@@ -26,11 +26,13 @@ mod nts_ke_experiment;
 #[cfg(feature = "ke-association-prototype")]
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
-pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};
-#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
-    SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
+    ManagedProtectedRestriction, ManagedProtectedTerminal, SourceProtectedProbeFailure,
+    SourceProtectedProbeReport,
 };
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};
 
 /// Run the explicitly selected, controlled-loopback KE association prototype.
 ///

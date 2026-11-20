@@ -151,7 +151,7 @@ fn correlated_restriction_checks_the_complete_frame() -> Result<(), ReplyError> 
     Ok(())
 }
 
-/// An NTS NAK requires exact correlation and excludes all other NTS fields.
+/// An NTS NAK requires a version-4 server header, exact correlation and no other NTS fields.
 /// # Errors
 /// Preserve an unexpected refusal of the eligible negative acknowledgement.
 /// # Panics
@@ -167,6 +167,17 @@ fn nts_nak_has_its_own_bounded_disposition() -> Result<(), ReplyError> {
         stage_successor_response(&owner, &packet[..84], &UID, ORIGIN, 1)?,
         StagedSuccessorResponse::NtsNak
     ));
+    for (version, mode) in [(3_u8, 4_u8), (4, 3)] {
+        let mut wrong_header: [u8; 112] = packet;
+        wrong_header[0] = (version << 3) | mode;
+        assert!(
+            matches!(
+                stage_successor_response(&owner, &wrong_header[..84], &UID, ORIGIN, 1),
+                Err(ReplyError::Header)
+            ),
+            "NTS NAK with version {version}, mode {mode}"
+        );
+    }
     assert!(matches!(
         stage_successor_response(&owner, &packet[..48], &UID, ORIGIN, 1),
         Err(ReplyError::UniqueIdentifier)

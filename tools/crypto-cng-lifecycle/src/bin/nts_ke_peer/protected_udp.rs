@@ -6,19 +6,31 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::num::NonZeroU16;
 use std::time::{Duration, Instant};
 
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 use super::{
-    Budget, Failure,
+    Budget, ClientExit, Failure,
     protected_packet::{
-        Correlation, DENY_BYTES, PacketFailure, REPLY_BYTES, REQUEST_BYTES, admit_and_seal,
-        admit_successor, seal_deny,
+        Correlation, DENY_BYTES, NAK_BYTES, PacketFailure, REPLY_BYTES, REQUEST_BYTES,
+        SuccessorCorrelation, admit_and_seal, admit_successor, correlated_nak, seal_deny,
+        seal_ordinary_successor,
     },
 };
 
 /// Windows reports an overlong UDP datagram as a receive error.
 #[cfg(windows)]
 const WSAEMSGSIZE: i32 = 10_040;
+
+/// The selected reply sequence for the sole authenticated successor request.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SuccessorReply {
+    /// One authenticated DENY.
+    Deny,
+    /// One authenticated ordinary reply with a fresh replacement cookie.
+    Ordinary,
+    /// One NTSN immediately followed by the authenticated ordinary reply.
+    NakThenOrdinary,
+}
 
 /// One kernel-assigned loopback endpoint and its original invocation deadline.
 pub(super) struct ProtectedUdp {
@@ -117,7 +129,48 @@ impl ProtectedUdp {
         budget: &Budget,
         c2s: &[u8; 32],
         s2c: &[u8; 32],
+        fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        self.reply_to_successor(budget, c2s, s2c, fill, SuccessorReply::Deny)
+    }
+
+    /// Complete the selected two exchanges, erase the exporters, then observe the socket.
+    ///
+    /// All reply sends and exit observation share the original budget and endpoint.
+    ///
+    /// # Errors
+    /// Preserve exchange refusal, an unexpected datagram or acknowledgement failure.
+    pub(super) fn exchange_successor_observe_exit(
+        self,
+        budget: &Budget,
+        c2s: &mut Zeroizing<[u8; 32]>,
+        s2c: &mut Zeroizing<[u8; 32]>,
+        fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
+        read_exit: impl FnMut() -> Result<Option<ClientExit>, Failure>,
+        successor_reply: SuccessorReply,
+    ) -> Result<(), Failure> {
+        let replies: Result<(), Failure> =
+            self.reply_to_successor(budget, c2s, s2c, fill, successor_reply);
+        c2s.zeroize();
+        s2c.zeroize();
+        replies?;
+        self.observe_client_exit(budget, read_exit, Instant::now)
+    }
+
+    /// Complete the initial and successor legs before any observation.
+    ///
+    /// Authenticate exactly one request per leg. Both successor responses in
+    /// the NTSN sequence use the second request's checked correlation and sender.
+    ///
+    /// # Errors
+    /// Preserve the first deadline, I/O, entropy or packet refusal.
+    fn reply_to_successor(
+        &self,
+        budget: &Budget,
+        c2s: &[u8; 32],
+        s2c: &[u8; 32],
         mut fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
+        successor_reply: SuccessorReply,
     ) -> Result<(), Failure> {
         if self.deadline != budget.deadline {
             return Err(Failure::Deadline);
@@ -130,15 +183,75 @@ impl ProtectedUdp {
             .map_err(|error| Failure::Io(error.kind()))?;
         let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
             self.receive(budget, &Instant::now)?;
-        let successor: Correlation =
+        let successor: SuccessorCorrelation =
             admit_successor(&request[..REQUEST_BYTES], c2s, &initial).map_err(Failure::Datagram)?;
         let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
         budget.poll(Instant::now())?;
         fill(&mut nonce)?;
         budget.poll(Instant::now())?;
-        let reply: Zeroizing<[u8; DENY_BYTES]> =
-            seal_deny(&successor, s2c, &nonce).map_err(Failure::Datagram)?;
-        self.send_reply(budget, &Instant::now, sender, &reply[..])
+        match successor_reply {
+            SuccessorReply::Deny => {
+                let reply: Zeroizing<[u8; DENY_BYTES]> =
+                    seal_deny(successor, s2c, &nonce).map_err(Failure::Datagram)?;
+                self.send_reply(budget, &Instant::now, sender, &reply[..])
+            }
+            SuccessorReply::Ordinary | SuccessorReply::NakThenOrdinary => {
+                let nak: Option<[u8; NAK_BYTES]> = (successor_reply
+                    == SuccessorReply::NakThenOrdinary)
+                    .then(|| correlated_nak(&successor));
+                let reply: Zeroizing<[u8; REPLY_BYTES]> =
+                    seal_ordinary_successor(successor, s2c, &nonce).map_err(Failure::Datagram)?;
+                if let Some(nak) = nak {
+                    self.send_reply(budget, &Instant::now, sender, &nak)?;
+                }
+                self.send_reply(budget, &Instant::now, sender, &reply[..])
+            }
+        }
+    }
+
+    /// Hold the existing nonblocking socket until the exact exit acknowledgement.
+    ///
+    /// Check the queue again after acknowledgement to cover any packet arriving
+    /// between the first probe and reading the marker.
+    ///
+    /// # Errors
+    /// Refuse late completion, extra datagrams or failed socket/marker reads.
+    fn observe_client_exit(
+        self,
+        budget: &Budget,
+        mut read_exit: impl FnMut() -> Result<Option<ClientExit>, Failure>,
+        now: impl Fn() -> Instant,
+    ) -> Result<(), Failure> {
+        loop {
+            budget.poll(now())?;
+            self.refuse_extra_datagram()?;
+            let exited: Option<ClientExit> = read_exit()?;
+            let pause: Duration = budget.poll(now())?;
+            if let Some(ClientExit) = exited {
+                self.refuse_extra_datagram()?;
+                budget.poll(now())?;
+                return Ok(());
+            }
+            std::thread::sleep(pause);
+        }
+    }
+
+    /// Observe at most one queued datagram without parsing or replying.
+    ///
+    /// # Errors
+    /// Refuse any datagram, including zero-length and truncated receives, and
+    /// any I/O error other than the nonblocking empty queue.
+    fn refuse_extra_datagram(&self) -> Result<(), Failure> {
+        let mut sentinel: [u8; 1] = [0; 1];
+        match self.socket.recv_from(&mut sentinel) {
+            Ok(_) => Err(Failure::UnexpectedDatagram),
+            Err(error) if error.kind() == ErrorKind::WouldBlock => Ok(()),
+            #[cfg(windows)]
+            Err(error) if error.raw_os_error() == Some(WSAEMSGSIZE) => {
+                Err(Failure::UnexpectedDatagram)
+            }
+            Err(error) => Err(Failure::Io(error.kind())),
+        }
     }
 
     /// Authenticate the initial request, return its matching reply, and retain correlation.

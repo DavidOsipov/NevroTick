@@ -19,6 +19,8 @@ use super::{
 use crate::nts_ke_experiment::association::ledger::{Receipt, RequestPhase, Status};
 use crate::nts_ke_experiment::datagram::ProtectedCompletion;
 #[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::datagram::{ObservedRetiredSuccessor, SuccessorFailure};
+#[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::recovery::LoopbackBeforeCommit;
 use crate::nts_ke_experiment::recovery::{
     Backoff, ContextStage, End, Invocation, Limits, ManagedSuccessorFixture, Plan, Producer,
@@ -1042,6 +1044,27 @@ fn script_reads(
 }
 
 impl Producer for ScriptProducer<'_> {
+    #[cfg(any(windows, target_os = "linux"))]
+    fn exchange_successor<'tx>(
+        &mut self,
+        association: &mut AssociationOwner<'tx>,
+        control: &'tx Control,
+    ) -> Option<Result<ObservedRetiredSuccessor<'tx>, SuccessorFailure>> {
+        self.managed_loopback.map(|_: SocketAddr| {
+            crate::nts_ke_experiment::datagram::tests::observe_loopback_managed_successor(
+                association,
+                control,
+            )
+        })
+    }
+
+    #[cfg(any(windows, target_os = "linux"))]
+    fn before_successor_commit(&mut self) -> Result<(), Failure> {
+        self.before_loopback_commit
+            .take()
+            .map_or(Ok(()), |observe| observe())
+    }
+
     fn managed_successor_fixture(&mut self) -> Option<ManagedSuccessorFixture> {
         #[cfg(any(windows, target_os = "linux"))]
         if self.managed_loopback.is_some() {

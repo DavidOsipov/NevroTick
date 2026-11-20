@@ -20,9 +20,15 @@ pub(super) const REPLY_BYTES: usize = 140;
 pub(super) const DENY_BYTES: usize = 124;
 /// Exact NTS associated-data extent for the server header and UID field.
 const REPLY_PREFIX_BYTES: usize = 84;
+/// Correlation-only NTSN contains only the NTP header and UID field.
+pub(super) const NAK_BYTES: usize = REPLY_PREFIX_BYTES;
 /// Public fixture cookie, distinct from the cookie sent in the KE response.
 const REPLACEMENT_COOKIE: [u8; 12] = [
     0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94,
+];
+/// Public terminal cookie, distinct from both earlier cookies in the exchange.
+const SUCCESSOR_COOKIE: [u8; 12] = [
+    0x12, 0x24, 0x36, 0x48, 0x5a, 0x6c, 0x7e, 0x90, 0xa2, 0xb4, 0xc6, 0xd8,
 ];
 
 /// Redacted packet outcomes, containing no rejected input or secret bytes.
@@ -50,6 +56,12 @@ pub(super) struct Correlation {
     uid: [u8; 32],
 }
 
+/// Correlation authenticated with the issued cookie and checked against the first leg.
+pub(super) struct SuccessorCorrelation {
+    /// The current request's UID and transmit token.
+    current: Correlation,
+}
+
 /// Authenticate the fixed C2S request and seal one correlated S2C reply.
 ///
 /// On success the reply echoes the authenticated transmit token as origin and
@@ -69,7 +81,8 @@ pub(super) fn admit_and_seal(
 ) -> Result<(Correlation, Zeroizing<[u8; REPLY_BYTES]>), PacketFailure> {
     let cookie: &[u8] = super::RESPONSE.get(16..28).ok_or(PacketFailure::Shape)?;
     let correlation: Correlation = authenticate(request, c2s_key, cookie)?;
-    let reply: Zeroizing<[u8; REPLY_BYTES]> = seal_reply(&correlation, s2c_key, response_nonce)?;
+    let reply: Zeroizing<[u8; REPLY_BYTES]> =
+        seal_reply(&correlation, s2c_key, response_nonce, &REPLACEMENT_COOKIE)?;
     Ok((correlation, reply))
 }
 
@@ -81,12 +94,12 @@ pub(super) fn admit_successor(
     request: &[u8],
     c2s_key: &[u8; 32],
     initial: &Correlation,
-) -> Result<Correlation, PacketFailure> {
+) -> Result<SuccessorCorrelation, PacketFailure> {
     let successor: Correlation = authenticate(request, c2s_key, &REPLACEMENT_COOKIE)?;
     if successor.wire_transmit == initial.wire_transmit || successor.uid == initial.uid {
         return Err(PacketFailure::Replay);
     }
-    Ok(successor)
+    Ok(SuccessorCorrelation { current: successor })
 }
 
 /// Authenticate a complete fixed-profile request and own its correlation.
@@ -182,6 +195,7 @@ fn seal_reply(
     correlation: &Correlation,
     s2c_key: &[u8; 32],
     nonce: &[u8; 16],
+    cookie: &[u8; 12],
 ) -> Result<Zeroizing<[u8; REPLY_BYTES]>, PacketFailure> {
     let mut reply: Zeroizing<[u8; REPLY_BYTES]> = Zeroizing::new([0; REPLY_BYTES]);
     let bytes: &mut [u8] = reply.as_mut();
@@ -197,27 +211,57 @@ fn seal_reply(
     let (envelope, body): (&mut [u8], &mut [u8]) = authenticator.split_at_mut(40);
     envelope[..8].copy_from_slice(&[4, 4, 0, 56, 0, 16, 0, 32]);
     body[..4].copy_from_slice(&[2, 4, 0, 16]);
-    body[4..16].copy_from_slice(&REPLACEMENT_COOKIE);
+    body[4..16].copy_from_slice(cookie);
     seal_authenticator(aad, envelope, body, s2c_key, nonce)?;
     Ok(reply)
 }
 
-/// Seal an authenticated DENY with the successor's correlation and no cookies.
+/// Encode the correlation-only NTSN allowed before the authenticated successor reply.
+///
+/// Its only field echoes the UID from the admitted second request. The same
+/// request's transmit token supplies the origin. There are no timestamps used
+/// for time, cookie, authenticator, or other extensions.
+pub(super) fn correlated_nak(correlation: &SuccessorCorrelation) -> [u8; NAK_BYTES] {
+    let current: &Correlation = &correlation.current;
+    let mut reply: [u8; NAK_BYTES] = [0; NAK_BYTES];
+    reply[0] = 0x24;
+    reply[12..16].copy_from_slice(b"NTSN");
+    reply[24..32].copy_from_slice(&current.wire_transmit.to_be_bytes());
+    reply[48..52].copy_from_slice(&[1, 4, 0, 36]);
+    reply[52..84].copy_from_slice(&current.uid);
+    reply
+}
+
+/// Consume the authenticated successor correlation to seal a reply with a new cookie.
+///
+/// # Errors
+/// Refuse a provider failure without returning reply bytes.
+pub(super) fn seal_ordinary_successor(
+    correlation: SuccessorCorrelation,
+    s2c_key: &[u8; 32],
+    nonce: &[u8; 16],
+) -> Result<Zeroizing<[u8; REPLY_BYTES]>, PacketFailure> {
+    let SuccessorCorrelation { current } = correlation;
+    seal_reply(&current, s2c_key, nonce, &SUCCESSOR_COOKIE)
+}
+
+/// Consume the authenticated successor correlation to seal a DENY with no cookies.
 ///
 /// # Errors
 /// Refuse a provider failure without returning reply bytes.
 pub(super) fn seal_deny(
-    correlation: &Correlation,
+    correlation: SuccessorCorrelation,
     s2c_key: &[u8; 32],
     nonce: &[u8; 16],
 ) -> Result<Zeroizing<[u8; DENY_BYTES]>, PacketFailure> {
+    let SuccessorCorrelation { current } = correlation;
     let mut reply: Zeroizing<[u8; DENY_BYTES]> = Zeroizing::new([0; DENY_BYTES]);
     let (aad, envelope): (&mut [u8], &mut [u8]) = reply.as_mut().split_at_mut(REPLY_PREFIX_BYTES);
     aad[0] = 0x24;
     aad[12..16].copy_from_slice(b"DENY");
-    aad[24..32].copy_from_slice(&correlation.wire_transmit.to_be_bytes());
+    aad[24..32].copy_from_slice(&current.wire_transmit.to_be_bytes());
     aad[48..52].copy_from_slice(&[1, 4, 0, 36]);
-    aad[52..84].copy_from_slice(&correlation.uid);
+    aad[52..84].copy_from_slice(&current.uid);
     envelope[..8].copy_from_slice(&[4, 4, 0, 40, 0, 16, 0, 16]);
     seal_authenticator(aad, envelope, &mut [], s2c_key, nonce)?;
     Ok(reply)

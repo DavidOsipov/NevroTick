@@ -3,9 +3,9 @@
 //! Public protocol literals are independent of the client encoder. Private-key
 //! paths, plaintext, certificates and exporter bytes never enter diagnostics.
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::num::NonZeroU16;
-use std::path::{Component, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
 
 #[cfg(windows)]
@@ -14,12 +14,16 @@ mod transport;
 mod protected_packet;
 mod protected_udp;
 
+use protected_udp::SuccessorReply;
+
 /// Entire peer lifetime, measured from the original invocation before setup.
 const LIFETIME: Duration = Duration::from_secs(60);
 /// Maximum wait between original-deadline observations during network work.
 const POLL: Duration = Duration::from_millis(200);
 /// Independent cumulative encrypted-input and encrypted-output byte limits.
 const IO_LIMIT: usize = 65_536;
+/// Exact controller acknowledgement published after reaping the client.
+const CLIENT_EXIT_MARKER: &[u8; 16] = b"client-exited=1\n";
 /// Exact public NPN0 / AEAD15 / EOM offer, including critical record bits.
 const OFFER: [u8; 16] = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];
 /// Exact response with one public twelve-byte cookie and no endpoint alternative.
@@ -59,6 +63,10 @@ enum Failure {
     Io(std::io::ErrorKind),
     /// The selected packet could not be admitted or sealed.
     Datagram(protected_packet::PacketFailure),
+    /// The receive-only phase consumed a third datagram, regardless of content.
+    UnexpectedDatagram,
+    /// The controller acknowledgement already existed or failed admission.
+    ExitAcknowledgement,
     /// The provider could not fill the reply nonce.
     Entropy,
     /// DER/key admission or fallible bounded allocation refused.
@@ -126,6 +134,36 @@ enum Mode {
     Protected,
     /// Return a cookie on the first exchange and an authenticated DENY on its successor.
     ProtectedSuccessorDeny,
+    /// Complete the selected successor reply sequence and observe client exit.
+    ProtectedSuccessorObserveExit(SuccessorReply),
+}
+
+/// The controller's acknowledged process retirement in the private fixture directory.
+struct ClientExit;
+
+impl ClientExit {
+    /// Admit the exact fixed record without interpreting partial or extra input.
+    ///
+    /// # Errors
+    /// Refuse bytes other than the complete process-retirement marker.
+    fn admit(bytes: &[u8]) -> Result<Self, Failure> {
+        if bytes == CLIENT_EXIT_MARKER {
+            Ok(Self)
+        } else {
+            Err(Failure::ExitAcknowledgement)
+        }
+    }
+}
+
+/// Derive the one controller acknowledgement beside the admitted readiness file.
+///
+/// # Errors
+/// Refuse a derived path outside the accepted spelling or aliasing readiness.
+fn client_exit_path(ready: &Path) -> Result<PathBuf, Failure> {
+    if ready.file_name() != Some(OsStr::new("peer.ready")) {
+        return Err(Failure::Arguments);
+    }
+    checked_path(ready.with_file_name("peer.client-exited").into_os_string())
 }
 
 /// Admitted mode and local path representations.
@@ -136,6 +174,8 @@ struct Config {
     key: PathBuf,
     /// New private-NTFS readiness record; never an existing record or mapped share.
     ready: PathBuf,
+    /// Derived exit marker, available only for the closed observed successor mode.
+    exit_acknowledgement: Option<PathBuf>,
     /// Explicitly selected operation.
     mode: Mode,
 }
@@ -162,6 +202,24 @@ impl Config {
             Some(flag) if flag == "--protected-successor-deny" && arguments.next().is_none() => {
                 Mode::ProtectedSuccessorDeny
             }
+            Some(flag)
+                if flag == "--protected-successor-deny-observe-exit"
+                    && arguments.next().is_none() =>
+            {
+                Mode::ProtectedSuccessorObserveExit(SuccessorReply::Deny)
+            }
+            Some(flag)
+                if flag == "--protected-successor-ordinary-observe-exit"
+                    && arguments.next().is_none() =>
+            {
+                Mode::ProtectedSuccessorObserveExit(SuccessorReply::Ordinary)
+            }
+            Some(flag)
+                if flag == "--protected-successor-nak-ordinary-observe-exit"
+                    && arguments.next().is_none() =>
+            {
+                Mode::ProtectedSuccessorObserveExit(SuccessorReply::NakThenOrdinary)
+            }
             Some(_) => return Err(Failure::Arguments),
         };
         let certificate = checked_path(certificate)?;
@@ -170,10 +228,15 @@ impl Config {
         if certificate == key || certificate == ready || key == ready {
             return Err(Failure::Arguments);
         }
+        let exit_acknowledgement: Option<PathBuf> = match mode {
+            Mode::ProtectedSuccessorObserveExit(_) => Some(client_exit_path(&ready)?),
+            Mode::Ke | Mode::Protected | Mode::ProtectedSuccessorDeny => None,
+        };
         Ok(Self {
             certificate,
             key,
             ready,
+            exit_acknowledgement,
             mode,
         })
     }
@@ -344,6 +407,15 @@ fn completion_line(mode: Mode) -> &'static str {
         Mode::ProtectedSuccessorDeny => {
             "scope=laboratory-ke-peer-protected-successor-deny completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2"
         }
+        Mode::ProtectedSuccessorObserveExit(SuccessorReply::Deny) => {
+            "scope=laboratory-ke-peer-protected-successor-deny-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0"
+        }
+        Mode::ProtectedSuccessorObserveExit(SuccessorReply::Ordinary) => {
+            "scope=laboratory-ke-peer-protected-successor-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0"
+        }
+        Mode::ProtectedSuccessorObserveExit(SuccessorReply::NakThenOrdinary) => {
+            "scope=laboratory-ke-peer-protected-successor-nak-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=3 client_exited=1 extra_udp_received=0"
+        }
     }
 }
 
@@ -373,6 +445,8 @@ fn labels(failure: Failure) -> (&'static str, &'static str, &'static str) {
         Failure::Tls => ("tls", "refused", "none"),
         Failure::Closure => ("closure", "missing-notify", "none"),
         Failure::Datagram(cause) => ("protected-datagram", packet_label(cause), "none"),
+        Failure::UnexpectedDatagram => ("protected-datagram", "unexpected-datagram", "none"),
+        Failure::ExitAcknowledgement => ("client-exit", "acknowledgement", "none"),
         Failure::Entropy => ("protected-datagram", "entropy", "none"),
         Failure::Io(kind) => ("io", io_label(kind), "none"),
         Failure::Ready { primary, cleanup } => (

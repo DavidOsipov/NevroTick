@@ -20,8 +20,8 @@ use rustls_cng_crypto::ShutdownHandle;
 use zeroize::Zeroizing;
 
 use super::{
-    Budget, Config, Failed, Failure, Flow, Mode, OFFER, RESPONSE, admit_offer, protected_response,
-    protected_udp::ProtectedUdp, ready_line, resolve,
+    Budget, CLIENT_EXIT_MARKER, ClientExit, Config, Failed, Failure, Flow, Mode, OFFER, RESPONSE,
+    admit_offer, protected_response, protected_udp::ProtectedUdp, ready_line, resolve,
 };
 
 /// Maximum admitted public certificate or private PKCS8 extent.
@@ -109,6 +109,63 @@ fn read_der(path: &Path) -> Result<Zeroizing<Vec<u8>>, Failure> {
         return Err(Failure::Input);
     }
     Ok(bytes)
+}
+
+/// Establish absence of the derived acknowledgement before publishing readiness.
+///
+/// # Errors
+/// Refuse preexisting entries or failure to confirm absence in the private directory.
+fn require_absent_exit_acknowledgement(path: &Path) -> Result<(), Failure> {
+    check_parent(path)?;
+    match fs::symlink_metadata(path) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        _ => Err(Failure::ExitAcknowledgement),
+    }
+}
+
+/// Read at most one exact-size acknowledgement and one EOF sentinel.
+///
+/// The admitted controller owns the private parent and publishes an immutable
+/// file after reaping the client. A held local regular file denies concurrent
+/// writes and deletes. Absence alone means the observer should keep waiting.
+///
+/// # Errors
+/// Refuse unsafe, malformed, modified or unreadable acknowledgements.
+fn read_exit_acknowledgement(path: &Path) -> Result<Option<ClientExit>, Failure> {
+    let before: Metadata = match fs::symlink_metadata(path) {
+        Ok(info) => info,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(Failure::ExitAcknowledgement),
+    };
+    check_parent(path)?;
+    if !before.is_file() || before.file_attributes() & REPARSE_ATTRIBUTE != 0 {
+        return Err(Failure::ExitAcknowledgement);
+    }
+    let mut file: fs::File = OpenOptions::new()
+        .read(true)
+        .share_mode(SHARE_READ)
+        .custom_flags(OPEN_REPARSE_POINT)
+        .open(path)
+        .map_err(|_| Failure::ExitAcknowledgement)?;
+    let held: Metadata = file.metadata().map_err(|_| Failure::ExitAcknowledgement)?;
+    if !held.is_file() || stamp(&held) != stamp(&before) {
+        return Err(Failure::ExitAcknowledgement);
+    }
+    let mut bytes: [u8; CLIENT_EXIT_MARKER.len()] = [0; CLIENT_EXIT_MARKER.len()];
+    file.read_exact(&mut bytes)
+        .map_err(|_| Failure::ExitAcknowledgement)?;
+    let mut extra: [u8; 1] = [0; 1];
+    if file
+        .read(&mut extra)
+        .map_err(|_| Failure::ExitAcknowledgement)?
+        != 0
+        || stamp(&file.metadata().map_err(|_| Failure::ExitAcknowledgement)?) != stamp(&held)
+        || stamp(&fs::symlink_metadata(path).map_err(|_| Failure::ExitAcknowledgement)?)
+            != stamp(&held)
+    {
+        return Err(Failure::ExitAcknowledgement);
+    }
+    ClientExit::admit(&bytes).map(Some)
 }
 
 /// Publish only a complete new readiness record; never overwrite a destination.
@@ -385,9 +442,13 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
         certificate,
         key,
         ready,
+        exit_acknowledgement,
         mode,
     } = config;
-    let budget = Budget::new(origin)?;
+    let budget: Budget = Budget::new(origin)?;
+    if let Some(path) = exit_acknowledgement.as_deref() {
+        require_absent_exit_acknowledgement(path)?;
+    }
     let mut connection = connection(&certificate, &key)?;
     budget.poll(Instant::now())?;
     let listener =
@@ -401,10 +462,15 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
         .port();
     let udp: Option<ProtectedUdp> = match mode {
         Mode::Ke => None,
-        Mode::Protected | Mode::ProtectedSuccessorDeny => Some(ProtectedUdp::bind(&budget)?),
+        Mode::Protected | Mode::ProtectedSuccessorDeny | Mode::ProtectedSuccessorObserveExit(_) => {
+            Some(ProtectedUdp::bind(&budget)?)
+        }
     };
     budget.poll(Instant::now())?;
-    let successor_port: Option<NonZeroU16> = if mode == Mode::ProtectedSuccessorDeny {
+    let successor_port: Option<NonZeroU16> = if matches!(
+        mode,
+        Mode::ProtectedSuccessorDeny | Mode::ProtectedSuccessorObserveExit(_)
+    ) {
         Some(udp.as_ref().ok_or(Failure::Arguments)?.port())
     } else {
         None
@@ -449,7 +515,12 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     {
         return Err(Failure::Tls.into());
     }
-    finish_exchange(StreamOwned::new(connection, socket), udp, mode)
+    finish_exchange(
+        StreamOwned::new(connection, socket),
+        udp,
+        mode,
+        exit_acknowledgement.as_deref(),
+    )
 }
 
 /// Complete KE and TLS close under the original budget. Protected mode then
@@ -461,12 +532,13 @@ fn finish_exchange(
     mut stream: StreamOwned<ServerConnection, BudgetIo>,
     udp: Option<ProtectedUdp>,
     mode: Mode,
+    acknowledgement: Option<&Path>,
 ) -> Result<(), Failed> {
     let mut offer: [u8; OFFER.len()] = [0; OFFER.len()];
     let received: io::Result<()> = stream.read_exact(&mut offer);
     stream.sock.settle(received)?;
     admit_offer(&offer)?;
-    let c2s: Zeroizing<[u8; 32]> = stream
+    let mut c2s: Zeroizing<[u8; 32]> = stream
         .conn
         .export_keying_material(
             Zeroizing::new([0_u8; 32]),
@@ -474,7 +546,7 @@ fn finish_exchange(
             Some(&[0, 0, 0, 15, 0]),
         )
         .map_err(|_| Failure::Tls)?;
-    let s2c: Zeroizing<[u8; 32]> = stream
+    let mut s2c: Zeroizing<[u8; 32]> = stream
         .conn
         .export_keying_material(
             Zeroizing::new([0_u8; 32]),
@@ -502,10 +574,22 @@ fn finish_exchange(
                     .fill(nonce)
                     .map_err(|_| Failure::Entropy)
             };
-            if mode == Mode::ProtectedSuccessorDeny {
-                socket.exchange_successor_deny(&budget, &c2s, &s2c, fill)?;
-            } else {
-                socket.exchange(&budget, &c2s, &s2c, fill)?;
+            match (mode, acknowledgement) {
+                (Mode::ProtectedSuccessorObserveExit(reply), Some(path)) => {
+                    socket.exchange_successor_observe_exit(
+                        &budget,
+                        &mut c2s,
+                        &mut s2c,
+                        fill,
+                        || read_exit_acknowledgement(path),
+                        reply,
+                    )?;
+                }
+                (Mode::ProtectedSuccessorDeny, None) => {
+                    socket.exchange_successor_deny(&budget, &c2s, &s2c, fill)?;
+                }
+                (Mode::Protected, None) => socket.exchange(&budget, &c2s, &s2c, fill)?,
+                _ => return Err(Failure::Arguments.into()),
             }
             Ok(())
         }

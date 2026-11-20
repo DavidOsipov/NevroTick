@@ -2909,6 +2909,17 @@ pub(in crate::nts_ke_experiment) fn loopback_managed_successor<'control>(
     )
 }
 
+/// Keep the actual socket adapter and original NAK observation in the joined control.
+/// # Errors
+/// Preserve the charged receiver or original adapter refusal.
+#[cfg(any(windows, target_os = "linux"))]
+pub(in crate::nts_ke_experiment) fn observe_loopback_managed_successor<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+) -> Result<super::ObservedRetiredSuccessor<'control>, super::SuccessorFailure> {
+    exchange_successor_observing(association, control, successor_entropy, Backend::bind)
+}
+
 /// Inspect the two authenticated responses from the fixed native fixture peer.
 /// Both datagrams use the actual adapter, original association and carried work.
 /// # Errors
@@ -2969,6 +2980,7 @@ fn loopback_request(
     wire: u64,
     uid: &[u8],
     cookie: &[u8; 12],
+    placeholder_count: usize,
 ) -> Result<SocketAddr, Failure> {
     let mut packet: [u8; 253] = [0; 253];
     let (length, client): (usize, SocketAddr) = peer
@@ -2976,19 +2988,25 @@ fn loopback_request(
         .map_err(|error: io::Error| Failure::Datagram(DatagramError::Receive(error.kind())))?;
     assert!(client.ip().is_loopback());
     assert_ne!(client.port(), 0);
-    assert_eq!(length, 252);
+    let authentication_offset: usize = 100 + 16 * placeholder_count;
+    assert_eq!(length, authentication_offset + 40);
     assert_eq!(packet.first(), Some(&0x23));
     assert_eq!(packet.get(40..48), Some(wire.to_be_bytes().as_slice()));
     assert_eq!(packet.get(48..52), Some([1, 4, 0, 36].as_slice()));
     assert_eq!(packet.get(52..84), Some(uid));
     assert_eq!(packet.get(84..88), Some([2, 4, 0, 16].as_slice()));
     assert_eq!(packet.get(88..100), Some(cookie.as_slice()));
-    let placeholders: &[u8] = packet.get(100..212).ok_or(Failure::Control)?;
+    let placeholders: &[u8] = packet
+        .get(100..authentication_offset)
+        .ok_or(Failure::Control)?;
     let placeholder: [u8; 16] = [3, 4, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let (fields, remainder): (&[[u8; 16]], &[u8]) = placeholders.as_chunks();
     assert_eq!(remainder, []);
     assert!(fields.iter().all(|field: &[u8; 16]| *field == placeholder));
-    assert_eq!(packet.get(212..216), Some([4, 4, 0, 40].as_slice()));
+    assert_eq!(
+        packet.get(authentication_offset..authentication_offset + 4),
+        Some([4, 4, 0, 40].as_slice())
+    );
     Ok(client)
 }
 
@@ -3016,16 +3034,34 @@ fn send_loopback_reply(
 #[cfg(any(windows, target_os = "linux"))]
 pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
     peer: &std::net::UdpSocket,
+    ordinary_successor: bool,
 ) -> Result<(), Failure> {
-    let first: SocketAddr = loopback_request(peer, 0x1122_3344_5566_7788, &C2S, &[0x11; 12])?;
-    send_loopback_reply(peer, first, fixtures::HEALTHY)?;
+    let first: SocketAddr = loopback_request(peer, 0x1122_3344_5566_7788, &C2S, &[0x11; 12], 7)?;
+    let first_reply: &[u8] = if ordinary_successor {
+        fixtures::TWO_COOKIES
+    } else {
+        fixtures::HEALTHY
+    };
+    send_loopback_reply(peer, first, first_reply)?;
     let second_uid: &[u8] = PROTECTED_DENY.get(52..84).ok_or(Failure::Control)?;
     let replacement: [u8; 12] = [
         0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
     ];
-    let second: SocketAddr =
-        loopback_request(peer, 0x8899_aabb_ccdd_eeff, second_uid, &replacement)?;
-    send_loopback_reply(peer, second, &PROTECTED_DENY)
+    let second_placeholders: usize = if ordinary_successor { 6 } else { 7 };
+    let second: SocketAddr = loopback_request(
+        peer,
+        0x8899_aabb_ccdd_eeff,
+        second_uid,
+        &replacement,
+        second_placeholders,
+    )?;
+    send_loopback_reply(peer, second, &CORRELATED_NTSN)?;
+    let terminal: &[u8] = if ordinary_successor {
+        fixtures::SUCCESSOR_OLD_S2C
+    } else {
+        &PROTECTED_DENY
+    };
+    send_loopback_reply(peer, second, terminal)
 }
 
 /// Compare the retained first operation with its observations before commit.

@@ -29,7 +29,7 @@ use crate::nts_ke_experiment::{
     Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
     run_observing, run_synchronously_with, write_observed_run,
 };
-use crate::{SourceProtectedProbeFailure, SourceProtectedProbeReport};
+use crate::{ManagedProtectedReport, SourceProtectedProbeFailure, SourceProtectedProbeReport};
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -1152,13 +1152,48 @@ fn observed_facade_registration_failure_refuses_submission() -> Result<(), Failu
     let state: Observation = SLOT.observer().poll_until(Instant::now() + WAIT);
     drain_facade_observation(&SLOT, state)?;
     assert!(matches!(result, Err(ObserverStartError::Registration)));
-    assert_prestart_report(result, ("power-registration", "unavailable"))?;
+    assert_prestart_report(
+        Err(ObserverStartError::Registration),
+        ("power-registration", "unavailable"),
+    )?;
+    assert_managed_registration_refusal(result)?;
     let mut diagnostic: Vec<u8> = Vec::new();
     output::write_power_registration_failure(&mut diagnostic).map_err(|_| Failure::Control)?;
     assert_eq!(diagnostic, b"scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=power-registration cause=unavailable retirement_confirmed=0\n");
     assert_eq!(submissions.load(Ordering::Acquire), 0);
     assert_eq!(state, Observation::Unused);
     assert!(ADMISSION.claim().is_ok());
+    Ok(())
+}
+
+/// Preserve the actual observer refusal at the successor consumer boundary.
+/// # Errors
+/// Report a false successful projection of a failed registration.
+/// # Panics
+/// Fail if the projection invents operation, cleanup or retained reply facts.
+fn assert_managed_registration_refusal(
+    observed: Result<ObservedInvocation, ObserverStartError>,
+) -> Result<(), Failure> {
+    let Err(failure): Result<ManagedProtectedReport, SourceProtectedProbeFailure> =
+        ManagedProtectedReport::from_observed(observed)
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("power-registration", "unavailable"));
+    assert_eq!(
+        (
+            failure.primary_labels(),
+            failure.cleanup_labels(),
+            failure.admission_cleanup_labels()
+        ),
+        (None, None, None)
+    );
+    assert!(failure.source_policy_error().is_none());
+    assert!(failure.retained_configuration().is_none());
+    assert_eq!(failure.power_unregistration_error(), None);
+    assert!(!failure.power_stop_failed());
+    assert!(failure.retained_first().is_none());
+    assert_eq!(failure.retained_first_nak_at(), None);
     Ok(())
 }
 
@@ -1229,11 +1264,25 @@ fn observed_facade_early_event_cancels_the_original_worker() -> Result<(), Failu
 /// Fail if close precedes the actual joined take or changes the original history.
 #[test]
 fn observed_facade_late_event_preserves_joined_protected_result() -> Result<(), Failure> {
-    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
-    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
-    let cases: [(bool, bool); 3] = [(false, false), (true, false), (false, true)];
-    for ((slot, admission), (late_event, reject_output)) in SLOTS.iter().zip(&ADMISSIONS).zip(cases)
-    {
+    /// Consumer of the same genuinely joined probe result.
+    enum Consumer {
+        /// Output to an accepting diagnostic and result writer.
+        Output,
+        /// Output to a writer that cannot retain the result bytes.
+        UnwritableOutput,
+        /// Present the probe to the distinct public successor report.
+        ManagedSuccessor,
+    }
+
+    static SLOTS: [WorkerSlot; 4] = [const { WorkerSlot::new() }; 4];
+    static ADMISSIONS: [ProcessAdmission; 4] = [const { ProcessAdmission::new() }; 4];
+    let cases: [(bool, Consumer); 4] = [
+        (false, Consumer::Output),
+        (true, Consumer::Output),
+        (false, Consumer::UnwritableOutput),
+        (true, Consumer::ManagedSuccessor),
+    ];
+    for ((slot, admission), (late_event, consumer)) in SLOTS.iter().zip(&ADMISSIONS).zip(cases) {
         let config: Config = Config::from_arguments(
             [
                 "127.0.0.1:4460".into(),
@@ -1284,8 +1333,12 @@ fn observed_facade_late_event_preserves_joined_protected_result() -> Result<(), 
             late_event.then_some(NonZeroU32::MIN)
         );
         assert!(!observed.cleanup.stop_failed);
+        if matches!(consumer, Consumer::ManagedSuccessor) {
+            assert_wrong_managed_mode(observed)?;
+            continue;
+        }
         let mut diagnostic: Vec<u8> = Vec::new();
-        if reject_output {
+        if matches!(consumer, Consumer::UnwritableOutput) {
             let mut rejected: [u8; 0] = [];
             let mut sink = std::io::Cursor::new(rejected.as_mut_slice());
             assert!(!write_observed_run(observed, &mut sink, &mut diagnostic));
@@ -1303,6 +1356,26 @@ fn observed_facade_late_event_preserves_joined_protected_result() -> Result<(), 
             assert_eq!(diagnostic, [0_u8; 0]);
         }
     }
+    Ok(())
+}
+
+/// The successor projection refuses a joined probe and preserves its close failure.
+/// # Errors
+/// Report unexpected successful projection of another operation mode.
+/// # Panics
+/// Fail if refusal obscures the exact close status or invents successor history.
+fn assert_wrong_managed_mode(observed: ObservedInvocation) -> Result<(), Failure> {
+    let Err(failure): Result<ManagedProtectedReport, SourceProtectedProbeFailure> =
+        ManagedProtectedReport::from_observed(Ok(observed))
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("currentness", "control"));
+    assert_eq!(failure.primary_labels(), Some(("currentness", "control")));
+    assert_eq!(failure.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert!(!failure.power_stop_failed());
+    assert!(failure.retained_first().is_none());
+    assert_eq!(failure.retained_first_nak_at(), None);
     Ok(())
 }
 
@@ -1361,6 +1434,8 @@ fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failur
 #[cfg(any(windows, target_os = "linux"))]
 #[derive(Clone, Copy)]
 enum LoopbackSuccessor {
+    /// A later ordinary authenticated reply completes the same pending request.
+    ApplyOrdinary,
     /// Let the genuine retired DENY commit under the original authority.
     ApplyDeny,
     /// Replace the actual source revision before the DENY can commit.
@@ -1390,7 +1465,7 @@ fn loopback_successor_hook(
         entered.send(()).map_err(|_| Failure::Control)?;
         release.recv_timeout(WAIT).map_err(|_| Failure::Control)?;
         match successor {
-            LoopbackSuccessor::ApplyDeny => {}
+            LoopbackSuccessor::ApplyOrdinary | LoopbackSuccessor::ApplyDeny => {}
             LoopbackSuccessor::ReplaceConfiguration => {
                 let replacement: crate::SourceConfigurationSnapshot = authority
                     .replace_ke_preview_configuration(
@@ -1486,25 +1561,32 @@ fn run_managed_loopback_control(
     std::thread::scope(|scope| {
         let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
             std::thread::Builder::new()
-                .spawn_scoped(scope, || serve_managed_loopback(&peer))
+                .spawn_scoped(scope, || {
+                    serve_managed_loopback(
+                        &peer,
+                        matches!(successor, LoopbackSuccessor::ApplyOrdinary),
+                    )
+                })
                 .map_err(|_| Failure::Control)?;
-        slot.submit_successor_fixture(
-            prepared,
-            admission,
-            component_provider,
-            move |config, provider, control, first_receipt| {
-                loopback_control_operation(
-                    config,
-                    provider,
-                    control,
-                    first_receipt,
-                    remote,
-                    before_commit,
+        slot.try_reserve(prepared)
+            .and_then(|reservation: SubmissionReservation| {
+                reservation.submit_bounded_successor_fixture(
+                    admission,
+                    component_provider,
+                    move |config, provider, control, first_receipt| {
+                        loopback_control_operation(
+                            config,
+                            provider,
+                            control,
+                            first_receipt,
+                            remote,
+                            before_commit,
+                        )
+                    },
+                    Hooks::none(),
                 )
-            },
-            Hooks::none(),
-        )
-        .map_err(|_| Failure::Control)?;
+            })
+            .map_err(|_| Failure::Control)?;
         gate.wait(slot)?;
         let before_successor_commit: Instant = Instant::now();
         assert!(matches!(
@@ -1617,45 +1699,150 @@ fn assert_joined_loopback_successor(
 ) -> Result<(), Failure> {
     match (successor, result) {
         (
-            LoopbackSuccessor::ApplyDeny | LoopbackSuccessor::ReplaceConfiguration,
-            Ok(ReceivedInvocation::ProtectedSuccessor(joined)),
+            LoopbackSuccessor::ApplyOrdinary
+            | LoopbackSuccessor::ApplyDeny
+            | LoopbackSuccessor::ReplaceConfiguration,
+            Ok(ReceivedInvocation::ManagedSuccessor(joined)),
         ) => {
-            let (first, terminal): (
-                Box<crate::nts_ke_experiment::datagram::ManagedProtectedHistory>,
-                Operation,
-            ) = joined.into_parts();
-            assert_loopback_first_receipt(&first, remote, expected, first_commit_window);
-            match (successor, terminal) {
-                (
-                    LoopbackSuccessor::ApplyDeny,
-                    Ok(InvocationCompletion::ManagedProtectedControl(history)),
-                ) => {
-                    assert_loopback_deny(&history, remote, expected);
-                    assert!(history.decided_at() >= *first_commit_window.end());
+            use crate::ManagedProtectedTerminal;
+
+            let first = joined.first_history().ok_or(Failure::Control)?;
+            let ordinary: bool = matches!(successor, LoopbackSuccessor::ApplyOrdinary);
+            assert_loopback_first_receipt(first, remote, expected, first_commit_window, ordinary);
+            let committed_at: Instant = first.history().committed_at();
+            let report: ManagedProtectedReport =
+                ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
+                    result: Ok(ReceivedInvocation::ManagedSuccessor(joined)),
+                    cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
+                }))
+                .map_err(|_| Failure::Control)?;
+            let projected = report.first().ok_or(Failure::Control)?;
+            let nak: Instant = report.first_nak_at().ok_or(Failure::Control)?;
+            assert_eq!(projected.committed_at(), committed_at);
+            assert_eq!(projected.packet_bytes(), 252);
+            assert_eq!(projected.initial_cookie_population(), (1, 12));
+            assert_eq!(projected.leap_indicator(), 0);
+            assert!(projected.configuration().same_configuration(expected));
+            assert!(projected.received_at() <= committed_at);
+            assert!(committed_at <= nak && first_commit_window.contains(&nak));
+            assert_eq!(
+                (report.attempted_sends(), report.fully_submitted_sends()),
+                (2, 2)
+            );
+            // Each leg needs write and read readiness. Each of the three
+            // datagrams needs a separate receive attempt, even if already ready.
+            assert!(report.remaining_driver_work() <= 57);
+            let (first_bytes, last_bytes): (usize, usize) =
+                if ordinary { (156, 140) } else { (140, 124) };
+            assert_eq!(
+                report.remaining_association_work(),
+                Some((30, 29, 131_072 - first_bytes - 84 - last_bytes)),
+            );
+            assert_eq!(
+                report.recovery_unavailable(),
+                matches!(successor, LoopbackSuccessor::ReplaceConfiguration),
+            );
+            assert_eq!(report.power_unregistration_error(), None);
+            match (successor, report.terminal()) {
+                (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
+                    assert!(receipt.configuration().same_configuration(expected));
+                    assert!(nak <= receipt.received_at());
+                    assert!(receipt.received_at() <= receipt.committed_at());
+                    assert_eq!(receipt.packet_bytes(), 236);
+                    assert_eq!(receipt.initial_cookie_population(), (2, 24));
+                    assert_eq!(receipt.leap_indicator(), 0);
                 }
-                (LoopbackSuccessor::ReplaceConfiguration, Err(failure)) => {
+                (LoopbackSuccessor::ApplyDeny, ManagedProtectedTerminal::Restriction(history)) => {
+                    assert_eq!(history.code(), "DENY");
+                    assert!(history.authenticated());
+                    assert_eq!(history.remote(), remote);
+                    assert_eq!(history.serial(), 2);
+                    assert!(history.configuration().same_configuration(expected));
+                    assert!(history.decided_at() >= *first_commit_window.end());
+                    assert_joined_restriction_debug(&report);
+                }
+                (
+                    LoopbackSuccessor::ReplaceConfiguration,
+                    ManagedProtectedTerminal::Refused(failure),
+                ) => {
                     assert_eq!(
-                        failure,
-                        failed(Failure::SourcePolicy(
-                            crate::SourcePolicyError::ConfigurationChanged,
-                        ))
+                        failure.source_policy_error(),
+                        Some(crate::SourcePolicyError::ConfigurationChanged),
                     );
                 }
-                (_, Err(failure)) => return Err(failure.primary),
                 _ => return Err(Failure::Control),
             }
         }
         (LoopbackSuccessor::Unwind, Err(RunFailed::Abnormal(joined))) => {
-            assert_eq!(joined.termination, Termination::Panicked);
-            assert!(!joined.retired);
-            assert!(joined.operation.is_none());
-            let first: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory =
-                joined.first_receipt().ok_or(Failure::Control)?;
-            assert_loopback_first_receipt(first, remote, expected, first_commit_window);
+            assert_abnormal_loopback_successor(joined, remote, expected, first_commit_window)?;
         }
         (_, Err(RunFailed::Operation(failure))) => return Err(failure.primary),
         _ => return Err(Failure::Control),
     }
+    Ok(())
+}
+
+/// Compare joined DENY diagnostics with the permitted summary fields.
+/// # Panics
+/// Fail if formatting leaks source configuration, endpoint, packet or timing data.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_joined_restriction_debug(report: &ManagedProtectedReport) {
+    assert_eq!(
+        format!("{report:?}"),
+        format!(
+            concat!(
+                "ManagedProtectedReport {{ first: Some(ManagedProtectedReceipt ",
+                "{{ packet_bytes: 252, leap_indicator: 0, .. }}), ",
+                "terminal: Restriction(ManagedProtectedRestriction ",
+                "{{ code: \"DENY\", authenticated: true, .. }}), ",
+                "attempted_sends: 2, fully_submitted_sends: 2, ",
+                "remaining_driver_work: {}, .. }}",
+            ),
+            report.remaining_driver_work()
+        ),
+        "joined diagnostics disclose only the selected summary fields"
+    );
+}
+
+/// Compare the public failure with genuine first-reply custody after abnormal join.
+/// # Errors
+/// Preserve wrong-mode refusal and a missing first receipt or NAK observation.
+/// # Panics
+/// Fail if retirement changes the first receipt or manufactures terminal history.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_abnormal_loopback_successor(
+    joined: JoinedOutcome,
+    remote: std::net::SocketAddr,
+    expected: &crate::SourceConfigurationSnapshot,
+    first_commit_window: &std::ops::RangeInclusive<Instant>,
+) -> Result<(), Failure> {
+    assert_eq!(joined.termination, Termination::Panicked);
+    assert!(!joined.retired);
+    assert!(joined.operation.is_none());
+    let first: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory =
+        joined.first_receipt().ok_or(Failure::Control)?;
+    assert_loopback_first_receipt(first, remote, expected, first_commit_window, false);
+    let committed_at: Instant = first.history().committed_at();
+    let Err(failure): Result<ManagedProtectedReport, SourceProtectedProbeFailure> =
+        ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
+            result: Err(RunFailed::Abnormal(joined)),
+            cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
+        }))
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("worker-termination", "panicked"));
+    assert!(failure.primary_labels().is_none());
+    assert!(failure.retained_configuration().is_none());
+    assert_eq!(failure.power_unregistration_error(), None);
+    let retained: crate::ManagedProtectedReceipt =
+        failure.retained_first().ok_or(Failure::Control)?;
+    let nak_at: Instant = failure.retained_first_nak_at().ok_or(Failure::Control)?;
+    assert!(retained.configuration().same_configuration(expected));
+    assert_eq!(retained.committed_at(), committed_at);
+    assert_eq!(retained.initial_cookie_population(), (1, 12));
+    assert_eq!(retained.packet_bytes(), 252);
+    assert!(committed_at <= nak_at && first_commit_window.contains(&nak_at));
     Ok(())
 }
 
@@ -1668,6 +1855,7 @@ fn assert_loopback_first_receipt(
     remote: std::net::SocketAddr,
     expected: &crate::SourceConfigurationSnapshot,
     first_commit_window: &std::ops::RangeInclusive<Instant>,
+    two_replacements: bool,
 ) {
     let history: &crate::nts_ke_experiment::datagram::ProtectedHistory = first.history();
     let receipt: crate::nts_ke_experiment::association::ledger::Receipt = history.receipt();
@@ -1679,8 +1867,9 @@ fn assert_loopback_first_receipt(
         receipt.fields().header().origin_timestamp().bits(),
         0x1122_3344_5566_7788
     );
-    assert_eq!(receipt.cookie_counts(), (1, 1));
-    assert_eq!(history.population(), (1, 12));
+    let replacements: usize = if two_replacements { 2 } else { 1 };
+    assert_eq!(receipt.cookie_counts(), (replacements, replacements));
+    assert_eq!(history.population(), (replacements, 12 * replacements));
     assert_eq!(
         first.summary(),
         &Summary {
@@ -1698,7 +1887,7 @@ fn assert_loopback_first_receipt(
 /// Compare the genuine applied control with the independent fixed peer's decision.
 /// # Panics
 /// Fail if protection, policy scope or the successor ordinal is lost.
-#[cfg(any(windows, target_os = "linux"))]
+#[cfg(windows)]
 fn assert_loopback_deny(
     history: &AppliedProtectedControl,
     remote: std::net::SocketAddr,
@@ -1799,6 +1988,17 @@ fn managed_loopback_successor_commits_exact_deny_after_normal_join() -> Result<(
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyDeny)
+}
+
+/// An admitted NAK leaves the original pending opportunity for an ordinary reply.
+/// # Errors
+/// Preserve fixture or actual worker failure.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_loopback_successor_preserves_nak_and_ordinary_reply_after_join() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyOrdinary)
 }
 
 /// Equal-value replacement after real retirement refuses the exact staged control.

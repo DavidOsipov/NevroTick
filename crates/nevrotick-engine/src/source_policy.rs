@@ -2625,7 +2625,6 @@ impl ProtectedEndpointGuard<'_> {
     /// # Errors
     /// Reject reused/foreign request identities, invalidated policy or missing
     /// state before publishing either direct restriction record.
-    #[cfg(test)]
     pub(super) fn apply_control(
         &mut self,
         authorization: crate::nts_ke_experiment::VerifiedRetiredControl<'_>,

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! One invocation's real admission and receiving owner; public execution is one-shot.
+//! One invocation's real admission and receiving owner.
 //!
 //! The private component experiment may replace one exhausted established context
-//! before its first protected success. Public execution remains one-shot. Counters
-//! bound transaction observations, not TLS traffic, native work or rendered bytes.
+//! before its first protected success. The explicit managed successor retains one
+//! original KE association. Counters bound transaction observations, not TLS traffic.
 
 use std::io;
 use std::sync::Arc;
@@ -15,17 +15,17 @@ use garde::Validate;
 use super::association::ledger::RecoveryIntent;
 use super::association::ledger::retirement::{PastRequests, RetiredContext};
 use super::association::{AssociationOwner, CheckedPopulation};
-#[cfg(test)]
-use super::datagram::CommittedFirstProtected;
-use super::datagram::{CommittedProtected, ProtectedCompletion};
-#[cfg(test)]
+use super::datagram::{
+    CommittedFirstProtected, CommittedProtected, ObservedRetiredSuccessor, ProtectedCompletion,
+    RetiredProtectedSuccessor, SuccessorFailure,
+};
 use super::job::FirstReceiptWriter;
 use super::process::ProviderScope;
 #[cfg(test)]
 use super::response::ProtectedControlKind;
 use super::{
     CancelOutcome, Config, Control, EXCHANGE_TIME, ExchangeMode, Failed, Failure,
-    InvocationCompletion, StopHandle, StopScope,
+    InvocationCompletion, ManagedSuccessorEffect, ManagedSuccessorTerminal, StopHandle, StopScope,
 };
 
 /// Fixed private experiment ceilings; none are shipped retry defaults.
@@ -430,7 +430,6 @@ pub(super) struct Invocation<'scope> {
     /// One retired context's history remains owned through establishment failures.
     previous: Option<PastRequests<'scope>>,
     /// One worker-owned destination for the first genuine managed commit.
-    #[cfg(test)]
     first_receipt: Option<FirstReceiptWriter<'scope>>,
 }
 
@@ -444,7 +443,6 @@ impl<'scope> Invocation<'scope> {
     /// Attach the worker's first-receipt destination before its initial admission.
     /// # Errors
     /// Refuse a foreign, duplicate, already admitted or non-managed invocation.
-    #[cfg(test)]
     pub(super) fn retain_first_with(
         &mut self,
         writer: FirstReceiptWriter<'scope>,
@@ -547,7 +545,6 @@ impl<'scope> Invocation<'scope> {
             last_failure: None,
             contexts: 0,
             previous: None,
-            #[cfg(test)]
             first_receipt: None,
         })
     }
@@ -1029,6 +1026,24 @@ pub(super) trait Producer {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure>;
 
+    /// Drive the single earned continuation through this actual adapter.
+    /// Absence refuses this explicit selection without falling back.
+    fn exchange_successor<'tx>(
+        &mut self,
+        _association: &mut AssociationOwner<'tx>,
+        _control: &'tx Control,
+    ) -> Option<Result<ObservedRetiredSuccessor<'tx>, SuccessorFailure>> {
+        None
+    }
+
+    /// Place a component fault between retirement and the final effect guard.
+    /// # Errors
+    /// Preserve the actual fixture's refusal at that boundary.
+    #[cfg(test)]
+    fn before_successor_commit(&mut self) -> Result<(), Failure> {
+        Ok(())
+    }
+
     /// Select the fixed two-request managed control fixture in component builds.
     #[cfg(test)]
     fn managed_successor_fixture(&mut self) -> Option<ManagedSuccessorFixture> {
@@ -1126,6 +1141,72 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         })
     }
 
+    /// Commit and retain the original history before allowing a second operation.
+    /// # Errors
+    /// Preserve first-leg admission or commit refusal and exact worker binding.
+    fn retain_first<P: Producer>(
+        &mut self,
+        association: &mut AssociationOwner<'control>,
+        producer: &mut P,
+        writer: FirstReceiptWriter<'scope>,
+    ) -> Result<(), Failure> {
+        let control: &'control Control = self.control;
+        let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
+            self.bind_association(association)?;
+        let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
+        let committed: CommittedFirstProtected<'control> =
+            first.commit_first_for_successor(association)?;
+        writer.record(committed.into_first_history(&receiving)?)
+    }
+
+    /// Use exactly one previously authenticated continuation and preserve the NAK
+    /// observation even when the selected terminal commit refuses.
+    /// # Errors
+    /// Preserve first and second adapter, retirement and guarded commit refusals.
+    fn receive_bounded_successor<P: Producer>(
+        &mut self,
+        association: &mut AssociationOwner<'control>,
+        producer: &mut P,
+        first_nak_at: &mut Option<Instant>,
+    ) -> Result<ManagedSuccessorEffect, Failure> {
+        let writer: FirstReceiptWriter<'scope> = self
+            .invocation
+            .first_receipt
+            .take()
+            .ok_or(Failure::Control)?;
+        self.retain_first(association, producer, writer)?;
+
+        let control: &'control Control = self.control;
+        let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
+            self.bind_association(association)?;
+        let (retired, observed): (RetiredProtectedSuccessor<'_>, Option<Instant>) = match producer
+            .exchange_successor(association, control)
+            .ok_or(Failure::Control)?
+        {
+            Ok(retired) => retired.into_parts(),
+            Err(failure) => {
+                *first_nak_at = failure.first_nak_at();
+                return Err(failure.cause());
+            }
+        };
+        *first_nak_at = observed;
+        #[cfg(test)]
+        producer.before_successor_commit()?;
+        match retired {
+            RetiredProtectedSuccessor::Ordinary(completion) => {
+                match receiving.accept(completion.commit(association)?)? {
+                    InvocationCompletion::ManagedProtected(history) => {
+                        Ok(ManagedSuccessorEffect::Ordinary(history))
+                    }
+                    _ => Err(Failure::Control),
+                }
+            }
+            RetiredProtectedSuccessor::Control(retired) => association
+                .commit_retired_protected_control(retired)
+                .map(ManagedSuccessorEffect::Restriction),
+        }
+    }
+
     /// Consume the first retired reply before selecting one private successor.
     /// A worker holding a first-receipt destination records the detached history
     /// after the nonterminal commit and before successor admission.
@@ -1141,16 +1222,11 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         producer: &mut P,
         fixture: ManagedSuccessorFixture,
     ) -> Result<InvocationCompletion, Failure> {
-        use super::datagram::{RetiredProtectedSuccessor, tests};
+        use super::datagram::tests;
 
         let control: &'control Control = self.control;
         if let Some(writer) = self.invocation.first_receipt.take() {
-            let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
-                self.bind_association(association)?;
-            let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
-            let committed: CommittedFirstProtected<'control> =
-                first.commit_first_for_successor(association)?;
-            writer.record(committed.into_first_history(&receiving)?)?;
+            self.retain_first(association, producer, writer)?;
         } else {
             let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
             first.commit_for_successor(association)?;
@@ -1493,6 +1569,25 @@ pub(super) fn step_with<P: Producer>(
             Err(cause) => return Err(receiver.context_failed(ContextStage::Attach, cause)),
         };
     }
+    if control.datagram_work.is_some() {
+        let mut first_nak_at: Option<Instant> = None;
+        let effect: Result<ManagedSuccessorEffect, Failure> =
+            receiver.receive_bounded_successor(&mut association, producer, &mut first_nak_at);
+        let status: super::association::ledger::Status = association.status();
+        drop(association);
+        let result: Result<ManagedSuccessorEffect, Failed> =
+            effect.map_err(|failure: Failure| receiver.mode_failed(failure));
+        if result.is_ok() {
+            receiver.invocation.plan = Plan::Closed(End::Completed);
+        }
+        return Ok(Step::Complete(InvocationCompletion::ManagedSuccessor(
+            Box::new(ManagedSuccessorTerminal {
+                result,
+                first_nak_at,
+                remaining_association_work: Some((status.attempts, status.frames, status.bytes)),
+            }),
+        )));
+    }
     let result: Result<InvocationCompletion, Failure> = match &config.mode {
         ExchangeMode::Preview => {
             super::preview_once(&mut association, |output| producer.preview_entropy(output))
@@ -1571,6 +1666,18 @@ impl Producer for Native {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure> {
         super::datagram::exchange(association, control, fill_native_request_entropy)
+    }
+
+    fn exchange_successor<'tx>(
+        &mut self,
+        association: &mut AssociationOwner<'tx>,
+        control: &'tx Control,
+    ) -> Option<Result<ObservedRetiredSuccessor<'tx>, SuccessorFailure>> {
+        Some(super::datagram::exchange_successor(
+            association,
+            control,
+            fill_native_request_entropy,
+        ))
     }
 
     fn preview_entropy(&mut self, output: &mut [u8; 48]) -> Result<(), Failure> {

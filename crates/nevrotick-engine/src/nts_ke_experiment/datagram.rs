@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! One private protected UDP operation after genuine association publication.
+//! One private protected UDP operation and its earned same-association successor.
 //!
 //! The native backend owns its socket through synchronous syscall returns. A Linux
 //! loopback fixture and the deterministic backend use the same receiving owner.
@@ -42,7 +42,8 @@ pub(super) enum DatagramError {
 mod reached {
     use std::io;
     use std::net::SocketAddr;
-    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, OnceLock};
     use std::time::{Duration, Instant};
 
     #[cfg(any(windows, all(test, target_os = "linux")))]
@@ -52,19 +53,16 @@ mod reached {
     use super::DatagramError;
     use crate::nts_ke_experiment::association::AssociationOwner;
     #[cfg(test)]
+    use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
     use crate::nts_ke_experiment::association::ledger::{
-        AppliedProtectedControl, LedgerError, StagedProtectedControl, StagedProtectedSuccessor,
+        CookieReplacement, LedgerError, PendingSubmission, Receipt, RequestInput, RequestPhase,
+        RetiredCommit, SendOutcome, StagedProtectedControl, StagedProtectedSuccessor, Ticket,
     };
-    use crate::nts_ke_experiment::association::ledger::{
-        CookieReplacement, PendingSubmission, Receipt, RequestInput, RequestPhase, RetiredCommit,
-        SendOutcome, Ticket,
-    };
-    #[cfg(test)]
-    use crate::nts_ke_experiment::job::Operation;
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
-        Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
+        Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase,
+        ManagedSuccessorTerminal, RunFailed, Summary,
     };
     use crate::source_policy::{LivePolicy, ProtectedEndpoint, ProtectedSendStamp};
     use crate::{
@@ -76,6 +74,47 @@ mod reached {
     const ATTEMPTS: usize = 64;
     /// An extra octet detects every successful receive above the admitted limit.
     const RECEIVE_BYTES: usize = 4097;
+
+    /// Local send and shared driver observations carried through the worker join.
+    /// The sole admitted worker records effects. The joined reader can inspect the
+    /// final observations after synchronization, including after worker unwind.
+    pub(in super::super) struct ProtectedDatagramWork {
+        /// Entries into the concrete send adapter, including failed or short returns.
+        attempted_sends: AtomicUsize,
+        /// Adapter returns that report the entire requested datagram length.
+        fully_submitted_sends: AtomicUsize,
+        /// Most recent unused allowance from the actual shared driver owner.
+        remaining_driver_work: AtomicUsize,
+        /// First admitted NAK observed in the actual pending receive path.
+        first_nak_at: OnceLock<Instant>,
+    }
+
+    impl ProtectedDatagramWork {
+        /// Record the admitted starting state before any backend or driver work.
+        pub(in super::super) const fn new() -> Self {
+            Self {
+                attempted_sends: AtomicUsize::new(0),
+                fully_submitted_sends: AtomicUsize::new(0),
+                remaining_driver_work: AtomicUsize::new(ATTEMPTS),
+                first_nak_at: OnceLock::new(),
+            }
+        }
+
+        /// Read attempted sends, full local submissions and unused driver credits, in order.
+        /// The caller must already have joined the worker for a final observation.
+        pub(in super::super) fn snapshot(&self) -> (usize, usize, usize) {
+            (
+                self.attempted_sends.load(Ordering::Relaxed),
+                self.fully_submitted_sends.load(Ordering::Relaxed),
+                self.remaining_driver_work.load(Ordering::Relaxed),
+            )
+        }
+
+        /// Preserve the first admitted mark after an actual join, including unwind.
+        pub(in super::super) fn first_nak_at(&self) -> Option<Instant> {
+            self.first_nak_at.get().copied()
+        }
+    }
 
     /// Preserve a closed adapter failure without formatting its source.
     const fn failed(error: DatagramError) -> Failure {
@@ -89,8 +128,11 @@ mod reached {
         /// Consume before the bounded operation, including a spurious wake.
         /// # Errors
         /// Refuse attempt 65 without performing it.
-        pub(super) fn spend(&mut self) -> Result<(), Failure> {
+        fn spend(&mut self, control: &Control) -> Result<(), Failure> {
             self.0 = self.after_one()?;
+            if let Some(work) = control.datagram_work.as_deref() {
+                work.remaining_driver_work.store(self.0, Ordering::Relaxed);
+            }
             Ok(())
         }
 
@@ -317,6 +359,12 @@ mod reached {
             guard.control.published(before.monotonic_after())?;
             let stamp: Option<ProtectedSendStamp> =
                 guard.reserve(remote, &backend.identity, before.monotonic_after())?;
+            let work: Option<&ProtectedDatagramWork> =
+                guard.control.control.datagram_work.as_deref();
+            if let Some(work) = work {
+                // The initial operation and single earned continuation bound this addition.
+                let _previous: usize = work.attempted_sends.fetch_add(1, Ordering::Relaxed);
+            }
             let (outcome, cancel_after): (SendOutcome, bool) = match &mut backend.io {
                 #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(socket) => (
@@ -329,6 +377,11 @@ mod reached {
                 #[cfg(test)]
                 Io::Script(script) => script.send(packet, guard.control.control),
             };
+            if let Some(work) = work
+                && matches!(outcome, SendOutcome::Completed(length) if length == packet.len())
+            {
+                let _previous: usize = work.fully_submitted_sends.fetch_add(1, Ordering::Relaxed);
+            }
             let after: SoftwareClock = SoftwareClock::capture();
             let control: &Control = guard.control.control;
             drop(guard);
@@ -417,19 +470,16 @@ mod reached {
     pub(in super::super) struct ProtectedCompletion<'control> {
         /// Same genuine operation, with its original context and complete history.
         operation: OperationCompletion<'control>,
-        /// Driver credits left by the original runtime; only the fixture can continue.
-        #[cfg(test)]
+        /// Driver credits left by the original runtime for one earned continuation.
         attempts: Attempts,
     }
 
-    /// The actual scripted control transfer after both receive resources retired.
+    /// The actual control transfer after both receive resources retired.
     /// Pending remains with the ledger until its guarded final commit.
-    #[cfg(test)]
     #[must_use = "observe the retired control through its original owner"]
     pub(in super::super) struct RetiredProtectedControl<'control>(StagedProtectedControl<'control>);
 
     /// Either private successor result, after the shared driver and backend retire.
-    #[cfg(test)]
     #[expect(
         clippy::large_enum_variant,
         reason = "keep the bounded returned history and cookie transfer inline after retirement"
@@ -442,45 +492,42 @@ mod reached {
     }
 
     /// Retired candidate and independent receive observation, awaiting final commit.
-    #[cfg(test)]
-    pub(super) struct ObservedRetiredSuccessor<'control> {
+    pub(in super::super) struct ObservedRetiredSuccessor<'control> {
         /// Exact retired candidate from the original pending operation.
         candidate: RetiredProtectedSuccessor<'control>,
         /// Original first NAK, retained if final commit later refuses.
         first_nak_at: Option<Instant>,
     }
 
-    #[cfg(test)]
     impl<'control> ObservedRetiredSuccessor<'control> {
         /// Transfer the actual candidate and its separate observation to the receiver.
-        pub(super) fn into_parts(self) -> (RetiredProtectedSuccessor<'control>, Option<Instant>) {
+        pub(in super::super) fn into_parts(
+            self,
+        ) -> (RetiredProtectedSuccessor<'control>, Option<Instant>) {
             (self.candidate, self.first_nak_at)
         }
     }
 
     /// Original successor refusal beside an independent, historical recovery observation.
-    #[cfg(test)]
-    pub(super) struct SuccessorFailure {
+    pub(in super::super) struct SuccessorFailure {
         /// The actual terminal cause of the selected operation.
         cause: Failure,
         /// First current NTSN during the pending opportunity. The one-KE plan cannot recover.
         first_nak_at: Option<Instant>,
     }
 
-    #[cfg(test)]
     impl SuccessorFailure {
         /// Retain the original cause even when a NAK was present.
-        pub(super) const fn cause(&self) -> Failure {
+        pub(in super::super) const fn cause(&self) -> Failure {
             self.cause
         }
 
         /// Give the original NAK arrival without scheduling recovery or rewriting failure.
-        pub(super) const fn first_nak_at(&self) -> Option<Instant> {
+        pub(in super::super) const fn first_nak_at(&self) -> Option<Instant> {
             self.first_nak_at
         }
     }
 
-    #[cfg(test)]
     impl<'control> RetiredProtectedControl<'control> {
         /// Transfer the exact already-retired request to its receiving ledger.
         pub(in super::super) fn into_staged(self) -> StagedProtectedControl<'control> {
@@ -490,6 +537,7 @@ mod reached {
         /// Publish the exact protected control through its original receiving owner.
         /// # Errors
         /// Preserve any currentness, endpoint or final guarded policy refusal.
+        #[cfg(test)]
         pub(super) fn commit(
             self,
             association: &mut AssociationOwner<'_>,
@@ -500,6 +548,7 @@ mod reached {
         /// Recheck this exact retired ticket without publishing any control effects.
         /// # Errors
         /// Preserve wrong-owner, stale-currentness, Stop and expiry refusals.
+        #[cfg(test)]
         pub(super) fn check_current(
             &self,
             association: &AssociationOwner<'_>,
@@ -515,7 +564,6 @@ mod reached {
         /// The actual consumed request and its guarded transfer.
         reply: RetiredReply<'control>,
         /// The original driver's unused allowance.
-        #[cfg(test)]
         attempts: Attempts,
     }
 
@@ -565,11 +613,9 @@ mod reached {
     }
 
     /// Genuine first-leg commit that left the original invocation published.
-    #[cfg(test)]
     pub(in super::super) struct CommittedFirstProtected<'control>(CommittedProtected<'control>);
 
     /// Detached first history bound to one actual invocation before worker storage.
-    #[cfg(test)]
     pub(in super::super) struct BoundFirstHistory {
         /// Identity of the exact committed Control instance, without authority.
         control_identity: Arc<()>,
@@ -577,7 +623,6 @@ mod reached {
         history: Box<ManagedProtectedHistory>,
     }
 
-    #[cfg(test)]
     impl BoundFirstHistory {
         /// Detach the payload only for the worker that owns this invocation.
         /// # Errors
@@ -643,13 +688,11 @@ mod reached {
         }
 
         /// Keep the same bounded pre-operation counts and observed submission.
-        #[cfg(test)]
         pub(in super::super) const fn summary(&self) -> &Summary {
             self.history.summary()
         }
 
         /// Inspect original committed facts through the actual joined control.
-        #[cfg(test)]
         pub(in super::super) const fn history(&self) -> &ProtectedHistory {
             &self.history
         }
@@ -682,30 +725,39 @@ mod reached {
         }
     }
 
-    /// A normally joined successor and its original first committed receipt.
-    #[cfg(test)]
-    pub(in super::super) struct ReceivedProtectedSuccessor {
-        /// Historical first result, independent of the terminal operation outcome.
-        first: Box<ManagedProtectedHistory>,
-        /// Actual ordinary, control or failed terminal result after retirement.
-        terminal: Operation,
+    /// The selected bounded path's normal retirement, original first history and work.
+    pub(in super::super) struct ReceivedManagedSuccessor {
+        /// Present only after a genuine first commit.
+        first: Option<Box<ManagedProtectedHistory>>,
+        /// Actual terminal result with the original NAK mark.
+        terminal: ManagedSuccessorTerminal,
+        /// Attempted sends, full sends, and the original driver's remaining work.
+        work: (usize, usize, usize),
     }
 
-    #[cfg(test)]
-    impl ReceivedProtectedSuccessor {
-        /// Transfer the actual first receipt beside the original terminal result.
-        pub(in super::super) fn into_parts(self) -> (Box<ManagedProtectedHistory>, Operation) {
-            (self.first, self.terminal)
+    impl ReceivedManagedSuccessor {
+        /// Observe the exact first packet history in joined component assertions.
+        #[cfg(test)]
+        pub(in super::super) fn first_history(&self) -> Option<&ManagedProtectedHistory> {
+            self.first.as_deref()
+        }
+
+        /// Move the normally retired facts together, with no renewed permission.
+        pub(in super::super) fn into_parts(
+            self,
+        ) -> (
+            Option<Box<ManagedProtectedHistory>>,
+            ManagedSuccessorTerminal,
+            (usize, usize, usize),
+        ) {
+            (self.first, self.terminal, self.work)
         }
     }
 
     /// One normally joined operation, with a distinct control-only case.
-    #[cfg_attr(
-        test,
-        expect(
-            clippy::large_enum_variant,
-            reason = "the existing fixed-size numerical probe remains inline across joined receiving"
-        )
+    #[expect(
+        clippy::large_enum_variant,
+        reason = "the existing fixed-size numerical probe remains inline across joined receiving"
     )]
     pub(in super::super) enum ReceivedInvocation {
         /// Existing preview and ordinary protected result modes.
@@ -713,9 +765,8 @@ mod reached {
         /// Historical control with no numerical or summary projection.
         #[cfg(test)]
         ProtectedControl(ReceivedProtectedControl),
-        /// Actual successor retirement with its genuine first historical receipt.
-        #[cfg(test)]
-        ProtectedSuccessor(ReceivedProtectedSuccessor),
+        /// Explicit bounded API's distinct normally joined result.
+        ManagedSuccessor(Box<ReceivedManagedSuccessor>),
     }
 
     /// Private mode-specific state issued only after the normal-join guard.
@@ -918,17 +969,29 @@ mod reached {
     ) -> Result<ReceivedInvocation, RunFailed> {
         let NormalOperation {
             operation,
-            #[cfg(test)]
             first_receipt,
+            datagram_work,
         } = joined.into_normal().map_err(RunFailed::Abnormal)?;
-        #[cfg(test)]
-        if let Some(first) = first_receipt {
-            return Ok(ReceivedInvocation::ProtectedSuccessor(
-                ReceivedProtectedSuccessor {
-                    first,
-                    terminal: operation,
+        if let Some(work) = datagram_work {
+            let terminal: ManagedSuccessorTerminal = match operation {
+                Ok(InvocationCompletion::ManagedSuccessor(terminal)) => *terminal,
+                Err(failure) => ManagedSuccessorTerminal {
+                    result: Err(failure),
+                    first_nak_at: None,
+                    remaining_association_work: None,
                 },
-            ));
+                Ok(_) => return Err(RunFailed::Operation(Failure::Control.into())),
+            };
+            return Ok(ReceivedInvocation::ManagedSuccessor(Box::new(
+                ReceivedManagedSuccessor {
+                    first: first_receipt,
+                    terminal,
+                    work,
+                },
+            )));
+        }
+        if first_receipt.is_some() {
+            return Err(RunFailed::Operation(Failure::Control.into()));
         }
         let history: JoinedProtectedHistory = match operation.map_err(RunFailed::Operation)? {
             InvocationCompletion::Preview(summary) => {
@@ -944,6 +1007,9 @@ mod reached {
             InvocationCompletion::Protected(history) => JoinedProtectedHistory::Diagnostic(history),
             InvocationCompletion::ManagedProtected(history) => {
                 JoinedProtectedHistory::Managed(history)
+            }
+            InvocationCompletion::ManagedSuccessor(_) => {
+                return Err(RunFailed::Operation(Failure::Control.into()));
             }
             #[cfg(test)]
             InvocationCompletion::ManagedProtectedControl(history) => {
@@ -987,10 +1053,15 @@ mod reached {
             self.committed_at
         }
 
+        /// Return the original trailing wall-read bracket's monotonic coordinate.
+        pub(in super::super) fn received_at(&self) -> Instant {
+            self.read_return.monotonic_after()
+        }
+
         /// Derive only the original monotonic receive-trailing to commit interval.
         /// A refused derivation leaves the committed historical result intact.
         pub(in super::super) fn receive_to_commit_delay(&self) -> Option<Duration> {
-            let trailing: Instant = self.read_return.monotonic_after();
+            let trailing: Instant = self.received_at();
             if self.committed_at < trailing {
                 return None;
             }
@@ -998,7 +1069,6 @@ mod reached {
         }
 
         /// Inspect original authenticated bits/time for actual-owner component controls.
-        #[cfg(test)]
         pub(in super::super) const fn receipt(&self) -> Receipt {
             self.receipt
         }
@@ -1059,7 +1129,6 @@ mod reached {
         /// driver allowance. The returned history grants no continuation authority.
         /// # Errors
         /// Preserve the original retired-reply and currentness refusals.
-        #[cfg(test)]
         pub(in super::super) fn commit_first_for_successor(
             self,
             association: &mut AssociationOwner<'_>,
@@ -1128,8 +1197,7 @@ mod reached {
             let RetiredOperation {
                 history,
                 reply,
-                #[cfg(test)]
-                    attempts: _,
+                attempts: _,
             }: RetiredOperation<'control> = self.into_retired();
             let configuration: Option<SourceConfigurationSnapshot> = association
                 .protected_endpoint()?
@@ -1161,13 +1229,11 @@ mod reached {
             RetiredOperation {
                 history,
                 reply,
-                #[cfg(test)]
                 attempts: self.attempts,
             }
         }
     }
 
-    #[cfg(test)]
     impl CommittedFirstProtected<'_> {
         /// Bind original first history to the actual receiver and worker Control.
         /// # Errors
@@ -1189,6 +1255,7 @@ mod reached {
         }
 
         /// Borrow the committed fact for the actual-owner continuation control.
+        #[cfg(test)]
         pub(super) const fn observation(
             &self,
         ) -> (
@@ -1314,7 +1381,7 @@ mod reached {
         mut pending_policy: Option<&mut LivePolicy>,
     ) -> Result<(), Failure> {
         loop {
-            attempts.spend()?;
+            attempts.spend(control)?;
             let cancelled = control.cancelled.notified();
             tokio::pin!(cancelled);
             cancelled.as_mut().enable();
@@ -1413,7 +1480,6 @@ mod reached {
         /// Existing ordinary one-shot and component paths.
         Ordinary,
         /// The admitted successor can retain one nonterminal NAK before completing.
-        #[cfg(test)]
         ProtectedSuccessor {
             /// The actual first NAK arrival. Later reads still spend credits.
             first_nak_at: Option<Instant>,
@@ -1421,22 +1487,17 @@ mod reached {
     }
 
     /// One concrete async driver result shared by both receive modes.
-    #[cfg_attr(
-        test,
-        expect(
-            clippy::large_enum_variant,
-            reason = "keep the bounded selected reply and transfer inline before resource retirement"
-        )
+    #[expect(
+        clippy::large_enum_variant,
+        reason = "keep the bounded selected reply and transfer inline before resource retirement"
     )]
     enum SelectedOperation<'control> {
         /// Ordinary timing and replacement obtained through the original ledger.
         Ordinary(OperationCompletion<'control>),
         /// The charged control evidence cannot produce ordinary reply history.
-        #[cfg(test)]
         Control(StagedProtectedControl<'control>),
     }
 
-    #[cfg(test)]
     impl<'control> SelectedOperation<'control> {
         /// Preserve the existing ordinary result type at its callers.
         /// # Errors
@@ -1466,7 +1527,6 @@ mod reached {
                     reply.remote,
                     &reply.read_return,
                 )?,
-                #[cfg(test)]
                 ReceiveState::ProtectedSuccessor { first_nak_at } => match association
                     .stage_concrete_successor(
                         control,
@@ -1484,6 +1544,10 @@ mod reached {
                         let (arrived_at, exhausted): (Instant, bool) = observation.into_parts();
                         if first_nak_at.is_none() {
                             *first_nak_at = Some(arrived_at);
+                            if let Some(work) = control.datagram_work.as_deref() {
+                                let _recorded: &Instant =
+                                    work.first_nak_at.get_or_init(|| arrived_at);
+                            }
                         }
                         if exhausted {
                             return Err(Failure::Ledger(LedgerError::ReceiveWork));
@@ -1537,7 +1601,7 @@ mod reached {
                 // Checkout must leave a credit for the required write readiness wait.
                 return attempts.after_one().map(|_| ());
             }
-            attempts.spend()?;
+            attempts.spend(control)?;
             // A timer is only a wake. The original guard can observe an already
             // latched Stop even before its notification reaches this task.
             tokio::select! {
@@ -1600,7 +1664,7 @@ mod reached {
         )
         .await?;
         loop {
-            attempts.spend()?;
+            attempts.spend(control)?;
             drop(control.published_guard()?);
             let (read, observed) = backend.receive(&mut buffer);
             match read {
@@ -1694,7 +1758,6 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
     ) -> Result<ProtectedCompletion<'control>, Failure> {
-        #[cfg(test)]
         association.check_fresh_exchange()?;
         exchange_with_attempts(association, control, fill, make_backend, Attempts(ATTEMPTS))
     }
@@ -1731,13 +1794,9 @@ mod reached {
             &mut attempts,
             &mut ReceiveState::Ordinary,
         )?;
-        #[cfg(test)]
         let operation: OperationCompletion<'control> = selected.into_ordinary()?;
-        #[cfg(not(test))]
-        let SelectedOperation::Ordinary(operation) = selected;
         Ok(ProtectedCompletion {
             operation,
-            #[cfg(test)]
             attempts,
         })
     }
@@ -1772,11 +1831,22 @@ mod reached {
             .map_err(|failure: SuccessorFailure| failure.cause())
     }
 
+    /// Spend the earned continuation and retire one actual native successor socket.
+    /// # Errors
+    /// Preserve successor admission and socket/driver failures beside any observed NAK.
+    #[cfg(windows)]
+    pub(in super::super) fn exchange_successor<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+    ) -> Result<ObservedRetiredSuccessor<'control>, SuccessorFailure> {
+        exchange_successor_observing(association, control, fill, Backend::bind)
+    }
+
     /// Retire the actual successor, retaining a NAK beside its candidate or failure.
     /// # Errors
     /// Preserve continuation, setup, charged receive and policy refusals. A NAK
     /// never starts replacement under this one-KE selection.
-    #[cfg(test)]
     pub(super) fn exchange_successor_observing<'control>(
         association: &mut AssociationOwner<'_>,
         control: &'control Control,
@@ -1943,19 +2013,15 @@ mod reached {
 }
 
 #[cfg(windows)]
-pub(super) use reached::exchange;
-
-#[cfg(test)]
-pub(super) use reached::{
-    Attempts, BoundFirstHistory, CommittedFirstProtected, RetiredProtectedControl,
-    RetiredProtectedSuccessor,
-};
+pub(super) use reached::{exchange, exchange_successor};
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{
-    CommittedProtected, CompletionProjection, ConsumedDatagram, GuardedSender,
-    ManagedProtectedHistory, ManagedProtectedProjection, ProtectedCompletion, ProtectedHistory,
-    ReceivedCompletion, ReceivedInvocation, RetiredReply, RetiredReplyParts, receive_joined,
+    Attempts, BoundFirstHistory, CommittedFirstProtected, CommittedProtected, CompletionProjection,
+    ConsumedDatagram, GuardedSender, ManagedProtectedHistory, ManagedProtectedProjection,
+    ObservedRetiredSuccessor, ProtectedCompletion, ProtectedDatagramWork, ProtectedHistory,
+    ReceivedCompletion, ReceivedInvocation, RetiredProtectedControl, RetiredProtectedSuccessor,
+    RetiredReply, RetiredReplyParts, SuccessorFailure, receive_joined,
 };
 
 #[cfg(test)]

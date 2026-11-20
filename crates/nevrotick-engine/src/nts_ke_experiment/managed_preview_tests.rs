@@ -1182,7 +1182,7 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
     )
 }
 
-/// A refused subscription releases the original bounded Preview slot before submission.
+/// Preflight refusals leave the bounded Preview slot reusable by the next attempt.
 /// # Errors
 /// Preserve actual source setup refusal.
 /// # Panics
@@ -1193,8 +1193,8 @@ fn managed_ke_preview_power_registration_refusal_releases_slot() -> Result<(), F
     let fixture: Issued = issued(Scenario::Healthy)?;
     let registration_called: Cell<bool> = Cell::new(false);
     let submit_called: Cell<bool> = Cell::new(false);
-    let result: Result<SourceKePreviewReport, SourceKePreviewFailure> =
-        fixture.source.preview_nts_ke_with_observer(
+    let preview = |source: &SourceHandle| -> Result<SourceKePreviewReport, SourceKePreviewFailure> {
+        source.preview_nts_ke_with_observer(
             &SLOT,
             |_stop: StopHandle| -> Result<fn() -> Result<(), NonZeroU32>, ()> {
                 registration_called.set(true);
@@ -1204,7 +1204,47 @@ fn managed_ke_preview_power_registration_refusal_releases_slot() -> Result<(), F
                 submit_called.set(true);
                 Err(SubmitError::Control)
             },
-        );
+        )
+    };
+    let limits: SourcePolicyLimits =
+        SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))
+            .map_err(Failure::SourcePolicy)?;
+    let unconfigured: SourceHandle = crate::source_policy::isolated_authority(limits)
+        .and_then(|authority: SourcePolicyAuthority| authority.source(0))
+        .map_err(Failure::SourcePolicy)?;
+    let missing: SourceKePreviewFailure = preview(&unconfigured).err().ok_or(Failure::Control)?;
+    assert_eq!(missing.labels(), ("source-policy", "refused"));
+    assert_eq!(missing.primary_labels(), Some(("source-policy", "refused")));
+    assert_eq!(
+        missing.source_policy_error(),
+        Some(SourcePolicyError::ConfigurationChanged)
+    );
+    assert!(missing.power_unregistration_error().is_none());
+    assert!(
+        unconfigured
+            .configuration_snapshot()
+            .map_err(Failure::SourcePolicy)?
+            .is_none()
+    );
+
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+        .build()
+        .map_err(|_| Failure::Control)?;
+    let entered: SourceKePreviewFailure = {
+        let _runtime_guard: tokio::runtime::EnterGuard<'_> = runtime.enter();
+        preview(&fixture.source).err().ok_or(Failure::Control)?
+    };
+    assert_eq!(entered.labels(), ("caller-context", "entered-runtime"));
+    assert!(entered.primary_labels().is_none());
+    assert!(entered.source_policy_error().is_none());
+    assert!(entered.power_unregistration_error().is_none());
+    assert!(!registration_called.get() && !submit_called.get());
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Unused
+    );
+
+    let result: Result<SourceKePreviewReport, SourceKePreviewFailure> = preview(&fixture.source);
     assert!(registration_called.get());
     assert!(!submit_called.get());
     let Err(refusal) = result else {
@@ -1352,6 +1392,11 @@ fn assert_joined_protected_leap(
     assert_eq!(report.leap_indicator(), expected_li);
     assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
     assert_eq!(report.packet_bytes(), original_packet_bytes);
+    assert_eq!(
+        format!("{report:?}"),
+        "SourceProtectedProbeReport { joined: true, transmitted: true, .. }",
+        "published diagnostics omit the original source, timing and packet fields"
+    );
     assert_eq!(run.work.calls, [1, 0, 1, 0]);
     assert_eq!(run.work.after.end, Some(End::Completed));
     let newer: &SourceConfigurationSnapshot =

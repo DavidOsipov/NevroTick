@@ -6,11 +6,10 @@
 //! Its only normal key supplier is the private same-connection association owner.
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
-#[cfg(test)]
-use ntp_wire::{ExtensionFields, RawExtension};
 use ntp_wire::{
-    FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError, NtsAuthenticatorParts,
-    NtsPlaintextLimits, RawDatagram, RawHeader, RawNtsPlaintext, frame_no_legacy_mac_datagram,
+    ExtensionFields, FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError,
+    NtsAuthenticatorParts, NtsPlaintextLimits, RawDatagram, RawExtension, RawHeader,
+    RawNtsPlaintext, frame_no_legacy_mac_datagram,
 };
 use zeroize::Zeroizing;
 
@@ -240,7 +239,6 @@ fn open_framed_response<T>(
 }
 
 /// The exact wire controls that can enter the protected policy owner.
-#[cfg(test)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ProtectedControlKind {
     /// Literal RATE.
@@ -252,7 +250,6 @@ pub(crate) enum ProtectedControlKind {
 }
 
 /// What the receive parser actually established about a restriction control.
-#[cfg(test)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ControlProtection {
     /// The original S2C key authenticated the control.
@@ -263,7 +260,6 @@ pub(super) enum ControlProtection {
 
 /// One bounded control candidate with no returned time or cookie material.
 /// The ledger still owns the original send, receive accounting and currentness.
-#[cfg(test)]
 pub(super) struct RestrictionControl {
     /// Recognized wire code from the same complete frame as the correlation.
     kind: ProtectedControlKind,
@@ -271,7 +267,6 @@ pub(super) struct RestrictionControl {
     protection: ControlProtection,
 }
 
-#[cfg(test)]
 impl RestrictionControl {
     /// Transfer the inert control facts into the original ledger's currentness check.
     pub(super) const fn into_parts(self) -> (ProtectedControlKind, ControlProtection) {
@@ -280,7 +275,6 @@ impl RestrictionControl {
 }
 
 /// Disposition of the checked packet before ledger or policy admission.
-#[cfg(test)]
 pub(super) enum StagedSuccessorResponse {
     /// The ordinary timing and replacement path.
     Ordinary(StagedReply),
@@ -290,10 +284,9 @@ pub(super) enum StagedSuccessorResponse {
     NtsNak,
 }
 
-/// Frame once and select the admitted ordinary or scripted control path.
+/// Frame once and select the ordinary reply or the distinct control check.
 /// # Errors
 /// Reject unknown controls, malformed inputs, correlation or authentication failure.
-#[cfg(test)]
 pub(super) fn stage_successor_response(
     keys: &DirectionalKeys,
     raw: &[u8],
@@ -325,7 +318,6 @@ pub(super) fn stage_successor_response(
 /// # Errors
 /// Refuse an unsupported code, wrong request coordinates, forbidden fields or
 /// failure on the selected S2C path. That failure cannot select correlation.
-#[cfg(test)]
 fn stage_successor_control(
     keys: &DirectionalKeys,
     datagram: &RawDatagram<'_>,
@@ -372,7 +364,6 @@ fn stage_successor_control(
 /// Verify the established authenticated control shape under the original S2C key.
 /// # Errors
 /// Refuse missing or wrong UID, wrong field placement or failed authenticated opening.
-#[cfg(test)]
 fn authenticate_restriction_control(
     keys: &DirectionalKeys,
     datagram: &RawDatagram<'_>,
@@ -399,7 +390,6 @@ fn authenticate_restriction_control(
 /// Well-framed unrelated extension content remains inert.
 /// # Errors
 /// Refuse missing, wrong or duplicate UID and any other NTS field.
-#[cfg(test)]
 fn check_correlated_control_fields(
     datagram: &RawDatagram<'_>,
     expected_uid: &[u8; 32],

@@ -4,6 +4,7 @@
 use std::cell::Cell;
 use std::io::ErrorKind;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use aes_siv::{KeyInit, siv::Aes128Siv};
@@ -15,9 +16,10 @@ use ntp_wire::{
     RawHeader, RawNtsKeMessage, decode_fixed_header, frame_nts_ke_message, negotiate_nts_ke_ntpv4,
     read_nts_ke_ntpv4_offer,
 };
+use zeroize::Zeroizing;
 
 use super::super::{OFFER, protected_response};
-use super::{Budget, Failure, PacketFailure, ProtectedUdp};
+use super::{Budget, ClientExit, Failure, PacketFailure, ProtectedUdp, SuccessorReply};
 
 /// Public request authentication key for the controlled socket tests.
 const C2S: [u8; 32] = [0x51; 32];
@@ -108,20 +110,43 @@ fn assert_no_reply(client: &UdpSocket) {
     ));
 }
 
-/// Verify the reply with literal layout and the independent directional opening.
+/// Verify the initial reply and return its literal replacement cookie.
 ///
 /// # Errors
-/// Refuse an invalid tag extent or a failure to open the received bytes.
+/// Preserve an invalid shape or a failure to open the received bytes.
 ///
 /// # Panics
-/// Panic if the reply fails to carry the original selection or replacement cookie.
+/// Panic if the reply fails to carry the expected correlation or cookie.
 fn check_reply(reply: &[u8; 140]) -> TestResult<[u8; 12]> {
+    let cookie: [u8; 12] = open_ordinary(reply, TRANSMIT, &UID, &SERVER_NONCE)?;
+    assert_eq!(
+        cookie,
+        [
+            0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94
+        ]
+    );
+    Ok(cookie)
+}
+
+/// Open the whole ordinary reply against independently selected correlation and nonce.
+///
+/// # Errors
+/// Refuse invalid tag or cookie extents or a directional opening failure.
+///
+/// # Panics
+/// Panic if the envelope, correlation or opened cookie field differs.
+fn open_ordinary(
+    reply: &[u8; 140],
+    origin: [u8; 8],
+    uid: &[u8; 32],
+    nonce: &[u8; 16],
+) -> TestResult<[u8; 12]> {
     assert_eq!(&reply[..2], &[0x24, 2]);
-    assert_eq!(&reply[24..32], &TRANSMIT);
+    assert_eq!(&reply[24..32], origin);
     assert_eq!(&reply[48..52], &[1, 4, 0, 36]);
-    assert_eq!(&reply[52..84], &UID);
+    assert_eq!(&reply[52..84], uid);
     assert_eq!(&reply[84..92], &[4, 4, 0, 56, 0, 16, 0, 32]);
-    assert_eq!(&reply[92..108], &SERVER_NONCE);
+    assert_eq!(&reply[92..108], nonce);
 
     let tag: &[u8; 16] = reply[108..124].try_into().map_err(|_| "reply-tag")?;
     let mut body: [u8; 16] = reply[124..].try_into().map_err(|_| "reply-body")?;
@@ -132,12 +157,7 @@ fn check_reply(reply: &[u8; 140]) -> TestResult<[u8; 12]> {
             tag.into(),
         )
         .map_err(|_| "reply-authentication")?;
-    assert_eq!(
-        body,
-        [
-            2, 4, 0, 16, 0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94
-        ]
-    );
+    assert_eq!(&body[..4], &[2, 4, 0, 16]);
     body[4..].try_into().map_err(|_| "replacement-size")
 }
 
@@ -402,5 +422,249 @@ fn protected_udp_successor_uses_issued_cookie_from_another_client_port() -> Test
     }
     let recovered: UdpSocket = UdpSocket::bind(endpoint).map_err(|_| "socket-still-held")?;
     drop(recovered);
+    Ok(())
+}
+
+/// Both new sequences use the actual first cookie and listen until acknowledgement.
+///
+/// # Errors
+/// Preserve socket, packet, observer or response-opening failures.
+/// # Panics
+/// Fail on wrong endpoints, order, reply correlation, cookies or key retention.
+#[test]
+fn protected_udp_ordinary_successors_observe_exact_expected_replies() -> TestResult {
+    for reply_mode in [SuccessorReply::Ordinary, SuccessorReply::NakThenOrdinary] {
+        let start: Instant = Instant::now();
+        let mut budget: Budget = Budget::new(start).map_err(|_| "fixture-budget")?;
+        budget.deadline = start
+            .checked_add(Duration::from_secs(5))
+            .ok_or("fixture-deadline")?;
+        let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "server-bind")?;
+        let endpoint: SocketAddrV4 = SocketAddrV4::new(Ipv4Addr::LOCALHOST, server.port().get());
+        let client: UdpSocket = client()?;
+        client
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .map_err(|_| "client-timeout")?;
+        let (signal, acknowledgement): (mpsc::SyncSender<()>, mpsc::Receiver<()>) =
+            mpsc::sync_channel(1);
+        let terminal_origin: [u8; 8] = 0x1122_3344_eedd_ccbb_u64.to_be_bytes();
+        let terminal_uid: [u8; 32] = [0x23; 32];
+        let terminal_nonce: [u8; 16] = [0x77; 16];
+        let client_socket: &UdpSocket = &client;
+        std::thread::scope(move |scope| -> TestResult {
+            let peer: std::thread::ScopedJoinHandle<'_, TestResult> = scope.spawn(move || {
+                let mut c2s: Zeroizing<[u8; 32]> = Zeroizing::new(C2S);
+                let mut s2c: Zeroizing<[u8; 32]> = Zeroizing::new(S2C);
+                let mut nonces: std::array::IntoIter<[u8; 16], 2> =
+                    [SERVER_NONCE, terminal_nonce].into_iter();
+                server
+                    .exchange_successor_observe_exit(
+                        &budget,
+                        &mut c2s,
+                        &mut s2c,
+                        |nonce| {
+                            *nonce = nonces.next().ok_or(Failure::Entropy)?;
+                            Ok(())
+                        },
+                        || match acknowledgement.try_recv() {
+                            Ok(()) => ClientExit::admit(b"client-exited=1\n").map(Some),
+                            Err(mpsc::TryRecvError::Empty) => Ok(None),
+                            Err(mpsc::TryRecvError::Disconnected) => {
+                                Err(Failure::ExitAcknowledgement)
+                            }
+                        },
+                        reply_mode,
+                    )
+                    .map_err(|_| "peer-exchange")?;
+                assert_eq!(*c2s, [0; 32]);
+                assert_eq!(*s2c, [0; 32]);
+                assert_eq!(nonces.next(), None);
+                Ok(())
+            });
+            send(client_socket, &request()?, endpoint)?;
+            let first: [u8; 140] = receive_reply(client_socket, endpoint)?;
+            let cookie: [u8; 12] = check_reply(&first)?;
+            let second: [u8; 252] =
+                request_with(terminal_origin, &terminal_uid, &cookie, &[0x69; 16])?;
+            send(client_socket, &second, endpoint)?;
+            if reply_mode == SuccessorReply::NakThenOrdinary {
+                let nak: [u8; 84] = receive_reply(client_socket, endpoint)?;
+                assert_eq!(&nak[..2], &[0x24, 0]);
+                assert_eq!(&nak[12..16], b"NTSN");
+                assert_eq!(&nak[24..32], &terminal_origin);
+                assert_eq!(&nak[48..52], &[1, 4, 0, 36]);
+                assert_eq!(&nak[52..], &terminal_uid);
+            }
+            let terminal: [u8; 140] = receive_reply(client_socket, endpoint)?;
+            assert_eq!(
+                open_ordinary(&terminal, terminal_origin, &terminal_uid, &terminal_nonce)?,
+                [
+                    0x12, 0x24, 0x36, 0x48, 0x5a, 0x6c, 0x7e, 0x90, 0xa2, 0xb4, 0xc6, 0xd8
+                ]
+            );
+            signal.send(()).map_err(|_| "client-acknowledgement")?;
+            peer.join().map_err(|_| "peer-panic")??;
+            Ok(())
+        })?;
+        client
+            .set_read_timeout(Some(Duration::from_millis(100)))
+            .map_err(|_| "client-timeout")?;
+        assert_no_reply(&client);
+    }
+    Ok(())
+}
+
+/// Read and independently attribute one complete loopback reply of the expected extent.
+///
+/// # Errors
+/// Refuse a different response length, endpoint or receive failure.
+fn receive_reply<const N: usize>(
+    client: &UdpSocket,
+    endpoint: SocketAddrV4,
+) -> TestResult<[u8; N]> {
+    let mut buffer: [u8; 141] = [0; 141];
+    let (length, sender): (usize, SocketAddr) = client
+        .recv_from(&mut buffer)
+        .map_err(|_| "client-receive")?;
+    if length != N || sender != SocketAddr::V4(endpoint) {
+        return Err("reply-shape");
+    }
+    buffer[..length].try_into().map_err(|_| "reply-length")
+}
+
+/// The real two-leg peer detects a packet queued while the marker is read.
+///
+/// # Errors
+/// Preserve socket setup, packet preparation or receipt failures.
+/// # Panics
+/// Fail if the old socket is released early or any extra datagram goes unnoticed
+/// or receives a third reply.
+#[test]
+fn protected_udp_observation_checks_queue_again_after_client_exit() -> TestResult {
+    let request: [u8; 252] = request()?;
+    let replacement: [u8; 12] = [
+        0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94,
+    ];
+    let origin: [u8; 8] = 0x1122_3344_eedd_ccbb_u64.to_be_bytes();
+    let successor: [u8; 252] = request_with(origin, &[0x23; 32], &replacement, &[0x69; 16])?;
+    let oversized: [u8; 4096] = [0xa5; 4096];
+    let plain: [u8; 48] = [0x23; 48];
+    for extra in [
+        None,
+        Some(&[][..]),
+        Some(oversized.as_slice()),
+        Some(plain.as_slice()),
+        Some(successor.as_slice()),
+    ] {
+        let budget: Budget = Budget::new(Instant::now()).map_err(|_| "fixture-budget")?;
+        let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "server-bind")?;
+        let endpoint: SocketAddrV4 = SocketAddrV4::new(Ipv4Addr::LOCALHOST, server.port().get());
+        let client: UdpSocket = client()?;
+        send(&client, &request, endpoint)?;
+        send(&client, &successor, endpoint)?;
+        let did_read: Cell<bool> = Cell::new(false);
+        let mut c2s: Zeroizing<[u8; 32]> = Zeroizing::new(C2S);
+        let mut s2c: Zeroizing<[u8; 32]> = Zeroizing::new(S2C);
+        let mut nonces: std::array::IntoIter<[u8; 16], 2> = [SERVER_NONCE, [0x77; 16]].into_iter();
+        let result: Result<(), Failure> = server.exchange_successor_observe_exit(
+            &budget,
+            &mut c2s,
+            &mut s2c,
+            |nonce| {
+                *nonce = nonces.next().ok_or(Failure::Entropy)?;
+                Ok(())
+            },
+            || {
+                did_read.set(true);
+                if let Some(bytes) = extra {
+                    send(&client, bytes, endpoint)
+                        .map_err(|_| Failure::Io(ErrorKind::WriteZero))?;
+                }
+                ClientExit::admit(b"client-exited=1\n").map(Some)
+            },
+            SuccessorReply::Deny,
+        );
+        assert!(did_read.get());
+        assert_eq!(*c2s, [0_u8; 32]);
+        assert_eq!(*s2c, [0_u8; 32]);
+        assert_eq!(nonces.next(), None);
+        assert_eq!(
+            result,
+            extra.map_or(Ok(()), |_| Err(Failure::UnexpectedDatagram))
+        );
+        let mut buffer: [u8; 141] = [0; 141];
+        for expected_length in [140, 124] {
+            let (length, sender): (usize, SocketAddr) = client
+                .recv_from(&mut buffer)
+                .map_err(|_| "client-receive")?;
+            assert_eq!(
+                (length, sender),
+                (expected_length, SocketAddr::V4(endpoint))
+            );
+        }
+        assert_no_reply(&client);
+    }
+    Ok(())
+}
+
+/// An acknowledgement at the exact original cutoff cannot complete observation.
+///
+/// # Errors
+/// Preserve setup failures.
+/// # Panics
+/// Fail if deadline equality is admitted.
+#[test]
+fn protected_udp_observation_refuses_acknowledgement_at_original_deadline() -> TestResult {
+    let origin: Instant = Instant::now();
+    let budget: Budget = Budget::new(origin).map_err(|_| "fixture-budget")?;
+    let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "server-bind")?;
+    server
+        .socket
+        .set_nonblocking(true)
+        .map_err(|_| "server-nonblocking")?;
+    let observed: Cell<Instant> = Cell::new(origin);
+    let result: Result<(), Failure> = server.observe_client_exit(
+        &budget,
+        || {
+            observed.set(budget.deadline);
+            ClientExit::admit(b"client-exited=1\n").map(Some)
+        },
+        || observed.get(),
+    );
+    assert_eq!(result, Err(Failure::Deadline));
+    Ok(())
+}
+
+/// An absent marker leaves the actual peer socket waiting for the client's exit.
+///
+/// # Errors
+/// Preserve local socket setup or observation failure.
+/// # Panics
+/// Fail if the observer ends on absence or reads the marker again after admission.
+#[test]
+fn protected_udp_observation_waits_for_client_exit() -> TestResult {
+    let start: Instant = Instant::now();
+    let budget: Budget = Budget::new(start).map_err(|_| "budget")?;
+    let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "bind")?;
+    server
+        .socket
+        .set_nonblocking(true)
+        .map_err(|_| "nonblocking")?;
+    let mut polls: u8 = 0;
+    server
+        .observe_client_exit(
+            &budget,
+            || {
+                polls += 1;
+                if polls == 1 {
+                    Ok(None)
+                } else {
+                    ClientExit::admit(b"client-exited=1\n").map(Some)
+                }
+            },
+            || start,
+        )
+        .map_err(|_| "observation")?;
+    assert_eq!(polls, 2);
     Ok(())
 }

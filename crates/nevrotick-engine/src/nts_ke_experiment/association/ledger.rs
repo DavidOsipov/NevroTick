@@ -14,13 +14,13 @@ use std::time::Instant;
 use ntp_wire::{FrameError, NtpTimestamp, NtsRequestEncodeError, RawHeader, decode_fixed_header};
 use zeroize::Zeroizing;
 
-#[cfg(test)]
-use super::super::datagram::{Attempts, RetiredProtectedControl};
 #[cfg(any(windows, test))]
-use super::super::datagram::{ConsumedDatagram, GuardedSender, RetiredReply, RetiredReplyParts};
+use super::super::datagram::{
+    Attempts, ConsumedDatagram, GuardedSender, RetiredProtectedControl, RetiredReply,
+    RetiredReplyParts,
+};
 use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
-#[cfg(test)]
 use super::super::response::{
     ControlProtection, ProtectedControlKind, StagedSuccessorResponse, stage_successor_response,
 };
@@ -325,17 +325,14 @@ pub(in super::super) struct PendingSubmission {
 }
 
 /// Select how a genuine retired reply completes its original Control.
-#[cfg_attr(not(test), derive(Clone, Copy))]
 pub(in super::super) enum RetiredCommit {
     /// The ordinary one-shot reply is also terminal for the invocation.
     Terminal,
-    /// The private two-request fixture keeps the same invocation alive.
-    #[cfg(test)]
+    /// The first protected commit keeps the same invocation alive.
     FirstRequest(Attempts),
 }
 
 /// First authenticated request committed on this exact managed association.
-#[cfg(test)]
 struct PriorAuthentication {
     /// Exact original packet receipt and charged ordinal.
     receipt: Receipt,
@@ -471,7 +468,6 @@ struct ChargedReply {
 
 /// One charged control from the exact still-outstanding successor.
 /// The transfer itself cannot change policy or consume the Pending slot.
-#[cfg(test)]
 #[must_use = "retain the exact control ticket through backend retirement"]
 pub(in super::super) struct StagedProtectedControl<'control> {
     /// Exact recognized wire code.
@@ -483,7 +479,6 @@ pub(in super::super) struct StagedProtectedControl<'control> {
 }
 
 /// Exact successor correlation shared by restriction and NTSN admission.
-#[cfg(test)]
 struct SuccessorCorrelation<'control> {
     /// Actual original invocation the packet reached.
     control: &'control Control,
@@ -502,7 +497,6 @@ struct SuccessorCorrelation<'control> {
 }
 
 /// Bounded historical NTSN observation. It carries no recovery or policy authority.
-#[cfg(test)]
 pub(in super::super) struct ObservedNtsNak {
     /// Original leading observation of the admitted datagram.
     arrived_at: Instant,
@@ -510,7 +504,6 @@ pub(in super::super) struct ObservedNtsNak {
     exhausted: bool,
 }
 
-#[cfg(test)]
 impl ObservedNtsNak {
     /// Transfer the observed time and the already enforced exhaustion decision.
     pub(in super::super) const fn into_parts(self) -> (Instant, bool) {
@@ -519,7 +512,6 @@ impl ObservedNtsNak {
 }
 
 /// The protected control already published through both original owners.
-#[cfg(test)]
 #[must_use = "retain the applied control as a historical observation"]
 pub(in super::super) struct AppliedProtectedControl {
     /// Exact control already applied to the managed source and endpoint.
@@ -536,7 +528,6 @@ pub(in super::super) struct AppliedProtectedControl {
     decided_at: Instant,
 }
 
-#[cfg(test)]
 impl AppliedProtectedControl {
     /// Observe the original control without interpreting it as time or permission.
     pub(in super::super) const fn kind(&self) -> ProtectedControlKind {
@@ -570,7 +561,6 @@ impl AppliedProtectedControl {
 }
 
 /// The actual distinct historical and outstanding protected send proofs.
-#[cfg(test)]
 struct ControlSubmissions<'a> {
     /// Send evidence retained by the previously authenticated request.
     prior: (&'a ProtectedSendStamp, &'a Arc<()>),
@@ -580,7 +570,6 @@ struct ControlSubmissions<'a> {
 
 /// One ledger-verified retired control for its original authority transaction.
 /// Only the retired receiver can mint it; current policy is checked at consumption.
-#[cfg(test)]
 pub(crate) struct VerifiedRetiredControl<'a> {
     /// Exact wire control owned by the retired request.
     kind: ProtectedControlKind,
@@ -592,7 +581,6 @@ pub(crate) struct VerifiedRetiredControl<'a> {
     decided_at: Instant,
 }
 
-#[cfg(test)]
 impl<'a> VerifiedRetiredControl<'a> {
     /// Read the control kind carried by this move-only authorization.
     pub(crate) const fn kind(&self) -> ProtectedControlKind {
@@ -616,7 +604,6 @@ impl<'a> VerifiedRetiredControl<'a> {
 }
 
 /// The exact charged successor admitted by the shared protected receiver.
-#[cfg(test)]
 pub(in super::super) enum StagedProtectedSuccessor<'control> {
     /// The ordinary reply has consumed its Pending submission and produced history.
     Ordinary(Receipt, CookieReplacement, PendingSubmission),
@@ -657,7 +644,6 @@ pub(in super::super) struct LedgerState<'a> {
     /// Last accepted receipt; failed attempts never replace it.
     last: Option<Receipt>,
     /// Only the private first-request retired commit can create this witness.
-    #[cfg(test)]
     prior_authentication: Option<PriorAuthentication>,
     /// One fixture-only next-stage clock choice; taken before any fallible staging.
     #[cfg(test)]
@@ -691,7 +677,6 @@ impl LedgerState<'_> {
             uids: Zeroizing::new([[0; 32]; ATTEMPTS]),
             uid_count: 0,
             last: None,
-            #[cfg(test)]
             prior_authentication: None,
             #[cfg(test)]
             next_receipt_at_read_tail: false,
@@ -1618,7 +1603,6 @@ impl<'a> AssociationOwner<'a> {
     /// Debit the successor's actual read before considering either packet disposition.
     /// # Errors
     /// Preserve exact submission, budget, current Control and packet refusal.
-    #[cfg(test)]
     pub(in super::super) fn stage_concrete_successor<'control>(
         &mut self,
         control: &'control Control,
@@ -1637,7 +1621,6 @@ impl<'a> AssociationOwner<'a> {
     /// Ordinary admission consumes the request; control staging preserves it for the next owner.
     /// # Errors
     /// Preserve backend, peer, UID, S2C, time and source-policy refusal.
-    #[cfg(test)]
     fn stage_charged_successor<'control>(
         &mut self,
         charged: &ChargedReply,
@@ -1683,6 +1666,7 @@ impl<'a> AssociationOwner<'a> {
                     SubmissionOrigin::Adapter(submission) => Ok(
                         StagedProtectedSuccessor::Ordinary(receipt, replacement, submission),
                     ),
+                    #[cfg(test)]
                     SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
                 }
             }
@@ -1716,7 +1700,6 @@ impl<'a> AssociationOwner<'a> {
     }
 
     /// Retain the exact coordinates of the charged successor observation.
-    #[cfg(test)]
     fn successor_correlation<'control>(
         charged: &ChargedReply,
         control: &'control Control,
@@ -1737,7 +1720,6 @@ impl<'a> AssociationOwner<'a> {
     /// Inspect one staged or retired ticket without consuming it or changing policy.
     /// # Errors
     /// Refuse a foreign or superseded request, late Stop, expiry or stale policy.
-    #[cfg(test)]
     pub(in super::super) fn check_protected_control_current(
         &self,
         candidate: &StagedProtectedControl<'_>,
@@ -1751,7 +1733,6 @@ impl<'a> AssociationOwner<'a> {
     /// Check both original managed sends and the current invocation before observation.
     /// # Errors
     /// Preserve authority, correlation and original receive-time refusals.
-    #[cfg(test)]
     fn check_successor_receive(
         &self,
         candidate: &SuccessorCorrelation<'_>,
@@ -1774,7 +1755,6 @@ impl<'a> AssociationOwner<'a> {
     /// Match the exact prior receipt and active successor under the original locks.
     /// # Errors
     /// Refuse missing or replaced request history, submission or managed stamps.
-    #[cfg(test)]
     fn control_submissions(
         &self,
         candidate: &SuccessorCorrelation<'_>,
@@ -1823,7 +1803,6 @@ impl<'a> AssociationOwner<'a> {
     /// mutation. The original receive bracket must be ordered, fully observed
     /// by processing time, and before cutoff. Refusal preserves the charged
     /// outstanding request and both policy records.
-    #[cfg(test)]
     pub(in super::super) fn commit_retired_protected_control(
         &mut self,
         retired: RetiredProtectedControl<'_>,
@@ -2193,7 +2172,6 @@ impl<'a> AssociationOwner<'a> {
             DatagramAuthorityGuard::lock(control, lease.as_ref())?;
         self.check_completed_receipt(&receipt)?;
         guard.receiving(submission.policy_provenance())?;
-        #[cfg(test)]
         if matches!(disposition, RetiredCommit::FirstRequest(_))
             && (lease.is_none()
                 || receipt.serial != 1
@@ -2212,7 +2190,6 @@ impl<'a> AssociationOwner<'a> {
                 guard.control.commit(now)?;
                 submission.identity
             }
-            #[cfg(test)]
             RetiredCommit::FirstRequest(attempts) => {
                 guard.control.published(now)?;
                 let identity: Arc<()> = Arc::clone(&submission.identity);
@@ -2233,7 +2210,6 @@ impl<'a> AssociationOwner<'a> {
     /// After a private first commit, only the original remaining driver can run.
     /// # Errors
     /// Refuse a fresh allowance on an association that already earned a successor.
-    #[cfg(test)]
     pub(in super::super) fn check_fresh_exchange(&self) -> Result<(), Failure> {
         if self.ledger.prior_authentication.is_some() {
             return Err(Failure::Control);
@@ -2244,7 +2220,6 @@ impl<'a> AssociationOwner<'a> {
     /// Spend the one continuation before entering a second backend or entropy.
     /// # Errors
     /// Refuse missing, foreign, stale, already spent or expired authority.
-    #[cfg(test)]
     pub(in super::super) fn take_authenticated_successor(
         &mut self,
         control: &Control,

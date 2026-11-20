@@ -4,7 +4,10 @@
 use aes_siv::{KeyInit, Tag, siv::Aes128Siv};
 use zeroize::Zeroizing;
 
-use super::{Correlation, PacketFailure, admit_and_seal, admit_successor};
+use super::{
+    Correlation, PacketFailure, SuccessorCorrelation, admit_and_seal, admit_successor,
+    correlated_nak, seal_ordinary_successor,
+};
 
 /// Public test-only inputs, distinct in every cryptographic role.
 const C2S: [u8; 32] = [0x3a; 32];
@@ -233,7 +236,7 @@ fn successor_requires_issued_cookie_and_both_fresh_coordinates() -> Result<(), &
         0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94,
     ]);
     stamp(&mut successor)?;
-    let _current: Correlation =
+    let _current: SuccessorCorrelation =
         admit_successor(&successor, &C2S, &initial).map_err(|_| "successor")?;
     assert_eq!(
         admit_successor(&successor, &S2C, &initial).err(),
@@ -248,5 +251,60 @@ fn successor_requires_issued_cookie_and_both_fresh_coordinates() -> Result<(), &
             Some(PacketFailure::Replay)
         );
     }
+    Ok(())
+}
+
+/// Open the ordinary terminal reply with the same S2C key and its own correlation.
+///
+/// # Errors
+/// Preserve independent construction, admission, sealing and opening refusals.
+/// # Panics
+/// Fail on stale correlation, a reused cookie or a reply that opens with C2S.
+#[test]
+fn ordinary_successor_seals_its_correlation_and_a_distinct_cookie() -> Result<(), &'static str> {
+    let mut input: [u8; 252] = request()?;
+    let (initial, first_reply): (Correlation, Zeroizing<[u8; 140]>) =
+        admit_and_seal(&input, &C2S, &S2C, &SERVER_NONCE).map_err(|_| "initial")?;
+    let issued: Zeroizing<[u8; 16]> = open_reply(&first_reply, &S2C)?;
+    input[88..100].copy_from_slice(&issued[4..]);
+    let transmit: [u8; 8] = [0x61, 0x72, 0x83, 0x94, 0xa5, 0xb6, 0xc7, 0xd8];
+    let uid: [u8; 32] = [0x41; 32];
+    input[40..48].copy_from_slice(&transmit);
+    input[52..84].copy_from_slice(&uid);
+    stamp(&mut input)?;
+    let successor: SuccessorCorrelation =
+        admit_successor(&input, &C2S, &initial).map_err(|_| "successor")?;
+    let nak: [u8; 84] = correlated_nak(&successor);
+    assert_eq!(
+        nak,
+        [
+            0x24, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b'N', b'T', b'S', b'N', 0, 0, 0, 0, 0, 0, 0,
+            0, 0x61, 0x72, 0x83, 0x94, 0xa5, 0xb6, 0xc7, 0xd8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 1, 4, 0, 36, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+            0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+            0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+        ]
+    );
+    let nonce: [u8; 16] = [0x55; 16];
+    let reply: Zeroizing<[u8; 140]> =
+        seal_ordinary_successor(successor, &S2C, &nonce).map_err(|_| "successor-reply")?;
+    assert_eq!(&reply[..2], &[0x24, 2]);
+    assert_eq!(&reply[24..32], &transmit);
+    assert_eq!(&reply[48..52], &[1, 4, 0, 36]);
+    assert_eq!(&reply[52..84], &uid);
+    assert_eq!(&reply[84..92], &[4, 4, 0, 56, 0, 16, 0, 32]);
+    assert_eq!(&reply[92..108], &nonce);
+    let terminal: Zeroizing<[u8; 16]> = open_reply(&reply, &S2C)?;
+    assert_eq!(
+        *terminal,
+        [
+            2, 4, 0, 16, 0x12, 0x24, 0x36, 0x48, 0x5a, 0x6c, 0x7e, 0x90, 0xa2, 0xb4, 0xc6, 0xd8
+        ]
+    );
+    assert_ne!(*terminal, *issued);
+    assert!(open_reply(&reply, &C2S).is_err());
+    let mut wrong_origin: [u8; 140] = *reply;
+    wrong_origin[24..32].copy_from_slice(&WIRE);
+    assert!(open_reply(&wrong_origin, &S2C).is_err());
     Ok(())
 }

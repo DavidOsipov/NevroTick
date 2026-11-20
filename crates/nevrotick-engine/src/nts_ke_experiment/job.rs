@@ -13,8 +13,7 @@ use std::sync::{Mutex, OnceLock, TryLockError};
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
 
-#[cfg(test)]
-use super::datagram::{BoundFirstHistory, ManagedProtectedHistory};
+use super::datagram::{BoundFirstHistory, ManagedProtectedHistory, ProtectedDatagramWork};
 use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use super::{Config, Control, Failed, Failure, InvocationCompletion, IoPhase, StopHandle};
 
@@ -87,8 +86,9 @@ struct Facts {
     /// Permanently set before retirement; only the actual joined collector moves its payload.
     operation: OnceLock<Mutex<Option<Operation>>>,
     /// Genuine first committed history, written before the worker enters its successor.
-    #[cfg(test)]
     first_receipt: OnceLock<Mutex<Option<Box<ManagedProtectedHistory>>>>,
+    /// Exact work for the selected bounded operation, read only after actual join.
+    datagram_work: OnceLock<Arc<ProtectedDatagramWork>>,
     /// True only after the actual provider and Config retirement boundary returned.
     retired: AtomicBool,
 }
@@ -98,8 +98,8 @@ impl Facts {
     const fn new() -> Self {
         Self {
             operation: OnceLock::new(),
-            #[cfg(test)]
             first_receipt: OnceLock::new(),
+            datagram_work: OnceLock::new(),
             retired: AtomicBool::new(false),
         }
     }
@@ -117,7 +117,6 @@ impl Facts {
 }
 
 /// Write-only checkpoint owned by the actual submitted worker.
-#[cfg(test)]
 pub(super) struct FirstReceiptWriter<'worker> {
     /// The same permanent slot's private result storage.
     facts: &'worker Facts,
@@ -125,7 +124,6 @@ pub(super) struct FirstReceiptWriter<'worker> {
     control_identity: Arc<()>,
 }
 
-#[cfg(test)]
 impl FirstReceiptWriter<'_> {
     /// Check attachment against the actual Control submitted to this worker.
     pub(super) fn owns(&self, control: &Control) -> bool {
@@ -200,19 +198,26 @@ pub(super) struct JoinedOutcome {
     /// Historical result, if genuinely recorded before termination/retirement.
     pub(super) operation: Option<Operation>,
     /// First receipt available even when the operation unwound before recording.
-    #[cfg(test)]
     first_receipt: Option<Box<ManagedProtectedHistory>>,
+    /// The actual adapter's now-retired observations, including an admitted NAK.
+    datagram_work: Option<Arc<ProtectedDatagramWork>>,
     /// Actual joined termination, never inferred from a timer or stop acknowledgement.
     pub(super) termination: Termination,
     /// Ordinary retirement actually crossed; false remains unconfirmed.
     pub(super) retired: bool,
 }
 
-#[cfg(test)]
 impl JoinedOutcome {
     /// Read genuine historical first receipt after actual join.
     pub(super) fn first_receipt(&self) -> Option<&ManagedProtectedHistory> {
         self.first_receipt.as_deref()
+    }
+
+    /// Observe the first admitted NAK after an actual join.
+    pub(super) fn first_nak_at(&self) -> Option<Instant> {
+        self.datagram_work
+            .as_deref()
+            .and_then(ProtectedDatagramWork::first_nak_at)
     }
 }
 
@@ -221,8 +226,9 @@ pub(super) struct NormalOperation {
     /// Actual typed terminal operation result under the original invocation.
     pub(super) operation: Operation,
     /// Genuine earlier success, if the worker selected a protected successor.
-    #[cfg(test)]
     pub(super) first_receipt: Option<Box<ManagedProtectedHistory>>,
+    /// Final accounting as observed by the selected adapter, if admitted.
+    pub(super) datagram_work: Option<(usize, usize, usize)>,
 }
 
 /// Consume-once receiving custody minted only by the actual slot's joined take.
@@ -240,14 +246,16 @@ impl ReceivingOutcome {
         match self.joined {
             JoinedOutcome {
                 operation: Some(operation),
-                #[cfg(test)]
                 first_receipt,
+                datagram_work,
                 termination: Termination::Returned,
                 retired: true,
             } => Ok(NormalOperation {
                 operation,
-                #[cfg(test)]
                 first_receipt,
+                datagram_work: datagram_work
+                    .as_deref()
+                    .map(ProtectedDatagramWork::snapshot),
             }),
             abnormal => Err(abnormal),
         }
@@ -546,13 +554,11 @@ impl WorkerSlot {
         // Recover poison solely to preserve the original owned operation; never heal it.
         let (operation, facts_poisoned): (Option<Operation>, bool) =
             take_recorded(&self.facts.operation);
-        #[cfg(test)]
-        let (first_receipt, first_receipt_poisoned): (
-            Option<Box<ManagedProtectedHistory>>,
-            bool,
-        ) = take_recorded(&self.facts.first_receipt);
-        #[cfg(test)]
+        let (first_receipt, first_receipt_poisoned): (Option<Box<ManagedProtectedHistory>>, bool) =
+            take_recorded(&self.facts.first_receipt);
         let facts_poisoned: bool = facts_poisoned || first_receipt_poisoned;
+        let datagram_work: Option<Arc<ProtectedDatagramWork>> =
+            self.facts.datagram_work.get().cloned();
         let retired = self.facts.retired.load(Ordering::Acquire);
         // No other operation mutates Joining, and observers never hold this gate.
         // Even an unavailable gate must retain, rather than destroy, an unwind payload.
@@ -576,8 +582,8 @@ impl WorkerSlot {
         };
         custody.phase = Phase::Joined(JoinedOutcome {
             operation,
-            #[cfg(test)]
             first_receipt,
+            datagram_work,
             termination,
             retired,
         });
@@ -663,6 +669,96 @@ impl SubmissionReservation {
             },
             Hooks::none(),
         )
+    }
+
+    /// Submit the explicit managed route with its original receipt destination.
+    /// # Errors
+    /// Refuse a different mode before spawning, or preserve actual submission failure.
+    #[cfg(windows)]
+    pub(super) fn try_submit_successor(self) -> Result<(), SubmitError> {
+        self.start_successor_with(
+            &super::PROCESS_ADMISSION,
+            native_provider,
+            |config, provider, control, writer| {
+                super::drive_with_first_receipt(
+                    config,
+                    provider,
+                    control,
+                    &mut super::recovery::Native,
+                    writer,
+                )
+            },
+            Hooks::none(),
+        )
+    }
+
+    /// Attach accounting only to the admitted route. Fixtures use the same worker.
+    /// # Errors
+    /// Refuse another mode or preserve any checked spawn or worker admission failure.
+    fn start_successor_with<F>(
+        mut self,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(
+                &'a Config,
+                &'a ProviderScope<'a>,
+                Control,
+                FirstReceiptWriter<'a>,
+            ) -> Operation
+            + Send
+            + 'static,
+    {
+        let prepared: &mut PreparedInvocation =
+            self.prepared.as_mut().ok_or(SubmitError::Control)?;
+        if !matches!(
+            prepared.config.mode,
+            super::ExchangeMode::ManagedProtected(_)
+        ) || prepared.control.datagram_work.is_some()
+        {
+            return Err(SubmitError::Control);
+        }
+        prepared.control.datagram_work = Some(Arc::new(ProtectedDatagramWork::new()));
+        let slot: &'static WorkerSlot = self.slot;
+        self.start_with(
+            admission,
+            make_provider,
+            move |config, provider, control| {
+                let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
+                    facts: &slot.facts,
+                    control_identity: Arc::clone(&control.first_receipt_identity),
+                };
+                execute(config, provider, control, writer)
+            },
+            hooks,
+        )
+    }
+
+    /// Exercise the same bounded submission and first-receipt custody in tests.
+    /// # Errors
+    /// Preserve the actual reservation's mode and spawn refusals.
+    #[cfg(test)]
+    pub(super) fn submit_bounded_successor_fixture<F>(
+        self,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(
+                &'a Config,
+                &'a ProviderScope<'a>,
+                Control,
+                FirstReceiptWriter<'a>,
+            ) -> Operation
+            + Send
+            + 'static,
+    {
+        self.start_successor_with(admission, make_provider, execute, hooks)
     }
 
     /// Submit the single controlled native successor through the original reservation.
@@ -836,6 +932,12 @@ where
         start();
     }
     let PreparedInvocation { config, control } = prepared;
+    if let Some(work) = &control.datagram_work {
+        facts
+            .datagram_work
+            .set(Arc::clone(work))
+            .map_err(|_| Failure::Control)?;
+    }
     let admitted: Result<ProcessClaim<'_>, Failure> = (|| {
         let guard: super::ConfigurationGuard<'_> = config.guard(&control, None)?;
         guard.remaining(IoPhase::Handshake, Instant::now())?;

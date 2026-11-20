@@ -29128,3 +29128,478 @@ same issued-cookie and distinct-correlation checks and returns a fresh terminal
 replacement cookie. Format and patch checks passed. The draft remains separate
 from the verified Engine source and has not been compiled or run. Its owned
 checkout retired after byte comparison.
+
+###### Explicit Windows protected successor and joined report — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/8/9/11/19/21/25/27. Source
+baseline `20be018edf23f2f322ad3c4b8d670c01a0bdf0f8`. The separate Windows
+`SourcePolicyAuthority::invoke_nts_protected` accepts the closed
+`OneAuthenticatedSuccessor` plan. It uses the installed original source
+revision, the ordinary worker and power observer, one real KE and the same
+native datagram driver for both operations. The existing probe and CLI
+continue their one-shot route. The second request needs the genuine first
+authenticated commit and its one-use continuation. It inherits the original
+deadlines, remaining driver credit, cookie and UID history, and association
+receive allowance.
+
+The worker records the first committed receipt before successor admission.
+Its receive owner distinguishes authenticated ordinary replies, guarded
+source/endpoint restriction effects, and correlation-only NTSN. The first
+admitted NTSN retains its original observation alongside the actual terminal
+outcome. A normally retired refusal reports recovery unavailable when an
+admitted NTSN remained unresolved. The bounded plan cannot restart KE or fall
+back to plain NTP. Actual backend entries and full local send returns are
+counted independently at the adapter. Checked association balances are
+captured before retirement. Complete reports require physical join and
+confirmed normal retirement. Abnormal joins can expose the original first
+receipt and NTSN without granting completion or current authority. No result
+grants calibrated timing, tracking, eligibility or clock effects.
+
+The closed `managed-protected-successor` mode in
+`tools/windows-sandbox/engine-facade-consumer.rs` checks the original receipt
+revision, chronology, terminal disposition and actual source/endpoint effect,
+including the alias source and shared endpoint. Its exact output retains
+typed refusal and cleanup categories, local send and work observations, and
+`eligible=0 fresh_sync=0`. It admits two canonical numeric loopback endpoints
+from its owned fixture environment and uses the fixed laboratory TLS identity.
+
+The existing plan and Rust contract skills governed the separate selector,
+once-only history and fail-closed mode checks. Protocol and privacy review
+traced the authenticated and correlation-only routes into their distinct
+owners and the bounded projection. Three isolated writers supplied the
+driver, report and external consumer. The coordinator integrated and
+independently reviewed their combined paths, including the report's retained
+abnormal observations, cookie population and actual shared-endpoint effect.
+The two writer checkouts used for these patches retired after exact path and
+patch comparisons.
+
+The component peer asserts the actual two protected requests and checks its
+socket again after client join. A literal two-cookie first reply changes the
+successor's checked pre-checkout population from `(1, 12)` to `(2, 24)`. The
+peer independently expects the shorter second request in that case. Four
+real controlled UDP histories exercise NTSN followed by ordinary completion,
+authenticated DENY, same-value configuration replacement, and unwind after
+receive before terminal commit. They check the physical join gate, original
+timestamps, two local sends, exact frame and byte debit, and preserved
+historical and typed failure facts. The foreign-Control case still refuses
+before producer entry. KE establishment in these component tests is injected.
+
+Pinned Rust 1.100, explicit EP1 and isolated verification completed for all
+620 product inputs on
+`ef1925965d3a7ebfbd4836f4806cf962e99c5d89aa920f163b3e7ca70c45f0cc`.
+Format, isolation, 581 GNU ordinary library cases, five exact
+`verify-release` cases and both GNU and Windows-target all-target Clippy
+lanes passed. Run 01 stopped at a test-module import. Run 02 reached two
+test-oracle failures. The original receive loop spends at least seven driver
+credits when NTSN and its valid neighbor are already readable, and the
+first receipt's post-admission pool differs from its checked initial pool.
+Run 03 passed the ordinary cases, then failed GNU Clippy on the large joined
+failure representation and local lints. Run 04 passed ordinary and GNU
+Clippy, then found an unused getter in the Windows production build. Run 05 uses that
+checked getter and passes all selected development lanes. The earlier runs
+remain incomplete. All five isolated build directories retired.
+
+| Evidence under `protected-receive-debit-01/bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `candidate-05.patch` | `f26145a7d94d74d206950ed45fcb09c779120a23ff94978d97c16df16d9728f9` |
+| `run-01/verification.json` | `48baf54419a3ca7a82c0587efb02eda5728822d8d7b12cb5df5460706088ecfd` |
+| `run-02/verification.json` | `298afcb1180c434461c5d5579e0523d57da8132e8331a9f3a5c9ad97ea2c0606` |
+| `run-03/verification.json` | `656016643674543699e7dee13cd6f374d219ef355f2e402fa1351a19fcc1344a` |
+| `run-04/verification.json` | `6f46aa95d41d97339aa0200c362743d2f90ab0022588f835795d1f6351ae959a` |
+| `run-05/verification.json` | `2634762fb22c40a4d379194be0354ea2f376549de7fcb71c5715e2f6edcfcfd2` |
+| `facade-link-01/verification.json` | `32de59f3dba437fb0f0f76df2384fed4d5a8be9106d06d131098ec2ed0da89c9` |
+
+The configured `verify-engine-native.py --lane build --facade-consumer
+--jobs 2` readmitted the same 620 product inputs, the consumer
+`fde4a2ee68c1b5873183b123663383b4af5b5d70d0af6743450dceaf1b6354c3`,
+the pinned Rust payload and the 529-file Microsoft library inventory.
+All 20 lanes passed, including attribution of the normal Engine and Tokio
+libraries, x86-64-v3 consumer link, Clippy and PE readback. The emitted
+`engine-facade-consumer.exe` is
+`ba3ab0b3891ef2c9609d5f0f3671624bd515ade39775bbfa8835699887785a36`.
+All four image and PDB pairs matched their receipts after the build.
+The retired build directory released 454 MiB. The exact source copy,
+exported images and receipts remain for the owned native case.
+
+The separate observed-DENY peer draft
+`peer-exit-observation-preparation.patch`
+(`2d015f1cfa3b7ae19de00c8e43aa7b6dacf8b32c7c3ed974d94d387d62a8952e`)
+uses the original UDP socket through a fixed private acknowledgment after
+actual client exit. Both legs and the extra receive-only observation share
+the original 60-second peer window. Any extra datagram fails without a reply.
+The draft passed scoped format and patch readback. Peer compilation and guest
+execution remain open. Its detached checkout retired after byte comparison.
+The private controller derivative in `native-controller-preparation/`
+uses the new facade and a no-replace exit acknowledgment, exact image pins
+and a redacted result check. Its two-file patch is
+`c859dd7035a9f00042a07333d0fe51ad5a659b3ed933f0fc1071a3eaf90964e8`.
+The writer observed Python syntax and 73 in-memory witness controls.
+Native script parsing, peer image admission and guest execution remain open.
+
+The independent owned guest run must still observe the real TLS/CNG/UDP
+exchange, original peer and client receipts, absence of an extra datagram at
+the owned endpoint through join, and guest cleanup. Re-admit the affected
+native/default/KE source, finite histories, coverage and per-critical-file
+mutation under the existing owners. No prior metric is transferred. Physical
+calibration and positive Core admission retain their separate suppliers.
+
+###### Successor peer through joined client exit — 20 November 2026
+
+S2.2/S2.3, CRYPTO-01/02/04 and CHECK-6/9/21/25/27. The standalone peer's
+explicit `--protected-successor-deny-observe-exit` mode now owns the
+advertised socket through the original two exchanges and the client-exit
+observation under one 60-second window. After the authenticated DENY it
+erases both directional exporters. The receive-only phase refuses any
+unexpected datagram, including empty and oversized packets. It probes
+the same socket again after the controller's actual process-exit marker.
+The reports combine exact local adapter send counts with absence of an
+extra datagram observed at the owned peer socket through the final probe.
+Earlier standalone modes continue their existing paths.
+
+Independent review identified that the first draft admitted a readiness
+name that could alias the exit marker on case-insensitive NTFS. The focused
+GNU RED reached that assertion with exit 101 after the healthy
+`peer.ready` derivation. The new mode's argument parser now requires the
+exact `peer.ready` leaf and derives `peer.client-exited` before transport
+setup. The peer admits only the fresh exact marker. The controller's
+private no-replace publication binds it to the reaped client's PID and
+start time. Portable controls also exercised the actual socket with an
+absent-then-valid marker, an exact-cutoff refusal, and an extra packet
+between the first probe and marker read. Both exporter buffers are checked
+after normal and extra-datagram outcomes. The Windows file reader will be
+reached by the owned native pair.
+
+The frozen standalone projection retains the committed lock
+`984260fd1fd0dcb6b020ef16004f2f96cfdf886223bf1dee446cc0ff0390a70c` and the
+exact admitted GNU and MSVC metadata. Rust 1.100 passed 26 tests in each
+ordinary and `verify-release` profile and both compiler lint lanes.
+The first GREEN attempt stopped at the 5 GiB disk admission before
+Cargo. The next ran all those lanes and linked the release peer, but its
+artifact collector expected a hyphenated PDB result. The final attempt
+re-admitted source, toolchain, vendor and SDK. It reused seven exact raw
+lane results and ran fresh isolation, MSVC release linking and PE
+readback. Cargo's attributed output includes the underscore-named PDB
+and the PE points to that emitted basename. The retained copy has a
+canonical adjacent name and unchanged bytes. Scratch retired for each
+started compiler run.
+
+| Evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `peer-observer/red-01/verification.json` | `bfd2834dd8a289f71b6d9a03c3f140a63758c9f08df8c30d2f37bfbdfabfa7a5` |
+| `peer-observer/green-02/verification.json` | `f28c5df6c1a12ba1938af67b6527d95ae03ccc059f4c98d9c36bcdbb4ec60584` |
+| `peer-observer/green-03/verification.json` | `e3e11b0558efe1302e30309bb846c5964fa13fe4ec985fa9b251c86155827ecc` |
+| `peer-observer/peer-keys-erased.patch` | `f2f5e72bbbb92a9c3906f7e4d7dd84338189640959b8537d0b942dda2e7bfcc4` |
+| `peer-observer/green-03/nevrotick-nts-ke-peer.exe` | `a7dbfaabfdba8a5a405c3022536750f367d839386d7e88a0363a0446db0fe681` |
+| `peer-observer/green-03/nevrotick-nts-ke-peer.pdb` | `e6d471a6c349d573161a76c9f3e66203f3b278bee16e8dfe23549d2a3cb4ddbe` |
+| `native-controller-paired/run-native.py` | `b5281ad5a362ea25c43b6942b6337592264574f4a1f0b189c37b636a0ec6c8f6` |
+
+Independent receipt review matched both actual images and their digests,
+620 common product inputs, 112 standalone inputs and all 10 current
+lane receipts. The paired driver now requires the separately admitted
+peer receipt and actual exported PE and PDB. Its host preflight matched
+the retained replacement guest `5c12948e…`, CLI 0.8.114.0 and 6,791 MiB
+available RAM. The offline guest query exited zero without temporary
+trust writes. The certificate-free image preflight parsed the controller
+in the actual guest, passed the CPU probe and observed peer exit 2,
+facade unknown and extra argument exits 126, and missing-endpoint exit
+124. The mapped input and output leaves were empty at close.
+
+The actual authenticated DENY pair then passed in the same owned,
+offline x64 guest. The Windows loader, script parser and argument
+controls repeated successfully. The host reported 6,622 MiB available
+at setup and 6,565 MiB before the payload. The guest's dedicated
+fixture controller finished in 8,491 ms. One real TLS/KE exchange closed
+and furnished both directional exporters. The normal, non-test facade
+retained its first authenticated receipt against the original
+configuration and applied authenticated DENY at ordinal two to the
+actual source and shared endpoint, with the alias source unchanged.
+
+The client reported two attempted sends and two full local submissions.
+It retained 58 driver credits, 30 checkouts, 30 receive frames and
+130,808 receive bytes. Its result kept measurement unavailable and both
+`eligible=0` and `fresh_sync=0`. The same owned peer observed two requests,
+sent two replies and observed zero extra datagrams through the pinned
+client-exit marker and final queue probe. Kernel listener ownership
+matched both advertised endpoints to that peer. Both processes exited
+zero and were reaped with four capture EOFs. All 11 progress records
+were present. The guest controller restored the exact fixture Root/CA
+baseline, removed its scratch and left the shared directories empty.
+The guest remained offline and available after the run.
+
+| Native evidence under `native-controller-paired` | SHA-256 |
+| --- | --- |
+| `kepre_93f4a9f7c7cb/verification.json` | `560caf8f0c83c1580acb1b6c33aa751d035f161a0cc05a338f9af9601d222235` |
+| `kefac_73bcae5c8adb/verification.json` | `263f41eea1b267428266a39412492bae955439d821e40381249e71ca4a124921` |
+| `kefac_73bcae5c8adb/healthy-ke.json` | `88b83695628aebf89ba2848aab20692fe430cf624df1a8312371f7127ad02094` |
+| `kefac_73bcae5c8adb/healthy-ke-baseline.json` | `022f6b817ae0acc61983094f7033a1cfcd3250c38fdb867136b95404df5d666d` |
+
+This exit covers the selected authenticated DENY pair in the interactive
+lab guest. The ordinary/ordinary and NTSN native consumers, broader
+provider lifecycle, current per-file coverage and mutation gates, and
+calibrated Core admission retain their separate exits.
+
+WSL cleanup retired the reconstructible 636-file facade source copy
+after comparing every bound byte. It also retired two historical Engine
+test PDBs at `native-link-01/run-02` and `native-link-current-01/run-01`
+after checking their retained digests and open-file state. The measured
+PDB recovery was 207,847,424 bytes. The old PE images and raw receipts
+remain. Future Windows tests on the changed source need fresh admission.
+The current facade/peer images and their matching PDBs remain available.
+
+###### Ordinary and NTSN successor peer controls — 20 November 2026
+
+S2.2/S2.3, CRYPTO-01/02/04 and CHECK-6/9/21/25/27. The standalone peer
+adds two explicit observed modes. Both authenticate a fresh second request
+with the cookie issued on the first leg and return an authenticated ordinary
+reply with a distinct replacement cookie. The NTSN mode sends a
+correlation-only NTSN before that reply on the same peer socket. Both modes
+use the original 60-second bound, erase both exporters and retain the exit
+observer through the reaped client. The existing DENY mode still runs.
+
+The Rust and integration review traced the real peer, the normal Engine
+facade and the separate process controller. The three new fixture cases
+exercise argument and marker admission, authenticated successor correlation
+and cookie bytes, and both reply sequences on the actual loopback socket.
+The first attempt passed all 29 cases in both GNU profiles and failed Clippy
+on a test-only eight-byte argument passed by reference. The repeat used a
+by-value argument. All ten lanes passed, including 29 cases each in ordinary
+and `verify-release`, both target Clippy lanes, MSVC release linking and PE
+readback. Source and dependency bookends matched and scratch retired. The
+same 620 Engine inputs retain the prior facade link. The 112 standalone
+inputs include seven changed peer files and the unchanged lockfile. Independent
+review checked the input maps, original DENY path, ten raw lane receipts,
+executable and PDB. Six controller controls covered the closed scenarios,
+healthy and refused wire witnesses, exact roster, actual-exit custody and
+restoration. The separate certificate-free Windows visit verified CPU,
+loader and argument controls in the same offline guest and emptied its
+mappings.
+
+| Evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `peer-observer/ordinary-nak-dev-01/verification.json` | `29cc56ef739050588d5e5b2d56c0f310db696283feb69a7606c653ea20bbe84f` |
+| `peer-observer/ordinary-nak-dev-02/verification.json` | `36deb62e09c22d3167d2e61a5f56e62b41e28d06f547c45b416948728874f583` |
+| `peer-observer/peer-ordinary-nak-v2.patch` | `7b3515bf3d7d5d131557dda1cc7dc10a6131af37e060b9b5e872bc43f0589696` |
+| `peer-observer/source-ordinary-nak-v2.patch` | `ab399e06de02e2f496a41a3da841becf36096454ab772ba8ef59968cc6c2ed4c` |
+| `peer-observer/ordinary-nak-dev-02/nevrotick-nts-ke-peer.exe` | `08f7c033a81d67bd43ffddeb3f805765b067b31084f381ec0b514839d72a6b5f` |
+| `peer-observer/ordinary-nak-dev-02/nevrotick-nts-ke-peer.pdb` | `09a34c35ca77bab041237b03fa4fb5065c6533b6172549f4f1ed013cdd560098` |
+| `native-controller-ordinary-nak-02/run-native.py` | `578f41df1375647b83428ea4d814202cf956e46560037f30ab2986625be74291` |
+| `native-controller-ordinary-nak-02/kepre_4f4b799fa8fe/verification.json` | `8ce8d3fca016a751d56e3923e15831a8669983d6f30841ed2d23f9162549c8dc` |
+
+The first actual ordinary run reaped both children with exit zero and
+restored the certificate stores. The controller refused its report witness
+and retained only the bounded capture hashes. The recorded 629-byte client
+stderr hash matched the expected ordinary report exactly, with 58 driver
+credits, 30 checkouts, 30 receive frames and 130,792 receive bytes. The
+PowerShell controller had reused its scenario byte-count variable for a
+later pinned-input read in the same script scope. The next controller has
+a dedicated expected receive-byte variable. Both image inputs, case
+oracles, budget values and all restoration checks remain bound as before.
+
+| Controller recovery evidence | SHA-256 |
+| --- | --- |
+| `native-controller-ordinary-nak-02/kefac_e376fc04f0de/verification.json` | `cfcc5afe5cf1a75dc277d3a6b6ba05d34f555e05db840405a0093a9faae16115` |
+| `native-controller-ordinary-nak-02/kefac_e376fc04f0de/healthy-ke.json` | `c9eaecc242536ba912e90a9183e25a1e673d394ff74662f83a9930fd933191ce` |
+| `native-controller-ordinary-nak-03/run-native.py` | `623d3c1be43566f0eac4eb03cfc8f7ddf68149e1081d4261e33fe788165090cb` |
+
+Both corrected-controller runs passed in the same owned offline x64 Windows
+guest. Each observed one real TLS/KE exchange, two complete protected client
+submissions and two normally joined authenticated receipts. The ordinary
+report bytes matched the earlier refused capture hash exactly. The NTSN
+case retained the NAK observation and then committed the ordinary reply to
+the same pending second request. It spent one more receive frame, 84 more
+bytes and one more driver credit. Both runs preserved the original source
+configuration, 30 remaining checkouts, unavailable measurement and zero
+sample eligibility or fresh sync. The owned peer observed zero extra
+datagrams through the process-exit acknowledgement and final queue check.
+
+| Case | Peer replies | NAK observed | Remaining work / frames / bytes | Guest elapsed |
+| --- | ---: | ---: | --- | ---: |
+| Ordinary successor | 2 | 0 | 58 / 30 / 130,792 | 10,691 ms |
+| NTSN then ordinary | 3 | 1 | 57 / 29 / 130,708 | 9,519 ms |
+
+Each run bound both listeners to the recorded peer, reaped both children
+with exit zero, admitted all four capture EOFs and retained the complete
+11-step progress record. The temporary guest Root and CA/CRL records
+returned to the empty baseline. Guest scratch retired and both shared
+leaves were empty after artifact collection. The guest remained offline.
+
+| Native evidence under `native-controller-ordinary-nak-03` | SHA-256 |
+| --- | --- |
+| `kefac_f409a0039055/verification.json` | `2e3a9b1e8b8d38a99a95038e14f357c09097f6b25d61353bd781b2e765882ba0` |
+| `kefac_f409a0039055/healthy-ke.json` | `ef735d7a8c0567aadfdc7426f4d7c3a70f9c1c5ce5e9b3af8095a3b85279aa03` |
+| `kefac_41bf851edf8f/verification.json` | `3ae3a3568a043e84ac529f3c72477689bc29c032bf94a556662cebd58d8674f7` |
+| `kefac_41bf851edf8f/healthy-ke.json` | `f707260ec0dc4ea18816f225175d7cccdb89e303f20c47b011a920b31a703c70` |
+
+The selected live successor cases now cover authenticated DENY, a second
+ordinary reply and NTSN followed by an ordinary reply. Separate exits
+remain for unavailable-successor recovery, repeated production acquisition,
+current per-file metrics, native power/provider lifecycle and calibrated
+Engine-to-Core admission.
+
+###### Current successor line observation — 20 November 2026
+
+CHECK-19/21/25/27. The coverage-gap and environment-preflight review kept
+one isolated GNU EP1 execution owner. The exact 620-input successor
+candidate `ef192596…` used the existing six-job, one-test-thread recipe
+and 90% per-file threshold. The observer checked the retained graph,
+vendor and compiler records, projected the nine-binary test roster from
+the exact prior controls, and verified all 614 executed names, including
+322 KE cases. All tests passed. The LLVM command exited 1 because one
+selected source file missed the line gate.
+
+| Selected executable-line scope | Covered / total |
+| --- | ---: |
+| `lib.rs` | 1,008 / 1,064 |
+| `association/ledger.rs` | 1,240 / 1,284 |
+| `datagram.rs` | 925 / 957 |
+| `job.rs` | 390 / 408 |
+| `managed_preview.rs` | 338 / 404 |
+| `nts_ke_experiment/mod.rs` | 755 / 824 |
+| `recovery.rs` | 799 / 880 |
+| `response.rs` | 231 / 237 |
+| `source_policy.rs` in EP1 | 1,726 / 1,782 |
+
+Independent readback matched the retained run, profile and exact test
+roster. The managed report's joined failure/projection and redacted
+diagnostics retain explicit gaps. The first observation stays incomplete
+at 83.66% for `managed_preview.rs`. Its runner and LLVM raw output are
+retained under `current-coverage-preparation-01/run-01` with receipt
+`392ef53524a16545588bdc5c9f804b9210c0c4710ca818ef90e125544abbfc35`
+and coverage export
+`8cfae0353c81040374abdc5d4cab9250c8fbdb6077d4d7f1ee26e70390777fc9`.
+The tmpfs work tree retired. Public campaigns remain closed. This
+selected line observation supplies no new mutation outcomes.
+
+Two test-only files then extended the actual joined report consumer and
+preflight controls. They check the original one-shot and successor
+registration refusal, pre-adapter source and runtime refusal, a genuinely
+joined wrong-mode result with a retained observer-close status, healthy
+LI and redacted receipt/report/restriction diagnostics, and the original
+receipt and NAK after actual abnormal join. Independent review verified
+both prestart projections and the final source delta. No test name,
+runtime byte, Cargo graph, LLVM selection or threshold changed. Both
+native successor images retain their original exact bindings.
+
+The test-only successor candidate `7aaf5191…` passed format, GNU/MSVC
+EP1 Clippy, eight selected optimized controls and the complete 614-case
+instrumented roster. The repeated line command passed all nine 90%
+gates. Managed Preview reached 385/404 (95.30%), adding 47 covered lines
+with the same denominator. The other eight line counts stayed identical.
+The isolation, source and tool bookends passed and the owned build
+scratch retired. The first threshold miss remains recorded. The GNU
+selection establishes executable-line coverage for these owners.
+Generated mutation, branch coverage and Windows-only code retain their
+separate evidence obligations.
+
+| Final test-only evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `current-coverage-preparation-02/managed-preview-coverage-tests-final.patch` | `678a12cba3072fb01812f901fcad7be6ad9302a2adc8ec2bf70d2fc8886ec90b` |
+| `managed-preview-report-controls-01/verification.json` | `33b093ae128edfb14d595c6dabc612cccc8abb12f19e30118b4252c377360cd1` |
+| `current-coverage-preparation-02/run-final-01/verification.json` | `0e31fe19c6ce8067b3035cf2a6ffbcec2d77d1f8bedca8ba6cd9402ff3387f32` |
+| `current-coverage-preparation-02/run-final-01/coverage.json` | `8deaf51f3cf3211c99241745ea4cb3563563f0c709352966916ddd92992ed3dd` |
+
+###### Current protected response mutation inventory — 20 November 2026
+
+CHECK-19/25/27. The private stable-core custodian admitted the exact
+620-input `7aaf5191…` line candidate, graph, toolchain and vendor. It
+executed the configured GNU EP1 `ke_response` listing only, using the
+existing `cargo-mutants --list --json` path. The first raw command listed
+77 descriptors with exit zero. Its collector erroneously compared the
+complete sandbox argv with the inner tool argv, then refused the result.
+The revised collector checks the isolation prefix and compares the exact
+inner argv after the limiter. The actual retry exited zero, produced the
+same raw listing bytes and retained all 77 typed descriptors. Both
+failed and successful collectors retired their scratch and verified the
+live source bookends.
+
+| Evidence under `current-response-inventory-01` | SHA-256 |
+| --- | --- |
+| `run-01/verification.json` | `8195829c38b43f27b144eab7cf9c70a1eeddcf39f1242e3c43d0c3f6d224da39` |
+| `run-02/verification.json` | `c7b58b002ae2a2008ca5373c0f665cd1dae0c579997720ac6d93b1d1360cf118` |
+| `run-02/response-descriptors.json` | `208d38d96c6bdd176219d1cb9a0e2279ee9d719553dea85a1c6f58c1b7521ce3` |
+| `run-02/enumerator-output.txt` | `e8161532037721632a8bafb5c76603ab64af0c50cdc953adaf333deb2716a6ed` |
+
+Next admit the exact uninstrumented EP1 baseline and Rustdoc selection,
+then review the complete response inventory against the actual UID/origin,
+NTSN, authentication-refusal and valid ordinary tests. The enumeration
+contains no variant outcomes and the 95% gate remains open. The older
+response inventory and other owners' selected scores retain their original
+source and caller scopes. Public campaigns remain closed.
+
+###### Complete GNU response campaign and control header tests — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/9/19/21/25/27. Environment
+preflight and independent review bound all 620 inputs of `7aaf5191…`.
+The uninstrumented ordinary lane passed all 614 cases. Its first collector
+stopped at the raw-versus-trimmed stdout comparison. The revised collector
+verified the raw lane and copied it byte-for-byte. It executed the missing
+91 Rustdoc cases, 72 compilation-only. Both physical commands exited zero
+and their exact names, binaries, source and tool bookends matched.
+
+The private whole-file GNU EP1 campaign used the exact 77 response
+descriptors, four workers, one Cargo job and one test thread per worker,
+90/60-second Build/Test caps and the existing 1,200-second campaign cap.
+The tool's own unmodified baseline passed the same 705 cases. The full
+run retained 45 behavioral catches, 30 compiler-unviable variants, two
+survivors and zero timeouts or exclusions. The raw viable result is
+45/47 (95.74%). The tool returned exit 2 and both unresolved survivors
+keep the gate open. Independent review checked all 165 retained files,
+all rendered diffs and named test failures. The owned tree retired under
+the original 1,350-second lease.
+
+Both survivors relax a header check in `stage_successor_control`. The
+test-only change in `response/tests.rs` keeps a valid version-4 server
+NTSN beside independently wrong-version and wrong-mode controls, with
+unchanged stratum, UID, origin and frame. The normal source requires
+`ReplyError::Header` for each refusal. On `12d9ca73…`, the original and
+restored source passed the selected test. Each exact retained drift
+variant compiled and exited 101 at its intended assertion. The isolation
+control, format, and both all-target EP1 Clippy lanes passed. The sole
+changed product input is test-only. Runtime source and the two previously
+observed native images retain their bound bytes.
+
+| Evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `current-response-baseline-01/run-01/verification.json` | `db6113d1cec0a3018ffcd16cc3dd0ecafbfb8309beca60bcdf9cd8247d434ea6` |
+| `current-response-baseline-01/run-02/verification.json` | `b3c799d7b1ff52b2eb97f579249a4f25db12ade1cc71bf91d7ec470ef7524420` |
+| `current-response-mutation-01/run-01/verification.json` | `2f81143bced210a816b23ebc38a3804b1ee3ca1c3473fb5a0a801d276069b872` |
+| `current-response-mutation-01/run-01/campaign/work/witnesses/mutants.out/outcomes.json` | `4f1c2d61a143b8ba1c450f6d58bfd9762f9ba6baf6d4774593f90c8b8618bc4d` |
+| `response-header-controls-v1.patch` | `f8877b6961d0394d2e3d27017bad4113a5d8543a0e8a74f8f2d35f4f647950b9` |
+| `response-header-controls-01/verification.json` | `ec4135f92eaee2dce24891cd8db5c4ae2e002865f17895b64fb018738c9b8fb8` |
+
+The focused controls earn zero generated mutation credit. Admit the
+revised exact ordinary baseline and the unchanged Rustdoc selection,
+then require the complete generated response outcome with no unresolved
+survivors. Record the separate generation gap for authenticated control
+plaintext admission and retain the existing non-native and broader
+product qualification boundaries. Public campaigns remain closed.
+
+###### Revised GNU EP1 response line and mutation gates — 20 November 2026
+
+The `12d9ca73…` test-only candidate passed all 614 uninstrumented
+ordinary cases. The 91 prior Rustdoc cases were admitted by exact reuse
+across the sole `#[cfg(test)]` delta and nine unchanged Rustdoc owners.
+The actual second whole-file campaign re-listed all 77 descriptor bytes
+and ran its own full 705-case baseline. Under the same private limits,
+it caught **47 of 47 viable variants (100%)**, with 30 compiler-unviable,
+zero survivors, zero timeouts and zero exclusions. Both prior survivors
+failed the intended wrong-version or wrong-mode assertion in the ordinary
+test suite. The native tool exited zero. Independent readback matched
+all 165 retained files, exact baseline names, live custody and all 77
+outcomes. The first campaign remains a separate observation at 45/47.
+
+The fresh response-only instrumented lane executed all 614 exact cases
+and measured **232/237 executable lines (97.89%)**, one more covered line
+with the original denominator. Both selected GNU `response.rs` gates
+passed. The three owned work trees retired. The other eight line counts
+stay with the earlier nine-file candidate. The nongenerated authenticated
+control plaintext assertion and wider native and product scope retain
+their own obligations. Public campaign policy remains closed.
+
+| Final response evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `current-response-header-baseline-01/run-01/verification.json` | `7f4441d323058cb039cb64e7dc0705b6a943fb4b6377d5d2cb7dfe1df58ee729` |
+| `current-response-mutation-01/run-02/verification.json` | `544af8166d73310ffb438366761681beb43f7a3c24269f65fbdfcc8dacd48abb` |
+| `current-response-mutation-01/run-02/campaign/work/witnesses/mutants.out/outcomes.json` | `94b05fc7384518f24c4dab7fc5957d16e38304abe7f73b37c4f6b277022d2705` |
+| `current-response-header-coverage-01/run-01/verification.json` | `f0a48cd43d43699ca01b1db8a2d8c9b251de32bb23e4fd8e212c0ae5d82e27f8` |
+| `current-response-header-coverage-01/run-01/coverage.json` | `55cee6af9937f6f608b62fa3fb83041b3dcad3cae8a9c773352eb02b71a4b298` |

@@ -1747,9 +1747,27 @@ Its 578 ordinary cases, 16 focused optimized cases and both target Clippy lanes
 passed. The [first-receipt worker checkpoint](../../tasks/engine-transport-pilot.md#first-protected-receipt-through-worker-join--20-november-2026)
 now retains first history through physical join beside success, refusal or
 unwind in the controlled receiver. The joined cases and 20 focused optimized
-checks passed. Connect the explicit non-test Native selection and retain the
-NTSN observation through terminal refusal and join. Reuse the owned independent
-DENY peer for the first positive facade control.
+checks passed. The [explicit Windows protected successor](../../tasks/engine-transport-pilot.md#explicit-windows-protected-successor-and-joined-report--20-november-2026)
+now connects the separate one-KE Native plan and retains the first receipt,
+the admitted NTSN and actual work through physical join. Its GNU ordinary
+and focused optimized controls and both target Clippy lanes passed. The
+external facade cross-linked against the normal Engine libraries. The
+[owned native DENY pair](../../tasks/engine-transport-pilot.md#successor-peer-through-joined-client-exit--20-november-2026)
+passed with real KE and two protected exchanges. The
+[native ordinary and NTSN successor cases](../../tasks/engine-transport-pilot.md#ordinary-and-ntsn-successor-peer-controls--20-november-2026)
+also passed with the same Engine inputs. Each peer observed no extra
+datagram through the joined client exit, and the fixture stores returned
+to baseline. The [current successor line observation](../../tasks/engine-transport-pilot.md#current-successor-line-observation--20-november-2026)
+passed all nine selected GNU EP1 line gates after adding joined report
+and refusal controls. The [fresh response inventory](../../tasks/engine-transport-pilot.md#current-protected-response-mutation-inventory--20-november-2026)
+contains 77 descriptors. The [full GNU response campaign and header controls](../../tasks/engine-transport-pilot.md#complete-gnu-response-campaign-and-control-header-tests--20-november-2026)
+passed its 705-case baseline and caught 45 of 47 viable variants. Both
+unresolved survivors exposed missing version and mode refusal assertions.
+The test-only revision rejected both exact variants in focused replay.
+Its [revised GNU EP1 response gates](../../tasks/engine-transport-pilot.md#revised-gnu-ep1-response-line-and-mutation-gates--20-november-2026)
+passed at 47/47 viable variants and 232/237 executable lines. Continue
+the remaining protected receive qualification and production supplier
+and lifecycle exits.
 The production measurement and Core admission boundary still needs an issuer
 with finite calibration bounds and effective invalidation, plus independent
 date and scale context. The

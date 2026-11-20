@@ -2,11 +2,12 @@
 
 use std::ffi::OsString;
 use std::num::NonZeroU16;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use super::{
-    Budget, Config, Failed, Failure, Flow, IO_LIMIT, Mode, RESPONSE, admit_offer, completion_line,
-    ready_line, resolve,
+    Budget, ClientExit, Config, Failed, Failure, Flow, IO_LIMIT, Mode, RESPONSE, SuccessorReply,
+    admit_offer, client_exit_path, completion_line, ready_line, resolve,
 };
 
 /// Later alert-write refusal stays separate from the original TLS protocol error.
@@ -236,6 +237,7 @@ fn cli_requires_paths_and_at_most_one_exact_final_mode() -> Result<(), Failure> 
     assert!(config.key.is_absolute());
     assert!(config.ready.is_absolute());
     assert_eq!(config.mode, Mode::Ke);
+    assert!(config.exit_acknowledgement.is_none());
     let mut missing = arguments();
     let _removed = missing.pop();
     assert!(matches!(
@@ -268,6 +270,31 @@ fn cli_requires_paths_and_at_most_one_exact_final_mode() -> Result<(), Failure> 
     successor.push(OsString::from("--protected-datagram"));
     assert!(matches!(
         Config::parse(successor.into_iter()),
+        Err(Failure::Arguments)
+    ));
+    let mut observed: Vec<OsString> = arguments();
+    observed.push(OsString::from("--protected-successor-deny-observe-exit"));
+    let selected: Config = Config::parse(observed.clone().into_iter())?;
+    assert_eq!(
+        selected.mode,
+        Mode::ProtectedSuccessorObserveExit(SuccessorReply::Deny)
+    );
+    assert_eq!(
+        selected.exit_acknowledgement,
+        Some(selected.ready.with_file_name("peer.client-exited"))
+    );
+    let mut aliased: Vec<OsString> = observed.clone();
+    aliased[3] = selected
+        .ready
+        .with_file_name("peer.CLIENT-EXITED")
+        .into_os_string();
+    assert!(matches!(
+        Config::parse(aliased.into_iter()),
+        Err(Failure::Arguments)
+    ));
+    observed.push(OsString::from("arbitrary-acknowledgement"));
+    assert!(matches!(
+        Config::parse(observed.into_iter()),
         Err(Failure::Arguments)
     ));
     for value in ["relative.der", "", "é", "nul\0path"] {
@@ -311,6 +338,90 @@ fn completion_keeps_default_exact_and_protected_distinct() {
         completion_line(Mode::ProtectedSuccessorDeny),
         "scope=laboratory-ke-peer-protected-successor-deny completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2"
     );
+    assert_eq!(
+        completion_line(Mode::ProtectedSuccessorObserveExit(SuccessorReply::Deny)),
+        "scope=laboratory-ke-peer-protected-successor-deny-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0"
+    );
+}
+
+/// Both new modes keep the same closed invocation and exact completion grammar.
+///
+/// # Errors
+/// Preserve refusal of the supported arguments.
+/// # Panics
+/// Fail on wrong scope or count, an extra flag or a readiness alias.
+#[test]
+fn observed_ordinary_modes_require_exact_arguments_and_witnesses() -> Result<(), Failure> {
+    for (flag, reply, witness) in [
+        (
+            "--protected-successor-ordinary-observe-exit",
+            SuccessorReply::Ordinary,
+            "scope=laboratory-ke-peer-protected-successor-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0",
+        ),
+        (
+            "--protected-successor-nak-ordinary-observe-exit",
+            SuccessorReply::NakThenOrdinary,
+            "scope=laboratory-ke-peer-protected-successor-nak-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=3 client_exited=1 extra_udp_received=0",
+        ),
+    ] {
+        let mut exact: Vec<OsString> = arguments();
+        exact.push(OsString::from(flag));
+        let selected: Config = Config::parse(exact.clone().into_iter())?;
+        assert_eq!(selected.mode, Mode::ProtectedSuccessorObserveExit(reply));
+        assert_eq!(
+            selected.exit_acknowledgement,
+            Some(selected.ready.with_file_name("peer.client-exited"))
+        );
+        assert_eq!(completion_line(selected.mode), witness);
+        let mut aliased: Vec<OsString> = exact.clone();
+        aliased[3] = selected.ready.with_file_name("peer.READY").into_os_string();
+        assert!(matches!(
+            Config::parse(aliased.into_iter()),
+            Err(Failure::Arguments)
+        ));
+        exact.push(OsString::from("other-marker"));
+        assert!(matches!(
+            Config::parse(exact.into_iter()),
+            Err(Failure::Arguments)
+        ));
+    }
+    Ok(())
+}
+
+/// A fixed sibling and exact bytes establish the closed acknowledgement grammar.
+///
+/// # Errors
+/// Preserve refusal of the valid derived path or complete record.
+/// # Panics
+/// Fail on an aliased path, accepted malformed marker or a different sibling.
+#[test]
+fn process_exit_acknowledgement_has_one_sibling_and_one_exact_record() -> Result<(), Failure> {
+    let base: PathBuf = if cfg!(windows) {
+        PathBuf::from(r"C:\nv-fixture")
+    } else {
+        PathBuf::from("/nv-fixture")
+    };
+    let acknowledgement: PathBuf = base.join("peer.client-exited");
+    assert_eq!(client_exit_path(&base.join("peer.ready"))?, acknowledgement);
+    assert_eq!(client_exit_path(&acknowledgement), Err(Failure::Arguments));
+    assert_eq!(
+        client_exit_path(&base.join("peer.CLIENT-EXITED")),
+        Err(Failure::Arguments),
+        "readiness cannot alias the acknowledgement on a case-insensitive filesystem"
+    );
+    let ClientExit = ClientExit::admit(b"client-exited=1\n")?;
+    for bytes in [
+        b"client-exited=1".as_slice(),
+        b"client-exited=0\n",
+        b"client-exited=1\n\0",
+        b"client-exited=1\r\n",
+    ] {
+        assert!(matches!(
+            ClientExit::admit(bytes),
+            Err(Failure::ExitAcknowledgement)
+        ));
+    }
+    Ok(())
 }
 
 /// Polls never renew the origin; equality and later times both refuse.

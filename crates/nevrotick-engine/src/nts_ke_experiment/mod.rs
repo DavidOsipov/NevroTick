@@ -39,13 +39,11 @@ mod recovery;
 use association::AssociationCandidate;
 #[cfg(any(windows, test))]
 use association::AssociationOwner;
-#[cfg(test)]
 pub(crate) use association::ledger::VerifiedRetiredControl;
 #[cfg(any(windows, test))]
 use process::ProcessAdmission;
 #[cfg(any(windows, test))]
 use process::ProviderScope;
-#[cfg(test)]
 pub(crate) use response::ProtectedControlKind;
 
 /// Process-wide one-shot admission; cached CNG providers cannot be reinitialized.
@@ -460,8 +458,9 @@ impl StopHandle {
 /// One transaction's immutable time bounds and serialized publication authority.
 struct Control {
     /// Exact instance identity for the worker's write-only first-receipt checkpoint.
-    #[cfg(test)]
     first_receipt_identity: Arc<()>,
+    /// Selected successor accounting, written by the actual datagram adapter.
+    datagram_work: Option<Arc<datagram::ProtectedDatagramWork>>,
     /// Original monotonic origin; earlier supplied times cannot gain lifetime.
     origin: Instant,
     /// Connect/handshake deadline from this transaction's original origin.
@@ -709,7 +708,6 @@ impl<'a> DatagramAuthorityGuard<'a> {
     /// Consume the authorization issued by the exact retired receiving ledger.
     /// # Errors
     /// Preserve Stop, deadline, binding and stamp refusals before either policy record changes.
-    #[cfg(test)]
     fn commit_protected_control(
         &mut self,
         authorization: VerifiedRetiredControl<'_>,
@@ -760,8 +758,8 @@ impl Control {
     fn new_in(start: Instant, stop_scope: Arc<StopScope>) -> Result<Self, Failure> {
         let cancelled = Arc::clone(&stop_scope.wake);
         Ok(Self {
-            #[cfg(test)]
             first_receipt_identity: Arc::new(()),
+            datagram_work: None,
             origin: start,
             handshake_deadline: start.checked_add(HANDSHAKE_TIME).ok_or(Failure::Deadline)?,
             expiry: start.checked_add(EXCHANGE_TIME).ok_or(Failure::Deadline)?,
@@ -1099,6 +1097,26 @@ enum InvocationCompletion {
     /// A committed, control-only historical effect from the private scripted worker.
     #[cfg(test)]
     ManagedProtectedControl(association::ledger::AppliedProtectedControl),
+    /// Closed second operation, with the original correlation-only NAK observation.
+    ManagedSuccessor(Box<ManagedSuccessorTerminal>),
+}
+
+/// Terminal historical effect issued after the second adapter retires.
+enum ManagedSuccessorEffect {
+    /// Genuine authenticated ordinary commit.
+    Ordinary(Box<datagram::ManagedProtectedHistory>),
+    /// The exact restriction committed by the source and endpoint policy owner.
+    Restriction(association::ledger::AppliedProtectedControl),
+}
+
+/// Terminal operation result and the independently observed recovery indication.
+struct ManagedSuccessorTerminal {
+    /// Preserve original operation and cleanup failures beside the first receipt.
+    result: Result<ManagedSuccessorEffect, Failed>,
+    /// Earliest admitted NAK within the original successor receive window.
+    first_nak_at: Option<Instant>,
+    /// Unspent checkout, frame and byte budgets from this actual association.
+    remaining_association_work: Option<(usize, usize, usize)>,
 }
 
 #[cfg(test)]
@@ -1110,7 +1128,7 @@ impl InvocationCompletion {
             Self::ManagedPreview(history) => Some(history.summary()),
             Self::Protected(history) => Some(history.summary()),
             Self::ManagedProtected(history) => Some(history.summary()),
-            Self::ManagedProtectedControl(_) => None,
+            Self::ManagedProtectedControl(_) | Self::ManagedSuccessor(_) => None,
         }
     }
 }
@@ -1160,6 +1178,19 @@ fn drive_invocation_with<'scope, P: recovery::Producer>(
 /// Preserve original admission, operation and retirement refusal from the shared drive.
 #[cfg(test)]
 fn drive_successor_fixture<'scope, P: recovery::Producer>(
+    config: &'scope Config,
+    provider: &'scope ProviderScope<'scope>,
+    control: Control,
+    producer: &mut P,
+    writer: job::FirstReceiptWriter<'scope>,
+) -> job::Operation {
+    drive_with_first_receipt(config, provider, control, producer, writer)
+}
+
+/// Drive the one-KE route with the exact original worker receipt destination.
+/// # Errors
+/// Preserve original preparation and adapter refusals.
+fn drive_with_first_receipt<'scope, P: recovery::Producer>(
     config: &'scope Config,
     provider: &'scope ProviderScope<'scope>,
     control: Control,
@@ -1216,6 +1247,21 @@ fn run_with_power_observer(config: Config) -> Result<ObservedInvocation, Observe
         &PROCESS_WORKER,
         subscribe_power_observer,
         job::SubmissionReservation::try_submit,
+    )
+}
+
+/// Select the explicit bounded successor before any Native invocation effects.
+/// # Errors
+/// Preserve the same checked preparation and registration refusals as the probe.
+#[cfg(windows)]
+fn run_managed_successor_with_power_observer(
+    config: Config,
+) -> Result<ObservedInvocation, ObserverStartError> {
+    run_observing(
+        config,
+        &PROCESS_WORKER,
+        subscribe_power_observer,
+        job::SubmissionReservation::try_submit_successor,
     )
 }
 
@@ -1330,9 +1376,11 @@ fn receive_probe(
 ) -> Result<datagram::ReceivedCompletion, RunFailed> {
     match received? {
         datagram::ReceivedInvocation::Probe(completion) => Ok(completion),
+        datagram::ReceivedInvocation::ManagedSuccessor(_) => {
+            Err(RunFailed::Operation(Failure::Control.into()))
+        }
         #[cfg(test)]
-        datagram::ReceivedInvocation::ProtectedControl(_)
-        | datagram::ReceivedInvocation::ProtectedSuccessor(_) => {
+        datagram::ReceivedInvocation::ProtectedControl(_) => {
             Err(RunFailed::Operation(Failure::Control.into()))
         }
     }
