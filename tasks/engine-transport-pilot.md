@@ -29603,3 +29603,38 @@ their own obligations. Public campaign policy remains closed.
 | `current-response-mutation-01/run-02/campaign/work/witnesses/mutants.out/outcomes.json` | `94b05fc7384518f24c4dab7fc5957d16e38304abe7f73b37c4f6b277022d2705` |
 | `current-response-header-coverage-01/run-01/verification.json` | `f0a48cd43d43699ca01b1db8a2d8c9b251de32bb23e4fd8e212c0ae5d82e27f8` |
 | `current-response-header-coverage-01/run-01/coverage.json` | `55cee6af9937f6f608b62fa3fb83041b3dcad3cae8a9c773352eb02b71a4b298` |
+
+###### Authenticated successor control plaintext check — 20 November 2026
+
+For S2.2/S2.3 and CHECK-6/9/19/21/25/27, the Engine regression reaches
+`stage_successor_response` with a recognized, correlated DENY. Empty
+authenticated plaintext yields `Deny` with `Authenticated` protection.
+With the same outer header and UID, the real opener admits the tag and
+inner framing of a one-field fixture, then the control consumer returns
+`Placement`. The wrong directional key returns `Open(Authentication)`.
+Both tags use independently generated public test vectors. Independent
+review confirmed the real receiving path, healthy neighbor and refusal
+oracles. The sole product-input delta is the existing `#[cfg(test)]`
+module `response/tests.rs`.
+
+On the 620-input candidate `adb1191eff00c38e40dca8604c805cce5c79b728436c3926cb3dff37dd4c6e52`
+from `b8b393f`, the Rust 1.100.0 isolated GNU EP1 libtest run executed
+five exact cases, all passed, with zero failed or ignored and 577
+filtered. Formatting and EP1 all-target Clippy for GNU and the MSVC
+target each exited zero. Source, graph and tool custody matched at both
+bookends. The build tree retired after 103 seconds. The initial launch
+was stopped during setup after review found that its log collector
+required zero filtered cases. The replacement derived the expected
+filtered count from the retained library roster and passed its synthetic
+collector controls before the successful run.
+
+The [response metric receipts above](#revised-gnu-ep1-response-line-and-mutation-gates--20-november-2026)
+retain their prior candidate. This separate plaintext assertion earns
+zero generated mutation credit. Native execution, remaining critical
+files and production timing suppliers retain their own gates.
+
+| Evidence under `bounded-native-successor-01/response-authenticated-plaintext-controls-01` | SHA-256 |
+| --- | --- |
+| `response-control-empty-plaintext.patch` | `000018f3a3b89f38e9cb228b11f6b2cac3f9fce2b31a963f9e353cc4fb839417` |
+| `run-focused-v2.py` | `25e8e9e90364f66fdf886f4784124b6af93e41df877db564f86b31343fd1762a` |
+| `run-02/verification.json` | `9aa9056f02f0deb3bd390c9a66efb701d90688f2073d9469ce3cac4090f2d787` |

@@ -36,6 +36,20 @@ const TRANSMIT: u64 = 0x3344_5566_7788_99aa;
 const COOKIE: [u8; 12] = [
     0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
 ];
+/// Empty DENY authenticator sealed with public S2C using cryptography 41.0.7 CMAC.
+/// The AES-SIV empty-input tag calculation first reproduced `ZERO_COOKIES`.
+const DENY_EMPTY_AUTHENTICATOR: [u8; 40] = [
+    0x04, 0x04, 0x00, 0x28, 0x00, 0x10, 0x00, 0x10, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x52, 0xf2, 0xaf, 0xf4, 0x3b, 0x6a, 0x9c, 0x7e,
+    0xc6, 0x4d, 0x0f, 0x87, 0xbe, 0x3a, 0xcf, 0xea,
+];
+/// Same DENY coordinates with one well-formed opaque field, `0x1234` of length 4.
+/// Generated with cryptography 41.0.7 AESSIV after reproducing `HEALTHY`.
+const DENY_ONE_FIELD_AUTHENTICATOR: [u8; 44] = [
+    0x04, 0x04, 0x00, 0x2c, 0x00, 0x10, 0x00, 0x14, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x90, 0x2e, 0xdd, 0xef, 0x01, 0x1f, 0x2e, 0xb3,
+    0x31, 0x85, 0x05, 0x34, 0xe2, 0x38, 0x95, 0x78, 0x50, 0xf6, 0xfc, 0xf1,
+];
 
 /// Supply only fixed public material to the actual directional owner.
 fn keys(c2s: [u8; 32], s2c: [u8; 32]) -> DirectionalKeys {
@@ -147,6 +161,45 @@ fn correlated_restriction_checks_the_complete_frame() -> Result<(), ReplyError> 
     assert!(matches!(
         stage_successor_response(&owner, fixtures::HEALTHY, &UID, ORIGIN, 1)?,
         StagedSuccessorResponse::Ordinary(_)
+    ));
+    Ok(())
+}
+
+/// Require no inner fields after authenticating the recognized control.
+/// # Errors
+/// Preserve unexpected refusal of the empty control or failure to open the field fixture.
+/// # Panics
+/// Fail if a field is accepted or if failed authentication selects correlation.
+#[test]
+fn authenticated_restriction_requires_empty_plaintext() -> Result<(), ReplyError> {
+    let owner: DirectionalKeys = keys(C2S, S2C);
+    let mut control: [u8; 128] = [0; 128];
+    control[..84].copy_from_slice(&fixtures::HEALTHY[..84]);
+    control[1] = 0;
+    control[12..16].copy_from_slice(b"DENY");
+    control[32..48].fill(0);
+    let empty_length: usize = 84 + DENY_EMPTY_AUTHENTICATOR.len();
+    control[84..empty_length].copy_from_slice(&DENY_EMPTY_AUTHENTICATOR);
+    let StagedSuccessorResponse::Control(facts) =
+        stage_successor_response(&owner, &control[..empty_length], &UID, ORIGIN, 1)?
+    else {
+        return Err(ReplyError::Header);
+    };
+    assert_eq!(
+        facts.into_parts(),
+        (ProtectedControlKind::Deny, ControlProtection::Authenticated)
+    );
+
+    control[84..].copy_from_slice(&DENY_ONE_FIELD_AUTHENTICATOR);
+    assert_valid_tag(&control)?;
+    assert!(matches!(
+        stage_successor_response(&owner, &control, &UID, ORIGIN, 1),
+        Err(ReplyError::Placement)
+    ));
+    let wrong_response_key: DirectionalKeys = keys(C2S, C2S);
+    assert!(matches!(
+        stage_successor_response(&wrong_response_key, &control, &UID, ORIGIN, 1),
+        Err(ReplyError::Open(StagedDecryptError::Authentication))
     ));
     Ok(())
 }

@@ -1765,9 +1765,13 @@ passed its 705-case baseline and caught 45 of 47 viable variants. Both
 unresolved survivors exposed missing version and mode refusal assertions.
 The test-only revision rejected both exact variants in focused replay.
 Its [revised GNU EP1 response gates](../../tasks/engine-transport-pilot.md#revised-gnu-ep1-response-line-and-mutation-gates--20-november-2026)
-passed at 47/47 viable variants and 232/237 executable lines. Continue
-the remaining protected receive qualification and production supplier
-and lifecycle exits.
+passed at 47/47 viable variants and 232/237 executable lines. A separate
+[authenticated-control plaintext check](../../tasks/engine-transport-pilot.md#authenticated-successor-control-plaintext-check--20-november-2026)
+passed five selected GNU EP1 cases and both target Clippy lanes. It
+exercises empty authenticated DENY, a valid tag with a refused inner
+field, and wrong-key refusal through the response parser. Continue the
+remaining protected receive qualification and production supplier and
+lifecycle exits.
 The production measurement and Core admission boundary still needs an issuer
 with finite calibration bounds and effective invalidation, plus independent
 date and scale context. The
