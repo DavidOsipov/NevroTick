@@ -7,11 +7,14 @@
 
 use std::any::Any;
 use std::io;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock, TryLockError};
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
 
+#[cfg(test)]
+use super::datagram::{BoundFirstHistory, ManagedProtectedHistory};
 use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use super::{Config, Control, Failed, Failure, InvocationCompletion, IoPhase, StopHandle};
 
@@ -56,7 +59,7 @@ impl PreparedInvocation {
                 .map_err(Failed::from)?;
         }
         let stop: StopHandle = StopHandle {
-            scope: std::sync::Arc::clone(&control.stop_scope),
+            scope: Arc::clone(&control.stop_scope),
         };
         Ok((Self { config, control }, stop))
     }
@@ -83,6 +86,9 @@ impl PreparedInvocation {
 struct Facts {
     /// Permanently set before retirement; only the actual joined collector moves its payload.
     operation: OnceLock<Mutex<Option<Operation>>>,
+    /// Genuine first committed history, written before the worker enters its successor.
+    #[cfg(test)]
+    first_receipt: OnceLock<Mutex<Option<Box<ManagedProtectedHistory>>>>,
     /// True only after the actual provider and Config retirement boundary returned.
     retired: AtomicBool,
 }
@@ -92,6 +98,8 @@ impl Facts {
     const fn new() -> Self {
         Self {
             operation: OnceLock::new(),
+            #[cfg(test)]
+            first_receipt: OnceLock::new(),
             retired: AtomicBool::new(false),
         }
     }
@@ -105,6 +113,46 @@ impl Facts {
         self.operation
             .set(Mutex::new(Some(operation)))
             .map_err(|_| Failure::Control)
+    }
+}
+
+/// Write-only checkpoint owned by the actual submitted worker.
+#[cfg(test)]
+pub(super) struct FirstReceiptWriter<'worker> {
+    /// The same permanent slot's private result storage.
+    facts: &'worker Facts,
+    /// Exact worker Control identity, captured before moving that instance.
+    control_identity: Arc<()>,
+}
+
+#[cfg(test)]
+impl FirstReceiptWriter<'_> {
+    /// Check attachment against the actual Control submitted to this worker.
+    pub(super) fn owns(&self, control: &Control) -> bool {
+        Arc::ptr_eq(&self.control_identity, &control.first_receipt_identity)
+    }
+
+    /// Store original committed first history once, without exposing it to observers.
+    /// # Errors
+    /// Refuse a foreign or duplicate checkpoint without replacing the original.
+    pub(super) fn record(self, bound: BoundFirstHistory) -> Result<(), Failure> {
+        let history: Box<ManagedProtectedHistory> =
+            bound.into_worker_history(&self.control_identity)?;
+        self.facts
+            .first_receipt
+            .set(Mutex::new(Some(history)))
+            .map_err(|_| Failure::Control)
+    }
+}
+
+/// Recover original facts only after physical join. Preserve poison independently.
+fn take_recorded<T>(recorded: &OnceLock<Mutex<Option<T>>>) -> (Option<T>, bool) {
+    match recorded.get() {
+        Some(cell) => match cell.lock() {
+            Ok(mut value) => (value.take(), false),
+            Err(poisoned) => (poisoned.into_inner().take(), true),
+        },
+        None => (None, false),
     }
 }
 
@@ -151,10 +199,30 @@ pub(super) enum Termination {
 pub(super) struct JoinedOutcome {
     /// Historical result, if genuinely recorded before termination/retirement.
     pub(super) operation: Option<Operation>,
+    /// First receipt available even when the operation unwound before recording.
+    #[cfg(test)]
+    first_receipt: Option<Box<ManagedProtectedHistory>>,
     /// Actual joined termination, never inferred from a timer or stop acknowledgement.
     pub(super) termination: Termination,
     /// Ordinary retirement actually crossed; false remains unconfirmed.
     pub(super) retired: bool,
+}
+
+#[cfg(test)]
+impl JoinedOutcome {
+    /// Read genuine historical first receipt after actual join.
+    pub(super) fn first_receipt(&self) -> Option<&ManagedProtectedHistory> {
+        self.first_receipt.as_deref()
+    }
+}
+
+/// Joined and normally retired facts. A later leg can still have refused.
+pub(super) struct NormalOperation {
+    /// Actual typed terminal operation result under the original invocation.
+    pub(super) operation: Operation,
+    /// Genuine earlier success, if the worker selected a protected successor.
+    #[cfg(test)]
+    pub(super) first_receipt: Option<Box<ManagedProtectedHistory>>,
 }
 
 /// Consume-once receiving custody minted only by the actual slot's joined take.
@@ -168,13 +236,19 @@ impl ReceivingOutcome {
     /// Consume actual collected custody only after all normal-retirement facts agree.
     /// # Errors
     /// Preserve the complete abnormal outcome, including any original history.
-    pub(super) fn into_normal(self) -> Result<Operation, JoinedOutcome> {
+    pub(super) fn into_normal(self) -> Result<NormalOperation, JoinedOutcome> {
         match self.joined {
             JoinedOutcome {
                 operation: Some(operation),
+                #[cfg(test)]
+                first_receipt,
                 termination: Termination::Returned,
                 retired: true,
-            } => Ok(operation),
+            } => Ok(NormalOperation {
+                operation,
+                #[cfg(test)]
+                first_receipt,
+            }),
             abnormal => Err(abnormal),
         }
     }
@@ -382,6 +456,43 @@ impl WorkerSlot {
         self.submit_with(prepared, admission, make_provider, execute, hooks)
     }
 
+    /// Run the selected fixture with write-only access to this exact worker checkpoint.
+    /// # Errors
+    /// Preserve the same reservation and spawn refusals as the ordinary kernel.
+    #[cfg(test)]
+    pub(super) fn submit_successor_fixture<F>(
+        &'static self,
+        prepared: PreparedInvocation,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(
+                &'a Config,
+                &'a ProviderScope<'a>,
+                Control,
+                FirstReceiptWriter<'a>,
+            ) -> Operation
+            + Send
+            + 'static,
+    {
+        self.submit_with(
+            prepared,
+            admission,
+            make_provider,
+            move |config, provider, control| {
+                let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
+                    facts: &self.facts,
+                    control_identity: Arc::clone(&control.first_receipt_identity),
+                };
+                execute(config, provider, control, writer)
+            },
+            hooks,
+        )
+    }
+
     /// Borrow ordinary observation without transferring any thread/result custody.
     #[cfg_attr(
         not(test),
@@ -433,16 +544,15 @@ impl WorkerSlot {
         let joined = handle.join();
         // No worker locks this cell, and no lock spans the actual join or teardown.
         // Recover poison solely to preserve the original owned operation; never heal it.
-        let (operation, facts_poisoned) = match self.facts.operation.get() {
-            Some(cell) => match cell.lock() {
-                Ok(mut operation) => (operation.take(), false),
-                Err(poisoned) => {
-                    let mut operation = poisoned.into_inner();
-                    (operation.take(), true)
-                }
-            },
-            None => (None, false),
-        };
+        let (operation, facts_poisoned): (Option<Operation>, bool) =
+            take_recorded(&self.facts.operation);
+        #[cfg(test)]
+        let (first_receipt, first_receipt_poisoned): (
+            Option<Box<ManagedProtectedHistory>>,
+            bool,
+        ) = take_recorded(&self.facts.first_receipt);
+        #[cfg(test)]
+        let facts_poisoned: bool = facts_poisoned || first_receipt_poisoned;
         let retired = self.facts.retired.load(Ordering::Acquire);
         // No other operation mutates Joining, and observers never hold this gate.
         // Even an unavailable gate must retain, rather than destroy, an unwind payload.
@@ -466,6 +576,8 @@ impl WorkerSlot {
         };
         custody.phase = Phase::Joined(JoinedOutcome {
             operation,
+            #[cfg(test)]
+            first_receipt,
             termination,
             retired,
         });

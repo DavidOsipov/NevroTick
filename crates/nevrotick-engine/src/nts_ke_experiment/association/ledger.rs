@@ -22,7 +22,7 @@ use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
 #[cfg(test)]
 use super::super::response::{
-    ProtectedControlKind, StagedSuccessorResponse, stage_successor_response,
+    ControlProtection, ProtectedControlKind, StagedSuccessorResponse, stage_successor_response,
 };
 use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
@@ -469,13 +469,22 @@ struct ChargedReply {
     matches_submission: bool,
 }
 
-/// One charged, authenticated control from the exact still-outstanding successor.
+/// One charged control from the exact still-outstanding successor.
 /// The transfer itself cannot change policy or consume the Pending slot.
 #[cfg(test)]
 #[must_use = "retain the exact control ticket through backend retirement"]
 pub(in super::super) struct StagedProtectedControl<'control> {
-    /// Exact authenticated wire code.
+    /// Exact recognized wire code.
     kind: ProtectedControlKind,
+    /// The protection actually established for the control itself.
+    protection: ControlProtection,
+    /// Outstanding submission bound to the charged read.
+    correlation: SuccessorCorrelation<'control>,
+}
+
+/// Exact successor correlation shared by restriction and NTSN admission.
+#[cfg(test)]
+struct SuccessorCorrelation<'control> {
     /// Actual original invocation the packet reached.
     control: &'control Control,
     /// Exact successor reservation ordinal.
@@ -488,18 +497,35 @@ pub(in super::super) struct StagedProtectedControl<'control> {
     backend: Arc<()>,
     /// Original monotonic send/archive observation.
     sent_at: Instant,
-    /// Leading reading of the original selected receive bracket.
-    arrival: Instant,
-    /// Trailing reading of that same bracket, never refreshed by retirement.
-    read_after: Instant,
+    /// Original selected receive bracket, never refreshed by retirement.
+    span: ReceiveSpan,
+}
+
+/// Bounded historical NTSN observation. It carries no recovery or policy authority.
+#[cfg(test)]
+pub(in super::super) struct ObservedNtsNak {
+    /// Original leading observation of the admitted datagram.
+    arrived_at: Instant,
+    /// The debit of this datagram used the last frame or byte credit.
+    exhausted: bool,
+}
+
+#[cfg(test)]
+impl ObservedNtsNak {
+    /// Transfer the observed time and the already enforced exhaustion decision.
+    pub(in super::super) const fn into_parts(self) -> (Instant, bool) {
+        (self.arrived_at, self.exhausted)
+    }
 }
 
 /// The protected control already published through both original owners.
 #[cfg(test)]
 #[must_use = "retain the applied control as a historical observation"]
 pub(in super::super) struct AppliedProtectedControl {
-    /// Exact authenticated control already applied to the managed source and endpoint.
+    /// Exact control already applied to the managed source and endpoint.
     kind: ProtectedControlKind,
+    /// The original protection of the control, independently of prior authentication.
+    protection: ControlProtection,
     /// Original fully admitted managed definition, detached before the effect.
     configuration: Box<crate::SourceConfigurationSnapshot>,
     /// Exact negotiated wire destination of the consumed successor.
@@ -515,6 +541,11 @@ impl AppliedProtectedControl {
     /// Observe the original control without interpreting it as time or permission.
     pub(in super::super) const fn kind(&self) -> ProtectedControlKind {
         self.kind
+    }
+
+    /// Describe how the packet itself was admitted, without reopening policy.
+    pub(in super::super) const fn protection(&self) -> ControlProtection {
+        self.protection
     }
 
     /// Borrow the original source definition without reopening policy.
@@ -551,7 +582,7 @@ struct ControlSubmissions<'a> {
 /// Only the retired receiver can mint it; current policy is checked at consumption.
 #[cfg(test)]
 pub(crate) struct VerifiedRetiredControl<'a> {
-    /// Exact authenticated wire control owned by the retired request.
+    /// Exact wire control owned by the retired request.
     kind: ProtectedControlKind,
     /// Original invocation matched when the retired ticket was consumed.
     control: &'a Control,
@@ -563,7 +594,7 @@ pub(crate) struct VerifiedRetiredControl<'a> {
 
 #[cfg(test)]
 impl<'a> VerifiedRetiredControl<'a> {
-    /// Read the authenticated control kind carried by this move-only authorization.
+    /// Read the control kind carried by this move-only authorization.
     pub(crate) const fn kind(&self) -> ProtectedControlKind {
         self.kind
     }
@@ -591,6 +622,8 @@ pub(in super::super) enum StagedProtectedSuccessor<'control> {
     Ordinary(Receipt, CookieReplacement, PendingSubmission),
     /// The control still requires the original owner's final currentness transaction.
     Control(StagedProtectedControl<'control>),
+    /// A current NTSN with the receive disposition bounded by the original credits.
+    NtsNak(ObservedNtsNak),
 }
 
 /// Actual final authenticated count refusal, still requiring current-time admission.
@@ -1615,7 +1648,6 @@ impl<'a> AssociationOwner<'a> {
         backend: &Arc<()>,
     ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
         let span: ReceiveSpan = ReceiveSpan::from_read(read);
-        let arrival: Instant = span.leading;
         let response: StagedSuccessorResponse = (|| {
             self.check_charged_datagram(charged, raw.len(), remote)?;
             let uid: &[u8; 32] = self.issued_uid(charged.uid_index)?;
@@ -1654,22 +1686,51 @@ impl<'a> AssociationOwner<'a> {
                     SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
                 }
             }
-            StagedSuccessorResponse::Control(kind) => {
+            StagedSuccessorResponse::Control(restriction) => {
+                let (kind, protection): (ProtectedControlKind, ControlProtection) =
+                    restriction.into_parts();
                 let candidate: StagedProtectedControl<'control> = StagedProtectedControl {
                     kind,
-                    control,
-                    serial: charged.serial,
-                    uid_index: charged.uid_index,
-                    wire: charged.wire,
-                    backend: Arc::clone(backend),
-                    sent_at: charged.sent_at,
-                    arrival,
-                    read_after: read.monotonic_after(),
+                    protection,
+                    correlation: Self::successor_correlation(charged, control, backend, span),
                 };
                 self.check_protected_control_current(&candidate)
                     .inspect_err(|_| self.retire_exhausted())?;
                 Ok(StagedProtectedSuccessor::Control(candidate))
             }
+            StagedSuccessorResponse::NtsNak => {
+                let correlation: SuccessorCorrelation<'control> =
+                    Self::successor_correlation(charged, control, backend, span);
+                self.check_successor_receive(&correlation, |now: Instant| {
+                    span.check(charged.sent_at, now, control.expiry)
+                })
+                .inspect_err(|_| self.retire_exhausted())?;
+                let exhausted: bool = self.ledger.frames == 0 || self.ledger.bytes == 0;
+                self.retire_exhausted();
+                Ok(StagedProtectedSuccessor::NtsNak(ObservedNtsNak {
+                    arrived_at: span.leading,
+                    exhausted,
+                }))
+            }
+        }
+    }
+
+    /// Retain the exact coordinates of the charged successor observation.
+    #[cfg(test)]
+    fn successor_correlation<'control>(
+        charged: &ChargedReply,
+        control: &'control Control,
+        backend: &Arc<()>,
+        span: ReceiveSpan,
+    ) -> SuccessorCorrelation<'control> {
+        SuccessorCorrelation {
+            control,
+            serial: charged.serial,
+            uid_index: charged.uid_index,
+            wire: charged.wire,
+            backend: Arc::clone(backend),
+            sent_at: charged.sent_at,
+            span,
         }
     }
 
@@ -1680,6 +1741,21 @@ impl<'a> AssociationOwner<'a> {
     pub(in super::super) fn check_protected_control_current(
         &self,
         candidate: &StagedProtectedControl<'_>,
+    ) -> Result<(), Failure> {
+        let correlation: &SuccessorCorrelation<'_> = &candidate.correlation;
+        self.check_successor_receive(correlation, |now: Instant| {
+            check_receive_times(correlation.sent_at, correlation.span.leading, now)
+        })
+    }
+
+    /// Check both original managed sends and the current invocation before observation.
+    /// # Errors
+    /// Preserve authority, correlation and original receive-time refusals.
+    #[cfg(test)]
+    fn check_successor_receive(
+        &self,
+        candidate: &SuccessorCorrelation<'_>,
+        check_time: impl FnOnce(Instant) -> Result<(), Failure>,
     ) -> Result<(), Failure> {
         if !std::ptr::eq(candidate.control, self.material.control) {
             return Err(Failure::Control);
@@ -1692,7 +1768,7 @@ impl<'a> AssociationOwner<'a> {
         guard.receiving(Some(submissions.pending))?;
         let now: Instant = Instant::now();
         guard.control.published(now)?;
-        check_receive_times(candidate.sent_at, candidate.arrival, now)
+        check_time(now)
     }
 
     /// Match the exact prior receipt and active successor under the original locks.
@@ -1701,7 +1777,7 @@ impl<'a> AssociationOwner<'a> {
     #[cfg(test)]
     fn control_submissions(
         &self,
-        candidate: &StagedProtectedControl<'_>,
+        candidate: &SuccessorCorrelation<'_>,
     ) -> Result<ControlSubmissions<'_>, Failure> {
         let prior: &PriorAuthentication = self
             .ledger
@@ -1753,33 +1829,37 @@ impl<'a> AssociationOwner<'a> {
         retired: RetiredProtectedControl<'_>,
     ) -> Result<AppliedProtectedControl, Failure> {
         let candidate: StagedProtectedControl<'_> = retired.into_staged();
-        if !std::ptr::eq(candidate.control, self.material.control) {
+        let correlation: &SuccessorCorrelation<'_> = &candidate.correlation;
+        if !std::ptr::eq(correlation.control, self.material.control) {
             return Err(Failure::Control);
         }
         let lease: ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?.clone();
         let configuration: Box<crate::SourceConfigurationSnapshot> =
             Box::new(lease.configuration().ok_or(Failure::Control)?.clone());
         let mut guard: DatagramAuthorityGuard<'_> =
-            DatagramAuthorityGuard::lock(candidate.control, Some(&lease))?;
-        let submissions: ControlSubmissions<'_> = self.control_submissions(&candidate)?;
+            DatagramAuthorityGuard::lock(correlation.control, Some(&lease))?;
+        let submissions: ControlSubmissions<'_> = self.control_submissions(correlation)?;
         let now: Instant = Instant::now();
-        check_receive_times(candidate.sent_at, candidate.arrival, now)?;
-        if candidate.read_after >= candidate.control.expiry || now >= candidate.control.expiry {
+        check_receive_times(correlation.sent_at, correlation.span.leading, now)?;
+        if correlation.span.trailing >= correlation.control.expiry
+            || now >= correlation.control.expiry
+        {
             return Err(Failure::Deadline);
         }
-        if candidate.read_after < candidate.arrival || candidate.read_after > now {
+        if correlation.span.trailing < correlation.span.leading || correlation.span.trailing > now {
             return Err(refused(LedgerError::Time));
         }
         let applied: AppliedProtectedControl = AppliedProtectedControl {
             kind: candidate.kind,
+            protection: candidate.protection,
             configuration,
             remote: self.material.udp,
-            serial: candidate.serial,
+            serial: correlation.serial,
             decided_at: now,
         };
         let authorization: VerifiedRetiredControl<'_> = VerifiedRetiredControl {
             kind: candidate.kind,
-            control: candidate.control,
+            control: correlation.control,
             submissions,
             decided_at: now,
         };

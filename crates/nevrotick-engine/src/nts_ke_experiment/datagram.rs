@@ -53,13 +53,15 @@ mod reached {
     use crate::nts_ke_experiment::association::AssociationOwner;
     #[cfg(test)]
     use crate::nts_ke_experiment::association::ledger::{
-        AppliedProtectedControl, StagedProtectedControl, StagedProtectedSuccessor,
+        AppliedProtectedControl, LedgerError, StagedProtectedControl, StagedProtectedSuccessor,
     };
     use crate::nts_ke_experiment::association::ledger::{
         CookieReplacement, PendingSubmission, Receipt, RequestInput, RequestPhase, RetiredCommit,
         SendOutcome, Ticket,
     };
-    use crate::nts_ke_experiment::job::ReceivingOutcome;
+    #[cfg(test)]
+    use crate::nts_ke_experiment::job::Operation;
+    use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
         Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
@@ -439,6 +441,45 @@ mod reached {
         Control(RetiredProtectedControl<'control>),
     }
 
+    /// Retired candidate and independent receive observation, awaiting final commit.
+    #[cfg(test)]
+    pub(super) struct ObservedRetiredSuccessor<'control> {
+        /// Exact retired candidate from the original pending operation.
+        candidate: RetiredProtectedSuccessor<'control>,
+        /// Original first NAK, retained if final commit later refuses.
+        first_nak_at: Option<Instant>,
+    }
+
+    #[cfg(test)]
+    impl<'control> ObservedRetiredSuccessor<'control> {
+        /// Transfer the actual candidate and its separate observation to the receiver.
+        pub(super) fn into_parts(self) -> (RetiredProtectedSuccessor<'control>, Option<Instant>) {
+            (self.candidate, self.first_nak_at)
+        }
+    }
+
+    /// Original successor refusal beside an independent, historical recovery observation.
+    #[cfg(test)]
+    pub(super) struct SuccessorFailure {
+        /// The actual terminal cause of the selected operation.
+        cause: Failure,
+        /// First current NTSN during the pending opportunity. The one-KE plan cannot recover.
+        first_nak_at: Option<Instant>,
+    }
+
+    #[cfg(test)]
+    impl SuccessorFailure {
+        /// Retain the original cause even when a NAK was present.
+        pub(super) const fn cause(&self) -> Failure {
+            self.cause
+        }
+
+        /// Give the original NAK arrival without scheduling recovery or rewriting failure.
+        pub(super) const fn first_nak_at(&self) -> Option<Instant> {
+            self.first_nak_at
+        }
+    }
+
     #[cfg(test)]
     impl<'control> RetiredProtectedControl<'control> {
         /// Transfer the exact already-retired request to its receiving ledger.
@@ -523,6 +564,35 @@ mod reached {
         configuration: Option<SourceConfigurationSnapshot>,
     }
 
+    /// Genuine first-leg commit that left the original invocation published.
+    #[cfg(test)]
+    pub(in super::super) struct CommittedFirstProtected<'control>(CommittedProtected<'control>);
+
+    /// Detached first history bound to one actual invocation before worker storage.
+    #[cfg(test)]
+    pub(in super::super) struct BoundFirstHistory {
+        /// Identity of the exact committed Control instance, without authority.
+        control_identity: Arc<()>,
+        /// Original managed first receipt with its pre-exchange population.
+        history: Box<ManagedProtectedHistory>,
+    }
+
+    #[cfg(test)]
+    impl BoundFirstHistory {
+        /// Detach the payload only for the worker that owns this invocation.
+        /// # Errors
+        /// Refuse a different worker Control without recording.
+        pub(in super::super) fn into_worker_history(
+            self,
+            control_identity: &Arc<()>,
+        ) -> Result<Box<ManagedProtectedHistory>, Failure> {
+            if !Arc::ptr_eq(&self.control_identity, control_identity) {
+                return Err(Failure::Control);
+            }
+            Ok(self.history)
+        }
+    }
+
     /// Owned historical protected exchange; only consuming genuine commit creates it.
     /// Unlike the plain pilot's `TransportFacts`, peer timestamp bits may be zero.
     #[cfg_attr(
@@ -577,6 +647,12 @@ mod reached {
         pub(in super::super) const fn summary(&self) -> &Summary {
             self.history.summary()
         }
+
+        /// Inspect original committed facts through the actual joined control.
+        #[cfg(test)]
+        pub(in super::super) const fn history(&self) -> &ProtectedHistory {
+            &self.history
+        }
     }
 
     /// One normally joined result; numerical refusal is retained data, never a retry.
@@ -606,6 +682,23 @@ mod reached {
         }
     }
 
+    /// A normally joined successor and its original first committed receipt.
+    #[cfg(test)]
+    pub(in super::super) struct ReceivedProtectedSuccessor {
+        /// Historical first result, independent of the terminal operation outcome.
+        first: Box<ManagedProtectedHistory>,
+        /// Actual ordinary, control or failed terminal result after retirement.
+        terminal: Operation,
+    }
+
+    #[cfg(test)]
+    impl ReceivedProtectedSuccessor {
+        /// Transfer the actual first receipt beside the original terminal result.
+        pub(in super::super) fn into_parts(self) -> (Box<ManagedProtectedHistory>, Operation) {
+            (self.first, self.terminal)
+        }
+    }
+
     /// One normally joined operation, with a distinct control-only case.
     #[cfg_attr(
         test,
@@ -620,6 +713,9 @@ mod reached {
         /// Historical control with no numerical or summary projection.
         #[cfg(test)]
         ProtectedControl(ReceivedProtectedControl),
+        /// Actual successor retirement with its genuine first historical receipt.
+        #[cfg(test)]
+        ProtectedSuccessor(ReceivedProtectedSuccessor),
     }
 
     /// Private mode-specific state issued only after the normal-join guard.
@@ -820,11 +916,21 @@ mod reached {
         joined: ReceivingOutcome,
         profile: Option<ExperimentalProfile>,
     ) -> Result<ReceivedInvocation, RunFailed> {
-        let history: JoinedProtectedHistory = match joined
-            .into_normal()
-            .map_err(RunFailed::Abnormal)?
-            .map_err(RunFailed::Operation)?
-        {
+        let NormalOperation {
+            operation,
+            #[cfg(test)]
+            first_receipt,
+        } = joined.into_normal().map_err(RunFailed::Abnormal)?;
+        #[cfg(test)]
+        if let Some(first) = first_receipt {
+            return Ok(ReceivedInvocation::ProtectedSuccessor(
+                ReceivedProtectedSuccessor {
+                    first,
+                    terminal: operation,
+                },
+            ));
+        }
+        let history: JoinedProtectedHistory = match operation.map_err(RunFailed::Operation)? {
             InvocationCompletion::Preview(summary) => {
                 return Ok(ReceivedInvocation::Probe(ReceivedCompletion {
                     inner: ReceivedState::Preview(summary),
@@ -876,7 +982,7 @@ mod reached {
             &self.summary
         }
 
-        /// Return the existing terminal processing observation from the original guard.
+        /// Return the original guarded processing observation.
         pub(in super::super) const fn committed_at(&self) -> Instant {
             self.committed_at
         }
@@ -947,7 +1053,44 @@ mod reached {
             self.attempts.remaining()
         }
 
-        /// Commit the first genuine retired protected request for a private successor.
+        /// Commit the first retired request and retain its original historical facts.
+        ///
+        /// The ledger leaves the original Control published and owns the remaining
+        /// driver allowance. The returned history grants no continuation authority.
+        /// # Errors
+        /// Preserve the original retired-reply and currentness refusals.
+        #[cfg(test)]
+        pub(in super::super) fn commit_first_for_successor(
+            self,
+            association: &mut AssociationOwner<'_>,
+        ) -> Result<CommittedFirstProtected<'control>, Failure> {
+            let RetiredOperation {
+                history,
+                reply,
+                attempts,
+            }: RetiredOperation<'control> = self.into_retired();
+            let (identity, committed_at): (Arc<()>, Instant) = association.commit_retired_reply(
+                reply,
+                RetiredCommit::FirstRequest(attempts),
+                Instant::now,
+            )?;
+            // The ledger already checked this immutable lease in its original
+            // refusal order. A component lease can lack an installed snapshot.
+            let configuration: Option<SourceConfigurationSnapshot> = association
+                .protected_endpoint()
+                .ok()
+                .flatten()
+                .and_then(ProtectedEndpoint::configuration)
+                .cloned();
+            Ok(CommittedFirstProtected(CommittedProtected {
+                operation: history,
+                identity,
+                committed_at,
+                configuration,
+            }))
+        }
+
+        /// Exercise continuation in fixtures that only need the ledger transition.
         /// # Errors
         /// Preserve the shared final receipt and currentness refusals.
         #[cfg(test)]
@@ -955,14 +1098,7 @@ mod reached {
             self,
             association: &mut AssociationOwner<'_>,
         ) -> Result<(), Failure> {
-            let RetiredOperation {
-                history: _,
-                reply,
-                attempts,
-            }: RetiredOperation<'_> = self.into_retired();
-            association
-                .commit_retired_reply(reply, RetiredCommit::FirstRequest(attempts), Instant::now)
-                .map(drop)
+            self.commit_first_for_successor(association).map(drop)
         }
 
         /// Consume this retired operation at its actual current receiving owner.
@@ -1031,6 +1167,45 @@ mod reached {
         }
     }
 
+    #[cfg(test)]
+    impl CommittedFirstProtected<'_> {
+        /// Bind original first history to the actual receiver and worker Control.
+        /// # Errors
+        /// Refuse a foreign receiver or absent installed configuration.
+        pub(in super::super) fn into_first_history(
+            self,
+            receiving: &BoundProtectedReceiver<'_, '_, '_, '_>,
+        ) -> Result<BoundFirstHistory, Failure> {
+            let control_identity: Arc<()> =
+                Arc::clone(&self.0.operation.control.first_receipt_identity);
+            let InvocationCompletion::ManagedProtected(history) = self.0.into_history(receiving)?
+            else {
+                return Err(Failure::Control);
+            };
+            Ok(BoundFirstHistory {
+                control_identity,
+                history,
+            })
+        }
+
+        /// Borrow the committed fact for the actual-owner continuation control.
+        pub(super) const fn observation(
+            &self,
+        ) -> (
+            &OperationHistory<'_>,
+            &Arc<()>,
+            Instant,
+            Option<&SourceConfigurationSnapshot>,
+        ) {
+            (
+                &self.0.operation,
+                &self.0.identity,
+                self.0.committed_at,
+                self.0.configuration.as_ref(),
+            )
+        }
+    }
+
     impl CommittedProtected<'_> {
         /// Consume the historical fact once into its checked post-admission counts.
         /// This test-only projection attaches no invocation chart. No Published
@@ -1070,7 +1245,7 @@ mod reached {
             summary
         }
 
-        /// Detach only immutable history from this genuinely consumed final commit.
+        /// Detach only immutable history from this genuine guarded commit.
         /// The consuming operation binds the actual receiving Control, obtains only
         /// that invocation's chart and the bound checked pre-operation population.
         /// No live owner, secret payload, numerical measurement or renewed timestamp
@@ -1193,7 +1368,7 @@ mod reached {
             fill,
             backend,
             &mut attempts,
-            ReceiveMode::Ordinary,
+            &mut ReceiveState::Ordinary,
         )
         .await
         .and_then(SelectedOperation::into_ordinary)
@@ -1233,14 +1408,16 @@ mod reached {
         packet_bytes: usize,
     }
 
-    /// The fixture selects whether an already authenticated leg can return a control.
-    #[derive(Clone, Copy)]
-    enum ReceiveMode {
+    /// The receive selection and the bounded observation owned by that request.
+    enum ReceiveState {
         /// Existing ordinary one-shot and component paths.
         Ordinary,
-        /// The admitted successor permits either bounded disposition.
+        /// The admitted successor can retain one nonterminal NAK before completing.
         #[cfg(test)]
-        ProtectedSuccessor,
+        ProtectedSuccessor {
+            /// The actual first NAK arrival. Later reads still spend credits.
+            first_nak_at: Option<Instant>,
+        },
     }
 
     /// One concrete async driver result shared by both receive modes.
@@ -1273,38 +1450,50 @@ mod reached {
     }
 
     /// Admit one charged disposition through the selected path in the same ledger.
+    /// A current NAK records only the observation and can leave the operation pending.
     /// # Errors
     /// Preserve original endpoint, identity, budget, time and authentication refusals.
     fn stage_observed_reply<'control>(
         association: &mut AssociationOwner<'_>,
         control: &'control Control,
         reply: ObservedReply<'_>,
-        mode: ReceiveMode,
-    ) -> Result<SelectedOperation<'control>, Failure> {
+        state: &mut ReceiveState,
+    ) -> Result<Option<SelectedOperation<'control>>, Failure> {
         let (receipt, replacement, submission): (Receipt, CookieReplacement, PendingSubmission) =
-            match mode {
-                ReceiveMode::Ordinary => association.stage_concrete_reply(
+            match state {
+                ReceiveState::Ordinary => association.stage_concrete_reply(
                     reply.consumed,
                     reply.remote,
                     &reply.read_return,
                 )?,
                 #[cfg(test)]
-                ReceiveMode::ProtectedSuccessor => match association.stage_concrete_successor(
-                    control,
-                    reply.consumed,
-                    reply.remote,
-                    &reply.read_return,
-                )? {
+                ReceiveState::ProtectedSuccessor { first_nak_at } => match association
+                    .stage_concrete_successor(
+                        control,
+                        reply.consumed,
+                        reply.remote,
+                        &reply.read_return,
+                    )? {
                     StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
                         (receipt, replacement, submission)
                     }
                     StagedProtectedSuccessor::Control(staged) => {
-                        return Ok(SelectedOperation::Control(staged));
+                        return Ok(Some(SelectedOperation::Control(staged)));
+                    }
+                    StagedProtectedSuccessor::NtsNak(observation) => {
+                        let (arrived_at, exhausted): (Instant, bool) = observation.into_parts();
+                        if first_nak_at.is_none() {
+                            *first_nak_at = Some(arrived_at);
+                        }
+                        if exhausted {
+                            return Err(Failure::Ledger(LedgerError::ReceiveWork));
+                        }
+                        return Ok(None);
                     }
                 },
             };
         let (cookies, cookie_bytes): (usize, usize) = replacement.population();
-        Ok(SelectedOperation::Ordinary(OperationCompletion {
+        Ok(Some(SelectedOperation::Ordinary(OperationCompletion {
             history: OperationHistory {
                 control,
                 receipt,
@@ -1319,7 +1508,7 @@ mod reached {
             },
             replacement,
             submission,
-        }))
+        })))
     }
 
     /// Wait for the original managed floor before checking out a request cookie.
@@ -1369,7 +1558,7 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         backend: &mut Backend,
         attempts: &mut Attempts,
-        mode: ReceiveMode,
+        state: &mut ReceiveState,
     ) -> Result<SelectedOperation<'control>, Failure> {
         if association.check_context(control)? != backend.remote {
             return Err(Failure::Endpoint);
@@ -1380,7 +1569,7 @@ mod reached {
         }
         let ticket: Ticket<'_> = association.reserve(RequestInput::Observed)?;
         association.prepare_observed(&ticket, fill)?;
-        drive_prepared(association, control, backend, attempts, ticket, mode).await
+        drive_prepared(association, control, backend, attempts, ticket, state).await
     }
 
     /// Send once and run the same concrete readiness/receive future in both modes.
@@ -1392,7 +1581,7 @@ mod reached {
         backend: &mut Backend,
         attempts: &mut Attempts,
         ticket: Ticket<'_>,
-        mode: ReceiveMode,
+        state: &mut ReceiveState,
     ) -> Result<SelectedOperation<'control>, Failure> {
         wait(backend, control, Interest::Write, attempts, None).await?;
         backend.send_prepared(association, ticket, control)?;
@@ -1455,8 +1644,9 @@ mod reached {
                         read_return: observed,
                         packet_bytes,
                     };
-                    match stage_observed_reply(association, control, reply, mode) {
-                        Ok(selected) => return Ok(selected),
+                    match stage_observed_reply(association, control, reply, state) {
+                        Ok(Some(selected)) => return Ok(selected),
+                        Ok(None) => {}
                         Err(error) => {
                             if !matches!(association.status().phase, RequestPhase::Pending) {
                                 return Err(error);
@@ -1539,7 +1729,7 @@ mod reached {
             fill,
             make_backend,
             &mut attempts,
-            ReceiveMode::Ordinary,
+            &mut ReceiveState::Ordinary,
         )?;
         #[cfg(test)]
         let operation: OperationCompletion<'control> = selected.into_ordinary()?;
@@ -1577,26 +1767,62 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
     ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
-        let mut attempts: Attempts = association.take_authenticated_successor(control)?;
-        let selected: SelectedOperation<'control> = retire_operation(
+        exchange_successor_observing(association, control, fill, make_backend)
+            .map(|observed: ObservedRetiredSuccessor<'control>| observed.into_parts().0)
+            .map_err(|failure: SuccessorFailure| failure.cause())
+    }
+
+    /// Retire the actual successor, retaining a NAK beside its candidate or failure.
+    /// # Errors
+    /// Preserve continuation, setup, charged receive and policy refusals. A NAK
+    /// never starts replacement under this one-KE selection.
+    #[cfg(test)]
+    pub(super) fn exchange_successor_observing<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+    ) -> Result<ObservedRetiredSuccessor<'control>, SuccessorFailure> {
+        let mut attempts: Attempts =
+            association
+                .take_authenticated_successor(control)
+                .map_err(|cause: Failure| SuccessorFailure {
+                    cause,
+                    first_nak_at: None,
+                })?;
+        let mut state: ReceiveState = ReceiveState::ProtectedSuccessor { first_nak_at: None };
+        let outcome: Result<SelectedOperation<'control>, Failure> = retire_operation(
             association,
             control,
             fill,
             make_backend,
             &mut attempts,
-            ReceiveMode::ProtectedSuccessor,
-        )?;
-        match selected {
+            &mut state,
+        );
+        let first_nak_at: Option<Instant> = match state {
+            ReceiveState::ProtectedSuccessor { first_nak_at } => first_nak_at,
+            ReceiveState::Ordinary => None,
+        };
+        let selected: SelectedOperation<'control> =
+            outcome.map_err(|cause: Failure| SuccessorFailure {
+                cause,
+                first_nak_at,
+            })?;
+        let candidate: RetiredProtectedSuccessor<'control> = match selected {
             SelectedOperation::Ordinary(operation) => {
-                Ok(RetiredProtectedSuccessor::Ordinary(ProtectedCompletion {
+                RetiredProtectedSuccessor::Ordinary(ProtectedCompletion {
                     operation,
                     attempts,
-                }))
+                })
             }
-            SelectedOperation::Control(staged) => Ok(RetiredProtectedSuccessor::Control(
-                RetiredProtectedControl(staged),
-            )),
-        }
+            SelectedOperation::Control(staged) => {
+                RetiredProtectedSuccessor::Control(RetiredProtectedControl(staged))
+            }
+        };
+        Ok(ObservedRetiredSuccessor {
+            candidate,
+            first_nak_at,
+        })
     }
 
     /// Own the actual adapter/runtime until this selected outcome can detach.
@@ -1608,7 +1834,7 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
         attempts: &mut Attempts,
-        mode: ReceiveMode,
+        state: &mut ReceiveState,
     ) -> Result<SelectedOperation<'control>, Failure> {
         if tokio::runtime::Handle::try_current().is_ok() {
             return Err(failed(DatagramError::EnteredRuntime));
@@ -1623,7 +1849,7 @@ mod reached {
         let result = runtime.block_on(async {
             let mut backend = make_backend(remote)?;
             let completion: Result<SelectedOperation<'control>, Failure> =
-                operation_with_attempts(association, control, fill, &mut backend, attempts, mode)
+                operation_with_attempts(association, control, fill, &mut backend, attempts, state)
                     .await;
             drop(backend);
             completion
@@ -1720,7 +1946,10 @@ mod reached {
 pub(super) use reached::exchange;
 
 #[cfg(test)]
-pub(super) use reached::{Attempts, RetiredProtectedControl, RetiredProtectedSuccessor};
+pub(super) use reached::{
+    Attempts, BoundFirstHistory, CommittedFirstProtected, RetiredProtectedControl,
+    RetiredProtectedSuccessor,
+};
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{

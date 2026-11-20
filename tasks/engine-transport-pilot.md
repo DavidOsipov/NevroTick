@@ -28899,3 +28899,232 @@ review `next-protected-invocation-plan-review-01/review.md` (`80774218…`) use
 the existing `protected-receive-debit-01` evidence chain. Rebind implementation
 inputs after the interface freeze, including subsequent documentation-only
 native-tool guidance changes; no product implementation is claimed here.
+
+###### Successor restriction admission and focused verification — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/9/21/25/27. The first dependency
+for the explicit invocation now works through the existing scripted successor
+receiver. The response parser uses the complete bounded `ntp-wire` frame and
+requires an exact outstanding UID and origin for RATE, DENY and RSTR. A frame
+containing an authenticator selects the established S2C verification path.
+Verification failure rejects the frame. A frame without an authenticator can
+produce a correlation-only restriction candidate. Duplicate or wrong UIDs and
+forbidden NTS fields refuse. Well-framed unrelated fields in the correlation-only
+form have no effect. Both restriction forms carry closed code and protection
+facts, and neither returns timing or cookie material.
+
+The actual ledger charges the packet before admission and checks the exact
+peer, backend and original Pending submission. Before policy mutation it still
+requires prior committed authentication from the same association, both send
+proofs, current source and Control, and the original receive span inside the
+cutoff. Actual adapter and runtime retirement precedes the policy commit. The
+commit changes only the selected source and endpoint, consumes Pending once and
+retains the earlier ordinary receipt. The applied result preserves the control's
+protection classification. The ordinary path still requires S2C and encrypted
+replacement-cookie admission. The authenticated fixture retains its existing
+exact UID-then-authenticator shape. Broader control interoperability remains open.
+
+Planning and Rust contract skills located the parser, ledger and retirement
+owners. Protocol input security and the RFC 8915 §5.7 review established the
+different authority of ordinary replies and restriction controls. Contract and
+regression QA exercised the real scripted consumer and the packet boundary.
+The isolated test writer returned the exact patch from a detached `6c84263`
+checkout. The coordinator verified its preimages and integrated the patch. A
+fresh-context review of the four changed Rust files found no blocking source
+issue and traced the charged read through the retired policy effect. Its source
+verdict carries to the retry because only two test documentation sections changed.
+
+The predecessor built and ran both owner cases with the same policy, debit and
+history observations. The correlation-only case failed with
+`Datagram(Receive(UnexpectedEof))` after the old parser refused the selected
+frame. The authenticated neighbor passed. The first repair passed 11 focused
+tests, then GNU Clippy refused the two test wrappers lacking `# Errors`.
+Adding their error contracts resolved the lint. The final 620-input candidate
+`466b31ed16c6c5c79e0ae9b478af642f56e2fe1788b79992f58f648a48a5448e`
+uses pinned Rust 1.100, the readmitted KE vendor cohort, the configured isolated
+environment and the explicit `ke-association-prototype` feature. Format,
+11 GNU library tests and GNU/MSVC all-target Engine Clippy each returned zero.
+The tests included all three correlated codes, authenticated and correlated
+DENY through the retired policy owner, the failed-tag neighbor, refusal and
+cutoff controls, exact counters and preserved historical receipt. The first
+attempt remains incomplete. Both owned build directories and the writer checkout
+retired. The two controller runs took 59.944 and 72.897 seconds. Raw results are
+under `protected-receive-debit-01/correlated-restriction-01`.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `run-01/predecessor.json` | `50131b0be4172dfc198b223e970226fb491087d0c46e0237cc1e7a514c00d8cf` |
+| `run-01/verification.json` | `59721455e12756029286c19a05119a3c95e1c04d1a43902dc8d7c88586cb29cb` |
+| `candidate-retry.patch` | `a7755b1e14a35039a8f4a190321436cd63045cefaad6671f10929f8e6b8a9e20` |
+| `run-02/verification.json` | `f7647e5475c3f38ac87a9d91f201060ea942f943cf8f544882987937a0310d5f` |
+
+The successor selector is still test-only. The next receive change is a
+separate NTSN observation with the original charged Pending proof and full
+receive span. The driver keeps at most one admitted observation and continues
+within its original work and cutoff. A valid ordinary neighbor completes the
+same request. Exhaustion or deadline preserves the original failure beside
+unavailable recovery under the one-KE cap. It must never enter the retired
+restriction transaction.
+
+The non-test invocation needs a private first-receipt checkpoint written in
+the worker immediately after the genuine first commit and read only after
+physical join. This retains the original run context and pre-checkout population
+even if the second operation fails or unwinds before the worker records the
+overall result. The first history detach leaves the original Control published.
+The explicit successor spends its carried allowance before backend setup and
+reports attempted and full local sends from the actual send outcome. Cookie
+archive and issued UID counts remain distinct. The existing one-shot facade
+and external consumer selection retain their previous semantics until the new
+typed path is connected and observed. The post-receipt ledger change in this
+slice adds provenance only. H07 phase and payload restructuring stays deferred.
+
+Current per-file metrics, optimized and wider development verification, the
+joined correlated-only consumer, native cases and the production exit remain
+open. Fuzz execution retains its existing hold. Formal verification is deferred
+under OD-10. No new timing or eligibility supplier has been admitted.
+
+###### Successor NTSN receive and retirement — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/9/21/25/27. The scripted successor
+now admits a separate NTSN disposition through the actual parser, charged
+ledger and receive driver. The complete frame must match the pending UID and
+wire origin and contain no cookie, placeholder or authenticator. The ledger
+checks the original backend, prior committed receipt, both managed send proofs,
+current Control and full receive span. NTSN preserves Pending while receive work
+remains. The last frame or byte retires the request with `ReceiveWork` before
+another read. Every read spends its original debit. A valid ordinary neighbor
+can still complete under the original expiry and replacement-cookie rules.
+
+The receiver keeps only the first admitted arrival alongside the retired
+candidate or its original receive failure. It makes no restriction or cookie
+publication and starts no KE. A fresh-context source review caught an earlier
+success-side loss of the mark before final commit. The revised observing result
+keeps it on both paths. Existing fixture wrappers preserve their original
+outputs. The new non-test worker must carry that observation through final
+commit and physical join. A genuine first committed receipt remains separate
+from both the live continuation allowance and the successor's latest staged
+receipt. The actual worker must write that first history before successor entry
+and release it only after join, including an abnormal join.
+
+Protocol and Rust contract skills informed the separate classification and
+authority checks. Regression and lifecycle QA tested the real scripted driver
+and retirement path with a valid reply, repeated admitted NTSN up to the frame
+limit, and explicit backend EOF with or without an admitted mark. The tests
+checked exact debits, original expiry, no extra read after frame exhaustion,
+preserved history and the source and endpoint records. NTSN-specific byte
+exhaustion and cutoff remain outside these four driver cases. Existing shared
+capture and cutoff neighbors passed. The coordinator integrated the isolated
+test writer's patch and removed its checkout after checking the exact bytes.
+Independent review matched the 16 focused cases and the complete 578-case
+ordinary run to the frozen source and observed retirement results.
+
+Pinned Rust 1.100 on candidate
+`995e9de103aeb05d2a9dbe3c0ea13e1f4f8c148c0a5bfecc535f062c98346cf2`
+passed the configured isolation control, format, 578 GNU EP1 library cases,
+16 focused GNU cases, and GNU/MSVC all-target Engine Clippy. The first
+`verify-release` build was killed under the generic 90-second CPU ceiling
+before executing tests. The retry reused the completed ordinary results and
+the same 620 product inputs. It used the prior Engine optimized 240-second
+CPU allowance with unchanged compiler profile, source, vendor, address-space
+and process limits. All 16 exact optimized cases passed. Both owned build
+directories retired. Controller work totalled 364.042 seconds. The first
+attempt remains incomplete and the retry supplies the optimized result.
+
+| Evidence under `protected-receive-debit-01/successor-nak-01` | SHA-256 |
+| --- | --- |
+| `candidate.patch` | `4d987602982b6141a765ed1efe2f1ebed2a28bb813c98638997ea21612499860` |
+| `run-01/verification.json` | `942302114c85ae3edcd35fa81bdfb7d66b1c185421cb13930fa4cded3aaf182b` |
+| `run-02/verification.json` | `9a50594ea10ad1fc8fc46ee1da8fe87f89d36cbed295a02ce85e7794911ffe56` |
+
+The observing successor remains test-only. Continue the first-receipt transfer
+and joined worker custody before exposing the explicit non-test plan. The
+non-test caller, native observations and current per-file coverage/mutation
+qualification remain open under their existing owners.
+
+The parallel first-receipt writer prepared a consuming first commit and extended
+the existing two-request control to inspect the original history after successor
+staging. `first-receipt-transfer-preparation.patch` in the same evidence root
+has SHA-256 `483ca230e150b6cffa23096733ec57eb79063e49ea2daa820ae9fc76fba1883c`.
+The patch applies to the current verified Rust source. It remains separate and
+unexecuted pending integration with the private worker checkpoint and actual
+joined receiver. The owned draft checkout retired after byte comparison.
+
+###### First protected receipt through worker join — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/9/21/25/27. The selected private
+worker now binds the first exchange's actual pre-checkout population and run
+context before producer entry. Its consuming first commit leaves the original
+Control nonterminal and retains the submitted socket identity, guarded commit
+time, original capture and installed source revision. The worker stores that
+owned first history once before successor admission. The live ledger still owns
+its continuation and remaining work. A later Stop cannot rewrite the first
+historical result.
+
+Fresh-context review found that a generic detached history could be offered to
+the writer. Scope and deadline equality also permitted a distinct sibling
+Control. The revised transfer can be issued only by the guarded first-request
+commit and the matching bound receiver. The writer checks the exact original
+Control identity both at attachment and when receiving that sealed history. An
+equal-valued sibling sharing the Stop scope refuses before producer entry. A
+selected writer also cannot silently fall back to a one-shot producer. The
+legacy path without a writer retains its prior routing.
+
+Only physical join moves either recorded fact from the slot. Normal joined
+custody returns the genuine first receipt beside the successor's original typed
+result. If the worker unwinds before recording its terminal operation, it retains
+the first receipt while the terminal record is absent and normal retirement is
+unconfirmed. The ordinary one-shot consumer rejects the dedicated successor
+result. Neither historical branch creates a measurement or sample authority.
+
+Rust contract and lifecycle QA used the actual guarded receiver and worker.
+Three controlled loopback cases reach both protected sends with scripted KE
+establishment. They hold the actual post-retirement second-leg gate, verify
+the receipt is unavailable even after a finished hint, and physically join
+for authenticated DENY, same-value configuration replacement, and unwind before
+the terminal record. The fourth worker joins a same-scope foreign-Control
+refusal with zero producer calls. Independent review matched each executed
+name and the original receipt and effect assertions. The loopback populations
+before first checkout and after first replacement are both `(1, 12)` in these
+fixtures. They observe those values and distinguish the original receipt by
+scope, ordinal, wire origin and capture times. The unequal-population control
+remains due for the final receiving path.
+
+Pinned Rust 1.100 and the isolated EP1 environment used 620 current inputs.
+The first attempt stopped at test module paths and qualification on an import.
+The second passed all 20 focused and 580 ordinary GNU library cases, with zero
+failed or ignored. Clippy then required panic documentation on the deliberate
+unwind hook. The final source differs from that ordinary run only by those
+three documentation lines. The byte-checked bridge preserves the ordinary
+result. Both target Clippy lanes, format, isolation and all 20 focused
+`verify-release` cases passed on
+`af12327c788ef8081a2e6428f61089171ebcff6fb39b27749aa87984e26652f5`.
+Both prior attempts retain their original outcomes. Controller work totalled
+337.269 seconds, and all three temporary build directories and both integrated
+writer checkouts retired.
+
+| Evidence under `protected-receive-debit-01/first-receipt-join-01` | SHA-256 |
+| --- | --- |
+| `run-01/verification.json` | `64aea8f62038e190b7c48db822781fd12f89bb236b633816f09be659d00913f1` |
+| `run-02/verification.json` | `8233de5b7768ac1ae290e8f990a93c1bb1de193d5d6fbe357244d198604faba5` |
+| `candidate-final.patch` | `2f66f8450fd6f8b251cd81d5f5d795c512935dc4a2c3f5d5bbd181d069755a74` |
+| `run-03/verification.json` | `a22cda7f0eb9cee9daad7ef9568205b6735fa50656490ea04ebda1fab5485d91` |
+
+Next wire the explicit non-test Native plan to this checkpoint and to the
+observing successor, retaining the NTSN mark through terminal refusal and join.
+The existing owned `--protected-successor-deny` peer supports the first native
+consumer check. It independently authenticates both requests against the same
+KE exporters and checks the successor's distinct UID, wire origin and issued
+cookie. Reuse the pinned offline controller and its exact loopback readiness
+and trust restoration. The controller needs a closed non-test facade mode
+instead of its current libtest entry. A peer that closes immediately after the
+second reply cannot independently witness absence of a third datagram. That
+check needs a bounded observation through the client's join. Current non-test
+dispatch, on-wire KE for this path and per-file qualification remain open.
+
+The independent peer writer prepared `ordinary-peer-preparation.patch`
+(`442b49dcd01286308dfbba71932978339d7f064bf4b7a2f4fd3c0de8b4ddb039`) in the
+same evidence root. Its closed `--protected-successor-ordinary` mode uses the
+same issued-cookie and distinct-correlation checks and returns a fresh terminal
+replacement cookie. Format and patch checks passed. The draft remains separate
+from the verified Engine source and has not been compiled or run. Its owned
+checkout retired after byte comparison.

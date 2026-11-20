@@ -251,13 +251,43 @@ pub(crate) enum ProtectedControlKind {
     Restrict,
 }
 
-/// Authenticated payload disposition without ledger or policy authority.
+/// What the receive parser actually established about a restriction control.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum ControlProtection {
+    /// The original S2C key authenticated the control.
+    Authenticated,
+    /// The packet carried the exact outstanding UID and wire origin.
+    CorrelatedOnly,
+}
+
+/// One bounded control candidate with no returned time or cookie material.
+/// The ledger still owns the original send, receive accounting and currentness.
+#[cfg(test)]
+pub(super) struct RestrictionControl {
+    /// Recognized wire code from the same complete frame as the correlation.
+    kind: ProtectedControlKind,
+    /// Authentication is recorded only if the S2C check actually succeeded.
+    protection: ControlProtection,
+}
+
+#[cfg(test)]
+impl RestrictionControl {
+    /// Transfer the inert control facts into the original ledger's currentness check.
+    pub(super) const fn into_parts(self) -> (ProtectedControlKind, ControlProtection) {
+        (self.kind, self.protection)
+    }
+}
+
+/// Disposition of the checked packet before ledger or policy admission.
 #[cfg(test)]
 pub(super) enum StagedSuccessorResponse {
     /// The ordinary timing and replacement path.
     Ordinary(StagedReply),
     /// The selected exact literal control, with no timing or cookie data.
-    Control(ProtectedControlKind),
+    Control(RestrictionControl),
+    /// A correlated NTS NAK candidate, awaiting the ledger's currentness checks.
+    NtsNak,
 }
 
 /// Frame once and select the admitted ordinary or scripted control path.
@@ -273,9 +303,7 @@ pub(super) fn stage_successor_response(
 ) -> Result<StagedSuccessorResponse, ReplyError> {
     let datagram: RawDatagram<'_> = frame_reply(raw, maximum_cookies)?;
     if datagram.header().stratum() == 0 {
-        let kind: ProtectedControlKind =
-            stage_protected_control(keys, &datagram, expected_uid, wire_transmit)?;
-        return Ok(StagedSuccessorResponse::Control(kind));
+        return stage_successor_control(keys, &datagram, expected_uid, wire_transmit);
     }
     stage_framed_reply(
         keys,
@@ -287,24 +315,36 @@ pub(super) fn stage_successor_response(
     .map(StagedSuccessorResponse::Ordinary)
 }
 
-/// Admit the exact scripted control kind only after this association's S2C check.
+/// Recognize a bounded successor control using the outstanding UID and origin.
 ///
-/// This fixture admits exactly the outstanding UID followed by one authenticator
-/// with empty protected plaintext. Server time and poll fields have no authority.
+/// An authenticator selects the existing UID-then-authenticator S2C path with
+/// empty protected plaintext. Without one, only correlation is established.
+/// NTSN permits no authenticator, cookie or placeholder. Server time and poll
+/// fields are ignored. The ledger still requires a prior
+/// authenticated reply and current send proofs before making any policy change.
 /// # Errors
-/// Refuse malformed framing, wrong request coordinates or unauthenticated content.
+/// Refuse an unsupported code, wrong request coordinates, forbidden fields or
+/// failure on the selected S2C path. That failure cannot select correlation.
 #[cfg(test)]
-fn stage_protected_control(
+fn stage_successor_control(
     keys: &DirectionalKeys,
     datagram: &RawDatagram<'_>,
     expected_uid: &[u8; 32],
     wire_transmit: u64,
-) -> Result<ProtectedControlKind, ReplyError> {
+) -> Result<StagedSuccessorResponse, ReplyError> {
     let header: &RawHeader = datagram.header();
     if header.version() != 4 || header.mode() != 4 || header.stratum() != 0 {
         return Err(ReplyError::Header);
     }
-    let kind: ProtectedControlKind = match &header.reference_id().to_be_bytes() {
+    let code: [u8; 4] = header.reference_id().to_be_bytes();
+    if &code == b"NTSN" {
+        if header.origin_timestamp().bits() != wire_transmit {
+            return Err(ReplyError::Origin);
+        }
+        check_correlated_control_fields(datagram, expected_uid)?;
+        return Ok(StagedSuccessorResponse::NtsNak);
+    }
+    let kind: ProtectedControlKind = match &code {
         b"RATE" => ProtectedControlKind::Rate,
         b"DENY" => ProtectedControlKind::Deny,
         b"RSTR" => ProtectedControlKind::Restrict,
@@ -313,6 +353,31 @@ fn stage_protected_control(
     if header.origin_timestamp().bits() != wire_transmit {
         return Err(ReplyError::Origin);
     }
+    let protection: ControlProtection = if datagram
+        .extensions()
+        .any(|field: RawExtension<'_>| field.field_type() == 0x0404)
+    {
+        authenticate_restriction_control(keys, datagram, expected_uid)?;
+        ControlProtection::Authenticated
+    } else {
+        check_correlated_control_fields(datagram, expected_uid)?;
+        ControlProtection::CorrelatedOnly
+    };
+    Ok(StagedSuccessorResponse::Control(RestrictionControl {
+        kind,
+        protection,
+    }))
+}
+
+/// Verify the established authenticated control shape under the original S2C key.
+/// # Errors
+/// Refuse missing or wrong UID, wrong field placement or failed authenticated opening.
+#[cfg(test)]
+fn authenticate_restriction_control(
+    keys: &DirectionalKeys,
+    datagram: &RawDatagram<'_>,
+    expected_uid: &[u8; 32],
+) -> Result<(), ReplyError> {
     let mut fields: ExtensionFields<'_> = datagram.extensions();
     let uid: RawExtension<'_> = fields.next().ok_or(ReplyError::UniqueIdentifier)?;
     if uid.field_type() != 0x0104 || uid.body() != expected_uid {
@@ -326,8 +391,36 @@ fn stage_protected_control(
         if frame.fields().next().is_some() {
             return Err(ReplyError::Placement);
         }
-        Ok(kind)
+        Ok(())
     })
+}
+
+/// Check the complete frame for a single matching UID and no other NTS fields.
+/// Well-framed unrelated extension content remains inert.
+/// # Errors
+/// Refuse missing, wrong or duplicate UID and any other NTS field.
+#[cfg(test)]
+fn check_correlated_control_fields(
+    datagram: &RawDatagram<'_>,
+    expected_uid: &[u8; 32],
+) -> Result<(), ReplyError> {
+    let mut uid_seen: bool = false;
+    for field in datagram.extensions() {
+        match field.field_type() {
+            0x0104 => {
+                if uid_seen || field.body() != expected_uid {
+                    return Err(ReplyError::UniqueIdentifier);
+                }
+                uid_seen = true;
+            }
+            0x0204 | 0x0304 | 0x0404 => return Err(ReplyError::Placement),
+            _ => {}
+        }
+    }
+    if !uid_seen {
+        return Err(ReplyError::UniqueIdentifier);
+    }
+    Ok(())
 }
 
 /// Admit the full authenticated field sequence before allocating exact copies.

@@ -26,8 +26,8 @@ use crate::nts_ke_experiment::job::{
 use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
     InvocationCompletion, ObservedInvocation, ObserverStartError, ProtectedControlKind, RunFailed,
-    Summary, drive_invocation_with, output, run_joined_with, run_observing, run_synchronously_with,
-    write_observed_run,
+    Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
+    run_observing, run_synchronously_with, write_observed_run,
 };
 use crate::{SourceProtectedProbeFailure, SourceProtectedProbeReport};
 
@@ -1316,15 +1316,17 @@ fn loopback_control_operation<'scope>(
     config: &'scope Config,
     provider: &'scope ProviderScope<'scope>,
     control: Control,
+    first_receipt: crate::nts_ke_experiment::job::FirstReceiptWriter<'scope>,
     remote: std::net::SocketAddr,
-    before_commit: Option<super::LoopbackBeforeCommit>,
+    before_commit: super::LoopbackBeforeCommit,
 ) -> Operation {
     let original_expiry: Instant = control.expiry;
     let mut producer: ScriptProducer<'_> =
         ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
     producer.managed_loopback = Some(remote);
-    producer.before_loopback_commit = before_commit;
-    let result: Operation = drive_invocation_with(config, provider, control, &mut producer);
+    producer.before_loopback_commit = Some(before_commit);
+    let result: Operation =
+        drive_successor_fixture(config, provider, control, &mut producer, first_receipt);
     assert_eq!(
         (
             producer.establish_calls,
@@ -1355,7 +1357,75 @@ fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failur
     Ok(PreparedInvocation::checked_fixture(config, control))
 }
 
-/// Observe request correlation, joined DENY, and policy or stale-source refusal.
+/// Terminal actions at the retired second reply's final policy boundary.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+enum LoopbackSuccessor {
+    /// Let the genuine retired DENY commit under the original authority.
+    ApplyDeny,
+    /// Replace the actual source revision before the DENY can commit.
+    ReplaceConfiguration,
+    /// Unwind the real worker before it records any terminal operation result.
+    Unwind,
+}
+
+/// Count destruction of the opaque payload sealed by the actual unwind case.
+#[cfg(any(windows, target_os = "linux"))]
+static SUCCESSOR_UNWIND_DROPS: AtomicUsize = AtomicUsize::new(0);
+
+/// Hold the actual terminal boundary and deliver the selected outside event.
+/// The component controller observes and releases only this one boundary.
+/// # Panics
+/// The returned hook resumes the selected fixture unwind or fails if the
+/// replacement retains the original revision.
+#[cfg(any(windows, target_os = "linux"))]
+fn loopback_successor_hook(
+    successor: LoopbackSuccessor,
+    mut authority: crate::SourcePolicyAuthority,
+    original: crate::SourceConfigurationSnapshot,
+    target: crate::KePreviewTarget,
+) -> (super::LoopbackBeforeCommit, Gate) {
+    let ((entered, release), gate) = producer_gate();
+    let before_commit: super::LoopbackBeforeCommit = Box::new(move || {
+        entered.send(()).map_err(|_| Failure::Control)?;
+        release.recv_timeout(WAIT).map_err(|_| Failure::Control)?;
+        match successor {
+            LoopbackSuccessor::ApplyDeny => {}
+            LoopbackSuccessor::ReplaceConfiguration => {
+                let replacement: crate::SourceConfigurationSnapshot = authority
+                    .replace_ke_preview_configuration(
+                        &original,
+                        original.addresses().clone(),
+                        target,
+                    )
+                    .map_err(Failure::SourcePolicy)?;
+                assert!(!replacement.same_configuration(&original));
+            }
+            LoopbackSuccessor::Unwind => std::panic::resume_unwind(Box::new(Payload {
+                drops: &SUCCESSOR_UNWIND_DROPS,
+            })),
+        }
+        Ok(())
+    });
+    (before_commit, gate)
+}
+
+/// Wait for the actual finished hint without collecting or taking the worker.
+/// # Errors
+/// Refuse a watchdog timeout or any inapplicable custody phase.
+#[cfg(any(windows, target_os = "linux"))]
+fn wait_for_unjoined_successor(slot: &'static WorkerSlot) -> Result<(), Failure> {
+    let deadline: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    loop {
+        match slot.observer().poll_until(deadline) {
+            Observation::Running(true) => return Ok(()),
+            Observation::Running(false) | Observation::Busy => std::thread::yield_now(),
+            _ => return Err(Failure::Control),
+        }
+    }
+}
+
+/// Observe the first history across normally and abnormally joined successors.
 /// Both UDP legs share one original finite fixture window.
 ///
 /// # Errors
@@ -1366,13 +1436,13 @@ fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failur
 fn run_managed_loopback_control(
     slot: &'static WorkerSlot,
     admission: &'static ProcessAdmission,
-    replace: bool,
+    successor: LoopbackSuccessor,
 ) -> Result<(), Failure> {
     use std::io;
     use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 
-    use crate::nts_ke_experiment::collect_prepared;
     use crate::nts_ke_experiment::datagram::{DatagramError, tests::serve_managed_loopback};
+    use crate::nts_ke_experiment::receive_submitted;
     use crate::{
         KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
         SourcePolicyAuthority, SourcePolicyLimits,
@@ -1409,66 +1479,93 @@ fn run_managed_loopback_control(
     );
     let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
 
-    let before_commit: Option<super::LoopbackBeforeCommit> = if replace {
-        let original: SourceConfigurationSnapshot = expected.clone();
-        Some(Box::new(move || {
-            let successor: SourceConfigurationSnapshot = authority
-                .replace_ke_preview_configuration(&original, original.addresses().clone(), target)
-                .map_err(Failure::SourcePolicy)?;
-            assert!(!successor.same_configuration(&original));
-            Ok(())
-        }))
-    } else {
-        None
-    };
+    let (before_commit, gate): (super::LoopbackBeforeCommit, Gate) =
+        loopback_successor_hook(successor, authority, expected.clone(), target);
     let prepared: PreparedInvocation = prepare_managed_loopback(config)?;
-    let (result, peer_result): (Result<ReceivedInvocation, RunFailed>, Result<(), Failure>) =
-        std::thread::scope(|scope| {
-            let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
-                std::thread::Builder::new()
-                    .spawn_scoped(scope, || serve_managed_loopback(&peer))
-                    .map_err(|_| Failure::Control)?;
-            let result: Result<ReceivedInvocation, RunFailed> = collect_prepared(
-                prepared,
-                slot,
-                None,
-                |slot: &'static WorkerSlot, prepared: PreparedInvocation| {
-                    slot.submit_fixture(
-                        prepared,
-                        admission,
-                        component_provider,
-                        move |config, provider, control| {
-                            loopback_control_operation(
-                                config,
-                                provider,
-                                control,
-                                remote,
-                                before_commit,
-                            )
-                        },
-                        Hooks::none(),
-                    )
-                },
-            );
-            let peer_result: Result<(), Failure> =
-                peer_worker.join().unwrap_or(Err(Failure::Control));
-            Ok::<_, Failure>((result, peer_result))
-        })?;
+    let original_origin: Instant = prepared.original_times().0;
+    std::thread::scope(|scope| {
+        let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
+            std::thread::Builder::new()
+                .spawn_scoped(scope, || serve_managed_loopback(&peer))
+                .map_err(|_| Failure::Control)?;
+        slot.submit_successor_fixture(
+            prepared,
+            admission,
+            component_provider,
+            move |config, provider, control, first_receipt| {
+                loopback_control_operation(
+                    config,
+                    provider,
+                    control,
+                    first_receipt,
+                    remote,
+                    before_commit,
+                )
+            },
+            Hooks::none(),
+        )
+        .map_err(|_| Failure::Control)?;
+        gate.wait(slot)?;
+        let before_successor_commit: Instant = Instant::now();
+        assert!(matches!(
+            slot.take_for_receiving(),
+            Err(CollectError::NotReady)
+        ));
+        assert_loopback_policy(&source, &alias, remote, false)?;
+        gate.release()?;
+        wait_for_unjoined_successor(slot)?;
+        assert!(matches!(
+            slot.take_for_receiving(),
+            Err(CollectError::NotReady)
+        ));
+        let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, None);
+        let peer_result: Result<(), Failure> = peer_worker.join().unwrap_or(Err(Failure::Control));
+        assert_joined_loopback_successor(
+            result,
+            successor,
+            remote,
+            &expected,
+            &(original_origin..=before_successor_commit),
+        )?;
+        peer_result
+    })?;
+    let deny_applied: bool = matches!(successor, LoopbackSuccessor::ApplyDeny);
+    assert_loopback_policy(&source, &alias, remote, deny_applied)?;
+    assert_loopback_custody(slot, &peer, &config_lifetime, successor)
+}
 
-    assert_loopback_control_outcome(result, replace, remote, &expected)?;
-    peer_result?;
-    assert_loopback_policy(&source, &alias, remote, replace)?;
+/// Inspect worker ownership and peer work before the fixture destroys its resources.
+/// # Errors
+/// Preserve clock arithmetic and the peer inspection setup refusal.
+/// # Panics
+/// Fail if the joined result can be taken twice, a panic payload escapes, or
+/// any extra datagram or original input owner remains outstanding.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_loopback_custody(
+    slot: &'static WorkerSlot,
+    peer: &std::net::UdpSocket,
+    config_lifetime: &Weak<()>,
+    successor: LoopbackSuccessor,
+) -> Result<(), Failure> {
+    assert_eq!(
+        slot.sealed_count(),
+        Ok(usize::from(matches!(successor, LoopbackSuccessor::Unwind)))
+    );
     assert_eq!(config_lifetime.strong_count(), 0);
     let inspect_until: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
     assert_eq!(
         slot.observer().poll_until(inspect_until),
         Observation::Taken
     );
+    assert!(matches!(
+        slot.take_for_receiving(),
+        Err(CollectError::NotReady)
+    ));
 
     peer.set_nonblocking(true).map_err(|_| Failure::Control)?;
     assert!(matches!(
         peer.recv_from(&mut [0_u8; 1]),
-        Err(error) if error.kind() == io::ErrorKind::WouldBlock
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
     ));
     Ok(())
 }
@@ -1483,7 +1580,7 @@ fn assert_loopback_policy(
     source: &crate::SourceHandle,
     alias: &crate::SourceHandle,
     remote: std::net::SocketAddr,
-    replace: bool,
+    deny_applied: bool,
 ) -> Result<(), Failure> {
     use crate::SourcePolicySnapshot;
 
@@ -1493,48 +1590,203 @@ fn assert_loopback_policy(
     let alias_after: SourcePolicySnapshot = alias
         .policy_snapshot(remote)
         .map_err(Failure::SourcePolicy)?;
-    assert_eq!(after.source().refused(), !replace);
-    assert_eq!(after.endpoint().refused(), !replace);
+    assert_eq!(after.source().refused(), deny_applied);
+    assert_eq!(after.endpoint().refused(), deny_applied);
     assert!(!alias_after.source().refused());
-    assert_eq!(alias_after.endpoint().refused(), !replace);
-    assert_eq!(after.source().revision(), if replace { 3 } else { 4 });
-    assert_eq!(after.endpoint().revision(), if replace { 3 } else { 4 });
+    assert_eq!(alias_after.endpoint().refused(), deny_applied);
+    let expected_revision: u64 = if deny_applied { 4 } else { 3 };
+    assert_eq!(after.source().revision(), expected_revision);
+    assert_eq!(after.endpoint().revision(), expected_revision);
     assert!(after.source().floor().is_some());
     assert!(after.endpoint().floor().is_some());
     Ok(())
 }
 
-/// Require the real normally joined result or the exact currentness refusal.
+/// Inspect the first genuine receipt beside the independently expected terminal facts.
 /// # Errors
-/// Preserve original unexpected operation failures and refuse the wrong disposition.
+/// Preserve unexpected operation failures and refuse absent or mismatched custody.
 /// # Panics
-/// Fail if history or the original refusal and its independent cleanup fields differ.
+/// Fail if the first history or the second-leg decision is overwritten or fabricated.
 #[cfg(any(windows, target_os = "linux"))]
-fn assert_loopback_control_outcome(
+fn assert_joined_loopback_successor(
     result: Result<ReceivedInvocation, RunFailed>,
-    replace: bool,
+    successor: LoopbackSuccessor,
     remote: std::net::SocketAddr,
     expected: &crate::SourceConfigurationSnapshot,
+    first_commit_window: &std::ops::RangeInclusive<Instant>,
 ) -> Result<(), Failure> {
-    match (replace, result) {
-        (false, Ok(ReceivedInvocation::ProtectedControl(joined))) => {
-            let history: AppliedProtectedControl = joined.into_history();
-            assert_eq!(history.kind(), ProtectedControlKind::Deny);
-            assert_eq!(history.remote(), remote);
-            assert_eq!(history.serial(), 2);
-            assert!(history.configuration().same_configuration(expected));
+    match (successor, result) {
+        (
+            LoopbackSuccessor::ApplyDeny | LoopbackSuccessor::ReplaceConfiguration,
+            Ok(ReceivedInvocation::ProtectedSuccessor(joined)),
+        ) => {
+            let (first, terminal): (
+                Box<crate::nts_ke_experiment::datagram::ManagedProtectedHistory>,
+                Operation,
+            ) = joined.into_parts();
+            assert_loopback_first_receipt(&first, remote, expected, first_commit_window);
+            match (successor, terminal) {
+                (
+                    LoopbackSuccessor::ApplyDeny,
+                    Ok(InvocationCompletion::ManagedProtectedControl(history)),
+                ) => {
+                    assert_loopback_deny(&history, remote, expected);
+                    assert!(history.decided_at() >= *first_commit_window.end());
+                }
+                (LoopbackSuccessor::ReplaceConfiguration, Err(failure)) => {
+                    assert_eq!(
+                        failure,
+                        failed(Failure::SourcePolicy(
+                            crate::SourcePolicyError::ConfigurationChanged,
+                        ))
+                    );
+                }
+                (_, Err(failure)) => return Err(failure.primary),
+                _ => return Err(Failure::Control),
+            }
         }
-        (true, Err(RunFailed::Operation(failure))) => {
-            assert_eq!(
-                failure.primary,
-                Failure::SourcePolicy(crate::SourcePolicyError::ConfigurationChanged)
-            );
-            assert_eq!(failure.cleanup, None);
-            assert_eq!(failure.admission_cleanup, None);
+        (LoopbackSuccessor::Unwind, Err(RunFailed::Abnormal(joined))) => {
+            assert_eq!(joined.termination, Termination::Panicked);
+            assert!(!joined.retired);
+            assert!(joined.operation.is_none());
+            let first: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory =
+                joined.first_receipt().ok_or(Failure::Control)?;
+            assert_loopback_first_receipt(first, remote, expected, first_commit_window);
         }
         (_, Err(RunFailed::Operation(failure))) => return Err(failure.primary),
         _ => return Err(Failure::Control),
     }
+    Ok(())
+}
+
+/// Match the original wire vector, pre-checkout population and receiving context.
+/// # Panics
+/// Fail if later work replaces or renews any of the retained original facts.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_loopback_first_receipt(
+    first: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory,
+    remote: std::net::SocketAddr,
+    expected: &crate::SourceConfigurationSnapshot,
+    first_commit_window: &std::ops::RangeInclusive<Instant>,
+) {
+    let history: &crate::nts_ke_experiment::datagram::ProtectedHistory = first.history();
+    let receipt: crate::nts_ke_experiment::association::ledger::Receipt = history.receipt();
+    assert!(first.configuration().same_configuration(expected));
+    assert_eq!(history.endpoints().1, remote);
+    assert_eq!(history.run_context().origin, *first_commit_window.start());
+    assert_eq!(receipt.serial(), 1);
+    assert_eq!(
+        receipt.fields().header().origin_timestamp().bits(),
+        0x1122_3344_5566_7788
+    );
+    assert_eq!(receipt.cookie_counts(), (1, 1));
+    assert_eq!(history.population(), (1, 12));
+    assert_eq!(
+        first.summary(),
+        &Summary {
+            cookies: 1,
+            cookie_bytes: 12,
+            packet_bytes: 252,
+            transmitted: true,
+        }
+    );
+    assert!(first_commit_window.contains(&receipt.accepted_at()));
+    assert!(first_commit_window.contains(&history.committed_at()));
+    assert!(receipt.accepted_at() <= history.committed_at());
+}
+
+/// Compare the genuine applied control with the independent fixed peer's decision.
+/// # Panics
+/// Fail if protection, policy scope or the successor ordinal is lost.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_loopback_deny(
+    history: &AppliedProtectedControl,
+    remote: std::net::SocketAddr,
+    expected: &crate::SourceConfigurationSnapshot,
+) {
+    use crate::nts_ke_experiment::response::ControlProtection;
+
+    assert_eq!(history.kind(), ProtectedControlKind::Deny);
+    assert_eq!(history.protection(), ControlProtection::Authenticated);
+    assert_eq!(history.remote(), remote);
+    assert_eq!(history.serial(), 2);
+    assert!(history.configuration().same_configuration(expected));
+}
+
+/// Require the real normally joined native fixture result.
+/// # Errors
+/// Preserve original unexpected operation failures and refuse the wrong disposition.
+/// # Panics
+/// Fail if the original control differs from the fixed peer's decision.
+#[cfg(windows)]
+fn assert_native_loopback_control(
+    result: Result<ReceivedInvocation, RunFailed>,
+    remote: std::net::SocketAddr,
+    expected: &crate::SourceConfigurationSnapshot,
+) -> Result<(), Failure> {
+    match result {
+        Ok(ReceivedInvocation::ProtectedControl(joined)) => {
+            let history: AppliedProtectedControl = joined.into_history();
+            assert_loopback_deny(&history, remote, expected);
+        }
+        Err(RunFailed::Operation(failure)) => return Err(failure.primary),
+        _ => return Err(Failure::Control),
+    }
+    Ok(())
+}
+
+/// Refuse a different Control even when its timing and actual Stop scope match.
+/// # Errors
+/// Preserve checked fixture setup and actual joined receiving refusals.
+/// # Panics
+/// Fail if attaching the original writer admits the sibling's producer or history.
+#[test]
+fn successor_writer_refuses_equal_value_foreign_control_before_producer() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_millis(20))
+        .ok_or(Failure::Deadline)?;
+    let (config, _source, _authority): (Config, crate::SourceHandle, crate::SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(8))?;
+    let result: Result<ReceivedInvocation, RunFailed> = run_joined_with(
+        config,
+        &SLOT,
+        None,
+        |slot: &'static WorkerSlot, prepared: PreparedInvocation| {
+            slot.submit_successor_fixture(
+                prepared,
+                &ADMISSION,
+                component_provider,
+                |config, provider, original, writer| {
+                    let sibling: Control = Control::clamped_in(
+                        original.origin,
+                        original.expiry,
+                        Arc::clone(&original.stop_scope),
+                    )?;
+                    assert_eq!(sibling.origin, original.origin);
+                    assert_eq!(sibling.expiry, original.expiry);
+                    assert_eq!(sibling.handshake_deadline, original.handshake_deadline);
+                    assert!(Arc::ptr_eq(&sibling.stop_scope, &original.stop_scope));
+                    let mut producer: ScriptProducer<'_> =
+                        ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
+                    producer.managed_control = Some(ProtectedControlKind::Deny);
+                    let outcome: Operation =
+                        drive_successor_fixture(config, provider, sibling, &mut producer, writer);
+                    assert_eq!((producer.establish_calls, producer.exchange_calls), (0, 0));
+                    outcome
+                },
+                Hooks::none(),
+            )
+        },
+    );
+    assert!(
+        matches!(result, Err(RunFailed::Operation(actual)) if actual == failed(Failure::Control))
+    );
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
     Ok(())
 }
 
@@ -1546,7 +1798,7 @@ fn assert_loopback_control_outcome(
 fn managed_loopback_successor_commits_exact_deny_after_normal_join() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    run_managed_loopback_control(&SLOT, &ADMISSION, false)
+    run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyDeny)
 }
 
 /// Equal-value replacement after real retirement refuses the exact staged control.
@@ -1558,7 +1810,22 @@ fn managed_loopback_successor_refuses_same_values_replacement_before_commit() ->
 {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    run_managed_loopback_control(&SLOT, &ADMISSION, true)
+    run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ReplaceConfiguration)
+}
+
+/// Unwinding before the second decision retains only the genuine first receipt.
+/// # Errors
+/// Preserve fixture or actual worker receiving failure.
+/// # Panics
+/// Fail if joining the worker destroys the original opaque unwind payload.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_loopback_successor_unwind_preserves_first_receipt_after_join() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::Unwind)?;
+    assert_eq!(SUCCESSOR_UNWIND_DROPS.load(Ordering::Acquire), 0);
+    Ok(())
 }
 
 /// Admit only the fixed owned fixture's numeric IPv4 loopback endpoint.
@@ -1646,8 +1913,8 @@ fn native_provider_managed_loopback_successor_commits_exact_deny_after_normal_jo
     if let Err(failure) = &observed.result {
         let _reported: std::process::ExitCode = report_run_failure(failure);
     }
-    assert_loopback_control_outcome(observed.result, false, udp, &expected)?;
-    assert_loopback_policy(&source, &alias, udp, false)?;
+    assert_native_loopback_control(observed.result, udp, &expected)?;
+    assert_loopback_policy(&source, &alias, udp, true)?;
     assert!(!observed.cleanup.stop_failed);
     assert_eq!(observed.cleanup.unregistration_error, None);
     assert_eq!(config_lifetime.strong_count(), 0);

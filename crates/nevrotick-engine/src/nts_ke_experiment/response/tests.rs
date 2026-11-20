@@ -9,7 +9,10 @@ use ntp_wire::{
 use zeroize::Zeroizing;
 
 use super::fixtures;
-use super::{DirectionalKeys, ReplyError, stage_reply};
+use super::{
+    ControlProtection, DirectionalKeys, ProtectedControlKind, ReplyError, StagedSuccessorResponse,
+    stage_reply, stage_successor_response,
+};
 
 /// Public C2S input; its two halves both differ from the response key.
 const C2S: [u8; 32] = [
@@ -78,6 +81,117 @@ fn healthy_response_stages_exact_coordinates_and_cookie_once() -> Result<(), Rep
     assert_eq!(fields.transmit().bits(), TRANSMIT);
     assert_eq!(cookies.len(), 1);
     assert_eq!(cookies[0].as_slice(), COOKIE);
+    Ok(())
+}
+
+/// The control path retains only the code and its actual protection evidence.
+/// A complete unrelated field is inert, while duplicates and reserved fields refuse.
+/// # Errors
+/// Preserve an unexpected refusal of an admitted control or authenticated neighbor.
+/// # Panics
+/// Fail if control evidence is escalated or a malformed field chain is accepted.
+#[test]
+fn correlated_restriction_checks_the_complete_frame() -> Result<(), ReplyError> {
+    let owner: DirectionalKeys = keys(C2S, S2C);
+    let mut control: [u8; 112] = [0; 112];
+    control[..84].copy_from_slice(&fixtures::HEALTHY[..84]);
+    control[1] = 0;
+    // A fully framed 28-byte, unrelated terminal extension.
+    control[84..88].copy_from_slice(&[0x12, 0x34, 0x00, 0x1c]);
+    for (code, expected) in [
+        (b"RATE", ProtectedControlKind::Rate),
+        (b"DENY", ProtectedControlKind::Deny),
+        (b"RSTR", ProtectedControlKind::Restrict),
+    ] {
+        control[12..16].copy_from_slice(code);
+        for size in [84_usize, control.len()] {
+            let StagedSuccessorResponse::Control(facts) =
+                stage_successor_response(&owner, &control[..size], &UID, ORIGIN, 1)?
+            else {
+                return Err(ReplyError::Header);
+            };
+            assert_eq!(
+                facts.into_parts(),
+                (expected, ControlProtection::CorrelatedOnly)
+            );
+        }
+    }
+    assert!(matches!(
+        stage_successor_response(&owner, &control[..84], &[0xff; 32], ORIGIN, 1),
+        Err(ReplyError::UniqueIdentifier)
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, &control[..84], &UID, ORIGIN + 1, 1),
+        Err(ReplyError::Origin)
+    ));
+    for (extension_type, expected) in [
+        ([0x01, 0x04], ReplyError::UniqueIdentifier),
+        ([0x02, 0x04], ReplyError::Placement),
+        ([0x03, 0x04], ReplyError::Placement),
+        ([0x04, 0x04], ReplyError::Nonce),
+    ] {
+        control[84..86].copy_from_slice(&extension_type);
+        assert!(matches!(
+            stage_successor_response(&owner, &control, &UID, ORIGIN, 1),
+            Err(error) if error == expected
+        ));
+    }
+    assert!(matches!(
+        stage_successor_response(&owner, &control[..111], &UID, ORIGIN, 1),
+        Err(ReplyError::Frame(FrameError::TruncatedExtension))
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, &fixtures::HEALTHY[..84], &UID, ORIGIN, 1),
+        Err(ReplyError::Envelope(_))
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, fixtures::HEALTHY, &UID, ORIGIN, 1)?,
+        StagedSuccessorResponse::Ordinary(_)
+    ));
+    Ok(())
+}
+
+/// An NTS NAK requires exact correlation and excludes all other NTS fields.
+/// # Errors
+/// Preserve an unexpected refusal of the eligible negative acknowledgement.
+/// # Panics
+/// Fail if an NTSN is mislabeled or unsupported fields reach either disposition.
+#[test]
+fn nts_nak_has_its_own_bounded_disposition() -> Result<(), ReplyError> {
+    let owner: DirectionalKeys = keys(C2S, S2C);
+    let mut packet: [u8; 112] = [0; 112];
+    packet[..84].copy_from_slice(&fixtures::HEALTHY[..84]);
+    packet[1] = 0;
+    packet[12..16].copy_from_slice(b"NTSN");
+    assert!(matches!(
+        stage_successor_response(&owner, &packet[..84], &UID, ORIGIN, 1)?,
+        StagedSuccessorResponse::NtsNak
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, &packet[..48], &UID, ORIGIN, 1),
+        Err(ReplyError::UniqueIdentifier)
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, &packet[..84], &[0xff; 32], ORIGIN, 1),
+        Err(ReplyError::UniqueIdentifier)
+    ));
+    assert!(matches!(
+        stage_successor_response(&owner, &packet[..84], &UID, ORIGIN + 1, 1),
+        Err(ReplyError::Origin)
+    ));
+    packet[86..88].copy_from_slice(&[0, 28]);
+    for extension_type in [0x0204_u16, 0x0304, 0x0404] {
+        packet[84..86].copy_from_slice(&extension_type.to_be_bytes());
+        assert!(matches!(
+            stage_successor_response(&owner, &packet, &UID, ORIGIN, 1),
+            Err(ReplyError::Placement)
+        ));
+    }
+    packet[84..86].copy_from_slice(&[0x12, 0x34]);
+    assert!(matches!(
+        stage_successor_response(&owner, &packet, &UID, ORIGIN, 1)?,
+        StagedSuccessorResponse::NtsNak
+    ));
     Ok(())
 }
 

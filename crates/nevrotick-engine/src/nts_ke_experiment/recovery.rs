@@ -15,7 +15,11 @@ use garde::Validate;
 use super::association::ledger::RecoveryIntent;
 use super::association::ledger::retirement::{PastRequests, RetiredContext};
 use super::association::{AssociationOwner, CheckedPopulation};
+#[cfg(test)]
+use super::datagram::CommittedFirstProtected;
 use super::datagram::{CommittedProtected, ProtectedCompletion};
+#[cfg(test)]
+use super::job::FirstReceiptWriter;
 use super::process::ProviderScope;
 #[cfg(test)]
 use super::response::ProtectedControlKind;
@@ -425,6 +429,9 @@ pub(super) struct Invocation<'scope> {
     contexts: u8,
     /// One retired context's history remains owned through establishment failures.
     previous: Option<PastRequests<'scope>>,
+    /// One worker-owned destination for the first genuine managed commit.
+    #[cfg(test)]
+    first_receipt: Option<FirstReceiptWriter<'scope>>,
 }
 
 impl<'scope> Invocation<'scope> {
@@ -432,6 +439,28 @@ impl<'scope> Invocation<'scope> {
     #[cfg(test)]
     pub(super) const fn run_context(&self) -> &Arc<crate::RunClockContext> {
         &self.run_context
+    }
+
+    /// Attach the worker's first-receipt destination before its initial admission.
+    /// # Errors
+    /// Refuse a foreign, duplicate, already admitted or non-managed invocation.
+    #[cfg(test)]
+    pub(super) fn retain_first_with(
+        &mut self,
+        writer: FirstReceiptWriter<'scope>,
+    ) -> Result<(), Failure> {
+        if !matches!(self.config.mode, ExchangeMode::ManagedProtected(_))
+            || self.plan != Plan::Due
+            || !self
+                .first_control
+                .as_ref()
+                .is_some_and(|control: &Control| writer.owns(control))
+            || self.first_receipt.is_some()
+        {
+            return Err(Failure::Control);
+        }
+        self.first_receipt = Some(writer);
+        Ok(())
     }
 
     /// Receive the original checked public Control created before process admission.
@@ -518,6 +547,8 @@ impl<'scope> Invocation<'scope> {
             last_failure: None,
             contexts: 0,
             previous: None,
+            #[cfg(test)]
+            first_receipt: None,
         })
     }
 
@@ -1096,9 +1127,11 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
     }
 
     /// Consume the first retired reply before selecting one private successor.
+    /// A worker holding a first-receipt destination records the detached history
+    /// after the nonterminal commit and before successor admission.
     /// # Errors
-    /// Preserve genuine first-leg commit, carried credit, subsequent receive
-    /// or final authority refusals without changing association ownership.
+    /// Preserve genuine first-leg commit, history binding and storage, carried
+    /// credit, subsequent receive or final authority refusals.
     /// # Panics
     /// The native fixture fails if the guarded control leaves a request pending.
     #[cfg(test)]
@@ -1111,8 +1144,17 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         use super::datagram::{RetiredProtectedSuccessor, tests};
 
         let control: &'control Control = self.control;
-        let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
-        first.commit_for_successor(association)?;
+        if let Some(writer) = self.invocation.first_receipt.take() {
+            let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
+                self.bind_association(association)?;
+            let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
+            let committed: CommittedFirstProtected<'control> =
+                first.commit_first_for_successor(association)?;
+            writer.record(committed.into_first_history(&receiving)?)?;
+        } else {
+            let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
+            first.commit_for_successor(association)?;
+        }
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
         #[cfg(windows)]
@@ -1169,9 +1211,13 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         if matches!(
             self.invocation.config.mode,
             ExchangeMode::ManagedProtected(_)
-        ) && let Some(fixture) = producer.managed_successor_fixture()
-        {
-            return self.receive_managed_successor_fixture(association, producer, fixture);
+        ) {
+            if let Some(fixture) = producer.managed_successor_fixture() {
+                return self.receive_managed_successor_fixture(association, producer, fixture);
+            }
+            if self.invocation.first_receipt.is_some() {
+                return Err(Failure::Control);
+            }
         }
         self.receive_protected(association, |owner| producer.exchange(owner, control))
     }

@@ -459,6 +459,9 @@ impl StopHandle {
 
 /// One transaction's immutable time bounds and serialized publication authority.
 struct Control {
+    /// Exact instance identity for the worker's write-only first-receipt checkpoint.
+    #[cfg(test)]
+    first_receipt_identity: Arc<()>,
     /// Original monotonic origin; earlier supplied times cannot gain lifetime.
     origin: Instant,
     /// Connect/handshake deadline from this transaction's original origin.
@@ -757,6 +760,8 @@ impl Control {
     fn new_in(start: Instant, stop_scope: Arc<StopScope>) -> Result<Self, Failure> {
         let cancelled = Arc::clone(&stop_scope.wake);
         Ok(Self {
+            #[cfg(test)]
+            first_receipt_identity: Arc::new(()),
             origin: start,
             handshake_deadline: start.checked_add(HANDSHAKE_TIME).ok_or(Failure::Deadline)?,
             expiry: start.checked_add(EXCHANGE_TIME).ok_or(Failure::Deadline)?,
@@ -1147,7 +1152,35 @@ fn drive_invocation_with<'scope, P: recovery::Producer>(
 ) -> Result<InvocationCompletion, Failed> {
     let mut invocation =
         recovery::Invocation::one_shot(config, provider, control).map_err(Failed::from)?;
-    match recovery::step_with(&mut invocation, producer) {
+    drive_prepared_invocation(&mut invocation, producer)
+}
+
+/// Run the selected successor through the actual worker's first-history checkpoint.
+/// # Errors
+/// Preserve original admission, operation and retirement refusal from the shared drive.
+#[cfg(test)]
+fn drive_successor_fixture<'scope, P: recovery::Producer>(
+    config: &'scope Config,
+    provider: &'scope ProviderScope<'scope>,
+    control: Control,
+    producer: &mut P,
+    writer: job::FirstReceiptWriter<'scope>,
+) -> job::Operation {
+    let mut invocation: recovery::Invocation<'scope> =
+        recovery::Invocation::one_shot(config, provider, control).map_err(Failed::from)?;
+    invocation.retain_first_with(writer).map_err(Failed::from)?;
+    drive_prepared_invocation(&mut invocation, producer)
+}
+
+/// Drive one checked invocation without substituting a renewed Control or result.
+/// # Errors
+/// Preserve original operation and secondary cleanup facts.
+#[cfg(any(windows, test))]
+fn drive_prepared_invocation<P: recovery::Producer>(
+    invocation: &mut recovery::Invocation<'_>,
+    producer: &mut P,
+) -> job::Operation {
+    match recovery::step_with(invocation, producer) {
         Ok(recovery::Step::Complete(summary)) => Ok(summary),
         Err(failure) => Err(failure),
         Ok(recovery::Step::Closed(end)) => Err(match invocation.last_failure() {
@@ -1298,7 +1331,8 @@ fn receive_probe(
     match received? {
         datagram::ReceivedInvocation::Probe(completion) => Ok(completion),
         #[cfg(test)]
-        datagram::ReceivedInvocation::ProtectedControl(_) => {
+        datagram::ReceivedInvocation::ProtectedControl(_)
+        | datagram::ReceivedInvocation::ProtectedSuccessor(_) => {
             Err(RunFailed::Operation(Failure::Control.into()))
         }
     }

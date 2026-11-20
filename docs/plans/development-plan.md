@@ -1738,6 +1738,18 @@ consumer under one original KE/deadline/budget. Keep the current one-shot API,
 correlated-only versus authenticated control distinction, delayed NTSN handling,
 and honest recovery-unavailable result under the one-KE cap. No shipped polling
 policy, recurring recovery, provider adoption or measurement eligibility follows.
+The [successor restriction dependency](../../tasks/engine-transport-pilot.md#successor-restriction-admission-and-focused-verification--20-november-2026)
+now distinguishes correlated and authenticated controls through the existing
+scripted receiver and its retired policy transaction. Focused GNU execution
+and GNU/MSVC Clippy passed. The [separate NTSN receive path](../../tasks/engine-transport-pilot.md#successor-ntsn-receive-and-retirement--20-november-2026)
+now preserves pending work and the first observation through adapter retirement.
+Its 578 ordinary cases, 16 focused optimized cases and both target Clippy lanes
+passed. The [first-receipt worker checkpoint](../../tasks/engine-transport-pilot.md#first-protected-receipt-through-worker-join--20-november-2026)
+now retains first history through physical join beside success, refusal or
+unwind in the controlled receiver. The joined cases and 20 focused optimized
+checks passed. Connect the explicit non-test Native selection and retain the
+NTSN observation through terminal refusal and join. Reuse the owned independent
+DENY peer for the first positive facade control.
 The production measurement and Core admission boundary still needs an issuer
 with finite calibration bounds and effective invalidation, plus independent
 date and scale context. The

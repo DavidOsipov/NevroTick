@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, TryLockError};
+use std::sync::{Arc, Mutex, MutexGuard, TryLockError};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
@@ -19,8 +19,8 @@ use super::super::ProtectedControlKind;
 use super::DatagramError;
 use super::reached::{
     Backend, Interest, Io, OperationCompletion, Read, RetiredProtectedSuccessor,
-    check_capture_order, classify_read, exchange_successor_mixed, exchange_successor_with,
-    exchange_with, operation,
+    check_capture_order, classify_read, exchange_successor_mixed, exchange_successor_observing,
+    exchange_successor_with, exchange_with, operation,
 };
 use crate::SoftwareClock;
 use crate::nts_ke_experiment::association::ledger::{
@@ -31,7 +31,7 @@ use crate::nts_ke_experiment::association::{AssociationCandidate, AssociationOwn
 use crate::nts_ke_experiment::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use crate::nts_ke_experiment::profile::StrictProfile;
 use crate::nts_ke_experiment::request::DirectionalKeys;
-use crate::nts_ke_experiment::response::{ReplyError, fixtures};
+use crate::nts_ke_experiment::response::{ControlProtection, ReplyError, fixtures};
 use crate::nts_ke_experiment::{
     CancelOutcome, Config, Control, Failure, IoPhase, StopDisposition, StopHandle, preview_once,
     protected_once,
@@ -142,6 +142,8 @@ pub(super) struct Script {
     reads: VecDeque<ScriptRead>,
     /// Optional observation of queue depth immediately after each actual read.
     read_residue: Option<Arc<AtomicUsize>>,
+    /// Optional record of the readings returned by the bounded scripted adapter.
+    read_captures: Option<Arc<Mutex<Vec<SoftwareClock>>>>,
     /// Override the leading receive-return reading at the selected queue residue.
     read_before_at_residue: Option<(usize, Instant)>,
     /// Optional trailing reading at the actual receive-return capture position.
@@ -182,6 +184,7 @@ impl Script {
             read_release: None,
             reads: reads.into(),
             read_residue: None,
+            read_captures: None,
             read_before_at_residue: None,
             read_after: None,
             read_after_final: None,
@@ -359,7 +362,16 @@ impl Script {
             },
             None => captured,
         };
-        self.fixture_wall(captured)
+        let captured: SoftwareClock = self.fixture_wall(captured);
+        if let Some(captures) = &self.read_captures {
+            assert!(
+                captures
+                    .lock()
+                    .map(|mut readings: MutexGuard<'_, Vec<SoftwareClock>>| readings.push(captured))
+                    .is_ok()
+            );
+        }
+        captured
     }
 
     /// Substitute only wall readings, preserving the actual monotonic brackets.
@@ -3016,6 +3028,38 @@ pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
     send_loopback_reply(peer, second, &PROTECTED_DENY)
 }
 
+/// Compare the retained first operation with its observations before commit.
+/// # Panics
+/// Fail if the receipt, socket, captures, commit interval or issued revision changes.
+fn assert_first_commit(
+    committed: &super::CommittedFirstProtected<'_>,
+    receipt: Receipt,
+    backend: &Arc<()>,
+    captures: &[(Instant, Instant, SystemTime); 3],
+    original_configuration: &SourceConfigurationSnapshot,
+    commit_interval: &std::ops::RangeInclusive<Instant>,
+) {
+    let (history, identity, committed_at, configuration): (
+        &super::reached::OperationHistory<'_>,
+        &Arc<()>,
+        Instant,
+        Option<&SourceConfigurationSnapshot>,
+    ) = committed.observation();
+    assert!(history.receipt == receipt);
+    assert!(Arc::ptr_eq(identity, backend));
+    assert_eq!(
+        &[history.send_before, history.send_after, history.read_return]
+            .map(|clock: SoftwareClock| (clock.monotonic(), clock.monotonic_after(), clock.utc())),
+        captures
+    );
+    assert!(commit_interval.contains(&committed_at));
+    assert!(
+        configuration.is_some_and(|actual: &SourceConfigurationSnapshot| {
+            actual.same_configuration(original_configuration)
+        })
+    );
+}
+
 /// Two separately retired requests use exactly one worker-local association allowance.
 /// # Errors
 /// Preserve actual issuer, both exchange paths or the terminal commit refusal.
@@ -3024,7 +3068,7 @@ pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
 #[test]
 fn managed_retired_first_request_allows_one_same_association_successor() -> Result<(), Failure> {
     for terminal in [true, false] {
-        with_managed_successor(|owner, control, _remote, _authority, _source| {
+        with_managed_successor(|owner, control, _remote, _authority, source| {
             assert_successor_refused(owner, control, Failure::Control);
             let expiry: Instant = control.expiry;
             // A normal first leg spends three units. Each WouldBlock costs its
@@ -3037,7 +3081,21 @@ fn managed_retired_first_request_allows_one_same_association_successor() -> Resu
             assert_eq!(owner.cookie_population()?, (0, 0));
             let first_backend: Arc<()> = Arc::clone(first.identity());
             let first_status: Status = owner.status();
-            first.commit_for_successor(owner)?;
+            let first_receipt: Receipt = first.history().receipt;
+            let original_captures: [(Instant, Instant, SystemTime); 3] = [
+                first.history().send_before,
+                first.history().send_after,
+                first.history().read_return,
+            ]
+            .map(|clock: SoftwareClock| (clock.monotonic(), clock.monotonic_after(), clock.utc()));
+            let original_configuration: SourceConfigurationSnapshot = source
+                .configuration_snapshot()
+                .map_err(Failure::SourcePolicy)?
+                .ok_or(Failure::Control)?;
+            let before_commit: Instant = Instant::now();
+            let committed: super::CommittedFirstProtected<'_> =
+                first.commit_first_for_successor(owner)?;
+            drop(control.published_guard()?);
             assert_eq!(owner.cookie_population()?, (1, 12));
             assert_eq!(
                 owner.status(),
@@ -3071,6 +3129,14 @@ fn managed_retired_first_request_allows_one_same_association_successor() -> Resu
             assert_eq!(second.remaining_attempts(), 0);
             assert_eq!(second.history().receipt.serial(), 2);
             assert!(!Arc::ptr_eq(second.identity(), &first_backend));
+            assert_first_commit(
+                &committed,
+                first_receipt,
+                &first_backend,
+                &original_captures,
+                &original_configuration,
+                &(before_commit..=second.history().send_before.monotonic()),
+            );
             assert_successor_refused(owner, control, Failure::Ledger(LedgerError::Ticket));
             assert_eq!(
                 owner.status(),
@@ -3339,6 +3405,38 @@ const PROTECTED_DENY: [u8; 124] = [
     0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x88, 0xd3, 0xca, 0xb3,
     0x90, 0xfb, 0xc2, 0x47, 0x7a, 0xf9, 0x7e, 0xa4, 0x03, 0xbf, 0x73, 0xfc,
 ];
+
+/// Literal DENY with the second request coordinates and only the UID extension.
+const CORRELATED_DENY: [u8; 84] = [
+    0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x45, 0x4e, 0x59,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x04, 0x00, 0x24, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b,
+    0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+    0x3c, 0x3d, 0x3e, 0x3f,
+];
+
+/// Public NTSN fixture with the second request's exact UID and origin.
+const CORRELATED_NTSN: [u8; 84] = [
+    0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4e, 0x54, 0x53, 0x4e,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x04, 0x00, 0x24, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b,
+    0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+    0x3c, 0x3d, 0x3e, 0x3f,
+];
+
+/// The same NTSN followed by a well-framed forbidden Cookie extension.
+const NTSN_WITH_COOKIE: [u8; 112] = {
+    let mut packet: [u8; 112] = [0x5a; 112];
+    let (prefix, suffix): (&mut [u8], &mut [u8]) = packet.split_at_mut(CORRELATED_NTSN.len());
+    prefix.copy_from_slice(&CORRELATED_NTSN);
+    suffix[0] = 0x02;
+    suffix[1] = 0x04;
+    suffix[2] = 0;
+    suffix[3] = 28;
+    packet
+};
 
 /// Independently sealed RSTR with the exact second request coordinates and public S2C key.
 const PROTECTED_RESTRICTION: [u8; 124] = [
@@ -3835,14 +3933,31 @@ fn known_protected_datagram_with_invalid_capture_charges_frame_and_bytes() -> Re
     Ok(())
 }
 
-/// Consume an exact retired DENY and observe its two direct policy records.
+/// Preserve the authenticated DENY path as the valid neighboring case.
 /// # Errors
-/// Preserve fixture, authentication, retirement and policy failures.
-/// # Panics
-/// Fail if the protected control affects another record, replaces authenticated
-/// history/cookies or leaves its original request or invocation open.
+/// Propagate actual fixture, exchange, retirement or policy refusal.
 #[test]
 fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(), Failure> {
+    assert_managed_retired_deny(&PROTECTED_DENY, ControlProtection::Authenticated)
+}
+
+/// Apply a correlated-only DENY through the same retired successor owner.
+/// # Errors
+/// Propagate actual fixture, exchange, retirement or policy refusal.
+#[test]
+fn managed_retired_correlated_only_deny_has_exact_policy_scope() -> Result<(), Failure> {
+    assert_managed_retired_deny(&CORRELATED_DENY, ControlProtection::CorrelatedOnly)
+}
+
+/// Consume the selected exact DENY and observe its committed protection and policy.
+/// # Errors
+/// Preserve fixture, exchange, retirement and policy failures.
+/// # Panics
+/// Fail on incorrect protection, scope, history, cookie or budget handling.
+fn assert_managed_retired_deny(
+    packet: &'static [u8],
+    protection: ControlProtection,
+) -> Result<(), Failure> {
     use crate::source_policy::SourceBinding;
     use crate::{SourceHandle, SourcePolicySnapshot};
 
@@ -3854,18 +3969,29 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
         let first: super::ProtectedCompletion<'_> = first_managed_exchange(owner, control, 0)?;
         let first_receipt: Receipt = first.history().receipt;
         first.commit_for_successor(owner)?;
+        assert_eq!(first_receipt.serial(), 1);
+        assert_eq!(owner.cookie_population()?, (1, 12));
+        let before: Status = owner.status();
         let selected: RetiredProtectedSuccessor<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
-                Script::new(
-                    ScriptSend::Full,
-                    vec![ScriptRead::Packet(&PROTECTED_DENY, peer)],
-                )
+                Script::new(ScriptSend::Full, vec![ScriptRead::Packet(packet, peer)])
             })?;
         let RetiredProtectedSuccessor::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let pending: Status = owner.status();
-        assert_eq!(pending.phase, RequestPhase::Pending);
+        assert_eq!(
+            pending,
+            Status {
+                phase: RequestPhase::Pending,
+                attempts: before.attempts - 1,
+                frames: before.frames - 1,
+                bytes: before.bytes - packet.len(),
+                available: 0,
+                used: before.used + 1,
+                uids: before.uids + 1,
+            }
+        );
         let original: SourcePolicySnapshot = source
             .policy_snapshot(remote)
             .map_err(Failure::SourcePolicy)?;
@@ -3875,6 +4001,8 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
         let earliest: Instant = Instant::now();
         let applied: AppliedProtectedControl = retired.commit(owner)?;
         assert_eq!(applied.kind(), ProtectedControlKind::Deny);
+        assert_eq!(applied.protection(), protection);
+        assert_eq!(applied.remote(), remote);
         assert_eq!(applied.serial(), 2);
         assert!((earliest..=Instant::now()).contains(&applied.decided_at()));
         assert!(applied.decided_at() < control.expiry);
@@ -4207,6 +4335,241 @@ fn managed_protected_ordinary_follows_rejected_controls_without_renewal() -> Res
         assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
         Ok(())
     })
+}
+
+/// Confirm both policy records changed only by the one protected send.
+/// # Panics
+/// Fail on refusal, unavailability, a second revision, or a changed interval.
+fn assert_nak_only_send_changed_policy(
+    before: &crate::SourcePolicySnapshot,
+    after: &crate::SourcePolicySnapshot,
+) {
+    for (prior, current) in [
+        (before.source(), after.source()),
+        (before.endpoint(), after.endpoint()),
+    ] {
+        assert!(!current.refused() && !current.unavailable());
+        assert_eq!(current.revision().checked_sub(prior.revision()), Some(1));
+        assert!(current.floor() > prior.floor());
+        assert_eq!(current.interval(), prior.interval());
+        assert_eq!(current.maximum_interval(), prior.maximum_interval());
+    }
+}
+
+/// Admit the protected reply on the same request after charging the correlated NTSN.
+/// # Errors
+/// Preserve the fixture, original receive and authenticated commit refusals.
+/// # Panics
+/// Fail if NTSN ends the receive, refreshes policy, or changes receipt or cookie custody.
+#[test]
+fn managed_successor_nak_leaves_ordinary_reply_opportunity() -> Result<(), Failure> {
+    with_managed_successor(|owner, control, remote, _, source| {
+        let expiry: Instant = control.expiry;
+        first_managed_exchange(owner, control, 0)?.commit_for_successor(owner)?;
+        let before: crate::SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        assert_eq!(owner.cookie_population()?, (1, 12));
+        let residue: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(3));
+        let captures: Arc<Mutex<Vec<SoftwareClock>>> = Arc::new(Mutex::new(Vec::with_capacity(2)));
+        let mut lifetime: Option<std::sync::Weak<()>> = None;
+        let (selected, first_nak_at): (RetiredProtectedSuccessor<'_>, Option<Instant>) =
+            exchange_successor_observing(owner, control, successor_entropy, |peer: SocketAddr| {
+                assert_eq!(peer, remote);
+                let mut script: Script = Script::new(
+                    ScriptSend::Full,
+                    vec![
+                        ScriptRead::Packet(&CORRELATED_NTSN, peer),
+                        ScriptRead::Packet(fixtures::SUCCESSOR_OLD_S2C, peer),
+                        ScriptRead::Failed(io::ErrorKind::UnexpectedEof),
+                    ],
+                );
+                script.read_residue = Some(Arc::clone(&residue));
+                script.read_captures = Some(Arc::clone(&captures));
+                lifetime = Some(Arc::downgrade(&script.lifetime));
+                Ok(backend(peer, script))
+            })
+            .map_err(|failure| failure.cause())?
+            .into_parts();
+        let RetiredProtectedSuccessor::Ordinary(retired) = selected else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(residue.load(Ordering::Relaxed), 1);
+        assert_eq!(lifetime.ok_or(Failure::Control)?.strong_count(), 0);
+        assert!(tokio::runtime::Handle::try_current().is_err());
+        {
+            let readings: MutexGuard<'_, Vec<SoftwareClock>> =
+                captures.lock().map_err(|_| Failure::Control)?;
+            assert_eq!(readings.len(), 2);
+            let first_at: Instant = readings.first().ok_or(Failure::Control)?.monotonic();
+            assert_eq!(first_nak_at, Some(first_at));
+        }
+        let receipt: Receipt = retired.history().receipt;
+        assert_eq!((receipt.serial(), receipt.cookie_counts()), (2, (1, 1)));
+        assert_eq!(retired.history().remote, remote);
+        assert_eq!(retired.history().packet_bytes, 252);
+        assert_eq!(
+            owner.status(),
+            Status {
+                phase: RequestPhase::Idle,
+                attempts: 30,
+                frames: 29,
+                bytes: 130_932 - CORRELATED_NTSN.len() - fixtures::SUCCESSOR_OLD_S2C.len(),
+                available: 0,
+                used: 2,
+                uids: 2,
+            }
+        );
+        assert!(owner.last_receipt() == Some(receipt));
+        assert_eq!(owner.cookie_population()?, (0, 0));
+        assert!(retired.commit(owner)?.into_summary().transmitted);
+        assert_eq!(owner.cookie_population()?, (1, 12));
+        assert!(owner.take_recovery_intent().is_none());
+        assert_eq!(control.expiry, expiry);
+        let after: crate::SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        assert_nak_only_send_changed_policy(&before, &after);
+        Ok(())
+    })
+}
+
+/// The selected terminal histories of the charged NTSN receiver.
+enum NakTerminal {
+    /// Repeated matching NTSN consumes the entire original frame allowance.
+    ReceiveWork,
+    /// A forbidden Cookie precedes a distinct backend EOF.
+    InvalidThenEof,
+    /// A matching NTSN precedes the same distinct backend EOF.
+    ValidThenEof,
+}
+
+/// Follow a genuine first commit into the selected terminal successor history.
+/// # Errors
+/// Preserve fixture, ledger and capture-observation refusals.
+/// # Panics
+/// Fail on lost terminal cause, changed policy, or incorrect NTSN observation or debit.
+fn assert_nak_terminal_history(terminal: &NakTerminal) -> Result<(), Failure> {
+    use crate::nts_ke_experiment::association::ledger::{RecoveryIntent, RecoveryReason};
+
+    with_managed_successor(|owner, control, remote, _, source| {
+        let expiry: Instant = control.expiry;
+        let first: super::ProtectedCompletion<'_> = first_managed_exchange(owner, control, 0)?;
+        let first_receipt: Receipt = first.history().receipt;
+        first.commit_for_successor(owner)?;
+        assert_eq!(owner.cookie_population()?, (1, 12));
+        assert!(owner.take_recovery_intent().is_none());
+        let before: crate::SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        let (packet, count, admitted): (&'static [u8], usize, bool) = match terminal {
+            NakTerminal::ReceiveWork => (&CORRELATED_NTSN, 31, true),
+            NakTerminal::InvalidThenEof => (&NTSN_WITH_COOKIE, 1, false),
+            NakTerminal::ValidThenEof => (&CORRELATED_NTSN, 1, true),
+        };
+        let residue: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(usize::MAX));
+        let captures: Arc<Mutex<Vec<SoftwareClock>>> =
+            Arc::new(Mutex::new(Vec::with_capacity(count + 1)));
+        let mut lifetime: Option<std::sync::Weak<()>> = None;
+        let failure =
+            exchange_successor_observing(owner, control, successor_entropy, |peer: SocketAddr| {
+                assert_eq!(peer, remote);
+                let sentinel: ScriptRead = match terminal {
+                    NakTerminal::ReceiveWork => {
+                        ScriptRead::Packet(fixtures::SUCCESSOR_OLD_S2C, peer)
+                    }
+                    NakTerminal::InvalidThenEof | NakTerminal::ValidThenEof => {
+                        ScriptRead::Failed(io::ErrorKind::UnexpectedEof)
+                    }
+                };
+                let reads: Vec<ScriptRead> = (0..count)
+                    .map(|_| ScriptRead::Packet(packet, peer))
+                    .chain([sentinel])
+                    .collect();
+                let mut script: Script = Script::new(ScriptSend::Full, reads);
+                script.read_residue = Some(Arc::clone(&residue));
+                script.read_captures = Some(Arc::clone(&captures));
+                lifetime = Some(Arc::downgrade(&script.lifetime));
+                Ok(backend(peer, script))
+            })
+            .err()
+            .ok_or(Failure::Control)?;
+        assert_eq!(lifetime.ok_or(Failure::Control)?.strong_count(), 0);
+        assert!(tokio::runtime::Handle::try_current().is_err());
+        let readings: MutexGuard<'_, Vec<SoftwareClock>> =
+            captures.lock().map_err(|_| Failure::Control)?;
+        let first_at: Instant = readings.first().ok_or(Failure::Control)?.monotonic();
+        assert_eq!(failure.first_nak_at(), admitted.then_some(first_at));
+        let phase: RequestPhase = match terminal {
+            NakTerminal::ReceiveWork => {
+                assert_eq!(failure.cause(), Failure::Ledger(LedgerError::ReceiveWork));
+                assert_eq!(residue.load(Ordering::Relaxed), 1);
+                assert_eq!(readings.len(), 31);
+                let last_at: Instant = readings.last().ok_or(Failure::Control)?.monotonic();
+                assert!(first_at < last_at);
+                let recovery: RecoveryIntent =
+                    owner.take_recovery_intent().ok_or(Failure::Control)?;
+                assert_eq!(recovery.reason(), RecoveryReason::ReceiveWork);
+                assert_eq!(recovery.not_before(), expiry);
+                RequestPhase::Idle
+            }
+            NakTerminal::InvalidThenEof | NakTerminal::ValidThenEof => {
+                assert_eq!(
+                    failure.cause(),
+                    Failure::Datagram(DatagramError::Receive(io::ErrorKind::UnexpectedEof))
+                );
+                assert_eq!(residue.load(Ordering::Relaxed), 0);
+                assert_eq!(readings.len(), 2);
+                RequestPhase::Pending
+            }
+        };
+        assert_eq!(
+            owner.status(),
+            Status {
+                phase,
+                frames: 31 - count,
+                bytes: 130_932 - count * packet.len(),
+                attempts: 30,
+                available: 0,
+                used: 2,
+                uids: 2
+            }
+        );
+        assert!(owner.take_recovery_intent().is_none());
+        assert!(owner.last_receipt() == Some(first_receipt));
+        assert_eq!(owner.cookie_population()?, (0, 0));
+        assert_eq!(control.expiry, expiry);
+        drop(control.published_guard()?);
+        let after: crate::SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        assert_nak_only_send_changed_policy(&before, &after);
+        Ok(())
+    })
+}
+
+/// Keep the first admitted mark alongside the original exhausted-work failure.
+/// # Errors
+/// Preserve fixture, ledger and capture-observation refusals.
+#[test]
+fn managed_successor_nak_exhaustion_retains_first_mark_and_receive_work() -> Result<(), Failure> {
+    assert_nak_terminal_history(&NakTerminal::ReceiveWork)
+}
+
+/// A forbidden NTSN Cookie must not mark the subsequent ordinary receive failure.
+/// # Errors
+/// Preserve fixture, ledger and capture-observation refusals.
+#[test]
+fn managed_successor_forbidden_nak_field_leaves_original_eof() -> Result<(), Failure> {
+    assert_nak_terminal_history(&NakTerminal::InvalidThenEof)
+}
+
+/// Keep an admitted NTSN mark alongside the original backend EOF.
+/// # Errors
+/// Preserve fixture, ledger and capture-observation refusals.
+#[test]
+fn managed_successor_admitted_nak_retains_original_eof() -> Result<(), Failure> {
+    assert_nak_terminal_history(&NakTerminal::ValidThenEof)
 }
 
 /// Replace the exact negotiated authorization after actual readiness.
