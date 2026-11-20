@@ -46,6 +46,7 @@ FACADE_CASES[MANAGED_EOF_MODE] = (0, MANAGED_EOF_ROW)
 TARGET = "x86_64-pc-windows-msvc"
 TEST_ROSTER_NAME = "windows-test-roster.json"
 MAX_TEST_ROSTER_BYTES = 1024 * 1024
+MAX_LAUNCHER_SOURCE_BYTES = 64 * 1024
 FACADE_FAULT_SOURCE = "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"
 FACADE_FAULT_SOURCE_SHA256 = "fda1bb48ac9751bb70a31f9501f7f8cca04de82b4481c1beab9c5e456c173287"
 FACADE_FAULT_OUTCOMES_SHA256 = "cee574bd36df9cbf1b7f2042ea2cf4aafb7f194366a19fe686e5fe94e70d3ca0"
@@ -72,6 +73,15 @@ HELD_KE_TESTS = (
     "nts_ke_experiment::job::tests::job_native_foreign_origin_records_control_before_actual_retirement",
     "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
     "nts_ke_experiment::job::tests::provider_native_foreign_origins_refuse_before_effect_factory",
+)
+# These deliberate ignored fixtures need their own peer/trust/isolated-process
+# controllers. They remain required native work outside this scripted selection.
+MANUAL_NATIVE_TESTS = (
+    "nts_ke_experiment::transport::certificate_time_fixture::pre_epoch_certificate_handshake_preserves_local_clock_failure",
+    "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
+    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
+    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_public_probe_joins_one_authenticated_reply",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join",
 )
 NESTED_TEST_MODES = dict(zip(("job-native-foreign", "provider-native-once", "provider-native-foreign"),
                            HELD_KE_TESTS, strict=True))
@@ -600,7 +610,7 @@ def validate_test_roster(value, candidate, extras, *, default_cohort=False, plac
     elif default_cohort:
         keys.add("selected_default_tests")
     else:
-        keys.update(("ke_tests", "selected_ke_tests", "held_ke_tests"))
+        keys.update(("ke_tests", "selected_ke_tests", "held_ke_tests", "manual_native_tests"))
     require(type(value) is dict and set(value) == keys
             and type(value["schema_version"]) is int and value["schema_version"] == 1
             and value["package"] == "nevrotick-engine" and value["target"] == TARGET
@@ -634,12 +644,32 @@ def validate_test_roster(value, candidate, extras, *, default_cohort=False, plac
     require(type(value["ke_tests"]) is list and expected_ke
             and value["ke_tests"] == expected_ke,
             "Windows KE roster must be the complete exact selected library subset.")
-    require(value["held_ke_tests"] == list(HELD_KE_TESTS)
-            and all(name in expected_ke for name in HELD_KE_TESTS)
-            and value["selected_ke_tests"] == [name for name in expected_ke if name not in HELD_KE_TESTS]
+    nested, manual = set(HELD_KE_TESTS), set(MANUAL_NATIVE_TESTS)
+    require(len(HELD_KE_TESTS) == len(nested) == 3
+            and len(MANUAL_NATIVE_TESTS) == len(manual) == 5
+            and nested.isdisjoint(manual)
+            and (nested | manual).issubset(expected_ke)
+            and value["held_ke_tests"] == list(HELD_KE_TESTS)
+            and value["manual_native_tests"] == list(MANUAL_NATIVE_TESTS)
+            and value["selected_ke_tests"] == [name for name in expected_ke if name not in nested | manual]
             and value["selected_ke_tests"],
-            "Windows KE selection must retain exactly the three required nested-child holds.")
+            "Windows KE selection must retain its exact three nested and five separate manual native cases.")
     return value
+
+
+def validate_ke_launcher_selection(source):
+    """Check bounded fixed source-vector consistency; this is not a Rust parser."""
+    require(type(source) is str and len(source.encode("utf-8")) <= MAX_LAUNCHER_SOURCE_BYTES,
+            "Fixed KE launcher source exceeds its static consistency bound.")
+    before, after = "            Self::Ke => (", "            Self::ControlHealthy =>"
+    require(source.count(before) == source.count(after) == 1,
+            "Fixed KE launcher selection anchors changed.")
+    body = source.split(before, 1)[1].split(after, 1)[0]
+    expected = ["engine-tests.exe", "nts_ke_experiment::", "--test-threads=1"]
+    for name in (*HELD_KE_TESTS, *MANUAL_NATIVE_TESTS):
+        expected.extend(("--skip", name))
+    require(re.findall(r'"([^"\n]*)"', body) == expected,
+            "Fixed KE launcher arguments differ from the exact scripted/manual partition.")
 
 
 def read_test_roster(path, candidate, extras, *, default_cohort=False, placement_cohort=False):
@@ -891,6 +921,9 @@ def build(args, report):
     require(type(facade) is bool, "Facade profile must be an explicit Boolean.")
     default = default_cohort_requested(args)
     placement = placement_cohort_requested(args)
+    if not (facade or default or placement):
+        validate_ke_launcher_selection(PE.Q.C.read_analysis_bytes(
+            ROOT / LAUNCHER, maximum=MAX_LAUNCHER_SOURCE_BYTES).decode("utf-8"))
     test_features = () if default or placement else ("ke-association-prototype",)
     fault_id = getattr(args, "facade_fault", None)
     fault_flags = (fault_id, getattr(args, "prepared_faults", None), getattr(args, "healthy_build_receipt", None))
@@ -1242,13 +1275,16 @@ NATIVE_JOB_OBSERVER = r"""
     // Best-effort notifications are supplemental identity evidence. Absence is
     // never inferred: Python requires every lifetime association to have one NEW.
     sealed class JobEvents {
-        readonly IntPtr job; readonly string launcher, child, console;
+        readonly IntPtr job; readonly string launcher, child, console; readonly int deadlineMilliseconds;
         IntPtr port; Task worker; volatile bool forceStop; int faulted;
         readonly System.Collections.Generic.List<Notice> notices = new System.Collections.Generic.List<Notice>(16);
         bool limitReached; string readFailure;
-        public JobEvents(IntPtr ownedJob, string launcherPath, string childPath, string consolePath) {
+        public JobEvents(IntPtr ownedJob, string launcherPath, string childPath, string consolePath, string mode) {
             job=ownedJob; launcher=launcherPath; child=childPath; console=consolePath;
+            ProcessLimit(mode);
+            deadlineMilliseconds = mode == "ke" ? 75000 : 45000;
         }
+        public int DeadlineMilliseconds { get { return deadlineMilliseconds; } }
         public void Start() {
             port = CreateIoCompletionPort(new IntPtr(-1), IntPtr.Zero, UIntPtr.Zero, 1); Check(port != IntPtr.Zero);
             PortAssociation association = new PortAssociation {key=new IntPtr(1), port=port};
@@ -1261,7 +1297,7 @@ NATIVE_JOB_OBSERVER = r"""
         void Read() {
             Stopwatch watch = Stopwatch.StartNew();
             try {
-                while (!forceStop && watch.ElapsedMilliseconds < 45000) {
+                while (!forceStop && watch.ElapsedMilliseconds < deadlineMilliseconds) {
                     uint kind; UIntPtr key; IntPtr value;
                     if (!GetQueuedCompletionStatus(port, out kind, out key, out value, 50)) {
                         int error = Marshal.GetLastWin32Error(); if (error == 258) continue;
@@ -1327,6 +1363,7 @@ def native_supervisor():
     replace("No AppVerifier/PageHeap configuration selected for requested-payload counting",
             "No AppVerifier/PageHeap configuration selected for scripted component tests")
     replace("public uint? active_processes_before_handle_release;",
+            "public int child_deadline_milliseconds, event_deadline_milliseconds; "
             "public uint? process_limit, total_processes, total_processes_before_gate, active_processes_before_gate; "
             "public int? assigned_before_gate, listed_before_gate; public Member[] members_before_gate; "
             "public string membership_read_failure_type; public Notice[] job_events; "
@@ -1346,16 +1383,20 @@ def native_supervisor():
     replace("Result result = new Result(); Process process = null; IntPtr job = IntPtr.Zero;",
             "Result result = new Result(); Process process = null; IntPtr job = IntPtr.Zero; JobEvents observer = null;")
     replace("ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2000;",
-            "ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2008; limits.basic.activeLimit = ProcessLimit(mode); result.process_limit = limits.basic.activeLimit;")
+            "ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2008; limits.basic.activeLimit = ProcessLimit(mode); result.process_limit = limits.basic.activeLimit; "
+            "result.child_deadline_milliseconds = mode == \"ke\" ? 60000 : 30000;")
     replace("            Check(SetInformationJobObject(job, 9, ref limits, (uint)Marshal.SizeOf(typeof(ExtendedLimit))));",
             "            Check(SetInformationJobObject(job, 9, ref limits, (uint)Marshal.SizeOf(typeof(ExtendedLimit))));\n"
-            "            observer = new JobEvents(job, image, child, console); observer.Start();")
+            "            observer = new JobEvents(job, image, child, console, mode); "
+            "result.event_deadline_milliseconds = observer.DeadlineMilliseconds; observer.Start();")
     replace("            // The observer has at most the BOM and still needs G; token capture",
             "            ObserveBeforeGate(job, result, image, child, console); observer.ThrowIfFaulted();\n"
             "            // The observer has at most the BOM and still needs G; token capture")
     replace("input.Write('G'); input.Flush(); input.Close(); result.gate_sent = true;", """if (gate == "good") input.Write('G');
             else if (gate == "bad") input.Write('X');
             input.Flush(); input.Close(); result.gate_sent = gate == "good";""")
+    replace("if (watch.ElapsedMilliseconds > 30000) throw new TimeoutException(\"Owned child deadline exceeded.\");",
+            "if (watch.ElapsedMilliseconds > result.child_deadline_milliseconds) throw new TimeoutException(\"Owned child deadline exceeded.\");")
     replace("            while (!process.WaitForExit(25)) {",
             "            while (!process.WaitForExit(25)) {\n                observer.ThrowIfFaulted();")
     replace("""            process.Dispose(); process = null; result.process_handle_released = true;
@@ -1642,6 +1683,10 @@ def validate_console(value, request, supervisor_hash, request_hash, *, expected_
             or result.get("cleanup_failure") is not None or result.get("output_overflow") is not False
             or result.get("cleanup_complete") is not True or result.get("streams_released") is not True
             or result.get("process_handle_released") is not True
+            or type(result.get("child_deadline_milliseconds")) is not int
+            or result["child_deadline_milliseconds"] != (60000 if request["mode"] == "ke" else 30000)
+            or type(result.get("event_deadline_milliseconds")) is not int
+            or result["event_deadline_milliseconds"] != (75000 if request["mode"] == "ke" else 45000)
             or type(result.get("process_limit")) is not int or result["process_limit"] != maximum
             or result.get("gate_sent") is not (request["gate"] == "good")
             or result.get("stdin_encoding") != "utf-8" or result.get("stdin_preamble_hex") != "EF-BB-BF"
@@ -1739,6 +1784,9 @@ def native(args, report):
         if (path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024 * 1024
                 or path.parent != build_path.parent or PRODUCT.sha256(path) != item.get("sha256")):
             raise Incomplete("Native emitted image is linked, absent, unbounded or changed.")
+    if not (facade or default or placement):
+        validate_ke_launcher_selection(PE.Q.C.read_analysis_bytes(
+            ROOT / LAUNCHER, maximum=MAX_LAUNCHER_SOURCE_BYTES).decode("utf-8"))
     directory = native_directory(args.native_dir)
     # The host directory must be an owned fresh LocalAppData child, not UNC/WSL.
     prefix = Path("/mnt/c/Users/perso/AppData/Local/NevroTick")
@@ -1760,10 +1808,13 @@ def native(args, report):
                   selected_default_tests=roster["selected_default_tests"] if default else [],
                   facade_consumer=facade, facade_refusal_cases_complete=False,
                   token_scope="Supervisor and launcher directly observed; fixed child inherits primary token.",
-                  scope="Scripted KE component tests with three separately checked nested-child cases. No real TLS, CNG, UDP, service or clock effects.")
+                  scope="Scripted KE component tests and controlled loopback UDP with three separately checked nested-child cases. Manual native TLS/provider fixtures remain separate; no full native, production, service or clock qualification.")
     if placement:
         report.update(placement_cohort=True, placement_cohort_complete=False, completed_placement_tests=[],
                       selected_placement_tests=roster["selected_placement_tests"])
+    elif not (facade or default):
+        report.update(manual_native_tests=roster["manual_native_tests"],
+                      unexecuted_manual_native_tests=list(roster["manual_native_tests"]))
     script = native_supervisor()
     supervisor_hash = hashlib.sha256(script.encode()).hexdigest()
     cases = (

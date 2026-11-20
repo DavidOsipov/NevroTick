@@ -1709,13 +1709,35 @@ The [combined source checkpoint](../../tasks/engine-transport-pilot.md#stale-deb
 now passes all 19 lanes and 1,981 named executions. Both closed roles admit
 the exact new receipt after 212 fresh reader controls and strict workspace
 validation. The new graph delta and historical lineage have independent
-review. Continue whole-ledger disposition and current metric admission from
-these bindings. The checkpoint retains its native and production exit gaps.
-The [current certificate-free Windows test image](../../tasks/engine-transport-pilot.md#current-certificate-free-msvc-link-and-dispatch-preflight)
-cross-links from the same candidate. Independent image readback matches
-the PDB and all 20 selected names. The prepared dispatcher passes 12
-simulated controls. Actual guest execution awaits an ordinary-user token
-before staging and completion evidence from the selected cases.
+review. The [current continuation](../../tasks/engine-transport-pilot.md#current-native-selection-and-final-ledger-controls--20-november-2026)
+now meets the ledger's selected GNU 95% generated-mutation criterion through
+the independently reviewed 226-row union: 145 catches, 74 compiler-invalid
+dispositions and seven equivalents. This combines retained causal witnesses
+with three fresh executions; no fresh whole-file campaign or native score
+is claimed. The line gate is qualified unchanged-source reuse. Continue the
+other critical-file and production exits from these bindings.
+The [earlier certificate-free Windows image](../../tasks/engine-transport-pilot.md#current-certificate-free-msvc-link-and-dispatch-preflight)
+retains its `a0df3abd…` cross-link and 20-case preparation scope. Current
+continuation repairs the exact scripted/manual native partition, passes 87
+portable controls and all 17 four-image MSVC build checks. The source-derived
+581-name roster retains all 20 preceding selected cases inside 313 ordinary
+scripted KE cases. Three nested cases remain separately mandatory and five
+manual fixtures remain explicit. The first ordinary-user main-Windows attempt
+matched all 581 names and retained 192 successes before its inherited cohort
+deadline. The reviewed paired child/event timer repair then passed 93 portable
+controls, all 17 rebuild steps, all 313 ordinary and three nested Windows
+cases, with complete supervision and job/stream/event cleanup. The first
+timeout remains incomplete; five manual fixtures and full-native qualification
+stay separate. This closes the bounded scripted checkpoint.
+
+The next product source child is the reviewed
+[explicit non-test protected invocation](../../tasks/engine-transport-pilot.md#next-bounded-non-test-protected-invocation--20-november-2026):
+freeze the checked API/result/parser boundary, then implement maximum two
+protected operations through the actual Native producer and joined external
+consumer under one original KE/deadline/budget. Keep the current one-shot API,
+correlated-only versus authenticated control distinction, delayed NTSN handling,
+and honest recovery-unavailable result under the one-KE cap. No shipped polling
+policy, recurring recovery, provider adoption or measurement eligibility follows.
 The production measurement and Core admission boundary still needs an issuer
 with finite calibration bounds and effective invalidation, plus independent
 date and scale context. The
@@ -1723,7 +1745,7 @@ date and scale context. The
 specifies the positive and refusal observations. It awaits an admitted
 independent reference and fixed uncertainty budgets.
 The earlier four generated fixture replay outcomes retain their own
-candidate. The current whole-file mutation gate still needs its own result.
+candidate; the current selected GNU ledger disposition is recorded above.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
 now reaches the joined managed Protected report alongside the original
 packet-admission age. Nine renewed EP1 lanes and 199 reader controls

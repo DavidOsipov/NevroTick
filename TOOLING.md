@@ -2378,6 +2378,12 @@ with an independently reviewed, bounded JSON prediction bound to the complete
 current product, runner/helper hashes, MSVC target and explicit KE feature. The
 full sorted library/KE lists, selected KE list and exact code-owned held cases
 are frozen with the build; native discovery cannot supply its own expected list.
+The KE roster also retains the five code-owned `manual_native_tests` requiring
+separate peer/trust/dedicated-process controllers. Its ordinary selection excludes
+exactly those five and the three separately executed nested cases. The result
+lists the manual fixtures as unexecuted; future ignored cases are not automatically
+excluded. The complete library must still be discovered exactly, and every
+selected scripted case must succeed with zero ignored results.
 The explicit `--default-cohort` on both lanes selects a separate closed
 guard/lifecycle child with empty Engine features (`--no-default-features`). Its
 strict independent roster uses `selected_default_tests` instead of KE fields,
@@ -2426,6 +2432,19 @@ The flat KE selection excludes three process-global claim tests; three fixed
 exact-test modes now execute them separately with their actual descendants.
 `scripted_ke_roster_complete` requires every selected case and each of those
 three exact observations. `full_native_ke_qualification` stays false.
+The fixed KE child/event-reader deadlines are 60,000/75,000 milliseconds;
+other modes retain 30,000/45,000. The receiver requires exact integer observations
+bound to the selected mode. Requests cannot supply a deadline. The outer
+PowerShell invocation remains bounded to 90 seconds, with unchanged process,
+event-count, output and cleanup guards. These are verification-workload limits;
+they change no acquisition deadline or polling policy.
+
+The deadline observations are a coordinated internal diagnostic-contract update.
+Current build/native admission binds the exact product and helper hashes, so an
+older helper generation is not migrated or retagged as current evidence. Its
+original receipts remain historical. This changes no persisted product or IPC
+format and grants no compatibility waiver to those owners.
+
 The opt-in `--facade-consumer` flag on both lanes instead selects the
 [V20 production-facade baseline](tasks/engine-transport-pilot.md#v20-production-facade-refusal-source-preparation--15-november-2026).
 It attributes normal Windows Engine/Tokio libraries from Cargo JSON and links

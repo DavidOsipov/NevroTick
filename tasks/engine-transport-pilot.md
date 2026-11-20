@@ -28728,3 +28728,174 @@ is finalized. The completed execution's build output has retired.
 | `stale-role-rebind-01/applied-checks-01/summary.json` | `3d6eae3d630c80ed5a70e359ca9ccae747c8fb52f75026cc07a785c58229e610` |
 | `stale-role-rebind-01/applied-checks-01/retry-04/verification.json` | `5dfe1002bd56405cf6b8440f4099da0f1b3c01b870330e38517d6c7cc7987dbe` |
 | `stale-combined-01/integrated-closed-roles.json` | `f79249b06ebf675ce3a3b3eab9677595670f23faea25a0c5c1c10c1a06d865d4` |
+
+###### Current native selection and final ledger controls — 20 November 2026
+
+S2.2, CHECK-6/9/19/21/25/27. Signed `bec0dba` publishes the preceding
+source checkpoint. The next child preserves its 620-input product
+`3609043e…`; only the native runner, its controls and fixed launcher change.
+Planning, regression selection, contract/static checks, mutation testing,
+Windows environment admission, delegation and independent review were applied.
+
+The scripted Windows KE selection previously included five deliberately ignored
+peer/trust/dedicated-process fixtures while requiring zero ignored results.
+The repaired reader retains those exact five in complete discovery and an
+explicit unexecuted-manual field. Its fixed launcher excludes exactly those
+five and the three separately executed nested cases. Every other scripted case,
+zero-ignore result validation, token/process/cleanup guards, and the false
+full-native qualification flag remain. The old reader rejects the new partition;
+its 78 preceding controls pass. All 87 repaired controls and pinned rustfmt pass.
+Fresh-context review accepts the three source postimages and their actual
+build/native consumers. This is runner-admission evidence, not a product defect.
+
+The independent Windows prediction contains 581 library names: 321 KE names,
+313 ordinary scripted cases, three mandatory nested cases and five manual
+fixtures. It derives from the current 571-name GNU library, two source-declared
+GNU-only exclusions and twelve inspected Windows-only declarations. Actual
+Windows discovery must match; it cannot redefine that prediction. Read-only
+main-host preflight observed medium integrity, deny-only Administrator membership
+and 6,141 MiB available physical memory. The configured supervisor must still
+observe its own and its child token. Standard four-image cross-linking passed all
+17 build and PE checks in 94.690 controller seconds. The test image retains
+the v3 product flags; three baseline-x64 diagnostics retain their separate role.
+After terminal-process and handle checks, 520,851,456 allocated bytes of owned
+build work retired; the four images, receipt and roster remain for dispatch.
+The first ordinary-user Windows attempt matched all 581 predicted names and
+confirmed the actual same-SID, nonadministrator, nonelevated supervisor and
+launcher. Ten control/discovery observations completed. The KE child recorded
+192 named successes and no assertion failure before its inherited 30-second
+whole-child deadline interrupted an explicitly bounded expiry case. Its raw
+result remains incomplete. Cleanup, stream/event joining and handle release
+were confirmed, with zero remaining job processes. The attempt took 159.434
+controller seconds.
+
+Failure triage found a coupled 45-second event-reader watchdog. A child-only
+extension would therefore be insufficient. The independently reviewed causal
+repair selects fixed KE child/event limits of 60/75 seconds, preserving other
+modes at 30/45 seconds, the 90-second outer invocation and every process,
+event-count, token, output and cleanup guard. Both effective values must be
+reported and checked at the receiving reader. This tests the cohort-budget
+hypothesis; it does not establish the absence of a Windows-specific stall.
+The paired two-file repair now passes 93 portable controls. Both effective
+integer fields feed the actual child/event guards; requests admit neither as
+an override. Older helper generations and receipts retain their own source-bound
+scope, with no migration into the current role or product/IPC format change.
+Independent review confirmed the complete changed consumer and cleanup paths.
+
+The current rebuild passed all 17 steps in 82.085 controller seconds. The fresh
+Windows 11 Pro x64 build-26300 run then passed all 14 observations in 156.444
+seconds: exact 581-name discovery, 313 ordinary successes with zero ignored and
+268 filtered, and three separately checked nested outer successes with 580
+filtered each. All 20 preceding certificate-free selectors appear among those
+313 actual successes. The nested parents require their inert inner child to
+exit 86; that inner exit is checked by the successful parent, not independently
+measured as an external native exit. The ordinary libtest summary reports
+31.61 seconds, distinct from an observed child-stopwatch duration.
+
+All actual supervisor/launcher tokens are matching-SID, nonadministrator and
+nonelevated. Descendant inheritance follows the inspected spawn path. Each job
+has zero remaining active processes, released streams/process handles, joined
+event readers and closed event ports, without cleanup or event-reader errors.
+Independent review inspected all 28 invocation/supervision records, complete
+outputs, process/event joins, runtime hashes, request/script/adapter/image
+bindings, 620 product and 15 helper pins, four EXE/PDB pairs and 17 build logs.
+The five manual fixtures remain unexecuted and full-native qualification false.
+The original timeout and 192 partial successes remain incomplete.
+
+The four native build/dispatch controller durations total 492.653 seconds.
+Adding the 20-second preflight and 120-second cleanup ceilings gives 632.653
+seconds within the unchanged 1,980-second native execution envelope. Source
+preparation and portable controls retain separate reported budgets. No failed
+result or consumed allowance is reset. Closeout exported exact raw bytes and
+retained the current four-image/PDB bundle once, then removed both owned Windows
+stages, temporary build directories and the integrated worker checkout. It took
+6.076 seconds. The index, HEAD and working diff were unchanged. Actual controller
+execution plus cleanup and the conservative 20-second preflight charge totals
+518.729/1,980 seconds. Source publication review remains separate from this
+completed scoped qualification.
+
+The final three generated ledger faults completed on the unchanged product in
+210.659 controller seconds. The healthy baseline executed 604 ordinary cases
+and 91 doctests. All three builds succeeded and tests failed at their intended
+assertions: stale serial custody reports `Ledger(Ticket)` and both reversed-span
+faults report `Ledger(Time)`. There are no survivors, compiler refusals or
+timeouts in this three-row run. Owned backing retired, the service is terminal,
+and before/after analysis admission is unchanged. Earlier misses/timeouts remain.
+The 450-second causal amendment preserves shared prior charge 1,496 under a
+2,050-second cap and conservative chronology prior charge 1,339 under a
+1,800-second cap; no historical overhead was refunded.
+
+Independent review supports the seven checked-domain equivalence proposals and
+the descriptor-specific historical bridges. One dossier's unlocated current
+`Instant: Default` compiler-control attribution supplies no execution evidence.
+Final independent raw-result review and coordinator admission reconcile the
+complete 226-row GNU inventory: 145 causal catches, 74 compiler-invalid
+dispositions and seven independently reviewed checked-domain equivalents.
+The adjusted score is `145 / (226 - 74 - 7) = 100%`, meeting the unchanged
+95% generated-mutation criterion. This is mixed evidence: exact retained
+witnesses and source bridges plus the three fresh executions, not a fresh
+226-row campaign. The two changed-type compiler dispositions retain their
+historical diagnostics and current structural arguments; neither earns a kill
+or a claim of a newly executed compiler control. Original raw failures and
+closed campaign flags remain untouched.
+
+The GNU line result 1,200/1,242 (96.62%) is qualified reuse from `a0df3abd…`.
+The ledger and production callers are unchanged. The four analysis-map deltas
+are one added product test and three policy/checker inputs. No fresh coverage
+export or branch result is claimed. This closes the selected GNU generated
+criterion for this ledger source, while generation omissions, other critical
+files, native/provider qualification, physical timing, positive Core admission
+and release obligations retain their own exits.
+
+Evidence under `protected-receive-debit-01`: native source/control patch
+`native-ke-roster-repair-01/source.patch` (`d5565480…`), actual reader-admitted
+prediction `main-host-native-preflight-02/windows-ke-independent-roster.json`
+(`a9aaa560…`), and final generated parent/child receipts
+`ledger-final-three-prepare-01/result-01/verification.json`
+(`ce3a8595…`) and `replay/verification.json` (`bd742cff…`). The independent
+reuse review is `ledger-reuse-independent-01/review.md` (`e052fb8a…`). Final
+data-only adjudication is `ledger-reuse-independent-01/extended-review-02/adjudication.json`
+(`1c3c88ca…`), adopted by `ledger-current-GNU-admission-02.json`. The current
+cross-build receipt is retained as
+`main-host-native-preflight-02/retained-build-first-01/verification.json`
+(`9ceb6fac…`). The paired rebuild receipt is
+`main-host-native-preflight-02/retained-build-deadline-02/verification.json`
+(`a7b2f948…`), and the final native receipt is
+`main-host-native-preflight-02/native-deadline-02/verification.json`
+(`e7323fa3…`). Its actual KE supervision is `ke-supervision.json` (`6227e5c8…`).
+`main-host-native-preflight-02/owned-closeout.json` (`91842011…`) maps original
+executed paths to byte-identical durable exports. Raw receipts keep their original
+paths; relocation supplies no new runnable admission. Coordinator native admission
+is `coordinator-native-admission.json` (`2ee61219…`). The source/control and
+timeout-repair patches retain both sets of RED/GREEN results.
+
+###### Next bounded non-test protected invocation — 20 November 2026
+
+S2.2/S2.3, NV-DEC-001 §6.5 and CHECK-6/8/9/11/19/21/25/27. The next
+implementation child is an explicit maximum-two-operation protected invocation,
+using one fresh KE, the original 60-second invocation and aggregate budgets.
+The existing one-shot API and CLI stay one-shot. No shipped polling interval,
+public-network expansion, recurring replacement or calibrated supplier is chosen.
+Coordinator adoption and completed fresh-context semantic review find this
+bounded laboratory source scope ready without another owner policy choice.
+
+Freeze the minimal checked plan/result/parser interfaces, then connect the actual
+Native producer, normal joined receiver and a non-test external facade consumer.
+Retain first committed history through successor refusal and actual cleanup;
+cookie/UID/send/receive work and original deadlines cannot renew. Promoting a
+test fixture's cfg alone does not meet this exit. The actual control path must
+distinguish correlated-only KoD/NAK from authenticated time/cookie publication.
+NTSN preserves Pending, the valid-reply opportunity, charged receive work and
+the original deadline; the one-KE cap reports recovery required/unavailable
+without immediate KE, cookie flush, invented jitter or plain fallback.
+
+Independent healthy/refusal/boundary/model/lifecycle observations must reach
+that non-test consumer. Current-source compiler/coverage/mutation admission
+retains 90%/95% and existing owners; source completion does not inherit this
+checkpoint's scores. Native/provider, physical calibration and positive Core
+admission retain their remaining obligations. Prepared contract
+`next-protected-invocation-contract-01/contract.md` (`fe667600…`) and completed
+review `next-protected-invocation-plan-review-01/review.md` (`80774218…`) use
+the existing `protected-receive-debit-01` evidence chain. Rebind implementation
+inputs after the interface freeze, including subsequent documentation-only
+native-tool guidance changes; no product implementation is claimed here.

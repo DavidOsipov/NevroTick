@@ -24,6 +24,15 @@ NATIVE = importlib.util.module_from_spec(SPEC)
 with patch.object(Path, "home", return_value=Path("/tmp/nevrotick-native-control-home")):
     SPEC.loader.exec_module(NATIVE)
 HASH = "a" * 64
+
+# Separate peer/trust/isolated-process cases retained by their canonical native owners.
+MANUAL_NATIVE_EXPECTATIONS = (
+    "nts_ke_experiment::transport::certificate_time_fixture::pre_epoch_certificate_handshake_preserves_local_clock_failure",
+    "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
+    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
+    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_public_probe_joins_one_authenticated_reply",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join",
+)
 REQUEST = {"image_sha256": HASH, "child_sha256": HASH, "gate": "good", "mode": "control-healthy",
            "image_path": "C:\\fixture\\NevroTick-" + "a" * 32 + ".exe"}
 CONSOLE = "C:\\Windows\\System32\\conhost.exe"
@@ -77,7 +86,8 @@ def observation(authored=2, helpers=1):
         "runtime_files_sha256": {"fixed-runtime": HASH, CONSOLE: HASH}, "system_console_path": CONSOLE,
         "execution": {
             "pid": 12, "exit_code": 0, "failure": None, "cleanup_failure": None,
-            "process_limit": 4,
+            "process_limit": 4, "child_deadline_milliseconds": 30000,
+            "event_deadline_milliseconds": 45000,
             "output_overflow": False, "cleanup_complete": True, "streams_released": True,
             "process_handle_released": True, "gate_sent": True, "stdin_encoding": "utf-8",
             "stdin_preamble_hex": "EF-BB-BF", "active_processes_before_cleanup": 0,
@@ -120,6 +130,107 @@ def facade_observation(mode, helpers=1):
         if event["kind"] == 6 and event["pid"] == 13:
             event["basename"] = "engine-facade-consumer.exe"
     return value
+
+
+class NativeChildDeadlineAdmission(unittest.TestCase):
+    """Changed deadlines remain code-owned and attested by the actual result reader."""
+
+    def test_deadline_reader_refuses_missing_observation_after_healthy_neighbor(self):
+        healthy = observation()
+        healthy["execution"]["child_deadline_milliseconds"] = 30000
+        NATIVE.validate_console(healthy, REQUEST, HASH, HASH)
+        missing = json.loads(json.dumps(healthy))
+        del missing["execution"]["child_deadline_milliseconds"]
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_console(missing, REQUEST, HASH, HASH)
+
+
+
+    def test_event_deadline_reader_refuses_missing_observation_after_healthy_neighbor(self):
+        healthy = observation()
+        healthy["execution"]["event_deadline_milliseconds"] = 45000
+        NATIVE.validate_console(healthy, REQUEST, HASH, HASH)
+        missing = json.loads(json.dumps(healthy))
+        del missing["execution"]["event_deadline_milliseconds"]
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_console(missing, REQUEST, HASH, HASH)
+
+    def test_ke_child_deadline_is_exact_and_cannot_be_requested_or_reported_for_other_modes(self):
+        for mode in ("ke", "cpu", "list", "control-healthy", *NATIVE.DEFAULT_COHORT_CASES,
+                     *NATIVE.PLACEMENT_COHORT_CASES):
+            value = observation()
+            child = "cpu-v3-probe.exe" if mode == "cpu" else (
+                "gate-control.exe" if mode == "control-healthy" else "engine-tests.exe")
+            for event in value["execution"]["job_events"]:
+                if event["pid"] == 13 and event["kind"] == 6:
+                    event["basename"] = child
+            expected = 60000 if mode == "ke" else 30000
+            value["execution"]["child_deadline_milliseconds"] = expected
+            value["execution"]["event_deadline_milliseconds"] = expected + 15000
+            request = dict(REQUEST, mode=mode)
+            self.assertIs(NATIVE.validate_console(value, request, HASH, HASH), value["execution"])
+            for wrong in (True, False, None, -1, 0, 1, str(expected), float(expected),
+                          expected - 1, expected + 1, 2147483647,
+                          30000 if mode == "ke" else 60000):
+                faulty = json.loads(json.dumps(value))
+                faulty["execution"]["child_deadline_milliseconds"] = wrong
+                with self.subTest(mode=mode, wrong=wrong), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(faulty, request, HASH, HASH)
+            with self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(value, dict(request, child_deadline_milliseconds=expected), HASH, HASH)
+
+    def test_emitted_child_stopwatch_uses_the_recorded_closed_mode_deadline(self):
+        source = NATIVE.native_supervisor()
+        selected = re.findall(r'result\.child_deadline_milliseconds = mode == "([^"\n]+)" \? ([0-9]+) : ([0-9]+);', source)
+        self.assertEqual(selected, [("ke", "60000", "30000")])
+        self.assertIn("public int child_deadline_milliseconds, event_deadline_milliseconds;", source)
+        self.assertEqual(source.count("if (watch.ElapsedMilliseconds > result.child_deadline_milliseconds)"), 1)
+        self.assertNotIn("if (watch.ElapsedMilliseconds > 30000)", source)
+        # The actual emitted mode vector is closed before selecting its recorded limit.
+        self.assertLess(source.index("limits.basic.activeLimit = ProcessLimit(mode)"),
+                        source.index("result.child_deadline_milliseconds ="))
+        self.assertIn("if (watch.ElapsedMilliseconds > 30000)", NATIVE.ALLOCATION.NATIVE_SUPERVISOR)
+
+
+    def test_event_deadline_refuses_wrong_limits_types_and_mode_binding(self):
+        for mode, event_limit in (("ke", 75000), ("control-healthy", 45000)):
+            value = observation()
+            if mode == "ke":
+                value["execution"]["child_deadline_milliseconds"] = 60000
+                for event in value["execution"]["job_events"]:
+                    if event["pid"] == 13 and event["kind"] == 6:
+                        event["basename"] = "engine-tests.exe"
+            value["execution"]["event_deadline_milliseconds"] = event_limit
+            request = dict(REQUEST, mode=mode)
+            self.assertIs(NATIVE.validate_console(value, request, HASH, HASH), value["execution"])
+            for wrong in (True, False, None, -1, 0, 1, event_limit - 1, event_limit + 1,
+                          str(event_limit), float(event_limit), 2147483647,
+                          45000 if mode == "ke" else 75000):
+                bad = json.loads(json.dumps(value))
+                bad["execution"]["event_deadline_milliseconds"] = wrong
+                with self.subTest(mode=mode, wrong=wrong), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(bad, request, HASH, HASH)
+            with self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(value, dict(request, event_deadline_milliseconds=event_limit), HASH, HASH)
+
+    def test_observer_uses_its_recorded_limit_and_preserves_bounded_cleanup_headroom(self):
+        source = NATIVE.native_supervisor()
+        self.assertEqual(re.findall(r'deadlineMilliseconds = mode == "([^"\n]+)" \? ([0-9]+) : ([0-9]+);', source),
+                         [("ke", "75000", "45000")])
+        self.assertIn("readonly int deadlineMilliseconds;", source)
+        self.assertIn("ProcessLimit(mode);\n            deadlineMilliseconds =", source)
+        self.assertEqual(source.count("while (!forceStop && watch.ElapsedMilliseconds < deadlineMilliseconds)"), 1)
+        self.assertIn("public int DeadlineMilliseconds { get { return deadlineMilliseconds; } }", source)
+        self.assertIn("result.event_deadline_milliseconds = observer.DeadlineMilliseconds; observer.Start();", source)
+        self.assertIn("new JobEvents(job, image, child, console, mode)", source)
+        self.assertNotIn("watch.ElapsedMilliseconds < 45000", source)
+        # The source rewrite must refuse a changed inherited child clock, not silently keep it.
+        original = NATIVE.ALLOCATION.NATIVE_SUPERVISOR
+        drift = original.replace("if (watch.ElapsedMilliseconds > 30000)",
+                                 "if (watch.ElapsedMilliseconds > 30001)")
+        self.assertNotEqual(drift, original)
+        with patch.object(NATIVE.ALLOCATION, "NATIVE_SUPERVISOR", drift), self.assertRaises(NATIVE.Incomplete):
+            NATIVE.native_supervisor()
 
 
 class NativeNestedProcessAdmission(unittest.TestCase):
@@ -1005,12 +1116,13 @@ class TestRosterAdmission(unittest.TestCase):
 
     def roster(self):
         selected = ["nts_ke_experiment::first", "nts_ke_experiment::second"]
-        ke = sorted([*NATIVE.HELD_KE_TESTS, *selected])
+        ke = sorted([*NATIVE.HELD_KE_TESTS, *MANUAL_NATIVE_EXPECTATIONS, *selected])
         return {"schema_version": 1, "package": "nevrotick-engine", "target": NATIVE.TARGET,
                 "features": ["ke-association-prototype"], "candidate_sha256": HASH,
                 "extra_inputs_sha256": {name: HASH for name in NATIVE.EXTRAS},
                 "tests": ["common::neighbor", *ke], "ke_tests": ke,
-                "selected_ke_tests": selected, "held_ke_tests": list(NATIVE.HELD_KE_TESTS)}
+                "selected_ke_tests": selected, "held_ke_tests": list(NATIVE.HELD_KE_TESTS),
+                "manual_native_tests": list(MANUAL_NATIVE_EXPECTATIONS)}
 
     def admit(self, value):
         return NATIVE.validate_test_roster(value, HASH, self.roster()["extra_inputs_sha256"])
@@ -1059,23 +1171,23 @@ class TestRosterAdmission(unittest.TestCase):
         value = self.roster()
         names_only = "\n".join(name + ": test" for name in value["tests"]) + "\n"
         self.assertEqual(NATIVE.validate_test_listing(names_only, value), value["tests"])
-        output = names_only + "\n6 tests, 0 benchmarks\n"
+        output = names_only + "\n11 tests, 0 benchmarks\n"
         self.assertEqual(NATIVE.validate_test_listing(output, value), value["tests"])
         for bad in (output.replace("common::neighbor", "common::same_count_substitute"),
                     output.replace("nts_ke_experiment::second", "nts_ke_experiment::first"),
-                    output.replace("6 tests", "5 tests"), output + "unattributed output\n",
-                    output + "6 tests, 0 benchmarks\n", output.replace("0 benchmarks", "1 benchmark")):
+                    output.replace("11 tests", "10 tests"), output + "unattributed output\n",
+                    output + "11 tests, 0 benchmarks\n", output.replace("0 benchmarks", "1 benchmark")):
             with self.subTest(output=bad[:100]), self.assertRaises(NATIVE.Incomplete):
                 NATIVE.validate_test_listing(bad, value)
 
     def test_selected_results_require_exact_successes_and_filtered_count(self):
         value = self.roster()
         output = "running 2 tests\n" + "\n".join("test " + name + " ... ok" for name in value["selected_ke_tests"])
-        output += "\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s\n"
+        output += "\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s\n"
         NATIVE.validate_ke_execution(output, value)
         NATIVE.validate_ke_execution(output.replace("\n", "\r\n"), value)
         for bad in (output.replace("::second", "::first"), output.replace("::second", "::unexpected"),
-                    output.replace("4 filtered", "3 filtered"), output.replace("0 ignored", "1 ignored"),
+                    output.replace("9 filtered", "8 filtered"), output.replace("0 ignored", "1 ignored"),
                     output.replace("second ... ok", "second ... ignored"),
                     output + "test common::unexpected ... ok\n", output + output,
                     output.replace("2 passed", "0 passed")):
@@ -1116,10 +1228,189 @@ class TestRosterAdmission(unittest.TestCase):
         self.assertEqual(source.count(before), 1)
         body = source.split(before, 1)[1].split(after, 1)[0]
         expected = ["engine-tests.exe", "nts_ke_experiment::", "--test-threads=1"]
-        for name in NATIVE.HELD_KE_TESTS:
+        for name in (*NATIVE.HELD_KE_TESTS, *MANUAL_NATIVE_EXPECTATIONS):
             expected += ["--skip", name]
         self.assertEqual(re.findall(r'"([^"\n]*)"', body), expected)
         self.assertEqual(len(NATIVE.HELD_KE_TESTS), 3)
+
+
+class ManualNativePartitionAdmission(unittest.TestCase):
+    """Exercise the real reader with independent deliberate-manual native identities."""
+
+    def explicit_roster(self):
+        value = TestRosterAdmission().roster()
+        ke = sorted(set(value["ke_tests"]) | set(MANUAL_NATIVE_EXPECTATIONS))
+        return dict(value, tests=sorted(["common::neighbor", *ke]), ke_tests=ke,
+                    manual_native_tests=list(MANUAL_NATIVE_EXPECTATIONS))
+
+    def test_explicit_manual_contract_is_admitted_without_ordinary_or_nested_loss(self):
+        value = self.explicit_roster()
+        self.assertIs(NATIVE.validate_test_roster(value, HASH, value["extra_inputs_sha256"]), value)
+        self.assertEqual(value["selected_ke_tests"], ["nts_ke_experiment::first", "nts_ke_experiment::second"])
+        self.assertEqual(value["held_ke_tests"], list(NATIVE.HELD_KE_TESTS))
+
+
+    def test_manual_partition_refuses_omissions_substitutions_promotions_and_overlap(self):
+        good = self.explicit_roster()
+        self.assertEqual(NATIVE.MANUAL_NATIVE_TESTS, MANUAL_NATIVE_EXPECTATIONS)
+        self.assertEqual(len(set(MANUAL_NATIVE_EXPECTATIONS)), 5)
+        for name in MANUAL_NATIVE_EXPECTATIONS:
+            for field in ("manual_native_tests", "ke_tests", "tests"):
+                value = json.loads(json.dumps(good))
+                value[field].remove(name)
+                with self.subTest(name=name, field=field), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_test_roster(value, HASH, value["extra_inputs_sha256"])
+        faults = (
+            {"manual_native_tests": list(MANUAL_NATIVE_EXPECTATIONS[:-1]) + ["nts_ke_experiment::foreign"]},
+            {"manual_native_tests": list(MANUAL_NATIVE_EXPECTATIONS) + ["nts_ke_experiment::first"]},
+            {"manual_native_tests": list(MANUAL_NATIVE_EXPECTATIONS[:-1]) + [MANUAL_NATIVE_EXPECTATIONS[0]]},
+            {"selected_ke_tests": good["selected_ke_tests"][:-1]},
+            {"selected_ke_tests": sorted([*good["selected_ke_tests"], MANUAL_NATIVE_EXPECTATIONS[0]])},
+            {"selected_ke_tests": sorted([*good["selected_ke_tests"], NATIVE.HELD_KE_TESTS[0]])},
+            {"held_ke_tests": list(NATIVE.HELD_KE_TESTS[:-1])},
+            {"held_ke_tests": list(NATIVE.HELD_KE_TESTS) + [MANUAL_NATIVE_EXPECTATIONS[0]]},
+        )
+        for fault in faults:
+            with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_test_roster(dict(good, **fault), HASH, good["extra_inputs_sha256"])
+        legacy = dict(good)
+        del legacy["manual_native_tests"]
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_roster(legacy, HASH, good["extra_inputs_sha256"])
+        overlapping = (MANUAL_NATIVE_EXPECTATIONS[0], *NATIVE.HELD_KE_TESTS[1:])
+        with patch.object(NATIVE, "HELD_KE_TESTS", overlapping), self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_roster(dict(good, held_ke_tests=list(overlapping)),
+                                      HASH, good["extra_inputs_sha256"])
+
+    def test_discovery_catches_a_coordinated_ordinary_omission_from_all_manifest_lists(self):
+        good = self.explicit_roster()
+        actual = "\n".join(name + ": test" for name in good["tests"]) + "\n"
+        NATIVE.validate_test_listing(actual, good)
+        missing = "nts_ke_experiment::second"
+        bad = {key: [name for name in value if name != missing]
+               if key in ("tests", "ke_tests", "selected_ke_tests") else value
+               for key, value in good.items()}
+        # Partition admission cannot invent source completeness; actual full discovery must agree.
+        self.assertIs(NATIVE.validate_test_roster(bad, HASH, bad["extra_inputs_sha256"]), bad)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_listing(actual, bad)
+
+    def test_selected_and_each_nested_case_keep_exact_zero_ignored_results(self):
+        value = self.explicit_roster()
+        selections = [(None, value["selected_ke_tests"])]
+        selections += [(mode, [name]) for mode, name in NATIVE.NESTED_TEST_MODES.items()]
+        for mode, selected in selections:
+            count = len(selected)
+            filtered = len(value["tests"]) - count
+            output = "\n".join(f"test {name} ... ok" for name in selected)
+            output += (f"\ntest result: ok. {count} passed; 0 failed; 0 ignored; 0 measured; "
+                       f"{filtered} filtered out; finished in 0.01s\n")
+            checker = (lambda text: NATIVE.validate_ke_execution(text, value)) if mode is None else (
+                lambda text: NATIVE.validate_nested_execution(text, value, mode))
+            checker(output)
+            for bad in (output.replace("0 ignored", "1 ignored"),
+                        output.replace(f"{count} passed", "0 passed"),
+                        output.replace(f"{filtered} filtered", f"{filtered - 1} filtered"),
+                        output.replace(selected[0], MANUAL_NATIVE_EXPECTATIONS[0]),
+                        output + f"test {MANUAL_NATIVE_EXPECTATIONS[0]} ... ok\n"):
+                with self.subTest(mode=mode, output=bad), self.assertRaises(NATIVE.Incomplete):
+                    checker(bad)
+
+    def test_fixed_source_check_refuses_missing_substituted_and_extra_skip_arguments(self):
+        source = (ROOT / NATIVE.LAUNCHER).read_text()
+        NATIVE.validate_ke_launcher_selection(source)
+        for name in (*NATIVE.HELD_KE_TESTS, *MANUAL_NATIVE_EXPECTATIONS):
+            fragment = '                    "--skip",\n                    "' + name + '",\n'
+            self.assertEqual(source.count(fragment), 1)
+            faults = (source.replace(fragment, ""),
+                      source.replace(name, "nts_ke_experiment::first"),
+                      source.replace(fragment, fragment + fragment))
+            for bad in faults:
+                with self.subTest(name=name, source=bad[-50:]), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_ke_launcher_selection(bad)
+        for bad in (source.replace('"--test-threads=1"', '"--include-ignored"'),
+                    source.replace("Self::Ke => (", "Self::CallerSelected => ("),
+                    source + source, "x" * (NATIVE.MAX_LAUNCHER_SOURCE_BYTES + 1), None):
+            with self.subTest(kind=type(bad)), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_ke_launcher_selection(bad)
+
+    def test_manual_source_owners_remain_explicitly_ignored_with_specific_controller_contracts(self):
+        owners = (
+            ("transport.rs", MANUAL_NATIVE_EXPECTATIONS[:2], "certificate-bearing NTS-KE peer"),
+            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[2:3],
+             "dedicated Windows process for native managed KE retirement"),
+            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[3:4],
+             "one-leg TLS and UDP peer"),
+            ("recovery/worker_tests.rs", MANUAL_NATIVE_EXPECTATIONS[4:], "TLS and UDP successor peer"),
+        )
+        directory = ROOT / "crates/nevrotick-engine/src/nts_ke_experiment"
+        for relative, names, reason in owners:
+            source = (directory / relative).read_text()
+            for name in names:
+                prefix = source.split("fn " + name.rsplit("::", 1)[1] + "()", 1)[0]
+                self.assertIn(reason, prefix.rsplit("#[ignore", 1)[1])
+                self.assertRegex(prefix, r'#\[test\]\s*#\[ignore = "[^"]+"\]\s*$')
+
+
+    def test_native_entry_records_manual_cases_without_running_or_promoting_them(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            inputs = {"actual-source": HASH}
+            candidate = NATIVE.ALLOCATION.canonical_digest(inputs)
+            sha256 = NATIVE.PRODUCT.sha256
+            extras = {name: sha256(ROOT / name) for name in NATIVE.EXTRAS}
+            value = dict(self.explicit_roster(), candidate_sha256=candidate, extra_inputs_sha256=extras)
+            roster_path = directory / NATIVE.TEST_ROSTER_NAME
+            roster_path.write_text(json.dumps(value))
+            artifacts = {}
+            for name in ("engine-tests.exe", "cpu-v3-probe.exe", "gated-launcher.exe", "gate-control.exe"):
+                path = directory / name
+                path.write_bytes(name.encode("ascii"))
+                artifacts[name] = {"path": str(path), "sha256": sha256(path)}
+            built = {"status": "passed", "lane": "build", "product_source_sha256": inputs,
+                     "candidate_sha256": candidate, "extra_inputs_sha256": extras,
+                     "artifacts": artifacts,
+                     "test_roster": {"path": str(roster_path), "sha256": sha256(roster_path)}}
+            receipt = directory / "verification.json"
+            receipt.write_text(json.dumps(built))
+            stage = directory / "fresh-stage"
+            args = type("Arguments", (), {"build_receipt": receipt, "native_dir": stage})()
+            report = {}
+            def digest(path):
+                return HASH if str(path).endswith("/powershell.exe") else sha256(path)
+            with patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, inputs)), \
+                 patch.object(NATIVE.PRODUCT, "sha256", side_effect=digest), \
+                 patch.object(NATIVE, "native_directory", return_value=stage), \
+                 patch.object(NATIVE.shutil, "disk_usage", return_value=type("Disk", (), {"free": 3 * 1024**3})()), \
+                 patch.object(NATIVE, "native_supervisor", side_effect=NATIVE.Incomplete("stop before Windows")), \
+                 patch.object(NATIVE.ENV, "run", side_effect=AssertionError("No Windows process permitted")) as dispatch:
+                with self.assertRaisesRegex(NATIVE.Incomplete, "stop before Windows"):
+                    NATIVE.native(args, report)
+                dispatch.assert_not_called()
+            self.assertEqual(report["manual_native_tests"], list(MANUAL_NATIVE_EXPECTATIONS))
+            self.assertEqual(report["unexecuted_manual_native_tests"], list(MANUAL_NATIVE_EXPECTATIONS))
+            self.assertEqual(report["required_held_tests"], list(NATIVE.HELD_KE_TESTS))
+            self.assertIs(report["full_native_ke_qualification"], False)
+            self.assertIs(report["scripted_ke_roster_complete"], False)
+            self.assertEqual(report["observations"], [])
+
+    def test_build_entry_refuses_launcher_vector_drift_before_work_or_compilation(self):
+        source = (ROOT / NATIVE.LAUNCHER).read_bytes()
+        changed = source.replace(MANUAL_NATIVE_EXPECTATIONS[0].encode(), b"nts_ke_experiment::foreign")
+        args = type("Arguments", (), {})()
+        with patch.object(NATIVE.PE.Q.C, "read_analysis_bytes", return_value=changed), \
+             patch.object(NATIVE.ENV, "run", side_effect=AssertionError("No compile permitted")) as launch:
+            with self.assertRaisesRegex(NATIVE.Incomplete, "launcher arguments"):
+                NATIVE.build(args, {})
+            launch.assert_not_called()
+
+    def test_separate_manual_roster_cannot_expand_other_selected_schemas(self):
+        for value, options in ((DefaultEngineCohortAdmission().roster(), {"default_cohort": True}),
+                               (PlacementEngineCohortAdmission().roster(), {"placement_cohort": True})):
+            self.assertIs(NATIVE.validate_test_roster(value, HASH, value["extra_inputs_sha256"], **options), value)
+            with self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_test_roster(dict(value, manual_native_tests=list(MANUAL_NATIVE_EXPECTATIONS)),
+                                          HASH, value["extra_inputs_sha256"], **options)
 
 
 class DefaultEngineCohortAdmission(unittest.TestCase):

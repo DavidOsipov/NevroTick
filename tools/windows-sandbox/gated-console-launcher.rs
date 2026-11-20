@@ -375,8 +375,9 @@ impl Mode {
             Self::FacadeManagedProtectedEof => {
                 ("engine-facade-consumer.exe", &["managed-protected-eof"])
             }
-            // These required nested-child controls await their separate custody
-            // qualification; the flat supervisor keeps its existing process cap.
+            // The three nested cases execute in separate supervised modes. The
+            // five manual native fixtures retain their own isolated controllers;
+            // the ordinary scripted selection keeps its existing process cap.
             Self::Ke => (
                 "engine-tests.exe",
                 &[
@@ -388,6 +389,16 @@ impl Mode {
                     "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
                     "--skip",
                     "nts_ke_experiment::job::tests::provider_native_foreign_origins_refuse_before_effect_factory",
+                    "--skip",
+                    "nts_ke_experiment::transport::certificate_time_fixture::pre_epoch_certificate_handshake_preserves_local_clock_failure",
+                    "--skip",
+                    "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
+                    "--skip",
+                    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
+                    "--skip",
+                    "nts_ke_experiment::transport::managed_close_fixture::managed_protected_public_probe_joins_one_authenticated_reply",
+                    "--skip",
+                    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join",
                 ],
             ),
             Self::ControlHealthy => ("gate-control.exe", &["healthy"]),
