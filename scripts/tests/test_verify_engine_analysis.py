@@ -3100,6 +3100,51 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
             MODULE.admit_engine_ke_evidence(binding)
 
+    def test_current_engine_ke_requires_native_fixture_and_exact_stale_debit_roster(self):
+        policy = json.loads((ROOT / MODULE.ENGINE_KE_POLICY).read_bytes())
+        binding = MODULE.validate_engine_ke_policy(policy)
+        self.assertEqual(binding["candidate_sha256"], MODULE.ENGINE_STALE_DEBIT_CANDIDATE)
+        fixture = MODULE.ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE
+        self.assertNotIn(fixture, MODULE.engine_ke_bound_inputs(MODULE.ENGINE_REVIEW_CANDIDATE))
+        without_fixture = copy.deepcopy(policy)
+        del without_fixture["binding"]["inputs_sha256"][fixture]
+        with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
+            MODULE.validate_engine_ke_policy(without_fixture)
+
+        names = binding["test_inventory"]
+        predecessor = sorted(set(names) - {MODULE.ENGINE_STALE_DEBIT_CASE})
+        self.assertEqual(MODULE.validate_engine_ke_inventory(
+            predecessor, candidate=MODULE.ENGINE_FINAL_FRAME_CANDIDATE), predecessor)
+        previous = sorted(set(predecessor) - MODULE.ENGINE_FINAL_FRAME_ADDITIONS)
+        self.assertEqual(MODULE.validate_engine_ke_inventory(
+            previous, candidate=MODULE.ENGINE_PROTECTED_DEBIT_CANDIDATE), previous)
+        missing_debit = sorted(set(previous) - MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS)
+        self.assertEqual(MODULE.validate_engine_ke_inventory(
+            missing_debit, candidate=MODULE.ENGINE_PLACEMENT_CANDIDATE), missing_debit)
+        historical = [name for name in missing_debit if name != MODULE.ENGINE_PLACEMENT_TEST]
+        self.assertEqual(MODULE.validate_engine_ke_inventory(
+            historical, candidate=MODULE.ENGINE_SCALE_CONFLICT_CANDIDATE), historical)
+        for required in (MODULE.ENGINE_SCALE_CONFLICT_TEST, MODULE.ENGINE_PLACEMENT_TEST,
+                         *sorted(MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS),
+                         *sorted(MODULE.ENGINE_FINAL_FRAME_ADDITIONS),
+                         MODULE.ENGINE_STALE_DEBIT_CASE):
+            self.assertIn(required, names)
+            substitute = required.rpartition("::")[0] + "::foreign_control"
+            substituted = sorted(substitute if name == required else name for name in names)
+            with self.subTest(required=required), self.assertRaisesRegex(MODULE.Incomplete, "604 actual Engine tests"):
+                MODULE.validate_engine_ke_inventory(substituted, candidate=binding["candidate_sha256"])
+        docs = binding["doctest_inventory"]
+        moved = ("crates/nevrotick-engine/src/measurement.rs - "
+                 "measurement::NominalPhaseNs (line 770) - compile fail")
+        self.assertIn(moved, docs)
+        for incorrect in (moved.replace("(line 770)", "(line 750)"), moved.removesuffix(" fail")):
+            replaced = sorted(incorrect if name == moved else name for name in docs)
+            with self.subTest(incorrect=incorrect), self.assertRaisesRegex(
+                    MODULE.Incomplete, "annotated Rustdoc inventory"):
+                MODULE.validate_engine_ke_doctest_inventory(replaced, candidate=binding["candidate_sha256"])
+        with self.assertRaisesRegex(MODULE.Incomplete, "mutation is held"):
+            MODULE.validate_engine_ke_policy(policy, campaign=True)
+
     def test_missing_numerics_helper_pin_refuses_admission(self):
         path = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"
         self.assertIn(path, self.policy["binding"]["inputs_sha256"])
@@ -6502,6 +6547,46 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                 MODULE.admit_source_policy_development(binding | {"candidate_sha256": "a" * 64}, self.identity)
             with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
                 MODULE.admit_source_policy_development(binding | {"candidate_sha256": current}, self.identity)
+
+    def test_current_source_policy_rejects_old_doc_identity_and_stopped_terminal(self):
+        policy = json.loads((ROOT / MODULE.SOURCE_POLICY_POLICY).read_bytes())
+        binding = MODULE.validate_source_policy_policy(policy)
+        self.assertEqual(binding["candidate_sha256"], MODULE.ENGINE_STALE_DEBIT_CANDIDATE)
+        moved = "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 762)"
+        self.assertIn(moved, binding["doctest_inventory"])
+        documents = sorted(moved.replace("(line 762)", "(line 742)") if name == moved else name
+                           for name in binding["doctest_inventory"])
+        with self.assertRaisesRegex(MODULE.Incomplete, "compiler examples differ"):
+            MODULE.source_policy_development_doctests(self.execution(documents), binding, "default-doctests")
+
+        candidate = MODULE.ENGINE_STALE_DEBIT_CANDIDATE
+        for old in (MODULE.ENGINE_FINAL_FRAME_TERMINAL, MODULE.ENGINE_FINAL_FRAME_INCOMPLETE, MODULE.ENGINE_PROTECTED_DEBIT_TERMINAL,
+                    MODULE.ENGINE_PLACEMENT_TERMINAL,
+                    MODULE.ENGINE_PLACEMENT_STOPPED):
+            stale = dict(binding["development_evidence"], sha256=old)
+            with self.subTest(terminal=old), self.assertRaisesRegex(
+                    MODULE.Incomplete, "exact combined terminal receipt"):
+                MODULE.read_combined_development(candidate, {}, stale)
+        with self.assertRaisesRegex(MODULE.Incomplete, "campaigns remain closed"):
+            MODULE.validate_source_policy_policy(policy, campaign=True)
+
+    def test_placement_format_retry_keeps_first_failure_and_original_wall_limit(self):
+        references = {f"/owned/reference-{index}.json": str(index) * 64 for index in range(1, 7)}
+        retry = {"references": references, "first_outer_seconds": 16.105, "retry_wall_seconds": 2383,
+                 "original_wall_seconds": 2400, "cumulative_wall_seconds_ceiling": 2399.105}
+        capture = {"placement_format_retry": retry, "wall_seconds": 2383}
+        terminal = {"placement_format_retry": retry, "prior_failed_development_sha256": MODULE.ENGINE_PLACEMENT_STOPPED}
+        with patch.object(MODULE, "ENGINE_PLACEMENT_FORMAT_REFERENCES", independent_digest(references)):
+            self.assertEqual(MODULE.validate_engine_placement_retry(capture, terminal), references)
+            succeeded_in_place = terminal | {"prior_failed_development_sha256": MODULE.ENGINE_PLACEMENT_TERMINAL}
+            with self.assertRaisesRegex(MODULE.Incomplete, "retry custody or cumulative allowance"):
+                MODULE.validate_engine_placement_retry(capture, succeeded_in_place)
+            overrun = retry | {"retry_wall_seconds": 2384, "cumulative_wall_seconds_ceiling": 2400.105}
+            with patch.object(MODULE, "ENGINE_PLACEMENT_RETRY_WALL", 2384):
+                with self.assertRaisesRegex(MODULE.Incomplete, "retry custody or cumulative allowance"):
+                    MODULE.validate_engine_placement_retry(
+                        {"placement_format_retry": overrun, "wall_seconds": 2384},
+                        terminal | {"placement_format_retry": overrun})
 
     def test_review_graph_refuses_unlisted_source_delta_and_rebound_graph_pin(self):
         old = {"Cargo.lock": "1" * 64}

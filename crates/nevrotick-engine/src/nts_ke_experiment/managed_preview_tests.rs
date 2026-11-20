@@ -20,8 +20,8 @@ use super::datagram::tests::{managed_component_exchange, managed_component_keys}
 use super::datagram::{ProtectedCompletion, ReceivedCompletion};
 use super::handoff::ManagedPreviewHistory;
 use super::job::{
-    Hooks, Observation, Operation, PreparedInvocation, SubmissionReservation, Termination,
-    WorkerSlot,
+    Hooks, Observation, Operation, PreparedInvocation, SubmissionReservation, SubmitError,
+    Termination, WorkerSlot,
 };
 use super::managed_preview::{
     SourceKePreviewFailure, SourceKePreviewReport, SourceProtectedProbeFailure,
@@ -34,8 +34,8 @@ use super::request::DirectionalKeys;
 use super::response::fixtures;
 use super::transport_fault::TransportIo;
 use super::{
-    Config, Control, Failed, Failure, RunFailed, StopDisposition, StopHandle, Summary, output,
-    run_observing, run_synchronously_with,
+    Config, Control, Failed, Failure, PowerObserverCleanup, RunFailed, StopDisposition, StopHandle,
+    Summary, output, run_observing, run_synchronously_with,
 };
 use crate::source_policy::{FixtureRequest, SourceBinding, fixture_control, fixture_send};
 use crate::{
@@ -113,6 +113,8 @@ enum Scenario {
     ProtectedBeforeReplyCommit,
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
+    /// Exercise distinct original placement endpoints through joined projection.
+    ProtectedPlacementAfterCommit,
     /// Replace the committed smeared definition before the numerical receiver.
     ProtectedSmearedAfterCommit,
     /// Retain an authenticated nonzero peer leap claim through the same replacement.
@@ -127,6 +129,7 @@ impl Scenario {
             Self::ProtectedBeforeSend
                 | Self::ProtectedBeforeReplyCommit
                 | Self::ProtectedAfterCommit
+                | Self::ProtectedPlacementAfterCommit
                 | Self::ProtectedSmearedAfterCommit
                 | Self::ProtectedLeapWarningAfterCommit(_)
         )
@@ -174,9 +177,9 @@ fn issued(scenario: Scenario) -> Result<Issued, Failure> {
         .install_ke_preview_configuration(&source, addresses, target.clone())
         .map_err(Failure::SourcePolicy)?;
     let declared_scale: Option<SourceScale> = match scenario {
-        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit(_) => {
-            Some(SourceScale::UnsmearedUtc)
-        }
+        Scenario::ProtectedAfterCommit
+        | Scenario::ProtectedPlacementAfterCommit
+        | Scenario::ProtectedLeapWarningAfterCommit(_) => Some(SourceScale::UnsmearedUtc),
         Scenario::ProtectedSmearedAfterCommit => Some(SourceScale::Smeared),
         _ => None,
     };
@@ -579,8 +582,8 @@ struct PreviewProducer {
     target: KePreviewTarget,
     /// Explicit test action, with no authority-bearing data.
     scenario: Scenario,
-    /// Observer's original Stop capability, delivered after protected retirement if set.
-    stop_before_reply_commit: Option<StopHandle>,
+    /// Observer's original Stop capability, delivered before the final packet commit.
+    stop_before_commit: Option<StopHandle>,
     /// Genuine newer snapshot returned by the actual replacement transaction.
     replacement: Option<SourceConfigurationSnapshot>,
     /// Actual establishment/entropy/protected-operation/jitter entries.
@@ -644,8 +647,18 @@ impl Producer for PreviewProducer {
             ) => (Some(fixtures::UNSYNCHRONIZED), LEAP_DELETION_REPLY),
             _ => (None, fixtures::HEALTHY),
         };
+        let pre_send: Option<[Instant; 2]> =
+            if matches!(self.scenario, Scenario::ProtectedPlacementAfterCommit) {
+                let origin: Instant = control.origin;
+                let earliest: Instant = origin
+                    .checked_sub(Duration::from_millis(1))
+                    .ok_or(Failure::Control)?;
+                Some([earliest, origin])
+            } else {
+                None
+            };
         let completion: ProtectedCompletion<'tx> =
-            managed_component_exchange(association, control, preceding, reply, || {
+            managed_component_exchange(association, control, preceding, reply, pre_send, || {
                 if matches!(self.scenario, Scenario::ProtectedBeforeSend) {
                     self.replace_definition()?;
                 }
@@ -673,7 +686,7 @@ impl Producer for PreviewProducer {
                     .map_err(Failure::SourcePolicy)?,
             );
         }
-        if let Some(stop) = self.stop_before_reply_commit.take() {
+        if let Some(stop) = self.stop_before_commit.take() {
             assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
         }
         Ok(completion)
@@ -683,6 +696,9 @@ impl Producer for PreviewProducer {
         self.calls[1] += 1;
         if matches!(self.scenario, Scenario::ReplaceDuringEntropy) {
             self.replace_definition()?;
+        }
+        if let Some(stop) = self.stop_before_commit.take() {
+            assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
         }
         output.fill(0x42_u8);
         Ok(())
@@ -859,6 +875,7 @@ fn component_operation<'scope>(
             }
             Scenario::ReplaceAfterCommit
             | Scenario::ProtectedAfterCommit
+            | Scenario::ProtectedPlacementAfterCommit
             | Scenario::ProtectedLeapWarningAfterCommit(ProtectedLeapWarning::Insertion) => {
                 producer.replace_definition()?;
             }
@@ -969,7 +986,7 @@ fn run_with_hooks(
         configuration: fixture.configuration,
         target: fixture.target,
         scenario,
-        stop_before_reply_commit: None,
+        stop_before_commit: None,
         replacement: None,
         calls: [0; 4],
     };
@@ -1089,8 +1106,9 @@ fn assert_history(
 ) -> Result<(), Failure> {
     assert!(completion.protected().is_none());
     assert!(!completion.summary().transmitted);
-    let report: SourceKePreviewReport = SourceKePreviewReport::from_run(Ok(completion))
-        .map_err(|_: SourceKePreviewFailure| Failure::Control)?;
+    let report: SourceKePreviewReport =
+        SourceKePreviewReport::from_run(Ok(completion), PowerObserverCleanup::default())
+            .map_err(|_: SourceKePreviewFailure| Failure::Control)?;
     assert!(report.configuration().same_configuration(expected));
     assert_eq!(
         (
@@ -1162,6 +1180,145 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
         Scenario::TwoCookies,
         (2, 28, 140),
     )
+}
+
+/// A refused subscription releases the original bounded Preview slot before submission.
+/// # Errors
+/// Preserve actual source setup refusal.
+/// # Panics
+/// Reject an unobserved or spent reservation and any attempted submission.
+#[test]
+fn managed_ke_preview_power_registration_refusal_releases_slot() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    let fixture: Issued = issued(Scenario::Healthy)?;
+    let registration_called: Cell<bool> = Cell::new(false);
+    let submit_called: Cell<bool> = Cell::new(false);
+    let result: Result<SourceKePreviewReport, SourceKePreviewFailure> =
+        fixture.source.preview_nts_ke_with_observer(
+            &SLOT,
+            |_stop: StopHandle| -> Result<fn() -> Result<(), NonZeroU32>, ()> {
+                registration_called.set(true);
+                Err(())
+            },
+            |_reservation: SubmissionReservation| {
+                submit_called.set(true);
+                Err(SubmitError::Control)
+            },
+        );
+    assert!(registration_called.get());
+    assert!(!submit_called.get());
+    let Err(refusal) = result else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(refusal.labels(), ("power-registration", "unavailable"));
+    assert!(refusal.power_unregistration_error().is_none());
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Unused
+    );
+    Ok(())
+}
+
+/// Observe the original Stop before Preview sealing and after real join.
+/// # Errors
+/// Preserve source setup and actual joined worker refusal.
+/// # Panics
+/// Reject unobserved power, stale Preview publication, UDP work or lost close status.
+#[test]
+fn managed_ke_preview_power_event_respects_sealing_and_join() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
+    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
+    let timings: [PowerEventTiming; 3] = [
+        PowerEventTiming::BeforeCommit,
+        PowerEventTiming::NoEvent,
+        PowerEventTiming::AfterJoin,
+    ];
+    let close_error: NonZeroU32 = NonZeroU32::new(5).ok_or(Failure::Control)?;
+    for ((slot, admission), timing) in SLOTS.iter().zip(&ADMISSIONS).zip(timings) {
+        let fixture: Issued = issued(Scenario::Healthy)?;
+        let expected: SourceConfigurationSnapshot = fixture.configuration.clone();
+        let stop_at_commit: Cell<Option<StopHandle>> = Cell::new(None);
+        let close_state: Cell<Option<Observation>> = Cell::new(None);
+        let late_stop: Cell<Option<Result<StopDisposition, Failure>>> = Cell::new(None);
+        let (observed, receiver): (SyncSender<Work>, Receiver<Work>) = sync_channel(1);
+        let result: Result<SourceKePreviewReport, SourceKePreviewFailure> =
+            fixture.source.preview_nts_ke_with_observer(
+                slot,
+                |stop: StopHandle| {
+                    if matches!(timing, PowerEventTiming::BeforeCommit) {
+                        stop_at_commit.set(Some(stop.clone()));
+                    }
+                    let closed: &Cell<Option<Observation>> = &close_state;
+                    let late_stop: &Cell<Option<Result<StopDisposition, Failure>>> = &late_stop;
+                    Ok(move || {
+                        closed.set(Some(slot.observer().poll_until(Instant::now() + WAIT)));
+                        if matches!(timing, PowerEventTiming::AfterJoin) {
+                            late_stop.set(Some(stop.request_stop()));
+                        }
+                        match timing {
+                            PowerEventTiming::NoEvent => Ok(()),
+                            PowerEventTiming::BeforeCommit | PowerEventTiming::AfterJoin => {
+                                Err(close_error)
+                            }
+                        }
+                    })
+                },
+                |reservation: SubmissionReservation| {
+                    let producer: PreviewProducer = PreviewProducer {
+                        authority: fixture.authority,
+                        configuration: fixture.configuration,
+                        target: fixture.target,
+                        scenario: Scenario::Healthy,
+                        stop_before_commit: stop_at_commit.take(),
+                        replacement: None,
+                        calls: [0; 4],
+                    };
+                    reservation.submit_fixture(
+                        admission,
+                        component_provider,
+                        move |config: &Config, provider: &ProviderScope<'_>, control: Control| {
+                            component_operation(config, provider, control, producer, &observed)
+                        },
+                        Hooks::none(),
+                    )
+                },
+            );
+        drain(slot, slot.observer().poll_until(Instant::now() + WAIT))?;
+        let work: Work = receiver.recv_timeout(WAIT).map_err(|_| Failure::Control)?;
+        assert_eq!(work.calls, [1, 1, 0, 0]);
+        assert_eq!(work.provider_lifetime.strong_count(), 0);
+        if matches!(timing, PowerEventTiming::BeforeCommit) {
+            assert!(result.is_err(), "Stop preceded the final Preview commit");
+            let Err(refusal) = result else {
+                return Err(Failure::Control);
+            };
+            assert_eq!(refusal.labels(), ("currentness", "cancelled"));
+            assert_eq!(refusal.power_unregistration_error(), Some(close_error));
+            assert!(!refusal.power_stop_failed());
+            assert!(refusal.retained_configuration().is_none());
+        } else {
+            let report: SourceKePreviewReport = result.map_err(|_| Failure::Control)?;
+            assert!(report.configuration().same_configuration(&expected));
+            assert_eq!(
+                (
+                    report.cookie_count(),
+                    report.cookie_bytes(),
+                    report.packet_bytes()
+                ),
+                (1, 12, 140)
+            );
+            assert_eq!(
+                report.power_unregistration_error(),
+                matches!(timing, PowerEventTiming::AfterJoin).then_some(close_error)
+            );
+        }
+        assert_eq!(close_state.get(), Some(Observation::Taken));
+        assert_eq!(
+            late_stop.get(),
+            matches!(timing, PowerEventTiming::AfterJoin).then_some(Ok(StopDisposition::Latched))
+        );
+    }
+    Ok(())
 }
 
 /// Observe the accepted raw LI and original scale across the actual worker join.
@@ -1249,13 +1406,13 @@ fn managed_protected_worker_refuses_li3_then_retains_li2_and_original_scale() ->
     )
 }
 
-/// Delivery positions relative to an actual source-issued Protected result.
+/// Delivery positions relative to an actual source-issued managed result.
 #[derive(Clone, Copy)]
 enum PowerEventTiming {
     /// Retain ordinary joined behavior without event delivery.
     NoEvent,
-    /// Deliver after protected adapter retirement, before the actual reply commit.
-    BeforeReplyCommit,
+    /// Deliver before the actual Preview or Protected commit.
+    BeforeCommit,
     /// Deliver after the actual joined take, while closing the observer.
     AfterJoin,
 }
@@ -1272,7 +1429,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
     static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
     let timings: [PowerEventTiming; 3] = [
         PowerEventTiming::NoEvent,
-        PowerEventTiming::BeforeReplyCommit,
+        PowerEventTiming::BeforeCommit,
         PowerEventTiming::AfterJoin,
     ];
     let close_error: NonZeroU32 = NonZeroU32::new(5).ok_or(Failure::Control)?;
@@ -1294,7 +1451,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
                 config,
                 slot,
                 |stop: StopHandle| {
-                    if matches!(timing, PowerEventTiming::BeforeReplyCommit) {
+                    if matches!(timing, PowerEventTiming::BeforeCommit) {
                         stop_at_commit.set(Some(stop.clone()));
                     }
                     let closed: &Cell<Option<Observation>> = &close_state;
@@ -1306,7 +1463,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
                         }
                         match timing {
                             PowerEventTiming::NoEvent => Ok(()),
-                            PowerEventTiming::BeforeReplyCommit | PowerEventTiming::AfterJoin => {
+                            PowerEventTiming::BeforeCommit | PowerEventTiming::AfterJoin => {
                                 Err(close_error)
                             }
                         }
@@ -1318,7 +1475,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
                         configuration: fixture.configuration,
                         target: fixture.target,
                         scenario: Scenario::ProtectedAfterCommit,
-                        stop_before_reply_commit: stop_at_commit.take(),
+                        stop_before_commit: stop_at_commit.take(),
                         replacement: None,
                         calls: [0; 4],
                     };
@@ -1346,7 +1503,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
             .policy_snapshot(fixture.allowed)
             .map_err(Failure::SourcePolicy)?;
         assert!(policy.source().floor().is_some() && policy.endpoint().floor().is_some());
-        if matches!(timing, PowerEventTiming::BeforeReplyCommit) {
+        if matches!(timing, PowerEventTiming::BeforeCommit) {
             let Err(refusal) = result else {
                 return Err(Failure::Control);
             };
@@ -1465,6 +1622,77 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
     Ok(())
 }
 
+/// The public report retains the original placement despite an absent profile and newer source.
+///
+/// # Errors
+/// Preserve actual worker, joined result or capture chronology refusal.
+/// # Panics
+/// Fail on an omitted, widened or renewed placement bound or a rewritten configuration.
+#[test]
+fn managed_protected_report_keeps_original_application_wall_elapsed_bounds() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let run: Run = run(&SLOT, &ADMISSION, Scenario::ProtectedPlacementAfterCommit)?;
+    let completion: ReceivedCompletion = run
+        .outcome
+        .map_err(|failure: RunFailed| operation_primary(&failure))?;
+    let protected = completion.protected().ok_or(Failure::Control)?;
+    let history = protected.history();
+    let [before, _, read]: [crate::SoftwareClock; 3] = history.captures();
+    let origin: Instant = run.work.before.origin;
+    let earliest: Instant = origin
+        .checked_sub(Duration::from_millis(1))
+        .ok_or(Failure::Control)?;
+    assert_eq!(
+        (before.monotonic(), before.monotonic_after()),
+        (earliest, origin)
+    );
+    let minimum: Duration = read
+        .monotonic()
+        .checked_duration_since(origin)
+        .ok_or(Failure::Control)?;
+    let maximum: Duration = read
+        .monotonic_after()
+        .checked_duration_since(earliest)
+        .ok_or(Failure::Control)?;
+    assert!(
+        maximum
+            .checked_sub(minimum)
+            .is_some_and(|width: Duration| width >= Duration::from_millis(1))
+    );
+    let received: Instant = read.monotonic_after();
+    let committed_at: Instant = history.committed_at();
+    let original_delay: Option<Duration> = committed_at.checked_duration_since(received);
+    assert!(original_delay.is_some());
+
+    let report: SourceProtectedProbeReport = protected_report(completion)?;
+    assert!(report.configuration().same_configuration(&run.expected));
+    assert_eq!(
+        report.configuration().declared_scale(),
+        SourceScale::UnsmearedUtc
+    );
+    let latest: SourceConfigurationSnapshot = run
+        .source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    assert!(!report.configuration().same_configuration(&latest));
+    assert_eq!(report.committed_at(), committed_at);
+    assert_eq!(report.receive_to_commit_delay(), original_delay);
+    assert!(matches!(
+        report.measurement(),
+        Err(MeasurementRefusal::Unavailable)
+    ));
+    assert_eq!(
+        report.application_wall_elapsed_bounds(),
+        Some([minimum, maximum])
+    );
+    assert_eq!(report.leap_indicator(), 0);
+    assert_eq!(run.work.calls, [1, 0, 1, 0]);
+    Ok(())
+}
+
 /// A genuine joined result cannot project through the other report mode.
 /// # Errors
 /// Preserve the original source-owned worker or Preview refusal.
@@ -1495,13 +1723,24 @@ fn managed_preview_cannot_project_a_protected_report() -> Result<(), Failure> {
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
     assert!(completion.protected().is_some());
     assert!(completion.summary().transmitted);
+    let close_error: NonZeroU32 = NonZeroU32::new(23).ok_or(Failure::Control)?;
+    let cleanup: PowerObserverCleanup = PowerObserverCleanup {
+        stop_failed: false,
+        unregistration_error: Some(close_error),
+    };
     let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
-        SourceKePreviewReport::from_run(Ok(completion))
+        SourceKePreviewReport::from_run(Ok(completion), cleanup)
     else {
         return Err(Failure::Control);
     };
     assert_eq!(refusal.labels(), ("currentness", "control"));
     assert_eq!(refusal.primary_labels(), Some(("currentness", "control")));
+    assert_eq!(
+        refusal.power_unregistration_error(),
+        Some(close_error),
+        "wrong completion mode preserves the exact observer close status"
+    );
+    assert!(!refusal.power_stop_failed());
     assert!(refusal.retained_configuration().is_none());
     assert_eq!(protected.work.calls, [1, 0, 1, 0]);
     Ok(())
@@ -1532,7 +1771,7 @@ fn assert_preview_abnormal_join_history() -> Result<(), Failure> {
     assert_eq!(run.work.calls, [1, 1, 0, 0]);
     assert_eq!(run.work.after.end, Some(End::Completed));
     let Err(projection): Result<SourceKePreviewReport, SourceKePreviewFailure> =
-        SourceKePreviewReport::from_run(Err(failure))
+        SourceKePreviewReport::from_run(Err(failure), PowerObserverCleanup::default())
     else {
         return Err(Failure::Control);
     };
@@ -1746,7 +1985,7 @@ fn managed_ke_preview_worker_entropy_replacement_retains_failure_and_charges() -
     assert!(failure.cleanup.is_none() && failure.admission_cleanup.is_none());
     assert_eq!(run.work.last_failure, Some(*failure));
     let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
-        SourceKePreviewReport::from_run(run.outcome)
+        SourceKePreviewReport::from_run(run.outcome, PowerObserverCleanup::default())
     else {
         return Err(Failure::Control);
     };
@@ -2069,6 +2308,73 @@ fn managed_ke_preview_ordinary_finish_refuses_with_diagnostic_neighbor() -> Resu
             Ok(())
         },
     )
+}
+
+/// Stop on the original scope after sealing must refuse the final managed Preview.
+/// # Errors
+/// Preserve actual issued-source, publication, preparation or healthy commit refusal.
+/// # Panics
+/// Reject historical publication after Stop, lost charges or a healthy refusal.
+#[test]
+fn managed_ke_preview_stop_after_sealing_refuses_final_commit() -> Result<(), Failure> {
+    let fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = Config::from_managed_preview(
+        fixture
+            .source
+            .capture_ke_preview()
+            .map_err(Failure::SourcePolicy)?,
+    );
+    for stop_before_commit in [true, false] {
+        with_owner(
+            &config,
+            COMPONENT_UDP,
+            |owner: &mut AssociationOwner<'_>, control: &Control| {
+                let prepared: super::handoff::PreparedRequest<'_> =
+                    owner.prepare_preview(|bytes: &mut [u8; 48]| {
+                        bytes.fill(0x42_u8);
+                        Ok(())
+                    })?;
+                let charged: Status = owner.status();
+                assert_eq!(
+                    (charged.attempts, charged.available, charged.used),
+                    (31, 1, 0)
+                );
+                assert_eq!(control.with_published(|_| Ok(())), Ok(()));
+                if stop_before_commit {
+                    let stop: StopHandle = StopHandle {
+                        scope: Arc::clone(&control.stop_scope),
+                    };
+                    assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
+                    assert!(
+                        matches!(prepared.finish_managed(), Err(Failure::Cancelled)),
+                        "original Stop after sealing must refuse managed Preview history"
+                    );
+                    assert!(matches!(
+                        *control.phase.lock().map_err(|_| Failure::Control)?,
+                        super::Phase::Published
+                    ));
+                } else {
+                    let history: ManagedPreviewHistory = prepared.finish_managed()?;
+                    let summary: &Summary = history.summary();
+                    assert!(
+                        history
+                            .configuration()
+                            .same_configuration(&fixture.configuration)
+                    );
+                    assert_eq!(
+                        (summary.cookies, summary.cookie_bytes, summary.packet_bytes),
+                        (1, 12, 140)
+                    );
+                    assert!(!summary.transmitted);
+                    assert_eq!(control.with_published(|_| Ok(())), Err(Failure::Control));
+                }
+                assert_eq!(owner.status(), charged);
+                assert!(owner.last_receipt().is_none());
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
 }
 
 /// Select when the same checked alias request delivers its restriction.

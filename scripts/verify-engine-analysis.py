@@ -5643,6 +5643,135 @@ ENGINE_KE_CASE_COUNT = 292
 ENGINE_KE_DOCTEST_COUNT = 90
 ENGINE_REVIEW_CANDIDATE = "eb0468583ee1c6a08e045296beec8d7fdf181c7a5154fbb36868cc4665422195"
 ENGINE_REVIEW_INPUT_COUNT = 619
+ENGINE_SCALE_CONFLICT_CANDIDATE = "9787ca8da2b8c768edc89e116568c71a9243bb7cfd4d1a85cf00001651989a89"
+ENGINE_SCALE_CONFLICT_INPUT_COUNT = 620
+ENGINE_SCALE_CONFLICT_TERMINAL = "b9866c64480d4c852bf9a3ff78b162d97826050fedeb673b130639075939314d"
+ENGINE_SCALE_CONFLICT_MANIFEST = "688fc05e0740bc31d68b226c7e71394fe5aaed3ea6482438d250ec73168a98e0"
+ENGINE_SCALE_CONFLICT_BOUNDARY = "a9383bfa0820f2f7e2453c1a4c4d3912468061329ff1d7c860405a833b1fb7b8"
+ENGINE_SCALE_CONFLICT_EP1_CASE_DIGEST = "b97fb5d24414fffb4dd5b49b76bc8e6a5abd12c6fe1dd50c8aadfae7d8527b1b"
+ENGINE_SCALE_CONFLICT_DEFAULT_CASE_DIGEST = "6fdab3b3e6a8bb20cd2e9801d425880cf9db791835c1468cbc458382bc52a10a"
+ENGINE_SCALE_CONFLICT_PRIOR_DELTA = "64bd400d1d68511b78606b864244eb7c0d57b44e8fb84fa40815ca53e22945e5"
+ENGINE_SCALE_CONFLICT_GRAPH_DELTA = "697611c380aa91e2b1c1adcaae6305c3da1b8e6b06042f927af63d470fecad5e"
+ENGINE_SCALE_CONFLICT_WRAPPER = "217ea4bcdc4f9c5fbd5d8c13206ef92c8dd2271d396c4f4c782384ad2dc98064"
+ENGINE_SCALE_CONFLICT_STOPPED = "0188b877d18537d9da98bb7ed53b6bb1aa0241df2bbe7fa8e602c266187b6bbb"
+ENGINE_SCALE_CONFLICT_RETRY_WALL = 2270
+ENGINE_SCALE_CONFLICT_FIRST_WALL = 129.291
+ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE = (
+    "crates/nevrotick-engine/src/nts_ke_experiment/transport/managed_close_fixture.rs"
+)
+ENGINE_SCALE_CONFLICT_TEST = (
+    "source_policy::tests::configuration::"
+    "source_configuration_smeared_scale_refuses_only_experimental_measurement"
+)
+ENGINE_SCALE_CONFLICT_ROSTER = {
+    "default-ordinary": (288, "48aa2d51baa22538640dfd383078b106ab833aef5971e4dea2a02796167fbb35"),
+    "default-doctests": (90, "de4eee700118467c20f02a5af10034630aa66ab7aec6f9c27f71444a76d2d62c"),
+    "ep1-ordinary": (585, "c55e41b045830ff7f9d119ea85f99a36b5d3a235737f9d4a1bd3a23ca9ee2fe8"),
+    "ep1-doctests": (91, "b382fb2f46ca19b8cf406c05cdefe99fe226f53fba21839e5c32ec229b8529e3"),
+}
+ENGINE_PLACEMENT_CANDIDATE = "8f98bdae618d53c3b087809af6e904046db5a0ea3dbd0310d7634e829f22bae9"
+ENGINE_PLACEMENT_TERMINAL = "ebbc33d919d96b7ace9466e7a17a135bbf92ae0af88a839d8f075572385b6107"
+ENGINE_PLACEMENT_MANIFEST = "27f16874cde2e46740951280026b11ae431a55cf2066beb435fb28447b01862c"
+ENGINE_PLACEMENT_BOUNDARY = "e2137a5632d20775ef0af5a2f6c75ceeb06b3352ef124ed94ebde24233bd16b7"
+ENGINE_PLACEMENT_WRAPPER = "bb1df7fd1b9242513fdbbbf3322370a25cd3d3c0a273327b1d094293881c181d"
+ENGINE_PLACEMENT_PRIOR_DELTA = "2a2ffd6e886084ed163cfb57f910ce309e541d432208c8ffcd76846548c4a11b"
+ENGINE_PLACEMENT_FOCUS_REFERENCES = "c7d569fd8346c3c9f9ff712792b7a816c2ad4289ebb33a4c47e578f989c218ff"
+ENGINE_PLACEMENT_INHERITED_RETRY = "a5fef0e0147e64ac0ecbb68b843e9f0984763c3273d408194b4e5d7bb43aa191"
+ENGINE_PLACEMENT_FORMAT_REFERENCES = "ebef65633905a3b34df0bb057909035ccc0c8f697a399f55b8394631b972307d"
+ENGINE_PLACEMENT_STOPPED = "d03d54e071e137602acb4888b1aa6af0378393f7fe0943b7627ae4c99c7b86ca"
+ENGINE_PLACEMENT_UNFORMATTED = "a130c4f7aff936ef728bf9409a10153caa7d062a3e63d68adf2e619e9894e53c"
+ENGINE_PLACEMENT_UNFORMATTED_MANIFEST = "07f45748fbe9d5173c0d25337b7dc45af2904d9419f1ee51e0c15031aedfe397"
+ENGINE_PLACEMENT_FORMAT_FAILURE = "30f7b2520edf988fc6040e88baf28d0f76c689cf444bd0496c6744c544c46053"
+ENGINE_PLACEMENT_FIRST_BOUNDARY = "98aa0aaa0ba9a129d6548d10f2a55ff3ddff7c29553a630520e078fcf5b01d89"
+ENGINE_PLACEMENT_RETRY_WALL = 2383
+ENGINE_PLACEMENT_FIRST_WALL_MS = 16105
+ENGINE_PLACEMENT_TEST = (
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_protected_report_keeps_original_application_wall_elapsed_bounds"
+)
+ENGINE_PLACEMENT_ROSTER = {
+    "default-ordinary": ENGINE_SCALE_CONFLICT_ROSTER["default-ordinary"],
+    "default-doctests": (90, "cf9a6463a093cccdfd4a667a74d3269244246f04e17a6230a91a3f25c24890de"),
+    "ep1-ordinary": (586, "33b079624f44119ae12e7928bc519a14cb29e5dab3b38b75e04b35d648146dc6"),
+    "ep1-doctests": (91, "ef3b2b18d5d15c2ae8b99fd6f601ca006afd1e87d5824e4c48645ef8281e089f"),
+}
+ENGINE_PLACEMENT_EP1_CASE_DIGEST = "f8fe12a23ece323ccbfd1818e5056a69e5bb211bcb5b66a0f1639706d5221c23"
+ENGINE_PROTECTED_DEBIT_CANDIDATE = "acc427ae2e19bf48011b4abdfa01ef9fdd973929a16aa068c8e29101c698333d"
+ENGINE_PROTECTED_DEBIT_TERMINAL = "b1f628d08e4e044edbf010cc919ebc32be0358d8d44330187775526d31de472e"
+ENGINE_PROTECTED_DEBIT_MANIFEST = "e29ea3c9d6fe505d977f5d5134b90a70f45ee3afa8f08e8799631a9f0a37b950"
+ENGINE_PROTECTED_DEBIT_BOUNDARY = "b33ad33869a91649c5ef0f76f743b793b638a8f229211cb9a608bd932ee9bf4f"
+ENGINE_PROTECTED_DEBIT_WRAPPER = "158368ee57cf5ae42ffbf36fea68bcfc658a86e2e682bd45a52cce6f936bf8f5"
+ENGINE_PROTECTED_DEBIT_PRIOR_DELTA = "bd84c06e7aea91c190fcdde1dc636c36e5a8702c4d3f04422407446867409a49"
+ENGINE_PROTECTED_DEBIT_GRAPH_DELTA = "29ab98a45ef08d2a68530e9ff4980bed955dcfb5e9bdd0c666bff329045b37d9"
+ENGINE_PROTECTED_DEBIT_FOCUSED = "9ddbc82842ca9819e77c86a82a0205846575e68fa96f8e0b847d639b7e4da9d4"
+ENGINE_PROTECTED_DEBIT_EP1_CASE_DIGEST = "e7c124237b7d965fba591a696fa55f4daaf522717ce24bebcc9c9a18114a7620"
+ENGINE_PROTECTED_DEBIT_ROSTER = ENGINE_PLACEMENT_ROSTER | {
+    "ep1-ordinary": (600, "caf3fe2393537ef970c3bf7043663273b06b2e31a44991adc06f77591b7482c0"),
+}
+ENGINE_PROTECTED_DEBIT_ADDITIONS = frozenset((
+    "nts_ke_experiment::datagram::tests::managed_protected_pending_endpoint_deny_wakes_silent_receive",
+    "nts_ke_experiment::datagram::tests::managed_protected_pending_expiry_observes_already_latched_stop",
+    "nts_ke_experiment::datagram::tests::managed_protected_pending_ignores_deny_for_another_port",
+    "nts_ke_experiment::datagram::tests::managed_protected_pending_rate_preserves_readiness_and_reply",
+    "nts_ke_experiment::datagram::tests::managed_protected_pending_stop_and_revision_replacement_wake_receive",
+    "nts_ke_experiment::datagram::tests::protected_consumed_known_debits_after_expiry",
+    "nts_ke_experiment::datagram::tests::protected_consumed_known_debits_after_stop",
+    "nts_ke_experiment::datagram::tests::protected_consumed_unknown_retires_after_expiry",
+    "nts_ke_experiment::datagram::tests::protected_consumed_unknown_retires_after_stop",
+    "nts_ke_experiment::datagram::tests::protected_known_live_reply_charges_rejected_and_matching_origins",
+    "nts_ke_experiment::datagram::tests::protected_stop_before_receive_preserves_datagram_credit",
+    "nts_ke_experiment::managed_preview_tests::managed_ke_preview_power_event_respects_sealing_and_join",
+    "nts_ke_experiment::managed_preview_tests::managed_ke_preview_power_registration_refusal_releases_slot",
+    "nts_ke_experiment::managed_preview_tests::managed_ke_preview_stop_after_sealing_refuses_final_commit",
+))
+ENGINE_FINAL_FRAME_CANDIDATE = 'a0df3abd9f964cea8bf28d184ac0e28daaad1b89c29696549a85adda4e45c9ee'
+ENGINE_FINAL_FRAME_MANIFEST = 'fceb74ede2e4dd5af5fed45a0865d5e9e3b665ad428105599e717ad118e875ce'
+ENGINE_FINAL_FRAME_TERMINAL = 'a366959a0df5a805a3d8dd2aadbe2674a72a525e907fbaf453e929e6b9cc78fc'
+ENGINE_FINAL_FRAME_BOUNDARY = '8c8a6cfade33a0e119b1a16e843cb8d1297ddd82904a0fe22492cc6da5438b8b'
+ENGINE_FINAL_FRAME_WRAPPER = 'c34d1e0e25a7116da40a8334925c2a0368557aad317db94493658e43a8870478'
+ENGINE_FINAL_FRAME_FOCUSED = '3335efdb9098640a888223f3508eed71b4b6408a211943067fc784a2c839ed15'
+ENGINE_FINAL_FRAME_FOCUSED_CANDIDATE = '0eb50c7f02c9f7623e88e2cde3ee3dd412308cb7c6a316227c9f9797c60693b6'
+ENGINE_FINAL_FRAME_FIXTURE = 'd9bf79ce5512a557504c195a04a58b93f61e1dda7065503d67e887732761e87f'
+ENGINE_FINAL_FRAME_FIXTURE_CANDIDATE = '0495021fa1525ca85aca79c78f370ceb60f13f4db73557c7c1ba8132199187c4'
+ENGINE_FINAL_FRAME_WORKER_FIXTURE = '3b2a92a90c0c389ee3245cdf8af43f907c0b3efd7c811eba485552701b220b5f'
+ENGINE_FINAL_FRAME_FIXTURE_CASES = ('nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_loopback_successor_commits_exact_deny_after_normal_join', 'nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_loopback_successor_refuses_same_values_replacement_before_commit')
+ENGINE_FINAL_FRAME_INCOMPLETE = 'f6a79d66c59665cd792df5c58465e828bddd9124f5d391dd33193857e0eee865'
+ENGINE_FINAL_FRAME_INCOMPLETE_CAPTURE = '2aa728bac7389dbb7036b4152932371d8ef0e26963c5dda8c0538bca150c96c0'
+ENGINE_FINAL_FRAME_INCOMPLETE_PLACEMENT = 'aa36d0874c26db8b2712eb1e5c0ef472bc3fabcdbf78ae1cc39cc803f55e4291'
+ENGINE_FINAL_FRAME_RETRY_WALL = 2250
+ENGINE_FINAL_FRAME_WORKER_PATH = 'crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs'
+ENGINE_FINAL_FRAME_WORKER_PRE = '2e2f88f996683153f1be926bb42b820c0394525286692b507c8fa38c8b4441a4'
+ENGINE_FINAL_FRAME_WORKER_POST = 'afc5836f5cb874cf6ff6e816f71f2b257538f8144aea88c6a210536f5424e53b'
+ENGINE_FINAL_FRAME_EP1_CASE_DIGEST = '50bf4855d5a7601a88979520b62aba6f39d6f5e9bbdc55d6406c0592c19eb4a1'
+ENGINE_FINAL_FRAME_TEST_PATH = 'crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs'
+ENGINE_FINAL_FRAME_ADDITIONS = frozenset((
+    'nts_ke_experiment::datagram::tests::protected_final_known_frame_retires_after_expiry',
+    'nts_ke_experiment::datagram::tests::protected_final_known_frame_retires_after_stop',
+    'nts_ke_experiment::datagram::tests::protected_final_known_frame_retires_after_stop_and_expiry',
+))
+ENGINE_FINAL_FRAME_DOCS = frozenset((
+    'docs/plans/development-plan.md',
+    'tasks/engine-transport-pilot.md',
+    'tasks/windows11-integration.md',
+))
+ENGINE_FINAL_FRAME_ROSTER = ENGINE_PROTECTED_DEBIT_ROSTER | {
+    "ep1-ordinary": (603, "9a15d0fb55d3045d1a6231d105c0a1da1f0841c9447929863f9e2ed57e175c26"),
+}
+ENGINE_STALE_DEBIT_CANDIDATE = '3609043e862889ed20e29e85345c06c019b6887049833af3fd1ca6b0ec82e382'
+ENGINE_STALE_DEBIT_MANIFEST = '18d40af6c21180b605590e1e87cf4eb97cfb269162526aff7d7ea6b84aa93b4a'
+ENGINE_STALE_DEBIT_TERMINAL = '9ea7c824f7b439aef49f81d73adbefe30f5c55b7625a0ab9d96d2c229332fa34'
+ENGINE_STALE_DEBIT_BOUNDARY = 'df2ab64c4c7b73dc10a9ddad5b96a42a83bece0cc546de7e7fc948db91565431'
+ENGINE_STALE_DEBIT_WRAPPER = 'b6a2a8c2269ca4703533f62a8f78dae311b3f84c4dbc09a184f85a91ee05ceb4'
+ENGINE_STALE_DEBIT_PREPARATION = 'd786a321b2b98acb8535aeda63d28a478a56bec3fb4065aba4c8903c645dd3ae'
+ENGINE_STALE_DEBIT_FULL = '8c8ee48f35cbec01534a1efbb10f639565e0e89a8b305af586512199047fc139'
+ENGINE_STALE_DEBIT_READBACK = '39a4c867b03d1906839761da97194fa8e7becd363bf411d952f9f00709c1a3e4'
+ENGINE_STALE_DEBIT_CASE = 'nts_ke_experiment::association::ledger::tests::receiver_stale_debit_keeps_current_pending'
+ENGINE_STALE_DEBIT_TEST_PATH = 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs'
+ENGINE_STALE_DEBIT_TEST_PRE = 'fcee7434236a431abd90d11efcb7bdb61e367e457fa846edf849cbff5cfca5d7'
+ENGINE_STALE_DEBIT_TEST_POST = '031e1f2a0896350a359c3ab52af4f48d75139e112787f612cda23de41b45ee7b'
+ENGINE_STALE_DEBIT_EP1_CASE_DIGEST = '0e6f6d3e9d8b210799ee61270bff21fe40053efe69af799090d7eddabac03509'
+ENGINE_STALE_DEBIT_FULL_COMMANDS = {'ep1-ordinary': '15fb7af1ad4678d1c3d428504b671e132361eeef54ba96e6e83964805a569118', 'ep1-optimized': '6c83ad7594673fb937511174ea5d07a9b0c529fca0ba2bf1f22f50d81b5c682d', 'ep1-doctests': '906f3b3a5cf44e0a4911772e655887aa7463852844d8a6e44c179c25a357d2e8'}
+ENGINE_STALE_DEBIT_ROSTER = ENGINE_FINAL_FRAME_ROSTER | {"ep1-ordinary": (604, "aae2f8642303d4d8f39b4a8fce24a683b98289481deea570e9efe423a2ef9947")}
 ENGINE_REVIEW_TERMINAL = "6459d484673913359fc69e58596c32ef113eca27363fa1ebc75ea14518ae31f7"
 ENGINE_REVIEW_MANIFEST = "1cc89353a08cab0ca94d365ac65a5319709e4904a207122cc095e3aad19bfc35"
 ENGINE_REVIEW_BOUNDARY = "a47858cedf91f8ae1d0fe3bb5440377cfa11d785b21afc34a4984aafa92b4994"
@@ -5922,7 +6051,8 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
     if any(name not in identity for name in (ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_LOCK)):
         raise Incomplete("The actual public generator is outside the admitted product source inventory.")
     graph = admit_engine_ke_fixture_lock(ROOT, dependency)
-    inputs = (*ENGINE_KE_BOUND_INPUTS, ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_MANIFEST, ENGINE_KE_FIXTURE_LOCK)
+    inputs = (*engine_ke_bound_inputs(COMMON.canonical_sha256(identity)),
+              ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_MANIFEST, ENGINE_KE_FIXTURE_LOCK)
     current = {name: PRODUCT.sha256(ROOT / name) for name in inputs}
     selected = argparse.Namespace(**vars(args))
     selected.lane = "baseline"
@@ -5964,8 +6094,49 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
         raise Incomplete("Public fixture artifact changed during its final custody bookend.")
 
 
+def engine_review_input_count(candidate: object) -> int | None:
+    """Select each combined review candidate without changing the older binding."""
+    if candidate in (ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE):
+        return ENGINE_SCALE_CONFLICT_INPUT_COUNT
+    if candidate == ENGINE_REVIEW_CANDIDATE:
+        return ENGINE_REVIEW_INPUT_COUNT
+    return None
+
+
+def engine_review_terminal_pin(candidate: object) -> str:
+    """Choose the immutable combined terminal for the admitted review generation."""
+    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        return ENGINE_STALE_DEBIT_TERMINAL
+    if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        return ENGINE_FINAL_FRAME_TERMINAL
+    if candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        return ENGINE_PROTECTED_DEBIT_TERMINAL
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        return ENGINE_PLACEMENT_TERMINAL
+    if candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+        return ENGINE_SCALE_CONFLICT_TERMINAL
+    return ENGINE_REVIEW_TERMINAL
+
+
+def engine_ke_bound_inputs(candidate: object) -> tuple[str, ...]:
+    """Bind the new Windows test helper only for the candidate which contains it."""
+    if candidate in (ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE):
+        return (*ENGINE_KE_BOUND_INPUTS, ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE)
+    return ENGINE_KE_BOUND_INPUTS
+
+
 def engine_ke_case_counts(candidate: object) -> tuple[int, int]:
     """Keep historical rosters distinct from the exact review candidate."""
+    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        return (604, 312)
+    if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        return (603, 311)
+    if candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        return (600, 308)
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        return 586, 294
+    if candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+        return 585, 293
     return (584, 293) if candidate == ENGINE_REVIEW_CANDIDATE else (
         ENGINE_KE_ORDINARY_COUNT, ENGINE_KE_CASE_COUNT)
 
@@ -5998,7 +6169,22 @@ def validate_engine_ke_inventory(names: object, *, candidate: object = None) -> 
             or not ENGINE_KE_TRANSPORT_CURRENTNESS_TESTS.issubset(names)
             or not ENGINE_KE_LOOPBACK_AND_TRANSPORT_CUTOFF_TESTS.issubset(names)
             or (candidate == ENGINE_REVIEW_CANDIDATE
-                and COMMON.canonical_sha256(names) != SOURCE_POLICY_ENGINE_REVIEW_ROSTER["ep1-ordinary"][1])):
+                and COMMON.canonical_sha256(names) != SOURCE_POLICY_ENGINE_REVIEW_ROSTER["ep1-ordinary"][1])
+            or (candidate == ENGINE_SCALE_CONFLICT_CANDIDATE
+                and (ENGINE_SCALE_CONFLICT_TEST not in names
+                     or COMMON.canonical_sha256(names) != ENGINE_SCALE_CONFLICT_ROSTER["ep1-ordinary"][1]))
+            or (candidate == ENGINE_STALE_DEBIT_CANDIDATE
+                and (ENGINE_STALE_DEBIT_CASE not in names
+                     or COMMON.canonical_sha256(names) != ENGINE_STALE_DEBIT_ROSTER["ep1-ordinary"][1]))
+            or (candidate == ENGINE_FINAL_FRAME_CANDIDATE
+                and (not (ENGINE_PROTECTED_DEBIT_ADDITIONS | ENGINE_FINAL_FRAME_ADDITIONS).issubset(names)
+                     or COMMON.canonical_sha256(names) != ENGINE_FINAL_FRAME_ROSTER["ep1-ordinary"][1]))
+            or (candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE
+                and (not ENGINE_PROTECTED_DEBIT_ADDITIONS.issubset(names)
+                     or COMMON.canonical_sha256(names) != ENGINE_PROTECTED_DEBIT_ROSTER["ep1-ordinary"][1]))
+            or (candidate == ENGINE_PLACEMENT_CANDIDATE
+                and (ENGINE_PLACEMENT_TEST not in names or ENGINE_SCALE_CONFLICT_TEST not in names
+                     or COMMON.canonical_sha256(names) != ENGINE_PLACEMENT_ROSTER["ep1-ordinary"][1]))):
         raise Incomplete(
             f"Engine KE requires all {ordinary_count} actual Engine tests including its "
             f"{ke_count} KE cases and the required send, cutoff, chronology, receive debit, header age, "
@@ -6009,13 +6195,25 @@ def validate_engine_ke_inventory(names: object, *, candidate: object = None) -> 
 
 def validate_engine_ke_doctest_inventory(names: object, *, candidate: object = None) -> list[str]:
     """Require the candidate's complete Rustdoc roster with original annotations."""
-    exact_doctests = candidate in (ENGINE_KE_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE)
+    exact_doctests = (candidate == ENGINE_KE_SOURCE_SCALE_CANDIDATE
+                      or engine_review_input_count(candidate) is not None)
     count = 91 if exact_doctests else ENGINE_KE_DOCTEST_COUNT
+    digest = ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        digest = ENGINE_PLACEMENT_ROSTER["ep1-doctests"][1]
+    elif candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        digest = ENGINE_STALE_DEBIT_ROSTER["ep1-doctests"][1]
+    elif candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        digest = ENGINE_FINAL_FRAME_ROSTER["ep1-doctests"][1]
+    elif candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        digest = ENGINE_PROTECTED_DEBIT_ROSTER["ep1-doctests"][1]
+    elif candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+        digest = ENGINE_SCALE_CONFLICT_ROSTER["ep1-doctests"][1]
     if (type(names) is not list or len(names) != count
             or any(type(name) is not str or len(name) > 4096 or ENGINE_KE_DOCTEST_NAME.fullmatch(name) is None
                    for name in names)
             or names != sorted(set(names))
-            or (exact_doctests and COMMON.canonical_sha256(names) != ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST)):
+            or (exact_doctests and COMMON.canonical_sha256(names) != digest)):
         raise Incomplete("Engine KE requires its complete exact annotated Rustdoc inventory.")
     return names
 
@@ -6032,11 +6230,13 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
         if type(binding[field]) is not str or re.fullmatch(r"[a-f0-9]{64}", binding[field]) is None:
             raise Incomplete("Engine KE candidate/context digest is malformed.")
     pins = binding["inputs_sha256"]
+    candidate = binding["candidate_sha256"]
     if (type(binding["source_file_count"]) is not int or binding["source_file_count"] <= 0
-            or type(pins) is not dict or set(pins) != set(ENGINE_KE_BOUND_INPUTS)
+            or type(pins) is not dict or set(pins) != set(engine_ke_bound_inputs(candidate))
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
-    if binding["candidate_sha256"] == ENGINE_REVIEW_CANDIDATE and binding["source_file_count"] != ENGINE_REVIEW_INPUT_COUNT:
+    expected_count = engine_review_input_count(binding["candidate_sha256"])
+    if expected_count is not None and binding["source_file_count"] != expected_count:
         raise Incomplete("Engine review KE requires the exact product input count.")
     validate_engine_ke_inventory(binding["test_inventory"], candidate=binding["candidate_sha256"])
     validate_engine_ke_doctest_inventory(binding["doctest_inventory"], candidate=binding["candidate_sha256"])
@@ -6108,8 +6308,9 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
     evidence = binding["ordinary_evidence"]
     candidate = binding["candidate_sha256"]
     source_scale = candidate == ENGINE_KE_SOURCE_SCALE_CANDIDATE
-    review = candidate == ENGINE_REVIEW_CANDIDATE
-    if review and evidence["sha256"] != ENGINE_REVIEW_TERMINAL:
+    review = engine_review_input_count(candidate) is not None
+    terminal_pin = engine_review_terminal_pin(candidate)
+    if review and evidence["sha256"] != terminal_pin:
         raise Incomplete("Engine review requires the exact combined terminal receipt.")
     if source_scale and evidence["sha256"] != ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256:
         raise Incomplete("Engine KE source-scale requires the exact combined terminal receipt.")
@@ -6156,7 +6357,18 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
             raise Incomplete("Engine KE development EP1 row differs from the physical executed identities.")
         if (source_scale or review) and lane != "ep1-doctests":
             pairs = sorted((case["binary"], case["name"]) for case in cases)
-            digest = ENGINE_REVIEW_EP1_CASE_DIGEST if review else ENGINE_KE_SOURCE_SCALE_CASE_DIGEST
+            if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+                digest = ENGINE_STALE_DEBIT_EP1_CASE_DIGEST
+            elif candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+                digest = ENGINE_FINAL_FRAME_EP1_CASE_DIGEST
+            elif candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+                digest = ENGINE_PROTECTED_DEBIT_EP1_CASE_DIGEST
+            elif candidate == ENGINE_PLACEMENT_CANDIDATE:
+                digest = ENGINE_PLACEMENT_EP1_CASE_DIGEST
+            elif candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+                digest = ENGINE_SCALE_CONFLICT_EP1_CASE_DIGEST
+            else:
+                digest = ENGINE_REVIEW_EP1_CASE_DIGEST if review else ENGINE_KE_SOURCE_SCALE_CASE_DIGEST
             if COMMON.canonical_sha256(pairs) != digest:
                 raise Incomplete("Engine KE executed binary and case identities differ.")
         result[lane] = row["sha256"]
@@ -6166,7 +6378,7 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
         capture, reference, recipe, boundary = read_combined_development(candidate, identity, evidence)
         if graph != capture["predecessor_graph"]:
             raise Incomplete("Engine review KE binding names a different predecessor graph.")
-        result.update(admit_engine_review_lineage(capture, reference, identity))
+        result.update(admit_engine_combined_review_lineage(capture, reference, identity, path))
         ordinary, = (row["cases"] for row in lanes if row["lane"] == "default-ordinary")
         doctests, = (row["cases"] for row in lanes if row["lane"] == "default-doctests")
         default_binding = {"candidate_sha256": candidate,
@@ -6736,7 +6948,10 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                   ordinary_reference=binding["ordinary_evidence"],
                   ordinary_reference_scope=(
                       "Exact combined terminal and predecessor graph; physical EP1 ordinary, optimized and Rustdoc rosters."
-                      if binding["candidate_sha256"] in (ENGINE_KE_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE) else
+                      if binding["candidate_sha256"] in (
+                          ENGINE_KE_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
+                          ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE,
+                          ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE) else
                       "Exact current development receipt and physical EP1 ordinary/Rustdoc rosters; metrics require their own actual execution."),
                   pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
                   pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
@@ -6744,7 +6959,8 @@ def execute_engine_ke_profile(args, report: dict) -> None:
     if args.lane == "contracts":
         report.update(contracts_qualification_passed=False, provider_claim_contracts_passed=False,
                       protected_history_contracts_passed=False)
-    session = COMMON.Session(ROOT, selected, report, ENGINE_KE_SCOPE, policy, ENGINE_KE_BOUND_INPUTS)
+    session = COMMON.Session(ROOT, selected, report, ENGINE_KE_SCOPE, policy,
+                             engine_ke_bound_inputs(binding["candidate_sha256"]))
     try:
         if (COMMON.canonical_sha256(session.product_identity) != binding["candidate_sha256"]
                 or read_json(session.source / ENGINE_KE_POLICY) != policy
@@ -7060,6 +7276,16 @@ SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
 
 def source_policy_combined_roster(candidate: object) -> tuple[dict, int] | None:
     """Select the roster and private-case count for the exact combined product."""
+    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        return (ENGINE_STALE_DEBIT_ROSTER, 75)
+    if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        return (ENGINE_FINAL_FRAME_ROSTER, 75)
+    if candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        return (ENGINE_PROTECTED_DEBIT_ROSTER, 75)
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        return ENGINE_PLACEMENT_ROSTER, 75
+    if candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+        return ENGINE_SCALE_CONFLICT_ROSTER, 75
     if candidate == ENGINE_REVIEW_CANDIDATE:
         return SOURCE_POLICY_ENGINE_REVIEW_ROSTER, 74
     if candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE:
@@ -7102,7 +7328,8 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
         "crates/nevrotick-engine/src/source_policy.rs - ")]
     compiler_count, negative_count = (
         (19, 14) if binding.get("candidate_sha256") in (
-            SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE)
+            SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
+            ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE)
         else (18, 13))
     if (len(selected) != (combined[1] if combined else 68)
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
@@ -7111,6 +7338,8 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
             or not SOURCE_POLICY_SNAPSHOT_TESTS <= set(selected)
             or not SOURCE_POLICY_PROVENANCE_TESTS <= set(ordinary)
             or not SOURCE_POLICY_CONFIGURATION_TESTS <= set(ordinary)
+            or (binding.get("candidate_sha256") in (ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE)
+                and ENGINE_SCALE_CONFLICT_TEST not in ordinary)
             or len(kod_docs) != compiler_count
             or sum(name.endswith(" - compile fail") for name in kod_docs) != negative_count):
         raise Incomplete("Source-policy roster must retain all controls, public diagnostics, the setup budget, "
@@ -7135,7 +7364,8 @@ def validate_source_policy_policy(policy: dict, *, campaign: bool = False) -> di
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None
                    for value in pins.values())):
         raise Incomplete("Source-policy protected source/helper closure is incomplete.")
-    if binding["candidate_sha256"] == ENGINE_REVIEW_CANDIDATE and binding["source_file_count"] != ENGINE_REVIEW_INPUT_COUNT:
+    expected_count = engine_review_input_count(binding["candidate_sha256"])
+    if expected_count is not None and binding["source_file_count"] != expected_count:
         raise Incomplete("Engine review source-policy requires the exact product input count.")
     source_policy_test_inventory(binding)
     evidence = binding["development_evidence"]
@@ -7956,6 +8186,16 @@ def admit_source_policy_observer(reference: dict, path: Path) -> dict:
 
 def source_policy_combined_evidence(candidate: str) -> tuple[str, str]:
     """Select the pinned manifest and raw boundary for this combined candidate."""
+    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        return (ENGINE_STALE_DEBIT_MANIFEST, ENGINE_STALE_DEBIT_BOUNDARY)
+    if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        return (ENGINE_FINAL_FRAME_MANIFEST, ENGINE_FINAL_FRAME_BOUNDARY)
+    if candidate == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        return (ENGINE_PROTECTED_DEBIT_MANIFEST, ENGINE_PROTECTED_DEBIT_BOUNDARY)
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        return ENGINE_PLACEMENT_MANIFEST, ENGINE_PLACEMENT_BOUNDARY
+    if candidate == ENGINE_SCALE_CONFLICT_CANDIDATE:
+        return ENGINE_SCALE_CONFLICT_MANIFEST, ENGINE_SCALE_CONFLICT_BOUNDARY
     if candidate == ENGINE_REVIEW_CANDIDATE:
         return ENGINE_REVIEW_MANIFEST, ENGINE_REVIEW_BOUNDARY
     if candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE:
@@ -8004,8 +8244,21 @@ def validate_source_policy_capture_lane(row: dict, selected: dict, raw: dict, bi
         validate = source_policy_execution if lane.startswith("default-") else source_policy_ep1_execution
         facts = validate(output, binding)
         cases = engine_ke_development_ordinary_cases(output)
-        if (Counter((case["binary"], case["name"]) for case in cases)
-                != Counter(map(tuple, selected["expected"]))
+        pairs = sorted((case["binary"], case["name"]) for case in cases)
+        candidate = binding["candidate_sha256"]
+        expected_digests = {
+            ENGINE_SCALE_CONFLICT_CANDIDATE: ENGINE_SCALE_CONFLICT_EP1_CASE_DIGEST,
+            ENGINE_PLACEMENT_CANDIDATE: ENGINE_PLACEMENT_EP1_CASE_DIGEST,
+            ENGINE_PROTECTED_DEBIT_CANDIDATE: ENGINE_PROTECTED_DEBIT_EP1_CASE_DIGEST,
+            ENGINE_FINAL_FRAME_CANDIDATE: ENGINE_FINAL_FRAME_EP1_CASE_DIGEST,
+            ENGINE_STALE_DEBIT_CANDIDATE: ENGINE_STALE_DEBIT_EP1_CASE_DIGEST,
+        }
+        if candidate in expected_digests:
+            expected_digest = (expected_digests[candidate] if lane.startswith("ep1-")
+                               else ENGINE_SCALE_CONFLICT_DEFAULT_CASE_DIGEST)
+            if COMMON.canonical_sha256(pairs) != expected_digest:
+                raise Incomplete("Engine combined ordinary execution differs by binary.")
+        if (Counter(pairs) != Counter(map(tuple, selected["expected"]))
                 or cases != row.get("cases") or facts["tests_executed"] != row.get("tests_executed")):
             raise Incomplete("Source-policy capture development ordinary identities differ by binary.")
     elif lane in {"default-doctests", "ep1-doctests"}:
@@ -8280,7 +8533,6 @@ def admit_engine_review_lineage(capture: dict, terminal: dict, identity: dict) -
     focus = references["focused_reference"]
     graph = references["predecessor_graph"]
     predecessor = prior.get("inputs")
-    graph_inputs = graph.get("product_input_sha256")
     if (prior.get("status") != "passed" or prior.get("mode") != "combined"
             or prior.get("candidate_sha256") != ENGINE_REVIEW_PRIOR or type(predecessor) is not dict
             or COMMON.canonical_sha256(predecessor) != ENGINE_REVIEW_PRIOR
@@ -8298,7 +8550,16 @@ def admit_engine_review_lineage(capture: dict, terminal: dict, identity: dict) -
             or focus.get("vendor_sha256") != capture["vendor_identity_sha256"]):
         raise Incomplete("Engine review baseline and focused source/tool lineage differs.")
 
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph, ENGINE_REVIEW_GRAPH_DELTA))
+    return admitted
+
+
+def admit_engine_review_graph(capture: dict, terminal: dict, identity: dict, graph: dict,
+                              delta_digest: str) -> dict:
+    """Read the original 45 dependency lanes and four projections for the exact reuse delta."""
+    admitted = {}
     graph_ref = capture["predecessor_graph"]
+    graph_inputs = graph.get("product_input_sha256")
     lanes, projections = graph.get("lanes"), graph.get("selected_graph_test_only_delta")
     if (terminal.get("predecessor_graph") != graph_ref
             or graph_ref["sha256"] != ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256
@@ -8308,7 +8569,7 @@ def admit_engine_review_lineage(capture: dict, terminal: dict, identity: dict) -
             or graph.get("status") != "passed" or graph.get("changed_tree_outputs") != []
             or graph.get("lockfile_sha256") != identity.get("Cargo.lock")
             or COMMON.canonical_sha256(sorted(name for name, digest in identity.items()
-                                              if graph_inputs.get(name) != digest)) != ENGINE_REVIEW_GRAPH_DELTA
+                                              if graph_inputs.get(name) != digest)) != delta_digest
             or type(lanes) is not list or len(lanes) != 45
             or type(graph.get("rows")) is not list or len(graph["rows"]) != 4
             or type(projections) is not list or len(projections) != 4):
@@ -8330,10 +8591,591 @@ def admit_engine_review_lineage(capture: dict, terminal: dict, identity: dict) -
     return admitted
 
 
+def validate_engine_placement_retry(capture: dict, terminal: dict) -> dict:
+    """Keep the exact formatter retry within the original combined allowance."""
+    retry = capture.get("placement_format_retry")
+    first_ms = ENGINE_PLACEMENT_FIRST_WALL_MS
+    retry_seconds = ENGINE_PLACEMENT_RETRY_WALL
+    cumulative_ms = first_ms + 1000 * retry_seconds
+    references = retry.get("references") if type(retry) is dict else None
+    if (type(references) is not dict or len(references) != 6
+            or COMMON.canonical_sha256(references) != ENGINE_PLACEMENT_FORMAT_REFERENCES
+            or retry != terminal.get("placement_format_retry")
+            or retry != {"references": references, "first_outer_seconds": first_ms / 1000,
+                         "retry_wall_seconds": retry_seconds, "original_wall_seconds": 2400,
+                         "cumulative_wall_seconds_ceiling": cumulative_ms / 1000}
+            or cumulative_ms > 2400 * 1000 or capture.get("wall_seconds") != retry_seconds
+            or terminal.get("prior_failed_development_sha256") != ENGINE_PLACEMENT_STOPPED):
+        raise Incomplete("Engine placement formatter retry custody or cumulative allowance differs.")
+    return references
+
+
+def admit_engine_placement_lineage(capture: dict, terminal: dict, identity: dict, path: Path) -> dict:
+    """Read the actual format stop, successful retry and original graph dependency closure."""
+    retry = validate_engine_placement_retry(capture, terminal)
+    focused, inherited = capture.get("references"), capture.get("prior_combined_retry")
+    if (type(focused) is not dict or len(focused) != 18 or terminal.get("focused_references") != focused
+            or COMMON.canonical_sha256(focused) != ENGINE_PLACEMENT_FOCUS_REFERENCES
+            or type(inherited) is not dict or len(inherited) != 4 or terminal.get("prior_combined_retry") != inherited
+            or COMMON.canonical_sha256(inherited) != ENGINE_PLACEMENT_INHERITED_RETRY
+            or any(focused.get(name) != digest for name, digest in retry.items())):
+        raise Incomplete("Engine placement retained producer and retry reference set differs.")
+    wrapper = path.parents[2] / "run-combined.py"
+    if (capture.get("wrapper_sha256") != ENGINE_PLACEMENT_WRAPPER
+            or hashlib.sha256(COMMON.read_analysis_bytes(wrapper, maximum=1024**2)).hexdigest()
+                != ENGINE_PLACEMENT_WRAPPER):
+        raise Incomplete("Engine placement wrapper bytes differ.")
+
+    admitted = {**focused, **inherited}
+    records: dict[str, dict] = {}
+    for name, digest in admitted.items():
+        member = Path(name)
+        if not member.is_absolute():
+            raise Incomplete("Engine placement lineage requires absolute evidence paths.")
+        if member.suffix == ".json" and member.name != "launch-command.json":
+            record = read_json(member, maximum=8 * 1024**2, expected_sha256=digest, owned_evidence=True)
+            records[digest] = record
+        elif (member.suffix not in {".py", ".patch"} and member.name != "launch-command.json"
+              or hashlib.sha256(COMMON.read_analysis_bytes(member, maximum=1024**2)).hexdigest() != digest):
+            raise Incomplete("Engine placement retained recipe or patch bytes differ.")
+    admitted[str(wrapper)] = ENGINE_PLACEMENT_WRAPPER
+
+    prior = records[ENGINE_SCALE_CONFLICT_TERMINAL]
+    previous = prior.get("inputs")
+    if (terminal.get("reference_sha256") != ENGINE_SCALE_CONFLICT_TERMINAL
+            or prior.get("status") != "passed" or prior.get("mode") != "combined"
+            or prior.get("candidate_sha256") != ENGINE_SCALE_CONFLICT_CANDIDATE
+            or type(previous) is not dict or previous.keys() != identity.keys()
+            or COMMON.canonical_sha256(previous) != ENGINE_SCALE_CONFLICT_CANDIDATE
+            or COMMON.canonical_sha256(sorted(name for name in identity if identity[name] != previous[name]))
+                != ENGINE_PLACEMENT_PRIOR_DELTA
+            or prior.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(prior.get("vendor_identity")) != capture["vendor_identity_sha256"]):
+        raise Incomplete("Engine placement exact predecessor or source delta differs.")
+
+    stopped = records[ENGINE_PLACEMENT_STOPPED]
+    first_capture = records[ENGINE_PLACEMENT_UNFORMATTED_MANIFEST]
+    first_inputs = first_capture.get("inputs")
+    boundary = records[ENGINE_PLACEMENT_FIRST_BOUNDARY]
+    format_failure = records[ENGINE_PLACEMENT_FORMAT_FAILURE]
+    first_lanes = [
+        {"lane": "boundary-control", "sha256": ENGINE_PLACEMENT_FIRST_BOUNDARY, "exit_code": 0, "failure": None},
+        {"lane": "format", "sha256": ENGINE_PLACEMENT_FORMAT_FAILURE, "exit_code": 1, "failure": None},
+    ]
+    if (stopped.get("status") != "incomplete" or stopped.get("mode") != "combined"
+            or stopped.get("active_lane") != "format" or stopped.get("cache_retirement") != []
+            or stopped.get("candidate_sha256") != ENGINE_PLACEMENT_UNFORMATTED
+            or stopped.get("capture_sha256") != ENGINE_PLACEMENT_UNFORMATTED_MANIFEST
+            or stopped.get("inputs") != first_inputs or type(first_inputs) is not dict
+            or first_capture.get("candidate_sha256") != ENGINE_PLACEMENT_UNFORMATTED
+            or first_capture.get("wall_seconds") != 2400 or first_inputs.keys() != identity.keys()
+            or COMMON.canonical_sha256(first_inputs) != ENGINE_PLACEMENT_UNFORMATTED
+            or {name for name in identity if identity[name] != first_inputs[name]} != {ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE}
+            or stopped.get("staged_index_sha256") != capture["index_sha256"]
+            or stopped.get("staged_tree") != capture["staged_tree"]
+            or stopped.get("owned_work_retired") is not True or stopped.get("resource_observer_joined") is not True
+            or stopped.get("public_campaigns_admitted") is not False or first_capture.get("campaigns_admitted") is not False
+            or stopped.get("lanes") != first_lanes
+            or boundary.get("exit_code") != 0 or boundary.get("failure") is not None
+            or boundary.get("output", "").splitlines().count("ANALYSIS_BOUNDARY_OK") != 1
+            or format_failure.get("exit_code") != 1 or format_failure.get("failure") is not None
+            or format_failure.get("command") != ["cargo", "fmt", "--all", "--", "--check"]
+            or re.findall(r"^Diff in /work/source/([^:]+):([0-9]+):$", format_failure.get("output", ""), re.M)
+                != [(ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE, line) for line in ("13", "238", "306")]):
+        raise Incomplete("Engine placement first attempt must retain its exact incomplete formatting outcome.")
+
+    graph_ref = capture["predecessor_graph"]
+    if focused.get(graph_ref["path"]) != graph_ref["sha256"]:
+        raise Incomplete("Engine placement predecessor graph reference differs.")
+    graph = records[graph_ref["sha256"]]
+    graph_dependencies = graph["manifest_sha256"] | graph["checkers"]
+    if any(capture["source"].get(name) != digest for name, digest in graph_dependencies.items()):
+        raise Incomplete("Engine placement predecessor graph inputs changed.")
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph, ENGINE_SCALE_CONFLICT_GRAPH_DELTA))
+    return admitted
+
+
+def admit_engine_protected_debit_lineage(capture: dict, terminal: dict, identity: dict,
+                                          path: Path) -> dict:
+    """Reconcile the new receipt with the closed placement graph and exact debit evidence."""
+    references = (
+        ("combined_development_reference", ENGINE_PLACEMENT_TERMINAL),
+        ("focused_reference", ENGINE_PROTECTED_DEBIT_FOCUSED),
+        ("predecessor_graph", ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256),
+    )
+    admitted: dict[str, str] = {}
+    records: dict[str, dict] = {}
+    for label, expected in references:
+        reference = capture.get(label)
+        if (type(reference) is not dict or set(reference) != {"path", "sha256"}
+                or reference["sha256"] != expected or type(reference["path"]) is not str
+                or not Path(reference["path"]).is_absolute()):
+            raise Incomplete("Engine protected-debit predecessor reference differs.")
+        member = Path(reference["path"])
+        records[label] = read_json(member, maximum=8 * 1024**2,
+                                   expected_sha256=expected, owned_evidence=True)
+        admitted[str(member)] = expected
+
+    prior = records["combined_development_reference"]
+    focus = records["focused_reference"]
+    graph = records["predecessor_graph"]
+    previous = prior.get("inputs")
+    if (prior.get("status") != "passed" or prior.get("mode") != "combined"
+            or prior.get("candidate_sha256") != ENGINE_PLACEMENT_CANDIDATE
+            or type(previous) is not dict or previous.keys() != identity.keys()
+            or COMMON.canonical_sha256(previous) != ENGINE_PLACEMENT_CANDIDATE
+            or prior.get("predecessor_graph") != capture["predecessor_graph"]
+            or terminal.get("reference_sha256") != ENGINE_PLACEMENT_TERMINAL
+            or prior.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(prior.get("vendor_identity")) != capture["vendor_identity_sha256"]):
+        raise Incomplete("Engine protected-debit exact placement predecessor differs.")
+    overlay = {name: digest for name, digest in identity.items() if previous[name] != digest}
+    overlay_sha = COMMON.canonical_sha256(overlay)
+    if (COMMON.canonical_sha256(sorted(overlay)) != ENGINE_PROTECTED_DEBIT_PRIOR_DELTA
+            or capture.get("overlay_sha256") != overlay_sha or terminal.get("overlay_sha256") != overlay_sha
+            or terminal.get("repair_patch_sha256") != overlay_sha
+            or focus.get("status") != "passed-integrated-receive-debit"
+            or focus.get("owned_work_retired") is not True or focus.get("inputs") != identity
+            or focus.get("candidate_sha256") != ENGINE_PROTECTED_DEBIT_CANDIDATE
+            or focus.get("stage_tree") != capture["staged_tree"]
+            or focus.get("index_sha256") != capture["index_sha256"]
+            or terminal.get("focused_development_sha256") != ENGINE_PROTECTED_DEBIT_FOCUSED):
+        raise Incomplete("Engine protected-debit exact source delta or focused execution differs.")
+    wrapper = path.parents[2] / "run-combined.py"
+    if (capture.get("wrapper_sha256") != ENGINE_PROTECTED_DEBIT_WRAPPER
+            or hashlib.sha256(COMMON.read_analysis_bytes(wrapper, maximum=1024**2)).hexdigest()
+                != ENGINE_PROTECTED_DEBIT_WRAPPER):
+        raise Incomplete("Engine protected-debit wrapper bytes differ.")
+    admitted[str(wrapper)] = ENGINE_PROTECTED_DEBIT_WRAPPER
+    if (capture.get("graph_delta_sha256") != ENGINE_PROTECTED_DEBIT_GRAPH_DELTA
+            or any(capture["source"].get(name) != digest for name, digest in
+                   (graph["manifest_sha256"] | graph["checkers"]).items())):
+        raise Incomplete("Engine protected-debit predecessor graph inputs changed.")
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph,
+                                              ENGINE_PROTECTED_DEBIT_GRAPH_DELTA))
+    return admitted
+
+
+def admit_engine_final_frame_lineage(capture: dict, terminal: dict, identity: dict,
+                                     path: Path) -> dict:
+    """Reconcile both test-only changes with the admitted receive-debit run."""
+    evidence_root = path.parents[3]
+    expected = {
+        "combined_development_reference": (
+            evidence_root / "combined-01/reports/run-01/verification.json", ENGINE_PROTECTED_DEBIT_TERMINAL),
+        "focused_reference": (
+            evidence_root / "final-known-frame-01/run-01/verification.json", ENGINE_FINAL_FRAME_FOCUSED),
+        "bounded_fixture_reference": (
+            evidence_root / "fixture-window-current-01/run-03/verification.json", ENGINE_FINAL_FRAME_FIXTURE),
+        "incomplete_combined_reference": (
+            evidence_root / "combined-03-durable/reports/run-01/verification.json", ENGINE_FINAL_FRAME_INCOMPLETE),
+        "incomplete_capture_reference": (
+            evidence_root / "combined-03-durable/admission.json", ENGINE_FINAL_FRAME_INCOMPLETE_CAPTURE),
+        "incomplete_placement_reference": (
+            evidence_root / "durable-storage-preflight-01/full-placement-01.json", ENGINE_FINAL_FRAME_INCOMPLETE_PLACEMENT),
+        "predecessor_graph": (None, ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256),
+    }
+    admitted: dict[str, str] = {}
+    records: dict[str, dict] = {}
+    for label, (expected_path, pin) in expected.items():
+        reference = capture.get(label)
+        if (type(reference) is not dict or set(reference) != {"path", "sha256"}
+                or type(reference["path"]) is not str or reference["sha256"] != pin):
+            raise Incomplete("Engine final-frame predecessor reference differs.")
+        member = Path(reference["path"])
+        if not member.is_absolute() or (expected_path is not None and member != expected_path):
+            raise Incomplete("Engine final-frame predecessor path differs.")
+        records[label] = read_json(member, maximum=8 * 1024**2, expected_sha256=pin, owned_evidence=True)
+        admitted[str(member)] = pin
+
+    prior = records["combined_development_reference"]
+    focus = records["focused_reference"]
+    fixture = records["bounded_fixture_reference"]
+    stopped = records["incomplete_combined_reference"]
+    stopped_capture = records["incomplete_capture_reference"]
+    placement = records["incomplete_placement_reference"]
+    graph = records["predecessor_graph"]
+    old_capture_path = evidence_root / "combined-01/admission.json"
+    old_capture = read_json(old_capture_path, maximum=1024**2,
+                            expected_sha256=ENGINE_PROTECTED_DEBIT_MANIFEST, owned_evidence=True)
+    admitted[str(old_capture_path)] = ENGINE_PROTECTED_DEBIT_MANIFEST
+    previous = prior.get("inputs")
+    if (prior.get("status") != "passed" or prior.get("mode") != "combined"
+            or prior.get("candidate_sha256") != ENGINE_PROTECTED_DEBIT_CANDIDATE
+            or prior.get("capture_sha256") != ENGINE_PROTECTED_DEBIT_MANIFEST
+            or type(previous) is not dict or previous.keys() != identity.keys()
+            or COMMON.canonical_sha256(previous) != ENGINE_PROTECTED_DEBIT_CANDIDATE
+            or old_capture["inputs"] != previous
+            or prior.get("owned_work_retired") is not True or prior.get("resource_observer_joined") is not True
+            or prior.get("public_campaigns_admitted") is not False
+            or prior.get("predecessor_graph") != capture["predecessor_graph"]
+            or terminal.get("reference_sha256") != ENGINE_PROTECTED_DEBIT_TERMINAL
+            or terminal.get("prior_failed_development_sha256") != ENGINE_FINAL_FRAME_INCOMPLETE
+            or prior.get("staged_tree") != capture["staged_tree"]
+            or prior.get("staged_index_sha256") != capture["index_sha256"]
+            or old_capture["head"] != capture["head"]
+            or prior.get("compiler") != capture["compiler"]
+            or prior.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(prior.get("vendor_identity")) != capture["vendor_identity_sha256"]):
+        raise Incomplete("Engine final-frame exact receive-debit predecessor differs.")
+
+    overlay = {name: digest for name, digest in identity.items() if previous[name] != digest}
+    overlay_sha = COMMON.canonical_sha256(overlay)
+    if (set(overlay) != {ENGINE_FINAL_FRAME_TEST_PATH, ENGINE_FINAL_FRAME_WORKER_PATH}
+            or previous[ENGINE_FINAL_FRAME_WORKER_PATH] != ENGINE_FINAL_FRAME_WORKER_PRE
+            or overlay[ENGINE_FINAL_FRAME_WORKER_PATH] != ENGINE_FINAL_FRAME_WORKER_POST
+            or capture["source"] != old_capture["source"] | overlay
+            or capture["protected"] != old_capture["protected"] | overlay
+            or any(record.get("overlay_sha256") != overlay_sha for record in (capture, terminal))
+            or terminal.get("repair_patch_sha256") != overlay_sha
+            or set(capture["live_doc_sha256"]) != ENGINE_FINAL_FRAME_DOCS
+            or capture["frozen_doc_sha256"] != {name: capture["source"][name] for name in ENGINE_FINAL_FRAME_DOCS}
+            or focus.get("status") != "passed-final-known-frame"
+            or focus.get("base_product") != ENGINE_PROTECTED_DEBIT_CANDIDATE
+            or focus.get("candidate_sha256") != ENGINE_FINAL_FRAME_FOCUSED_CANDIDATE
+            or focus.get("owned_work_retired") is not True
+            or focus.get("inputs") != previous | {ENGINE_FINAL_FRAME_TEST_PATH: overlay[ENGINE_FINAL_FRAME_TEST_PATH]}
+            or fixture.get("status") != "passed-fixture-qualification-controls"
+            or fixture.get("prior_product") != ENGINE_FINAL_FRAME_FOCUSED_CANDIDATE
+            or fixture.get("candidate_sha256") != ENGINE_FINAL_FRAME_FIXTURE_CANDIDATE
+            or fixture.get("inputs") != identity | {ENGINE_FINAL_FRAME_WORKER_PATH: ENGINE_FINAL_FRAME_WORKER_FIXTURE}
+            or fixture.get("owned_work_retired") is not True
+            or type(fixture.get("generated_credit")) is not int or fixture["generated_credit"] != 0
+            or fixture.get("patched_fixture_sha256") != ENGINE_FINAL_FRAME_WORKER_FIXTURE
+            or terminal.get("bounded_fixture_reference") != capture["bounded_fixture_reference"]
+            or focus.get("generated_mutation_credit") != 0 or focus.get("native_windows") is not False
+            or terminal.get("focused_development_sha256") != ENGINE_FINAL_FRAME_FOCUSED):
+        raise Incomplete("Engine final-frame exact test-source delta or focused evidence differs.")
+
+    if (stopped.get("status") != "incomplete" or stopped.get("active_lane") != "msvc-clippy"
+            or stopped.get("candidate_sha256") != ENGINE_FINAL_FRAME_FIXTURE_CANDIDATE
+            or stopped.get("inputs") != fixture["inputs"] or stopped_capture.get("inputs") != fixture["inputs"]
+            or stopped.get("capture_sha256") != ENGINE_FINAL_FRAME_INCOMPLETE_CAPTURE
+            or stopped_capture.get("wall_seconds") != 2400 or not stopped.get("resource_observer_joined")
+            or stopped.get("owned_work_retired") is not True
+            or placement.get("exported_sha256", {}).get("reports/run-01/verification.json") != ENGINE_FINAL_FRAME_INCOMPLETE
+            or any(placement.get(key) is not True for key in ("outer_work_retired", "mount_retired", "image_retired"))
+            or placement["elapsed"]["launch_seconds"] >= 69 or placement["elapsed"]["prepare_seconds"] >= 15
+            or capture.get("previous_full_charged_seconds") != 84
+            or terminal.get("previous_full_charged_seconds") != 84
+            or 84 + 50 + ENGINE_FINAL_FRAME_RETRY_WALL + 10 > 2400
+            or any(terminal.get(key) != capture.get(key) for key in (
+                "incomplete_combined_reference", "incomplete_capture_reference", "incomplete_placement_reference"))):
+        raise Incomplete("Engine final-frame retry lost its failed lint result or cumulative allowance.")
+    lint = stopped.get("lanes", [])
+    if [(row.get("lane"), row.get("exit_code")) for row in lint] != [
+        ("boundary-control", 0), ("format", 0), ("msvc-check", 0), ("msvc-clippy", 101)
+    ]:
+        raise Incomplete("Engine final-frame failed lint roster differs.")
+    lint_path = expected["incomplete_combined_reference"][0].with_name("msvc-clippy.json")
+    lint_raw = read_json(lint_path, maximum=4 * 1024**2, expected_sha256=lint[-1]["sha256"], owned_evidence=True)
+    if (lint_raw.get("exit_code") != 101 or lint_raw.get("failure", True) is not None
+            or "too many lines (102/100)" not in lint_raw.get("output", "")
+            or "run_managed_loopback_control" not in lint_raw["output"]):
+        raise Incomplete("Engine final-frame original lint diagnostic differs.")
+    admitted[str(lint_path)] = lint[-1]["sha256"]
+
+    fixture_path = expected["bounded_fixture_reference"][0]
+    fixture_exits = {"boundary-control": 0, "original-healthy": 0, "format": 0,
+                     "bounded-healthy": 0, "pending-phase": 101, "adapter-match": 101,
+                     "bounded-restored": 0}
+    fixture_lanes = fixture.get("lanes", [])
+    if [row.get("lane") for row in fixture_lanes] != list(fixture_exits):
+        raise Incomplete("Engine bounded-loopback raw lane roster differs.")
+    for row in fixture_lanes:
+        label = row["lane"]
+        expected_exit = fixture_exits[label]
+        path_relative = fixture_path.with_name(label + ".json")
+        raw = read_json(path_relative, maximum=4 * 1024**2, expected_sha256=row["sha256"], owned_evidence=True)
+        output = raw.get("output")
+        if (type(raw.get("exit_code")) is not int or raw["exit_code"] != expected_exit
+                or row.get("exit") != expected_exit or raw.get("failure", True) is not None
+                or row.get("failure", True) is not None or type(output) is not str):
+            raise Incomplete("Engine bounded-loopback raw lane exit differs.")
+        if label == "boundary-control" and "PRODUCT_BOUNDARY_OK" not in output:
+            raise Incomplete("Engine bounded-loopback boundary marker is missing.")
+        if label in {"original-healthy", "bounded-healthy", "pending-phase", "adapter-match", "bounded-restored"}:
+            observed = re.findall(r"(?m)^test ([\w:]+) \.\.\. (ok|FAILED)$", output)
+            wanted = [(name, "ok") for name in ENGINE_FINAL_FRAME_FIXTURE_CASES]
+            if expected_exit == 101:
+                wanted = [(ENGINE_FINAL_FRAME_FIXTURE_CASES[0], "FAILED")]
+                if not re.search(r"(?m)^Error: Deadline$", output) or row.get("test_elapsed_seconds") != 4.0:
+                    raise Incomplete("Engine bounded-loopback original deadline witness differs.")
+            if sorted(observed) != sorted(wanted):
+                raise Incomplete("Engine bounded-loopback raw cases differ.")
+        admitted[str(path_relative)] = row["sha256"]
+
+    focus_path = expected["focused_reference"][0]
+    focus_lanes = focus.get("lanes")
+    exits = {"boundary-control": 0, "format": 0, "healthy": 0, "retirement-omission": 101,
+             "restored": 0, "clippy-gnu": 0, "clippy-msvc": 0}
+    if type(focus_lanes) is not dict or focus_lanes.keys() != exits.keys():
+        raise Incomplete("Engine final-frame focused evidence roster differs.")
+    for label, exit_code in exits.items():
+        row = focus_lanes[label]
+        raw_path = focus_path.with_name(label + ".json")
+        raw = read_json(raw_path, maximum=4 * 1024**2, expected_sha256=row["sha256"], owned_evidence=True)
+        if (type(raw.get("exit_code")) is not int or raw["exit_code"] != exit_code
+                or type(row.get("exit_code")) is not int or row["exit_code"] != exit_code
+                or raw.get("failure", True) is not None or row.get("failure", True) is not None
+                or type(raw.get("output")) is not str):
+            raise Incomplete("Engine final-frame focused raw lane differs.")
+        if label in {"healthy", "retirement-omission", "restored"}:
+            observed = re.findall(r"(?m)^test ([\w:]+) \.\.\. (ok|FAILED)$", raw["output"])
+            wanted = "FAILED" if label == "retirement-omission" else "ok"
+            cases = row.get("cases")
+            if (type(cases) is not dict or len(cases) != (11 if label == "healthy" else 4)
+                    or len(observed) != len(cases) or dict(observed) != cases
+                    or any(cases.get(name) != wanted for name in ENGINE_FINAL_FRAME_ADDITIONS)
+                    or any(result != "ok" for name, result in cases.items()
+                           if name not in ENGINE_FINAL_FRAME_ADDITIONS)):
+                raise Incomplete("Engine final-frame focused test cases differ.")
+        admitted[str(raw_path)] = row["sha256"]
+
+    wrapper = path.parents[2] / "run-combined.py"
+    if (capture.get("wrapper_sha256") != ENGINE_FINAL_FRAME_WRAPPER
+            or hashlib.sha256(COMMON.read_analysis_bytes(wrapper, maximum=1024**2)).hexdigest()
+                != ENGINE_FINAL_FRAME_WRAPPER):
+        raise Incomplete("Engine final-frame wrapper differs.")
+    admitted[str(wrapper)] = ENGINE_FINAL_FRAME_WRAPPER
+
+    if (capture.get("graph_delta_sha256") != ENGINE_PROTECTED_DEBIT_GRAPH_DELTA
+            or any(capture["source"].get(name) != digest for name, digest in
+                   (graph["manifest_sha256"] | graph["checkers"]).items())):
+        raise Incomplete("Engine final-frame predecessor graph inputs differ.")
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph,
+                                              ENGINE_PROTECTED_DEBIT_GRAPH_DELTA))
+    return admitted
+
+
+def admit_engine_stale_debit_lineage(capture: dict, terminal: dict, identity: dict,
+                                     path: Path) -> dict:
+    """Bind one added regression to its actual predecessor and complete raw lanes."""
+    evidence_root = path.parents[3]
+    prior_path = evidence_root / "combined-04-durable/reports/run-01/verification.json"
+    prior_capture_path = prior_path.parents[2] / "admission.json"
+    old_capture = read_json(prior_capture_path, maximum=1024**2,
+                            expected_sha256=ENGINE_FINAL_FRAME_MANIFEST, owned_evidence=True)
+    previous = old_capture.get("inputs")
+    if (type(previous) is not dict or len(previous) != 620
+            or previous.keys() != identity.keys()
+            or COMMON.canonical_sha256(previous) != ENGINE_FINAL_FRAME_CANDIDATE
+            or {name for name in identity if previous[name] != identity[name]} != {ENGINE_STALE_DEBIT_TEST_PATH}
+            or previous[ENGINE_STALE_DEBIT_TEST_PATH] != ENGINE_STALE_DEBIT_TEST_PRE
+            or identity[ENGINE_STALE_DEBIT_TEST_PATH] != ENGINE_STALE_DEBIT_TEST_POST):
+        raise Incomplete("Engine stale-debit exact one-test product delta differs.")
+    old_binding = {"path": str(prior_path), "sha256": ENGINE_FINAL_FRAME_TERMINAL}
+    prior_capture, prior, recipe, boundary = read_combined_development(
+        ENGINE_FINAL_FRAME_CANDIDATE, previous, old_binding)
+    old_rows = {row["lane"]: row for row in prior["lanes"]}
+    old_default = {"candidate_sha256": ENGINE_FINAL_FRAME_CANDIDATE,
+                   "test_inventory": sorted(case["name"] for case in old_rows["default-ordinary"]["cases"]),
+                   "doctest_inventory": sorted(old_rows["default-doctests"]["cases"])}
+    admitted = {str(prior_path): ENGINE_FINAL_FRAME_TERMINAL,
+                str(prior_capture_path): ENGINE_FINAL_FRAME_MANIFEST}
+    admitted.update(admit_engine_final_frame_lineage(prior_capture, prior, previous, prior_path))
+    prefix = boundary["sandbox_command"][:-len(boundary["command"])-1]
+    admitted.update(admit_source_policy_capture_rows(prior_path, prior["lanes"], recipe, old_default, prefix))
+    overlay = {ENGINE_STALE_DEBIT_TEST_PATH: ENGINE_STALE_DEBIT_TEST_POST}
+    references = {
+        "combined_development_reference": (prior_path, ENGINE_FINAL_FRAME_TERMINAL),
+        "focused_reference": (evidence_root / "ledger-stale-receive-check-01/run-full-01/verification.json", ENGINE_STALE_DEBIT_FULL),
+        "independent_affected_reference": (evidence_root / "ledger-stale-receive-check-01/independent-full-readback-01.json", ENGINE_STALE_DEBIT_READBACK),
+        "preparation_reference": (path.parents[2] / "preparation.json", ENGINE_STALE_DEBIT_PREPARATION),
+    }
+    records = {}
+    for label, (member, digest) in references.items():
+        if capture.get(label) != {"path": str(member), "sha256": digest}:
+            raise Incomplete("Engine stale-debit immutable evidence reference differs.")
+        records[label] = read_json(member, maximum=8 * 1024**2,
+                                   expected_sha256=digest, owned_evidence=True)
+        admitted[str(member)] = digest
+    if (capture["source"] != old_capture["source"] | overlay
+            or capture["protected"] != old_capture["protected"] | overlay
+            or len(capture["source"]) != 2146 or len(capture["protected"]) != 696
+            or any(capture.get(key) != old_capture.get(key) for key in (
+                "head", "staged_tree", "index_sha256", "compiler", "tool_inventories",
+                "vendor_identity_sha256", "predecessor_graph", "frozen_doc_sha256"))
+            or set(capture["live_doc_sha256"]) != ENGINE_FINAL_FRAME_DOCS
+            or capture["overlay_sha256"] != COMMON.canonical_sha256(overlay)
+            or terminal.get("repair_patch_sha256") != COMMON.canonical_sha256(overlay)
+            or terminal.get("reference_sha256") != ENGINE_FINAL_FRAME_TERMINAL
+            or terminal.get("focused_development_sha256") != ENGINE_STALE_DEBIT_FULL):
+        raise Incomplete("Engine stale-debit source, graph or predecessor custody differs.")
+    graph_ref = capture["predecessor_graph"]
+    graph_path = Path(graph_ref["path"])
+    graph = read_json(graph_path, maximum=8 * 1024**2,
+                      expected_sha256=ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256, owned_evidence=True)
+    graph_inputs = graph.get("product_input_sha256")
+    if type(graph_inputs) is not dict or not graph_inputs.keys() <= identity.keys():
+        raise Incomplete("Engine stale-debit predecessor graph input map differs.")
+    graph_delta = COMMON.canonical_sha256(sorted(
+        name for name, digest in identity.items() if graph_inputs.get(name) != digest))
+    if (capture.get("graph_delta_sha256") != graph_delta
+            or any(capture["source"].get(name) != digest for name, digest in
+                   (graph["manifest_sha256"] | graph["checkers"]).items())):
+        raise Incomplete("Engine stale-debit graph delta or immutable graph inputs differ.")
+    admitted[str(graph_path)] = ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph, graph_delta))
+    full = records["focused_reference"]
+    readback = records["independent_affected_reference"]
+    prep = records["preparation_reference"]
+    accounting = {"total_seconds": 2400, "prior_combined_seconds": 623,
+                  "focused_seconds": 123, "affected_full_seconds": 267,
+                  "charged_seconds": 1013, "preflight_seconds": 50,
+                  "service_seconds": 1200, "stop_seconds": 10, "bounded_total_seconds": 2273}
+    if (capture.get("accounting") != accounting or prep.get("accounting") != accounting
+            or capture.get("previous_full_charged_seconds") != 1013
+            or terminal.get("previous_full_charged_seconds") != 1013
+            or capture.get("wall_seconds") != 1200
+            or full.get("status") != "passed-stale-debit-affected-ep1"
+            or full.get("base_product") != ENGINE_FINAL_FRAME_CANDIDATE
+            or full.get("candidate_sha256") != ENGINE_STALE_DEBIT_CANDIDATE or full.get("inputs") != identity
+            or full.get("previous_full_sha256") != ENGINE_FINAL_FRAME_TERMINAL
+            or full.get("owned_work_retired") is not True
+            or type(full.get("generated_mutation_credit")) is not int or full["generated_mutation_credit"] != 0
+            or full.get("native_windows") is not False
+            or readback.get("status") != "passed-independent-full-raw-readback"
+            or readback.get("full_verification_sha256") != ENGINE_STALE_DEBIT_FULL
+            or readback.get("candidate_sha256") != ENGINE_STALE_DEBIT_CANDIDATE
+            or readback.get("input_count") != 620
+            or prep.get("status") != "prepared-not-admitted"
+            or prep.get("candidate_sha256") != ENGINE_STALE_DEBIT_CANDIDATE):
+        raise Incomplete("Engine stale-debit affected evidence or cumulative allowance differs.")
+    full_path = references["focused_reference"][0]
+    binding = {"candidate_sha256": ENGINE_STALE_DEBIT_CANDIDATE,
+               "test_inventory": sorted(case["name"] for case in full["lanes"]["ep1-ordinary"]["cases"]),
+               "doctest_inventory": sorted(full["lanes"]["ep1-doctests"]["cases"])}
+    for current, old in zip(capture["lanes"], old_capture["lanes"], strict=True):
+        expected = list(old)
+        if old[0] in {"ep1-ordinary", "ep1-optimized"}:
+            pairs = set(map(tuple, old[3]))
+            added = ("unittests src/lib.rs", ENGINE_STALE_DEBIT_CASE)
+            if len(pairs) != 603 or added in pairs:
+                raise Incomplete("Engine stale-debit predecessor roster differs.")
+            expected[3] = [list(pair) for pair in sorted(pairs | {added})]
+        if current != expected:
+            raise Incomplete("Engine stale-debit captured command or exact roster differs.")
+        if old[0] not in {"ep1-ordinary", "ep1-optimized", "ep1-doctests"}:
+            continue
+        label = old[0]
+        row = full["lanes"][label]
+        member = full_path.with_name(label + ".json")
+        raw = read_json(member, maximum=4 * 1024**2, expected_sha256=row["sha256"], owned_evidence=True)
+        if (row.get("exit_code") != 0 or raw.get("exit_code") != 0
+                or row.get("failure", True) is not None or raw.get("failure", True) is not None
+                or type(raw.get("command")) is not list
+                or COMMON.canonical_sha256(raw["command"]) != ENGINE_STALE_DEBIT_FULL_COMMANDS[label]):
+            raise Incomplete("Engine stale-debit affected raw command or outcome differs.")
+        validate = validate_engine_ke_current_doctests if label == "ep1-doctests" else validate_engine_ke_execution
+        facts = validate(raw["output"], binding)
+        cases = facts["test_names"] if label == "ep1-doctests" else engine_ke_development_ordinary_cases(raw["output"])
+        if cases != row.get("cases") or facts["tests_executed"] != row.get("tests_executed"):
+            raise Incomplete("Engine stale-debit affected raw identities differ.")
+        if label != "ep1-doctests" and COMMON.canonical_sha256(sorted((case["binary"], case["name"]) for case in cases)) != ENGINE_STALE_DEBIT_EP1_CASE_DIGEST:
+            raise Incomplete("Engine stale-debit affected raw binary roster differs.")
+        admitted[str(member)] = row["sha256"]
+    wrapper = path.parents[2] / "run-combined.py"
+    if (capture.get("wrapper_sha256") != ENGINE_STALE_DEBIT_WRAPPER
+            or hashlib.sha256(COMMON.read_analysis_bytes(wrapper, maximum=1024**2)).hexdigest() != ENGINE_STALE_DEBIT_WRAPPER):
+        raise Incomplete("Engine stale-debit configured wrapper differs.")
+    admitted[str(wrapper)] = ENGINE_STALE_DEBIT_WRAPPER
+    return admitted
+
+
+def admit_engine_combined_review_lineage(capture: dict, terminal: dict, identity: dict,
+                                         path: Path) -> dict:
+    """Keep each exact combined review on its own original construction and retry evidence."""
+    if terminal.get("candidate_sha256") == ENGINE_STALE_DEBIT_CANDIDATE:
+        return admit_engine_stale_debit_lineage(capture, terminal, identity, path)
+    if terminal.get("candidate_sha256") == ENGINE_FINAL_FRAME_CANDIDATE:
+        return admit_engine_final_frame_lineage(capture, terminal, identity, path)
+    if terminal.get("candidate_sha256") == ENGINE_PROTECTED_DEBIT_CANDIDATE:
+        return admit_engine_protected_debit_lineage(capture, terminal, identity, path)
+    if terminal.get("candidate_sha256") == ENGINE_PLACEMENT_CANDIDATE:
+        return admit_engine_placement_lineage(capture, terminal, identity, path)
+    if terminal.get("candidate_sha256") != ENGINE_SCALE_CONFLICT_CANDIDATE:
+        return admit_engine_review_lineage(capture, terminal, identity)
+
+    admitted, references = {}, {}
+    for label in ("combined_development_reference", "focused_reference", "predecessor_graph"):
+        binding = capture[label]
+        reference_path = Path(binding["path"])
+        references[label] = read_json(reference_path, maximum=8 * 1024**2,
+                                      expected_sha256=binding["sha256"], owned_evidence=True)
+        admitted[str(reference_path)] = binding["sha256"]
+    prior_ref = capture["combined_development_reference"]
+    focus_ref = capture["focused_reference"]
+    prior, focus, graph = (references[label] for label in (
+        "combined_development_reference", "focused_reference", "predecessor_graph"))
+    previous = prior.get("inputs")
+    if (prior_ref["sha256"] != ENGINE_REVIEW_TERMINAL
+            or terminal.get("reference_sha256") != prior_ref["sha256"]
+            or prior.get("status") != "passed" or prior.get("mode") != "combined"
+            or prior.get("candidate_sha256") != ENGINE_REVIEW_CANDIDATE or type(previous) is not dict
+            or len(previous) != ENGINE_REVIEW_INPUT_COUNT or COMMON.canonical_sha256(previous) != ENGINE_REVIEW_CANDIDATE
+            or not previous.keys() <= identity.keys()
+            or COMMON.canonical_sha256(sorted(name for name, digest in identity.items()
+                                              if previous.get(name) != digest)) != ENGINE_SCALE_CONFLICT_PRIOR_DELTA
+            or focus.get("status") != "passed-focused-portable-causal-pair"
+            or focus.get("owned_work_retired") is not True
+            or focus.get("snapshots", {}).get("green") != {
+                "candidate": ENGINE_SCALE_CONFLICT_CANDIDATE, "inputs": identity}
+            or terminal.get("focused_development_sha256") != focus_ref["sha256"]
+            or prior.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(prior.get("vendor_identity")) != capture["vendor_identity_sha256"]):
+        raise Incomplete("Engine scale-conflict predecessor and focused source identity differs.")
+
+    wrapper = path.parents[2] / "run-combined.py"
+    expected_cumulative = ENGINE_SCALE_CONFLICT_FIRST_WALL + ENGINE_SCALE_CONFLICT_RETRY_WALL
+    if (capture.get("wrapper_sha256") != ENGINE_SCALE_CONFLICT_WRAPPER
+            or hashlib.sha256(COMMON.read_analysis_bytes(wrapper, maximum=1024**2)).hexdigest()
+                != ENGINE_SCALE_CONFLICT_WRAPPER
+            or capture.get("first_attempt_outer_seconds") != ENGINE_SCALE_CONFLICT_FIRST_WALL
+            or terminal.get("cumulative_wall_seconds_ceiling") != expected_cumulative
+            or expected_cumulative > 2400
+            or terminal.get("prior_failed_development_sha256") != ENGINE_SCALE_CONFLICT_STOPPED):
+        raise Incomplete("Engine scale-conflict retry custody or cumulative allowance differs.")
+    admitted[str(wrapper)] = ENGINE_SCALE_CONFLICT_WRAPPER
+    stopped = None
+    for label, length in (("focused_references", 6), ("previous_combined_attempt", 4)):
+        pins = capture.get(label)
+        if type(pins) is not dict or len(pins) != length or terminal.get(label) != pins:
+            raise Incomplete("Engine scale-conflict focused or stopped-run reference set differs.")
+        for name, digest in pins.items():
+            reference_path = Path(name)
+            if not reference_path.is_absolute():
+                raise Incomplete("Engine scale-conflict lineage requires an absolute evidence path.")
+            if reference_path.suffix == ".json":
+                record = read_json(reference_path, maximum=8 * 1024**2, expected_sha256=digest,
+                                   owned_evidence=True)
+                if digest == ENGINE_SCALE_CONFLICT_STOPPED:
+                    stopped = record
+            elif (reference_path.suffix != ".py"
+                  or hashlib.sha256(COMMON.read_analysis_bytes(reference_path, maximum=1024**2)).hexdigest()
+                      != digest):
+                raise Incomplete("Engine scale-conflict retained wrapper bytes differ.")
+            admitted[name] = digest
+    if (type(stopped) is not dict or stopped.get("status") != "incomplete"
+            or stopped.get("candidate_sha256") != ENGINE_SCALE_CONFLICT_CANDIDATE
+            or stopped.get("inputs") != identity
+            or stopped.get("active_lane") != "ep1-doctests"
+            or stopped.get("error") != "RuntimeError('Rustdoc identity changes: ep1-doctests')"
+            or stopped.get("owned_work_retired") is not True):
+        raise Incomplete("Engine scale-conflict first attempt must retain the exact incomplete outcome.")
+    graph_dependencies = graph["manifest_sha256"] | graph["checkers"]
+    if any(capture["source"].get(name) != digest for name, digest in graph_dependencies.items()):
+        raise Incomplete("Engine scale-conflict predecessor graph inputs changed.")
+    admitted.update(admit_engine_review_graph(capture, terminal, identity, graph, ENGINE_SCALE_CONFLICT_GRAPH_DELTA))
+    return admitted
+
+
 def read_combined_development(candidate: str, identity: dict, evidence: dict) -> tuple[dict, dict, list, dict]:
     """Read the owned frozen capture and its complete combined terminal observation."""
     path = Path(evidence["path"])
-    if candidate == ENGINE_REVIEW_CANDIDATE and evidence["sha256"] != ENGINE_REVIEW_TERMINAL:
+    review_count = engine_review_input_count(candidate)
+    terminal_pin = engine_review_terminal_pin(candidate)
+    if review_count is not None and evidence["sha256"] != terminal_pin:
         raise Incomplete("Engine review requires the exact combined terminal receipt.")
     if (len(path.parents) < 3 or path.name != "verification.json" or path.parent.name != "run-01"
             or path.parents[1].name != "reports"):
@@ -8349,13 +9191,26 @@ def read_combined_development(candidate: str, identity: dict, evidence: dict) ->
     }
     elapsed, peak = reference.get("elapsed_seconds"), reference.get("peak_memory_bytes")
     memory_events, invocation = reference.get("memory_events"), reference.get("invocation_id")
+    expected_wall = (ENGINE_SCALE_CONFLICT_RETRY_WALL if candidate == ENGINE_SCALE_CONFLICT_CANDIDATE
+                     else 2400)
+    if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
+        expected_wall = ENGINE_FINAL_FRAME_RETRY_WALL
+    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+        expected_wall = 1200
+    documentation_keys = {"live_doc_sha256", "frozen_doc_sha256"}
+    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+        expected_wall = ENGINE_PLACEMENT_RETRY_WALL
+        document_custody = not documentation_keys & (capture.keys() | reference.keys())
+    else:
+        document_custody = all(key in capture and reference.get(key) == capture[key]
+                               for key in documentation_keys)
     if (reference.get("status") != "passed" or reference.get("mode") != "combined"
             or reference.get("capture_sha256") != manifest
             or reference.get("candidate_sha256") != capture["candidate_sha256"]
             or capture["candidate_sha256"] != candidate
             or reference.get("inputs") != identity or capture["inputs"] != identity
-            or (candidate == ENGINE_REVIEW_CANDIDATE
-                and (len(identity) != ENGINE_REVIEW_INPUT_COUNT or COMMON.canonical_sha256(identity) != candidate
+            or (review_count is not None
+                and (len(identity) != review_count or COMMON.canonical_sha256(identity) != candidate
                      or capture.get("input_manifest_count") != len(identity)))
             or reference.get("protected") != capture["protected"] or reference.get("main_admission") != expected_main
             or reference.get("staged_tree") != capture["staged_tree"]
@@ -8364,8 +9219,7 @@ def read_combined_development(candidate: str, identity: dict, evidence: dict) ->
             or reference.get("tool_inventories") != capture["tool_inventories"]
             or COMMON.canonical_sha256(reference.get("vendor_identity")) != capture["vendor_identity_sha256"]
             or reference.get("cargo_home_config_sha256") != SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME
-            or reference.get("live_doc_sha256") != capture["live_doc_sha256"]
-            or reference.get("frozen_doc_sha256") != capture["frozen_doc_sha256"]
+            or not document_custody
             or reference.get("native_windows_execution") != "not performed"
             or reference.get("metrics") != "not performed"
             or reference.get("public_campaigns_admitted") is not False or capture["campaigns_admitted"] is not False
@@ -8374,7 +9228,7 @@ def read_combined_development(candidate: str, identity: dict, evidence: dict) ->
             or reference.get("tasks_events") != "max 0" or type(memory_events) is not dict
             or any(memory_events.get(key) != "0" for key in ("max", "oom", "oom_kill", "oom_group_kill"))
             or type(invocation) is not str or re.fullmatch(r"[a-f0-9]{32}", invocation) is None
-            or type(elapsed) not in (int, float) or not 0 < elapsed <= capture["wall_seconds"] == 2400
+            or type(elapsed) not in (int, float) or not 0 < elapsed <= capture["wall_seconds"] == expected_wall
             or type(peak) is not int or not 0 < peak <= 6 * 1024**3
             or {"active_lane", "error", "final_custody_error"} & reference.keys()):
         raise Incomplete("Engine combined development lacks exact passing terminal custody.")
@@ -8398,8 +9252,8 @@ def admit_source_policy_combined_development(binding: dict, identity: dict, path
     evidence = binding["development_evidence"]
     capture, reference, recipe, boundary = read_combined_development(candidate, identity, evidence)
     sandbox_prefix = boundary["sandbox_command"][:-len(boundary["command"])-1]
-    lineage = (admit_engine_review_lineage(capture, reference, identity)
-               if candidate == ENGINE_REVIEW_CANDIDATE
+    lineage = (admit_engine_combined_review_lineage(capture, reference, identity, path)
+               if engine_review_input_count(candidate) is not None
                else admit_source_policy_scale_lineage(capture, reference, identity))
     return {str(path): evidence["sha256"], str(path.parents[2] / "admission.json"): reference["capture_sha256"],
             **lineage,
@@ -8420,7 +9274,8 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
             or source_policy_combined_roster(binding["candidate_sha256"]) is not None):
         if binding["candidate_sha256"] != actual_candidate:
             raise Incomplete("Source-policy capture development candidate binding differs.")
-        if actual_candidate in (SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE):
+        if (actual_candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE
+                or engine_review_input_count(actual_candidate) is not None):
             return admit_source_policy_combined_development(binding, identity, path)
         return admit_source_policy_capture_development(binding, identity, path)
     reference = read_json(path, maximum=4 * 1024**2, expected_sha256=evidence["sha256"])
@@ -8502,7 +9357,10 @@ def execute_source_policy_profile(args, report: dict) -> None:
                   dependency_profile="default", development_reference=binding["development_evidence"],
                   development_reference_scope=(
                       "Exact current 19-lane development; helpers and metric results retain separate admission."
-                      if binding["candidate_sha256"] in (SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE) else
+                      if binding["candidate_sha256"] in (
+                          SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
+                          ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE,
+                          ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE) else
                       "Prior-source development only; current helpers/manifest and metric results retain their own admission."),
                   pending_qualification="Generation gaps, independent outcomes, EP1/native/production and other critical owners remain separate.")
     session = COMMON.Session(ROOT, selected, report, SOURCE_POLICY_SCOPE, policy, SOURCE_POLICY_BOUND_INPUTS)

@@ -1300,6 +1300,87 @@ fn receiver_stale_uid_keeps_charged_pending() -> Result<(), Failure> {
     })
 }
 
+/// Refuse a spent receipt's debit after a successor becomes Pending.
+/// # Errors
+/// Preserve checked request construction and both genuine reply admissions.
+/// # Panics
+/// Fail if stale custody reaches admission, alters the owner or loses the successor.
+#[test]
+fn receiver_stale_debit_keeps_current_pending() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, control| {
+        pending(owner)?;
+        let before_first: super::Status = owner.status();
+        let arrival: Instant = Instant::now();
+        let span: ReceiveSpan = ReceiveSpan {
+            leading: arrival,
+            trailing: arrival,
+        };
+        let debit: super::ChargedReply = owner.charge_reply(fixtures::HEALTHY.len(), None)?;
+        let remote: SocketAddr = owner.material.udp;
+        let (first, retired): (Receipt, [super::CookiePool; 2]) = owner.receive_reply_with(
+            &debit,
+            fixtures::HEALTHY,
+            remote,
+            span,
+            Instant::now,
+            |owner, receipt, replacement, _submission| {
+                (receipt, owner.apply_replacement(replacement))
+            },
+        )?;
+        drop(retired);
+        assert_eq!(first.serial(), 1);
+        assert_eq!(first.cookie_counts(), (1, 1));
+        assert_eq!(owner.status().frames, before_first.frames - 1);
+        assert_eq!(
+            owner.status().bytes,
+            before_first.bytes - fixtures::HEALTHY.len()
+        );
+
+        let ticket: super::Ticket<'_> = owner.reserve(packet_input()?)?;
+        owner.prepare(&ticket, |output| {
+            entropy(output);
+            output[0] = 1; // Literal independent WRONG_UID fixture's successor UID.
+            Ok(())
+        })?;
+        owner.invoke_sender(ticket, |packet, _| SendOutcome::Completed(packet.len()))?;
+        let before: super::Status = owner.status();
+        let population: (usize, usize) = owner.cookie_population()?;
+        let expiry: Instant = control.expiry;
+        let admitted: Cell<bool> = Cell::new(false);
+        assert_eq!(before.phase, RequestPhase::Pending);
+        assert_eq!(
+            owner.receive_reply_with(
+                &debit,
+                fixtures::HEALTHY,
+                remote,
+                span,
+                Instant::now,
+                |_, _, _, _| {
+                    admitted.set(true);
+                }
+            ),
+            Err(refused(LedgerError::Ticket))
+        );
+        assert!(!admitted.get());
+        assert_eq!(owner.status(), before);
+        assert_eq!(owner.cookie_population()?, population);
+        assert!(owner.last_receipt() == Some(first));
+        assert_eq!(control.expiry, expiry);
+
+        let current: Receipt = owner.receive_reply(fixtures::WRONG_UID, remote, Instant::now())?;
+        assert_eq!(current.serial(), 2);
+        assert_eq!(current.cookie_counts(), (1, 0));
+        assert!(owner.last_receipt() == Some(current));
+        assert_eq!(owner.status().phase, RequestPhase::Idle);
+        assert_eq!(owner.status().frames, before.frames - 1);
+        assert_eq!(
+            owner.status().bytes,
+            before.bytes - fixtures::WRONG_UID.len()
+        );
+        Ok(())
+    })
+}
+
 /// The declared current key rejects the valid-old-key companion before publication.
 /// Fixed independent fixture material grants no TLS/exporter or entropy authority.
 /// # Errors

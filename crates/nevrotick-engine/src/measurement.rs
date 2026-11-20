@@ -376,23 +376,29 @@ struct ApplicationCaptureSpan {
 }
 
 impl ApplicationCaptureSpan {
-    /// Return the inclusive lower and upper elapsed placement in nanoseconds.
+    /// Return the inclusive lower and upper elapsed placement in the monotonic domain.
     /// # Errors
-    /// Preserve unrepresentable duration or signed conversion refusal.
-    fn elapsed_bounds(&self) -> Result<[i128; 2], MeasurementRefusal> {
-        let lower: i128 = signed_nanoseconds(
-            self.last
-                .mono
-                .checked_duration_since(self.first.mono_after)
-                .ok_or(MeasurementRefusal::CaptureOrder)?,
-        )?;
-        let upper: i128 = signed_nanoseconds(
-            self.last
-                .mono_after
-                .checked_duration_since(self.first.mono)
-                .ok_or(MeasurementRefusal::CaptureOrder)?,
-        )?;
+    /// Preserve refusal of either elapsed subtraction.
+    fn elapsed_durations(&self) -> Result<[Duration; 2], MeasurementRefusal> {
+        let lower: Duration = self
+            .last
+            .mono
+            .checked_duration_since(self.first.mono_after)
+            .ok_or(MeasurementRefusal::CaptureOrder)?;
+        let upper: Duration = self
+            .last
+            .mono_after
+            .checked_duration_since(self.first.mono)
+            .ok_or(MeasurementRefusal::CaptureOrder)?;
         Ok([lower, upper])
+    }
+
+    /// Return the same inclusive elapsed placement in signed nanoseconds.
+    /// # Errors
+    /// Preserve elapsed-duration or signed conversion refusal.
+    fn elapsed_bounds(&self) -> Result<[i128; 2], MeasurementRefusal> {
+        let [minimum, maximum]: [Duration; 2] = self.elapsed_durations()?;
+        Ok([signed_nanoseconds(minimum)?, signed_nanoseconds(maximum)?])
     }
 
     /// Compare the paired converted wall readings to their original elapsed placement.
@@ -438,6 +444,20 @@ pub(super) fn application_elapsed_bounds(
         facts.processing,
     )?
     .elapsed_bounds()
+}
+
+/// Derive historical elapsed bounds from the original ordered application captures.
+/// The terminal observation participates in chronology and stays outside the bounds.
+/// # Errors
+/// Preserve chronology or elapsed-duration refusal.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub(super) fn application_elapsed_durations(
+    send_before: SoftwareClock,
+    send_after: SoftwareClock,
+    read: SoftwareClock,
+    committed_at: Instant,
+) -> Result<[Duration; 2], MeasurementRefusal> {
+    check_capture_order(send_before, send_after, read, committed_at)?.elapsed_durations()
 }
 
 /// Stage a fixed-size conditional measurement, without effects or clock reads.

@@ -1605,6 +1605,125 @@ uses the configuration originally sealed for each exchange. The managed
 plain and joined protected controls pass, retaining packet and history
 facts when a smeared declaration refuses the unsmeared experiment.
 Current per-file qualification and production mapping remain open.
+The [current Engine metrics checkpoint](../../tasks/engine-transport-pilot.md#tls-and-source-scale-closed-role-and-gnu-metrics)
+binds the TLS and source-scale repairs to the exact 620-input product from
+`d1ec8a8`. Both closed readers pass all 211 controls. GNU instrumentation
+passes all five default and 14 EP1 line gates on 288 and 585 cases.
+Enumeration lists 880 default and 889 EP1 descriptors. The 217 ledger
+descriptors match the prior complete inventory. Current mutation outcomes
+still require per-file reconciliation, and `measurement.rs` and
+`transport.rs` retain their separate gates. The healthy protected public
+facade case links for MSVC. Its Sandbox preflight stopped below the
+Windows memory floor before native execution or trust changes.
+The [protected elapsed-placement checkpoint](../../tasks/engine-transport-pilot.md#protected-elapsed-placement-and-focused-wsl-qualification)
+retains the original application send/receive bracket bounds in the joined
+protected report. Its 620-input product `8f98bdae…` passes all 19 WSL
+development lanes with 1,945 named executions. Both closed role readers
+admit the exact candidate, with 212 focused controls passed. The same product
+links for MSVC in WSL. Its [healthy Sandbox exchange](../../tasks/engine-transport-pilot.md#managed-protected-public-probe-in-the-offline-sandbox--20-november-2026)
+passes actual TLS/KE, one authenticated protected UDP reply, joined collection
+and verified temporary trust restoration on the exact fixture.
+The [current affected-file metrics](../../tasks/engine-transport-pilot.md#elapsed-placement-metrics-on-the-staged-source)
+pass all three 90% line gates. The datagram active-target result catches
+26/26 viable mutants and preserves the separate incomplete GNU result.
+The [managed report active-target result](../../tasks/engine-transport-pilot.md#managed-report-active-target-mutation-result--20-november-2026)
+catches 49/49 viable mutants on the same placement product. Measurement's
+whole-file mutation gate remains open. The [managed Preview observer repair](../../tasks/engine-transport-pilot.md#managed-preview-power-observation--20-november-2026)
+now connects the original Windows Preview invocation to the shared power and
+worker lifecycle. Its focused WSL checks pass on working product `d0a05f35…`.
+All 588 GNU EP1 cases pass in each of ordinary and optimized modes. The first
+optimized build stop retains its incomplete result alongside the scoped retry.
+The [selected GNU line readback](../../tasks/engine-transport-pilot.md#preview-power-line-and-generation-readback--20-november-2026)
+passes both affected 90% files and enumerates 221 descriptors. Current role
+admission, per-file mutation and the separately identified final-guard controls
+remain open.
+The [protected pending retirement child](../../tasks/engine-transport-pilot.md#protected-receive-retirement-on-pending-policy-changes--20-november-2026)
+uses the original request's source and endpoint watches to retire quiet stale
+work. Its first isolated behavior run passes seven exact cases after three
+reached predecessor failures. The final formatted `f9309a2b…` candidate passes
+eight exact cases, including the separately reproduced timer/latched-Stop
+ordering issue, and GNU/MSVC-target Clippy. A seeded cleanup omission fails the
+new Preview projection assertion. The changes are integrated in the working
+tree. The affected selection passes 288 default ordinary cases, 594 EP1 cases
+in each ordinary and optimized mode, and 91 EP1 doctests.
+The [protected receive debit after Control withdrawal](../../tasks/engine-transport-pilot.md#protected-receive-debit-after-control-withdrawal--20-november-2026)
+now charges known and unknown extents to the original Pending request when a
+read consumed a datagram before Stop or expiry. The Control refusal blocks
+packet staging and preserves the original terminal reason. Four predecessor
+cases reproduced the accounting error. The integrated `acc427ae2…` product
+passes 11 focused EP1 cases and GNU/MSVC-target Clippy. The integrated
+GNU selection passes 600 cases per EP1 build mode and 91 EP1 doctests.
+The full combined WSL producer passed 19 lanes and 1,973 named executions.
+Both closed roles admit that exact receipt and all 212 reader controls
+passed. The [current GNU coverage and catalogue](../../tasks/engine-transport-pilot.md#current-protected-receive-coverage-and-mutation-catalogue--20-november-2026)
+passed all 19 registered file-line gates and the separate EP1 source-policy
+observation. The current 71-descriptor datagram cohort passed the 95%
+generated gate at 26/26 viable after the exact MSVC-target compiler refusal.
+The original GNU exit 2 and 26/27 raw result remain recorded. Continue
+the remaining critical-file cohorts and the affected Windows runtime checks.
+The [current Windows link](../../tasks/engine-transport-pilot.md#current-protected-receive-windows-link-and-sandbox-admission)
+emitted and checked the exact Engine test EXE and PDB in WSL. The offline
+Sandbox's measured interactive token has Administrator enabled. Ordinary-user
+execution of the prepared certificate-free roster still needs a qualified
+launch path and actual completion evidence.
+The [current ledger accounting partition](../../tasks/engine-transport-pilot.md#current-ledger-receive-accounting-mutation-partition)
+records ten behavioral catches, one compiler refusal and two Test timeouts
+across 13 variants. Both timed variants fail through isolated exact unit
+witnesses with healthy and restored controls. The raw timeouts and the
+226-descriptor whole-file gate remain open.
+The [final-known-frame regression](../../tasks/engine-transport-pilot.md#final-known-frame-after-control-withdrawal)
+now exercises Stop, expiry and their combined precedence at the last receive
+credit. All 11 selected cases and GNU/MSVC-target Clippy passed on test-only
+`0eb50c7f…`. The isolated retirement omission left the request Pending in all
+three new cases. The healthy final-frame case passed and all four passed after
+restoration. The working tree contains the tested change. The [affected EP1
+development run](../../tasks/engine-transport-pilot.md#final-frame-affected-ep1-development)
+passes isolation, 603 ordinary and 603 optimized cases, and 91 doctests on
+the same candidate. The [managed loopback fixture](../../tasks/engine-transport-pilot.md#managed-loopback-deadline-for-ledger-mutation)
+now bounds both Engine legs with one four-second window. The two previously
+timed-out ledger variants fail at that deadline through the real loopback
+consumer. Both healthy cases and restored controls pass on `0495021f…`.
+The [combined checkpoint](../../tasks/engine-transport-pilot.md#combined-final-frame-and-loopback-checkpoint)
+passes all 19 lanes and 1,979 named executions on `a0df3abd…` after
+extracting the checked fixture deadline setup to satisfy MSVC Clippy.
+Both closed roles now readmit the exact physical receipt, with 212
+reader controls and strict workspace policy passed. The [current ledger observation](../../tasks/engine-transport-pilot.md#current-ledger-line-gate-and-17-variant-generated-partition)
+passes the 90% line gate at 96.62% and matches all 226 descriptors.
+The current selected run catches all four viable variants out of 17,
+including both earlier accounting timeouts. Thirteen compiler refusals
+were verified in raw diagnostics. Continue the exact disposition and
+execution work for the whole-file 95% gate. The original timeout
+records remain part of the evidence.
+The [historical ledger replay](../../tasks/engine-transport-pilot.md#historical-ledger-replay-and-current-guard-review)
+adds five complete current catches. Three further tests were interrupted by
+the native overall deadline, and the attempt retains its incomplete status.
+Recovery preserved raw outcomes and retired the owned backing. Historical
+reuse and seven reviewed equivalence proposals require their exact admission
+before the complete 95% gate can close. A reviewed cumulative 250-second
+amendment then completed all three interrupted variants with their intended
+Capacity, Endpoint and Ticket failures. The earlier outcomes remain recorded.
+The [stale-debit regression](../../tasks/engine-transport-pilot.md#stale-receive-debit-and-actual-pending-successor)
+is integrated on `3609043e…` after healthy, exact fault and restored controls,
+GNU/MSVC Clippy, 604 ordinary and optimized EP1 cases, and 91 doctests.
+The [combined source checkpoint](../../tasks/engine-transport-pilot.md#stale-debit-combined-source-checkpoint)
+now passes all 19 lanes and 1,981 named executions. Both closed roles admit
+the exact new receipt after 212 fresh reader controls and strict workspace
+validation. The new graph delta and historical lineage have independent
+review. Continue whole-ledger disposition and current metric admission from
+these bindings. The checkpoint retains its native and production exit gaps.
+The [current certificate-free Windows test image](../../tasks/engine-transport-pilot.md#current-certificate-free-msvc-link-and-dispatch-preflight)
+cross-links from the same candidate. Independent image readback matches
+the PDB and all 20 selected names. The prepared dispatcher passes 12
+simulated controls. Actual guest execution awaits an ordinary-user token
+before staging and completion evidence from the selected cases.
+The production measurement and Core admission boundary still needs an issuer
+with finite calibration bounds and effective invalidation, plus independent
+date and scale context. The
+[W11-W01 reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+specifies the positive and refusal observations. It awaits an admitted
+independent reference and fixed uncertainty budgets.
+The earlier four generated fixture replay outcomes retain their own
+candidate. The current whole-file mutation gate still needs its own result.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
 now reaches the joined managed Protected report alongside the original
 packet-admission age. Nine renewed EP1 lanes and 199 reader controls

@@ -17,7 +17,7 @@ use zeroize::Zeroizing;
 #[cfg(test)]
 use super::super::datagram::{Attempts, RetiredProtectedControl};
 #[cfg(any(windows, test))]
-use super::super::datagram::{GuardedSender, RetiredReply, RetiredReplyParts};
+use super::super::datagram::{ConsumedDatagram, GuardedSender, RetiredReply, RetiredReplyParts};
 use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
 #[cfg(test)]
@@ -28,6 +28,8 @@ use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
 use crate::SoftwareClock;
 use crate::nts_ke_experiment::DatagramAuthorityGuard;
+#[cfg(any(windows, test))]
+use crate::source_policy::LivePolicy;
 use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
 
 pub(in super::super) mod retirement;
@@ -888,6 +890,32 @@ impl<'a> AssociationOwner<'a> {
         Ok(peer)
     }
 
+    /// Observe the exact successfully submitted managed request while the socket waits.
+    /// The observer inherits its policy stamp while the ledger retains commit custody.
+    /// # Errors
+    /// Refuse missing or foreign pending submission or policy provenance.
+    #[cfg(any(windows, test))]
+    pub(in super::super) fn observe_pending_policy(
+        &self,
+        backend: &Arc<()>,
+    ) -> Result<Option<LivePolicy>, Failure> {
+        let Some(lease) = self.protected_endpoint()? else {
+            return Ok(None);
+        };
+        let (stamp, identity): (&ProtectedSendStamp, &Arc<()>) = self
+            .ledger
+            .active
+            .as_ref()
+            .filter(|active: &&Active<'_>| active.phase == RequestPhase::Pending)
+            .and_then(|active: &Active<'_>| active.submission.as_ref())
+            .and_then(SubmissionOrigin::policy_provenance)
+            .ok_or(refused(LedgerError::Ticket))?;
+        if !Arc::ptr_eq(identity, backend) {
+            return Err(refused(LedgerError::Ticket));
+        }
+        Ok(Some(lease.observe_pending(stamp)))
+    }
+
     /// Spend one preparation attempt only for the selected request representation.
     /// # Errors
     /// Refuse foreign/spent tickets, mode mismatch or stale publication before entropy.
@@ -1417,51 +1445,49 @@ impl<'a> AssociationOwner<'a> {
         [std::mem::replace(&mut self.material.cookies, next), cookies]
     }
 
-    /// Charge a consumed datagram whose original extent cannot be established.
-    ///
-    /// A full truncation-detecting buffer or a qualified consumed-size error must
-    /// enter here once, rather than passing a manufactured prefix to the parser.
-    /// Spend one remaining frame and all remaining bytes, then retire Pending and
-    /// coalesce recovery. No cookie, receipt, deadline or request credit is restored.
+    /// Exercise unknown-extent accounting under the component's original Control.
     /// # Errors
     /// Refuse stale/wrong phase unchanged; a charged retirement returns `ReceiveWork`.
+    #[cfg(test)]
     pub(in super::super) fn charge_consumed_unknown(&mut self) -> Result<(), Failure> {
         let control = self.material.control;
         control.with_published(|_| {
-            let active = self
-                .ledger
-                .active
-                .as_ref()
-                .ok_or(refused(LedgerError::Phase))?;
-            if active.phase != RequestPhase::Pending {
-                return Err(refused(LedgerError::Phase));
-            }
-            self.ledger.frames = self.ledger.frames.saturating_sub(1);
-            self.ledger.bytes = 0;
-            self.retire_exhausted();
+            self.pending_reply()?;
+            self.exhaust_receive_work();
             Err(refused(LedgerError::ReceiveWork))
         })
     }
 
-    /// Charge the known extent of a datagram that was consumed and discarded.
-    /// Reuse the ordinary Pending debit and retire the exhausted allowance.
+    /// Debit a concrete consumed datagram without entering packet admission.
     /// # Errors
-    /// Preserve original Control, outstanding request and receive-budget refusals.
+    /// Preserve original Control or actual submission and receive-budget refusals.
     pub(in super::super) fn charge_discarded_reply(
         &mut self,
-        length: usize,
-        backend: &Arc<()>,
+        consumed: ConsumedDatagram<'_>,
     ) -> Result<(), Failure> {
-        self.charge_reply(length, Some(backend))?;
+        self.charge_concrete_datagram(consumed)?;
         self.retire_exhausted();
         Ok(())
     }
 
-    /// Charge and authenticate the concrete datagram once and retain its history.
-    ///
-    /// The original submission and replacement remain private until retired commit.
+    /// Debit the exact consuming adapter and check Control before packet admission.
     /// # Errors
     /// Preserve admission, original budgets, endpoint/time, AEAD and shape errors.
+    pub(in super::super) fn stage_concrete_reply(
+        &mut self,
+        consumed: ConsumedDatagram<'_>,
+        remote: SocketAddr,
+        read: &SoftwareClock,
+    ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
+        let (charged, raw, _): (ChargedReply, &[u8], &Arc<()>) =
+            self.charge_concrete_datagram(consumed)?;
+        self.stage_charged_observed_reply(&charged, raw, remote, read)
+    }
+
+    /// Keep the direct component entry guarded before its synthetic debit.
+    /// # Errors
+    /// Preserve admission, original budgets, endpoint/time, AEAD and shape errors.
+    #[cfg(test)]
     pub(in super::super) fn stage_observed_reply(
         &mut self,
         raw: &[u8],
@@ -1469,14 +1495,34 @@ impl<'a> AssociationOwner<'a> {
         read: &SoftwareClock,
         backend: &Arc<()>,
     ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
+        let charged: ChargedReply =
+            self.charge_reply(raw.len(), Some(backend))
+                .inspect_err(|_| {
+                    self.ledger.next_receipt_at_read_tail = false;
+                })?;
+        self.stage_charged_observed_reply(&charged, raw, remote, read)
+    }
+
+    /// Authenticate a previously debited datagram and retain its exact history.
+    ///
+    /// The original submission and replacement remain private until retired commit.
+    /// # Errors
+    /// Preserve admission, original budgets, endpoint/time, AEAD and shape errors.
+    fn stage_charged_observed_reply(
+        &mut self,
+        charged: &ChargedReply,
+        raw: &[u8],
+        remote: SocketAddr,
+        read: &SoftwareClock,
+    ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
         #[cfg(test)]
         let at_read_tail: bool = std::mem::take(&mut self.ledger.next_receipt_at_read_tail);
         let (receipt, replacement, submission): (Receipt, CookieReplacement, SubmissionOrigin) =
             self.receive_reply_with(
+                charged,
                 raw,
                 remote,
                 ReceiveSpan::from_read(read),
-                Some(backend),
                 || {
                     #[cfg(test)]
                     if at_read_tail {
@@ -1517,8 +1563,7 @@ impl<'a> AssociationOwner<'a> {
         self.ledger.next_receipt_at_read_tail
     }
 
-    /// Charge once before selecting an ordinary response or a narrow protected control.
-    /// Ordinary admission consumes the request; control staging preserves it for the later owner.
+    /// Preserve guarded component accounting for the direct replay control.
     /// # Errors
     /// Preserve byte/frame, peer, backend, UID, S2C, time and policy refusals.
     #[cfg(test)]
@@ -1534,10 +1579,45 @@ impl<'a> AssociationOwner<'a> {
             return Err(Failure::Control);
         }
         let charged: ChargedReply = self.charge_reply(raw.len(), Some(backend))?;
+        self.stage_charged_successor(&charged, control, raw, remote, read, backend)
+    }
+
+    /// Debit the successor's actual read before considering either packet disposition.
+    /// # Errors
+    /// Preserve exact submission, budget, current Control and packet refusal.
+    #[cfg(test)]
+    pub(in super::super) fn stage_concrete_successor<'control>(
+        &mut self,
+        control: &'control Control,
+        consumed: ConsumedDatagram<'_>,
+        remote: SocketAddr,
+        read: &SoftwareClock,
+    ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let (charged, raw, backend): (ChargedReply, &[u8], &Arc<()>) =
+            self.charge_concrete_datagram(consumed)?;
+        self.stage_charged_successor(&charged, control, raw, remote, read, backend)
+    }
+
+    /// Ordinary admission consumes the request; control staging preserves it for the next owner.
+    /// # Errors
+    /// Preserve backend, peer, UID, S2C, time and source-policy refusal.
+    #[cfg(test)]
+    fn stage_charged_successor<'control>(
+        &mut self,
+        charged: &ChargedReply,
+        control: &'control Control,
+        raw: &[u8],
+        remote: SocketAddr,
+        read: &SoftwareClock,
+        backend: &Arc<()>,
+    ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
         let span: ReceiveSpan = ReceiveSpan::from_read(read);
         let arrival: Instant = span.leading;
         let response: StagedSuccessorResponse = (|| {
-            self.check_charged_datagram(&charged, raw.len(), remote)?;
+            self.check_charged_datagram(charged, raw.len(), remote)?;
             let uid: &[u8; 32] = self.issued_uid(charged.uid_index)?;
             stage_successor_response(
                 &self.material.keys,
@@ -1561,7 +1641,7 @@ impl<'a> AssociationOwner<'a> {
                     CookieReplacement,
                     SubmissionOrigin,
                 ) = self.consume_staged_reply(
-                    &charged,
+                    charged,
                     staged,
                     span,
                     Instant::now,
@@ -1723,14 +1803,15 @@ impl<'a> AssociationOwner<'a> {
         if self.protected_endpoint()?.is_some() {
             return Err(Failure::Control);
         }
+        let charged: ChargedReply = self.charge_reply(raw.len(), None)?;
         let (receipt, retired): (Receipt, [CookiePool; 2]) = self.receive_reply_with(
+            &charged,
             raw,
             remote,
             ReceiveSpan {
                 leading: arrival,
                 trailing: arrival,
             },
-            None,
             Instant::now,
             |owner, receipt, replacement, _submission| {
                 (receipt, owner.apply_replacement(replacement))
@@ -1740,73 +1821,128 @@ impl<'a> AssociationOwner<'a> {
         Ok(receipt)
     }
 
-    /// Charge the actual datagram and sample its current Pending coordinates.
+    /// Preserve the original Pending coordinates for accounting.
     /// # Errors
-    /// Preserve original control, phase and aggregate budget refusals.
+    /// Refuse an absent or nonpending request without altering its state.
+    fn pending_reply(&self) -> Result<&Active<'a>, Failure> {
+        self.ledger
+            .active
+            .as_ref()
+            .filter(|active: &&Active<'a>| active.phase == RequestPhase::Pending)
+            .ok_or(refused(LedgerError::Phase))
+    }
+
+    /// Spend the consumed frame and exhaust the available byte allowance.
+    fn exhaust_receive_work(&mut self) {
+        self.ledger.frames = self.ledger.frames.saturating_sub(1);
+        self.ledger.bytes = 0;
+        self.retire_exhausted();
+    }
+
+    /// Account for actual consumption by the original adapter even after Control closes.
+    /// Only a current, known-extent observation can reach packet admission.
+    /// # Errors
+    /// Refuse an unbound read or return the original Control or receive-budget refusal.
+    fn charge_concrete_datagram<'backend>(
+        &mut self,
+        consumed: ConsumedDatagram<'backend>,
+    ) -> Result<(ChargedReply, &'backend [u8], &'backend Arc<()>), Failure> {
+        let (backend, packet): (&Arc<()>, Option<&[u8]>) = consumed.into_parts();
+        let active: &Active<'a> = self.pending_reply()?;
+        if !active
+            .submission
+            .as_ref()
+            .is_some_and(|submission: &SubmissionOrigin| submission.matches(Some(backend)))
+        {
+            return Err(refused(LedgerError::Ticket));
+        }
+        let control: &Control = self.material.control;
+        let authority: Result<super::super::ControlGuard<'_, '_>, Failure> =
+            control.published_guard();
+        let debit: Result<(ChargedReply, &[u8], &Arc<()>), Failure> = if let Some(raw) = packet {
+            self.debit_reply(raw.len(), Some(backend))
+                .map(|charged: ChargedReply| (charged, raw, backend))
+        } else {
+            self.exhaust_receive_work();
+            Err(refused(LedgerError::ReceiveWork))
+        };
+        match authority {
+            Ok(_guard) => debit,
+            Err(failure) => {
+                if debit.is_ok() {
+                    self.retire_exhausted();
+                }
+                Err(failure)
+            }
+        }
+    }
+
+    /// Keep fabricated component input behind the original currentness gate.
+    /// # Errors
+    /// Preserve original Control, phase and aggregate budget refusals.
+    #[cfg(test)]
     fn charge_reply(
         &mut self,
         length: usize,
         backend: Option<&Arc<()>>,
     ) -> Result<ChargedReply, Failure> {
         let control: &Control = self.material.control;
-        control.with_published(|_| {
-            let active: &Active<'_> = self
-                .ledger
-                .active
-                .as_ref()
-                .ok_or(refused(LedgerError::Phase))?;
-            if active.phase != RequestPhase::Pending {
-                return Err(refused(LedgerError::Phase));
-            }
-            let (wire, local_t1): (NonZeroU64, Option<NtpTimestamp>) = match active.input {
-                RequestInput::Packet { wire, local_t1 } => (wire, Some(local_t1)),
-                RequestInput::Observed => (
-                    active.observed_wire.ok_or(refused(LedgerError::Phase))?,
-                    None,
-                ),
-                RequestInput::Preview => return Err(refused(LedgerError::Preview)),
-            };
-            let uid_index: usize = active.uid.ok_or(refused(LedgerError::Phase))?;
-            let sent_at: Instant = active.sent_at.ok_or(refused(LedgerError::Phase))?;
-            if self.ledger.frames == 0 || length > self.ledger.bytes {
-                self.ledger.frames = self.ledger.frames.saturating_sub(1);
-                self.ledger.bytes = 0;
-                self.retire_exhausted();
-                return Err(refused(LedgerError::ReceiveWork));
-            }
-            self.ledger.frames -= 1;
-            self.ledger.bytes -= length;
-            Ok(ChargedReply {
-                serial: active.serial,
-                uid_index,
-                wire,
-                local_t1,
-                sent_at,
-                maximum_cookies: active.maximum_cookies,
-                matches_submission: active
-                    .submission
-                    .as_ref()
-                    .is_some_and(|submission: &SubmissionOrigin| submission.matches(backend)),
-            })
-        })
+        control.with_published(|_| self.debit_reply(length, backend))
     }
 
-    /// Charge before parsing or opening, then consume the exact original Pending submission.
+    /// Debit the exact extent and retain the original Pending admission coordinates.
+    /// # Errors
+    /// Preserve pending-state and budget refusals.
+    fn debit_reply(
+        &mut self,
+        length: usize,
+        backend: Option<&Arc<()>>,
+    ) -> Result<ChargedReply, Failure> {
+        let active: &Active<'a> = self.pending_reply()?;
+        let (wire, local_t1): (NonZeroU64, Option<NtpTimestamp>) = match active.input {
+            RequestInput::Packet { wire, local_t1 } => (wire, Some(local_t1)),
+            RequestInput::Observed => (
+                active.observed_wire.ok_or(refused(LedgerError::Phase))?,
+                None,
+            ),
+            RequestInput::Preview => return Err(refused(LedgerError::Preview)),
+        };
+        let charged: ChargedReply = ChargedReply {
+            serial: active.serial,
+            uid_index: active.uid.ok_or(refused(LedgerError::Phase))?,
+            wire,
+            local_t1,
+            sent_at: active.sent_at.ok_or(refused(LedgerError::Phase))?,
+            maximum_cookies: active.maximum_cookies,
+            matches_submission: active
+                .submission
+                .as_ref()
+                .is_some_and(|submission: &SubmissionOrigin| submission.matches(backend)),
+        };
+        if self.ledger.frames == 0 || length > self.ledger.bytes {
+            self.exhaust_receive_work();
+            return Err(refused(LedgerError::ReceiveWork));
+        }
+        self.ledger.frames -= 1;
+        self.ledger.bytes -= length;
+        Ok(charged)
+    }
+
+    /// Parse an already debited observation, then consume the exact Pending submission.
     /// Rejection retains the original deadline and reduces the remaining allowance.
     /// # Errors
     /// Preserve admission, budget, backend/endpoint/time, AEAD and shape errors.
     fn receive_reply_with<T>(
         &mut self,
+        charged: &ChargedReply,
         raw: &[u8],
         remote: SocketAddr,
         span: ReceiveSpan,
-        backend: Option<&Arc<()>>,
         observe_now: impl FnOnce() -> Instant,
         admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
     ) -> Result<T, Failure> {
-        let charged: ChargedReply = self.charge_reply(raw.len(), backend)?;
         let staged: StagedReplacement = (|| {
-            self.check_charged_datagram(&charged, raw.len(), remote)?;
+            self.check_charged_datagram(charged, raw.len(), remote)?;
             self.stage_current_reply(
                 raw,
                 charged.uid_index,
@@ -1817,7 +1953,7 @@ impl<'a> AssociationOwner<'a> {
         .inspect_err(|&error: &Failure| {
             self.reject_staging(error, charged.sent_at, span);
         })?;
-        self.consume_staged_reply(&charged, staged, span, observe_now, admit)
+        self.consume_staged_reply(charged, staged, span, observe_now, admit)
     }
 
     /// Check the extent and submitter of a datagram after its exact ledger debit.

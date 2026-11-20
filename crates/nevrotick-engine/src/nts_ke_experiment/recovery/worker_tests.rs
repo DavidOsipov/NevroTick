@@ -1340,9 +1340,26 @@ fn loopback_control_operation<'scope>(
     result
 }
 
-/// Observe request correlation, joined DENY, and policy or stale-source refusal.
+/// Prepare one checked window across both loopback legs.
+///
+/// A refused first reply can leave the request Pending while it waits for
+/// another datagram. This fixture bounds that wait under its original deadline.
 /// # Errors
-/// Preserve checked setup, peer I/O and unexpected worker operation refusals.
+/// Preserve deadline arithmetic and Control construction refusals.
+#[cfg(any(windows, target_os = "linux"))]
+fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failure> {
+    let origin: Instant = Instant::now();
+    let window: Duration = WAIT.checked_mul(2).ok_or(Failure::Deadline)?;
+    let cutoff: Instant = origin.checked_add(window).ok_or(Failure::Deadline)?;
+    let control: Control = Control::clamped(origin, cutoff)?;
+    Ok(PreparedInvocation::checked_fixture(config, control))
+}
+
+/// Observe request correlation, joined DENY, and policy or stale-source refusal.
+/// Both UDP legs share one original finite fixture window.
+///
+/// # Errors
+/// Preserve checked setup and worker failure ahead of a separate peer failure.
 /// # Panics
 /// Fail if sent work, committed history, or the exact policy effect is lost.
 #[cfg(any(windows, target_os = "linux"))]
@@ -1354,6 +1371,7 @@ fn run_managed_loopback_control(
     use std::io;
     use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 
+    use crate::nts_ke_experiment::collect_prepared;
     use crate::nts_ke_experiment::datagram::{DatagramError, tests::serve_managed_loopback};
     use crate::{
         KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
@@ -1403,14 +1421,15 @@ fn run_managed_loopback_control(
     } else {
         None
     };
+    let prepared: PreparedInvocation = prepare_managed_loopback(config)?;
     let (result, peer_result): (Result<ReceivedInvocation, RunFailed>, Result<(), Failure>) =
         std::thread::scope(|scope| {
             let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
                 std::thread::Builder::new()
                     .spawn_scoped(scope, || serve_managed_loopback(&peer))
                     .map_err(|_| Failure::Control)?;
-            let result: Result<ReceivedInvocation, RunFailed> = run_joined_with(
-                config,
+            let result: Result<ReceivedInvocation, RunFailed> = collect_prepared(
+                prepared,
                 slot,
                 None,
                 |slot: &'static WorkerSlot, prepared: PreparedInvocation| {
@@ -1432,7 +1451,7 @@ fn run_managed_loopback_control(
                 },
             );
             let peer_result: Result<(), Failure> =
-                peer_worker.join().map_err(|_| Failure::Control)?;
+                peer_worker.join().unwrap_or(Err(Failure::Control));
             Ok::<_, Failure>((result, peer_result))
         })?;
 

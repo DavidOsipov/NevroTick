@@ -637,12 +637,13 @@ mod reached {
     }
 
     /// Transfer the admitted fields needed by the joined managed report.
-    type ManagedProtectedProjection = (
+    pub(in super::super) type ManagedProtectedProjection = (
         SourceConfigurationSnapshot,
         Summary,
         u8,
         Instant,
         Option<Duration>,
+        Option<[Duration; 2]>,
         Result<ExperimentalMeasurement, MeasurementRefusal>,
     );
 
@@ -696,6 +697,13 @@ mod reached {
                 history.receipt.fields().header().leap_indicator(),
                 history.committed_at(),
                 history.receive_to_commit_delay(),
+                crate::measurement::application_elapsed_durations(
+                    history.send_before,
+                    history.send_after,
+                    history.read_return,
+                    history.committed_at(),
+                )
+                .ok(),
                 received.measurement,
             ))
         }
@@ -1117,15 +1125,18 @@ mod reached {
         }
     }
 
-    /// Register the shared wake before reading actual scope and local state.
+    /// Register the shared wake before checking actual scope and pending correlation.
+    /// A timer wake rechecks Control so a Stop latched before it retains precedence.
     /// A harmless wake re-waits within the same nonrenewable attempt allowance.
+    /// Socket readiness remains necessary. Policy contention waits for release.
     /// # Errors
-    /// Preserve cancellation/expiry/readiness failure with the original deadline.
+    /// Preserve cancellation, expiry, pending-policy and genuine readiness failure.
     async fn wait(
         backend: &mut Backend,
         control: &Control,
         interest: Interest,
         attempts: &mut Attempts,
+        mut pending_policy: Option<&mut LivePolicy>,
     ) -> Result<(), Failure> {
         loop {
             attempts.spend()?;
@@ -1133,11 +1144,26 @@ mod reached {
             tokio::pin!(cancelled);
             cancelled.as_mut().enable();
             drop(control.published_guard()?);
+            let socket_allowed: bool = if let Some(policy) = pending_policy.as_deref_mut() {
+                let refreshed: Result<bool, Failure> = policy
+                    .refresh_pending(&backend.identity)
+                    .map_err(Failure::SourcePolicy);
+                drop(control.published_guard()?);
+                refreshed?
+            } else {
+                true
+            };
             let ready = tokio::select! {
                 biased;
                 () = &mut cancelled => false,
-                () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => return Err(Failure::Deadline),
-                ready = backend.ready(interest, control) => {
+                () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => false,
+                () = async {
+                    match pending_policy.as_deref_mut() {
+                        Some(policy) => policy.wake().await,
+                        None => std::future::pending::<()>().await,
+                    }
+                } => false,
+                ready = backend.ready(interest, control), if socket_allowed => {
                     ready?;
                     true
                 },
@@ -1173,10 +1199,26 @@ mod reached {
         .and_then(SelectedOperation::into_ordinary)
     }
 
+    /// One concrete consumption on the exact pending backend.
+    #[must_use = "account for this consumed datagram exactly once"]
+    pub(in super::super) struct ConsumedDatagram<'backend> {
+        /// Identity of the adapter that actually returned this read.
+        backend: &'backend Arc<()>,
+        /// Exact selected extent. An unknown extent has no exposable prefix.
+        packet: Option<&'backend [u8]>,
+    }
+
+    impl<'backend> ConsumedDatagram<'backend> {
+        /// Give the ledger exclusive custody of this observation.
+        pub(in super::super) fn into_parts(self) -> (&'backend Arc<()>, Option<&'backend [u8]>) {
+            (self.backend, self.packet)
+        }
+    }
+
     /// One actual datagram and its original adapter/capture observations.
     struct ObservedReply<'a> {
-        /// Original selected bytes, excluding unused buffer capacity.
-        packet: &'a [u8],
+        /// Exclusive accounting for the original concrete read.
+        consumed: ConsumedDatagram<'a>,
         /// Peer returned by the actual selector.
         remote: SocketAddr,
         /// Exact concrete socket/back-end identity.
@@ -1236,25 +1278,22 @@ mod reached {
     fn stage_observed_reply<'control>(
         association: &mut AssociationOwner<'_>,
         control: &'control Control,
-        reply: &ObservedReply<'_>,
+        reply: ObservedReply<'_>,
         mode: ReceiveMode,
     ) -> Result<SelectedOperation<'control>, Failure> {
-        let identity: &Arc<()> = &reply.backend.identity;
         let (receipt, replacement, submission): (Receipt, CookieReplacement, PendingSubmission) =
             match mode {
-                ReceiveMode::Ordinary => association.stage_observed_reply(
-                    reply.packet,
+                ReceiveMode::Ordinary => association.stage_concrete_reply(
+                    reply.consumed,
                     reply.remote,
                     &reply.read_return,
-                    identity,
                 )?,
                 #[cfg(test)]
-                ReceiveMode::ProtectedSuccessor => match association.stage_protected_successor(
+                ReceiveMode::ProtectedSuccessor => match association.stage_concrete_successor(
                     control,
-                    reply.packet,
+                    reply.consumed,
                     reply.remote,
                     &reply.read_return,
-                    identity,
                 )? {
                     StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
                         (receipt, replacement, submission)
@@ -1355,34 +1394,60 @@ mod reached {
         ticket: Ticket<'_>,
         mode: ReceiveMode,
     ) -> Result<SelectedOperation<'control>, Failure> {
-        wait(backend, control, Interest::Write, attempts).await?;
+        wait(backend, control, Interest::Write, attempts, None).await?;
         backend.send_prepared(association, ticket, control)?;
         let (send_before, send_after, packet_bytes) =
             backend.send.ok_or(failed(DatagramError::Capture))?;
         check_capture_order(send_before.monotonic_after(), send_after.monotonic())?;
         let mut buffer = Zeroizing::new([0; RECEIVE_BYTES]);
-        wait(backend, control, Interest::Read, attempts).await?;
+        let mut pending_policy: Option<LivePolicy> =
+            association.observe_pending_policy(&backend.identity)?;
+        wait(
+            backend,
+            control,
+            Interest::Read,
+            attempts,
+            pending_policy.as_mut(),
+        )
+        .await?;
         loop {
             attempts.spend()?;
             drop(control.published_guard()?);
             let (read, observed) = backend.receive(&mut buffer);
             match read {
-                Read::WouldBlock => wait(backend, control, Interest::Read, attempts).await?,
+                Read::WouldBlock => {
+                    wait(
+                        backend,
+                        control,
+                        Interest::Read,
+                        attempts,
+                        pending_policy.as_mut(),
+                    )
+                    .await?;
+                }
                 Read::Failed(kind) => return Err(failed(DatagramError::Receive(kind))),
                 Read::ConsumedUnknown => {
-                    association.charge_consumed_unknown()?;
+                    association.charge_discarded_reply(ConsumedDatagram {
+                        backend: &backend.identity,
+                        packet: None,
+                    })?;
                     return Err(failed(DatagramError::Capture));
                 }
                 Read::Datagram(length, remote) => {
+                    let packet: &[u8] =
+                        buffer.get(..length).ok_or(failed(DatagramError::Capture))?;
+                    let consumed: ConsumedDatagram<'_> = ConsumedDatagram {
+                        backend: &backend.identity,
+                        packet: Some(packet),
+                    };
                     if let Err(error) =
                         check_capture_order(send_after.monotonic_after(), observed.monotonic())
                     {
-                        association.charge_discarded_reply(length, &backend.identity)?;
+                        association.charge_discarded_reply(consumed)?;
                         return Err(error);
                     }
-                    let packet = buffer.get(..length).ok_or(failed(DatagramError::Capture))?;
                     let reply: ObservedReply<'_> = ObservedReply {
-                        packet,
+                        consumed,
                         remote,
                         backend,
                         send_before,
@@ -1390,7 +1455,7 @@ mod reached {
                         read_return: observed,
                         packet_bytes,
                     };
-                    match stage_observed_reply(association, control, &reply, mode) {
+                    match stage_observed_reply(association, control, reply, mode) {
                         Ok(selected) => return Ok(selected),
                         Err(error) => {
                             if !matches!(association.status().phase, RequestPhase::Pending) {
@@ -1659,9 +1724,9 @@ pub(super) use reached::{Attempts, RetiredProtectedControl, RetiredProtectedSucc
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{
-    CommittedProtected, CompletionProjection, GuardedSender, ManagedProtectedHistory,
-    ProtectedCompletion, ProtectedHistory, ReceivedCompletion, ReceivedInvocation, RetiredReply,
-    RetiredReplyParts, receive_joined,
+    CommittedProtected, CompletionProjection, ConsumedDatagram, GuardedSender,
+    ManagedProtectedHistory, ManagedProtectedProjection, ProtectedCompletion, ProtectedHistory,
+    ReceivedCompletion, ReceivedInvocation, RetiredReply, RetiredReplyParts, receive_joined,
 };
 
 #[cfg(test)]

@@ -1173,20 +1173,6 @@ fn drive_invocation_with<'scope, P: recovery::Producer>(
     }
 }
 
-/// Run a managed invocation under its existing source-owner controls.
-/// # Errors
-/// Preserve caller-context, submission, collection and joined operation dispositions.
-#[cfg(windows)]
-fn run(config: Config) -> Result<datagram::ReceivedCompletion, RunFailed> {
-    let (prepared, _stop): (job::PreparedInvocation, StopHandle) = prepare_synchronous(config)?;
-    receive_probe(collect_prepared(
-        prepared,
-        &PROCESS_WORKER,
-        None,
-        |slot, prepared| slot.try_reserve(prepared)?.try_submit(),
-    ))
-}
-
 /// Wire the observed Windows invocation to its original one-shot stop scope.
 /// # Errors
 /// Preserve caller-context, preparation and registration refusal before submission.
@@ -1349,7 +1335,7 @@ fn prepare_synchronous(config: Config) -> Result<(job::PreparedInvocation, StopH
 /// Submit and consume only after the existing worker confirms actual join.
 /// # Errors
 /// Preserve submission, collection, operation or abnormal retirement failure.
-#[cfg(any(windows, test))]
+#[cfg(test)]
 fn collect_prepared(
     prepared: job::PreparedInvocation,
     slot: &'static job::WorkerSlot,

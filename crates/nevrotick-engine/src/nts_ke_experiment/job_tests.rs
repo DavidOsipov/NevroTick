@@ -14,11 +14,11 @@ use super::{
     InvocationCompletion, IoPhase, Observation, Operation, Ordering, Phase, PreparedInvocation,
     ProcessAdmission, ProcessClaim, ProviderScope, SubmitError, Termination, WorkerSlot,
 };
-use crate::SourceProtectedProbeReport;
 use crate::nts_ke_experiment::process::native_scope_with;
 use crate::nts_ke_experiment::{
     ObservedInvocation, RunFailed, StopDisposition, StopHandle, Summary, run_observing,
 };
+use crate::{SourceKePreviewReport, SourceProtectedProbeReport};
 
 /// Finite component watchdog, not a bound on a product/native operation or explicit join.
 const WAIT: Duration = Duration::from_secs(2);
@@ -1407,6 +1407,25 @@ fn assert_unconfirmed_report(
         observed.cleanup.stop_failed,
         matches!(stop_case, StopGateCase::Poisoned)
     );
+    let Err(RunFailed::Collection(collection)) = &observed.result else {
+        return Err(Failure::Control);
+    };
+    let Err(preview_failure) =
+        SourceKePreviewReport::from_run(Err(RunFailed::Collection(*collection)), observed.cleanup)
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(preview_failure.labels(), ("worker-collection", "busy"));
+    assert_eq!(
+        preview_failure.power_unregistration_error(),
+        Some(NonZeroU32::MIN)
+    );
+    assert_eq!(
+        preview_failure.power_stop_failed(),
+        matches!(stop_case, StopGateCase::Poisoned),
+        "KE-FACADE-01-preview-collection-stop-failure"
+    );
+    assert!(preview_failure.retained_configuration().is_none());
     let Err(failure) = SourceProtectedProbeReport::from_observed(Ok(observed)) else {
         return Err(Failure::Control);
     };

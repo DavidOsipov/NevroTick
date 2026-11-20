@@ -12,6 +12,7 @@ use std::sync::{Arc, TryLockError};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
+use tokio::sync::watch;
 use zeroize::Zeroizing;
 
 use super::super::ProtectedControlKind;
@@ -92,11 +93,52 @@ enum ScriptRead {
     Failed(io::ErrorKind),
 }
 
+/// Independently revoke authority after the original selected receive capture.
+enum ScriptReceiveRevocation {
+    /// Latch the original invocation's real Stop before ledger entry.
+    Stop {
+        handle: StopHandle,
+        expiry: Instant,
+        wait_for_expiry: bool,
+    },
+    /// Wait for the invocation's existing, finite real cutoff.
+    Expiry(Instant),
+}
+
+impl ScriptReceiveRevocation {
+    /// Apply exactly the fixture's selected action outside the Control gates.
+    /// # Panics
+    /// Fail if authority had already expired or the scope was not freshly latched.
+    fn apply(&self, captured: SoftwareClock) {
+        let expiry: Instant = match self {
+            Self::Stop {
+                handle,
+                expiry,
+                wait_for_expiry,
+            } => {
+                assert!(handle.scope.stopped.try_lock().is_ok());
+                assert_eq!(handle.request_stop(), Ok(StopDisposition::Latched));
+                assert!(Instant::now() < *expiry);
+                if !wait_for_expiry {
+                    return;
+                }
+                *expiry
+            }
+            Self::Expiry(expiry) => *expiry,
+        };
+        assert!(captured.monotonic_after() < expiry);
+        std::thread::sleep(expiry.saturating_duration_since(Instant::now()));
+        assert!(Instant::now() >= expiry);
+    }
+}
+
 /// Bounded scripted facts. This type is available only in unit-test builds.
 pub(super) struct Script {
     /// Actual component backend lifetime, separate from retained socket identity.
     lifetime: Arc<()>,
     ready: VecDeque<ScriptReady>,
+    /// Keep read readiness parked across repeated polls until the fixture releases it.
+    read_release: Option<watch::Receiver<bool>>,
     reads: VecDeque<ScriptRead>,
     /// Optional observation of queue depth immediately after each actual read.
     read_residue: Option<Arc<AtomicUsize>>,
@@ -106,6 +148,8 @@ pub(super) struct Script {
     read_after: Option<Instant>,
     /// Optional substitute for the trailing reading of the final scripted datagram.
     read_after_final: Option<Instant>,
+    /// Apply the closed event on the selected completed receive capture.
+    revoke_after_read: Option<(usize, ScriptReceiveRevocation)>,
     send: ScriptSend,
     /// Optional fixed sample at the final pre-send capture position.
     send_before: Option<SoftwareClock>,
@@ -135,11 +179,13 @@ impl Script {
         Self {
             lifetime: Arc::new(()),
             ready: VecDeque::new(),
+            read_release: None,
             reads: reads.into(),
             read_residue: None,
             read_before_at_residue: None,
             read_after: None,
             read_after_final: None,
+            revoke_after_read: None,
             send,
             send_before: None,
             fixed_utc: None,
@@ -187,9 +233,19 @@ impl Script {
     /// Panics if the scripted scope Stop was already latched.
     pub(super) async fn ready(
         &mut self,
-        _interest: Interest,
+        interest: Interest,
         control: &Control,
     ) -> Result<(), Failure> {
+        if let Interest::Read = interest
+            && let Some(release) = &mut self.read_release
+        {
+            drop(
+                release
+                    .wait_for(|ready: &bool| *ready)
+                    .await
+                    .map_err(|_| Failure::Control)?,
+            );
+        }
         match self.ready.pop_front().unwrap_or(ScriptReady::Ready) {
             ScriptReady::Ready => Ok(()),
             ScriptReady::Cancel => {
@@ -278,8 +334,15 @@ impl Script {
         }
     }
 
-    /// Substitute only explicitly selected raw readings at the real capture site.
+    /// Apply the fixed event and substitute only selected readings at the actual capture site.
+    /// # Panics
+    /// Fail if a selected fixture event cannot reach its intended boundary.
     pub(super) fn observe_read_return(&self, captured: SoftwareClock) -> SoftwareClock {
+        if let Some((ordinal, revocation)) = &self.revoke_after_read
+            && self.receive_calls == *ordinal
+        {
+            revocation.apply(captured);
+        }
         let captured: SoftwareClock = match self.read_before_at_residue {
             Some((residue, mono)) if self.reads.len() == residue => {
                 SoftwareClock { mono, ..captured }
@@ -459,6 +522,7 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
     control: &'a Control,
     preceding: Option<&'static [u8]>,
     reply: &'static [u8],
+    pre_send: Option<[Instant; 2]>,
     before_send: impl FnOnce() -> Result<(), Failure>,
 ) -> Result<super::ProtectedCompletion<'a>, Failure> {
     exchange_with(
@@ -476,11 +540,15 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
                 .collect();
             let mut script: Script = Script::new(ScriptSend::Full, reads);
             // Fixed era-zero date shared by the admitted and refused model cases.
-            script.fixed_utc = Some(
-                UNIX_EPOCH
-                    .checked_add(Duration::from_secs(1_700_000_000))
-                    .ok_or(Failure::Control)?,
-            );
+            let utc: SystemTime = UNIX_EPOCH
+                .checked_add(Duration::from_secs(1_700_000_000))
+                .ok_or(Failure::Control)?;
+            script.fixed_utc = Some(utc);
+            script.send_before = pre_send.map(|[mono, mono_after]| SoftwareClock {
+                mono,
+                utc,
+                mono_after,
+            });
             Ok(backend(peer, script))
         },
     )
@@ -2290,6 +2358,389 @@ fn managed_protected_reply_distinguishes_wire_peer_and_policy_epochs() -> Result
     check_managed_pending_receiving_backend()
 }
 
+/// A source-policy action or invocation Stop issued after the protected send.
+#[derive(Clone, Copy)]
+enum PendingReadEvent {
+    /// Retain a server refusal at the exact protected endpoint.
+    Deny,
+    /// Increase the next-send floor at the exact protected endpoint.
+    Rate,
+    /// Retain a server refusal at a separate endpoint on the same IP.
+    DenyOtherPort,
+    /// Replace the installed source with equal values and a fresh revision.
+    ReplaceConfiguration,
+    /// Request Stop through the original invocation scope.
+    Stop,
+}
+
+impl PendingReadEvent {
+    /// Specify the independently expected retirement result for this event.
+    const fn refusal(self) -> Option<Failure> {
+        use crate::SourcePolicyError;
+
+        match self {
+            Self::Deny => Some(Failure::SourcePolicy(SourcePolicyError::Disabled)),
+            Self::ReplaceConfiguration => Some(Failure::SourcePolicy(
+                SourcePolicyError::ConfigurationChanged,
+            )),
+            Self::Stop => Some(Failure::Cancelled),
+            Self::Rate | Self::DenyOtherPort => None,
+        }
+    }
+}
+
+/// Sample notifications from the parked operation independently of polling it.
+#[derive(Default)]
+struct PendingReadWake {
+    /// Notifications delivered to the registered future since the first poll.
+    notifications: AtomicUsize,
+}
+
+impl std::task::Wake for PendingReadWake {
+    fn wake(self: Arc<Self>) {
+        self.notifications.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Apply the external event only after the real driver parks at read readiness.
+/// # Errors
+/// Preserve a setup or event refusal separately from the observed driver result.
+/// # Panics
+/// Reject missing or unexpected notifications and early or absent readiness.
+fn poll_pending_read_event<'control>(
+    operation: impl Future<Output = Result<OperationCompletion<'control>, Failure>>,
+    apply: impl FnOnce() -> Result<(), Failure>,
+    release: &watch::Sender<bool>,
+    event: PendingReadEvent,
+) -> Result<Result<OperationCompletion<'control>, Failure>, Failure> {
+    use std::task::{Context, Poll, Waker};
+
+    let observed: Arc<PendingReadWake> = Arc::new(PendingReadWake::default());
+    let waker: Waker = Waker::from(Arc::clone(&observed));
+    let mut context: Context<'_> = Context::from_waker(&waker);
+    let mut operation = std::pin::pin!(operation);
+    assert!(operation.as_mut().poll(&mut context).is_pending());
+    let before: usize = observed.notifications.load(Ordering::Relaxed);
+    apply()?;
+    assert_eq!(
+        observed.notifications.load(Ordering::Relaxed) > before,
+        !matches!(event, PendingReadEvent::DenyOtherPort),
+        "only an event applicable to the request should wake the protected receive",
+    );
+    if event.refusal().is_none() {
+        assert!(operation.as_mut().poll(&mut context).is_pending());
+        assert!(!release.send_replace(true));
+    }
+    let polled: Poll<Result<OperationCompletion<'_>, Failure>> =
+        operation.as_mut().poll(&mut context);
+    assert!(
+        polled.is_ready(),
+        "the selected event did not resolve the pending receive",
+    );
+    match polled {
+        Poll::Ready(result) => Ok(result),
+        Poll::Pending => Err(Failure::Control),
+    }
+}
+
+/// Verify the actual policy transition and its exact protected-endpoint scope.
+/// # Panics
+/// Reject missing protected send debit, cross-source effects or a lost floor update.
+fn assert_pending_read_policy(
+    event: PendingReadEvent,
+    submitted: &crate::SourcePolicySnapshot,
+    updated: &crate::SourcePolicySnapshot,
+) {
+    assert!(
+        submitted.source().floor().is_some(),
+        "the request must have sent",
+    );
+    assert_eq!(updated.source().floor(), submitted.source().floor());
+    assert!(!updated.source().refused());
+    assert_eq!(
+        updated.endpoint().refused(),
+        matches!(event, PendingReadEvent::Deny),
+    );
+    if matches!(event, PendingReadEvent::Rate) {
+        assert_eq!(updated.endpoint().interval(), Duration::from_secs(1));
+        assert!(updated.endpoint().floor() > submitted.endpoint().floor());
+    } else {
+        assert_eq!(updated.endpoint().floor(), submitted.endpoint().floor());
+    }
+}
+
+/// Deliver a real owner event independently of protected packet readiness.
+/// # Errors
+/// Preserve original Stop, revision replacement or alias admission failure.
+/// # Panics
+/// Fail if the first Stop did not latch.
+fn apply_pending_read_event(
+    event: PendingReadEvent,
+    authority: &mut SourcePolicyAuthority,
+    config: &Config,
+    control: &Control,
+    alias: &crate::source_policy::SourceBinding,
+    alias_reply: &mut crate::source_policy::FixtureRequest,
+) -> Result<(), Failure> {
+    match event {
+        PendingReadEvent::ReplaceConfiguration => {
+            replace_policy_wait_configuration(authority, config)
+        }
+        PendingReadEvent::Stop => {
+            let stop: StopHandle = StopHandle {
+                scope: Arc::clone(&control.stop_scope),
+            };
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+            Ok(())
+        }
+        PendingReadEvent::Deny | PendingReadEvent::DenyOtherPort | PendingReadEvent::Rate => {
+            let code: [u8; 4] = if matches!(event, PendingReadEvent::Rate) {
+                *b"RATE"
+            } else {
+                *b"DENY"
+            };
+            crate::source_policy::fixture_control(
+                alias,
+                alias_reply,
+                u32::from_be_bytes(code),
+                Instant::now(),
+            )
+            .map_err(Failure::SourcePolicy)
+        }
+    }
+}
+
+/// Apply each event while the actual driver is parked on read readiness.
+/// # Errors
+/// Preserve issuer, fixture control, run or observation refusal.
+/// # Panics
+/// Reject an early send or reply, charge reversal, or misapplied policy.
+fn check_managed_protected_pending_read_event(event: PendingReadEvent) -> Result<(), Failure> {
+    use crate::source_policy::{FixtureRequest, SourceBinding, fixture_send};
+    use crate::{SourceHandle, SourcePolicySnapshot};
+
+    let initial: Duration = Duration::from_millis(250);
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_secs(2))
+        .ok_or(Failure::Deadline)?;
+    let (config, source, mut authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, initial, Duration::from_secs(2))?;
+    let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+    with_config_owner(
+        &config,
+        earlier,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            let alias_peer: SocketAddr = if matches!(event, PendingReadEvent::DenyOtherPort) {
+                SocketAddr::new(remote.ip(), 124)
+            } else {
+                remote
+            };
+            let binding: SourceBinding = alias.bind(alias_peer).map_err(Failure::SourcePolicy)?;
+            let prior_send: Instant = earlier
+                .checked_add(Duration::from_millis(500))
+                .ok_or(Failure::Deadline)?;
+            let mut alias_reply: FixtureRequest =
+                fixture_send(&binding, &Arc::new(()), prior_send).map_err(Failure::SourcePolicy)?;
+            let (release, pending_read): (watch::Sender<bool>, watch::Receiver<bool>) =
+                watch::channel(false);
+            let receive: bool = event.refusal().is_none();
+            let reads: Vec<ScriptRead> = if receive {
+                vec![ScriptRead::Packet(fixtures::HEALTHY, remote)]
+            } else {
+                Vec::new()
+            };
+            let mut selected: Script = Script::new(ScriptSend::Full, reads);
+            selected.read_release = Some(pending_read);
+            let mut backend: Backend = backend(remote, selected);
+            let expiry: Instant = control.expiry;
+            let result: Result<OperationCompletion<'_>, Failure> = runtime()?.block_on(async {
+                poll_pending_read_event(
+                    operation(owner, control, entropy, &mut backend),
+                    || {
+                        let submitted: SourcePolicySnapshot = source
+                            .policy_snapshot(remote)
+                            .map_err(Failure::SourcePolicy)?;
+                        apply_pending_read_event(
+                            event,
+                            &mut authority,
+                            &config,
+                            control,
+                            &binding,
+                            &mut alias_reply,
+                        )?;
+                        let updated: SourcePolicySnapshot = source
+                            .policy_snapshot(remote)
+                            .map_err(Failure::SourcePolicy)?;
+                        assert_pending_read_policy(event, &submitted, &updated);
+                        Ok(())
+                    },
+                    &release,
+                    event,
+                )
+            })?;
+            assert_eq!(control.expiry, expiry);
+            assert!(Instant::now() < expiry);
+            let adapter: &Script = script(&backend)?;
+            assert_eq!(
+                (adapter.send_calls, adapter.receive_calls),
+                (1, usize::from(receive)),
+            );
+            let status: Status = owner.status();
+            assert_eq!((status.attempts, status.used, status.uids), (31, 1, 1));
+            assert_eq!(status.frames, 32 - usize::from(receive));
+            assert_eq!(
+                status.bytes,
+                131_072 - usize::from(receive) * fixtures::HEALTHY.len(),
+            );
+            assert_eq!(owner.cookie_population()?, (0, 0));
+            if let Some(expected) = event.refusal() {
+                assert_eq!(result.err(), Some(expected));
+                assert!(owner.last_receipt().is_none());
+            } else {
+                let completion: OperationCompletion<'_> = result?;
+                let header: ntp_wire::RawHeader = completion.history.receipt.fields().header();
+                assert_eq!(header.origin_timestamp().bits(), WIRE);
+                assert_eq!(owner.last_receipt().map(Receipt::serial), Some(1));
+                assert_eq!(
+                    (completion.history.cookies, completion.history.cookie_bytes),
+                    (1, 12),
+                );
+            }
+            Ok(())
+        },
+    )
+}
+
+/// The exact endpoint's refusal wakes the receiver without a datagram or timeout.
+/// # Errors
+/// Preserve fixture and driver refusal.
+#[test]
+fn managed_protected_pending_endpoint_deny_wakes_silent_receive() -> Result<(), Failure> {
+    check_managed_protected_pending_read_event(PendingReadEvent::Deny)
+}
+
+/// A RATE-only update preserves the actual request and its separately ready reply.
+/// # Errors
+/// Preserve fixture and driver refusal.
+#[test]
+fn managed_protected_pending_rate_preserves_readiness_and_reply() -> Result<(), Failure> {
+    check_managed_protected_pending_read_event(PendingReadEvent::Rate)
+}
+
+/// A DENY received at another port does not invalidate the protected exchange.
+/// # Errors
+/// Preserve fixture and driver refusal.
+#[test]
+fn managed_protected_pending_ignores_deny_for_another_port() -> Result<(), Failure> {
+    check_managed_protected_pending_read_event(PendingReadEvent::DenyOtherPort)
+}
+
+/// Stop and equal-value source replacement retire a quiet pending receive.
+/// # Errors
+/// Preserve fixture and driver refusal.
+#[test]
+fn managed_protected_pending_stop_and_revision_replacement_wake_receive() -> Result<(), Failure> {
+    check_managed_protected_pending_read_event(PendingReadEvent::Stop)?;
+    check_managed_protected_pending_read_event(PendingReadEvent::ReplaceConfiguration)
+}
+
+/// Park after one managed send and use the driver's own expiry timer.
+/// # Errors
+/// Preserve fixture, policy, runtime or unexpected protected receive refusal.
+/// # Panics
+/// Fail if the read did not park, expiry missed a latched Stop, or work was refunded.
+#[test]
+fn managed_protected_pending_expiry_observes_already_latched_stop() -> Result<(), Failure> {
+    use std::task::Poll;
+
+    let cases: [(bool, Option<Failure>); 3] = [
+        (true, Some(Failure::Cancelled)),
+        (false, Some(Failure::Deadline)),
+        (false, None),
+    ];
+    for (latch_stop, expected) in cases {
+        let earlier: Instant = Instant::now()
+            .checked_sub(Duration::from_secs(2))
+            .ok_or(Failure::Deadline)?;
+        let (config, source, _authority): (Config, crate::SourceHandle, SourcePolicyAuthority) =
+            managed_attempt_config(earlier, Duration::from_millis(250), Duration::from_secs(2))?;
+        let driver: tokio::runtime::Runtime = runtime()?;
+        let start: Instant = Instant::now();
+        let expiry: Instant = start
+            .checked_add(Duration::from_millis(250))
+            .ok_or(Failure::Deadline)?;
+        let control: Control = Control::clamped(start, expiry)?;
+        with_config_control(
+            &config,
+            &control,
+            S2C,
+            &[(0x11, 12)],
+            |owner, control, remote| {
+                let (release, pending_read): (watch::Sender<bool>, watch::Receiver<bool>) =
+                    watch::channel(false);
+                let mut selected: Script = Script::new(
+                    ScriptSend::Full,
+                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                );
+                selected.read_release = Some(pending_read);
+                let mut backend: Backend = backend(remote, selected);
+                let result: Result<OperationCompletion<'_>, Failure> = driver.block_on(async {
+                    let pending = operation(owner, control, entropy, &mut backend);
+                    tokio::pin!(pending);
+                    std::future::poll_fn(|context| {
+                        assert!(pending.as_mut().poll(context).is_pending());
+                        Poll::Ready(())
+                    })
+                    .await;
+                    let submitted: crate::SourcePolicySnapshot = source
+                        .policy_snapshot(remote)
+                        .map_err(Failure::SourcePolicy)?;
+                    assert!(
+                        submitted.source().floor().is_some(),
+                        "the request must have sent"
+                    );
+                    assert!(
+                        Instant::now() < expiry,
+                        "the operation must park before expiry"
+                    );
+                    if latch_stop {
+                        latch_wait_stop_without_wake(control)?;
+                    }
+                    if expected.is_none() {
+                        assert!(!release.send_replace(true));
+                    }
+                    Ok::<_, Failure>(pending.await)
+                })?;
+                assert_eq!(control.expiry, expiry);
+                let observed: &Script = script(&backend)?;
+                let receive: usize = usize::from(expected.is_none());
+                assert_eq!((observed.send_calls, observed.receive_calls), (1, receive));
+                let status: Status = owner.status();
+                assert_eq!((status.attempts, status.used, status.uids), (31, 1, 1));
+                assert_eq!(status.frames, 32 - receive);
+                assert_eq!(status.bytes, 131_072 - receive * fixtures::HEALTHY.len());
+                assert_eq!(owner.cookie_population()?, (0, 0));
+                if let Some(failure) = expected {
+                    assert!(Instant::now() >= expiry);
+                    assert_eq!(
+                        result.err(),
+                        Some(failure),
+                        "expiry must recheck the original Stop"
+                    );
+                    assert!(owner.last_receipt().is_none());
+                } else {
+                    let completed: OperationCompletion<'_> = result?;
+                    assert_eq!(completed.history.receipt.serial(), 1);
+                }
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
 /// Retire the first genuine managed operation at its checked alias floor.
 /// # Errors
 /// Preserve the original driver, send, timing or authentication failure.
@@ -4015,6 +4466,326 @@ fn consumed_unknown_extent_exhausts_bytes_and_retires_pending() -> Result<(), Fa
         assert_eq!(owner.status().bytes, 0);
         assert_eq!(owner.status().phase, RequestPhase::Idle);
         assert!(owner.last_receipt().is_none());
+        Ok(())
+    })
+}
+
+/// Exercise exact consumed extent after either post-read Control refusal.
+///
+/// The fixture consumes and captures the selected datagram before changing
+/// Control. The second ordinary datagram stays queued under either refusal.
+/// # Errors
+/// Preserve genuine fixture, policy, runtime or original Control setup failures.
+/// # Panics
+/// Reject changed debit, lost failure precedence, staging, or an extra read.
+fn check_protected_consumed_receive_revocation(
+    unknown_extent: bool,
+    stop: bool,
+) -> Result<(), Failure> {
+    use crate::nts_ke_experiment::association::ledger::RecoveryReason;
+
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_secs(2))
+        .ok_or(Failure::Deadline)?;
+    let (config, _source, _authority): (Config, crate::SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(250), Duration::from_secs(2))?;
+    let driver: tokio::runtime::Runtime = runtime()?;
+    let start: Instant = Instant::now();
+    let expiry: Instant = start
+        .checked_add(Duration::from_secs(1))
+        .ok_or(Failure::Deadline)?;
+    let control: Control = Control::clamped(start, expiry)?;
+    with_config_control(
+        &config,
+        &control,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            owner.select_next_receipt_at_read_tail_for_test()?;
+            let first: ScriptRead = if unknown_extent {
+                ScriptRead::UnknownExtent
+            } else {
+                ScriptRead::Packet(fixtures::HEALTHY, remote)
+            };
+            let mut selected: Script = Script::new(
+                ScriptSend::Full,
+                vec![first, ScriptRead::Packet(fixtures::HEALTHY, remote)],
+            );
+            selected.revoke_after_read = Some((
+                1,
+                if stop {
+                    ScriptReceiveRevocation::Stop {
+                        handle: StopHandle {
+                            scope: Arc::clone(&control.stop_scope),
+                        },
+                        expiry,
+                        wait_for_expiry: false,
+                    }
+                } else {
+                    ScriptReceiveRevocation::Expiry(expiry)
+                },
+            ));
+            let mut backend: Backend = backend(remote, selected);
+            let result: Result<OperationCompletion<'_>, Failure> =
+                driver.block_on(operation(owner, control, entropy, &mut backend));
+            let expected: Failure = if stop {
+                Failure::Cancelled
+            } else {
+                Failure::Deadline
+            };
+            assert_eq!(result.err(), Some(expected));
+            assert_eq!(control.expiry, expiry);
+            let script: &Script = script(&backend)?;
+            assert_eq!(
+                (script.send_calls, script.receive_calls, script.reads.len()),
+                (1, 1, 1)
+            );
+            let status: Status = owner.status();
+            assert_eq!((status.attempts, status.used, status.uids), (31, 1, 1));
+            let bytes: usize = if unknown_extent {
+                0
+            } else {
+                131_072 - fixtures::HEALTHY.len()
+            };
+            assert_eq!(
+                (status.frames, status.bytes),
+                (31, bytes),
+                "consumed protected receive must debit the original allowance after {expected:?}",
+            );
+            assert!(owner.has_receipt_tail_selection_for_test());
+            assert!(owner.last_receipt().is_none());
+            assert_eq!(owner.cookie_population()?, (0, 0));
+            if unknown_extent {
+                assert_eq!(status.phase, RequestPhase::Idle);
+                let recovery = owner.take_recovery_intent().ok_or(Failure::Control)?;
+                assert_eq!(recovery.reason(), RecoveryReason::ReceiveWork);
+                assert_eq!(recovery.not_before(), expiry);
+            }
+            assert!(owner.take_recovery_intent().is_none());
+            Ok(())
+        },
+    )
+}
+
+/// Protect exact byte and frame accounting when known data precedes Stop.
+/// # Errors
+/// Preserve unexpected fixture or Control refusal.
+#[test]
+fn protected_consumed_known_debits_after_stop() -> Result<(), Failure> {
+    check_protected_consumed_receive_revocation(false, true)
+}
+
+/// Protect exact byte and frame accounting when known data precedes expiry.
+/// # Errors
+/// Preserve unexpected fixture or Control refusal.
+#[test]
+fn protected_consumed_known_debits_after_expiry() -> Result<(), Failure> {
+    check_protected_consumed_receive_revocation(false, false)
+}
+
+/// Conservatively exhaust unknown bytes when consumption precedes Stop.
+/// # Errors
+/// Preserve unexpected fixture or Control refusal.
+#[test]
+fn protected_consumed_unknown_retires_after_stop() -> Result<(), Failure> {
+    check_protected_consumed_receive_revocation(true, true)
+}
+
+/// Conservatively exhaust unknown bytes when consumption precedes expiry.
+/// # Errors
+/// Preserve unexpected fixture or Control refusal.
+#[test]
+fn protected_consumed_unknown_retires_after_expiry() -> Result<(), Failure> {
+    check_protected_consumed_receive_revocation(true, false)
+}
+
+/// Which terminal observations are visible after capturing the final known frame.
+enum AfterFinalRead {
+    Stop,
+    Expiry,
+    StopThenExpiry,
+}
+
+/// Exercise the final receive credit with the original finite cutoff.
+/// # Errors
+/// Preserve unexpected fixture construction or owner failures.
+/// # Panics
+/// Fail if the final frame is refunded, published, or leaves exhausted custody pending.
+fn check_final_known_frame_retirement(after: &AfterFinalRead) -> Result<(), Failure> {
+    use crate::nts_ke_experiment::association::ledger::{RecoveryIntent, RecoveryReason};
+
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_secs(2))
+        .ok_or(Failure::Deadline)?;
+    let (config, _source, _authority): (Config, crate::SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(250), Duration::from_secs(2))?;
+    let driver: tokio::runtime::Runtime = runtime()?;
+    let start: Instant = Instant::now();
+    let expiry: Instant = start
+        .checked_add(Duration::from_secs(1))
+        .ok_or(Failure::Deadline)?;
+    let control: Control = Control::clamped(start, expiry)?;
+    with_config_control(
+        &config,
+        &control,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            let (event, expected): (ScriptReceiveRevocation, Failure) = match after {
+                AfterFinalRead::Expiry => {
+                    (ScriptReceiveRevocation::Expiry(expiry), Failure::Deadline)
+                }
+                AfterFinalRead::Stop | AfterFinalRead::StopThenExpiry => (
+                    ScriptReceiveRevocation::Stop {
+                        handle: StopHandle {
+                            scope: Arc::clone(&control.stop_scope),
+                        },
+                        expiry,
+                        wait_for_expiry: matches!(after, AfterFinalRead::StopThenExpiry),
+                    },
+                    Failure::Cancelled,
+                ),
+            };
+            let mut reads: Vec<ScriptRead> = (0..31)
+                .map(|_| ScriptRead::Packet(fixtures::ZERO_COOKIES, remote))
+                .collect();
+            reads.extend([
+                ScriptRead::Packet(fixtures::HEALTHY, remote),
+                ScriptRead::Packet(fixtures::HEALTHY, remote),
+            ]);
+            let mut selected: Script = Script::new(ScriptSend::Full, reads);
+            selected.revoke_after_read = Some((32, event));
+            let mut backend: Backend = backend(remote, selected);
+            let result: Result<OperationCompletion<'_>, Failure> =
+                driver.block_on(operation(owner, control, entropy, &mut backend));
+
+            assert_eq!(result.err(), Some(expected));
+            let script: &Script = script(&backend)?;
+            assert_eq!(
+                (script.send_calls, script.receive_calls, script.reads.len()),
+                (1, 32, 1)
+            );
+            assert_eq!(
+                owner.status(),
+                Status {
+                    phase: RequestPhase::Idle,
+                    attempts: 31,
+                    frames: 0,
+                    bytes: 131_072 - 31 * fixtures::ZERO_COOKIES.len() - fixtures::HEALTHY.len(),
+                    available: 0,
+                    used: 1,
+                    uids: 1,
+                },
+                "exhausted final known frame must retire after {expected:?}",
+            );
+            assert!(owner.last_receipt().is_none());
+            assert_eq!(owner.cookie_population()?, (0, 0));
+            assert_eq!(control.expiry, expiry);
+            let recovery: RecoveryIntent = owner.take_recovery_intent().ok_or(Failure::Control)?;
+            assert_eq!(recovery.reason(), RecoveryReason::ReceiveWork);
+            assert_eq!(recovery.not_before(), expiry);
+            assert!(owner.take_recovery_intent().is_none());
+            Ok(())
+        },
+    )
+}
+
+/// Spend and retire the final known frame when Stop follows capture.
+/// # Errors
+/// Preserve unexpected fixture or owner failures.
+#[test]
+fn protected_final_known_frame_retires_after_stop() -> Result<(), Failure> {
+    check_final_known_frame_retirement(&AfterFinalRead::Stop)
+}
+
+/// Spend and retire the final known frame when the original cutoff passes after capture.
+/// # Errors
+/// Preserve unexpected fixture or owner failures.
+#[test]
+fn protected_final_known_frame_retires_after_expiry() -> Result<(), Failure> {
+    check_final_known_frame_retirement(&AfterFinalRead::Expiry)
+}
+
+/// Preserve a latched Stop when the cutoff also passes after the final capture.
+/// # Errors
+/// Preserve unexpected fixture or owner failures.
+#[test]
+fn protected_final_known_frame_retires_after_stop_and_expiry() -> Result<(), Failure> {
+    check_final_known_frame_retirement(&AfterFinalRead::StopThenExpiry)
+}
+
+/// A genuine Stop during read readiness preserves both receive budgets.
+/// # Errors
+/// Preserve unexpected fixture or Control refusal.
+/// # Panics
+/// Reject consumption, staging or lost original Stop.
+#[test]
+fn protected_stop_before_receive_preserves_datagram_credit() -> Result<(), Failure> {
+    with_owner(S2C, |owner, control, remote| {
+        owner.select_next_receipt_at_read_tail_for_test()?;
+        let expiry: Instant = control.expiry;
+        let mut selected: Script = Script::new(
+            ScriptSend::Full,
+            vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+        );
+        selected
+            .ready
+            .extend([ScriptReady::Ready, ScriptReady::ScopeStop]);
+        let mut backend: Backend = backend(remote, selected);
+        let result: Result<OperationCompletion<'_>, Failure> =
+            runtime()?.block_on(operation(owner, control, entropy, &mut backend));
+        assert_eq!(result.err(), Some(Failure::Cancelled));
+        let script: &Script = script(&backend)?;
+        assert_eq!(
+            (script.send_calls, script.receive_calls, script.reads.len()),
+            (1, 0, 1)
+        );
+        let status: Status = owner.status();
+        assert_eq!((status.frames, status.bytes), (32, 131_072));
+        assert_eq!(control.expiry, expiry);
+        assert!(owner.has_receipt_tail_selection_for_test());
+        assert!(owner.last_receipt().is_none());
+        Ok(())
+    })
+}
+
+/// A rejected origin spends bytes and leaves the matching origin usable once.
+/// # Errors
+/// Preserve unexpected fixture, runtime or healthy reply refusal.
+/// # Panics
+/// Reject uncharged rejected data, altered original deadline or spurious acceptance.
+#[test]
+fn protected_known_live_reply_charges_rejected_and_matching_origins() -> Result<(), Failure> {
+    with_owner(S2C, |owner, control, remote| {
+        let expiry: Instant = control.expiry;
+        let mut backend: Backend = backend(
+            remote,
+            Script::new(
+                ScriptSend::Full,
+                vec![
+                    ScriptRead::Packet(fixtures::WRONG_ORIGIN, remote),
+                    ScriptRead::Packet(fixtures::HEALTHY, remote),
+                ],
+            ),
+        );
+        let result: OperationCompletion<'_> =
+            runtime()?.block_on(operation(owner, control, entropy, &mut backend))?;
+        assert_eq!(result.history.receipt.fields().origin().bits(), WIRE);
+        assert_eq!(owner.last_receipt().map(Receipt::serial), Some(1));
+        let script: &Script = script(&backend)?;
+        assert_eq!(
+            (script.send_calls, script.receive_calls, script.reads.len()),
+            (1, 2, 0)
+        );
+        let status: Status = owner.status();
+        assert_eq!(
+            (status.frames, status.bytes),
+            (
+                30,
+                131_072 - fixtures::WRONG_ORIGIN.len() - fixtures::HEALTHY.len()
+            ),
+        );
+        assert_eq!(control.expiry, expiry);
         Ok(())
     })
 }

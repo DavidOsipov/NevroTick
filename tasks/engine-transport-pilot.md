@@ -27529,3 +27529,1202 @@ Windows execution stays scoped to the earlier exact TLS repair image.
 | `run-02/verification.json` | `8d6d8f41545cbe19f7ad6734f72da43a8a5fba4a331c939b18fab0de587e79fc` |
 | `run-03/verification.json` | `21ba8b44d70bd797f0510f7af102199e64dfb733b57aa8b6a5f3c9589f489657` |
 | `msvc-check-01/verification.json` | `b4e3d78388cb06f3c8adff21f4e197914de87dc32134afba4774eb3376ceed2d` |
+
+###### TLS and source-scale closed-role and GNU metrics
+
+CHECK-19/25/27 and S2.2/W11-W01. The pre-commit, regression selection,
+coverage, mutation and independent-review skills governed the exact
+reader and metric checkpoint for signed `d1ec8a8be995be8c0b43ed8b48830f7c8f4cc8c2`,
+tree `62c5bdcfbf9a12ccdfa666095325955d82ea2c87`. The complete product
+still resolves to 620 inputs and
+`9787ca8da2b8c768edc89e116568c71a9243bb7cfd4d1a85cf00001651989a89`.
+The preceding combined run stopped on 21 shifted Rustdoc line labels
+after 585 ordinary EP1 tests and 91 doctests exited zero. Source comparison
+matched the original fence bytes, declaration and test annotations at
+the new locations. The exact-label retry passed all 19 development lanes
+and 1,943 test executions. The first outer run consumed 129.291 seconds
+and the retry allowed 2,270 seconds against the original 2,400-second
+budget. The first run retains its incomplete terminal. The reader
+re-admits the original 45 dependency lanes and four
+projections through the verified unchanged graph inputs.
+
+The two readers admit the current retained evidence and the preceding
+619-input receipts under their respective bindings. Default protects 47
+role inputs, and EP1 protects 58 including the Windows-only regression
+fixture. All 211 reader controls and the workspace strict-policy check
+passed on the four-file overlay. Independent review matched all role
+inputs, both exact rosters and 105 referenced evidence files. Both public
+campaigns remain closed with empty mutation inventories and equivalences.
+
+The existing stable-core `enumerate` and `coverage` lanes ran serially in
+WSL through the isolated default and EP1 entries. Independent readback
+matched the exact executed test binary/name pairs and LLVM line counts.
+The isolated work and source exports retired after retention.
+
+| GNU selection | Instrumented cases | Line results | Generated descriptors |
+| --- | ---: | --- | ---: |
+| Default | 288 | Five gates pass. Source policy 1,452/1,497 and library 1,008/1,055. | 880 |
+| EP1 | 585, including 293 KE | All 14 gates pass. Datagram 719/744, ledger 1,115/1,153, lowest 198/217. | 889 |
+
+All 217 current ledger descriptors and their rendered diffs match the
+preceding inventory. The other 12 unchanged EP1 owner inventories also
+match. The datagram inventory has 67 descriptors with a changed binding.
+Four retained E0277 ledger cases have a matching diagnostic dependency
+readback, and seven reviewed Group 05 candidates still need exact
+equivalence admission. Enumeration carries no mutation kill credit.
+Reconcile actual current per-file outcomes, including the retained
+chronology stops, before the 95% gate. The security-primitive measurement
+owner and the Windows-only transport owner require separate current
+metrics. These GNU lanes add no physical timing or Windows result.
+
+The certificate-bearing healthy public facade fixture reached the
+second exact MSVC Clippy/link and guest loader/selection preflight.
+Host available RAM fell from 2,354 to 2,012 MiB before dispatch against
+the 2,048 MiB floor. The collector stopped before changing guest trust
+or launching the exchange, and emptied the staged mappings. Keep this
+guest run open until Windows availability resumes. Production timing
+calibration, trusted date and installed-service trust remain separate.
+
+| Retained terminal under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `crypto-cng-protected-runtime-20261119/current-staged-combined-01.NzLuzL/reports/run-01/verification.json` | `0188b877d18537d9da98bb7ed53b6bb1aa0241df2bbe7fa8e602c266187b6bbb` |
+| `crypto-cng-protected-runtime-20261119/current-staged-combined-02.S3dvsZ/reports/run-01/verification.json` | `b9866c64480d4c852bf9a3ff78b162d97826050fedeb673b130639075939314d` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/default-01/terminal.json` | `c777c816715a8a8b39c56aa6ffdd5a5f7dda94fd0381b25c4d7b4074d240c974` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/ep1-01/verification.json` | `3c97fb9f99964ff78908807f1ad06c80ac830e617d8c65bd7c14d2e01896985a` |
+
+###### Protected elapsed placement and focused WSL qualification
+
+S2.1/W11-W01 TQ-01/TQ-08 and CHECK-17/19/24/25/27. The detached
+placement candidate retains inclusive elapsed bounds from the original
+application send and receive brackets in the normally joined protected
+report. The complete chronology is checked through the guarded commit.
+The commit instant does not extend the elapsed interval. The original
+capture, source revision and previous numerical disposition remain
+independent. The healthy scripted receiving control reconstructs the
+range from distinct brackets after a source replacement. A second
+control preserves unavailable measurement with an absent profile. The
+selected omission removed the range and the intended assertion failed.
+
+The first combined run stopped at rustfmt in the Windows-only healthy
+fixture before Rust tests. The retry changed only the three formatter
+hunks. Its exact 620-input product is
+`8f98bdae618d53c3b087809af6e904046db5a0ea3dbd0310d7634e829f22bae9`.
+All 19 lanes pass with 1,945 named executions: 586 EP1 and 288 default
+in each ordinary and optimized mode, 91 EP1 and 90 default doctests,
+and 16 selected Core executions. Format, GNU and MSVC-target compiler
+checks and Clippy, GNU rustdoc and the isolation control passed. The
+original 16.105-second failure and the 2,383-second retry cap stay
+inside the 2,400-second allowance. Independent readback matched all
+19 raw lane hashes, all six changed Rust files and the separate WSL
+MSVC test link for the same product. Work backing retired.
+
+The prepared Windows guest runner binds that exact linked test image.
+Native execution awaits Windows availability. Both closed readers re-admit the physical receipts, exact
+rosters and 45 graph lanes plus four projections for the 620-input
+product. All 212 reader controls passed. Both real campaign entry
+points refused. The new reader keeps the formatting stop and original
+cumulative closure; both 90% line and 95% per-file gates remain.
+Retain `receive_submitted(slot, None)`: the earliest missing production
+dependency is an acquisition/platform issuer with an original clock and
+mapping revision, validity and justified finite error across the whole
+exchange, and effective clock and power invalidation. Independent date
+and source-scale inputs remain required. Elapsed application bounds
+supply no calibrated packet or UTC placement.
+
+On staged product `9787ca8d…`, GNU EP1 instrumentation executes all 585
+binary/name cases and covers 405/413 executable lines in `measurement.rs`.
+The separate catalogue lists 122 exact generated descriptors. The
+focused `measure_for_source` run verifies its five selected descriptors
+against the original listing, then runs the 676-name baseline. Four
+variants are behaviorally caught and the compiler rejects one through
+the missing `ExperimentalMeasurement: Default` bound. Both the managed
+plain and joined protected cases catch the source-scale reversal.
+The other three catches reach the residual/coherence controls. This
+observes the selected five and leaves the whole-file 95% gate open.
+
+All 217 current ledger descriptors retain an exact map to their original
+raw partitions. The historical rows aggregate to 129 caught, 67 compiler
+refusals, 10 survivors and 11 timeouts. Source correspondence is
+104 identical, 100 uniformly relocated and 13 with changed local
+context. Four diagnostic dependencies and seven equivalence candidates
+have scoped review. The mapping excludes nothing from the current
+denominator and does not qualify the ledger. The chronology retry
+retains its separate 11-second remainder.
+
+The exact Group 06 GNU replay passed its 676 named baseline cases. All
+four original ledger variants compiled and failed the expected receiving
+test, then reached the same real loopback fixture before the test-phase
+60-second timeout. Cargo-mutants exited 3. The source trace showed why:
+a refused first reply leaves the worker waiting for a further datagram
+under its 60-second invocation deadline. The peer has a separate
+two-second receive timeout, and the collector actually joins the Engine
+worker before taking the peer result.
+
+A separate test-only candidate `c3b09d8b…` gives both fixture legs one
+checked four-second original control window. It preserves the existing
+submission and joined collection, reaps the peer, and reports the
+invocation result before a peer failure. Production deadlines, receive
+behavior and the 90/60-second mutation limits are unchanged. The fresh
+676-case baseline passed, and all four exact generated variants produced
+the named Phase, Capacity, Endpoint and Ticket failures with test exit
+101 in 23.36–23.76 seconds. Cargo-mutants exited zero. The ledger group
+used 1,135.407 of the original 1,350 seconds across its recorded attempts,
+including 228.565 seconds for the four-timeout run and 190.172 for the
+fixture retry. The earlier outcomes remain Timeouts. These four scoped
+catches qualify neither the complete ledger nor a different source
+candidate. The fixture correction and its receipt remain separate from
+the staged elapsed-placement source.
+
+| Retained evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `crypto-cng-protected-runtime-20261119/placement-combined-01.rqxeDJ/reports/run-01/verification.json` | `d03d54e071e137602acb4888b1aa6af0378393f7fe0943b7627ae4c99c7b86ca` |
+| `crypto-cng-protected-runtime-20261119/placement-combined-02.Gr8M0n/reports/run-01/verification.json` | `ebbc33d919d96b7ace9466e7a17a135bbf92ae0af88a839d8f075572385b6107` |
+| `crypto-cng-protected-runtime-20261119/managed-public-healthy-01/build-04/verification.json` | `8613641e6c57c9fb6703e44d3a2b66bbd3d1d4a77415f14df299080785ebdd0c` |
+| `crypto-cng-protected-runtime-20261119/placement-closed-overlay-01/coordinator-readback-01/reader-tests.log` | `38015fecb0ce3841a472ff15927dbb967c27cb6e20c011eb1bc6fe3fcd60e2b7` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/measurement-01/result/verification.json` | `7db5c739d9c1d918d4284c67afaa45de9d6b47434dd0f2629499295a6ff19fa5` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/measurement-01/causal-five-result/verification.json` | `88642386e05e490216251ab3d71fc8621d48bc17d87bc960bfda0043ad4c5ece` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/ledger-217-dispositions.json` | `c7da369c743506e4ad2944941c9b9220ce1aaffc9ebbf5e0fa48301f9214683b` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/ledger-group06-replay-01/replay-result/verification.json` | `72749f79ef1fca85c0fceaf9ac75b49f576610d12ee0210a3c273ad57354add8` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/group06-test-drain-fix-01/replay-result/verification.json` | `00eb1b021df359a8246b4a30ba31d1894b2b646310d5138f686b7d560b6033d6` |
+
+###### Elapsed-placement metrics on the staged source
+
+S2.1/W11-W01 and CHECK-25/27. Product `8f98bdae…`, staged tree
+`92a2872c4be8a18f339ac13c9897de37e74d388a`. One GNU EP1 instrumentation
+run executed all 586 cases, including 294 KE. The physical LLVM line
+counts independently match the file records. The export has no branch
+counters. Enumeration retained all 278 typed and rendered descriptors.
+
+| Source owner | Covered executable lines | Current generated descriptors |
+| --- | ---: | ---: |
+| `measurement.rs` | 417/423 | 124 |
+| `datagram.rs` | 726/751 | 67 |
+| `managed_preview.rs` | 202/221 | 87 |
+
+All three pass the 90% line gate. The separate datagram cohort ran the
+complete 677-name baseline and all 67 generated variants using four
+workers and the original 90-second Build and 60-second Test limits.
+The raw GNU result retains 26 behavioral catches, 40 compiler
+refusals, one missed variant, zero timeouts and exit 2. The raw
+26/27 result stays incomplete at the GNU gate. The one miss belongs
+to the Windows-only `reached::exchange` body. Its exact selected
+replacement reaches E0277 for `ProtectedCompletion<'_>: Default`
+at `datagram.rs:1432` in the WSL MSVC library check. The healthy and
+restored neighboring sources both compile. The joined active-target
+adjudication preserves all raw outcomes and gives that compiler
+refusal zero kill credit. For the selected file, 26/26 viable
+variants were caught and the unchanged 95% gate passes. The other two
+files still need complete mutation outcomes. Both public campaigns
+remain closed. Native timing, exchange and production admission retain
+their existing scopes.
+
+| Retained evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/placement-metrics-01/result-01/verification.json` | `3851c19531d096cc4e2ea55b5da523d65d678488fe85355484453ed7b9192b35` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/placement-datagram-full-01/result-01/verification.json` | `bc39107d31f4ffccb48344f78dfdf353dc95e6ff93a7ff76dea3d36c2557244e` |
+| `crypto-cng-protected-runtime-20261119/placement-msvc-datagram-01/run-01/verification.json` | `234a0de235d89fd74d4cb3eece29500eb2422a5f7b4bf34d991ad370b4664733` |
+| `engine-closed-d1ec8a8-metrics-pyv0lfsx/placement-datagram-full-01/result-01/coordinator-target-join.json` | `cc625c6ae473a173e33ae04802ecb38edb50f02b0e0deedad58a4815d3a950c6` |
+
+###### Managed report active-target mutation result — 20 November 2026
+
+CHECK-25/27. Fresh-context independent review matched the prior placement
+product `8f98bdae…`, all 620 inputs and the 677-name baseline. Staged tree
+`a8aa85ce…` differs from the instrumented tree only in the two task and plan
+documents. The `managed_preview.rs` GNU line result is 202/221 (91.40%).
+The LLVM export contains zero branch counters.
+
+The complete 87-descriptor GNU result has 49 behavioral catches, 36 compiler
+refusals, two misses, zero timeouts and exit 2. The raw 49/51 result remains
+incomplete. Each missed Windows-only wrapper was replayed on the active MSVC
+target in WSL. Both exact variants produced E0277 for the respective report's
+missing `Default` bound. The healthy and restored builds emitted Engine metadata.
+The joined result passes the 95% generated per-file gate with 49/49 viable
+variants caught, 38 compiler refusals, zero exclusions and zero unresolved
+variants. Compiler refusal adds zero behavioral kills. Only whole-body
+replacements were generated. The retained placement consumer and omitted-field
+control supply separate behavior evidence, with no extra mutation credit.
+Windows facade execution and generation gaps remain open.
+
+| Retained evidence under `~/.local/share/nevrotick/engine-closed-d1ec8a8-metrics-pyv0lfsx` | SHA-256 |
+| --- | --- |
+| `placement-managed-full-01/result-01/verification.json` | `8c0bac7cedb5828c0013a0ab6f0b13946b35d8c1f454dd554cfb5c7b52688137` |
+| `placement-managed-msvc-01/run-01/verification.json` | `139b06a711475357976d65bf5dd731c37ff6c8c27d807b5821c1dae9b550d9ff` |
+| `placement-managed-full-01/result-01/coordinator-target-join.json` | `98c59a88a8d4ef46a192a86e934e4c542f5b21c6865ba038ce2ea07537de9c0d` |
+
+###### Managed Preview power observation — 20 November 2026
+
+S2.2/W11-W02 and CHECK-11/21/25/27. The public Preview now uses the existing
+Protected invocation's reserved worker slot and power registration before actual
+submission. The original invocation Stop handle fences Preview's seal. A
+registration refusal rolls back the worker reservation. Normal joined retirement
+still owns the result, and explicit close reports independent observer cleanup
+without replacing the original outcome. The original issued configuration still
+governs Preview, which has no UDP send. Native registration retains its single
+attempt per process.
+
+Checkpoint, preflight, regression selection and Rust contract skills are applied
+to the actual producer-to-worker path. The pinned predecessor `a50b1c23…` fails
+the two exact registration and pre-seal Stop controls at their independent
+assertions. Four neighbors pass. On the 620-input product `d0a05f35…`, all six
+focused cases and rustfmt pass. The late-event neighbor injects after actual
+joined collection. The interrupted first attempt retains its four raw exits.
+The resumed isolation, GNU and MSVC-target Clippy, 91 GNU doctests and MSVC-target
+rustdoc lanes pass on the same input map. The previous boot journal measured
+67.804 seconds to stop. The resumed run consumes 76.778 seconds after the
+conservative 70-second charge within the original 540-second allowance. Owned
+build backing retired. The three Rust paths are integrated in the working tree
+above the unchanged staged checkpoint. The earlier generated report score stays
+with `8f98bdae…` pending renewed current-source admission and metrics.
+Fresh-context independent review matched all 620 working product inputs, raw
+lane hashes and protected worker consumers. Three KE direct pins and the test
+roster changed. The source-policy direct pins still match but its whole-product
+binding also needs renewal. Refresh `ke_core` and `ke_managed_preview` evidence
+before their selected metrics. The two public campaign flags stay closed.
+
+The first integrated GNU EP1 ordinary lane executes the exact prior nine-target
+roster plus the two new controls, with all 588 passing. The optimized lane
+stops before any test with a compiler SIGKILL and Cargo exit 101. Its bootstrap
+per-process CPU cap was 90 seconds. The service peak was 2.5 GiB against an
+8 GiB aggregate cap. The first invocation consumes 173.251 seconds and retires
+its scratch. Retain this incomplete terminal and the successful ordinary lane.
+The failure-triage retry reuses the previously reviewed 240-second compiler
+CPU limit only for the optimized command. It preserves the source, test roster,
+four-GiB process address-space cap, two Cargo jobs and isolation. The aggregate
+memory cap is six GiB. All 588 optimized cases pass across the same nine targets.
+The optimized execution adds no coverage or mutation result. The retry uses
+174.969 seconds of internal elapsed time. A 175-second charge for the first
+attempt brings the recorded internal total to 349.969 of 650 seconds. The unit
+is inactive and both attempts' owned temporary builds have retired.
+Independent final review matched both physical rosters, including 296 KE cases
+per mode. The optimized command changed only the CPU limit and owned temporary
+mount paths. Combined unit runtime, including startup, was about 361 seconds.
+
+The new offline Sandbox passed its guest identity, loopback and runtime readiness
+readback. The protected healthy test runner now pins that guest with its same
+reviewed input bytes. No fixture, temporary trust or native Preview behavior was
+executed in this setup.
+
+| Retained evidence | SHA-256 |
+| --- | --- |
+| `managed-preview-power-next-01/focus-01/red-focused.json` | `0b7a971cda316c3c9bb304668bc53b6c9e12134d00666bbf2dfb2e2d727e99cb` |
+| `managed-preview-power-next-01/focus-01/green-focused.json` | `74e45b3458b0eaa55f859e3971efd9157930dfd92a607af1f470e0284e1f3093` |
+| `managed-preview-power-next-01/resume-01/verification.json` | `c0c087b1723ed66efb6d83df684a56bda003ec543a4d09ca9698843aab0b2079` |
+| `managed-preview-power-next-01/integrated-01/verification.json` | `65bbcee6c7cf763679120524766058399747a39f03d850e51a9eb87edcce3176` |
+| `managed-preview-power-next-01/integrated-optimized-02/verification.json` | `5d8e73433bfd435366fcab34aea22f8b6b1c400323932ec4ddfcd8f9deffde7b` |
+| `crypto-cng-protected-runtime-20261119/owned-sandbox-resume-5c12948e-b410-4dc9-9389-f1d0b9c33a84/readback-01.json` | `0dfa8e935e1f3e081bb4ae59cde1effa25236eb02159547fe1c52b8fdc75ccea` |
+
+###### Managed Protected public probe in the offline Sandbox — 20 November 2026
+
+S2.2 and CHECK-6/9/17/21/25/27. The exact MSVC link for placement product
+`8f98bdae…` runs the public managed Protected probe against the admitted
+certificate-bearing loopback peer in Sandbox `5c12948e…`. One selected
+test executes and passes. The peer completes TLS/KE, derives two directional
+exporters and answers the 252-byte protected UDP request. The joined client
+observes one authenticated reply, original source configuration and one charge
+each against the source and endpoint. Its retained measurement remains mapping
+unavailable. The observed client output carries `eligible=0 fresh_sync=0`.
+
+The collector confirms two normal child exits, all four capture streams at EOF,
+listener ownership, and baseline certificate-store restoration after removal of
+the temporary root and CRL. Guest scratch is absent, the two input/output mappings
+are empty and the guest remains available. The earlier memory-floor refusal
+stays recorded. This is actual native success for the frozen one-shot fixture.
+Independent readback matched the exact client and peer hashes, all retained
+output files, both process outcomes and the store-restoration sequence.
+The working Preview delta, installed-service trust, repeated production
+acquisition, physical power delivery, calibrated timing and Core admission
+remain separate obligations.
+
+| Retained evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/managed-public-healthy-01/kepublic_625df3cbbe6f` | SHA-256 |
+| --- | --- |
+| `verification.json` | `5543dc052ac83c4e0db4919f28c936ae1d6d842370c3bca69cc3aa118add5eb7` |
+| `healthy-ke.json` | `feec498f644e7d27d546a0a2b6eafb889d2bf49b26b5526c181692e89fe7733b` |
+
+###### Preview power line and generation readback — 20 November 2026
+
+CHECK-24/25/27. On the exact `d0a05f35…` working product, the controlled GNU EP1
+LLVM run executes the same 588 names as the ordinary checkpoint. Both selected
+files pass 90% executable-line coverage. The KE module has 727/795 lines
+(91.45%) and the managed report has 233/258 (90.31%). The export contains zero
+branch counters. The pinned enumerator lists 127 and 94 descriptors respectively.
+These observations create zero mutation kills. Both current 95% file gates and
+role admission stay open. The raw selected metrics gather evidence under the
+unchanged stable tool and vendor closure. The two public campaign flags stay
+closed. Three incomplete setup attempts retain their results. The successful
+85.374-second run uses the admitted private mount arrangement and retires its
+temporary build backing.
+
+Independent generation-gap review found that the earlier managed Stop test
+delivers during entropy. It cannot distinguish removing the later final-commit
+check. The actual collection-busy fixture also checked fallback Stop failure
+through Protected only. Add the final managed prepared request Stop and healthy
+neighbor, and check the actual Preview error projection with independent cleanup.
+The earlier healthy and negative named cases and previous mutation outcomes keep
+their exact candidates. Prefer bounded state/ordering histories through actual
+consumers for the new wake and commit behavior. Structured protected codec fuzz
+retains the existing target-specific hold and raw-input owner. A wake-only change
+does not add a new wire parser or different accepted packet shapes.
+
+| Retained evidence under `~/.local/share/nevrotick/engine-closed-d1ec8a8-metrics-pyv0lfsx/managed-preview-power-next-01` | SHA-256 |
+| --- | --- |
+| `metrics-retained-04/result/verification.json` | `27033833f5dc7370d262454299b2d2b7d4da080bbf80ea7cac62df31559592be` |
+| `metrics-retained-04/result/coverage.json` | `20716bdea235d41a7bf89260cdd473bee53458dec5e4a50abf9e77886806da55` |
+| `metrics-retained-04/result/descriptors.json` | `2638d8a400517451f4c84db9ea564443bd2bb8032183d60e22e9103fd3062a65` |
+
+###### Protected receive retirement on pending policy changes — 20 November 2026
+
+S2.2 and CHECK-6/11/21/25/27. The one-shot Protected driver watched source and
+endpoint policy before cookie checkout. Its pending read selected only socket
+readiness, Stop and the expiry timer. An independently admitted plain alias
+could revoke the same endpoint while a quiet protected request stayed live to
+its deadline. The final receiving checks already refused stale publication.
+The bounded repair gives the pending wait a watch derived from the actual
+submitted stamp and backend allocation. It checks the original configuration,
+restriction epochs and pending authority. RATE and other future-send floor
+changes preserve the current reply. Contention waits for the existing release
+signal. The initial cutoff, work allowance, already charged send, authenticated
+receiving guard and actual teardown order still govern the invocation.
+
+The separate worktree tests use a counting waker and an independently released
+read gate through the real driver with its scripted backend. They exercise five
+event cases: shared-endpoint DENY, shared-endpoint RATE, another port, Stop and
+equal-value replacement with a new revision. The oracle observes one send,
+relevant wake or absence, immutable cutoff, original charges and selected
+receipt or refusal. These are bounded deterministic event cases. The two Preview
+cleanup checks and the final sealed-commit control share this focused run.
+
+The first source run stopped at the test helper's unnecessary qualification.
+After removing it, three intended predecessor assertions failed and four healthy
+neighbors passed. All seven selected tests passed on the isolated first green
+candidate `d71994ca…`. The formatter then refused one test hunk. Both attempts
+retired their temporary builds. Fresh independent review identified the expiry
+timer's direct `Deadline` return as a second ordering issue. The focused old
+timer test reached `Deadline` after Stop had already latched and before its
+notification. The timer now leads through the existing fresh Control guard.
+The reached control returns `Cancelled`, while expiry without a Stop still
+returns `Deadline` and a genuine healthy reply succeeds.
+
+The final formatted product `f9309a2b…` passes all eight focused tests,
+workspace rustfmt, GNU default/EP1 and MSVC-target EP1 Clippy. A separate
+seeded control drops only Preview's fallback Stop failure while preserving
+the close code. It compiles and fails the actual Preview projection assertion.
+The healthy projection retains the actual busy/stop-failure and close facts.
+This adds zero generated mutation kills. The formatted six-path follow-up is
+integrated in the working tree above the unchanged original stage. Both worker
+worktrees and all focused build backing retired after receipt and patch retention.
+The integrated GNU selection matches all 620 product inputs and passes 288
+default ordinary cases, 594 EP1 ordinary and 594 EP1 optimized cases, and 91 EP1
+doctests. Both EP1 modes add exactly the six new tests across the same
+nine binaries. The isolation control passes and the owned build retires after
+254.353 seconds. Current role admission, selected file coverage and mutation,
+and native observation of the new pending path remain open. Source review also
+identified the later Control-stop accounting boundary after an actual native
+receive. Add a controlled known/unknown receipt and Stop/expiry witness before
+changing that owner. Contention-release and repeated wake trajectories remain
+separate scheduling controls.
+Apply the source-policy metric obligations to both reached profiles. The shared
+constructor reaches default callers. The new pending observer and its refresh
+are EP1 Windows/test arms. Retain their EP1 line and descriptor evidence as a
+separate selected readback until the target-side mutation owner is admitted.
+
+| Retained evidence under `~/.local/share/nevrotick/engine-closed-d1ec8a8-metrics-pyv0lfsx/managed-preview-power-next-01` | SHA-256 |
+| --- | --- |
+| `pending-preview-focus-01/behavioral-red.json` | `0844ed375b080795e32543260ea9931ee789ca591a6adef17a71b22fce70f9f4` |
+| `pending-preview-focus-02/behavioral-red.json` | `ae54fc55019ad4f4f01c929cf45f78367000ccf2de73113c72b4b31650d31d36` |
+| `pending-preview-focus-02/behavioral-green.json` | `d722482677fb6b19cf854de89f6df64bab0e93bd12afe2ad63279981f6a84ff4` |
+| `pending-preview-focus-02/format.json` | `eaad21ab3924190cedad4c88ca4eaca85be2ed7541e32a4bed477e6824e41318` |
+| `pending-preview-focus-03/timer-red.json` | `8b639c372156fb66a16613377d10472a34ede6d39aeb269189663538b535b635` |
+| `pending-preview-focus-04/verification.json` | `cacbb8ae3640120b300c6f016ca173c203c5293fa35f3e6f07bfdd0ae7237f71` |
+| `integrated-pending-01/verification.json` | `4eb4379a6c49b5d377fa49da536967043221b4340f92c30bdefec20f42b82245` |
+
+###### Protected receive debit after Control withdrawal — 20 November 2026
+
+S2.2 and CHECK-6/9/11/25/27. A socket read can consume a datagram before
+the next Control observation refuses further work. The predecessor
+`f9309a2b…` left both original Pending counters unchanged in four
+reached tests covering known and unknown extent after Stop and expiry.
+Pre-read Stop and a live rejected-then-matching reply passed.
+
+The concrete receive driver now hands the ledger a sealed observation of
+one consumed datagram from the original backend. Known extent spends
+one frame and the original byte count. Unknown extent spends one frame
+and exhausts the byte allowance, retiring Pending with at most one
+recovery intent at the original cutoff. The original Control refusal
+remains primary and prevents packet staging and publication. An adapter
+that consumed nothing creates no debit. The ordinary receiver and the
+scripted successor use the same accounting path and keep their existing
+final admission guards.
+
+Separate worktrees owned the Rust contract and the lifecycle/boundary
+tests. The first repair passed all 11 exact EP1 cases and stopped on
+GNU Clippy's `single_match_else` diagnostic. An independent review
+checked the adapter/Pending identity, failure order, and unchanged
+semantics of the lint correction. The final 620-input product
+`acc427ae2e19bf48011b4abdfa01ef9fdd973929a16aa068c8e29101c698333d`
+passes the 11 cases, workspace formatting and EP1 Clippy for GNU and
+`x86_64-pc-windows-msvc` in WSL. The three Engine changes are integrated
+in the working tree over Git `d1ec8a8`. The staged tree `a8aa85ce` and
+Cargo graph and toolchain inputs match the preimages. Both detached
+worktrees and focused build directories retired.
+
+The integrated WSL execution passed 600 ordinary and 600 optimized
+EP1 cases across the same nine test binaries, including 308 KE cases per
+mode. The prior roster plus exactly the six new cases matches both raw
+outputs. All 91 annotated Rustdoc identities match the prior selection
+and passed. The isolation control passed and the owned build retired
+after 226.968 seconds. Default ordinary evidence remains scoped to
+`f9309a2b…`. All three paths in the debit patch enter through the EP1 gate.
+
+The full combined WSL producer passed all 19 lanes on the same product in
+366.264 seconds within the 2,400-second allowance. The 1,973 named
+executions include 288 default and 600 EP1 cases per build mode, 90 default
+and 91 EP1 doctests, and 16 Core cases. All raw exits and identity hashes
+match. The exact prior graph contributes 45 lane records and four
+projections. Independent review confirmed the unchanged graph inputs,
+19 lane commands, resource limits and the exact 14-case EP1 delta from
+placement. The first preparation stopped at a documentation pin assertion
+with zero lanes. The completed capture binds both the frozen staged
+documentation and the live working copies. Both owned outer tmpfs
+directories and the inner build have retired. The ext4 preflight reclaimed
+192,282,624 bytes from duplicate document assets and superseded binaries.
+
+Both closed roles now admit the combined receipt from the working tree
+with 47 default and 58 EP1 input pins. The isolated reader suite passed
+all 212 controls. Its first strict-workspace invocation stopped at the
+missing `rustup` search path. The configured manifest-adoption check then
+passed with the admitted tool path and the same 16 configuration hashes.
+The historical placement bindings and checks retain their original scope.
+To replay the isolated reader suite, reconstruct the frozen staged tree
+and overlay the eight pinned Rust files before applying the reader patch.
+
+The registered GNU coverage and catalogue refresh below completes the
+line and listing observations for this candidate. The 95% per-file
+mutation gates, native evidence for this receive path and held protected
+codec fuzzing remain open. The
+[W11-W01 timing reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+records the independent UTC and uncertainty inputs needed before positive
+production measurement admission.
+
+| Evidence under `managed-preview-power-next-01/protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `red-01/verification.json` | `0c4bae9453fa47756afd001fa048749a528a03d3a0e79e28fd216edf54c4cff7` |
+| `green-02/verification.json` | `25e88c59bdfa694ff653430552092d0a1e26700e2f413e23ef3f3f33d622169a` |
+| `green-03/verification.json` | `98d177ca71268c8e8ac499cf44d7398c7044da93757b107dcf956290d14dac12` |
+| `integrated-03/verification.json` | `9ddbc82842ca9819e77c86a82a0205846575e68fa96f8e0b847d639b7e4da9d4` |
+| `retired-visual-export-cleanup-01.json` | `f831021fb1c2b97175e4601f0d2d63de1d3baa80e32e40272e3dae2817be41b7` |
+| `combined-01/admission.json` | `e29ea3c9d6fe505d977f5d5134b90a70f45ee3afa8f08e8799631a9f0a37b950` |
+| `combined-01/reports/run-01/verification.json` | `b1f628d08e4e044edbf010cc919ebc32be0358d8d44330187775526d31de472e` |
+| `combined-01/closed-role-verification.json` | `60378da378aa4c7eb1fc5c01f23dc2e98fad84f234564da70208958f99cc62f4` |
+| `combined-01/strict-workspace-02.json` | `37f27934a967a2950bc6bdf2a316971cdd4daf1b4e8f586fe2f9e903b90157b0` |
+| `combined-01/integrated-closed-roles.json` | `54d085191d1dcc4fe4de742d605728d9c87cf6e7c751197395ed000249ff3d75` |
+| `combined-01/outer-work-retired.json` | `8fe63bbdd591a2ab2223450ad53907595574db14aba73555beb03740b85a736e` |
+
+###### Current protected receive coverage and mutation catalogue — 20 November 2026
+
+CHECK-25/27. The registered default and EP1 verifiers ran on the exact
+620-input `acc427ae2…` product with the admitted role and tool hashes.
+Instrumented execution passed 288 default and 600 EP1 cases, including 308
+KE cases. Independent readback matched each case to its actual Cargo
+binary. All five default and all 14 EP1 registered file-line gates passed.
+The separate EP1 `source_policy.rs` observation used the same 600-case
+roster and reached the Pending receive and ordinary floor operations.
+The LLVM exports contain zero branch counters.
+
+| Affected file | Graph | Executed lines | Listed descriptors |
+| --- | --- | ---: | ---: |
+| `source_policy.rs` | Default | 1,458/1,503 | 319 |
+| `source_policy.rs` | EP1 companion | 1,726/1,782 | 319 |
+| KE `mod.rs` | EP1 | 727/795 | 127 |
+| `association/ledger.rs` | EP1 | 1,200/1,242 | 226 |
+| `datagram.rs` | EP1 | 762/787 | 71 |
+| `managed_preview.rs` | EP1 | 233/258 | 94 |
+
+The EP1 companion export observed executed instances of
+`observe_pending`, `refresh_pending` and `refresh_observing`, with
+positive line counts at the receiving and floor calls. Its 319 descriptor
+records, including rendered diffs, match the default listing. Report
+target activity separately for EP1-only methods. The whole registered
+catalogues contain 886 default and 909 EP1 descriptors. Both exceed the
+512-descriptor campaign cap and require bounded per-file execution.
+The listings provide zero mutation outcomes.
+
+The first supervisor stopped after the successful default enumeration at
+an analysis-tool versus role-policy digest comparison. The corrected
+supervisor verified both pins and reused that physical list. Its three
+remaining lanes finished in 173.028 seconds, with 60 seconds charged for
+the first attempt within the original 1,320-second allowance. The EP1
+companion finished in 109.396 seconds. All three owned build trees retired.
+
+Independent inventory review found body replacements without isolated
+mutants for individual policy wakes, timer precedence, and ledger debit
+before refusal. Retain the actual-driver Stop/expiry and healthy debit
+witnesses with zero generated kill credit. Pending contention/release and
+repeated wakes retain separate control gaps. The [final-known-frame cases](#final-known-frame-after-control-withdrawal)
+provide a later targeted witness for retirement after Control withdrawal.
+
+The private datagram cohort completed all 71 descriptors in 610.102 seconds
+under the original four-worker, 90-second Build, 60-second Test and
+1,200-second mutation bounds. The GNU baseline passed the exact 600 ordinary
+and 91 doctest names. The raw GNU result retains 26 behavioral catches, 44
+compiler refusals, one inactive-target miss, zero timeouts and exit 2. Its
+26/27 raw gate remains incomplete.
+
+After the GNU lease retired, the MSVC cross-target compiler control took 45.379
+seconds. Healthy and restored sources each produced fresh Engine MSVC library
+metadata. The exact generated replacement in the Windows-only `exchange` body
+exited 101 with the sole error E0277 at `datagram.rs:1489`, requiring
+`ProtectedCompletion<'_>: Default`. That descriptor receives zero behavioral
+kill credit. The joined exact-candidate result is **26/26 viable caught**, with
+45 compiler refusals, zero unresolved survivors, zero timeouts and no
+equivalence exclusions. The generated `datagram.rs` 95% gate passes.
+
+The mutation and independent-review procedures reconciled all 71 descriptors,
+actual phase commands, named failures, and 153 retained GNU files. A
+fresh-context reviewer also checked the four MSVC lane records and the two
+retired build directories. All 620 product and 633 analysis bindings match
+the working checkout. The generation gaps above, other critical-file results
+and current Windows runtime evidence remain open. Public campaigns stay closed.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `host-metrics-01/result-01/verification.json` | `d1b5d9262352f5267e8c240d0a85bd73126ac43463236701ddb83022ed41e2e2` |
+| `host-metrics-01/result-01/source_policy-enumerate/verification.json` | `2209d9387849726fd02bab8a7324a5fad6132ef252fc4996e8d6753d4d5b890a` |
+| `host-metrics-01/result-02/verification.json` | `c7752eecb1b9ae27154607e6460e6c3d5efc70b9c1908f73bb47dd409eb8c813` |
+| `host-metrics-01/result-02/ke_association-enumerate/verification.json` | `7ae767a3342033db4a95414e2b690373b53bf66193e33588e260476a64cb55f0` |
+| `source-policy-ep1-01/result-01/verification.json` | `2b2557f25d7ad560e8a5e0b6bda1a436a5c044bc42f6df32629923a58cd4c170` |
+| `datagram-mutation-01/run.py` | `101f1b58439987b012f3e576abb3e4b35c96cab74f51cf603497c45be9d2b748` |
+| `datagram-mutation-01/result-01/start.json` | `5dd5a099eea858861e832b296c91a78bb29399146734ba07b72c563df7775fe6` |
+| `datagram-mutation-01/result-01/verification.json` | `9ec115f0b42415f4494532f3da9522d3af40a4ee6d95db2a96c51e7dcfba243c` |
+| `datagram-mutation-01/result-01/replay/verification.json` | `bc5abf56a7d1be8c29cf998d05c7e6395178d3d67c5e890c74399e3aa556cd41` |
+| `datagram-msvc-01/preparation-02.json` | `7628b2d9af5c2cc0263be8bc52dac1c34f4f28546d9d8e7005c829ff5286ad49` |
+| `datagram-msvc-01/run-01/verification.json` | `41da8d0429308840c4fe60ddfc89a8017b39237b751226dea1975e263d44e426` |
+| `datagram-mutation-01/result-01/coordinator-target-join.json` | `a6507f8622f115537c3ea641c735a0fd80d9d7753583c4235fc9d92ac48d06bc` |
+
+###### Current protected receive Windows link and Sandbox admission
+
+S2.2 and CHECK-6/9/17/21/25/27. The configured native link command ran in
+isolated WSL on `acc427ae2…`, with one Cargo job and the current
+MSVC Clippy receipt. The first attempt linked successfully and stopped
+export at the shared 64 MiB artifact limit after 93.262 seconds. The retry
+retained that limit for the image and used a separate 256 MiB PDB limit with
+the durable-space reserve. It finished in 105.405 seconds and observed the
+PDB alone above 64 MiB. Both attempts fit the original 360-second allowance
+and retired their private build trees.
+
+The retry emitted the 15,457,280-byte Engine EP1 libtest image and its
+103,821,312-byte PDB. Cargo attributed both to the exact MSVC target and
+feature. Boundary isolation, raw PE and bundled LLVM readback passed. Fresh
+independent review matched the raw PE and PDB GUID and age, the 620 product
+and 633 analysis paths, and the retained artifact hashes. Static image
+declarations, native process mitigation and runtime results have separate
+evidence. The latter two remain open.
+
+Sandbox and environment preflight matched the owned offline guest, available
+host memory of 6,095 MiB and the installed Visual C++ runtime. The separate
+interactive-token control returned guest exit 44. The WDAG desktop token had
+Administrator enabled. The ordinary-user roster awaits a launch path with an
+observably restricted token and confirmed child completion. The fixed 16
+selectors match the current host roster. They include two actual IPv4 UDP
+cases and scripted receive debit, Pending policy and Preview controls. The
+guest result reader passed one synthetic success and four refusal controls.
+The roster has zero native executions and uses neither temporary trust nor
+certificate confirmation. The guest remains available.
+The prepared dispatcher uses `ExistingLogin`. A suitable launch must verify
+the effective token before staging and retain cleanup custody for prelaunch
+refusals. This preparation has neither staged the roster nor changed accounts.
+The owner's readiness recheck reached the same guest using Sandbox CLI
+0.8.114.0. The runtime-presence check passed, and the interactive token again
+returned guest exit 44. This roster requires no installation or confirmation.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `native-link-01/run-01/verification.json` | `7a3aa60940928d38f76940be0da04c2f407b86ac66eb8409c461a6c3e17129b1` |
+| `native-link-01/run-02/verification.json` | `a494b8ea5cb1b30c5fadb9f93f5575ebc1ff8fa29c621c5a7b75583c6b3f9c46` |
+| `native-link-01/run-02/engine-tests.exe` | `e1f32ebcbbe87057ee07522c9725d1c89b9536cc967fe1c46e4680682cbcca3f` |
+| `native-link-01/run-02/engine-tests.pdb` | `061458fd44a274409f3d982c158c38ef1b14aa08522b4187f22fbe3f99278f11` |
+| `native-certfree-readiness-01.json` | `feaf0d2693c8b9d33fb39c245106075f9251d1e9ec019a306ae84af89b2447cd` |
+| `native-certfree-token-01.json` | `430d21c51430c3f087cb8f2690b7c8b6f4cfad7dfeecc8aad58786c66b603eff` |
+| `native-certfree-token-01-command.json` | `70518311093400a1c8203a003245a3125f1a2602adfa8ac94b43276adbc48731` |
+| `native-certfree-01/dispatch-certfree-02.py` | `dd8c3e94d98ea3ead53b633adad5f54a700e4bb389cd91bbdbd6320ecfeaac8b` |
+
+###### Current ledger receive-accounting mutation partition
+
+CHECK-11/25/27. Current `acc427ae2…` catalogue review matched 198 relocated
+descriptors to the 217-descriptor predecessor and identified 28 current new
+or changed-context rows. Correspondence supports selection. The affected
+callers and tests require current execution. The selected 13-row subset
+challenges discarded datagrams, Pending and adapter checks, unknown extent,
+and exact frame and byte accounting. The actual filtered enumeration matched
+the pinned typed and rendered records. The exact 691-case GNU EP1 baseline
+passed.
+
+The four-worker run recorded all 13 rows in 309.444 seconds. Ten were caught,
+one was compiler-unviable, and two timed out during Test. The native tool
+returned 3 and the verifier returned 1. There were zero raw misses. The two
+timed-out variants compiled successfully and reached failing receiver cases
+before their 60-second Test cap. The original timeout outcomes and raw
+10/12 viable result remain incomplete. The generated subset supplies no
+whole-ledger pass. Both public roles remain closed and the owned backing
+retired.
+
+The failure-triage review selects two existing unit cases for the same
+exact rendered changes and the current healthy and restored source. One
+requires the Pending reply to retain its authenticated header. The other
+requires the actual consumed-unknown driver path to report the original
+Stop, retire the request and exhaust byte allowance. Both exact variants
+compiled and exited 101 in isolation. The Pending variant returned
+`Ledger(Phase)`. The adapter variant returned `Ledger(Ticket)` where the
+driver requires `Cancelled`. The healthy and restored controls each passed
+both selectors. The focused run finished in 119.043 seconds and retired
+its private build tree. The two service runtimes total 428.689 seconds,
+with 430 seconds charged against the 1,350-second allowance.
+
+These two causal witnesses receive zero generated kill credit and preserve
+the original Test timeouts. The [final-known-frame cases](#final-known-frame-after-control-withdrawal)
+now cover the exact exhaustion and coupled deadline. The remainder of the
+226-descriptor inventory stays with this owner and its unchanged 95% gate.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `ledger-accounting-mutation-01/input-preflight-01.json` | `bb4ca535e77112b14f6a191571d3ed5712761e151ffe876419b028810380e78f` |
+| `ledger-accounting-mutation-01/result-01/verification.json` | `b20a8570be655cfede76fe3e940ed073049a84684484dd72baa675c7875d765a` |
+| `ledger-accounting-mutation-01/result-01/replay/verification.json` | `ecdb050d2c451bb229de8f53a2b73b6ddb87e146cbb81820b3ab0ee35e1ca2f0` |
+| `ledger-accounting-mutation-01/result-01/replay/work/witnesses/mutants.out/outcomes.json` | `50edda0a3047713fcf0486329731fcf4da38586fc2224de2e0c95bbe4bc1a727` |
+| `ledger-accounting-direct-01/run-01/verification.json` | `bde89a218e3056f6ba3bd7efc21b8f039ec4ad04150cd36c99153e28a2bd1527` |
+
+###### Final known frame after Control withdrawal
+
+S2.2 and CHECK-11/25/27. The lifecycle and regression review reused the actual
+scripted receive driver, with 31 independently authenticated zero-cookie
+refusals before the selected known frame. The fixture now selects the receive
+ordinal for the existing post-capture hook. The three cases arrange Stop,
+expiry, or Stop latched before expiry with both conditions observable when the
+capture returns. Each asserts one send, 32 reads and one packet left queued.
+The request spends the original budget to zero frames and 127,088 bytes,
+retires to Idle, publishes no receipt or replacement cookies and emits exactly
+one `ReceiveWork` intent at the original cutoff. The coupled case preserves
+`Cancelled`. The existing first-frame controls still observe staging refusal
+directly. The new cases observe ledger retirement and publication.
+
+The 620-input test-only candidate `0eb50c7f…` passed all 11 selected GNU EP1
+cases. The isolated retirement omission made all three new cases fail at
+`Pending` versus required `Idle` with the same charged counters. The healthy
+final-frame neighbor passed. After restoration all four cases passed. Workspace
+format and GNU/MSVC-target EP1 all-targets Clippy passed with warnings denied.
+The shared bounded runner retired its scratch after 138.310 seconds. Fresh
+independent review matched all seven lane hashes and the sole changed input,
+`datagram/tests.rs`. The checked test input is integrated in the working tree.
+
+This is a deterministic boundary check through the original Tokio driver with
+scripted I/O. The isolated control adds zero generated kill credit. The earlier
+full roster, catalogue, metrics and Windows artifact refer to `acc427ae2…`.
+Current affected EP1 development and role admission need rebinding before the
+next per-file catalogue execution. Static review on the previous snapshot
+selected the 15 remaining changed-context ledger rows and identified two
+potential behavioral Pending-policy controls among them. Their current
+compiler and generated outcomes remain open.
+
+| Evidence under `protected-receive-debit-01/final-known-frame-01` | SHA-256 |
+| --- | --- |
+| `candidate.rs` | `e3eb530ab7ad1e59a438d96bcc7406a8ca2a7d4f9722943c3445065dc64d9dc6` |
+| `launch-command.json` | `0a3952f3ed2b99457148b1bbddc455d515e0bd404cd503822a0db5759036aa4e` |
+| `run-01/verification.json` | `3335efdb9098640a888223f3508eed71b4b6408a211943067fc784a2c839ed15` |
+
+###### Final-frame affected EP1 development
+
+CHECK-19/25/27. Regression selection identified three additions to the
+ordinary and optimized Engine KE rosters through the changed datagram test
+file. The configured WSL preflight and focused runner used Rust 1.100.0,
+`x86_64-unknown-linux-gnu`, `ke-association-prototype`, two Cargo jobs and
+one test thread. On all 620 inputs of `0eb50c7f…`, the isolation control,
+603 ordinary cases, 603 optimized cases and 91 doctests exited zero. Both
+build modes executed the same nine artifacts and three added cases. The
+successful attempt took 270.171 seconds and retired its scratch without a
+memory or task-limit event. The two earlier attempts spent 30 seconds in
+setup. The first refused the format of a filtered reference log. The second
+refused the scratch mount. Neither reached Cargo.
+
+The scoped writer left null digest fields in its terminal receipt. A separate
+readback matched the live 620 inputs and frozen projection, checked the raw
+exits and names against the terminal and predecessor rosters, and recorded
+the raw hashes. The original receipt is retained. These results cover the
+selected EP1 development scope. The full combined producer still requires
+its 5 GiB durable startup reserve, short by about 241 MB at closeout. Both
+closed roles remain bound to the preceding candidate. The prepared rebind
+requires the current combined receipt before the ledger campaign can resume.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `ep1-current-01/run-01/verification.json` | `9035e6785393ab9bd5eeb14e5003d6d3d670fd7155556747138887f0dcae613d` |
+| `ep1-current-01/run-02/verification.json` | `70321d9d8775cd71f19f7396a2f2098f4544b2ac8141cc312dee4da7a43e6ae1` |
+| `ep1-current-01/run-03/verification.json` | `2ffdabd510fc1343a03be1fc4ead91338ec42323a697b812175efc08567e085c` |
+| `ep1-current-01/run-03-readback.json` | `5ccb32378b3a29663fd41fe51456a59b7769763919d7d398a0651b1f4858f18b` |
+
+###### Managed loopback deadline for ledger mutation
+
+S2.2 and CHECK-11/25/27. Failure triage matched the last reached test in
+both current ledger timeout logs to the shared managed successor fixture.
+The same test preceded the earlier Group 05 and Group 06 timeouts. The
+fixture now supplies one checked four-second Engine window for both UDP
+legs. The peer keeps its separate two-second socket I/O limits. The Engine
+still joins and consumes the actual worker result, then the fixture joins the
+peer. An unexpected worker failure takes precedence over a peer failure.
+The production invocation window stays unchanged.
+
+The independent lifecycle review traced both synchronous test callers
+through current handshake admission, worker join and sealed collection.
+The selected GNU EP1 run verified the joined DENY and stale-configuration
+cases on the original and patched fixture, then repeated them after fault
+restoration. Each pair exited zero. The exact Pending-phase and adapter
+match variants from the prior catalogue each compiled and returned
+`Deadline` at 4.00 seconds through the real loopback case, with exit 101.
+Workspace formatting and boundary isolation passed. The first two harness
+attempts selected zero tests because of an incorrect filter. Their incomplete
+results and 110 charged seconds remain in the same allowance. The completed
+attempt took 161.62 seconds with confirmed scratch retirement and no memory
+or task-limit events.
+
+The exact test-only file is integrated as the second changed test input,
+yielding 620-input product `0495021f…`. No generated kill credit follows
+from the isolated fault runs. The original timeouts remain recorded.
+The roles still require the exact 19-lane combined receipt before running
+the current ledger inventory. Resume with the 15 unexecuted changed-context
+descriptors and reconcile the 13 already sampled variants against the whole
+current file. The separate chronology timeouts reached a different fixture
+and retain their original disposition.
+
+The updated combined producer verified the 2,146-file projection, 620
+product inputs, 696 protected paths, the unchanged graph comparison and
+the 19-lane roster. The role generator's reader and control transforms
+compile in memory. No combined lanes ran. The durable volume had
+5,096,136,704 bytes available against the unchanged 5 GiB startup minimum.
+Resume the full producer in `combined-03` when that reserve is available.
+
+| Evidence under `protected-receive-debit-01/fixture-window-current-01` | SHA-256 |
+| --- | --- |
+| `run-01/verification.json` | `a3ba9c3bc78a3bb2b0545f33b559df1e8b5f0722ea7ca5f179e56f2f31dcc098` |
+| `run-02/verification.json` | `e3a5b1b2cd0b9ac8a885d5e68c07f1a342bddf94bfc126cd211c6144102b326b` |
+| `run-03/verification.json` | `d9bf79ce5512a557504c195a04a58b93f61e1dda7065503d67e887732761e87f` |
+
+The sibling `combined-03/projection-readback-01.json` has SHA-256
+`38c4ea655c19a4e97700826732f20eff6abf91aea3b371a7a839431dafa5269b`.
+
+###### Combined final-frame and loopback checkpoint
+
+S2.2 and CHECK-19/25/27. The report store used a private ext4 image on
+the available secondary drive, mounted in WSL through the pinned Ubuntu
+`fuse2fs` and runtime library. Both package bytes matched the local
+Ubuntu package index. The boundary control passed the original controller's
+read-only source, private writable report and separate RAM work checks.
+An unmount and remount recovered the expected report bytes. The storage
+setup retained the 5 GiB startup reserve, the in-run resource floors and
+the same Bubblewrap command and limits. Both report stores started with
+9,927,127,040 bytes available. The first storage probe used the wrong
+library directory, and the second used an unsupported nested RAM path.
+Both stopped before the combined producer. Both combined images, mounts
+and outer scratch trees retired after hashed export.
+
+On `0495021f…`, the first combined run passed isolation, format and the
+MSVC-target compiler check. MSVC Clippy then refused the test fixture at
+102 lines against the 100-line limit. The repair extracts the checked
+deadline setup into a fixture helper and preserves its call point before
+peer launch, the shared four-second window and both joins. The first
+combined attempt used 84 charged seconds including source preparation.
+The reviewed retry cap was 2,250 seconds with the same lane limits.
+Including the retry's setup and stop allowances, the original 2,400-second
+budget remains intact.
+
+The 620-input product `a0df3abd…` passed all 19 lanes in 488.413 seconds
+of producer time. Independent readback matched all 25 exported members and
+each raw lane's exact command, exit and selection. Results include 603 EP1
+and 288 default cases in each build mode, 91 EP1 and 90 default doctests,
+and 16 selected Core test executions, for 1,979 named executions. GNU and MSVC-target
+compiler and lint checks, formatting, rustdoc and the isolation control
+passed. The resource observer joined with 486 samples. The unit retired
+between the final check and export, with zero memory or task-limit events.
+
+Both closed role readers admit the copied physical receipt in an isolated
+source projection and in the live checkout after the four-file update.
+Their registries retain 94 default and 98 EP1 evidence members, including
+all combined lanes, the bounded fixture logs and the first Clippy refusal.
+All 212 reader controls passed. Strict workspace policy passed against
+the same candidate after exposing the admitted Rust tools to the child.
+The first role apply stopped at the older staged policy preimages. The
+retry supplied the independently checked four predecessor postimages and
+passed the readers and their controls. Its strict child initially lacked
+`rustup` on PATH. The closeout carries those results and the corrected
+strict check. The public campaign entry points still refuse and both
+metric thresholds remain in force.
+
+Next bind the current ledger enumeration and qualify the remaining
+descriptors. The earlier isolated fault exits retain their own candidate
+and add zero generated credit. For the native counterpart, the selected
+certificate-free roster grows from 16 to 20 by adding the three
+final-frame cases and the healthy 32nd-frame control. Its two existing
+loopback cases already reach the changed helper. A fresh MSVC link,
+ordinary-user token admission before staging and native completion remain
+pending. Production measurement admission retains the separate
+W11-W01 reference prerequisite.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `durable-storage-preflight-01/mount-smoke-03.json` | `90994bda1c551d027899dd0dc5a3e025a36c724eb34e5643035ad7f6816793af` |
+| `combined-03-durable/reports/run-01/verification.json` | `f6a79d66c59665cd792df5c58465e828bddd9124f5d391dd33193857e0eee865` |
+| `combined-04-durable/admission.json` | `fceb74ede2e4dd5af5fed45a0865d5e9e3b665ad428105599e717ad118e875ce` |
+| `combined-04-durable/reports/run-01/verification.json` | `a366959a0df5a805a3d8dd2aadbe2674a72a525e907fbaf453e929e6b9cc78fc` |
+| `combined-04-durable/independent-combined-readback.json` | `4e540a3bcc59906326f77299b152276e2ecd19618c79c1c4932c600e7c4011e1` |
+| `durable-storage-preflight-01/full-placement-02.json` | `6730b2e119cb57da8403e9ba4355cd1c63b51f1460fa00ec37838490a275dc84` |
+| `combined-04-durable/closed-role-verification-03.json` | `6a48cbb548026852351a89772154a5c844a529eb4c3cd453782f11d1cc961e6a` |
+| `combined-04-durable/integrated-closed-roles.json` | `4d1ec7f773b13da232f0c256eaff2639c62dacdc69b8c944dd8cc27fd383674b` |
+
+###### Current ledger line gate and 17-variant generated partition
+
+S2.2 and CHECK-25/27. The registered GNU EP1 ledger-only enumeration and
+coverage lanes ran on `a0df3abd…` with both closed roles and the admitted
+stable tool and vendor stores. The current 633 analysis paths match the
+exact closed-role projection. The raw LLVM export covers 1,200 of 1,242
+executable lines (96.62%) through the same 603 ordinary EP1 cases as the
+combined run. The export contains no branch counts. All 226 typed and
+rendered descriptors match the preceding full catalogue. The readback
+checked the actual enumeration output and raw LLVM report.
+
+The normalized predecessor comparison identifies 198 corresponding rows
+and 28 new or changed-context rows. Thirteen of the latter had prior
+outcomes. The selected partition comprises the other 15 and the two
+earlier accounting timeouts. The current filtered listing matched all
+17 typed and rendered descriptors. The baseline executed the exact
+603 ordinary and 91 doctest cases. Four workers used the original
+90-second Build and 60-second Test limits. The effective remaining
+native wall allowance was 526 seconds, with 703 seconds carried
+forward into the original 1,350-second outer lease.
+
+Both tool and supervisor exited zero. All four viable variants reached
+the expected test failures with exit 101. Both Pending-policy variants
+failed the genuine endpoint-DENY wait control. The previous Pending-phase
+and charged-adapter timeouts now also completed the changed loopback
+case with the expected deadline failure. All 13 compiler refusals have
+primary ledger diagnostics from the actual Rust JSON output. The first
+independent readback did not explicitly enforce the successful Build
+phase and missed the structured diagnostics. The repaired readback
+verified both phases of each behavioral catch and every compiler refusal.
+The raw outcomes have zero survivors and zero timeouts in this partition.
+
+The supervisor retired its work in 292.005 seconds. Conservative accounting
+charges up to 1,016 cumulative seconds including host preflight, leaving
+at least 334 seconds under the same lease. The earlier raw timeouts remain
+archived. Only the current generated executions supply the four catches.
+The 95% gate for the complete 226-row inventory stays open. In the 198
+corresponding rows, audit the exact reuse prerequisites, the two returned-cookie
+guards with later generated catches, seven checked-domain equivalence
+candidates and the guarded stale-charge consumer at the current serial
+check. Eight retained Group 05/06 raw timeouts reached the repaired loopback
+fixture. The two chronology timeouts reached a different scripted successor.
+Both groups require their own current disposition.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `ledger-current-observation-01/result-01/verification.json` | `53ecebec3cba06815c1b8a898bd1d07d9410a290cdbb14055a660544491e7569` |
+| `ledger-current-observation-01/independent-readback.json` | `065150b4c36e2a2fbffb0090f442033227e6d72695aa69053014cccfc0ca7710` |
+| `ledger-current-mutation-01/selection.json` | `3956af1e4c53d6545a0ea9371038899e51f86df4095a8ea3e2961014a73d33ac` |
+| `ledger-current-mutation-01/result-01/verification.json` | `89602bfd92bb539379c7c7a5d7161bcbc3e69adfd567dfca2d9fb8a56522453d` |
+| `ledger-current-mutation-01/result-01/replay/verification.json` | `2784ae91aff3830ad258cff3cd0d7e952dbd3bfa77031f3b3464cb6c73e4ad98` |
+| `ledger-current-mutation-01/independent-readback-02.json` | `45b77d146ba0a8f3d09e0e32d38e078b4a6009b060ec6417477ada917ff98752` |
+
+###### Current certificate-free MSVC link and dispatch preflight
+
+S2.2 and CHECK-6/9/21/25/27. The isolated WSL `cargo test --no-run`
+cross-link for `a0df3abd…` passed with Rust 1.100.0, the EP1 profile,
+`x86_64-pc-windows-msvc`, the `x86-64-v3` floor and 529 bound SDK files.
+The supervisor retired the owned scratch after 124.449 seconds. Independent
+readback matched the PE CodeView ID and age to the retained PDB and found
+all 20 exact selector strings in the linked image. All 20 also occur in
+the successful ordinary and optimized GNU EP1 runs on this candidate.
+The roster adds the final receive-credit Stop, expiry, combined refusal
+and healthy commit cases to the earlier 16-case certificate-free selection.
+
+The prepared dispatcher pins the current receipt, EXE and roster. Its 12
+simulated dispatch controls passed. They exercise pre-mapping and pre-staging
+token refusal, readiness/parser refusal, incomplete and drifted results,
+confirmed cleanup and retained evidence when launch or completion is uncertain.
+Separate input controls reject a wrong receipt pin, changed EXE and predecessor
+receipt. Actual guest parsing and execution remain pending. The last owned offline
+Sandbox twice reported guest exit 44 for its enabled Administrator token.
+The next native attempt requires an ordinary-user token before any mapping or
+staging. The certificate-free roster needs no certificate or runtime installation
+in the already prepared guest. Zero current Windows cases have executed.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `native-link-current-01/run-01/verification.json` | `f9a17e5c595355f16ba7350603a73b8c71e5bc9daec7dd3c5d477ea68cd89562` |
+| `native-link-current-01/independent-image-readback.json` | `7c844f8da5930b6cfc1fb9ce83f8b788bb11bec5681ed30c2b20a257f6493e83` |
+| Linked Engine test EXE | `a0f4581f84b2ea892229c5340b3535892624655f7e0bde6eea27f82f4fa61cbf` |
+| Matching PDB | `953e51b01604b52722b89ce2c072e5228bd7d81864fb20fe8e9bb212663b02a8` |
+| `native-certificatefree-current-01/dispatch-certfree.py` | `101bbbc586a526adf04d9c364fa7a19b74c3e5e46805c0debe19e2110f94a44b` |
+| `native-certificatefree-current-01/run-certfree.ps1` | `b3b94a0aa414daf9f7b88eaf13eb54b8696e0746c4c59a8702947b7159fa17e2` |
+| `native-certificatefree-current-01/roster.txt` | `acbc67465dab6acc2efc2c84910d1a42b09183d4778b19f57d04ff76bfc2e081` |
+| `native-certificatefree-current-01/static-checks.json` | `8f55300052cfc9cdca6f0c7ebf83e276be8d129cc4d5955852807001c3faf0a7` |
+
+###### Historical ledger replay and current guard review
+
+S2.2 and CHECK-25/27. Planning, environment preflight, mutation accounting,
+failure triage and checkpoint skills were applied to the remaining ledger
+work. Two inherited-context read-only workers independently examined the
+historical raw outcomes and the seven checked-domain equivalence proposals.
+Both completed. All 620 product and 633 analysis input hashes still match
+`a0df3abd…`. The source-selection, thresholds and public closed-policy
+settings retain the preceding checkpoint's acceptance criteria.
+
+The 198 corresponding descriptors comprise 118 historical catches, 60
+compiler refusals, ten survivors and ten timeouts. The intermediate catalogue
+correspondence needs an additional qualification. Exactly 185 also match the
+original typed descriptor and complete diff after coordinate normalization.
+Thirteen terminal/retirement descriptors had already changed context before
+the intermediate catalogue. Their original outcomes require separate current
+evidence. The old source/helper maps differ from the current map by 40–45
+inputs. The two returned-cookie generated catches retain their original
+candidate and their meaningful direct-owner causal scope. This comparison
+supplies no complete current score.
+
+The eight Group 05/06 timeouts that reached the managed loopback fixture were
+selected for a current replay. The original 1,350-second cumulative allowance
+carried 1,016 charged seconds into the attempt. With 20 seconds reserved for
+preflight and ten for shutdown, the service maximum was 304 seconds. Actual
+admission left 225 seconds for the native command. The baseline passed and
+five variants completed successful Build and Test exit 101 with the expected
+`Ledger(Capacity)` failures. The final three entered Test near native second
+208 and were interrupted by the overall native deadline. Their individual
+60-second Test allowance had not elapsed. The immediate post-leader cgroup
+check then refused completion because child work had not yet drained.
+
+The attempt remains incomplete at 254.494 seconds. After authoritative unit
+termination, recovery confirmed the absence of the owned cgroup and of process
+working-directory, root or descriptor references to the exact backing. It
+copied and rehashed the raw results, retained the five complete catches and
+the three incomplete rows, then removed 1,435,295,744 allocated bytes of owned
+scratch. Conservative cumulative accounting is 1,292/1,350 seconds, leaving
+58 seconds. The incomplete original receipt remains intact. The two chronology
+timeouts reached a different scripted successor and retain their separate
+scope and allowance.
+
+Independent checked-domain review supports all seven equivalence proposals
+on the exact current source. The six archive variants retain the same outcome
+because the nonrefundable original attempt allowance permits at most 31 used
+entries before append, capacity reserves 32, cookie checkout excludes both
+used histories, and each 4,096-byte request reserves at least 128 non-cookie
+bytes. The maximum archived body total is therefore 126,976 bytes, strictly
+below 131,072. The replacement-vector variant has both length predicates false
+because checked construction and all admitted transitions bound each vector to
+eight entries. The aggregate guard remains enforced. The reviewer checked
+failure, unknown-send, predecessor-install and fixture construction paths.
+These are source-bound proposals awaiting exact equivalence admission. The
+seven historical misses stay recorded, with zero added behavioral kill credit.
+
+| Evidence under `protected-receive-debit-01/ledger-historical-timeouts-01` | SHA-256 |
+| --- | --- |
+| `selection.json` | `009d0f3648842a2fac7e3fc8340a4a5bc1061825eb7bb6de137421ee8d9a301c` |
+| `result-01/verification.json` | `f5cabfaa60e2401f0041cc9fe6e1b26039ecc2c1b5609b1ade0d49b42b08cd57` |
+| `recovery-01/verification.json` | `e8f746fa1c669279dfcb7ec3d4c9909e3d34e622639158b8aac62da56f494d7b` |
+| `recovery-01/replay/work/witnesses/mutants.out/outcomes.json` | `d8a0e98ba8c9cb431717fc65fa3a7e779197c9975923efc5fc7b647bdbff8e57` |
+
+**Causal retry amendment.** Under the owner's continuing heavy-qualification
+authorization, a fresh-context plan reviewer completed the three-row retry
+review. The exact native deadline left about 17 seconds for tests whose
+completed neighbors required about 39 seconds. Its resource samples show no
+memory, PID or free-space stop. The amendment adds 250 seconds to the original
+1,350-second cumulative allowance, retaining the original failed attempt and
+1,292 seconds already charged. The accounting is
+`1292 + 20 preflight + 278 service + 10 shutdown = 1600`.
+Only the unfinished current descriptors at `1968:19`, `1971:19` and `1974:12`
+may execute in this attempt, after the separate test-overlay job retires and
+current source custody is checked again. The actual 694-name baseline, four
+workers, 90-second Build/60-second Test limits, 1,200-second CPU cap, isolation,
+tool/vendor identities and resource limits remain required. Observed concurrent
+Build work reached 50.7 seconds, so feasibility does not guarantee completion.
+The amendment supplies no automatic extension or missing outcome credit.
+The retry uses `ledger-historical-remainder-01/selection.json`, SHA-256
+`510eb92dd36186fc0e3f0f4650e268f5db120dab7492ae8fe131db61c3688e4e`.
+
+The serialized three-row retry completed in 183.400 seconds. The 694-name
+baseline passed. Each generated variant compiled and reached its required
+Test exit 101 through the actual Capacity, Endpoint or Ticket refusal. Native
+and supervisor exits were zero, with no resource stop or remaining owned
+scratch. Independent readback checked the exact descriptors, raw Build/Test
+statuses, logs and diffs. Conservative cumulative charging is 1,496/1,600
+seconds, leaving 104 seconds. The eight replayed Group 05/06 variants now
+have five retained complete outcomes from the interrupted attempt and three
+complete outcomes from this retry. Earlier failed and interrupted attempts
+retain their original status. The complete 226-row gate still needs its
+remaining source-bound dispositions and admission.
+
+| Evidence under `protected-receive-debit-01/ledger-historical-remainder-01` | SHA-256 |
+| --- | --- |
+| `result-01/verification.json` | `22d76b685363394ce7043b03cc1f0679d932ab613d412a5d9a1d9d77d6cbb3da` |
+| `result-01/replay/verification.json` | `00d873ae24e33b0b7961ef806ac7a7c44dda2c0ad7eaf93f8ef1954b89e932cd` |
+| `result-01/replay/work/witnesses/mutants.out/outcomes.json` | `8d2b532358d8bcb6bf3c3d146aa172f817ddb93bbcd8744adc2aef581291d90d` |
+| `independent-readback-01.json` | `820d9329334915151bc221c174b668675e57fd0fa68039cd60d2abd4b81a0c78` |
+
+###### Stale receive debit and actual Pending successor
+
+S2.2 and CHECK-25/27. The retained `consume_staged_reply` serial/phase
+survivor prompted a focused checked-owner regression. Rust/contracts,
+unit, boundary, regression-selection and independent-review skills were
+applied. The test obtains a real receive debit and accepts its matching
+independently authenticated reply, then prepares and sends a distinct
+successor through the actual component adapter. Reoffering the original
+debit and original valid packet must fail with `Ledger(Ticket)` at the
+Pending selection guard. It must preserve the successor, spent balances,
+cookie population and complete historical receipt, with no admission
+callback. The successor's independently tagged valid reply then succeeds
+with its own single receive charge.
+
+The source review and focused execution establish an existing guarded
+private-helper contract. The ordinary production receive chain constructs
+and consumes its debit synchronously. This test uses that real private
+boundary to exercise an otherwise missed stale-custody scenario. It adds
+no caller authority or new transport path.
+
+On overlay `3609043e862889ed20e29e85345c06c019b6887049833af3fd1ca6b0ec82e382`,
+the healthy pair passed, the exact isolated `||` to `&&` fault compiled and
+failed the new case at `Ok(())` versus required `Err(Ledger(Ticket))`, and
+the used-cookie neighbor passed. Both cases passed after restoration.
+The isolation control, workspace format and GNU/MSVC-target all-targets
+Clippy passed. The seven-lane run retired its scratch in 122.176 seconds.
+This isolated sensitivity check supplies zero generated mutation kills.
+
+The affected full EP1 selections then passed 604 ordinary cases, 604
+optimized cases and 91 doctests in 266.165 seconds, with actual source,
+tool/vendor admission and independent exact package/binary/name matching.
+All 603 predecessor case coordinates remain, with exactly one new case
+in the library binary. All nine executable groups and both doctest groups
+retain zero failures, ignores or filtered cases. The wrapper retained an
+old two-name top-level focus label. Independent readback records the full
+actual per-lane selection and its exact raw hashes, preserving the original
+receipt. The completed fresh-context reviewer inspected the changed
+contract, patch, raw failure and healthy neighbors, full affected execution,
+source delta and cleanup.
+
+The sole test file is now integrated at SHA-256
+`031e1f2a0896350a359c3ab52af4f48d75139e112787f612cda23de41b45ee7b`.
+All 620 working product inputs match the executed overlay, and the original
+index remains preserved. Both closed-role and complete mutation admission
+must be reconciled with this new source/test roster before another campaign.
+The preceding `a0df3abd…` metrics and Windows image retain their own inputs.
+Native Windows execution and the existing formal/fuzz/storage/UI holds keep
+their current scope.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `ledger-stale-test-vUc8pm/receiver-stale-debit.patch` | `47cca21a5321e2fc35e62c910cdcbe9bef82c770c9e45b9c84d9b3b4f77edfb9` |
+| `ledger-stale-receive-check-01/run-01/verification.json` | `63246070d3ca2f239dc3594ab24dc0d3997e66f911ecaaefed4e4e5bf24b6552` |
+| `ledger-stale-receive-check-01/run-full-01/verification.json` | `8c8ee48f35cbec01534a1efbb10f639565e0e89a8b305af586512199047fc139` |
+| `ledger-stale-receive-check-01/independent-full-readback-01.json` | `39a4c867b03d1906839761da97194fa8e7becd363bf411d952f9f00709c1a3e4` |
+
+###### Ordinary-token Sandbox launch preparation
+
+CHECK-6/9/21/27. The Sandbox-management skill was applied to the remaining
+effective-token prerequisite. A read-only host observation measured 4,013 MiB
+available RAM and confirmed the exact owned offline guest
+`5c12948e-b410-4dc9-9389-f1d0b9c33a84`. Native `runas /showtrustlevels`
+observation returned guest exit 74 through the initial regex admission.
+A literal check then returned exit 75 for empty captured text, with host and
+native command success. The selected guest identity remained present before
+and after both observations. The route has supplied no observable normal-user
+level and no restricted child was launched. This result cannot establish
+whether the underlying SAFER API supports a suitable token.
+
+A separately owned source prototype explores a guest-private, same-SID token
+probe. It stages no Rust executable or certificate and creates no mapping.
+Fresh-context source review found a marker publication race and incomplete
+watchdog, producer-output, child-cleanup and actual-validator evidence. The
+writer repaired marker publication through flushed and closed unique temporary
+files followed by a refusing `File.Move`. The executable guest mode now refuses
+before Windows dispatch while the remaining prototype requirements are open.
+Its six Linux controls cover source structure and model predicates. Fourteen
+changed-fact examples exercise an unused Python helper and supply no evidence
+for the actual guest predicate. No prototype guest payload has executed.
+
+The intended product-test token remains the original SID with the actual
+non-elevated, non-Administrator token required by the configured native runner.
+The current private `WDAGUtilityAccount` name check is a fixture constraint,
+and supplies no platform requirement for a particular account name. A usable
+launch route must observe actual token and child completion, preserve uncertainty
+on timeout and retain cleanup custody. The present native runtime gap remains
+with this Engine owner. Host readiness and source controls qualify neither the
+Windows roster nor native product behavior.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `native-ordinary-token-admission-01/verification.json` | `a74f9c975fc185606f6ef34bf8b1994393b6dd8788feb27447469fd0aa9f1f04` |
+| `native-ordinary-token-admission-01/trustlevels-01.json` | `f22c8a12ff32d2d0305f5956e2c3182daf36b4639562d184ffa428edecb24b53` |
+| `native-ordinary-token-admission-01/trustlevels-literal-02.json` | `67de5c40dcf480d0798acc81e9d30aac5816edf5873f3e90abb7ada92e1d3a38` |
+| `native-ordinary-token-probe-01/manifest.json` | `8e2854906bcf7224b7b2976eced3808177fe37ca911f925845e6f15d5b0bac2c` |
+| `native-ordinary-token-probe-01/source-checks.json` | `f7620f3dc48f8c8aee817297806dc007697b952e7b1fa15e392cdb2433685d0b` |
+
+###### Stale-debit combined source checkpoint
+
+S2.2 and CHECK-6/9/11/19/21/25/27. The exact integrated 620-input product
+`3609043e862889ed20e29e85345c06c019b6887049833af3fd1ca6b0ec82e382`
+passes all 19 configured combined lanes and 1,981 named executions. EP1
+ordinary and optimized each execute 604 cases, with 91 doctests. Default
+ordinary and optimized each execute 288 cases, with 90 doctests. The four
+selected Core cases execute in each of the two selected binaries and both
+build modes. Format, GNU/MSVC compiler and Clippy selections, Core Clippy,
+rustdoc and boundary isolation all pass. Every raw lane matches its terminal
+hash and observed exit. The controller took 402.371 seconds; the actual
+service lifetime was 424.081 seconds. Owned build output retired, and the
+resource observer joined.
+
+The source and execution plan received completed fresh-context prelaunch
+review. It checked all 2,146 frozen source files, 620 product files, 19 dirty
+postimages, index/status/diff custody, exact rosters, unchanged lane commands
+and configured resource bounds. The new run carries forward 1,013 seconds
+of earlier combined, focused and affected execution. Conservatively charging
+51 preparation seconds, the observed service rounded to 425 seconds and ten
+shutdown seconds gives at most 1,499/2,400 seconds before the reader checks.
+
+The four-file role rebind adds the exact new candidate and its single test
+coordinate while retaining historical admission. Independent review found
+that the proposed new lineage incorrectly required an unchanged graph delta.
+The repaired helper derives the exact new 27-path delta from the immutable
+graph, checks its nine manifest and three checker pins, and admits the new
+capture and terminal through the existing graph consumer. Fresh review
+confirmed all 49 resulting physical evidence members before generation.
+No production Rust or Cargo inputs changed during this rebind.
+
+Applied-source verification admitted 122 default and 126 EP1 physical evidence
+members, including all 19 new logs and the historical lineage. The 47/58
+helper scopes, closed campaigns, empty mutation inventories/equivalences and
+90%/95% criteria retain their existing meaning. All 212 fresh Python reader
+controls passed. The verification harness first omitted an historical evidence
+mount, then collided with its own strict-report filename, then refused an
+overly narrow preparation guard. Those outcomes are retained. The byte-identical
+212-case result was reused after the reporting repair. A strict-only retry
+captured the actual strict-workspace exit zero and passing JSON. The original
+240-second allowance charged 196.217 seconds, with the private source and all
+owned verification scratch retired.
+
+The tested four postimages are integrated in the actual checkout. Both real
+role readers readmitted the physical evidence again after integration. The
+shared index was preserved during implementation and verification. The current
+source checkpoint is ready for staged-candidate review and publication under
+the owner's instruction. Whole-ledger mutation qualification, an admitted
+ordinary-token Windows launch, genuine measurement suppliers and positive Core
+admission retain their separate required exits.
+
+Cleanup recovered 855,818,240 filesystem bytes by deleting the unused global
+Cargo source cache under its cache locks, after checking for live users and
+nested repositories. Later ordinary Cargo use can retrieve those cache entries
+again. Current verification uses its separate admitted vendor and tool stores.
+Git HEAD, index, status and both diff hashes matched before and after cleanup.
+The frozen combined source input remains available until publication custody
+is finalized. The completed execution's build output has retired.
+
+| Evidence under `protected-receive-debit-01` | SHA-256 |
+| --- | --- |
+| `cleanup-cargo-source-cache-01.json` | `b2970cd1160b000ef77f7a3758040bab8f1ec510b2b1a989e2c26e3afc565f19` |
+| `stale-combined-01/admission.json` | `18d40af6c21180b605590e1e87cf4eb97cfb269162526aff7d7ea6b84aa93b4a` |
+| `stale-combined-01/reports/run-01/verification.json` | `9ea7c824f7b439aef49f81d73adbefe30f5c55b7625a0ab9d96d2c229332fa34` |
+| `stale-role-rebind-01/closed-role-source.patch` | `1eeb8de5418917dab264451f474df3f1628c68f99f5195909087b3473378b9be` |
+| `stale-role-rebind-01/applied-checks-01/summary.json` | `3d6eae3d630c80ed5a70e359ca9ccae747c8fb52f75026cc07a785c58229e610` |
+| `stale-role-rebind-01/applied-checks-01/retry-04/verification.json` | `5dfe1002bd56405cf6b8440f4099da0f1b3c01b870330e38517d6c7cc7987dbe` |
+| `stale-combined-01/integrated-closed-roles.json` | `f79249b06ebf675ce3a3b3eab9677595670f23faea25a0c5c1c10c1a06d865d4` |

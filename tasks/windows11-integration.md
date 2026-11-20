@@ -4089,6 +4089,50 @@ release provenance, S134/native and fuzz restrictions, storage pause and UI-M0
 D1–D3 deferrals retain their recorded status. This preparation lifts no hold and
 supplies no source-to-native qualification.
 
+#### W11-W01 application timing reference trial — 20 November 2026
+
+S2.1, TQ-01/07/08/09 and CHECK-6/7/11/14/21/25/27. The acquisition and
+Windows platform owners supply one reference for the original application
+send and receive brackets. The Engine owner carries the accepted mapping
+revision through the existing guarded consumer. Domain/bootstrap and S1.4
+supply date, era and scale context. Core owns history admission after all
+those inputs have been qualified.
+
+**Readiness: blocked at reference admission.** The independently reviewed
+[actual CLI witness](engine-transport-pilot.md#actual-observe-cli-capture-bracket-witness--w11-w01-19-november-2026)
+binds the two peer observations to the 10 MHz guest QPC shared with the
+Engine. Its 202 ns allowance covers the observed ordering and conversion
+comparison. The evidence supports relative interval containment. A traceable
+UTC reference, finite physical event-pairing errors and a valid mapping
+envelope are still missing. The protected receiver continues to publish
+timing unavailability.
+
+Before execution, freeze the actual reference identity and calibration
+record, traceable UTC scale and validity, the event-pairing method for T1
+and T4, and independent error and drift bounds. State which physical
+event each pair represents. Set numerical leg and exchange budgets before
+looking at validation outputs. Admit compatible independent date and
+peer-scale evidence. Reserve separate reference observations for verification.
+Qualified bounds must also cover the interval between observations or
+retire the mapping when continuity is uncertain.
+
+For each held-out leg, compare mapped UTC with the independent reference
+and include the reference and pairing error bounds. Require the resulting
+worst-case error to fit inside the issued uncertainty, and the issued
+uncertainty to fit inside the predeclared leg budget. The validity interval
+must cover both complete original capture brackets. Propagate the bounded
+leg, peer, scale and rounding uncertainties to the declared exchange
+budget under the existing measurement contract.
+
+At the actual serialized consume-once boundary, observe one admission for
+the healthy same-revision exchange and one for a fresh exchange after
+reissue. Require zero current admissions with absent or expired evidence,
+excess uncertainty, a crossing capture or revision replacement before
+commit. A late result retains the original observations, age and debit
+without an additional history row or freshness publication. Controlled
+invalidation establishes the software guard. Physical power and wall-clock
+transitions require their own native evidence and restoration.
+
 ### 4.27 Address-family admission routing — 5 November 2026
 
 **Owner/stage:** engine/protocol with the platform adapter owner, before dependent

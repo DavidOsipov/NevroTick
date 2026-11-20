@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Native loopback control for the first managed transport failure at TLS retirement.
+//! Native loopback controls for managed KE retirement and the joined Protected report.
 
+use std::env;
 use std::error::Error;
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpListener, TcpStream, UdpSocket};
 use std::sync::OnceLock;
 use std::sync::mpsc::{Receiver, SyncSender, sync_channel};
@@ -11,8 +12,9 @@ use std::time::{Duration, Instant};
 
 use super::super::{Config, PROCESS_WORKER, job::Observation, run_with_power_observer};
 use crate::{
-    KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourcePolicyAuthority,
-    SourcePolicyError, SourcePolicyLimits, SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    KePreviewTarget, MeasurementRefusal, SourceAddressSet, SourceConfigurationSnapshot,
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
+    SourcePolicySnapshot, SourceProtectedProbeFailure, SourceProtectedProbeReport, SourceScale,
 };
 
 /// This process owns one probe and one bounded peer; no production deadline changes.
@@ -172,7 +174,7 @@ fn managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure() 
     let limits: SourcePolicyLimits =
         SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?;
     let mut authority: SourcePolicyAuthority = SourcePolicyAuthority::install(limits)?;
-    let source: crate::SourceHandle = authority.source(0)?;
+    let source: SourceHandle = authority.source(0)?;
     let addresses: SourceAddressSet = SourceAddressSet::new(&[udp.local_addr()?])?;
     let expected: SourceConfigurationSnapshot =
         authority.install_ke_preview_configuration(&source, addresses, target.clone())?;
@@ -223,5 +225,134 @@ fn managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure() 
         udp.recv_from(&mut [0; 1]),
         Err(error) if error.kind() == io::ErrorKind::WouldBlock
     ));
+    Ok(())
+}
+
+/// Exact synthetic certificate identity reused from the admitted offline KE peer.
+const MANAGED_PEER_IDENTITY: &str = "ke-a7e40ec4eade477dbaba6ca9e9f975a4.invalid";
+/// This fixture's initial source and endpoint send intervals.
+const INITIAL_SEND_INTERVAL: Duration = Duration::from_millis(1);
+
+/// Read one numeric endpoint whose fixture and owning PID are pinned by the collector.
+///
+/// # Errors
+/// Refuse missing, oversized, non-Unicode, non-IPv4-loopback or zero-port input.
+fn managed_peer_endpoint(variable: &str) -> io::Result<SocketAddr> {
+    let raw: std::ffi::OsString =
+        env::var_os(variable).ok_or_else(|| io::Error::other("missing managed peer endpoint"))?;
+    if raw.len() > "127.0.0.1:65535".len() {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let address: SocketAddrV4 = raw
+        .to_str()
+        .ok_or(io::ErrorKind::InvalidInput)?
+        .parse()
+        .map_err(|_| io::ErrorKind::InvalidInput)?;
+    if *address.ip() != Ipv4Addr::LOCALHOST || address.port() == 0 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    Ok(SocketAddr::V4(address))
+}
+
+/// Recover the first send's guarded monotonic reservation from both actual policy records.
+///
+/// # Errors
+/// Refuse a missing source floor or an unrepresentable reservation instant.
+/// # Panics
+/// Fail if either record took other than one send debit or changed restrictions.
+fn verify_managed_send_debit(policy: &SourcePolicySnapshot) -> io::Result<Instant> {
+    let floor: Instant = policy
+        .source()
+        .floor()
+        .ok_or_else(|| io::Error::other("missing managed send floor"))?;
+    for record in [policy.source(), policy.endpoint()] {
+        assert_eq!(record.revision(), 2);
+        assert_eq!(record.interval(), INITIAL_SEND_INTERVAL);
+        assert_eq!(record.floor(), Some(floor));
+        assert!(!record.refused());
+        assert!(!record.unavailable());
+    }
+    floor
+        .checked_sub(INITIAL_SEND_INTERVAL)
+        .ok_or_else(|| io::Error::other("managed send floor precedes its interval"))
+}
+
+/// Exercise the public managed probe with one authenticated native exchange.
+///
+/// The collector owns the fixed one-leg peer and synthetic trust, verifies both
+/// listener owners and joins both processes. This case uses the permanent Engine
+/// slot and must run alone in a fresh Windows process.
+///
+/// # Errors
+/// Preserve endpoint, source setup, public probe, history and output refusals.
+/// # Panics
+/// Fail if provenance, timing, one-send policy, or actual retirement differs.
+#[test]
+#[ignore = "requires the owned offline Windows one-leg TLS and UDP peer"]
+fn managed_protected_public_probe_joins_one_authenticated_reply() -> Result<(), Box<dyn Error>> {
+    let ke_peer: SocketAddr = managed_peer_endpoint("NV_NTS_MANAGED_KE_PEER")?;
+    let udp_peer: SocketAddr = managed_peer_endpoint("NV_NTS_MANAGED_UDP_PEER")?;
+    let target: KePreviewTarget = KePreviewTarget::new(ke_peer, MANAGED_PEER_IDENTITY)?;
+    let limits: SourcePolicyLimits =
+        SourcePolicyLimits::new(1, 1, INITIAL_SEND_INTERVAL, Duration::from_millis(4))?;
+    let mut authority: SourcePolicyAuthority = SourcePolicyAuthority::install(limits)?;
+    let source: SourceHandle = authority.source(0)?;
+    let addresses: SourceAddressSet = SourceAddressSet::new(&[udp_peer])?;
+    let expected: SourceConfigurationSnapshot =
+        authority.install_ke_preview_configuration(&source, addresses, target)?;
+
+    let started_at: Instant = Instant::now();
+    let report: SourceProtectedProbeReport = authority.probe_nts_protected(&expected)?;
+    let returned_at: Instant = Instant::now();
+
+    assert!(report.configuration().same_configuration(&expected));
+    assert_eq!(
+        report.configuration().declared_scale(),
+        SourceScale::Unknown
+    );
+    assert_eq!(report.packet_bytes(), 252);
+    assert_eq!(report.leap_indicator(), 0);
+    assert!(matches!(
+        report.measurement(),
+        Err(MeasurementRefusal::Unavailable)
+    ));
+
+    let committed_at: Instant = report.committed_at();
+    let delay: Duration = report
+        .receive_to_commit_delay()
+        .ok_or_else(|| io::Error::other("missing managed receive-to-commit delay"))?;
+    let receive_trailing_at: Instant = committed_at
+        .checked_sub(delay)
+        .ok_or_else(|| io::Error::other("invalid managed receive-to-commit delay"))?;
+    let policy: SourcePolicySnapshot = source.policy_snapshot(udp_peer)?;
+    let reserved_at: Instant = verify_managed_send_debit(&policy)?;
+    assert!((started_at..=receive_trailing_at).contains(&reserved_at));
+    assert!((started_at..=committed_at).contains(&receive_trailing_at));
+    assert!(committed_at <= returned_at);
+
+    let [minimum, maximum]: [Duration; 2] = report
+        .application_wall_elapsed_bounds()
+        .ok_or_else(|| io::Error::other("missing original application elapsed bounds"))?;
+    let invocation_receive_span: Duration = receive_trailing_at
+        .checked_duration_since(started_at)
+        .ok_or_else(|| io::Error::other("receive precedes the invocation"))?;
+    assert!(minimum <= maximum && maximum <= invocation_receive_span);
+
+    assert_eq!(report.power_unregistration_error(), None);
+    let inspect_until: Instant = Instant::now()
+        .checked_add(Duration::from_secs(1))
+        .ok_or_else(|| io::Error::from(io::ErrorKind::TimedOut))?;
+    assert_eq!(
+        PROCESS_WORKER.observer().poll_until(inspect_until),
+        Observation::Taken
+    );
+    assert_eq!(PROCESS_WORKER.sealed_count(), Ok(0));
+
+    writeln!(
+        io::stdout().lock(),
+        "scope=managed-protected-native eligible=0 fresh_sync=0 completed=1 packet_bytes={} li={} configuration=original receive_to_commit=present mapping=unavailable source_debits=1 endpoint_debits=1 worker_joined=1 observer_closed=1",
+        report.packet_bytes(),
+        report.leap_indicator()
+    )?;
     Ok(())
 }

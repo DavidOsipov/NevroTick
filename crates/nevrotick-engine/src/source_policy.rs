@@ -2548,6 +2548,12 @@ impl ProtectedEndpoint {
         LivePolicy::from_mode(SourceMode::Managed(self.binding.clone()))
     }
 
+    /// Observe changes affecting the genuine pending send without applying its next-send floor.
+    /// The observer can recheck correlation but cannot commit a reply or control.
+    pub(super) fn observe_pending(&self, stamp: &ProtectedSendStamp) -> LivePolicy {
+        LivePolicy::managed(self.binding.clone(), Some(stamp.correlation.clone()))
+    }
+
     /// Acquire the actual endpoint's policy custody without registering a waiter.
     /// # Errors
     /// Preserve contention and poison without granting another route.
@@ -2941,23 +2947,30 @@ impl LivePolicy {
     }
     /// Allocate the single pinned release waiter outside actual sender custody.
     pub(super) fn from_mode(mode: SourceMode) -> Self {
-        let mode = match mode {
-            SourceMode::UnmanagedLab => LiveMode::UnmanagedLab,
-            SourceMode::Managed(binding) => {
-                let source_changes = binding.source_changes.subscribe();
-                let endpoint_changes = binding.endpoint_changes.subscribe();
-                let released = Box::pin(Arc::clone(&binding.source.cell.released).notified_owned());
-                LiveMode::Managed(Box::new(ManagedLive {
-                    binding,
-                    pending: None,
-                    wait: WaitState::Ready,
-                    source_changes,
-                    endpoint_changes,
-                    released,
-                }))
-            }
-        };
-        Self { mode }
+        match mode {
+            SourceMode::UnmanagedLab => Self {
+                mode: LiveMode::UnmanagedLab,
+            },
+            SourceMode::Managed(binding) => Self::managed(binding, None),
+        }
+    }
+
+    /// Subscribe before the first currentness check of this exact policy binding.
+    fn managed(binding: SourceBinding, pending: Option<Correlation>) -> Self {
+        let source_changes: watch::Receiver<()> = binding.source_changes.subscribe();
+        let endpoint_changes: watch::Receiver<()> = binding.endpoint_changes.subscribe();
+        let released: Pin<Box<OwnedNotified>> =
+            Box::pin(Arc::clone(&binding.source.cell.released).notified_owned());
+        Self {
+            mode: LiveMode::Managed(Box::new(ManagedLive {
+                binding,
+                pending,
+                wait: WaitState::Ready,
+                source_changes,
+                endpoint_changes,
+                released,
+            })),
+        }
     }
 
     /// Readiness hint only; the mandatory sender independently rechecks current state.
@@ -2965,6 +2978,21 @@ impl LivePolicy {
         match &self.mode {
             LiveMode::UnmanagedLab => true,
             LiveMode::Managed(live) => matches!(live.wait, WaitState::Ready),
+        }
+    }
+
+    /// Refresh the actual pending correlation before admitting a socket readiness wait.
+    /// A contended policy waits for release. This hint grants no publication authority.
+    /// # Errors
+    /// Refuse missing pending provenance or any currentness failure.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn refresh_pending(&mut self, request: &Arc<()>) -> Result<bool, SourcePolicyError> {
+        self.refresh(request)?;
+        match &self.mode {
+            LiveMode::Managed(live) if live.pending.is_some() => {
+                Ok(matches!(live.wait, WaitState::Ready))
+            }
+            LiveMode::Managed(_) | LiveMode::UnmanagedLab => Err(SourcePolicyError::Foreign),
         }
     }
 
