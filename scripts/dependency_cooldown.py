@@ -34,6 +34,12 @@ APPROVED_EXCEPTIONS: dict[str, str] = {}
 # same code review as the existing policy pin. This stores no duplicate graph.
 # Prior concrete exception IDs stay attached to that exact accepted checkpoint.
 APPROVED_BASELINES: dict[str, dict] = {
+    # Reproduce the unchanged root lock with the private broker status codec manifest.
+    "9cd2cc1fa25d1b816c9d066706aada4bf0c31363f2c73e4bfae2b868e6a5cf73": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
     # Reproduce the unchanged root lock with the broker runtime observation adapter.
     "fe13f2fca26a7a0b6c535009c70834b8f4c3524150abc381a2d9aa014bb0fdc1": {
         "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",

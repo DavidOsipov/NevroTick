@@ -35,6 +35,10 @@ checked version 2 partial inputs for direct MSIX. The full internal register
 retains historical Store fields and their validation. The active unresolved
 lists omit those fields, and the strict output inventory retires the Store CSV.
 The source pipeline leaves package identity and a complete manifest unresolved.
+The read-only `inspect-msix` command binds that checked source generation
+to selected package, service and event inputs and reports which required
+product roles need admitted payloads. Package assembly must independently
+bind each actual role artifact and its dependency and resource closure.
 The direct package and installed release gates still apply.
 
 At the inspected NevroTick baseline

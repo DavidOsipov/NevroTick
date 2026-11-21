@@ -10,13 +10,14 @@ use std::{
 };
 
 use super::{
-    BrokerAvailability, BrokerQueryFault, Clock, InertWorker, PrivateStatusIssue,
+    BrokerAvailability, BrokerQueryFault, Clock, InertWorker, InvocationPoll, PrivateStatusIssue,
     ServiceInvocation, StatusReporter, StopNotification,
 };
 use crate::{
     LabRole, NativeError,
     private_clock_wire::{
-        Frame, FrameError, RequestId, decode_reply, decode_request, encode_reply, encode_request,
+        AssemblyProgress, Frame, FrameAssembly, FrameError, RequestId, decode_reply,
+        decode_request, encode_reply, encode_request,
     },
 };
 
@@ -201,10 +202,24 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
         ))
     }
 
-    /// Charge and decode the actual frame, then obtain a fresh guarded broker decision.
+    /// Deliver one complete record through the same owner as fragmented transfers.
     /// # Errors
     /// Refuses wrong owner, malformed input, replay, closed admission or expired cutoff.
     fn receive(&mut self, delivery: Delivery<'_>) -> Result<Reply, SessionFault> {
+        let mut inbound: InboundStatus<'_, 'a, R, C> = self.begin_receive(delivery.connection)?;
+        inbound
+            .complete_fragment(delivery.bytes)?
+            .ok_or(SessionFault::Frame(FrameError::Length))
+    }
+
+    /// Reserve one receive under the original transport identity.
+    /// The receiver stays exclusively borrowed until this frame resolves or is abandoned.
+    /// # Errors
+    /// Refuses a closed, exhausted or foreign connection.
+    fn begin_receive(
+        &mut self,
+        connection: &Connection,
+    ) -> Result<InboundStatus<'_, 'a, R, C>, SessionFault> {
         if !self.connection.get() {
             return Err(SessionFault::Closed);
         }
@@ -213,9 +228,19 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
             return Err(SessionFault::Closed);
         };
         self.remaining = remaining;
-        if !Rc::ptr_eq(&self.connection, delivery.connection) {
+        if !Rc::ptr_eq(&self.connection, connection) {
             return Err(SessionFault::ForeignConnection);
         }
+        Ok(InboundStatus {
+            receiver: self,
+            assembly: Some(FrameAssembly::request()),
+        })
+    }
+
+    /// Check the original time and control owners before taking more completed bytes.
+    /// # Errors
+    /// Retires the connection and returns the original service or session refusal.
+    fn check_receive_edge(&mut self) -> Result<(), SessionFault> {
         if let Err(fault) = self
             .owner
             .broker_status_edge(self.clock, self.stop, Some(self.cutoff))
@@ -223,7 +248,14 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
             self.close();
             return Err(Self::owner_fault(fault));
         }
-        let id: RequestId = decode_request(delivery.bytes).map_err(SessionFault::Frame)?;
+        Ok(())
+    }
+
+    /// Check the completed frame and take the final guarded availability decision.
+    /// # Errors
+    /// Refuses invalid schema, replay or loss of the original currentness guard.
+    fn dispatch(&mut self, frame: &Frame) -> Result<Reply, SessionFault> {
+        let id: RequestId = decode_request(frame.as_bytes()).map_err(SessionFault::Frame)?;
         if self.last.is_some_and(|previous: RequestId| id <= previous) {
             return Err(SessionFault::Replayed);
         }
@@ -256,6 +288,67 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
     /// Retire delivery and any unconsumed reply without touching worker custody.
     fn close(&self) {
         self.connection.set(false);
+    }
+}
+
+/// One admitted receive. The trusted fixture transport supplies only bytes
+/// already delivered on the connection admitted by the session.
+struct InboundStatus<'session, 'owner, R: StatusReporter<Error = NativeError>, C: Clock> {
+    /// The exact receiving session remains exclusively reserved during assembly.
+    receiver: &'session mut BrokerStatusSession<'owner, R, C>,
+    /// Incomplete frame storage. Its absence marks a resolved receive.
+    assembly: Option<FrameAssembly>,
+}
+
+impl<R: StatusReporter<Error = NativeError>, C: Clock> InboundStatus<'_, '_, R, C> {
+    /// Drive one service step while this receive retains exclusive custody.
+    /// A live connection can shorten a Running wait. Closure retires just the
+    /// local input and preserves the service's own progress or cleanup result.
+    fn poll_broker(&mut self) -> InvocationPoll {
+        let receiver: &mut BrokerStatusSession<'_, R, C> = self.receiver;
+        let poll: InvocationPoll = receiver.owner.poll(receiver.clock, receiver.stop);
+        if receiver.connection.get()
+            && let InvocationPoll::Pending(wait) = poll
+            && let Some(remaining) = receiver
+                .owner
+                .broker_status_wait(receiver.stop, receiver.cutoff)
+        {
+            return InvocationPoll::Pending(wait.min(remaining));
+        }
+        receiver.close();
+        self.assembly = None;
+        poll
+    }
+
+    /// Record one nonempty, contiguous completion from the admitted fixture connection.
+    /// A partial frame provides no reply and keeps the original session cutoff.
+    /// # Errors
+    /// Refuses a resolved receive, invalid framing, changed control, or failed dispatch.
+    /// Empty or ambiguous framing retires the connection. A schema refusal after
+    /// an exact envelope leaves the next boundary known.
+    fn complete_fragment(&mut self, bytes: &[u8]) -> Result<Option<Reply>, SessionFault> {
+        let assembly: FrameAssembly = self.assembly.take().ok_or(SessionFault::Closed)?;
+        self.receiver.check_receive_edge()?;
+        match assembly.push(bytes) {
+            Ok(AssemblyProgress::Pending(assembly)) => {
+                self.assembly = Some(assembly);
+                Ok(None)
+            }
+            Ok(AssemblyProgress::Complete(frame)) => self.receiver.dispatch(&frame).map(Some),
+            Err(error) => {
+                self.receiver.close();
+                Err(SessionFault::Frame(error))
+            }
+        }
+    }
+}
+
+impl<R: StatusReporter<Error = NativeError>, C: Clock> Drop for InboundStatus<'_, '_, R, C> {
+    /// Retire undecided boundaries rather than restarting a partial request.
+    fn drop(&mut self) {
+        if self.assembly.is_some() {
+            self.receiver.close();
+        }
     }
 }
 

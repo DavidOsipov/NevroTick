@@ -27,9 +27,9 @@ serde_json = { version = "=1.0.154", default-features = false, features = ["std"
 windows-platform-native = { version = "=0.0.0", path = "../../crates/windows-platform-native" }
 windows-sys = { version = "=0.61.2", default-features = false, features = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"] }
 
-# Private observer tests also need the Time-gated ETW reader bindings.
+# Private observer and overlapped pipe tests add Windows-only library-test bindings.
 [target.'cfg(windows)'.dev-dependencies]
-windows-sys = { version = "=0.61.2", default-features = false, features = ["Win32_System_Diagnostics_Etw", "Win32_System_Time"] }
+windows-sys = { version = "=0.61.2", default-features = false, features = ["Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_Etw", "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Time"] }
 
 [[bin]]
 name = "nevrotick-lab-s02-engine"

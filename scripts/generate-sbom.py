@@ -200,8 +200,9 @@ def generate(root: Path, output: Path, features: list[str], no_default: bool) ->
             path = output / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        receipt = {"scope": ("Rust dependency inventory only; complete native/resource/package "
-                             "and submitted/Store-delivered MSIX reconciliation required"),
+        receipt = {"scope": ("Rust dependency inventory only. Reconcile native and generated files "
+                             "and resources with the built, signed and directly distributed MSIX "
+                             "and the installed payload."),
                    "source_commit": commit, "source_date_epoch": int(epoch),
                    "generator": entry, "target": POLICY["target"], "features": features,
                    "default_features": not no_default,

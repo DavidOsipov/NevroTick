@@ -9872,6 +9872,187 @@ provisioning and calibrated clock mapping retain their owning gates.
 The bounded fixture checks leave the applicable coverage and mutation
 gates open. Fuzz and formal work retain their existing holds.
 
+##### Private availability frame receive progress — 22 November 2026
+
+S0.3/S3.2, BND-3 and CHECK-2/25/27, following signed `7fb7ae0`. The
+IPC, Rust contract and lifecycle review traced the complete-frame
+receiver through the original broker owner and found no owner for
+partial input. The fixture now reserves one receive against the original
+connection and charges one attempt before assembly. Every completed
+fragment checks the original service and session cutoffs and Stop. The
+80-byte assembler checks version, direction, reserved fields and the
+64-byte body cap as soon as the 16-byte header is complete. Only the
+exact extent reaches the existing strict JSON, request ID, replay and
+final guarded availability decision. The exact-record entry uses the
+same receiving path.
+
+Each nonempty fragment either advances this receive or completes it.
+Empty and excess completion and malformed envelope retire the connection.
+Abandoning partial input also retires it, so later bytes cannot start a
+new frame on that connection. A refused schema or request ID after a
+complete envelope keeps the known next boundary. Frame assembly also
+has codec controls for the reply direction. The ordinary client still
+consumes a completed reply in the original exchange.
+
+The independently checked 672-input candidate `0cfde7c0…874b2` passed
+all six graph and all 12 development lanes. Both GNU modes execute 160
+fixture tests and 70 platform tests. There are exactly seven new tests
+and no removals. Three drive the actual receiver through split requests,
+cutoff and Stop at fragment boundaries, and abandonment and excess bytes.
+Four codec controls include all two-piece splits of literal request,
+reply and maximum-size frames. The 28 platform doctests, fixture
+rustdoc, GNU/MSVC Clippy and 15 cross-link reader controls pass. The
+initial source attempt retains its GNU Clippy ownership refusal. Raw
+development receipts are `private-clock-fragments-{graph,development}-2211b.json`.
+
+The x64-v3 MSVC libtest link on the same candidate passed. The linked
+image `7e5d0788…1090c` and its PDB matched the admitted hashes. The
+selected split-request cutoff and Stop test passed once in the offline
+Windows Sandbox, build 26100, with the existing native clock getter
+and controlled service observations. The guest and child exited zero.
+Child and scratch cleanup and unchanged staged inputs were observed.
+The owner-prepared guest remained running. The link receipt is
+`cross-private-clock-fragments-link-2211b.json` and the native verdict
+`b1d8676f…10660` is retained under
+`private-clock-fragments-20261122.r_9j1gor`.
+
+One isolated fault removes only the session cutoff from the
+per-fragment guard and retains the final dispatch guard. The selected
+test fails before dispatch at cutoff equality. The fixture runner
+returns 101 with 158 passes and one failure, observing `Ok(None)`
+where the test requires `Expired`. The healthy candidate passes the
+same control. Receipt `071471f6…b36ca` retains the targeted result.
+The four guarded build attempts used 427.55 of 480 seconds, and the
+fault worktree and build scratch were retired.
+
+The current fixture transport supplies bytes that have already arrived
+and holds one receiving borrow. The native adapter still needs to bind
+actual completions and their storage to an identified channel, keep
+broker polling and cleanup responsive during pending work, and retain
+response write offsets through cancellation. Cleanup of the actual
+worker and writer in the current host remains separate from future pipe
+completion. Provisioned identities, endpoint ownership and actual
+identification-token capture/reversion remain CHECK-2 prerequisites.
+The per-primitive coverage and critical-file mutation exits stay open.
+
+##### Service polling during a private frame receive — 22 November 2026
+
+S0.3/S3.2, BND-3 and CHECK-2/25/27. The private receive can advance one
+step of the original broker invocation while it retains its partial
+frame and its one charged attempt. The step calls the original
+`ServiceInvocation::poll` with its clock and sticky Stop source. This
+also reaches the existing bounded diagnostics pump. For a live
+connection it limits the Running wait to the earlier of the service's
+wait and the remaining session time from the same accepted clock
+observation. At cutoff equality the local frame and connection retire
+while the service keeps its own poll result and deadline.
+
+The same step preserves the host's progress, overdue, join and actual
+terminal outcomes. Late fragments after retirement encounter the closed
+receive before dispatch. This fixture holds bytes from completed
+transfers. A native pipe driver still needs to retain in-flight buffer,
+operation and handle custody through actual completion, then bind the
+result to the admitted Windows peer. The original reply write and peer
+identity obligations remain open.
+
+The independently reviewed 672-input candidate `15a02b63…55e6d` passed
+six graph checks and all 12 development lanes. Both GNU modes ran 163
+fixture cases. The exact roster adds three cases with no removals. They
+observe a due sample and valid reply during a split transfer, the 200 ms
+session wait followed by equality and the still-live 800 ms service wait,
+and the original Stop completing the inert worker with exactly one
+required diagnostic consumer attempt. The latter two reject late bytes.
+The formatting, GNU/MSVC Clippy, platform doctests, fixture rustdoc and
+15 cross-link reader controls passed. Raw receipts are
+`private-clock-poll-{graph,development}-2211a.json`.
+
+The x64-v3 MSVC libtest link passed on the same candidate. The exact
+sampling-during-receive test ran once in the offline Windows Sandbox,
+build 26100. It passed with the native clock getter and scripted
+scheduling. Both guest and child exited zero. Child reaping, scratch
+removal and unchanged staged inputs were observed. The original
+guest remained running. The image identity is `cf2c370d…e3e64` and
+the native verdict is `03f42ad1…23c69`. The first observer invocation
+refused the wrong link receipt label before guest dispatch. Its
+setup record and the successful observation are retained.
+
+The isolated wait-selection fault returned the later wait. The
+sampling case observed 4 s instead of 1 s. The idle-cutoff case
+observed 1 s instead of 200 ms. The faulted fixture runner exited
+101 with these two failures and 160 passes, including the Stop control.
+The healthy candidate passed all three. Receipt `15b6697b…8326c`
+retains the fault result. The guarded builds used 362.73 of 480 seconds,
+and the fault worktree and scratch were retired.
+
+The existing 4 GiB build reserve was restored with verified archives of
+two completed compiler output trees and three retired source snapshots.
+Measured recovery was 217.7 MB. Archive readback matched every recorded
+file hash and directory entry, including modes. The archive and path
+receipts are under `private-clock-poll-20261122.8cxmd_yr`.
+
+##### Native private pipe receive and cancellation — 22 November 2026
+
+S0.3/S3.2, BND-3 and CHECK-2/25/27. The Windows-only fixture connects the
+existing private broker ingress to an overlapped byte-mode pipe read.
+One fixed local writer instance has a protected owner DACL and rejects
+remote clients. The noninheritable reader has read-only access and
+identification-level QoS. Both connected handles report the fixture PID
+before any bytes are written. These checks admit the same-process fixture.
+Provisioned service identities and their effective pipe rights remain open.
+
+The read slot retains the pipe, event and pinned operation and byte storage
+through `GetOverlappedResult`. A cancellation request or `ERROR_NOT_FOUND`
+leaves the slot occupied. Pending and unrecognized completion errors also
+retain custody. Abandoning such a slot terminates only the isolated fixture
+child before Rust can drop outstanding storage. The external runner owns
+the timeout and observes actual child exit. The portable broker continues
+polling while the native read is pending.
+
+The native test feeds the broker an actual completed header and body and
+resolves the original reply. Its expiry case keeps the running broker
+separate from the retired session. It observes cancellation through the
+original overlapped record, then challenges the closed ingress with
+the test request body. Service Stop follows after the test has observed
+native completion. Stop during pending native I/O, a successful read
+racing cancellation, inline completion and disconnect require their own
+controls. An independent source review traced both histories and memory
+custody. The fixture now logs the first native error before broker cleanup
+assertions can mask it.
+
+The two admitted lockfiles retain their bytes with no registry delta.
+The exact graph comparison retains both ordinary graphs and the GNU test
+graph. The MSVC test graph adds `Win32_Security_Authorization`.
+The first development attempt reached MSVC Clippy and failed four fixture
+lint rules. Its original receipt and the corrected candidate are recorded
+separately in `native-pipe-read-20261122.Igz3SLim` and the service
+receipt directory.
+
+Candidate `674bd551…59c2d` binds 674 inputs. All six graph checks and all
+12 development lanes passed with matching source and index bookends.
+Both GNU modes ran 70 platform and 163 fixture cases. The platform
+doctests, fixture rustdoc, GNU/MSVC Clippy and formatting passed.
+The graph and development receipts are
+`native-pipe-read-{graph,development}-2211b.json`.
+The 26 fixture graph, 15 cross-link reader, 30 dependency, and
+36 dependency-profile controls also passed.
+
+The x64-v3 MSVC libtest linked from the same candidate in
+`cross-native-pipe-read-link-2211c.json`. PE readback found the named
+pipe, read, cancel, completion and read-only clock APIs. One exact
+Windows test passed both histories in the offline Sandbox, build 26100.
+The guest and child exited zero. The runner verified the image
+`70d90ad5…ad6c0`, child reaping, scratch removal and staged input
+integrity. It removed the staging files and preserved the running guest
+with its empty share directories. Verdict `8f3f10d0…3dc5d` is in the
+native receipt directory cited above. Including the first failure, the
+guarded builds used 378.92 of the original 480 seconds.
+
+Product endpoint establishment, independent service-token evidence,
+response writes and actual native completion before service shutdown stay
+with the existing S0.3/S3.2 owner. Application Verifier, PageHeap, repeated
+native handle retention and the existing per-file coverage and mutation
+exits remain open. This private fixture owns no clock actuation.
+
 ##### Engine collection and timer cleanup transfer — 21 November 2026
 
 W11-W05/S3.1 and CHECK-27 retain the original series decision independently
@@ -11074,6 +11255,76 @@ were retired. Existing package/lifecycle and affected metrics remain
 with their owners. The next source step consumes the partial projection
 through a checked package-assembly inventory once the required inputs are
 admitted.
+
+The W11-W10 CHECK-26 readback also found that the emitted SBOM receipt
+still named Store reconciliation after the selection of direct MSIX.
+The two actual optional-feature fixture rows failed at that wording.
+The revised receipt requires reconciliation of native and generated
+files and resources against the built, signed and directly distributed
+package and the installed payload. All 11 focused offline SBOM tests
+passed on the integrated code. Receipt structure, inventory selection
+and release gates retain their existing scope. The fixture runs establish
+the emitted wording and Rust graph checks for their selected inputs.
+Complete product SBOM and package reconciliation still require the
+actual delivery artifacts.
+
+##### Direct MSIX assembly input inspection — 22 November 2026
+
+W11-W10/MD-P4 and CHECK-18/20/23/26/27. The metadata, package artifact and
+test-planning review traced the checked direct-MSIX projection to a
+read-only assembly input report. The new `inspect-msix` command and
+`check` share the bounded descriptor-relative reader, exact file
+comparison, independent semantic checks and final source, tool and path
+checks. The report hashes the observed bytes returned by that operation,
+including the actual generation receipt.
+
+The report binds the checked package, service and event authoring
+inputs, including the conditional event compiler manifest when present.
+It lists UI, Engine, broker and helper source states and their four
+open production artifact slots. The six pending obligations expose their
+IDs, owners and stage. Current source inspection succeeds with
+`assembly_ready: false` and a null identity. The report goes to stdout.
+
+The actual repository `validate`, `generate`, `check` and `inspect-msix`
+commands passed through the default 14-file generation. Independent
+readback matched every selected digest and checked that the bytes and
+directory entries stayed as generated. The generation receipt
+`7192396f…98581c` and release-stage refusal are retained under
+`msix-assembly-inspection-20261122.TW8xBkGc`. The five focused reader
+controls also passed. They cover exact source roles and unresolved claims,
+same-byte hard links, a forged identity and matching forged receipt,
+optional event input, and deterministic file replacement after admission.
+A one-expression fault reopening the inspected pathname fails the last
+test at report equality, with the replacement digest in the result.
+Its worktree was retired.
+
+All eight metadata modules and the legal consumer passed strict typing
+with the five intended negative controls. The first run caught the
+optional manifest path extending a tuple inferred at fixed length.
+The correction declares the tuple's variable length. The first coverage
+run was stopped before producing a result so a new run could bind
+the corrected bytes. The next run reached all 259 cases and refused
+qualification after an existing wrong-route fault selector matched
+both output dictionaries. The repaired control selects only the
+generator's partial authoring entry and exercises the original refusal
+before publication. All four existing event-resource consumer tests
+also passed.
+
+The corrected coverage run passed all 259 cases with 332 observed
+subprocesses and matching bookends for 36 inputs. All five declared
+security modules meet the 90% executable-line threshold. The receipt
+records 46/49 lines for the CLI, 610/666 for admission, 283/304 for
+delivery, 343/360 for generation and 39/39 for text policy. It retains
+branch counts and excluded faulted-source observations. Receipt
+`45c42a66…8aa6f` is under `coverage-verified` in the same evidence root.
+The completed attempts' raw coverage JSON is stored in verified
+compressed form. The full critical-file mutation gate remains open.
+
+The next assembly stage needs role-bound production binaries and their
+dependency and resource closure, selected activation and platform inputs,
+and approved identity and version. Those inputs must carry their own
+admission and byte custody. Signing, native installation, lifecycle
+behavior and directly delivered bytes remain separate gates.
 
 #### Independent review and documentation evidence
 

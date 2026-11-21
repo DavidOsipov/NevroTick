@@ -14,12 +14,14 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).absolute().parents[2]))
 
 from metadata.pipeline.contract import MetadataError, load_metadata  # noqa: E402
-from metadata.pipeline.generate import PublicationUncertainError, check, field_counts, generate  # noqa: E402
+from metadata.pipeline.generate import (  # noqa: E402
+    PublicationUncertainError, check, field_counts, generate, inspect_msix,
+)
 
 
 class _Arguments(argparse.Namespace):
     """Typed destinations of this fixed command parser."""
-    command: Literal["validate", "generate", "check"]
+    command: Literal["validate", "generate", "check", "inspect-msix"]
     root: Path
     source: Path | None
     stage: Literal["source", "release"]
@@ -27,16 +29,16 @@ class _Arguments(argparse.Namespace):
 
 
 def main(arguments: list[str] | None = None) -> int:
-    """Validate, generate or compare one candidate without native/build side effects."""
+    """Validate, generate, check or inspect one candidate without native/build effects."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("validate", "generate", "check"))
+    parser.add_argument("command", choices=("validate", "generate", "check", "inspect-msix"))
     parser.add_argument("--root", type=Path, default=Path(__file__).absolute().parents[2])
     parser.add_argument("--source", type=Path)
     parser.add_argument("--stage", choices=("source", "release"), default="source")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(arguments, namespace=_Arguments())
     if (args.command == "validate") != (args.output is None):
-        parser.error("validate has no output; generate/check require --output")
+        parser.error("validate has no output; generate/check/inspect-msix require --output")
     report: dict[str, object]
     try:
         if args.command == "validate":
@@ -46,6 +48,9 @@ def main(arguments: list[str] | None = None) -> int:
         elif args.command == "generate":
             assert args.output is not None
             report = dict(generate(args.root, args.output, args.source, stage=args.stage))
+        elif args.command == "inspect-msix":
+            assert args.output is not None
+            report = inspect_msix(args.root, args.output, args.source, stage=args.stage)
         else:
             assert args.output is not None
             report = dict(check(args.root, args.output, args.source, stage=args.stage))

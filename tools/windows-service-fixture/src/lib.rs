@@ -27,6 +27,10 @@ mod native;
 mod native_etw_capture;
 #[cfg(all(windows, test))]
 mod native_etw_writer;
+#[cfg(all(windows, test))]
+mod native_pipe_pair;
+#[cfg(all(windows, test))]
+mod native_pipe_read;
 #[cfg(test)]
 mod private_clock_wire;
 

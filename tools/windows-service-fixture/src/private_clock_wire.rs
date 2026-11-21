@@ -15,6 +15,8 @@ use serde::de::{Deserializer as _, Error as _, IgnoredAny, MapAccess, Visitor};
 const HEADER_LEN: usize = 16;
 /// Fixture body ceiling before JSON decoding.
 const MAX_BODY_LEN: usize = 64;
+/// Maximum complete frame within the fixed transport storage.
+pub(super) const MAX_FRAME_LEN: usize = HEADER_LEN + MAX_BODY_LEN;
 /// Exact supported major and minor version.
 const VERSION: [u8; 2] = [1, 0];
 /// Direction tag for an Engine request.
@@ -62,20 +64,103 @@ impl RequestId {
     }
 }
 
-/// One encoded header and closed body in fixed storage.
+/// One complete frame candidate in fixed storage.
+/// Received bytes still require request or reply decoding before dispatch.
 #[must_use]
 pub(super) struct Frame {
-    /// Encoder-owned header and body followed by private zeroed storage.
-    bytes: [u8; HEADER_LEN + MAX_BODY_LEN],
-    /// Header plus literal body length within the fixed storage.
+    /// Complete frame bytes followed by private zeroed storage.
+    bytes: [u8; MAX_FRAME_LEN],
+    /// Header plus body length within the fixed storage.
     len: usize,
 }
 
 impl Frame {
-    /// Expose the exact encoded length. Spare buffer bytes stay private.
+    /// Expose the exact complete frame bytes. Spare buffer bytes stay private.
     #[must_use]
     pub(super) fn as_bytes(&self) -> &[u8] {
         &self.bytes[..self.len]
+    }
+}
+
+/// Own one bounded incomplete frame for an exact wire direction.
+#[must_use]
+pub(super) struct FrameAssembly {
+    /// Fixed storage for the consecutive completed prefix.
+    bytes: [u8; MAX_FRAME_LEN],
+    /// Bytes appended from completed transport reads.
+    used: usize,
+    /// Direction required at header admission.
+    expected_kind: u8,
+    /// Exact total size after the complete header passes envelope checks.
+    frame_len: Option<usize>,
+}
+
+/// A checked fragment either leaves partial custody or completes one frame.
+#[must_use]
+pub(super) enum AssemblyProgress {
+    /// Keep the accumulated bytes private until the exact frame end.
+    Pending(FrameAssembly),
+    /// Release one whole frame candidate to the ordinary decoder.
+    Complete(Frame),
+}
+
+impl FrameAssembly {
+    /// Begin an empty assembly for one Engine request.
+    pub(super) const fn request() -> Self {
+        Self::new(REQUEST)
+    }
+
+    /// Begin an empty assembly for one broker reply.
+    pub(super) const fn reply() -> Self {
+        Self::new(REPLY)
+    }
+
+    /// Initialize fixed empty storage for the selected wire direction.
+    const fn new(expected_kind: u8) -> Self {
+        Self {
+            bytes: [0; MAX_FRAME_LEN],
+            used: 0,
+            expected_kind,
+            frame_len: None,
+        }
+    }
+
+    /// Append bytes observed in one completed read on the same connection.
+    /// A refusal consumes the assembly. A returned frame has checked extent
+    /// and direction but leaves JSON and correlation admission to the decoder.
+    ///
+    /// # Errors
+    ///
+    /// Refuses empty completion, excess bytes or an invalid complete header.
+    pub(super) fn push(mut self, completed: &[u8]) -> Result<AssemblyProgress, FrameError> {
+        let end: usize = self
+            .used
+            .checked_add(completed.len())
+            .ok_or(FrameError::Length)?;
+        if completed.is_empty() || end > self.frame_len.unwrap_or(MAX_FRAME_LEN) {
+            return Err(FrameError::Length);
+        }
+        self.bytes[self.used..end].copy_from_slice(completed);
+        self.used = end;
+
+        if self.frame_len.is_none()
+            && let Some((header, _)) = self.bytes[..end].split_first_chunk::<HEADER_LEN>()
+        {
+            let envelope: Envelope = parse_envelope(header, self.expected_kind)?;
+            // Envelope admission bounds the sum to the fixed frame capacity.
+            let frame_len: usize = HEADER_LEN + envelope.body_len;
+            if end > frame_len {
+                return Err(FrameError::Length);
+            }
+            self.frame_len = Some(frame_len);
+        }
+        if self.frame_len == Some(end) {
+            return Ok(AssemblyProgress::Complete(Frame {
+                bytes: self.bytes,
+                len: end,
+            }));
+        }
+        Ok(AssemblyProgress::Pending(self))
     }
 }
 
@@ -97,7 +182,7 @@ impl Message {
         };
         // Every literal is at most 19 bytes, so these two octets preserve its exact length.
         let [length_lo, length_hi, ..] = body.len().to_le_bytes();
-        let mut bytes: [u8; HEADER_LEN + MAX_BODY_LEN] = [0; HEADER_LEN + MAX_BODY_LEN];
+        let mut bytes: [u8; MAX_FRAME_LEN] = [0; MAX_FRAME_LEN];
         let (header, body_buffer): (&mut [u8], &mut [u8]) = bytes.split_at_mut(HEADER_LEN);
         header[..8].copy_from_slice(&[VERSION[0], VERSION[1], kind, 0, length_lo, length_hi, 0, 0]);
         header[8..].copy_from_slice(&id.value.to_le_bytes());
@@ -128,6 +213,27 @@ fn decode_header(frame: &[u8], expected_kind: u8) -> Result<(RequestId, &[u8]), 
     let (header, body): (&[u8; HEADER_LEN], &[u8]) = frame
         .split_first_chunk::<HEADER_LEN>()
         .ok_or(FrameError::Header)?;
+    let Envelope { body_len, id } = parse_envelope(header, expected_kind)?;
+    if body_len != body.len() {
+        return Err(FrameError::Length);
+    }
+    Ok((RequestId::new(u64::from_le_bytes(id))?, body))
+}
+
+/// Checked envelope fields consumed by frame assembly and full decoding.
+struct Envelope {
+    /// Declared body length within the exact protocol cap.
+    body_len: usize,
+    /// Raw correlation bytes reserved for complete-frame admission.
+    id: [u8; 8],
+}
+
+/// Check attributes available as soon as the fixed header is complete.
+///
+/// # Errors
+///
+/// Refuses unsupported version, wrong direction, reserved bits or excessive length.
+fn parse_envelope(header: &[u8; HEADER_LEN], expected_kind: u8) -> Result<Envelope, FrameError> {
     let [
         major,
         minor,
@@ -149,10 +255,10 @@ fn decode_header(frame: &[u8], expected_kind: u8) -> Result<(RequestId, &[u8]), 
         return Err(FrameError::Header);
     }
     let body_len: usize = usize::from(u16::from_le_bytes([lo, hi]));
-    if body_len > MAX_BODY_LEN || body_len != body.len() {
+    if body_len > MAX_BODY_LEN {
         return Err(FrameError::Length);
     }
-    Ok((RequestId::new(u64::from_le_bytes(id))?, body))
+    Ok(Envelope { body_len, id })
 }
 
 /// Deserialize exactly one map and admit only JSON whitespace after it.

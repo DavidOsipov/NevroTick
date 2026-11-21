@@ -631,18 +631,17 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
             os.close(parent)
 
 
-def check(root: Path, output: Path, source: Path | None = None, *,
-          stage: str = "source") -> CommandReport:
-    """Read a path-bound frozen candidate and recheck source/code/root identity.
+def _read_checked_generation(root: Path, output: Path, source: Path | None, *,
+                             stage: str) -> tuple[Metadata, dict[str, bytes]]:
+    """Return the admitted model and observed bytes of the same bound generation.
 
-    This is observational: it neither repairs bytes nor establishes durability,
-    native interpretation or stability after the caller releases its isolation.
+    Both the data and the receipt come from the held no-follow traversal.
+    The returned bytes describe that observation even if the path later changes.
     """
     model = load_metadata(root, source, stage=stage)
     expected = _expected(model)
     output = _outside_source(root, output)
     root_fd = _open_directory(output)
-    seen: set[str] = set()
     observed_outputs: dict[str, bytes] = {}
     total = 0
 
@@ -670,28 +669,62 @@ def check(root: Path, output: Path, source: Path | None = None, *,
                 finally:
                     os.close(child)
             else:
-                if relative not in expected or len(seen) >= MAX_OUTPUT_FILES:
+                if relative not in expected or len(observed_outputs) >= MAX_OUTPUT_FILES:
                     raise MetadataError("unexpected-output-file")
                 data = _read_regular(directory, name, MAX_OUTPUT_FILE)
                 total += len(data)
                 if total > MAX_OUTPUT_TOTAL or data != expected[relative]:
                     raise MetadataError("output-content-mismatch")
-                seen.add(relative)
-                if relative != "receipt.json":
-                    observed_outputs[relative] = data
+                observed_outputs[relative] = data
 
     try:
         _parent_unchanged(output, root_fd)
         visit(root_fd)
-        if seen != set(expected):
+        if observed_outputs.keys() != expected.keys():
             raise MetadataError("missing-output-file")
-        verify_delivery(model, observed_outputs)
+        verify_delivery(model, {name: data for name, data in observed_outputs.items()
+                                if name != "receipt.json"})
         if load_metadata(root, source, stage=stage) != model:
             raise MetadataError("source-changed-during-check")
-        if _code_identity() != _receipt_tools(expected["receipt.json"]):
+        if _code_identity() != _receipt_tools(observed_outputs["receipt.json"]):
             raise MetadataError("generator-changed-during-check")
         _parent_unchanged(output, root_fd)
-        return {"status": "checked-source", "file_count": len(seen),
-                "pending_count": len(model.pending), **field_counts(model)}
+        return model, observed_outputs
     finally:
         os.close(root_fd)
+
+
+def check(root: Path, output: Path, source: Path | None = None, *,
+          stage: str = "source") -> CommandReport:
+    """Check visible source contents, independently of durability or installed state."""
+    model, observed_outputs = _read_checked_generation(root, output, source, stage=stage)
+    return {"status": "checked-source", "file_count": len(observed_outputs),
+            "pending_count": len(model.pending), **field_counts(model)}
+
+
+def inspect_msix(root: Path, output: Path, source: Path | None = None, *,
+                 stage: str = "source") -> dict[str, object]:
+    """Read a checked source handoff for direct MSIX assembly and identify open inputs.
+
+    Role state comes from the admitted model. Digests bind the bytes actually
+    read. This source operation admits no binaries or package identity.
+    """
+    model, observed_outputs = _read_checked_generation(root, output, source, stage=stage)
+    inputs: tuple[str, ...] = ("authoring/msix-inputs.json", "authoring/service-inputs.json",
+                               "authoring/event-inputs.json")
+    if model.event_provider is not None:
+        inputs = (*inputs, "authoring/service-events.man")
+    return {
+        "schema_version": 1,
+        "status": "assembly-inputs-incomplete",
+        "distribution_route": "direct-msix",
+        "package_identity": None,
+        "assembly_ready": False,
+        "generation_receipt_sha256": hashlib.sha256(observed_outputs["receipt.json"]).hexdigest(),
+        "authoring_inputs": {name: hashlib.sha256(observed_outputs[name]).hexdigest()
+                             for name in inputs},
+        "roles": {item.role: {"source_state": item.state, "artifact_status": "not-admitted"}
+                  for item in model.components if item.role in ("ui", "engine", "broker", "helper")},
+        "pending": [{"path": item.path, "owner": item.owner, "required_stage": item.required_stage}
+                    for item in model.pending],
+    }

@@ -142,7 +142,7 @@ rerun for this documentation assessment.
 | P3 services and secured state | Lifecycle/SCM foundation, exact-role privilege admission and bounded fixture diagnostics exist; selected platform/caller portable gates are complete. | Adopt real product workers, final identities/provisioning, secured IPC/state and actual native lifecycle/security behavior. |
 | P4 clock integration | Pure proposal/accounting and modeled acknowledged-delivery mechanisms exist in Core. | Implement and qualify the real broker, clock authority, W32Time handover/restoration and recovery in admitted Windows environments. |
 | P5 UI | Slint v0.4 fixture workflows and presentation/localization source exist; later AccessKit repairs have bounded controls. | Independent critical-text approval, live backend integration, triggered D1–D3 work and exact native/accessibility/resource/security qualification. |
-| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) now emits checked partial direct-MSIX inputs and retires the Store CSV. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
+| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) emits checked partial direct-MSIX inputs and retires the Store CSV. Its [assembly input report](../../tasks/windows11-integration.md#direct-msix-assembly-input-inspection--22-november-2026) binds those inputs and identifies the four open payload slots. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
 | P7 final qualification | Acceptance, support/incident and release procedures are documented. | An integrated exact candidate, required native/package/security/operational evidence, support decisions and David's release approval. |
 
 The software still does not synchronize the user's clock. Completed subcomponents
@@ -1364,8 +1364,14 @@ Its 668-input candidate passed configured development and its selected
 Windows Sandbox control. The [private Engine–broker exchange](../../tasks/windows11-integration.md#private-enginebroker-availability-exchange--22-november-2026)
 now connects a bounded request and reply to that owner in a same-process
 fixture. Its 672-input candidate passed configured development and the
-selected Windows Sandbox control. Continue through the existing S0.3/S3.2
-native pipe and peer-identity owners.
+selected Windows Sandbox control. The [fragment receive child](../../tasks/windows11-integration.md#private-availability-frame-receive-progress--22-november-2026)
+connects bounded partial input to the guarded receiver. The
+[service poll child](../../tasks/windows11-integration.md#service-polling-during-a-private-frame-receive--22-november-2026)
+advances the broker lifecycle while the frame is pending. The
+[native pipe receive child](../../tasks/windows11-integration.md#native-private-pipe-receive-and-cancellation--22-november-2026)
+adds Windows overlapped read and cancellation custody in the private
+fixture. Continue through the existing S0.3/S3.2 write, service-stop
+completion and peer-identity owners.
 Actual SCM delivery, the calibrated forward-step envelope and correction
 acknowledgement have their own exits. Qualify finite error,
 drift and full-exchange validity before Engine admission. Production recovery

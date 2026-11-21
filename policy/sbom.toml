@@ -13,6 +13,6 @@ maximum_snapshot_bytes = 268435456
 
 # scripts/generate-sbom.py takes the actual build's feature selection explicitly.
 # Do not use universal all-features or infer shipped contents from Cargo.lock.
-# Release publishing must reconcile native/generated/resources and the selected
-# submitted and Store-delivered MSIX inventories with their final artifact hashes,
-# then attach the SBOM with those same assets.
+# Reconcile native and generated files and resources with the built, signed and
+# directly distributed MSIX and the installed payload. Bind final artifact hashes
+# and attach the prepared SBOM alongside the same release assets.

@@ -41,7 +41,10 @@ CACHE = Path.home() / ".local/share/nevrotick/service-verification-cache-2026110
 TARGETS = ("x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc")
 FEATURES = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"]
 OLD_FEATURES = ["Win32_Foundation", "Win32_System_Services"]
-WINDOWS_DEV_FEATURES = ["Win32_System_Diagnostics_Etw", "Win32_System_Time"]
+WINDOWS_DEV_FEATURES = [
+    "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_Etw",
+    "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Time",
+]
 LOCK_SHA256 = "7946166bf913eabec7b2534d82253a919154c895af9e01e32d8b78a2f70d92fd"
 LOCK_METADATA_ONLY = {"wasi@0.11.1+wasi-snapshot-preview1", "r-efi@6.0.0", "serde_derive@1.0.229"}
 PRIVATE_STATUS_DEV = {
@@ -486,7 +489,7 @@ def expected_contexts(policy, target, *, development=False):
         expected["windows-platform-native@0.0.0"] = {"target": [[]]}
         windows_features = ["Win32", "Win32_System", *FEATURES]
         if development:
-            windows_features.extend(["Win32_System_Diagnostics", *WINDOWS_DEV_FEATURES])
+            windows_features.extend(["Win32_Storage", "Win32_System_Diagnostics", *WINDOWS_DEV_FEATURES])
         expected["windows-sys@0.61.2"] = {"target": [sorted(windows_features)]}
     if development:
         engine = policy["rows"][target]["package_scopes"]["nevrotick-engine"]

@@ -8,11 +8,15 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(windows)]
+use std::io::Write;
+
 use windows_platform::service::{ServiceStatus, StatusReporter};
 
 use super::{
-    BrokerAvailability, BrokerStatusSession, Clock, Connection, Delivery, InertWorker, LabRole,
-    NativeError, Reply, ServiceInvocation, SessionFault, StopNotification,
+    BrokerAvailability, BrokerStatusSession, Clock, Connection, Delivery, EngineStatusClient,
+    InertWorker, LabRole, NativeError, PendingStatus, Reply, ServiceInvocation, SessionFault,
+    StopNotification,
 };
 use crate::{
     BrokerClockRead, NativeOperation,
@@ -24,10 +28,24 @@ use crate::{
     private_clock_wire::FrameError,
 };
 
+#[cfg(windows)]
+use super::InboundStatus;
+#[cfg(windows)]
+use crate::{
+    native_pipe_pair::{LabPipeReader, LabPipeWriter, open_lab_pipe},
+    native_pipe_read::{
+        NativeCancel, NativePipeRead, NativeReadBytes, NativeReadError, NativeReadPoll,
+        NativeReadStart,
+    },
+};
+
+/// Windows runs two additional branches of the selected native pipe test.
+const BROKER_CASES: usize = if cfg!(windows) { 17 } else { 15 };
 /// Each scenario owns one fresh registered mailbox and one independent counter.
-static MAILBOXES: [BrokerClockChanges; 7] = [const { BrokerClockChanges::new() }; 7];
+static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
+    [const { BrokerClockChanges::new() }; BROKER_CASES];
 /// Calls of the original raw getter, separated from trusted deadline observations.
-static GETTERS: [AtomicU32; 7] = [const { AtomicU32::new(0) }; 7];
+static GETTERS: [AtomicU32; BROKER_CASES] = [const { AtomicU32::new(0) }; BROKER_CASES];
 
 /// Observe the same Windows coordinate adapter used by the fixed broker.
 /// # Errors
@@ -43,13 +61,13 @@ fn sample<const N: usize>()
 
 /// Observe one known value through the portable broker reader.
 /// # Errors
-/// Refuses an unscripted repeat getter call.
+/// Refuses a call past the selected scenario's observed read allowance.
 /// # Panics
 /// Panics if the selected fixture has no assigned counter.
 #[cfg(not(windows))]
-fn sample<const N: usize>() -> Result<u64, u32> {
+fn sample<const N: usize, const READS: u32>() -> Result<u64, u32> {
     let previous: u32 = GETTERS[N].fetch_add(1, SeqCst);
-    if previous == 0 { Ok(1) } else { Err(7) }
+    if previous < READS { Ok(1) } else { Err(7) }
 }
 
 /// Successful status acknowledgement through the actual registered mailbox.
@@ -136,6 +154,22 @@ fn with_broker<const N: usize, T>(
         &StopNotification,
     ) -> T,
 ) -> Result<T, Box<dyn Error>> {
+    with_broker_reads::<N, 1, T>(exercise)
+}
+
+/// Keep the same scripted broker owner with a scenario-specific read count.
+/// The ordinary one-read controls retain their original allowance.
+/// # Errors
+/// Returns an unexpected startup or incomplete terminal observation.
+/// # Panics
+/// Fails if polling, cleanup or the actual getter count differs.
+fn with_broker_reads<const N: usize, const READS: u32, T>(
+    exercise: impl FnOnce(
+        &mut ServiceInvocation<Reporter, InertWorker>,
+        &mut ScriptClock<'_>,
+        &StopNotification,
+    ) -> T,
+) -> Result<T, Box<dyn Error>> {
     let mailbox: &'static BrokerClockChanges = &MAILBOXES[N];
     let stop: StopNotification = StopNotification::new();
     let mut clock: ScriptClock<'_> = ScriptClock {
@@ -145,13 +179,17 @@ fn with_broker<const N: usize, T>(
         mailbox,
         stop: &stop,
     };
+    #[cfg(windows)]
+    let reader: NativeBrokerReader = NativeBrokerReader::new(mailbox, sample::<N>);
+    #[cfg(not(windows))]
+    let reader: NativeBrokerReader = NativeBrokerReader::new(mailbox, sample::<N, READS>);
     let mut owner: ServiceInvocation<Reporter, InertWorker> = start_broker_invocation(
         0,
         &mut Reporter(mailbox),
         &mut HealthyTokenObserver(LabRole::ClockBroker),
         &mut clock,
         &stop,
-        NativeBrokerReader::new(mailbox, sample::<N>).with_sampling(|_, _| None),
+        reader.with_sampling(|_, _| None),
     )
     .map_err(|_receipt: HostReceipt| "unexpected broker startup failure")?;
     let first: InvocationPoll = owner.poll(&mut clock, &stop);
@@ -169,7 +207,7 @@ fn with_broker<const N: usize, T>(
         Some(BrokerClockRead::Completed { revision, result: Ok(_), .. })
             if revision.get() == 1
     ));
-    assert_eq!(GETTERS[N].load(SeqCst), 1);
+    assert_eq!(GETTERS[N].load(SeqCst), READS);
     Ok(result)
 }
 
@@ -231,6 +269,513 @@ fn private_status_requires_its_role_and_charges_every_frame() -> Result<(), Box<
     Ok(())
 }
 
+/// Split each request through the real receiver. A prefix produces no reply
+/// and several completions consume exactly one of the four request attempts.
+/// # Errors
+/// Returns fixture startup, cleanup or transfer failures.
+/// # Panics
+/// Fails on premature publication, stale completion reuse or renewed allowance.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn split_requests_publish_once_and_charge_one_attempt() -> Result<(), Box<dyn Error>> {
+    let actual: Result<_, SessionFault> = with_broker::<7, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let mut accepted: [bool; 4] = [false; 4];
+        for slot in &mut accepted {
+            let pending = client.request()?;
+            let delivery: Delivery<'_> = pending.delivery();
+            let (first, rest): (&[u8], &[u8]) = delivery.bytes.split_at(7);
+            let (second, last): (&[u8], &[u8]) = rest.split_at(10);
+            let mut request = session.begin_receive(delivery.connection)?;
+            assert!(request.complete_fragment(first)?.is_none());
+            assert!(request.complete_fragment(second)?.is_none());
+            let reply: Reply = request
+                .complete_fragment(last)?
+                .ok_or(SessionFault::Frame(FrameError::Length))?;
+            assert_eq!(
+                request.complete_fragment(last).err(),
+                Some(SessionFault::Closed)
+            );
+            *slot = pending.resolve(reply)?;
+        }
+        let next = client.request()?;
+        let refused: Option<SessionFault> = session.receive(next.delivery()).err();
+        Ok((accepted, refused))
+    })?;
+    assert_eq!(actual, Ok(([true; 4], Some(SessionFault::Closed))));
+    Ok(())
+}
+
+/// Keep one initial cutoff and the original Stop source as fragments arrive.
+/// # Errors
+/// Returns unexpected fixture startup, cleanup or prefix refusal.
+/// # Panics
+/// Fails when the last fragment publishes after either disqualifying transition.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn split_request_respects_cutoff_and_stop() -> Result<(), Box<dyn Error>> {
+    let cutoff: Result<_, SessionFault> = with_broker::<8, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request = session.begin_receive(delivery.connection)?;
+        assert!(request.complete_fragment(header)?.is_none());
+        request.receiver.clock.now = request.receiver.cutoff;
+        // One further byte would still leave an incomplete frame. The
+        // receiving guard must refuse it without relying on final dispatch.
+        let (next_byte, _tail): (&[u8], &[u8]) = body.split_at(1);
+        Ok(request.complete_fragment(next_byte).err())
+    })?;
+    assert_eq!(cutoff, Ok(Some(SessionFault::Expired)));
+
+    let stopped: Result<_, SessionFault> = with_broker::<9, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request = session.begin_receive(delivery.connection)?;
+        assert!(request.complete_fragment(header)?.is_none());
+        let _stop_disposition = deliver(Some(&MAILBOXES[9]), stop, 1, 0);
+        Ok(request.complete_fragment(body).err())
+    })?;
+    assert_eq!(stopped, Ok(Some(SessionFault::Closed)));
+    Ok(())
+}
+
+/// A due broker sample progresses while the receiver retains a split request.
+/// # Errors
+/// Returns startup, receive or reply refusal from the actual fixture.
+/// # Panics
+/// Fails if the due sample or the original request is lost.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn broker_poll_samples_during_a_partial_frame() -> Result<(), Box<dyn Error>> {
+    let actual: Result<_, SessionFault> = with_broker_reads::<12, 2, _>(|owner, clock, stop| {
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+            EngineStatusClient,
+        ) = BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request = session.begin_receive(delivery.connection)?;
+        let partial: bool = request.complete_fragment(header)?.is_none();
+        let before: u32 = GETTERS[12].load(SeqCst);
+        request.receiver.clock.now += Duration::from_secs(1);
+        let poll: InvocationPoll = request.poll_broker();
+        let after: u32 = GETTERS[12].load(SeqCst);
+        let reply: Reply = request
+            .complete_fragment(body)?
+            .ok_or(SessionFault::Frame(FrameError::Length))?;
+        Ok((partial, before, poll, after, pending.resolve(reply)?))
+    })?;
+    assert_eq!(
+        actual,
+        Ok((
+            true,
+            1,
+            InvocationPoll::Pending(Duration::from_secs(1)),
+            2,
+            true
+        ))
+    );
+    Ok(())
+}
+
+/// The original session cutoff limits a live wait and retires idle partial input.
+/// # Errors
+/// Returns startup, receive or clock setup failure from the actual fixture.
+/// # Panics
+/// Fails if expiry waits past the cutoff, stops the broker or accepts late bytes.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn broker_poll_retires_an_idle_frame_at_the_original_cutoff() -> Result<(), Box<dyn Error>> {
+    let actual: Result<_, SessionFault> = with_broker_reads::<13, 2, _>(|owner, clock, stop| {
+        let cutoff: Instant = clock
+            .now
+            .checked_add(Duration::from_secs(5))
+            .ok_or(SessionFault::Expired)?;
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+            EngineStatusClient,
+        ) = BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request = session.begin_receive(delivery.connection)?;
+        let partial: bool = request.complete_fragment(header)?.is_none();
+        let remaining: Duration = Duration::from_millis(200);
+        request.receiver.clock.now = cutoff.checked_sub(remaining).ok_or(SessionFault::Expired)?;
+        let early: InvocationPoll = request.poll_broker();
+        let open: bool = request.receiver.connection.get();
+        request.receiver.clock.now = cutoff;
+        let boundary: InvocationPoll = request.poll_broker();
+        let closed: bool = !request.receiver.connection.get();
+        let broker_open: bool = !request.receiver.owner.admission_closed();
+        let late: Option<SessionFault> = request.complete_fragment(body).err();
+        Ok((partial, early, open, boundary, closed, broker_open, late))
+    })?;
+    assert_eq!(
+        actual,
+        Ok((
+            true,
+            InvocationPoll::Pending(Duration::from_millis(200)),
+            true,
+            InvocationPoll::Pending(Duration::from_millis(800)),
+            true,
+            true,
+            Some(SessionFault::Closed)
+        ))
+    );
+    Ok(())
+}
+
+/// Preserve the typed fixture failure in the selected Windows test report.
+/// # Errors
+/// Returns the observed failure with its debug representation.
+#[cfg(windows)]
+fn native_fixture_result<T>(result: Result<T, impl std::fmt::Debug>) -> Result<T, Box<dyn Error>> {
+    result.map_err(|error| {
+        // Preserve the first error even if later fixture cleanup checks fail.
+        let _diagnostic: std::io::Result<()> = writeln!(
+            std::io::stderr().lock(),
+            "native pipe fixture refused: {error:?}"
+        );
+        format!("{error:?}").into()
+    })
+}
+
+/// Wait for the native terminal result under a separate real elapsed bound.
+/// # Errors
+/// Returns an unrecognized observation or a two-second completion timeout.
+#[cfg(windows)]
+fn wait_for_native_read(reader: &mut NativePipeRead) -> Result<NativeReadPoll, Box<dyn Error>> {
+    let started: Instant = Instant::now();
+    loop {
+        match reader.poll() {
+            Ok(NativeReadPoll::Pending) if started.elapsed() < Duration::from_secs(2) => {
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            Ok(NativeReadPoll::Pending) => {
+                let message: &str = "native pipe read still pending after two seconds";
+                // An unresolved read triggers fatal Drop. Write outside libtest's capture.
+                let _diagnostic: std::io::Result<()> =
+                    writeln!(std::io::stderr().lock(), "{message}");
+                return Err(message.into());
+            }
+            Ok(completion) => return Ok(completion),
+            Err(error) => {
+                let _diagnostic: std::io::Result<()> = writeln!(
+                    std::io::stderr().lock(),
+                    "native pipe completion observation failed: {error:?}"
+                );
+                return Err(format!("{error:?}").into());
+            }
+        }
+    }
+}
+
+/// Write one exact encoded fragment and observe its actual native terminal read.
+/// # Errors
+/// Returns a write failure, a completion observation failure or a non-data terminal result.
+#[cfg(windows)]
+fn write_completed_fragment(
+    reader: &mut NativePipeRead,
+    writer: &LabPipeWriter,
+    bytes: &[u8],
+) -> Result<NativeReadBytes, Box<dyn Error>> {
+    if let Err(error) = writer.write(bytes) {
+        let _diagnostic: std::io::Result<()> = writeln!(
+            std::io::stderr().lock(),
+            "native fixture peer write failed: {error:?}"
+        );
+        if reader.is_pending() {
+            if let Err(cancel_error) = reader.request_cancel() {
+                let _diagnostic: std::io::Result<()> = writeln!(
+                    std::io::stderr().lock(),
+                    "native fixture failure cleanup could not request cancellation: {cancel_error:?}"
+                );
+            }
+            let _completion: NativeReadPoll = wait_for_native_read(reader)?;
+        }
+        return Err(format!("{error:?}").into());
+    }
+    if let NativeReadPoll::Data(completed) = wait_for_native_read(reader)? {
+        Ok(completed)
+    } else {
+        Err("native pipe read terminated without data".into())
+    }
+}
+
+/// Prove the original broker still samples while an actual Windows read waits,
+/// then pass two completed native fragments through the original receiver.
+/// # Errors
+/// Returns native pipe, invocation, frame or reply failure.
+/// # Panics
+/// Fails if an idle read completes early or successful data fails to reach the broker.
+#[cfg(windows)]
+fn native_read_feeds_broker() -> Result<(), Box<dyn Error>> {
+    let (reader, writer): (LabPipeReader, LabPipeWriter) =
+        native_fixture_result(open_lab_pipe(15))?;
+    let mut read: NativePipeRead = native_fixture_result(NativePipeRead::new(reader))?;
+    with_broker_reads::<15, 2, _>(move |owner, clock, stop| {
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+            EngineStatusClient,
+        ) = native_fixture_result(BrokerStatusSession::open(
+            owner,
+            clock,
+            stop,
+            LabRole::Engine,
+        ))?;
+        let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+            native_fixture_result(session.begin_receive(delivery.connection))?;
+        let due: Instant = request.receiver.clock.now + Duration::from_secs(1);
+
+        let header_start: NativeReadStart = native_fixture_result(read.begin(header.len()))?;
+        let header_idle: bool = matches!(read.poll(), Ok(NativeReadPoll::Pending));
+        let before: u32 = GETTERS[15].load(SeqCst);
+        request.receiver.clock.now = due;
+        let broker_poll: InvocationPoll = request.poll_broker();
+        let after: u32 = GETTERS[15].load(SeqCst);
+        let native_header: NativeReadBytes = write_completed_fragment(&mut read, &writer, header)?;
+        assert!(matches!(header_start, NativeReadStart::Queued));
+        assert!(header_idle);
+        assert_eq!((before, after), (1, 2));
+        assert_eq!(broker_poll, InvocationPoll::Pending(Duration::from_secs(1)));
+        assert_eq!(native_header.as_bytes(), header);
+        assert!(
+            native_fixture_result(request.complete_fragment(native_header.as_bytes()))?.is_none()
+        );
+
+        let body_start: NativeReadStart = native_fixture_result(read.begin(body.len()))?;
+        let body_idle: bool = matches!(read.poll(), Ok(NativeReadPoll::Pending));
+        let native_body: NativeReadBytes = write_completed_fragment(&mut read, &writer, body)?;
+        assert!(matches!(body_start, NativeReadStart::Queued));
+        assert!(body_idle);
+        assert!(!read.is_pending());
+        assert_eq!(native_body.as_bytes(), body);
+        let reply: Reply =
+            native_fixture_result(request.complete_fragment(native_body.as_bytes()))?
+                .ok_or("the broker did not reply to a complete native frame")?;
+        assert!(native_fixture_result(pending.resolve(reply))?);
+        Ok(())
+    })?
+}
+
+/// Let the real receiver expire while an actual body read remains pending.
+/// Observe native cancellation before challenging the closed receiver with late bytes.
+/// # Errors
+/// Returns native pipe, invocation, frame or cancellation observation failure.
+/// # Panics
+/// Fails if expiry retires pending native work early or admits late input.
+#[cfg(windows)]
+fn native_read_drains_after_expiry() -> Result<(), Box<dyn Error>> {
+    let (reader, writer): (LabPipeReader, LabPipeWriter) =
+        native_fixture_result(open_lab_pipe(16))?;
+    let mut read: NativePipeRead = native_fixture_result(NativePipeRead::new(reader))?;
+    with_broker_reads::<16, 2, _>(move |owner, clock, stop| {
+        let cutoff: Instant = clock.now + Duration::from_secs(5);
+        let remaining: Duration = Duration::from_millis(200);
+        let before_cutoff: Instant = cutoff.checked_sub(remaining).ok_or("cutoff underflow")?;
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+            EngineStatusClient,
+        ) = native_fixture_result(BrokerStatusSession::open(
+            owner,
+            clock,
+            stop,
+            LabRole::Engine,
+        ))?;
+        let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+            native_fixture_result(session.begin_receive(delivery.connection))?;
+
+        let header_start: NativeReadStart = native_fixture_result(read.begin(header.len()))?;
+        let native_header: NativeReadBytes = write_completed_fragment(&mut read, &writer, header)?;
+        assert!(matches!(header_start, NativeReadStart::Queued));
+        assert_eq!(native_header.as_bytes(), header);
+        assert!(
+            native_fixture_result(request.complete_fragment(native_header.as_bytes()))?.is_none()
+        );
+
+        let body_start: NativeReadStart = native_fixture_result(read.begin(body.len()))?;
+        let body_idle: bool = matches!(read.poll(), Ok(NativeReadPoll::Pending));
+        request.receiver.clock.now = before_cutoff;
+        let early: InvocationPoll = request.poll_broker();
+        let open: bool = request.receiver.connection.get();
+        request.receiver.clock.now = cutoff;
+        let boundary: InvocationPoll = request.poll_broker();
+        let retired: bool = request.assembly.is_none() && !request.receiver.connection.get();
+        let broker_open: bool = !request.receiver.owner.admission_closed();
+        let pending_at_cutoff: bool = read.is_pending();
+        let cancellation: Result<NativeCancel, NativeReadError> = read.request_cancel();
+        let pending_after_cancel: bool = read.is_pending();
+        let completion: NativeReadPoll = wait_for_native_read(&mut read)?;
+
+        assert!(matches!(body_start, NativeReadStart::Queued));
+        assert!(body_idle);
+        assert_eq!(early, InvocationPoll::Pending(remaining));
+        assert!(open);
+        assert_eq!(
+            boundary,
+            InvocationPoll::Pending(Duration::from_millis(800))
+        );
+        assert!(retired && broker_open);
+        assert!(pending_at_cutoff && pending_after_cancel);
+        assert!(matches!(
+            native_fixture_result(cancellation)?,
+            NativeCancel::Requested
+        ));
+        assert!(matches!(completion, NativeReadPoll::Cancelled));
+        assert!(!read.is_pending());
+        assert_eq!(
+            request.complete_fragment(body).err(),
+            Some(SessionFault::Closed)
+        );
+        Ok(())
+    })?
+}
+
+/// Exercise real native completion and the expiry/cancellation neighbor.
+/// # Errors
+/// Returns unexpected native pipe, invocation or exchange failure.
+/// # Panics
+/// Fails if actual completion custody or broker progress differs from the oracle.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires an explicitly admitted offline Windows pipe and read-only clock fixture"]
+fn native_read_completes_or_drains_while_broker_polls() -> Result<(), Box<dyn Error>> {
+    native_read_feeds_broker()?;
+    native_read_drains_after_expiry()
+}
+
+/// The original Stop runs actual worker cleanup even while a request is incomplete.
+/// # Errors
+/// Returns startup or receive refusal from the actual fixture.
+/// # Panics
+/// Fails if the lifecycle or diagnostic pump is skipped or late input is admitted.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn broker_poll_finishes_stop_during_a_partial_frame() -> Result<(), Box<dyn Error>> {
+    let actual: Result<_, SessionFault> = with_broker::<14, _>(|owner, clock, stop| {
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+            EngineStatusClient,
+        ) = BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request = session.begin_receive(delivery.connection)?;
+        let partial: bool = request.complete_fragment(header)?.is_none();
+        let attempts: u64 = request
+            .receiver
+            .owner
+            .diagnostics
+            .snapshot()
+            .required()
+            .health()
+            .consumer_attempts()
+            .value();
+        let wake: bool = deliver(Some(&MAILBOXES[14]), stop, 1, 0).wake;
+        let poll: InvocationPoll = request.poll_broker();
+        let after: u64 = request
+            .receiver
+            .owner
+            .diagnostics
+            .snapshot()
+            .required()
+            .health()
+            .consumer_attempts()
+            .value();
+        let late: Option<SessionFault> = request.complete_fragment(body).err();
+        Ok((partial, wake, poll, after.checked_sub(attempts), late))
+    })?;
+    assert_eq!(
+        actual,
+        Ok((
+            true,
+            true,
+            InvocationPoll::Finished,
+            Some(1),
+            Some(SessionFault::Closed)
+        ))
+    );
+    Ok(())
+}
+
+/// Discard abandoned or unframeable input. The same connection cannot reframe its tail.
+/// # Errors
+/// Returns unexpected fixture startup, cleanup or prefix refusal.
+/// # Panics
+/// Fails if abandonment or an invalid extent permits the same transport to submit another frame.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn abandoned_frame_retires_the_connection() -> Result<(), Box<dyn Error>> {
+    let actual: Result<_, SessionFault> = with_broker::<10, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (prefix, _rest): (&[u8], &[u8]) = delivery.bytes.split_at(10);
+        {
+            let mut request = session.begin_receive(delivery.connection)?;
+            assert!(request.complete_fragment(prefix)?.is_none());
+        }
+        Ok(session.receive(delivery).err())
+    })?;
+    assert_eq!(actual, Ok(Some(SessionFault::Closed)));
+
+    let malformed: Result<_, SessionFault> = with_broker::<11, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending = client.request()?;
+        let delivery: Delivery<'_> = pending.delivery();
+        let (head, _rest): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let extent: Option<SessionFault> = {
+            let mut request = session.begin_receive(delivery.connection)?;
+            assert!(request.complete_fragment(head)?.is_none());
+            request.complete_fragment(b"{}x").err()
+        };
+        Ok((extent, session.receive(delivery).err()))
+    })?;
+    assert_eq!(
+        malformed,
+        Ok((
+            Some(SessionFault::Frame(FrameError::Length)),
+            Some(SessionFault::Closed),
+        )),
+    );
+    Ok(())
+}
+
 /// Correlation requires both a correct in-band ID and the originally composed connection.
 /// # Errors
 /// Returns an unexpected broker startup, cleanup or exchange failure.
@@ -251,7 +796,7 @@ fn private_status_refuses_foreign_mismatched_and_late_replies() -> Result<(), Bo
             let pending = sender.request()?;
             let local: Reply = session.receive(pending.delivery())?;
             let foreign: Reply = {
-                let other_pending: super::PendingStatus<'_> = other_sender.request()?;
+                let other_pending: PendingStatus<'_> = other_sender.request()?;
                 other_session.receive(other_pending.delivery())?
             };
             let foreign_result: Result<bool, SessionFault> = pending.resolve(foreign);

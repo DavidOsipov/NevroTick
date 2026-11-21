@@ -169,6 +169,11 @@ extra = ["dep:control-optional"]
         boms = [json.loads(path.read_text()) for path in output.rglob("*.cdx.json")]
         self.assertEqual(len(boms), 1, "Only the independently selected root is a workspace member")
         self.assertEqual(boms[0]["metadata"]["component"]["name"], "independent-sbom-root")
+        scope = json.loads((output / "sbom-inputs.json").read_text())["scope"]
+        self.assertIn("Rust dependency inventory only", scope)
+        self.assertIn("built, signed and directly distributed MSIX", scope)
+        self.assertIn("installed payload", scope)
+        self.assertNotIn("Store", scope)
         return boms[0]
 
     def add_second_workspace_member(self):

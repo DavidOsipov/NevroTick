@@ -37,7 +37,7 @@ runtime, service, account, privilege, package, signing or publication state.
 | [pipeline/text_policy.py](pipeline/text_policy.py) | Pinned strict UTF-8/Unicode admission, including raw comments and decoded escapes |
 | [pipeline/generate.py](pipeline/generate.py) | Deterministic destination encoders, fresh-tree publication and read-only comparison |
 | [pipeline/delivery.py](pipeline/delivery.py) | Source-derived delivery obligations and independent semantic interpretation of supported generated outputs |
-| [pipeline/__main__.py](pipeline/__main__.py) | `validate`, `generate` and `check` command line |
+| [pipeline/__main__.py](pipeline/__main__.py) | `validate`, `generate`, `check` and `inspect-msix` command line |
 | [tests](tests) | Independent valid/hostile source and actual CLI/output controls |
 
 ## Use
@@ -56,6 +56,8 @@ python3 -I -B metadata/pipeline/__main__.py generate \
   --output "$metadata_output_parent/candidate"
 python3 -I -B metadata/pipeline/__main__.py check \
   --output "$metadata_output_parent/candidate"
+python3 -I -B metadata/pipeline/__main__.py inspect-msix \
+  --output "$metadata_output_parent/candidate"
 
 python3 -I -B -m unittest discover -s metadata/tests -v
 ```
@@ -67,6 +69,14 @@ or existing output never becomes an overwrite request. Keep prior generations
 for comparison and generate a new destination after changing inputs. `check`
 recomputes expectations and rejects stale, changed, missing, extra, linked or
 unexpected files without modifying the inspected tree.
+
+`inspect-msix` checks the same complete generation and prints a direct-MSIX
+assembly input report. It binds the observed generation receipt and the selected
+package, service and event authoring inputs by SHA-256. The report identifies
+the four required product roles and their source states, excludes the observer,
+and lists pending field IDs and owners. The current sources report
+`assembly-inputs-incomplete` with a null package identity and four open
+payload slots. The command prints the report to stdout.
 
 `--root PATH` selects an explicit source checkout; `--source PATH` selects a
 different admitted source file within that checkout. Neither controls Python

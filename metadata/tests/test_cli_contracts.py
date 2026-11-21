@@ -76,14 +76,15 @@ class CliContractTests(SourceFixture):
     def test_output_argument_errors_use_parser_exit_without_effects(self) -> None:
         """Invalid command/output combinations fail before the source operation."""
         for command, extra in (("validate", ["--output", str(self.output)]),
-                               ("generate", []), ("check", [])):
+                               ("generate", []), ("check", []), ("inspect-msix", [])):
             with self.subTest(command=command):
                 result = subprocess.run([sys.executable, "-I", "-B", str(self.entrypoint),
                                          command, "--root", str(self.root), *extra],
                                         capture_output=True, text=True, timeout=15, check=False)
                 self.assertEqual(result.returncode, 2, result.stderr)
                 self.assertEqual(result.stdout, "")
-                self.assertIn("validate has no output; generate/check require --output", result.stderr)
+                self.assertIn("validate has no output; generate/check/inspect-msix require --output",
+                              result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
                 self.assertFalse(self.output.exists())
 

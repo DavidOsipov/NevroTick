@@ -1251,10 +1251,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         notification: &StopNotification,
         session_cutoff: Option<Instant>,
     ) -> Result<Instant, BrokerQueryFault> {
-        if self.phase != WorkerPhase::Running
-            || self.custody != WorkerCustody::Active
-            || self.admission_closed
-        {
+        if !self.broker_status_running() {
             return Err(BrokerQueryFault::ServiceClosed);
         }
         let deadline: Instant = self.run_deadline.ok_or(BrokerQueryFault::ServiceClosed)?;
@@ -1266,6 +1263,30 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         }
         self.require_broker_status_open(notification)?;
         Ok(now)
+    }
+
+    /// Observe the invocation state required for private broker status reads.
+    #[cfg(test)]
+    fn broker_status_running(&self) -> bool {
+        self.phase == WorkerPhase::Running
+            && self.custody == WorkerCustody::Active
+            && !self.admission_closed
+    }
+
+    /// Bound a live connection's wait using the observation from the owner's poll.
+    /// The same instant anchors the owner's relative wait and this session cutoff.
+    #[cfg(test)]
+    fn broker_status_wait(
+        &self,
+        notification: &StopNotification,
+        cutoff: Instant,
+    ) -> Option<Duration> {
+        if !self.broker_status_running() || self.require_broker_status_open(notification).is_err() {
+            return None;
+        }
+        cutoff
+            .checked_duration_since(self.observed.last_trusted)
+            .filter(|remaining: &Duration| !remaining.is_zero())
     }
 
     /// Require the same broker reader to remain live, including during suspension.

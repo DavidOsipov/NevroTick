@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import dataclasses
+import hashlib
+import io
 import json
 import shutil
 import sys
@@ -11,7 +14,7 @@ import unittest
 from unittest import mock
 import xml.etree.ElementTree as ET
 
-from test_pipeline import REPOSITORY, LITERAL_SENTINEL, SourceFixture, json_data
+from test_pipeline import REPOSITORY, LITERAL_SENTINEL, SourceFixture, json_data, snapshot
 
 
 class ProducerDeliveryCliTests(SourceFixture):
@@ -41,14 +44,159 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.assertEqual(legacy.read_text(), "field,value,status\n")
         self.require_rejection(self.cli("validate", "--stage", "release"))
 
+    def test_inspect_msix_binds_inputs_and_reports_only_incomplete_preparation(self) -> None:
+        """A legitimate owned generation supplies hashes and four unadmitted product roles."""
+        self.generate()
+        original_entries = set(self.base.rglob("*"))
+        original_bytes = snapshot(self.base)
+        report = self.require_success(self.cli("inspect-msix", output=self.output))
+        pending = report.pop("pending")
+        self.assertIsInstance(pending, list)
+        self.assertEqual(len(pending), 6)
+        for item in pending:
+            self.assertEqual(set(item), {"path", "owner", "required_stage"})
+        self.assertEqual(
+            {(item["path"], item["owner"], item["required_stage"]) for item in pending},
+            {
+                ("release.version", "W11-W10/P6", "release"),
+                ("package.identity", "W11-W10/P6", "release"),
+                ("services.identities", "W11-W05", "release"),
+                ("diagnostics.provider", "W11-W08", "release"),
+                ("public.destinations", "W11-W10/P6", "release"),
+                ("release.qualification", "W11-W10/P6", "release"),
+            },
+        )
+        self.assertIs(report["assembly_ready"], False)
+        self.assertEqual(
+            report,
+            {
+                "schema_version": 1,
+                "status": "assembly-inputs-incomplete",
+                "distribution_route": "direct-msix",
+                "package_identity": None,
+                "assembly_ready": False,
+                "generation_receipt_sha256": hashlib.sha256(original_bytes["generated/receipt.json"]).hexdigest(),
+                "authoring_inputs": {
+                    path: hashlib.sha256(original_bytes["generated/" + path]).hexdigest()
+                    for path in (
+                        "authoring/msix-inputs.json",
+                        "authoring/service-inputs.json",
+                        "authoring/event-inputs.json",
+                    )
+                },
+                "roles": {
+                    "ui": {"source_state": "fixture", "artifact_status": "not-admitted"},
+                    "engine": {"source_state": "planned", "artifact_status": "not-admitted"},
+                    "broker": {"source_state": "planned", "artifact_status": "not-admitted"},
+                    "helper": {"source_state": "planned", "artifact_status": "not-admitted"},
+                },
+            },
+        )
+        self.require_rejection(self.cli("inspect-msix", "--stage", "release", output=self.output))
+        self.assertEqual(snapshot(self.base), original_bytes)
+        self.assertEqual(set(self.base.rglob("*")), original_entries)
+
+    def test_inspect_msix_refuses_self_consistent_forged_identity(self) -> None:
+        """Agreeing descriptor and receipt bytes cannot fill the unresolved identity."""
+        self.generate()
+        selected = self.output / "authoring/msix-inputs.json"
+        receipt = self.output / "receipt.json"
+        original_descriptor = selected.read_bytes()
+        original_receipt = receipt.read_bytes()
+        descriptor = json.loads(original_descriptor)
+        descriptor["identity"] = {"Name": "Fixture.Unapproved", "Publisher": "CN=Fixture"}
+        descriptor["complete_manifest"] = True
+        forged = (json.dumps(descriptor, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+        forged_receipt = json.loads(original_receipt)
+        rows = [row for row in forged_receipt["files"] if row["path"] == "authoring/msix-inputs.json"]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["sha256"], hashlib.sha256(original_descriptor).hexdigest())
+        row.update(bytes=len(forged), sha256=hashlib.sha256(forged).hexdigest())
+        selected.write_bytes(forged)
+        receipt.write_text(json.dumps(forged_receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+        forged_snapshot = snapshot(self.base)
+        self.require_rejection(self.cli("inspect-msix", output=self.output))
+        self.assertEqual(snapshot(self.base), forged_snapshot)
+        selected.write_bytes(original_descriptor)
+        receipt.write_bytes(original_receipt)
+        self.require_success(self.cli("inspect-msix", output=self.output))
+
+    def test_inspect_msix_keeps_admitted_bytes_after_named_leaf_changes(self) -> None:
+        """Report identity is determined by the admitted snapshot rather than a later path read."""
+        self.generate()
+        healthy = self.require_success(self.cli("inspect-msix", output=self.output))
+        sys.path.insert(0, str(REPOSITORY))
+        try:
+            generator = importlib.import_module("metadata.pipeline.generate")
+            cli = importlib.import_module("metadata.pipeline.__main__")
+        finally:
+            sys.path.remove(str(REPOSITORY))
+        admit = generator._read_checked_generation
+        leaf = self.output / "authoring/msix-inputs.json"
+        changed = b'{"PRIVATE-REJECTED-CONTENT-934781": true}'
+        stdout, stderr = io.StringIO(), io.StringIO()
+
+        def replace_after_admission(*args, **kwargs):
+            admitted = admit(*args, **kwargs)
+            leaf.write_bytes(changed)
+            return admitted
+
+        with mock.patch.object(generator, "_read_checked_generation", side_effect=replace_after_admission) as read:
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                status = cli.main(["inspect-msix", "--root", str(self.root), "--output", str(self.output)])
+        read.assert_called_once()
+        self.assertEqual(leaf.read_bytes(), changed)
+        self.assertEqual(status, 0, stderr.getvalue())
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(json.loads(stdout.getvalue()), healthy)
+        self.require_rejection(self.cli("inspect-msix", output=self.output))
+
+    def test_inspect_msix_refuses_same_byte_alias(self) -> None:
+        """A relevant generated leaf must retain single-file custody even with the right hash."""
+        self.generate()
+        path = self.output / "authoring/service-inputs.json"
+        alias = self.base / "same-service-bytes"
+        alias.hardlink_to(path)
+        comparison = snapshot(self.base)
+        self.assertEqual(comparison["same-service-bytes"], comparison["generated/authoring/service-inputs.json"])
+        self.require_rejection(self.cli("inspect-msix", output=self.output))
+        self.assertEqual(snapshot(self.base), comparison)
+        self.assertTrue(alias.samefile(path))
+        alias.unlink()
+        self.require_success(self.cli("inspect-msix", output=self.output))
+
+    def test_inspect_msix_binds_optional_event_compiler_input(self) -> None:
+        """The compilation input is an additional authoring hash when the owner supplies it."""
+        self.replace_once("[fields]", (
+            '[diagnostics.event_provider]\n'
+            'name = "NevroTick-TestService"\n'
+            'guid = "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380"\n'
+            'package_resource_file = "nevrotick-test-events.dll"\n\n'
+            '[fields]'
+        ))
+        self.generate()
+        report = self.require_success(self.cli("inspect-msix", output=self.output))
+        expected_paths = {
+            "authoring/msix-inputs.json",
+            "authoring/service-inputs.json",
+            "authoring/event-inputs.json",
+            "authoring/service-events.man",
+        }
+        self.assertEqual(
+            report["authoring_inputs"],
+            {path: hashlib.sha256((self.output / path).read_bytes()).hexdigest() for path in expected_paths},
+        )
+        self.assertIs(report["assembly_ready"], False)
+
     def test_wrong_msix_route_is_refused_before_publication(self) -> None:
         self.copy_pipeline()
         self.generate()
         producer = self.root / "metadata/pipeline/generate.py"
         original = producer.read_text()
-        selected = '"distribution_route": "direct-msix"'
+        selected = '"distribution_route": "direct-msix", "complete_manifest": False,'
         self.assertEqual(original.count(selected), 1)
-        producer.write_text(original.replace(selected, '"distribution_route": "microsoft-store"'))
+        producer.write_text(original.replace(selected, selected.replace("direct-msix", "microsoft-store")))
         invalid = self.base / "invalid-route"
         self.require_rejection(self.cli("generate", output=invalid))
         self.assertFalse(invalid.exists())
