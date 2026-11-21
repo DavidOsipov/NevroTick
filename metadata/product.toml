@@ -63,9 +63,9 @@ next_action = "Freeze the release version mapping before release generation."
 [[pending]]
 path = "package.identity"
 owner = "W11-W10/P6"
-reason = "Final Store-assigned package and certificate identity is unresolved."
+reason = "The direct MSIX package Name and Publisher are unresolved."
 required_stage = "release"
-next_action = "Record the assigned identity through the existing package owner."
+next_action = "Record the approved direct package identity and qualify its later signer match."
 
 [[pending]]
 path = "services.identities"
@@ -154,10 +154,10 @@ next_action = "Complete the existing native and package qualification gates."
 "project.assets.fixture_image" = { value = "crates/nevrotick-ui/ui/assets/head.png", status = "populated", source = "crates/nevrotick-ui/ui/assets/README.md", reason = "Reviewed existing project fact." }
 "project.assets.icon_source" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
 "project.assets.package_logo" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
-"project.assets.store_logo" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.store_logo" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
 "project.assets.screenshots" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
 "project.assets.trailer" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
-"project.assets.additional_store_assets" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.additional_store_assets" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
 
 # project.localization
 "project.localization.adopted_locales" = { value = "en", status = "populated", source = "docs/plans/ui-localization.md", reason = "Reviewed existing project fact." }
@@ -166,7 +166,7 @@ next_action = "Complete the existing native and package qualification gates."
 "project.localization.service_mui" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
 "project.localization.pe_translations" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
 "project.localization.msix_pri" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
-"project.localization.store_locales" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
+"project.localization.store_locales" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
 
 # project.platform
 "project.platform.target" = { value = "", status = "derived", source = "platform.target", reason = "Derived from the existing admitted authority." }
@@ -200,31 +200,31 @@ next_action = "Complete the existing native and package qualification gates."
 "project.build.schema_versions" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
 
 # project.store
-"project.store.product_name" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.description_long" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.description_short" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.features" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.keywords" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.category" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.subcategory" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.secondary_category" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.short_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.sort_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.voice_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.whats_new" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.age_rating" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.privacy_declaration" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.privacy_policy_text" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.hardware_minimum" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.hardware_recommended" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.system_requirements" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.copyright_trademark" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.additional_license_terms" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.published_by" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.use_uploaded_images" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.game_settings" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.display_mode" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
-"project.store.product_declarations" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.product_name" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.description_long" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.description_short" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.features" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.keywords" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.category" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.subcategory" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.secondary_category" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.short_title" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.sort_title" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.voice_title" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.whats_new" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.age_rating" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.privacy_declaration" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.privacy_policy_text" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.hardware_minimum" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.hardware_recommended" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.system_requirements" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.copyright_trademark" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.additional_license_terms" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.published_by" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.use_uploaded_images" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.game_settings" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.display_mode" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
+"project.store.product_declarations" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
 
 # project.signing
 "project.signing.publisher_subject" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }

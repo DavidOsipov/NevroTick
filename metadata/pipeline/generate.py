@@ -9,13 +9,11 @@ to the caller's build environment, not these filesystem checks.
 
 from __future__ import annotations
 
-import csv
 from collections import Counter
 from collections.abc import Collection
 from dataclasses import asdict
 from typing import Literal, TypedDict
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
@@ -27,7 +25,7 @@ import xml.etree.ElementTree as ET
 from .contract import (Component, EventProvider, FieldValue, InputDigest, Metadata, MetadataError, PendingField,
                        Product, load_metadata, validate_model)
 from .delivery import delivery_contract, verify_delivery
-from .fields import FIELD_BY_KEY
+from .fields import FIELD_BY_KEY, retained_store_field
 
 MAX_OUTPUT_FILE = 1024 * 1024
 MAX_OUTPUT_TOTAL = 4 * MAX_OUTPUT_FILE
@@ -119,22 +117,23 @@ def _field_rows(model: Metadata, prefixes: tuple[str, ...] = ()) -> list[dict[st
 def field_counts(model: Metadata) -> FieldCounts:
     """Count fields only after enforcing the public model contract.
 
-    Unresolved means pending or derived with no observation/value yet. It is
-    separate from native/release qualification and excludes justified absence.
+    Unresolved counts current pending facts and derived observations without a
+    value yet. Retained Store rows and justified absence are excluded.
     """
     validate_model(model)
     return {"field_count": len(model.fields),
-            "unresolved_field_count": sum(field.status == "pending" or
-                                           (field.status == "derived" and not field.value)
-                                           for field in model.fields)}
+            "unresolved_field_count": sum((field.status == "pending" or
+                                            (field.status == "derived" and not field.value))
+                                           for field in model.fields if not retained_store_field(field.key))}
 
 
 def _field_coverage(model: Metadata) -> dict[str, object]:
     """Report complete declared-field disposition separately from resolved values."""
     rows = _field_rows(model)
+    current = [row for row in rows if not retained_store_field(row["key"])]
     pending = [{key: row[key] for key in ("key", "owner", "source", "reason")}
-               for row in rows if row["status"] == "pending"]
-    return {"schema_version": 1, "scope": "declared-source-field-register",
+               for row in current if row["status"] == "pending"]
+    return {"schema_version": 2, "scope": "declared-source-field-register",
             "complete_declared_field_set": True,
             **field_counts(model),
             "status_counts": dict(sorted(Counter(row["status"] for row in rows).items())),
@@ -142,7 +141,7 @@ def _field_coverage(model: Metadata) -> dict[str, object]:
             "resolved_value_count": sum(bool(row["value"]) for row in rows),
             "pending": pending,
             "unobserved_derived": [{key: row[key] for key in ("key", "owner", "source", "reason")}
-                                   for row in rows if row["status"] == "derived" and not row["value"]],
+                                   for row in current if row["status"] == "derived" and not row["value"]],
             "release_qualified": False,
             "native_readback": "not-run",
             "delivery": delivery_contract(model)}
@@ -253,40 +252,6 @@ def _display_xml(model: Metadata) -> bytes:
     return rendered + b"\n"
 
 
-def _store_csv(model: Metadata) -> bytes:
-    """Export review fields; reject formula-leading cells without changing values."""
-    stream = io.StringIO(newline="")
-    writer = csv.writer(stream, lineterminator="\n", quoting=csv.QUOTE_ALL)
-    writer.writerow(("field", "value", "status"))
-    product_values = {"name": model.product.name, "publisher": model.product.publisher,
-                      "description": model.product.description, "repository": model.product.repository,
-                      "homepage": model.product.homepage}
-    for key in ("name", "publisher", "description", "repository", "homepage"):
-        value = product_values[key]
-        if value is not None:
-            if value.lstrip().startswith(("=", "+", "-", "@")):
-                raise MetadataError("store-export-formula-prefix")
-            writer.writerow(("product." + key, value, "derived"))
-    for pending_field in model.pending:
-        writer.writerow((pending_field.path, "", "pending"))
-    for key in ("project.release.notes", "project.urls.support", "project.urls.privacy",
-                "project.urls.license", "project.urls.release_notes"):
-        value = _field_value(model, key)
-        if value:
-            if value.lstrip().startswith(("=", "+", "-", "@")):
-                raise MetadataError("store-export-formula-prefix")
-            writer.writerow((key, value, "derived"))
-    # The catalogue register contains the actual per-listing field dispositions;
-    # this remains a custom review CSV, not the Partner Center upload schema.
-    for field in model.fields:
-        if field.key.startswith(("catalogue.B.9.1.", "catalogue.B.9.2.")):
-            if field.value and field.status in {"populated", "derived"}:
-                if field.value.lstrip().startswith(("=", "+", "-", "@")):
-                    raise MetadataError("store-export-formula-prefix")
-                writer.writerow((field.key, field.value, field.status))
-    return stream.getvalue().encode("utf-8")
-
-
 def _service_events(provider: EventProvider) -> bytes:
     """Render compiler input from the revalidated provider and fixed field order.
 
@@ -367,7 +332,6 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                                                "fields": _field_rows(model)}),
                 "field-coverage.json": _json(_field_coverage(model)),
                "authoring/display.xml": _display_xml(model),
-                "authoring/store.csv": _store_csv(model),
                 "authoring/project-inputs.json": _json({
                     "schema_version": 1, "kind": "internal-project-authoring-inputs",
                     "fields": _field_rows(model, ("project.",))})}
@@ -387,7 +351,8 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                 ) if value)), component.file_version)
             outputs[f"rc/{component.id}.rc"] = _version_resource(model, component)
     outputs["authoring/msix-inputs.json"] = _json({
-        "schema_version": 1, "kind": "partial-msix-authoring-inputs", "complete_manifest": False,
+        "schema_version": 2, "kind": "partial-msix-authoring-inputs",
+        "distribution_route": "direct-msix", "complete_manifest": False,
         "display_name": model.product.name, "publisher_display_name": model.product.publisher,
         "description": model.product.description, "identity": None,
         "target": model.target, "cpu_floor": model.cpu_floor,

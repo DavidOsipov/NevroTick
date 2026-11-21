@@ -23,6 +23,36 @@ class ProducerDeliveryCliTests(SourceFixture):
         shutil.copytree(REPOSITORY / "metadata/pipeline", self.root / "metadata/pipeline")
         self.entrypoint = self.root / "metadata/pipeline/__main__.py"
 
+    def test_direct_msix_source_generation_and_check(self) -> None:
+        self.generate()
+        self.require_success(self.cli("check", output=self.output))
+        name = "authoring/msix-inputs.json"
+        status = json_data(self.output / name)
+        self.assertEqual((status["schema_version"], status.get("distribution_route")), (2, "direct-msix"))
+        self.assertIs(status["complete_manifest"], False)
+        self.assertIsNone(status["identity"])
+        pending = {row["path"]: row["reason"] for row in status["pending"]}
+        self.assertIn("Name and Publisher", pending["package.identity"])
+        self.assertIn("services.identities", pending)
+        self.assertFalse((self.output / "authoring/store.csv").exists())
+        legacy = self.output / "authoring/store.csv"
+        legacy.write_text("field,value,status\n")
+        self.require_rejection(self.cli("check", output=self.output))
+        self.assertEqual(legacy.read_text(), "field,value,status\n")
+        self.require_rejection(self.cli("validate", "--stage", "release"))
+
+    def test_wrong_msix_route_is_refused_before_publication(self) -> None:
+        self.copy_pipeline()
+        self.generate()
+        producer = self.root / "metadata/pipeline/generate.py"
+        original = producer.read_text()
+        selected = '"distribution_route": "direct-msix"'
+        self.assertEqual(original.count(selected), 1)
+        producer.write_text(original.replace(selected, '"distribution_route": "microsoft-store"'))
+        invalid = self.base / "invalid-route"
+        self.require_rejection(self.cli("generate", output=invalid))
+        self.assertFalse(invalid.exists())
+
     def test_wrong_producer_mapping_is_refused_before_publication(self) -> None:
         self.copy_pipeline()
         self.require_success(self.cli("generate", output=self.output))
@@ -102,17 +132,12 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.require_rejection(self.cli("check", output=self.output))
         self.assertEqual(json_data(self.output / "metadata.json")["product"]["description"], old)
         self.assertEqual(json_data(fresh / "metadata.json")["product"]["description"], new)
-        # Independent literal/tree/cell observers, rather than the production checker.
+        # Inspect literals and records independently of the delivery checker.
         from test_pipeline import rust_string
-        import csv
-        import io
         import xml.etree.ElementTree as ET
         self.assertEqual(rust_string((fresh / "rust/product.rs").read_text(), "PRODUCT_DESCRIPTION"), new)
         xml = ET.fromstring((fresh / "authoring/display.xml").read_bytes())
         self.assertEqual(xml.find("{*}product/{*}description").text, new)
-        rows = list(csv.reader(io.StringIO((fresh / "authoring/store.csv").read_text(), newline="")))
-        self.assertEqual([row for row in rows if row[0] == "product.description"],
-                         [["product.description", new, "derived"]])
         self.assertEqual(json_data(fresh / "authoring/msix-inputs.json")["description"], new)
 
 
@@ -210,7 +235,7 @@ class DeliveryObservationTests(SourceFixture):
         self.assertEqual(set(report["internal_only_artifacts"]), {
             "field-register.json", "field-coverage.json", "authoring/display.xml",
             "authoring/msix-inputs.json", "authoring/service-inputs.json",
-            "authoring/event-inputs.json", "authoring/store.csv", "authoring/project-inputs.json",
+            "authoring/event-inputs.json", "authoring/project-inputs.json",
         })
         self.assertFalse(any(row["artifact"].startswith(("rust/engine", "rc/engine",
                                                        "rust/broker", "rc/broker",
@@ -328,11 +353,18 @@ class DeliveryObservationTests(SourceFixture):
                 self.assertNotEqual(changed, original)
                 self.reject({**self.outputs, name: changed})
 
-    def test_csv_duplicate_field_or_same_count_wrong_identity_is_refused(self) -> None:
-        for replacement in (b'"product.name"', b'"wrong.name"'):
-            outputs = self.outputs.copy()
-            outputs["authoring/store.csv"] = outputs["authoring/store.csv"].replace(b'"product.publisher"', replacement)
-            self.reject(outputs)
+    def test_direct_msix_receiver_refuses_store_artifact_and_wrong_route(self) -> None:
+        name = "authoring/msix-inputs.json"
+        self.delivery.verify_delivery(self.model, self.outputs)
+        self.reject({**self.outputs, "authoring/store.csv": b"field,value,status\n"})
+        for field, value in (
+            ("distribution_route", "microsoft-store"),
+            ("schema_version", 1),
+            ("complete_manifest", True),
+            ("identity", {"Name": "Fixture.Package", "Publisher": "CN=Fixture"}),
+        ):
+            with self.subTest(field=field):
+                self.reject(self.json_change(name, lambda data: data.__setitem__(field, value)))
 
     def test_direct_observer_requires_exact_plain_types_paths_and_budgets(self) -> None:
         self.reject({})

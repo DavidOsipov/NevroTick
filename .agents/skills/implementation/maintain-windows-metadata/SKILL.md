@@ -92,10 +92,10 @@ not accepted source files or successful observation records.
    on raw source/comments and decoded keys/values, including TOML escapes.
 6. **Generate supported projections.** Derive per-component RC resources,
    selected package authoring inputs, localization and About/diagnostics from
-   reviewed data and frozen build facts. Store projections retained by the
-   existing source tool are historical compatibility outputs, not selected
-   release requirements. Route schema/applicability changes through their owner;
-   do not delete required keys ad hoc or invent Partner Center values. Escape each target
+   reviewed data and frozen build facts. The direct MSIX source profile retains
+   historical Store fields inside the validated register. Fresh generations
+   exclude the retired Store CSV. Route schema/applicability changes through
+   their owner and preserve the exact current artifact inventory. Escape each target
    format correctly, enforce its own version/length/encoding rules and fail on
    missing required inputs. Finish resources before signing. Do not add package
    behaviors, broad Windows bindings or a runtime inspection service for this.

@@ -246,11 +246,44 @@ class EngineCompositionGraphTests(unittest.TestCase):
             deps = [{"pkg": "windows-platform", "dep_kinds": [{"kind": None, "target": None}]},
                     {"pkg": "nevrotick-engine", "dep_kinds": [{"kind": "dev", "target": None}]}]
             nodes.append({"id": name, "features": [], "deps": deps if name == "nevrotick-windows-service-fixture" else []})
+        private_status = (
+            ("garde", "0.23.0", ["derive"]),
+            ("memchr", "2.8.3", ["alloc", "std"]),
+            ("serde", "1.0.229", ["std"]),
+            ("serde_core", "1.0.229", ["result", "std"]),
+            ("serde_json", "1.0.154", ["std"]),
+            ("zmij", "1.0.23", []),
+        )
+        policy["rows"][Q.TARGETS[0]]["package_scopes"]["windows-platform"]["features"] = {
+            "garde@0.23.0": {"target": [["derive"]]},
+        }
+        for name, version, features in private_status:
+            policy["packages"].append({
+                "name": name, "version": version, "license": "MIT OR Apache-2.0",
+                "links": None, "build_script": False, "proc_macro": False,
+            })
+            packages.append({
+                "id": name, "name": name, "version": version, "license": "MIT OR Apache-2.0",
+                "source": "registry+https://github.com/rust-lang/crates.io-index",
+                "targets": [{"kind": ["lib"]}],
+            })
+            nodes.append({"id": name, "features": features, "deps": []})
+        nodes[0]["deps"].extend(
+            {"pkg": name, "dep_kinds": [{"kind": "dev", "target": None}]}
+            for name in ("garde", "serde", "serde_json")
+        )
         data = {"packages": packages, "resolve": {"nodes": nodes}}
         normal = ("nevrotick-windows-service-fixture v0.0.0 (/work/source/tools/windows-service-fixture)|\n"
-                  "`-- windows-platform v0.0.0 (/work/source/crates/windows-platform)|\n")
+                  "`-- windows-platform v0.0.0 (/work/source/crates/windows-platform)|\n"
+                  "    `-- garde v0.23.0|derive\n")
         development = normal + ("[dev-dependencies]\n"
-                               "`-- nevrotick-engine v0.0.0 (/work/source/crates/nevrotick-engine)|\n")
+                               "|-- nevrotick-engine v0.0.0 (/work/source/crates/nevrotick-engine)|\n"
+                               "|-- garde v0.23.0|derive\n"
+                               "|-- serde v1.0.229|std\n"
+                               "|   `-- serde_core v1.0.229|result,std\n"
+                               "`-- serde_json v1.0.154|std\n"
+                               "    |-- memchr v2.8.3|alloc,std\n"
+                               "    `-- zmij v1.0.23|\n")
         return policy, data, normal, development
 
     def receive(self, fixture, target=Q.TARGETS[0]):
@@ -304,8 +337,12 @@ class EngineCompositionGraphTests(unittest.TestCase):
                         "|-- windows-sys v0.61.2|{}\n|   `-- windows-link v0.2.1|\n`-- windows-platform")
         normal = normal.replace("`-- windows-platform", windows_tree.format(",".join(normal_features)))
         development = development.replace("`-- windows-platform", windows_tree.format(",".join(test_features)))
-        development = development.replace("`-- nevrotick-engine", "|-- nevrotick-engine")
-        development += f"|   `-- {leaf} v0.0.0 ({leaf_path})|\n"
+        engine_edge = "|-- nevrotick-engine v0.0.0 (/work/source/crates/nevrotick-engine)|\n"
+        development = development.replace(engine_edge, engine_edge + f"|   `-- {leaf} v0.0.0 ({leaf_path})|\n")
+        development = development.replace(
+            "`-- serde_json v1.0.154|std\n    |-- memchr v2.8.3|alloc,std\n    `-- zmij v1.0.23|",
+            "|-- serde_json v1.0.154|std\n|   |-- memchr v2.8.3|alloc,std\n|   `-- zmij v1.0.23|",
+        )
         development += f"`-- windows-sys v0.61.2|{','.join(test_features)}\n    `-- windows-link v0.2.1|\n"
         return policy, data, normal, development
 
@@ -387,9 +424,14 @@ class EngineCompositionGraphTests(unittest.TestCase):
         self.assertIn("nevrotick-engine@0.0.0", result["development_contexts"])
 
     def test_default_only_substitution_does_not_prove_engine_execution(self):
-        policy, data, normal, _development = self.fixture()
-        with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
+        policy, data, normal, development = self.fixture()
+        with self.assertRaisesRegex(Q.Incomplete, "exact direct test-only edges"):
             self.receive((policy, data, normal, normal))
+        without_engine = development.replace(
+            "|-- nevrotick-engine v0.0.0 (/work/source/crates/nevrotick-engine)|\n", "",
+        )
+        with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
+            self.receive((policy, data, normal, without_engine))
 
     def test_shared_diagnostics_target_requires_its_actual_declared_source(self):
         """Admit the real new consumer, refusing absent, foreign or gated substitutes."""
@@ -427,6 +469,26 @@ class EngineCompositionGraphTests(unittest.TestCase):
         policy, data, _normal, development = self.fixture()
         with self.assertRaisesRegex(Q.Incomplete, "Dev edge in production"):
             self.receive((policy, data, development, development))
+
+    def test_private_json_edges_remain_test_only(self):
+        """Refuse promotion, omitted test edges and derive activation at real graph readers."""
+        policy, data, normal, development = self.fixture()
+        readback = self.receive((policy, data, normal, development))
+        self.assertNotIn("serde_json@1.0.154", readback["contexts"])
+        self.assertEqual(readback["development_contexts"]["serde@1.0.229"], {"target": [["std"]]})
+        wrong_normal = normal + "`-- serde_json v1.0.154|std\n"
+        for refusal, tree in (
+            ("exact direct test-only edges", development.replace("|-- garde v0.23.0|derive\n", "")),
+            ("feature contexts", development.replace("|-- serde v1.0.229|std", "|-- serde v1.0.229|derive,std")),
+        ):
+            with self.subTest(refusal=refusal), self.assertRaisesRegex(Q.Incomplete, refusal):
+                self.receive((policy, data, normal, tree))
+        with self.assertRaisesRegex(Q.Incomplete, "Unexpected tree identity"):
+            self.receive((policy, data, wrong_normal, development))
+        serde = next(row for row in data["resolve"]["nodes"][0]["deps"] if row["pkg"] == "serde")
+        serde["dep_kinds"][0]["kind"] = None
+        with self.assertRaisesRegex(Q.Incomplete, "development-only edges"):
+            self.receive((policy, data, normal, development))
 
     def test_optional_ke_feature_is_not_admitted_by_a_dev_edge(self):
         fixture = self.fixture()

@@ -52,10 +52,10 @@ SOURCE_CONFIG_SHA256 = hashlib.sha256(
 ).hexdigest()
 METRICS_READER = Q.TOOL + "/metrics.py"
 METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
-# The renewable SCM roster plus nine sampled broker continuity cases.
+# The live availability roster plus eight private status wire and exchange controls.
 # Platform and fixture doctest scopes retain their independently reviewed roster.
 SOURCE_TEST_ROSTERS = {
-    "fixture-test": "f6abec2bfdc2bcfdbb11323b74c8ebb166f23d2073b551e99d7598aa0cbfefcc",
+    "fixture-test": "d304aedeee935bd27792739a38817c74c9ec028d081eecb71bfcf22d19c00ec3",
     "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
     "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
     "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",

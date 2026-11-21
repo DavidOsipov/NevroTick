@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import csv
 import dataclasses
 import importlib
-import io
 import json
 import sys
 import unittest
@@ -93,8 +91,6 @@ class LiteralPropertyTests(SourceFixture):
         xml_components = {node.attrib["id"]: node for node in xml.find(XML_NAMESPACE + "components")}
         self.assertEqual(xml_components["ui"].findtext(XML_NAMESPACE + "description"), ui)
         self.assertEqual(xml_components["observe"].findtext(XML_NAMESPACE + "description"), observe)
-        rows = list(csv.DictReader(io.StringIO(outputs["authoring/store.csv"].decode(), newline="")))
-        self.assertEqual([row["value"] for row in rows if row["field"] == "product.description"], [product])
         self.assertEqual(json.loads(outputs["authoring/msix-inputs.json"])["description"], product)
         fields = {row["key"]: row for row in json.loads(outputs["field-register.json"])["fields"]}
         for key, value in (

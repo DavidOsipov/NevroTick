@@ -463,6 +463,29 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
         self.history
     }
 
+    /// Select a successful observation from this reader's own awake revision.
+    /// The owner must recheck the returned revision at its live decision edge.
+    #[cfg(test)]
+    pub(super) fn observed_awake_revision(&self) -> Option<ClockRevision<'static>> {
+        let changes: &'static BrokerClockChanges = self.changes;
+        let current: ClockRevision<'static> = changes.revision()?;
+        matches!(
+            self.history,
+            Some(BrokerClockRead::Completed {
+                revision,
+                result: Ok(_),
+                ..
+            }) if revision == current.number()
+        )
+        .then_some(current)
+    }
+
+    /// Observe whether the original registered mailbox still admits status reads.
+    #[cfg(test)]
+    pub(super) fn status_source_open(&self) -> bool {
+        self.changes.is_live()
+    }
+
     /// Preserve the latest sampled reason when a fresh read replaces the receipt.
     pub(super) fn last_discontinuity(&self) -> Option<SampledClockBreak> {
         self.sampling

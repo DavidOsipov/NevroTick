@@ -9749,17 +9749,128 @@ Selected lifecycle control verifies observation with real getters and
 scripted waits. Actual wall-step and physical power delivery, installed
 SCM and both fixed-role links on this candidate remain open. The fixture
 metrics need durable disk capacity and their own admitted inventories.
-The next bounded S0.4/W11-W05 source action is a live redacted availability
-decision from acknowledged Running and a successful current-revision
-sample, observed through the same host before teardown. Use the original
-cutoff and final awake revision check. Exercise failed acknowledgement,
-getter failure, notice/Stop before the decision, suspend/fresh resume,
-and exact cutoff. The historical receipt stays historical. The independent
-architecture review found that no private Engine–broker IPC connection or
-peer/session owner exists yet. S0.3/S3.2 must freeze these owners and the
-bounded request/reply contract before selecting a strict decoder and
-transport. The current Engine path continues to withhold mapped admission
-until independent reference, era and scale inputs are qualified.
+The [live availability checkpoint](#live-broker-availability--22-november-2026)
+exercises the next serialized S0.4/W11-W05 decision.
+
+##### Live broker availability — 22 November 2026
+
+W11-W05/S0.4, CHECK-25/27. Rust contract and lifecycle QA connect the
+fixed broker's actual invocation constructor and Running permit to a
+private fixture decision before teardown. A successful latest sample
+selects its original awake revision. Fresh owner time and Stop use the
+existing cutoff and failure bookkeeping. A final same-revision atomic
+check orders the decision against delivered invalidation. The result
+reports availability only at that decision. The query issues no new
+native getter and carries no coordinate, freshness lease or authority.
+
+The single test drives five independent host histories. Its controls
+retain the exact refused Running acknowledgement, observe successful and
+failed replacement samples in the same revision, and prove withdrawal
+during suspension and until fresh observation after resume. Delivered
+notice and Stop cross the final observation, and cutoff equality
+refuses beside the admitted nanosecond immediately preceding it. The
+original successful receipt survives these refusals. The source review
+traced the same mailbox through native registration and callback and
+checked the matched outcome against the original owner.
+
+Candidate `24a0e080…a6b6b6` binds 668 inputs. The A and B attempts stopped
+on test function length, and C stopped on missing test helper contract
+headings. D passes all six graph and all 12 development lanes, including
+70 platform and 145 fixture tests in each GNU mode, 28 platform doctests,
+GNU/MSVC Clippy, formatting and fixture rustdoc. The exact roster gains
+one test and all 15 cross-link reader controls pass. The original guarded
+development and link allowance consumed 461.48 of 480 seconds. Raw
+receipts are `broker-availability-{graph,development}-2211d.json` and
+`cross-broker-availability-link-2211d.json`. All build scratch retired.
+
+The linked x64-v3 MSVC test image `274376a8…c149f` and its PDB matched
+their admitted hashes. Getter imports and absence of the checked write
+and privilege-adjustment imports were observed. The original offline
+Sandbox, build 26100, ran the exact selected Windows test once with the
+real getter and scripted control, time and failure edges. Guest and
+child both exited zero. The child was reaped, scratch removed, inputs
+rechecked and mapped staging left empty. Native verdict
+`99548f93…2bd64` and raw records remain under
+`service-broker-availability-20261122.7j0gw_2b`.
+
+The next private Engine–broker request needs a typed connection/session
+owner and a frozen bounded request/reply contract under S0.3/S3.2. The
+fixture decision supplies the tested receiver rule. Native peer identity,
+installed SCM delivery, physical power/time changes and per-file
+coverage and mutation gates remain open. A current mapping still
+requires qualifying independent reference, date and scale inputs.
+
+##### Private Engine–broker availability exchange — 22 November 2026
+
+S0.3/S3.2, BND-3 and CHECK-2/3/25/26/27. The selected fixture method is one
+private read of broker availability. The fixed v1.0 envelope is 16 bytes.
+It contains two version bytes, one direction byte, a zero byte, the
+little-endian unsigned body length, two zero bytes and a little-endian
+nonzero unsigned 64-bit request ID. A fixture frame contains at most 64
+body bytes. The request is an empty JSON map. The reply has one required
+boolean `available`. Exact length, direction and reserved fields are
+checked before map decoding; mandatory garde construction checks the
+ID. Both body visitors enforce one complete JSON object.
+
+The trusted same-process fixture composer supplies the Engine role and the
+actual broker, clock and Stop source. An exclusive borrow retains these
+owners during one connection. One identity allocation binds the paired
+sender and receiver independently of the frame's ID. The sender retains
+one pending request. The receiver charges each inbound delivery against
+four attempts, accepts only increasing valid IDs and gates the final
+decision against both the fixed five-second fixture session cutoff and
+the original broker Running cutoff. A closed receiver invalidates
+unconsumed replies. Session expiry does not replace a service failure or
+spend a new Running allowance. The ordinary client consumes the reply
+inside the exchange and reports the original broker decision. This is a
+redacted observation, with no UTC, freshness or correction authority.
+Polling the broker and dispatching on a live connection must be combined
+by the later serialized transport driver.
+
+The test-only standalone graph pins garde, Serde and serde_json. Guarded
+registry resolution checked the six newly locked identities against the
+14-day policy; the Windows executable and GNU normal trees match the
+prior graphs. Offline reproduction in the actual nested layout matched
+the guarded mirror's entire lock `7946166b…92fd`. The matching product
+resolution binds the changed fixture manifest and retains the root lock
+byte-for-byte. All exact resolution, source and vendor inputs retain
+their own receipts under `private-clock-status-cooldown-20261122.2T8m7P`.
+
+The final development candidate `d880fe25…3f3d4` binds 672 inputs. Its six
+graph and 12 development lanes passed, including 70 platform and 153
+fixture tests per GNU mode, 28 platform doctests, fixture rustdoc and
+GNU/MSVC Clippy. The exact fixture roster gains eight controls. They
+exercise strict decoding, connection identity, replay and decreasing
+IDs, delivery limits, close, Stop, revision invalidation and cutoff
+equality through the actual receiving path. The first development
+attempt retains its two GNU Clippy refusals. The 15 cross-link reader
+controls passed. Independent review rehashed the complete source map
+and reconciled both GNU test rosters with the exact linked candidate.
+
+The x64-v3 MSVC image `01bf11a3…6d55` and its PDB matched the link receipt.
+Import readback observed the three clock getter functions and none of
+the checked clock-write or privilege-adjustment functions. The selected
+final-transition and cutoff test passed once in the offline Windows
+Sandbox, build 26100, using the real clock getter and scripted lifecycle
+edges. The child exited zero and was reaped. The fixture scratch and
+staged files were removed and the owner-prepared guest stayed running.
+The link receipt is `cross-private-clock-status-link-2211b.json`. The
+native verdict `ad0f3c94…785c4` and raw controls are retained in
+`private-clock-status-20261122.2hl3uw4n`.
+
+The isolated cutoff control changed only the final session guard.
+The configured GNU fixture runner exited 101 with 151 passes and one
+intended failure. The live receiver returned `Ok(Available)` at the
+cutoff where the independent expectation was `Err(Expired)`. The exact
+healthy candidate passes that control. The retired fault worktree and
+retained receipt `cd954889…b802` account for the targeted observation.
+The bounded development, link and fault builds used 417.68 of 480
+seconds. All build scratch retired.
+
+Native pipe identities, ACLs, transport completion, installed service
+provisioning and calibrated clock mapping retain their owning gates.
+The bounded fixture checks leave the applicable coverage and mutation
+gates open. Fuzz and formal work retain their existing holds.
 
 ##### Engine collection and timer cleanup transfer — 21 November 2026
 
@@ -10914,7 +11025,7 @@ and observed results remain unchanged and supply no direct-route qualification.
 | Existing owner | Current assignment and exit |
 | --- | --- |
 | W11-W10/P6; package authoring | Prepare the complete direct MSIX and actual publisher/manifest requirements without Store identity or submission assumptions. Keep UI, engine, broker, helper and required payloads in one product; no automatic MSI fallback or external service prerequisite. |
-| MD-P4–MD-P5; metadata/build | Reconcile actual Store fields, projections, pending dispositions and release validators with the direct route in a bounded implementation change. Preserve structural validation, independent output/privacy controls and source-mode resource work. Do not invent Partner Center values or silently delete required registry keys; this documentation checkpoint changes no generator or TOML. |
+| MD-P4–MD-P5; metadata/build | The source checkpoint below reconciles the reached Store projection and active pending lists. Continue the direct route at package assembly and release-validation boundaries. Preserve structural validation, independent output/privacy controls, and source-mode resource work. |
 | W11-W05/W11-W08 with W11-W10 | Qualify services, provisioning/removal/recovery and event resources on the intended OS families. Resolve the proposed machine-scope event-provider custom capability on the non-Store route; sideloading alone does not waive capability requirements. |
 | Security/signing; later release checkpoint | Select signer and certificate trust later. Requalify Store-dependent CIG/image policies against actual direct-signed payloads; preserve strongest supported compatible controls. Required signatures, correct identity and native admission remain future release evidence, with no customer trust-store/protection bypass. |
 | WGT-0/P6/P7 | Preserve pre-V1 capability scheduling; qualify a non-Store source, identity and complete MSIX. WGT-C01 preparation remains distinct from WGT-C02 public catalog availability. No `msstore` ProductId, public URL, catalog submission or automatic updater is selected here. |
@@ -10927,6 +11038,42 @@ the AGENTS byte limit and `git diff --check` verify documentation only. No produ
 code, metadata values, SDK agreement, signer, package build, Windows operation,
 release or Store operation is adopted or executed by this change. Unrelated
 execution holds and current Core/Engine work remain with their existing owners.
+
+#### Direct MSIX source projection checkpoint — 22 November 2026
+
+W11-W10/MD-P4–MD-P5 and CHECK-18/20/23/26/27. The source CLI now delivers
+checked version 2 partial MSIX inputs with the `direct-msix` route, null
+identity and `complete_manifest: false`. The producer and independent
+receiver agree on the exact 14-file default inventory. The conditional
+service instrumentation manifest remains a fifteenth file only when a
+provider is admitted. Current RC and event-resource callers check these
+generated inputs and consume their existing resource leaves. The strict
+receiver refuses the retired Store CSV and stale generated trees.
+
+The complete internal field register still validates historical Store
+values and derivations. Its 731 entries and status/surface totals include
+those rows. The v2 active unresolved lists contain 152 pending fields
+and 42 unobserved derived values. They exclude historical Store rows.
+The direct package identity, package logo, signing and installed gates
+keep their own current dispositions. Release-stage validation still
+refuses this prototype.
+
+The detached writer passed 254 metadata tests and four event-resource
+source tests under Python 3.12.3. The coordinator verified the exact
+eight-file patch `5e0e1df8…83b39` after integration, ran the actual source
+validate, generate and check path, admitted the independent artifact
+inventory, and checked refusal with one added Store file, restored
+success and release-stage refusal. A separate read-only judge traced the
+current RC and event consumers, verified the release guard, and identified
+the documentation changes reconciled here. Before publication the
+coordinator repeated all 254 metadata and four event-resource tests on
+the integrated source and checked the 66-skill inventory. Receipt and command readback
+are retained under `service-broker-availability-20261122.7j0gw_2b/direct-msix-metadata`.
+The writer's detached worktree and the coordinator's generated output
+were retired. Existing package/lifecycle and affected metrics remain
+with their owners. The next source step consumes the partial projection
+through a checked package-assembly inventory once the required inputs are
+admitted.
 
 #### Independent review and documentation evidence
 

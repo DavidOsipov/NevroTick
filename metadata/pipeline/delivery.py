@@ -9,16 +9,14 @@ filesystem reads; this module accepts bounded in-memory immutable byte strings.
 from __future__ import annotations
 
 from collections import Counter
-import csv
 from dataclasses import asdict
-import io
 import json
 import re
 import xml.etree.ElementTree as ET
 
 from .contract import (Component, EventProvider, InputDigest, Metadata, MetadataError, PendingField,
                        Product, validate_model)
-from .fields import FIELD_BY_KEY
+from .fields import FIELD_BY_KEY, retained_store_field
 
 _MAX_FILE = 1024 * 1024
 _MAX_TOTAL = 4 * _MAX_FILE
@@ -42,7 +40,7 @@ _PUBLIC_FACTS = (
 _INTERNAL = (
     "field-register.json", "field-coverage.json", "authoring/display.xml",
     "authoring/msix-inputs.json", "authoring/service-inputs.json",
-    "authoring/event-inputs.json", "authoring/store.csv", "authoring/project-inputs.json",
+    "authoring/event-inputs.json", "authoring/project-inputs.json",
 )
 
 
@@ -76,7 +74,6 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
     for field in ("name", "publisher", "description", "repository"):
         add("product." + field, "metadata.json", "/product/" + field)
         add("product." + field, "authoring/display.xml", "/metadata/product/" + field)
-        add("product." + field, "authoring/store.csv", "product." + field)
     for field, constant in (("name", "PRODUCT_NAME"), ("publisher", "PUBLISHER"),
                             ("description", "PRODUCT_DESCRIPTION"), ("repository", "REPOSITORY")):
         add("product." + field, "rust/product.rs", constant)
@@ -88,7 +85,6 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
     values = _values(model)
     if model.product.homepage is not None:
         add("product.homepage", "metadata.json", "/product/homepage")
-        add("product.homepage", "authoring/store.csv", "product.homepage")
     for key, constant in _PUBLIC_FACTS:
         if key in values:
             add(key, "metadata.json", "/public_metadata/" + key)
@@ -139,6 +135,7 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
     add("fields", "field-register.json", "/fields", representation="complete-internal-register")
     add("fields:project.*", "authoring/project-inputs.json", "/fields",
         representation="exact-owned-prefix-selection")
+    add("policy:OD-05.7.9", "authoring/msix-inputs.json", "/distribution_route")
     add("fields:catalogue.B.6.*", "authoring/msix-inputs.json", "/fields",
         representation="exact-owned-prefix-selection")
     add("fields:catalogue.A.*,component.engine.scm.*,component.broker.scm.*",
@@ -166,10 +163,10 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
             public.extend(("rust/" + component.id + ".rs", "rc/" + component.id + ".rc"))
     modes = {"json": "exact-typed-whole-record", "rs": "exact-generated-constant-subset",
              "rc": "exact-prototype-versioninfo-subset", "xml": "exact-authoring-tree",
-             "csv": "exact-review-rows", "man": "exact-source-event-schema"}
+             "man": "exact-source-event-schema"}
     artifacts = [{"artifact": artifact, "observation": modes[artifact.rsplit(".", 1)[1]]}
                  for artifact in sorted(public + internal)]
-    return {"schema_version": 1, "scope": "generated-source", "status": "required-source-contract",
+    return {"schema_version": 2, "scope": "generated-source", "status": "required-source-contract",
             "binding_scope": "selected-facts-and-complete-artifact-records",
             "locator_convention": "semantic-members; collections keyed by admitted component id or service role",
             "obligation_count": len(obligations), "obligations": obligations,
@@ -209,18 +206,19 @@ def _expected_json(model: Metadata) -> dict[str, object]:
     """Independent semantic expectations, not serialized production output."""
     values = _values(model)
     rows = _rows(model)
+    current = [row for row in rows if not retained_store_field(row["key"])]
     pending = [_record(item) for item in model.pending]
-    coverage = {"schema_version": 1, "scope": "declared-source-field-register",
+    coverage = {"schema_version": 2, "scope": "declared-source-field-register",
                 "complete_declared_field_set": True, "field_count": len(model.fields),
-                "unresolved_field_count": sum(row.status == "pending" or
-                    (row.status == "derived" and not row.value) for row in model.fields),
+                "unresolved_field_count": sum(row["status"] == "pending" or
+                    (row["status"] == "derived" and not row["value"]) for row in current),
                 "status_counts": dict(Counter(row.status for row in model.fields)),
                 "surface_counts": dict(Counter(FIELD_BY_KEY[row.key].surface for row in model.fields)),
                 "resolved_value_count": sum(bool(row.value) for row in model.fields),
                 "pending": [{key: row[key] for key in ("key", "owner", "source", "reason")}
-                            for row in rows if row["status"] == "pending"],
+                            for row in current if row["status"] == "pending"],
                 "unobserved_derived": [{key: row[key] for key in ("key", "owner", "source", "reason")}
-                                       for row in rows if row["status"] == "derived" and not row["value"]],
+                                       for row in current if row["status"] == "derived" and not row["value"]],
                 "release_qualified": False, "native_readback": "not-run",
                 "delivery": delivery_contract(model)}
     return {
@@ -235,8 +233,8 @@ def _expected_json(model: Metadata) -> dict[str, object]:
         "field-coverage.json": coverage,
         "authoring/project-inputs.json": {"schema_version": 1, "kind": "internal-project-authoring-inputs",
                                            "fields": _rows(model, ("project.",))},
-        "authoring/msix-inputs.json": {"schema_version": 1, "kind": "partial-msix-authoring-inputs",
-            "complete_manifest": False, "display_name": model.product.name,
+        "authoring/msix-inputs.json": {"schema_version": 2, "kind": "partial-msix-authoring-inputs",
+            "distribution_route": "direct-msix", "complete_manifest": False, "display_name": model.product.name,
             "publisher_display_name": model.product.publisher, "description": model.product.description,
             "identity": None, "target": model.target, "cpu_floor": model.cpu_floor,
             "pending": pending, "fields": _rows(model, ("catalogue.B.6.",))},
@@ -442,16 +440,6 @@ def _xml(raw: bytes) -> dict[str, object]:
             "product": product_values, "components": component_values}
 
 
-def _csv(raw: bytes) -> list[list[str]]:
-    """Preserve row identity/cardinality, including multiline quoted cells."""
-    rows = list(csv.reader(io.StringIO(raw.decode("utf-8"), newline=""), strict=True))
-    if (not rows or rows[0] != ["field", "value", "status"]
-            or any(len(row) != 3 for row in rows)
-            or len({row[0] for row in rows[1:]}) != len(rows) - 1):
-        raise MetadataError("delivery-csv-shape-or-identity")
-    return rows
-
-
 def _verify_event_manifest(provider: EventProvider, raw: bytes) -> None:
     """Verify the complete small compiler-input tree independently of generation."""
     if (len(raw) > 4096 or not raw.startswith(b'<?xml version="1.0" encoding="utf-8"?>\n')
@@ -530,7 +518,7 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
             or sum(len(raw) for raw in outputs.values()) > _MAX_TOTAL):
         raise MetadataError("delivery-output-budget-or-type")
     expected_json = _expected_json(model)
-    expected_paths = set(expected_json) | {"rust/product.rs", "authoring/display.xml", "authoring/store.csv"}
+    expected_paths = set(expected_json) | {"rust/product.rs", "authoring/display.xml"}
     if model.event_provider is not None:
         expected_paths.add(_EVENT_MANIFEST)
     for component in model.components:
@@ -583,23 +571,5 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
                            for item in model.components]}
         if not _equal(_xml(outputs["authoring/display.xml"]), expected_xml):
             raise MetadataError("delivery-display-xml")
-        expected_csv = [["field", "value", "status"]]
-        product_values = {"name": model.product.name, "publisher": model.product.publisher,
-                          "description": model.product.description, "repository": model.product.repository,
-                          "homepage": model.product.homepage}
-        for key in ("name", "publisher", "description", "repository", "homepage"):
-            value = product_values[key]
-            if value is not None:
-                expected_csv.append(["product." + key, value, "derived"])
-        expected_csv.extend([item.path, "", "pending"] for item in model.pending)
-        for key in ("project.release.notes", "project.urls.support", "project.urls.privacy",
-                    "project.urls.license", "project.urls.release_notes"):
-            if key in values:
-                expected_csv.append([key, values[key], "derived"])
-        expected_csv.extend([row.key, row.value, row.status] for row in model.fields
-            if row.key.startswith(("catalogue.B.9.1.", "catalogue.B.9.2.")) and row.value
-            and row.status in {"populated", "derived"})
-        if not _equal(_csv(outputs["authoring/store.csv"]), expected_csv):
-            raise MetadataError("delivery-store-csv")
-    except (UnicodeError, ValueError, TypeError, RecursionError, ET.ParseError, csv.Error) as error:
+    except (UnicodeError, ValueError, TypeError, RecursionError, ET.ParseError) as error:
         raise MetadataError("delivery-invalid-source-projection") from error

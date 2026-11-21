@@ -45,6 +45,8 @@ use crate::{
 };
 
 #[cfg(test)]
+use crate::broker_clock_change::ClockRevision;
+#[cfg(test)]
 use crate::diagnostics::{UnconfirmedWriter, WriterClose};
 #[cfg(any(windows, test))]
 use crate::{ClockReadRetirement, SampledClockBreak};
@@ -56,6 +58,10 @@ use crate::{NativeBrokerClockRead, broker_clock_change::NativeBrokerReader};
 mod broker_observation;
 #[cfg(test)]
 use broker_observation::{BrokerObservation, BrokerProbe};
+
+#[cfg(test)]
+#[path = "private_clock_status.rs"]
+mod private_clock_status;
 
 /// Wake the existing owner thread with one coalesced, retained unpark token.
 /// A worker retains at most one clone and publishes state before notification.
@@ -485,6 +491,37 @@ pub(super) enum InvocationPoll {
     Finished,
 }
 
+/// Redacted observation at one decision of the serialized laboratory owner.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "the reported observation applies only at this decision"]
+pub(super) enum BrokerAvailability {
+    /// The latest successful sample belonged to the awake Running revision.
+    Available,
+    /// No current successful sample could be reported.
+    Unavailable,
+}
+
+/// A refusal by the original service or the finite fixture connection.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BrokerQueryFault {
+    /// The serialized owner cannot admit a status decision.
+    ServiceClosed,
+    /// The connection's own cutoff elapsed while the service may still run.
+    SessionExpired,
+}
+
+/// Sticky one-time connection issuance within the fixture invocation.
+#[cfg(test)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum PrivateStatusIssue {
+    /// No private connection has yet been issued.
+    Unissued,
+    /// The sole admitted connection has been issued.
+    Issued,
+}
+
 /// Internal worker phase, never a separately replaceable lifecycle or reporter.
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum WorkerPhase {
@@ -544,6 +581,9 @@ pub(super) struct ServiceInvocation<
     /// Configured native broker reader, held by the same Running permit.
     #[cfg(any(windows, test))]
     broker_clock_reader: Option<NativeBrokerReader>,
+    /// This fixture selects at most one connection for the entire invocation.
+    #[cfg(test)]
+    private_status_issue: PrivateStatusIssue,
     /// Only the explicit broker fixture can select one read before preparation.
     #[cfg(test)]
     broker_probe: Option<BrokerProbe>,
@@ -1165,6 +1205,88 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         Ok(now)
     }
 
+    /// Observe current broker readiness without invoking another clock getter.
+    /// The result contains no raw coordinates, authority or retained reply.
+    /// Fresh owner time and Stop use the same fence and failure handling as reads.
+    #[cfg(test)]
+    pub(super) fn broker_availability(
+        &mut self,
+        clock: &mut impl Clock,
+        notification: &StopNotification,
+    ) -> BrokerAvailability {
+        self.broker_availability_before(clock, notification, None)
+            .unwrap_or(BrokerAvailability::Unavailable)
+    }
+
+    /// Decide once under the original invocation and an optional earlier connection cutoff.
+    /// # Errors
+    /// Refuses a closed service or an expired connection without emitting a reply.
+    #[cfg(test)]
+    fn broker_availability_before(
+        &mut self,
+        clock: &mut impl Clock,
+        notification: &StopNotification,
+        session_cutoff: Option<Instant>,
+    ) -> Result<BrokerAvailability, BrokerQueryFault> {
+        let revision: Option<ClockRevision<'static>> = self
+            .broker_clock_reader
+            .as_ref()
+            .and_then(NativeBrokerReader::observed_awake_revision);
+        self.broker_status_edge(clock, notification, session_cutoff)?;
+        if revision.is_some_and(|revision: ClockRevision<'static>| revision.admits()) {
+            return Ok(BrokerAvailability::Available);
+        }
+        self.require_broker_status_open(notification)?;
+        Ok(BrokerAvailability::Unavailable)
+    }
+
+    /// Admit a live broker status observation and sample the trusted owner time.
+    /// The earlier connection cutoff never becomes a service fault or new deadline.
+    /// # Errors
+    /// Refuses when either cutoff is reached, or owner admission fails or closes.
+    #[cfg(test)]
+    fn broker_status_edge(
+        &mut self,
+        clock: &mut impl Clock,
+        notification: &StopNotification,
+        session_cutoff: Option<Instant>,
+    ) -> Result<Instant, BrokerQueryFault> {
+        if self.phase != WorkerPhase::Running
+            || self.custody != WorkerCustody::Active
+            || self.admission_closed
+        {
+            return Err(BrokerQueryFault::ServiceClosed);
+        }
+        let deadline: Instant = self.run_deadline.ok_or(BrokerQueryFault::ServiceClosed)?;
+        let now: Instant = self
+            .broker_bracket_edge(clock, notification, deadline)
+            .map_err(|_reason: ClockReadRetirement| BrokerQueryFault::ServiceClosed)?;
+        if session_cutoff.is_some_and(|cutoff: Instant| now >= cutoff) {
+            return Err(BrokerQueryFault::SessionExpired);
+        }
+        self.require_broker_status_open(notification)?;
+        Ok(now)
+    }
+
+    /// Require the same broker reader to remain live, including during suspension.
+    /// # Errors
+    /// Refuses a missing reader or a Stop/terminal mailbox.
+    #[cfg(test)]
+    fn require_broker_status_open(
+        &self,
+        notification: &StopNotification,
+    ) -> Result<(), BrokerQueryFault> {
+        if notification.stop_requested()
+            || self
+                .broker_clock_reader
+                .as_ref()
+                .is_none_or(|reader: &NativeBrokerReader| !reader.status_source_open())
+        {
+            return Err(BrokerQueryFault::ServiceClosed);
+        }
+        Ok(())
+    }
+
     /// Move the unchanged original primary and secondary objects into their result.
     ///
     /// # Errors
@@ -1387,6 +1509,8 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
         #[cfg(any(windows, test))]
         broker_clock_reader: None,
         #[cfg(test)]
+        private_status_issue: PrivateStatusIssue::Unissued,
+        #[cfg(test)]
         broker_probe: None,
         observed,
         phase_deadline,
@@ -1451,7 +1575,29 @@ pub(super) fn run_broker_service<A: StatusFactory, C: Clock, W: Wait>(
     notification: &StopNotification,
     reader: NativeBrokerReader,
 ) -> HostReceipt {
-    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = match start_invocation(
+    match start_broker_invocation(argc, factory, token_observer, clock, notification, reader) {
+        Ok(invocation) => drive_service(invocation, clock, wait, notification),
+        Err(receipt) => receipt,
+    }
+}
+
+/// Bind the reader only to the fixed broker role and its existing owner.
+/// # Errors
+/// Returns the original pre-invocation failure receipt.
+#[cfg(any(windows, test))]
+#[expect(
+    clippy::result_large_err,
+    reason = "broker startup preserves the original fixed receipt without introducing a heap allocation"
+)]
+pub(super) fn start_broker_invocation<A: StatusFactory, C: Clock>(
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    notification: &StopNotification,
+    reader: NativeBrokerReader,
+) -> Result<ServiceInvocation<A::Reporter, InertWorker>, HostReceipt> {
+    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = start_invocation(
         LabRole::ClockBroker,
         argc,
         factory,
@@ -1459,12 +1605,9 @@ pub(super) fn run_broker_service<A: StatusFactory, C: Clock, W: Wait>(
         clock,
         notification,
         InertWorker::new(),
-    ) {
-        Ok(invocation) => invocation,
-        Err(receipt) => return receipt,
-    };
+    )?;
     invocation.broker_clock_reader = Some(reader);
-    drive_service(invocation, clock, wait, notification)
+    Ok(invocation)
 }
 
 /// Retain the same lifecycle and charge through every poll and actual finish.

@@ -520,7 +520,7 @@ fn healthy_snapshot(role: LabRole) -> Result<PrivilegeSnapshot, TokenObservation
 }
 
 /// Explicit healthy observer provided to every historical actual-host trace.
-struct HealthyTokenObserver(LabRole);
+pub(super) struct HealthyTokenObserver(pub(super) LabRole);
 impl TokenObserver for HealthyTokenObserver {
     /// Supply a complete exact-role capture through the actual decoder.
     fn observe(&mut self) -> Result<PrivilegeSnapshot, TokenObservationFailure> {

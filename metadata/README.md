@@ -2,11 +2,11 @@
 
 **Delivery amendment — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects direct MSIX distribution and rejects Microsoft Store publication. The
-existing pipeline still contains Store fields, projections and release-stage
-pending checks. MD-P4–MD-P5 must reconcile those consumers with the selected route;
-this documentation change does not modify the schema or generator. Source-mode
-work continues. Do not invent Partner Center values or treat Store-specific
-pending fields as accepted direct-release prerequisites. Signing remains later work.
+fresh source pipeline identifies the direct route in its partial MSIX inputs.
+Store fields are retained and validated as historical authoring data. The
+current artifact inventory excludes the Store CSV and refuses old generated
+trees. Regenerate from admitted source for current builds. Package identity,
+signing and installed qualification remain later work.
 
 Edit [product.toml](product.toml) to maintain product/component metadata in one
 place. The pipeline derives current versions, repository and applicable licenses
@@ -83,9 +83,12 @@ contents, not the missing flush acknowledgement. Direct API callers receive
 `PublicationUncertainError`, a `MetadataError` subtype. Ordinary rejection remains
 exit `1`; command-argument errors retain their separate parser outcome.
 
-The result includes `field_count` and `unresolved_field_count`; the latter counts
-pending fields and derived observations with no value yet. It is not a count of
-release blockers. The detailed coverage report separates these two kinds.
+The result includes `field_count` and `unresolved_field_count`. The second count
+covers current pending fields and unobserved derived values, excluding historical
+Store rows. The version 2 coverage report separates the two unresolved categories.
+Its total field count and status and surface totals describe the full register,
+including retained Store values and their original applicability.
+Release prerequisites have their own explicit records.
 
 ```sh
 python3 -I -B metadata/pipeline/__main__.py validate --stage release
@@ -213,15 +216,14 @@ encoding rule, not a promise that every Unicode character is accepted.
 | `rust/ui.rs`, `rust/observe.rs` | Fixed typed constants for the current fixture UI and observe-only CLI |
 | `rc/ui.rc`, `rc/observe.rc` | UTF-8 VERSIONINFO source candidates for ordinary user-mode EXEs, with application type/subtype zero and explicit prerelease flags |
 | `authoring/display.xml` | Escaped custom XML authoring projection, namespace `urn:nevrotick:metadata:authoring:1` |
-| `authoring/msix-inputs.json` | Explicitly partial MSIX authoring data; no guessed package identity or runnable manifest |
+| `authoring/msix-inputs.json` | Version 2 partial inputs for direct MSIX. Package identity stays null until admitted |
 | `authoring/service-inputs.json` | Planned engine/broker display/purpose data; no chosen SCM name, account or service behavior |
 | `authoring/event-inputs.json` | Partial provider inputs and pending installed qualification |
 | `authoring/service-events.man` | Conditional compiler input with the two selected service event descriptors and fixed payload template |
-| `authoring/store.csv` | Legacy custom review-field export with `field,value,status`; not selected for publication and not a Partner Center upload schema |
 | `authoring/project-inputs.json` | Internal project/rights/assets/locales/platform/build authoring data for explicit downstream consumers |
 | `receipt.json` | Source/code identities and complete payload sizes/hashes; excludes its own hash to avoid circularity |
 
-The checked-in source generates 15 files. A source with a provider candidate
+The checked-in source generates 14 files. A source with a provider candidate
 adds the instrumentation manifest. `field-register.json`,
 `field-coverage.json` and all `authoring/` projections are internal authoring
 evidence and may include contact, regulatory, operational or provenance details. They are not

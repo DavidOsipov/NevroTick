@@ -42,8 +42,20 @@ TARGETS = ("x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc")
 FEATURES = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"]
 OLD_FEATURES = ["Win32_Foundation", "Win32_System_Services"]
 WINDOWS_DEV_FEATURES = ["Win32_System_Diagnostics_Etw", "Win32_System_Time"]
-LOCK_SHA256 = "b18d0e235af7a07a3b3d1ee676fb6087db11c42a25f87bb1a7de5e57aa8ff704"
-LOCK_METADATA_ONLY = {"wasi@0.11.1+wasi-snapshot-preview1", "r-efi@6.0.0"}
+LOCK_SHA256 = "7946166bf913eabec7b2534d82253a919154c895af9e01e32d8b78a2f70d92fd"
+LOCK_METADATA_ONLY = {"wasi@0.11.1+wasi-snapshot-preview1", "r-efi@6.0.0", "serde_derive@1.0.229"}
+PRIVATE_STATUS_DEV = {
+    "garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]},
+    "serde": {"version": "=1.0.229", "default-features": False, "features": ["std"]},
+    "serde_json": {"version": "=1.0.154", "default-features": False, "features": ["std"]},
+}
+PRIVATE_STATUS_FEATURES = {
+    "memchr@2.8.3": ["alloc", "std"],
+    "serde@1.0.229": ["std"],
+    "serde_core@1.0.229": ["result", "std"],
+    "serde_json@1.0.154": ["std"],
+    "zmij@1.0.23": [],
+}
 JOBS = 1
 SECONDS = 180
 DISK_FLOOR = 4 * 1024 ** 3
@@ -403,7 +415,8 @@ def manifest_admission(policy):
         "workspace": {"resolver": "3", "lints": fragment["workspace"]["lints"]},
         "dependencies": {"windows-platform": {"version": "=0.0.0", "path": "../../crates/windows-platform"}},
         "dev-dependencies": {"nevrotick-engine": {"version": "=0.0.0",
-                             "path": "../../crates/nevrotick-engine", "default-features": False}},
+                             "path": "../../crates/nevrotick-engine", "default-features": False},
+                             **PRIVATE_STATUS_DEV},
         "target": {"cfg(windows)": {
             "dependencies": {
                 "windows-platform-native": {"version": "=0.0.0", "path": "../../crates/windows-platform-native"},
@@ -425,8 +438,8 @@ def manifest_admission(policy):
     expected_ids = {identity for target in TARGETS
                     for identity in expected_contexts(policy, target, development=True)
                     if not identity.endswith("@0.0.0")}
-    # Cargo retains these existing supplier edges for unselected WASI/UEFI targets.
-    # They remain locked metadata and receive no GNU/MSVC execution context.
+    # Off-target suppliers and serde_core's cfg(any()) derive edge remain
+    # locked metadata with no GNU/MSVC execution context in this fixture.
     expected_ids.update(LOCK_METADATA_ONLY)
     records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
     records.update({p["name"] + "@" + p["version"]: p for p in policy["metadata_only_packages"]})
@@ -448,6 +461,7 @@ def manifest_admission(policy):
     return {"before_features": OLD_FEATURES, "after_features": FEATURES,
             "added_features": sorted(set(FEATURES) - set(OLD_FEATURES)),
             "windows_dev_features": WINDOWS_DEV_FEATURES,
+            "private_status_dev_dependencies": PRIVATE_STATUS_DEV,
             "lock_sha256": LOCK_SHA256, "external_packages": sorted(expected_ids)}
 
 
@@ -482,6 +496,9 @@ def expected_contexts(policy, target, *, development=False):
                 require(len(sets) == len(current) == 1,
                         "Standalone composition requires one exact feature set per role.")
                 expected[identity][role] = [sorted(set(current[0]) | set(sets[0]))]
+        for identity, features in PRIVATE_STATUS_FEATURES.items():
+            require(identity not in expected, "Private status suppliers must extend only the fixture test graph.")
+            expected[identity] = {"target": [features]}
     return expected
 
 
@@ -571,6 +588,7 @@ def graph_row(policy, target, metadata_output, tree_output, development_tree_out
     expected_edges = {
         "windows-platform": [{"kind": None, "target": None}],
         "nevrotick-engine": [{"kind": "dev", "target": None}],
+        **{name: [{"kind": "dev", "target": None}] for name in PRIVATE_STATUS_DEV},
     }
     if target == TARGETS[1]:
         expected_edges["windows-platform-native"] = [{"kind": None, "target": "cfg(windows)"}]
@@ -593,11 +611,12 @@ def graph_row(policy, target, metadata_output, tree_output, development_tree_out
 
 
 def tree_contexts(policy, target, tree_output, *, development):
-    """Check supplier feature contexts and the fixture's direct Windows adapter edge."""
+    """Check supplier contexts and direct Windows adapter and private status edges."""
     records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
     expected = expected_contexts(policy, target, development=development)
     contexts, stack, sections = {}, {}, {}
     native_observer_edges = []
+    private_status_edges = []
     roots = 0
     for line in tree_output.splitlines():
         marker = re.fullmatch(r"((?:\|   |    )*)\[(build|dev)-dependencies\]", line)
@@ -631,6 +650,8 @@ def tree_contexts(policy, target, tree_output, *, development):
             role = "host" if macro or section == "build" or stack[depth - 1] == "host" else "target"
             if depth == 1 and name == "windows-platform-native":
                 native_observer_edges.append(section)
+            if depth == 1 and name in PRIVATE_STATUS_DEV:
+                private_status_edges.append((name, section))
         for old_depth in list(stack):
             if old_depth >= depth:
                 del stack[old_depth]
@@ -644,6 +665,9 @@ def tree_contexts(policy, target, tree_output, *, development):
     expected_native_edges = [None] if target == TARGETS[1] else []
     require(native_observer_edges == expected_native_edges,
             "Actual native observer dependency must be one direct normal edge in each Windows tree.")
+    wanted_status = {(name, "dev") for name in PRIVATE_STATUS_DEV} if development else set()
+    require(set(private_status_edges) == wanted_status and len(private_status_edges) == len(wanted_status),
+            "Actual private status dependencies require exact direct test-only edges.")
     require(roots == 1 and contexts == expected, "Actual normal/build feature contexts differ from admission.")
     return contexts
 

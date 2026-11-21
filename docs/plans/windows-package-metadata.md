@@ -30,13 +30,12 @@ and [W11-W10](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-
 Existing execution holds, Core priority, actual licensing admission and optional
 enhanced-provenance policy remain unchanged.
 
-**Implementation boundary — 21 November 2026:** the source generator still has
-Store-specific fields, constraints and projections from the earlier route.
-Those are retained implementation history, not a selected distribution channel.
-W11-W10/MD-P2 must reconcile the reached schema, public projection and release-mode
-requirements with direct MSIX before claiming that the metadata pipeline supports
-the new route. This documentation amendment does not change those code paths,
-populate pending identities or qualify a package.
+**Source implementation boundary — 22 November 2026:** the source generator emits
+checked version 2 partial inputs for direct MSIX. The full internal register
+retains historical Store fields and their validation. The active unresolved
+lists omit those fields, and the strict output inventory retires the Store CSV.
+The source pipeline leaves package identity and a complete manifest unresolved.
+The direct package and installed release gates still apply.
 
 At the inspected NevroTick baseline
 `21726b2db44f225da0aaed82f03255c2f2c81023`, Cargo records project license,
@@ -315,8 +314,8 @@ page pairs, MSI LANGIDs and MSIX resource language tags require explicit mapping
 **Historical, unselected Store field map:** the listing research and limits in
 this section describe the earlier Store route. OD-05 §7.9 supersedes that route;
 do not create a Store listing, reserve Store identity, or treat these fields or
-limits as requirements for direct MSIX. Existing Store-specific generator outputs
-still need the separate MD-P2 reconciliation described in §1.
+limits as requirements for direct MSIX. The generator retains the historical
+fields in the internal register and rejects the retired CSV in fresh trees.
 
 For current direct-release descriptions, reuse truthful public product,
 feature, localization, support, privacy and license facts from the shared record
@@ -649,7 +648,7 @@ Treat metadata as hostile data even when committed or previously accepted. Read
 only bounded regular inputs through a no-follow custody check; retain exact bytes
 and their digests. Decode into immutable checked values and preserve the contract
 at public generation entry points, including direct-construction bypass cases.
-Project explicit allowed fields through destination-specific Rust/RC/XML/CSV/JSON
+Project explicit allowed fields through destination-specific Rust/RC/XML/JSON
 encoders. Never interpret metadata as code, commands, templates or callbacks.
 File paths/identifiers and output names do not come from arbitrary interpolation.
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections import Counter
-import csv
 import dataclasses
 import hashlib
 import importlib
@@ -218,21 +217,37 @@ class ExpandedFieldTests(SourceFixture):
                     else:
                         self.require_rejection(result)
 
-    def test_valid_store_limits_reach_the_review_csv_through_catalogue_aliases(self) -> None:
+    def test_historical_store_aliases_remain_internal(self) -> None:
         terms = "x" * 10000
         hardware = "\n".join(["x" * 200] * 11)
         self.set_field("project.store.additional_license_terms", terms)
         self.set_field("project.store.hardware_minimum", hardware)
         self.generate()
-        with (self.output / "authoring/store.csv").open(encoding="utf-8", newline="") as stream:
-            rows = list(csv.DictReader(stream))
-        values = {row["field"]: row["value"] for row in rows}
+        rows = json_data(self.output / "field-register.json")["fields"]
+        values = {row["key"]: row["value"] for row in rows}
         self.assertEqual(
             values["catalogue.B.9.1.StoreAdditional.Additional license terms"], terms
         )
         self.assertEqual(
             values["catalogue.B.9.1.StoreListing[locale].Additional system requirements.Minimum hardware"], hardware
         )
+
+    def test_store_history_is_not_an_active_source_requirement(self) -> None:
+        old = '"project.store.product_name" = { value = "", status = "not-applicable"'
+        self.replace_once(old, old.replace("not-applicable", "pending"))
+        reply = self.generate()
+        rows = {row["key"]: row for row in json_data(self.output / "field-register.json")["fields"]}
+        self.assertEqual(rows["project.store.product_name"]["status"], "pending")
+        self.assertEqual(rows["project.assets.store_logo"]["status"], "not-applicable")
+        coverage = json_data(self.output / "field-coverage.json")
+        self.assertEqual(coverage["schema_version"], 2)
+        pending = {row["key"] for row in coverage["pending"]}
+        unobserved = {row["key"] for row in coverage["unobserved_derived"]}
+        self.assertIn("project.assets.package_logo", pending)
+        self.assertIn("catalogue.B.6.2.Package/Properties/Logo", unobserved)
+        self.assertNotIn("project.store.product_name", pending)
+        self.assertNotIn("catalogue.B.9.1.StoreListing[locale].Product name", unobserved)
+        self.assertEqual(reply["unresolved_field_count"], len(pending) + len(unobserved))
 
     def test_emoji_raw_comments_and_escaped_known_field_reject(self) -> None:
         for text in (self.original_record + "\n# emoji \U0001f600\n",
@@ -347,10 +362,10 @@ class ExpandedModelTests(SourceFixture):
         model = self.contract.load_metadata(self.root)
         actual = self.generator.field_counts(model)
         self.assertEqual(actual["field_count"], len(model.fields))
-        expected_unresolved = sum(field.status == "pending" or
-                                  (field.status == "derived" and not field.value)
-                                  for field in model.fields)
-        self.assertEqual(actual["unresolved_field_count"], expected_unresolved)
+        self.generate()
+        observed = json_data(self.output / "field-coverage.json")
+        self.assertEqual(actual["unresolved_field_count"],
+                         len(observed["pending"]) + len(observed["unobserved_derived"]))
         with self.assertRaises(self.contract.MetadataError):
             self.generator.field_counts(dataclasses.replace(model, fields=()))
 

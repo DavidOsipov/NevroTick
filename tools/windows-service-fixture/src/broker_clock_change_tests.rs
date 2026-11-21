@@ -27,6 +27,9 @@ use crate::{
 #[path = "broker_clock_sampling_tests.rs"]
 mod sampling_tests;
 
+#[path = "broker_availability_tests.rs"]
+mod availability_tests;
+
 /// Independent callback state for the acknowledged host history.
 static HEALTHY: BrokerClockChanges = BrokerClockChanges::new();
 /// Independent callback state for the refused Running acknowledgement.

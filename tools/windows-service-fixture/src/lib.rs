@@ -27,6 +27,8 @@ mod native;
 mod native_etw_capture;
 #[cfg(all(windows, test))]
 mod native_etw_writer;
+#[cfg(test)]
+mod private_clock_wire;
 
 pub use error::{
     FixtureError, NativeError, NativeOperation, TokenCleanupOutcome, TokenObservationCause,

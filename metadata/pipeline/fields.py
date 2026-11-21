@@ -759,3 +759,11 @@ FIELD_SPECS = tuple(FieldSpec(*row) for row in _FIELD_ROWS)
 FIELD_BY_KEY = MappingProxyType({spec.key: spec for spec in FIELD_SPECS})
 if len(FIELD_BY_KEY) != len(FIELD_SPECS):
     raise RuntimeError("Duplicate code-owned metadata field contract")
+
+
+def retained_store_field(key: str) -> bool:
+    """Classify historical Store rows kept in the internal field register."""
+    return key.startswith(("project.store.", "catalogue.B.9.")) or key in {
+        "project.assets.store_logo", "project.assets.additional_store_assets",
+        "project.localization.store_locales",
+    }

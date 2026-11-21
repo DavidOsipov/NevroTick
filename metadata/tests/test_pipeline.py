@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import dataclasses
 import errno
 import hashlib
@@ -35,7 +34,6 @@ EXPECTED_FILES = frozenset(
         "authoring/service-inputs.json",
         "authoring/event-inputs.json",
         "authoring/display.xml",
-        "authoring/store.csv",
         "authoring/project-inputs.json",
         "receipt.json",
     }
@@ -623,22 +621,25 @@ class MetadataCliTests(SourceFixture):
                 else:
                     self.require_rejection(result)
 
-    def test_csv_formula_prefix_rejects_generation_with_plain_neighbor(self) -> None:
-        for description, accepted in (
-            ("Source text = 1 + 1", True),
-            ("=1+1", False), ("+1+1", False), ("-1+1", False),
-            ("@SUM(1,1)", False), ("\t=1+1", False),
+    def test_formula_looking_description_remains_literal_in_direct_projections(self) -> None:
+        for name, description in (
+            ("ordinary", "Source text = 1 + 1"),
+            ("equals", "=1+1"),
+            ("plus", "+1+1"),
+            ("minus", "-1+1"),
+            ("at", "@SUM(1,1)"),
+            ("whitespace", "\t=1+1"),
         ):
-            with self.subTest(description=description):
+            with self.subTest(name=name):
                 self.write_record(self.original_record.replace(
                     'description = "A Windows time synchronization client under development."',
                     'description = ' + json.dumps(description), 1,
                 ))
-                result = self.cli("generate", output=self.base / f"formula-{len(description)}-{accepted}")
-                if accepted:
-                    self.require_success(result)
-                else:
-                    self.require_rejection(result)
+                output = self.base / name
+                self.require_success(self.cli("generate", output=output))
+                self.assertEqual(json_data(output / "authoring/msix-inputs.json")["description"], description)
+                rust = (output / "rust/product.rs").read_text()
+                self.assertEqual(rust_string(rust, "PRODUCT_DESCRIPTION"), description)
 
     def test_cargo_package_identity_is_checked(self) -> None:
         cargo = self.root / "crates/nevrotick-ui/Cargo.toml"
@@ -877,11 +878,7 @@ class GeneratedFactTests(SourceFixture):
         self.assertEqual(xml_root.tag, "{urn:nevrotick:metadata:authoring:1}metadata")
         self.assertEqual(xml_root.findtext("m:product/m:description", namespaces=namespace), LITERAL_SENTINEL)
         self.assertEqual(len(list(xml_root.iter())), 22)
-        with (self.output / "authoring/store.csv").open(encoding="utf-8", newline="") as file:
-            rows = list(csv.DictReader(file))
-        description_rows = [row for row in rows if row["field"] == "product.description"]
-        self.assertEqual(len(description_rows), 1)
-        self.assertEqual(description_rows[0]["value"], LITERAL_SENTINEL)
+        self.assertEqual(json_data(self.output / "authoring/msix-inputs.json")["description"], LITERAL_SENTINEL)
 
     def test_json_unknown_cargo_fields_do_not_become_public_exports(self) -> None:
         cargo = self.root / "crates/nevrotick-ui/Cargo.toml"
@@ -903,22 +900,7 @@ class GeneratedFactTests(SourceFixture):
             description,
         )
         self.assertEqual(json_data(self.output / "metadata.json")["product"]["description"], description)
-        with (self.output / "authoring/store.csv").open(encoding="utf-8", newline="") as file:
-            rows = list(csv.DictReader(file))
-        expected_fields = {
-            "product.name", "product.publisher", "product.description", "product.repository",
-            "release.version", "package.identity", "services.identities", "diagnostics.provider",
-            "public.destinations", "release.qualification",
-            "catalogue.B.9.1.StoreAdditional.Developed by",
-        }
-        # The expanded author register adds one legitimate Store alias. Check
-        # its independent meaning and the exact field set, not a looser row cap.
-        self.assertEqual({row["field"] for row in rows}, expected_fields)
-        self.assertEqual(len(rows), len(expected_fields))
-        self.assertTrue(all(set(row) == {"field", "value", "status"} for row in rows))
-        self.assertEqual([row["value"] for row in rows if row["field"] ==
-                          "catalogue.B.9.1.StoreAdditional.Developed by"], ["David Osipov"])
-        self.assertEqual([row["value"] for row in rows if row["field"] == "product.description"], [description])
+        self.assertEqual(json_data(self.output / "authoring/msix-inputs.json")["description"], description)
 
     def test_cargo_prerelease_and_numeric_windows_version_are_preserved(self) -> None:
         cargo = self.root / "crates/nevrotick-ui/Cargo.toml"
