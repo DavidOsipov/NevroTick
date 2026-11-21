@@ -7,6 +7,8 @@ use std::net::SocketAddr;
 use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
+use ntp_wire::{NtpTimestamp, RawHeader};
+
 use super::{
     Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
     PowerObserverCleanup, RunFailed, StopHandle,
@@ -16,7 +18,8 @@ use super::{
     response::{ControlProtection, ProtectedControlKind},
 };
 use crate::{
-    ExperimentalMeasurement, MeasurementRefusal, SourceConfigurationSnapshot, SourcePolicyError,
+    ExperimentalMeasurement, MeasurementRefusal, SoftwareClock, SourceConfigurationSnapshot,
+    SourcePolicyError,
 };
 
 /// A genuine managed Preview completed and its actual worker returned and joined.
@@ -394,6 +397,17 @@ pub(super) fn protected_report(
     SourceProtectedProbeReport::from_completion(result, PowerObserverCleanup::default())
 }
 
+/// Exercise the same private receipt projection on actual joined component history.
+#[cfg(test)]
+pub(super) fn protected_receipt(
+    result: &super::datagram::ReceivedCompletion,
+) -> Option<ManagedProtectedReceipt> {
+    result
+        .protected()?
+        .managed_history()
+        .map(ManagedProtectedReceipt::from_history)
+}
+
 impl fmt::Debug for SourceProtectedProbeReport {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("SourceProtectedProbeReport { joined: true, transmitted: true, .. }")
@@ -422,10 +436,16 @@ pub struct ManagedProtectedReceipt {
     initial_cookie_population: (usize, usize),
     /// Authenticated peer leap indicator accepted by ordinary response admission.
     leap_indicator: u8,
+    /// Original server receive and transmit wire values, in that order.
+    peer_timestamps: [NtpTimestamp; 2],
     /// Original guarded operation commit time.
     committed_at: Instant,
     /// Trailing observation of the original receive-return bracket.
     received_at: Instant,
+    /// Original pre-send, send-return and selected receive-return brackets.
+    application_clock_captures: [SoftwareClock; 3],
+    /// Inclusive elapsed bounds from the original pre-send and receive-return reads.
+    application_wall_elapsed_bounds: Option<[Duration; 2]>,
 }
 
 impl ManagedProtectedReceipt {
@@ -433,14 +453,18 @@ impl ManagedProtectedReceipt {
     fn from_history(managed: &ManagedProtectedHistory) -> Self {
         let history: &super::datagram::ProtectedHistory = managed.history();
         let receipt: Receipt = history.receipt();
+        let header: RawHeader = receipt.fields().header();
         let summary: &super::Summary = managed.summary();
         Self {
             configuration: managed.configuration().clone(),
             packet_bytes: summary.packet_bytes,
             initial_cookie_population: (summary.cookies, summary.cookie_bytes),
-            leap_indicator: receipt.fields().header().leap_indicator(),
+            leap_indicator: header.leap_indicator(),
+            peer_timestamps: [header.receive_timestamp(), header.transmit_timestamp()],
             committed_at: history.committed_at(),
             received_at: history.received_at(),
+            application_clock_captures: history.captures(),
+            application_wall_elapsed_bounds: history.application_wall_elapsed_bounds(),
         }
     }
 
@@ -468,6 +492,15 @@ impl ManagedProtectedReceipt {
         self.leap_indicator
     }
 
+    /// Return the original authenticated server receive and transmit values (T2 and T3).
+    ///
+    /// The wire values retain all bits, including zero. This historical pair
+    /// supplies no era interpretation, clock mapping, freshness or sample eligibility.
+    #[must_use]
+    pub const fn peer_timestamps(&self) -> [NtpTimestamp; 2] {
+        self.peer_timestamps
+    }
+
     /// Return the monotonic observation used by the guarded commit.
     #[must_use]
     pub const fn committed_at(&self) -> Instant {
@@ -478,6 +511,29 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub const fn received_at(&self) -> Instant {
         self.received_at
+    }
+
+    /// Return the pre-send, same-send return and selected receive-return readings,
+    /// in that order. Each value holds the original local wall reading and its
+    /// two process-local monotonic bracket endpoints.
+    ///
+    /// These are historical application observations. The wall values supply no
+    /// UTC accuracy, trusted date, packet placement or clock mapping.
+    #[must_use]
+    pub const fn application_clock_captures(&self) -> [SoftwareClock; 3] {
+        self.application_clock_captures
+    }
+
+    /// Return the inclusive minimum and maximum monotonic intervals between
+    /// this exchange's original pre-send and receive-return wall reads.
+    /// The minimum pairs the leading receive reading with the trailing pre-send
+    /// reading. The maximum pairs the trailing receive and leading pre-send readings.
+    ///
+    /// Unavailable bounds leave the historical receipt intact. These intervals
+    /// include application placement and scheduling delay and supply no UTC mapping.
+    #[must_use]
+    pub const fn application_wall_elapsed_bounds(&self) -> Option<[Duration; 2]> {
+        self.application_wall_elapsed_bounds
     }
 }
 
@@ -554,6 +610,10 @@ impl fmt::Debug for ManagedProtectedRestriction {
 
 /// Original terminal outcome after normal retirement and physical join.
 #[derive(Debug)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "retain bounded historical receipt facts inline without adding an allocation when projecting completed work"
+)]
 #[must_use = "inspect the original terminal protected operation outcome"]
 pub enum ManagedProtectedTerminal {
     /// The successor produced a committed ordinary authenticated receipt.
@@ -563,6 +623,12 @@ pub enum ManagedProtectedTerminal {
     /// The selected packet operation refused and its original cause was retained.
     Refused(SourceProtectedProbeFailure),
 }
+
+/// Fixed inline storage ceiling for one historical terminal observation.
+const MAX_INLINE_MANAGED_TERMINAL_BYTES: usize = 512;
+
+/// Require renewed layout review before a terminal result exceeds its fixed budget.
+const _: () = assert!(size_of::<ManagedProtectedTerminal>() <= MAX_INLINE_MANAGED_TERMINAL_BYTES);
 
 /// Joined historical results for the explicit managed protected invocation.
 ///

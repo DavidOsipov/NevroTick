@@ -96,6 +96,8 @@ pub(super) enum Event {
     /// Custody resolved and terminal reporting attempted, including failed reports.
     /// This explicitly does not mean successful Stopped or a Clean result.
     Finished,
+    /// A retained original operation failure, independent of cleanup or Stop.
+    OperationFailure(FailureCode),
 }
 
 impl Event {
@@ -110,6 +112,7 @@ impl Event {
             Self::StopReportFailure(code) => (6, 2, code.0),
             Self::TerminalReportFailure(code) => (7, 2, code.0),
             Self::Finished => (8, 1, 0),
+            Self::OperationFailure(code) => (9, 2, code.0),
         }
     }
 }

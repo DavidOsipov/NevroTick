@@ -5970,6 +5970,607 @@ verification policies. No production worker, account, runtime, deadline, IPC,
 network/clock effect or installed-service authority is selected. Formal work
 remains post-V1; Windows/native, fuzz, storage and UI execution holds remain.
 
+<a id="s31-real-engine-composition--20-november-2026"></a>
+
+**Coordinator-selected real Engine composition — 20 November 2026.** The renewed
+full-V1 owner goal and [current development selection](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+admit this finite source child after the current Engine receipt checkpoint.
+`peer_input_final_judge` independently accepts this scoped scheduling reconciliation
+and contract preparation; it does not lift native or security holds. The old
+inert implementation and its qualification remain historical prerequisites.
+
+**Observable exit:** one explicitly selected managed-loopback acquisition through
+`SourceHandle::session` → `AcquisitionSession::prepare` →
+`PreparedAcquisition::execute`, consumed by the actual `Worker` and portable
+`ServiceInvocation`. Preparation constructs one genuine dormant `AcquisitionSession`
+on the host, with no acquisition thread or unfinished preparation job. Only after
+acknowledged Running and its separate active permit is that owned session moved
+to its sole Engine thread. That thread prepares the borrowing plan and publishes
+its original `ControlHandle` through the same sticky cancellation gate before
+executing. No socket/runtime/send is started before Running. No automatic retry or recurring acquisition is
+selected. Test peers are owned loopback only; no shipped plain-NTP fallback,
+positive time eligibility, mapping, broker authority or production service is
+inferred. Initial composition is compiled/tested in the existing standalone
+fixture; native.rs, both executable defaults and installed identities stay outside
+this stage. Later native/production integration must consume the same checked
+kernel, rather than treating this stage as completion of those exits.
+
+**Contract revision 3, independently accepted before source editing:**
+
+1. Retain at most one acquisition thread, one original control, a bounded result
+   slot, one host wake and one activation/cancellation gate. Before activation,
+   retain the actual checked session without spawning a thread. Activation moves
+   it exactly once; failed spawn retains a typed failure and starts no work.
+   Sticky cancellation and control publication share one serialized gate, so a
+   Stop between activation and control publication cannot be lost. The Engine
+   thread alone prepares/executes/retires its moved session. Stop fences host admission before
+   requesting that original control. Result publication and a wake precede thread
+   return; neither proves physical exit. Only `is_finished` followed by actual
+   `join` permits the worker's Finished observation and release of its permit.
+2. Distinguish pending work, a retained return marker awaiting thread exit, and
+   joined completion. Resolve the wake-before-thread-exit race with a narrow
+   **20 ms fixture-only join-tail observation**, using the existing owner's wait;
+   no new thread, runtime, supervisor, global timer policy or heartbeat while
+   acquisition remains active. At most one such wait is armed. Before expiry,
+   clamp it to the original remaining phase deadline. After expiry, retain the
+   overdue failure and allow only join-tail observation at that same bounded
+   timer request; it grants no new deadline, progress checkpoint, work, Clean
+   outcome or time-to-completion promise. Use a distinct private `InvocationPoll::JoinTail`
+   observation so this cleanup wait is not mistaken for ordinary deadline allowance.
+   The 20 ms value bounds the requested wait, not a minimum polling interval,
+   measured wake rate, latency or CPU guarantee: the wait may return early or
+   spuriously. Such observations never renew the original deadline or count as
+   progress. A stalled operation without a return marker stays event-driven.
+   Native termination/recovery and performance remain open.
+3. The private Worker finish interface becomes a closed `WorkerFinish` observation:
+   `Pending`, `JoinTailPending`, or `Finished(WorkerCompletion)`. The completion
+   contains named `operation_failure` and `cleanup_failure` optional fixed
+   `WorkerError` facts. Existing `Poll<Result<(), WorkerError>>` fixture adapters
+   map their old sole error to cleanup, preserving their meaning. A joined
+   completion carries separate optional operation and cleanup failures.
+   Preserve the first already observed cause. If it is already occupied, retain
+   a later operation failure and later cleanup failure in separate fixed slots,
+   beside existing StopPending and terminal-report failure slots. Never overwrite
+   a slot or encode a known operation failure as successful work. Existing error
+   getters keep their meaning; a new bounded getter exposes the secondary
+   operation fact. The actual acquisition result remains owned and inspectable
+   without formatting arbitrary Engine error content.
+4. Required diagnostics retain existing IDs 1–8, nine-byte encoding and two
+   sixteen-record routes. Add fixture event **9**, operation failure, with the
+   existing fixed worker cause codes and ERROR severity. It routes once per
+   retained operation-failure slot even when optional output is disabled. Existing
+   cleanup event 5 retains its meaning. Sink full/unavailable cannot alter status,
+   failure precedence, permit custody or cleanup. No arbitrary text/secret fields
+   or production logger schema is introduced.
+5. Successful one-shot completion leaves the laboratory invocation Running until
+   requested Stop or its original run bound. Stop before activation yields zero
+   acquisition; failed Running publication never activates. Stop during work
+   reaches the real Engine handle. Late completion resolves only the original
+   owner and cannot reopen admission. Drop/timeout/cancellation release no charge;
+   unresolved whole-owner destruction retains the existing fatal fixture guard.
+
+**Revision-3 independent review resolutions:**
+
+- Every ordinary preparation, execution or gate-publication failure must publish
+  a retained terminal marker and owner wake. Use a non-panicking final notifier
+  independent of the result mutex. A poisoned gate permits cleanup/cancellation
+  and historical inspection only, never resumption or new work. Unexpected Rust
+  unwind in the acquisition thread uses the existing fixture unwind-to-abort
+  guard, rather than silently terminating the thread. It produces no Finished
+  acknowledgement and no clean Stopped report. Abort, native faults and panic-hook
+  privacy retain the existing explicit limitations; child controls need finite
+  supervision and no core dumps.
+- Classify the genuine result before projecting worker health. Outer Err is an
+  operation failure. For Ok(report), retain its complete original series: a primary
+  failure, Stale, or Failure without any recorded cleanup cause is an operation
+  failure; each stop/invalidation cleanup cause is a cleanup failure. Failure
+  caused solely by those cleanup facts does not invent another operation cause.
+  Completed, Stopped and SeriesDeadline without recorded causes are legitimate
+  terminal neighbors, not freshness or synchronization claims. Missing numerical
+  qualification remains data, not successful time admission. Gate/publication
+  failure is separately retained as worker failure without rewriting that report.
+- A known operation or cleanup failure observed while Running requests host
+  shutdown promptly. Use a private tagged `WorkerFailure::{Operation,Cleanup}`
+  health error so its origin is retained. Finished still carries both canonical
+  facts; the host deduplicates the same previously observed kind/code and retains
+  a distinct late operation/cleanup fact in its separate fixed slot. Completion
+  never depends on a caller remembering to observe health first.
+- Reversed-clock handling remains sticky and performs no further Clock reads,
+  ordinary work or deadline calculation from the historical fallback. The inert
+  worker's existing no-wait completion is unchanged. For this real-thread child
+  only, a retained terminal marker permits the same join-only relative wait via
+  the existing wait primitive even when time is unusable. Its duration is a fixed
+  cleanup observation request, independent of the rejected Clock/fallback, and
+  supplies no trusted current time, timing/rate guarantee or new allowance.
+  Update the nearby host/README contract consistently; this exception provides
+  no native clock-recovery or product termination policy. Actual join is still
+  required, and the earlier clock failure prohibits Clean.
+
+The initial independent review returned REVISE for these three details. The
+completed inherited-context `peer_input_final_judge` re-review accepted all three
+explicit resolutions as READY. The concrete interfaces below are frozen for the
+isolated writers; this is contract review, not a source or execution pass.
+
+**Exact source ownership:** coordinator owns the standalone Cargo manifest/lock,
+its qualification.py graph/roster admission and shared verification scope. Add only
+an existing local Engine dev-dependency (defaults disabled), preserving the admitted
+registry cohort, licences, Rust 1.100 and MSVC/v3 target. Host/error/diagnostic
+writer owns their existing source and focused tests. A separate writer owns the
+private Engine worker module and its real-composition tests after interface freeze.
+`src/lib.rs` registers that first-stage module under test configuration. Neither
+writer changes native.rs, either binary, workspace manifests, broker/IPC code or
+production policies. Register all changed critical owners before metrics; historical
+platform gates do not qualify new host/worker code.
+
+**Required evidence:** real-loopback healthy series; denied and pending startup;
+failed preparation and Running publication; Stop before/during execution; original
+report and no admitted time sample; delayed thread tail before and after the fixed
+deadline; wake/check/park race; paired operation/cleanup/status failure precedence;
+no Stopped or charge release before join; bounded required-event output with healthy,
+full and unavailable sinks. Use independent literal/state expectations and actual
+host/Engine consumers. Preserve current configured GNU ordinary/optimized,
+MSVC test compilation, Clippy/rustdoc/doctest and per-file 90%/95% gates with complete
+inventories/generation gaps. Structured input fuzzing, native memory tools and
+other QA follow actual triggers; no held campaign is reopened. One execution owner,
+one inner Cargo job/test thread, initial development bound 900 seconds; freeze
+metric budgets separately after development and complete candidate admission.
+
+Status: real source composition implemented and development verified below.
+Current per-file coverage/mutation qualification is next; the parent S3.1/native
+and W11-W01 mapping/broker issuer exits remain open.
+
+<a id="s31-real-engine-development--21-november-2026"></a>
+
+**Real Engine composition — development exit, 21 November 2026.** Two isolated
+writers supplied the host and private Engine worker, coordinated at `78f8ae9`.
+The integrated path now creates a genuine dormant managed session before Ready,
+activates its one thread after acknowledged Running, serializes sticky Stop with
+original-control publication, retains the actual result, and requires physical
+exit plus join before releasing charge. Operation/cleanup/status failures remain
+separate; event 9 routes fixed operation codes. Both native executable defaults
+remain inert. This is an initial P3 source integration, not an installed service.
+
+The frozen 647-input development candidate is
+`85551119db977803da105f84d7405a2101cd93121c99c91b85a6183f915f6a9a`.
+Its standalone manifest/lock hashes are `0a9e2f25…`/`7174fe52…`; the unchanged
+root lock remains `26dd7d34…`. Actual guarded root resolution reproduced zero
+registry additions/removals before rebinding the complete manifest context and
+code-owned policy pin. All 26 standalone registry identities reuse exact accepted
+root sources/checksums; ten are newly selected in this standalone lock, no new
+registry version. GNU normal/test trees select 16/27 packages, MSVC 18/29;
+Engine is dev-only with KE disabled. No licensing/feature/build grants changed.
+
+All twelve configured `qualification.py privilege-checkpoint` lanes passed:
+format, GNU/Windows all-target Clippy, ordinary/optimized tests, separate doctests
+and rustdoc. Each mode ran 105 fixture-library cases plus one executable-entry
+case, including all eight genuine Engine compositions; each also ran 45 platform
+cases. Platform doctests ran eight cases. Fixture doctest selection was empty:
+no positive case or general contract proof is counted for that zero result.
+The Engine controls cover literal T2/T3 and zero admitted samples, denied startup
+and Running, failed preparation, pre-publication and in-flight Stop, delayed join
+including expiry, Stale, poisoned publication and supervised actual-thread unwind.
+The wake-before-park case uses an independent Condvar witness and honors the
+original Pending rather than masking a missing notification with a heartbeat.
+
+The original 900-second development owner closed at 891.910 seconds. Five exact
+candidate attempts retain the initial import/lint failures; the final native lane
+results are not attributed to earlier candidates. Its final receipt is
+`artifacts/windows-services/recovery-20261107-v1/engine-compose-development-dev05.json`
+(SHA-256 `0f1df4fb9eb4d156ecb1320896b4ff5153bdb84ceef326e5174118c2b7965fc6`).
+Graph, raw first failures and coordinator closeout remain in the same evidence
+chain under `engine-composition-20261120-v1/`. Derived builds lived on a private
+3-GiB RAM mount and were retired after each attempt; no compiler outputs retained.
+
+Seventeen admission controls and twenty metric-reader controls pass. The latter
+retain a reproduced HEAD failure: deferred zero-viable accounting returns an
+explicit failed score, while strict receiving admission still refuses it. The
+corrected test checks both; no unviable variant receives kill credit. Independent
+fresh-context graph and combined-source reviewers completed, with later scoped
+rereviews. They found a stale reversal expectation and a wake-masking test gap;
+both were corrected before final execution. One exact non-test-only dead-code
+expectation covers the join-tail variant whose real producer is test-only; test
+builds do not suppress it. Inert native behavior is unchanged.
+
+Process-only core refusal was needed for WSL's piped crash collector: matching
+Microsoft kernel source rejects RLIMIT_CORE 1 before collector launch, whereas
+zero is ignored by pipes. The configured runner checks both inherited limits;
+file collectors use zero, socket collectors remain unadmitted. No host collector
+setting changed. Actual GNU fault children aborted without a core and retained
+no Finished/Clean acknowledgement; Windows crash execution remains held.
+
+**QA disposition at the development-only exit (historical):** at that point,
+four-owner line coverage and mutation qualification remained unexecuted. Pinned cargo-mutants skips the test-gated worker
+during native discovery; inspect actual ordinary and direct-file inventories
+before selecting a complete reviewed alternative. Empty selection earns no score.
+Runtime outer-error/cleanup producer paths are not replaced by scripted host-fact
+controls. Existing model/boundary/lifecycle, sink-failure and actual-consumer tests
+ran; no generalized property/fuzz campaign or native memory/leak result is claimed.
+No new byte codec/unsafe/FFI was added; held fuzz, native memory/service, storage,
+UI and post-V1 formal obligations retain their owners. Genuine Engine-to-Core
+mapping/eligibility, native workers and complete MSIX remain separate exits.
+
+
+<a id="s31-four-owner-metric-preparation--21-november-2026"></a>
+
+**Four-owner metric preparation — 21 November 2026.** The actual generator
+preflight completed on the same 647-input `85551119…` candidate in 24.833 seconds,
+under a separate 240-second allowance. Ordinary worker file/descriptor lists are
+both empty; the unchanged native host positive lists 92 variants. Pinned direct
+file generation lists 33 worker descriptors covering thirteen named functions.
+All four native tool exits are zero with source/vendor/index bookends and no
+compilation/test run. Receipt `engine-composition-20261120-v1/generator-preflight-01.json`
+has SHA-256 `a534758e59a465bed4c0e8a6277767838602ce78ec2f1fb37d5e065025c70ec5`.
+These are generated rows, not executed kills. The current native parser correctly
+rejects empty inventories and the direct generator's `single_file` package.
+
+**Next-stage proposal for independent review, not an executed qualification:**
+register host, error, diagnostics and the test-only worker as four selected
+critical owners before coverage. Preserve native cargo-mutants for the existing
+three owners. For the worker alone, extend the existing fixture metric entrypoint
+with a separately tagged complete direct-generated replay; add no general runner,
+dependency, compiler extension, production cfg, feature or dependency edge. Keep
+the original `cfg(test)` and every ordinary/native hold. Do not relabel its rows as
+a native cargo-mutants campaign or manufacture native outcomes.
+
+Admit the complete bounded raw JSON and exact rendered diffs from the pinned
+direct generator against the independently reviewed source, tools and graph.
+Retain its raw `single_file` identity; any fixture-path projection is explicit,
+source-bound and round-trip checked, never fed silently to the native parser.
+Use the existing exact-span overlay method from the Engine facade preparer and
+existing source/inventory review. Require all rows, unique complete descriptors,
+valid in-file spans, unchanged source context and exact one-file changed bytes;
+reject altered/missing/duplicate/out-of-owner/oversized rows or diff identity.
+Register generation gaps separately, including ungenerated individual wake/join
+checks. Do not move or disguise the test gate to influence discovery.
+
+Replay only in an owned private derivative, with immutable original inputs and
+per-case byte bookends. Reuse the admitted Q sandbox/tool/vendor/graph and ordinary
+fixture case roster. Establish an unmodified full Build/Test/doctest baseline;
+record actual raw Build/Test argv, exits, output, duration and custody for every
+complete descriptor. A compiler refusal is unviable with zero kill credit only
+when the changed owner explains it. A Test failure requires a meaningful selected
+behavioral cause through the real host/Engine consumer; setup/native abort alone,
+missing results or timeouts grant no kills. Surviving, timed-out or unclassified
+rows remain open. Restore the exact original before the healthy closing control.
+No proposed projection or handwritten verdict is execution evidence.
+
+The native and direct-replay result schemas remain distinct. The worker's score,
+if admitted, identifies all 33 direct-generated cases and the full-row replay,
+with a nonempty viable denominator and unchanged >=95% threshold. No equivalence
+or exclusion is preapproved. Source/requirement reconciliation and independent
+review of actual effects remain mandatory; manual sensitivity controls add zero
+generated credit. Score passing never closes the held native/production exits.
+
+**Finite exit:** first qualify the parser/custody/scorer with independent healthy
+and malformed fixtures, then a representative real healthy/fault replay before
+the full row set. Budget preparation and representative replay together at 900
+seconds; declare the full campaign's separate cumulative allowance only after
+that exit. One execution owner, one inner Cargo job/test thread, four mutation
+workers maximum, private RAM scratch, 4-GiB root-disk reserve and 1-GiB free-memory
+stop. Preserve all original failures and record timing/cleanup. Fresh-context
+`s31_metrics_plan_review` completed READY for the preparation/pilot only; its
+historical memory lookup was disclosed and material facts rechecked. The fourth
+95% gate remains open.
+
+The same pilot origin now has a 1,800-second cumulative ceiling, retaining its
+initial 900-second allowance and all preparation usage. This single bounded
+amendment addresses a concrete prerequisite: the existing shared subprocess loop
+had no in-run resource probe. An optional fixed-reason guard now stops/reaps its
+owned process group, while default callers retain their old behavior. The service
+caller checks the declared disk/memory floor during execution; healthy, resource
+stop, invalid guard and exact-floor controls qualify it. Independent review also
+requires a child-readiness witness rather than callback-count timing in the stop
+control. This is no new full campaign or allowance reset. Proceed with fresh
+helper-bound graph/ordinary/direct enumeration, then the named representative
+replay; the full campaign still awaits its fixed exit.
+
+The first real replay (`engine-compose-worker-pilot01.json`) stopped before
+Build/Test: Cargo 1.100 refused package cleaning in a newly created empty target
+without `CACHEDIR.TAG` (exit 101). It remains incomplete with zero kill credit.
+The causal repair admits an absent or strictly empty canonical owned initial
+target and records that observation, leaving Cargo to create its cache marker.
+Nonempty, symlink and non-directory initial targets refuse without deletion.
+Every variant and closing Build still requires successful package-scoped Cargo
+clean plus exact freshly compiled fixture libtest evidence. Independent reviewer
+`s31_replay_code_review` accepted this bounded amendment before implementation.
+The same pilot origin retains all earlier usage and now has a 2,700-second
+cumulative ceiling for this repair, fresh admission and one representative retry;
+this is not full-campaign permission or an allowance reset.
+
+The second replay retained a successful real baseline Build/Test/doctest, then
+both variant/closing Cleans refused the same missing marker. It remains
+incomplete with zero kills. Source tracing found the service runner precreated
+`target` on every command, including direct enumeration; upstream Cargo marks
+newly created cache directories. The causal preparation control failed in both
+ordinary/mutation modes before repair, then all nineteen controls passed after
+removing only `target` from that mkdir list. This leaves Cargo responsible for
+creating its own cache and marker through the existing private writable work
+mount; no tag is forged and no clean/refusal is bypassed. Reviewer
+`s31_replay_code_review` accepted this bounded hypothesis and required actual
+subsequent successful variant/closing Cleans before confirming it. The same
+2,700-second pilot ceiling and original usage remain unchanged.
+
+**Representative pilot exit passed.** Current 648-input candidate
+`f5d2083a8ae38f9e3215d8689c71e27b03ac272d4a4716f2abb641fd6e70646a`
+passed fresh six-command graph admission, all 106 ordinary fixture cases and
+all 33 complete direct descriptors with current independent review. The actual
+healthy → fault → restored-healthy replay passed in 69.921 outer-owner seconds
+(67.058 seconds inside the receipt): both package
+Cleans succeeded; baseline and closing each require seven fresh fixture artifacts
+including the exact libtest; the fault produced the intended poisoned-publication
+assertion at `engine_worker_tests.rs:876`. Receipt
+`engine-compose-worker-pilot03.json` SHA-256
+`f090f9292357ecf2c098af0ef83072ad809f4d8b1bbb1f89845ce54ef07774a5` retains
+source/vendor/tool/index bookends and raw commands/results. This confirms the
+cache initialization repair on the admitted Cargo, not arbitrary toolchains.
+The pilot owner closed at 2395.130/2700 cumulative seconds, including preparation,
+reviews and both earlier failed attempts. All private RAM builds were retired.
+Its score correctly remains incomplete (one executed of 33, no full percent or
+gate pass); no four-file metric/native/production qualification is inferred.
+
+The independently accepted next stage is one 2,400-second cumulative full-metric stage,
+including preparation/admission/review: four >=90% line gates, the existing three
+native mutation owners and the separate complete 33-row worker replay with
+unchanged >=95% per-file requirements. Before that run, retain each exact changed
+worker overlay and reconstruction identity beside raw command evidence, then
+retire only its fully checked owned derivative after actual process return and
+classification. This avoids exporting 33 duplicate complete source trees. Keep
+the original base once; any mismatch, unresolved custody or cleanup failure keeps
+the derivative and stops. Independent `s31_metrics_plan_review` completed READY before dependent execution.
+The shared exporter gains an optional strictly stronger disk-reserve parameter:
+existing callers retain 2 GiB; this metric caller explicitly requests 4 GiB,
+checked before and during copies and recorded in its ledgers. Selection/retention
+rules, native/direct schemas and open generation/native obligations remain
+unchanged. Coordinator owns that shared helper; the isolated writer owns only
+the metric reader and its controls. Preparation, source review, fresh admission,
+actual execution, export and cleanup consume the same declared stage origin.
+
+Full-stage review also found a replay input alias: `/work/source` was read-only,
+but the same derivative remained writable at its natural path under the work
+mount. The fix seals both aliases. A real isolated Python canary first opened the
+natural alias for writing while the canonical path refused with EROFS; after the
+fix both reads succeed and both write-only opens refuse with EROFS, beside a real
+writable scratch neighbor. No canary bytes were changed. RED/GREEN receipts
+`source-alias-actual-red01.json`/`source-alias-actual-green01.json` retain the
+commands and cleanup; this is a verification-boundary repair with no demonstrated
+host escape or product vulnerability. Nineteen Q controls pass. Sparse/export
+controls pass 34 cases; current environment/resource controls pass 39. Skills
+applied: plan/code contracts and causal failure triage for preparation; mutation,
+resource, boundary and independent-review procedures for the current metric
+stage. These synthetic and process-boundary checks add no generated kill credit.
+
+The independent source reviewer accepted sparse deletion and export changes,
+with a final receiving prerequisite: after all subprocesses/export, independently
+verify every archived worker/manifest against its recorded hashes, full original
+and variant identities, exact descriptor and command linkage. Later writable work
+could otherwise alter earlier sparse files. No final qualification claim follows
+from score fields alone; all prior source/native/generation gaps remain explicit.
+
+The first complete coverage execution ran all 106 cases: diagnostics 118/118,
+error 132/132, host 547/582 (93.99%) and worker 162/184 (88.04%). The gate remained
+failed. One new component case exercises actual dormant/prepared/retired Worker
+transitions, pre-activation Stop and first-failure retention with a genuine checked
+session and peer. It changes no worker implementation or denominator. Its first
+integration reused source index 0, and the healthy neighbor correctly refused a
+second first-install-only configuration. The fixture now admits ten bounded
+sources and gives the new case index 9; original cases retain indices 0–8. This
+fixes test isolation, not an established product defect. Original failures remain.
+
+Independent review accepted the new case and the causal fixture repair. The same
+full-stage origin now has a 3,600-second cumulative ceiling, retaining its original
+2,400-second allowance and all usage, because these demonstrated prerequisites
+require changed-candidate qualification. Per-lane 1,200-second caps, resource
+stops, 90%/95% requirements and native holds remain unchanged. Budget grants no
+passing result. Completed private writer/preparation trees were removed after
+preserving their exact patches/untracked sources and verifying root Git custody.
+Unused dependency/object caches from the failed coverage build were deleted;
+actual executables/shared objects, profiles and raw coverage/command/source data
+remain. Three duplicate pilot source copies were deleted only after complete hash
+parity with retained direct-enumeration source archives. Explicit cleanup ledgers
+identify historical export subsets and exact retained source locations.
+
+**Causal qualification continuation — 21 November 2026.** The partial
+`engine-compose-full-worker-replay03` stopped after eleven of 33 descriptors:
+three behavioral kills, five compiler-unviable, two survivors and one unclassified
+watchdog failure. No score passed and the watchdog earns no kill. Real controls
+now observe original Stop/control publication and Stale retirement before releasing
+the physical thread-tail barrier; cleanup precedes assertions without changing
+the captured oracle. A separately retained original control is used only to
+rescue an adverse test path, so the observer cannot manufacture the claimed Stop.
+Four literal inputs test the private cleanup OR policy in the same critical file;
+its real report-getter/cleanup-error-producer path remains a separate open gap.
+The fresh worker inventory has 35 descriptors, not the historical 33.
+
+The first native-three run stopped before any mutation because the pinned tool's
+ordinary source copy omitted the external Engine **dev-dependency** path. The
+supported confined in-place mode now keeps the complete private derivative,
+serializes one mutator and one Cargo/test worker, seals both parent aliases and
+permits writes only to the selected existing owner file. Original source,
+manifests, tests, dependencies, configuration, vendor and tools remain read-only.
+Actual mount controls observed selected writes/restoration and eighteen neighbor,
+manifest, unlink/rename refusals. Dirty or interrupted derivatives remain failed;
+no tool patch, graph substitution or fault exclusion was introduced.
+
+`engine-compose-final-native-mutation05` then reached a healthy baseline but was
+killed by the actual `DISK_RESERVE` guard. Root-headroom loss was observed; its
+cause was not established. Full export failed, and the former supervisor then
+unmounted its private RAM workspace: raw outcomes/dirty derivative are unavailable.
+Its two stdout misses cannot establish scores or exclusions. This retention
+mistake is preserved, not reconstructed as a complete native run. The corrected
+supervisor requires actual 6-GiB launch headroom, records numerical root/work/RAM
+observations and preserves failed work independently before unmount. If preservation
+itself fails, its real signal-resistant custodian remains idle, with no campaign
+or automatic release. Actual retention/refusal controls and independent source
+review are retained in `engine-composition-20261120-v1/supervisor-retention-controls06.json`
+and `supervisor06-final-retention-review01.json`. The enforced execution/export
+reserve remains 4 GiB; no threshold was lowered.
+
+A surviving Stop-helper fault exposed a masked postcondition: the existing exact
+representability case now checks the actual `begin_stop` deadline, overdue fence
+and charge immediately, before the later poll. The legal representable neighbor
+and all original failure/status/cleanup assertions remain. Pinned Rust's
+`From<T> for Poll<T>` constructs exactly `Ready(t)`; the observed `Poll::from(Ok(()))`
+replacement has a source-domain equivalence argument, but no killed-mutant credit
+or exclusion is inferred from the lost run.
+
+A probe also created one ignored Python bytecode input. Its exact bytes were
+retained; independent comparison of all 39 recursive code objects found unchanged
+execution/location attributes and constants. Raw marshal payloads were **not**
+byte-identical. Historical development04/coverage04 remain bound to their actual
+649-input candidate; no receipt was rewritten. The cache was removed before the
+fresh 648-input candidate and all subsequent imports suppress bytecode.
+
+The single full-stage origin and all earlier usage remain: independently reviewed
+causal amendments extended 2400 → 3600 → 5400 → 6300 → 8100 seconds for the actual
+coverage/isolation, native-layout/sensitivity, generated-cache and disk/retention
+prerequisites. Per-lane caps, 90%/95%, complete inventories and scoped holds are
+unchanged; an allowance supplies no result. The authorized cleanup deleted 83 exact
+superseded Nov14–17 audit subdirectories (2,139,627,520 allocated bytes), 37 old npm
+download-cache files (197,988,352 bytes recovered) and fourteen obsolete native PDBs.
+Root reports/patches, current Core Nov18 evidence, current service evidence,
+repositories, installed tools, vendor and Git custody were preserved. Historical
+raw replay/symbol availability is explicitly lost at the paths listed in
+`obsolete-audit-retirement06.json`, `old-npm-cache-retirement06.json` and
+`obsolete-native-symbol-retirement06.json`; those older raw files must not be
+reported as independently inspectable.
+
+The current freeze is 648 inputs, candidate
+`75328629358e6159cde07debf7395cf17217e3a396e76dd82ff565577ba91960`,
+HEAD `78f8ae931c7139d37e0ff36ed18e41dabf8c72ff`, with preserved dirty source and
+unchanged index. Graph06 (six commands), development06 (all twelve configured
+lanes), ordinary06 (109 cases) and both complete inventories pass with current
+source/tool/vendor/index bookends. Both independent inventory reviews accepted
+the exact 150 native and 35 direct descriptors. Fresh current coverage/mutation
+results and final independent archive receiving review are still required;
+this paragraph does not report their execution or qualification.
+
+**Three-owner receiving complete; worker-policy follow-up active.** On candidate
+`75328629…`, native06 completed all 92 host variants, but its receiving parser
+correctly stopped at three assertion-free aborts. Its original incomplete receipt
+is unchanged. The separately reviewed `engine-compose-native-adjudication07.json`
+then replays those exact three generated overlays through the existing supervised
+healthy driver: each has an actual parent assertion, with identical healthy
+baseline/closing controls (one selected library case, 107 explicitly filtered).
+Original raw diffs, all three full derivatives and original source are retained.
+It also executes the two previously unrun native owners, without repeating host92.
+Independent receiving checked all 2,837 exported files, all 150 native raw diffs,
+all cause links, source/tool/vendor/proof/index bookends and every retained variant.
+
+| Selected source | Distinct generated outcomes | Qualified accounting |
+| --- | --- | --- |
+| Host | 92: 53 meaningful kills, 36 compiler-unviable, three exact source equivalents; zero timeouts | Raw 53/56 = 94.642857% remains recorded. Three independently reviewed equivalents remove only their own denominator entries: 53/(56−3) = 100%. The three semantic supplements are existing generated IDs, not three additional kills. |
+| Error | 42: 17 meaningful kills, 25 compiler-unviable, zero survivors/timeouts/exclusions | 17/17 viable, 100%. |
+| Diagnostics | 16: three meaningful kills, 13 compiler-unviable, zero survivors/timeouts/exclusions | 3/3 viable, 100%. |
+
+The source-domain arguments live in the bounded companion
+[service-fixture equivalences](windows-service-fixture-equivalences.md); they
+identify exact descriptors, private-owner invariants, side effects, adversarial
+counterexamples and invalidation conditions. They are source review, not formal
+jobs or behavioral kills. Both independent receiving reviews retain the original
+failed raw status. The adjudication's `metrics_passed`/`qualification_passed`
+fields remain false; this is three-owner source qualification, not four-owner or
+native service completion.
+
+The complete worker06 replay executed all 35 variants: 19 meaningful kills,
+15 compiler-unviable and one survivor, no timeouts. Its raw 19/20 = 95% still
+fails the existing **no unresolved survivor** rule. All 35 sparse archives,
+original/variant maps, exact byte reconstructions, command links and causes were
+independently verified. The survivor deletes `!cleanup_failed` from operation
+classification; current real report cases have no cleanup failure, so the pure
+cleanup-OR table did not distinguish it. No threshold was relaxed and this
+survivor was not declared equivalent or hidden by an exclusion.
+
+The causal worker08 refactor keeps the exact expression and negation in the same
+critical source file, behind one private total policy helper. Its actual consumer
+still supplies the genuine immutable report's end/primary-cause getters and
+original cleanup boolean. The existing test now has 20 independent literal rows
+covering every current end/boolean combination, including cleanup-only failure;
+no report is forged and no test name, dependency, filter or native entrypoint
+changes. The actual Engine cleanup-error producer/getter transfer remains open.
+The two source files were integrated only after the 753… jobs and custody closed.
+Fresh new-candidate graph, all twelve development lanes, ordinary cases, all four
+line gates, complete direct inventory/review and full worker replay are required.
+Three unchanged native owners may reuse their exact 753… qualified evidence only
+through the independently reviewed unchanged-source/semantic-consumer bridge;
+old receipts and scores are never rebound as new-candidate executions.
+
+The same origin retains every earlier charge and now has an independently reviewed
+11,100-second ceiling, extended for the demonstrated semantic-cause admission and
+worker-policy sensitivity failures. No new campaign name resets elapsed usage or
+per-lane caps. The unchanged actual `WorkerFinish` handling rule also has retained
+compiler controls: a legal private-host consumer succeeds, bare discard fails
+solely for `unused_must_use`; no visibility/setup warning supplies that refusal.
+Fresh review checked both full changed source maps and actual diagnostic spans.
+This supplies compiler-rule evidence, not linear consumption or native cleanup.
+
+<a id="s31-real-engine-selected-qualification--21-november-2026"></a>
+
+**Selected portable qualification complete — 21 November 2026.** The final
+648-input candidate is
+`02c515363237d1c3c3f7adfc1808dcd0de62546105f97e83390d44675d0256e4`,
+against HEAD `78f8ae931c7139d37e0ff36ed18e41dabf8c72ff`, with preserved dirty
+work and unchanged index. Fresh graph08 passes all six commands; development08
+passes all twelve configured lanes, including GNU ordinary/optimized 108 library
+plus one entrypoint case, 45 platform cases per mode, eight platform doctests,
+GNU/MSVC all-target Clippy, formatting and rustdoc. Zero fixture doctests earn
+zero credit. This is current integrated source evidence, not a native Windows run.
+
+| Current selected owner | Fresh executable-line gate | Mutation evidence and scope |
+| --- | --- | --- |
+| Host | 547/582, 93.9863% | Qualified unchanged 753… source: 53 meaningful kills, 36 compiler-unviable, three reviewed zero-credit equivalents; adjusted 53/53. |
+| Error | 132/132, 100% | Qualified unchanged 753… source: 17/17 viable killed, 25 compiler-unviable. |
+| Diagnostics | 118/118, 100% | Qualified unchanged 753… source: 3/3 viable killed, 13 compiler-unviable. |
+| Real Engine worker | 186/193, 96.3731% | **Fresh current37/37 replay:** 20/20 viable killed, 17 compiler-unviable; zero survivors, timeouts or exclusions. |
+
+The current direct generator still selects the negation fault at
+`series_operation_failed` line180:80. Its actual variant fails the independent
+literal policy assertion; the baseline and healthy closing each execute all109
+cases after seven fresh fixture artifacts. All37 Clean/Build and20 reached Test
+phases, every exact raw descriptor, all648 base hashes, all37 sparse manifests,
+complete variant maps, byte reconstruction and command/cause links were
+independently checked. Compiler refusals earn zero behavioral kills. Branch
+counts are zero: this supplies no branch qualification.
+
+The three older native-owner results and must-use compiler controls retain their
+actual **753…** labels. The only source delta is the worker's exact expression
+extraction and its literal table. All three native owners/tests, Q/M/helpers,
+manifest/lock/features, compiler/target/vendor/configuration and expected effects
+are unchanged; both moved getters are pure borrowed reads and every helper input
+preserves the original result. Independent review accepts this explicit unaffected-
+state bridge alongside fresh current integrated checks. No old receipt, source
+binding or score was rewritten as a new-candidate execution. The failed35-worker
+result and original native06 refusal remain preserved.
+
+Current timer-cleanup production has a narrow applicability result: the sole
+`EngineWorker::new` factory fixes `ControlSchedule(None,None)`; actual Engine
+`start_timer(None)` produces no job and `finish_timer(None)` succeeds. All cleanup-
+field assignments were traced. A positive timer-cleanup error is therefore
+source-inapplicable to this exact factory path, **not** equivalent over the broader
+helper domain. General Some-schedule/alternate-factory genuine producer/getter
+transfer and later outer-error evidence remain open before that adoption. No
+report was forged and no current Some-cleanup execution is claimed.
+
+A fresh-context independent judge completed source and raw receiving review:
+`engine-composition-20261120-v1/final-integrated-judge06.json`, SHA-256
+`d68cf7f9c7d1f83bdca395a308ca83800bf629afafd5302efde2c03d868e1635`.
+The combined source record is `combined-source-checkpoint08.json` in the same
+existing evidence directory. Its full source/configuration/lock identities,
+actual receipt hashes, reuse argument, original failures, reviewer completions,
+cumulative budgets and cleanup records remain separate from Git publication.
+
+**Scope and next action.** QUALIFIED for this None-schedule portable source
+composition and selected four-owner line/generated gates. Individual constructor,
+wake/join/atomic/cfg and generated/macro omissions retain the inventory review's
+limits; no exhaustive schedule, general fuzz/property-framework, leak/sanitizer,
+physical power, installed Windows/two-family, production mapping/positive Core,
+provider/service/IPC/clock, MSIX or release exit is closed. Current source adds no
+new decoder/byte codec or unsafe/FFI boundary; held fuzz/native/UI/storage and
+post-V1 formal work remain with their owners. The actual native hosts remain
+inert. Continue the existing W11-W08 first portable logger stage by freezing its
+**whole** catalogue, producer facts, limits, consumer and health contract and
+obtaining independent review before implementation. An enum-only/helper-only
+extension cannot close that exit. No commit/signing/publication action occurred.
+
 **Frozen contract, revision 2 (independently accepted before implementation):**
 
 1. One invocation retains the existing `ServiceLifecycle`, reporter, worker and
@@ -7003,6 +7604,127 @@ stage. No proposed shared crate is presumed to exist.
    faulty sinks. Extend existing tests/metrics at the affected owners; preserve
    90% security-module coverage and 95% critical-file mutation requirements with
    honest generated-fault reconciliation. Run only admitted applicable checks.
+
+<a id="w11-w08-first-portable-contract--21-november-2026"></a>
+
+**Whole first portable stage — contract freeze, 21 November 2026.** Planning and
+fresh-context independent review are complete; implementation and all product
+checks below remain **planned**. This continues all five obligations above,
+not only catalogue enums. Baseline HEAD is `78f8ae931c7139d37e0ff36ed18e41dabf8c72ff`;
+the preserved dirty 648-input source is `02c515363237d1c3c3f7adfc1808dcd0de62546105f97e83390d44675d0256e4`.
+The root index remains unchanged. Current S3.1 qualification retains its exact
+scope and receipts; this plan grants no new execution or qualification claim.
+
+The exact contract is
+`artifacts/windows-services/recovery-20261107-v1/engine-composition-20261120-v1/logger-stage1-contract10.json`,
+SHA256 `220405f5b2d1ab006847cc2ed2c96ec265a8976d8689a0ed60b150e44dde7fd2`.
+Fresh reviewer `/root/logger_stage1_plan_judge` read the actual source,
+canonical authorities and frozen contract without conversation inheritance;
+`logger-stage1-plan-review10.json` is **READY for this implementation stage**.
+Its preserved predecessor `logger-stage1-plan-review09.json` was REVISE:
+LOGGER09-R01 identified garde rejection allocation despite a no-allocation
+claim; LOGGER09-R02 identified loss of an overflow fault when wire time becomes
+Unavailable. Contract10 resolves those planning issues; executed implementation
+evidence is still due. Reviewer agreement is no product/native pass.
+
+**Owners and contract.** Add the sole reusable catalogue/checked codec/router to
+`crates/windows-platform/src/diagnostics.rs`; keep actual error projection and
+service decisions in the fixture. No dependency or runtime is added. Preserve
+all nine event IDs and their cause meanings: StartObserved1,
+RunningAcknowledged2, AdmissionClosed3, PrimaryFailure4,
+CompletionFailure5, StopReportFailure6, TerminalReportFailure7, Finished8,
+OperationFailure9. Events1/2/3/8 are INFO/Info, the other whole-invocation failures
+ERROR/High; all nine attempt the required route. No absent Critical/Medium/Low
+producer is invented. Synthetic five-level by five-importance controls test the
+independent policy. Optional Off/Error/Warn/Info and a checked five-bit importance
+mask affect only optional duplicates; no DEBUG/TRACE session or knob is added.
+
+Closed event-specific causes and private fallible construction own acceptance.
+One mandatory root garde rule validates the complete fixed-size candidate through
+one semantic owner, at most one error, empty root path and constant `invalid-v2`
+code. Valid typed production does not allocate; rejected raw candidates can
+allocate a bounded temporary Report, dropped before a closed error escapes.
+No caller text, report formatting, arbitrary payload or error chain is retained.
+Before final qualification derive actual requested rejection-allocation bytes from
+the admitted garde entry layout and pinned Vec growth; the fixed-storage bound
+below is not an allocator-total/RSS claim. No duplicated validator or waiver is
+permitted to obtain an allocation-free label.
+
+**Exact v2 encoding.** A record is128 bytes, integers little-endian; reserved
+bytes must be zero. This coordinated private producer/consumer change preserves
+historical v1 nine-byte literal evidence and rejects v1 at the new decoder;
+there was no deployed v1 decoder or persistent migration to qualify.
+
+| Byte positions, inclusive | Meaning |
+| --- | --- |
+| 0..7 | Version2, kind1, fixed component, event ID, technical level, importance, required route1, event-specific cause |
+| 8..15 | Nonzero invocation-local u64 sequence |
+| 16;17..24 | Lifecycle observation kind and checked elapsed nanoseconds; observed zero is valid |
+| 25;26..41 | Process-instance tag and nonzero u128 claim when present |
+| 42;43..50 / 51;52..59 | Policy/configuration generation tags and nonzero u64 claims |
+| 60;61..68 / 69;70..77 | Association/clock generation tags and nonzero u64 claims |
+| 78;79..94 | Correlation tag and nonzero u128 claim |
+| 95;96..103;104..107 | UTC quality, signed Unix floor seconds, nanoseconds below1e9 |
+| 108..127 | Reserved zero bytes |
+
+Technical codes are ERROR1/WARN2/INFO3/DEBUG4/TRACE5; importance codes are
+Critical1/High2/Medium3/Low4/Info5, never native Windows ordinals. Unavailable tags
+are0 with canonical zero payload; observed metadata claims are1. UTC1 means
+SystemWallUnqualified only; no trusted-UTC code exists. All current live issuer
+fields/UTC are explicitly Unavailable. The actual fixed role, checked local
+sequence and last genuine lifecycle observation are frozen before handoff; no
+new clock read is added. Internal NotObserved does not fault the rate clock;
+checked overflow/origin-order faults encode Unavailable but permanently fault
+refill, while actual clock reversal retains the accepted coordinate as historical
+kind2. Neither delayed consumption nor the passive decoder can mint producer
+provenance. Decoded records have no route into the live producer queue.
+
+**Finite fixture profile.** Each route owns16 pending and16 recent records;
+the two routes consume8192 encoded storage bytes, plus fixed bookkeeping.
+Bound diagnostic-owned fixed storage and simultaneous copies at24576 bytes;
+verify actual layouts/lifetimes. Rate keys are exactly the nine IDs per route:
+initial32 credits partition into nine first-ID reservations plus23 repeats,
+with four credits per ID. Charge before queue attempt, never refund full or
+unavailable admission. First valid time establishes an anchor without restoring
+spent initial credits; only a checked nondecreasing1s window can refill once.
+Bad/unavailable time never refills; overflow/reversal faults latch permanently.
+Coalescing retains first bounded cause/counters without new cardinality.
+Sequence exhaustion refuses reuse; all u64 diagnostic counters saturate explicitly.
+These are portable fixture allocations, not shipped/native/disk/session defaults.
+
+**Actual consumer and receipt.** The normal invocation pumps at most one original
+per route after each lifecycle poll and at most16 per route when sealing.
+Concrete Healthy/Full/Reject/Unavailable consumers perform no callback, lock,
+I/O or retry; an available queue with rejected consumption remains observable.
+Queue admission, consumer attempt/acceptance, refusal, overwrite and unknown
+native delivery stay separate. A single private `HostReceipt` pairs the original
+operation result with its bounded snapshot, through `run_service`, normal native
+OUTCOME and dispatcher projection. Pre-invocation registration/OWNER failures
+retain their original error and useful PrimaryFailure without inventing
+StartObserved/Finished or extra clock reads. Work/Stop/readiness/actual-join and
+primary/secondary error precedence are unchanged; native executable workers
+remain inert. Snapshot retention grants no service or clock authority.
+
+**Implementation and QA exit.** Use the existing configured service and fixture
+runners. Register shared diagnostics as a security module/critical file and
+extend the existing service-analysis package owner for its actual coverage and
+mutation selection; fixture-only instrumentation cannot qualify another package.
+Preserve historical schema1-5 roles and current thresholds. Require independent
+raw/tag/classification/version refusals and legal compiler controls, literal
+producer-to-consumer observations, rate/flood/sequence/counter boundaries,
+backward-time/restart and synthetic-secret neighbors, real lifecycle/fault
+integration, ordinary/optimized/static/doctest lanes and Windows source compilation.
+All affected owners retain90% executable-line and95% per-file mutation gates with
+honest omissions/outcomes. Reuse unchanged error/worker evidence only through an
+explicit caller/source bridge and fresh affected integration. Native delivery,
+real Windows lifecycle, held fuzz/storage/UI, authorized verbose sessions,
+production suppliers and post-V1 formal work retain their separate exits.
+
+Planning applied plan-code-change, plan-architecture, plan-threat-model,
+evolve-data-contracts, security-privacy-logging, qa-test-planning and
+plan-independent-review to the actual owner/error/codec/consumer path and
+THR-8/10/18 with CHECK-14/17/21/25/26/27. Implementation applies its Rust/service
+and contract owners; selected QA obligations above remain planned, not passed.
 
 The portable exit is a reached, bounded, inspectable event pipeline and health
 consumer at the declared source boundary. It is not production Windows delivery,

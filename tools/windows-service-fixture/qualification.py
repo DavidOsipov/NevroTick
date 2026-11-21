@@ -3,7 +3,7 @@
 
 Authoritative source and fresh raw records remain in this checkout. The private
 persistent cache contains only derived sealed inputs and compiler outputs. This
-entry point admits no Windows execution, service installation, network, formal
+entry point admits no Windows execution, service installation, host network, formal
 work, mutation campaign or alternative compiler flags. GPL-2.0-only.
 """
 from __future__ import annotations
@@ -39,10 +39,12 @@ CACHE = Path.home() / ".local/share/nevrotick/service-verification-cache-2026110
 TARGETS = ("x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc")
 FEATURES = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"]
 OLD_FEATURES = ["Win32_Foundation", "Win32_System_Services"]
-LOCK_SHA256 = "12f770f2eebb343c19b6c962bda9c367115daad4c88bfad1aebd734bad1e330f"
+LOCK_SHA256 = "7174fe521a3280939e6a0516f95a3bbf251c0b51b7f5e08fec61bf12dd4af3b5"
+LOCK_METADATA_ONLY = {"wasi@0.11.1+wasi-snapshot-preview1", "r-efi@6.0.0"}
 JOBS = 1
 SECONDS = 180
-DISK_FLOOR = 2 * 1024 ** 3
+DISK_FLOOR = 4 * 1024 ** 3
+MEMORY_FLOOR = 1024 ** 3
 SPEC = importlib.util.spec_from_file_location("service_fixture_shared", ROOT / "scripts/portable-analysis.py")
 C = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(C)
@@ -76,6 +78,59 @@ def index_identity():
     if not path.is_absolute():
         path = ROOT / path
     return {"path": str(path), "sha256": C.PRODUCT.sha256(path)}
+
+
+def core_dump_policy():
+    """Select process-only core refusal for this observed Linux collector.
+
+    Linux/WSL coredump_pipe treats RLIMIT_CORE=1 as an early refusal; zero is
+    ignored by pipe collectors. Socket collectors require separate admission.
+    Source: Microsoft linux-msft-wsl-6.18.58.1/fs/coredump.c, coredump_pipe.
+    """
+    with Path("/proc/sys/kernel/core_pattern").open("rb") as stream:
+        pattern = stream.read(4097)
+    require(0 < len(pattern) <= 4096 and b"\0" not in pattern,
+            "Unknown or oversized Linux core collector pattern.")
+    require(not pattern.startswith(b"@"), "Socket core collectors need separate process refusal admission.")
+    return {"collector_kind": "pipe" if pattern.startswith(b"|") else "file",
+            "pattern_sha256": hashlib.sha256(pattern).hexdigest(),
+            "kernel_release": os.uname().release,
+            "limit_bytes": 1 if pattern.startswith(b"|") else 0}
+
+
+def disable_core_dumps():
+    """Apply the selected soft/hard process limit; never change a host setting."""
+    policy = core_dump_policy()
+    limit = policy["limit_bytes"]
+    resource.setrlimit(resource.RLIMIT_CORE, (limit, limit))
+    return check_core_dumps()
+
+
+def check_core_dumps():
+    """Refuse tool/test execution unless this collector's process refusal is active."""
+    policy = core_dump_policy()
+    require(resource.getrlimit(resource.RLIMIT_CORE) == (policy["limit_bytes"], policy["limit_bytes"]),
+            "Core collector requires its exact inherited process refusal limit.")
+    return policy
+
+
+def resource_stop_reason():
+    """Return a fixed reason when this service command loses its declared headroom."""
+    try:
+        if shutil.disk_usage(ROOT).free < DISK_FLOOR:
+            return "DISK_RESERVE"
+        with Path("/proc/meminfo").open("rb") as stream:
+            data = stream.read(65537)
+        if len(data) > 65536:
+            return "RESOURCE_OBSERVATION"
+        found = re.findall(rb"^MemAvailable:[ \t]+([0-9]{1,16}) kB$", data, re.M)
+        if len(found) != 1:
+            return "RESOURCE_OBSERVATION"
+        if int(found[0]) * 1024 < MEMORY_FLOOR:
+            return "FREE_MEMORY"
+    except (OSError, ValueError):
+        return "RESOURCE_OBSERVATION"
+    return None
 
 
 def no_ambient_flags():
@@ -180,13 +235,36 @@ def check_service_tools(admitted):
                 "Service analysis executable changed during execution.")
 
 
+NATIVE_MUTATION_FILES = {"host": "src/host.rs", "error": "src/error.rs", "diagnostics": "src/diagnostics.rs"}
+
+
+def native_mutation_command(admitted, subject):
+    """Select one pinned serial in-place campaign, never an arbitrary writable command."""
+    require(type(subject) is str and subject in NATIVE_MUTATION_FILES, "Unknown native mutation subject.")
+    return [str(admitted["extensions"]["cargo-mutants"]), "mutants", "--package",
+            "nevrotick-windows-service-fixture", "--file", NATIVE_MUTATION_FILES[subject],
+            "--test-workspace", "false", "--cap-lints", "false", "--in-place",
+            "--jobserver", "true", "--jobserver-tasks", "1",
+            "--cargo-arg=--message-format=json", "--cargo-arg=--frozen",
+            "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+            "--output", "/work/mutation/" + subject]
+
+
 def run_command(work, command, admitted, vendor, source, *, timeout=180,
-                cpu_seconds=None, mutation=False, cwd=None):
-    """Use the existing public-host sandbox with the service's unchanged resource custody."""
+                cpu_seconds=None, mutation=False, cwd=None, native_subject=None):
+    """Seal inputs, permitting only the selected private native mutation output file."""
     require(isinstance(command, list) and command
             and all(isinstance(item, str) and item and "\0" not in item for item in command),
             "Service execution requires a nonempty literal argv.")
     require(type(mutation) is bool, "Mutation resource selection must be explicit.")
+    require(native_subject is None or (type(native_subject) is str and native_subject in NATIVE_MUTATION_FILES),
+            "Native write authority requires one closed subject.")
+    if native_subject is None:
+        require(not any(item == "--in-place" or item.startswith("--in-place=") for item in command),
+                "In-place mutation requires the explicit confined native profile.")
+    else:
+        require(mutation is True and command == native_mutation_command(admitted, native_subject),
+                "Native mutation command differs from its fixed serial profile.")
     cpu_seconds = timeout if cpu_seconds is None else cpu_seconds
     require(type(timeout) in (int, float) and 0 < timeout <= 3600,
             "Invalid finite service wall allowance.")
@@ -202,8 +280,20 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
     cwd = source if cwd is None else cwd
     C.RUNTIME._directory(cwd, "Service command cwd")
     require(cwd.is_relative_to(source), "Service command cwd escapes the sealed source.")
+    writable = None
+    if native_subject is not None:
+        require(source == work / "native-source" and cwd == source / TOOL,
+                "Native mutation requires its complete private derivative and exact fixture cwd.")
+        writable = source / TOOL / NATIVE_MUTATION_FILES[native_subject]
+        details = writable.lstat()
+        require(stat.S_ISREG(details.st_mode) and details.st_nlink == 1
+                and writable.resolve(strict=True) == writable,
+                "Native mutation file must be an existing unaliased regular file.")
     check_service_tools(admitted)
-    for name in ("home", "tmp", "cargo-home", "target"):
+    check_core_dumps()
+    require(resource_stop_reason() is None, "Service resource headroom is unavailable before command.")
+    # Cargo creates target atomically with its own cache marker; never precreate it.
+    for name in ("home", "tmp", "cargo-home"):
         (work / name).mkdir(mode=0o700, exist_ok=True)
     replacements = {str(admitted["stable"] / "bin" / name): "/toolchain/bin/" + name
                     for name in ("cargo", "rustc", "rustdoc", "rustfmt", "cargo-fmt", "cargo-clippy")}
@@ -224,8 +314,16 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
     args[0] = admitted["helpers"]["bwrap"]["path"]
     args.extend(["--ro-bind", str(source), "/work/source", "--ro-bind", str(vendor), "/vendor",
                  "--ro-bind", str(config), "/work/cargo-home/config.toml", "--dir", "/tools"])
+    # The work bind also exposes derivatives at their natural path. Seal that alias.
+    source_alias = str(Path("/work") / source.relative_to(work))
+    if source_alias != "/work/source":
+        args.extend(["--ro-bind", str(source), source_alias])
     for name, path in admitted["extensions"].items():
         args.extend(["--ro-bind", str(path), "/tools/" + name])
+    if writable is not None:
+        relative = writable.relative_to(source).as_posix()
+        for prefix in ("/work/source", source_alias):
+            args.extend(["--bind", str(writable), prefix + "/" + relative])
     args.extend(["--chdir", str(Path("/work") / cwd.relative_to(work))])
     environment = {"PATH": "/tools:/toolchain/bin:/usr/bin:/bin", "LANG": "C.UTF-8",
                    "HOME": "/work/home", "TMPDIR": "/work/tmp", "TMP": "/work/tmp", "TEMP": "/work/tmp",
@@ -233,9 +331,9 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
                    "CARGO_BUILD_JOBS": "1", "CARGO_TERM_COLOR": "never", "RUSTUP_AUTO_INSTALL": "0",
                    "RUSTC": "/toolchain/bin/rustc", "RUSTDOC": "/toolchain/bin/rustdoc",
                    "RUST_TEST_THREADS": "1"}
-    if not mutation:
+    if not mutation or native_subject is not None:
         environment["CARGO_TARGET_DIR"] = "/work/target"
-    else:
+    if mutation:
         # Keep a semantic assertion visible if a later custody guard aborts the
         # same libtest process. An abort alone still supplies no mutation credit.
         environment["RUST_TEST_NOCAPTURE"] = "1"
@@ -246,7 +344,7 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
                  "--nofile=4096" if mutation else "--nofile=256", "--fsize=268435456", "--", *invocation])
     result = C.PRODUCT.ENV.run(args, cwd=ROOT, timeout=timeout,
                                environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
-                               stdin=subprocess.DEVNULL)
+                               stdin=subprocess.DEVNULL, resource_guard=resource_stop_reason)
     check_service_tools(admitted)
     return {**result, "namespace_argv": invocation}
 
@@ -257,11 +355,13 @@ def manifest_admission(policy):
     fragment = tomllib.loads((ROOT / "policy/rust-workspace.toml").read_text())
     expected = {
         "package": {"name": "nevrotick-windows-service-fixture", "version": "0.0.0", "edition": "2024",
-                    "rust-version": "1.99.1", "license": "GPL-2.0-only",
+                    "rust-version": "1.100", "license": "GPL-2.0-only",
                     "repository": "https://github.com/DavidOsipov/NevroTick", "publish": False, "build": False,
                     "description": "Inert source-only S0.2 laboratory Windows service hosts"},
         "workspace": {"resolver": "3", "lints": fragment["workspace"]["lints"]},
         "dependencies": {"windows-platform": {"version": "=0.0.0", "path": "../../crates/windows-platform"}},
+        "dev-dependencies": {"nevrotick-engine": {"version": "=0.0.0",
+                             "path": "../../crates/nevrotick-engine", "default-features": False}},
         "target": {"cfg(windows)": {"dependencies": {"windows-sys": {
             "version": "=0.61.2", "default-features": False, "features": FEATURES}}}},
         "bin": [{"name": "nevrotick-lab-s02-engine", "path": "src/bin/engine.rs"},
@@ -273,9 +373,14 @@ def manifest_admission(policy):
     lock_path = ROOT / TOOL / "Cargo.lock"
     require(C.PRODUCT.sha256(lock_path) == LOCK_SHA256, "Standalone registry lock changed.")
     lock = tomllib.loads(lock_path.read_text())
-    expected_ids = set(policy["rows"][TARGETS[0]]["package_scopes"]["windows-platform"]["features"])
-    expected_ids.update({"windows-link@0.2.1", "windows-sys@0.61.2"})
+    expected_ids = {identity for target in TARGETS
+                    for identity in expected_contexts(policy, target, development=True)
+                    if not identity.endswith("@0.0.0")}
+    # Cargo retains these existing supplier edges for unselected WASI/UEFI targets.
+    # They remain locked metadata and receive no GNU/MSVC execution context.
+    expected_ids.update(LOCK_METADATA_ONLY)
     records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
+    records.update({p["name"] + "@" + p["version"]: p for p in policy["metadata_only_packages"]})
     external = {}
     local = {}
     for package in lock["package"]:
@@ -287,7 +392,9 @@ def manifest_admission(policy):
             require(key in expected_ids and package["source"] == C.PRODUCT.SLINT.REGISTRY
                     and package["checksum"] == records[key]["checksum"], "Unadmitted standalone registry bytes.")
     require(set(external) == expected_ids
-            and set(local) == {"windows-platform@0.0.0", "nevrotick-windows-service-fixture@0.0.0"},
+            and set(local) == {"windows-platform@0.0.0", "nevrotick-windows-service-fixture@0.0.0",
+                              "nevrotick-engine@0.0.0", "ntp-wire@0.0.0", "time-domain@0.0.0",
+                              "windows-platform-native@0.0.0"},
             "Standalone lock closure differs from the fixed local consumers.")
     return {"before_features": OLD_FEATURES, "after_features": FEATURES,
             "added_features": sorted(set(FEATURES) - set(OLD_FEATURES)),
@@ -300,12 +407,12 @@ def source_identity():
     identity.update({f"{TOOL}/{name}": digest for name, digest in C.PRODUCT.inventory(ROOT / TOOL).items()})
     for name in ("scripts/portable-analysis.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
                  "scripts/analysis-controls.py", "scripts/prepare-product.py", "policy/analysis-tools.json",
-                 "policy/rust-workspace.toml"):
+                 "policy/rust-workspace.toml", "scripts/tests/test_check_environment.py"):
         identity[name] = C.PRODUCT.sha256(ROOT / name)
     return policy, identity
 
 
-def expected_contexts(policy, target):
+def expected_contexts(policy, target, *, development=False):
     """Extend the already reviewed portable scope with the exact Windows binding closure."""
     row = policy["rows"][target]["package_scopes"]["windows-platform"]
     expected = copy.deepcopy({**row["features"], **row["local_features"]})
@@ -315,7 +422,30 @@ def expected_contexts(policy, target):
         expected["windows-sys@0.61.2"] = {"target": [["Win32", "Win32_Foundation", "Win32_Security",
                                                            "Win32_System", "Win32_System_Services",
                                                            "Win32_System_Threading"]]}
+    if development:
+        engine = policy["rows"][target]["package_scopes"]["nevrotick-engine"]
+        for identity, roles in {**engine["features"], **engine["local_features"]}.items():
+            for role, sets in roles.items():
+                current = expected.setdefault(identity, {}).setdefault(role, [[]])
+                require(len(sets) == len(current) == 1,
+                        "Standalone composition requires one exact feature set per role.")
+                expected[identity][role] = [sorted(set(current[0]) | set(sets[0]))]
     return expected
+
+
+LOCAL_OWNERS = {name: "crates/" + name for name in (
+    "windows-platform", "nevrotick-engine", "ntp-wire", "time-domain", "windows-platform-native")}
+LOCAL_OWNERS["nevrotick-windows-service-fixture"] = TOOL
+LOCAL_TESTS = {
+    "windows-platform": ("service", "scm", "privilege_observation", "privilege_observation_contracts"),
+    "nevrotick-engine": ("execute_entered", "prepare_entered", "prepare_release", "quality",
+                         "runtime_boundary", "series", "session"),
+    "ntp-wire": ("datagram", "header", "nts_client_request", "nts_export", "nts_ke", "nts_negotiation",
+                 "nts_packet", "nts_plaintext", "nts_request", "nts_stream"),
+    "time-domain": ("clock", "coordinate", "era", "exchange", "leap", "leap_bundle",
+                    "rational_seconds", "rounding"),
+    "windows-platform-native": ("subscription_lifecycle",),
+}
 
 
 def local_targets(package):
@@ -329,11 +459,13 @@ def local_targets(package):
             "entrypoints": (["test"], ["bin"], "tests/entrypoints.rs"),
         }
     else:
-        require(package["name"] == "windows-platform", "Unexpected local target owner.")
-        owner = "crates/windows-platform"
-        expected = {"windows_platform": (["lib"], ["lib"], "src/lib.rs")}
-        expected.update({name: (["test"], ["bin"], f"tests/{name}.rs")
-                         for name in ("service", "scm", "privilege_observation", "privilege_observation_contracts")})
+        name = package["name"]
+        require(name in LOCAL_TESTS, "Unexpected local target owner.")
+        owner = LOCAL_OWNERS[name]
+        expected = {name.replace("-", "_"): (["lib"], ["lib"], "src/lib.rs")}
+        expected.update({test: (["test"], ["bin"], f"tests/{test}.rs") for test in LOCAL_TESTS[name]})
+        if name == "nevrotick-engine":
+            expected["nevrotick-observe"] = (["bin"], ["bin"], "src/bin/nevrotick-observe.rs")
     expected = {name: (kind, crate_types, f"/work/source/{owner}/{relative}")
                 for name, (kind, crate_types, relative) in expected.items()}
     actual = {}
@@ -343,7 +475,7 @@ def local_targets(package):
     require(actual == expected, "Local metadata target set differs from the two fixed compositions and declared tests.")
 
 
-def graph_row(policy, target, metadata_output, tree_output):
+def graph_row(policy, target, metadata_output, tree_output, development_tree_output):
     """Require exact registry provenance, targets and normal/build feature contexts before compilation."""
     data = C.ANALYSIS.decode(metadata_output.encode("utf-8"))
     nodes = {node["id"]: node for node in data["resolve"]["nodes"]}
@@ -351,14 +483,14 @@ def graph_row(policy, target, metadata_output, tree_output):
     require(len(packages) == len(data["packages"]) and len(nodes) == len(data["resolve"]["nodes"])
             and set(packages) == set(nodes), "Malformed metadata package/node closure.")
     records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
-    expected = expected_contexts(policy, target)
+    expected = expected_contexts(policy, target, development=True)
     seen_metadata = set()
     for key, package in packages.items():
         identity = package["name"] + "@" + package["version"]
         require(identity in expected and identity not in seen_metadata, "Unexpected metadata package.")
         seen_metadata.add(identity)
         if package["source"] is None:
-            owner = TOOL if package["name"] == "nevrotick-windows-service-fixture" else "crates/windows-platform"
+            owner = LOCAL_OWNERS.get(package["name"])
             require(package["manifest_path"] == f"/work/source/{owner}/Cargo.toml"
                     and package["license"] == "GPL-2.0-only"
                     and not any("custom-build" in item["kind"] for item in package["targets"]),
@@ -372,16 +504,46 @@ def graph_row(policy, target, metadata_output, tree_output):
                     and any("proc-macro" in item["kind"] for item in package["targets"]) == record["proc_macro"],
                     "Registry execution metadata differs from admitted provenance.")
         union = sorted({feature for sets in expected[identity].values() for features in sets for feature in features})
+        if identity == "tokio@1.54.1" and target == TARGETS[0]:
+            # Cargo metadata retains this optional target dependency's activation;
+            # the separate GNU tree must still omit the Windows execution role.
+            union = sorted(set(union) | {"windows-sys"})
         require(nodes[key]["features"] == union, "Metadata features differ from the fixed scope.")
     require(seen_metadata == set(expected), "Metadata omits a selected package.")
+    roots = [package for package in packages.values()
+             if package["name"] == "nevrotick-windows-service-fixture"]
+    require(len(roots) == 1, "Missing standalone metadata root.")
+    actual_edges = {packages[dep["pkg"]]["name"]: dep["dep_kinds"]
+                    for dep in nodes[roots[0]["id"]]["deps"]}
+    expected_edges = {
+        "windows-platform": [{"kind": None, "target": None}],
+        "nevrotick-engine": [{"kind": "dev", "target": None}],
+    }
+    if target == TARGETS[1]:
+        expected_edges["windows-sys"] = [{"kind": None, "target": "cfg(windows)"}]
+    require(len(actual_edges) == len(nodes[roots[0]["id"]]["deps"]),
+            "Duplicate standalone dependency identity.")
+    require(actual_edges == expected_edges, "Engine must remain an exact development-only dependency.")
+    normal = tree_contexts(policy, target, tree_output, development=False)
+    development = tree_contexts(policy, target, development_tree_output, development=True)
+    return {"target": target, "contexts": normal, "development_contexts": development,
+            "external_packages": sorted(set(development) & set(records)),
+            "engine_in_production": False, "engine_in_tests": True}
+
+
+def tree_contexts(policy, target, tree_output, *, development):
+    """Compare actual normal or test-role features with independently admitted supplier scopes."""
+    records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
+    expected = expected_contexts(policy, target, development=development)
     contexts, stack, sections = {}, {}, {}
     roots = 0
     for line in tree_output.splitlines():
-        marker = re.fullmatch(r"((?:\|   |    )*)\[build-dependencies\]", line)
+        marker = re.fullmatch(r"((?:\|   |    )*)\[(build|dev)-dependencies\]", line)
         if marker:
             depth = len(marker[1]) // 4
             require(depth in stack, "Orphan build-dependency marker.")
-            sections[depth] = True
+            require(marker[2] != "dev" or development, "Dev edge in production feature tree.")
+            sections[depth] = marker[2] == "build"
             continue
         match = re.fullmatch(r"((?:(?:\|   |    )*(?:\|-- |`-- ))?)([a-zA-Z0-9_-]+) v([^ |]+)([^|]*)\|([^\r\n]*)", line)
         require(match is not None, "Malformed complete Cargo feature tree.")
@@ -391,7 +553,7 @@ def graph_row(policy, target, metadata_output, tree_output):
         local = identity.endswith("@0.0.0")
         macro = not local and records[identity]["proc_macro"]
         if local:
-            owner = TOOL if name == "nevrotick-windows-service-fixture" else "crates/windows-platform"
+            owner = LOCAL_OWNERS[name]
             require(annotation == f" (/work/source/{owner})", "Unexpected local tree source.")
         else:
             require(annotation == (" (proc-macro)" if macro else ""), "Unexpected registry tree annotation.")
@@ -414,17 +576,20 @@ def graph_row(policy, target, metadata_output, tree_output):
             observed.append(features)
             observed.sort()
     require(roots == 1 and contexts == expected, "Actual normal/build feature contexts differ from admission.")
-    return {"target": target, "contexts": contexts, "external_packages": sorted(set(contexts) & set(records))}
+    return contexts
 
 
 def graph_commands(cargo):
-    """Return the four fixed graph observations for the selected admitted compiler."""
+    """Observe metadata and separate production/test trees for both admitted targets."""
     commands = []
     for target in TARGETS:
         commands.extend([[cargo, "metadata", "--manifest-path", "/work/source/" + MANIFEST,
                           "--frozen", "--offline", "--format-version", "1", "--filter-platform", target],
                          [cargo, "tree", "--manifest-path", "/work/source/" + MANIFEST,
                           "--frozen", "--offline", "--target", target, "--edges", "normal,build",
+                          "--charset", "ascii", "--format", "{p}|{f}", "--no-dedupe"],
+                         [cargo, "tree", "--manifest-path", "/work/source/" + MANIFEST,
+                          "--frozen", "--offline", "--target", target, "--edges", "normal,build,dev",
                           "--charset", "ascii", "--format", "{p}|{f}", "--no-dedupe"]])
     return commands
 
@@ -436,14 +601,15 @@ def receive_graph(graph, binding, policy, cargo):
             and not graph.get("custody_error") and graph.get("graph_binding") == binding,
             "Graph receipt does not admit these exact source/configuration/tool/vendor bytes.")
     commands = graph.get("commands")
-    require(type(commands) is list and len(commands) == 4, "Graph receipt requires four actual command results.")
+    require(type(commands) is list and len(commands) == 6, "Graph receipt requires six actual command results.")
     for observed, expected in zip(commands, graph_commands(cargo), strict=True):
         require(type(observed) is dict and observed.get("argv") == expected
                 and type(observed.get("exit_code")) is int and observed["exit_code"] == 0
                 and "failure" in observed and observed["failure"] is None
                 and type(observed.get("output")) is str,
                 "Graph command identity or successful bounded execution is missing.")
-    rows = [graph_row(policy, target, commands[i * 2]["output"], commands[i * 2 + 1]["output"])
+    rows = [graph_row(policy, target, commands[i * 3]["output"], commands[i * 3 + 1]["output"],
+                      commands[i * 3 + 2]["output"])
             for i, target in enumerate(TARGETS)]
     require(graph.get("graph_rows") == rows, "Graph receipt rows differ from the revalidated raw observations.")
 
@@ -485,12 +651,12 @@ def lane_commands(lane, cargo):
 def run(args):
     """Freeze one current epoch, retain all raw outcomes, and publish success only after bookends."""
     no_ambient_flags()
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    core_policy = disable_core_dumps()
     require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh record label.")
     require(RECORDS.is_dir() and not RECORDS.is_symlink(), "Main-repository record directory is missing.")
     destination = RECORDS / (args.label + ".json")
     require(not destination.exists(), "A prior raw record must never be replaced.")
-    require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 2GiB free before admission.")
+    require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 4GiB free before admission.")
     CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(CACHE.resolve() == CACHE and CACHE.stat().st_uid == os.geteuid()
             and CACHE.stat().st_mode & 0o077 == 0, "Derived cache must be canonical, owned and private.")
@@ -506,8 +672,9 @@ def run(args):
               "status": "incomplete", "started_unix": time.time(), "commands": [],
               "bookends_passed": False, "index_bytes_unchanged": False, "work": str(work),
               "limits": {"jobs": JOBS, "test_threads": 1, "wall_seconds": SECONDS,
-                         "cpu_seconds": SECONDS, "processes": 128, "core_bytes": 0,
-                         "disk_floor_bytes": DISK_FLOOR}, "native_execution": False}
+                         "cpu_seconds": SECONDS, "processes": 128, "core_limit_bytes": core_policy["limit_bytes"],
+                         "core_dump_policy": core_policy,
+                         "disk_floor_bytes": DISK_FLOOR, "memory_available_floor_bytes": MEMORY_FLOOR}, "native_execution": False}
     graph_receipt = None
     try:
         policy, identity = source_identity()
@@ -563,7 +730,7 @@ def run(args):
             commands = lane_commands(args.lane, cargo)
         for command in commands:
             check()
-            require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 2GiB free before execution.")
+            require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 4GiB free before execution.")
             result = run_command(work, command, admitted, vendor, source,
                                  timeout=SECONDS, cpu_seconds=SECONDS)
             record["commands"].append({"argv": command, **result})
@@ -575,8 +742,9 @@ def run(args):
         succeeded = len(record["commands"]) == len(commands) and all(
             command["exit_code"] == 0 for command in record["commands"])
         if args.lane == "graph" and succeeded:
-            record["graph_rows"] = [graph_row(policy, target, record["commands"][i * 2]["output"],
-                                              record["commands"][i * 2 + 1]["output"])
+            record["graph_rows"] = [graph_row(policy, target, record["commands"][i * 3]["output"],
+                                              record["commands"][i * 3 + 1]["output"],
+                                              record["commands"][i * 3 + 2]["output"])
                                     for i, target in enumerate(TARGETS)]
         check()
         require(C.PRODUCT.admit_vendor(vendor, policy) == vendor_identity, "Vendor content changed during the job.")

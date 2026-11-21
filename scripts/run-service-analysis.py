@@ -159,8 +159,10 @@ def copy_regular(source, destination, expected):
             os.close(descriptor)
 
 
-def export_tree(origin, archive, record):
+def export_tree(origin, archive, record, *, disk_floor=DISK_FLOOR):
     """Retain every selected file and a complete selection/byte hash ledger."""
+    require(type(disk_floor) is int and disk_floor >= DISK_FLOOR,
+            "Evidence export requires an integer disk floor at least the existing reserve.")
     before = inventory(origin)
     selected = {name: item for name, item in before.items()
                 if stat.S_ISREG(item[2]) and retained(name)}
@@ -168,9 +170,9 @@ def export_tree(origin, archive, record):
     # Persist a complete planned ledger first; retain completed rows on any failure.
     write_new(record / "export-plan.json", {"rules": RULES, "origin": str(origin),
               "archive": str(archive), "inventory": {k: list(v) for k, v in before.items()},
-              "selected": sorted(selected), "selected_bytes": required_bytes})
-    require(shutil.disk_usage(RECORDS).free >= DISK_FLOOR + required_bytes,
-            "Insufficient disk to export evidence while retaining the 2 GiB floor.")
+              "selected": sorted(selected), "selected_bytes": required_bytes, "disk_floor_bytes": disk_floor})
+    require(shutil.disk_usage(RECORDS).free >= disk_floor + required_bytes,
+            "Insufficient disk to export evidence while retaining the selected disk floor.")
     archive.mkdir(mode=0o700)
     for name, item in sorted(before.items()):
         if stat.S_ISDIR(item[2]) and retained(name):
@@ -178,7 +180,7 @@ def export_tree(origin, archive, record):
     copied = {}
     with (record / "export-progress.jsonl").open("x", encoding="utf-8") as progress:
         for name, expected in sorted(selected.items()):
-            require(shutil.disk_usage(RECORDS).free >= DISK_FLOOR + expected[6],
+            require(shutil.disk_usage(RECORDS).free >= disk_floor + expected[6],
                     "Disk headroom fell below the evidence export floor.")
             row = copy_regular(origin / name, archive / name, expected)
             copied[name] = row
@@ -190,7 +192,7 @@ def export_tree(origin, archive, record):
             "Archive inventory differs from selected producer files.")
     write_new(record / "export-map.json", {"complete": True, "rules": RULES,
               "files": copied, "excluded_files": sorted(k for k, v in before.items()
-              if stat.S_ISREG(v[2]) and k not in selected), "bytes": required_bytes})
+              if stat.S_ISREG(v[2]) and k not in selected), "bytes": required_bytes, "disk_floor_bytes": disk_floor})
     return copied
 
 

@@ -8,6 +8,7 @@ The smoke lane never falls back from bubblewrap to executing Cargo on the host.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 import hashlib
 import json
 import os
@@ -84,10 +85,13 @@ def overridden_names(environment: dict[str, str]) -> list[str]:
 
 
 def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None, stdin=None,
-        max_output: int = MAX_OUTPUT) -> dict:
+        max_output: int = MAX_OUTPUT,
+        resource_guard: Callable[[], str | None] | None = None) -> dict:
     """Bound wall time/output and reject surviving children of the owned group."""
     if type(max_output) is not int or not 0 < max_output <= MAX_REQUESTED_OUTPUT:
         raise Incomplete("Unadmitted command-output budget.")
+    if resource_guard is not None and not callable(resource_guard):
+        raise Incomplete("Resource guard must be an explicit callable.")
     process = subprocess.Popen(
         command, cwd=cwd, env=environment, stdin=stdin, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True,
@@ -99,6 +103,13 @@ def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None,
             selector.register(process.stdout, selectors.EVENT_READ)
             deadline = time.monotonic() + timeout
             while selector.get_map() or process.poll() is None:
+                if resource_guard is not None:
+                    reason = resource_guard()
+                    if reason is not None:
+                        if type(reason) is not str or re.fullmatch(r"[A-Z][A-Z0-9_-]{0,63}", reason) is None:
+                            raise Incomplete("Resource guard returned an invalid closed reason code.")
+                        failure = "resource stop: " + reason
+                        break
                 if time.monotonic() >= deadline:
                     failure = f"wall timeout ({timeout}s)"
                     break

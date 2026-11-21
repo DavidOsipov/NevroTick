@@ -61,6 +61,43 @@ impl WorkerWake {
     }
 }
 
+/// One tagged worker-health fact; kind and code have independent meaning.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum WorkerFailure {
+    /// The original operation failed; cancellation still retains its charge.
+    Operation(WorkerError),
+    /// Cleanup failed; actual completion is still separately observed.
+    Cleanup(WorkerError),
+}
+
+/// Canonical facts published only after the worker has actually finished.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct WorkerCompletion {
+    /// Original operation refusal, independent of cleanup and host Stop.
+    pub(super) operation_failure: Option<WorkerError>,
+    /// Original cleanup refusal, independent of the operation result.
+    pub(super) cleanup_failure: Option<WorkerError>,
+}
+
+/// Closed custody observation; a returned result alone is not a joined thread.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "retain the original worker charge until actual completion"]
+pub(super) enum WorkerFinish {
+    /// No terminal marker; remain event-driven without a heartbeat.
+    Pending,
+    /// A terminal marker exists, but physical thread exit/join remains pending.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the admitted thread worker is test-only; inert native defaults retain this private finish protocol"
+        )
+    )]
+    JoinTailPending,
+    /// Actual completion/join acknowledges both independent result facts.
+    Finished(WorkerCompletion),
+}
+
 /// Bounded worker seam; only the host owns status, admission and work permits.
 /// A supplied worker is dormant, with no already-started job. Its first operation
 /// begins only in `poll_prepare` after the host admits the preparation permit.
@@ -80,7 +117,7 @@ pub(super) trait Worker {
     ///
     /// # Errors
     /// Retain any failure as cause while the original permit remains charged.
-    fn poll_running(&mut self, wake: &WorkerWake) -> Result<(), WorkerError>;
+    fn poll_running(&mut self, wake: &WorkerWake) -> Result<(), WorkerFailure>;
 
     /// Request cancellation once after admission is permanently fenced.
     /// This prompt request itself provides no completion or cleanup acknowledgement.
@@ -89,7 +126,7 @@ pub(super) trait Worker {
     /// Finished acknowledges actual jobs and resolved cleanup custody, including
     /// an acknowledged recovery handoff if required. Unresolved cleanup is Pending.
     /// A failed completion retains its typed cause alongside earlier failures.
-    fn poll_finished(&mut self, wake: &WorkerWake) -> Poll<Result<(), WorkerError>>;
+    fn poll_finished(&mut self, wake: &WorkerWake) -> WorkerFinish;
 }
 
 /// Actual default worker for both fixed-role laboratory executable compositions.
@@ -118,7 +155,7 @@ impl Worker for InertWorker {
     }
 
     /// The inert loop has no independent operational fault source.
-    fn poll_running(&mut self, _wake: &WorkerWake) -> Result<(), WorkerError> {
+    fn poll_running(&mut self, _wake: &WorkerWake) -> Result<(), WorkerFailure> {
         Ok(())
     }
 
@@ -129,11 +166,14 @@ impl Worker for InertWorker {
     }
 
     /// Acknowledge completion only after the cancellation condition was published.
-    fn poll_finished(&mut self, _wake: &WorkerWake) -> Poll<Result<(), WorkerError>> {
+    fn poll_finished(&mut self, _wake: &WorkerWake) -> WorkerFinish {
         if self.cancelled {
-            Poll::Ready(Ok(()))
+            WorkerFinish::Finished(WorkerCompletion {
+                operation_failure: None,
+                cleanup_failure: None,
+            })
         } else {
-            Poll::Pending
+            WorkerFinish::Pending
         }
     }
 }
@@ -144,6 +184,9 @@ const LAB_WAIT_HINT_MS: u32 = 1000;
 const LAB_PENDING_MS: u32 = 10_000;
 /// Explicit maximum useful laboratory control-loop interval.
 const LAB_RUNNING: Duration = Duration::from_millis(60_000);
+/// Fixture-only maximum relative wait request after a real terminal marker.
+/// Early/spurious returns remain possible; this is no wake-rate guarantee.
+const JOIN_TAIL_WAIT: Duration = Duration::from_millis(20);
 
 /// The one native dispatcher call; role selection never comes from raw input.
 pub(super) trait Dispatcher {
@@ -317,6 +360,8 @@ pub(super) fn guard_service_main<F: FnOnce() + std::panic::UnwindSafe>(body: F) 
 pub(super) enum InvocationPoll {
     /// Await a coalesced worker/Stop notification, bounded by the fixed deadline.
     Pending(Duration),
+    /// Observe only marked thread-exit/join custody, without a new allowance.
+    JoinTail(Duration),
     /// A deadline or unusable clock ended ordinary waiting; retain the same owner.
     Overdue,
     /// Actual cleanup and the sole terminal report attempt have completed.
@@ -349,6 +394,8 @@ enum WorkerCustody {
     Active,
     /// Cancellation was requested once; actual completion remains unacknowledged.
     Cancelling,
+    /// A current terminal marker awaits physical exit/join under the same custody.
+    Joining,
     /// Finished acknowledged resolved actual work and cleanup custody.
     Finished,
 }
@@ -383,6 +430,10 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
     overdue: bool,
     /// Earliest cause, never overwritten by cleanup or status failures.
     failure: Option<FixtureError>,
+    /// Original tagged worker cause when it occupies the primary failure slot.
+    primary_worker_failure: Option<WorkerFailure>,
+    /// Sole distinct later operation failure, never confused with cleanup.
+    operation_failure: Option<WorkerError>,
     /// Sole later failed actual completion observation.
     completion_failure: Option<WorkerError>,
     /// Sole later failed `StopPending` operation.
@@ -395,11 +446,37 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
     diagnostics: Diagnostics,
     /// First emission of each existing primary/completion/Stop/terminal fact.
     diagnosed_failures: [bool; 4],
+    /// Primary and secondary operation facts each route once through event 9.
+    diagnosed_operations: [bool; 2],
     /// A wake is bound to this OS thread; the generic owner must not migrate.
     thread_bound: PhantomData<Rc<()>>,
 }
 
 impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> {
+    /// Retain kind/code once, preserving primary and each fixed secondary slot.
+    fn worker_failed(&mut self, failure: WorkerFailure) {
+        self.admission_closed = true;
+        if self.primary_worker_failure == Some(failure) {
+            return;
+        }
+        let error: WorkerError = match failure {
+            WorkerFailure::Operation(error) | WorkerFailure::Cleanup(error) => error,
+        };
+        if self.failure.is_none() {
+            self.primary_worker_failure = Some(failure);
+            self.failure = Some(FixtureError::Worker(error));
+        } else {
+            let slot: &mut Option<WorkerError> = match failure {
+                WorkerFailure::Operation(_) => &mut self.operation_failure,
+                WorkerFailure::Cleanup(_) => &mut self.completion_failure,
+            };
+            if slot.is_none() {
+                *slot = Some(error);
+            }
+        }
+        self.publish_failures();
+    }
+
     /// Retain the earliest cause and permanently close every worker admission path.
     fn fail(&mut self, error: FixtureError) {
         self.admission_closed = true;
@@ -442,6 +519,20 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     error,
                 )));
         }
+        if !self.diagnosed_operations[0]
+            && let Some(WorkerFailure::Operation(error)) = self.primary_worker_failure
+        {
+            self.diagnosed_operations[0] = true;
+            self.diagnostics
+                .emit(Event::OperationFailure(FailureCode::from_worker(error)));
+        }
+        if !self.diagnosed_operations[1]
+            && let Some(error) = self.operation_failure
+        {
+            self.diagnosed_operations[1] = true;
+            self.diagnostics
+                .emit(Event::OperationFailure(FailureCode::from_worker(error)));
+        }
     }
 
     /// Observe trusted time; a fault immediately fences admission before cleanup.
@@ -449,6 +540,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         match self.observed.observe(clock) {
             Ok(now) => Some(now),
             Err(error) => {
+                if self.observed.reversed {
+                    self.phase_deadline = None;
+                }
                 self.fail(error);
                 None
             }
@@ -501,7 +595,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     self.check_pending(now);
                 }
             }
-            Poll::Ready(Err(error)) => self.fail(FixtureError::Worker(error)),
+            Poll::Ready(Err(error)) => self.worker_failed(WorkerFailure::Operation(error)),
             Poll::Ready(Ok(())) => {
                 self.complete_permit();
                 self.custody = WorkerCustody::Prepared;
@@ -566,7 +660,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
             }
             self.custody = WorkerCustody::Active;
             if let Err(error) = self.worker.activate() {
-                self.fail(FixtureError::Worker(error));
+                self.worker_failed(WorkerFailure::Operation(error));
                 return;
             }
             // Activation is a boundary: recheck Stop and time before health/wait.
@@ -587,7 +681,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
             }
         }
         if let Err(error) = self.worker.poll_running(&self.wake) {
-            self.fail(FixtureError::Worker(error));
+            self.worker_failed(error);
             return;
         }
         // A bounded health method can still consume time. Reobserve before
@@ -612,9 +706,13 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         if self.owner.state() == Some(ServiceState::StartPending) {
             self.check_pending(now);
         }
-        self.phase_deadline = now.checked_add(Duration::from_millis(u64::from(LAB_PENDING_MS)));
-        // The failed preceding phase remains the primary cause. Its expiry does
-        // not remove the new, separately bounded shutdown observation allowance.
+        self.phase_deadline = if self.observed.reversed {
+            None
+        } else {
+            now.checked_add(Duration::from_millis(u64::from(LAB_PENDING_MS)))
+        };
+        // A valid observation anchors the separately bounded shutdown allowance.
+        // Reversal leaves only historical lifecycle bookkeeping, not an allowance.
         self.overdue = self.observed.reversed || self.phase_deadline.is_none();
         if let Err(error) = self.owner.request_stop(now) {
             if self.failure.is_none() {
@@ -635,7 +733,12 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
     fn stop(&mut self, clock: &mut impl Clock) {
         if self.custody != WorkerCustody::Dormant {
             match self.worker.poll_finished(&self.wake) {
-                Poll::Pending => {
+                pending @ (WorkerFinish::Pending | WorkerFinish::JoinTailPending) => {
+                    self.custody = if matches!(pending, WorkerFinish::JoinTailPending) {
+                        WorkerCustody::Joining
+                    } else {
+                        WorkerCustody::Cancelling
+                    };
                     if let Some(now) = self.observe(clock) {
                         if self.owner.state() == Some(ServiceState::StopPending) {
                             self.check_pending(now);
@@ -648,21 +751,23 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     }
                     return;
                 }
-                Poll::Ready(result) => {
+                WorkerFinish::Finished(result) => {
                     self.custody = WorkerCustody::Finished;
                     self.complete_permit();
-                    if let Err(error) = result {
-                        if self.failure.is_none() {
-                            self.fail(FixtureError::Worker(error));
-                        } else {
-                            self.completion_failure = Some(error);
-                        }
+                    if let Some(error) = result.operation_failure {
+                        self.worker_failed(WorkerFailure::Operation(error));
+                    }
+                    if let Some(error) = result.cleanup_failure {
+                        self.worker_failed(WorkerFailure::Cleanup(error));
                     }
                     self.publish_failures();
                 }
             }
         }
         let now = self.observed.cleanup_observation(clock, &mut self.failure);
+        if self.observed.reversed {
+            self.phase_deadline = None;
+        }
         self.publish_failures();
         if self.owner.state() == Some(ServiceState::StopPending) {
             self.check_pending(now);
@@ -716,6 +821,25 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         if self.phase == WorkerPhase::Finished {
             return InvocationPoll::Finished;
         }
+        if self.custody == WorkerCustody::Joining {
+            // The terminal marker permits only this relative cleanup observation.
+            // Reversed time supplies no trusted deadline or arithmetic operand.
+            let wait: Duration = if self.overdue || self.observed.reversed {
+                JOIN_TAIL_WAIT
+            } else {
+                match self.phase_deadline.and_then(|deadline: Instant| {
+                    deadline.checked_duration_since(self.observed.last_trusted)
+                }) {
+                    Some(remaining) if !remaining.is_zero() => remaining.min(JOIN_TAIL_WAIT),
+                    _ => {
+                        self.overdue = true;
+                        self.fail(FixtureError::Lifecycle(LifecycleError::DeadlineElapsed));
+                        JOIN_TAIL_WAIT
+                    }
+                }
+            };
+            return InvocationPoll::JoinTail(wait);
+        }
         if self.overdue {
             return InvocationPoll::Overdue;
         }
@@ -747,7 +871,8 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         let Some(primary) = self.failure.take() else {
             return Some(Ok(()));
         };
-        if self.completion_failure.is_none()
+        if self.operation_failure.is_none()
+            && self.completion_failure.is_none()
             && self.stop_failure.is_none()
             && self.terminal_failure.is_none()
         {
@@ -755,6 +880,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         }
         Some(Err(FixtureError::Cleanup(ServiceFailure::new(
             primary,
+            self.operation_failure.take(),
             self.completion_failure.take(),
             self.stop_failure.take(),
             self.terminal_failure.take(),
@@ -897,12 +1023,15 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
         run_deadline: None,
         overdue: false,
         failure,
+        primary_worker_failure: None,
+        operation_failure: None,
         completion_failure: None,
         stop_failure: None,
         terminal_failure: None,
         result_taken: false,
         diagnostics: Diagnostics::new(role, sinks),
         diagnosed_failures: [false; 4],
+        diagnosed_operations: [false; 2],
         thread_bound: PhantomData,
     };
     invocation.diagnostics.emit(Event::StartObserved);
@@ -937,6 +1066,7 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
     loop {
         match invocation.poll(clock, notification) {
             InvocationPoll::Pending(remaining) => wait.park(remaining),
+            InvocationPoll::JoinTail(relative) => wait.park(relative),
             InvocationPoll::Overdue => wait.park_until_notified(),
             InvocationPoll::Finished => {
                 return invocation

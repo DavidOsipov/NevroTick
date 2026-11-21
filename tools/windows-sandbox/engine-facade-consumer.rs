@@ -72,7 +72,7 @@ use std::{
 
 use nevrotick_engine::{
     KePreviewTarget, ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, SourceAddressSet,
+    ManagedProtectedRestriction, ManagedProtectedTerminal, SoftwareClock, SourceAddressSet,
     SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicyError,
     SourcePolicyLimits, SourcePolicySnapshot, SourceProtectedProbeFailure,
     SourceProtectedProbeReport,
@@ -491,9 +491,22 @@ fn successor_peer(variable: &'static str) -> Result<SocketAddr, SetupFailure> {
     )))
 }
 
+/// Check the issued definition, receive bracket and fixed native peer wire values.
+fn successor_receipt_matches(
+    receipt: &ManagedProtectedReceipt,
+    expected: &SourceConfigurationSnapshot,
+) -> bool {
+    let [_, _, receive]: [SoftwareClock; 3] = receipt.application_clock_captures();
+    let peer_timestamps: [u64; 2] = receipt.peer_timestamps().map(|timestamp| timestamp.bits());
+    receipt.configuration().same_configuration(expected)
+        && receive.monotonic_after() == receipt.received_at()
+        && receipt.received_at() <= receipt.committed_at()
+        && peer_timestamps == [0x0123_4567_89ab_d000, 0x0123_4567_89ab_e000]
+}
+
 /// Check any retained history against the definition issued for this invocation.
 /// # Errors
-/// Refuse a retained revision that differs from the original installation.
+/// Refuse a different retained revision or inconsistent original receive placement.
 fn check_successor_failure(
     failure: &SourceProtectedProbeFailure,
     expected: &SourceConfigurationSnapshot,
@@ -501,8 +514,7 @@ fn check_successor_failure(
     if failure
         .retained_first()
         .is_some_and(|receipt: ManagedProtectedReceipt| {
-            !receipt.configuration().same_configuration(expected)
-                || receipt.received_at() > receipt.committed_at()
+            !successor_receipt_matches(&receipt, expected)
         })
         || failure.retained_configuration().is_some_and(
             |configuration: &SourceConfigurationSnapshot| {
@@ -569,8 +581,7 @@ fn check_successor_report(
     let first_commit: Option<Instant> = first.map(ManagedProtectedReceipt::committed_at);
     let nak: Option<Instant> = report.first_nak_at();
     if first.is_some_and(|receipt: &ManagedProtectedReceipt| {
-        !receipt.configuration().same_configuration(expected)
-            || receipt.received_at() > receipt.committed_at()
+        !successor_receipt_matches(receipt, expected)
     }) || nak.is_some_and(|observed: Instant| {
         first_commit.is_none_or(|committed: Instant| observed < committed)
     }) {
@@ -578,8 +589,7 @@ fn check_successor_report(
     }
     let terminal: Option<Instant> = match report.terminal() {
         ManagedProtectedTerminal::Ordinary(receipt)
-            if receipt.configuration().same_configuration(expected)
-                && receipt.received_at() <= receipt.committed_at() =>
+            if successor_receipt_matches(receipt, expected) =>
         {
             Some(receipt.received_at())
         }

@@ -1164,6 +1164,49 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Coordinator selection after the receipt checkpoint — 20 November 2026.**
+David's later live instruction changed the active goal to “Complete accepted
+NevroTick V1 P0–P7 and complete hardened MSIX”, followed by confirmation that he
+had changed it. That instruction followed his assessment of the 18 November
+`2dd3f88` checkpoint; its precise chat timestamp is not retained. Under that
+renewed scope and the coordinator's stage-selection responsibility, select the
+existing [W11-W05/S3.1 Engine composition child](../../tasks/windows11-integration.md#s31-real-engine-composition--20-november-2026)
+as the bounded source prerequisite. Its [selected source qualification](../../tasks/windows11-integration.md#s31-real-engine-selected-qualification--21-november-2026)
+now completes the None-schedule portable composition: current integrated development,
+all four executable-line gates and the full current worker replay pass, with
+explicit unchanged-owner reuse for the three native-tool cohorts. Native Windows,
+general worker cleanup transfer and parent P3 remain separate. This narrowly
+supersedes the temporary Core/Engine-only scheduling restriction for the selected
+P3 source child, while retaining Core/Engine priority and every actual hold.
+
+**Next bounded product action — 21 November 2026:** implement all five obligations
+of the existing [W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026).
+Its complete contract freeze and fresh-context independent plan review are ready;
+source implementation, connected service-decision → bounded consumer/health path
+and affected qualification remain planned.
+The current nine-event source supplies real producers; independent operational
+importance, finite optional filtering and inspectable normal-source consumption
+remain missing. Include explicit unavailable producer facts, limits, version
+compatibility and failing-consumer behavior; a new enum alone is insufficient.
+No dependency, native API, diagnostic-session authority or execution hold is
+selected by this continuation. Keep the completed lifecycle evidence scoped;
+rerun affected checks if the next change invalidates it. Final service identities,
+per-role configuration and the supported MSIX pre-start bridge are unfinished
+work at their existing owners, not blanket permission prohibitions.
+
+The child composes one real, explicit managed-loopback Engine series with the
+existing portable service invocation. Its first source stage changes neither
+native service entrypoints nor the two inert executable defaults. It advances
+actual acquisition/lifecycle wiring, not production service readiness or the
+missing mapping issuer. This is an initial integration stage within P3, not a
+replacement for the final real workers, secure IPC, broker and native exits.
+The completed source child freezes readiness/activation, sticky Stop, physical
+thread join, paired operation/cleanup failure handling and its exact local graph.
+Do not repeat the inert lifecycle qualification or add another historical-field
+wrapper as a substitute. Positive Engine-to-Core admission still needs the real
+clock-effect/invalidation owner, finite mapping evidence and independent date/scale.
+
+
 **Published qualified source child — 17 November 2026, `238b9ae`:**
 [Managed logical-source provenance](../../tasks/engine-transport-pilot.md#managed-logical-source-provenance--implementation-contract--17-november-2026)
 continues S2.1/W11-W01 from signed `72b4ae5`. The mapping supplier contract is
@@ -1772,12 +1815,61 @@ exercises empty authenticated DENY, a valid tag with a refused inner
 field, and wrong-key refusal through the response parser. Continue the
 remaining protected receive qualification and production supplier and
 lifecycle exits.
+The [joined application-bounds child](../../tasks/engine-transport-pilot.md#joined-protected-application-bounds--20-november-2026)
+retains each original elapsed interval through normal or abnormal
+completion. Its final seven focused cases, 91 doctests and both target Clippy
+lanes passed; all 615 instrumented cases cleared both changed-owner
+line gates. The first 154-row managed mutation attempt retained one
+LI=0 projection survivor and 34 unfinished descriptors at its time cap.
+The LI=1/2 refinement catches the exact original fault, and the
+constructor-transfer control catches an added nanosecond through genuine
+join. The completed 154-row reconciliation retains 67 generated catches,
+84 compiler refusals and three raw timeouts; its conservative 67/70
+(95.71%) includes all three in the denominator. Each timeout also has an
+exact reached causal witness. The original native runs remain incomplete;
+independent review accepts the separately scoped Managed active-target gate.
+The datagram run completed all 120 descriptors and its full baseline.
+Its 33 native catches, 84 compiler refusals across the selected targets,
+and three exact causal witnesses retain distinct evidence classes.
+Independent review accepts the separate datagram active-target gate at
+36/36 viable, with zero raw kill credit for the causal witnesses. The
+two-owner historical-bounds checkpoint is complete within that scope.
+Preserve the original raw GNU failure and Windows collector parser failure.
+Continue with the original local wall readings and monotonic brackets
+through the genuine joined receiver, before any mapping-issuer claim.
+That [source child](../../tasks/engine-transport-pilot.md#original-application-readings-through-joined-projection--in-development)
+passed format, both target Clippy lanes, nine ordinary/optimized cases and
+91 doctests at `d334d20a…`, including the genuine unequal-wall managed case.
+The `413288ff…` continuation retains original authenticated peer T2/T3
+alongside those local captures. Format, both target Clippy lanes, ten ordinary
+and ten optimized controls, and 91 doctests passed. A genuine joined-consumer
+swap control catches reversed T2/T3 with healthy/restored and zero neighbors.
+After repairing the private wrapper's listing-limit and raw-export retention
+errors, all 615 instrumented cases passed; direct LLVM review accepts both
+current file line gates at 937/970 and 405/424. Fresh inventories contain
+121 datagram and 156 managed variants. All 20 configured external-facade
+MSVC/v3 cross-build checks also passed, with physical scratch retired and no
+Windows execution claim. Both current per-file mutation gates now pass through
+an independently reviewed complete 277-row union: managed 70/70 viable and
+datagram 36/36, with 171 compiler refusals earning zero kills. Seventeen
+variants and each exact 706-case baseline were freshly executed; 260 historical
+observations were reused only after compiler/caller/oracle-context review.
+All six prior timeout faults were caught in those fresh subsets. Original raw
+GNU failures and the Windows collector failure remain recorded. A fresh-context
+judge accepts this bounded current two-owner checkpoint, not a new full
+277-variant or native campaign. The earlier metrics retain their original
+`16dc06b6…` scope. Positive numerical output still needs the genuine suppliers
+below. Further historical-field wrappers do not supply that missing authority.
 The production measurement and Core admission boundary still needs an issuer
 with finite calibration bounds and effective invalidation, plus independent
 date and scale context. The
 [W11-W01 reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
 specifies the positive and refusal observations. It awaits an admitted
 independent reference and fixed uncertainty budgets.
+That reference gates the native trial and positive qualification.
+Continue source work on the actual local-clock supplier while preserving
+the distinction between local wall coordinates and independently trusted
+peer date/era evidence.
 The earlier four generated fixture replay outcomes retain their own
 candidate; the current selected GNU ledger disposition is recorded above.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
@@ -2753,8 +2845,9 @@ now passes ordinary checks and all six selected platform/caller 90%/95% gates.
 Reuse its exact evidence and the existing adapter/worker lifecycle and diagnostics
 owners. Final accounts/provisioning, Windows artifacts and actual native
 lifecycle/security evidence still gate installed integration. This parallel source
-checkpoint does not schedule service work during the current Core/Engine-only
-focus; separately admitted guest jobs retain W11 §4.19 prerequisites. NTP/NTS
+checkpoint did not schedule service work during the then-current Core/Engine-only
+focus. The 20 November coordinator selection above now admits only its named
+source child; separately admitted guest jobs retain W11 §4.19 prerequisites. NTP/NTS
 algorithms, clock discipline and complete package delivery retain their own owners.
 
 **Controlling owner amendment — 6 November 2026:**

@@ -2,7 +2,7 @@
 name = "nevrotick-windows-service-fixture"
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.99.1"
+rust-version = "1.100"
 license = "GPL-2.0-only"
 repository = "https://github.com/DavidOsipov/NevroTick"
 publish = false
@@ -15,6 +15,10 @@ resolver = "3"
 
 [dependencies]
 windows-platform = { version = "=0.0.0", path = "../../crates/windows-platform" }
+
+# The real Engine composition is private and compiled only by fixture tests.
+[dev-dependencies]
+nevrotick-engine = { version = "=0.0.0", path = "../../crates/nevrotick-engine", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "=0.61.2", default-features = false, features = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"] }

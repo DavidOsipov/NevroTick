@@ -29638,3 +29638,480 @@ files and production timing suppliers retain their own gates.
 | `response-control-empty-plaintext.patch` | `000018f3a3b89f38e9cb228b11f6b2cac3f9fce2b31a963f9e353cc4fb839417` |
 | `run-focused-v2.py` | `25e8e9e90364f66fdf886f4784124b6af93e41df877db564f86b31343fd1762a` |
 | `run-02/verification.json` | `9aa9056f02f0deb3bd390c9a66efb701d90688f2073d9469ce3cac4090f2d787` |
+
+###### Joined protected application bounds — 20 November 2026
+
+W11-W01 TQ-01/08/09 and CHECK-6/11/14/21/25/27. The shared
+`ProtectedHistory` owner now supplies one shared derivation of the original
+inclusive elapsed interval for both report projections. `ManagedProtectedReceipt`
+retains it for the first exchange, an ordinary successor and a first
+receipt recovered after abnormal join. Normal successor refusal retains
+the same first interval. The existing chronology check includes original
+commit time. Derivation reads only the retained captures.
+
+On the 620-input `117a1620…` candidate, five exact ordinary controls,
+format, GNU/MSVC all-target EP1 Clippy and 91 Rustdoc checks passed.
+The first attempt passed its five tests but failed the test helper's
+missing panic documentation. The corrected run retired its work in
+106.455 seconds. Independent source and raw-result reviews completed.
+The current two-owner instrumented run executed all 615 exact cases and
+passed both 90% line gates, at 933/965 for `datagram.rs` and 389/408
+for `managed_preview.rs`. Branch and MC/DC counts remain unmeasured.
+Fresh complete listing contains 120 datagram and 154 managed descriptors.
+
+The first managed-only campaign passed its own 706-case baseline and
+reached the original 1,200-second command limit. It retained 120 complete
+variant outcomes, with 48 catches, 71 compiler refusals and one survivor.
+The other 34 descriptors were unfinished in that attempt. The wrapper exited one and
+retired its build scratch after 1,237.983 seconds. Preserve this incomplete
+run and its original raw statuses. The survivor returns zero from the
+new receipt's leap-indicator getter. Its existing joined fixtures all
+used LI=0. This establishes missing regression sensitivity.
+
+The reviewed test-only refinement `16dc06b6…` moves the existing valid
+LI=1/2 fixtures byte-for-byte to their shared test owner. The real
+two-leg consumer now requires first LI=0 for ordinary completion, LI=1
+beside DENY, and LI=2 beside configuration refusal or abnormal join.
+The ordinary terminal LI=0 neighbor, original counts, source association,
+work and custody checks remain. The final focused run passed seven exact
+ordinary cases, format, both target Clippy lanes and 91 doctests in
+110.241 seconds. Both subsequent partition baselines executed all 706
+ordinary-plus-doctest cases. The 615-case line export above remains bound
+to `117a1620…`; the final candidate changes only four test files and keeps
+both measured production files and their compilation inputs identical.
+Independent review admits that scoped line-evidence reuse, without
+claiming a fresh final-candidate export.
+
+The elapsed getter's generated replacements failed compilation through
+dead-code or const restrictions. They earn zero behavioral kill credit.
+An independently reviewed constructor-transfer control adds one nanosecond
+to the transferred minimum while preserving the real helper and field
+reads. It must compile and fail the actual bounds assertion beside healthy
+and restored controls. It compiled and failed all four genuine joined
+bounds assertions with the minimum exactly one nanosecond too large and
+the original maximum unchanged. The exact historical LI=0 getter fault
+also compiled and failed the three LI=1/2/2 assertions while the LI=0
+neighbor passed. Restored source passed all four cases. The three-lane
+causal run took 164.209 seconds and earns zero generated kill credit.
+
+**Bounded continuation.** Actual hot Build phases took about 24–29 seconds,
+and Test phases about 42 seconds. Logs show Cargo reused its artifacts;
+the Test cost is actual suite execution, including real expiry waits.
+The original full-file allowance was insufficient for the expanded
+154-row inventory. The independently reviewed continuation preserves
+the complete inventory, full 706-case child baselines, exact Cargo phase
+arguments, four workers, one inner job/thread, 90/60-second phase caps,
+the 1,200-second per-command cap and 95% file threshold.
+
+Use disjoint exact partitions of at most 24 unfinished descriptors.
+Reconcile complete original rows independently and retain the LI survivor
+until its exact fault fails under the strengthened tests. No partial
+native result becomes a full campaign pass. Charge the original attempt,
+all subsequent preparation, executions and teardown to one 4,050-second
+owner envelope beginning at monotonic 61,248.940420 on this boot. Check
+the remaining allowance before every child, with cleanup reserved.
+Partitioning does not restart this allowance. Windows-only outcomes,
+other owners and positive production Core admission keep their own gates.
+
+The first continuation completed 24 exact rows: 19 caught, two compiler
+refusals and three Test timeouts, including a genuine generated catch of
+the original LI=0 survivor. Its native exit three and wrapper exit one
+remain incomplete. The second continuation completed all seven remaining
+GNU rows as compiler refusals, with native and wrapper exits zero, in
+181.156 seconds. Neither partition is a whole-file campaign pass.
+
+The three timed variants replace `SourceProtectedProbeFailure::labels`.
+Each passed Build, then spent about 39 seconds rebuilding during its
+60-second Test phase and stopped before the intended abnormal-join case.
+Retained file timestamps and an independently observed realtime backstep
+explain the freshness hazard; its external clock owner is unknown. No
+clock, freshness metadata, phase limit or test selection was altered.
+The separate exact-fault replay passed healthy and restored controls and
+reached the intended abnormal-join assertion for each wrong label tuple.
+All five lanes completed in 296.186 seconds, with zero generated kill
+credit. The original three raw Timeout statuses remain unchanged.
+
+All six Windows-target compiler controls have complete raw results:
+healthy/restored Engine metadata compiled, and four exact Windows-only
+variants failed at the intended E0277 `Default` requirements. The outer
+collection step timed out after those results were retained, at 348.976
+seconds. Independent readback reconstructed each source diff, checked
+the target/v3 commands and diagnostics, and confirmed unchanged live
+custody and retired scratch. These four compiler refusals earn no kills;
+the outer receipt remains incomplete and proves no Windows execution.
+
+Independent reconciliation accounts for every one of the 154 descriptors
+exactly once: 67 generated catches, 84 compiler refusals and three raw
+timeouts. The 119 reused original rows satisfy current source/assertion,
+baseline and full-listing conditions. Keeping all three timeouts in the
+viable denominator gives a conservative **67/70 (95.71%)** against 95%.
+The three exact current causal witnesses are separate evidence. Applying
+the existing selected-file adjudication precedent, independent final review
+accepts the report-only Managed active-target 95% gate on that conservative
+score, with all three exact witnesses separately reached. The
+configured native campaign remains incomplete and public campaigns stay
+closed. The datagram owner's separate complete inventory is reconciled
+below. Neither owner establishes production timing qualification.
+
+The Managed qualification workloads retired before the owner stop. Its
+later root administrative timing assertion failed and is retained as a
+late closeout check, without restarting the budget or changing any native
+result. No additional Managed workload was launched after the stop.
+
+The datagram run executed its 706-case baseline and all 120 exact
+descriptors in 1,053.651 seconds, with 33 catches, 82 compiler refusals,
+two Windows-only misses and three Test timeouts. Native exit three and
+wrapper exit one remain incomplete. Its raw GNU score is 33/38 (86.84%).
+The two Windows bodies independently refused their exact replacements
+at E0277, leaving 84 compiler-unviable entries across the selected targets.
+That generated-only cross-target ratio is 33/36 (91.67%). Compiler
+refusals supply zero kills.
+
+The first Windows collector counted Cargo's failure echo as another
+compiler invocation. Its actual first refusal was retained and admitted
+by independent raw readback. The repaired collector compiled only the
+remaining successor variant and checked the actual `Running` command,
+target, v3 flags and sole intended diagnostic. It exited zero in 63.172
+seconds. The earlier parser failure and incomplete receipt stay intact.
+
+Each timed-out tuple replacement compiled but reached only 202 healthy
+cases before the later unrelated wait. The exact five-lane replay passed
+healthy/restored controls and failed the joined ordinary report's count
+assertion for all three faults: `(0,1)`, `(0,1)` and `(0,0)` against `(2,2)`.
+It completed in 290.960 seconds and earns zero generated kill credit.
+All raw timeouts remain unchanged. Independent selected-file adjudication
+accounts for all 120 descriptors and accepts the separate active-target
+gate at **36/36 viable (100%)**, consisting of 33 generated catches and
+three exact causal witnesses. The witnesses add zero raw generated kills.
+The configured native campaign remains incomplete and public campaigns
+stay closed. Together with the scoped line gates, this closes the two-owner
+historical-bounds projection checkpoint; production and native timing
+qualification remain separate.
+
+The datagram owner retains the original four-worker, 90/60-second
+Build/Test, 1,200-second native and 1,350-second wrapper limits. Initial
+preparation was conservatively charged 600 seconds, guarded against its
+pre-dispatch lower bound. After the observed cold-build timeouts and
+current Windows type changes prevented old-proof reuse, independent
+review admitted a 2,700-second aggregate envelope from the same origin
+64,936.280364. It adds only the two compiler controls and exact causal
+lanes, including their preparation, review and cleanup. The origin never
+resets, no full GNU retry is selected, and the 95% threshold is unchanged.
+
+One datagram catch changes the test-only `terminal_history` oracle; its
+other replacement is compiler-unviable. Keep both in file accounting and
+identify their test-only scope. The two elapsed-helper replacements are
+also compiler-unviable because they remove its calculation's sole caller.
+The unchanged calculation, independently paired original bounds, wide
+bracket control and +1 ns transfer witness support this bounded projection.
+Direct public `None` projection, branch/MC/DC, broader mutation sensitivity
+and physical timing remain unqualified.
+
+Planning and implementation used `plan-code-change`, `implement-rust`
+and `implement-rust-contracts` for the actual history-to-report seam.
+`qa-regression-selection` and `qa-integration-tests` selected original
+capture assertions through genuine worker join. `qa-independent-review`
+checked source, raw results, metric scope and the LI refinement.
+`qa-mutation-testing` accounts for the generation gap, complete partitions,
+timeouts and exact causal controls. This projection adds no input decoder, numerical formula,
+native ownership or synchronization primitive. Existing fuzz and formal
+deferrals and physical timing qualification retain their owners.
+
+The calibrated reference is an entry condition for the W11-W01 native
+trial and positive qualification. Preparation of the actual local-clock
+supplier can proceed independently. Keep local wall coordinates, which
+may be wrong by a century, distinct from trusted peer date/era evidence.
+The next source input is the original local wall readings beside their
+QPC brackets through the actual joined receiver. Issuance still needs
+justified finite error/validity and authoritative invalidation.
+
+| Evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `current-successor-elapsed-bounds-01/run-02/verification.json` | `7820deb686a548c009275966541435591ca2370e346a162ccc75e9e952218ec3` |
+| `current-successor-elapsed-bounds-01/coverage-01/verification.json` | `000cb2455633e5ffe02036b79f27b2b9ebc88435bbb32109bc0d3670b4df0713` |
+| `current-successor-elapsed-bounds-01/inventory-01/verification.json` | `16f3a0ded3ae402a6fb64723fd5c0a3b4db57799bf94e9bd0b4984cae07ae488` |
+| `current-successor-managed-preview-mutation-01/run-01/verification.json` | `49b1c86fc44184721fef25cca26d1caca49aaa61466a9baaa4fe4fe57900e1f5` |
+| `current-successor-nonzero-leap-01/candidate.patch` | `5a61bfe78c1fef3da6738b3613e9da5547d2dddeb9d57623a0cd41f96af56a1c` |
+| `current-successor-nonzero-leap-01/run-01/verification.json` | `e6fa47b30ea095c8f1067f17aac402b763f9daaa5bea316415c3da86073f90ba` |
+| `current-successor-nonzero-leap-01/causal-01/verification.json` | `a768635f2428eba9ae2c3697a7b842d5da15e64949404b890d1f863f085753f7` |
+| `current-successor-managed-preview-mutation-01/continuation-part-01/verification.json` | `c7c5b6caadcf462e16ff0feba02f4d6ea2f3010e1f5d4858910d0614439c8331` |
+| `current-successor-managed-preview-mutation-01/continuation-part-02/verification.json` | `0c3bd4d90c9b319b1ae1613e16a12d8f00ebaedadb4e332584b8971294ac1787` |
+| `current-successor-managed-preview-mutation-01/msvc-controls/independent-readback-01.json` | `20a2af9796ba32d8f93700ba8e927f960ccdb20b5318e644f9f9dea6aeac1427` |
+| `current-successor-managed-preview-mutation-01/independent-union-review-01.json` | `12c9357382551f88b986b6fa933b1b3363b4feb88c65ba033269e148fdf48dcc` |
+| `current-successor-nonzero-leap-01/label-timeout-causal-01/verification.json` | `72759d0ab6f0ade36846a6c8e9c2da6532da20a5c44fb3f0e88e4f2de665c347` |
+| `current-successor-managed-preview-mutation-01/independent-final-adjudication-01.json` | `d60c587c219532653349fca8ddca2bacd62d468432bd5c75df5c034251b582fe` |
+| `current-successor-managed-preview-mutation-01/administrative-closeout-01.json` | `63d473d5d045cb60860b439c166b4431cf416ce8831a74452be86ccec9c0f6a0` |
+| `current-successor-datagram-mutation-01/run-current-budgeted-mutation.py` | `4fea7b64c524332e33f425e8ab3d5f62b2738a8797b7024adeeaf8ea7586437e` |
+| `current-successor-datagram-mutation-01/run-current-01/verification.json` | `3f898865490a08a6af0d99886a2f66413241b7e22606643ae446346d60dce5da` |
+| `current-successor-datagram-mutation-01/continuation-budget-01.json` | `9d7ca98c63ed561026503e82d32f4716e33e610b261afba3b75f689fd6244512` |
+| `current-successor-datagram-mutation-01/budget-review-01.json` | `90b96ca3f582040fa9335a2c61e038c78f5de255425c96b58ad13051d8df5b38` |
+| `current-successor-datagram-mutation-01/msvc-controls/run-01/verification.json` | `52102d919767dc302f16ceee7b980ccd102bc6df18eb64f57b1a899f8ff31031` |
+| `current-successor-datagram-mutation-01/msvc-controls/run-successor-01/verification.json` | `40c0ca5a18add3194904dfacc2c170f8aac1193ebd27b94697cda334822cbd51` |
+| `current-successor-datagram-mutation-01/timeout-controls/run-01/verification.json` | `f1127188d369f91fac42b97711e364e92e69ac4800a265b54eb6f35f0196f269` |
+| `current-successor-datagram-mutation-01/independent-final-adjudication-01.json` | `eac0f38b3dc82745eb2e4e53878486996047f1e70d16c8db311ce732c11dd8d3` |
+
+###### Original application readings through joined projection — in development
+
+W11-W01 TQ-01/08/09 and CHECK-6/11/14/21/25/27. The next source child
+copies the three original `SoftwareClock` values from genuine guarded
+history into `ManagedProtectedReceipt`. Its read-only accessor preserves
+pre-send, same-send return and selected receive-return order. The shared
+private constructor serves first, ordinary successor and abnormal retained
+receipts. The actual facade checks the retained receive endpoint against
+the original receipt time. No clock read or conversion is added.
+
+The initial implemented 620-input source was `e6ce6b7f…`, based on the
+qualified `16dc06b6…` predecessor. The reviewed controlled-wall candidate
+was `8850fd05…`. Its facade is separately bound
+outside that product map. Source review found no behavioral defect and
+identified a likely needless borrow, corrected before compiler execution.
+The unequal-wall Script control now reaches the actual private receipt
+constructor using genuine joined managed history. It independently expects
+epoch minus 120 seconds, epoch and epoch minus 60 seconds, and compares all
+nine coordinates against the original pre-transfer `OperationHistory`.
+Both forwarding helpers disappear under production `cfg`; no managed
+history is forged. Review found two missing fixture field initializers,
+both repaired before compiler execution. No behavioral RED is claimed.
+The inline receipt grows by three fixed clock records. Both target Clippy
+lanes must decide any resulting layout/lint impact before further changes.
+
+The local-reading source passed its scoped development checks at `d334d20a…`.
+The current peer-input continuation below passes its selected development,
+line, cross-link and independently admitted active-target mutation gates.
+This closes only the bounded historical-facts projection checkpoint.
+The earlier two-owner metrics retain their exact predecessor scope. Re-admit the new source before
+development checks and affected final gates; no score is transferred by
+copying its hashes. Preparation uses the existing Rust-contract and regression
+selection skills, with independent review and isolated test/runner writers.
+Keep the existing test kernel and private checked history; no forged managed
+history or additional runtime/dependency is selected.
+
+The first configured development selection is format plus GNU/MSVC EP1
+all-target Clippy, one Cargo job and a 360-second runtime bound. It admits
+the full 620-input candidate, 15 existing helpers and the separate facade.
+Focused ordinary/optimized tests, doctests, external-consumer compilation
+and affected qualification follow the source/static result. No broader
+campaign is selected before this cheap preflight. The existing healthy,
+refusal, original-configuration and abnormal-join cases remain in scope.
+
+The first three-lane selection retired in 96.168 seconds: format passed;
+GNU and MSVC Clippy exited 101. GNU reported the now redundant
+`crate::SoftwareClock` qualification and an unchanged numerical caller
+missing the new sixth helper argument. The repair removes the qualification
+and preserves the helper's original five-argument interface by keeping the
+wall-step assertions at its case-aware caller. The first failures remain in
+`current-original-captures-development-01/run-final-01/verification.json`
+(`00880e48c6546369f7c67df36f5e8003b23ccdfdf4cf4123ffa137ddf1f3136f`).
+
+MSVC reported `clippy::large_enum_variant` at `ManagedProtectedTerminal`:
+328-byte ordinary receipt versus 72-byte restriction. Independent review
+approved one item-scoped expectation for that exact enum, preserving its
+API and fixed inline captures without adding a completion-path allocation.
+The private 512-byte ceiling has an unconditional compile-time size assertion.
+This bounds growth beyond 512 bytes; it does not detect every smaller increase.
+Existing snapshot cloning is unchanged and no whole-path allocation-free claim
+is made. Both target lanes must fulfill the expectation and accept the bound.
+Owner: Engine transport coordinator. Approver: independent
+`original_capture_independent_review` source/diagnostic review. Reopen on
+field/variant/layout, projection ownership, supported target or compiler changes.
+This adopts no broad lint suppression or David security exception.
+
+A second static selection (`ac46659b…`) retained format, prelude-qualification
+and two test-function-length failures. The repair uses the prelude `size_of`,
+the pinned formatter and named test-only helpers containing the unchanged
+wall-step and power-result assertions. No additional suppression was added.
+The corrected `d334d20a…` selection passed format and both target Clippy
+lanes in 100.125 seconds. Both targets fulfilled the item expectation and
+accepted the unconditional 512-byte ceiling.
+
+Its focused GNU EP1 development run passed nine exact ordinary and nine
+optimized cases, each with 573 other library cases filtered, plus 91 doctests
+(19 runtime, 72 compile-only). It completed in 211.339 seconds and retired
+its work. This includes the genuine managed unequal-wall scenario and its
+separate original-operation witness. The refactored power-report scenario
+joins the next affected-case selection before final qualification.
+
+**Authenticated peer inputs.** The current 620-input `413288ff…` continuation
+retains exact T2/T3 `ntp_wire::NtpTimestamp` values in the same private receipt
+constructor, exposed in protocol order without conversion. Source review
+accepted the fixed additional pair and reopened/reapproved the existing
+item-scoped layout exception; its reason now covers bounded receipt facts.
+Both current target Clippy lanes accept the fixed inline layout and fulfill
+the item expectation. The unconditional 512-byte ceiling remains mandatory.
+The sealed component vectors are unchanged: first and ordinary terminal have
+distinct nonzero pairs, and the genuine joined placement case retains zero
+wire timestamps while numerical output stays unavailable. Existing first,
+ordinary and abnormal consumers compare independent literal values.
+The facade checks `d000/e000` against its actual peer producer
+(`protected_packet.rs:206–207`); both native legs use that same pair, so only
+the component vectors discriminate wrong-leg substitution. No native run,
+era/date interpretation, positive Core sample or clock authority is claimed.
+
+The current `413288ff…` development run passed format, GNU/MSVC all-target
+EP1 Clippy, ten exact ordinary and ten optimized cases, and all 91 doctests
+(72 compile-only). It completed in 272.785 seconds. The additional power-case
+consumer is included. Current source, 15 verification helpers and the facade
+are bound as 636 inputs; the configured graph and locked compiler remain unchanged.
+
+The isolated T2/T3 transfer control passed healthy and restored three-case
+selections. Its single constructor swap failed both intended joined consumers
+at their first-pair assertion, while the zero-pair neighbor passed. Exact raw
+101 exits and reversed values were retained. The 203.766-second run establishes
+that reached field-transfer sensitivity, not a separately reached terminal-pair
+fault or generated mutation kills. Prelaunch review rejected the original
+runner's tuple-only diagnostic parsing and missing nonzero closeout exit;
+the corrected V3 retains both repairs and the original unexecuted versions.
+
+The first current line/inventory wrapper executed all 615 cases and parsed
+both passing line summaries, then refused its oversized selected listing
+allowance. Its retention also overwrote the LLVM export with the command
+transcript. The original whole attempt remains incomplete; the lost export is
+not reconstructed or counted as independently reviewed evidence. The corrected
+combined run uses separate typed `coverage.json` and `coverage-lane.json`, and
+selected 512-per-file/512-total listing allowances without changing public policy.
+Actual healthy and wrong-artifact-kind retention controls challenge that repair.
+Before this rerun the original 600-second envelope was revised to 900 seconds,
+retaining monotonic origin 72247.204300. The complete owner closed at 593.579
+seconds, including the first attempt and preparation/wait, without a reset.
+
+The repaired run executed all 615 cases again and retained the real LLVM export.
+Independent direct readback accepts `datagram.rs` at **937/970 (96.60%)** and
+`managed_preview.rs` at **405/424 (95.52%)**. LLVM records six calls each to the
+new receipt constructor and both getters, and 45 to original-history `captures`.
+These are reached paths, not branch/MC/DC or complete behavioral qualification.
+Fresh inventories contain **121 datagram and 156 managed descriptors**. Default
+replacements do not establish viable field-transfer sensitivity. Current
+per-file mutation gates use the independent reconciliation below and actual
+uninstrumented 706-case baselines; no historical row transfers merely because
+its descriptor name or line number resembles a current row.
+
+The actual external facade then passed all 20 configured cross-build checks:
+normal EP1 Engine/Tokio producer libraries, facade Clippy and link, and four
+PE/PDB pairs for the admitted MSVC target. Product libraries and the facade
+retain v3; diagnostic roles retain their admitted baseline. The 116.654-second
+owned run verified
+input/library/export bookends and retained 29 original output files (50,275,440
+bytes). Compiler/source scratch was RAM-backed and retired. It executed no
+Windows binary and made no Windows settings change.
+
+**Current selected mutation gates — independently accepted.** The frozen
+277-row map selects 13 managed and four datagram variants for fresh GNU
+execution, including all three new descriptors and all six old timeout rows.
+Each owner physically ran the configured `--baseline run`: 615 ordinary cases
+and 91 doctests, with exact names, source/tool/vendor custody and cleanup.
+The managed subset completed in 285.049 seconds: five catches and eight
+compiler refusals. The datagram subset completed in 228.335 seconds: three
+catches and one compiler refusal. No subset survivor or timeout remains.
+All six formerly timed-out faults are fresh behavioral catches here; their
+original timeout receipts remain unchanged.
+
+Independent compiler-premise review admits 74 managed and 82 datagram GNU
+refusals in unchanged decisive type/const/liveness contexts. Separate review
+admits all six historical MSVC compiler controls with zero behavioral credit.
+Two proposed datagram pointers incorrectly referenced GNU logs; the separate
+correction binds the actual MSVC logs and intended E0277. The original exchange
+collector/parser capsule remains incomplete even though its raw compiler
+refusal is retained. Independent behavioral review admits 65 managed and 33
+datagram catches only after verifying their current caller/oracle contexts and
+those current owner baselines. This includes byte-identical datagram function
+and test bodies and explicit pre-receipt failure paths; line relocation alone
+supplies no reuse basis.
+
+The complete current active-target union is **70 caught / 70 viable** for
+managed projection (156 total, 86 compiler-unviable), and **36 / 36** for
+datagram handling (121 total, 85 compiler-unviable). It includes 17 fresh and
+260 independently reviewed reused observations. Compiler refusals receive zero
+kills; no equivalents or manual controls enter the numerator. These are selected
+per-file gates under the accepted predecessor active-target criterion, not a
+fresh full 277-variant campaign or a rewritten GNU-only result. Generation gaps
+remain explicit: Default getter/constructor replacements are compiler-unviable;
+independent wall vectors and the genuine joined pair-swap control supply
+separate behavioral sensitivity, not additional generated kills.
+
+Fresh-context `peer_input_final_judge` independently accepts the current source,
+complete inventories, both raw baselines, every fresh log/diff and corrected
+MSVC evidence. The new mutation owner retained origin 72907.253827294 and closed
+at **1629.385 / 2400 seconds**, including preparation, reviews and cleanup.
+This new-source checkpoint resets none of the earlier closed owner budgets.
+All owned heavy jobs and temporary build trees are retired. Public campaigns,
+positive numerical/Core admission and native/package/release qualification stay
+at their existing boundaries. The V1 goal remains active.
+
+**Skill actions and QA scope.** Rust-contract work keeps immutable facts from the
+same guarded history; regression/contract/integration selection reaches original
+configuration, nonzero and zero wire values, unequal local walls, refusal,
+ordinary completion, power cancellation and abnormal join. Independent review
+inspects actual source, raw assertions, LLVM and configured link outputs.
+Coverage/mutation work preserves exact file denominators and the 90%/95% gates.
+These finite scenarios are not a newly run property or fuzz campaign. This
+copy/readback slice adds no parser input, serialization, thread, FFI or native
+resource owner; additional parser fuzzing and native memory instrumentation are
+not triggered by this delta. Existing fuzz/native obligations and holds remain.
+The fixed inline ceiling supplies a storage bound, not a performance measurement.
+
+Positive Engine-to-Core admission still lacks the actual clock/mapping authority
+and checked revision/withdrawal channel, finite validity/error/drift evidence,
+and independently admitted date/era/scale. Existing resume Stop delivery and raw
+clock-adjustment observations supply neither continuity nor calibration.
+The next genuine issuer must attach to its actual clock-effect/invalidation
+owner; no detached positive model or additional always-unavailable wrapper is
+introduced. This is the existing W11-W01/broker dependency, not a claim that
+all source work requires completing the native reference trial first.
+
+| Development evidence under `bounded-native-successor-01` | SHA-256 |
+| --- | --- |
+| `current-original-captures-development-01/run-final-01/verification.json` | `00880e48c6546369f7c67df36f5e8003b23ccdfdf4cf4123ffa137ddf1f3136f` |
+| `current-original-captures-development-01/run-repaired-02/verification.json` | `e4990f0f86643fe682042313f87602a0bcd321089b72682309c2a03cac1ec85e` |
+| `current-original-captures-development-01/run-repaired-03/verification.json` | `e4d30bc1c7fdce8f5ec5d80db66b1eeb5cee19c3536fe52bc2d449da47868f09` |
+| `current-original-captures-development-01/run-focused-repaired-03/verification.json` | `5df2f99c447054e663ef6b6506a6e728cc1ef0e92c3c4033b44d782d9d0c6c96` |
+| `current-authenticated-peer-inputs-01/source-inputs-01.json` | `00d16b47e43b4e6f23a026969044a8ec5ad8e33a0441207971db2f4350e4b016` |
+| `current-authenticated-peer-inputs-01/run-01/verification.json` | `166feef75c81de094a7fb92c86ce31db24ba2a296e44e177aac4eb2f215961d8` |
+| `current-authenticated-peer-inputs-01/causal-01/verification.json` | `809c4ecf748c11dfe1e08678392b7a2cbbcc22fb1b86950b9ae358133ebb5e85` |
+| `current-authenticated-peer-inputs-01/lines-inventory-01/verification.json` — incomplete | `5497d68a2a49dea8fb33c5959881dacf6505be62f71dbdad89a5ca04e492d1b5` |
+| `current-authenticated-peer-inputs-01/lines-inventory-repair-01/verification.json` | `7b58a697d27180b4bb1d2858a7fea8eacf76ef08f8b1e3b471cb57a04d17b51e` |
+| `current-authenticated-peer-inputs-01/facade-cross-build-01/supervisor-verification.json` | `e7f52a4f07bd0cae903671c7024f8240414b6a37a66dbc4af6366c0bf8ad55a1` |
+| `current-authenticated-peer-inputs-01/facade-cross-build-01/verification.json` | `db10fc755dfe73b67887480b20ab3738c5576f025e656e1f6c94e095c41e7815` |
+| `current-authenticated-peer-inputs-01/mutation-wave-01-ke_managed_preview/verification.json` | `7a94f9d12f12e6ca96e13751cd25481edd95fb761fae61f20949270563dbb606` |
+| `current-authenticated-peer-inputs-01/mutation-wave-01-ke_datagram/verification.json` | `ad8938b31429316882f4f1fc44fb5655ad47bf80d9668e550fd8320a9c09da57` |
+| `current-authenticated-peer-inputs-01/mutation-compiler-premise-review-01.json` | `d7ad66b7ba3a5bc80f6ae646c1d6a506180f5fe4c4fc24c6ead5a9c684955788` |
+| `current-authenticated-peer-inputs-01/mutation-behavioral-context-review-01.json` | `2550248b763096be80e15239441761d230535faba812b440ea76acc670dc8b9d` |
+| `current-authenticated-peer-inputs-01/mutation-managed-behavioral-complement-review-01.json` | `d3173f1f60ddb472f34a3f2de084ef33dd8aea3f75916d2cc9966eb7f2827c69` |
+| `current-authenticated-peer-inputs-01/current-two-owner-mutation-adjudication-01.json` | `cd3b2cdfba1ccd6e07ce411c209bc59db0c90a304fc98313fded57226643746a` |
+| `current-authenticated-peer-inputs-01/independent-final-judge-record-01.json` — coordinator record of delivered review | `5f58859c5293050ff1d93e4df9ef31a37664152c6deb085afecd167e6affa67f` |
+| `current-authenticated-peer-inputs-01/mutation-owner-closeout-01.json` | `28007216c90ff7f2bdcfc1210a6e110bd3ee4336d28160bb2b9f051a2b70d842` |
+
+Historical wall readings remain potentially inaccurate local coordinates.
+Mapping identity/revision, finite error/validity, effective invalidation,
+independent date/scale and positive Engine-to-Core admission stay open.
+Raw readings are not added to diagnostic output. Native, fuzz, UI, storage
+and post-V1 formal scopes remain unchanged.
+
+
+###### Next Engine acquisition lifecycle composition — 20 November 2026
+
+The current historical-input source and two selected file gates are closed at
+`413288ff…`. Continue the real acquisition-to-owner path through the existing
+[W11-W05/S3.1 child](windows11-integration.md#s31-real-engine-composition--20-november-2026).
+The coordinator selects its initial portable compile/test composition under the
+later full-V1 goal, retaining all native/clock/service-installation holds. Freeze
+its actual Engine thread, readiness, original Stop, joined completion, paired
+failure and local graph contracts before implementation. This prepares a real
+service dependency; it supplies neither positive Core admission nor production
+worker/service qualification. No additional clock-fact wrapper is the next task.
+
+The historical [21 November development exit](windows11-integration.md#s31-real-engine-development--21-november-2026)
+ran eight initial Engine cases per GNU mode, all twelve configured lanes and
+retained original reports through actual join. The later [selected portable
+qualification](windows11-integration.md#s31-real-engine-selected-qualification--21-november-2026)
+now passes on current 648-input `02c51536…`: fresh 109-case integrated ordinary/
+optimized execution, all four 90% line gates and current 37-row worker replay
+(20 viable kills, 17 compiler-unviable, zero survivors). Three unchanged native-tool
+owners retain their separately qualified 753… evidence through an independently
+reviewed source/consumer bridge. Actual Windows, general cleanup-producer transfer,
+production mapping and positive Core admission remain separate. Continue the
+existing W11-W08 whole portable logger contract/consumer stage in the development
+plan; no additional historical-clock wrapper or source-only enum substitutes for
+that working pipeline. Original failures, holds and publication boundary remain.
+The ordinary native executables, mapping issuer, positive Core admission and
+installed-service/native/package exits remain open. No service/clock effect or
+formal work was admitted by this development result.

@@ -103,18 +103,24 @@ fn a_healthy_inert_driver_finishes_with_one_bounded_wait() -> Result<(), Box<dyn
 fn a_inert_worker_keeps_readiness_and_completion_separate() {
     use std::task::Poll;
 
-    use super::{InertWorker, Worker, WorkerWake};
+    use super::{InertWorker, Worker, WorkerCompletion, WorkerFinish, WorkerWake};
 
     let wake = WorkerWake::current();
     let mut worker = InertWorker::new();
-    assert_eq!(worker.poll_finished(&wake), Poll::Pending);
+    assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
-    assert_eq!(worker.poll_finished(&wake), Poll::Pending);
+    assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     assert_eq!(worker.activate(), Ok(()));
     assert_eq!(worker.poll_running(&wake), Ok(()));
-    assert_eq!(worker.poll_finished(&wake), Poll::Pending);
+    assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     worker.request_cancel(&wake);
-    assert_eq!(worker.poll_finished(&wake), Poll::Ready(Ok(())));
+    assert_eq!(
+        worker.poll_finished(&wake),
+        WorkerFinish::Finished(WorkerCompletion {
+            operation_failure: None,
+            cleanup_failure: None,
+        })
+    );
     std::thread::park_timeout(Duration::ZERO);
 }
 
@@ -2439,7 +2445,8 @@ mod worker_tests {
     };
 
     use super::super::{
-        Clock, InvocationPoll, ServiceInvocation, StatusFactory, TokenObserver, Worker, WorkerWake,
+        Clock, InvocationPoll, ServiceInvocation, StatusFactory, TokenObserver, Worker,
+        WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake,
         start_invocation_with_diagnostics,
     };
     use crate::{
@@ -2506,6 +2513,8 @@ mod worker_tests {
         stop_on_clock_after_activation: bool,
         /// Enable externally visible destructor markers only in the isolated child.
         destructor_markers: bool,
+        /// Count actual clock calls, including the one that first detects reversal.
+        clock_reads: usize,
     }
 
     /// Monotonic input chosen by the test, independently of status or worker verdicts.
@@ -2521,6 +2530,7 @@ mod worker_tests {
     impl Clock for TestClock {
         /// Supply exactly the chosen observation, including deliberate reversal.
         fn now(&mut self) -> Instant {
+            self.trace.borrow_mut().clock_reads += 1;
             if std::mem::take(&mut self.trace.borrow_mut().stop_during_next_clock) {
                 let _control = self.notification.handle_control(1);
             }
@@ -2710,6 +2720,10 @@ mod worker_tests {
         running: Result<(), WorkerError>,
         /// Only this observation acknowledges resolved completion and cleanup.
         completion: Poll<Result<(), WorkerError>>,
+        /// Tagged health facts for controls requiring both failure kinds.
+        health_failure: Option<WorkerFailure>,
+        /// Canonical completion or terminal-marker input, separate from health.
+        finish: Option<WorkerFinish>,
         /// Optional one-shot change at the preparation-to-readiness boundary.
         preparation_effect: Option<PreparationEffect>,
         /// Wake captured from the actual host, without an independently made token.
@@ -2726,6 +2740,8 @@ mod worker_tests {
                 activation: Ok(()),
                 running: Ok(()),
                 completion: Poll::Pending,
+                health_failure: None,
+                finish: None,
                 preparation_effect: None,
                 wake: None,
                 private_context: Vec::new(),
@@ -2779,11 +2795,15 @@ mod worker_tests {
         }
 
         /// Return health independently from the explicit completion observation.
-        fn poll_running(&mut self, wake: &WorkerWake) -> Result<(), WorkerError> {
+        fn poll_running(&mut self, wake: &WorkerWake) -> Result<(), WorkerFailure> {
             self.trace.borrow_mut().events.push(Event::Running);
             let mut script = self.script.borrow_mut();
             script.wake = Some(wake.clone());
-            script.running
+            if let Some(failure) = script.health_failure {
+                Err(failure)
+            } else {
+                script.running.map_err(WorkerFailure::Operation)
+            }
         }
 
         /// A cancellation request publishes no completion and releases no resource.
@@ -2793,11 +2813,20 @@ mod worker_tests {
         }
 
         /// Only the separately selected Finished result can settle worker custody.
-        fn poll_finished(&mut self, wake: &WorkerWake) -> Poll<Result<(), WorkerError>> {
+        fn poll_finished(&mut self, wake: &WorkerWake) -> WorkerFinish {
             self.trace.borrow_mut().events.push(Event::Completion);
             let mut script = self.script.borrow_mut();
             script.wake = Some(wake.clone());
-            script.completion
+            if let Some(finish) = script.finish {
+                return finish;
+            }
+            match script.completion {
+                Poll::Pending => WorkerFinish::Pending,
+                Poll::Ready(result) => WorkerFinish::Finished(WorkerCompletion {
+                    operation_failure: None,
+                    cleanup_failure: result.err(),
+                }),
+            }
         }
     }
 
@@ -3038,7 +3067,11 @@ mod worker_tests {
             &mut self,
             completion: Result<(), WorkerError>,
         ) -> Option<Result<(), FixtureError>> {
-            self.script.borrow_mut().completion = Poll::Ready(completion);
+            {
+                let mut script: std::cell::RefMut<'_, Script> = self.script.borrow_mut();
+                script.finish = None;
+                script.completion = Poll::Ready(completion);
+            }
             let _control = self.notification.handle_control(1);
             let Some(invocation) = self.invocation.as_mut() else {
                 return self.start_failure.take().map(Err);
@@ -3215,11 +3248,12 @@ mod worker_tests {
         let expected = [
             [1, 1, 1, 1, 0, 1, 0, 0, 0],
             [1, 1, 4, 2, 20, 2, 0, 0, 0],
-            [1, 1, 3, 1, 0, 3, 0, 0, 0],
-            [1, 1, 6, 2, 10, 4, 0, 0, 0],
-            [1, 1, 5, 2, 23, 5, 0, 0, 0],
-            [1, 1, 7, 2, 10, 6, 0, 0, 0],
-            [1, 1, 8, 1, 0, 7, 0, 0, 0],
+            [1, 1, 9, 2, 20, 3, 0, 0, 0],
+            [1, 1, 3, 1, 0, 4, 0, 0, 0],
+            [1, 1, 6, 2, 10, 5, 0, 0, 0],
+            [1, 1, 5, 2, 23, 6, 0, 0, 0],
+            [1, 1, 7, 2, 10, 7, 0, 0, 0],
+            [1, 1, 8, 1, 0, 8, 0, 0, 0],
         ];
         let mut outcomes = Vec::new();
         for required in [Healthy, Full, Unavailable] {
@@ -3254,7 +3288,7 @@ mod worker_tests {
                 assert_diagnostic_sink(
                     rig.owner()?.diagnostics.required(),
                     required,
-                    &expected[..4],
+                    &expected[..5],
                 )?;
                 let result = rig.settle(Err(WorkerError::Cleanup));
                 let Some(Err(FixtureError::Cleanup(facts))) = &result else {
@@ -3405,15 +3439,16 @@ mod worker_tests {
                     Ok(())
                 })
             );
-            let expected = if failed {
-                [
+            let expected: &[[u8; 9]] = if failed {
+                &[
                     [1, 1, 1, 1, 0, 1, 0, 0, 0],
                     [1, 1, 4, 2, 20, 2, 0, 0, 0],
-                    [1, 1, 3, 1, 0, 3, 0, 0, 0],
-                    [1, 1, 8, 1, 0, 4, 0, 0, 0],
+                    [1, 1, 9, 2, 20, 3, 0, 0, 0],
+                    [1, 1, 3, 1, 0, 4, 0, 0, 0],
+                    [1, 1, 8, 1, 0, 5, 0, 0, 0],
                 ]
             } else {
-                [
+                &[
                     [1, 1, 1, 1, 0, 1, 0, 0, 0],
                     [1, 1, 2, 1, 0, 2, 0, 0, 0],
                     [1, 1, 3, 1, 0, 3, 0, 0, 0],
@@ -3426,7 +3461,7 @@ mod worker_tests {
                 .optional()
                 .ok_or("healthy optional sink disappeared")?;
             for sink in [rig.owner()?.diagnostics.required(), optional] {
-                assert_eq!(sink.records(), &expected);
+                assert_eq!(sink.records(), expected);
                 let emitted = sink.records().iter().flatten().copied().collect::<Vec<_>>();
                 for secret in secrets {
                     assert!(!emitted.windows(secret.len()).any(|bytes| bytes == secret));
@@ -3715,7 +3750,7 @@ mod worker_tests {
                 .as_mut()
                 .ok_or("missing retained invocation")?;
             invocation.begin_stop(&mut rig.clock);
-            assert!(invocation.phase_deadline.is_some());
+            assert_eq!(invocation.phase_deadline.is_some(), !reversed);
             assert_eq!(invocation.overdue, reversed);
             assert!(invocation.admission_closed());
             assert_eq!(invocation.outstanding_work(), 1);
@@ -4629,6 +4664,18 @@ mod worker_tests {
             assert_eq!(rig.owner()?.outstanding_work(), 1);
             *rig.clock.time.borrow_mut() = if overflow { ceiling } else { neighbor };
             let _control = rig.notification.handle_control(1);
+            {
+                let invocation: &mut Invocation = rig
+                    .invocation
+                    .as_mut()
+                    .ok_or("missing retained invocation")?;
+                invocation.begin_stop(&mut rig.clock);
+                assert!(!invocation.observed.reversed);
+                assert_eq!(invocation.phase_deadline.is_none(), overflow);
+                assert_eq!(invocation.overdue, overflow);
+                assert!(invocation.admission_closed());
+                assert_eq!(invocation.outstanding_work(), 1);
+            }
             let observation = rig.poll()?;
             if overflow {
                 assert_eq!(observation, InvocationPoll::Overdue);
@@ -4854,6 +4901,375 @@ mod worker_tests {
             .map_err(|_panic| "retained-wake owner thread panicked")?;
         publication?;
         owner_result.map_err(Into::into)
+    }
+
+    /// Canonical joined facts do not depend on a health observation winning Stop.
+    /// Both dormant-prepared and activated neighbors preserve their own call counts.
+    ///
+    /// # Errors
+    /// Propagate fixture construction or absence of the complete retained result.
+    /// # Panics
+    /// Fails if Stop hides either fact, runs fenced work or permits clean completion.
+    #[test]
+    fn joined_facts_survive_stop_before_health_and_after_activation() -> TestResult {
+        for stop_in_ack in [true, false] {
+            let mut rig: Rig = Rig::start(Settings::default())?;
+            rig.trace.borrow_mut().stop_during_running_ack = stop_in_ack;
+            {
+                let mut script: std::cell::RefMut<'_, Script> = rig.script.borrow_mut();
+                script.preparation = Poll::Ready(Ok(()));
+                script.finish = Some(WorkerFinish::Finished(WorkerCompletion {
+                    operation_failure: Some(WorkerError::Running),
+                    cleanup_failure: Some(WorkerError::Cleanup),
+                }));
+            }
+            let first: InvocationPoll = rig.poll()?;
+            if stop_in_ack {
+                assert_eq!(first, InvocationPoll::Finished);
+            } else {
+                assert!(matches!(first, InvocationPoll::Pending(_)));
+                assert_eq!(rig.owner()?.outstanding_work(), 1);
+                let _control: ScmControl = rig.notification.handle_control(1);
+                assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            }
+            assert_eq!(rig.count(&Event::Activate), usize::from(!stop_in_ack));
+            assert_eq!(rig.count(&Event::Running), usize::from(!stop_in_ack));
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            assert_eq!(rig.count(&Event::Completion), 1);
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            let Some(Err(FixtureError::Cleanup(facts))) = rig.take_result() else {
+                return Err("Stop lost canonical operation or cleanup facts".into());
+            };
+            assert_eq!(facts.primary(), &FixtureError::Worker(WorkerError::Running));
+            assert_eq!(facts.operation(), None);
+            assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+            assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &[
+                    [1, 1, 1, 1, 0, 1, 0, 0, 0],
+                    [1, 1, 2, 1, 0, 2, 0, 0, 0],
+                    [1, 1, 3, 1, 0, 3, 0, 0, 0],
+                    [1, 1, 4, 2, 22, 4, 0, 0, 0],
+                    [1, 1, 9, 2, 22, 5, 0, 0, 0],
+                    [1, 1, 5, 2, 23, 6, 0, 0, 0],
+                    [1, 1, 8, 1, 0, 7, 0, 0, 0],
+                ]
+            );
+        }
+        Ok(())
+    }
+
+    /// A health kind requests shutdown; canonical completion deduplicates only
+    /// that same kind/code. An equal code in the other kind remains a separate fact.
+    ///
+    /// # Errors
+    /// Propagate checked fixture construction or a missing bounded failure result.
+    /// # Panics
+    /// Fails if a kind collapses, health releases custody, or repeated polls emit twice.
+    #[test]
+    fn tagged_health_deduplicates_by_kind_and_code_after_actual_completion() -> TestResult {
+        for operation_first in [true, false] {
+            let mut rig: Rig = Rig::start(Settings::default())?;
+            {
+                let mut script: std::cell::RefMut<'_, Script> = rig.script.borrow_mut();
+                script.preparation = Poll::Ready(Ok(()));
+                script.health_failure = Some(if operation_first {
+                    WorkerFailure::Operation(WorkerError::Running)
+                } else {
+                    WorkerFailure::Cleanup(WorkerError::Running)
+                });
+            }
+            assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            assert!(rig.owner()?.admission_closed());
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            assert_eq!(rig.owner()?.outstanding_work(), 1);
+            assert!(rig.take_result().is_none());
+            rig.script.borrow_mut().finish = Some(WorkerFinish::Finished(WorkerCompletion {
+                operation_failure: Some(WorkerError::Running),
+                cleanup_failure: Some(WorkerError::Running),
+            }));
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            let Some(Err(FixtureError::Cleanup(facts))) = rig.take_result() else {
+                return Err("same-code distinct-kind completion fact disappeared".into());
+            };
+            assert_eq!(facts.primary(), &FixtureError::Worker(WorkerError::Running));
+            assert_eq!(
+                facts.operation(),
+                (!operation_first).then_some(WorkerError::Running)
+            );
+            assert_eq!(
+                facts.completion(),
+                operation_first.then_some(WorkerError::Running)
+            );
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            let before: Vec<[u8; 9]> = rig.owner()?.diagnostics.required().records().to_vec();
+            assert_eq!(before.iter().filter(|record| record[2] == 9).count(), 1);
+            assert!(before.iter().any(|record| record[2..5] == [9, 2, 22]));
+            for _ in 0..4 {
+                assert_eq!(rig.poll()?, InvocationPoll::Finished);
+                assert!(rig.take_result().is_none());
+            }
+            assert_eq!(rig.owner()?.diagnostics.required().records(), before);
+        }
+        Ok(())
+    }
+
+    /// A distinct late operation code occupies its fixed secondary slot while
+    /// both operation slots route independently with no new diagnostic payload.
+    ///
+    /// # Errors
+    /// Propagate checked fixture construction or absence of the canonical facts.
+    /// # Panics
+    /// Fails if the first code changes or the later operation/cleanup facts vanish.
+    #[test]
+    fn distinct_late_operation_retains_both_operation_slots() -> TestResult {
+        let mut rig: Rig = Rig::start(Settings::default())?;
+        {
+            let mut script: std::cell::RefMut<'_, Script> = rig.script.borrow_mut();
+            script.preparation = Poll::Ready(Ok(()));
+            script.health_failure = Some(WorkerFailure::Operation(WorkerError::Activation));
+        }
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        rig.script.borrow_mut().finish = Some(WorkerFinish::Finished(WorkerCompletion {
+            operation_failure: Some(WorkerError::Running),
+            cleanup_failure: Some(WorkerError::Cleanup),
+        }));
+        assert_eq!(rig.poll()?, InvocationPoll::Finished);
+        let Some(Err(FixtureError::Cleanup(facts))) = rig.take_result() else {
+            return Err("distinct late operation was not retained".into());
+        };
+        assert_eq!(
+            facts.primary(),
+            &FixtureError::Worker(WorkerError::Activation)
+        );
+        assert_eq!(facts.operation(), Some(WorkerError::Running));
+        assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+        let operations: Vec<[u8; 9]> = rig
+            .owner()?
+            .diagnostics
+            .required()
+            .records()
+            .iter()
+            .copied()
+            .filter(|record| record[2] == 9)
+            .collect();
+        assert_eq!(
+            operations,
+            [[1, 1, 9, 2, 21, 4, 0, 0, 0], [1, 1, 9, 2, 22, 6, 0, 0, 0],]
+        );
+        Ok(())
+    }
+
+    /// A prior status failure retains precedence while joined facts fill both
+    /// worker slots. Full/unavailable optional routes cannot affect required output
+    /// or the four separate secondary facts beside that original primary.
+    ///
+    /// # Errors
+    /// Propagate fixture construction or absence of the retained bounded result.
+    /// # Panics
+    /// Fails if sinks alter custody, precedence, facts, required routing or native codes.
+    #[test]
+    fn late_joined_facts_preserve_status_precedence_across_sink_faults() -> TestResult {
+        use DiagnosticSinkCondition::{Full, Healthy, Unavailable};
+
+        let running: NativeError = NativeError::new(NativeOperation::Status, 814);
+        let stopping: NativeError = NativeError::new(NativeOperation::Status, 813);
+        let terminal: NativeError = NativeError::new(NativeOperation::Status, 811);
+        let expected: [[u8; 9]; 8] = [
+            [1, 1, 1, 1, 0, 1, 0, 0, 0],
+            [1, 1, 4, 2, 10, 2, 0, 0, 0],
+            [1, 1, 3, 1, 0, 3, 0, 0, 0],
+            [1, 1, 6, 2, 10, 4, 0, 0, 0],
+            [1, 1, 9, 2, 22, 5, 0, 0, 0],
+            [1, 1, 5, 2, 23, 6, 0, 0, 0],
+            [1, 1, 7, 2, 10, 7, 0, 0, 0],
+            [1, 1, 8, 1, 0, 8, 0, 0, 0],
+        ];
+        for required in [Healthy, Full, Unavailable] {
+            for optional in [None, Some(Healthy), Some(Full), Some(Unavailable)] {
+                let mut rig: Rig = Rig::start_with_sinks(
+                    Settings {
+                        report_failures: vec![(4, running), (3, stopping), (1, terminal)],
+                        ..Settings::default()
+                    },
+                    Sinks::new(diagnostic_sink(required), optional.map(diagnostic_sink)),
+                )?;
+                rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+                let _pending: InvocationPoll = rig.poll()?;
+                assert_eq!(rig.count(&Event::Activate), 0);
+                assert_eq!(rig.count(&Event::Running), 0);
+                assert!(rig.take_result().is_none());
+                rig.script.borrow_mut().finish = Some(WorkerFinish::Finished(WorkerCompletion {
+                    operation_failure: Some(WorkerError::Running),
+                    cleanup_failure: Some(WorkerError::Cleanup),
+                }));
+                assert_eq!(rig.poll()?, InvocationPoll::Finished);
+                let Some(Err(FixtureError::Cleanup(facts))) = rig.take_result() else {
+                    return Err("joined worker facts displaced the original status failure".into());
+                };
+                assert_eq!(
+                    facts.primary(),
+                    &FixtureError::Lifecycle(LifecycleError::Report(running))
+                );
+                assert_eq!(facts.operation(), Some(WorkerError::Running));
+                assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+                assert_eq!(facts.stop_report(), Some(&LifecycleError::Report(stopping)));
+                assert_eq!(
+                    facts.terminal_report(),
+                    Some(&LifecycleError::Report(terminal))
+                );
+                assert_eq!(rig.owner()?.outstanding_work(), 0);
+                assert_diagnostic_sink(rig.owner()?.diagnostics.required(), required, &expected)?;
+                match (optional, rig.owner()?.diagnostics.optional()) {
+                    (None, None) => {}
+                    (Some(condition), Some(sink)) => {
+                        assert_diagnostic_sink(sink, condition, &expected)?;
+                    }
+                    _ => return Err("optional diagnostic route changed presence".into()),
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Unmarked work gets the original deadline wait; only a current terminal
+    /// marker selects the short join request. Timely physical completion is Clean.
+    ///
+    /// # Errors
+    /// Propagate checked fixture and monotonic input construction.
+    /// # Panics
+    /// Fails if unmarked work gains a heartbeat or a timely join loses clean custody.
+    #[test]
+    fn timely_join_tail_is_distinct_from_unmarked_pending_work() -> TestResult {
+        let mut rig: Rig = Rig::start(Settings::default())?;
+        rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+        let _running: InvocationPoll = rig.poll()?;
+        let _control: ScmControl = rig.notification.handle_control(1);
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::Pending(Duration::from_secs(10))
+        );
+        assert_eq!(rig.owner()?.outstanding_work(), 1);
+        rig.script.borrow_mut().finish = Some(WorkerFinish::JoinTailPending);
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::JoinTail(Duration::from_millis(20))
+        );
+        rig.advance(Duration::from_millis(5))?;
+        assert_eq!(rig.settle(Ok(())), Some(Ok(())));
+        assert_eq!(rig.owner()?.outstanding_work(), 0);
+        assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 0, 0, 0, 0]));
+        Ok(())
+    }
+
+    /// The terminal marker grants only a bounded join observation. Clamp before
+    /// exact expiry, retain the failure at expiry, and clear eligibility on Pending.
+    ///
+    /// # Errors
+    /// Propagate checked fixture/time construction or missing final failure facts.
+    /// # Panics
+    /// Fails if a marker renews a deadline, a stale marker gains a timer, or custody escapes.
+    #[test]
+    fn join_tail_clamps_to_original_deadline_and_remains_failed_after_expiry() -> TestResult {
+        let mut rig: Rig = Rig::start(Settings::default())?;
+        rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        let _control: ScmControl = rig.notification.handle_control(1);
+        rig.script.borrow_mut().finish = Some(WorkerFinish::JoinTailPending);
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::JoinTail(Duration::from_millis(20))
+        );
+        let deadline: Option<Instant> = rig.owner()?.phase_deadline;
+        let statuses: Vec<[u32; 7]> = rig.statuses();
+        rig.advance(Duration::from_millis(9_990))?;
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::JoinTail(Duration::from_millis(10))
+        );
+        assert_eq!(rig.owner()?.phase_deadline, deadline);
+        assert_eq!(rig.failure(), None);
+        rig.advance(Duration::from_millis(10))?;
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::JoinTail(Duration::from_millis(20))
+        );
+        assert_eq!(
+            rig.failure(),
+            Some(&FixtureError::Lifecycle(LifecycleError::DeadlineElapsed))
+        );
+        assert_eq!(rig.owner()?.phase_deadline, deadline);
+        assert_eq!(rig.statuses(), statuses);
+        assert_eq!(rig.owner()?.outstanding_work(), 1);
+        assert!(rig.take_result().is_none());
+        rig.script.borrow_mut().finish = Some(WorkerFinish::Pending);
+        assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+        rig.script.borrow_mut().finish = Some(WorkerFinish::JoinTailPending);
+        assert_eq!(
+            rig.poll()?,
+            InvocationPoll::JoinTail(Duration::from_millis(20))
+        );
+        assert_eq!(
+            rig.settle(Ok(())),
+            Some(Err(FixtureError::Lifecycle(
+                LifecycleError::DeadlineElapsed
+            )))
+        );
+        assert_eq!(rig.owner()?.outstanding_work(), 0);
+        assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+        Ok(())
+    }
+
+    /// Reversal invalidates the host deadline without further Clock calls or
+    /// fallback arithmetic. A current marker alone permits the relative join wait.
+    ///
+    /// # Errors
+    /// Propagate checked fixture/time construction or absence of the original result.
+    /// # Panics
+    /// Fails if reversal admits Clean, reads time again, or turns Pending into polling.
+    #[test]
+    fn reversed_clock_join_tail_uses_no_new_clock_observation_or_allowance() -> TestResult {
+        for reverse_after_stop in [false, true] {
+            let mut rig: Rig = Rig::start(Settings::default())?;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            let _running: InvocationPoll = rig.poll()?;
+            let _control: ScmControl = rig.notification.handle_control(1);
+            rig.script.borrow_mut().finish = Some(WorkerFinish::JoinTailPending);
+            if reverse_after_stop {
+                assert_eq!(
+                    rig.poll()?,
+                    InvocationPoll::JoinTail(Duration::from_millis(20))
+                );
+            }
+            let reversed: Instant = rig.earlier()?;
+            *rig.clock.time.borrow_mut() = reversed;
+            assert_eq!(
+                rig.poll()?,
+                InvocationPoll::JoinTail(Duration::from_millis(20))
+            );
+            assert_eq!(rig.failure(), Some(&FixtureError::ClockReversed));
+            assert_eq!(rig.owner()?.phase_deadline, None);
+            let reads: usize = rig.trace.borrow().clock_reads;
+            let statuses: Vec<[u32; 7]> = rig.statuses();
+            rig.advance(Duration::from_secs(60))?;
+            for _ in 0..4 {
+                assert_eq!(
+                    rig.poll()?,
+                    InvocationPoll::JoinTail(Duration::from_millis(20))
+                );
+                assert_eq!(rig.trace.borrow().clock_reads, reads);
+                assert_eq!(rig.owner()?.outstanding_work(), 1);
+                assert!(rig.take_result().is_none());
+            }
+            rig.script.borrow_mut().finish = Some(WorkerFinish::Pending);
+            assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+            assert_eq!(rig.statuses(), statuses);
+            assert_eq!(rig.settle(Ok(())), Some(Err(FixtureError::ClockReversed)));
+            assert_eq!(rig.trace.borrow().clock_reads, reads);
+            assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+        }
+        Ok(())
     }
 
     /// Test-only child selection, absent from native executable composition.

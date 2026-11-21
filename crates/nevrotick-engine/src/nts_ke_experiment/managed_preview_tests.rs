@@ -11,7 +11,7 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::num::{NonZeroU32, NonZeroU64};
 use std::sync::mpsc::{Receiver, SyncSender, TrySendError, sync_channel};
 use std::sync::{Arc, Weak};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zeroize::Zeroizing;
 
 use super::association::ledger::{RequestInput, RequestPhase, Status, Ticket};
@@ -25,7 +25,7 @@ use super::job::{
 };
 use super::managed_preview::{
     SourceKePreviewFailure, SourceKePreviewReport, SourceProtectedProbeFailure,
-    SourceProtectedProbeReport, protected_report,
+    SourceProtectedProbeReport, protected_receipt, protected_report,
 };
 use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use super::profile::StrictProfile;
@@ -40,39 +40,10 @@ use super::{
 use crate::source_policy::{FixtureRequest, SourceBinding, fixture_control, fixture_send};
 use crate::{
     ExperimentalMeasurement, ExperimentalProfile, KePreviewTarget, KePreviewTargetError,
-    MeasurementRefusal, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
-    SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot, SourceScale,
+    ManagedProtectedReceipt, MeasurementRefusal, SoftwareClock, SourceConfigurationSnapshot,
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
+    SourcePolicySnapshot, SourceScale,
 };
-
-/// Public LI=1 neighbor of HEALTHY, sealed with cryptography 41.0.7 AESSIV.
-/// The independent generator first reproduced HEALTHY with the same public
-/// key, nonce, UID and plaintext, then sealed the header with LI=1.
-const LEAP_ANNOUNCED_REPLY: &[u8] = &[
-    0x64, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-    0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa,
-    0x01, 0x04, 0x00, 0x24, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-    0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
-    0x1c, 0x1d, 0x1e, 0x1f, 0x04, 0x04, 0x00, 0x38, 0x00, 0x10, 0x00, 0x20, 0x10, 0x11, 0x12, 0x13,
-    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0xef, 0x05, 0xee, 0x46,
-    0xb2, 0x20, 0x92, 0x67, 0x3b, 0x83, 0x69, 0xf1, 0xdc, 0x44, 0x6f, 0x17, 0xa8, 0xdb, 0x1e, 0xea,
-    0x8d, 0x66, 0x67, 0x1a, 0x39, 0xa2, 0xaf, 0x21, 0xf4, 0x11, 0x64, 0x2b,
-];
-
-/// Public LI=2 neighbor of HEALTHY, sealed with cryptography 41.0.7 AESSIV.
-/// Only the authenticated header's first byte and the ciphertext/tag change.
-/// The fixed plaintext is one 12-byte replacement cookie.
-const LEAP_DELETION_REPLY: &[u8] = &[
-    0xa4, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-    0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa,
-    0x01, 0x04, 0x00, 0x24, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-    0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
-    0x1c, 0x1d, 0x1e, 0x1f, 0x04, 0x04, 0x00, 0x38, 0x00, 0x10, 0x00, 0x20, 0x10, 0x11, 0x12, 0x13,
-    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x91, 0x14, 0xe1, 0x5a,
-    0x96, 0xb4, 0x1f, 0x85, 0x0f, 0x2a, 0x80, 0x73, 0x01, 0x64, 0x00, 0xcc, 0x15, 0xc8, 0x56, 0x5b,
-    0xb7, 0xbb, 0xda, 0x68, 0xc9, 0xfc, 0x66, 0x03, 0x7e, 0xa8, 0xd4, 0xb0,
-];
 
 /// Finite component observation only; it supplies no product operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -586,6 +557,8 @@ struct PreviewProducer {
     stop_before_commit: Option<StopHandle>,
     /// Genuine newer snapshot returned by the actual replacement transaction.
     replacement: Option<SourceConfigurationSnapshot>,
+    /// Original capture coordinates observed before any joined projection.
+    original_captures: Option<[SoftwareClock; 3]>,
     /// Actual establishment/entropy/protected-operation/jitter entries.
     calls: [usize; 4],
 }
@@ -640,11 +613,15 @@ impl Producer for PreviewProducer {
         }
         let (preceding, reply): (Option<&'static [u8]>, &'static [u8]) = match self.scenario {
             Scenario::ProtectedLeapWarningAfterCommit(ProtectedLeapWarning::Insertion) => {
-                (None, LEAP_ANNOUNCED_REPLY)
+                (None, fixtures::LEAP_ANNOUNCED_REPLY)
             }
             Scenario::ProtectedLeapWarningAfterCommit(
                 ProtectedLeapWarning::DeletionAfterUnsynchronized,
-            ) => (Some(fixtures::UNSYNCHRONIZED), LEAP_DELETION_REPLY),
+            ) => (
+                Some(fixtures::UNSYNCHRONIZED),
+                fixtures::LEAP_DELETION_REPLY,
+            ),
+            Scenario::ProtectedPlacementAfterCommit => (None, fixtures::ZERO_TIMESTAMPS),
             _ => (None, fixtures::HEALTHY),
         };
         let pre_send: Option<[Instant; 2]> =
@@ -657,13 +634,14 @@ impl Producer for PreviewProducer {
             } else {
                 None
             };
-        let completion: ProtectedCompletion<'tx> =
+        let (completion, captures): (ProtectedCompletion<'tx>, [SoftwareClock; 3]) =
             managed_component_exchange(association, control, preceding, reply, pre_send, || {
                 if matches!(self.scenario, Scenario::ProtectedBeforeSend) {
                     self.replace_definition()?;
                 }
                 Ok(())
             })?;
+        self.original_captures = Some(captures);
         assert_eq!(association.cookie_population()?, (0, 0));
         if preceding.is_some() {
             assert_eq!(
@@ -817,6 +795,8 @@ struct Work {
     after: Snapshot,
     /// Original complete failure retained by the invocation, if any.
     last_failure: Option<Failed>,
+    /// Direct adapter observation before the worker transfers the operation history.
+    original_captures: Option<[SoftwareClock; 3]>,
     /// Actual producer entry counts, including forbidden UDP/jitter controls.
     calls: [usize; 4],
     /// Actual replacement result, never a fabricated revision label.
@@ -898,6 +878,7 @@ fn component_operation<'scope>(
         before,
         after,
         last_failure,
+        original_captures: producer.original_captures,
         calls: producer.calls,
         replacement: producer.replacement,
         provider_lifetime,
@@ -988,6 +969,7 @@ fn run_with_hooks(
         scenario,
         stop_before_commit: None,
         replacement: None,
+        original_captures: None,
         calls: [0; 4],
     };
     let (observed, receiver): (SyncSender<Work>, Receiver<Work>) = sync_channel(1);
@@ -1311,6 +1293,7 @@ fn managed_ke_preview_power_event_respects_sealing_and_join() -> Result<(), Fail
                         scenario: Scenario::Healthy,
                         stop_before_commit: stop_at_commit.take(),
                         replacement: None,
+                        original_captures: None,
                         calls: [0; 4],
                     };
                     reservation.submit_fixture(
@@ -1522,6 +1505,7 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
                         scenario: Scenario::ProtectedAfterCommit,
                         stop_before_commit: stop_at_commit.take(),
                         replacement: None,
+                        original_captures: None,
                         calls: [0; 4],
                     };
                     reservation.submit_fixture(
@@ -1548,26 +1532,42 @@ fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), 
             .policy_snapshot(fixture.allowed)
             .map_err(Failure::SourcePolicy)?;
         assert!(policy.source().floor().is_some() && policy.endpoint().floor().is_some());
-        if matches!(timing, PowerEventTiming::BeforeCommit) {
-            let Err(refusal) = result else {
-                return Err(Failure::Control);
-            };
-            assert_eq!(refusal.labels(), ("currentness", "cancelled"));
-            assert_eq!(refusal.power_unregistration_error(), Some(close_error));
-            assert!(!refusal.power_stop_failed());
-            assert!(refusal.retained_configuration().is_none());
-        } else {
-            let report: SourceProtectedProbeReport = result.map_err(|_| Failure::Control)?;
-            assert!(report.configuration().same_configuration(&expected));
-            assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
-            assert_eq!(
-                report.power_unregistration_error(),
-                matches!(timing, PowerEventTiming::AfterJoin).then_some(close_error)
-            );
-            let replacement: &SourceConfigurationSnapshot =
-                work.replacement.as_ref().ok_or(Failure::Control)?;
-            assert!(!replacement.same_configuration(report.configuration()));
-        }
+        check_protected_power_report(result, timing, close_error, &expected, &work)?;
+    }
+    Ok(())
+}
+
+/// Check the original terminal report and cleanup beside its committed definition.
+/// # Errors
+/// Preserve an unexpected report-mode or operation refusal.
+/// # Panics
+/// Fail if Stop rewrites history or cleanup replaces the original outcome.
+fn check_protected_power_report(
+    result: Result<SourceProtectedProbeReport, SourceProtectedProbeFailure>,
+    timing: PowerEventTiming,
+    close_error: NonZeroU32,
+    expected: &SourceConfigurationSnapshot,
+    work: &Work,
+) -> Result<(), Failure> {
+    if matches!(timing, PowerEventTiming::BeforeCommit) {
+        let Err(refusal) = result else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(refusal.labels(), ("currentness", "cancelled"));
+        assert_eq!(refusal.power_unregistration_error(), Some(close_error));
+        assert!(!refusal.power_stop_failed());
+        assert!(refusal.retained_configuration().is_none());
+    } else {
+        let report: SourceProtectedProbeReport = result.map_err(|_| Failure::Control)?;
+        assert!(report.configuration().same_configuration(expected));
+        assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
+        assert_eq!(
+            report.power_unregistration_error(),
+            matches!(timing, PowerEventTiming::AfterJoin).then_some(close_error)
+        );
+        let replacement: &SourceConfigurationSnapshot =
+            work.replacement.as_ref().ok_or(Failure::Control)?;
+        assert!(!replacement.same_configuration(report.configuration()));
     }
     Ok(())
 }
@@ -1629,7 +1629,7 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
                 .map(MeasurementRefusal::as_str),
             refusal
         );
-        let [_, _, read_return]: [crate::SoftwareClock; 3] = history.captures();
+        let [_, _, read_return]: [SoftwareClock; 3] = history.captures();
         let trailing: Instant = read_return.monotonic_after();
         assert!(trailing <= accepted_at);
         let expected_delay: Option<Duration> = committed_at.checked_duration_since(trailing);
@@ -1667,7 +1667,7 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
     Ok(())
 }
 
-/// The public report retains the original placement despite an absent profile and newer source.
+/// The joined reports retain placement and zero peer timestamps across source replacement.
 ///
 /// # Errors
 /// Preserve actual worker, joined result or capture chronology refusal.
@@ -1684,7 +1684,16 @@ fn managed_protected_report_keeps_original_application_wall_elapsed_bounds() -> 
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
     let protected = completion.protected().ok_or(Failure::Control)?;
     let history = protected.history();
-    let [before, _, read]: [crate::SoftwareClock; 3] = history.captures();
+    let original: [SoftwareClock; 3] = run.work.original_captures.ok_or(Failure::Control)?;
+    let receipt: ManagedProtectedReceipt =
+        protected_receipt(&completion).ok_or(Failure::Control)?;
+    assert!(receipt.configuration().same_configuration(&run.expected));
+    assert_original_receipt_captures(&receipt, original)?;
+    assert_eq!(
+        receipt.peer_timestamps().map(|timestamp| timestamp.bits()),
+        [0, 0]
+    );
+    let [before, _, read]: [SoftwareClock; 3] = original;
     let origin: Instant = run.work.before.origin;
     let earliest: Instant = origin
         .checked_sub(Duration::from_millis(1))
@@ -1735,6 +1744,34 @@ fn managed_protected_report_keeps_original_application_wall_elapsed_bounds() -> 
     );
     assert_eq!(report.leap_indicator(), 0);
     assert_eq!(run.work.calls, [1, 0, 1, 0]);
+    Ok(())
+}
+
+/// Compare the joined receipt with actual pre-transfer brackets and scripted wall literals.
+/// # Errors
+/// Preserve refusal to represent the fixture's nominal local wall values.
+/// # Panics
+/// Fail if any original bracket coordinate changes at projection.
+fn assert_original_receipt_captures(
+    receipt: &ManagedProtectedReceipt,
+    original: [SoftwareClock; 3],
+) -> Result<(), Failure> {
+    let expected_wall: [SystemTime; 3] = [
+        UNIX_EPOCH
+            .checked_sub(Duration::from_secs(120))
+            .ok_or(Failure::Control)?,
+        UNIX_EPOCH,
+        UNIX_EPOCH
+            .checked_sub(Duration::from_secs(60))
+            .ok_or(Failure::Control)?,
+    ];
+    let actual: [SoftwareClock; 3] = receipt.application_clock_captures();
+    assert_eq!(actual.map(SoftwareClock::utc), expected_wall);
+    for (actual, original) in actual.into_iter().zip(original) {
+        assert_eq!(actual.monotonic(), original.monotonic());
+        assert_eq!(actual.utc(), original.utc());
+        assert_eq!(actual.monotonic_after(), original.monotonic_after());
+    }
     Ok(())
 }
 

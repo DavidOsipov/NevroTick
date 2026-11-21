@@ -742,6 +742,17 @@ mod reached {
             self.first.as_deref()
         }
 
+        /// Observe the exact terminal ordinary history in joined component assertions.
+        #[cfg(all(test, any(windows, target_os = "linux")))]
+        pub(in super::super) fn terminal_history(&self) -> Option<&ManagedProtectedHistory> {
+            use crate::nts_ke_experiment::ManagedSuccessorEffect;
+
+            match &self.terminal.result {
+                Ok(ManagedSuccessorEffect::Ordinary(history)) => Some(history),
+                Ok(ManagedSuccessorEffect::Restriction(_)) | Err(_) => None,
+            }
+        }
+
         /// Move the normally retired facts together, with no renewed permission.
         pub(in super::super) fn into_parts(
             self,
@@ -844,13 +855,7 @@ mod reached {
                 history.receipt.fields().header().leap_indicator(),
                 history.committed_at(),
                 history.receive_to_commit_delay(),
-                crate::measurement::application_elapsed_durations(
-                    history.send_before,
-                    history.send_after,
-                    history.read_return,
-                    history.committed_at(),
-                )
-                .ok(),
+                history.application_wall_elapsed_bounds(),
                 received.measurement,
             ))
         }
@@ -942,6 +947,14 @@ mod reached {
         /// Borrow unchanged genuine history; never split off or rebind its provenance.
         pub(in super::super) const fn history(&self) -> &ProtectedHistory {
             self.history.observation()
+        }
+
+        /// Borrow the source-issued history only from a genuine joined result.
+        pub(in super::super) fn managed_history(&self) -> Option<&ManagedProtectedHistory> {
+            match &self.history {
+                JoinedProtectedHistory::Managed(managed) => Some(managed.as_ref()),
+                JoinedProtectedHistory::Diagnostic(_) => None,
+            }
         }
 
         /// Borrow only the original optional checked declaration.
@@ -1068,6 +1081,18 @@ mod reached {
             self.committed_at.checked_duration_since(trailing)
         }
 
+        /// Derive the inclusive elapsed bounds from this operation's original wall reads.
+        /// Unavailable bounds do not change the receipt or its original timing.
+        pub(in super::super) fn application_wall_elapsed_bounds(&self) -> Option<[Duration; 2]> {
+            crate::measurement::application_elapsed_durations(
+                self.send_before,
+                self.send_after,
+                self.read_return,
+                self.committed_at,
+            )
+            .ok()
+        }
+
         /// Inspect original authenticated bits/time for actual-owner component controls.
         pub(in super::super) const fn receipt(&self) -> Receipt {
             self.receipt
@@ -1079,8 +1104,7 @@ mod reached {
             self.population
         }
 
-        /// Copy only the three original brackets; create no new acquisition fact.
-        #[cfg(test)]
+        /// Copy the original pre-send, send-return and selected receive-return brackets.
         pub(in super::super) const fn captures(&self) -> [SoftwareClock; 3] {
             [self.send_before, self.send_after, self.read_return]
         }

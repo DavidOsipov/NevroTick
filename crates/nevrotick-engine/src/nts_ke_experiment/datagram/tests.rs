@@ -310,11 +310,10 @@ impl Script {
 
     /// Return the fixed pre-send sample when that fixture selected one.
     pub(super) const fn observe_send_before(&self, captured: SoftwareClock) -> SoftwareClock {
-        let captured: SoftwareClock = match self.send_before {
+        match self.send_before {
             Some(before) => before,
-            None => captured,
-        };
-        self.fixture_wall(captured)
+            None => self.fixture_wall(captured),
+        }
     }
 
     /// Inject only the closed UTC fault; retain the actual captured monotonic bracket.
@@ -536,8 +535,8 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
     reply: &'static [u8],
     pre_send: Option<[Instant; 2]>,
     before_send: impl FnOnce() -> Result<(), Failure>,
-) -> Result<super::ProtectedCompletion<'a>, Failure> {
-    exchange_with(
+) -> Result<(super::ProtectedCompletion<'a>, [SoftwareClock; 3]), Failure> {
+    let completed: super::ProtectedCompletion<'a> = exchange_with(
         association,
         control,
         |output: &mut [u8; 56]| {
@@ -551,19 +550,38 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
                 .map(|packet: &'static [u8]| ScriptRead::Packet(packet, peer))
                 .collect();
             let mut script: Script = Script::new(ScriptSend::Full, reads);
-            // Fixed era-zero date shared by the admitted and refused model cases.
-            let utc: SystemTime = UNIX_EPOCH
-                .checked_add(Duration::from_secs(1_700_000_000))
-                .ok_or(Failure::Control)?;
-            script.fixed_utc = Some(utc);
-            script.send_before = pre_send.map(|[mono, mono_after]| SoftwareClock {
-                mono,
-                utc,
-                mono_after,
-            });
+            if let Some([mono, mono_after]) = pre_send {
+                script.send = ScriptSend::AfterWallStep;
+                script.fixed_utc = Some(
+                    UNIX_EPOCH
+                        .checked_sub(Duration::from_secs(60))
+                        .ok_or(Failure::Control)?,
+                );
+                script.send_before = Some(SoftwareClock {
+                    mono,
+                    utc: UNIX_EPOCH
+                        .checked_sub(Duration::from_secs(120))
+                        .ok_or(Failure::Control)?,
+                    mono_after,
+                });
+            } else {
+                // Fixed era-zero date shared by the admitted and refused model cases.
+                script.fixed_utc = Some(
+                    UNIX_EPOCH
+                        .checked_add(Duration::from_secs(1_700_000_000))
+                        .ok_or(Failure::Control)?,
+                );
+            }
             Ok(backend(peer, script))
         },
-    )
+    )?;
+    let original: &super::reached::OperationHistory<'a> = completed.history();
+    let captures: [SoftwareClock; 3] = [
+        original.send_before,
+        original.send_after,
+        original.read_return,
+    ];
+    Ok((completed, captures))
 }
 
 /// Inspect only this test build's closed backend.
@@ -3034,14 +3052,10 @@ fn send_loopback_reply(
 #[cfg(any(windows, target_os = "linux"))]
 pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
     peer: &std::net::UdpSocket,
+    first_reply: &'static [u8],
     ordinary_successor: bool,
 ) -> Result<(), Failure> {
     let first: SocketAddr = loopback_request(peer, 0x1122_3344_5566_7788, &C2S, &[0x11; 12], 7)?;
-    let first_reply: &[u8] = if ordinary_successor {
-        fixtures::TWO_COOKIES
-    } else {
-        fixtures::HEALTHY
-    };
     send_loopback_reply(peer, first, first_reply)?;
     let second_uid: &[u8] = PROTECTED_DENY.get(52..84).ok_or(Failure::Control)?;
     let replacement: [u8; 12] = [

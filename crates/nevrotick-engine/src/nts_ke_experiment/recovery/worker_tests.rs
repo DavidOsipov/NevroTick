@@ -29,7 +29,9 @@ use crate::nts_ke_experiment::{
     Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
     run_observing, run_synchronously_with, write_observed_run,
 };
-use crate::{ManagedProtectedReport, SourceProtectedProbeFailure, SourceProtectedProbeReport};
+use crate::{
+    ManagedProtectedReport, SoftwareClock, SourceProtectedProbeFailure, SourceProtectedProbeReport,
+};
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -1444,6 +1446,20 @@ enum LoopbackSuccessor {
     Unwind,
 }
 
+#[cfg(any(windows, target_os = "linux"))]
+impl LoopbackSuccessor {
+    /// Select the independently sealed first response sent by the loopback peer.
+    const fn first_reply(self) -> &'static [u8] {
+        use crate::nts_ke_experiment::response::fixtures;
+
+        match self {
+            Self::ApplyOrdinary => fixtures::TWO_COOKIES,
+            Self::ApplyDeny => fixtures::LEAP_ANNOUNCED_REPLY,
+            Self::ReplaceConfiguration | Self::Unwind => fixtures::LEAP_DELETION_REPLY,
+        }
+    }
+}
+
 /// Count destruction of the opaque payload sealed by the actual unwind case.
 #[cfg(any(windows, target_os = "linux"))]
 static SUCCESSOR_UNWIND_DROPS: AtomicUsize = AtomicUsize::new(0);
@@ -1564,6 +1580,7 @@ fn run_managed_loopback_control(
                 .spawn_scoped(scope, || {
                     serve_managed_loopback(
                         &peer,
+                        successor.first_reply(),
                         matches!(successor, LoopbackSuccessor::ApplyOrdinary),
                     )
                 })
@@ -1684,6 +1701,21 @@ fn assert_loopback_policy(
     Ok(())
 }
 
+/// Original receive and transmit bits shared by the independently sealed first replies.
+#[cfg(any(windows, target_os = "linux"))]
+const FIRST_PEER_TIMESTAMPS: [u64; 2] = [0x2233_4455_6677_8899, 0x3344_5566_7788_99aa];
+
+/// Compare both exact wire values without interpreting either timestamp.
+/// # Panics
+/// Fail if the joined receipt changes or swaps the two values.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_peer_timestamps(receipt: &crate::ManagedProtectedReceipt, expected: [u64; 2]) {
+    assert_eq!(
+        receipt.peer_timestamps().map(|timestamp| timestamp.bits()),
+        expected
+    );
+}
+
 /// Inspect the first genuine receipt beside the independently expected terminal facts.
 /// # Errors
 /// Preserve unexpected operation failures and refuse absent or mismatched custody.
@@ -1705,11 +1737,17 @@ fn assert_joined_loopback_successor(
             Ok(ReceivedInvocation::ManagedSuccessor(joined)),
         ) => {
             use crate::ManagedProtectedTerminal;
+            use crate::nts_ke_experiment::datagram::ManagedProtectedHistory;
 
-            let first = joined.first_history().ok_or(Failure::Control)?;
+            let first: &ManagedProtectedHistory = joined.first_history().ok_or(Failure::Control)?;
             let ordinary: bool = matches!(successor, LoopbackSuccessor::ApplyOrdinary);
             assert_loopback_first_receipt(first, remote, expected, first_commit_window, ordinary);
             let committed_at: Instant = first.history().committed_at();
+            let (first_captures, first_bounds): ReceiptTiming = original_receipt_timing(first)?;
+            let terminal_timing: Option<ReceiptTiming> = joined
+                .terminal_history()
+                .map(original_receipt_timing)
+                .transpose()?;
             let report: ManagedProtectedReport =
                 ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
                     result: Ok(ReceivedInvocation::ManagedSuccessor(joined)),
@@ -1721,7 +1759,15 @@ fn assert_joined_loopback_successor(
             assert_eq!(projected.committed_at(), committed_at);
             assert_eq!(projected.packet_bytes(), 252);
             assert_eq!(projected.initial_cookie_population(), (1, 12));
-            assert_eq!(projected.leap_indicator(), 0);
+            assert_peer_timestamps(projected, FIRST_PEER_TIMESTAMPS);
+            assert_eq!(
+                capture_coordinates(projected.application_clock_captures()),
+                first_captures
+            );
+            assert_eq!(
+                projected.application_wall_elapsed_bounds(),
+                Some(first_bounds)
+            );
             assert!(projected.configuration().same_configuration(expected));
             assert!(projected.received_at() <= committed_at);
             assert!(committed_at <= nak && first_commit_window.contains(&nak));
@@ -1745,14 +1791,12 @@ fn assert_joined_loopback_successor(
             assert_eq!(report.power_unregistration_error(), None);
             match (successor, report.terminal()) {
                 (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
-                    assert!(receipt.configuration().same_configuration(expected));
-                    assert!(nak <= receipt.received_at());
-                    assert!(receipt.received_at() <= receipt.committed_at());
-                    assert_eq!(receipt.packet_bytes(), 236);
-                    assert_eq!(receipt.initial_cookie_population(), (2, 24));
-                    assert_eq!(receipt.leap_indicator(), 0);
+                    assert_eq!(projected.leap_indicator(), 0);
+                    let timing: ReceiptTiming = terminal_timing.ok_or(Failure::Control)?;
+                    assert_ordinary_loopback_receipt(receipt, expected, nak, timing);
                 }
                 (LoopbackSuccessor::ApplyDeny, ManagedProtectedTerminal::Restriction(history)) => {
+                    assert_eq!(projected.leap_indicator(), 1);
                     assert_eq!(history.code(), "DENY");
                     assert!(history.authenticated());
                     assert_eq!(history.remote(), remote);
@@ -1765,6 +1809,7 @@ fn assert_joined_loopback_successor(
                     LoopbackSuccessor::ReplaceConfiguration,
                     ManagedProtectedTerminal::Refused(failure),
                 ) => {
+                    assert_eq!(projected.leap_indicator(), 2);
                     assert_eq!(
                         failure.source_policy_error(),
                         Some(crate::SourcePolicyError::ConfigurationChanged),
@@ -1782,6 +1827,78 @@ fn assert_joined_loopback_successor(
     Ok(())
 }
 
+/// Coordinates of each original application wall-read bracket.
+#[cfg(any(windows, target_os = "linux"))]
+type CaptureCoordinates = [(Instant, std::time::SystemTime, Instant); 3];
+
+/// Original coordinates and independently derived elapsed bounds.
+#[cfg(any(windows, target_os = "linux"))]
+type ReceiptTiming = (CaptureCoordinates, [Duration; 2]);
+
+/// Keep the leading monotonic read, wall value and trailing monotonic read.
+#[cfg(any(windows, target_os = "linux"))]
+fn capture_coordinates(captures: [SoftwareClock; 3]) -> CaptureCoordinates {
+    captures.map(|capture: SoftwareClock| {
+        (
+            capture.monotonic(),
+            capture.utc(),
+            capture.monotonic_after(),
+        )
+    })
+}
+
+/// Capture all original readings and independently pair their elapsed endpoints.
+/// # Errors
+/// Preserve an unexpected reversal in the genuine joined capture sequence.
+/// # Panics
+/// Fail if the retained captures or original commit are out of order.
+#[cfg(any(windows, target_os = "linux"))]
+fn original_receipt_timing(
+    original: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory,
+) -> Result<ReceiptTiming, Failure> {
+    let captures: [SoftwareClock; 3] = original.history().captures();
+    let [before, after, read]: [SoftwareClock; 3] = captures;
+    assert!(before.monotonic() <= before.monotonic_after());
+    assert!(before.monotonic_after() <= after.monotonic());
+    assert!(after.monotonic() <= after.monotonic_after());
+    assert!(after.monotonic_after() <= read.monotonic());
+    assert!(read.monotonic() <= read.monotonic_after());
+    assert!(read.monotonic_after() <= original.history().committed_at());
+    let minimum: Duration = read
+        .monotonic()
+        .checked_duration_since(before.monotonic_after())
+        .ok_or(Failure::Control)?;
+    let maximum: Duration = read
+        .monotonic_after()
+        .checked_duration_since(before.monotonic())
+        .ok_or(Failure::Control)?;
+    Ok((capture_coordinates(captures), [minimum, maximum]))
+}
+
+/// Compare the ordinary terminal receipt with its own original history.
+/// # Panics
+/// Fail if the receipt loses exact timing, configuration or packet facts.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_ordinary_loopback_receipt(
+    receipt: &crate::ManagedProtectedReceipt,
+    expected: &crate::SourceConfigurationSnapshot,
+    nak: Instant,
+    (captures, bounds): ReceiptTiming,
+) {
+    assert!(receipt.configuration().same_configuration(expected));
+    assert!(nak <= receipt.received_at());
+    assert!(receipt.received_at() <= receipt.committed_at());
+    assert_eq!(receipt.packet_bytes(), 236);
+    assert_eq!(receipt.initial_cookie_population(), (2, 24));
+    assert_eq!(receipt.leap_indicator(), 0);
+    assert_peer_timestamps(receipt, [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc]);
+    assert_eq!(
+        capture_coordinates(receipt.application_clock_captures()),
+        captures
+    );
+    assert_eq!(receipt.application_wall_elapsed_bounds(), Some(bounds));
+}
+
 /// Compare joined DENY diagnostics with the permitted summary fields.
 /// # Panics
 /// Fail if formatting leaks source configuration, endpoint, packet or timing data.
@@ -1792,7 +1909,7 @@ fn assert_joined_restriction_debug(report: &ManagedProtectedReport) {
         format!(
             concat!(
                 "ManagedProtectedReport {{ first: Some(ManagedProtectedReceipt ",
-                "{{ packet_bytes: 252, leap_indicator: 0, .. }}), ",
+                "{{ packet_bytes: 252, leap_indicator: 1, .. }}), ",
                 "terminal: Restriction(ManagedProtectedRestriction ",
                 "{{ code: \"DENY\", authenticated: true, .. }}), ",
                 "attempted_sends: 2, fully_submitted_sends: 2, ",
@@ -1823,6 +1940,7 @@ fn assert_abnormal_loopback_successor(
         joined.first_receipt().ok_or(Failure::Control)?;
     assert_loopback_first_receipt(first, remote, expected, first_commit_window, false);
     let committed_at: Instant = first.history().committed_at();
+    let (first_captures, first_bounds): ReceiptTiming = original_receipt_timing(first)?;
     let Err(failure): Result<ManagedProtectedReport, SourceProtectedProbeFailure> =
         ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
             result: Err(RunFailed::Abnormal(joined)),
@@ -1842,6 +1960,16 @@ fn assert_abnormal_loopback_successor(
     assert_eq!(retained.committed_at(), committed_at);
     assert_eq!(retained.initial_cookie_population(), (1, 12));
     assert_eq!(retained.packet_bytes(), 252);
+    assert_eq!(retained.leap_indicator(), 2);
+    assert_peer_timestamps(&retained, FIRST_PEER_TIMESTAMPS);
+    assert_eq!(
+        capture_coordinates(retained.application_clock_captures()),
+        first_captures
+    );
+    assert_eq!(
+        retained.application_wall_elapsed_bounds(),
+        Some(first_bounds)
+    );
     assert!(committed_at <= nak_at && first_commit_window.contains(&nak_at));
     Ok(())
 }
@@ -2457,7 +2585,8 @@ fn assert_retained_history(
         "KE-HIST-01-original-packet-time"
     );
     assert_eq!(receipt.local_t1(), None);
-    for (actual, expected) in history.captures().into_iter().zip(expected.captures) {
+    let captures: [SoftwareClock; 3] = history.captures();
+    for (actual, expected) in captures.into_iter().zip(expected.captures) {
         assert_eq!(
             (actual.monotonic(), actual.utc(), actual.monotonic_after()),
             (
@@ -2496,6 +2625,21 @@ fn assert_retired_resources(
     );
     assert_eq!(provider.map(Weak::strong_count), Some(0));
     assert_eq!(config.strong_count(), 0);
+}
+
+/// Confirm that the selected wall-step fixture keeps ordered monotonic brackets.
+/// # Panics
+/// Fail if the selected fixture loses its genuine stepped-wall placement.
+fn assert_original_wall_step(
+    history: &crate::nts_ke_experiment::datagram::ProtectedHistory,
+    case: ExchangeCase,
+) {
+    if matches!(case, ExchangeCase::AfterWallStep) {
+        let [before, after, read]: [SoftwareClock; 3] = history.captures();
+        assert!(before.monotonic_after() <= after.monotonic());
+        assert!(after.monotonic_after() <= read.monotonic());
+        assert!(after.utc() > read.utc());
+    }
 }
 
 /// Carry genuine Script facts through the real driver, worker, join and final take.
@@ -2579,6 +2723,7 @@ fn check_joined_protected_history(
         original_origin,
         peer_times,
     );
+    assert_original_wall_step(history, case);
     assert_retired_resources(&config_lifetime, provider.get(), resource.get());
     let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
     assert!(summary.transmitted && summary.packet_bytes > 48);
@@ -2610,18 +2755,22 @@ fn check_joined_protected_history(
     Ok(())
 }
 
-/// Valid-tag zero T2/T3 values remain inert history, alongside the nonzero neighbor.
+/// Valid-tag zero T2/T3 values and a scripted local wall step remain inert history.
 /// # Errors
 /// Preserve actual joined Script failures; no numerical/sample constructor is invoked.
 /// # Panics
 /// Fail if any original bits/captures/identity are lost or cleanup is falsely inferred.
 #[test]
 fn whole_job_protected_history_retains_nonzero_and_zero_timestamps() -> Result<(), Failure> {
-    static SLOTS: [WorkerSlot; 5] = [const { WorkerSlot::new() }; 5];
-    static ADMISSIONS: [ProcessAdmission; 5] = [const { ProcessAdmission::new() }; 5];
-    let cases = [
+    static SLOTS: [WorkerSlot; 6] = [const { WorkerSlot::new() }; 6];
+    static ADMISSIONS: [ProcessAdmission; 6] = [const { ProcessAdmission::new() }; 6];
+    let cases: [(ExchangeCase, (u64, u64)); 6] = [
         (
             ExchangeCase::Healthy,
+            (0x2233_4455_6677_8899, 0x3344_5566_7788_99aa),
+        ),
+        (
+            ExchangeCase::AfterWallStep,
             (0x2233_4455_6677_8899, 0x3344_5566_7788_99aa),
         ),
         (ExchangeCase::ZeroReceive, (0, 0x3344_5566_7788_99aa)),

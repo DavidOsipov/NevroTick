@@ -183,12 +183,14 @@ impl fmt::Display for WorkerError {
 
 impl Error for WorkerError {}
 
-/// One original cause and at most one result from each permitted cleanup effect.
+/// One original cause and one fixed slot per later operation/cleanup/report kind.
 /// Private construction prevents recursive accumulation of wrapped failures.
 #[derive(Debug, Eq, PartialEq)]
 pub struct ServiceFailure {
     /// One boxed cause, allocated only when independent secondary facts exist.
     primary: Box<FixtureError>,
+    /// Sole distinct later operation failure, independent of cleanup.
+    operation: Option<WorkerError>,
     /// The sole completed worker cleanup failure, if later than the primary cause.
     completion: Option<WorkerError>,
     /// The sole `StopPending` failure, if later than the primary cause.
@@ -202,12 +204,14 @@ impl ServiceFailure {
     #[cfg(any(windows, test))]
     pub(crate) fn new(
         primary: FixtureError,
+        operation: Option<WorkerError>,
         completion: Option<WorkerError>,
         stop_report: Option<LifecycleError<NativeError>>,
         terminal_report: Option<LifecycleError<NativeError>>,
     ) -> Self {
         Self {
             primary: Box::new(primary),
+            operation,
             completion,
             stop_report,
             terminal_report,
@@ -218,6 +222,12 @@ impl ServiceFailure {
     #[must_use]
     pub fn primary(&self) -> &FixtureError {
         &self.primary
+    }
+
+    /// Read the sole later operation failure without changing cleanup's meaning.
+    #[must_use]
+    pub const fn operation(&self) -> Option<WorkerError> {
+        self.operation
     }
 
     /// Read the sole later failed completion observation, if any.

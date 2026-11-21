@@ -11,6 +11,9 @@
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
 mod diagnostics;
+#[cfg(test)]
+#[forbid(unsafe_code)]
+mod engine_worker;
 mod error;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]

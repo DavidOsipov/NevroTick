@@ -108,6 +108,7 @@ fn fixture_variant_categories_are_distinct_and_have_the_declared_source_presence
         (
             FixtureError::Cleanup(ServiceFailure::new(
                 FixtureError::Worker(WorkerError::Preparation),
+                None,
                 Some(WorkerError::Cleanup),
                 None,
                 None,
@@ -157,6 +158,7 @@ fn worker_cleanup_facts_retain_the_primary_and_each_bounded_secondary() -> Resul
     let terminal = NativeError::new(NativeOperation::Status, 719);
     let facts = ServiceFailure::new(
         FixtureError::Lifecycle(LifecycleError::Report(first)),
+        Some(WorkerError::Running),
         Some(WorkerError::Cleanup),
         Some(LifecycleError::Report(stop)),
         Some(LifecycleError::Report(terminal)),
@@ -166,6 +168,7 @@ fn worker_cleanup_facts_retain_the_primary_and_each_bounded_secondary() -> Resul
         &FixtureError::Lifecycle(LifecycleError::Report(first)),
     );
     assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+    assert_eq!(facts.operation(), Some(WorkerError::Running));
     assert_eq!(facts.stop_report(), Some(&LifecycleError::Report(stop)));
     assert_eq!(
         facts.terminal_report(),

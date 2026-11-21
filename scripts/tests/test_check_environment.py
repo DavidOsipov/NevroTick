@@ -323,6 +323,33 @@ class CargoContextTests(unittest.TestCase):
 
 
 class ProcessTests(unittest.TestCase):
+    def test_resource_guard_stops_only_owned_command_and_retains_reason(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            marker = Path(temporary) / "owned-child-ready"
+            def guard():
+                return "FREE_MEMORY" if marker.is_file() else None
+            result = ENV.run([sys.executable, "-c",
+                              "from pathlib import Path; import sys,time; Path(sys.argv[1]).write_text('ready'); time.sleep(10)",
+                              str(marker)], cwd=Path(temporary), timeout=2, resource_guard=guard)
+            self.assertEqual(marker.read_text(), "ready")
+        self.assertEqual(result["failure"], "resource stop: FREE_MEMORY")
+        self.assertNotEqual(result["exit_code"], 0)
+
+    def test_resource_guard_healthy_neighbor_keeps_normal_success(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result = ENV.run([sys.executable, "-c", "print('RESOURCE_HEALTHY')"],
+                             cwd=Path(temporary), timeout=2, resource_guard=lambda: None)
+        self.assertEqual(result["exit_code"], 0)
+        self.assertIsNone(result["failure"])
+        self.assertIn("RESOURCE_HEALTHY", result["output"])
+
+    def test_resource_guard_rejects_invalid_callback_and_reason(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for guard in ("not-a-callback", lambda: False, lambda: "arbitrary secret text"):
+                with self.subTest(guard_type=type(guard).__name__), self.assertRaises(ENV.Incomplete):
+                    ENV.run([sys.executable, "-c", "import time; time.sleep(10)"],
+                            cwd=Path(temporary), timeout=2, resource_guard=guard)
+
     def test_invalid_output_budget_rejects_before_launch(self):
         for budget in (0, -1, True, None, "8", ENV.MAX_REQUESTED_OUTPUT + 1):
             with self.subTest(budget=budget), patch.object(ENV.subprocess, "Popen") as launch:

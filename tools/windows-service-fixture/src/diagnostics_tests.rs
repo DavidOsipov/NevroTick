@@ -48,7 +48,8 @@ fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
         25
     );
     let nested = FixtureError::Cleanup(ServiceFailure::new(
-        FixtureError::Cleanup(ServiceFailure::new(failure, None, None, None)),
+        FixtureError::Cleanup(ServiceFailure::new(failure, None, None, None, None)),
+        Some(WorkerError::Running),
         Some(WorkerError::Cleanup),
         None,
         None,
@@ -80,6 +81,7 @@ fn literal_events_reach_both_routes_with_explicit_version_and_role() {
                 &LifecycleError::ReportingFailed,
             )),
             Event::Finished,
+            Event::OperationFailure(FailureCode::from_worker(WorkerError::Running)),
         ] {
             diagnostics.emit(event);
         }
@@ -92,6 +94,7 @@ fn literal_events_reach_both_routes_with_explicit_version_and_role() {
             [1, role_code, 6, 2, 10, 6, 0, 0, 0],
             [1, role_code, 7, 2, 13, 7, 0, 0, 0],
             [1, role_code, 8, 1, 0, 8, 0, 0, 0],
+            [1, role_code, 9, 2, 22, 9, 0, 0, 0],
         ];
         assert_eq!(diagnostics.required().records(), expected);
         assert_eq!(

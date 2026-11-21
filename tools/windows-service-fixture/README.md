@@ -95,7 +95,34 @@ when it is the first failure; an earlier original cause retains priority.
 Terminal status must be Failed in either case. This inert fixture exception is
 neither product clock recovery nor an adopted native fault policy.
 
-The fixture creates or changes no service, account, token, privilege, protected
+The private S3.1 worker interface additionally distinguishes unmarked Pending,
+a terminal return marker awaiting physical thread exit/join, and actual Finished.
+Finished carries separate optional operation and cleanup facts; health carries
+the same tagged kinds and never acknowledges completion. Stop fences admission
+before cancellation and captures both Finished facts even when health was never
+observed. The first cause retains priority; one distinct later operation and one
+later cleanup fact occupy fixed slots beside the existing status failures.
+`ServiceFailure::operation()` exposes the secondary operation fact;
+`completion()` continues to expose cleanup. Required event 9 reports each retained
+operation slot with ERROR severity and fixed worker cause codes. Event IDs 1–8,
+nine-byte records and each sixteen-record route retain their meanings and limits.
+
+For the test-only real-thread composition, a current terminal marker permits a
+distinct join-tail wait through the owner's existing wait primitive. Its requested
+duration is at most 20 ms, clamped to the original remaining phase deadline before
+expiry. Exact expiry first records failure; subsequent marker-gated waits observe
+only actual exit/join and grant no new allowance, work, progress or Clean outcome.
+The request is neither a minimum polling interval nor a measured rate/latency
+guarantee: spurious/early wakes remain possible. Unmarked Pending stays event
+driven after expiry. On sticky clock reversal the host discards its phase deadline
+and performs no further Clock reads or fallback deadline arithmetic. Shared
+`ServiceLifecycle` failed-stop bookkeeping still consumes the historical last
+trusted observation; it supplies no trusted host allowance. Only this marked
+real-thread tail may request the fixed relative cleanup wait with unusable time.
+The default inert worker still completes without that wait. Neither path provides
+native recovery, termination or performance qualification.
+
+The native executable defaults create or change no service, account, token, privilege, protected
 file, policy, Windows clock, network connection, DNS request, IPC endpoint or
 persistent state. It has no installer, shell command execution, wrapper, automatic
 restart, elevation or additional runtime.
@@ -103,12 +130,17 @@ restart, elevation or additional runtime.
 The exact external Windows edge is existing `windows-sys` 0.61.2, defaults off,
 with `Win32_Foundation`, `Win32_Security`, `Win32_System_Services` and
 `Win32_System_Threading`. The other direct edge is the existing path-owned
-`windows-platform`. The lock preserves admitted registry identities. The retained
+`windows-platform`. The private test-only managed loopback composition adds the local Engine as a
+dev-dependency with defaults disabled. It exercises owned loopback UDP and one
+joined thread, while normal executable graphs retain the two existing edges.
+The lock preserves admitted registry identities. The retained
 graph/ordinary-check receipts cover their frozen candidate; changed source or
 features require refreshed admission before dependent checks.
 
-Pinned Rust 1.99.1 source selects the futex parker on the standard Windows target.
-`Thread::unpark` uses its existing parker, a Release atomic swap and, when needed,
+The historical Rust 1.99.1 source inspection selected the futex parker on the
+standard Windows target; current builds use the repository Rust 1.100 admission.
+In that inspected source, `Thread::unpark` uses its existing parker, a Release
+atomic swap and, when needed,
 `WakeByAddressSingle`; the inspected path has no allocator, Rust mutex, waiting,
 formatting or user callback. `OnceLock::get` is nonblocking. Thread/TLS initialization
 occurs in `ServiceMain` before handler registration, never in HandlerEx. This is
@@ -135,6 +167,34 @@ coverage/mutation, graph and actual native/package evidence remain separate.
 `qualification.py privilege-checkpoint` batches the existing twelve format,
 Clippy, debug/release test, doctest and rustdoc checks under one admission. The
 fixture metric consumer separately requires a current single-command
-`fixture-test` receipt. Use `metrics.py` for the host/error/diagnostics gates;
-platform-only measurements do not qualify those callers. The existing W11 task
-retains both evidence chains and their native limits.
+`fixture-test` receipt. `metrics.py coverage` selects host, error, diagnostics
+and the private test-only Engine worker. `enumerate`/`mutation` retain the existing
+three native cargo-mutants owners. Native execution uses the pinned supported
+`--in-place` mode in a complete private derivative, with one mutation thread
+and only the selected file writable through both aliases. Manifests, tests,
+dependencies and the original base remain read-only; full restoration is checked
+after each owner. The worker is omitted by ordinary discovery;
+`worker-enumerate` admits its separate complete direct-file inventory, and
+`worker-replay-pilot`/`worker-replay` require an independently reviewed current
+inventory. They retain raw direct identities and actual Build/Test results, never
+native cargo-mutants outcomes. A pilot earns no full-file score. Full replay
+retains exact worker overlays, complete reconstruction identities and command
+links while retiring only checked private derivatives. Independently verify all
+archived overlays after the last subprocess before accepting qualification.
+
+The runner keeps a 4-GiB disk and 1-GiB available-memory reserve during commands;
+metric exports explicitly preserve 4 GiB before and during copying. Original inputs stay read-only; explicit private native mutation outputs are
+confined to the selected file at both namespace aliases. Each replay
+starts from an absent/empty private target, then requires successful package-only
+Cargo cleaning and fresh fixture libtest artifacts for variants and restoration.
+Platform-only measurements do not qualify these callers. The existing W11 task
+retains the exact candidates, first failures and native/production limits.
+
+The configured Linux runner admits the observed core collector before abort
+controls. File collectors use process RLIMIT_CORE 0; pipe collectors use the
+Linux sentinel 1 that refuses before launching the collector. Both soft and hard
+limits are checked. Socket collectors remain unadmitted. This changes no host
+core_pattern, trust or protection setting. The matching WSL kernel source is
+[Microsoft coredump_pipe](https://github.com/microsoft/WSL2-Linux-Kernel/blob/linux-msft-wsl-6.18.58.1/fs/coredump.c#L917-L942);
+child native signal/core observations remain execution evidence, not a universal
+crash-handler qualification.
