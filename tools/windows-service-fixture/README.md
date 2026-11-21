@@ -167,8 +167,10 @@ coverage/mutation, graph and actual native/package evidence remain separate.
 `qualification.py privilege-checkpoint` batches the existing twelve format,
 Clippy, debug/release test, doctest and rustdoc checks under one admission. The
 fixture metric consumer separately requires a current single-command
-`fixture-test` receipt. `metrics.py coverage` selects host, error, diagnostics
-and the private test-only Engine worker. `enumerate`/`mutation` retain the existing
+`fixture-test` receipt. `metrics.py coverage` selects host, error, diagnostics,
+the private Engine worker and the portable threaded writer. The writer's unit
+controls live in a separate source file so they have no writer line credit.
+`enumerate`/`mutation` retain the existing
 three native cargo-mutants owners. Native execution uses the pinned supported
 `--in-place` mode in a complete private derivative, with one mutation thread
 and only the selected file writable through both aliases. Manifests, tests,
@@ -181,6 +183,11 @@ native cargo-mutants outcomes. A pilot earns no full-file score. Full replay
 retains exact worker overlays, complete reconstruction identities and command
 links while retiring only checked private derivatives. Independently verify all
 archived overlays after the last subprocess before accepting qualification.
+`writer-enumerate`, `writer-replay-pilot` and `writer-replay` use the same
+bounded direct replay with the exact `src/diagnostics_thread.rs` owner, a
+separate schema and a separate overlay archive. Writer behavioral credit
+requires the named queue or host writer control at its corresponding test
+file. The roster, complete enumeration and review bind the exact candidate.
 
 The runner keeps a 4-GiB disk and 1-GiB available-memory reserve during commands;
 metric exports explicitly preserve 4 GiB before and during copying. Original inputs stay read-only; explicit private native mutation outputs are

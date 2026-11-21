@@ -22,7 +22,6 @@ from pathlib import Path
 import re
 import resource
 import shutil
-import struct
 import time
 import tomllib
 
@@ -37,7 +36,10 @@ Incomplete = Q.Incomplete
 TARGET = "x86_64-pc-windows-msvc"
 BINS = ("nevrotick-lab-s02-engine", "nevrotick-lab-s02-broker")
 LIBRARY_SCOPES = ("crt/lib/x86_64", "sdk/lib/um/x86_64", "sdk/lib/ucrt/x86_64")
-MAX_PE_BYTES = 64 * 1024 * 1024
+PE_READER = "scripts/windows_pe.py"
+PE_SPEC = importlib.util.spec_from_file_location("windows_pe", ROOT / PE_READER)
+PE = importlib.util.module_from_spec(PE_SPEC)
+PE_SPEC.loader.exec_module(PE)
 
 
 def source_prerequisites(path):
@@ -87,98 +89,11 @@ def source_prerequisites(path):
 
 
 def pe_readback(path):
-    """Read bounded raw PE structures independently of Cargo/LLVM text output.
-
-    Enforce AMD64/PE32+, relocations, declared CFG/ASLR/NX/high-entropy VA,
-    strict CET metadata, restrictive loader flags and no writable executable
-    section. These are image declarations, never effective Windows policy.
-    """
-    Q.require(path.is_file() and not path.is_symlink() and path.stat().st_size <= MAX_PE_BYTES,
-              "PE must be a bounded regular emitted file.")
-    data = path.read_bytes()
-
-    def unpack(fmt, offset):
-        """Decode only complete fields inside this bounded immutable image."""
-        size = struct.calcsize(fmt)
-        Q.require(type(offset) is int and 0 <= offset <= len(data) - size, "PE field exceeds file bounds.")
-        return struct.unpack_from(fmt, data, offset)[0]
-
-    Q.require(len(data) >= 64 and data[:2] == b"MZ", "PE has no complete DOS header.")
-    pe = unpack("<I", 60)
-    Q.require(64 <= pe <= 1024 * 1024 and data[pe:pe + 4] == b"PE\0\0", "Invalid PE header location.")
-    Q.require(unpack("<H", pe + 4) == 0x8664, "Image is not AMD64.")
-    count, optional_size = unpack("<H", pe + 6), unpack("<H", pe + 20)
-    characteristics = unpack("<H", pe + 22)
-    optional = pe + 24
-    Q.require(1 <= count <= 96 and optional_size >= 240 and unpack("<H", optional) == 0x20B,
-              "Image is not a complete bounded PE32+ image.")
-    Q.require(characteristics & 0x22 == 0x22 and characteristics & 0x2001 == 0,
-              "Image lacks executable/large-address support or is a DLL/relocation-stripped image.")
-    dll = unpack("<H", optional + 70)
-    Q.require(dll & 0x4160 == 0x4160, "Required CFG/ASLR/NX/high-entropy declarations are missing.")
-    Q.require(unpack("<H", optional + 68) == 3, "Fixed lab executable subsystem changed.")
-    Q.require(unpack("<I", optional + 108) >= 16, "PE directory table is incomplete.")
-    sections = []
-    for number in range(count):
-        section = optional + optional_size + number * 40
-        virtual_size, rva = unpack("<I", section + 8), unpack("<I", section + 12)
-        raw_size, raw_offset = unpack("<I", section + 16), unpack("<I", section + 20)
-        flags = unpack("<I", section + 36)
-        Q.require(raw_offset <= len(data) and raw_size <= len(data) - raw_offset, "Section exceeds file.")
-        Q.require(flags & 0xA0000000 != 0xA0000000, "Image has a writable executable section.")
-        sections.append((rva, virtual_size, raw_offset, raw_size))
-
-    def file_offset(rva, size):
-        """Map exactly one complete file-backed RVA span; reject ambiguity and zero-fill."""
-        matches = [raw + rva - base for base, virtual, raw, length in sections
-                   if base <= rva and rva - base <= length and size <= length - (rva - base)
-                   and rva - base + size <= max(virtual, length)]
-        Q.require(len(matches) == 1, "PE RVA span has no unique complete file-backed section.")
-        return matches[0]
-
-    def directory(number):
-        """Read one fixed PE32+ data-directory pair."""
-        return unpack("<I", optional + 112 + number * 8), unpack("<I", optional + 116 + number * 8)
-
-    reloc_rva, reloc_size = directory(5)
-    Q.require(reloc_rva != 0 and reloc_size >= 8, "Relocation directory is missing.")
-    file_offset(reloc_rva, reloc_size)
-    config_rva, config_size = directory(10)
-    Q.require(config_rva != 0 and config_size >= 148, "Complete CFG load configuration is missing.")
-    load = file_offset(config_rva, config_size)
-    Q.require(148 <= unpack("<I", load) <= config_size, "Load configuration size is inconsistent.")
-    dependent = unpack("<H", load + 78)
-    guard = unpack("<I", load + 144)
-    Q.require(dependent == 0xA00, "Restrictive dependent-load declaration changed.")
-    Q.require(guard & 0x500 == 0x500 and unpack("<Q", load + 128) != 0
-              and unpack("<Q", load + 136) > 0, "CFG instrumentation/function-table declarations are missing.")
-    debug_rva, debug_size = directory(6)
-    Q.require(debug_size > 0 and debug_size % 28 == 0 and debug_size <= 28 * 128,
-              "Debug-directory extent is missing or invalid.")
-    debug = file_offset(debug_rva, debug_size)
-    cet, codeview = [], []
-    for number in range(debug_size // 28):
-        entry = debug + number * 28
-        kind, size = unpack("<I", entry + 12), unpack("<I", entry + 16)
-        raw = unpack("<I", entry + 24)
-        if kind == 20:
-            Q.require(size == 4, "Extended DLL characteristics have an unexpected shape.")
-            cet.append(unpack("<I", raw))
-        elif kind == 2:
-            Q.require(24 <= size <= 4096 and raw <= len(data) - size and data[raw:raw + 4] == b"RSDS",
-                      "CodeView record is incomplete.")
-            codeview.append(data[raw + 24:raw + size].split(b"\0", 1)[0].decode("utf-8"))
-    Q.require(len(cet) == 1 and cet[0] & 3 == 3 and cet[0] & 0x3C == 0,
-              "Strict CET compatibility is missing or relaxed/downgraded.")
-    pdb_names = {path.with_suffix(".pdb").name, path.stem.replace("-", "_") + ".pdb"}
-    Q.require(len(codeview) == 1 and codeview[0].replace("\\", "/").split("/")[-1] in pdb_names,
-              "Image does not identify its matching PDB basename.")
-    return {"machine": "AMD64", "format": "PE32+", "subsystem": "console", "dll_characteristics": dll,
-            "file_characteristics": characteristics, "sections": count, "relocations_bytes": reloc_size,
-            "dependent_load_flags": dependent, "guard_flags": guard, "guard_function_count": unpack("<Q", load + 136),
-            "extended_dll_characteristics": cet[0], "codeview_path": codeview[0],
-            "limit": "Static image declarations only; no native mitigation or service behavior is qualified."}
-
+    """Use the shared static PE reader with the selected fixture console role."""
+    try:
+        return PE.pe_readback(path, subsystem="console")
+    except ValueError as error:
+        raise Incomplete(str(error)) from error
 
 def run(args):
     """Admit current source/SDK/tools, then perform only the explicitly selected Linux lane."""
@@ -200,7 +115,8 @@ def run(args):
     try:
         policy, identity, checkpoint, prerequisites = source_prerequisites(args.source_checkpoint)
         record.update(source_sha256=identity, candidate_sha256=checkpoint["candidate_sha256"],
-                      recipe_sha256=C.PRODUCT.sha256(ROOT / SELF), prerequisite_records_sha256=prerequisites,
+                      recipe_sha256=C.PRODUCT.sha256(ROOT / SELF), pe_reader_sha256=C.PRODUCT.sha256(ROOT / PE_READER),
+                      prerequisite_records_sha256=prerequisites,
                       checkpoint_path=str(args.source_checkpoint.resolve()), checkpoint_sha256=C.PRODUCT.sha256(args.source_checkpoint.resolve()),
                       index_before=Q.index_identity())
         admitted = C.ANALYSIS.admit(ROOT, profile="stable-core")
@@ -250,6 +166,7 @@ def run(args):
             Q.require(Q.source_identity()[1] == identity and C.PRODUCT.inventory(source) == identity,
                       "Current or sealed source changed.")
             Q.require(C.PRODUCT.sha256(ROOT / SELF) == record["recipe_sha256"]
+                      and C.PRODUCT.sha256(ROOT / PE_READER) == record["pe_reader_sha256"]
                       and C.PRODUCT.sha256(config) == config_sha and C.PRODUCT.sha256(wrapper) == wrapper_sha,
                       "Cross recipe, sealed configuration or linker changed.")
             Q.require(Q.index_identity() == record["index_before"], "Staging bytes changed during cross lane.")
@@ -312,20 +229,24 @@ def run(args):
                     Q.require(len(pdbs) == 1 and not pdbs[0].is_symlink(), "Matching emitted PDB is missing or ambiguous.")
                     pdb = pdbs[0]
                     readback = pe_readback(image)
+                    image_hash = readback["image_sha256"]
                     Q.require(readback["codeview_path"].replace("\\", "/").split("/")[-1] == pdb.name,
                               "Selected PDB does not match the image's CodeView basename.")
                     observed = execute([str(inspector), "--file-headers", "--coff-load-config", "--coff-debug-directory",
                                         "--coff-imports", str(Path("/work") / image.relative_to(work))])
                     Q.require(observed["exit_code"] == 0, "Independent LLVM PE inspection failed.")
-                    for original in (image, pdb):
+                    Q.require(C.PRODUCT.sha256(image) == image_hash, "PE changed after hardening readback.")
+                    pdb_hash = C.PRODUCT.sha256(pdb)
+                    for original, digest in ((image, image_hash), (pdb, pdb_hash)):
                         copied = artifacts / original.name
                         shutil.copyfile(original, copied)
-                        Q.require(C.PRODUCT.sha256(copied) == C.PRODUCT.sha256(original), "Copied artifact changed.")
+                        Q.require(C.PRODUCT.sha256(copied) == C.PRODUCT.sha256(original) == digest,
+                                  "Copied artifact changed.")
                     (artifacts / (name + "-llvm-readobj.txt")).write_text(observed["output"])
                     record["artifacts"][name] = {"image": str((artifacts / image.name).relative_to(ROOT)),
-                                                 "image_sha256": C.PRODUCT.sha256(image),
+                                                 "image_sha256": image_hash,
                                                  "pdb": str((artifacts / pdb.name).relative_to(ROOT)),
-                                                 "pdb_sha256": C.PRODUCT.sha256(pdb), "raw_pe": readback}
+                                                 "pdb_sha256": pdb_hash, "raw_pe": readback}
                 Q.require(len({item["image_sha256"] for item in record["artifacts"].values()}) == 2,
                           "Distinct fixed-role compositions unexpectedly have identical bytes.")
         check()

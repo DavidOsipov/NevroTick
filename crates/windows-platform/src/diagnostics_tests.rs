@@ -8,8 +8,8 @@ use std::time::{Duration, Instant};
 use super::{
     Candidate, Component, ConsumerState, Counter, DecodeError, DecodedRecord,
     DiagnosticObservation, DiagnosticSnapshot, ImportanceMask, LifecycleObservationClaim,
-    MemoryConsumer, MemoryRoutes, ObservationReason, OptionalProfile, PrimaryCause, RouteHealth,
-    Router, ServiceEvent,
+    MemoryConsumer, MemoryRoutes, ObservationReason, OptionalProfile, PrimaryCause, QueueState,
+    RouteHealth, Router, ServiceEvent, WriterRecord,
 };
 use garde::Validate;
 
@@ -434,4 +434,143 @@ fn pending_capacity_and_reached_full_consumer_have_distinct_loss() {
         0
     );
     assert_eq!(snapshot.required().health().queue_full().value(), 4);
+}
+
+/// Eligible originals retain their fields with optional routing Off.
+///
+/// # Panics
+/// Fails if the independent oracle observes a contract violation.
+#[test]
+fn writer_fields_come_from_original_required_admission() {
+    let mut actual: Router = Router::new(
+        Component::ClockBroker,
+        OptionalProfile::Off,
+        ImportanceMask::all(),
+        MemoryRoutes::available(),
+    );
+    assert!(
+        actual
+            .emit_for_writer(ServiceEvent::StartObserved, at(100))
+            .is_none()
+    );
+    let running: Option<WriterRecord> =
+        actual.emit_for_writer(ServiceEvent::RunningAcknowledged, at(200));
+    assert!(running.is_some());
+    if let Some(record) = running {
+        assert_eq!(record.component(), Component::ClockBroker);
+        assert_eq!(record.sequence(), 2);
+        assert_eq!(
+            record.observation(),
+            LifecycleObservationClaim::LastAccepted(200)
+        );
+        assert_eq!(record.event_id(), 2);
+        assert_eq!(record.cause_code(), 0);
+    }
+    let historical: DiagnosticObservation = DiagnosticObservation {
+        reason: ObservationReason::ActualClockFault,
+        elapsed_ns: 230,
+    };
+    let failure: Option<WriterRecord> = actual.emit_for_writer(
+        ServiceEvent::PrimaryFailure(PrimaryCause::LifecycleReport),
+        historical,
+    );
+    assert!(failure.is_some());
+    if let Some(record) = failure {
+        assert_eq!(record.component(), Component::ClockBroker);
+        assert_eq!(record.sequence(), 3);
+        assert_eq!(
+            record.observation(),
+            LifecycleObservationClaim::HistoricalAfterClockFault(230)
+        );
+        assert_eq!(record.event_id(), 4);
+        assert_eq!(record.cause_code(), 10);
+    }
+    let pending: DiagnosticSnapshot = actual.snapshot();
+    assert_eq!(pending.required().pending(), 3);
+    assert_eq!(pending.required().health().consumer_attempts().value(), 0);
+    assert_eq!(pending.optional().health().filtered().value(), 3);
+    let finished: DiagnosticSnapshot = actual.finish();
+    assert_eq!(sequences(&finished), [1, 2, 3]);
+    // Inspect the retained wire values without optional-mask arithmetic.
+    assert_eq!(
+        finished.required().history().get(1).map(|bytes| bytes[5]),
+        Some(5)
+    );
+    assert_eq!(
+        finished.required().history().get(2).map(|bytes| bytes[5]),
+        Some(2)
+    );
+    assert_eq!(finished.optional().pending(), 0);
+    assert!(finished.optional().history().is_empty());
+}
+
+/// Optional admission supplies no writer record when the required queue is absent.
+///
+/// # Panics
+/// Fails if the independent oracle observes a contract violation.
+#[test]
+fn writer_ignores_optional_admission_after_required_queue_refusal() {
+    let routes: MemoryRoutes =
+        MemoryRoutes::available().with_queue_states(QueueState::Unavailable, QueueState::Available);
+    let mut actual: Router = Router::new(
+        Component::Engine,
+        OptionalProfile::Info,
+        ImportanceMask::all(),
+        routes,
+    );
+    assert!(
+        actual
+            .emit_for_writer(ServiceEvent::RunningAcknowledged, at(0))
+            .is_none()
+    );
+    let pending: DiagnosticSnapshot = actual.snapshot();
+    assert_eq!(pending.required().health().queue_unavailable().value(), 1);
+    assert_eq!(pending.required().pending(), 0);
+    assert_eq!(pending.optional().pending(), 1);
+    let finished: DiagnosticSnapshot = actual.finish();
+    assert_eq!(finished.optional().history().len(), 1);
+}
+
+/// Writer admission follows queue capacity, its spent credits and the producer seal.
+///
+/// # Panics
+/// Fails if the independent oracle observes a contract violation.
+#[test]
+fn writer_distinguishes_queue_refusal_from_later_consumer_refusal() {
+    let routes: MemoryRoutes = MemoryRoutes::new(
+        MemoryConsumer::new(ConsumerState::Full),
+        MemoryConsumer::new(ConsumerState::Available),
+    );
+    let mut actual: Router = Router::new(
+        Component::Engine,
+        OptionalProfile::Off,
+        ImportanceMask::all(),
+        routes,
+    );
+    for event in [
+        ServiceEvent::StartObserved,
+        ServiceEvent::RunningAcknowledged,
+        ServiceEvent::AdmissionClosed,
+        ServiceEvent::Finished,
+    ] {
+        for _ in 0..4 {
+            actual.emit(event, at(0));
+        }
+    }
+    let failure: ServiceEvent = ServiceEvent::PrimaryFailure(PrimaryCause::Native);
+    assert!(actual.emit_for_writer(failure, at(0)).is_none());
+    for sequence in [18_u64, 19, 20] {
+        actual.pump_one();
+        let record: Option<WriterRecord> = actual.emit_for_writer(failure, at(0));
+        assert_eq!(record.as_ref().map(WriterRecord::sequence), Some(sequence));
+    }
+    actual.pump_one();
+    assert!(actual.emit_for_writer(failure, at(0)).is_none());
+    let finished: DiagnosticSnapshot = actual.finish();
+    assert_eq!(finished.required().health().queue_full().value(), 1);
+    assert_eq!(finished.required().health().suppressed().value(), 1);
+    assert_eq!(finished.required().health().consumer_full().value(), 19);
+    assert!(finished.required().history().is_empty());
+    assert!(actual.emit_for_writer(failure, at(1_000_000_000)).is_none());
+    assert_eq!(actual.snapshot().health().sealed_loss().value(), 1);
 }

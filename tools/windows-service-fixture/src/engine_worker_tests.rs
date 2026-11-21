@@ -1164,6 +1164,7 @@ fn real_stale_engine_report_closes_service_admission_without_erasing_the_report(
     );
     let report: &AcquisitionReport = rig.report()?;
     assert_eq!(report.series().end(), SeriesEnd::Stale);
+    assert_eq!(report.series().collection_end(), SeriesEnd::Stale);
     assert_eq!(report.series().admitted_sample_count(), 0);
     assert!(report.series().primary_failure().is_none());
     assert!(peer_has_no_datagram(&peer)?);
@@ -1264,36 +1265,20 @@ fn cleanup_failure_policy_reports_either_or_both_failures() {
         );
     }
 
-    // Each row declares the operation result directly from the accepted contract.
-    // Cleanup-only Failure must remain distinct from an independent operation failure.
-    let operation_cases: [(SeriesEnd, bool, bool, bool); 20] = [
-        (SeriesEnd::Completed, false, false, false),
-        (SeriesEnd::Completed, false, true, false),
-        (SeriesEnd::Completed, true, false, true),
-        (SeriesEnd::Completed, true, true, true),
-        (SeriesEnd::Stopped, false, false, false),
-        (SeriesEnd::Stopped, false, true, false),
-        (SeriesEnd::Stopped, true, false, true),
-        (SeriesEnd::Stopped, true, true, true),
-        (SeriesEnd::Stale, false, false, true),
-        (SeriesEnd::Stale, false, true, true),
-        (SeriesEnd::Stale, true, false, true),
-        (SeriesEnd::Stale, true, true, true),
-        (SeriesEnd::SeriesDeadline, false, false, false),
-        (SeriesEnd::SeriesDeadline, false, true, false),
-        (SeriesEnd::SeriesDeadline, true, false, true),
-        (SeriesEnd::SeriesDeadline, true, true, true),
-        (SeriesEnd::Failure, false, false, true),
-        (SeriesEnd::Failure, false, true, false),
-        (SeriesEnd::Failure, true, false, true),
-        (SeriesEnd::Failure, true, true, true),
+    // The original decision already includes Engine-owned primary validation.
+    // Cleanup is classified separately and cannot change these expected facts.
+    let operation_cases: [(SeriesEnd, bool); 5] = [
+        (SeriesEnd::Completed, false),
+        (SeriesEnd::Stopped, false),
+        (SeriesEnd::Stale, true),
+        (SeriesEnd::SeriesDeadline, false),
+        (SeriesEnd::Failure, true),
     ];
-    for case in operation_cases {
-        let (end, primary_failed, cleanup_failed, expected): (SeriesEnd, bool, bool, bool) = case;
+    for (end, expected) in operation_cases {
         assert_eq!(
-            series_operation_failed(end, primary_failed, cleanup_failed),
+            series_operation_failed(end),
             expected,
-            "end={end:?}, primary_failed={primary_failed}, cleanup_failed={cleanup_failed}"
+            "collection_end={end:?}"
         );
     }
 }

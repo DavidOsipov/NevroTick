@@ -1630,6 +1630,7 @@ fn cleanup_boundary_neighbors() -> Result<(), Box<dyn Error>> {
                 SeriesEnd::Stopped
             }
         );
+        assert_eq!(report.collection_end(), SeriesEnd::Stopped);
         assert!(report.primary_failure().is_none());
         assert_eq!(
             report.stop_cleanup_failure().map(FailureSummary::code),
@@ -1681,13 +1682,14 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
         ),
         "valid original series completion was refused",
     )?;
-    let partial = receiver.finish(SeriesEnd::Failure, Some(PilotError::WireSetup));
+    let partial = receiver.finish(SeriesEnd::Stale, Some(PilotError::WireSetup));
     let report = reconcile_cleanup(
         partial,
         Err(PilotError::ControlTask),
         Err(PilotError::GenerationExhausted),
     );
     assert_eq!(report.end(), SeriesEnd::Failure);
+    assert_eq!(report.collection_end(), SeriesEnd::Failure);
     assert!(report.primary_failure().is_some());
     assert!(report.stop_cleanup_failure().is_some());
     assert!(report.invalidate_cleanup_failure().is_some());
@@ -1721,6 +1723,7 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
     }
     let invalid = unmanaged_receiver(context(), peer(), None).finish(SeriesEnd::Completed, None);
     assert_eq!(invalid.end(), SeriesEnd::Failure);
+    assert_eq!(invalid.collection_end(), SeriesEnd::Failure);
     assert!(invalid.primary_failure().is_some());
     assert_eq!(
         invalid
@@ -2755,6 +2758,69 @@ fn check_checkpoint_facts(
     Ok(())
 }
 
+/// Reap a genuine timer-action error after the actual collection decision.
+/// The private generation-exhaustion fault changes the original watch owner only
+/// after collection; no report, cleanup error or timer return is fabricated.
+/// Already-latched Stop remains a healthy neighbor: invalidation cannot fail there.
+/// # Errors
+/// Preserve timer setup, finite completion wait or actual cleanup refusal.
+/// # Panics
+/// Require retained collection and original records beside the typed timer failure.
+async fn collection_after_failed_timer(
+    report: SeriesReport,
+    handle: ControlHandle,
+    expected: SeriesEnd,
+) -> Result<SeriesReport, Box<dyn Error>> {
+    assert_eq!(report.end(), expected);
+    assert_eq!(report.collection_end(), expected);
+    if handle.sender.borrow().stop {
+        return Ok(report);
+    }
+    handle
+        .sender
+        .send_modify(|state: &mut Control| state.epoch = u64::MAX);
+    let mut observation: watch::Receiver<Control> = handle.sender.subscribe();
+    let when: Instant = Instant::now()
+        .checked_add(Duration::from_millis(100))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let started: Result<Option<crate::TimerJob>, PilotError> =
+        start_timer(Some(when), handle, TimerAction::Invalidate);
+    if Instant::now() >= when && !matches!(&started, Ok(Some(_))) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "future invalidation fixture expired before its own task was established",
+        )
+        .into());
+    }
+    let job: crate::TimerJob =
+        started?.ok_or("future invalidation timer did not create its owned task")?;
+    let notification: Result<Result<(), watch::error::RecvError>, tokio::time::error::Elapsed> =
+        tokio::time::timeout(CHECKPOINT_WAIT, observation.changed()).await;
+    let finished: bool = job.is_finished();
+    // Always abort/reap the actual job before reporting a fixture timeout.
+    let cleanup: Result<(), PilotError> = finish_timer(Some(job)).await;
+    notification??;
+    assert!(finished);
+    assert!(observation.borrow().stop);
+    assert!(matches!(cleanup, Err(PilotError::GenerationExhausted)));
+    let report: SeriesReport = reconcile_cleanup(report, Ok(()), cleanup);
+    assert_eq!(report.end(), SeriesEnd::Failure);
+    assert_eq!(
+        report.collection_end(),
+        expected,
+        "SERIES-original-collection-survives-reaped-timer-failure"
+    );
+    assert!(report.primary_failure().is_none());
+    assert!(report.stop_cleanup_failure().is_none());
+    assert_eq!(
+        report
+            .invalidate_cleanup_failure()
+            .map(FailureSummary::code),
+        Some("generation_exhausted")
+    );
+    Ok(report)
+}
+
 /// Execute the actual series with a synchronized external final control request.
 /// # Errors
 /// Preserve real preparation/runtime/peer/handshake failures after joining the worker.
@@ -2788,6 +2854,7 @@ fn final_checkpoint_case(
         "independently valid distinct checkpoint tokens were refused",
     )?;
     let (prepared, control) = preparation?;
+    let timer_control: ControlHandle = control.clone();
     let shared = context();
     let deadline = shared
         .origin
@@ -2854,6 +2921,12 @@ fn final_checkpoint_case(
         report.end() == expected,
         "final series summary ignored its serialized current control",
     )?;
+    let report: SeriesReport = runtime.block_on(collection_after_failed_timer(
+        report,
+        timer_control,
+        expected,
+    ))?;
+    check_checkpoint_facts(&report, &observed)?;
     Ok(())
 }
 

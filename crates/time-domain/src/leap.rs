@@ -322,6 +322,8 @@ pub struct LeapInterpretation {
     events: LeapEventKnowledge,
     /// Event records whose effective instants belong to the inclusive interval.
     known_transition_count: usize,
+    /// First possible leap-effective midnight in the uncovered part of the interval.
+    first_uncovered_month_boundary: Option<UtcCoordinateQ32>,
 }
 
 impl LeapInterpretation {
@@ -357,6 +359,17 @@ impl LeapInterpretation {
     #[must_use]
     pub const fn known_transition_count(self) -> usize {
         self.known_transition_count
+    }
+
+    /// Return the first UTC month start in the uncovered part of the queried interval.
+    ///
+    /// The date window includes both endpoints. A finite coverage cutoff is eligible
+    /// beginning at its exact tick, and the continuous UTC rule covers its first tick.
+    /// `None` means that the uncovered part contains no month start. Earlier recorded
+    /// events are reported separately. The candidate supplies calendar placement only.
+    #[must_use]
+    pub const fn first_uncovered_month_boundary(self) -> Option<UtcCoordinateQ32> {
+        self.first_uncovered_month_boundary
     }
 }
 
@@ -510,7 +523,8 @@ impl<'records> LeapKnowledge<'records> {
     /// No ambient date, mutation, allocation or effects are permitted. Event
     /// membership includes both endpoints; offset variation counts changes
     /// strictly after the earliest endpoint through the inclusive latest one.
-    /// At most 128 records are inspected, independently of interval width.
+    /// At most 128 records and 31 uncovered UTC day boundaries are inspected,
+    /// independently of interval width.
     /// Historical/finite coverage ends exclusively; the continuous rule starts
     /// inclusively. Touching boundaries bridge knowledge without an impulse,
     /// while a positive gap preserves unknown offset after the rule begins.

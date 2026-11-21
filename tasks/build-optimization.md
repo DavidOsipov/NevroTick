@@ -1727,3 +1727,160 @@ bytes and historical receipts intact. The current product priority remains
 [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 No runner implementation, tool admission, product/native execution, campaign
 restart or post-V1 formal work is performed by this follow-up.
+
+## Linked Windows PE hardening gate — 21 November 2026
+
+W11-W10/P6, CHECK-18/20/23. The configured Windows build now checks the
+hardening declarations on the actual UI and Observe executable bytes before
+accepting VERSIONINFO or exporting either image. It reuses the service
+fixture's static PE reader with separate GUI and console expectations. The
+bounded reader checks AMD64 PE32+, executable and relocation declarations,
+CFG, ASLR, DEP, high-entropy VA, strict CET, the selected dependent-load
+mask and the absence of writable executable sections. It bounds the
+file-backed CFG function table using its encoded stride, and checks that
+the RVA and on-disk pointer name the same CET and CodeView records.
+The parsed bytes' SHA-256 controls subsequent LLVM/readback and export.
+The selected PDB basename must agree with CodeView before either pair
+is copied. The service and Engine artifact owners use the same reader and
+keep the captured image digest through inspection and export.
+
+Build-security, package-artifact and regression skills guided the
+selection of actual image controls, the parser extraction and output
+custody. Microsoft Learn MCP confirmed the [PE CFG metadata layout](https://learn.microsoft.com/windows/win32/secbp/pe-metadata),
+[RVA and raw-pointer meanings](https://learn.microsoft.com/windows/win32/debug/pe-format#special-sections)
+and the [static dependent-load flag scope](https://learn.microsoft.com/cpp/build/reference/dependentloadflag).
+The parsed declarations and file-backed CFG extent keep their static
+scope. Code-path instrumentation, effective Windows mitigations, the
+per-role `0x800` import closure, package contents, signatures and
+installed trust retain their existing acceptance owners.
+
+On baseline `82ea4c68710f` with the prior verified VERSIONINFO working
+changes, the actual former consumer admitted both retained release images
+even with only `NX_COMPAT` cleared. The same modified bytes now fail the
+static check before LLVM runs. Both original artifacts still pass with
+their exact original build hashes. The reader controls also cover missing
+flags, wrong subsystem, bad CFG table spans, inconsistent debug addresses,
+relaxed CET, disallowed load flags, truncated images and nonregular or
+oversized inputs. Final host selections passed 141 product-verifier,
+93 Engine-admission, 12 VERSIONINFO and seven PE reader tests. The
+Engine admission control changes the artifact after its initial
+inspection. The old exporter accepted it and the repaired consumer
+refuses it. A separate product control accepts the exact CodeView
+basename and refuses the other allowed spelling before either copy.
+
+Independent review checked the combined helper bindings and found the
+inspection-to-copy identity gap and the PDB selection ambiguity. It
+accepted the follow-up guards. Two retained Engine facade images also
+passed the new static reader through the fixture's console adapter.
+Their former native and compile receipts retain their original scope.
+The actual NX controls are retained at
+`~/.local/share/nevrotick/windows-pe-admission-20261121.daxkxk4o/`.
+`red.json` has SHA-256 `6f3adbe69b990f5becb9810158cdfd2f17e5b2d7fdf5fdb9246e0951c7646557`
+and `green.json` has SHA-256 `2698b2cf80e4ac7f278aeb32fc4d5148c8f2506f5fd2a87f8d30802cbf1a6274`.
+
+The amended default `scripts/verify.py --lane windows` passed all 32
+configured rows. Rust 1.100.0 and LLVM RC 22.1.8 used the admitted vendor
+and MSVC libraries. The 637-input candidate's canonical map SHA-256 is
+`f4445b252e22c8bc646df4864313c0e5ec631604bcf708105c47d5f770318cc8`.
+Every input matched the working bytes after export. With six CPUs and an
+owned `/dev/shm` scratch directory, the run finished in 392.66 seconds
+within its 1,000-second budget. The scratch volume retained at least
+4.13 GiB free and the run retired the temporary build tree. The
+durable service-metric admission remains a separate ext4 requirement.
+
+Both final PE files report `0xC160` DLL characteristics, `0x10500` CFG
+flags, `0xA00` dependent-load flags and CET declarations `0x3`. The
+file-backed CFG table contains 7,914 UI entries and 302 Observe entries.
+The independent export inspection confirmed the exact two EXE/PDB pairs
+by image hash, CodeView GUID, age, and basename. It checked the complete
+five-file export inventory. The same directory retains the full records.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `fresh-build.json` | `f0058423d481da67119f4b892f55ddb32f99de47e8d24c85572672c007752cff` |
+| `fresh-build-custody.json` | `49a7c1fee2ef31f11aadaf0e5a49be890dc4ee0c80b9ebe400377c9a49347a90` |
+| `inspected-exports.json` | `f6a2487b0f474756d49d68e423771a38a597ef9f205cc656ba6515485477b9e1` |
+
+### Configured export needs EXE/PDB pair identity — 21 November 2026
+
+Under CHECK-18/20/23, the actual `export_windows_artifacts` accepted both
+genuine pairs and an Observe export using the genuine UI PDB under the exact
+`nevrotick_observe.pdb` basename. Both executable hashes stayed identical.
+Independent LLVM readback recorded Observe's expected CodeView GUID
+`5385F3A4-5460-E43A-4C4C-44205044422E` and the substituted PDB's actual GUID
+`E0A6EABA-C806-42DB-4C4C-44205044422E`. Both are age 1. The receiver checks
+the symbol basename and copy identity. Pair matching also requires the PDB
+signature and age. [Microsoft Learn](https://learn.microsoft.com/visualstudio/debugger/debug-interface-access/idiadatasource-loadandvalidatedatafrompdb?view=visualstudio)
+
+The offline readback used live exporter SHA-256
+`dd14e14624e0817cec3392d3801d43b3355bdccb036269e649e521b4668bf780`, the admitted
+retained images, a private output tree and independent readers. The receipt
+`pdb-pair-export-readback-20261121.json` under the same PE admission directory
+has SHA-256 `958ede85790a95c0dcc6760294098c539ba517758185a5ef254f440dd6d35c4e`.
+It preserves the initial import setup failure. The retained inputs and tool
+hashes matched at both bookends, and the probes retired scratch. The earlier
+real matching pairs retain their recorded scope.
+
+#### Pair admission implementation and controls
+
+The configured exporter loads `windows_pe.py` from its frozen source snapshot.
+It captures both regular PE/PDB pairs, compares the RSDS basename, GUID and age,
+then writes the inspected bytes. Both image hash checks and the source and
+output digest bookends remain in place. The reader follows the bounded MSF 7
+directory to the VC70 Info header. It rejects malformed extents, reserved pages
+and overlapping block references. The admitted emitter uses 4 KiB pages. A PE
+may be at most 64 MiB and a PDB at most 256 MiB, matching the existing file cap.
+This gate checks symbol identity. Debug stream payloads remain opaque.
+[LLVM MSF layout](https://llvm.org/docs/PDB/MsfFile.html) · [LLVM PDB info stream](https://llvm.org/docs/PDB/PdbStream.html)
+
+The maintained export function accepted the genuine retained pairs and their
+restored copies byte-for-byte. A same-name wrong-role PDB and a same-GUID
+wrong-age PDB both failed with an empty output directory. A separately seeded
+page-layout check executed 32 healthy two-page directories and 96 malformed
+neighbors, covering scattered page positions, directory aliases, stream aliases
+and an overlong directory map. Each case used a physical input and the real
+reader. The test corpus added no tool dependency.
+
+All 199 selected Python tests passed after restoring the existing vendor-first
+admission order. An initially oversized sparse PDB fixture was refused by the
+configured sandbox before the reader could run. The corrected fixture exercises
+the same size guard with a lower test-only bound. The exact isolated PE/PDB test
+command passed all ten cases before restarting the Windows row. The reported
+first attempt and its setup failure remain in the evidence directory.
+
+The `windows-pdb-pair-current-20261121.6Zfr92yL` evidence directory under
+`~/.local/share/nevrotick/` holds the current checks. The first retained-pair
+green receipt remains with the original PE evidence. A later I/O or source-drift
+failure can leave partial copied output. Such an exit is incomplete.
+
+The configured `--lane windows --profile default` replay passed all 32 rows
+on 637 inputs. The canonical source-map SHA-256 is
+`bdf556427cf0d885dbc0db5b15a75ebe15514b9077f82363e1050f97dfb36762` and the
+unchanged lockfile SHA-256 is
+`26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db`.
+It used the pinned Rust 1.100.0/MSVC cross toolchain and admitted libraries.
+The first stopped attempt and successful replay consumed 469.58 seconds,
+including admission and final custody, within the original 1,000-second
+allowance. The replay kept at least 4.13 GiB free in its owned scratch and
+retired that scratch after source and output verification.
+
+Independent `llvm-readobj` and `llvm-pdbutil` readback matched basename,
+GUID, age and the four emitted file hashes against the export receipt. The
+real export then accepted healthy and restored copies of the newly emitted
+pairs. It refused both a wrong-role PDB and a separate age-only change at the
+same Observe basename with zero destination files.
+
+| Evidence leaf | SHA-256 |
+| --- | --- |
+| `custody.json` (first attempt) | `65a2d201ea11068220550848679c5ac76bffe73beff88d1dc598f6c03713b721` |
+| `pdb-page-layout-controls.json` | `bfaa3c6750b4f192c2dad3c18d3738ec251a9e9096c69a09a5fe17ff0b44089a` |
+| `replay/final-python.json` | `847725c06a26ddda34df2a9ed1467c87c80ebb41476cd6393236adf145274dba` |
+| `replay/runner.json` | `941ebee105a151093cd1dda822d817ee37f922f7572aae01a3f4837b049ee7cf` |
+| `replay/custody.json` | `dae441d8c0dcb6242d5988f626da2715b99b7bdae05e49e978a365b05c11096e` |
+| `replay/independent-pair-readback.json` | `1e4b408b9b1230c977ba5b34bea0533ffb3a89d9b494bf5a4b1612c76af2bf59` |
+| `replay/fresh-pair-controls.json` | `9289e2686ca534bf8ea9aaa119e3a156bc22e1da7da0134754916ddb45d5c018` |
+
+The service fixture and Engine native reports establish byte custody. Semantic
+PDB pair admission remains open for those two exporters. The shared reader
+hash changes their future candidate bindings. Installed behavior and complete
+MSIX delivery remain under W11-W10 and their respective native owners.

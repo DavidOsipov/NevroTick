@@ -202,7 +202,7 @@ PRODUCT, ANALYSIS, ENV = ALLOCATION.PRODUCT, ALLOCATION.ANALYSIS, ALLOCATION.ENV
 PE = load("engine_native_pe", "scripts/cross-link-service-fixture.py")
 Incomplete = ENV.Incomplete
 EXTRAS = (SELF, LAUNCHER, CPU, FACADE_CONSUMER, "scripts/verify-time-domain-windows-allocation.py",
-          "scripts/cross-link-service-fixture.py", "tools/windows-service-fixture/qualification.py",
+          "scripts/cross-link-service-fixture.py", "scripts/windows_pe.py", "tools/windows-service-fixture/qualification.py",
           "scripts/portable-analysis.py", "scripts/prepare-product.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
           "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py",
           "scripts/tests/fixtures/engine-facade-fault-v19.rs.txt")
@@ -1091,17 +1091,20 @@ def build(args, report):
         inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
         for name, image in images.items():
             raw = PE.pe_readback(image)
+            image_hash = raw["image_sha256"]
             run(name + "-pe", [inspector, "--file-headers", "--coff-load-config", "--coff-debug-directory",
                                "--coff-imports", "/work/" + str(image.relative_to(work))])
+            require(PRODUCT.sha256(image) == image_hash, "Emitted image changed after hardening readback.")
             pdb = image.with_suffix(".pdb")
             require(pdb.is_file() and not pdb.is_symlink(), "Matching emitted PDB is absent.")
-            for original, destination in ((image, args.output_dir / (name + ".exe")),
-                                          (pdb, args.output_dir / (name + ".pdb"))):
+            pdb_hash = PRODUCT.sha256(pdb)
+            for original, destination, digest in ((image, args.output_dir / (name + ".exe"), image_hash),
+                                                  (pdb, args.output_dir / (name + ".pdb"), pdb_hash)):
                 shutil.copyfile(original, destination)
-                require(PRODUCT.sha256(destination) == PRODUCT.sha256(original), "Export changed emitted bytes.")
+                require(PRODUCT.sha256(destination) == PRODUCT.sha256(original) == digest,
+                        "Export changed emitted bytes.")
             report["artifacts"][name + ".exe"] = {"path": str(args.output_dir / (name + ".exe")),
-                                                 "sha256": PRODUCT.sha256(image), "pe": raw,
-                                                 "pdb_sha256": PRODUCT.sha256(pdb)}
+                                                 "sha256": image_hash, "pe": raw, "pdb_sha256": pdb_hash}
         build_completed = True
     except BaseException as error:
         primary_error = error

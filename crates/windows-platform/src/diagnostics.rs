@@ -11,12 +11,16 @@
 //! A legal external consumer reaches the real router and bounded memory sink:
 //! ```
 //! use windows_platform::diagnostics::{Component, DiagnosticObservation,
-//!     DiagnosticSnapshot, ImportanceMask, MemoryRoutes, OptionalProfile, Router, ServiceEvent};
+//!     DiagnosticSnapshot, ImportanceMask, MemoryRoutes, OptionalProfile, Router, ServiceEvent,
+//!     WriterRecord};
 //! let mut router: Router = Router::new(Component::Engine, OptionalProfile::Off,
 //!     ImportanceMask::all(), MemoryRoutes::available());
 //! router.emit(ServiceEvent::StartObserved, DiagnosticObservation::unavailable());
+//! let writer_record: Option<WriterRecord> = router.emit_for_writer(
+//!     ServiceEvent::RunningAcknowledged, DiagnosticObservation::unavailable());
+//! assert!(writer_record.is_some());
 //! let snapshot: DiagnosticSnapshot = router.finish();
-//! assert_eq!(snapshot.required().history().len(), 1);
+//! assert_eq!(snapshot.required().history().len(), 2);
 //! assert_eq!(snapshot.optional().history().len(), 0);
 //! ```
 //!
@@ -35,6 +39,20 @@
 //! fn relabel(decoded: DecodedRecord) -> Router {
 //!     Router::new(decoded.component(), OptionalProfile::Off,
 //!         ImportanceMask::all(), MemoryRoutes::available())
+//! }
+//! ```
+//!
+//! The writer handoff has only live construction and cannot be cloned:
+//! ```compile_fail,E0451
+//! use windows_platform::diagnostics::{Component, WriterRecord};
+//! fn relabel(original: WriterRecord) -> WriterRecord {
+//!     WriterRecord { component: Component::Engine, ..original }
+//! }
+//! ```
+//! ```compile_fail,E0277
+//! use windows_platform::diagnostics::WriterRecord;
+//! fn replay(original: &WriterRecord) -> WriterRecord {
+//!     Clone::clone(original)
 //! }
 //! ```
 //!
@@ -1116,6 +1134,67 @@ pub enum LifecycleObservationClaim {
     HistoricalAfterClockFault(u64),
 }
 
+impl LifecycleObservationClaim {
+    /// Project the fixed observation fields from a checked record or its producer.
+    const fn from_wire(kind: u8, elapsed_ns: u64) -> Self {
+        match kind {
+            1 => Self::LastAccepted(elapsed_ns),
+            2 => Self::HistoricalAfterClockFault(elapsed_ns),
+            _ => Self::Unavailable,
+        }
+    }
+}
+
+/// Original event fields available to the writer after required queue admission.
+///
+/// Only the live router constructs this handoff. It does not acknowledge
+/// memory consumption, native delivery or durable retention.
+#[must_use]
+pub struct WriterRecord {
+    /// Fixed role of the emitting router.
+    component: Component,
+    /// Original invocation-local sequence.
+    sequence: u64,
+    /// Original checked lifecycle observation.
+    observation: LifecycleObservationClaim,
+    /// Eligible catalogue ID.
+    event_id: u8,
+    /// Cause permitted by the eligible event's catalogue entry.
+    cause_code: u8,
+}
+
+impl WriterRecord {
+    /// Return the router's original component.
+    #[must_use]
+    pub const fn component(&self) -> Component {
+        self.component
+    }
+
+    /// Return the original local sequence.
+    #[must_use]
+    pub const fn sequence(&self) -> u64 {
+        self.sequence
+    }
+
+    /// Return the original lifecycle observation.
+    #[must_use]
+    pub const fn observation(&self) -> LifecycleObservationClaim {
+        self.observation
+    }
+
+    /// Return the eligible event's fixed catalogue ID.
+    #[must_use]
+    pub const fn event_id(&self) -> u8 {
+        self.event_id
+    }
+
+    /// Return the original permitted cause or canonical no-cause zero.
+    #[must_use]
+    pub const fn cause_code(&self) -> u8 {
+        self.cause_code
+    }
+}
+
 /// Passive nonzero metadata claim, structurally valid without issuer authenticity.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MetadataClaim<T> {
@@ -1231,11 +1310,7 @@ impl DecodedRecord {
     /// Read the original lifecycle-coordinate claim, never consumption time.
     #[must_use]
     pub fn observation(&self) -> LifecycleObservationClaim {
-        match self.bytes[16] {
-            1 => LifecycleObservationClaim::LastAccepted(read_u64(&self.bytes, 17)),
-            2 => LifecycleObservationClaim::HistoricalAfterClockFault(read_u64(&self.bytes, 17)),
-            _ => LifecycleObservationClaim::Unavailable,
-        }
+        LifecycleObservationClaim::from_wire(self.bytes[16], read_u64(&self.bytes, 17))
     }
     /// Read the passive process instance claim, not authenticated process identity.
     #[must_use]
@@ -1787,13 +1862,14 @@ impl Route {
         }
     }
     /// Attempt one original using this route's independent pre-queue credit.
-    fn attempt(&mut self, event: ServiceEvent, record: ProducedRecord) {
+    /// Return whether the original entered the queue.
+    fn attempt(&mut self, event: ServiceEvent, record: ProducedRecord) -> bool {
         let index: usize = event.index();
         self.health.events[index].observe(event.cause_code());
         if !self.budget.charge(index) {
             self.health.suppressed.increment();
             self.health.events[index].suppressed.increment();
-            return;
+            return false;
         }
         if self.queue_state == QueueState::Unavailable {
             self.health.queue_unavailable.increment();
@@ -1803,7 +1879,9 @@ impl Route {
             self.queue[self.pending] = Some(QueueEntry { record });
             self.pending += 1;
             self.health.queued.increment();
+            return true;
         }
+        false
     }
     /// At most one FIFO dequeue and one concrete consumption; no retry or callback.
     fn pump_one(&mut self) {
@@ -2071,13 +2149,51 @@ impl Router {
     /// Freeze the original checked event/context and attempt required then optional routing.
     /// All failures affect only fixed diagnostics health, never the operation result.
     pub fn emit(&mut self, event: ServiceEvent, observation: DiagnosticObservation) {
+        let _sequence: Option<u64> = self.emit_to_routes(event, observation);
+    }
+
+    /// Emit once and hand off an eligible original admitted by the required queue.
+    ///
+    /// Running acknowledgement and primary failure are eligible. Optional routing
+    /// and subsequent memory consumption do not affect the writer handoff.
+    #[must_use]
+    pub fn emit_for_writer(
+        &mut self,
+        event: ServiceEvent,
+        observation: DiagnosticObservation,
+    ) -> Option<WriterRecord> {
+        let sequence: u64 = self.emit_to_routes(event, observation)?;
+        if !matches!(
+            event,
+            ServiceEvent::RunningAcknowledged | ServiceEvent::PrimaryFailure(_)
+        ) {
+            return None;
+        }
+        Some(WriterRecord {
+            component: self.component,
+            sequence,
+            observation: LifecycleObservationClaim::from_wire(
+                observation.wire_kind(),
+                observation.elapsed_ns,
+            ),
+            event_id: event.id(),
+            cause_code: event.cause_code(),
+        })
+    }
+
+    /// Run the shared checked emission path and return the required admission sequence.
+    fn emit_to_routes(
+        &mut self,
+        event: ServiceEvent,
+        observation: DiagnosticObservation,
+    ) -> Option<u64> {
         if self.sealed {
             self.health.sealed_loss.increment();
-            return;
+            return None;
         }
         let Some(sequence): Option<u64> = self.next_sequence else {
             self.health.sequence_loss.increment();
-            return;
+            return None;
         };
         let candidate: Result<Candidate, DecodeError> = Candidate::checked(raw_record(
             self.component,
@@ -2088,7 +2204,7 @@ impl Router {
         ));
         let Ok(candidate) = candidate else {
             self.health.construction_loss.increment();
-            return;
+            return None;
         };
         self.next_sequence = sequence.checked_add(1);
         self.health.emitted.increment();
@@ -2096,7 +2212,7 @@ impl Router {
         let record: ProducedRecord = ProducedRecord {
             bytes: candidate.bytes,
         };
-        self.required.attempt(event, record);
+        let required_queued: bool = self.required.attempt(event, record);
         let descriptor: &EventDescriptor = event.descriptor();
         if optional_enabled(
             self.optional,
@@ -2108,6 +2224,7 @@ impl Router {
         } else {
             self.duplicate.health.filtered.increment();
         }
+        required_queued.then_some(sequence)
     }
 
     /// Perform at most one dequeue/concrete consumer attempt per independent route.

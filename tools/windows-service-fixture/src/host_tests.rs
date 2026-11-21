@@ -1934,6 +1934,7 @@ fn receipt_fixture(actual_result: Result<(), FixtureError>) -> super::HostReceip
     super::HostReceipt {
         actual_result,
         diagnostics: router.finish(),
+        writer_close: None,
     }
 }
 
@@ -2817,7 +2818,8 @@ mod worker_tests {
     //! the lifecycle, completes a permit or chooses the host's result.
 
     use std::{
-        cell::RefCell,
+        cell::{Cell, RefCell},
+        convert::Infallible,
         error::Error,
         rc::Rc,
         task::Poll,
@@ -2832,21 +2834,27 @@ mod worker_tests {
 
     use super::super::{
         Clock, InvocationPoll, ServiceInvocation, StatusFactory, TokenObserver, Worker,
-        WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake,
-        start_invocation_with_diagnostics,
+        WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake, start_invocation_with_writer,
     };
     use super::{DiagnosticRouteView, DiagnosticView};
     use crate::{
         FixtureError, LabRole, NativeError, NativeOperation, TokenCleanupOutcome,
-        TokenObservationCause, TokenObservationFailure, diagnostics::Sinks, error::WorkerError,
+        TokenObservationCause, TokenObservationFailure,
+        diagnostics::{CloseMode, ClosePending, EventWriter, Sinks, WriterClose},
+        error::WorkerError,
     };
 
-    use windows_platform::diagnostics::{ConsumerState, MemoryConsumer};
+    use windows_platform::diagnostics::{
+        Component, ConsumerState, LifecycleObservationClaim, MemoryConsumer, WriterRecord,
+    };
 
     /// Test construction errors remain distinct from assertions about host behavior.
     type TestResult<T = ()> = Result<T, Box<dyn Error>>;
     /// The actual host owner, with only its external observations replaced.
-    type Invocation = ServiceInvocation<Reporter, ScriptedWorker>;
+    type Invocation<W = Infallible> = ServiceInvocation<Reporter, ScriptedWorker, W>;
+
+    /// The original fields observed at the reached writer, in schema order.
+    type WriterFields = (Component, u64, LifecycleObservationClaim, u8, u8);
 
     /// Chronological effects, including the distinction between attempt and success.
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2869,6 +2877,14 @@ mod worker_tests {
         Cancel,
         /// Actual completion was polled independently from failure or cancellation.
         Completion,
+        /// The host offered the live writer record before cleanup.
+        WriterOffered(WriterFields),
+        /// The host gave the writer its current shutdown allowance.
+        WriterPolled(CloseMode),
+        /// The actual portable consumer took the admitted record.
+        WriterConsumed(WriterFields),
+        /// Actual portable writer custody was resolved.
+        WriterClosed,
         /// The worker's destructor actually ran.
         WorkerDropped,
         /// The reporter's destructor actually ran.
@@ -3259,9 +3275,9 @@ mod worker_tests {
     /// Ordinary assertion unwinding publishes real test-worker completion first, so
     /// a failing assertion does not accidentally abort the entire test process. The
     /// separate subprocess test exercises unresolved owner destruction directly.
-    struct Rig {
+    struct Rig<W: EventWriter = Infallible> {
         /// Retained actual owner; only the fatal-drop child removes it unresolved.
-        invocation: Option<Invocation>,
+        invocation: Option<Invocation<W>>,
         /// A refusal before owner return remains inspectable without worker calls.
         start_failure: Option<FixtureError>,
         /// Actual time seam consumed by every owner step.
@@ -3293,6 +3309,20 @@ mod worker_tests {
         /// # Errors
         /// Propagate checked construction of the independently selected token fixture.
         fn start_with_sinks(settings: Settings, sinks: Sinks) -> TestResult<Self> {
+            Self::start_with_writer(settings, sinks, |_, _| None)
+        }
+    }
+
+    impl<W: EventWriter> Rig<W> {
+        /// Compose a dormant writer before startup with the same effect trace.
+        ///
+        /// # Errors
+        /// Propagate checked construction of the independently selected token fixture.
+        fn start_with_writer(
+            settings: Settings,
+            sinks: Sinks,
+            writer: impl FnOnce(Rc<RefCell<Trace>>, Rc<RefCell<Instant>>) -> Option<W>,
+        ) -> TestResult<Self> {
             let trace = Rc::new(RefCell::new(Trace {
                 report_failures: settings.report_failures,
                 ..Trace::default()
@@ -3321,16 +3351,16 @@ mod worker_tests {
                 script: Rc::clone(&script),
                 trace: Rc::clone(&trace),
                 notification: Rc::clone(&notification),
-                time,
+                time: Rc::clone(&time),
             };
-            let (invocation, start_failure) = match start_invocation_with_diagnostics(
+            let (invocation, start_failure) = match start_invocation_with_writer(
                 settings.role,
                 settings.argc,
                 &mut factory,
                 &mut observer,
                 &mut clock,
                 &notification,
-                (worker, sinks),
+                (worker, sinks, writer(Rc::clone(&trace), time)),
             ) {
                 Ok(invocation) => (Some(invocation), None),
                 Err(receipt) => (None, Some(super::startup_error(receipt))),
@@ -3350,7 +3380,7 @@ mod worker_tests {
         ///
         /// # Errors
         /// Reject access when startup returned no retained invocation.
-        fn owner(&self) -> TestResult<&Invocation> {
+        fn owner(&self) -> TestResult<&Invocation<W>> {
             self.invocation
                 .as_ref()
                 .ok_or_else(|| "startup returned no retained invocation".into())
@@ -3482,7 +3512,7 @@ mod worker_tests {
         }
     }
 
-    impl Drop for Rig {
+    impl<W: EventWriter> Drop for Rig<W> {
         /// Settle test-owned work on ordinary assertion unwinding. If the host fails
         /// to consume an explicit completion within eight steps, retain the owner
         /// instead of turning that unrelated test failure into a process abort.
@@ -3498,6 +3528,816 @@ mod worker_tests {
                 std::mem::forget(invocation);
             }
         }
+    }
+
+    /// Independently controlled portable completion and its real owner wake.
+    #[derive(Default)]
+    struct CloseSignal {
+        /// Actual portable close is observable only after the test publishes it.
+        completed: Cell<bool>,
+        /// The writer published its last wake before physical exit.
+        join_tail: Cell<bool>,
+        /// Last retained owner wake while this writer remains outstanding.
+        wake: RefCell<Option<WorkerWake>>,
+        /// Independent clock shift during the next actual drain poll.
+        shift_during_drain: Cell<Option<Instant>>,
+    }
+
+    impl CloseSignal {
+        /// Publish completion before notifying a parked owner.
+        fn complete(&self) {
+            self.completed.set(true);
+            if let Some(wake) = self.wake.borrow_mut().take() {
+                wake.notify();
+            }
+        }
+
+        /// Publish the last wake while the test still holds physical completion.
+        fn enter_join_tail(&self) {
+            self.join_tail.set(true);
+            let wake: Option<WorkerWake> = self.wake.borrow_mut().take();
+            if let Some(wake) = wake {
+                wake.notify();
+            }
+        }
+    }
+
+    /// Two-slot portable writer whose actual consumed output shares the SCM trace.
+    struct ScriptedWriter {
+        /// Same ordered observation of actual adapter calls, without owner access.
+        trace: Rc<RefCell<Trace>>,
+        /// Independent clock input observed at the actual consumption boundary.
+        time: Rc<RefCell<Instant>>,
+        /// Independent finite local queue, retaining typed originals.
+        queue: [Option<WriterRecord>; 2],
+        /// Independent close observation, already completed for prompt neighbors.
+        close: Rc<CloseSignal>,
+        /// Refuse each offer without affecting status.
+        refuse: bool,
+    }
+
+    /// Read all selected fields, using only the live consumer's interface.
+    fn writer_fields(record: &WriterRecord) -> WriterFields {
+        (
+            record.component(),
+            record.sequence(),
+            record.observation(),
+            record.event_id(),
+            record.cause_code(),
+        )
+    }
+
+    impl EventWriter for ScriptedWriter {
+        /// Retain or refuse the real original without supplying a lifecycle transition.
+        fn offer(&mut self, record: WriterRecord, _wake: &WorkerWake) -> bool {
+            self.trace
+                .borrow_mut()
+                .events
+                .push(Event::WriterOffered(writer_fields(&record)));
+            if self.refuse {
+                return false;
+            }
+            if let Some(slot) = self.queue.iter_mut().find(|slot| slot.is_none()) {
+                *slot = Some(record);
+                return true;
+            }
+            false
+        }
+
+        /// The scripted writer only consumes records under an explicit close mode.
+        fn fence(&mut self) {}
+
+        /// Resolve actual completion only after publication, retaining local loss.
+        fn poll_close(
+            &mut self,
+            mode: CloseMode,
+            wake: &WorkerWake,
+        ) -> Result<WriterClose, ClosePending> {
+            self.trace
+                .borrow_mut()
+                .events
+                .push(Event::WriterPolled(mode));
+            if matches!(mode, CloseMode::Drain(_))
+                && let Some(value) = self.close.shift_during_drain.take()
+            {
+                *self.time.borrow_mut() = value;
+            }
+            if !self.close.completed.get() {
+                if self.close.join_tail.get() {
+                    return Err(ClosePending::JoinTail);
+                }
+                *self.close.wake.borrow_mut() = Some(wake.clone());
+                return Err(ClosePending::Wake);
+            }
+            let mut loss: bool = false;
+            let mut trace: std::cell::RefMut<'_, Trace> = self.trace.borrow_mut();
+            for slot in &mut self.queue {
+                if let Some(record) = slot.take() {
+                    if matches!(mode, CloseMode::Drain(deadline) if *self.time.borrow() < deadline)
+                    {
+                        trace
+                            .events
+                            .push(Event::WriterConsumed(writer_fields(&record)));
+                    } else {
+                        loss = true;
+                    }
+                }
+            }
+            trace.events.push(Event::WriterClosed);
+            Ok(if loss {
+                WriterClose::Loss
+            } else {
+                WriterClose::Drained
+            })
+        }
+    }
+
+    impl Drop for ScriptedWriter {
+        /// Observe real destructor execution only in the bounded drop-test child.
+        fn drop(&mut self) {
+            if self.trace.borrow().destructor_markers {
+                eprintln!("fixture-service-writer-dropped");
+            }
+        }
+    }
+
+    /// Compose a live writer with optional diagnostics Off through the real host.
+    ///
+    /// # Errors
+    /// Propagate checked construction of the independent fixture.
+    fn writer_rig(
+        failures: Vec<(u32, NativeError)>,
+        close: &Rc<CloseSignal>,
+        refuse: bool,
+    ) -> TestResult<Rig<ScriptedWriter>> {
+        let rig: Rig<ScriptedWriter> = Rig::start_with_writer(
+            Settings {
+                report_failures: failures,
+                ..Settings::default()
+            },
+            Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+            |trace: Rc<RefCell<Trace>>, time: Rc<RefCell<Instant>>| {
+                Some(ScriptedWriter {
+                    trace,
+                    time,
+                    queue: [None, None],
+                    close: Rc::clone(close),
+                    refuse,
+                })
+            },
+        )?;
+        {
+            let mut worker: std::cell::RefMut<'_, Script> = rig.script.borrow_mut();
+            worker.preparation = Poll::Ready(Ok(()));
+            worker.completion = Poll::Ready(Ok(()));
+        }
+        Ok(rig)
+    }
+
+    /// An acknowledged Running event reaches real consumption before Stopped.
+    ///
+    /// # Errors
+    /// Propagate fixture, clock or receipt failures.
+    /// # Panics
+    /// Fails if acknowledgement, writer consumption or terminal order differs.
+    #[test]
+    fn writer_consumes_running_with_optional_output_off() -> TestResult {
+        let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+        close.complete();
+        let mut rig: Rig<ScriptedWriter> = writer_rig(Vec::new(), &close, false)?;
+        rig.advance(Duration::from_nanos(25))?;
+        let running: [u32; 7] = [16, 4, 1, 0, 0, 0, 0];
+        let stopped: [u32; 7] = [16, 1, 0, 0, 0, 0, 0];
+        let fields: WriterFields = (
+            Component::Engine,
+            2,
+            LifecycleObservationClaim::LastAccepted(25),
+            2,
+            0,
+        );
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        assert_eq!(rig.count(&Event::WriterOffered(fields)), 1);
+        let _stop: ScmControl = rig.notification.handle_control(1);
+        assert_eq!(rig.poll()?, InvocationPoll::Finished);
+        let receipt: super::super::HostReceipt = rig
+            .invocation
+            .as_mut()
+            .and_then(ServiceInvocation::take_receipt)
+            .ok_or("missing finished receipt")?;
+        assert_eq!(receipt.result(), &Ok(()));
+        assert_eq!(receipt.writer_close, Some(WriterClose::Drained));
+        assert_eq!(receipt.diagnostics().optional().history().len(), 0);
+        let trace: Vec<Event> = rig.events();
+        let selected: Vec<&Event> = trace
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event,
+                    Event::WriterOffered(_) | Event::WriterConsumed(_) | Event::WriterClosed
+                ) || **event == Event::StatusAcknowledged(running)
+                    || **event == Event::StatusAttempt(stopped)
+            })
+            .collect();
+        assert_eq!(
+            selected,
+            [
+                &Event::StatusAcknowledged(running),
+                &Event::WriterOffered(fields),
+                &Event::WriterConsumed(fields),
+                &Event::WriterClosed,
+                &Event::StatusAttempt(stopped),
+            ]
+        );
+        Ok(())
+    }
+
+    /// A same-poll Running refusal enters the live writer before any terminal call.
+    ///
+    /// # Errors
+    /// Propagate fixture, clock or receipt failures.
+    /// # Panics
+    /// Fails if the owner loses custody or the original cause across delayed close.
+    #[test]
+    fn writer_retains_same_poll_refusal_through_delayed_close_and_expiry() -> TestResult {
+        let cause: NativeError = NativeError::new(NativeOperation::Status, 814);
+        let stopped: [u32; 7] = [16, 1, 0, 1066, 1, 0, 0];
+        for (after, expected_close) in [
+            (Duration::from_secs(9), WriterClose::Drained),
+            (Duration::from_secs(10), WriterClose::Loss),
+            (Duration::from_secs(11), WriterClose::Loss),
+        ] {
+            let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+            let mut rig: Rig<ScriptedWriter> = writer_rig(vec![(4, cause)], &close, false)?;
+            rig.advance(Duration::from_nanos(25))?;
+            let deadline: Instant = rig.later(Duration::from_secs(10))?;
+            let fields: WriterFields = (
+                Component::Engine,
+                2,
+                LifecycleObservationClaim::LastAccepted(25),
+                4,
+                10,
+            );
+            assert_eq!(
+                rig.poll()?,
+                InvocationPoll::Pending(Duration::from_secs(10))
+            );
+            assert_eq!(rig.count(&Event::WriterOffered(fields)), 1);
+            let events: Vec<Event> = rig.events();
+            assert_eq!(
+                events
+                    .iter()
+                    .filter(|event| matches!(event, Event::WriterOffered(_)))
+                    .count(),
+                1
+            );
+            assert!(
+                !events
+                    .iter()
+                    .any(|event| matches!(event, Event::StatusAcknowledged([_, 4, ..])))
+            );
+            assert_eq!(rig.count(&Event::Completion), 1);
+            assert_eq!(rig.count(&Event::Activate), 0);
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            assert!(rig.take_result().is_none());
+            assert_eq!(rig.count(&Event::StatusAttempt(stopped)), 0);
+            rig.advance(after)?;
+            let (wait, mode): (InvocationPoll, CloseMode) = if after < Duration::from_secs(10) {
+                (
+                    InvocationPoll::Pending(Duration::from_secs(1)),
+                    CloseMode::Drain(deadline),
+                )
+            } else {
+                (InvocationPoll::Overdue, CloseMode::Retire)
+            };
+            assert_eq!(rig.poll()?, wait);
+            assert!(rig.take_result().is_none());
+            assert_eq!(rig.events().last(), Some(&Event::WriterPolled(mode)));
+            close.complete();
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            assert_eq!(rig.count(&Event::Completion), 1);
+            assert_eq!(rig.count(&Event::StatusAttempt(stopped)), 1);
+            assert_eq!(rig.count(&Event::WriterClosed), 1);
+            assert_eq!(
+                rig.count(&Event::WriterConsumed(fields)),
+                usize::from(matches!(mode, CloseMode::Drain(_)))
+            );
+            let receipt: super::super::HostReceipt = rig
+                .invocation
+                .as_mut()
+                .and_then(ServiceInvocation::take_receipt)
+                .ok_or("missing finished receipt")?;
+            assert_eq!(receipt.writer_close, Some(expected_close));
+            assert_eq!(
+                receipt.result(),
+                &Err(FixtureError::Lifecycle(LifecycleError::Report(cause)))
+            );
+        }
+        Ok(())
+    }
+
+    /// Crossing the cutoff inside a pending drain fences the writer even while
+    /// independent worker cancellation remains outstanding.
+    ///
+    /// # Errors
+    /// Propagate fixture or clock construction and observation failures.
+    /// # Panics
+    /// Fails if expiry grants writer work or discharges either pending owner.
+    #[test]
+    fn writer_expires_during_pending_poll_without_discharging_worker() -> TestResult {
+        let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+        let mut rig: Rig<ScriptedWriter> = writer_rig(Vec::new(), &close, false)?;
+        rig.script.borrow_mut().completion = Poll::Pending;
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        let deadline: Instant = rig.later(Duration::from_secs(10))?;
+        close.shift_during_drain.set(Some(deadline));
+        let _stop: ScmControl = rig.notification.handle_control(1);
+        assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+        assert_eq!(rig.owner()?.outstanding_work(), 1);
+        assert!(rig.take_result().is_none());
+        let events: Vec<Event> = rig.events();
+        assert!(events.ends_with(&[
+            Event::WriterPolled(CloseMode::Drain(deadline)),
+            Event::WriterPolled(CloseMode::Retire),
+        ]));
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| matches!(event, Event::WriterOffered(_)))
+                .count(),
+            1
+        );
+        close.complete();
+        assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+        assert_eq!(rig.owner()?.outstanding_work(), 1);
+        assert_eq!(rig.count(&Event::WriterClosed), 1);
+        assert!(rig.take_result().is_none());
+        rig.script.borrow_mut().completion = Poll::Ready(Ok(()));
+        assert_eq!(rig.poll()?, InvocationPoll::Finished);
+        assert_eq!(rig.count(&Event::WriterClosed), 1);
+        assert_eq!(
+            rig.take_result(),
+            Some(Err(FixtureError::Lifecycle(
+                LifecycleError::DeadlineElapsed
+            )))
+        );
+        assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+        Ok(())
+    }
+
+    /// The final writer wake cannot leave the overdue owner parked indefinitely.
+    /// # Errors
+    /// Propagate fixture, clock and receipt failures.
+    /// # Panics
+    /// Fails if the final marker grants completion or loses the relative wait.
+    #[test]
+    fn overdue_writer_final_marker_keeps_join_observable() -> TestResult {
+        let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+        let mut rig: Rig<ScriptedWriter> = writer_rig(Vec::new(), &close, false)?;
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        close
+            .shift_during_drain
+            .set(Some(rig.later(Duration::from_secs(10))?));
+        let _stop: ScmControl = rig.notification.handle_control(1);
+        assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+        let status_count: usize = rig.statuses().len();
+        assert_eq!(rig.owner()?.outstanding_work(), 0);
+        close.enter_join_tail();
+        let relative: InvocationPoll = InvocationPoll::JoinTail(Duration::from_millis(20));
+        assert_eq!(rig.poll()?, relative);
+        assert_eq!(rig.poll()?, relative);
+        assert_eq!(rig.statuses().len(), status_count);
+        assert_eq!(rig.count(&Event::WriterClosed), 0);
+        assert!(rig.take_result().is_none());
+        close.complete();
+        assert_eq!(rig.poll()?, InvocationPoll::Finished);
+        assert_eq!(rig.count(&Event::WriterClosed), 1);
+        assert_eq!(rig.statuses().len(), status_count + 1);
+        assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+        assert_eq!(
+            rig.take_result(),
+            Some(Err(FixtureError::Lifecycle(
+                LifecycleError::DeadlineElapsed
+            )))
+        );
+        Ok(())
+    }
+
+    /// Real writer effects and thread lifecycle through this invocation.
+    mod threaded_writer_controls {
+        use std::{
+            panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
+            sync::{
+                Arc,
+                atomic::{AtomicBool, AtomicUsize, Ordering},
+                mpsc::{Receiver, SyncSender, sync_channel},
+            },
+            task::Poll,
+            thread,
+            time::{Duration, Instant},
+        };
+
+        use super::{
+            Component, ConsumerState, FixtureError, InvocationPoll, LifecycleError,
+            LifecycleObservationClaim, MemoryConsumer, Rig, ScmControl, ServiceInvocation,
+            Settings, Sinks, TestResult, WriterClose, WriterFields, writer_fields,
+        };
+        use crate::diagnostics::threaded::{ThreadedWriter, WriterBackend};
+        use windows_platform::diagnostics::{DecodedRecord, WriterRecord};
+
+        /// Real waits are independent of the host's manually advanced monotonic input.
+        const REAL_WAIT: Duration = Duration::from_secs(5);
+
+        /// Independent facts from the two actual thread boundaries.
+        #[derive(Default)]
+        struct Facts {
+            /// The real backend close consumed its owner exactly once.
+            closes: AtomicUsize,
+            /// Close continued because the test explicitly released it.
+            close_released: AtomicBool,
+            /// The physical exit tail continued because the test explicitly released it.
+            tail_released: AtomicBool,
+        }
+
+        /// A finite local backend which observes real offered metadata and real close.
+        struct Backend {
+            /// Complete original fields observed at the actual writer.
+            records: SyncSender<WriterFields>,
+            /// Record entry to the actual backend close.
+            close_entered: SyncSender<()>,
+            /// Hold close until the test advances the host clock.
+            close_release: Receiver<()>,
+            /// Original effect and release observations.
+            facts: Arc<Facts>,
+        }
+
+        impl WriterBackend for Backend {
+            /// Consume one real record; a full observation channel reports actual local loss.
+            fn write(&mut self, record: WriterRecord) -> bool {
+                self.records.try_send(writer_fields(&record)).is_ok()
+            }
+
+            /// Hold actual backend close before the writer can publish its final marker.
+            fn close(self) -> bool {
+                self.facts.closes.fetch_add(1, Ordering::AcqRel);
+                let released: bool = self.close_entered.try_send(()).is_ok()
+                    && self.close_release.recv_timeout(REAL_WAIT).is_ok();
+                self.facts.close_released.store(released, Ordering::Release);
+                released
+            }
+        }
+
+        /// Release both owned thread gates before Rig's assertion-unwind containment runs.
+        struct Release {
+            /// Explicitly release the backend's close call.
+            close: Option<SyncSender<()>>,
+            /// Explicitly release the post-marker thread tail.
+            tail: Option<SyncSender<()>>,
+        }
+
+        impl Release {
+            /// # Errors
+            /// Preserve a missing or already-disconnected actual close gate.
+            fn close(&mut self) -> TestResult {
+                self.close
+                    .take()
+                    .ok_or("missing close release")?
+                    .try_send(())?;
+                Ok(())
+            }
+
+            /// # Errors
+            /// Preserve a missing or already-disconnected physical exit gate.
+            fn tail(&mut self) -> TestResult {
+                self.tail
+                    .take()
+                    .ok_or("missing exit-tail release")?
+                    .try_send(())?;
+                Ok(())
+            }
+        }
+
+        impl Drop for Release {
+            /// Both one-slot gates are released without waiting, including on assertion panic.
+            fn drop(&mut self) {
+                if let Some(close) = self.close.take() {
+                    let _released = close.try_send(());
+                }
+                if let Some(tail) = self.tail.take() {
+                    let _released = tail.try_send(());
+                }
+            }
+        }
+
+        /// Settle the original invocation even after the causal expectation fails.
+        /// The backend gates must be released before entering this cleanup path.
+        /// # Errors
+        /// Preserve startup refusal to construct an invocation for the test.
+        fn finish_writer<B: WriterBackend>(rig: &mut Rig<ThreadedWriter<B>>) -> TestResult {
+            let _stop: ScmControl = rig.notification.handle_control(1);
+            let started: Instant = Instant::now();
+            while rig.poll()? != InvocationPoll::Finished {
+                if started.elapsed() >= REAL_WAIT {
+                    eprintln!("portable host test could not join its original writer");
+                    std::process::abort();
+                }
+                thread::sleep(Duration::from_millis(1));
+            }
+            Ok(())
+        }
+
+        /// Observe the actual backend and owned thread before allowing physical exit.
+        /// # Errors
+        /// Preserve finite input, clock, receipt and barrier failures.
+        /// # Panics
+        /// Fails on divergent writer effects or premature terminal status.
+        fn observe_held_writer(
+            rig: &mut Rig<ThreadedWriter<Backend>>,
+            release: &mut Release,
+            records_rx: &Receiver<WriterFields>,
+            close_rx: &Receiver<()>,
+            tail_rx: &Receiver<()>,
+            facts: &Facts,
+        ) -> TestResult<usize> {
+            rig.advance(Duration::from_nanos(25))?;
+            assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            assert_eq!(
+                records_rx.recv_timeout(REAL_WAIT)?,
+                (
+                    Component::Engine,
+                    2,
+                    LifecycleObservationClaim::LastAccepted(25),
+                    2,
+                    0
+                ),
+                "S31-THREADED-real-Running-record"
+            );
+            let _stop: ScmControl = rig.notification.handle_control(1);
+            assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            close_rx.recv_timeout(REAL_WAIT)?;
+            rig.advance(Duration::from_secs(10))?;
+            assert_eq!(
+                rig.poll()?,
+                InvocationPoll::Overdue,
+                "S31-THREADED-before-final-marker"
+            );
+            let status_count: usize = rig.statuses().len();
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            assert!(rig.take_result().is_none());
+            assert_ne!(rig.statuses().last().map(|status| status[1]), Some(1));
+            release.close()?;
+            tail_rx.recv_timeout(REAL_WAIT)?;
+            assert!(facts.close_released.load(Ordering::Acquire));
+            let relative: InvocationPoll = InvocationPoll::JoinTail(Duration::from_millis(20));
+            assert_eq!(
+                rig.poll()?,
+                relative,
+                "S31-THREADED-final-wake-still-needs-join"
+            );
+            assert_eq!(rig.poll()?, relative);
+            assert_eq!(rig.statuses().len(), status_count);
+            assert!(rig.take_result().is_none());
+            release.tail()?;
+            Ok(status_count)
+        }
+
+        /// The real writer's final wake is not physical thread completion.
+        /// # Errors
+        /// Preserve bounded backend, fixture, clock, gate, observation and join failures.
+        /// # Panics
+        /// Reject lost Running bytes, early Stopped/receipt, or missing relative join polling.
+        #[test]
+        fn actual_writer_final_wake_retains_physical_join() -> TestResult {
+            let facts: Arc<Facts> = Arc::new(Facts::default());
+            let (records_tx, records_rx): (SyncSender<WriterFields>, Receiver<WriterFields>) =
+                sync_channel(16);
+            let (close_tx, close_rx): (SyncSender<()>, Receiver<()>) = sync_channel(1);
+            let (release_close_tx, release_close_rx): (SyncSender<()>, Receiver<()>) =
+                sync_channel(1);
+            let (tail_tx, tail_rx): (SyncSender<()>, Receiver<()>) = sync_channel(1);
+            let (release_tail_tx, release_tail_rx): (SyncSender<()>, Receiver<()>) =
+                sync_channel(1);
+            let gates: Release = Release {
+                close: Some(release_close_tx),
+                tail: Some(release_tail_tx),
+            };
+            let backend: Backend = Backend {
+                records: records_tx,
+                close_entered: close_tx,
+                close_release: release_close_rx,
+                facts: Arc::clone(&facts),
+            };
+            let tail_facts: Arc<Facts> = Arc::clone(&facts);
+            let mut rig: Rig<ThreadedWriter<Backend>> = Rig::start_with_writer(
+                Settings::default(),
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+                move |_, _| {
+                    Some(ThreadedWriter::with_exit_tail(backend, move || {
+                        let entered: bool = tail_tx.try_send(()).is_ok();
+                        let released: bool = release_tail_rx.recv_timeout(REAL_WAIT).is_ok();
+                        tail_facts
+                            .tail_released
+                            .store(entered && released, Ordering::Release);
+                    }))
+                },
+            )?;
+            // Move after Rig: normal unwinding releases both gates before Rig is dropped.
+            let mut release: Release = gates;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            rig.script.borrow_mut().completion = Poll::Ready(Ok(()));
+            let observations: thread::Result<TestResult<usize>> =
+                catch_unwind(AssertUnwindSafe(|| {
+                    observe_held_writer(
+                        &mut rig,
+                        &mut release,
+                        &records_rx,
+                        &close_rx,
+                        &tail_rx,
+                        &facts,
+                    )
+                }));
+            drop(release);
+            finish_writer(&mut rig)?;
+            let status_count: usize = match observations {
+                Ok(result) => result?,
+                Err(failure) => resume_unwind(failure),
+            };
+            let receipt: crate::host::HostReceipt = rig
+                .invocation
+                .as_mut()
+                .and_then(ServiceInvocation::take_receipt)
+                .ok_or("missing physically joined receipt")?;
+            assert_eq!(
+                receipt.writer_close,
+                Some(WriterClose::Drained),
+                "S31-THREADED-actual-writer-close-receipt"
+            );
+            assert_eq!(
+                receipt.result(),
+                &Err(FixtureError::Lifecycle(LifecycleError::DeadlineElapsed))
+            );
+            assert_eq!(rig.statuses().len(), status_count + 1);
+            assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+            assert_eq!(facts.closes.load(Ordering::Acquire), 1);
+            assert!(facts.tail_released.load(Ordering::Acquire));
+            Ok(())
+        }
+
+        /// Record any attempted backend effect on the refused startup path.
+        struct DeniedBackend {
+            /// Any write or close crossed the refused startup boundary.
+            touched: Arc<AtomicBool>,
+        }
+
+        impl WriterBackend for DeniedBackend {
+            /// Mark an unexpected write if startup leaked into the adapter.
+            fn write(&mut self, _record: WriterRecord) -> bool {
+                self.touched.store(true, Ordering::Release);
+                true
+            }
+
+            /// Mark an unexpected backend start even if its record was discarded.
+            fn close(self) -> bool {
+                self.touched.store(true, Ordering::Release);
+                true
+            }
+        }
+
+        /// Rejected startup records its error solely through the admitted memory route.
+        /// # Errors
+        /// Preserve fixture and terminal observation failures.
+        /// # Panics
+        /// Fail if an initial argument refusal invokes the backend or loses its cause.
+        #[test]
+        fn refused_startup_never_starts_the_writer_backend() -> TestResult {
+            let touched: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+            let backend: DeniedBackend = DeniedBackend {
+                touched: Arc::clone(&touched),
+            };
+            let mut rig: Rig<ThreadedWriter<DeniedBackend>> = Rig::start_with_writer(
+                Settings {
+                    argc: 2,
+                    ..Settings::default()
+                },
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+                move |_, _| Some(ThreadedWriter::with_exit_tail(backend, || {})),
+            )?;
+            finish_writer(&mut rig)?;
+            let receipt: crate::host::HostReceipt = rig
+                .invocation
+                .as_mut()
+                .and_then(ServiceInvocation::take_receipt)
+                .ok_or("missing refused-startup receipt")?;
+            assert_eq!(receipt.result(), &Err(FixtureError::UnsupportedArguments));
+            assert_eq!(receipt.writer_close, None);
+            assert!(!touched.load(Ordering::Acquire));
+            let mut primary_causes: Vec<u8> = Vec::new();
+            for raw in receipt.diagnostics().required().history().records() {
+                let record: DecodedRecord =
+                    DecodedRecord::decode(raw).map_err(|_| "missing checked startup diagnostic")?;
+                if record.event().id() == 4 {
+                    primary_causes.push(record.event().cause_code());
+                }
+            }
+            assert_eq!(primary_causes, [4]);
+            Ok(())
+        }
+    }
+
+    /// A ready writer must check time at consumption, even if the host sampled
+    /// before expiry at the beginning of the same poll.
+    ///
+    /// # Errors
+    /// Propagate fixture, clock or receipt failures.
+    /// # Panics
+    /// Fails if a record is consumed at the exact deadline.
+    #[test]
+    fn ready_writer_refuses_actual_consumption_at_exact_deadline() -> TestResult {
+        let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+        close.complete();
+        let mut rig: Rig<ScriptedWriter> = writer_rig(Vec::new(), &close, false)?;
+        assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+        close
+            .shift_during_drain
+            .set(Some(rig.later(Duration::from_secs(10))?));
+        let _stop: ScmControl = rig.notification.handle_control(1);
+        assert_eq!(rig.poll()?, InvocationPoll::Finished);
+        assert!(
+            !rig.events()
+                .iter()
+                .any(|event| matches!(event, Event::WriterConsumed(_)))
+        );
+        let receipt: super::super::HostReceipt = rig
+            .invocation
+            .as_mut()
+            .and_then(ServiceInvocation::take_receipt)
+            .ok_or("missing finished receipt")?;
+        assert_eq!(receipt.writer_close, Some(WriterClose::Loss));
+        assert_eq!(
+            receipt.result(),
+            &Err(FixtureError::Lifecycle(LifecycleError::DeadlineElapsed))
+        );
+        Ok(())
+    }
+
+    /// Local output refusal cannot change a clean stop or capture its later error.
+    ///
+    /// # Errors
+    /// Propagate fixture or receipt failures.
+    /// # Panics
+    /// Fails if the writer changes the service result or receives the terminal-only failure.
+    #[test]
+    fn writer_refusal_and_terminal_only_failure_preserve_distinct_receipts() -> TestResult {
+        let terminal: NativeError = NativeError::new(NativeOperation::Status, 811);
+        for failure in [None, Some(terminal)] {
+            let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+            close.complete();
+            let mut rig: Rig<ScriptedWriter> = writer_rig(
+                failure.map_or_else(Vec::new, |cause: NativeError| vec![(1, cause)]),
+                &close,
+                true,
+            )?;
+            assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            let _stop: ScmControl = rig.notification.handle_control(1);
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            let receipt: super::super::HostReceipt = rig
+                .invocation
+                .as_mut()
+                .and_then(ServiceInvocation::take_receipt)
+                .ok_or("missing finished receipt")?;
+            assert_eq!(receipt.writer_close, Some(WriterClose::Loss));
+            let expected: Result<(), FixtureError> = failure
+                .map_or(Ok(()), |cause: NativeError| {
+                    Err(FixtureError::Lifecycle(LifecycleError::Report(cause)))
+                });
+            assert_eq!(receipt.result(), &expected);
+            let events: Vec<Event> = rig.events();
+            assert_eq!(
+                events
+                    .iter()
+                    .filter(|event| matches!(event, Event::WriterOffered(_)))
+                    .count(),
+                1
+            );
+            assert!(
+                !events
+                    .iter()
+                    .any(|event| matches!(event, Event::WriterConsumed(_)))
+            );
+            let memory: Vec<u8> = receipt
+                .diagnostics()
+                .required()
+                .history()
+                .records()
+                .map(|record: &[u8; windows_platform::diagnostics::RECORD_BYTES]| record[3])
+                .collect();
+            if failure.is_some() {
+                assert_eq!(memory, [1, 2, 3, 4, 8]);
+            } else {
+                assert_eq!(memory, [1, 2, 3, 8]);
+            }
+        }
+        Ok(())
     }
 
     /// Independent finite destination conditions, without a callback into the owner.
@@ -5710,7 +6550,7 @@ mod worker_tests {
     const OWNER_DROP_CHILD_MODE: &str = "NEVROTICK_S31_OWNER_DROP_CHILD_MODE";
 
     /// Exercise the actual fatal custody guard in an externally bounded subprocess.
-    /// Healthy destruction verifies that both destructor observers are reachable.
+    /// Healthy destruction verifies that all three destructor observers are reachable.
     /// The configured runner must bound child execution and disable core dumps.
     ///
     /// # Panics
@@ -5725,6 +6565,30 @@ mod worker_tests {
 
         match std::env::var(OWNER_DROP_CHILD_MODE) {
             Ok(mode) => {
+                if matches!(mode.as_str(), "writer-healthy" | "writer-unresolved") {
+                    let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
+                    if mode == "writer-healthy" {
+                        close.complete();
+                    }
+                    let mut rig: Rig<ScriptedWriter> = writer_rig(Vec::new(), &close, false)?;
+                    rig.trace.borrow_mut().destructor_markers = true;
+                    let _running: InvocationPoll = rig.poll()?;
+                    let _stop: ScmControl = rig.notification.handle_control(1);
+                    let stop: InvocationPoll = rig.poll()?;
+                    assert_eq!(rig.count(&Event::Completion), 1);
+                    assert_eq!(rig.owner()?.outstanding_work(), 0);
+                    let invocation: Invocation<ScriptedWriter> =
+                        rig.invocation.take().ok_or("missing writer owner")?;
+                    if mode == "writer-unresolved" {
+                        assert!(matches!(stop, InvocationPoll::Pending(_)));
+                        eprintln!("fixture-worker-unresolved-drop-entered");
+                    } else {
+                        assert_eq!(stop, InvocationPoll::Finished);
+                    }
+                    drop(invocation);
+                    eprintln!("fixture-worker-owner-drop-returned");
+                    return Ok(());
+                }
                 let mut rig = Rig::start(Settings::default())?;
                 rig.trace.borrow_mut().destructor_markers = true;
                 let _observation = rig.poll()?;
@@ -5748,7 +6612,12 @@ mod worker_tests {
             Err(error) => return Err(Box::new(error)),
         }
 
-        for mode in ["healthy", "unresolved"] {
+        for mode in [
+            "healthy",
+            "unresolved",
+            "writer-healthy",
+            "writer-unresolved",
+        ] {
             let output = Command::new(std::env::current_exe()?)
                 .args([
                     "--exact",
@@ -5760,17 +6629,22 @@ mod worker_tests {
                 .env("RUST_BACKTRACE", "0")
                 .output()?;
             let stderr = std::str::from_utf8(&output.stderr)?;
-            if mode == "healthy" {
+            if matches!(mode, "healthy" | "writer-healthy") {
                 assert!(output.status.success());
                 assert!(stderr.contains("fixture-worker-worker-dropped"));
                 assert!(stderr.contains("fixture-worker-reporter-dropped"));
                 assert!(stderr.contains("fixture-worker-owner-drop-returned"));
                 assert!(!stderr.contains("fixture-worker-unresolved-drop-entered"));
+                assert_eq!(
+                    stderr.contains("fixture-service-writer-dropped"),
+                    mode == "writer-healthy"
+                );
             } else {
                 assert_eq!(output.status.signal(), Some(6));
                 assert!(stderr.contains("fixture-worker-unresolved-drop-entered"));
                 assert!(!stderr.contains("fixture-worker-worker-dropped"));
                 assert!(!stderr.contains("fixture-worker-reporter-dropped"));
+                assert!(!stderr.contains("fixture-service-writer-dropped"));
                 assert!(!stderr.contains("fixture-worker-owner-drop-returned"));
             }
         }

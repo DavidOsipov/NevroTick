@@ -17,6 +17,7 @@ TRAY_OS=BASE+'native_tray/windows.rs'
 TRAY_MODEL=BASE+'tray_ui.rs'
 NOTICE=BASE+'notifications_ui/native_delivery.rs'
 NOTICE_OS=BASE+'native_notifications_windows.rs'
+NOTICE_REQUEST='WindowsToastPort::request_test'
 NOTICE_FLOW=BASE+'slint_host/native_notification_workflow.rs'
 PRESENTER=BASE+'localization/presentation.rs'
 TRAY_LABELS={
@@ -43,7 +44,11 @@ def native_uses(files,inert_source,without_tests,functions,trace):
         selected=[(text[start:end],start)for function,start,end in spans if function==method]
         if owner is not None:
             # Shared method names require their maintained concrete impl.
-            clean=inert_source(text);owners=list(re.finditer(r'\bimpl\s+'+re.escape(owner)+r'\s*\{',clean))
+            clean=inert_source(text)
+            owner_pattern=re.escape(owner)
+            if owner=='DeliveryAttempt':
+                owner_pattern+=r"\s*<\s*'_\s*,\s*'_\s*,?\s*>"
+            owners=list(re.finditer(r'\bimpl\s+'+owner_pattern+r'\s*\{',clean))
             if len(owners)!=1:return []
             lower=owners[0].end();upper=lower;depth=1
             while upper<len(clean)and depth:
@@ -131,7 +136,7 @@ def native_uses(files,inert_source,without_tests,functions,trace):
       (FLOW,'pump_tray',r'let\s+bridge\s*=\s*TrayBridge::new\s*\(\s*prepared\.clone\s*\(\s*\)\s*,\s*wake\s*\)','active prepared labels initialize the actual bridge'),
       (FLOW,'pump_tray',r'NativeTray::start\s*\(\s*Arc::clone\s*\(\s*&bridge\s*\)','selected worker receives that bridge'),
       (FLOW,'pump_tray',r'tray\.port\.update\s*\(\s*prepared\.clone\s*\(\s*\)\s*\)','updates retain current prepared labels'),
-      (TRAY,'new',r'Mailbox\s*\{[^}]*\bprojection\s*,','bridge stores the received complete projection'),
+      (TRAY,'TrayBridge::new',r'Mailbox\s*\{[^}]*\bprojection\s*,','bridge stores the received complete projection'),
       (TRAY,'replace',r'\.projection\s*=\s*projection\s*;','updates replace the retained projection'),
       (TRAY,'prepared_projection',r'\.map\s*\(\s*\|slot\|\s*slot\.projection\.clone\s*\(\s*\)\s*\)','popup reads the retained immutable projection'),
       (TRAY_OS,'update',r'self\.bridge\.replace\s*\(\s*projection\s*\)','actual native update retains its argument'),
@@ -197,23 +202,53 @@ def native_uses(files,inert_source,without_tests,functions,trace):
       (NOTICE_FLOW,'request_native',r'\.copy\s*\.prepare_native_notification\s*\(','request uses current private catalog'),
       (NOTICE_FLOW,'request_native',r'\bport\.request_test\s*\(\s*&prepared\s*,','prepared fields reach actual adapter'),
       (COPY,'prepare_native_notification',r'\bPreparedTestNotice::from_snapshot\s*\(\s*&active\.snapshot\s*\(','active snapshot supplies every native field'),
-      (NOTICE_OS,'request_test',r'\bdocument\s*\(\s*prepared\s*,','actual request builds document from checked fields'),
-      (NOTICE_OS,'request_test',r'\bToastNotification::CreateToastNotification\s*\(','real notification object is constructed'),
-      (NOTICE_OS,'request_test',r'\.notifier\.Show\s*\(\s*&active\.toast','real guarded native submission sink'),
       (NOTICE_OS,'document',r'for\s+content\s+in\s*\[\s*prepared\.title\s*\(\s*\)\s*,\s*prepared\.body\s*\(\s*\)\s*\].*\.CreateTextNode\s*\(\s*&HSTRING::from\s*\(\s*content\s*\)','actual title/body text node arguments'),
     ]:require(path,name,pattern,role)
     for path,name,pattern,role in [
       (NOTICE,'from_snapshot',r'let\s+render\s*=\s*\|key\|\s*\{\s*snapshot\s*\.text\s*\(\s*MessageId::from_key\s*\(\s*key\s*\)','closed keys are looked up in the selected snapshot'),
       (NOTICE,'checked_parts',r'Ok\s*\(\s*Self\s*\{\s*notice\s*,\s*title\s*:\s*title\.to_owned\s*\(\s*\)\s*,\s*body\s*:\s*body\.to_owned\s*\(\s*\)\s*,\s*action\s*:\s*action\.to_owned\s*\(\s*\)\s*,?\s*\}\s*\)','checked fields retain their exact roles'),
-      (NOTICE_OS,'request_test',preparation_binding('document',r'document\s*\(\s*prepared\s*,\s*token\s*\)'), 'current prepared fields supply the selected document'),
-      (NOTICE_OS,'request_test',preparation_binding('toast',r'ToastNotification::CreateToastNotification\s*\(\s*&document\s*\)'), 'that document supplies the selected toast'),
-      (NOTICE_OS,'request_test',r'let\s+mut\s+active\s*=\s*ActiveToast\s*\{\s*toast\s*,','actual active object retains the selected toast'),
+      (NOTICE_OS,NOTICE_REQUEST,
+       r'let\s+attempt\s*=\s*match\s+self\.session\.admit\s*\(\s*prepared\s*,\s*preferences\s*,\s*observer\s*,?\s*\)\s*'
+       r'\{\s*Ok\s*\(\s*None\s*\)\s*=>\s*return\s+RequestOutcome::Coalesced\s*,\s*'
+       r'Err\s*\(\s*block\s*\)\s*=>\s*return\s+RequestOutcome::Blocked\s*\(\s*block\s*\)\s*,\s*'
+       r'Ok\s*\(\s*Some\s*\(\s*attempt\s*\)\s*\)\s*=>\s*attempt\s*,?\s*\}\s*;',
+       'the admitted session attempt owns the requested prepared notice'),
+      (NOTICE,'DeliverySession::admit',
+       r'Ok\s*\(\s*Some\s*\(\s*DeliveryAttempt\s*\{\s*session\s*:\s*self\s*,\s*prepared\s*,?\s*\}\s*\)\s*\)\s*\}\s*$',
+       'the session retains its exact prepared notice in the admitted attempt'),
+      (NOTICE_OS,NOTICE_REQUEST,
+       r'let\s+token\s*=\s*attempt\.activation_token\s*\(\s*\)\s*;\s*'
+       +preparation_binding('document',r'document\s*\(\s*attempt\.prepared\s*\(\s*\)\s*,\s*token\s*,?\s*\)'),
+       'the admitted attempt supplies the prepared fields and token for the selected document'),
+      (NOTICE_OS,NOTICE_REQUEST,preparation_binding('toast',r'ToastNotification::CreateToastNotification\s*\(\s*&document\s*\)'), 'that document supplies the selected toast'),
+      (NOTICE_OS,NOTICE_REQUEST,r'let\s+mut\s+active\s*=\s*ActiveToast\s*\{\s*toast\s*,','actual active object retains the selected toast'),
+      (NOTICE_OS,NOTICE_REQUEST,
+       r'let\s+notifier\s*=\s*&self\.notifier\s*;\s*'
+       r'let\s+submission\s*=\s*attempt\.attempt_show\s*\(\s*\|\|\s*\{\s*'
+       r'if\s+notifier\.Show\s*\(\s*&active\.toast\s*\)\s*\.is_ok\s*\(\s*\)\s*'
+       r'\{\s*Submission::AcceptedByOs\s*\}\s*else\s*\{\s*Submission::Indeterminate\s*\}\s*'
+       r'\}\s*\)\s*;\s*self\.active\s*=\s*Some\s*\(\s*active\s*\)\s*;\s*'
+       r'RequestOutcome::Attempted\s*\(\s*submission\s*\)\s*\}\s*$',
+       'the attempt submits the selected toast through the same notifier and retains the result'),
       (NOTICE_OS,'document',r'let\s+doc\s*=\s*XmlDocument::new\s*\(\s*\)','one document owns the selected nodes'),
       (NOTICE_OS,'document',r'let\s+text\s*=\s*doc\.CreateTextNode\s*\(\s*&HSTRING::from\s*\(\s*content\s*\)\s*\).*element\.AppendChild\s*\(\s*&text\s*\).*binding\.AppendChild\s*\(\s*&element\s*\)','title/body nodes join the binding'),
       (NOTICE_OS,'document',r'visual\.AppendChild\s*\(\s*&binding\s*\).*toast\.AppendChild\s*\(\s*&visual\s*\)','binding joins the toast'),
       (NOTICE_OS,'document',r'actions\.AppendChild\s*\(\s*&action\s*\).*toast\.AppendChild\s*\(\s*&actions\s*\).*doc\.AppendChild\s*\(\s*&toast\s*\).*Ok\s*\(\s*doc\s*\)','localized action joins the returned document'),
     ]:require(path,name,pattern,role)
     for name,expression in [('title','&self.title'),('body','&self.body'),('action_label','&self.action')]:getter(NOTICE,name,expression)
+    getter(NOTICE,'DeliveryAttempt::prepared','self.prepared')
+    exact_body(NOTICE,'DeliveryAttempt::activation_token',"""
+        ActivationToken::new(self.session.nonce, self.prepared.notice)
+    """,'the token belongs to the admitted notice and session')
+    exact_body(NOTICE,'DeliveryAttempt::attempt_show',"""
+        let notice = self.prepared.notice;
+        self.session.high_water = notice.id();
+        self.session.latest = Some((notice, Submission::Indeterminate));
+        self.session.activated = false;
+        let submission = show();
+        self.session.latest = Some((notice, submission));
+        submission
+    """,'the admitted ID is spent before the one actual Show callback')
     exact_body(COPY,'prepare_native_notification',"""
         use crate::notifications_ui::native_delivery::{NoticeError, PreparedTestNotice};
         if self.failed { return Err(NoticeError::Catalog(Error::Schema)); }

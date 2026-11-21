@@ -147,11 +147,7 @@ impl Shared {
             Err(_) => true,
             Ok(report) => {
                 let series: &nevrotick_engine::SeriesReport = report.series();
-                series_operation_failed(
-                    series.end(),
-                    series.primary_failure().is_some(),
-                    cleanup_failed,
-                )
+                series_operation_failed(series.collection_end())
             }
         });
         WorkerCompletion {
@@ -172,12 +168,12 @@ fn any_cleanup_failure(stop_failed: bool, invalidate_failed: bool) -> bool {
     stop_failed || invalidate_failed
 }
 
-/// Classify operation failure from the original series end and recorded cause presence.
-/// Every enum/boolean combination is accepted; this total, effect-free policy
-/// preserves primary and stale failures without duplicating a cleanup-only cause.
+/// Classify operation failure from the Engine's validated collection decision.
+/// Engine finish already forces primary failures to Failure; independent cleanup
+/// cannot erase Stale or introduce an additional operation failure.
 /// It does not establish either actual Engine cleanup producer or report transfer.
-fn series_operation_failed(end: SeriesEnd, primary_failed: bool, cleanup_failed: bool) -> bool {
-    primary_failed || end == SeriesEnd::Stale || (end == SeriesEnd::Failure && !cleanup_failed)
+fn series_operation_failed(end: SeriesEnd) -> bool {
+    matches!(end, SeriesEnd::Stale | SeriesEnd::Failure)
 }
 
 /// The test composition can pause at these boundaries without replacing an Engine result.

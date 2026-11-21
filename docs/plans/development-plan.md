@@ -1233,8 +1233,70 @@ capability prerequisite. Freeze the publisher/resource identity and bounded
 pre-terminal writer contract first. Windows may terminate the process after
 `SERVICE_STOPPED`, so terminal reporting and durable event delivery retain
 separate exit evidence. The [two-event compiler input](../../tasks/windows11-integration.md#two-event-compiler-input-checkpoint--21-november-2026)
-now reaches the metadata CLI and independent source readback. The writer still
-needs a pre-terminal handoff before the same poll can finish the service.
+now reaches the metadata CLI and independent source readback. The
+[portable pre-terminal handoff](../../tasks/windows11-integration.md#portable-pre-terminal-writer-handoff--21-november-2026)
+connects those live records to a bounded writer control in the actual service
+Stop owner. The original cutoff and independent worker/writer completion guard
+the terminal call. The fixture host now handles a final writer wake followed by
+a pending join. The portable writer connects a bounded real thread to that
+host, with controls for admission, cutoff and physical exit. The repaired
+653-input fixture candidate passed 121 ordinary and 121 optimized cases plus
+GNU and Windows-target Clippy. The writer's per-file metrics, native provider
+and installed delivery remain open. The fixture runner now binds the writer
+to its own coverage subject and direct mutation lanes. Reader controls,
+graph admission and GNU Clippy passed for the initial 654-input candidate.
+That test rebuild stopped at the disk reserve. The
+[current writer prerequisite](../../tasks/windows11-integration.md#portable-pre-terminal-writer-handoff--21-november-2026)
+passes all six graph commands and 121 unfiltered GNU tests on the exact
+654-input successor. The bounded private scratch retained the original
+disk and memory guards. The matching test receipt is ready for the
+durable writer metrics route when 6 GiB is free on ext4.
+Current shared diagnostics passes 936/963 executable lines
+and 240/240 viable generated variants. The fixture-wide metrics still
+need durable WSL capacity and fresh exact bindings. The matching Microsoft
+SDK archive and authoring fixture are frozen for Message Compiler and
+linked-resource readback. Admit the exact licence and tools for that
+compiler-only job, then continue the provider-bound writer and intended-token
+observations under W11-W08 and W11-W10.
+
+The [Engine collection and timer cleanup transfer](../../tasks/windows11-integration.md#engine-collection-and-timer-cleanup-transfer--21-november-2026)
+preserves a final Stale decision beside a reaped timer failure. The private
+joint fixture control reproduced the lost operation diagnostic under the
+old classifier and passed with the repaired classifier. It exercised the
+actual joined worker and both decoded causes on the current writer base.
+Per-file metrics and native service qualification remain with W11-W05/S3.1.
+
+In parallel, the [MD-P4 VERSIONINFO compiler and readback pilot](../../tasks/windows11-integration.md#md-p4-versioninfo-compiler-and-readback-pilot--21-november-2026)
+verified generated UI and Observe resources in linked WSL-built PE carriers,
+including the wrong-role, absent-resource and changed-input controls. The
+corrected detached source then cross-linked the actual Slint UI executable,
+and independent readback confirmed the exact selected version resource.
+The [maintained runner build](../../tasks/windows11-integration.md#maintained-windows-ui-resource-build--21-november-2026)
+passed the complete WSL Windows lane, independently inspected the selected
+resource and exported both matched EXE/PDB pairs. The same-target Slint warm
+build and clean comparison matched the changed resource. Removing the selector
+produced the expected missing-resource refusal. The source-mode UI slice is
+integrated in the main worktree. Its [Observe continuation](../../tasks/windows11-integration.md#maintained-observe-versioninfo-build--21-november-2026)
+now links the diagnostic resource into the actual console executable. All
+31 configured default Windows cross-build rows passed and independent readback
+matched both resource and EXE/PDB pairs. Observe warm and clean builds matched
+the changed metadata, and the real console readback refused wrong-component
+and absent resources. The event compiler, installed delivery and complete
+MSIX retain their separate prerequisites.
+
+The [linked PE hardening gate](../../tasks/build-optimization.md#linked-windows-pe-hardening-gate--21-november-2026)
+now checks each emitted UI and Observe image before metadata acceptance or
+export. The configured default Windows build passed all 32 rows. The
+new check rejects the observed DEP-cleared counterexamples, binds both
+images to export, and separates static declarations from the native
+mitigation and installed MSIX gates.
+
+The [EXE/PDB pair admission follow-up](../../tasks/build-optimization.md#configured-export-needs-exepdb-pair-identity--21-november-2026)
+now binds both PDBs to the actual UI and Observe executables before export.
+The configured Windows replay passed all 32 rows. Independent readback
+matched the new pairs, and the live receiver refused both a wrong-role PDB
+and an age-only mismatch with empty destinations. Service and Engine fixture
+symbol admission retain their separate owners.
 
 The child composes one real, explicit managed-loopback Engine series with the
 existing portable service invocation. Its first source stage changes neither
@@ -2912,6 +2974,17 @@ under pure LP-C01/02/03, CHECK-7/25/26 and CHECK-15/23's pure replacement subset
 Its task records the current input maps, qualified receipt reuse, admission-code
 delta, four passing mutation cohorts and current offline generator checks. This
 completes neither full S1.4 nor P1.
+
+**LP-C08 calendar prerequisite — 21 November 2026.** The
+[uncovered UTC month-boundary query](../../tasks/s1.4-leap-policy.md#uncovered-utc-month-boundary--21-november-2026)
+now supplies a checked guard candidate from the complete date window. GNU
+development and endpoint sensitivity checks passed. All three changed files
+passed the 90% executable-line and 95% per-file mutation gates. The supervised
+replay caught all 109 viable variants out of 143 generated, with no survivors or
+timeouts. Independent readback verified the exact candidate and delivered
+evidence. The Core guard consumer remains open until the required finite
+envelope, mapping and invalidation facts are admitted.
+
 **Completed bounded child:** the existing
 [three-owner S2.1 measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
 passes 47 ordinary host tests, 12 doctests, current per-file coverage and the

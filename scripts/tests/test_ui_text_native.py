@@ -32,22 +32,36 @@ def change(files,path,old,new,count=1):
     files[path]=files[path].replace(old,new,count)
 
 
-def selected_notice_let_else(files,names=('document','toast')):
-    for name,call in [('document','document(prepared, token)'),
-                      ('toast','ToastNotification::CreateToastNotification(&document)')]:
-        if name not in names:continue
-        old=('let '+name+' = match '+call+' {\n'
-             '            Ok(value) => value,\n'
-             '            Err(_) => return RequestOutcome::NotSubmitted(NativeFailure::Preparation),\n'
-             '        };')
-        new=('let Ok('+name+') = '+call+' else {\n'
-             '            return RequestOutcome::NotSubmitted(NativeFailure::Preparation);\n'
-             '        };')
-        change(files,n.NOTICE_OS,old,new)
+PREPARATION_CALLS = {
+    'document': 'document(attempt.prepared(), token)',
+    'toast': 'ToastNotification::CreateToastNotification(&document)',
+}
+PREPARATION_FAILURE = 'return RequestOutcome::NotSubmitted(NativeFailure::Preparation);'
+
+
+def let_else_preparation(name):
+    return (f'let Ok({name}) = {PREPARATION_CALLS[name]} else {{\n'
+            f'            {PREPARATION_FAILURE}\n'
+            '        };')
+
+
+def select_preparation_match(files, names):
+    for name in names:
+        matched = (f'let {name} = match {PREPARATION_CALLS[name]} {{\n'
+                   '            Ok(value) => value,\n'
+                   f'            Err(_) => {PREPARATION_FAILURE.removesuffix(";")},\n'
+                   '        };')
+        change(files,n.NOTICE_OS,let_else_preparation(name),matched)
 
 
 class NativeTextCoverage(unittest.TestCase):
-    def setUp(self):self.files=fixture()
+    def setUp(self):
+        self.files = fixture()
+        root = Path(__file__).resolve().parents[2]
+        # Keep the unchanged fixture owners frozen. The admission and
+        # submission controls exercise the current notice adapter and owner.
+        for path in (n.NOTICE, n.NOTICE_OS):
+            self.files[path] = c.read_regular(root / path, c.MAX_FILE_BYTES).decode('utf-8', 'strict')
 
     def test_actual_current_host_and_native_api_arguments_are_healthy(self):
         value=result(self.files)
@@ -118,8 +132,8 @@ class NativeTextCoverage(unittest.TestCase):
         self.assertEqual(result(self.files)['errors'],[])
 
     def test_toast_requires_actual_show_not_a_comment(self):
-        change(self.files,n.NOTICE_OS,'.notifier.Show(','.notifier.UnusedShow(')
-        self.files[n.NOTICE_OS]+='\n// .notifier.Show(&active.toast)\n'
+        change(self.files,n.NOTICE_OS,'notifier.Show(','notifier.UnusedShow(')
+        self.files[n.NOTICE_OS]+='\n// notifier.Show(&active.toast)\n'
         value=result(self.files)
         self.assertNotIn('ui.native-notification.test-title',value['uses'])
         self.assertIn('ui.tray.menu.open',value['uses'])
@@ -167,60 +181,98 @@ class NativeTextCoverage(unittest.TestCase):
         change(self.files,n.NOTICE_OS,'CreateToastNotification(&document)','CreateToastNotification(&XmlDocument::new()?)')
         self.assertNotIn('ui.native-notification.test-body',result(self.files)['uses'])
 
-    def test_selected_preparation_let_else_forms_are_healthy(self):
+    def test_selected_preparation_match_forms_and_spaced_let_else_are_healthy(self):
         for names in [('document',),('toast',),('document','toast')]:
             with self.subTest(bindings=names):
-                files=copy.deepcopy(self.files);selected_notice_let_else(files,names)
+                files=copy.deepcopy(self.files);select_preparation_match(files,names)
                 self.assertEqual(result(files)['errors'],[])
                 self.assertEqual(len(result(files)['uses']),16)
-        files=copy.deepcopy(self.files);selected_notice_let_else(files)
-        change(files,n.NOTICE_OS,'let Ok(document) = document(prepared, token) else {',
-               'let Ok(\n document\n) = document(\n prepared, token\n) else {')
+        files=copy.deepcopy(self.files)
+        change(files,n.NOTICE_OS,'let Ok(document) = document(attempt.prepared(), token) else {',
+               'let Ok(\n document\n) = document(\n attempt.prepared(), token\n) else {')
         change(files,n.NOTICE_OS,'let Ok(toast) = ToastNotification::CreateToastNotification(&document) else {',
                'let Ok(toast) =\n ToastNotification::CreateToastNotification(\n &document\n) else {')
         self.assertEqual(result(files)['errors'],[])
 
     def test_let_else_document_requires_current_prepared_arguments(self):
-        for call in ['document(other, token)','document(prepared, other)']:
+        for call in ['document(prepared, token)', 'document(other.prepared(), token)',
+                     'document(attempt.prepared(), other)']:
             with self.subTest(call=call):
-                files=copy.deepcopy(self.files);selected_notice_let_else(files)
-                change(files,n.NOTICE_OS,'document(prepared, token)',call)
+                files=copy.deepcopy(self.files)
+                change(files,n.NOTICE_OS,PREPARATION_CALLS['document'],call)
                 self.assertNotIn('ui.native-notification.test-body',result(files)['uses'])
                 self.assertTrue(result(files)['errors'])
 
     def test_let_else_toast_requires_selected_document(self):
-        selected_notice_let_else(self.files)
         change(self.files,n.NOTICE_OS,'CreateToastNotification(&document)',
                'CreateToastNotification(&XmlDocument::new()?)')
         self.assertNotIn('ui.native-notification.test-body',result(self.files)['uses'])
         self.assertTrue(result(self.files)['errors'])
 
     def test_let_else_preparation_failure_must_diverge_with_fixed_outcome(self):
-        failure='return RequestOutcome::NotSubmitted(NativeFailure::Preparation);'
-        for replacement in [failure.removeprefix('return '),
+        for replacement in [PREPARATION_FAILURE.removeprefix('return '),
                             'return RequestOutcome::NotSubmitted(NativeFailure::CleanupPending);',
                             'return RequestOutcome::Attempted(Submission::AcceptedByOs);']:
             for name in ['document','toast']:
                 with self.subTest(binding=name,replacement=replacement):
-                    files=copy.deepcopy(self.files);selected_notice_let_else(files,(name,))
-                    change(files,n.NOTICE_OS,failure,replacement)
+                    files=copy.deepcopy(self.files)
+                    selected=let_else_preparation(name)
+                    change(files,n.NOTICE_OS,selected,selected.replace(PREPARATION_FAILURE,replacement))
                     self.assertNotIn('ui.native-notification.test-body',result(files)['uses'])
                     self.assertTrue(result(files)['errors'])
 
     def test_let_else_selected_binding_cannot_be_substituted(self):
         for name in ['document','toast']:
             with self.subTest(binding=name):
-                files=copy.deepcopy(self.files);selected_notice_let_else(files)
+                files=copy.deepcopy(self.files)
                 change(files,n.NOTICE_OS,'let Ok('+name+') =','let Ok(other) =')
                 self.assertNotIn('ui.native-notification.test-body',result(files)['uses'])
                 self.assertTrue(result(files)['errors'])
 
     def test_legacy_preparation_failure_cannot_be_replaced_with_success(self):
+        select_preparation_match(self.files,('document',))
         change(self.files,n.NOTICE_OS,
                'Err(_) => return RequestOutcome::NotSubmitted(NativeFailure::Preparation),',
                'Err(_) => return RequestOutcome::Attempted(Submission::AcceptedByOs),')
         self.assertNotIn('ui.native-notification.test-body',result(self.files)['uses'])
         self.assertTrue(result(self.files)['errors'])
+
+    def test_tray_bridge_witness_is_limited_to_the_actual_constructor(self):
+        other = '\nimpl CompletionLatch { fn new() -> Self { Self { outcome: None } } }\n'
+        self.files[n.TRAY] += other
+        self.assertEqual(result(self.files)['errors'], [])
+        change(self.files,n.TRAY,'pending: TrayEvent::default(),\n                projection,',
+               'pending: TrayEvent::default(),\n                projection: other,')
+        self.files[n.TRAY] = self.files[n.TRAY].removesuffix(other)
+        self.files[n.TRAY] += '\nimpl Other { fn new(projection: PreparedTray) { Mailbox { projection, } } }\n'
+        observed = result(self.files)
+        self.assertNotIn('ui.tray.menu.open', observed['uses'])
+        self.assertIn('ui.native-notification.test-title', observed['uses'])
+        self.assertTrue(any(error['function'] == 'TrayBridge::new' for error in observed['errors']))
+
+    def test_notice_requires_checked_attempt_and_guarded_same_object_submission(self):
+        self.assertEqual(result(self.files)['errors'], [])
+        faults = (
+            (n.NOTICE_OS, 'self.session.admit(prepared, preferences, observer)',
+             'self.session.admit(other, preferences, observer)'),
+            (n.NOTICE, 'session: self,\n            prepared,',
+             'session: self,\n            prepared: other,'),
+            (n.NOTICE, '        self.prepared\n', '        self.other\n'),
+            (n.NOTICE_OS, 'let token = attempt.activation_token();', 'let token = other.activation_token();'),
+            (n.NOTICE_OS, 'let notifier = &self.notifier;', 'let notifier = &other.notifier;'),
+            (n.NOTICE_OS, 'let submission = attempt.attempt_show(', 'let submission = other.attempt_show('),
+            (n.NOTICE_OS, 'notifier.Show(&active.toast)', 'notifier.Show(&other.toast)'),
+            (n.NOTICE, 'let submission = show();', 'let submission = Submission::AcceptedByOs;'),
+        )
+        for path, old, new in faults:
+            with self.subTest(old=old):
+                files = copy.deepcopy(self.files)
+                change(files,path,old,new)
+                observed = result(files)
+                self.assertNotIn('ui.native-notification.test-body', observed['uses'])
+                self.assertNotIn(n.NOTICE_FLOW, observed['emitters'])
+                self.assertIn('ui.tray.menu.open', observed['uses'])
+                self.assertTrue(observed['errors'])
 
     def test_native_bridge_must_start_with_current_prepared_catalog_labels(self):
         change(self.files,n.FLOW,'TrayBridge::new(prepared.clone(), wake)','TrayBridge::new(PreparedTray::fixture(menu, interaction).unwrap(), wake)')

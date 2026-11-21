@@ -12,6 +12,7 @@
 //! Cancellation and health failure never acknowledge physical completion.
 
 use std::{
+    convert::Infallible,
     marker::PhantomData,
     num::NonZeroU32,
     rc::Rc,
@@ -36,9 +37,15 @@ use windows_platform::{
 
 use crate::{
     FixtureError, LabRole, NativeError, TokenObservationFailure,
-    diagnostics::{Diagnostics, Event, Sinks, lifecycle_cause, primary_cause, worker_cause},
+    diagnostics::{
+        CloseMode, Delivery, Diagnostics, Event, EventWriter, Sinks, lifecycle_cause,
+        primary_cause, worker_cause,
+    },
     error::{ServiceFailure, WorkerError},
 };
+
+#[cfg(test)]
+use crate::diagnostics::WriterClose;
 
 /// Wake the existing owner thread with one coalesced, retained unpark token.
 /// A worker retains at most one clone and publishes state before notification.
@@ -368,6 +375,9 @@ pub(super) struct HostReceipt {
     actual_result: Result<(), FixtureError>,
     /// Finite consumed originals, loss and health from that same invocation.
     diagnostics: DiagnosticSnapshot,
+    /// Local completion and loss observation from the portable writer control.
+    #[cfg(test)]
+    writer_close: Option<WriterClose>,
 }
 
 impl HostReceipt {
@@ -399,6 +409,8 @@ impl HostReceipt {
         Self {
             actual_result: Err(error),
             diagnostics: diagnostics.finish(),
+            #[cfg(test)]
+            writer_close: None,
         }
     }
 
@@ -465,7 +477,11 @@ enum WorkerCustody {
 /// The driver keeps this owner through Finished; unresolved whole-owner destruction
 /// aborts this inert fixture before any field destructor can discard custody.
 /// This guard selects no production native-job termination or recovery policy.
-pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: Worker> {
+pub(super) struct ServiceInvocation<
+    R: StatusReporter<Error = NativeError>,
+    P: Worker,
+    W: EventWriter = Infallible,
+> {
     /// Original serialized lifecycle and reporter, never replaced after expiry.
     owner: ServiceLifecycle<R>,
     /// Original worker, including its pending state and resolved cleanup custody.
@@ -504,6 +520,8 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
     result_taken: bool,
     /// Invocation-owned finite output, with no effect on lifecycle decisions.
     diagnostics: Diagnostics,
+    /// Optional writer retains its own custody through the terminal boundary.
+    writer: Option<Delivery<W>>,
     /// First emission of each existing primary/completion/Stop/terminal fact.
     diagnosed_failures: [bool; 4],
     /// Primary and secondary operation facts each route once through event 9.
@@ -512,7 +530,7 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
     thread_bound: PhantomData<Rc<()>>,
 }
 
-impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> {
+impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceInvocation<R, P, W> {
     /// Freeze the last genuine observation before the shared queue handoff.
     /// This computes checked relative metadata and performs no new clock read.
     fn emit(&mut self, event: Event) {
@@ -521,7 +539,15 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
             self.observed.last_trusted,
             self.observed.reversed,
         );
-        self.diagnostics.emit(event, observation);
+        if let Some(writer) = &mut self.writer
+            && writer.is_open()
+        {
+            if let Some(record) = self.diagnostics.emit_for_writer(event, observation) {
+                writer.offer(record, &self.wake);
+            }
+        } else {
+            self.diagnostics.emit(event, observation);
+        }
     }
 
     /// Retain kind/code once, preserving primary and each fixed secondary slot.
@@ -763,6 +789,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
     /// Fence first, attempt `StopPending` once, then request bounded cancellation.
     fn begin_stop(&mut self, clock: &mut impl Clock) {
         self.admission_closed = true;
+        if let Some(writer) = &mut self.writer {
+            writer.fence();
+        }
         self.emit(Event::AdmissionClosed);
         let now = self.observed.cleanup_observation(clock, &mut self.failure);
         self.publish_failures();
@@ -792,9 +821,12 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         }
     }
 
-    /// Observe actual completion before releasing a charge or attempting Stopped.
-    fn stop(&mut self, clock: &mut impl Clock) {
-        if self.custody != WorkerCustody::Dormant {
+    /// Observe physical worker completion and settle its original charge once.
+    fn poll_stop_worker(&mut self, clock: &mut impl Clock) -> bool {
+        if !matches!(
+            self.custody,
+            WorkerCustody::Dormant | WorkerCustody::Finished
+        ) {
             match self.worker.poll_finished(&self.wake) {
                 pending @ (WorkerFinish::Pending | WorkerFinish::JoinTailPending) => {
                     self.custody = if matches!(pending, WorkerFinish::JoinTailPending) {
@@ -812,7 +844,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     } else {
                         self.overdue = true;
                     }
-                    return;
+                    return false;
                 }
                 WorkerFinish::Finished(result) => {
                     self.custody = WorkerCustody::Finished;
@@ -827,13 +859,19 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                 }
             }
         }
-        let now = self.observed.cleanup_observation(clock, &mut self.failure);
-        if self.observed.reversed {
-            self.phase_deadline = None;
+        true
+    }
+
+    /// Observe both independently owned completions before attempting Stopped.
+    fn stop(&mut self, clock: &mut impl Clock) {
+        let worker_finished: bool = self.poll_stop_worker(clock);
+        if !worker_finished && self.writer.is_none() {
+            return;
         }
-        self.publish_failures();
-        if self.owner.state() == Some(ServiceState::StopPending) {
-            self.check_pending(now);
+        let now: Instant = self.observe_stop(clock);
+        let (now, writer_finished): (Instant, bool) = self.poll_stop_writer(clock, now);
+        if !worker_finished || !writer_finished {
+            return;
         }
         let outcome = if self.failure.is_some() {
             StopOutcome::Failed(NonZeroU32::MIN)
@@ -850,6 +888,49 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         self.publish_failures();
         self.phase = WorkerPhase::Finished;
         self.emit(Event::Finished);
+    }
+
+    /// Give the same writer the original absolute deadline and check time after
+    /// the effect. Crossing the cutoff while pending immediately retires its work.
+    fn poll_stop_writer(&mut self, clock: &mut impl Clock, now: Instant) -> (Instant, bool) {
+        let mode: CloseMode = match self.phase_deadline {
+            Some(deadline) if !self.overdue => CloseMode::Drain(deadline),
+            _ => CloseMode::Retire,
+        };
+        let Some(writer) = &mut self.writer else {
+            return (now, true);
+        };
+        if writer.is_closed() {
+            return (now, true);
+        }
+        let finished: bool = writer.poll_close(mode, &self.wake).is_ready();
+        let now: Instant = self.observe_stop(clock);
+        if !finished
+            && self.overdue
+            && matches!(mode, CloseMode::Drain(_))
+            && let Some(writer) = &mut self.writer
+        {
+            let finished: bool = writer.poll_close(CloseMode::Retire, &self.wake).is_ready();
+            return (self.observe_stop(clock), finished);
+        }
+        (now, finished)
+    }
+
+    /// Observe the original Stop deadline for failure bookkeeping and retirement.
+    /// Reversal permits only historical failed-stop use and retires writer work.
+    fn observe_stop(&mut self, clock: &mut impl Clock) -> Instant {
+        let now: Instant = self.observed.cleanup_observation(clock, &mut self.failure);
+        if self.observed.reversed {
+            self.phase_deadline = None;
+        }
+        self.overdue |= self
+            .phase_deadline
+            .is_none_or(|deadline: Instant| now >= deadline);
+        self.publish_failures();
+        if self.owner.state() == Some(ServiceState::StopPending) {
+            self.check_pending(now);
+        }
+        now
     }
 
     /// Take one finite, nonblocking step while retaining every original owner.
@@ -884,7 +965,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         if self.phase == WorkerPhase::Finished {
             return InvocationPoll::Finished;
         }
-        if self.custody == WorkerCustody::Joining {
+        if self.custody == WorkerCustody::Joining
+            || self.writer.as_ref().is_some_and(Delivery::needs_join_tail)
+        {
             // The terminal marker permits only this relative cleanup observation.
             // Reversed time supplies no trusted deadline or arithmetic operand.
             let wait: Duration = if self.overdue || self.observed.reversed {
@@ -947,6 +1030,8 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         Some(HostReceipt {
             actual_result: result,
             diagnostics: self.diagnostics.finish(),
+            #[cfg(test)]
+            writer_close: self.writer.as_ref().and_then(Delivery::outcome),
         })
     }
 
@@ -999,14 +1084,17 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, P: Worker> Drop for ServiceInvocation<R, P> {
-    /// Refuse unresolved whole-owner destruction before worker/reporter fields drop.
+impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> Drop
+    for ServiceInvocation<R, P, W>
+{
+    /// Refuse unresolved whole-owner destruction before worker/writer/reporter fields drop.
     /// Process abort is fixture-only; it promises no native termination recovery.
     fn drop(&mut self) {
         if !matches!(
             self.custody,
             WorkerCustody::Dormant | WorkerCustody::Finished
-        ) {
+        ) || self.writer.as_ref().is_some_and(Delivery::unresolved)
+        {
             std::process::abort();
         }
     }
@@ -1069,6 +1157,35 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
     composition: (P, Sinks),
 ) -> Result<ServiceInvocation<A::Reporter, P>, HostReceipt> {
     let (worker, sinks): (P, Sinks) = composition;
+    start_invocation_with_writer(
+        role,
+        argc,
+        factory,
+        token_observer,
+        clock,
+        notification,
+        (worker, sinks, None),
+    )
+}
+
+/// Bind one optional dormant writer to the actual registered lifecycle owner.
+///
+/// # Errors
+/// Preserve startup failure without ever offering work to an unbound writer.
+#[expect(
+    clippy::result_large_err,
+    reason = "return the original bounded startup receipt without allocating on failure"
+)]
+fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventWriter>(
+    role: LabRole,
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    notification: &StopNotification,
+    composition: (P, Sinks, Option<W>),
+) -> Result<ServiceInvocation<A::Reporter, P, W>, HostReceipt> {
+    let (worker, sinks, writer): (P, Sinks, Option<W>) = composition;
     let diagnostics: Diagnostics = Diagnostics::new(role, sinks);
     let reporter: A::Reporter = match factory.register(role) {
         Ok(reporter) => reporter,
@@ -1124,6 +1241,11 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
         }
     }
     let admission_closed = failure.is_some() || notification.stop_requested();
+    let writer: Option<Delivery<W>> = if admission_closed {
+        None
+    } else {
+        writer.map(Delivery::new)
+    };
     let mut invocation = ServiceInvocation {
         owner,
         worker,
@@ -1144,6 +1266,7 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
         terminal_failure: None,
         result_taken: false,
         diagnostics,
+        writer,
         diagnosed_failures: [false; 4],
         diagnosed_operations: [false; 2],
         thread_bound: PhantomData,
@@ -1189,6 +1312,8 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
                 return invocation.take_receipt().unwrap_or_else(|| HostReceipt {
                     actual_result: Err(FixtureError::OutcomeUnavailable),
                     diagnostics: invocation.diagnostics.finish(),
+                    #[cfg(test)]
+                    writer_close: None,
                 });
             }
         }

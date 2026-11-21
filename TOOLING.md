@@ -2546,7 +2546,27 @@ python3 -B scripts/verify.py
 | --- | --- |
 | `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the seven admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
-| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and observe CLI; exports both executables and matching PDBs to new external output, preserving existing UI receipt keys and adding the engine artifact record. Native execution remains separate. |
+| `--lane windows --llvm-rc /usr/lib/llvm-22/bin/llvm-rc --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and Observe CLI. Verifies both linked version resources and exports the two executables and matching PDBs to new external output. Native execution remains separate. |
+
+The Windows release links select the admitted LLVM 22.1.8 `llvm-rc` and its
+matching sibling `lib/libLLVM.so.22.1`. Use the regular installation layout
+or its executable symlink. The runner checks both files and the Rust-bundled
+reader and LLVM library against exact pins. The metadata CLI generates and
+checks a frozen source-mode tree in an owner-private Linux directory. The
+resource compiler uses UTF-8 code page 65001 with preprocessing disabled.
+Each link receives only its own read-only resource. The UI build script
+uses its existing digest input. The Observe release row passes the digest
+in the resource filename to the final executable's `cargo rustc` invocation.
+The bounded PE reader checks the emitted machine, subsystem, relocation,
+CFG, ASLR, DEP, strict CET, dependent-load and section declarations of both
+images. The pinned LLVM reader independently checks their VERSIONINFO fields.
+Both checks run even when `--output-dir` is omitted. Export checks each
+inspected image hash and matches its CodeView basename, GUID and age against
+the selected PDB before writing either pair. The reader accepts the emitted
+MSF 7 format with 4 KiB pages and a VC70 Info header. The receipt records the
+source, compiler, resource, image and symbol identities.
+Runtime mitigations, package, signing and installation retain their own gates.
+[Pinned LLVM RC options](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/tools/llvm-rc/Opts.td#L34-L39)
 
 For [EP1](tasks/engine-transport-pilot.md#ep1--actual-ke-producer-into-engine-ownership),
 add `--profile engine-ke-association` to the selected dependency, portable or

@@ -80,7 +80,7 @@ fn valid_ledger(value: &LedgerValue<'_>) -> bool {
 /// Input seconds are nonnegative and at most `i64::MAX`. Whole-day conversion
 /// and the 400-year cycle use i128, leaving ample headroom for every intermediate.
 /// A March-based cycle has fixed month-start positions, including leap years.
-fn is_month_start(seconds: u64) -> bool {
+pub(super) fn is_month_start(seconds: u64) -> bool {
     if !seconds.is_multiple_of(86_400) {
         return false;
     }

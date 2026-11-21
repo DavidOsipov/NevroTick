@@ -9,7 +9,7 @@ use std::error::Error;
 use time_domain::{
     EraWindow, LeapContinuousFrom, LeapDataIdentity, LeapDateScope, LeapError, LeapEventKnowledge,
     LeapFutureExpiry, LeapHistoryBefore, LeapInterpretation, LeapKnowledge, LeapOffsetKnowledge,
-    MAX_COORDINATE_TICKS,
+    MAX_COORDINATE_TICKS, UtcCoordinateQ32,
 };
 
 /// Exact Q32 unit, independently fixed by the coordinate representation.
@@ -948,5 +948,169 @@ fn huge_monthly_records_retain_the_checked_numeric_envelope() -> Result<(), Box<
         LeapEventKnowledge::KnownEvents,
         1,
     );
+    Ok(())
+}
+
+/// LP-C08: an uncovered month boundary uses the exact inclusive Q32 interval.
+///
+/// # Errors
+/// Propagates unexpected rejection of the ledger, scope or query.
+/// # Panics
+/// Fails if an allowed month start is missed or a neighboring tick qualifies.
+#[test]
+fn uncovered_month_starts_use_exact_inclusive_query_ticks() -> Result<(), Box<dyn Error>> {
+    let history: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, 2_335_219_200, None, None)?;
+    let scope: LeapDateScope = LeapDateScope::new(window(2_335_219_200, 2_358_806_401)?)?;
+    // April, May and October 1974, independently calculated from Gregorian dates.
+    for midnight in [2_342_995_200_i128, 2_345_587_200, 2_358_806_400] {
+        let tick: i128 = midnight * SECOND;
+        for (lower, upper, expected) in [
+            (tick - 1, tick - 1, None),
+            (tick - 1, tick, Some(tick)),
+            (tick, tick, Some(tick)),
+            (tick, tick + 1, Some(tick)),
+            (tick + 1, tick + 1, None),
+        ] {
+            let answer: LeapInterpretation =
+                history.interpret(EraWindow::new(lower, upper)?, scope)?;
+            assert_eq!(
+                answer
+                    .first_uncovered_month_boundary()
+                    .map(UtcCoordinateQ32::ticks),
+                expected,
+                "month start {midnight}, query [{lower}, {upper}]"
+            );
+        }
+    }
+    let ordinary: LeapInterpretation =
+        history.interpret(window(2_344_204_800, 2_344_204_801)?, scope)?;
+    assert_eq!(ordinary.events(), LeapEventKnowledge::Unknown);
+    assert!(ordinary.first_uncovered_month_boundary().is_none());
+    Ok(())
+}
+
+/// LP-C08: reviewed and finite coverage precede candidates; continuous UTC ends them.
+///
+/// # Errors
+/// Propagates unexpected rejection of the ledger, scope or query.
+/// # Panics
+/// Fails on the wrong candidate, or on loss of a previously known transition.
+#[test]
+fn uncovered_month_starts_respect_coverage_fences() -> Result<(), Box<dyn Error>> {
+    let scope: LeapDateScope = LeapDateScope::new(window(2_303_683_200, 2_358_806_400)?)?;
+    let april: u64 = 2_342_995_200;
+    let may: u64 = 2_345_587_200;
+    let april_ticks: i128 = i128::from(april) * SECOND;
+    let may_ticks: i128 = i128::from(may) * SECOND;
+    for (review, expiry) in [(2_340_316_800, Some(april)), (april, Some(2_340_316_800))] {
+        let open: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, review, expiry, None)?;
+        let covered: EraWindow = EraWindow::new(scope.dates().earliest().ticks(), april_ticks - 1)?;
+        let covered_answer: LeapInterpretation = open.interpret(covered, scope)?;
+        assert!(covered_answer.first_uncovered_month_boundary().is_none());
+        let answer: LeapInterpretation = open.interpret(scope.dates(), scope)?;
+        assert_answer(
+            answer,
+            LeapOffsetKnowledge::Unknown,
+            LeapEventKnowledge::Unknown,
+            1,
+        );
+        assert_eq!(
+            answer
+                .first_uncovered_month_boundary()
+                .map(UtcCoordinateQ32::ticks),
+            Some(april_ticks)
+        );
+    }
+    let gapped: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, april, None, Some(may))?;
+    let straddling: LeapInterpretation = gapped.interpret(scope.dates(), scope)?;
+    assert_eq!(
+        straddling
+            .first_uncovered_month_boundary()
+            .map(UtcCoordinateQ32::ticks),
+        Some(april_ticks)
+    );
+    for (lower, upper) in [(may_ticks - 1, may_ticks), (may_ticks, may_ticks + 1)] {
+        let answer: LeapInterpretation = gapped.interpret(EraWindow::new(lower, upper)?, scope)?;
+        assert!(answer.first_uncovered_month_boundary().is_none());
+    }
+    let bridged: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, april, Some(may), Some(may))?;
+    let answer: LeapInterpretation = bridged.interpret(window(april, 2_358_806_400)?, scope)?;
+    assert_answer(
+        answer,
+        LeapOffsetKnowledge::Known(12),
+        LeapEventKnowledge::NoEvents,
+        0,
+    );
+    assert!(answer.first_uncovered_month_boundary().is_none());
+    Ok(())
+}
+
+/// LP-C08: 48 month transitions use an independently enumerated Gregorian oracle.
+///
+/// # Errors
+/// Propagates unexpected rejection of the ledger, scope or query.
+/// # Panics
+/// Fails if a month transition is premature, missed or shifted by one day.
+#[test]
+fn uncovered_month_starts_follow_independent_month_lengths() -> Result<(), Box<dyn Error>> {
+    let history: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, 2_335_219_200, None, None)?;
+    let scope: LeapDateScope = LeapDateScope::new(window(3_124_137_600, 15_810_076_800)?)?;
+    // Literal January starts for 1999, 2000, 2100 and 2400, with their February lengths.
+    for (january, february_days) in [
+        (3_124_137_600_i128, 28_i128),
+        (3_155_673_600, 29),
+        (6_311_433_600, 28),
+        (15_778_454_400, 29),
+    ] {
+        let mut start: i128 = january * SECOND;
+        for days in [31, february_days, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] {
+            let next: i128 = start + days * 86_400 * SECOND;
+            let before: LeapInterpretation =
+                history.interpret(EraWindow::new(start + 1, next - 1)?, scope)?;
+            let through: LeapInterpretation =
+                history.interpret(EraWindow::new(start + 1, next)?, scope)?;
+            assert!(
+                before.first_uncovered_month_boundary().is_none(),
+                "before {next}"
+            );
+            assert_eq!(
+                through
+                    .first_uncovered_month_boundary()
+                    .map(UtcCoordinateQ32::ticks),
+                Some(next),
+                "through {next}"
+            );
+            start = next;
+        }
+    }
+    Ok(())
+}
+
+/// LP-C08: a query at the numeric ceiling has no representable next month start.
+///
+/// # Errors
+/// Propagates unexpected rejection of the ledger, scope or query.
+/// # Panics
+/// Fails if an out-of-range month start is reported or a valid neighbor is lost.
+#[test]
+fn uncovered_month_starts_stop_at_the_coordinate_ceiling() -> Result<(), Box<dyn Error>> {
+    let history: LeapKnowledge<'_> = knowledge(&EARLY_HISTORY, 2_335_219_200, None, None)?;
+    // Gregorian 400-year reduction of i64::MAX seconds lands on December 5.
+    let last_start: i128 = 9_223_372_036_854_374_400_i128 * SECOND;
+    let scope: LeapDateScope =
+        LeapDateScope::new(EraWindow::new(last_start, MAX_COORDINATE_TICKS)?)?;
+    for (lower, upper, expected) in [
+        (last_start, MAX_COORDINATE_TICKS, Some(last_start)),
+        (last_start + 1, MAX_COORDINATE_TICKS, None),
+        (MAX_COORDINATE_TICKS, MAX_COORDINATE_TICKS, None),
+    ] {
+        let answer: LeapInterpretation = history.interpret(EraWindow::new(lower, upper)?, scope)?;
+        assert_eq!(
+            answer
+                .first_uncovered_month_boundary()
+                .map(UtcCoordinateQ32::ticks),
+            expected
+        );
+    }
     Ok(())
 }

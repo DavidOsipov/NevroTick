@@ -7,6 +7,7 @@ Windows cross-linking supplies no native UI, service or release qualification.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 import hashlib
 import importlib.util
 import json
@@ -108,6 +109,40 @@ UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_cove
 
 UI_NATIVE_INPUT_CHECKER_FILES = ("scripts/native_input_source.py",
                                  "scripts/tests/test_native_input_source.py")
+
+WINDOWS_PE_INPUT_FILES = ("scripts/windows_pe.py", "scripts/tests/test_windows_pe.py")
+WINDOWS_UI_INPUT_FILES = (
+    "metadata/product.toml",
+    "metadata/__init__.py",
+    "metadata/pipeline/__init__.py",
+    "metadata/pipeline/__main__.py",
+    "metadata/pipeline/contract.py",
+    "metadata/pipeline/delivery.py",
+    "metadata/pipeline/fields.py",
+    "metadata/pipeline/generate.py",
+    "metadata/pipeline/text_policy.py",
+    "scripts/windows_versioninfo_expectation.py",
+    "scripts/windows_versioninfo.py",
+    "scripts/tests/test_windows_versioninfo.py",
+)
+
+RC_COMPILER = "/tools/llvm/bin/llvm-rc"
+RC_LIBRARY = "/tools/llvm/lib/libLLVM.so.22.1"
+WINDOWS_UI_HOST_TOOLS = "lib/rustlib/x86_64-unknown-linux-gnu"
+READOBJ = f"{WINDOWS_UI_HOST_TOOLS}/bin/llvm-readobj"
+READOBJ_LIBRARY = f"{WINDOWS_UI_HOST_TOOLS}/lib/libLLVM.so.23.1-rust-1.100.0-stable"
+RESOURCE_PATH = "/work/metadata/ui.res"
+RESOURCE_DIGEST_ENV = "NEVROTICK_UI_VERSIONINFO_SHA256"
+
+# Exact LLVM 22.1.8 resource tools and Rust 1.100.0's LLVM reader.
+WINDOWS_UI_TOOL_PINS = {
+    RC_COMPILER: (202112, "4bc604021aa8f408dfe212ae1de12b785e60d914f19e9ade02333d842135556e"),
+    RC_LIBRARY: (149344344, "3f02d721ee01ce618a2317fe5552ab3bbd44331cd6d65e602dae2876fbf35e2e"),
+    f"/toolchain/{READOBJ}": (3134320, "867e1f5d2a6d277d4ba5d01ba8205f301d1734ff6e7bb64663e2c8aaa2b35d63"),
+    f"/toolchain/{READOBJ_LIBRARY}": (
+        208242288, "517f2e2d3762ccd6fe742c1b2fc720f447777c2589c99f58e7d12bfacf7b908c"),
+}
+
 
 # Vendor-specific host-admission ceilings, before isolated build execution.
 # The reviewed534-package graph has2.66MB checksum metadata (largest191KB),
@@ -1227,35 +1262,54 @@ def commands(lane: str, *, schema_version: int = 2,
     raise ENV.Incomplete("Unknown product verification row.")
 
 
-def export_windows_artifacts(work: Path, output: Path) -> dict:
+def windows_pe_reader(source: Path):
+    """Load the PE and PDB reader from the admitted source snapshot."""
+    spec = importlib.util.spec_from_file_location("product_pe", source / "scripts/windows_pe.py")
+    reader = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reader)
+    return reader
+
+
+def export_windows_artifacts(work: Path, output: Path, *, source: Path,
+                             ui_sha256: str | None = None, observe_sha256: str | None = None) -> dict:
     """Export both release executables and their unique PDBs to fresh output.
 
-    Admit the complete UI/engine file sets before copying; missing/ambiguous
-    symbols or existing destinations fail without a partial export. Retain the
-    UI metadata keys and add the engine entry separately. This records linked
-    artifacts, not native Windows execution.
+    Admit both complete pairs before copying. Publish the exact snapshots
+    that established each executable's CodeView basename, GUID and age.
     """
     build = work / "target" / ENV.WINDOWS_TARGET / "release"
-    artifacts, identities = {}, {}
-    for role, name in (("ui", PACKAGE), ("engine", "nevrotick-observe")):
+    pe = windows_pe_reader(source)
+    artifacts, payloads = {}, {}
+    for role, name, subsystem in (("ui", PACKAGE, "gui"), ("engine", "nevrotick-observe", "console")):
         binary = build / f"{name}.exe"
         names = {f"{name}.pdb", f"{name.replace('-', '_')}.pdb"}
-        symbols = [build / candidate for candidate in sorted(names) if (build / candidate).is_file()]
-        if len(symbols) != 1:
+        symbol_paths = [build / candidate for candidate in sorted(names) if (build / candidate).is_file()]
+        if len(symbol_paths) != 1:
             raise ENV.Incomplete("Release Windows artifact needs exactly one matching PDB.")
-        pdb = symbols[0]
-        identities.update({source: sha256(source) for source in (binary, pdb)})
-        artifacts[role] = (binary, pdb)
-    if any((output / source.name).exists() or (output / source.name).is_symlink()
-           for source in identities):
+        pdb = symbol_paths[0]
+        try:
+            image, symbols, identity = pe.read_export_pair(binary, pdb, subsystem=subsystem)
+        except ValueError as error:
+            raise ENV.Incomplete(str(error)) from error
+        if role == "ui" and ui_sha256 is not None and image[1] != ui_sha256:
+            raise ENV.Incomplete("Windows UI bytes changed after version resource inspection.")
+        if role == "engine" and observe_sha256 is not None and image[1] != observe_sha256:
+            raise ENV.Incomplete("Windows Observe bytes changed after version resource inspection.")
+        payloads.update({binary: image, pdb: symbols})
+        artifacts[role] = (binary, pdb, identity)
+    if any((output / path.name).exists() or (output / path.name).is_symlink() for path in payloads):
         raise ENV.Incomplete("Windows artifact export refuses existing destinations.")
-    for source in identities:
-        shutil.copyfile(source, output / source.name)
+    for path, (data, expected) in payloads.items():
+        destination = output / path.name
+        with destination.open("xb") as target:
+            target.write(data)
+        if sha256(destination) != expected or sha256(path) != expected:
+            raise ENV.Incomplete("Windows artifact bytes changed during export.")
     result = {}
-    for role, (binary, pdb) in artifacts.items():
-        entry = {"path": str(output / binary.name), "sha256": identities[binary],
+    for role, (binary, pdb, symbols) in artifacts.items():
+        entry = {"path": str(output / binary.name), "sha256": payloads[binary][1],
                  "profile": "release", "target": ENV.WINDOWS_TARGET,
-                 "symbols": {"path": str(output / pdb.name), "sha256": identities[pdb]}}
+                 "symbols": {"path": str(output / pdb.name), **symbols}}
         if role == "ui":
             result.update(entry)
         else:
@@ -1462,6 +1516,20 @@ def summarize_test_counts(records: list[dict], *, patched_packages: tuple[str, .
             "optimized_tests_executed": sum(counts[package]["optimized-tests"] for package in OPTIMIZED_DISCRIMINATORS)}
 
 
+def observe_resource_path(digest: str) -> str:
+    """Make the selected resource bytes part of the leaf invocation identity."""
+    if re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+        raise ENV.Incomplete("Invalid Observe resource digest.")
+    return f"/work/metadata/observe-{digest}.res"
+
+
+def link_observe_resource(build: list[str], digest: str) -> list[str]:
+    """Pass the resource to the exact executable's final rustc invocation."""
+    command = list(build)
+    command[command.index("build")] = "rustc"
+    return [*command, "--", "-C", "link-arg=" + observe_resource_path(digest)]
+
+
 def command_resources(lane: str, label: str, command: list[str], *, profile: str = "default") -> dict:
     """Select one finite build budget from the exact configured command owner.
 
@@ -1481,6 +1549,10 @@ def command_resources(lane: str, label: str, command: list[str], *, profile: str
         if lane != "windows" or label not in release_labels:
             raise ENV.Incomplete("Windows release resources require their exact lane and row.")
         expected = dict(commands("windows", schema_version=3, profile=profile))[label]
+        if label == "windows-engine-link":
+            resource = re.fullmatch(r"link-arg=/work/metadata/observe-([a-f0-9]{64})\.res", command[-1])
+            if resource is not None:
+                expected = link_observe_resource(expected, resource[1])
         if command != expected:
             raise ENV.Incomplete("Windows release resource command differs from its fixed owner.")
         if label == "windows-link":
@@ -1627,6 +1699,89 @@ def admit_advisories(receipt_path: Path | None, now: float, expected_lock: str) 
     return cargo_home, files
 
 
+def admit_windows_ui_tools(toolchain: Path, compiler: Path | None) -> dict[str, tuple[Path, str]]:
+    """Admit the selected resource compiler and reader with their LLVM libraries."""
+    if compiler is None:
+        raise ENV.Incomplete("Windows UI linking requires the admitted --llvm-rc executable.")
+    compiler = compiler.resolve(strict=True)
+    compiler_library = (compiler.parent.parent / "lib/libLLVM.so.22.1").resolve(strict=True)
+    rust_tool = toolchain / READOBJ
+    rust_library = toolchain / READOBJ_LIBRARY
+    paths = {RC_COMPILER: compiler, RC_LIBRARY: compiler_library,
+             f"/toolchain/{READOBJ}": rust_tool,
+             f"/toolchain/{READOBJ_LIBRARY}": rust_library}
+    tools = {}
+    for mount, path in paths.items():
+        size, digest = WINDOWS_UI_TOOL_PINS[mount]
+        if path.is_symlink() or not path.is_file() or path.stat().st_size != size or sha256(path) != digest:
+            raise ENV.Incomplete(f"Unadmitted Windows UI version tool input: {Path(mount).name}")
+        tools[mount] = (path, digest)
+    if not os.access(compiler, os.X_OK) or not os.access(rust_tool, os.X_OK):
+        raise ENV.Incomplete("Windows UI version tools must be executable.")
+    return tools
+
+
+def generate_windows_metadata(generation: Path, run) -> None:
+    """Generate one checked source tree shared by both version-resource rows."""
+    generation.mkdir(mode=0o700)
+    cli = ["python3", "-I", "-B", "metadata/pipeline/__main__.py"]
+    args = ["--output", "/metadata-output/tree"]
+    run("ui-metadata-generate", [*cli, "generate", *args], extra=("--bind", str(generation), "/metadata-output"))
+    run("ui-metadata-check", [*cli, "check", *args], extra=("--ro-bind", str(generation), "/metadata-output"))
+
+
+def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) -> tuple[Path, dict, dict]:
+    """Compile the fixed role's checked input with an isolated output directory."""
+    if role not in {"ui", "observe"}:
+        raise ENV.Incomplete("Unsupported Windows version resource role.")
+    generation = directory / "generation"
+    compiled = directory / f"compiled-{role}"
+    compiled.mkdir(mode=0o700)
+    expected = json.loads(run(f"{role}-versioninfo-expectation",
+                              ["python3", "-I", "-B", "scripts/windows_versioninfo_expectation.py", role]))
+    rc = generation / f"tree/rc/{role}.rc"
+    if rc.is_symlink() or not rc.is_file() or not 0 < rc.stat().st_size <= 64 * 1024:
+        raise ENV.Incomplete(f"Missing or oversized checked {role} resource source.")
+    inputs = {"rc_sha256": sha256(rc), "generation_sha256": sha256(generation / "tree/receipt.json")}
+    mounts = ("--ro-bind", str(rc), "/metadata-input/version.rc", "--bind", str(compiled), "/metadata-build",
+              "--remount-ro", "/work", "--ro-bind", str(tools[RC_COMPILER][0]), RC_COMPILER,
+              "--ro-bind", str(tools[RC_LIBRARY][0]), RC_LIBRARY)
+    run(f"{role}-versioninfo-compile", [RC_COMPILER, "/no-preprocess", "/C", "65001", "/FO",
+                                      "/metadata-build/version.res", "--", "/metadata-input/version.rc"], extra=mounts)
+    resource = compiled / "version.res"
+    if resource.is_symlink() or not resource.is_file() or not 0 < resource.stat().st_size <= 4096:
+        raise ENV.Incomplete(f"Missing or oversized compiled {role} version resource.")
+    if inputs != {"rc_sha256": sha256(rc), "generation_sha256": sha256(generation / "tree/receipt.json")}:
+        raise ENV.Incomplete(f"Checked {role} metadata changed during compilation.")
+    inputs["res_sha256"] = sha256(resource)
+    return resource, expected, inputs
+
+
+def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict, run) -> dict:
+    """Admit static PE declarations and VERSIONINFO on the same linked bytes."""
+    binaries = {"ui": PACKAGE, "observe": "nevrotick-observe"}
+    if role not in binaries:
+        raise ENV.Incomplete("Unsupported Windows version resource role.")
+    reader_path = source / "scripts/windows_versioninfo.py"
+    spec = importlib.util.spec_from_file_location("product_versioninfo", reader_path)
+    reader = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reader)
+    relative = f"target/{ENV.WINDOWS_TARGET}/release/{binaries[role]}.exe"
+    binary = work / relative
+    pe = windows_pe_reader(source)
+    declarations = pe.pe_readback(binary, subsystem="gui" if role == "ui" else "console")
+    identity = declarations["image_sha256"]
+    report = run(f"{role}-versioninfo-readback", [f"/toolchain/{READOBJ}", "--file-headers",
+                                                "--coff-resources", f"/work/{relative}"],
+                 extra=("--remount-ro", "/work"))
+    actual = reader.decode(report, role=role)
+    observed = {"fixed": list(actual["fixed"]), "strings": actual["strings"],
+                "translation": list(actual["translation"])}
+    if observed != expected or sha256(binary) != identity:
+        raise ENV.Incomplete(f"Linked {role} version resource differs from the checked source facts or image custody.")
+    return {"image_sha256": identity, "pe_declarations": declarations, **observed}
+
+
 def execute(root: Path, args, report: dict) -> None:
     """Freeze candidate inputs, run the selected row and reject input drift."""
     profile = getattr(args, "profile", "default")
@@ -1641,9 +1796,25 @@ def execute(root: Path, args, report: dict) -> None:
         except SLINT.Incomplete as error:
             raise ENV.Incomplete(str(error)) from error
     report["dependency_profile"] = profile
+    sdk_directory = getattr(args, "linux_sdk_dir", None)
+    if sdk_directory is not None and (args.lane != "portable" or policy["schema_version"] != 3):
+        raise ENV.Incomplete("The optional Linux SDK belongs only to portable Slint checks.")
     vendor = args.vendor_dir.resolve(strict=True)
     vendor_identity = admit_vendor(vendor, policy)
     toolchain = args.toolchain_dir.resolve(strict=True)
+    rc_compiler = getattr(args, "llvm_rc", None)
+    windows_ui_selected = args.lane == "windows" and policy["schema_version"] == 3
+    if rc_compiler is not None and not windows_ui_selected:
+        raise ENV.Incomplete("The LLVM resource compiler belongs only to the selected Windows build lane.")
+    ui_tools = admit_windows_ui_tools(toolchain, rc_compiler) if windows_ui_selected else None
+    if args.lane == "windows":
+        source_identity.update({name: sha256(root / name) for name in WINDOWS_PE_INPUT_FILES})
+    if ui_tools:
+        source_identity.update({name: sha256(root / name) for name in WINDOWS_UI_INPUT_FILES})
+        for role in ("ui", "observe"):
+            report[f"{role}_versioninfo"] = {
+                "source_stage": "source", "tools": {mount: {"path": str(path), "sha256": digest}
+                                                     for mount, (path, digest) in ui_tools.items()}}
     selected = args.deny if args.lane == "dependencies" else args.nextest if args.lane == "portable" else None
     extension = selected.resolve(strict=True) if selected else None
     report["tools"] = admit_tools(root, toolchain, extension, args.lane)
@@ -1655,11 +1826,8 @@ def execute(root: Path, args, report: dict) -> None:
         if (capture_output == root or capture_output.is_relative_to(root)
                 or args.output_dir.exists() or args.output_dir.is_symlink()):
             raise ENV.Incomplete("Slint capture output must be new and outside the checkout.")
-    sdk_directory = getattr(args, "linux_sdk_dir", None)
     sdk_inputs = None
     if sdk_directory is not None:
-        if args.lane != "portable" or policy["schema_version"] != 3:
-            raise ENV.Incomplete("The optional Linux SDK belongs only to portable Slint checks.")
         sdk_directory = sdk_directory.resolve(strict=True)
         try:
             sdk_inputs = SDK.admit(sdk_directory, root / SDK.POLICY)
@@ -1673,8 +1841,8 @@ def execute(root: Path, args, report: dict) -> None:
     advisory = admit_advisories(args.advisory_receipt, time.time(), source_identity["Cargo.lock"]) if args.lane == "dependencies" else None
     if advisory:
         report["advisory_receipt_sha256"] = ADVISORY.receipt_digest(args.advisory_receipt)
-    with tempfile.TemporaryDirectory(prefix="nevrotick-product-", dir=scratch) as temporary:
-        temporary = Path(temporary)
+    with ExitStack() as stack:
+        temporary = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="nevrotick-product-", dir=scratch)))
         source, work = temporary / "source", temporary / "work"
         source.mkdir()
         work.mkdir()
@@ -1714,7 +1882,7 @@ def execute(root: Path, args, report: dict) -> None:
         report["checker_sha256"] = {name: source_identity[name] for name in checker_names}
         metadata_outputs = {}
         tree_outputs = {}
-        def run(label, command):
+        def run(label, command, *, extra=()):
             target: str | None = None
             if label.startswith("dependency-"):
                 flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
@@ -1725,17 +1893,24 @@ def execute(root: Path, args, report: dict) -> None:
             output_budget = ({"max_output": SLINT.MAX_METADATA_BYTES}
                              if policy["schema_version"] == 3 and label.startswith("dependency-metadata-") else {})
             resources = command_resources(args.lane, label, command, profile=profile)
-            result = ENV.run(sandbox(toolchain, work, source, vendor, command, extension, libraries,
-                                    "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory,
-                                    lane=args.lane, label=label, profile=profile),
+            invocation = sandbox(toolchain, work, source, vendor, command, extension, libraries,
+                                 "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory,
+                                 lane=args.lane, label=label, profile=profile)
+            if extra:
+                insertion = invocation.index("--")
+                invocation[insertion:insertion] = extra
+            result = ENV.run(invocation,
                              cwd=root, timeout=resources["wall_seconds"],
                              environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"},
                              **output_budget)
             record = {"lane": label, "command": command, "exit_code": result["exit_code"],
                       "failure": result["failure"], "output": result["output"], "resource_profile": resources}
+            if extra:
+                record["sandbox_command"] = invocation
             report["lanes"].append(record)
             output = ENV.require_ok(result)
-            if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls", "ui-native-input-controls"}:
+            if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls",
+                         "ui-native-input-controls", "ui-versioninfo-controls", "windows-pe-controls"}:
                 record["executed_controls"] = validate_text_control_result(output)
             if label == "ui-text-coverage":
                 record["text_coverage"] = validate_text_coverage_result(output)
@@ -1775,9 +1950,39 @@ def execute(root: Path, args, report: dict) -> None:
             run(label, command)
         for label, command in text_contract_commands(args.lane, schema_version=policy["schema_version"]):
             run(label, command)
+        if ui_tools:
+            run("ui-versioninfo-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                            "discover", "-s", "scripts/tests", "-p", "test_windows_versioninfo.py", "-v"])
+        if args.lane == "windows":
+            run("windows-pe-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                        "discover", "-s", "scripts/tests", "-p", "test_windows_pe.py", "-v"])
         patched_names = tuple(record["name"] for record in policy.get("patched_packages", []))
+        metadata_dir = None
+        version_roles = {"windows-link": "ui", "windows-engine-link": "observe"}
         for label, command in commands(args.lane, schema_version=policy["schema_version"], patched_packages=patched_names, profile=profile):
-            run(label, command)
+            if not ui_tools or label not in version_roles:
+                run(label, command)
+                continue
+            if metadata_dir is None:
+                # The metadata producer requires an owner-private POSIX parent.
+                # The Cargo scratch may be a separately admitted DrvFS location.
+                metadata_dir = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="nevrotick-versioninfo-", dir="/tmp")))
+                generate_windows_metadata(metadata_dir / "generation", run)
+                (work / "metadata").mkdir()
+            role = version_roles[label]
+            resource, expected, inputs = compile_windows_versioninfo(metadata_dir, role, ui_tools, run)
+            receipt = report[f"{role}_versioninfo"]
+            receipt.update(inputs)
+            digest = inputs["res_sha256"]
+            if role == "ui":
+                extra = ("--ro-bind", str(resource), RESOURCE_PATH, "--setenv", RESOURCE_DIGEST_ENV, digest)
+            else:
+                extra = ("--ro-bind", str(resource), observe_resource_path(digest))
+                command = link_observe_resource(command, digest)
+            run(label, command, extra=extra)
+            if sha256(resource) != digest:
+                raise ENV.Incomplete(f"Selected {role} resource changed during linking.")
+            receipt.update(read_windows_versioninfo(work, source, role, expected, run))
         if capture_requested:
             run("slint-capture-build", slint_capture_build_command())
             run("slint-capture", ["/work/target/debug/examples/capture"])
@@ -1785,6 +1990,18 @@ def execute(root: Path, args, report: dict) -> None:
             report["test_counts"] = summarize_test_counts(
                 report["lanes"], patched_packages=patched_names, schema_version=policy["schema_version"])
         final_source = admit_product(root)[1]
+        if args.lane == "windows":
+            final_source.update({name: sha256(root / name) for name in WINDOWS_PE_INPUT_FILES})
+        if ui_tools:
+            final_source.update({name: sha256(root / name) for name in WINDOWS_UI_INPUT_FILES})
+            build = work / "target" / ENV.WINDOWS_TARGET / "release"
+            for role, filename in (("ui", f"{PACKAGE}.exe"), ("observe", "nevrotick-observe.exe")):
+                if report[f"{role}_versioninfo"].get("image_sha256") != sha256(build / filename):
+                    raise ENV.Incomplete(f"Windows {role} resource inspection or linked image custody is incomplete.")
+            generation = sha256(metadata_dir / "generation/tree/receipt.json")
+            if (any(report[f"{role}_versioninfo"]["generation_sha256"] != generation for role in version_roles.values())
+                    or admit_windows_ui_tools(toolchain, rc_compiler) != ui_tools):
+                raise ENV.Incomplete("Windows version resource source or tool custody is incomplete.")
         if sdk_inputs:
             final_source[SDK.POLICY] = sha256(root / SDK.POLICY)
             try:
@@ -1810,7 +2027,10 @@ def execute(root: Path, args, report: dict) -> None:
                 raise ENV.Incomplete("Artifact output must be outside the checkout.")
             output.mkdir(mode=0o700)
             if args.lane == "windows":
-                report["artifact"] = export_windows_artifacts(work, output)
+                ui_identity = report.get("ui_versioninfo", {}).get("image_sha256")
+                observe_identity = report.get("observe_versioninfo", {}).get("image_sha256")
+                report["artifact"] = export_windows_artifacts(work, output, source=source,
+                                                              ui_sha256=ui_identity, observe_sha256=observe_identity)
             elif args.lane == "portable":
                 report["engine_artifact"] = export_host_engine_artifact(work, output)
                 if capture_requested:
@@ -1825,7 +2045,7 @@ def main(argv=None) -> int:
     parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE), default="default")
     parser.add_argument("--capture-slint", action="store_true")
     for name in ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
-                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir"):
+                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
     report = {"scope": f"UI-M0, wire, domain, exchange, synthetic regression and controlled-loopback engine pilot {args.lane} verification", "status": "incomplete",

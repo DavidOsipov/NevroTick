@@ -499,8 +499,8 @@ pub struct SeriesReport {
     peer: SocketAddr,
     /// All three original positions, including explicit not-started ones.
     attempts: [SeriesAttempt; ATTEMPTS],
-    /// Closed whole-series outcome after cleanup reconciliation.
-    end: SeriesEnd,
+    /// Validated collection decision, retained independently of timer cleanup.
+    collection_end: SeriesEnd,
     /// Original primary failure; cleanup cannot replace or erase it.
     primary_failure: Option<FailureSummary>,
     /// Independently retained stop-timer cleanup cause.
@@ -522,7 +522,17 @@ impl SeriesReport {
     /// Return the whole-series outcome, including any cleanup failure.
     #[must_use]
     pub const fn end(&self) -> SeriesEnd {
-        self.end
+        if self.stop_cleanup_failure.is_some() || self.invalidate_cleanup_failure.is_some() {
+            SeriesEnd::Failure
+        } else {
+            self.collection_end
+        }
+    }
+    /// Return the validated collection decision before independent timer cleanup.
+    /// Primary failures and incomplete Completed decisions are already reconciled.
+    #[must_use]
+    pub const fn collection_end(&self) -> SeriesEnd {
+        self.collection_end
     }
     /// Return the separately retained primary cause, if any.
     #[must_use]
@@ -792,7 +802,7 @@ impl SeriesReceiver {
             context: self.context,
             peer: self.peer,
             attempts: self.attempts,
-            end,
+            collection_end: end,
             primary_failure: primary.map(FailureSummary::capture),
             stop_cleanup_failure: None,
             invalidate_cleanup_failure: None,
@@ -1305,9 +1315,6 @@ fn reconcile_cleanup(
 ) -> SeriesReport {
     report.stop_cleanup_failure = stop.err().map(FailureSummary::capture);
     report.invalidate_cleanup_failure = invalidate.err().map(FailureSummary::capture);
-    if report.stop_cleanup_failure.is_some() || report.invalidate_cleanup_failure.is_some() {
-        report.end = SeriesEnd::Failure;
-    }
     report
 }
 

@@ -7,6 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -166,13 +167,13 @@ def equivalence_fixture(root):
 def retirement_fixture(work):
     """Independent base/variant bytes and completed real-format observations."""
     source, derivative = work / "source", work / "worker-variant-000"
-    base_worker = source / M.WORKER
+    base_worker = source / M.WORKER_DIRECT.path
     base_worker.parent.mkdir(parents=True)
     base_worker.write_bytes(b"original\n")
     (source / "unrelated.rs").write_bytes(b"unchanged\n")
     import shutil
     shutil.copytree(source, derivative)
-    (derivative / M.WORKER).write_bytes(b"variant\n")
+    (derivative / M.WORKER_DIRECT.path).write_bytes(b"variant\n")
     class Session:
         def check(self):
             if M.C.PRODUCT.inventory(self.source) != self.identity:
@@ -181,12 +182,12 @@ def retirement_fixture(work):
     session.work, session.source = work, source
     session.identity = M.C.PRODUCT.inventory(source)
     session.tests = ["healthy_owner"]
-    identity = {**session.identity, M.WORKER: hashlib.sha256(b"variant\n").hexdigest()}
+    identity = {**session.identity, M.WORKER_DIRECT.path: hashlib.sha256(b"variant\n").hexdigest()}
     raw = {"name": "exact pilot", "package": "single_file", "file": "engine_worker.rs"}
     clean = {"exit_code": 0, "failure": None, "output": "cleaned"}
     build = {"exit_code": 0, "failure": None, "output": direct_build()}
     test = {"exit_code": 101, "failure": None, "output": fixture_test_output("thread 'healthy_owner' panicked at src/engine_worker_tests.rs:9:5:\nassertion failed\n")}
-    row = {"raw": raw, "source_sha256": identity[M.WORKER], "variant_sha256": M.Q.canonical(identity),
+    row = {"raw": raw, "source_sha256": identity[M.WORKER_DIRECT.path], "variant_sha256": M.Q.canonical(identity),
            "Clean": clean, "Build": build, "Test": test, **M.replay_outcome(build, test, session.tests)}
     session.record = {"direct_inventory": {raw["name"]: raw}, "commands": [
         {"label": "worker:0:" + label, "argv": ["literal", label], "variant_sha256": M.Q.canonical(identity), **result}
@@ -197,10 +198,194 @@ def retirement_fixture(work):
 class FixtureMetricControls(unittest.TestCase):
     """Challenge false passes without installing or invoking any analysis tool."""
 
+    @staticmethod
+    def _direct_owner_specimen(leaf):
+        """Independent full descriptor with one exact rendered source change."""
+        source = b"fn guard() -> bool {\n    true\n}\n"
+        row = descriptor(leaf, name=f"{leaf}:2:5: replace guard -> bool with false")
+        row.update(package="single_file",
+                   span={"start": {"line": 2, "column": 5}, "end": {"line": 2, "column": 9}},
+                   function={"function_name": "guard", "return_type": "-> bool",
+                             "span": {"start": {"line": 1, "column": 1},
+                                      "end": {"line": 3, "column": 2}}})
+        row["diff"] = (f"--- {leaf}\n+++ replace guard -> bool with false\n"
+                       "@@ -1,3 +1,3 @@\n fn guard() -> bool {\n-    true\n"
+                       "+    false /* ~ changed by cargo-mutants ~ */\n }\n")
+        return source, row
+
+    def test_writer_direct_owner_accepts_exact_row_and_rejects_worker_substitution(self):
+        source, writer = self._direct_owner_specimen("diagnostics_thread.rs")
+        _, worker = self._direct_owner_specimen("engine_worker.rs")
+        checked = M.direct_inventory(json.dumps([writer]), source, owner=M.WRITER_DIRECT)
+        self.assertEqual(set(checked), {writer["name"]})
+        self.assertEqual(checked[writer["name"]]["raw"], writer)
+        self.assertEqual(checked[writer["name"]]["source"],
+                         b"fn guard() -> bool {\n    false /* ~ changed by cargo-mutants ~ */\n}\n")
+        summary = M.direct_summary(checked, owner=M.WRITER_DIRECT)
+        self.assertEqual(summary, {"schema": "fixture-writer-direct-replay-v1", "count": 1,
+                                  "sha256": M.Q.canonical({writer["name"]: writer})})
+        worker_checked = M.direct_inventory(json.dumps([worker]), source, owner=M.WORKER_DIRECT)
+        self.assertEqual(M.direct_summary(worker_checked, owner=M.WORKER_DIRECT)["schema"],
+                         "fixture-worker-direct-replay-v1")
+        for row, owner in ((worker, M.WRITER_DIRECT), (writer, M.WORKER_DIRECT)):
+            with self.subTest(leaf=row["file"]), self.assertRaises(M.Incomplete):
+                M.direct_inventory(json.dumps([row]), source, owner=owner)
+        for rows, owner in ((checked, M.WORKER_DIRECT), (worker_checked, M.WRITER_DIRECT)):
+            with self.subTest(owner=owner), self.assertRaises(M.Incomplete):
+                M.direct_summary(rows, owner=owner)
+
+    def test_writer_direct_owner_preserves_exact_descriptor_and_source_shape(self):
+        source, row = self._direct_owner_specimen("diagnostics_thread.rs")
+        for change in ("empty", "duplicate", "missing", "extra", "boolean", "diff", "span", "path"):
+            bad = copy.deepcopy(row)
+            if change == "missing": del bad["genre"]
+            if change == "extra": bad["ignored"] = True
+            if change == "boolean": bad["span"]["start"]["line"] = True
+            if change == "diff": bad["diff"] += "poison"
+            if change == "span": bad["span"]["end"]["column"] = 900
+            if change == "path": bad["file"] = "src/diagnostics_thread.rs"
+            rows = [] if change == "empty" else [bad, bad] if change == "duplicate" else [bad]
+            with self.subTest(change=change), self.assertRaises(M.Incomplete):
+                M.direct_inventory(json.dumps(rows), source, owner=M.WRITER_DIRECT)
+
+    def test_writer_lane_dispatch_binds_command_roster_and_received_role(self):
+        """Exercise the actual lane receiver before any replay Build can start."""
+        source, descriptor_row = self._direct_owner_specimen("diagnostics_thread.rs")
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / M.WRITER_DIRECT.path
+            path.parent.mkdir(parents=True)
+            path.write_bytes(source)
+            tests = list(M.WRITER_ASSERTIONS)
+            calls = []
+
+            def enumerate_once(label, command, seconds):
+                calls.append((label, command, seconds))
+                return {"exit_code": 0, "failure": None, "output": json.dumps([descriptor_row])}
+
+            session = SimpleNamespace(args=SimpleNamespace(lane="writer-enumerate"),
+                                      record={"candidate_sha256": "a" * 64}, source=directory,
+                                      tests=tests[:-1], binding={"exact": "writer-graph"},
+                                      admitted={"extensions": {"cargo-mutants": Path("/selected/mutants")}},
+                                      run=enumerate_once)
+            with self.assertRaisesRegex(M.Incomplete, "omits a writer control"):
+                M.execute(session)
+            self.assertEqual(calls, [])
+            session.tests = tests
+            M.execute(session)
+            expected = [("writer-direct-generated", ["/selected/mutants", "mutants",
+                         "--Zmutate-file", "src/diagnostics_thread.rs", "--json"], 120)]
+            self.assertEqual(calls, expected)
+            self.assertEqual(session.record["direct_schema"], "fixture-writer-direct-replay-v1")
+            self.assertNotIn("metrics_passed", session.record)
+            previous = {**session.record, "status": "passed", "lane": "writer-enumerate",
+                        "bookends_passed": True, "export_complete": True, "graph_binding": session.binding,
+                        "subjects": {"diagnostics_thread": "src/diagnostics_thread.rs"}}
+            session.args = SimpleNamespace(lane="writer-replay-pilot", direct_inventory="inventory",
+                                           reviewed_inventory="review")
+            for substitutions in ({"lane": "worker-enumerate"},
+                                  {"direct_schema": "fixture-worker-direct-replay-v1"},
+                                  {"subjects": {"engine_worker": "src/engine_worker.rs"}}):
+                calls.clear()
+                session.receipt = lambda _: {**previous, **substitutions}
+                with self.subTest(substitutions=substitutions), \
+                        self.assertRaisesRegex(M.Incomplete, "differs from current direct enumeration"):
+                    M.execute(session)
+                self.assertEqual(calls, expected)
+            calls.clear()
+            session.receipt = lambda label: previous if label == "inventory" else {
+                **session.record["review_template"], "schema": "fixture-worker-direct-replay-v1",
+                "reviewer": "independent"}
+            with self.assertRaisesRegex(M.Incomplete, "requires exact independently reviewed"):
+                M.execute(session)
+            self.assertEqual(calls, expected)
+
+    def test_writer_sparse_evidence_reconstructs_only_the_writer(self):
+        bytes_changed = b"changed writer\n"
+        changed_hash = hashlib.sha256(bytes_changed).hexdigest()
+        identity = {M.WORKER_DIRECT.path: "0" * 64, M.WRITER_DIRECT.path: "1" * 64}
+        variant = {**identity, M.WRITER_DIRECT.path: changed_hash}
+        session = SimpleNamespace(identity=identity, check=lambda: None)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "diagnostics_thread.rs").write_bytes(bytes_changed)
+            file = directory / "manifest.json"
+            manifest = {"schema": "fixture-writer-direct-replay-v1:retained-variant",
+                        "original_source_sha256": identity, "original_sha256": M.Q.canonical(identity),
+                        "variant_source_sha256": variant, "variant_sha256": M.Q.canonical(variant),
+                        "writer_path": M.WRITER_DIRECT.path, "writer_sha256": changed_hash,
+                        "raw": {"file": "diagnostics_thread.rs"}, "command_labels": ["writer:0:Build"]}
+            file.write_text(json.dumps(manifest))
+            M.retained_variant(session, directory, manifest, owner=M.WRITER_DIRECT)
+            for altered in ({"writer_path": M.WORKER_DIRECT.path},
+                            {"schema": "fixture-worker-direct-replay-v1:retained-variant"},
+                            {"variant_source_sha256": {**variant, M.WORKER_DIRECT.path: "2" * 64}}):
+                forged = {**manifest, **altered}
+                file.write_text(json.dumps(forged))
+                with self.subTest(altered=altered), self.assertRaises(M.Incomplete):
+                    M.retained_variant(session, directory, forged, owner=M.WRITER_DIRECT)
+
+    def test_writer_replay_requires_the_named_test_and_its_exact_assertion_file(self):
+        queue = "diagnostics::threaded::queue_control::one_queued_original_obeys_the_drain_cutoff"
+        host = ("host::tests::worker_tests::threaded_writer_controls::"
+                "actual_writer_final_wake_retains_physical_join")
+        expected = [queue, host]
+        build = {"exit_code": 0, "failure": None, "output": direct_build()}
+        for test_name, filename in ((queue, "src/diagnostics_thread_tests.rs"),
+                                    (host, "src/host_tests.rs")):
+            text = f"thread '{test_name}' panicked at {filename}:12:5:\nassertion `left == right` failed\n"
+            test = {"exit_code": 101, "failure": None, "output": fixture_test_output(text)}
+            checked = M.replay_outcome(build, test, expected, owner=M.WRITER_DIRECT)
+            self.assertEqual((checked["kind"], checked["kill_credit"]), ("killed", 1))
+            self.assertEqual(M.classify_cause(text, expected, assertion_files=M.WRITER_ASSERTIONS)["kind"],
+                             "behavioral-assertion")
+            if test_name == queue:
+                with self.assertRaises(M.Incomplete):
+                    M.replay_outcome(build, test, expected, owner=M.WORKER_DIRECT)
+        for test_name, filename in ((queue, "src/host_tests.rs"),
+                                    (host, "src/diagnostics_thread_tests.rs"),
+                                    (queue, "src/diagnostics_thread.rs"),
+                                    (queue, "src/engine_worker_tests.rs"),
+                                    (queue, "../src/diagnostics_thread_tests.rs"),
+                                    (queue, "/foreign/src/diagnostics_thread_tests.rs"),
+                                    ("unselected_writer_test", "src/diagnostics_thread_tests.rs")):
+            text = f"thread '{test_name}' panicked at {filename}:12:5:\nassertion failed\n"
+            test = {"exit_code": 101, "failure": None, "output": fixture_test_output(text)}
+            with self.subTest(test=test_name, file=filename), self.assertRaises(M.Incomplete):
+                M.replay_outcome(build, test, expected, owner=M.WRITER_DIRECT)
+        for bad in ({"exit_code": True, "failure": None, "output": fixture_test_output(execution(expected), complete=True)},
+                    {"exit_code": 101, "failure": "timeout", "output": fixture_test_output(text)},
+                    {"exit_code": -6, "failure": None, "output": fixture_test_output("process abort signal SIGABRT\n")}):
+            with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
+                M.replay_outcome(build, bad, expected, owner=M.WRITER_DIRECT)
+        survived = {"exit_code": 0, "failure": None,
+                    "output": fixture_test_output(execution(expected), complete=True)}
+        self.assertEqual(M.replay_outcome(build, survived, expected, owner=M.WRITER_DIRECT)["kind"],
+                         "survived")
+
+    def test_writer_replay_compiler_refusal_cannot_borrow_the_worker_source(self):
+        expected = ["diagnostics::threaded::queue_control::one_queued_original_obeys_the_drain_cutoff"]
+        target = fixture_artifacts("/work/source/tools/windows-service-fixture")[0]
+        diagnostic = {"reason": "compiler-message", "target": target["target"],
+                      "package_id": target["package_id"], "manifest_path": target["manifest_path"],
+                      "message": {"level": "error", "message": "mismatched types",
+                                  "spans": [{"is_primary": True, "file_name": "src/diagnostics_thread.rs"}]}}
+        refused = {"exit_code": 101, "failure": None, "output": json.dumps(diagnostic) + "\n"}
+        row = M.replay_outcome(refused, None, expected, owner=M.WRITER_DIRECT)
+        self.assertEqual((row["kind"], row["kill_credit"]), ("compiler-unviable", 0))
+        with self.assertRaises(M.Incomplete):
+            M.replay_outcome(refused, None, expected, owner=M.WORKER_DIRECT)
+        for filename in ("src/engine_worker.rs", "src/host.rs", "foreign.rs", "../src/diagnostics_thread.rs"):
+            bad = copy.deepcopy(diagnostic)
+            bad["message"]["spans"][0]["file_name"] = filename
+            with self.subTest(file=filename), self.assertRaises(M.Incomplete):
+                M.replay_outcome({**refused, "output": json.dumps(bad) + "\n"}, None, expected, owner=M.WRITER_DIRECT)
+
     def test_diagnostics_is_an_exact_required_metric_owner_with_bounded_attribution(self):
         """The new output boundary has its own gate and only its actual source/tests qualify."""
         self.assertEqual(M.SUBJECTS, {"host": "src/host.rs", "error": "src/error.rs",
-                                     "diagnostics": "src/diagnostics.rs", "engine_worker": "src/engine_worker.rs"})
+                                     "diagnostics": "src/diagnostics.rs", "engine_worker": "src/engine_worker.rs",
+                                     "diagnostics_thread": "src/diagnostics_thread.rs"})
         item = descriptor("src/diagnostics.rs", name="diagnostics output guard")
         self.assertEqual(M.inventory_listing(json.dumps([item]), "diagnostics"), {item["name"]: item})
         admitted = {"extensions": {"cargo-mutants": Path("/selected/cargo-mutants")}}
@@ -425,10 +610,10 @@ class FixtureMetricControls(unittest.TestCase):
                     tempfile.TemporaryDirectory() as temporary:
                 work = Path(temporary)
                 source = work / "source"
-                worker = source / M.WORKER
+                worker = source / M.WORKER_DIRECT.path
                 worker.parent.mkdir(parents=True)
                 worker.write_bytes(b"original\n")
-                raw = {"name": "exact pilot"}
+                raw = {"name": "exact pilot", "file": "engine_worker.rs"}
                 inventory = {"exact pilot": {"raw": raw, "source": b"variant\n",
                              "source_sha256": hashlib.sha256(b"variant\n").hexdigest()}}
                 summary = M.direct_summary(inventory)
@@ -439,9 +624,9 @@ class FixtureMetricControls(unittest.TestCase):
                         if path == "inventory":
                             return {"status": "passed", "lane": "worker-enumerate", "bookends_passed": True,
                                     "export_complete": True, "graph_binding": self.binding,
-                                    "direct_schema": M.DIRECT_SCHEMA, "direct_summary": summary,
+                                    "direct_schema": M.WORKER_DIRECT.schema, "direct_summary": summary,
                                     "direct_inventory": {"exact pilot": raw}}
-                        return {"schema": M.DIRECT_SCHEMA, "candidate_sha256": "a" * 64,
+                        return {"schema": M.WORKER_DIRECT.schema, "candidate_sha256": "a" * 64,
                                 "summary": summary, "reviewer": "independent", "reconciliation": reconciliation}
                     def run(self, label, command, seconds):
                         result = observe(label, command)
@@ -451,7 +636,7 @@ class FixtureMetricControls(unittest.TestCase):
                 session.args = type("Args", (), {"lane": "worker-replay-pilot", "direct_inventory": "inventory",
                     "reviewed_inventory": "review", "pilot_mutant": "exact pilot"})()
                 session.work, session.source, session.tests = work, source, ["healthy_owner"]
-                session.identity = {M.WORKER: hashlib.sha256(b"original\n").hexdigest()}
+                session.identity = {M.WORKER_DIRECT.path: hashlib.sha256(b"original\n").hexdigest()}
                 session.admitted = {"extensions": {"cargo-mutants": Path("/admitted/cargo-mutants")}}
                 session.record, session.binding = {"candidate_sha256": "a" * 64}, {"bound": "graph"}
                 def observe(label, command):
@@ -481,9 +666,9 @@ class FixtureMetricControls(unittest.TestCase):
                         patch.object(M, "replay_command", side_effect=lambda sess, src, identity, label, command, seconds:
                                      observe(label, command)):
                     if failed_clean or cached_variant or cached_closing:
-                        with self.assertRaises(M.Incomplete): M.execute_worker(session)
+                        with self.assertRaises(M.Incomplete): M.execute_direct(session, M.WORKER_DIRECT)
                     else:
-                        M.execute_worker(session)
+                        M.execute_direct(session, M.WORKER_DIRECT)
                         self.assertTrue(session.record["pilot_passed"])
                         self.assertFalse(session.record["replay_score"]["gate_passed"])
                         self.assertIn("Clean", session.record["replay_rows"]["exact pilot"])
@@ -536,12 +721,12 @@ class FixtureMetricControls(unittest.TestCase):
             session, derivative, identity, row = retirement_fixture(Path(temporary))
             result = M.retire_variant(session, derivative, identity, 0, row)
             self.assertFalse(derivative.exists())
-            self.assertEqual((session.source / M.WORKER).read_bytes(), b"original\n")
+            self.assertEqual((session.source / M.WORKER_DIRECT.path).read_bytes(), b"original\n")
             retained = session.work / result["path"]
             self.assertEqual((retained / "engine_worker.rs").read_bytes(), b"variant\n")
             manifest = json.loads((retained / "manifest.json").read_text())
             restored = dict(manifest["original_source_sha256"])
-            restored[M.WORKER] = hashlib.sha256((retained / "engine_worker.rs").read_bytes()).hexdigest()
+            restored[M.WORKER_DIRECT.path] = hashlib.sha256((retained / "engine_worker.rs").read_bytes()).hexdigest()
             self.assertEqual(restored, identity)
             self.assertEqual(manifest["variant_source_sha256"], identity)
             self.assertEqual(manifest["variant_sha256"], M.Q.canonical(restored))
@@ -562,7 +747,7 @@ class FixtureMetricControls(unittest.TestCase):
                 if failure == "sibling": selected = sibling
                 if failure == "missing-base": (session.source / "unrelated.rs").unlink()
                 if failure == "extra": (derivative / "unexpected.rs").write_bytes(b"unknown")
-                if failure == "source-drift": (derivative / M.WORKER).write_bytes(b"altered")
+                if failure == "source-drift": (derivative / M.WORKER_DIRECT.path).write_bytes(b"altered")
                 if failure == "failed-Q": row["Test"]["failure"] = "resource stop"
                 if failure == "unclassified": row["kind"] = "unknown"
                 if failure == "bool-credit": row["kill_credit"] = True
@@ -583,7 +768,7 @@ class FixtureMetricControls(unittest.TestCase):
                 with patch.object(M.Q, "write_new", side_effect=write), self.assertRaises((M.Incomplete, ValueError)):
                     M.retire_variant(session, selected, identity, 0, row)
                 self.assertTrue(derivative.exists())
-                self.assertEqual((session.source / M.WORKER).read_bytes(), b"original\n")
+                self.assertEqual((session.source / M.WORKER_DIRECT.path).read_bytes(), b"original\n")
                 self.assertEqual((sibling / "sentinel").read_bytes(), b"keep sibling")
 
     def test_variant_retirement_deletion_failure_preserves_sparse_evidence_and_partial_tree(self):
@@ -604,7 +789,7 @@ class FixtureMetricControls(unittest.TestCase):
             manifest = json.loads((retained / "manifest.json").read_text())
             M.retained_variant(session, retained, manifest)
             self.assertEqual((retained / "engine_worker.rs").read_bytes(), b"variant\n")
-            self.assertEqual((session.source / M.WORKER).read_bytes(), b"original\n")
+            self.assertEqual((session.source / M.WORKER_DIRECT.path).read_bytes(), b"original\n")
             self.assertEqual((sibling / "sentinel").read_bytes(), b"unrelated")
 
     def test_variant_byte_bookends_reject_base_extra_file_and_wrong_restoration(self):
@@ -638,21 +823,23 @@ class FixtureMetricControls(unittest.TestCase):
                             session.drift = True
                             M.check_variant(session, derivative, identity)
 
-    def test_worker_coverage_cannot_borrow_three_native_owner_metrics(self):
+    def test_direct_coverage_uses_each_exact_owner_file(self):
         report = {"data": [{"files": [{"filename": "/work/source/" + M.Q.TOOL + "/" + filename,
                    "summary": {"lines": {"count": 100, "covered": 90}}}
                    for filename in M.SUBJECTS.values()]}]}
-        self.assertEqual(M.metric_coverage(report)["engine_worker"]["line_percent"], 90)
-        for bad in ("missing", "low", "duplicate", "foreign", "bool"):
-            changed = copy.deepcopy(report)
-            rows = changed["data"][0]["files"]
-            if bad == "missing": rows.pop()
-            if bad == "low": rows[-1]["summary"]["lines"]["covered"] = 89
-            if bad == "duplicate": rows.append(copy.deepcopy(rows[-1]))
-            if bad == "foreign": rows[-1]["filename"] = "/foreign/src/engine_worker.rs"
-            if bad == "bool": rows[-1]["summary"]["lines"]["covered"] = True
-            with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
-                M.metric_coverage(changed)
+        for owner in ("engine_worker", "diagnostics_thread"):
+            self.assertEqual(M.metric_coverage(report)[owner]["line_percent"], 90)
+            for bad in ("missing", "low", "duplicate", "foreign", "bool"):
+                changed = copy.deepcopy(report)
+                rows = changed["data"][0]["files"]
+                subject = next(row for row in rows if row["filename"].endswith(f"/src/{owner}.rs"))
+                if bad == "missing": rows.remove(subject)
+                if bad == "low": subject["summary"]["lines"]["covered"] = 89
+                if bad == "duplicate": rows.append(copy.deepcopy(subject))
+                if bad == "foreign": subject["filename"] = f"/foreign/src/{owner}.rs"
+                if bad == "bool": subject["summary"]["lines"]["covered"] = True
+                with self.subTest(owner=owner, bad=bad), self.assertRaises(M.Incomplete):
+                    M.metric_coverage(changed)
 
     def test_received_record_is_parsed_from_one_strict_owned_snapshot(self):
         self.assertEqual(M.decode_record(b'{"status":"passed","count":1}'), {"status": "passed", "count": 1})
@@ -672,12 +859,15 @@ class FixtureMetricControls(unittest.TestCase):
              "summary": {"lines": {"count": 100, "covered": 95}}},
             {"filename": "/work/source/tools/windows-service-fixture/src/engine_worker.rs",
              "summary": {"lines": {"count": 100, "covered": 95}}},
+            {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics_thread.rs",
+             "summary": {"lines": {"count": 100, "covered": 90}}},
             {"filename": "/work/source/unrelated.rs", "summary": {"lines": {"count": 1000, "covered": 0}}}]}]}
         before = copy.deepcopy(report)
         result = M.metric_coverage(report)
         self.assertEqual(result["host"]["line_percent"], 90)
         self.assertEqual(result["error"]["line_percent"], 100)
         self.assertEqual(result["diagnostics"]["line_percent"], 95)
+        self.assertEqual(result["diagnostics_thread"]["line_percent"], 90)
         self.assertEqual(report, before)
         for change in ("missing", "empty", "low", "duplicate", "foreign"):
             broken = copy.deepcopy(report)
@@ -705,6 +895,8 @@ class FixtureMetricControls(unittest.TestCase):
             {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics.rs",
              "summary": {"lines": {"count": 100, "covered": 90}}},
             {"filename": "/work/source/tools/windows-service-fixture/src/engine_worker.rs",
+             "summary": {"lines": {"count": 100, "covered": 90}}},
+            {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics_thread.rs",
              "summary": {"lines": {"count": 100, "covered": 90}}}]}]}
         self.assertEqual(M.metric_coverage(report)["diagnostics"]["line_percent"], 90)
         for change in ("low", "missing", "duplicate", "foreign"):

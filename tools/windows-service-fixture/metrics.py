@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure the portable fixture host/error/diagnostics/worker owners (GPL-2.0-only).
+"""Measure the portable fixture host, diagnostics, worker and writer (GPL-2.0-only).
 
 The fixture runner owns tool admission and isolated execution. This module reuses
 only existing pure metric parsers and evidence export; it changes no shared gate.
@@ -28,6 +28,7 @@ import shutil
 import signal
 import stat
 import time
+from typing import NamedTuple
 
 HERE = Path(__file__).resolve().parent
 
@@ -50,10 +51,44 @@ FIXTURE_TARGETS = {LIBRARY: ("lib", "src/lib.rs"), "entrypoints": ("test", "test
                    "nevrotick-lab-s02-engine": ("bin", "src/bin/engine.rs"),
                    "nevrotick-lab-s02-broker": ("bin", "src/bin/broker.rs")}
 NATIVE_SUBJECTS = {"host": "src/host.rs", "error": "src/error.rs", "diagnostics": "src/diagnostics.rs"}
-SUBJECTS = {**NATIVE_SUBJECTS, "engine_worker": "src/engine_worker.rs"}
+SUBJECTS = {**NATIVE_SUBJECTS, "engine_worker": "src/engine_worker.rs",
+            "diagnostics_thread": "src/diagnostics_thread.rs"}
 SCOPE = C.Scope(PACKAGE, tuple(NATIVE_SUBJECTS.items()), "fixture-local")
-DIRECT_SCHEMA = "fixture-worker-direct-replay-v1"
-WORKER = Q.TOOL + "/src/engine_worker.rs"
+
+
+class DirectOwner(NamedTuple):
+    """Bind a configured direct lane to one exact fixture source and schema."""
+
+    prefix: str
+    subject: str
+    schema: str
+
+    @property
+    def file(self) -> str:
+        return SUBJECTS[self.subject]
+
+    @property
+    def path(self) -> str:
+        return Q.TOOL + "/" + self.file
+
+    @property
+    def leaf(self) -> str:
+        return PurePosixPath(self.file).name
+
+
+WORKER_DIRECT = DirectOwner("worker", "engine_worker", "fixture-worker-direct-replay-v1")
+WRITER_DIRECT = DirectOwner("writer", "diagnostics_thread", "fixture-writer-direct-replay-v1")
+DIRECT_LANES = {f"{owner.prefix}-{suffix}": owner for owner in (WORKER_DIRECT, WRITER_DIRECT)
+                for suffix in ("enumerate", "replay-pilot", "replay")}
+METRIC_LANES = ("coverage", "enumerate", "mutation", *DIRECT_LANES)
+WRITER_ASSERTIONS = {
+    "diagnostics::threaded::queue_control::one_queued_original_obeys_the_drain_cutoff":
+        "src/diagnostics_thread_tests.rs",
+    "host::tests::worker_tests::threaded_writer_controls::actual_writer_final_wake_retains_physical_join":
+        "src/host_tests.rs",
+    "host::tests::worker_tests::threaded_writer_controls::refused_startup_never_starts_the_writer_backend":
+        "src/host_tests.rs",
+}
 COVERAGE_SCOPE = C.Scope(PACKAGE, tuple((k, Q.TOOL + "/" + v) for k, v in SUBJECTS.items()), "fixture-local")
 LIMITS = {"coverage_wall_seconds": 300, "enumeration_wall_seconds": 120,
           "mutation_wall_seconds": 1200, "build_seconds": 90, "test_seconds": 60,
@@ -309,13 +344,14 @@ def equivalent_misses(outcomes, equivalences):
     return accepted
 
 
-def selected_span(value):
+def selected_span(value, *, files=None):
     """Recognize only source/test paths in this standalone fixture namespace."""
     if type(value) is not str or ".." in PurePosixPath(value).parts:
         return False
-    files = ("src/host.rs", "src/error.rs", "src/diagnostics.rs", "src/host_tests.rs",
-             "src/error_tests.rs", "src/diagnostics_tests.rs", "src/engine_worker.rs",
-             "src/engine_worker_tests.rs", "tests/entrypoints.rs")
+    if files is None:
+        files = ("src/host.rs", "src/error.rs", "src/diagnostics.rs", "src/host_tests.rs",
+                 "src/error_tests.rs", "src/diagnostics_tests.rs", "src/engine_worker.rs",
+                 "src/engine_worker_tests.rs", "tests/entrypoints.rs")
     return value in files or any(value == prefix + filename for filename in files
                for prefix in ("/work/source/" + Q.TOOL + "/", Q.TOOL + "/"))
 
@@ -408,7 +444,8 @@ def reject_infrastructure_failure(text: str) -> None:
 
 
 def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = False,
-                   required_source: str | None = None, native_subject: str | None = None) -> dict:
+                   required_source: str | None = None, native_subject: str | None = None,
+                   assertion_files: dict[str, str] | None = None) -> dict:
     """Attribute actual failures; shared by native results and tagged direct replay."""
     reject_infrastructure_failure(text)
     diagnostics = []
@@ -428,7 +465,8 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
         # On GNU these private modules and their callers compile only into the fixture libtest.
         callers = {"src/host.rs": {"src/host.rs", "src/host_tests.rs", "src/engine_worker.rs", "src/engine_worker_tests.rs"},
                    "src/diagnostics.rs": {"src/diagnostics.rs", "src/diagnostics_tests.rs", "src/host.rs",
-                                          "src/host_tests.rs", "src/engine_worker_tests.rs"}}
+                                          "src/host_tests.rs", "src/engine_worker_tests.rs",
+                                          "src/diagnostics_thread.rs", "src/diagnostics_thread_tests.rs"}}
         if native_subject in callers:
             failures = [line for line in text.splitlines() if line.startswith("error:")]
             require(failures and all(line.startswith("error: could not compile `" + PACKAGE + "` (lib test) due to ")
@@ -454,10 +492,13 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
                 paths = {prefix + path for path in accepted for prefix in ("", Q.TOOL + "/", root + "/")}
                 require(name == LIBRARY and all(span.get("file_name") in paths for span in primary),
                         "Cfg-only mutation compiler diagnostic has a different target or primary source.")
-            require(all((native_subject in callers or selected_span(span.get("file_name"))) and (required_source is None or
-                        span.get("file_name") in {required_source, Q.TOOL + "/" + required_source,
-                                                 "/work/source/" + Q.TOOL + "/" + required_source})
-                        for span in primary),
+            if required_source is not None:
+                attributed_source = all(selected_span(span.get("file_name"), files=(required_source,))
+                                        for span in primary)
+            else:
+                attributed_source = native_subject in callers or all(
+                    selected_span(span.get("file_name")) for span in primary)
+            require(attributed_source,
                     "Unviable mutant contains an unrelated compiler error.")
             if primary:
                 attributed.append(item["message"])
@@ -472,13 +513,20 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
         return {"kind": "compiler-unviable", "kill_credit": 0, "log_sha256": digest}
     require(not diagnostics and not re.search(r"error\[E\d+\]|could not compile", text),
             "Caught mutant contains a compiler failure.")
+    def admitted_assertion(name, path):
+        if name not in expected_tests:
+            return False
+        if assertion_files is None:
+            return selected_span(path)
+        return name in assertion_files and selected_span(path, files=(assertion_files[name],))
+
     assertions = []
     for match in re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text, re.M | re.S):
         name, body = match.groups()
-        if name not in expected_tests or f"test {name} ... FAILED" not in text:
+        if f"test {name} ... FAILED" not in text:
             continue
         assertion = re.search(r"panicked at ([^\n]+?):(\d+):\d+:\nassertion[^\n]*failed", body)
-        if assertion is not None and selected_span(assertion[1]):
+        if assertion is not None and admitted_assertion(name, assertion[1]):
             assertions.append({"test": name, "source": assertion[1], "line": int(assertion[2])})
     # Mutation-only nocapture can retain a meaningful assertion before a
     # later fatal custody guard aborts libtest. The abort itself supplies no
@@ -488,7 +536,7 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
     for match in re.finditer(r"^(?:test ([^\r\n]+?) \.\.\. )?thread '([^'\r\n]+)'(?: \(\d+\))? "
                              r"panicked at ([^\r\n]+?):(\d+):\d+:\nassertion[^\r\n]*failed[^\r\n]*", text, re.M):
         prefix, name, source, line = match.groups()
-        if name in expected_tests and (prefix is None or prefix == name) and selected_span(source):
+        if (prefix is None or prefix == name) and admitted_assertion(name, source):
             if not any(row["test"] == name and row["source"] == source and row["line"] == int(line)
                        for row in assertions):
                 assertions.append({"test": name, "source": source, "line": int(line),
@@ -497,7 +545,7 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
     return {"kind": "behavioral-assertion", "causes": assertions, "log_sha256": digest}
 
 
-def direct_inventory(text: str, source: bytes) -> dict:
+def direct_inventory(text: str, source: bytes, *, owner: DirectOwner = WORKER_DIRECT) -> dict:
     """Validate every raw direct row and its exact ASCII single-span rendered diff."""
     require(type(text) is str and len(text.encode()) <= 4 * 1024 * 1024
             and type(source) is bytes and 0 < len(source) <= 256 * 1024
@@ -523,7 +571,7 @@ def direct_inventory(text: str, source: bytes) -> dict:
     for row in rows:
         require(type(row) is dict and set(row) == {"name", "package", "file", "function", "span",
                     "replacement", "genre", "diff"} and row["package"] == "single_file"
-                and row["file"] == "engine_worker.rs"
+                and row["file"] == owner.leaf
                 and all(type(row[key]) is str and len(row[key]) <= 65536
                         for key in ("name", "replacement", "genre", "diff"))
                 and row["name"] and row["genre"] in {"FnValue", "BinaryOperator", "UnaryOperator", "MatchArmGuard"}
@@ -539,7 +587,7 @@ def direct_inventory(text: str, source: bytes) -> dict:
         outer_first, outer_last = bounds(function["span"])
         require(outer_first <= first < last <= outer_last, "Direct mutation escapes its function.")
         coordinate = row["span"]["start"]
-        prefix = f"engine_worker.rs:{coordinate['line']}:{coordinate['column']}: "
+        prefix = f"{owner.leaf}:{coordinate['line']}:{coordinate['column']}: "
         require(row["name"].startswith(prefix), "Direct name differs from its exact span.")
         description = row["name"][len(prefix):]
         original = source[first:last].decode("ascii")
@@ -562,7 +610,7 @@ def direct_inventory(text: str, source: bytes) -> dict:
         old_count, new_count = context_high - context_low, context_high - context_low + delta
         def count(value: int) -> str:
             return str(context_low + 1) + (f",{value}" if value != 1 else "")
-        rendered = (f"--- engine_worker.rs\n+++ {description}\n@@ -{count(old_count)} +{count(new_count)} @@\n".encode()
+        rendered = (f"--- {owner.leaf}\n+++ {description}\n@@ -{count(old_count)} +{count(new_count)} @@\n".encode()
                     + b"".join(b" " + line for line in lines[context_low:low])
                     + b"".join(b"-" + line for line in lines[low:high])
                     + b"".join(b"+" + line for line in changed_lines[low:high + delta])
@@ -573,9 +621,11 @@ def direct_inventory(text: str, source: bytes) -> dict:
     return inventory
 
 
-def direct_summary(inventory: dict) -> dict:
+def direct_summary(inventory: dict, *, owner: DirectOwner = WORKER_DIRECT) -> dict:
     """Keep direct raw identities separate from native cargo-mutants descriptors."""
-    return {"schema": DIRECT_SCHEMA, "count": len(inventory),
+    require(inventory and all(row["raw"].get("file") == owner.leaf for row in inventory.values()),
+            "Direct summary contains another owner's descriptors.")
+    return {"schema": owner.schema, "count": len(inventory),
             "sha256": Q.canonical({name: row["raw"] for name, row in inventory.items()})}
 
 
@@ -717,7 +767,8 @@ def replay_commands() -> list[list[str]]:
     return [[*common, "--no-run"], [*common, "--", "--test-threads=1", "--nocapture"]]
 
 
-def replay_outcome(build: dict, test: dict | None, expected: list[str]) -> dict:
+def replay_outcome(build: dict, test: dict | None, expected: list[str], *,
+                   owner: DirectOwner = WORKER_DIRECT) -> dict:
     """Classify actual direct Build/Test observations without native outcome translation."""
     for result in (build, test):
         if result is None:
@@ -728,7 +779,7 @@ def replay_outcome(build: dict, test: dict | None, expected: list[str]) -> dict:
     if build["exit_code"] == 101:
         require(test is None, "Compiler-unviable replay must not invent a Test observation.")
         return {"kind": "compiler-unviable", "cause": classify_cause(build["output"], expected,
-                    compiler=True, required_source="src/engine_worker.rs"), "kill_credit": 0}
+                    compiler=True, required_source=owner.file), "kill_credit": 0}
     require(build["exit_code"] == 0 and test is not None, "Replay Build did not complete.")
     require(test["exit_code"] in (0, 101), "Replay Test has an unclassified native exit.")
     root = "/work/source/" + Q.TOOL
@@ -736,10 +787,12 @@ def replay_outcome(build: dict, test: dict | None, expected: list[str]) -> dict:
     runtime = fixture_test_runtime(test["output"], root, artifacts, complete=test["exit_code"] == 0, verbose=False)
     if test["exit_code"] == 0:
         return {"kind": "survived", "tests": executed_tests(runtime, expected), "kill_credit": 0}
-    return {"kind": "killed", "cause": classify_cause(runtime, expected), "kill_credit": 1}
+    assertions = WRITER_ASSERTIONS if owner == WRITER_DIRECT else None
+    return {"kind": "killed", "cause": classify_cause(runtime, expected, assertion_files=assertions),
+            "kill_credit": 1}
 
 
-def replay_score(rows: dict, inventory: dict, *, complete: bool) -> dict:
+def replay_score(rows: dict, inventory: dict, *, complete: bool, owner: DirectOwner = WORKER_DIRECT) -> dict:
     """A pilot has zero full-campaign credit; only complete viable rows can pass 95%."""
     require(type(complete) is bool and type(rows) is dict and rows and set(rows) <= set(inventory),
             "Replay score has empty or unknown rows.")
@@ -750,7 +803,7 @@ def replay_score(rows: dict, inventory: dict, *, complete: bool) -> dict:
     require(not complete or set(rows) == set(inventory), "Full replay omits generated rows.")
     killed = sum(row["kind"] == "killed" for row in rows.values())
     viable = sum(row["kind"] != "compiler-unviable" for row in rows.values())
-    return {"schema": DIRECT_SCHEMA, "generated": len(inventory), "executed": len(rows),
+    return {"schema": owner.schema, "generated": len(inventory), "executed": len(rows),
             "killed": killed, "viable": viable, "unviable": len(rows) - viable,
             "survived": viable - killed, "complete": complete, "excluded": 0,
             "viable_killed_percent": 100 * killed / viable if viable and complete else None,
@@ -794,29 +847,33 @@ def replay_command(session, source: Path, identity: dict, label: str, command: l
 
 
 
-def retained_variant(session, directory: Path, manifest: dict) -> None:
+def retained_variant(session, directory: Path, manifest: dict, *, owner: DirectOwner = WORKER_DIRECT) -> None:
     """Verify strict sparse evidence reconstructs the complete bound variant."""
     E.directory(directory)
-    require(set(C.PRODUCT.inventory(directory)) == {"manifest.json", "engine_worker.rs"},
+    require(set(C.PRODUCT.inventory(directory)) == {"manifest.json", owner.leaf},
             "Sparse evidence has missing, linked or unexpected files.")
     actual = decode_record(C.read_analysis_bytes(directory / "manifest.json", maximum=1024 * 1024))
-    require(actual == manifest and Q.canonical(actual) == Q.canonical(manifest),
+    require(actual == manifest and Q.canonical(actual) == Q.canonical(manifest)
+            and actual.get("schema") == owner.schema + ":retained-variant",
             "Retained variant manifest is missing, altered or has unknown fields.")
-    worker = C.read_analysis_bytes(directory / "engine_worker.rs", maximum=256 * 1024)
-    require(hashlib.sha256(worker).hexdigest() == actual["worker_sha256"]
+    source = C.read_analysis_bytes(directory / owner.leaf, maximum=256 * 1024)
+    retained_hash = actual[f"{owner.prefix}_sha256"]
+    retained_path = actual[f"{owner.prefix}_path"]
+    require(hashlib.sha256(source).hexdigest() == retained_hash
             and actual["original_source_sha256"] == session.identity
             and actual["original_sha256"] == Q.canonical(session.identity),
             "Retained worker bytes or original full source identity differ.")
-    reconstructed = {**actual["original_source_sha256"], actual["worker_path"]: actual["worker_sha256"]}
-    require(actual["worker_path"] == WORKER and WORKER in session.identity
-            and actual["worker_sha256"] != session.identity[WORKER]
+    reconstructed = {**actual["original_source_sha256"], retained_path: retained_hash}
+    require(retained_path == owner.path and owner.path in session.identity
+            and retained_hash != session.identity[owner.path]
             and reconstructed == actual["variant_source_sha256"]
             and Q.canonical(reconstructed) == actual["variant_sha256"],
-            "Sparse variant does not reconstruct exactly one changed worker.")
+            "Sparse variant does not reconstruct exactly one changed direct owner.")
     session.check()
 
 
-def retire_variant(session, derivative: Path, identity: dict, number: int, row: dict) -> dict:
+def retire_variant(session, derivative: Path, identity: dict, number: int, row: dict, *,
+                   owner: DirectOwner = WORKER_DIRECT) -> dict:
     """Retain complete sparse evidence before removing one completed derivative.
 
     Validation failure leaves its derivative intact. A deletion failure preserves
@@ -824,7 +881,7 @@ def retire_variant(session, derivative: Path, identity: dict, number: int, row: 
     state and stops; cleanup does not attempt additional restoration I/O.
     """
     require(type(number) is int and 0 <= number < LIMITS["maximum_mutants"]
-            and derivative == session.work / f"worker-variant-{number:03d}"
+            and derivative == session.work / f"{owner.prefix}-variant-{number:03d}"
             and derivative.parent == session.work and derivative != session.source,
             "Retirement requires the exact numbered owned derivative child.")
     E.directory(derivative)
@@ -832,11 +889,11 @@ def retire_variant(session, derivative: Path, identity: dict, number: int, row: 
     check_variant(session, derivative, identity)
     require(type(row) is dict and type(row.get("raw")) is dict
             and session.record.get("direct_inventory", {}).get(row["raw"].get("name")) == row["raw"]
-            and row.get("source_sha256") == identity.get(WORKER)
+            and row.get("source_sha256") == identity.get(owner.path)
             and row.get("variant_sha256") == Q.canonical(identity),
             "Retirement lacks its admitted raw descriptor and exact variant identity.")
     successful(row.get("Clean"))
-    classified = replay_outcome(row.get("Build"), row.get("Test"), session.tests)
+    classified = replay_outcome(row.get("Build"), row.get("Test"), session.tests, owner=owner)
     observed = {key: row.get(key) for key in classified}
     require(observed == classified and Q.canonical(observed) == Q.canonical(classified),
             "Retirement requires an actual completed classified replay.")
@@ -844,26 +901,26 @@ def retire_variant(session, derivative: Path, identity: dict, number: int, row: 
     for phase in ("Clean", "Build", "Test"):
         if row.get(phase) is None:
             continue
-        label = f"worker:{number}:{phase}"
+        label = f"{owner.prefix}:{number}:{phase}"
         commands = [item for item in session.record["commands"] if item.get("label") == label]
         require(len(commands) == 1 and commands[0].get("variant_sha256") == Q.canonical(identity)
                 and all(commands[0].get(key) == value for key, value in row[phase].items()),
                 "Retirement command observation is missing, duplicated or altered.")
         labels.append(label)
-    retained_root = session.work / "worker-replay"
+    retained_root = session.work / f"{owner.prefix}-replay"
     retained_root.mkdir(mode=0o700, exist_ok=True)
     E.directory(retained_root)
     directory = retained_root / f"{number:03d}"
     directory.mkdir(mode=0o700)
-    worker = C.read_analysis_bytes(derivative / WORKER, maximum=256 * 1024)
-    with (directory / "engine_worker.rs").open("xb") as stream:
-        stream.write(worker)
-    manifest = {"schema": DIRECT_SCHEMA + ":retained-variant", "original_source_sha256": session.identity,
+    source = C.read_analysis_bytes(derivative / owner.path, maximum=256 * 1024)
+    with (directory / owner.leaf).open("xb") as stream:
+        stream.write(source)
+    manifest = {"schema": owner.schema + ":retained-variant", "original_source_sha256": session.identity,
                 "original_sha256": Q.canonical(session.identity), "variant_source_sha256": identity,
-                "variant_sha256": Q.canonical(identity), "worker_path": WORKER,
-                "worker_sha256": identity[WORKER], "raw": row["raw"], "command_labels": labels}
+                "variant_sha256": Q.canonical(identity), f"{owner.prefix}_path": owner.path,
+                f"{owner.prefix}_sha256": identity[owner.path], "raw": row["raw"], "command_labels": labels}
     Q.write_new(directory / "manifest.json", manifest)
-    retained_variant(session, directory, manifest)
+    retained_variant(session, directory, manifest, owner=owner)
     check_variant(session, derivative, identity)
     E.directory(derivative)
     current = derivative.stat()
@@ -875,7 +932,7 @@ def retire_variant(session, derivative: Path, identity: dict, number: int, row: 
     try:
         shutil.rmtree(derivative)
         require(not derivative.exists(), "Retired derivative remains attached.")
-        retained_variant(session, directory, manifest)
+        retained_variant(session, directory, manifest, owner=owner)
     except Exception as error:
         retention.update(status="incomplete-possibly-partial-derivative",
                          retirement_error=type(error).__name__ + ": " + str(error))
@@ -884,29 +941,34 @@ def retire_variant(session, derivative: Path, identity: dict, number: int, row: 
     return retention
 
 
-def execute_worker(session) -> None:
-    """Enumerate or replay exact worker rows in a separately tagged bounded lane."""
+def execute_direct(session, owner: DirectOwner) -> None:
+    """Enumerate or replay the selected owner's exact bounded direct rows."""
     record, args = session.record, session.args
-    result = session.run("worker-direct-generated", [str(session.admitted["extensions"]["cargo-mutants"]),
-                          "mutants", "--Zmutate-file", "src/engine_worker.rs", "--json"], 120)
-    source = C.read_analysis_bytes(session.source / WORKER, maximum=256 * 1024)
-    inventory = direct_inventory(result["output"], source)
-    summary = direct_summary(inventory)
-    record.update(direct_schema=DIRECT_SCHEMA, direct_inventory={name: row["raw"] for name, row in inventory.items()},
+    prefix = owner.prefix
+    require(DIRECT_LANES.get(args.lane) == owner, "Direct lane differs from its configured source owner.")
+    if owner == WRITER_DIRECT:
+        require(WRITER_ASSERTIONS.keys() <= set(session.tests), "Admitted test roster omits a writer control.")
+    result = session.run(f"{prefix}-direct-generated", [str(session.admitted["extensions"]["cargo-mutants"]),
+                          "mutants", "--Zmutate-file", owner.file, "--json"], 120)
+    source = C.read_analysis_bytes(session.source / owner.path, maximum=256 * 1024)
+    inventory = direct_inventory(result["output"], source, owner=owner)
+    summary = direct_summary(inventory, owner=owner)
+    record.update(direct_schema=owner.schema, direct_inventory={name: row["raw"] for name, row in inventory.items()},
                   direct_summary=summary)
-    if args.lane == "worker-enumerate":
-        record["review_template"] = {"schema": DIRECT_SCHEMA, "candidate_sha256": record["candidate_sha256"],
+    if args.lane == f"{prefix}-enumerate":
+        record["review_template"] = {"schema": owner.schema, "candidate_sha256": record["candidate_sha256"],
                                     "summary": summary, "reviewer": "", "reconciliation": {}}
         return
     previous = session.receipt(args.direct_inventory)
-    require(previous.get("status") == "passed" and previous.get("lane") == "worker-enumerate"
+    require(previous.get("status") == "passed" and previous.get("lane") == f"{prefix}-enumerate"
             and previous.get("bookends_passed") is True and previous.get("export_complete") is True
             and previous.get("graph_binding") == session.binding
-            and previous.get("direct_schema") == DIRECT_SCHEMA and previous.get("direct_summary") == summary
+            and previous.get("direct_schema") == owner.schema and previous.get("direct_summary") == summary
+            and (owner != WRITER_DIRECT or previous.get("subjects") == {owner.subject: owner.file})
             and previous.get("direct_inventory") == record["direct_inventory"], "Replay differs from current direct enumeration.")
     review = session.receipt(args.reviewed_inventory)
     require(type(review) is dict and set(review) == {"schema", "candidate_sha256", "summary", "reviewer", "reconciliation"}
-            and review.get("schema") == DIRECT_SCHEMA and review.get("candidate_sha256") == record["candidate_sha256"]
+            and review.get("schema") == owner.schema and review.get("candidate_sha256") == record["candidate_sha256"]
             and review.get("summary") == summary and type(review.get("summary", {}).get("count")) is int
             and type(review.get("reviewer")) is str and 0 < len(review["reviewer"]) <= 200,
             "Replay requires exact independently reviewed source and complete direct inventory.")
@@ -918,7 +980,7 @@ def execute_worker(session) -> None:
             and all(reconciliation[key] for key in reconciliation if key != "remaining_gaps"),
             "Replay review must retain function/cfg/generation gaps and independent controls.")
     record["inventory_review"] = review
-    complete = args.lane == "worker-replay"
+    complete = args.lane == f"{prefix}-replay"
     require(complete or (type(args.pilot_mutant) is str and args.pilot_mutant in inventory),
             "Pilot requires one exact complete-inventory mutant name.")
     names = list(inventory) if complete else [args.pilot_mutant]
@@ -930,7 +992,7 @@ def execute_worker(session) -> None:
     record["initial_target"] = initial_replay_target(session.work)
     # Full baseline uses the immutable original. Doctests remain a distinct command.
     for label, command in zip(("Build", "Test"), commands, strict=True):
-        baseline = session.run("worker-baseline:" + label, command, seconds(90 if label == "Build" else 60))
+        baseline = session.run(f"{prefix}-baseline:" + label, command, seconds(90 if label == "Build" else 60))
         if label == "Build":
             baseline_artifacts = fixture_build_artifacts(baseline["output"], "/work/source/" + Q.TOOL)
             record["baseline_fresh_fixture_artifacts"] = len(baseline_artifacts)
@@ -939,7 +1001,7 @@ def execute_worker(session) -> None:
                                            complete=True, verbose=False)
             executed_tests(runtime, session.tests)
     for command in Q.lane_commands("fixture-doc", "/toolchain/bin/cargo"):
-        docs = session.run("worker-baseline:doc", command, seconds(60))
+        docs = session.run(f"{prefix}-baseline:doc", command, seconds(60))
         if re.search(r"^test result: ok\. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;", docs["output"], re.M):
             require(not re.search(r"^test (?!result:)", docs["output"], re.M), "Empty doctest report includes a case.")
             record["baseline_doctests"] = {"executed": 0, "behavior_credit": 0}
@@ -950,32 +1012,32 @@ def execute_worker(session) -> None:
     replay_error = None
     try:
         for number, name in enumerate(names):
-            derivative = session.work / f"worker-variant-{number:03d}"
+            derivative = session.work / f"{prefix}-variant-{number:03d}"
             shutil.copytree(session.source, derivative)
-            (derivative / WORKER).write_bytes(inventory[name]["source"])
-            identity = {**session.identity, WORKER: inventory[name]["source_sha256"]}
-            clean = replay_command(session, derivative, identity, f"worker:{number}:Clean", replay_clean_command(), seconds(90))
+            (derivative / owner.path).write_bytes(inventory[name]["source"])
+            identity = {**session.identity, owner.path: inventory[name]["source_sha256"]}
+            clean = replay_command(session, derivative, identity, f"{prefix}:{number}:Clean", replay_clean_command(), seconds(90))
             successful(clean)
-            build = replay_command(session, derivative, identity, f"worker:{number}:Build", commands[0], seconds(90))
+            build = replay_command(session, derivative, identity, f"{prefix}:{number}:Build", commands[0], seconds(90))
             test = None
             if type(build.get("exit_code")) is int and build["exit_code"] == 0 and build.get("failure") is None:
                 fresh_fixture_build(build["output"])
-                test = replay_command(session, derivative, identity, f"worker:{number}:Test", commands[1], seconds(60))
+                test = replay_command(session, derivative, identity, f"{prefix}:{number}:Test", commands[1], seconds(60))
             row = {"raw": inventory[name]["raw"], "variant_sha256": Q.canonical(identity),
                    "source_sha256": inventory[name]["source_sha256"], "Clean": clean, "Build": build, "Test": test}
             rows[name] = row
-            row.update(replay_outcome(build, test, session.tests))
+            row.update(replay_outcome(build, test, session.tests, owner=owner))
             check_variant(session, derivative, identity)
-            retire_variant(session, derivative, identity, number, row)
+            retire_variant(session, derivative, identity, number, row, owner=owner)
     except Exception as error:
         replay_error = error
         raise
     finally:
         # Fresh original Build/Test proves exact restoration and a healthy closing neighbor.
         try:
-            session.run("worker-closing:Clean", replay_clean_command(), seconds(90))
+            session.run(f"{prefix}-closing:Clean", replay_clean_command(), seconds(90))
             for label, command in zip(("Build", "Test"), commands, strict=True):
-                closing = session.run("worker-closing:" + label, command, seconds(90 if label == "Build" else 60))
+                closing = session.run(f"{prefix}-closing:" + label, command, seconds(90 if label == "Build" else 60))
                 if label == "Build":
                     closing_artifacts = fixture_build_artifacts(closing["output"], "/work/source/" + Q.TOOL)
                     record["closing_fresh_fixture_artifacts"] = len(closing_artifacts)
@@ -987,9 +1049,9 @@ def execute_worker(session) -> None:
             record["closing_error"] = type(closing_error).__name__ + ": " + str(closing_error)
             if replay_error is None:
                 raise
-    record["replay_score"] = replay_score(rows, inventory, complete=complete)
+    record["replay_score"] = replay_score(rows, inventory, complete=complete, owner=owner)
     if complete:
-        require(record["replay_score"]["gate_passed"], "Full direct worker replay remains below its 95% gate.")
+        require(record["replay_score"]["gate_passed"], f"Full direct {prefix} replay remains below its 95% gate.")
         record["metrics_passed"] = True
     else:
         require(any(row["kind"] == "killed" for row in rows.values()), "Representative pilot has no semantic fault detection.")
@@ -1178,10 +1240,12 @@ def enumerate_owners(session):
 def execute(session):
     """Run one fixed finite metric lane after ordinary test and graph admission."""
     record, args = session.record, session.args
-    if args.lane.startswith("worker-"):
-        execute_worker(session)
+    owner = DIRECT_LANES.get(args.lane)
+    if owner is not None:
+        execute_direct(session, owner)
         return
     if args.lane == "coverage":
+        require(WRITER_ASSERTIONS.keys() <= set(session.tests), "Admitted test roster omits a writer control.")
         command = [str(session.admitted["extensions"]["cargo-llvm-cov"]), "llvm-cov", "--package", PACKAGE,
                    "--frozen", "--offline", "--jobs", "1", "--lib", "--tests", "--json",
                    "--output-path", "/work/coverage.json", "--failure-mode", "any", "--", "--test-threads=1"]
@@ -1342,12 +1406,13 @@ def run(args):
     Q.no_ambient_flags()
     core_policy = Q.disable_core_dumps()
     require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh metric label.")
-    require(args.lane in {"coverage", "enumerate", "mutation", "worker-enumerate", "worker-replay-pilot", "worker-replay"}, "Unknown fixture metric lane.")
+    require(args.lane in METRIC_LANES, "Unknown fixture metric lane.")
+    owner = DIRECT_LANES.get(args.lane)
     require(args.lane != "mutation" or (args.inventory_receipt is not None and args.reviewed_inventory is not None),
             "Mutation requires an enumeration receipt and an independent inventory review.")
     require(args.equivalence_review is None or args.lane == "mutation",
             "Exact equivalence review applies only to the mutation lane.")
-    require(not args.lane.startswith("worker-replay") or (args.direct_inventory is not None
+    require(owner is None or args.lane == f"{owner.prefix}-enumerate" or (args.direct_inventory is not None
             and args.reviewed_inventory is not None), "Replay requires direct enumeration and independent review.")
     deadline = getattr(args, "deadline_monotonic", None)
     stage_id = getattr(args, "durable_stage", None)
@@ -1376,7 +1441,7 @@ def run(args):
         require(not destination.exists() and not evidence.exists() and not output.exists(), "Metric label already owns evidence.")
         output.mkdir(mode=0o700)
         evidence.mkdir(mode=0o700)
-        selected = ({"engine_worker": SUBJECTS["engine_worker"]} if args.lane.startswith("worker-")
+        selected = ({owner.subject: owner.file} if owner is not None
                     else SUBJECTS if args.lane == "coverage" else NATIVE_SUBJECTS)
         record = {"schema_version": 1, "scope": "portable fixture selected owners only", "lane": args.lane,
                   "core_dump_policy": core_policy,
@@ -1432,7 +1497,7 @@ def run(args):
 def main():
     """Accept fixed lanes and fresh evidence selections, never arbitrary commands."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("lane", choices=("coverage", "enumerate", "mutation", "worker-enumerate", "worker-replay-pilot", "worker-replay"))
+    parser.add_argument("lane", choices=METRIC_LANES)
     parser.add_argument("--label", required=True)
     parser.add_argument("--graph-receipt", type=Path, required=True)
     parser.add_argument("--test-receipt", type=Path, required=True)

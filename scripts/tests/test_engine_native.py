@@ -1034,7 +1034,7 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
             def pe(image):
                 if active["fault"] and drift == "exported_artifacts" and image.name == "engine-facade-consumer.exe":
                     (active["output"] / "gated-launcher.exe").write_bytes(b"changed exported image")
-                return {"synthetic": True}
+                return {"image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()}
             def args(output, fault):
                 output.mkdir()
                 return NATIVE.argparse.Namespace(output_dir=output, vendor_dir=vendor, toolchain_dir=toolchain,
@@ -1670,7 +1670,8 @@ class PlacementEngineCohortAdmission(unittest.TestCase):
                   patch.object(NATIVE.ANALYSIS, "admit", return_value=stable),
                   patch.object(NATIVE.ENV, "require_admitted_compiler"),
                   patch.object(NATIVE.ENV, "run", side_effect=observe),
-                  patch.object(NATIVE.PE, "pe_readback", return_value={"synthetic": True})):
+                  patch.object(NATIVE.PE, "pe_readback", side_effect=lambda image: {
+                      "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()})):
                 NATIVE.build(args, report)
             self.assertEqual(report["status"], "passed")
             self.assertIs(report["placement_cohort"], True)
@@ -2140,6 +2141,10 @@ class EvidenceCustody(unittest.TestCase):
                         if path.name == "engine-facade-consumer.exe":
                             if fault == "sdk-drift": sdk_file.write_bytes(b"changed SDK input")
                             elif fault == "normal-drift": normal["nevrotick_engine"].write_bytes(b"changed normal library")
+                    elif fault == "image-drift" and "--coff-load-config" in command:
+                        if command[-1].endswith("/engine-facade-consumer.exe"):
+                            observed = output / "work" / command[-1].removeprefix("/work/")
+                            observed.write_bytes(b"changed after static image inspection")
                     return {"exit_code": 0, "failure": None, "output": "synthetic external observation\n"}
 
                 build = NATIVE.build
@@ -2162,12 +2167,14 @@ class EvidenceCustody(unittest.TestCase):
                       patch.object(NATIVE.ANALYSIS, "admit", return_value=stable),
                       patch.object(NATIVE.ENV, "require_admitted_compiler"),
                       patch.object(NATIVE.ENV, "run", side_effect=external_command),
-                      patch.object(NATIVE.PE, "pe_readback", return_value={"synthetic": True}),
+                      patch.object(NATIVE.PE, "pe_readback", side_effect=lambda image: {
+                          "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()}),
                       patch.object(NATIVE, "engine_libraries", side_effect=normal_libraries)):
                     if fault == "old-shadow":
                         namespace["engine_libraries"] = NATIVE.engine_libraries
                     if fault:
-                        message = "normal_libraries" if fault == "normal-drift" else "windows_libraries"
+                        message = {"normal-drift": "normal_libraries", "image-drift": "after hardening readback"}.get(
+                            fault, "windows_libraries")
                         with self.assertRaisesRegex(NATIVE.Incomplete, message): build(args, report)
                     else:
                         build(args, report)
@@ -2179,7 +2186,7 @@ class EvidenceCustody(unittest.TestCase):
                         self.assertEqual(report["normal_library_inputs"].keys(),
                                          {"/work/" + str(path.relative_to(output / "work")) for path in normal.values()})
 
-        for fault in (None, "old-shadow", "sdk-drift", "normal-drift"):
+        for fault in (None, "old-shadow", "sdk-drift", "normal-drift", "image-drift"):
             with self.subTest(fault=fault): run_case(fault)
 
     def test_native_staging_refuses_traversal_with_valid_neighbor(self):

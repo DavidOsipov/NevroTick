@@ -94,6 +94,24 @@ class CompileResourceControls(unittest.TestCase):
             return VERIFY.sandbox(Path("/toolchain"), Path("/work"), Path("/source"), Path("/vendor"),
                                   command, None, **context)
 
+    def test_observe_resource_argument_keeps_the_exact_engine_release_boundary(self):
+        for profile in ("default", "engine-ke-association"):
+            with self.subTest(profile=profile):
+                command = self.release_command("nevrotick-engine", profile != "default")
+                command[command.index("build")] = "rustc"
+                resource = "/work/metadata/observe-" + "a" * 64 + ".res"
+                command.extend(["--", "-C", "link-arg=" + resource])
+                invocation = self.assembled(command, lane="windows", label="windows-engine-link", profile=profile)
+                self.assertIn("--as=4294967296", invocation)
+                self.assertIn("--cpu=300", invocation)
+                self.assertEqual(invocation[-len(command):], command)
+                for changed in (command[:-1] + ["link-arg=/work/metadata/ui.res"],
+                                command + ["-C", "target-cpu=native"], command[:-3]):
+                    with self.assertRaises(VERIFY.ENV.Incomplete):
+                        self.assembled(changed, lane="windows", label="windows-engine-link", profile=profile)
+                with self.assertRaises(VERIFY.ENV.Incomplete):
+                    self.assembled(command, lane="windows", label="windows-link", profile=profile)
+
     def test_only_exact_ui_windows_release_gets_eight_gib_address_space(self):
         for profile in ("default", "engine-ke-association"):
             for label, package, limit in (("windows-link", "nevrotick-ui", "--as=8589934592"),
@@ -1885,60 +1903,128 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertNotIn("run", rows["windows-link"])
         self.assertIn("--bin", rows["windows-link"])
 
-    def test_windows_export_selects_release_and_preserves_matching_symbols(self):
+    def windows_release_fixture(self):
+        fixture_path = Path(__file__).with_name("test_windows_pe.py")
+        spec = importlib.util.spec_from_file_location("windows_export_fixtures", fixture_path)
+        fixtures = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixtures)
         release = self.work / "target/x86_64-pc-windows-msvc/release"
-        debug = self.work / "target/x86_64-pc-windows-msvc/debug"
         release.mkdir(parents=True)
-        debug.mkdir(parents=True)
-        (release / "nevrotick-ui.exe").write_bytes(b"release-control")
-        (release / "nevrotick_ui.pdb").write_bytes(b"release-symbol-control")
-        (release / "nevrotick-observe.exe").write_bytes(b"engine-control")
-        (release / "nevrotick_observe.pdb").write_bytes(b"engine-symbol-control")
-        (debug / "nevrotick-ui.exe").write_bytes(b"wrong-debug-control")
         output = self.work / "export"
         output.mkdir()
-        report = VERIFY.export_windows_artifacts(self.work, output)
+        artifacts = {
+            "nevrotick-ui.exe": bytes(fixtures._image(
+                2, pdb_path=r"C:\build\nevrotick_ui.pdb", guid=fixtures._UI_GUID)),
+            "nevrotick_ui.pdb": bytes(fixtures._pdb(guid=fixtures._UI_GUID)),
+            "nevrotick-observe.exe": bytes(fixtures._image(
+                3, pdb_path="nevrotick_observe.pdb", guid=fixtures._OBSERVE_GUID)),
+            "nevrotick_observe.pdb": bytes(fixtures._pdb(guid=fixtures._OBSERVE_GUID)),
+        }
+        for name, payload in artifacts.items():
+            (release / name).write_bytes(payload)
+        return release, output, artifacts
+
+    def test_windows_export_selects_release_and_preserves_matching_symbols(self):
+        release, output, artifacts = self.windows_release_fixture()
+        debug = release.with_name("debug")
+        debug.mkdir()
+        (debug / "nevrotick-ui.exe").write_bytes(b"wrong-debug-control")
+        report = VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(report["profile"], "release")
         self.assertEqual(report["target"], "x86_64-pc-windows-msvc")
-        self.assertEqual((output / "nevrotick-ui.exe").read_bytes(), b"release-control")
-        self.assertEqual(report["sha256"], digest(b"release-control"))
-        self.assertEqual(report["symbols"]["sha256"], digest(b"release-symbol-control"))
-        self.assertEqual(Path(report["symbols"]["path"]).read_bytes(), b"release-symbol-control")
-        self.assertEqual(Path(report["engine"]["path"]).read_bytes(), b"engine-control")
-        self.assertEqual(report["engine"]["symbols"]["sha256"], digest(b"engine-symbol-control"))
+        self.assertEqual({entry.name: entry.read_bytes() for entry in output.iterdir()}, artifacts)
+        self.assertEqual(report["sha256"], digest(artifacts["nevrotick-ui.exe"]))
+        self.assertEqual(report["symbols"]["sha256"], digest(artifacts["nevrotick_ui.pdb"]))
+        self.assertEqual(Path(report["symbols"]["path"]).name, "nevrotick_ui.pdb")
+        self.assertEqual(Path(report["engine"]["path"]).name, "nevrotick-observe.exe")
+        self.assertEqual(report["engine"]["symbols"]["sha256"], digest(artifacts["nevrotick_observe.pdb"]))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "existing destinations"):
-            VERIFY.export_windows_artifacts(self.work, output)
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
+
+    def test_windows_export_checks_the_inspected_ui_bytes_before_any_copy(self):
+        release, output, artifacts = self.windows_release_fixture()
+        ui = release / "nevrotick-ui.exe"
+        inspected = digest(artifacts[ui.name])
+        # A trailing byte changes the inspected hash while retaining the PE and PDB identity.
+        ui.write_bytes(artifacts[ui.name] + b"\0")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI bytes changed after version resource inspection"):
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT, ui_sha256=inspected)
+        self.assertEqual(list(output.iterdir()), [])
+
+        ui.write_bytes(artifacts[ui.name])
+        report = VERIFY.export_windows_artifacts(self.work, output, source=ROOT, ui_sha256=inspected)
+        self.assertEqual(report["sha256"], inspected)
+        self.assertEqual({entry.name: entry.read_bytes() for entry in output.iterdir()}, artifacts)
+
+    def test_windows_export_refuses_uninspected_observe_replacement_before_copying(self):
+        release, output, artifacts = self.windows_release_fixture()
+        ui_digest = digest(artifacts["nevrotick-ui.exe"])
+        observe = release / "nevrotick-observe.exe"
+        observed_bytes = artifacts[observe.name]
+        observe.write_bytes(observed_bytes + b"\0")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Observe bytes changed after version resource inspection"):
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT, ui_sha256=ui_digest,
+                                            observe_sha256=digest(observed_bytes))
+        self.assertEqual(list(output.iterdir()), [])
+        observe.write_bytes(observed_bytes)
+        report = VERIFY.export_windows_artifacts(self.work, output, source=ROOT, ui_sha256=ui_digest,
+                                                 observe_sha256=digest(observed_bytes))
+        self.assertEqual(report["engine"]["sha256"], digest(observed_bytes))
+        self.assertEqual((output / observe.name).read_bytes(), observed_bytes)
+
+    def test_windows_export_refuses_the_other_symbol_spelling_before_copying(self):
+        release, output, _ = self.windows_release_fixture()
+        canonical = release / "nevrotick_observe.pdb"
+        alternate = release / "nevrotick-observe.pdb"
+        canonical.rename(alternate)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "CodeView basename"):
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
+        self.assertEqual(list(output.iterdir()), [])
+        alternate.rename(canonical)
+        report = VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
+        self.assertEqual(Path(report["engine"]["symbols"]["path"]).name, canonical.name)
+
+    def test_windows_export_refuses_wrong_guid_or_age_before_copying(self):
+        release, output, artifacts = self.windows_release_fixture()
+        observe = release / "nevrotick_observe.pdb"
+        observed_bytes = artifacts[observe.name]
+        # Keep the selected name and the MSF/PDB layout. Change only the identity.
+        wrong_age = bytearray(observed_bytes)
+        wrong_age[5 * 4096 + 8:5 * 4096 + 12] = (2).to_bytes(4, "little")
+        for subject, payload in (("other role", artifacts["nevrotick_ui.pdb"]),
+                                 ("different age", wrong_age)):
+            with self.subTest(subject=subject):
+                observe.write_bytes(payload)
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "PDB GUID or age differs"):
+                    VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
+                self.assertEqual(list(output.iterdir()), [])
+        observe.write_bytes(observed_bytes)
+        VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
+        self.assertEqual({entry.name: entry.read_bytes() for entry in output.iterdir()}, artifacts)
 
     def test_windows_export_refuses_missing_or_ambiguous_symbols_before_copying(self):
-        release = self.work / "target/x86_64-pc-windows-msvc/release"
-        release.mkdir(parents=True)
-        (release / "nevrotick-ui.exe").write_bytes(b"release-control")
-        output = self.work / "export"
-        output.mkdir()
+        release, output, artifacts = self.windows_release_fixture()
+        (release / "nevrotick_ui.pdb").unlink()
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
-            VERIFY.export_windows_artifacts(self.work, output)
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(list(output.iterdir()), [])
 
         for name in ("nevrotick-ui.pdb", "nevrotick_ui.pdb"):
-            (release / name).write_bytes(b"ambiguous-symbol-control")
+            (release / name).write_bytes(artifacts["nevrotick_ui.pdb"])
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
-            VERIFY.export_windows_artifacts(self.work, output)
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(list(output.iterdir()), [])
 
     def test_windows_engine_artifacts_are_admitted_before_any_ui_copy(self):
-        release = self.work / "target/x86_64-pc-windows-msvc/release"
-        release.mkdir(parents=True)
-        for name in ("nevrotick-ui.exe", "nevrotick_ui.pdb", "nevrotick-observe.exe"):
-            (release / name).write_bytes(b"independent-artifact-control")
-        output = self.work / "export"
-        output.mkdir()
+        release, output, artifacts = self.windows_release_fixture()
+        (release / "nevrotick_observe.pdb").unlink()
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
-            VERIFY.export_windows_artifacts(self.work, output)
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(list(output.iterdir()), [])
-        (release / "nevrotick_observe.pdb").write_bytes(b"engine-symbol")
-        (release / "nevrotick-observe.pdb").write_bytes(b"ambiguous-symbol")
+        for name in ("nevrotick_observe.pdb", "nevrotick-observe.pdb"):
+            (release / name).write_bytes(artifacts["nevrotick_observe.pdb"])
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
-            VERIFY.export_windows_artifacts(self.work, output)
+            VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(list(output.iterdir()), [])
 
     def test_portable_row_keeps_doctests_separate_and_empty_tests_fatal(self):
@@ -2228,6 +2314,64 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
         self.receipt.write_text(json.dumps(record))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "different acquisition receipt"):
             VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, self.receipt)
+
+
+class WindowsUiToolAdmissionTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="windows-ui-tool-control-")
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self.compiler = root / "llvm/bin/llvm-rc"
+        self.toolchain = root / "rust"
+        rust = self.toolchain / "lib/rustlib/x86_64-unknown-linux-gnu"
+        self.files = {
+            "/tools/llvm/bin/llvm-rc": (self.compiler, b"reviewed compiler"),
+            "/tools/llvm/lib/libLLVM.so.22.1": (root / "llvm/lib/libLLVM.so.22.1", b"compiler library"),
+            "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj": (
+                rust / "bin/llvm-readobj", b"reviewed reader"),
+            "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/lib/libLLVM.so.23.1-rust-1.100.0-stable": (
+                rust / "lib/libLLVM.so.23.1-rust-1.100.0-stable", b"reader library"),
+        }
+        for tool, payload in self.files.values():
+            tool.parent.mkdir(parents=True, exist_ok=True)
+            tool.write_bytes(payload)
+            tool.chmod(0o700 if tool.parent.name == "bin" else 0o600)
+
+        # Select small inert fixture bytes without replacing the production
+        # filesystem checks or digest calculation.
+        pins = {mount: (len(payload), digest(payload)) for mount, (_, payload) in self.files.items()}
+        self.enterContext(patch.object(VERIFY, "WINDOWS_UI_TOOL_PINS", pins))
+
+    def test_admits_exact_compiler_reader_and_libraries(self):
+        expected = {mount: (tool, digest(payload)) for mount, (tool, payload) in self.files.items()}
+        self.assertEqual(VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler), expected)
+
+    def test_refuses_unselected_or_missing_binary_and_library_inputs(self):
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "--llvm-rc"):
+            VERIFY.admit_windows_ui_tools(self.toolchain, None)
+
+        for mount, (tool, payload) in self.files.items():
+            with self.subTest(mount=mount):
+                mode = tool.stat().st_mode & 0o777
+                tool.unlink()
+                try:
+                    with self.assertRaises((FileNotFoundError, VERIFY.ENV.Incomplete)) as refused:
+                        VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler)
+                    self.assertIn(tool.name, str(refused.exception))
+                finally:
+                    tool.write_bytes(payload)
+                    tool.chmod(mode)
+
+    def test_refuses_same_length_substituted_binary_and_library_inputs(self):
+        for mount, (tool, payload) in self.files.items():
+            with self.subTest(mount=mount):
+                tool.write_bytes(b"x" * len(payload))
+                try:
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Unadmitted Windows UI version tool input") as refused:
+                        VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler)
+                    self.assertIn(tool.name, str(refused.exception))
+                finally:
+                    tool.write_bytes(payload)
 
 
 class SlintCaptureControls(unittest.TestCase):
