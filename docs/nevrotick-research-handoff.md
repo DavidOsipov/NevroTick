@@ -120,6 +120,20 @@ Produce a table of actual proposed Rust/native/build dependencies, exact version
 
 Escalate a concrete rights conflict or material behavioral deviation to David. Do not repeat the accepted separate GUI/Core licence choice; escalate only a concrete unresolved rights/graph issue with the source and grants involved. Do not remove notices to satisfy an installer or signing-provider requirement.
 
+**NTPv5/F323 comparison, 21 November 2026:** the
+[maintained assessment](supporting-reviews/ntpv5-benefits-and-adoption.md) records
+the exact experimental ntpd-rs revision, its draft mismatch, the current IETF
+work in progress and Chrony 4.9's F323 mechanism. It supplements the retained
+stable ntpd-rs comparator; it admits no new dependency, donor code, controller or
+protocol default. R-01 retains source/rights review if later reuse is selected.
+R-02/R-05 retain independent date/trust admission; an advertised era or scale
+cannot supply it. R-08/W11-W01 retain timestamp provenance and native benefit
+evidence. The
+[S0.1 handoff](../tasks/s0.1-protocol-comparison.md#ntpv5-and-f323-research-handoff--21-november-2026)
+coordinates these conditional cases with the existing Engine/Core owners.
+Recording the recommendations schedules no experiment and changes no current
+product task, accepted roadmap order or execution hold.
+
 ## 4. R-02 — century-scale authenticated recovery
 
 Use [the clock-limit handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)

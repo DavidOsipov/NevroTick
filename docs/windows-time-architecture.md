@@ -1036,6 +1036,27 @@ without importing upstream spike/step thresholds or a second controller. [S122]
 
 Version 1 sends NTPv4 client-mode requests and accepts server-mode replies for current configured associations. Use ephemeral randomized client ports; do not open an NTP server listener. Associate a response with the saved real transmit timestamp even if the wire token uses anti-spoofing randomization. Validate era interpretation, essential timestamps, LI/scale/segment admission under §10.5, valid time stratum, root properties, local clock continuity and one-response-per-request behavior. LI=3 rejects ordinary time; LI=0 alone never rejects a silent source or proves no leap. A stratum-zero Kiss-o'-Death response is control information, never a time sample. [S16, S19, S125]
 
+**NTPv5/F323 research boundary — 21 November 2026.** The
+[pinned assessment](supporting-reviews/ntpv5-benefits-and-adoption.md) records
+optional acquisition/metadata experiments; it changes neither this V1 wire
+profile nor DEC-1's Chrony-derived Core. A future version adapter belongs at the
+wire/association/measurement boundary, preserving independent date/scale admission,
+qualified local timestamp mapping, checked uncertainty and the current broker
+authority. Peer metadata and finer representation do not establish UTC accuracy.
+
+The proposed F323 path carries a separately typed, optional remote claim alongside
+the unchanged NTPv4 header, through authenticated response staging, receipt and
+final currentness checks. It needs explicit request budgets and authentication
+coverage, a remote-history owner distinct from acknowledged local corrections,
+and explicit invalidation when metadata becomes unavailable or the epoch or
+association changes. A future NTPv5 path needs its own exact draft grammar,
+semantic admission and protocol-bound NTS negotiation; enabling a
+wire version never relaxes authentication policy. These are conditional design
+constraints, not selected implementations. The
+[existing protocol task](../tasks/s0.1-protocol-comparison.md#ntpv5-and-f323-research-handoff--21-november-2026)
+routes their CHECK-6/7/8/9/11/21/25/26/27 evidence. Current product work and all
+qualification obligations continue through development-plan §7.
+
 The [S2.1 integration card](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 binds the real acquisition owner to preserved wire metadata, timestamp provenance
 and final current-generation/deadline admission. Its first controlled measurement
