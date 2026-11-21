@@ -26,8 +26,10 @@ to use Sandbox, or the presence of this skill, does not change those decisions.
 Use a later explicit disposition when present; do not perpetuate a superseded
 hold or ask again for work already authorized by the owner.
 
-Keep the selected complete hardened MSIX and David's Store attempt under
-[amended OD-05](../../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership).
+Keep the selected complete hardened MSIX for direct distribution under
+[OD-05 §7.9](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026).
+Store publication is rejected; signing/trust choices are deferred. Continue
+source/package preparation without a Store trial, approval or refusal gate.
 The [MSIX plan](../../../../../docs/plans/windows-msix-store.md) owns supported
 provisioning, trust, confinement and lifecycle requirements. This lab guide
 supplies a method, not an alternative architecture or new acceptance gate.
@@ -53,7 +55,7 @@ named CHECK owner to decide whether a proposed row is sufficient.
 | Win32/FFI API behavior | Bounded native execution on the identified guest build | Cross-build success alone remains insufficient; guest component availability must be observed |
 | SCM configuration and process tokens | Inert service, configuration readback, fresh-process token and denied-operation controls | Does not establish production provisioning ownership or all Windows policies |
 | Named-pipe ACL or caller identity | Real guest principals and allowed/denied clients | One administrative test cannot prove ordinary-user isolation |
-| MSIX install/remove mechanics | The exact local package and admitted guest deployment route | Does not prove Store acquisition, approval, update delivery or all-user lifecycle |
+| MSIX install/remove mechanics | The exact local package and admitted guest deployment route | Does not prove public signer trust, direct update delivery or all-user lifecycle |
 | UI behavior | Explicit guest target, observed UI state and a supported interactive session | Full accessibility/display requirements follow their existing phase; unavailable UI infrastructure is not a pass |
 | Sustained resource use | A bounded run with declared virtualization and host-load conditions | Not an uncontended hardware benchmark or proof of battery/Modern Standby behavior |
 | Persistent baselines or multiple OS builds | Recreate and bootstrap only the current host-derived guest | Use a separately selected persistent VM or other suitable test machine for checkpoint/OS matrices |
@@ -96,23 +98,26 @@ canonical acceptance catalog defines each requirement.
 ## MSIX and Store boundaries
 
 Service-bearing MSIX packages require administrative installation. Local
-sideloading, developer registration and actual Store delivery are distinct
-experiments. A successfully registered app inside a winapp-prepared guest does
-not prove the final package's signature, immutable-content integrity, publisher
-identity, servicing behavior or Store eligibility. [N5]
+developer registration, test-signed installation and final direct distribution
+are distinct observations. A successfully registered app inside a winapp-prepared
+guest does not prove the final package's signature, immutable-content integrity,
+publisher identity or servicing behavior. Store delivery is historical research,
+not an active NevroTick stage. [N5]
 
 Keep an experiment's package bytes, dependency packages, architecture, certificate
 provenance, deployment command, principal and observed package identity in its
 receipt. If a local test certificate is needed, its import belongs only inside
 the owned guest and the admitted test scope. Never import it into the developer
-host's trust store as a convenience. Test signing is not Microsoft signing;
-final Store-delivered artifact checks remain separate under the signing guide.
+host's trust store as a convenience. Test signing proves no public-trust or
+Microsoft/Store signer-class admission. Requalify Store-dependent image policies
+for direct signing; final distributed-artifact checks remain separate under the
+signing guide.
 
 The current ordinary-utility custom-action restriction, unresolved independent
 removal recovery and service-account/provisioning questions remain exactly those
 recorded in the MSIX plan. Sandbox availability neither fixes nor waives them.
 Keep CHECK-18/23/24 with their existing release/lifecycle owners. David retains
-the actual Store submission and release decisions; no account login or upload
+the signing and direct-release decisions; no account login or upload
 follows from this skill.
 
 ## Clock and timing evidence

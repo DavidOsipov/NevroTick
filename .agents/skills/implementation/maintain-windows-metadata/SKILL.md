@@ -1,6 +1,6 @@
 ---
 name: "maintain-windows-metadata"
-description: "Collect, reconcile, store, generate and independently verify product, Cargo, SCM, PE VERSIONINFO, MSIX, event-catalogue, conditional MSI and Store metadata. Use for field inventories and gaps, publisher, version or locale drift, packaging authoring, public build information and release completeness."
+description: "Collect, reconcile, store, generate and independently verify product, Cargo, SCM, PE VERSIONINFO, MSIX, event-catalogue, conditional MSI and retained Store metadata. Use for field inventories and gaps, publisher, version or locale drift, packaging authoring, public build information and release completeness."
 ---
 
 # Maintain Windows metadata
@@ -14,7 +14,7 @@ Populate all useful, supported, applicable descriptive fields and record justifi
 absence. Do not infer new capabilities, identities, contacts or release readiness
 from a request for more metadata.
 
-Keep the selected complete MSIX route, current Core priority and execution holds.
+Keep [OD-05 §7.9](../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026): complete directly distributed MSIX; Store publication rejected and signing/trust choices deferred. Continue source/resource preparation without Store identity, submission or signing prerequisites. Preserve current Core priority and execution holds.
 MSI authoring is conditional on the existing owner decision. The owner-authorized
 [top-level pipeline](../../../../metadata/README.md) now supplies the source-tool
 implementation; use [the current staged plan](../../../../docs/plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026).
@@ -28,7 +28,7 @@ separate; a manifest version range is not the complete product support policy.
 
 | Work | Read |
 | --- | --- |
-| Collect source, Cargo, file/package, installed or Store observations | [Harvesting and provenance](references/harvesting-and-provenance.md) |
+| Collect source, Cargo, file/package or installed observations; inspect retained Store records only when relevant | [Harvesting and provenance](references/harvesting-and-provenance.md) |
 | Choose authorities, handle conflicts, model fields or store evidence | [Record and storage](references/record-and-storage.md) |
 | Change the portable pipeline or interpret its source-delivery report | [Implemented owners and report semantics](references/generation-and-verification.md#maintain-the-portable-pipeline), then the affected regression owner |
 | Generate resources/manifests, map versions/locales or verify outputs | [Generation and verification](references/generation-and-verification.md) |
@@ -54,8 +54,8 @@ not accepted source files or successful observation records.
 1. **Bound the request and stage.** Inspect current Git state, actual manifests,
    existing metadata sources, selected components, target/features, package
    route and task holds. Name whether the result is source inventory, reviewed
-   authoring, generated output, emitted artifact, installed observation or
-   Store-delivered evidence. A source-only task stops before build/native work.
+   authoring, generated output, emitted artifact, signed/distributed bytes or
+   installed observation. A source-only task stops before build/native work.
 2. **Build the field register.** For each applicable product/component/locale/
    surface, name its semantic field, authority, source locator, type, schema
    limits, value kind, applicability, transformation, owner, required stage,
@@ -91,8 +91,11 @@ not accepted source files or successful observation records.
    have explicit non-authorable dispositions. Enforce the [UTF-8 text policy](../../../../metadata/text-policy.md)
    on raw source/comments and decoded keys/values, including TOML escapes.
 6. **Generate supported projections.** Derive per-component RC resources,
-   selected package authoring inputs, localization, About/diagnostics and Store
-   listing exports from reviewed data and frozen build facts. Escape each target
+   selected package authoring inputs, localization and About/diagnostics from
+   reviewed data and frozen build facts. Store projections retained by the
+   existing source tool are historical compatibility outputs, not selected
+   release requirements. Route schema/applicability changes through their owner;
+   do not delete required keys ad hoc or invent Partner Center values. Escape each target
    format correctly, enforce its own version/length/encoding rules and fail on
    missing required inputs. Finish resources before signing. Do not add package
    behaviors, broad Windows bindings or a runtime inspection service for this.
@@ -105,7 +108,7 @@ not accepted source files or successful observation records.
    [testing contract](../../testing/CONTRACT.md). Inspect actual PE and package
    bytes, resolve localized resources and reconcile complete payloads. Record
    mismatch, absence, access error and not-run distinctly. Native installed
-   observations and final Store bytes remain their own existing gates; parser
+   observations and final distributed bytes remain their own existing gates; parser
    success and matching publisher strings do not prove signatures or trust.
    Check actual consumer invalidation, selected producer identity and final
    package/export exclusions at their existing MD-P4–MD-P5 gates.
@@ -115,8 +118,9 @@ not accepted source files or successful observation records.
 8. **Close the current scope honestly.** Report field coverage and missing
    required values by stage, changed sources/projections, exact checked inputs,
    observed differences, unexecuted checks and the next existing owner action.
-   Update W11-W10/P6 rather than creating another package task. Do not submit,
-   sign, publish or alter account data without the applicable existing authority.
+   Update W11-W10/P6 rather than creating another package task. Do not sign,
+   publish or alter account data without the applicable existing authority.
+   Store submission is excluded by the current owner decision.
 
 ## Review the common failure paths
 

@@ -36,7 +36,7 @@ and evidence, with shared decisions and integration reconciled centrally.
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native UI presentation, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
 | Implement or debug Slint components, Rust models, event-loop ownership or resources | [implement-slint](implementation/implement-slint/SKILL.md), alongside native-UI product semantics |
-| Harvest, maintain, generate or reconcile Windows product/package/Store metadata | [maintain-windows-metadata](implementation/maintain-windows-metadata/SKILL.md); [package-artifact QA](testing/qa-package-artifacts/SKILL.md) owns final artifact/native qualification |
+| Harvest, maintain, generate or reconcile Windows product/package metadata | [maintain-windows-metadata](implementation/maintain-windows-metadata/SKILL.md); [package-artifact QA](testing/qa-package-artifacts/SKILL.md) owns final artifact/native qualification |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
@@ -69,19 +69,22 @@ qualification remain distinct. Prototype crates require dependency qualification
 Retained TUF research adopts no updater or second release. Future-version work
 must name changed architecture decisions.
 
-The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects one complete hardened MSIX for David's Store submission attempt,
-including services. Use [MSIX hardening §3](../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
+The current [OD-05 §7.9 delivery decision](../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects one complete hardened MSIX for direct distribution, including services,
+and rejects Microsoft Store publication because of its publisher indemnity.
+Use [MSIX hardening §3](../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
 and [its staged work §7](../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners):
-source/design preparation, an admitted local/test-signed candidate, David's Store
-trial, then actual Store-delivered qualification before broad release. Prior Store
-approval/signing is not a prerequisite for preparing the candidate. This current
-decision overrides MSI-only directions in older research and references.
+source/package preparation, admitted local/test-signed mechanics, then exact
+signed/distributed/installed artifact qualification before release. Signing and
+trust choices are deferred; do not block source/resource work on them or require
+Store approval, a submission attempt, refusal or Partner Center identity.
+Requalify Store-dependent CIG assumptions under the eventual direct-signing
+profile; do not infer publisher trust or silently weaken required protections.
 [OD-05 §7.7](../../docs/nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
-also requires the signed package and every supported individual signature,
-including nonbinary files. SignPath is a candidate for inner-file signing on
-MSIX; MSI delivery still needs a later decision. The unsigned-MSI/OpenPGP
-exception is superseded. Preserve historical sources and upstream signatures.
+retains package and supported individual-signature obligations; it grants no
+current release pass. SignPath remains a candidate, not a selected signer. MSI
+requires a later decision; no automatic fallback, customer trust-store change or
+unsigned-MSI/OpenPGP substitute. Preserve historical sources/upstream signatures.
 No direction choice proves implementation, lifts the Windows
 stop/separate fuzz hold/storage pause or displaces the current Core task.
 

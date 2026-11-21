@@ -15,8 +15,13 @@ applicable, supported descriptive field and explain deliberate omissions. It is
 not to maximize text length, invent release facts, or activate optional package
 behavior merely because an XML element or installer property exists.
 
-The selected delivery remains one complete hardened MSIX under
-[OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership).
+The selected delivery is one complete hardened MSIX distributed directly under
+[OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026).
+David rejects Microsoft Store publication because of its publisher indemnity
+obligation. Store submission, Partner Center identity and Store listing fields
+are not current release prerequisites. Signing, publisher trust, hosting and
+update delivery remain deferred; source/resource preparation continues without
+claiming that an unsigned or untrusted package is ready for public installation.
 MSI mappings are retained for possible later owner reconsideration, not a second
 deliverable or a reason to defer shared executable metadata. This contract
 supplements the [MSIX field profile](windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile),
@@ -24,6 +29,14 @@ the [P6 plan](development-plan.md#p6--complete-installation-hardening-and-releas
 and [W11-W10](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need).
 Existing execution holds, Core priority, actual licensing admission and optional
 enhanced-provenance policy remain unchanged.
+
+**Implementation boundary — 21 November 2026:** the source generator still has
+Store-specific fields, constraints and projections from the earlier route.
+Those are retained implementation history, not a selected distribution channel.
+W11-W10/MD-P2 must reconcile the reached schema, public projection and release-mode
+requirements with direct MSIX before claiming that the metadata pipeline supports
+the new route. This documentation amendment does not change those code paths,
+populate pending identities or qualify a package.
 
 At the inspected NevroTick baseline
 `21726b2db44f225da0aaed82f03255c2f2c81023`, Cargo records project license,
@@ -45,11 +58,12 @@ the missing comprehensive field map and consistency rules.
 | MSIX manifest/resources | Package identity, package/application display fields, resources and supported platform declarations; deployment, Start and Settings |
 | MSI database | Product/upgrade/package identity, Property table, Summary Information stream, icon and localized installer resources; Windows Installer and installed-app information |
 | Installed integration | Actual package or MSI registration, shortcut display/icon/AppUserModelID where applicable, service display names and descriptions |
-| Store submission | Localized descriptions, features, screenshots, search terms, category, support/privacy/license information; a separate submission surface |
+| Direct release descriptions | Accurate localized descriptions, implemented features, screenshots where useful, support/privacy/license information and instructions for the selected direct artifact |
+| Historical Store submission | Unselected listing/export surface retained for traceability; no Store listing or account is required under OD-05 §7.9 |
 | Release and component evidence | Source revision, dependency/native payload inventory, hashes, license notices and existing provenance records; support, audit and release custody |
 
 No single field supplies all of these. The display publisher, certificate subject,
-Store-assigned identity, Cargo author and original upstream copyright holders
+package identity, Cargo author and original upstream copyright holders
 are distinct facts. Descriptive strings cannot authorize a helper or prove the
 trustworthiness of a binary. [PE] [MSIX-PROPERTIES] [MSI-ARP] [STORE-IDENTITY]
 
@@ -110,14 +124,14 @@ document remains the canonical field map.
 | Group | Information to maintain | Value origin |
 | --- | --- | --- |
 | Product | `NevroTick`, short/long descriptions, intended component roles | Owner-approved product definitions; shipping descriptions reflect implemented capabilities |
-| Publisher | Public display name `David Osipov`; developer/manufacturer labels | Owner identity; Store display spelling must match Partner Center when submitted |
+| Publisher | Public display name `David Osipov`; developer/manufacturer labels | Owner identity; the eventual MSIX signing subject has its own exact identity requirements and is not selected by this display name |
 | Public destinations | Repository, homepage, documentation, support, update/release notes, privacy and license URLs; optional public support email/phone | Actual maintained endpoints. The repository URL is established; dedicated support/privacy pages and contact availability need validation |
 | Rights | Current code license, copyright notices, third-party notices, brand/asset rights | Exact admitted source and license inventory; preserve upstream notices and pending license questions |
 | Versioning | Logical product version, release channel, numeric Windows versions, MSI upgrade family/product/package identifiers if selected | Explicit mapping and release process, not guessed GUIDs or independent edits |
 | Platform | Actual architectures, minimum OS, tested OS, installer engine floor if relevant, CPU prerequisites | Admitted target/build/runtime policy. `x64` alone does not express the required x86-64-v3 CPU/OS-state prerequisite |
 | Components | Filename, internal name, role description, file type, numeric/file display version, icon, language resource mapping | Actual frozen build outputs; UI, engine, broker, helper and shipped diagnostics are distinct |
-| Assets/locales | Source asset attribution, generated PNG/ICO variants, supported UI/installer languages, translated strings, fallback | Existing branding sources plus actual generated resources; Store listing languages tracked separately |
-| Build/release evidence | Commit, dependency lock/inventory, toolchain/profile, release timestamp if defined, final hashes and stage identity | Measured/generated release records; source, submitted and delivered bytes remain distinguishable |
+| Assets/locales | Source asset attribution, generated PNG/ICO variants, supported UI/installer languages, translated strings, fallback | Existing branding sources plus actual generated resources; public release-description languages tracked separately |
+| Build/release evidence | Commit, dependency lock/inventory, toolchain/profile, release timestamp if defined, final hashes and stage identity | Measured/generated release records; source, built, signed, downloaded and installed bytes remain distinguishable |
 
 For every field the register records its output surface, schema/type/length,
 localization rule, owner, source/derivation, applicability and status:
@@ -175,7 +189,7 @@ accounts, privileges or startup policy merely to improve labels.
 
 | Surface / fields | Rule |
 | --- | --- |
-| `Identity/Name`, `Publisher` | Exact assigned Store values for that route, or admitted certificate-matching identity for another authorized route; not user-facing marketing strings |
+| `Identity/Name`, `Publisher` | Reviewed direct-package identity and admitted certificate-matching publisher; pending signing identity remains explicit, and display branding cannot substitute for it |
 | `Identity/Version`, `ProcessorArchitecture`, conditional `ResourceId` | Version mapping, actual code architecture and actual resource-package semantics; no invented resource identity |
 | `Properties/DisplayName`, `PublisherDisplayName`, `Description`, `Logo` | Fully populate applicable descriptive fields, including the optional useful package description; follow current schema and channel identity requirements |
 | Application `Id`, `Executable` and existing activation declarations | Stable per-application identity and actual payload; preserve the selected ordinary-user UI and separate service/helper contract |
@@ -186,10 +200,11 @@ accounts, privileges or startup policy merely to improve labels.
 | Derived installed identifiers | Read and retain PFN, full name, actual installed version and application identity; do not maintain a hand-invented duplicate of derived identifiers |
 
 `DisplayName`/`PublisherDisplayName` are display strings; `Identity/Publisher`
-must satisfy the signing identity requirements. Store product identity supplies
-`Name`, `Publisher` and publisher display information. The package family name
-and package SID are derived values, not extra identity elements to add to the
-manifest. [STORE-IDENTITY] [MSIX-IDENTITY]
+must satisfy the selected signing identity requirements. Direct package name
+and publisher identity need explicit review when the deferred signing route is
+resolved; no Partner Center assignment is required by this plan. The package
+family name and package SID are derived values, not extra identity elements to
+add to the manifest. [MSIX-IDENTITY]
 
 Package properties and application visual properties are different surfaces.
 The inspected VisualElements schema permits display names of 1–256 characters
@@ -199,7 +214,7 @@ appropriate package PNG assets and executable/installer ICO resources from the
 approved branding sources, with asset-size and localization checks. [MSIX-VISUAL]
 
 Maintain translated descriptions and resource references, build the PRI as
-needed, and check fallback resolution. A translated Store listing is not proof
+needed, and check fallback resolution. A translated release description is not proof
 that the installed application supports that UI language. [MSIX-LOCALIZE]
 [STORE-LISTING]
 
@@ -210,7 +225,7 @@ integrity and Trusted Launch. They stay under the selected
 Likewise, no extra capability is justified by the desire for more metadata.
 Unknown attributes or elements must not be inserted as a custom data store.
 Keep additional project information in a schema-defined bundled release record
-or the proper Store field. [MSIX-PROPERTIES]
+or the appropriate direct-release description. [MSIX-PROPERTIES]
 
 ## 7. MSI metadata if that delivery route is selected later
 
@@ -274,9 +289,9 @@ claim x86 and x64 together just to advertise broad compatibility.
 
 | Surface | Representation and constraint |
 | --- | --- |
-| Logical/Cargo release version | May include semantic-version prerelease/build information; current `0.0.0` prototype versions are not a selected Store numbering policy |
+| Logical/Cargo release version | May include semantic-version prerelease/build information; current `0.0.0` prototype versions are not a selected release numbering policy |
 | PE fixed version | Four unsigned 16-bit values; human-readable version strings can retain extra display context |
-| MSIX identity version | Numeric quad. For the documented Windows 10/11 Store package route, leave the fourth component zero for Store use and use a nonzero major component |
+| MSIX identity version | Numeric quad under the actual package schema and reviewed monotonic direct-release mapping. The earlier Store submission constraints are historical; any change to implemented version admission requires explicit reconciliation and qualification |
 | MSI `ProductVersion` | Three significant components: major ≤255, minor ≤255, build ≤65535. Windows Installer ignores a fourth component for product-version comparison |
 
 A simple stable example is logical `1.2.3`, PE `1.2.3.0`, MSIX `1.2.3.0`, MSI
@@ -285,8 +300,8 @@ Previews and multiple releases from one logical version need a defined monotonic
 numeric mapping that cannot collide. Preserve the logical/channel identifier
 separately rather than forcing a semantic version such as `0.1.0-alpha.2` into
 an incompatible installer field. Check downgrade/update behavior using the
-selected channel rules. Store-delivered revision changes need an allowed mapping
-and distinct receipts, not a false byte-for-byte equality requirement.
+selected channel rules. Actual package/signing transformations need an allowed
+mapping and distinct receipts; record the exact final distributed bytes.
 [PE] [MSIX-VERSION] [MSI-VERSION]
 
 Package identity, MSI upgrade identity and display branding have different
@@ -297,10 +312,16 @@ page pairs, MSI LANGIDs and MSIX resource language tags require explicit mapping
 
 ## 9. Store metadata and other distribution descriptions
 
-Maintain Store input alongside the shared record, with channel-specific fields.
-It is not embedded into MSIX merely by adding XML, and an MSI distributed through
-the Store also has a separate listing/submission. Populate the meaningful
-optional fields in addition to mandatory ones. [STORE-LISTING] [STORE-MSI]
+**Historical, unselected Store field map:** the listing research and limits in
+this section describe the earlier Store route. OD-05 §7.9 supersedes that route;
+do not create a Store listing, reserve Store identity, or treat these fields or
+limits as requirements for direct MSIX. Existing Store-specific generator outputs
+still need the separate MD-P2 reconciliation described in §1.
+
+For current direct-release descriptions, reuse truthful public product,
+feature, localization, support, privacy and license facts from the shared record
+under the selected publication surface's actual schema. The following retained
+Store research does not select that surface. [STORE-LISTING] [STORE-MSI]
 
 - Reserved product name; primary/secondary category and applicable subcategory.
 - Clear localized long and short descriptions, implemented feature list and
@@ -323,28 +344,31 @@ Checked MSIX listing limits include 10,000 characters for the description,
 allows seven search terms, each at most 40 characters and no more than 21 words
 overall; copyright/trademark information is 200 characters and developer
 attribution 255. Additional license terms accept a URL or up to 10,000 text
-characters. Recheck these mutable channel limits at submission; they are not
-targets to fill with repetitive text. [STORE-LISTING] [STORE-ADDITIONAL]
+characters. These are the historical research values, not current direct-release
+constraints or targets to fill with repetitive text. [STORE-LISTING] [STORE-ADDITIONAL]
 
 The Store's Published by label comes from the account's publisher display name;
 the optional Developed by field is separate. Listing languages can exceed
 package languages, but must not misrepresent actual UI translation. Privacy,
 support, licenses and website belong in their designated fields. Cargo metadata,
 WinGet descriptions and an SBOM have their own schemas and consumers.
-[OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1) now
-places [WinGet capability](winget-distribution.md) before V1. Reuse appropriate
-values through the existing authority; a conditional Community projection remains
-distinct from Store-source identity and from every PE custom string.
 [STORE-ADDITIONAL] [STORE-PROPERTIES]
+
+**Current WinGet scope:** [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+places [WinGet capability](winget-distribution.md) before V1. OD-05 §7.9 selects
+preparation of its non-Store Community route for the direct MSIX. Reuse appropriate
+facts through the existing authority; actual publication waits for the approved
+artifact and its resolved signing/trust/hosting arrangement. Store-source identity
+is not a prerequisite.
 
 ### 9.1 WinGet projection and identity — 7 November 2026
 
 W11-W10/P6 owns the [source/field map](winget-distribution.md#4-metadata-and-artifact-contract).
-Keep Store ProductId, MSIX PackageFamilyName and any Community PackageIdentifier
-separate. Derive display descriptions/rights from the existing record and release
+Keep MSIX PackageFamilyName and Community PackageIdentifier separate. No Store
+ProductId is required. Derive display descriptions/rights from the existing record and release
 facts, artifact URLs/hashes from final approved distributables, and detection/
 scope/dependency behavior from actual package and installed observations.
-No pending Store identity, support/privacy URL, license mapping or release version
+No pending package/publisher identity, support/privacy URL, license mapping or release version
 may be invented to make a manifest valid.
 
 The current source generator has no qualified WinGet output. Add a bounded
@@ -357,29 +381,31 @@ The WinGet client/tool/schema combination must be tested together.
 Use only supported icon formats and truthful locales. `Architecture: x64` cannot
 express x86-64-v3, and a numeric OS minimum cannot encode the complete two-family
 policy; [the actual admission owner](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
-retains those checks. Signing/Store processing precedes hashes for the distributed
+retains those checks. Final packaging/signing precedes hashes for the distributed
 form. Source projection, native package qualification and live catalog availability
 remain separate evidence. See [NV-WGT-001](winget-distribution.md) for primary sources.
 
 ## 10. Generation, verification and existing task handoff
 
 1. **Inventory and assign.** Under W11-W10/P6, complete the field register from
-   actual product/component/rights records. Identify pending Partner Center
-   identity, public support/privacy endpoints, release numbering, translations
+   actual product/component/rights records. Identify pending direct-package and
+   deferred signer identity, public support/privacy endpoints, release numbering, translations
    and authoring-tool inputs. Existing schemas determine valid absence.
 2. **Generate deterministically.** From reviewed data and frozen release inputs,
    produce per-binary resources, selected package inputs, localization resources,
-   About/diagnostic version data and the relevant Store listing export. XML/RC/
-   MSI/CSV escaping and field limits are explicit generator responsibilities.
+   About/diagnostic version data and selected direct-release descriptions. Reconcile
+   the earlier Store-specific schema/projections before claiming direct-route
+   readiness. XML/RC/MSI/CSV escaping and field limits remain explicit generator responsibilities.
 3. **Inspect emitted artifacts independently.** Compare expected values with
    actual PE resources, MSIX reader results or read-only MSI database and summary
    queries. Resolve resources, inventory all shipped first-party components and
    check genuine role-specific filenames/descriptions, icons and translations.
    A generator unit test alone cannot prove embedded resource presence.
 4. **Bind final bytes.** Finish resources before signing. Freeze and inspect the
-   signed/submitted artifacts and their hashes; post-signing metadata edits
-   require a newly built/signed candidate. Keep Store-delivered transformation
-   and signing evidence distinct under the existing release profile.
+   signed/package artifacts and their hashes; post-signing metadata edits
+   require a newly built/signed candidate. Bind the actual downloaded artifact and
+   installed observations separately, preserving any packaging/signing transformation
+   evidence under the existing release profile.
 5. **Observe the installed surfaces at the existing native gate.** Check Explorer
    Details, Start, Settings/installed-app information, service descriptions and
    About/diagnostics for the admitted package and locales. Windows surfaces may
@@ -423,11 +449,11 @@ within OD-05 §7.6; no collector or production metadata source is implemented he
 
 | Stage | Recommended method | Required distinction |
 | --- | --- | --- |
-| Harvest | Repository/Cargo/license/brand records first; admitted frozen Cargo/SBOM tooling; read-only PE/MSIX/MSI interfaces; existing authorized Store exports | Tool-observed or imported values remain candidates until reconciled with the correct field authority |
-| Store intent | Selected `metadata/product.toml` under section 13, with owned component/locale extensions; reference existing Cargo/release/license owners | One authority per fact; no duplicate manually edited release versions or implicit Cargo custom-metadata inheritance |
-| Store observations | Versioned JSON in existing candidate evidence, bound to input hashes, collector, time, stage, locale/context, raw value and outcome | Intended, generated, embedded, Windows-resolved, installed, submitted and delivered values are different evidence |
-| Use | Generate per-component RC resources, selected package inputs, localization, About/diagnostics and Store CSV projections | Explicit schemas, destination escaping and version/locale mapping; no invented identities or added capabilities |
-| Verify | Compare independent readers against reviewed expectations, then observe native installed surfaces at their existing gate | Generated inputs, parser success, native display, signature trust and actual Store delivery prove different properties |
+| Harvest | Repository/Cargo/license/brand records first; admitted frozen Cargo/SBOM tooling; read-only PE/MSIX/MSI interfaces; reviewed direct-release records | Tool-observed or imported values remain candidates until reconciled with the correct field authority; no Store export prerequisite |
+| Record intent | Selected `metadata/product.toml` under section 13, with owned component/locale extensions; reference existing Cargo/release/license owners | One authority per fact; no duplicate manually edited release versions or implicit Cargo custom-metadata inheritance |
+| Record observations | Versioned JSON in existing candidate evidence, bound to input hashes, collector, time, stage, locale/context, raw value and outcome | Intended, generated, embedded, Windows-resolved, signed, downloaded and installed values are different evidence |
+| Use | Generate per-component RC resources, selected package inputs, localization, About/diagnostics and direct-release descriptions; reconcile existing unselected Store CSV projections in the implementation | Explicit schemas, destination escaping and version/locale mapping; no invented identities or added capabilities |
+| Verify | Compare independent readers against reviewed expectations, then observe native installed surfaces at their existing gate | Generated inputs, parser success, native display, signature trust and actual direct delivery prove different properties |
 
 Use a small Git-reviewed source instead of introducing a database/service. Keep
 large raw evidence and final artifacts in the existing owned artifact locations,
@@ -495,7 +521,7 @@ appropriate treatment rather than plausible invented values.
 Use role-accurate descriptions for actual shipped components. The catalogue's
 engine/broker labels and descriptions are proposals; freeze them against actual
 release behavior without implying that prototypes already implement that behavior.
-Technical SCM names, release numbering, Store/certificate identity, provider GUIDs,
+Technical SCM names, release numbering, direct-package/certificate identity, provider GUIDs,
 supported locales and maintained support/privacy/help URLs remain with their
 existing authorities. Do not create convincing placeholders or a second version
 source. All mandatory pending inputs remain visible before their dependent gate.
@@ -650,10 +676,10 @@ Use CHECK-18/20/23/26/27 and the service/diagnostics owners already mapped above
 | Stage | Owner and implementation | Independent exit and retained limit |
 | --- | --- | --- |
 | MD-P1: authored record and admission | Metadata owner implements the single TOML record, strict bounded schema/checked construction, inert Cargo fact adapters and explicit pending dispositions. | Real current component facts resolve; unknown/duplicate/wrong-type/oversized/unsafe inputs are refused beside valid neighbors. Pending values carry owner/next action. Source mode may report pending future release fields; release mode fails closed on them. |
-| MD-P2: deterministic projections and check | Build metadata owner implements generated Rust constants, per-current-component VERSIONINFO RC, public descriptors and applicable package/service/event/Store authoring projections. | Same inputs produce identical content; source edits change affected projections; check detects corruption, extras and stale source/generator identities without writing. Literal hostile text stays data. No fake complete MSIX, registered event catalogue or service resource is emitted for unresolved identities. |
+| MD-P2: deterministic projections and check | Build metadata owner implements generated Rust constants, per-current-component VERSIONINFO RC, public descriptors and applicable package/service/event/direct-release authoring projections. Reconcile existing Store-specific schema, required fields and outputs with OD-05 §7.9 before claiming direct-route support. | Same inputs produce identical content; source edits change affected projections; check detects corruption, extras and stale source/generator identities without writing. Literal hostile text stays data. No fake complete MSIX, registered event catalogue or service resource is emitted for unresolved identities. |
 | MD-P3: configured entry points and regression checks | Coordinator integrates the portable CLI, focused tests, CI source checks, skill usage and current task. | Real CLI entry points operate on owned temporary fixtures, both success and failure paths execute, failed publication preserves prior state, and the CI job is already part of the required gate. Rust/RC files are generated source, not linked/native qualification. |
 | MD-P4: actual consumer/build adoption | Existing S0.5/build/P3/W11-W05/W11-W08/W11-W10 owners adopt reached generated inputs before their dependent component/package slice. | Actual compile/link/package consumers use the frozen tree, reject stale/missing metadata and independently inspect emitted resources. No new dependency or unrelated Cargo graph change is admitted by this plan. Missing component source and pending native execution remain explicit. |
-| MD-P5: native, signing and delivered readback | Existing W11-W10/P6 and W11-W05/W11-W08 owners, followed by David's release authority. | Inspect installed labels/resources/locales and lifecycle, finalize before signing, then separately verify signed/submitted and Store-delivered bytes. Existing identity/provisioning, native/security/package gates and execution holds remain. |
+| MD-P5: native, signing and delivered readback | Existing W11-W10/P6 and W11-W05/W11-W08 owners, followed by David's release authority. | Inspect installed labels/resources/locales and lifecycle, finalize before signing, then separately verify the final signed package, directly downloaded bytes and installed observations. Signing/trust/hosting remain deferred and must be resolved before public qualification; source preparation continues. Existing identity/provisioning, native/security/package gates and execution holds remain. |
 
 Implement MD-P1–MD-P3 now in the portable source-tool scope. Plan MD-P4–MD-P5
 through the existing phases as real consumers and authoritative release inputs
@@ -784,7 +810,7 @@ The existing MD-P4–MD-P5 owners adopt these concrete exits before dependent wo
 | MD-P4, build/package owner | Bind observations to the actual selected resource compiler, linker, SDK, target, profile, generator and relevant configuration identities. Use admitted tool records and exact consumed bytes where applicable; version strings and ambient environment discovery alone are not executable custody. Keep the existing source receipt and later artifact observation distinct, with one frozen generation per build. |
 | MD-P4–MD-P5, package/export owner | Use an exact approved payload allowlist. Internal field/coverage registers, authoring records, private contact/regulatory values and unselected source inputs are not automatically shipped. Challenge accidental whole-directory copying and a private sentinel beside a healthy package/export. Inspect actual final payload paths and contents, not only the public source projection. |
 | MD-P4–MD-P5, W11-W05/W11-W08/W11-W10 identity owners | When actual SCM names, package/application identities, resource keys or provider GUIDs are selected, validate references and collisions using each namespace's real comparison rules. A display-name match cannot select another role; intended shared identities need an explicit contract. Do not impose global uniqueness across unrelated namespaces or invent values to exercise the check. |
-| MD-P5, package/native/release owner | Finalize generated resources, compile/link and package before signing; any later mutation produces a new candidate. Independently inspect the exact signed/submitted and Store-delivered artifacts, then installed/resolved values in their actual contexts. Keep local, submitted, delivered and installed observations distinct. Existing signing, trust, lifecycle and release-authority checks remain. |
+| MD-P5, package/native/release owner | Finalize generated resources, compile/link and package before signing; any later mutation produces a new candidate. Independently inspect the exact final signed package and directly downloaded artifact, then installed/resolved values in their actual contexts. Keep local, signed, downloaded and installed observations distinct. Existing signing, trust, lifecycle and release-authority checks remain; no Store processing or Store ID is required. |
 
 The independent controls must distinguish a healthy complete result from missing
 or empty output, wrong ownership with unchanged counts, stale generations and
@@ -812,7 +838,10 @@ the held compiled/native/package stages or another product plan.
 Admission must enforce the selected ASCII email grammar, including local-part
 dot placement, without rewriting accepted values or claiming mailbox ownership.
 Retain permanent just-below/exact/just-above cases for reached decoded resource
-limits and Store/service/resource-reference rules, with valid neighboring inputs.
+limits and implemented service/resource-reference rules, with valid neighboring
+inputs. Existing Store-specific source controls remain regression evidence until
+their explicit direct-route implementation reconciliation; they are not a reason
+to require Store identity or submission for this package.
 The XML observer must interpret the actual bytes and their declared encoding;
 decoding to Unicode first must not conceal an incompatible declaration. Preserve
 the declared generated subset, literal text, rejection of extra content and

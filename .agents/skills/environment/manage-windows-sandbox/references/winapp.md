@@ -179,7 +179,7 @@ and distinguish application termination from loss of its controller. [W2]
 ## Qualification limits and failures
 
 Development registration does not prove final signed MSIX installation,
-Store acquisition/update, service lifecycle, least-privilege behavior or uninstall
+direct acquisition/update, service lifecycle, least-privilege behavior or uninstall
 recovery. Guest-user command execution does not replace an intended-principal
 test. Route each required observation back to the current task and CHECK owner.
 

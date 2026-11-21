@@ -50,7 +50,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick golden outputs or differential results from pinned references with independent semantic facts and a tested comparator. |
 | [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate static enforcement for Rust code and Python verification helpers, including Clippy, source policy and CodeQL on admitted inputs and targets. |
 | [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Audit Rust input, state and lifecycle chains against invariants with source-backed slices, change-based reuse and qualified CodeQL paths. |
-| [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, selected complete-package contents, metadata, provenance and submitted/Store-delivered MSIX consistency independently of source configuration. |
+| [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, selected complete-package contents, metadata, provenance and build/signed/distributed MSIX consistency independently of source configuration. |
 | [qa-accessibility](qa-accessibility/SKILL.md) | Assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication. |
 | [qa-visual-dpi](qa-visual-dpi/SKILL.md) | Test NevroTick visual usability across Windows DPI, text scaling, contrast, window sizing and multi-monitor changes. |
 | [qa-i18n-localization](qa-i18n-localization/SKILL.md) | Test NevroTick message catalogs, units and native layout for adopted locales while preserving wire and security semantics. |

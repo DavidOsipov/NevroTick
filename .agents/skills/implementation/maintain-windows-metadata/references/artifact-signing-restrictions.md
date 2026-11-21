@@ -2,7 +2,8 @@
 
 Use for signing-configuration research or a later admitted SignPath path.
 Source review: 8 November 2026. Keep [OD-05 and the signing guide](../../../../../docs/windows-time-signing-guide.md)
-authoritative: complete MSIX/Store remains selected; SignPath is a candidate for
+authoritative: OD-05 §7.9 selects complete direct MSIX and rejects Store publication;
+signing/trust choices are deferred. SignPath remains only a candidate for
 required inner-file signatures on that route or a later owner-selected MSI.
 Apply the [all-signable shipping inventory](../../../../../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory),
 including supported nonbinary files. This reference selects no provider,
@@ -121,13 +122,13 @@ for the approved project/release identity.
 Verify required individual signatures and package/catalog trust separately.
 Preserve approved upstream signatures as their own issuer's evidence, and record
 any unsupported production signing capability as open/release-blocking. Confirm
-required inner signatures survive the actual Store-delivered transformation;
+required inner signatures survive the final packaging/signing/distribution path;
 do not fall back to catalog-only acceptance or detached consumer verification.
 
 The [deep-signing example](https://docs.signpath.io/artifact-configuration/examples#deep-signing-an-msi-installer-with-nested-executables)
 signs inner PE files, rebuilds the MSI and signs its enclosing bytes. Reuse the
 signing guide's artifact custody and independent final-output inspection. Keep
-submitted, returned and Store-delivered hashes distinct. Do not transfer MSI
+signing-input, returned and distributed hashes distinct. Do not transfer MSI
 mechanics or append support to a different format without qualification.
 
 For ordinary app-package signing without publisher bridging,
@@ -136,7 +137,7 @@ require the signing certificate subject to match manifest Identity Publisher;
 the [signing digest must match AppxBlockMap](https://learn.microsoft.com/en-us/windows/msix/package/sign-app-package-using-signtool).
 Preserve the selected package
 identity; do not change it to fit an available certificate. Inspect the actual
-package at its proper stage; provider support does not qualify Store-delivered
+package at its proper stage; provider support does not qualify final distributed
 identity, extracted PE trust or privileged-helper admission.
 Treat any future [publisher-bridging migration](https://learn.microsoft.com/en-us/windows/msix/package/persistent-identity)
 as a separately reviewed identity/update path; this reference does not admit it.
@@ -160,4 +161,5 @@ Record source/configuration revision, parameter provenance, resolved file set,
 artifact hashes, effective restrictions, reader/provider versions and observed
 outcomes with the existing receipt. Unresolved extraction or matching semantics
 remain a gap in that provider configuration, not permission to claim a pass or
-an additional blocker for the selected Store route.
+a blocker for independent direct-MSIX source/resource preparation while signing
+remains deferred.

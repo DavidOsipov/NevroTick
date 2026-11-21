@@ -23,7 +23,7 @@ owns the Windows field inventory.
 | What is embedded in a particular file/package? | Exact hashed file, admitted PE/resource reader, read-only Appx/MSI interfaces | Metadata is untrusted data, not publisher authentication |
 | What does Windows present for an installed candidate? | Package/Installer registration and scoped actual UI/resource observations | User, machine, OS, locale, resource packs and cache context affect presentation |
 | Which service/event metadata is actually registered? | Scoped admitted SCM or publisher-metadata reader for the exact installed candidate | Stable identity, raw resource reference, resolved message and current runtime state are separate observations |
-| What identity/listing did the Store assign or retain? | Existing authorized Partner Center identity record and listing export | Keep assigned identity, submission, published listing and delivered bytes distinct |
+| What did a retained historical Store record contain? | Existing authorized identity/listing evidence only | Store publication is unselected under OD-05 §7.9; no account, assignment or listing acquisition is required |
 | What is a field/API allowed to mean? | Microsoft Learn, Cargo documentation and pinned upstream implementation | Search results locate sources; they do not approve product values |
 
 Use connected Microsoft Learn for Windows contracts, GitHub for exact source,
@@ -155,13 +155,13 @@ can therefore change unrelated installations. If registry observation is needed,
 record hive, architecture view and user scope; never mistake registry display
 strings for a complete or authenticated inventory. [Installed-query sources](sources.md#windows-readers-and-resource-tools)
 
-Use already authorized Store identity records and locale-specific listing CSV
-exports. Import them as dated, bounded observations, then review differences
-against owned source. Retain locale identifiers and CSV structure. Listing
-languages do not establish UI translations. Do not infer missing Partner Center
-IDs from publisher names, repurpose a certificate subject as a friendly label,
-or automate login/submission because a harvest step needs evidence. Record a
-pending owner input if no authoritative export is available.
+Store observations are historical and unselected under
+[OD-05 §7.9](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026).
+Inspect an already retained export only when relevant to historical provenance;
+keep its date, locale identifiers and CSV structure. Listing languages do not
+establish UI translations. No Partner Center assignment or missing export
+blocks direct-MSIX source preparation. Do not invent Store IDs, repurpose a
+certificate subject as a friendly label or automate Store login/submission.
 
 ## Bind and admit observations
 

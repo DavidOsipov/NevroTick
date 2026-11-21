@@ -18,7 +18,7 @@ not a new lifecycle qualification campaign.
 
 Preserve separate own-process engine and clock-broker owners, an unprivileged
 network-facing engine, normal-user UI and narrowly elevated lifecycle helper.
-OD-05 selects a complete hardened MSIX; its supported service-account/provisioning
+OD-05 §7.9 selects direct distribution of a complete hardened MSIX, with Store publication rejected and signing deferred; its supported service-account/provisioning
 mapping remains unqualified. Do not select LocalSystem, a wrapper, watchdog,
 dependency or extra installer to fill that gap. OD-07 requires x86-64-v3 and the
 strongest applicable compatible protections; configured flags are not native proof.
@@ -47,7 +47,7 @@ additional owner needed for the changed guarantee:
 1. **Freeze the actual boundary.** Inspect current source, manifests, selected
    target/features, wrapper revision, package profile, task holds and existing
    evidence. Distinguish source-only preparation, host model, Windows cross-build,
-   installed native behavior and final package/Store bytes. An ordinary service
+   installed native behavior and final distributed package bytes. An ordinary service
    request does not authorize host service replacement, clock changes or a native
    probe. Select the existing admitted disposable-machine scope before mutation.
 

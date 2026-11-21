@@ -1,4 +1,4 @@
 interface:
   display_name: "Inspect built Windows artifacts"
-  short_description: "Verify NevroTick MSIX contents and Store-delivered artifacts"
-  default_prompt: "Use $qa-package-artifacts to verify emitted NevroTick binaries, complete MSIX contents, metadata, provenance and Store-delivered consistency independently of source configuration."
+  short_description: "Verify NevroTick MSIX and directly distributed artifacts"
+  default_prompt: "Use $qa-package-artifacts to verify emitted NevroTick binaries, complete MSIX contents, metadata, provenance and direct-distribution consistency independently of source configuration."

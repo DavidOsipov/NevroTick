@@ -8,6 +8,9 @@ GitHub, Context7, Firecrawl developer search/page extraction and web search/open
 Indexed snippets and generated extraction answers were discovery aids; current
 official contracts and pinned implementation resolve material claims. Tool
 availability and source inspection are not dependency/native qualification.
+Under [OD-05 §7.9](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026),
+Store identity/listing sources below are retained research, not selected
+requirements or permission to open an account or submit NevroTick.
 
 ## Cargo and build records
 
@@ -96,7 +99,7 @@ semantics, not another metadata catalogue or a provider-selection decision.
 | [SignPath syntax](https://docs.signpath.io/artifact-configuration/syntax) | Path matching, cardinality, parameter declarations and required values |
 | [SignPath examples](https://docs.signpath.io/artifact-configuration/examples) | Concrete restriction composition and nested-signing order; illustrative names/versions are not project defaults |
 | [Artifact configuration overview](https://docs.signpath.io/artifact-configuration/) | Generated configurations need review, particularly for third-party payloads |
-| [Microsoft package certificates](https://learn.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing), [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/sign-app-package-using-signtool) | Certificate/manifest publisher and block-map digest correspondence; use the admitted current SDK and existing Store qualification stages |
+| [Microsoft package certificates](https://learn.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing), [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/sign-app-package-using-signtool) | Certificate/manifest publisher and block-map digest correspondence; use the admitted current SDK and direct-package qualification stages |
 | [MSIX persistent identity](https://learn.microsoft.com/en-us/windows/msix/package/persistent-identity) | A separately reviewed publisher-bridging migration, not authority to change the current package identity |
 
 These are dated documentation observations. Provider locale/version extraction,

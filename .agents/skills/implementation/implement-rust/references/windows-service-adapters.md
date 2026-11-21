@@ -15,15 +15,18 @@ projects, install tools, register services or change clocks merely for checklist
 completion. Execute cases
 only within task-authorized machine/mutation scope.
 
-The [current OD-05 direction](../../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-is a complete hardened MSIX for David's Store trial with services. Read
+The [current OD-05 §7.9 direction](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+is direct distribution of one complete hardened MSIX with services. Store
+publication is rejected; signing/trust decisions are deferred. Read
 [plan §3](../../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
-for package/CIG/per-role controls and
+for package/per-role controls and
 [§7](../../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
-for local/test-signed mechanics, owner submission and subsequent actual Store-byte
-qualification. Prior Store acceptance is not a prerequisite for source/design
-work or candidate preparation. The supported MSIX service-account/provisioning mapping remains
-open; retain own-process separation and effective least privilege. Earlier MSI
+for local/test-signed mechanics and final signed/distributed/installed
+qualification. Continue source/resource preparation without a Store or signing
+prerequisite. Requalify Store-dependent CIG under the eventual signer profile,
+without assuming trust or silently dropping protections. The supported MSIX
+service-account/provisioning mapping remains open; retain own-process separation
+and effective least privilege. Earlier MSI
 mechanics are fallback/reference only, not a prerequisite or automatic parallel
 target. Current Core priority, Windows stop, separate fuzz hold and storage pause
 remain.

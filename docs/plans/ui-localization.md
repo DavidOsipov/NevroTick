@@ -429,7 +429,8 @@ and [complete-package custody](windows-msix-store.md#31-package-integrity-and-se
    tools; reconcile resource hashes, source/semantic revision and approved content
    with existing package/SBOM custody. Signing/submission never executes candidate
    scripts. Runtime independently admits actual approved installed CBOR resources;
-   retain submitted versus Store-delivered identities and package integrity.
+   retain built, signed and directly distributed identities and package integrity
+   under OD-05 §7.9; Store publication is withdrawn.
    Authentic signatures establish neither payload safety nor action authority.
 
 OS-specific filesystem/isolation and actual packaged-open behavior require later

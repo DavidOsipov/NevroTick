@@ -23,7 +23,7 @@ owns the product fields and current pending facts.
 | Harvested observations | Versioned JSON records with raw evidence references | What a particular collector observed from a particular input/context |
 | Generated projections | RC/XML/RESW/PRI/selected installer authoring, About data and listing exports | Deterministic products of reviewed intent and frozen facts; not separately edited authorities |
 | Dependency/component inventory | Existing admitted CycloneDX 1.5 JSON and native/asset reconciliation | Software composition, license/provenance and exact payload relationships |
-| Submission/delivery/installed evidence | Existing release/package evidence with separate stage identities | What was submitted, delivered, installed and presented |
+| Build/signing/delivery/installed evidence | Existing release/package evidence with separate stage identities | What was built, signed, distributed, installed and presented |
 
 A small reviewed source file fits this project's scale and Git workflow better
 than a new database or metadata server. Split by component/locale only when it
@@ -43,7 +43,8 @@ override rules for custom metadata. [Cargo sources](sources.md#cargo-and-build-r
 | Value class | Authority | Conflict rule |
 | --- | --- | --- |
 | Product name, purpose, public publisher/developer text, support/privacy destinations | Accepted owner/project record and maintained public endpoint | Resolve against current accepted scope; a harvested string cannot silently amend it |
-| Technical Store identity | Exact product's Partner Center assignment | Match required identity exactly; record unresolved account data as pending |
+| Direct MSIX identity | Reviewed package identity and eventual signing profile | Keep Name/Publisher stable and qualify their signature relationship; signing choice remains deferred |
+| Historical Store identity | Any retained exact-product Partner Center assignment | Unselected under OD-05 §7.9; never invent or acquire an assignment to satisfy an obsolete release gate |
 | Release/component versions | Existing Cargo/release policy and approved mapping | Detect mismatches; never strip prerelease text or truncate integers to force agreement |
 | Copyright, license, attribution | Exact source/asset provenance and applicable reviewed rights records | Retain upstream rights; manifest claims are inputs to review, not legal clearance |
 | Actual binary/package bytes, architecture and embedded fields | Frozen artifact and independent reader | Report discrepancies against intent; do not rewrite intent to match a defect |
@@ -54,7 +55,7 @@ Do not use a global "latest wins" merge. Different authorities answer different
 questions. Require an explicit reviewable semantic diff before promoting imported
 values; retain old value, new value, evidence, reason, owner and affected outputs.
 An automatic collector can propose a patch; it cannot make owner, rights, release
-or Store identity decisions by itself.
+or publisher-identity decisions by itself.
 
 ## Define a field contract
 
@@ -134,8 +135,12 @@ disposition; every applicable field required at the current gate needs a valid
 value or completed derivation. A reasoned optional omission is acceptable; a
 required field marked not applicable incorrectly is still a failure. Report
 pending counts and reasons, not an unqualified percentage that hides uninspected
-components, locales or output formats. Source-preparation work may retain pending
-Store data; it cannot claim package/submission completeness.
+components, locales or output formats. Store fields/exports are unselected under
+[OD-05 §7.9](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026),
+not pending Store onboarding. If the existing source tool still requires them,
+record and repair applicability through its code-owned contract; do not invent
+values or silently delete registry keys. Source preparation alone claims no
+package/signature completeness.
 
 ## Keep observation identity and results
 

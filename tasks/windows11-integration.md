@@ -1,5 +1,13 @@
 # Windows 11 integration: agent task and evidence record
 
+**Current delivery amendment — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects one complete MSIX for direct distribution and rejects Microsoft Store
+publication. Signing and certificate trust are deferred; permitted source,
+resource and package preparation continue. [§4.39](#439-direct-msix-distribution-decision--21-november-2026)
+is the current W11-W10/MD-P4–MD-P5/WGT-0 handoff. Older Store-attempt,
+refusal-first, Partner Center and `msstore`-first directions below are superseded;
+their dated research and execution receipts retain only their historical scope.
+
 **Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
 defers **all formal-proof work until after the first released software version
 (V1)**. Retain the proof receipts and incomplete obligations below; their older
@@ -1243,10 +1251,10 @@ Reviewer comprehension, retained verbatim:
 **Pre-V1 WinGet assignment, 7 November 2026:** [OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
 adds [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1) to the
 existing P6/P7 delivery work. Use [the plan](../docs/plans/winget-distribution.md)
-and [§4.36](#433-winget-distribution-before-v1--7-november-2026) for the bounded
+and [§4.36](#436-winget-distribution-before-v1--7-november-2026) for the bounded
 source/metadata, native lifecycle and release-operation sequence. Capability is
 due before V1; external public-source availability is a separate observed result.
-Store-first complete MSIX, current Core priority and execution holds remain.
+Direct complete MSIX under §4.39, current Core priority and execution holds remain.
 
 **Adopted metadata delivery controls, 7 November 2026:** David authorized the
 reviewed website-pipeline techniques under [metadata §13.5](../docs/plans/windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026).
@@ -1262,7 +1270,7 @@ remain distinct from actual delivery and native qualification.
 | --- | --- |
 | Completed bounded source-tool controls, MD-P1–MD-P3 metadata owner | Checksum and semantic delivery implementation passed the source receipt below. Preserve direct-model/real-CLI healthy controls and rejection of wrong check digits, missing/extra/duplicate bindings, same-count wrong values/owners and unintended public fields. This source result does not complete the dependent build/native rows. |
 | Pending real consumer, MD-P4 build/component owner | Wire the frozen generation into actual resource consumers; independently read linked resources. Run cold → consumed-input change → warm → clean control, check rerun rules and actual selected compiler/SDK/target/profile identity. Preserve intentional per-component/version/licence differences. |
-| Pending dependent package/native work, MD-P4–MD-P5 W11-W05/W11-W08/W11-W10 | Check namespace references/collisions when real identities exist; exact package/export allowlists exclude internal authoring and private values. Retain accidental-copy/private-sentinel controls, actual signed/submitted/Store/installed identities and independent resource readback. Existing prerequisites and execution holds remain. |
+| Pending dependent package/native work, MD-P4–MD-P5 W11-W05/W11-W08/W11-W10 | Reconcile legacy Store field applicability without inventing identities or weakening schema validation. Check namespace references/collisions when real identities exist; exact package/export allowlists exclude internal authoring and private values. Retain accidental-copy/private-sentinel controls, actual built/signed/distributed/installed identities and independent resource readback. Signing remains later work; existing native prerequisites and execution holds remain. |
 
 **Source-tool finalization, 7 November 2026:** David authorized closing the
 subsequent audit's admission/observer defects and regression gaps under
@@ -9075,8 +9083,8 @@ the existing metadata/release/security/independent-QA owners.
 
 First execute WGT-W01 source/identity preparation: re-read actual release/package
 state, source-specific IDs, metadata pending fields, current tools and holds.
-Qualify the selected complete Store MSIX through `msstore` first; a Community
-manifest route requires an authorized public trusted complete artifact. No MSI
+Under §4.39, qualify the selected complete direct MSIX through a non-Store source;
+Community publication requires an authorized public trusted complete artifact. No MSI
 selection, external service prerequisite, new signing entitlement, reserved
 identifier or public download URL follows from this assignment.
 
@@ -9918,3 +9926,92 @@ evidence; the execution limitation is a session gap, not a new product gate.
 No repository code, build, test, Windows fixture or installer was executed.
 The final receipt changes only this review/evidence record; final parent
 validation and publication identity remain distinct from the reviewed hash.
+
+### 4.39 Direct MSIX distribution decision — 21 November 2026
+
+**Accepted scope:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+records David's rejection of Microsoft Store publication and its broad publisher
+indemnity requirements. Prepare one complete directly distributed MSIX. Signing
+and certificate trust will be addressed later; continue independent product,
+resource and package-authoring work. This supersedes every earlier instruction
+in this record to attempt Store publication first, wait for a refusal, obtain
+Partner Center identity or qualify a Store-delivered product. Historical research
+and observed results remain unchanged and supply no direct-route qualification.
+
+| Existing owner | Current assignment and exit |
+| --- | --- |
+| W11-W10/P6; package authoring | Prepare the complete direct MSIX and actual publisher/manifest requirements without Store identity or submission assumptions. Keep UI, engine, broker, helper and required payloads in one product; no automatic MSI fallback or external service prerequisite. |
+| MD-P4–MD-P5; metadata/build | Reconcile actual Store fields, projections, pending dispositions and release validators with the direct route in a bounded implementation change. Preserve structural validation, independent output/privacy controls and source-mode resource work. Do not invent Partner Center values or silently delete required registry keys; this documentation checkpoint changes no generator or TOML. |
+| W11-W05/W11-W08 with W11-W10 | Qualify services, provisioning/removal/recovery and event resources on the intended OS families. Resolve the proposed machine-scope event-provider custom capability on the non-Store route; sideloading alone does not waive capability requirements. |
+| Security/signing; later release checkpoint | Select signer and certificate trust later. Requalify Store-dependent CIG/image policies against actual direct-signed payloads; preserve strongest supported compatible controls. Required signatures, correct identity and native admission remain future release evidence, with no customer trust-store/protection bypass. |
+| WGT-0/P6/P7 | Preserve pre-V1 capability scheduling; qualify a non-Store source, identity and complete MSIX. WGT-C01 preparation remains distinct from WGT-C02 public catalog availability. No `msstore` ProductId, public URL, catalog submission or automatic updater is selected here. |
+| Release/security | Bind built, signed, published and installed bytes through the existing custody/SBOM/licence/lifecycle checks. Hosting, updates and containment need the actual later-selected channel. Optional enhanced provenance remains optional. |
+
+**Documentation workflow:** `plan-code-change` coordinates the owner-decision,
+architecture/delivery and agent-guidance consumers; `plan-independent-review`
+checks the integrated candidate. Local link/anchor checks, instruction inventory,
+the AGENTS byte limit and `git diff --check` verify documentation only. No product
+code, metadata values, SDK agreement, signer, package build, Windows operation,
+release or Store operation is adopted or executed by this change. Unrelated
+execution holds and current Core/Engine work remain with their existing owners.
+
+#### Independent review and documentation evidence
+
+**Reviewer:** `/root/direct_msix_independent_review`; fresh conversation
+(`fork_turns: "none"`), read-only, no authorship or commit. **Completion:** completed.
+The review covered the integrated delivery decision and its README, canonical
+architecture, package/metadata/release plans and agent-guidance consumers at base
+`de17282dddb59f54e069cecd71341e10cb0e5c72`. The reviewer independently verified the
+49-file candidate's `git diff --binary HEAD` SHA-256:
+`69c3d7c6b12d2a0fec5294f7e03e2d9a65d35d9210bd6e3dae0f09cbf487234a`.
+The final publication adds only this receipt to that reviewed candidate.
+
+The reviewer's comprehension paragraphs are retained verbatim:
+
+> The proposed change keeps NevroTick’s release format as one complete hardened MSIX and changes its distribution route to direct delivery outside Microsoft Store. The README and OD-05 §7.9 explicitly record David’s objection to the Store publisher’s defense and indemnity obligations. Signing and certificate trust are deferred while source, resource and package preparation continue. Store submission, refusal, Partner Center identity and `msstore` qualification cease to be prerequisites.
+
+> The current architecture retains a network engine without clock-setting privilege, a separate clock broker, an ordinary-user Slint UI and a narrow lifecycle helper. Source components and metadata tooling exist, but complete-package provisioning, native lifecycle, signing and release qualification remain open. The metadata generator still contains Store-specific consumers; the revised documents identify their future reconciliation rather than claiming a code fix. Required signatures, final-artifact custody, privacy controls, recovery and per-role security protections remain intact, including explicit reconsideration of Store-dependent CIG assumptions and custom-capability requirements.
+
+**Reviewer verdict: READY for documentation integration and publication.**
+Completed independent, read-only review. No material finding remains open in the
+frozen candidate. The reviewer authored no candidate changes and performed no
+commit or write. Scope: 47 Markdown files and two skill UI YAML files; no product
+code, generator implementation, metadata values or native execution changed.
+
+The reviewer's finding-resolution record is retained below:
+
+| ID | Original issue | Final disposition |
+| --- | --- | --- |
+| **DIR-01 — current routing consistency** | OD-05 §7.7, the documentation reading guide and update-assessment routing still described Store-first delivery. Two live WinGet links also targeted the wrong section. | **Resolved.** Current guidance now follows §7.9. Retained Store history is labelled accordingly. The relevant WinGet links now target §4.36. |
+| **DIR-02 — canonical metadata applicability** | `docs/plans/windows-package-metadata.md` still actively required Partner Center inputs, Store exports and Store-delivered readback despite the amended direction. | **Resolved.** Current identity, version, generation and final readback guidance follows direct MSIX. Existing Store fields, constraints and outputs are explicitly identified as legacy implementation requiring an owned future change. Structural validation, independent readback and private-field exclusion controls remain. |
+| **DIR-03 — historical evidence preservation** | The server-catalogue draft’s historical coordinator reconciliation had been rewritten to include today’s distribution decision while nearby text promised that the historical record remained unchanged. | **Resolved.** The historical row is restored. A separate dated notice near the document’s beginning provides current routing without expanding the old review’s evidence. |
+
+The reviewer checked the README's owner-decision wording and the cited Microsoft
+agreement and platform documentation. It found no claim of legal invalidity,
+automatic GPL incompatibility, an installable package or signing readiness.
+Its verification independently covered candidate identity, scope, repaired
+passages and the 32,647-byte `AGENTS.md`; the coordinator's structural checks
+below are separate evidence, not reviewer reruns. Its permitted next action was
+to append this review, verify that receipt-only delta and complete the authorized
+documentation publication. No application, native Windows, signing or release
+qualification follows from this verdict.
+
+**Coordinator static validation:** `git diff --check` passed. Parent-authored
+inert-data checks inspected 3,431 local link occurrences in the changed Markdown,
+including 55 new/changed occurrences with no new failures. An unchanged
+`[qa-performance-resources]: predeclare` prose-label finding in the development
+plan remains outside the new-link result. All 66 registered skill frontmatters
+and UI records passed structural checks; all 20 imported-file hashes matched.
+`AGENTS.md` is 32,647 UTF-8 bytes, below 32,768. No root `docs/SHA256SUMS.txt`
+exists; historical evidence-bundle hashes were not rewritten. These checks parse
+repository files as inert data and import or execute no repository module.
+
+The full repository skill checker is **NOT RUN**. The `security-audit` skill's
+required OS-isolation preflight failed before repository code executed:
+`bwrap: loopback: Failed to create NETLINK_ROUTE socket: Operation not permitted`.
+Unchanged isolation setup was not retried and unisolated target execution was not
+substituted. The checker regression suite is unchanged and was not selected for
+this documentation scope. This session limitation is separate from product
+qualification; it supplies neither a checker pass nor a new release requirement.
+The final receipt delta receives the same bounded parent static checks before
+publication; its final commit identity is separate from the reviewed diff hash.

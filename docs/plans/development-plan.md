@@ -1,5 +1,7 @@
 # NevroTick development and acceptance plan
 
+**Distribution amendment — 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. Signing, publisher trust, hosting and updates remain for later resolution. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
+
 **Created:** 29 October 2026; **documentation reconciliation:** 12 November 2026
 
 **Status:** P0–P7 remain open. Core frequency-request/achieved-baseline feedback and the earlier laboratory KE-to-request handoff have completed their selected host exits. The default-off Engine NTS prototype now contains private association/request custody, authenticated-response admission, an explicitly selected protected-datagram path and bounded private recovery. Its latest source checkpoint retains unresolved recovery, generation and native gates; it is not a whole-Engine qualification. Production sample admission, integrated services/clock control, full S1.4/P1/P2, Slint backend/text approval and release qualification remain open. [Section 7](#7-next-executable-task-for-a-development-agent) owns the current Core/Engine continuation and exact evidence boundaries.
@@ -140,7 +142,7 @@ rerun for this documentation assessment.
 | P3 services and secured state | Lifecycle/SCM foundation, exact-role privilege admission and bounded fixture diagnostics exist; selected platform/caller portable gates are complete. | Adopt real product workers, final identities/provisioning, secured IPC/state and actual native lifecycle/security behavior. |
 | P4 clock integration | Pure proposal/accounting and modeled acknowledged-delivery mechanisms exist in Core. | Implement and qualify the real broker, clock authority, W32Time handover/restoration and recovery in admitted Windows environments. |
 | P5 UI | Slint v0.4 fixture workflows and presentation/localization source exist; later AccessKit repairs have bounded controls. | Independent critical-text approval, live backend integration, triggered D1–D3 work and exact native/accessibility/resource/security qualification. |
-| P6 delivery | Complete MSIX/Store, all-file signing, metadata and WinGet work have selected owners and contracts. Metadata repair/typing/line checks are recorded. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. MSI remains conditional on David selecting it. |
+| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. Metadata repair/typing/line checks are recorded; source-tool Store assumptions still require reconciliation. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
 | P7 final qualification | Acceptance, support/incident and release procedures are documented. | An integrated exact candidate, required native/package/security/operational evidence, support decisions and David's release approval. |
 
 The software still does not synchronize the user's clock. Completed subcomponents
@@ -655,7 +657,7 @@ tool on every change.
 | A failure, regression or disputed result | [qa-failure-triage]; [qa-system-stabilization] only for a bounded multi-defect convergence effort. Preserve first failure and healthy control. |
 | Useful independent development slices, multiple delegated owners or interrupted work | [plan-code-change] and [development delegation](#development-delegation); [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. One record, exclusive mutable ownership and integrated acceptance. |
 | Wire/persistence/version/units/validation acceptance changes | [evolve-data-contracts] with [qa-contract-tests], including old/new consumer and interrupted-migration cases. |
-| Windows product/package/Store metadata, manifests or generated resources | [maintain-windows-metadata], affected build/deployment owners and [qa-package-artifacts]. Resolve canonical fields and generated projections before signing or artifact claims. |
+| Windows product/package/distribution metadata, manifests or generated resources | [maintain-windows-metadata], affected build/deployment owners and [qa-package-artifacts]. Resolve canonical fields and generated projections before signing or artifact claims. |
 | More state transitions/interleavings than ordinary examples cover | [qa-model-based-testing], [qa-state-concurrency-lifecycle]; choose Loom/Kani only for a named feasible model/proof obligation. |
 | Concrete compiler diagnostic, borrow/drop issue, or Send/Sync problem | Respectively [rust-compiler-errors], [rust-borrow-semantics], [rust-send-sync]. Do not change architecture just to silence the compiler. |
 | Available admitted native Windows UI automation | [winapp-ui-automation]; automation supplements actual keyboard/Narrator observations. Do not install a tool just to follow a preferred path. |
@@ -1020,7 +1022,7 @@ and expansion fixtures; they do not add an unapproved translation/locale scope.
 
 Apply [the package-metadata contract](windows-package-metadata.md) under OD-05
 §7.6: one maintained source of product/release/component values, complete
-applicable PE/package/installed-app/Store fields, explicit version and locale
+applicable PE/package/installed-app/direct-distribution fields, explicit version and locale
 mappings, and independent emitted/installed readback. W11-W10 owns this work
 within the existing package checks; MSI mappings remain conditional reference.
 Use [maintain-windows-metadata](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
@@ -1052,7 +1054,7 @@ consumed-input warm-build invalidation and actual selected compiler/SDK/target/
 profile identity before accepting the reached consumer integration. MD-P4–MD-P5
 package owners also reconcile
 the exact allowed payload and private-authoring exclusions, namespace references
-and final signed/Store/installed observations. The existing W11-W10 receipt owns
+and final signed/directly downloaded/installed observations. The existing W11-W10 receipt owns
 actual execution; none of these planned exits is a native pass or a new Core task.
 
 The [source-tool finalization contract](windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026)
@@ -1082,9 +1084,7 @@ for reached consumers and CHECK-27 for native verifier work; current holds remai
 
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
 helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
-and amended OD-05: source/design preparation needs no Store preapproval; local
-mechanics and David's controlled Store attempt precede actual Store-delivered
-artifact qualification before broad release. Observe install, unelevated launch,
+and [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026): source/package preparation proceeds while signing/trust/hosting decisions are deferred. Qualify local mechanics and the actual directly distributed artifact before broad release, without any Store submission or refusal stage. Observe install, unelevated launch,
 upgrade, repair, Reset, downgrade rejection and uninstall without UI, with other sessions and at every relevant
 interruption/reboot point. Preserve one product/version/controller, exact prior
 W32Time state and ownership-aware rollback; do not fight GPO. Disabled required
@@ -1099,8 +1099,8 @@ Per-process mitigation manifests distinguish build, creation-time and runtime
 requirements, effective state and valid workflows. Check actual SCM child-policy
 behavior, DLL search/tamper canaries, native provider compatibility and UI/helper
 requirements. Explicit package integrity, sealed executable content and
-Store-compatible CIG follow the [selected profile](windows-msix-store.md#3-package-trust-and-the-privileged-helper).
-Required startup-protection failure blocks normal protected work
+a delivery-compatible image-admission profile follow the [selected profile](windows-msix-store.md#3-package-trust-and-the-privileged-helper).
+Requalify the former Store-dependent CIG assumptions for the actual signer and module closure; do not assume ordinary publisher trust grants Store signer admission. Required startup-protection failure blocks normal protected work
 while preserving authorized recovery; compiler flags alone prove no full profile.
 
 For any adopted optional storage route, qualify the installed provider's
@@ -1114,15 +1114,7 @@ application enclave needs its separate admission only if later selected.
 
 Reconcile exact Cargo/runtime/build/proc-macro/native graph, source grants/notices,
 generated code, SBOM and **complete package payload**, including non-Cargo files.
-Qualify the selected Store package/catalog profile with tamper/wrong-package/
-manifest/payload controls and installed-file trust, retaining submitted and
-Store-delivered identities separately. A valid supported production candidate
-must work without developer roots or disabled Windows protections. Store-managed
-servicing is subject to the full lifecycle contract; no bespoke privileged
-updater or separate UI package is added. MSI delivery remains a later owner
-choice. Resolve native signing for all supported shipped files under OD-05 §7.7,
-including inner files on MSIX; SignPath is a candidate, not a selected service.
-The unsigned-MSI/OpenPGP exception is superseded; source preparation can continue.
+Qualify the direct MSIX package/publisher trust profile with tamper/wrong-package/manifest/payload controls and installed-file trust, retaining built, signed and actually downloaded identities separately. A supported public production candidate must work without developer roots or disabled protections. Signing, publisher trust, hosting and update delivery remain deferred under OD-05 §7.9; this does not block source/package preparation or declare a public release qualified. Any later update mechanism must meet the complete-product lifecycle contract. No bespoke privileged updater, separate UI package or automatic MSI fallback is added. Retain OD-05 §7.7 signature coverage; no signing provider is selected here.
 
 Use the [release policy](../release-policy.md) for the proposed support baseline,
 exact release/status record, containment and compatible corrective releases.
@@ -1135,11 +1127,12 @@ is written; its support commitment and actual rehearsals remain open.
 **Pre-V1 WinGet capability, 7 November 2026:** [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
 adds [WGT-0](../../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1)
 to this existing delivery work. Follow [NV-WGT-001](winget-distribution.md) and
-[W11-W10/W11-W05](../../tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026):
-qualify Store-source acquisition of the selected complete MSIX first, with
+[W11-W10/W11-W05](../../tasks/windows11-integration.md#436-winget-distribution-before-v1--7-november-2026):
+prepare non-Store acquisition of the selected complete direct MSIX, with
 source-specific identity, metadata, actual WinGet/native lifecycle and bounded
-release preparation. Community manifests require an authorized public trusted
-installer; no alternate MSI or custom service updater follows. WGT-C01 is due
+release preparation. Community publication requires the authorized complete
+artifact and its resolved signing/trust/hosting route; no `msstore` ID, Store
+submission, alternate MSI or custom service updater is selected. WGT-C01 is due
 before V1; WGT-C02 separately records public source visibility after external
 publication. Planned commands, a PR or catalog merge supply no native pass.
 Keep OS/CPU admission and package/recovery gates even when YAML cannot express
@@ -1184,7 +1177,7 @@ corrective recovery limits. Reconcile WGT-C01 pre-V1 capability evidence and
 the separate WGT-C02 source-availability status; publish only observed working
 WinGet instructions. External moderation/propagation is not local qualification
 and carries no promised deadline. The release-policy proposal is not itself that
-decision. Store containment, publishing-authority recovery and installed-case
+decision. Direct-download/rollout containment, publishing-authority recovery and installed-case
 restoration require distinct observations; unobserved/offline devices remain
 explicit residual populations.
 
@@ -4410,32 +4403,21 @@ intervening implementation, import queue and current stops. The
 owns this reconciliation and the new candidate's review/validation separately
 from the earlier source and publication receipts.
 
-The subsequent [MSIX/Store plan](windows-msix-store.md) retains the research based
-on `070927855ed99e1a0683d9f291d3462d33343118` and the owner's later 3 November
-decision, amended against `661281ad0e6504338d352b943154522b800974fa`.
-[OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-now selects one complete hardened MSIX for David's Store attempt with services.
-The [same W11 task](../../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
-routes explicit integrity/sealed-content/CIG and per-role protection design,
-supported provisioning and recovery through W11-W10/W11-W05 and existing owners.
-Preparation needs no Store preapproval. Local qualified mechanics precede the
-owner's controlled submission; the actual Store-delivered candidate is qualified
-before broad release. Store refusal triggers owner reconsideration, not an
-automatic MSI fallback. Do not delay the current Core checkpoint for packaging.
+The [existing MSIX plan](windows-msix-store.md) retains the research based on `070927855ed99e1a0683d9f291d3462d33343118` and the historical 3 November Store direction. [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) supersedes that direction with direct distribution of one complete MSIX and rejects Store publication. The [same W11 task](../../tasks/windows11-integration.md) keeps W11-W10/W11-W05 ownership of package integrity, sealed executable content, direct-artifact image admission, supported provisioning and recovery. Signing, trust, hosting and updates remain deferred. Continue source/package preparation and the current Core checkpoint without Store preapproval, submission, certification or a refusal-triggered fallback. No actual direct-release qualification is asserted.
 
 **Release operations, 4 November 2026:** the [release policy](../release-policy.md)
 and [W11 task §4.21](../../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
-route source-based support/backport preparation, Store containment, publishing-
+route source-based support/backport preparation, direct-download containment, publishing-
 authority recovery and compatible corrective releases to the same owners.
 W11-W10's document is prepared; support terms need David's decision and actual
-account/Store/native rehearsals remain open at P6/P7. W11-W05 retains P0/P4/P6
+account/direct-publication/native rehearsals remain open at P6/P7. W11-W05 retains P0/P4/P6
 mandatory-state, maintenance and restoration qualification. A written runbook
 does not close OPEN-3/11/12/14 or choose a provisioning mechanism. Preserve
 section 7's current Core priority and the later scoped Sandbox disposition, blocked
 stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals.
 
 The later accepted [OD-05 §7.5 decision](../nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
-keeps [enhanced source-to-Store proof](release-provenance.md) optional. GitHub/
+keeps [enhanced source-to-delivered-artifact proof](release-provenance.md) optional. GitHub/
 Sigstore attestations, independent reproducible builds and a public proof bundle
 are not release blockers or extra P6/P7 prerequisites. Required source/artifact
 custody, SBOM/licence, integrity, installed identity and lifecycle evidence retain
@@ -4526,7 +4508,7 @@ conditional candidates remain open until their own evidence gates are met.
 | DNS-2; DNSSEC/crypto/performance | W11-W07: evaluate CNG SIMD hash batches only for an evidenced workload, with independent result parity and latency/cost comparisons. Provider handles and multicore scheduling retain separate ownership; no implicit graph selection or storage-root qualification. | DNS-C04/12/16; applicable CHECK-20/21/25/26/27 |
 | Affected native phase; diagnostics/QA | W11-W08: correlate bounded redacted WPR/WPA events and record loss. Separate local diagnostic authorization/expiry from aggregate ETW controller interest, provider/session/file access and retained data; test two controllers and each selected dump collector. Admit one exact low-resource profile with healthy/fault controls before use. PerfLib V2 remains optional. | CHECK-1/17/21/27, with CHECK-1 limited to diagnostic access; applicable ST-T14/16 and DNS-C12/14 |
 | P5 after existing D2/D3 triggers; UI/accessibility | [W11-W09](../../tasks/windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage): bind the W11-W08 Critical/High catalogue to real incident eligibility, then qualify the reached portable request and selected native presentation separately. Adopt existing incident design, finite deduplication and safe activation; UIA and toast evidence remain separate. Preserve the rich-toast release deferral; review any new deployment/dependency need before selection. | CHECK-14/17/21/22/25/27 at reached scopes; CHECK-23/26 for deployment/graph; applicable ST-T01/14; UI-M0 D1/D2/D3 remain Deferred |
-| S0.6/P6 packaging/security; other reserves conditional | W11-W10: prepare the selected complete hardened MSIX under the focused plan; record per-role integrity/mitigation, provisioning, recovery and certification notes, then local mechanics → David's Store attempt → actual delivered-artifact qualification. The direction is selected; native work remains held. Job Objects/triggers, LPAC/isolation, full enclaves, identity/WinGet or W32Time-provider changes retain separate need/compatibility gates; strict CET/EHCONT is evaluated within the per-role mitigation profile. VBS claim extensions remain prerelease, side-channel fields need a threat/role, UDP batching a bottleneck and VM Generation ID a privilege-compatible design. PPL remains excluded for an ordinary utility. | Existing architecture/storage/package owners; MSIX uses CHECK-1/2/5/12/13/15/16/18/20/23/24/26/27 and §19.4. No new acceptance IDs or certification-based security waiver |
+| S0.6/P6 packaging/security; other reserves conditional | W11-W10: prepare one complete direct MSIX under OD-05 §7.9 and the existing plan; record per-role integrity/mitigation, provisioning and recovery, then qualify local mechanics and actual directly distributed artifacts. Signing/trust/hosting/update choices are deferred; source preparation continues. Requalify Store-dependent image admission; Store submission/certification is excluded. Native work remains within its existing scope. Job Objects/triggers, LPAC/isolation, full enclaves, identity/WinGet or W32Time-provider changes retain separate need/compatibility gates; strict CET/EHCONT is evaluated within the per-role profile. VBS claim extensions remain prerelease, side-channel fields need a threat/role, UDP batching a bottleneck and VM Generation ID a privilege-compatible design. PPL remains excluded for an ordinary utility. | Existing architecture/storage/package owners; CHECK-1/2/5/12/13/15/16/18/20/23/24/26/27 and §19.4. No new acceptance IDs or signature-based security waiver |
 
 Preserve DoQ-only upstream and leaf/intermediate pinning, the least-privilege
 service boundary, one complete MSIX and the independent mandatory-state owner. Native DNS

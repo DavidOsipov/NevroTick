@@ -5,13 +5,15 @@
 **Baseline:** `windows-time-architecture.md`, RWTC-ARCH-001 revision 1.4.  
 **Input:** David Osipov's ArtCraft proposal, issue 888, its supplied Markdown attachment, and the live issue discussion. [P1, P2]
 
-**Current routing, 4 November 2026:** the assessment below retains its original
-MSI-era candidate and source findings. Amended [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects complete Store MSIX preparation; the [release policy](release-policy.md)
-now owns current support-status proposals, containment and incident procedures.
-Neither addition adopts TUF, this assessment's UpdateTrustState, a custom
-updater or a separate download/signing authority. Operational/native rehearsals
-remain open under the existing W11 task.
+**Current routing, 21 November 2026:** the assessment below retains its original
+MSI-era candidate and source findings. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects one complete MSIX for direct distribution and rejects Microsoft Store
+publication. Signing and certificate trust remain deferred; source and package
+preparation can continue. The [release policy](release-policy.md) owns current
+support-status proposals, containment and incident procedures. This routing
+adopts neither TUF, this assessment's UpdateTrustState, a custom updater nor a
+separate download/signing authority. Operational/native rehearsals remain open
+under the existing W11 task.
 
 ## 1. Assessment
 

@@ -1,5 +1,12 @@
 # NevroTick task map
 
+**Delivery decision — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects complete direct MSIX and rejects Store publication; signing is deferred.
+The [current W11-W10 handoff](windows11-integration.md#439-direct-msix-distribution-decision--21-november-2026)
+supersedes older Store-first/submission/delivered-byte directions below without
+changing their historical receipts. Continue source/package work; actual direct
+signing, native lifecycle and release qualification remain open.
+
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md), then
 the [development plan](../docs/plans/development-plan.md). Architecture §21 owns
 P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
@@ -200,7 +207,7 @@ retain their existing prerequisites and re-entry gates.
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary), [source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); platform/IPC/security/Core | S3.1 integration preparation reuses the implemented service foundation; product/native adoption remains gated. Authenticated handlers → mandatory state → simulated-backend integration retain their prerequisites. W11/ST-W assignments apply; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
-| P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |
+| P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then direct-distribution provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; source/local mechanics and final signed/distributed/native exits differ. Signing resolution is deferred under OD-05 §7.9. |
 | P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27 and applicable AC-01–22, installed bytes, unresolved blockers and actual release-profile trust. AC-21/22 preserve the canonical OD-11 direct-path/proxy deferral split. |
 
 The [clock-limit preparation card](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
@@ -247,7 +254,7 @@ priority remain with plan §7.
 | [State-guided fuzzing experiment](../docs/supporting-reviews/state-guided-fuzzing-experiment.md), [harness task](s1.1-deterministic-harness.md) | Closed; reuse its strict oracle, corpus and targeted lifecycle lessons. Reopen only for a concrete uncovered transition, changed input model or demonstrated search gap. |
 | [Verus assessment](../docs/supporting-reviews/verus-assessment.md), [time-domain task](s1.1-time-domain.md#verus-proposal-assessment--1-november-2026) | The 1 November assessment deferred integration and scheduled no pilot. **5 November:** the addition timeout justified the [bounded Core pilot](s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026); its three readiness commands are now complete and the candidate is DEFER because required `u64::checked_shl` is unsupported. Zero product-proof commands ran. Return only after official support for the unchanged API and a newly reviewed finite checkpoint; broader adoption remains deferred. No global CI gate or phase blocker is added. |
 | [Update assessment](../docs/windows-time-update-assessment.md) and retained TUF reviews | TUF and a bespoke privileged updater remain unadopted. W11-W10 owns the selected MSIX delivery; a materially different update design requires its existing decision process. |
-| [Enhanced build provenance](../docs/plans/release-provenance.md) | Optional under OD-05 §7.5: attestations, independent rebuilds and public source-to-Store evidence add no release blocker or P6/P7 prerequisite. W11-W10 retains the existing required custody, SBOM/licence, trust and installed-payload checks. |
+| [Enhanced build provenance](../docs/plans/release-provenance.md) | Optional under OD-05 §7.5: attestations, independent rebuilds and public source-to-distributed-artifact evidence add no release blocker or P6/P7 prerequisite. W11-W10 retains the existing required custody, SBOM/licence, trust and installed-payload checks. |
 
 [Future roadmap parents](development-backlog.md#future-roadmap-parents) now retain
 DNS, Android, Chrony-replacement, deferred SOCKS5 and the post-Khronos GeoIP

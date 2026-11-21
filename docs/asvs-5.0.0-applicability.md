@@ -35,15 +35,16 @@ dependency-release gate. Those choices and rehearsals remain open. All 345
 clause IDs, original verification fields, classifications and unexecuted statuses
 below remain unchanged; this routing adds no conformance result.
 
-**3 November delivery refinement:** the amended [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects complete hardened MSIX preparation for David's Store attempt with services.
+**21 November delivery refinement:** [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects complete hardened MSIX for direct distribution and rejects Store publication.
+Signing/trust resolution is deferred while source/package preparation continues.
 Use current architecture THR-20 and CHECK-13/15/16/18/23 with the
 [MSIX plan](plans/windows-msix-store.md) for package/catalog identity, immutable
 code, per-process protection and recovery-before-removal evidence. Earlier
 MSI-specific revision notes below retain historical provenance and apply to the
 retained MSI alternative where relevant; they do not require an MSI prerequisite.
 All 345 clause IDs/dispositions and unexecuted statuses remain unchanged. Neither
-this amendment nor Store certification establishes ASVS conformity.
+this amendment nor package signing establishes ASVS conformity.
 
 **30 October contract refinement:** [architecture §20.2.1](windows-time-architecture.md#2021-contract-review-acceptance-refinements)
 and [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix)

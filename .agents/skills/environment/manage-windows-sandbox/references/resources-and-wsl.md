@@ -182,7 +182,7 @@ another build, durable state, a fuller installation or checkpoint-controlled
 experiments. Do not make that future environment a prerequisite for independent
 portable Core work. [R3, R7]
 
-Store delivery, user/token matrices and physical clock, power or timestamp
+Final direct delivery, user/token matrices and physical clock, power or timestamp
 properties need their appropriate environments. Carry each gap to its existing
 CHECK owner; Sandbox success does not establish release qualification.
 

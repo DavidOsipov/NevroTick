@@ -1,5 +1,13 @@
 # Product metadata pipeline
 
+**Delivery amendment — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects direct MSIX distribution and rejects Microsoft Store publication. The
+existing pipeline still contains Store fields, projections and release-stage
+pending checks. MD-P4–MD-P5 must reconcile those consumers with the selected route;
+this documentation change does not modify the schema or generator. Source-mode
+work continues. Do not invent Partner Center values or treat Store-specific
+pending fields as accepted direct-release prerequisites. Signing remains later work.
+
 Edit [product.toml](product.toml) to maintain product/component metadata in one
 place. The pipeline derives current versions, repository and applicable licenses
 from the referenced Cargo manifests. Generated files are projections, never
@@ -85,7 +93,7 @@ python3 -I -B metadata/pipeline/__main__.py validate --stage release
 
 The checked-in source currently has unresolved release prerequisites. This
 command must fail; removing pending descriptions is not permission to invent
-Store identity, service technical names, provider GUIDs or release mappings.
+publisher identity, service technical names, provider GUIDs or release mappings.
 Source validation/generation does not claim release readiness.
 
 ### Service event authoring candidate
@@ -168,7 +176,7 @@ encoding rule, not a promise that every Unicode character is accepted.
 | `authoring/service-inputs.json` | Planned engine/broker display/purpose data; no chosen SCM name, account or service behavior |
 | `authoring/event-inputs.json` | Partial provider inputs and pending installed qualification |
 | `authoring/service-events.man` | Conditional compiler input with the two selected service event descriptors and fixed payload template |
-| `authoring/store.csv` | Custom review-field export with `field,value,status`; not a Partner Center upload schema |
+| `authoring/store.csv` | Legacy custom review-field export with `field,value,status`; not selected for publication and not a Partner Center upload schema |
 | `authoring/project-inputs.json` | Internal project/rights/assets/locales/platform/build authoring data for explicit downstream consumers |
 | `receipt.json` | Source/code identities and complete payload sizes/hashes; excludes its own hash to avoid circularity |
 
@@ -225,7 +233,7 @@ actual emitted resources independently. Do not reparse editable product metadata
 at runtime, discover generated code via an arbitrary environment override or
 run a new Python process from each dependency build script. Actual product
 consumers, resource compilation, complete MSIX/event authoring, native installed
-readback and final signed/Store-delivered comparison retain their existing gates.
+readback and final signed/directly distributed comparison retain their existing gates.
 
 ## Security boundary
 

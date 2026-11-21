@@ -1,18 +1,24 @@
-# Optional enhanced build and Store provenance
+# Optional enhanced build and distribution provenance
 
 **Date:** 4 November 2026  
 **Status:** accepted optional direction; research and possible experiment only  
 **Authority:** [OD-05 §7.5](../nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
 and [release policy §3.3](../release-policy.md#33-optional-enhanced-provenance).
 
+**Current channel — 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects direct MSIX distribution and rejects Store publication. Apply optional
+provenance to the actual built, signed and directly distributed artifacts. Store
+processing, certification notes and Store experiments below are retained research,
+not scheduled work or release prerequisites. Signing resolution remains deferred.
+
 ## 1. Owner decision and existing requirements
 
 David asked to retain the research on connecting a release to its repository,
 without making the additional assurance a mandatory release blocker. GitHub/
 Sigstore attestations, independent reproducible application builds and a public
-source-to-Store evidence bundle are **optional**. Their absence, an unperformed
+source-to-distributed-artifact evidence bundle are **optional**. Their absence, an unperformed
 experiment or a failure to reproduce a build does not by itself block P6/P7,
-the Store attempt, release approval or current Core work. This record introduces
+direct MSIX preparation, release approval or current Core work. This record introduces
 no CHECK, mandatory qualification row or hidden prerequisite.
 
 Existing source/build/artifact custody, corresponding-source and licence duties,
@@ -198,10 +204,10 @@ and the existing W11-W10/release evidence owner:
 - Generate and externally verify an optional detached inventory/attestation;
   compare an unchanged artifact with a deliberately altered copy and a wrong
   expected workflow identity to check that the verifier discriminates them.
-- When a real Store-delivered candidate exists through the authorized submission
-  path, compare its measured payload with the recorded submitted payload and
-  retain the signature/packaging differences. A local test signature supplies
-  no Store-delivered observation.
+- When a real direct-distribution candidate exists through the authorized release
+  path, compare its measured payload with the recorded built/signed payload and
+  retain any packaging/delivery differences. A local test signature supplies
+  no public-trust or installed-product observation.
 - Close the bounded trial as demonstrated, inconclusive or unperformed for each
   optional claim. Continue ordinary phase work without demanding a successful
   experiment; route discovered required-property failures to their existing owner.

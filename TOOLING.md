@@ -917,18 +917,18 @@ complete package's release evidence and final checksums.** Before the protected 
 release owner must reconcile this Rust inventory with native objects/libraries,
 generated source, resources, build-tool provenance and the actual package payload;
 validate the final CycloneDX/SPDX document; and bind the exact version, source
-candidate and **final package/payload hashes**. For the selected Store MSIX route,
-retain submitted and actual Store-delivered identities separately and reconcile
+candidate and **final package/payload hashes**. For the selected direct MSIX route,
+retain built, signed, published and installed identities separately and reconcile
 any changed bytes before claiming final CHECK-18/23/26 qualification. A Cargo inventory alone cannot
 satisfy CHECK-26 or that complete-product requirement. Prepare the SBOM before
 publication; do not generate a lockfile-only inventory after publishing a version.
 
 The eventual source/evidence-release publisher prepares a draft release and
-verifies its complete attachment set before publication. Store submission and
-delivery use the [selected MSIX workflow](docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners),
-not `gh release upload`; that workflow separates local mechanics, David's
-controlled submission and final Store-artifact qualification. Store package
-redistribution is not presumed authorized by an SBOM workflow. If David later
+verifies its complete attachment set before publication. Direct package
+delivery uses the [selected MSIX workflow](docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners),
+which separates local mechanics, later signing/trust resolution, David's
+release approval and final distributed-artifact qualification. OD-05 §7.9 rejects
+Store publication; hosting is not selected by this workflow. If David later
 chooses the retained MSI route, its existing signed-MSI upload procedure remains
 separate. This is a handoff contract, not a new publication job or authorization
 to upload now. The current Cargo graph does not supply a complete package or

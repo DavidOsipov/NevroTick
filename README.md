@@ -37,8 +37,8 @@ integrations are outside the planned timekeeping scope.
   source agreement and a lightweight Slint UI. The planned engine and clock
   broker have separate privileges and ship in one complete MSIX. The selected
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
-  package protections, followed by a Microsoft Store submission with services;
-  packaging, native qualification and Store acceptance remain future work.
+  package protections for direct distribution outside Microsoft Store;
+  packaging, signing and native qualification remain future work.
 - **Longer-term plans:** an Android companion and **DNS over QUIC (DoQ)**
   with leaf/intermediate certificate pinning remain planned, not implemented or
   promised for a particular release. Their existing roadmap decisions, design
@@ -46,6 +46,22 @@ integrations are outside the planned timekeeping scope.
 
 See the [product roadmap](ROADMAP.md) and
 [Windows feature plan](docs/windows-time-features.md) for the design and open work.
+
+## Distribution: MSIX, without Microsoft Store
+
+**NevroTick will not be published in Microsoft Store.** I reject the Store's
+publisher terms, including its broad requirement to defend and indemnify
+Microsoft and other covered parties against claims related to the application.
+I consider that an unacceptable condition for publishing this project.
+See [Microsoft's App Developer Agreement v8.11, section 10(c)](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf).
+
+The selected release format remains **one complete MSIX, distributed directly
+outside the Store**. Signing and certificate trust remain unresolved and will be
+addressed later; development and package preparation can continue. This is a
+distribution decision, not an announcement of an installable release. The
+[owner decision](docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+supersedes the earlier Store-publication plan. SDK, runtime and signing-provider
+terms remain separate and require their own review.
 
 ## AI-assisted development and learning
 

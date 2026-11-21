@@ -48,4 +48,10 @@ integration owners; these source tests do not execute or qualify those gates.
 
 The owners remain W11-W10/P6 with CHECK-18/20/23/26/27. W11-W05 and W11-W08 own
 later service and event integration. Emitted binaries, complete MSIX, installed
-state and Store-delivered bytes retain their existing independent gates.
+state and directly distributed bytes retain their existing independent gates.
+
+The [21 November delivery decision](../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+withdraws Store publication. Existing Store projections, pending fields and
+release-stage checks are legacy implementation to reconcile under MD-P4–MD-P5.
+Keep their historical controls until that scoped change; passing them does not
+make a Store identity a requirement or qualify the direct-distribution profile.

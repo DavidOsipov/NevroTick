@@ -1,5 +1,7 @@
 # WinGet distribution: pre-V1 capability and release plan
 
+**Distribution amendment — 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication and selects direct MSIX distribution. WGT-0 remains pre-V1; qualify the non-Store Community route for the complete package. Signing/trust/hosting and actual publication remain unresolved, while source/metadata preparation continues. The former `msstore`-first direction and Store ProductId prerequisite are superseded; historical research/review below is retained as such.
+
 **Document:** NV-WGT-001, revision 1.2<br>
 **Owner instruction / research date:** David Osipov, 7 November 2026  
 **Roadmap stage:** WGT-0, within the existing pre-V1 P6/P7 delivery work  
@@ -18,12 +20,7 @@ under [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments
 and the 14 November [OD-20 amendment](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1).
 WinGet does not become a new Core prerequisite or alter this post-V1 order.
 
-The existing [OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects one complete hardened MSIX containing UI, engine, broker and lifecycle
-helper, with a Microsoft Store submission attempt. Preserve that direction.
-Qualify WinGet access to the actual Store product through `msstore` first. The
-Community `winget` source is a separate route for an authorized public installer;
-it is conditional, not a reason to select MSI or create a split product. [S01–S03]
+[OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete direct-distribution MSIX containing UI, engine, broker and lifecycle helper. Prepare the Community `winget` source route for that artifact; actual publication requires its authorized signing/trust/hosting solution and release approval. `msstore` and Store publication are rejected, and no Store ID is required. This adds neither MSI nor a split product. [S01–S03]
 
 Two results must be recorded separately:
 
@@ -33,7 +30,7 @@ Two results must be recorded separately:
   document, placeholder YAML or passing syntax check alone cannot close it.
 - **WGT-C02 — public source available:** the actual approved product/version is
   discoverable and usable from its specified source after external publication.
-  Store visibility, community moderation and catalog propagation have external
+  Community moderation and catalog propagation have external
   dependencies. A PR, merge or release tag alone cannot close this result.
 
 This separation avoids requiring a community PR to be accepted before its
@@ -45,7 +42,7 @@ wait is not a substitute for that result or an automatic implementation failure.
 
 | Existing obligation | Treatment in this plan |
 | --- | --- |
-| Complete MSIX and actual Store attempt | Retained. No automatic MSI fallback, standalone service bootstrapper or second product lifecycle. |
+| Complete direct MSIX; Store publication rejected | OD-05 §7.9 supersedes the earlier Store attempt. No automatic MSI fallback, separate service bootstrapper or second product lifecycle. Signing is deferred without blocking source/package preparation. |
 | P6/P7, W11-W10/W11-W05 and CHECK owners | Retained; WGT labels organize the distribution slice rather than replacing architecture requirements. |
 | Extensive accurate metadata | Extended with source-specific identities and conditional Community projections from the existing metadata authority. No new parallel product record. |
 | Public release, account, visibility and credential authority | Remains with David under the release policy. This task records preparation; it performs no submission or publication. |
@@ -57,7 +54,7 @@ wait is not a substitute for that result or an automatic implementation failure.
 
 | Supplied claim | Verified correction and project consequence |
 | --- | --- |
-| WinGet uses YAML in a public GitHub repository. | Correct for the Community route. `msstore` is a distinct Store catalog and uses a Store ProductId; the selected Store product does not need a second Community listing merely to be acquired through WinGet. [S01, S02] |
+| WinGet uses YAML in a public GitHub repository. | Correct for the Community route selected for preparation. `msstore` is a distinct Store catalog using Store ProductId; that route is now rejected for NevroTick. [S01, S02] |
 | MSI, MSIX, EXE and ZIP/portable are supported. | Broadly correct as client capabilities. NevroTick still requires its complete-product service/lifecycle package; a portable EXE or installation script does not meet that requirement. Community script installers are expressly disallowed. [S03, S04] |
 | MSI/MSIX make installation completely unattended. | Supported installer types have known installation behavior, but privilege authorization and source/package agreements are separate. Packaged services require administrative installation. Silent mode does not bypass UAC or consent. [S02, S05] |
 | `/S` or `/VERYSILENT` can be copied into an EXE manifest. | Switches depend on the real installer technology. Use the specific supported installer type and test its actual switches; do not add generic EXE arguments to MSIX. [S06] |
@@ -68,7 +65,7 @@ wait is not a substitute for that result or an automatic implementation failure.
 | Automated checks prove the installer is safe. | Checks cover manifest, origin, hashes, installation and security scans; moderation can intervene. They do not prove NevroTick's clock authority, least privilege or recovery invariants. [S07, S10] |
 | PRs usually merge within a few hours. | No end-to-end merge guarantee was established. The repository's typical publishing delay is measured after merge, not from PR creation. Keep external review and propagation explicit. [S10, S11] |
 | `vedantmgoyal2009/winget-releaser@v2` is official. | It is third-party; the old URL redirects to `vedantmgoyal9/winget-releaser`. Its update flow requires an existing accepted package, and its inspected execution chain contains floating dependencies. It is not adopted by this plan. [S12] |
-| Trigger on every new tag so users always get the latest build. | Tags can precede assets/qualification and include previews. Publish only the approved stable artifact, then verify source visibility. Client upgrade execution, Store update settings, pins, policy and offline users remain separate. [S13–S15] |
+| Trigger on every new tag so users always get the latest build. | Tags can precede assets/qualification and include previews. Publish only the approved stable artifact, then verify source visibility. Client upgrade execution, update settings, pins, policy and offline users remain separate. [S13–S15] |
 | WinGet provides free Microsoft signing. | Community listing does not sign the installer. Store processing signs accepted MSIX/AppX; a direct MSIX needs its own valid target-device trust path. A file hash is not a publisher signature. [S16–S18] |
 
 Confidence is high for these source-documented distinctions. Compatibility of
@@ -93,9 +90,9 @@ URLs with plausible values.
 
 | Route | Plan and required evidence | Identity |
 | --- | --- | --- |
-| Selected Store MSIX through `msstore` | First route to qualify. Observe actual Store-source availability and authorized installation of the complete package, services, user registration, updates and removal on each supported platform. Store acceptance alone is not this observation. | Actual Store ProductId plus MSIX identity/PackageFamilyName, publisher and exact delivered version. |
-| Community `winget` source | Prepare the contract; activate only when David authorizes a compatible, public, trusted complete installer and its distribution. A self-hosted MSIX needs an established signing/trust route; a Store download does not automatically establish rehosting rights or a suitable permanent URL. | Reviewed Community PackageIdentifier, version, immutable installer URL/hash and actual MSIX or MSI installed identity. |
-| MSI alternative | Remains conditional on the existing owner reconsideration after a concrete Store blocker/refusal. If selected later, qualify the complete MSI, silent/elevated lifecycle, signatures and installed identity. | Actual ProductCode/UpgradeCode/Apps & Features values and separate release mapping. |
+| Historical Store MSIX through `msstore` | Rejected under OD-05 §7.9; retained technical comparison only. Do not prepare a Store submission or qualify this route as a release prerequisite. | Store ProductId is not a NevroTick prerequisite. |
+| Community `winget` source for direct MSIX | Selected non-Store capability to prepare under WGT-0. Qualify the complete package, service/user lifecycle and source-specific acquisition on supported platforms. Actual publication needs the later resolved signing/trust/hosting solution and David's release authority. | Reviewed Community PackageIdentifier, approved version, immutable installer URL/hash and actual MSIX PackageFamilyName/publisher identity. No identifier is registered by this plan. |
+| MSI alternative | Remains unselected and requires a later owner decision. Do not introduce it to avoid an unresolved direct-MSIX gate. | Its ProductCode/UpgradeCode and release mappings would need separate qualification if selected. |
 
 Record `source + identifier + package identity + version + scope + platform` as a
 single tested route. A display-name match is insufficient. Never present a proposed
@@ -112,7 +109,7 @@ publication receipts distinct from authored product facts.
 
 | Field family | Authority / check |
 | --- | --- |
-| PackageIdentifier, Store ProductId, MSIX identity/PackageFamilyName | Distinct namespaces. Confirm actual assigned/reviewed identity and source; preserve update continuity. |
+| Community PackageIdentifier and MSIX identity/PackageFamilyName | Distinct namespaces. Confirm actual reviewed identity and source; preserve update continuity. The historical Store ProductId does not belong in the selected direct route. |
 | PackageVersion and Windows version | Approved release mapping plus real package and installed readback. Preserve monotonic upgrade behavior and handle differing display versions explicitly. |
 | PackageName, Publisher, Author and descriptions | Reviewed public product facts; component authors and signer identity are not interchangeable. Describe implemented behavior. |
 | PublisherUrl, PublisherSupportUrl, PrivacyUrl, PackageUrl and LicenseUrl | Real maintained public endpoints approved for those purposes. Pending remains pending, not a fabricated link. |
@@ -133,7 +130,7 @@ an explicit allowlist; internal field registers, credentials and personal/operat
 metadata are not publication inputs. [S06, S09]
 
 Freeze an approved asset identity and do not replace its bytes under the same
-version URL. A rebuild, signature change or Store transformation requires new
+version URL. A rebuild, signature change or package transformation requires new
 hashes and affected qualification. A published release name alone cannot select
 the artifact: match source/tag/commit, version, asset name, hash, package identity,
 architecture and existing release approval. Follow the [release policy](../release-policy.md).
@@ -171,7 +168,7 @@ Follow the [two-family qualification matrix](../../tasks/windows11-integration.m
   neither lower the floor nor remove guards to obtain a green check.
 
 Microsoft lists WinGet on Windows Server 2025, but that does not establish
-`msstore` availability for this product, service-MSIX behavior, Server Core or
+Community-source acquisition for this product, service-MSIX behavior, Server Core or
 every enterprise policy profile. Each admitted source/platform row needs its
 own observation. A Windows Sandbox may not have WinGet or Store preinstalled;
 use only an admitted reproducible setup, and retain full-VM lifecycle evidence
@@ -198,7 +195,7 @@ install, repair where supported, update, Reset, interrupted servicing and remova
 through the actual package/source path. A process exit code alone cannot prove
 that services, user registration and mandatory recovery state are correct.
 
-Retain separate local test-signed, submitted, Store-delivered and installed
+Retain separate local test-signed, final signed/package, downloaded and installed
 identities. Test roots can support admitted lab mechanics, not a public
 installation claim. Never disable hash verification, certificate checks,
 Defender, required mitigations or service controls to satisfy distribution tests.
@@ -207,10 +204,7 @@ time client cannot promise to repair the clock that prevents its download.
 
 ## 6. Release automation design
 
-For the selected Store route, reuse the existing Store release process and add
-source-specific discovery/installation receipts. A Community manifest publisher
-is needed only if that route is activated. Do not create an inert secret-bearing
-workflow while the installer, route and identities are unresolved.
+For the selected direct MSIX, reuse the existing protected release process and prepare Community-source discovery/installation receipts. The signing/trust/hosting arrangement remains deferred; actual catalog publication follows the approved complete public artifact. Do not create a secret-bearing workflow while its producer, identities and external effects are unresolved. No Store submission or Store refusal belongs in this sequence.
 
 | Stage | Required behavior and output |
 | --- | --- |
@@ -282,13 +276,13 @@ instructions or a populated release manifest. Replace placeholders with actual
 reviewed values; verify options against the admitted tool version.
 
 ```powershell
-# Discovery of the selected Store product (read-only)
-winget show --id <actual-store-product-id> --exact --source msstore
+# Discovery only after the Community product is actually published (read-only)
+winget show --id <verified-community-id> --exact --source winget
 
-# A separately authorized native test of the real route
-winget install --id <actual-store-product-id> --exact --source msstore
+# A separately authorized native test of the published direct MSIX route
+winget install --id <verified-community-id> --exact --source winget
 
-# Conditional Community authoring; choose the admitted tool version first
+# Community authoring preparation; choose the admitted tool version first
 winget install --id Microsoft.WingetCreate --exact --source winget --version <admitted-wingetcreate-version>
 # Initial authoring: decline the wizard's final submission prompt for review
 wingetcreate new <official-version-specific-installer-url>
@@ -300,7 +294,7 @@ winget hash <final-msix-path> --msix
 
 Local manifest installation requires the documented LocalManifestFiles setting
 in the owned test fixture. Restore the fixture setting afterward. Local success
-does not prove Store discovery, community acceptance or final Store trust. Test
+does not prove Community discovery, catalog acceptance or public package trust. Test
 the default silent-with-progress behavior and `--silent` as appropriate to the actual client/type;
 never infer suppression of UAC, agreements, reboot or lifecycle requirements.
 Public instructions use the observed exact source/ID and qualified flags, not
@@ -314,11 +308,11 @@ without blocking useful source preparation.
 
 | Package / owner | Action and observable exit |
 | --- | --- |
-| WGT-W01 — release/packaging coordinator | Reinspect current source, metadata, OD-05/14/17, real package status and holds. Establish the Store-first route and exact pending identity/artifact questions. Record the smallest next source slice; do not invent a runnable manifest. |
+| WGT-W01 — release/packaging coordinator | Reinspect current source, metadata, OD-05 §7.9/OD-14/OD-17, package status and holds. Establish the direct-MSIX Community route and actual pending identity/artifact questions. Signing/trust/hosting are deferred; continue the smallest source/metadata slice and do not invent a runnable release manifest or Store ID. |
 | WGT-W02 — metadata/build owner | Implement the reached source identity/readback contract and, only for an activated Community route, deterministic multi-file projection/update. Preserve private/public boundaries and truthful pending states. Independent valid and malformed/changed controls exercise the real producer and consumer. |
 | WGT-W03 — W11-W10/W11-W05 and QA | On admitted disposable targets, qualify the actual WinGet/package path and complete lifecycle using the matrix below and existing CHECK owners. Record unsupported rows and exact-client limits. A source-only result leaves this work open. |
 | WGT-W04 — release/security owner | Prepare and dry-run the selected release operation. For Community submission, qualify artifact custody, supported credential design, trigger behavior, frozen tools, duplicate/conflict behavior and failure recovery without public writes. |
-| WGT-W05 — independent reviewer/coordinator | Reconcile exact candidate/tool/platform receipts and remaining blockers; record WGT-C01 before V1 release approval. Scope local, Store and Community evidence separately. |
+| WGT-W05 — independent reviewer/coordinator | Reconcile exact candidate/tool/platform receipts and remaining blockers; record WGT-C01 before V1 release approval. Scope local, direct-package and Community evidence separately. |
 | WGT-W06 — David/release owner | At authorized publication, perform the selected source operation and observe WGT-C02. Later versions reuse the tested update path and triage policy; listing/merge alone is not an installed recovery result. |
 
 **Next executable stage now:** WGT-W01 source/identity preparation under existing
@@ -347,7 +341,7 @@ WGT-T labels are local navigation, not another general acceptance catalog.
 | WGT-T09 — removal and recovery | Supported uninstall/Reset/repair and last-user paths preserve recovery until W32Time/clock ownership is safely settled. Retained data and cleanup match the declared policy. |
 | WGT-T10 — source/channel isolation | Explicit ID/source selects the intended product. A similarly named package, wrong source, preview event or unsupported cross-format route is refused by the release operation. |
 | WGT-T11 — automation and credentials | Authorized frozen release produces a reviewable result; draft/missing assets, wrong hash, untrusted PR, token expiry, duplicate PR and conflicting version stop safely. Test actual trigger propagation. |
-| WGT-T12 — external publication and withdrawal | Observe PR/Store outcome, catalog visibility and source-specific acquisition separately. A rejected/delayed/withdrawn release does not produce a false availability claim or pretend to recall installed copies. |
+| WGT-T12 — external publication and withdrawal | Observe Community PR outcome, catalog visibility and source-specific acquisition separately. A rejected/delayed/withdrawn release does not produce a false availability claim or pretend to recall installed copies. |
 
 Reuse unchanged evidence only with an explicit source/artifact/platform identity
 argument. Changes to signing, package family, dependency closure, service
@@ -359,9 +353,9 @@ Required missing native evidence is incomplete, not not-applicable.
 Close **WGT-C01** only when the selected capability has a real implementation,
 reviewed metadata/identity contract, reproducible preparation/release operation
 and all applicable pre-publication native/package receipts. Record exactly which
-Store/catalog observations await an externally available approved product;
-that dependency does not turn local/test-signed results into a Store pass.
-P6/P7 still require their actual final Store-delivered artifact and lifecycle
+Community catalog observations await an externally available approved product;
+that dependency does not turn local/test-signed results into a public-trust pass.
+P6/P7 still require their actual final directly distributed artifact and lifecycle
 evidence before broad release. A source-only plan cannot satisfy either gate.
 
 Close **WGT-C02** only with actual source-specific discovery and successful
@@ -373,7 +367,7 @@ silently changing packaging, dropping a supported platform or weakening guards.
 
 Use the [release policy](../release-policy.md) for bad-version withdrawal,
 credential compromise, compatible higher-version correction and retained support
-populations. Community removal, Store visibility changes and GitHub asset actions
+populations. Community removal and direct-host/release-asset actions
 do not uninstall or repair existing clients. If two channels are ever admitted,
 track each actual published identity and recovery reach. No automatic downgrade,
 forced update or continuous monitoring is introduced.
@@ -394,8 +388,7 @@ no Windows execution, installer creation, trust-store change, signing, credentia
 creation, Store action or Community PR occurred.
 
 The dated review below records revision 1.0 and its original scheduling. The
-14 November amendment linked in §1 controls the current order; this receipt is
-unchanged.
+14 November amendment linked in §1 controls the post-V1 order; OD-05 §7.9 now controls direct distribution. The quoted Store-first direction below is historical and superseded, not a current assignment. This receipt is unchanged.
 
 **Completed integrated review, 7 November 2026:** the distinct judge
 `/root/winget_judge` returned **READY to record this research/plan and pre-V1

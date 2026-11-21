@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.27<br>
+**Document:** NV-DEC-001, revision 1.28<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -8,6 +8,13 @@
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
+
+**Current delivery decision — 21 November 2026:** [OD-05 §7.9](#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects one complete MSIX for direct distribution and rejects Microsoft Store
+publication because David rejects its broad publisher indemnity requirements.
+Signing and certificate-trust decisions are deferred; continue permitted product
+development and package preparation. Earlier Store-attempt, rejection-first,
+Partner Center and Store-delivered qualification directions are superseded.
 
 **Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) keeps mathematical estimation experiments first after actual V1 release. [OD-20, 14 November](#24-od-20--supplementary-certificate-distrust-after-v1) defers OneCRL/CRLite integration until after V1 and places TRUST-0 second under the delegated ordering choice, followed by multithreading, Khronos/Ananke, GeoIP and Android. Existing V1 certificate qualification remains required; this adds no V1 feed-integration gate.
 
@@ -18,7 +25,7 @@ sets a 14-day minimum publication age for routine new registry-version selection
 including transitives. The existing build/dependency owners retain implementation
 and fixture evidence; urgent exceptions use OD-04 individually.
 
-**Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target; the current post-V1 order is governed by amended OD-16.
+**Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, now following OD-05 §7.9's directly distributed complete MSIX; the current post-V1 order is governed by amended OD-16.
 
 **8 November signing decision:** [OD-05 §7.7](#77-sign-every-supported-shipped-artifact--8-november-2026)
 requires signatures on the installer/package and every shipped file with a
@@ -56,7 +63,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; add a future Roughtime bootstrap stage for a badly wrong initial date | **Accepted behavior goal and future bootstrap direction** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-0 protocol/provider/trust qualification. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
-| OD-05 | Prepare one complete hardened MSIX for David's Store attempt with services; sign the installer/package and every supported shipped artifact, including nonbinary files. Preserve approved upstream signatures and David's release authority | **Accepted delivery/hardening direction; signing scope amended 8 November 2026** | Production per-format signing capability, complete per-file and package evidence, Store preservation of inner signatures, least-privilege provisioning/recovery, native mitigations and actual Store acceptance; the unsigned-MSI/OpenPGP exception is superseded |
+| OD-05 | Prepare one complete hardened MSIX for direct distribution; no Microsoft Store publication. Preserve approved upstream signatures, the required signing scope and David's release authority | **Accepted direct-distribution decision, 21 November 2026; signing resolution deferred** | Later signer/certificate-trust decision, complete per-file/package evidence, least-privilege provisioning/recovery and native mitigations; no Store submission or refusal prerequisite, no unsigned-release or trust-bypass approval |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
 | OD-07 | Require x86-64-v3 as the Windows product minimum and configure it now; retain runtime-selected higher-feature optimizations | **Accepted 30 October; implementation correction explicitly required 6 November 2026** | The target config and exact admission controls select v3. Qualify CPU/OS/VM startup admission, final artifacts, exact-feature dispatch, numerical equivalence and measured benefit; historical generic receipts do not qualify this configuration |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
@@ -68,7 +75,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 | OD-16 | Run mathematical estimation experiments first after actual V1 release, preserving multithreading before Khronos | **7 November direction amended 13 November; TRUST-0 inserted by OD-20 on 14 November 2026** | MATH-C01 precedes TRUST-C01, then MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
-| OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026** | WGT-0 within P6/P7: real source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve Store-first complete MSIX; no automatic MSI selection, publication or update guarantee |
+| OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026; channel amended 21 November** | WGT-0 within P6/P7: non-Store source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve directly distributed complete MSIX; no automatic MSI selection, catalog publication or update guarantee |
 | OD-18 | Add small literature-derived tests/cases before V1; document longer implementation in ROADMAP.md and detailed docs | **Accepted qualification and planning direction, 13 November 2026** | Actual-consumer tests and reached V1 cases need candidate-specific results; absent future runtime cases remain prepared, not executed. LIT-0/NV-NCR-001 map longer work to existing owners without adopting TPKI, NTxMon or new estimator constants |
 | OD-19 | Apply a 14-day minimum publication age to routine selection of new registry versions, including changed/new transitives | **Accepted and implemented in the bounded tooling scope, 13 November 2026; isolated fixtures qualified under R4-B-02** | Product/native qualification remains separate; future updates need exact changed-graph/source approval and any concrete individual exception. Aging does not establish package safety |
 | OD-20 | Defer OneCRL and CRLite integration until after V1; add a roadmap entry and detailed plan, deciding its priority | **Accepted deferral, 14 November 2026; delegated engineering placement is second, after MATH-C01 and before MT-0** | TRUST-0/TRUST-C01: authenticated updates, accepted-chain checks, coverage/freshness, association invalidation and separate root-policy scope. No implementation or native pass; existing V1 OPEN-8/R-05 requirements remain |
@@ -586,7 +593,7 @@ approval. All unrelated holds, cumulative budgets and publication limits remain.
 
 ### 7.1 Accepted choices
 
-**3 November 2026 amendment:** David asked to maximize MSIX protection, then try
+**Historical 3 November 2026 amendment, Store direction superseded by §7.9:** David asked to maximize MSIX protection, then try
 publishing the complete application in Microsoft Store with its services. He will
 reconsider delivery after an actual rejection or a concrete technical blocker.
 This supersedes the earlier MSI-first direction and the requirement to obtain
@@ -595,11 +602,11 @@ unsupported service topology or unsafe lifecycle.
 
 - **Selected preparation target:** one complete hardened MSIX containing the UI,
   network engine, clock broker, narrow lifecycle helper and required payloads;
-  Microsoft Store is the intended first publication attempt. No split
+  direct distribution outside Microsoft Store is selected by §7.9. No split
   MSI-service/MSIX-UI product or external service prerequisite.
 - **Security objective:** use the strongest compatible, supported and verified
   controls for each process, including package-content integrity and the
-  Store-compatible code-integrity profile in the
+  signer-compatible code-integrity profile in the
   [MSIX plan](plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper).
   A required protection failure must prevent the affected authority/operation;
   no silent disabling, broader service privilege or weakened recovery to make
@@ -615,15 +622,15 @@ unsupported service topology or unsafe lifecycle.
   Hardware-conditional enforcement does not silently raise the v3 CPU floor.
   This clarifies the existing objective without enabling incompatible switches,
   adopting an unpinned/nightly compiler or lifting unrelated execution holds.
-- **Store outcome:** prepare the candidate and accurate service/capability
-  justification without waiting for speculative preapproval. David makes the
-  account/submission/visibility and release actions. An actual refusal is a
-  decision input, not permission to conceal services or silently ship another
-  channel. Store acceptance and application security qualification are distinct.
+- **Distribution outcome:** prepare the complete direct MSIX under §7.9.
+  Microsoft Store publication, account onboarding, submission and waiting for a
+  refusal are no longer part of the plan. David retains release authority;
+  direct distribution still requires actual package and application qualification.
 - **Signing-service candidate:** SignPath Foundation, if the project qualifies,
   may supply required inner-file signatures for the selected MSIX or signatures
   for a later owner-selected complete MSI. Eligibility and actual format support
-  remain open; the Store's outer signature does not supply every inner signature.
+  remain open; resolve the outer package and required inner signatures later
+  under §7.9, without blocking independent source preparation.
 - **Publisher display:** the Foundation's publisher identity is acceptable to David. Exact issued identity and renewal policy still require verification.
 - **Human release/signing approver:** **David Osipov**.
 - **MSI delivery alternative:** reconsider only after David's later decision.
@@ -644,12 +651,13 @@ evidence into a pass. SignPath's acceptance remains external. [S12]
 
 ### 7.2 Separate release profiles
 
-The selected Store MSIX profile uses the actual delivered package/catalog,
-approved package identity and installed component lineage, with the exact
+The selected direct MSIX profile uses the actual distributed package/catalog,
+selected publisher identity and installed component lineage, with the exact
 service, mitigation and recovery evidence in
 [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate)
 and [signing §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries).
-Store signing is not an arbitrary publisher allowlist or helper authorization.
+Publisher trust is not an arbitrary image allowlist or helper authorization;
+Store-dependent policies need requalification for the eventual direct signer.
 The current profile additionally requires the per-file signatures in §7.7.
 The following table is **historical: the two MSI profiles recorded on 29 October,
 with the unsigned-MSI/OpenPGP release permission superseded on 8 November 2026**.
@@ -690,8 +698,8 @@ The owner requested research and integration of the missing stable-release
 support and bad-release recovery procedures. The resulting
 [release policy](release-policy.md) is the operational owner for support records,
 backports, promotion, containment, corrective packages and publishing-authority
-recovery. It preserves OD-05's selected complete Store MSIX and David's account,
-submission, visibility and exact-candidate authority.
+recovery. It now follows §7.9's complete direct MSIX and David's publishing
+and exact-candidate authority; Store account/submission work is superseded.
 
 **Proposed, not yet approved:** the latest explicitly designated, qualified,
 non-withdrawn stable release is the normal maintenance target, with a recorded
@@ -718,8 +726,8 @@ mandatory release blocker. The [focused provenance record](plans/release-provena
 retains the evidence, limitations and possible later experiment.
 
 GitHub/Sigstore artifact attestations, an independently reproduced Windows
-build, and a public source-to-Store verification bundle are **optional**.
-Their absence alone does not block a release, P6/P7 closure, the Store attempt
+build, and a public source-to-distributed-artifact verification bundle are **optional**.
+Their absence alone does not block a release, P6/P7 closure, direct MSIX preparation
 or the current Core work. Do not import them as mandatory work through a task
 index, CHECK mapping or the release-policy qualification matrix. A later
 decision to require them must explicitly amend this instruction.
@@ -742,7 +750,7 @@ dependencies or build infrastructure contain no malicious behavior.
 David requires the maximum useful, correct metadata whether the selected
 delivery is MSIX or a later MSI route. The
 [metadata contract](plans/windows-package-metadata.md) maps executable resources,
-installer/package and installed-app information, Store fields, localization,
+installer/package and installed-app information, historical Store fields, localization,
 versions and source-of-value rules. Populate applicable supported fields and
 record justified absence; do not invent identities, support contacts or shipped
 capabilities, or enable package behavior merely to fill optional fields.
@@ -759,7 +767,7 @@ execution holds remain; enhanced public build provenance stays optional under
 **Accepted owner instruction:** sign the installer itself and all binaries
 inside, then extend that requirement to every shipped file that supports an
 appropriate signature, including nonbinary files. This is a final-product
-obligation for the selected complete Store MSIX and any later selected MSI;
+obligation for the selected complete direct MSIX and any later selected MSI;
 it is not a statement that the current repository already produces signed files.
 
 - Maintain one complete shipping inventory. Every supported signable artifact
@@ -777,9 +785,9 @@ it is not a statement that the current repository already produces signed files.
   or verifier merely because an arbitrary-byte signing tool exists. Assess the
   real format and its admitted consumer; provider/key unavailability is open
   signing work, not a reason to call a supported format inapplicable.
-- Store package/catalog trust and individual signatures require separate
-  evidence. Qualify the actual delivered artifact and preservation of required
-  inner signatures after Store processing. Missing signatures, unsupported
+- Package/catalog trust and individual signatures require separate
+  evidence. Qualify the actual directly distributed artifact and preservation of
+  required inner signatures through packaging and delivery. Missing signatures, unsupported
   signing capability required by the declared profile or incompatible transformation block release
   pending resolution; there is no catalog-only exemption for signable files.
 - The former unsigned-MSI plus OpenPGP release permission in §§7.1–7.3 is
@@ -795,7 +803,7 @@ Signature presence does not establish automatic runtime enforcement or benign
 code; package integrity, process/loader admission and the padding/content-trust
 rules remain independent obligations.
 
-The Store-first direction, Foundation publisher-display acceptance, David's
+The direct MSIX direction in §7.9, Foundation publisher-display acceptance, David's
 human signing/release authority, Core priority and existing execution holds
 remain. This records no provider selection, paid certificate, account action,
 production signing, Store submission or completed native result.
@@ -832,11 +840,65 @@ requirements or automatically provide trusted sideloaded MSIX/CIG admission.
 It permits no customer certificate-store installation, disabled OS protection,
 manual detached-verification requirement or unconditional helper/loader acceptance.
 
-Complete Store MSIX remains the selected delivery direction; this clarification
+At that 8 November checkpoint, complete Store MSIX remained selected; §7.9 now
+selects direct MSIX distribution. This earlier signing clarification
 does not itself switch to MSI or authorize a release. David retains exact-candidate
 approval. No paid certificate, provider application, key generation/export,
 signing operation, upload or native execution is performed or authorized by this
 documentation update. W11-W10/S6.4 and R-06 retain the concrete qualification work.
+
+### 7.9 Direct MSIX distribution; Microsoft Store rejected — 21 November 2026
+
+**Accepted direct owner instruction, 21 November 2026, Asia/Tbilisi:** NevroTick
+will not be published in Microsoft Store. David rejects the Store publisher
+agreement's broad duty to defend and indemnify Microsoft and other covered
+parties, and considers it an unacceptable publication condition. The cited
+provision is [App Developer Agreement v8.11, §10(c)](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf),
+effective 17 April 2026. This records the owner's decision; it does not claim a
+court ruling, automatic GPL incompatibility or universal unenforceability.
+
+**Selected route:** one complete hardened MSIX containing the UI, engine, broker,
+helper and required payloads, distributed directly outside the Store. Microsoft
+documents [direct MSIX distribution](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/choose-distribution-path).
+Keep the existing complete-product boundary; no automatic MSI fallback, split
+installer, external service prerequisite or broader service privileges.
+
+**Superseded:** the 3 November Store attempt, refusal-before-reconsideration,
+Partner Center onboarding/production identity, Store listing/submission,
+`msstore`-first WinGet route, and Store-delivered artifact requirements. Retain
+useful dated research and receipts as historical evidence. Store-specific fields
+or checks still present in metadata/tooling are legacy consumers to reconcile,
+not prerequisites for the selected release. Do not invent a Store identity to
+satisfy them. No Store account, application, agreement acceptance or upload is
+part of the approved distribution work.
+
+**Signing deferred:** David will address signing and certificate trust later.
+Continue permitted development, resource compilation and MSIX authoring; do not
+make choosing a signer, buying a certificate or obtaining provider acceptance a
+prerequisite for that independent work. This changes scheduling, not §7.7's
+signing scope or required trust/native evidence before an actual public release.
+It approves no unsigned public MSIX, customer certificate import, disabled
+protection or fabricated trust result. No signer, key, hosting endpoint or update
+service is selected by this decision. §7.8's interim MSI permission does not
+automatically qualify MSIX installation.
+
+**Qualification ownership:** W11-W10/P6/P7 and W11-W05 retain exact distributed
+bytes, full dependency/resource/licence inventory, installed identity, service
+provisioning/removal/recovery and per-role mitigation checks. Reassess the
+Store-dependent code-integrity assumptions against the eventual signer and
+actual loaded images; a generic trusted signature does not establish Store
+signing. Custom-capability requirements, including the proposed machine-scope
+event provider, can still apply outside the Store and remain unresolved. Preserve
+the strongest supported compatible protections; record concrete incompatibility
+instead of silently weakening the policy. WGT-0 remains before V1 with a
+non-Store source and identity to qualify. Optional enhanced provenance stays
+optional and follows the actual direct-distribution artifacts.
+
+**Licence boundary:** refusing the Store agreement does not waive the independent
+terms for SDK tools, generated code, Microsoft runtime inputs or a later signing
+provider. This decision accepts none of those agreements and changes no existing
+source or asset licence. It establishes no installable package, native pass or
+release approval and leaves unrelated execution holds intact.
 
 ## 8. OD-06 — future research and decision queue
 
@@ -847,12 +909,12 @@ Priority order:
 1. Confirm selected-source licence obligations and an admissible crypto/native graph before port/dependency commitments.
 2. Resolve the Pool/NTS default interaction and provider permission before shipping defaults.
 3. Prove era-aware authenticated recovery and propose conservative plain-NTP limits before clock actuation.
-4. Prepare the owner-selected complete hardened MSIX and Store submission case
-   with services through OD-05 and the existing W11 task. Qualify supported
+4. Prepare the owner-selected complete hardened MSIX for direct distribution
+   with services through OD-05 §7.9 and the existing W11 task. Qualify supported
    provisioning, recovery, installed trust and per-process protections. Resolve
    production signing for every supported shipped format under OD-05 §7.7,
-   including SignPath eligibility if pursued for inner-file signatures. Missing
-   capability blocks release, not independent MSIX source preparation.
+   at the later signing checkpoint, including SignPath eligibility if pursued.
+   Signing resolution does not block independent MSIX source preparation.
 5. Continue the existing native account/IPC/clock/lifecycle/resource investigations at their phase gates. Bring concrete exceptions rather than a speculative list of approvals.
 
 The proprietary-artwork/free-signing question is **unresolved**. This work neither concludes SignPath rejects the project nor changes the brand licence. Research and any later authorized provider clarification must answer it.
@@ -1373,7 +1435,7 @@ The [existing W11 task §4.32](../tasks/windows11-integration.md#432-two-family-
 owns two rows and shared controls under existing CHECK/P0/P4/P6/P7 owners.
 OPEN-2 remains open. Qualify package applicability, product OS-family admission,
 safe CPU preflight, Server acquisition/update applicability and actual delivered
-bytes separately; one complete MSIX and David's Store attempt retain OD-05's
+bytes separately; one complete directly distributed MSIX follows OD-05 §7.9's
 owners. Managed-domain observation and administrator-authorized takeover retain
 architecture §1.2; DC/PDC time service remains outside the product.
 
@@ -1585,10 +1647,10 @@ acceptance cases. [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-be
 and [W11-W10 with W11-W05](../tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026)
 own scheduling and evidence.
 
-Preserve OD-05's one complete hardened MSIX and actual Store attempt. Qualify
-WinGet acquisition of the real Store product through `msstore` first. The
-Community `winget` repository is a different source; preparing or activating
-that path requires a compatible authorized public trusted artifact. This
+Preserve OD-05 §7.9's one complete hardened MSIX for direct distribution.
+The former `msstore`-first route is withdrawn. Qualify a non-Store WinGet source,
+identity and exact installer; Community `winget` publication remains subject to
+its own acceptance and a compatible authorized public trusted artifact. This
 instruction selects neither MSI, a new signing provider, a split installer nor
 a service self-updater. Existing platform/CPU, privilege, lifecycle, recovery
 and release gates remain.

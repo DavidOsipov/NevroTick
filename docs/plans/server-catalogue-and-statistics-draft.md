@@ -5,6 +5,12 @@
 **Documentation baseline:** main commit 715a56561012d83ca0d667ef5ed1fd4ede555ad4; tree 0e454ff69e1b400dd3a8271f2ef6d4b4f1690eb9. The authoring workspace contains a verified selection of documentation, not a full source checkout or an implementation audit.  
 **Requested workflow:** inventory author → independent inventory reviewer → storage-allocation author → independent critical reviewer → coordinator reconciliation.
 
+**Current delivery routing, 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects one complete MSIX for direct distribution and rejects Microsoft Store
+publication. Signing and certificate trust remain deferred. This later decision
+supersedes the Store direction mentioned in the historical §9 review; that review
+and its recorded evidence do not qualify the new distribution route.
+
 ## 1. Purpose, authority and decision status
 
 David asked to record the discussion about safely supplied NTS, NTP and Roughtime server lists; observations and source reliability; compact storage; catalogue authentication; local database protection; and possible future NTS certificate pinning. This document identifies what information those features need, why they need it, who may produce and consume it, and what cannot be inferred from it. Logical inventory does not mean every field is persisted on every attempt.

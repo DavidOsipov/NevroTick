@@ -11,22 +11,23 @@ selects Slint (winit/software and Fluent-style starting configuration). The
 diagrams show the selected process owner; the checked-in Win32 reference is not
 yet migrated or replaced by qualified Slint evidence.
 
-**Distribution contract, amended 3 November 2026:** one complete hardened MSIX per
-supported architecture is selected for David's Store submission attempt with
+**Distribution contract, amended 21 November 2026:** one complete hardened MSIX per
+supported architecture is selected for direct distribution outside Microsoft Store with
 services. It contains the native UI, engine service, privileged clock broker,
 helper and required payloads. One product owns install/update/repair/removal;
 runtime process separation does not require separate packages. Architecture
 sections 19.4–19.5 distinguish this target from unqualified provisioning, recovery,
-Store acceptance and actual delivered-artifact evidence. MSI designs remain
+signing/trust resolution and actual distributed-artifact evidence. MSI designs remain
 alternatives for a later owner decision.
 
-**Release-profile amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects the complete Store MSIX preparation path; no Store preapproval is needed
-to prepare the candidate. The [MSIX plan](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
-separates local mechanics, David's controlled submission and actual Store-delivered
+**Release-profile amendment:** [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+rejects Store publication and selects complete direct MSIX; signing is deferred
+while preparation continues. The [MSIX plan](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
+separates local mechanics, later signing/trust resolution and actual distributed-artifact
 qualification before broad release. [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
 requires all supported individual signatures plus the package; the former
-unsigned-MSI/OpenPGP permission is superseded. These diagrams specify required
+unsigned-MSI/OpenPGP permission is superseded. Requalify Store-dependent signer
+assumptions before release. These diagrams specify required
 behavior; they prove neither an available MSIX lifecycle hook nor native execution.
 
 The [release policy](release-policy.md) owns support-status proposals, operational

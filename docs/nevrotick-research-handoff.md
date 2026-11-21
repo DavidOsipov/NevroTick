@@ -8,11 +8,11 @@
 
 **30 October 2026 trust-lifecycle amendment:** R-02/R-04/R-05 now require explicit authentication ages, semantic time-floor recovery and vote/freshness rules before the dependent production interfaces are frozen. These refine existing open gates; they adopt no key lifetime, stronger quorum, floor-reset privilege or new source preset. Source review and controlled-case specifications below establish no implemented NTS or Windows behavior.
 
-**3 November 2026 delivery amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-selects complete hardened MSIX preparation and David's Store attempt with services.
+**21 November 2026 delivery amendment:** [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects complete hardened MSIX for direct distribution and rejects Store publication.
 The [focused plan](plans/windows-msix-store.md) and existing W11-W10/W11-W05 task
-own that work; Store preapproval and MSI completion are not preparation gates.
-Technical qualification and actual Store outcome remain open; existing execution
+own that work; signing/trust resolution is deferred while preparation continues.
+Technical qualification and the eventual direct signer remain open; existing execution
 holds and Core priority remain.
 
 **4 November 2026 leap-policy amendment:** [architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales)
@@ -341,10 +341,10 @@ Test wrong name, expired/future certificates, revoked intermediates, unavailable
 ### Accepted owner policy to preserve
 
 **Current direction:** prepare the complete hardened MSIX, including services, for
-David's Store submission attempt. Follow [plan §7](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners):
-source/design and local test-signed mechanics precede owner-controlled submission;
-actual Store-delivered trust/CIG and lifecycle evidence precede broad release.
-Preparing the candidate requires no prior Store acceptance or signature. R-06
+direct distribution under OD-05 §7.9. Follow [plan §7](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners):
+source/design and resource/package preparation continue while signing is deferred;
+actual signed/distributed trust, compatible image policies and lifecycle evidence
+precede broad release. Store publication is rejected. R-06
 supplies package/publisher identity, approved-release/helper binding, exact
 dependency/catalog inventory, wrong-clock/offline trust conditions and truthful
 capability justification to the existing W11 task; do not create another survey.
@@ -356,7 +356,7 @@ account readiness, real access/recovery rehearsals and installed-state/native
 evidence remain open. Continue through
 [W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
 and OPEN-11/14 instead of repeating the release survey. This common operational
-work applies to the selected Store route, including required inner-file signing
+work applies to the selected direct route, including later package/inner-file signing
 capability; it is not limited to a later MSI route.
 
 **8 November owner amendment:** [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
@@ -381,7 +381,7 @@ is not waived. No consumer certificate import or new custom verifier is adopted.
 
 1. How do the provider's current terms treat a Rust port of Chrony, third-party/native payloads, the first-release condition and proprietary NevroTick brand assets? The current [SignPath conditions](https://signpath.org/terms.html) are labelled Draft. Give supported interpretations and questions for later authorized clarification; do not assert approval or rejection or change the artwork licence.
 2. Which actual shipped formats require individual signatures, which expected project/upstream issuer satisfies each row, and what supported production provider/tool profile can create and verify them? Include nested/stream PE, existing signable scripts/data and packages; keep unavailability distinct from true format non-applicability. Do not introduce new scripting or data envelopes to create signing work.
-3. Does the actual Store-delivered artifact preserve all required inner signatures and admitted component identities? Qualify package/catalog trust and embedded/per-format signatures independently, with missing, wrong-signer, modified and healthy controls. A generic Store signature or catalogue count cannot answer this.
+3. Does the actual directly distributed artifact preserve all required inner signatures and admitted component identities? Qualify package/catalog trust and embedded/per-format signatures independently, with missing, wrong-signer, modified and healthy controls. A generic trusted signature or catalogue count cannot answer this; requalify assumptions that previously required Store signing.
 4. What minimum signing/submission custody, expiry/revocation, access-removal and rotation process can David operate for the actual signer roles? Preserve approved upstream signatures and qualify wrong-clock/offline verification. Prepare the process without generating/exposing keys or reusing a personal Git commit key.
 5. How does inside-out signing bind approved source/build, final metadata, exact signed members, submitted/delivered package and protected installed paths to maintenance and anti-downgrade policy? If MSI is later selected, qualify its actual cabinet/stream/custom-action and lifecycle relationships under the same signature requirement.
 

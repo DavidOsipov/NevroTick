@@ -2,7 +2,12 @@
 
 Use this reference after the authoritative input records are known. The
 [canonical metadata plan](../../../../../docs/plans/windows-package-metadata.md)
-owns the full PE/MSIX/MSI/Store field map and numeric/version/length limits.
+owns the full PE/MSIX/MSI/retained-Store field map and numeric/version/length limits.
+[OD-05 §7.9](../../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+selects direct MSIX and rejects Store publication. Store identities/listings are
+unselected, not a release prerequisite. Reconcile any older source-tool
+applicability through its code-owned contract; keep historical outputs distinct
+without inventing account values or deleting required keys ad hoc.
 Reuse [package-artifact QA](../../../testing/qa-package-artifacts/SKILL.md) for
 final custody, signing, native behavior and complete-product evidence.
 
@@ -95,8 +100,8 @@ files. Actual compile/link/installed/signature readback remains MD-P4–MD-P5.
    binary reproducibility from deterministic metadata alone.
 7. Compile/link/package, then read back the actual result. Finalize metadata
    before signing; any content edit after signing creates a new candidate that
-   needs the applicable signing/custody checks again. Bind final, submitted and
-   Store-delivered hashes separately.
+   needs the applicable signing/custody checks again. Bind build, signed,
+   distributed and installed hashes separately.
 
 Cargo build scripts, environment variables and resource compilation contracts
 are linked in [sources](sources.md). Do not broaden product features or introduce
@@ -227,7 +232,7 @@ SDK, target, profile and configuration identities using the existing build
 receipt owner. Never infer execution/custody from a version string, describe
 ambient tools as selected, or stamp old artifacts with a new generator identity.
 One build consumes one frozen generation; retain source, compiled, packaged,
-signed and Store-delivered identities separately. Do not add a mutable cache,
+signed and directly distributed identities separately. Do not add a mutable cache,
 database or public attestation requirement for this.
 
 At package/export adoption, inspect the exact approved final payload, including
@@ -242,7 +247,7 @@ existing native/package gate challenge mutually consistent declarations that
 disagree with emitted bytes, same-count wrong component/version/locale, missing
 resources and stale generations. Missing or empty required output fails; a
 warning, producer-generated golden update or same-helper parity alone cannot
-establish the promised semantics. Keep native/Store gates pending until actually
+establish the promised semantics. Keep applicable native/direct-release gates pending until actually
 executed under their existing holds.
 
 ## Map each output deliberately
@@ -250,12 +255,12 @@ executed under their existing holds.
 | Output | Required mapping/reconciliation |
 | --- | --- |
 | Every first-party EXE/DLL | Product/publisher fields plus actual component filename, internal name, role description, fixed/string versions, file type/flags, translations and icon where applicable; headless components still need descriptive metadata |
-| MSIX identity | Exact assigned Name/Publisher and reviewed numeric version/architecture/resource identity; distinguish friendly labels and derived family/full names |
+| MSIX identity | Reviewed direct-package Name/Publisher and numeric version/architecture/resource identity; qualify the eventual signing relationship and distinguish friendly labels and derived family/full names |
 | MSIX display/resources | Package and application fields, correct assets, resolvable `ms-resource:` keys, PRI/resource packs and actual supported languages/fallback |
 | Platform applicability | Current OD-14 family/edition/installation scope, actual package minimum/tested values and separately enforced CPU prerequisites; neither x64 nor MaxVersionTested proves complete support or an upper support bound |
 | Conditional MSI | Property table and Summary Information; correct manufacturer/product/upgrade/package identities, version/language, ARP fields, icons and actual install paths; preserve Installer-owned derived registration |
 | About/diagnostics | Read the same build-generated public projection; distinguish product release version, component/file version and installed package identity; keep an unpackaged development state explicit |
-| Store listings | Reviewed per-locale description/features/keywords/support/privacy/license information and actual screenshots; retain limits, CSV schema, release scope and separate UI-language claims |
+| Retained Store projections | Historical source-tool compatibility only; no Store identity/listing/submission gate under OD-05 §7.9; keep historical language claims separate from actual UI translations |
 | Software composition | Existing CycloneDX inventory linked to actual native/generated/resource payloads and final hashes; retain original third-party publisher/rights information |
 | Installed services/shortcuts | Compare actual registration/display with intended per-role values under existing native owners; metadata work does not authorize service changes |
 | SCM labels | Separate stable technical name, display name and purpose description; preserve raw MUI references, resolved locale and installed servicing behavior under W11-W05 |
@@ -317,9 +322,10 @@ information, Start/shortcut entries, service descriptions and About/diagnostics
 for the exact candidate and selected locales. Shell views expose different
 subsets; a hidden optional field is not necessarily missing. Preserve raw data,
 resource resolution and presented state as separate evidence. Schema/readback
-success does not establish installation, update/recovery, signature trust or
-Store certification. Keep the existing test-signed → submitted → delivered
-qualification stages and current execution holds.
+success does not establish installation, update/recovery or signature trust.
+Keep local/test-signed → final signed/distributed → installed qualification
+stages and current execution holds; signing choices remain deferred without
+blocking independent source/resource preparation.
 
 ## Challenge meaningful failures
 
@@ -329,7 +335,7 @@ generator/collector, include applicable cases such as:
 
 | Fault or edge case | Required independent outcome |
 | --- | --- |
-| Missing required field; unresolved Store identity; placeholder public URL | Current required stage fails with owner/action; source-only preparation can remain explicitly pending |
+| Missing applicable required field; unresolved direct-package identity; placeholder public URL | Current required stage fails with owner/action; source-only preparation can remain pending; unselected Store fields cannot create a publication prerequisite |
 | Wrong publisher or one component's role/name copied into another | Comparison reports the affected surface/component; does not mutate the source to match |
 | Version overflow, prerelease collision or MSI fourth-part-only change | Checked mapping rejects the ambiguity before authoring; valid boundary values remain accepted |
 | Quotes, ampersands, non-ASCII, embedded NUL and long text | Correct target round-trip for allowed text; explicit bounded rejection for invalid data |
@@ -348,11 +354,11 @@ skill. Use admitted instrumentation and scopes when implementation begins.
 
 Report the source/record version and hashes; populated/derived/pending/justified
 absent fields by component, locale and stage; generated outputs; actual readback
-results; signature/installed/Store evidence not yet executed; and the owner of
+results; applicable signature/installed/direct-release evidence not yet executed; and the owner of
 each next action. Keep review corrections in authored inputs and regenerate.
 
-Source preparation can be complete while Store-assigned identity, release
-numbering or native execution is pending. An illustrative TOML/JSON template is
+Source preparation can be complete while the direct-signing profile, release
+numbering or native execution is pending. No Store-assigned identity is required. An illustrative TOML/JSON template is
 not an implemented schema, production record, collector, generator or passing
 artifact check. Rich metadata does not make optional enhanced build provenance
 mandatory, activate MSI delivery or alter David's release authority.

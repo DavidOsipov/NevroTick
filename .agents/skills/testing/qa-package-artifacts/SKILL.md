@@ -1,6 +1,6 @@
 ---
 name: "qa-package-artifacts"
-description: "Independently verify emitted Windows binaries and complete MSIX packages: metadata, signatures, provenance, lifecycle and actual Store-delivered artifacts."
+description: "Independently verify emitted Windows binaries and complete MSIX packages: metadata, signatures, provenance, lifecycle and actual directly distributed artifacts."
 ---
 
 # Inspect built Windows artifacts
@@ -30,7 +30,7 @@ leakage; a public source allowlist cannot qualify a later whole-directory copy.
 The source delivery report's `public_artifacts` describes exposure, not the
 approved shipping inventory; generated Rust/RC source remains a build input.
 Retain one frozen metadata generation and separate compiled, packaged, signed,
-submitted, Store-delivered and installed observations. Source-only delivery
+distributed and installed observations. Source-only delivery
 results leave these real consumer/native gates open.
 
 Identify frozen source/configuration/toolchain/dependency/feature inputs, actual final binary/package hashes. Inspect emitted PE/runtime protections, architecture, versions, manifests/resources, DLL loading dependencies, expected component/service inventory.
@@ -43,7 +43,7 @@ approved upstream signer and actual embedded/catalog/package source separately.
 Preserve approved upstream signatures; do not replace them just to obtain a pass.
 Challenge missing/removed/invalid or wrong-signer signatures, omitted nested PE
 and changed signed scripts beside the fully covered healthy inventory. Reconcile
-required inner signatures again on the actual Store-delivered package. Missing
+required inner signatures again on the actual distributed package. Missing
 signing capability under the declared profile is open work/release blocked, not N/A; signature presence
 alone proves no runtime enforcement. Reuse existing CHECK-18/23/26 and receipt.
 
@@ -74,9 +74,9 @@ must still work. Keep these consumer observations separate from signature
 verification, and record source-based non-applicability where no such consumer
 exists. Do not create a downloader or custom verifier merely to exercise a case.
 
-The selected target is one complete hardened MSIX with UI/engine/broker/administration helper for David's Store trial, under [architecture §19.4](../../../../docs/windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership). Compare actual payloads/installed results; source selection proves no package or qualified implementation. Check package/catalog and project-specific identity, tamper controls, clean-machine operation, one product lifecycle and source/SBOM/provenance obligations. Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for integrity, immutable code and the actual per-role DLL/mitigation profile.
+The selected target is one complete hardened MSIX with UI/engine/broker/administration helper for direct distribution, under [architecture §19.4](../../../../docs/windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05 §7.9](../../../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026). Store publication is rejected; signing/trust choices are deferred. Compare actual payloads/installed results; source selection proves no package or qualified implementation. Check package/catalog and project-specific identity, tamper controls, clean-machine operation, one product lifecycle and source/SBOM/provenance obligations. Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for integrity, immutable code and the actual per-role DLL/mitigation profile.
 
-Follow [the existing stages in §7](../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners). First identify and inspect the complete local candidate; test-signed Windows mechanics run only when prerequisites and execution holds permit. Record which catalog/CIG/activation cases need genuine Store bytes. David then tries the prepared submission with services; prior Store approval or signing is not a prerequisite for its preparation. After Store processing, independently inspect the actual delivered package and rerun affected trust, load, runtime and servicing cases before broad release. Keep local, submitted and Store-delivered hashes distinct. Certification and local schema success are not application passes. Current Core priority, Windows stop, separate fuzz hold and storage pause remain.
+Follow [the existing stages in §7](../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners). Inspect the complete local candidate; test-signed Windows mechanics run only when prerequisites and execution holds permit. Signing choices do not block independent source/resource preparation. No Store trial, approval, refusal or delivered-Store-artifact gate applies. Requalify Store-dependent CIG/catalog/activation assumptions for the eventual direct-signing profile; preserve required protections and leave unavailable cases open. Independently inspect the signed/distributed package and run affected trust, load, runtime and servicing cases before release. Keep build, signed, distributed and installed hashes distinct. Schema success is no application pass. Current Core priority, Windows stop, separate fuzz hold and storage pause remain.
 
 Use the [configured release-inventory workflow](../references/configured-tooling.md#coverage-mutation-and-release-inventory)
 and existing `scripts/generate-sbom.py` wrapper for its current Windows x64
@@ -88,7 +88,7 @@ native libraries, generated/build inputs and complete package payload. The wrapp
 establish full-product completeness, final-byte/signature parity or publication
 authority by itself.
 
-For the selected Store route, verify the exact installed package/publisher/release and content trust, not just a broad Microsoft/Store signer class. Challenge tampered, wrong-project, copied-out and unapproved old-release artifacts beside the intended healthy package. Common catalog trust does not establish independently embedded signatures on every extracted PE or helper authority. CIG admission must match the actual selected mode and runtime image closure, not the Cargo crate list.
+For direct MSIX, verify the exact installed package/publisher/release and content trust, not just a generally trusted signer. Challenge tampered, wrong-project, copied-out and unapproved old-release artifacts beside the intended healthy package. Common catalog trust does not establish independently embedded signatures on every extracted PE or helper authority. CIG admission must match the actual selected mode and runtime image closure, not the Cargo crate list.
 
 MSI delivery remains a later owner decision, not a parallel deliverable or automatic fallback. Every selected route needs the required individual signatures plus its package checks. SignPath may supply inner-file signatures even on MSIX if qualified. The unsigned-MSI/OpenPGP exception is superseded; detached verification cannot replace native signatures. No profile waives native gates or David's release approval.
 
@@ -98,6 +98,6 @@ with the approved payload; exercise its relevant mismatch cases before adoption.
 Provider acceptance leaves independent final-byte, project-identity and installed
 qualification with their existing owners.
 
-For update/repair/Reset/removal and fault/restoration claims use [Windows evidence](../references/windows-evidence.md). Test-signed experiments qualify only declared mechanics; they do not establish Store signer-category admission. Store processing/signing can change bytes; record reproducibility, submitted lineage and final authenticated identity separately.
+For update/repair/Reset/removal and fault/restoration claims use [Windows evidence](../references/windows-evidence.md). Test-signed experiments qualify only declared mechanics; they do not establish public trust or final loading-policy admission. Signing/packaging can change bytes; record reproducibility, build lineage and final authenticated identity separately.
 
-Reject mismatched/tampered artifacts beside legitimate neighboring package controls. TUF/custom-updater research remains unadopted. Report exact inspected outputs, stage-specific gaps and unavailable Windows/security-profile evidence; a Store refusal returns the delivery decision to David rather than silently selecting MSI.
+Reject mismatched/tampered artifacts beside legitimate neighboring package controls. TUF/custom-updater research remains unadopted. Report exact inspected outputs, stage-specific gaps and unavailable Windows/security-profile evidence; a concrete direct-MSIX incompatibility returns the affected decision to David rather than silently selecting MSI or restoring Store publication.

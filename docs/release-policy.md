@@ -1,6 +1,6 @@
 # Release policy and incident recovery
 
-**Prepared:** 4 November 2026.  
+**Prepared:** 4 November 2026; direct-MSIX/no-Store amendment 21 November 2026.
 **Status:** operational specification; support baseline proposed for first-stable
 approval. No stable release, completed rehearsal or native qualification is
 established by this document.  
@@ -16,15 +16,23 @@ bad-release containment and recovery of compromised publication authority.
 [§19.4](windows-time-architecture.md#194-future-complete-msix-gate) own the
 technical lifecycle, protected-state and complete-package requirements.
 
-The selected target is one complete hardened Store MSIX, including services.
-Source/design preparation, permitted local mechanics, David's controlled Store
-submission and actual delivered-artifact qualification remain separate stages.
-MSI delivery remains a later owner choice. [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
-requires the signed package and every supported individual file signature on
-either route; the unsigned-MSI/OpenPGP exception is superseded. SignPath can be a
-candidate for required inner signatures even on MSIX. This policy
-selects no TUF protocol, custom updater, remote kill switch, secondary installer
-or new privileged recovery service.
+The selected target is **one complete hardened MSIX for direct distribution**,
+including services. David rejects Microsoft Store publication because of its
+broad publisher duty to defend and indemnify Microsoft, including legal costs.
+[OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+supersedes the earlier controlled-Store-submission direction. No Store account,
+certification, trial, refusal or Store-produced artifact is required.
+
+**Signing is deferred to later.** Continue source/metadata/package preparation;
+no provider selection, certificate purchase or signing approval is required now.
+This does not establish public trust, an unsigned-release exception or a native/
+release pass. Before actual public distribution, qualify the selected signing,
+trust and delivery profile and the supported individual/package signatures under
+[OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026).
+SDK, runtime and signing-provider terms remain separate; rejecting Store terms
+is not blanket redistribution clearance. Hosting, an automatic updater and a
+signing provider are unselected. MSI remains a later owner choice; no secondary
+installer, remote kill switch or privileged recovery service is introduced.
 
 The later [OD-05 §7.8 clarification](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
 permits interim self-signed MSI if that delivery route is selected. Apply
@@ -44,14 +52,14 @@ does not authorize unrestricted Windows, fuzz, storage or publication work.
 
 | Responsibility | Owner and required output |
 | --- | --- |
-| Stable-support commitment, exact candidate, Store account/submission/visibility and broad release | David. Record the scope/date of each decision; preparation and review confer no publishing authority. |
+| Stable-support commitment, exact candidate, signing/delivery selection and broad direct release | David. Record the scope/date of each decision; preparation and review confer no publishing authority. |
 | Incident coordination and containment decision | David, or a specifically recorded bounded delegate. Identify the incident owner and next action; no backup person or continuous coverage is presumed. |
 | Source/build custody and corrective candidate | Existing build/release owner. Produce the bound source, package and compatibility evidence. |
 | Clock, mandatory state and lifecycle recovery | Existing W11-W05/platform/security/storage owners. Supply a qualified recovery route for the affected installed state. |
 | Independent candidate review | Existing CHECK-24 reviewer. Reconcile actual evidence and residuals; agent review is not another human release approval. |
 
 A credible protected-effect, state-continuity or release-trust failure stops
-further approval/expansion while assessed. External account, credential, Store
+further approval/expansion while assessed. External account, credential, hosting
 and advisory actions remain with their authorized human owner. This preparation
 does not perform or authorize those actions.
 
@@ -65,7 +73,7 @@ does not perform or authorize those actions.
 | Development commits, snapshots, CI artifacts and prototypes | Experimental scope only. Reports about current and older revisions remain welcome through SECURITY.md. |
 | Intended initial platforms | [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience. Exact OS/CPU/protection profiles, supported delivery and package transitions require row-specific qualification; this direction approves no stable-support commitment. |
 
-A source tag, a GitHub release, a private Store candidate or Store certification
+A source tag, a GitHub release, a signed package or a controlled preview
 does not establish production support. Availability of archived bytes does not
 make them recommended for installation.
 
@@ -125,7 +133,7 @@ evidence record. Populate real entries only after the applicable decision.
 
 | Required field | Meaning |
 | --- | --- |
-| Release and package identities | Marketed version; source commit; exact submitted and delivered package identity/version; channel/flight; predecessor and correction links. |
+| Release and package identities | Marketed version; source commit; exact prepared, signed and directly delivered package identity/version; channel/audience; predecessor and correction links. |
 | Status, scope and date | Candidate, controlled trial, approved stable, transition overlap, superseded, quarantined or withdrawn; reason and decision owner. |
 | Supported matrix | Qualified Windows/CPU/policy rows and compatible upgrade/recovery predecessors; explicit unsupported/unverified combinations. |
 | Evidence and approval | Immutable source/build/artifact references, applicable CHECK results, known residuals and exact-candidate approval. |
@@ -145,12 +153,12 @@ Bind approval to an auditable candidate evidence record containing:
 - Source commit/tree, release branch/tag, reviewed changes and immutable workflow
   inputs; toolchain/SDK, lockfile, features, build/native dependencies and licenses.
 - Complete UI/engine/broker/helper and dependency inventory; hashes of the local
-  candidate, submitted package and actual delivered artifacts kept separately.
-  Reconcile manifests, catalog, installed payloads and SBOM after Store processing.
+  candidate, signed package and actual directly delivered artifacts kept separately.
+  Reconcile manifests, catalog, installed payloads and SBOM after every transformation.
 - Bundled public-data inputs/generator/revision/digests, including the selected
   leap calendar and any admitted catalogue generation. Data travels through the
   approved complete release; this record adds no separate update channel.
-- Package/publisher/product identity, submitted/delivered version, capabilities,
+- Package/publisher/product identity, prepared/signed/delivered version, capabilities,
   platform applicability, launch paths, effective mitigations and helper/IPC
   admission evidence. Signer class alone is not product-role authority.
 - Each claimed [client/Server profile](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026):
@@ -167,7 +175,7 @@ Bind approval to an auditable candidate evidence record containing:
   and W11-W10/S6.4 receipt; a catalog result cannot supply embedded-padding evidence.
 - [Complete required signature inventory](windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory):
   actual format/nesting, expected project or approved upstream signer, separate
-  individual/package results and post-Store preservation. Reconcile every shipped
+  individual/package results and final delivered-signature preservation. Reconcile every shipped
   supported signable file, including nonbinary formats; retain exact bytes and
   unresolved capability/coverage blockers. No catalog-only or OpenPGP exception.
 - For an admitted interim self-signed MSI, name the profile, independently
@@ -175,7 +183,7 @@ Bind approval to an auditable candidate evidence record containing:
   failure and actual policy/installation outcomes. Keep that accepted trust
   limitation visible in release status and later signer-migration records;
   it is not a public publisher-trust pass or a claim that users verify the key.
-- Audience, visibility, flight/rollout state, observation/stop criteria, recovery
+- Audience, direct-channel availability, rollout state, observation/stop criteria, recovery
   target, approval owner/date and subsequent publication/availability observations.
 
 Changing a bound package, generated input or workflow invalidates affected
@@ -190,23 +198,24 @@ or a GitHub/Sigstore attestation.
 
 ### 3.2 Promotion sequence
 
-1. **Prepare:** establish the complete source/design profile and applicable
+1. **Prepare:** establish the complete direct-MSIX design and applicable
    architecture gates. Define compatibility and recovery before a new writer
-   can modify mandatory state.
+   changes mandatory state. Continue while signing is deferred; preserve exact
+   unresolved signer/trust fields instead of inventing values or blocking source work.
 2. **Qualify local mechanics when admitted:** inspect the actual candidate and
-   run the required component/native/lifecycle cases in the permitted environment.
-   Record test trust roots and substitutions; they prove no final Store trust.
-3. **Controlled submission:** David approves the exact submission candidate and
-   intended restricted audience. Configure the appropriate publication hold and
-   audience before submission; see §4. A Store signature is not required before
-   preparing or submitting this first candidate.
-4. **Qualify delivery:** obtain the actual Store-delivered candidate through the
-   intended route; reconcile its identity/content and all affected Windows,
+   run required component/native/lifecycle cases in the permitted environment.
+   Record laboratory trust substitutions; they prove no public publisher trust.
+3. **Resolve signing and controlled delivery later:** David selects the actual
+   signing/trust and hosting arrangements before distribution. Freeze the exact
+   candidate, required signatures and intended audience. No Store trial or
+   approval is part of this sequence, and this document creates no signing task now.
+4. **Qualify delivered bytes:** obtain the final directly distributed candidate
+   through the intended route; reconcile content/identity and affected Windows,
    privilege, mitigation, maintenance and recovery observations.
 5. **Approve stable/broad availability:** complete independent CHECK-24 review;
-   David decides the exact delivered candidate, support table and distribution
-   scope. Expansion requires its recorded observation/stop criteria, not merely
-   a successful build, certification or elapsed waiting period.
+   David decides the exact candidate, support table and scope. Expansion follows
+   recorded observations and stop criteria, not merely a build, valid signature
+   or elapsed waiting period.
 
 Keep required failures, unexecuted checks and unresolved technical blockers
 visible. Emergency urgency can remove unrelated optional work; it cannot convert
@@ -217,7 +226,7 @@ for unrelated portable Core work.
 
 [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
 records David's accepted decision: artifact attestations, independent
-reproducible builds and a public source-to-Store evidence bundle are optional
+reproducible builds and a public source-to-release evidence bundle are optional
 release strengthening. The [research and possible experiment](plans/release-provenance.md)
 add no mandatory row to §9 and no prerequisite to §3.2, P6/P7 or release approval.
 Their absence alone is not a blocker; report an unperformed or unsuccessful
@@ -233,9 +242,11 @@ decision does not approve the proposed first-stable support terms in §2.
 
 [OD-17](nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
 requires [WinGet delivery capability](plans/winget-distribution.md) before V1
-within P6/P7. Preserve the complete Store MSIX and qualify `msstore` first;
-Community publication is conditional on an authorized public trusted complete
-installer. W11-W10/W11-W05 own the existing implementation and evidence chain.
+within P6/P7. Preserve the complete directly distributed MSIX. OD-05 §7.9
+withdraws the former `msstore`/ProductId-first route. Reconcile Community-source
+capability to an authorized public trusted complete package when signing/delivery
+are resolved; preparation may continue meanwhile. W11-W10/W11-W05 retain the
+existing implementation and evidence chain. No source-availability pass is implied.
 
 Record WGT-C01 pre-V1 capability independently from WGT-C02 externally observed
 catalog availability. Bind source/identifier/version/scope to the approved exact
@@ -254,11 +265,38 @@ covered in the [automation contract](plans/winget-distribution.md#6-release-auto
 
 David retains account, credential, submission and visibility actions under §1.
 No WinGet invocation in the time service, automatic customer update promise or
-second installer is added. Removing a catalog entry, withdrawing a Store listing
-or changing GitHub availability does not repair/recall installed copies; include
+second installer is added. Removing a catalog entry or changing download
+availability does not repair/recall installed copies; include
 every admitted channel in the existing incident and corrective-release record.
 
-## 4. Distribution containment: choose the actual Store operation
+<a id="4-distribution-containment-choose-the-actual-store-operation"></a>
+
+## 4. Distribution containment for direct MSIX
+
+The direct hosting/update arrangements remain unselected. Before publishing,
+record the actual channel owner, supported availability controls and observed
+limits. These are release-stage requirements, not a new prerequisite to package
+preparation or a decision to build an updater. [MS-22]
+
+| Situation/control | Operational meaning and required decision |
+| --- | --- |
+| Candidate not yet public | Keep exact bytes private under the selected preview access controls. An unlisted public URL is not private access control. |
+| Unsafe public package | Stop recommending it and use the chosen host/catalog's supported withdrawal controls; independently observe what remains downloadable, cached or mirrored. Preserve immutable incident evidence. |
+| Bad update feed, if a feed is later selected | Stop offering the suspect update; assess the fallback independently and publish only a qualified compatible correction. Feed change does not roll back installed copies. |
+| Restricted preview or staged expansion, if selected | Define and test actual access/membership and delivery behavior; do not assume Store flights or percentage rollout exists on an ordinary download host. |
+| Corrective release | Bind approved final bytes to a suitable higher version and compatible installed-state transition. Observe actual acquisition/update; status changes alone prove no recovery. |
+| Withdrawn release or removed catalog entry | Record the action and its remaining audiences. Previously downloaded or installed copies are not recalled automatically. |
+
+A GitHub warning or removed download pointer is one containment action; it does
+not repair installed state. If immutable releases are enabled, asset/tag edit
+constraints differ from notes/status. Use actual supported controls without
+assuming that setting is enabled or making it mandatory here. [W06]
+
+### Historical Store operations — unselected
+
+The following dated research belongs to the rejected Store route. It is retained
+for provenance and existing links; no row is a NevroTick submission, rehearsal,
+account or release prerequisite under OD-05 §7.9.
 
 Microsoft's documented controls affect different populations. Recheck the real
 product/account and preserve observed results when used; this table is not
@@ -307,13 +345,13 @@ a working recovery command exists today.
 ### 5.1 Declare, preserve and stop expansion
 
 Record incident identifier, coordinator, detection/report time and uncertainty,
-exact suspected source/build/submitted/delivered versions, symptoms, affected
+exact suspected source/build/signed/delivered versions, symptoms, affected
 platforms, reachable protected effects and contrary evidence. Distinguish a
 regression from suspected unauthorized publication; enter §7 as well when
 publication or build trust is uncertain.
 
 Freeze promotion and prepare the appropriate §4 action for David. Capture useful
-artifact/submission/access evidence before removal where feasible. Record the
+artifact/publication/access evidence before removal where feasible. Record the
 requested action, actual provider result, time basis and remaining audiences.
 Contain credible clock-ownership, mandatory-state or release-trust failures before
 claiming a complete impact count. Do not call a suspicion confirmed intrusion.
@@ -356,31 +394,32 @@ Choose a bounded fix or reviewed source reversion and bind its new candidate
 under §3. Include the causal defect, affected-state fixtures and valid neighboring
 operation. A trusted clean installation alone is insufficient.
 
-For the normal Store path, make the correction greater than every affected
-applicable installed version, including exposed flights and Store-modified
-version components; verify actual applicability and installation from each
-required predecessor. The Store owns the submitted version's fourth component
-under its Windows 10/11 rules, and numeric fields are bounded. Qualify the actual
-desktop package rules and reserve usable version headroom. [MS-05]
+For the selected direct-MSIX route, give the correction a version greater than
+every affected applicable installed version and verify actual installation from
+each required predecessor. Retain the bounded four-component package version,
+identity/signing continuity and usable version headroom; do not import Store's
+submission-specific fourth-component rules into direct authoring. Freeze the
+actual supported deployment/update mechanism before claiming its behavior.
 
-A compromised publisher might consume that headroom. If an admissible higher
-version, recovered identity or required state transition is unavailable, keep
-the incident unresolved and bring a concrete provider-assisted recovery choice
-to David. Do not silently change package identity, add a sideload/MSI route,
-force a downgrade or reset authority. App Installer's separate downgrade feature
-does not establish ordinary Store recovery and is not selected. [MS-10]
+A compromised publisher could consume version headroom. If a higher acceptable
+version, recovered signing identity or required state transition is unavailable,
+keep the incident unresolved and bring a concrete recovery choice to David.
+Do not silently change package identity, switch to MSI, force a downgrade or
+reset clock authority. App Installer's optional downgrade setting is not
+selected and does not establish safe mandatory-state recovery. [MS-10]
 
 ### 5.5 Requalify, publish and observe
 
 Run defect-specific and affected lifecycle/security cases plus all applicable
 release gates; retain independent healthy controls and exact-candidate review.
-Follow §3's local → controlled Store → delivered-artifact → broad-release stages.
+Follow §3's local preparation → later signing/controlled delivery → final-artifact
+qualification → broad-release stages.
 A rebuild or changed delivery artifact requires affected evidence reconciliation.
 
 David approves the identified correction and containment/resumption action.
 Publish the §8 advisory through an authorized channel; record actual corrected
 acquisition and installed-case outcomes separately. Do not infer fleet repair
-from publication success, a slider percentage or the absence of reports.
+from publication success, a rollout setting or the absence of reports.
 Offline/blocked clients retain explicit follow-up status.
 
 ## 6. Mandatory-state compatibility and owned recovery
@@ -490,11 +529,11 @@ Required trust failure cannot admit an unverified helper.
 
 ### 7.1 Trust boundary and residual
 
-**A malicious same-product package published through compromised Store authority
-may carry a valid Microsoft signature. No independent on-device admission
+**A malicious same-product package produced through compromised signing/release
+authority may carry a valid trusted signature. No independent on-device admission
 mechanism has been established that guarantees rejection of that package.**
 It may replace the very binaries or local checks expected to enforce approval.
-The existing rejection requirements for unrelated Store packages, tampering,
+The existing rejection requirements for unrelated signed packages, tampering,
 copied-out helpers and inadmissible older artifacts apply at a still-trusted
 boundary; they do not demonstrate protection against replacement of that boundary.
 
@@ -509,8 +548,9 @@ neither accepts the residual for David nor selects a new verifier. [MS-05, W07]
 
 ### 7.2 Readiness before a real stable release
 
-Maintain a private minimal access/recovery inventory: actual MSA or Entra account
-type, accountable owner, authorized users/groups/apps, publication permissions,
+Maintain a private minimal access/recovery inventory for the later chosen
+signing, repository, hosting and delivery providers: actual account type,
+accountable owner, authorized users/groups/apps, publication permissions,
 credential expiration/renewal owner, notification/recovery contacts, provider
 routes, independently retained approved artifacts and where protected recovery
 material is kept. Record no passwords, tokens, private keys or recovery codes
@@ -523,18 +563,17 @@ device. No backup responder, independent warning channel or quorum is presumed;
 name a real arrangement before relying on it. David's absence does not delegate
 his approval. [W16]
 
-For Store MSIX, Microsoft supplies outer-package signing during publication; there is no
-assumed project-owned Store signing certificate to revoke or renew. The inventory
-must address the actual identity and submission credentials, plus the production
-signers required for inner artifacts by OD-05 §7.7. Their provider/approval/renewal
-and revocation procedures apply even on MSIX. A later selected MSI requires its
-own package-specific procedures as well. [MS-05, MS-13]
+When signing resumes, include the actual package and inner-file signer,
+provider/approval controls, key or service-credential custody, renewal, rotation
+and revocation procedures. Do not assume Microsoft supplies an outer Store
+signature or that one provider signs every format. This inventory is future
+release work; signing deferral does not block independent preparation.
 
 ### 7.3 Contain authority and establish a trusted baseline
 
 1. **Declare uncertainty:** bound the possible compromise interval and affected
    source, workflow, build, publication and communication principals. Preserve
-   non-secret IDs, logs, submission history and chronology through §8.
+   non-secret IDs, logs, signing/publication history and chronology through §8.
 2. **Use trustworthy access:** recover from an independently trusted device/
    session through the applicable route below. Secure associated email,
    authentication and recovery settings. Do not use the suspect account's
@@ -543,11 +582,11 @@ own package-specific procedures as well. [MS-05, MS-13]
    tokens/keys, automation and account changes. Revoke/rotate affected material
    through its owner and verify the actual result. Removing one password or
    grant does not prove every remaining session/application lost access.
-4. **Contain publication separately:** inspect active/scheduled submissions,
-   flights, availability and contact changes; apply §4 and ask Store support for
-   incident-specific help where necessary. Record what the provider actually
-   confirms. No publisher-controlled Microsoft-certificate revocation or
-   universal remote uninstall is established.
+4. **Contain publication separately:** inspect signing requests, release jobs,
+   download/update pointers, catalog records, availability and contact changes.
+   Apply §4 and use the actual provider's recovery route where necessary. Record
+   the observed scope of key/service-access revocation; neither account recovery
+   nor a valid revocation request establishes universal remote uninstall.
 5. **Re-establish release custody:** inventory commits, tags, releases, workflow
    revisions, dependencies, generated data, caches and artifacts in the uncertain
    interval. Reconcile against independently retained identities, remove the
@@ -565,6 +604,13 @@ own package-specific procedures as well. [MS-05, MS-13]
 
 ### 7.4 Provider-specific owner actions
 
+Use only rows matching the signing/hosting arrangement David later selects.
+Microsoft-account/Entra entries may be relevant to a separately chosen service;
+Partner Center and Store entries are historical unselected-route research.
+Do not create or recover a Store account as a direct-MSIX prerequisite. The
+selected signer's own key/service incident procedure remains to be filled when
+signing work resumes.
+
 | Authority/problem | Prepared recovery route and limitation |
 | --- | --- |
 | Personal Microsoft account | Use the [compromised-account guide](https://support.microsoft.com/en-us/account-billing/how-to-recover-a-hacked-or-compromised-microsoft-account-24ca907d-bcdf-a44b-4656-47f0cd89c245) and its Sign-in Helper. The [recovery-form guidance](https://support.microsoft.com/en-us/account-billing/help-with-the-microsoft-account-recovery-form-b19c02d1-a782-dee6-93c3-dc8113b20c42) describes limits when all two-step-verification methods are lost; support recovery is not guaranteed. [MS-17, MS-18] |
@@ -576,7 +622,7 @@ own package-specific procedures as well. [MS-05, MS-13]
 
 These are preparation links, not evidence that a NevroTick account, alternate
 identity or recovery contact has been configured or tested. Do not substitute
-a CSP/Azure-subscription runbook for the actual Store developer account.
+a generic CSP/Azure/Store runbook for the actual selected signing or hosting provider.
 
 ## 8. Evidence, communication and closure
 
@@ -595,7 +641,7 @@ No default telemetry or automatic upload is introduced. [W08]
 
 An authorized incident update states: affected and corrected exact identities;
 facts/uncertainty and reachable impact; the qualified local action or explicit
-recovery gap; corrective acquisition path and prerequisites; offline/flight/
+recovery gap; corrective acquisition path and prerequisites; offline/audience/
 applicability limits; reporting contact; and the next update owner. A
 [repository security advisory](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory)
 can serve a genuine vulnerability; ordinary regressions need not become CVEs.
@@ -618,7 +664,7 @@ a release blocker regardless of administrative incident status. [W08, W09]
 
 ## 9. Qualification matrix and remaining decisions
 
-All product/account/Store cases below are **planned, not executed by this
+All applicable product/signing/delivery cases below are **planned, not executed by this
 documentation work**. Preserve existing CHECK owners and candidate-specific
 receipts; this is not a new acceptance catalog.
 
@@ -630,9 +676,9 @@ is unresolved. No client result silently qualifies Server, and OPEN-2 stays open
 | Distinguishing case and useful control | Required observation | Existing owners/environment |
 | --- | --- | --- |
 | Supported-release transition; latest quarantined | Previous qualified route persists while its replacement is unavailable, unless unsafe; an unassessed predecessor is never silently recommended. A no-qualified-stable state is expressible. | CHECK-24; David/release; document/tabletop, then actual channel evidence. |
-| Private initial audience, later flight and percentage rollout | Membership/rank/applicability and update-percentage controls are distinguished; intended tester obtains the correction, outsider/private and wrong-flight cases match the declared scope. | W11-W10, CHECK-18/23/24; David-controlled Store candidate. |
-| Halt/unsafe fallback/cloned submission | Record actual fallback and retained installed version; cloned package inventory contains only intended candidates. Healthy corrective acquisition succeeds. | CHECK-18/23/24; controlled Store evidence. |
-| Corrective greater version, skipped releases, applicability/headroom | Affected public/flight predecessors reach the intended correction; stranded/unsupported cases are explicit, not forced downgrades. | OPEN-11/14, CHECK-18/23/26; package and delivered/native evidence. |
+| Restricted preview and staged availability, if selected | Actual chosen-channel access and audience controls are distinguished; intended tester obtains the correction and excluded audiences receive no claimed private access. No Store flight or rollout service is assumed. | W11-W10, CHECK-18/23/24; later selected direct channel. |
+| Withdraw unsafe download/update offer | Record actual host/catalog action, remaining cached/acquired bytes and independently assessed fallback; healthy corrective acquisition succeeds. No installed-copy recall is inferred. | CHECK-18/23/24; later selected direct channel. |
+| Corrective greater version, skipped releases, applicability/headroom | Affected public/preview predecessors reach the intended correction; stranded/unsupported cases are explicit, not forced downgrades. | OPEN-11/14, CHECK-18/23/26; package and delivered/native evidence. |
 | Defective/new schema and mixed components | Required states migrate or safely refuse without losing authority; valid compatible update works. If refusal leaves prior takeover, recovery remains actually available. | CHECK-13/15/23/25; state/lifecycle owners, host contracts then disposable Windows. |
 | Reservation/effect/outcome/reply interruptions | Reached failures around writes/flushes/effect/acknowledgement preserve uncertainty and consumed authority; reconciled healthy operation works. | CHECK-10/12/13/15; broker/storage, authorized native effect lane. |
 | Successor, administrator/GPO change and queued SCM restart | No stale reset, W32Time handback beneath successor or maintenance bypass; authorized current-owner restoration succeeds. | W11-W05, CHECK-5/12/13/23/27; disposable Windows with external restoration owner. |
@@ -640,10 +686,10 @@ is unresolved. No client result silently qualifies Server, and OPEN-2 stays open
 | Mandatory corruption, optional cache and wrong intact floor | Mandatory failure blocks unsafe effects; optional reacquisition remains useful; authorized narrow floor supersession preserves history/authority and unauthorized reset fails. | CHECK-9/12/15/25, OPEN-6; trust/storage owners, required host/native layers. |
 | Whole-environment rollback | Report demonstrated within-model controls and the unqualified privileged-snapshot residual separately; no file-authentication claim becomes universal anti-rollback. | CHECK-11/12/15; security/platform, admitted VM scenario. |
 | Wrong-date/offline/stale or absent trust cache | Actual declared verifier/retrieval/custody and recovery behavior, with intended allowed path and hostile helper refusal; no trust-check bypass. | CHECK-9/18/23/27; signing §5.1, actual delivered artifact/native Windows. |
-| Wrong, tampered, unrelated Store, copied-out or unapproved old code | Still-trusted admission boundary denies product authority to the inadmissible artifact; intended package/helper works. | CHECK-1/2/16/18/23; release/platform/security, exact installed artifact. |
+| Wrong, tampered, unrelated signed, copied-out or unapproved old code | Still-trusted admission boundary denies product authority to the inadmissible artifact; intended package/helper works. | CHECK-1/2/16/18/23; release/platform/security, exact installed artifact. |
 | Authentic malicious same-product publication | Tabletop/inert fixture distinguishes signature success from approval. Document the absent independent gate, trustworthy recovery route or unresolved exposure; do not record automatic rejection as passed. | THR-15, OPEN-11, CHECK-18/20/24; release/security, then separately admitted account/native evidence. |
 | Account/application access recovery and renewal | Real roles/routes are available; authorized test access removal and remaining session limits are observed. Publishing and installed-device recovery stay separate. | W11-W10, CHECK-18/20/24; private inventory/tabletop, separately authorized account exercise. |
-| Corrective source/build/delivered custody | Substitution/unexpected inputs fail the actual release gate; reviewed valid candidate, full inventory/generated data and licenses reconcile. | CHECK-18/19/20/24/26; build/release and final Store evidence. |
+| Corrective source/build/delivered custody | Substitution/unexpected inputs fail the actual release gate; reviewed valid candidate, full inventory/generated data and licenses reconcile. | CHECK-18/19/20/24/26; build/release and final direct-delivery evidence. |
 | Support export and incident guidance | Synthetic secret/error cases yield useful bounded redacted output; incomplete observations remain explicit; guidance names only a qualified local action. | CHECK-14/17/24/27; diagnostics/release, content review then actual export/native paths. |
 
 Before the first stable commitment, David must resolve §2's proposed maintenance
@@ -724,3 +770,5 @@ Mutable provider behavior must be rechecked before the corresponding real action
 | GH-6 | [Firefox startup, same pin](https://github.com/mozilla-firefox/firefox/blob/f0d8507effaed215a7ff810b76c9bc5d3f11a6ab/toolkit/xre/nsAppRunner.cpp): major-version downgrade guard and overrides, not a privileged-ledger design. |
 | GH-7 | [tj-actions maintainer incident statement](https://github.com/tj-actions/changed-files/issues/2464#issuecomment-2727015352): March 2025 upstream response and distinct downstream actions; mutable primary statement. |
 
+
+- **MS-22:** [Direct MSIX distribution](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/choose-distribution-path) and [web distribution/signing](https://learn.microsoft.com/en-us/windows/msix/app-installer/installing-windows10-apps-web). Direct download and optional App Installer updates are supported mechanisms, not a selected NevroTick host, updater or signing provider.

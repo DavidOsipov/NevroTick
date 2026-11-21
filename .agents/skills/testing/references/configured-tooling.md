@@ -266,6 +266,6 @@ The wrapper currently fixes `x86_64-pc-windows-msvc` through
 admission, not an invented `--target` argument. It admits cargo-cyclonedx and
 freezes source/graph/configuration, requiring real manifests, lockfile and cached
 dependencies. Reconcile its Rust
-inventory with native/generated/resources and the selected submitted and actual
-Store-delivered MSIX inventories and final artifacts; generation alone proves
+inventory with native/generated/resources and the built, signed and actually
+distributed MSIX inventories and final artifacts; generation alone proves
 neither complete-product inventory nor permission to publish.

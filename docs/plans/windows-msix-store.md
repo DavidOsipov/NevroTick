@@ -1,6 +1,6 @@
-# Complete MSIX and Microsoft Store: hardening and delivery plan
+# Direct MSIX distribution: hardening and delivery plan
 
-**Status:** owner-selected preparation target; implementation, native qualification and Store acceptance pending.<br>
+**Status, amended 21 November 2026:** complete MSIX for direct distribution; Microsoft Store publication rejected. Signing remains deferred and unresolved; implementation and native qualification remain open.<br>
 **Recorded:** 3 November 2026 (UTC+04:00); sources checked 2 November 2026 UTC.  
 **Repository basis:** `070927855ed99e1a0683d9f291d3462d33343118`.  
 **Hardening amendment:** 3 November 2026, against `661281ad0e6504338d352b943154522b800974fa`; new Microsoft Learn sources checked on that date.<br>
@@ -12,34 +12,45 @@ the official SignPath conditions. Search snippets were not the final evidence.
 
 ## 1. Decision, authority and evidence limits
 
-**An accepted complete Store MSIX can remove the need to purchase and manage a
-public package-signing certificate.** Store hosting, updates and package identity
-also support the selected distribution direction. These benefits do not establish
-that NevroTick's service isolation and recovery lifecycle fit that channel. [S01,
-S02, S08]
+**Owner decision, 21 November 2026:** NevroTick will **not be published in
+Microsoft Store**. David rejects the Store App Developer Agreement's broad
+publisher obligation to defend and indemnify Microsoft and other covered
+parties, including legal costs. The reviewed agreement is version 8.11,
+effective 17 April 2026, §10(c). This is the owner's distribution decision, not
+an assertion about enforceability in every jurisdiction. [S122]
 
-**Owner decision, 3 November:** prepare one complete MSIX with the strongest
-compatible, supported and verified protections; David will try publishing it in
-Microsoft Store with its services and reconsider delivery if rejected. This
-supersedes the earlier MSI-first/MSIX-conditional selection in this study. Store
-preapproval is not a prerequisite to source/design work or preparing a submission
-candidate. The [amended OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
-owns that direction; [architecture §19.4](../windows-time-architecture.md#194-future-complete-msix-gate)
-owns the technical qualification required before release.
+Prepare **one complete MSIX for direct distribution**, including the UI, engine,
+broker, helper and required payloads. The
+[OD-05 §7.9 amendment](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+supersedes the 3 November Store-attempt/reconsider-after-refusal direction.
+No Store account, trial submission, certification, refusal or Store-produced
+artifact is a prerequisite. Store research below is retained for history and
+comparison; its benefits and procedures do not authorize a Store route.
 
-The complete MSIX must contain the UI, engine, broker, helper and required payloads.
-No MSI-service/MSIX-UI split, separate service prerequisite, broader LocalSystem
-broker or hidden orphan component follows from free signing.
-Keep complete MSI as a possible later owner-selected delivery alternative, not
-an automatic fallback, parallel v1 deliverable or predecessor to MSIX preparation.
+Signing and target-device trust will be resolved later. Continue source,
+metadata and package preparation without a signing-provider selection or new
+signing approval step. This deferral does not establish a signed artifact,
+public Windows trust, an unsigned-release exception or native/release readiness.
+The existing supported-file signature requirements in
 [OD-05 §7.7](../nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
-now requires all supported individual signatures plus the package on either route;
-the unsigned-MSI/OpenPGP permission is superseded. SignPath is a candidate for
-required inner-file signing even on MSIX, subject to actual eligibility. Bring an
-actual Store refusal or concrete incompatibility to David with evidence.
+remain for eventual distribution. No hosting, updater or signing provider is
+selected by this amendment. Direct MSIX distribution is documented by Microsoft;
+SDK tools and redistributed runtimes retain their separate licence obligations.
+Rejecting Store terms does not clear those components. [S123, S124]
+
+Preserve the complete-package and strongest-compatible-hardening contracts:
+no MSI-service/MSIX-UI split, separate service prerequisite, broadened broker
+rights or hidden orphan component. The former Store-compatible CIG assumptions
+need a direct-distribution disposition against the actual signer/module graph;
+ordinary publisher trust is not Store-signer admission. Services, custom
+capabilities, protected state, update/removal and wrong-clock behavior still need
+native qualification. MSI remains a possible later owner-selected alternative,
+not an automatic fallback or prerequisite. Architecture
+[§19.4](../windows-time-architecture.md#194-future-complete-msix-gate) owns those
+technical gates.
 
 This report records documented facts, project-specific inferences and unresolved
-questions separately. It establishes no Store permission, applicant eligibility,
+questions separately. It establishes no signing-provider acceptance, public publisher trust,
 package build, native execution, offline activation or release approval. Current
 portable Core priority, Windows execution stop, separate fuzz no-retry hold,
 storage-experiment pause and UI-M0/D1–D3 boundaries remain unchanged. The existing
@@ -50,11 +61,16 @@ for phase placement. This is not another acceptance catalog or execution plan.
 
 ## 2. Distribution economics and publisher identity
 
+**Current route:** direct MSIX; signing and publisher identity remain unresolved.
+The Store comparisons, onboarding instructions and dated prices in this section
+are historical research, not tasks or prerequisites under OD-05 §7.9. Only a
+later explicit owner decision could reopen Store publication.
+
 | Route | Documented responsibility | Consequence |
 | --- | --- | --- |
 | Complete MSIX through Store | Microsoft re-signs after certification; no developer CA-trusted certificate/token/HSM purchase is required for the outer Store signature. [S01, S02] | Free outer-package signing does not supply the individual signatures required by amended OD-05; their production capability remains open. |
 | Complete MSI/EXE listed in Store | Publisher supplies an immutable versioned HTTPS installer URL; installer and all included PE files need trusted Authenticode signatures. Microsoft does not re-sign them. [S03, S08] | Listing the current MSI does not solve signing. OpenPGP sidecars do not satisfy this Store requirement. |
-| Developer-built MSIX distributed directly | Publisher establishes package signing and target-device trust. [S01, S02] | Store is not a general free certificate for arbitrary external builds or portable binaries. |
+| Developer-built MSIX distributed directly | Publisher establishes package signing and target-device trust. [S123, S124] | **Selected route.** Signing is deferred; preparation continues without claiming public trust or installability. |
 | Complete MSI through SignPath Foundation | Free managed signing for accepted OSS projects, subject to provider conditions. [S27] | Existing conditional alternative; compare its actual eligibility and implementation cost with complete MSIX. |
 
 The verified MSIX submission fact is absence of a **CA-trusted developer
@@ -122,7 +138,7 @@ embedded-padding result requires its own applicable
 [signing-guide check](../windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes).
 No valid carrier signature authorizes excluded application data or a substituted
 component. Reuse approved complete-byte custody at each actual delivery stage;
-qualify required inner-signature preservation on the actual Store-delivered
+qualify required inner-signature preservation on the actual directly distributed
 artifact. A catalog-only shipped PE no longer meets the owner requirement.
 
 **Project inference:** the intended helper must belong to the approved installed
@@ -133,10 +149,11 @@ identity and protected installed paths; do not use a broad Microsoft/Store signe
 class as project authorization. No particular package-aware verifier recipe was
 qualified here.
 
-The intended production profile includes **CIG with the explicit Store-signed
-image allowance**. Qualify the actual Rust/native DLL closure and activation
-mechanism for each role; the selection is not evidence that the binaries already
-support it. Test intended imports and allowed workflows beside tampered,
+The intended production profile retains **the strongest supported compatible
+protections for direct distribution**. The former Store-signed CIG allowance is
+not an adopted solution for publisher-signed binaries. Resolve the actual
+Rust/native DLL closure, signer classes and activation mechanism per role; a
+documented profile is not evidence that the binaries already support it. Test intended imports and allowed workflows beside tampered,
 copied-out and wrong-project artifacts. Keep CIG, package identity, helper
 authorization and release approval distinct. [S13, S31]
 
@@ -163,8 +180,8 @@ prefix added to the existing `IgnorableNamespaces` list. It is a requirement for
 future authoring, **not a deployable product manifest**. The documented minimum
 is build 19041; NevroTick still needs its selected client/Server qualification
 matrix under [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope).
-Use explicit `on`: the documented `default` behavior is `off`. Store integrity
-and repair behavior does not remove the obligation to inspect the delivered
+Use explicit `on`: the documented `default` behavior is `off`. Package signing
+and repair behavior do not remove the obligation to inspect the delivered
 manifest and observe tamper handling. [S34–S36]
 
 The package/build owner must also establish:
@@ -200,15 +217,15 @@ The package/build owner must also establish:
 
 The frozen release inventory binds source/build inputs, actual PE files, native
 dependencies, resources, manifest, package identity, SBOM and corresponding-source
-obligations. Preserve both submitted and Store-delivered identities because Store
-processing/signing may change bytes. A Cargo crate list is not an inventory of
+obligations. Preserve prepared, signed and directly downloaded identities because
+signing or any other admitted transformation may change bytes. A Cargo crate list is not an inventory of
 runtime DLLs; inspect the emitted and actually loaded images.
 
 The [selected leap dataset and policy](leap-second-policy.md#3-knowledge-and-distribution-contract)
 are **reviewed immutable generated data compiled into the admitted consumers**,
 delivered through this same authenticated complete release. Bind pinned source
 identities, generator version, normalized data/policy revision and digest, and
-supported coverage to the build and submitted/Store-delivered records. No build
+supported coverage to the build, signed and directly distributed records. No build
 silently fetches mutable upstream data; no new downloader, arbitrary runtime file
 path, hot replacement or TUF trust root follows. A corrupt payload is a package
 integrity failure; valid unknown future coverage is a policy state, not an
@@ -255,11 +272,20 @@ under the correct identity, and a harmless unlisted executable being refused
 when attempting to use that identity through the exercised launch mechanism.
 Cover UI, actual SCM services and the installed elevated helper separately;
 record whether each really has package identity. Recheck the catalog and launch
-results on Store-delivered bytes. Local test signing, a generic startup result
+results on the final directly distributed bytes. Local test signing, a generic startup result
 or one UI observation does not qualify the other roles. No such native case has
 run in this source continuation.
 
 ### 3.2 Store-compatible code integrity guard
+
+**21 November disposition:** the heading and API research are retained for
+existing links. This Store-specific profile is no longer the selected delivery
+assumption. W11-W10/security must qualify the strongest compatible direct-MSIX
+profile per real role and dependency graph. A CA/SignPath signature does not
+become a Microsoft or Store signature; record concrete compatibility limits and
+any owner disposition rather than silently dropping or falsely claiming CIG.
+Signing-provider selection is deferred; this technical work does not require
+a Store trial or interrupt independent source/package preparation.
 
 Microsoft documents CIG for Store-distributed third-party applications with
 **“Also allow loading of images signed by Microsoft Store”** enabled. The
@@ -288,20 +314,18 @@ does not retroactively prove initial-load protection. No external bootstrapper,
 system-wide Exploit Protection rewrite or unsupported SCM hook is selected by
 this requirement. [S33, S43]
 
-Qualify the exact installed **Store-signed artifact**, including lazy-loaded CRT,
-TLS/crypto/storage providers and supported UI accessibility workflows. A local
-test-signed package can qualify declared mechanics but is not proof of Store
-signer-category admission. Audit settings can help measure compatibility;
-audit-only evidence is not enforcement. When an existing supported mechanism
-is used to export Exploit Protection XML, retain its actual exported settings;
-do not invent XML element/attribute names. [S31, S32]
+For the direct route, qualify the exact installed **publisher-signed artifact**
+and its selected policy, including lazy-loaded CRT, TLS/crypto/storage providers
+and supported UI accessibility workflows. A local test-signed package qualifies
+only its declared laboratory mechanics. Audit settings can measure compatibility;
+audit-only evidence is not enforcement. Retain actual exported Exploit Protection
+settings rather than inventing XML element or attribute names. [S31, S32]
 
-Failure to establish a required signature policy blocks the affected role's
-network acquisition, sensitive IPC or clock authority. Diagnose and recover via
-the separately trusted, bounded lifecycle path; do not retry by disabling CIG or
-accepting arbitrary signed DLLs. A stricter Microsoft-only mode may replace the
-Store-compatible mode only if the exact role and delivered dependency graph
-actually pass; Store signing alone does not establish that result.
+A required effective policy failure denies the affected role's network,
+sensitive IPC or clock authority, while preserving separately qualified bounded
+recovery. Do not retry by silently weakening the profile or accepting arbitrary
+signed DLLs. Reconcile any incompatible CIG signer class with the existing
+strongest-compatible policy and owner decision before a production claim.
 
 ### 3.3 Strongest compatible process protections
 
@@ -320,7 +344,7 @@ enforcement or lift the current execution holds.
 | Control | Required target and compatibility boundary |
 | --- | --- |
 | DEP/NX, ASLR, high entropy, CFG | Preserve the build baseline; inspect final images and instrumented call sites/dependencies. Strict CFG is the target when every executable module supports it; do not manufacture compatibility by dropping instrumentation. CFG has no audit mode. |
-| CIG | Store-compatible enforced profile in §3.2 for each role, with independently authorized helper/package identity. |
+| CIG | Direct-distribution compatibility and effective profile under §3.2 for each role; no automatic Store-signer assumption. Keep independently authorized helper/package identity and an explicit disposition for a concrete incompatible profile. |
 | ACG / dynamic code | Target `ProhibitDynamicCode` with no thread opt-out or remote downgrade. Inventory JIT/dynamic-code users; do not add a JIT or escape flag for convenience. Services are strongest candidates; UI compatibility needs its own observations. |
 | CET / hardware stack protection | Preserve the selected `/CETCOMPAT` and `/CETCOMPATSTRICT` markers; require strict effective shadow stacks on the supported hardware/OS class and qualify supported non-CET/EHCONT restrictions against the actual metadata/module closure. Rust EHCONT generation is unavailable in the pinned stable profile; a linker-only flag cannot repair it. Image markers are no runtime proof, and v3 does not imply CET hardware. |
 | Image loading | Target `NoRemoteImages`, `NoLowMandatoryLabelImages`, `PreferSystem32Images` alongside sealed content and safe search. The last is a search preference; low-IL blocking does not reject every medium-IL writable path. |
@@ -377,17 +401,19 @@ claim. [S15, S16]
 
 | Capability or rule | Current primary-source position | NevroTick disposition |
 | --- | --- | --- |
-| `packagedServices` | Partner/enterprise-oriented; Store submission discouraged and most cases not approved. [S14] | Disclose and justify the real services in David's planned submission; record the actual outcome without blocking preparation on speculative preapproval. |
+| `packagedServices` | Windows supports packaged services; the separate Store submission policy discourages this capability. [S14, S15] | Qualify direct installation, effective accounts/rights and servicing. Store submission/approval is not a NevroTick task. |
 | `localSystemServices` | LocalSystem requires this and `packagedServices`. [S14] | No justification to broaden broker authority. |
-| `allowElevation` | Strict case-by-case Store approval; Microsoft requests advance justification. [S14] | Prepare the narrow lifecycle justification and required capability request for David; no hidden elevation or unreviewed entitlement. |
+| `allowElevation` | The cited Store approval policy is separate from runtime capability/activation support. [S14] | Qualify the narrow direct-distribution helper activation and user consent; no hidden elevation or assumed entitlement. |
 | `desktop8` extension category `windows.eventTracing` | The [desktop8 provider schema](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-desktop8-provider) supports a manifest-based provider and channel. Declaring machine scope requires a custom capability. [S14] | Evaluate under [W11-W08 installed delivery](../../tasks/windows11-integration.md#installed-event-delivery-contract-preparation--21-november-2026). Capability applicability, exact installed writer/read access, rendering and servicing remain open. |
-| Store §10.2.4 | Generally restricts non-Microsoft NT-service/driver dependencies and requires disclosure; its stated WHCP exception concerns drivers. [S07] | State the complete utility's service dependency honestly; retain actual certification feedback, not a presumed exception. |
-| Store §§10.2.7–10.2.8 | Clean removal, user consent and supported Windows-setting changes. [S07] | W32Time and later DNS ownership/restoration belong in certification notes. |
+| Store §10.2.4 | Historical rejected-route rule about service/driver dependencies. [S07] | Not a direct-MSIX gate; preserve the actual Windows service/provisioning contract. |
+| Store §§10.2.7–10.2.8 | Historical rejected-route rules on removal and settings. [S07] | W32Time/DNS ownership, consent and restoration remain independent product requirements, not Store certification work. |
 
 The older desktop preparation page says Store rejects applications needing any
 elevation. The specific capability catalog documents conditional approval. Keep
 this discrepancy visible; use the specific current policy for the conditional
-conclusion, and obtain actual eligibility evidence before claiming approval. [S14,
+conclusion in retained research; it is no current Store approval task. Custom
+capability requirements can still apply outside the Store and must be checked
+for the exact selected extension. [S14,
 S29]
 
 **Two-family scope, 5 November 2026:** [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
@@ -399,7 +425,7 @@ includes Server 2025; App Installer/WinGet availability does not establish this
 complete service-bearing package's acquisition, licensing or update route.
 Older Server 2019 Store restrictions do not prove universal Server 2025
 impossibility. Supported delivery and actual delivered bytes remain unresolved
-under W11-W10, with David retaining the controlled Store attempt.
+under W11-W10 for direct MSIX distribution; no Store attempt is planned.
 
 The [platform card](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 separates package applicability, product OS-family admission and a safely
@@ -547,7 +573,7 @@ The following public mechanisms were checked for the missing lifecycle order:
 | --- | --- | --- |
 | `PackageCatalog.PackageUninstalling` / its event arguments | Reports activity, result, completion, package and progress; the arguments expose no documented deferral, cancellation or recovery acknowledgement. [S57] | Observation cannot require deployment to wait for restored clock state or guarantee that a stopped service is activated for cleanup. |
 | `PackageManager.RemovePackageAsync(String)` | The request cannot be canceled; associated applications are shut down during removal. [S58] | A helper can restore before initiating its own removal request, but that does not intercept independent Settings/administrative removal or Reset. |
-| `RemovalOptions` | The caller chooses removal options; `PreserveApplicationData` is limited to development-mode packages. [S59] | A caller-selected defer option is not a package-authored barrier for every removal path; development-mode preservation is not a Store journal strategy. |
+| `RemovalOptions` | The caller chooses removal options; `PreserveApplicationData` is limited to development-mode packages. [S59] | A caller-selected defer option is not a package-authored barrier for every removal path; development-mode preservation is not a production journal strategy. |
 | Service STOP / preshutdown | STOP is a service-lifecycle event; preshutdown allows a bounded wait until timeout or `SERVICE_STOPPED`. [S60] | Neither identifies final package removal or guarantees recovery after an already stopped/crashed service. Ordinary STOP cannot restore W32Time underneath a successor. |
 | `GetServiceDirectory` / `GetServiceRegistryStateKey` | SCM deletes service state directories/registry keys when the service is uninstalled. [S61, S62] | Neither location can be the sole journal that must survive incomplete recovery through service removal. |
 | Package retention and Reset | Registration/deregistration and staging/destaging differ; Reset removes app data and reinstalls. [S24, S25] | Remaining payload, another user's registration or a surviving data file alone does not establish an invocable recovery owner. |
@@ -578,7 +604,7 @@ experiment is bounded in section 7.3.
 | --- | --- | --- |
 | First installation | Packaged services require administrative installation. [S15] | Work before first **application UI launch**; this does not promise installation without normal administrative authorization. |
 | In-use update | `uap17:UpdateWhileInUse=defer` is Windows 11 24H2+; specified force-update shutdown options are ignored, but required OS updates/reboot may force close. [S23] | Candidate scheduling aid; qualify service behavior, cleanup and bounded adoption of security fixes. |
-| Bad Store release | Restoring an older package in Store can serve new acquisitions after its suitability is assessed; already upgraded installations need a higher-version corrective release. [S02] | [Release-policy §§4–6](../release-policy.md#4-distribution-containment-choose-the-actual-store-operation) distinguish containment, deliverable correction and current mandatory-state recovery. An unsafe fallback is not automatically recommended. |
+| Bad directly distributed release | Stop recommending/acquiring unsafe bytes through the selected channel; qualify a higher-version compatible correction for affected installations. Deleting a download is not recall. | [Release-policy §§4–6](../release-policy.md#4-distribution-containment-choose-the-actual-store-operation) distinguish containment, deliverable correction and current mandatory-state recovery. An unsafe fallback is not automatically recommended. |
 | Repair versus Reset | Repair retains app data; Reset permanently removes it and reinstalls. [S25] | Map optional caches and mandatory authority/journal state separately; preserve a supported recovery path. |
 | Multiple users | Staging, registration, deregistration and destaging differ; other registrations/provisioning/processes can retain payload. [S24] | Define the machine-service owner, last-user transition and ordinary/admin removal outcomes. |
 | Update/interruption | Existing architecture requires quiescence, current generation and durable maintenance/recovery ownership. | Old-package cleanup must not restore W32Time underneath its successor or reset consumed correction authority. |
@@ -586,7 +612,7 @@ experiment is bounded in section 7.3.
 Continue the [wrong-clock/offline matrix](../windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
 for initial installation, startup before login, helper activation, update/repair
 and removal. Record actual verifier, package/OS identity, trust/time/cache inputs,
-retrieval policy, finite work and safe refusal/recovery. Store signing proves
+retrieval policy, finite work and safe refusal/recovery. A valid signature proves
 neither universal success nor universal failure with severely wrong dates or no
 network. Do not weaken authentication or trust policy to manufacture a pass.
 
@@ -599,16 +625,25 @@ native result.
 
 ## 6. Delivery, controlled audiences and alternatives
 
-**Pre-V1 WinGet addition, 7 November 2026:** [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
-requires distribution capability before V1. The [WinGet plan](winget-distribution.md)
-first qualifies this selected complete Store product through `msstore`, using its
-real ProductId, package identity and exact client/platform. WinGet's Community
-`winget` source is separate and needs an authorized trusted public installer;
-it does not supply signing or select the retained MSI alternative. Preserve
-controlled Store visibility, final-byte trust, service provisioning and recovery.
-W11-W10/W11-W05 own WGT-C01 pre-V1 preparation/native qualification and the
-separate WGT-C02 actual source-availability receipt. Current evidence and holds
-remain; no working WinGet route is established by this paragraph.
+**Current direct-distribution direction, 21 November 2026:** retain the
+complete MSIX and David's exact-candidate publication authority. Hosting,
+controlled-preview access and any update mechanism are future selections.
+Microsoft documents direct MSIX delivery and optional `.appinstaller` updates;
+this plan does not adopt an updater, establish a working channel or promise
+public installation before signing/trust and native qualification. [S123, S124]
+
+The pre-V1 [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+requirement remains, but its former `msstore`/ProductId-first selection is
+superseded. Reconcile the [WinGet plan](winget-distribution.md) to the directly
+distributed complete MSIX. The Community source needs its own eligible trusted
+public installer and external submission/availability evidence; it supplies no
+signing solution. WGT-C01 capability and WGT-C02 actual source availability remain
+separate. Signing deferral permits preparation without inventing either pass.
+
+**Historical Store delivery research — unselected:** the following Store Web
+Installer, audience/flight and Store download descriptions are retained as
+source research only. They create no account, submission, visibility or Store
+rehearsal task for NevroTick.
 
 The **Store Web Installer** supports website/GitHub-first acquisition: a Store
 badge's Direct mode invokes a Microsoft-provided small EXE that obtains the
@@ -628,7 +663,7 @@ mandatory-metadata cases with current Microsoft sources. Initial audience,
 flight membership and update percentage are different controls; an unavailable
 listing is not recall. Qualify the actual former-owner, flight and corrective-
 update reach for the selected visibility setting before promising containment
-or recovery. David retains every Store action and expansion decision.
+or recovery. These Store operations are unselected; David retains direct-release authority.
 
 There is an official download path: `winget download` can retrieve Store
 packages, dependencies and offline licences. Its normal offline-license workflow
@@ -654,78 +689,56 @@ fallback; no exact future price is promised. [S01, S28]
 ## 7. Bounded continuation and existing acceptance owners
 
 The [accepted optional-provenance decision](../nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
-keeps attestations, independent reproducible builds and the public
-[source-to-Store evidence bundle](release-provenance.md) outside mandatory
-release prerequisites. The submitted/delivered identity, integrity, SBOM/licence,
-installed trust and native/lifecycle checks below remain required; they do not
-implicitly require that additional proof.
+keeps attestations, independent reproducible builds and a public verification
+bundle outside mandatory release prerequisites. The
+[provenance research](release-provenance.md) retains its historical Store
+transformation examples; current custody binds build, signing and direct
+publication. Identity, integrity, SBOM/licence, installed trust and native/lifecycle
+checks remain required without making optional provenance a new gate.
 
-The selected work remains **W11-W10 with W11-W05 and the existing release/security
-owners**. Source/design preparation is ready and does not require Store
-preapproval. It does not replace the current Core checkpoint or lift an execution
-hold. Record work and evidence in
-[task §4.8](../../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026),
-using these successive exits rather than another plan or approval campaign:
+W11-W10 owns the complete direct-MSIX work with W11-W05 and the existing
+release/security owners. Source and package preparation continue while David
+defers signing. Reuse [task §4.8](../../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
+and the current OD-05 amendment; no Store account or acceptance campaign remains.
 
-1. **Freeze the complete design and security profile.** Inventory components,
-   required capabilities and entry points, immutable code/data layout, supported
-   pre-exposure service provisioning, identity/IPC and mitigation activation per
-   role. Design recovery before removal/Reset and maintenance across versions.
-   Prepare concise certification notes: what each service does, why it must run
-   before UI/login, exact accounts/rights, elevation and user consent, resources,
-   removal/restoration and reproducible reviewer steps. Preserve unresolved
-   questions with a concrete evidence owner; no general research rerun.
-   Prepare the [release record and incident procedures](../release-policy.md)
-   with explicit support-proposal status, compatibility matrix, account recovery
-   owner and rehearsal plan. This adds no implementation prerequisite to the
-   current Core slice.
-2. **Build and qualify a complete local candidate when prerequisites permit.**
-   Implement actual roles and packaging through the existing phase work. Inspect
-   the emitted manifest, capability/dependency closure, service declarations,
-   final PE protections, source/SBOM/licence lineage and package integrity.
-   After the Windows stop is lifted, qualify test-signed mechanics in an owned
-   disposable VM: effective tokens/ACLs/network boundaries, startup before login,
-   legitimate and rejected DLL/IPC actions, wrong-clock/offline behavior, repair,
-   Reset, interrupted maintenance, multiuser and final restoration. Record which
-   CIG/catalog claims await a genuine Store artifact. No fake production manifest
-   or unsigned fixture counts as a complete candidate.
-3. **David attempts the Store submission with services.** Provide the concrete
-   package and certification notes for his account/capability/visibility choices.
-   A private initial audience is the controlled route to obtain and test actual
-   Store-delivered bytes before broad rollout; decide visibility before the first
-   submission because public-to-private conversion is unavailable. Flights follow
-   an initial submission and still undergo certification. Do not require a Store
-   signature before this first submission: Microsoft signing occurs during the
-   publication pipeline after certification. Account work, upload and publication
-   remain David's actions, not actions delegated to an agent by this plan.
-   [S02, S10, S11, S49]
-4. **Qualify the Store-delivered candidate before broad release.** Capture actual
-   package identity, final manifest/catalog/images and dependency hashes; rerun
-   the affected trust/CIG, activation, runtime and servicing cases on supported
-   Windows builds with protections enforced. Reconcile submitted-to-delivered
-   provenance and report changed-byte evidence. Certification supplies no
-   application security pass. If refused, retain the actual reason and bring
-   compatible alternatives to David; do not broaden authority or silently switch
-   to MSI. If accepted but a technical gate fails, correct the candidate and
-   requalify instead of treating acceptance as a waiver.
-   Before broad release, complete the applicable operational rehearsals and
-   obtain David's actual stable-support/transition decision. Preserve separate
-   observations for contained distribution, available correction and recovered
-   installed cases; publication alone is none of those native recovery results.
+1. **Freeze the complete design and security profile.** Inventory real components,
+   capabilities, immutable code/data, pre-exposure service provisioning, identity,
+   IPC, per-role mitigations and removal/Reset recovery. Replace Store-signer
+   assumptions with explicit direct-route questions and owners. Preserve the
+   release/support proposals, compatibility matrix and bounded rehearsal plan.
+2. **Prepare and qualify local mechanics when admitted.** Implement through the
+   existing phases; inspect manifest, dependencies, service declarations, PE
+   protections, source/licence/SBOM lineage and package integrity. Qualify permitted
+   test-signed mechanics in an owned disposable environment. Record substitutions
+   and unresolved production trust rather than requiring signing setup now or
+   claiming that local tests establish public installability.
+3. **Resolve signing and delivery later.** David will address the signing issue.
+   Before public distribution, bind the actual package/publisher identity,
+   supported inner/outer signatures, target-device trust and selected hosting to
+   one candidate. Provider acceptance, fees and runtime/SDK terms remain separate
+   reviews. This stage does not authorize a Store submission, trust bypass or
+   unsigned public release.
+4. **Qualify the final directly delivered candidate.** Compare the final download,
+   package/catalog/manifest/images and dependencies with approved signed bytes;
+   exercise affected trust, activation, mitigation, service and recovery cases on
+   supported Windows profiles. Reconcile any authorized transformation. Complete
+   applicable operational rehearsals and David's stable-support/release decision
+   before broad availability. Publication alone proves neither installed recovery
+   nor fleet adoption; preserve failed and unexecuted checks.
 
 | Existing owners | Additional distinguishing evidence |
 | --- | --- |
-| CHECK-1/2/15; platform/security | Intended service/helper succeeds; second same-account service, wrong Store package, unauthorized copied-out helper and unapproved older release cannot obtain broker/data authority. |
+| CHECK-1/2/15; platform/security | Intended service/helper succeeds; second same-account service, wrong signed package, unauthorized copied-out helper and unapproved older release cannot obtain broker/data authority. |
 | CHECK-5/12/13/23; lifecycle/packaging | Normal and interrupted update/removal preserve current ownership, journal and W32Time restoration; Reset and last-user removal cannot erase the only recovery path. |
 | CHECK-18/23; signing/release, CHECK-9 for affected certificate-retrieval policy | Actual package/catalog identity and supported trust/time conditions; tamper/wrong-project rejection alongside valid installed startup and maintenance. |
-| CHECK-16/20/26; build/security | Actual Store-produced binary/dependency closure supports explicit integrity enforcement, sealed executable content and the role-specific CIG/ACG/CFG/CET/image policies; source/licence/SBOM lineage and compatible positive controls accompany denied actions. |
+| CHECK-16/20/26; build/security | Actual directly distributed binary/dependency closure supports explicit integrity enforcement, sealed executable content and the role-specific CIG/ACG/CFG/CET/image policies; source/licence/SBOM lineage and compatible positive controls accompany denied actions. |
 | CHECK-24; independent review | Exact candidate, source/approval gaps and native observations remain separate; no planned case or documentation pass becomes a release claim. |
-| W11-W10/W11-W05; existing release, state and lifecycle CHECK owners | [Release-policy §9](../release-policy.md#9-qualification-matrix-and-remaining-decisions) supplies support transition, halt/correction, publishing-authority and bad-state recovery cases. The support baseline is proposed; account/Store/native rehearsals remain unexecuted. |
+| W11-W10/W11-W05; existing release, state and lifecycle CHECK owners | [Release-policy §9](../release-policy.md#9-qualification-matrix-and-remaining-decisions) supplies support transition, halt/correction, publishing-authority and bad-state recovery cases. The support baseline is proposed; signing/delivery/native rehearsals remain unexecuted; Store rehearsals are unselected. |
 
 Record disposition and evidence in the existing Windows task. The MSIX direction
 is selected now; **release qualification** still requires every applicable
-architecture §19.4 gate. Revisit dated policy/fees before
-onboarding, APIs against the selected SDK/build, and trust/lifecycle evidence when
+architecture §19.4 gate. Revisit provider terms only when signing is resumed,
+APIs against the selected SDK/build, and trust/lifecycle evidence when
 the delivered package, publisher identity or state schema changes.
 
 ### 7.1 Concrete source inventory and manifest profile
@@ -764,20 +777,21 @@ The package author uses this field-level profile when real components exist:
 
 The [cross-format metadata contract](windows-package-metadata.md) supplies the
 complete descriptive-field inventory, per-binary resources, localization,
-version mapping, Store listing and independent readback rules under OD-05 §7.6.
+version mapping and independent readback rules under OD-05 §7.6; Store-listing
+fields are retained as unselected history under §7.9.
 Apply it to this same candidate. It adds no speculative capability, invented
-Partner Center identity or parallel MSI deliverable.
+publisher identity or parallel MSI deliverable.
 
 | Manifest/input surface | Concrete intended value or rule | Unfilled input / independent check |
 | --- | --- | --- |
-| `Identity` | One product identity, `ProcessorArchitecture="x64"`, monotonic release version | Exact `Name`/`Publisher` come from David's Partner Center identity; do not invent them. Bind submitted and delivered versions separately. [S02, S51] |
+| `Identity` | One product identity, `ProcessorArchitecture="x64"`, monotonic release version | Exact `Name`/`Publisher` must match the later selected direct-package signing identity; do not invent them while signing is deferred. Bind prepared, signed and delivered versions separately. [S51, S124] |
 | `Dependencies/TargetDeviceFamily` | Candidate `Name="Windows.Desktop"`; resolve the supported family/schema for both intended OS rows and freeze actual `MinVersion` and `MaxVersionTested` | Client 26300 and Server 26100 cannot be selected exclusively by one numeric minimum; `MaxVersionTested` is not an upper support fence. Reconcile required features/Trusted Launch, product-family admission and safe CPU preflight through the [platform card](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026); exact activation remains unresolved. [S51] |
 | Ordinary UI `Application` | Explicit actual `Executable`, stable unique `Id`, `uap10:RuntimeBehavior="packagedClassicApp"`, `uap10:TrustLevel="mediumIL"` | This expresses the selected ordinary full-trust Windows desktop UI, with Slint as its default toolkit; it supplies no AppContainer or administrative authority. Avoid contradictory legacy `EntryPoint` attributes. [S51, S52] |
-| Package `Properties` | Explicit content integrity; Trusted Launch for the admitted supported profile; real display/asset metadata | Resolve namespaces and SDK schema, then inspect the emitted and Store-delivered manifest. Protect all executable content as in section 3.1. |
+| Package `Properties` | Explicit content integrity; Trusted Launch for the admitted supported profile; real display/asset metadata | Resolve namespaces and SDK schema, then inspect the emitted and directly delivered manifest. Protect all executable content as in section 3.1. |
 | Compiled calendar/policy provenance | Same authenticated complete release and supported coverage as [NV-LP-001](leap-second-policy.md#3-knowledge-and-distribution-contract) | Reproduce reviewed pinned-input generation and bind the exact normalized revision/digest and generator to the actual payload. No new manifest capability, runtime download or separate updater is required. |
 | `runFullTrust` | Required for the intended medium-IL desktop application | Declare the restricted capability and verify the actual activation graph. It is not elevation. [S14, S51] |
 | `packagedServices` | Required for declared `windows.service` extensions | Disclose the real engine and broker; record their own-process SCM service entries, executable paths, accounts and startup configuration. Account/provisioning mapping remains unresolved under section 4. [S14–S17] |
-| `allowElevation` | Justified only for the intended bounded elevated lifecycle operations | Exact helper activation and Store capability admission remain unresolved; normal UI use stays unelevated. [S14] |
+| `allowElevation` | Justified only for the intended bounded elevated lifecycle operations | Exact helper activation and any applicable direct-route capability entitlement remain unresolved; normal UI use stays unelevated. [S14] |
 | `localSystemServices`, mutable/external executable content | Excluded from this selected profile | Do not insert broader authority or mutable code to get a package accepted or a mitigation test to pass. |
 | `customInstallActions` and `Microsoft.classicAppInstaller_8wekyb3d8bbwe` | Blocked for this ordinary utility scenario under the published grant policy; retain only as an explicitly confirmed exception | The technical capability condition does not override the games-only grant policy. Any actual exception still needs activation/ordering and lifecycle evidence. [S14, S21, S22] |
 | Other capabilities/extensions/dependencies | Only individually justified by an actual component | No speculative broad filesystem, COM, protocol, startup-task, shell or networking declaration. Full-trust network confinement still needs the actual service/WFP owner. |
@@ -808,8 +822,9 @@ For the runtime signature-policy candidate, Microsoft documents
 description admits the **Microsoft, Store and WHQL signer classes**. Record that
 documented breadth explicitly; do not silently relabel it the exact equivalent
 of a PowerShell option or infer an OR operation by setting both
-`MicrosoftSignedOnly` and `StoreSignedOnly`. The selected profile's actual
-configuration/allowed-image set must be reconciled and observed before adoption.
+`MicrosoftSignedOnly` and `StoreSignedOnly`. The direct-distribution profile's actual
+configuration/allowed-image set must be reconciled and observed before adoption;
+ordinary publisher signatures do not acquire these signer classes.
 This source card adopts no untested native bit combination. [S13, S31–S33, S43]
 
 The early-runtime layer can evaluate ACG, signature/image/extension policies,
@@ -832,7 +847,7 @@ than a deployable or release-qualified package:
 | W11-W05 platform/security; CHECK-1/2/15/16 | Manifest-supported account topology, actual per-operation rights and supported no-UI provisioning/reentry before functional exposure | Begin with section 7.5's handle-only rights discriminator; separately resolve invocation and the section 4 account/ordering bridge. Do not promote two LocalService services to a chosen topology without the same-account isolation proof. |
 | W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Recovery owner remains invocable until durable restoration, including independent removal/Reset when the service is already stopped | Identify the supported bridge, then compare running versus already-stopped/crashed removal with the same durable pending obligation. Observe actual independent activation and recovery before expanding the matrix; a record or retained bytes alone cannot restore the system. |
 | W11-W10 platform/build; CHECK-16/18/20/26/27 | Concrete launch path and module graph satisfy required CIG and other policies; Trusted Launch supported on the selected OS row | Inspect real emitted/loaded images and runtime admission once actual roles exist. Preserve the pre-entry loader gap and the documented signer-class distinction. |
-| Release/packaging; CHECK-18/23/24 | Real identity, production payloads, qualified local mechanics and candid capability/reviewer notes | Build the complete submission candidate through P3/P4/P6 when those prerequisites permit. David's Store attempt precedes genuine Store-byte trust tests; prior certification remains no preparation prerequisite. |
+| Release/packaging; CHECK-18/23/24 | Real identity, production payloads, qualified local mechanics and candid capability/reviewer notes | Prepare the complete direct-MSIX candidate through P3/P4/P6. Signing selection is deferred; final signed/downloaded-byte qualification remains future work, with no Store prerequisite. |
 
 **First native experiment, still held:** use one inert locally test-signed
 package with an automatic test service, no first UI launch and no clock/W32Time
@@ -874,11 +889,11 @@ update/repair before functional exposure. External harness authority proves only
 its Windows building blocks; the complete package still needs its own supported
 provisioner, no-UI invocation and servicing reentry.
 
-Certification preparation can proceed from section 7.1's role/capability table.
+Direct-package preparation can proceed from section 7.1's role/capability table.
 The release owner fills it with actual executable/service names, effective
 accounts and rights, user-consent/elevation flow, expected network/resource use,
 startup before login, restoration/removal results and exact reviewer steps for
-the frozen candidate. Missing rows stay unresolved; do not submit planned
+the frozen candidate. Missing rows stay unresolved; do not present planned
 protections or hypothetical removal results as implemented facts.
 
 ### 7.4 Service provisioning and independent-removal research
@@ -902,14 +917,15 @@ object isolation of an already running process. [S54, S55, S69–S71]
 
 | Unselected candidate | Useful property | Remaining cost or evidence |
 | --- | --- | --- |
-| Initially disabled services plus an explicitly elevated enable/configure operation | Could supply a narrow configuration owner without a permanent LocalSystem runtime role, conditional on actual required object rights and supported invocation | Changes activation UX if it requires an initial user action; helper elevation/Store eligibility, exact package identity and servicing behavior remain unqualified. Section 7.5 separates authority from no-UI invocation/reentry. Do not silently add mandatory first UI launch. |
+| Initially disabled services plus an explicitly elevated enable/configure operation | Could supply a narrow configuration owner without a permanent LocalSystem runtime role, conditional on actual required object rights and supported invocation | Changes activation UX if it requires an initial user action; helper elevation/capability entitlement, exact package identity and servicing behavior remain unqualified. Section 7.5 separates authority from no-UI invocation/reentry. Do not silently add mandatory first UI launch. |
 | Short-lived automatic LocalSystem bootstrap service, with functional services initially disabled | A manifest-supported account/start mode could provide configuration without depending on UI launch | Adds a privileged service registration and `localSystemServices`; process exit does not remove that registration. First-start ordering, protected re-entry, interruption, idempotence and repair/update/SID activation remain unqualified. This is not a broader LocalSystem clock broker or an adopted exception. |
 | One SCM broker creating a restricted engine child | Can establish the engine's token restrictions and creation-time mitigations before engine entry | Changes topology and supervision. It does not itself supply all broker/service configuration authority, outbound-network confinement or independent-uninstall recovery. |
 
 The first two candidates are inferred compositions of supported manifest/SCM
 building blocks, not Microsoft-endorsed complete MSIX recipes. The manifest
 permits disabled and automatic services and LocalSystem/LocalService accounts;
-Store approval is a separate condition. Changing a packaged service to a virtual
+Any applicable Windows capability entitlement remains a separate condition;
+Store approval is unselected. Changing a packaged service to a virtual
 account through the general SCM setter would likewise require a supported
 servicing contract; API support for virtual accounts does not establish that
 MSIX preserves a manifest/account mismatch. [S14, S16, S17, S55, S69]
@@ -1566,3 +1582,7 @@ employee reply. Their limited evidentiary scope is stated in section 7.5.
 - **S119:** [Pinned WSL MSI uninstall call](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/src/windows/common/install.cpp#L408-L423) and [WiX service/MSIX removal owner](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/msipackage/package.wix.in#L678-L839).
 - **S120:** MSIX Core [separate MSI owner](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/MsixMgrWix/Product.wxs#L10-L70), [synchronous removal dispatch](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/msixmgrLib/PackageManager.cpp#L118-L153) and [empty PSF removal handler](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/msixmgr/PSFScriptExecuter.cpp#L13-L75), at the same pinned revision.
 - **S121:** TranslucentTB [independent taskbar restoration/package callbacks](https://github.com/TranslucentTB/TranslucentTB/blob/d4636e439865df0a1a1419db408e055740ce5c74/ExplorerTAP/taskbarappearanceservice.cpp#L153-L356) and [temporary DLL copy](https://github.com/TranslucentTB/TranslucentTB/blob/d4636e439865df0a1a1419db408e055740ce5c74/TranslucentTB/loadabledll.cpp#L11-L86). Pinned user-process analogy, not privileged recovery qualification.
+
+- **S122:** [Microsoft Store App Developer Agreement v8.11](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf), published 17 March 2026, effective 17 April 2026, §10(c). Source for the publisher indemnity David rejects; no Store acceptance is recorded.
+- **S123:** [Choose a Windows distribution path](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/choose-distribution-path), including direct MSIX download and optional App Installer delivery.
+- **S124:** [Install Windows apps from a web page](https://learn.microsoft.com/en-us/windows/msix/app-installer/installing-windows10-apps-web), including package signing, target-device trust and direct delivery.

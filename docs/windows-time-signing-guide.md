@@ -1,19 +1,38 @@
 # Signing the Windows time client: a practical package guide
 
-**Revision:** 1.0 with owner-decision, trust-lifecycle, selected-MSIX and release-operations amendments; padding/content-trust and all-signable shipping requirements refined 8 November 2026
+**Revision:** 1.0 with owner-decision, trust-lifecycle and release-operations amendments; direct-MSIX/no-Store decision and signing deferral recorded 21 November 2026
 
 **Research date:** 28 October 2026  
-**Status:** Preparation guide; Store acceptance, production package signing and native qualification are **not completed**.
+**Status:** Preparation guide; Microsoft Store publication rejected. Signing is deferred and unresolved; production signing/trust and native qualification are **not completed**.
 
-**Applies to:** The Chrony-derived Rust time client for Windows 11, with one complete hardened MSIX containing its services, ordinary-user UI, administrative helper and all required payloads selected for a first Microsoft Store submission. Earlier MSI signing research is retained for a possible later owner decision.
+**Applies to:** The Chrony-derived Rust time client with one complete hardened MSIX for direct distribution, containing its services, ordinary-user UI, administrative helper and all required payloads. Earlier Store/MSI research is retained as history or a possible later owner decision, not an active publication route.
 
 ## 1. The decision and the next action
 
-**Selected direction, amended 3 November 2026:** prepare **one complete hardened MSIX for Microsoft Store**, including the services and every required application payload. David will try the Store submission himself and reconsider the distribution decision if an actual rejection or concrete blocker requires it. [OD-05 section 7.1](nevrotick-owner-decisions.md#71-accepted-choices) supersedes the earlier MSI-first selection. A Store rejection does not automatically select a weaker package or a separate service installer.
+**Selected direction, amended 21 November 2026:** prepare **one complete MSIX
+for direct distribution**. David will not publish NevroTick to Microsoft Store
+because he rejects its broad publisher duty to defend and indemnify Microsoft,
+including legal costs. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+supersedes the former Store-attempt/reconsider-after-refusal direction. A Store
+account, submission, certification or rejection is not a prerequisite.
 
-Preparation can proceed without speculative Store preapproval. The [MSIX plan](plans/windows-msix-store.md) defines the package-integrity, Store-compatible code-integrity and role-specific protection requirements, capability justification and qualification sequence. The current Core priority, Windows execution stop, fuzzing, storage and UI holds still apply. This documentation change does not authorize a held native experiment or claim a working package.
+**Signing is deferred to later.** Continue source, metadata and package
+preparation without selecting a provider, buying a certificate or initiating
+onboarding. This decision does not establish public publisher trust or approve
+an unsigned release. Final required signatures and target-device trust remain
+unresolved distribution work. No hosting or automatic-update mechanism is
+selected, and SDK/runtime licences remain separate from the rejected Store terms.
 
-David retains account, submission, publication and exact-candidate release decisions. Store certification and signing are external outcomes. Initial controlled submission precedes verification of the actual Store-signed artifact; broad release follows the required post-Store artifact and native checks. See [section 6.1](#61-store-msix-trust-and-publication-boundaries) and the plan's publication sequence.
+The [MSIX plan](plans/windows-msix-store.md) retains sealed package content,
+per-role strongest-compatible protections and native qualification. Reconcile
+its former Store-signer CIG assumptions with the actual direct-distribution
+signer/module graph; do not treat an ordinary trusted publisher certificate as
+Store-signer admission. Current Core priority and execution holds remain.
+
+David retains provider, publication and exact-candidate release decisions.
+Local/test-signed mechanics, final signing and directly delivered-artifact
+qualification are distinct stages. [Section 6.1](#61-store-msix-trust-and-publication-boundaries)
+owns those trust boundaries; no ready package or signing capability is claimed.
 
 The [release policy](release-policy.md) owns the current support statement,
 proposed first-stable baseline, exact release-status records and incident
@@ -29,13 +48,13 @@ embedded PE, package/catalog and exact final-artifact evidence separate.
 accepts an interim self-signed MSI profile while David has no personal publicly
 trusted code-signing certificate. [Section 7.1](#71-interim-self-signed-msi-profile)
 distinguishes approved-key integrity from public publisher trust. This is an
-available signing profile, not a switch from the selected Store MSIX direction.
+available MSI signing profile, not automatic trust admission for direct MSIX.
 
-**OPEN-11** remains open for actual selected-route acceptance and qualification. This guide does not claim that an account, certificate, signing integration, submitted package or release gate has been completed.
+**OPEN-11** remains open for direct-route signing/trust and qualification. Its unresolved signing portion does not block independent preparation. This guide establishes no provider acceptance, certificate, signing integration, distributed package or release pass.
 
 ## 2. What “getting the certificate” means here
 
-Sections 2–4 retain SignPath research that can support required inner-file signatures for MSIX or a later selected MSI. MSI-specific steps apply only to that delivery format. Sections 4.1 and 5.1–5.2 apply across routes; Store outer-package signing has the separate trust boundary in section 6.1.
+Sections 2–4 retain SignPath research for later signing work; they are not current onboarding instructions while signing is deferred. Exact MSIX/package and inner-file support, eligibility and terms need review if that provider is later selected. MSI-specific steps apply only to a later selected MSI. Sections 4.1 and 5.1–5.2 apply across routes; section 6.1 owns direct-package trust.
 
 A public code-signing certificate identifies a publisher and contains a public key. Signing requires the corresponding private key. Downloading a public `.cer` file would not provide that capability.
 
@@ -67,7 +86,7 @@ Use this preparation table. It is our proposed application dossier, not a claim 
 | Functionality | Windows NTP/NTS client, privileged clock broker, separate network engine, ordinary-user UI; no kernel driver planned |
 | Source provenance | Exact Chrony revision and files used, port ledger, modifications, notices and corresponding-source/build instructions |
 | License position | Proposed project license and reviewed obligations of every shipped component; clearly identify unresolved items |
-| Distribution | Selected complete Store MSIX, architectures supported, inner-file signing inventory and packaging tool/version; describe MSI only if later selected |
+| Distribution | Selected complete directly distributed MSIX, architectures supported, package/inner-file signing inventory and packaging tool/version; signing is deferred, and MSI remains unselected |
 | Release evidence | Working documented preview and the release evidence the provider says it requires |
 | Build origin | Repository, protected release workflow, toolchain/lockfile identities and artifact path |
 | Ownership | Maintainers, reviewers and release approver; account protection and access-removal procedure |
@@ -92,7 +111,7 @@ Do not add provider attribution or claim that signing is approved until it actua
 
 ## 4. The onboarding sequence
 
-These provider-specific steps apply only if SignPath is pursued for the required signatures. They do not block independent source/design preparation or lift the current Windows execution stop. Production per-file signing capability must be resolved before release even when Microsoft supplies the outer Store signature; section 4.1 defines the required scope independently of provider choice.
+These provider-specific steps apply only if SignPath is pursued for the required signatures. They do not block independent source/design preparation or lift the current Windows execution stop. Production package and per-file signing capability must be resolved before public distribution; section 4.1 defines the required scope independently of provider choice. No Store outer signature is expected, and no provider onboarding is required now.
 
 ### Step 1 — Establish the repository and a working preview
 
@@ -162,7 +181,7 @@ not a claim of implemented signing or native enforcement.
 | PE images: owned EXE/DLL, helpers/services, native dependencies, resource images and nested custom-action binaries | Verified embedded Authenticode on every PE, including files with unusual/no extensions and PE content stored in installer streams. Verify the expected project or approved upstream signer. Package/catalog trust is additionally required, not a substitute. [S7, S22, S28] |
 | PowerShell files, if already admitted and shipped, such as `.ps1`, `.psm1`, `.psd1` and supported PowerShell XML formats | Native Authenticode using the platform-supported file/SIP profile. Verify exact text/encoding after all generation and packaging. Do not assume ordinary XML has the PowerShell signature format. [S26, S27] |
 | Other admitted script formats with native signature support, such as supported WSH files | Use the supported host/format signing profile and identify its verifier and actual invocation behavior. This requirement admits no new script engine or script-based installer action. [S5] |
-| Final MSIX/AppX, supported packages/bundles, or a later selected MSI; shipped MSP/MST/MSM/CAB/CAT where supported | Sign each signable shipped artifact in its supported format and verify the actual returned/delivered object. Qualify nested/container signing and MSI cabinet/patch relationships when present. Microsoft supplies the accepted Store package signature; that stage does not sign every inner PE/script for us. [S5, S8, S29, S30] |
+| Final MSIX/AppX, supported packages/bundles, or a later selected MSI; shipped MSP/MST/MSM/CAB/CAT where supported | Sign each signable shipped artifact in its supported format and verify the actual returned/delivered object. Qualify nested/container signing and MSI cabinet/patch relationships when present. The later selected direct-distribution signer must cover the package; outer signing does not sign every inner PE/script for us. [S5, S8, S29, S30] |
 | XML/JSON or another data format with an existing admitted signature schema and consuming verifier | Use that compatible mechanism and its exact coverage/identity rules. SignPath lists XMLDSIG and JSON signing, but arbitrary XML/JSON is not thereby an Authenticode format, nor does adding a signature make an unaware consumer enforce it. Do not change strict schemas or add custom crypto solely to create signatures. [S5] |
 | Other package data: ordinary configuration, text/licences, images, resources and generated tables without such a compatible individual mechanism | Authenticate through the signed complete package and bind exact content to its approved inventory. Record the format/consumer reason for no separate signature. An untrusted adjacent checksum is not authentication; packaged data remains hostile parser input. |
 
@@ -197,7 +216,7 @@ self-signed MSI, record approved-key signature verification separately from
 **public trust: not established / untrusted chain** on an unchanged clean system.
 A positive result in a deliberately configured verification VM is not a default
 consumer-Windows trust pass. Section 7.1 defines this narrow owner exception;
-it does not relax the selected Store route's trust or mitigation requirements.
+it does not establish direct-MSIX target-device trust or relax its mitigation requirements.
 
 Preserve valid approved upstream signatures. They can satisfy the component's
 individual-signature obligation; do not reattribute the component to NevroTick.
@@ -223,9 +242,9 @@ component external while bundling it. [S5, S27]
    inside outward, then the final installer/package. Provider-managed nested
    signing must demonstrate the same ordering and returned inventory. [S30]
 4. Verify the actual packaged members, required individual signatures and outer
-   package, with no missing/extra executable content. Keep initial Store
-   submission and Microsoft's delivered-package signing as distinct stages.
-   Reconcile and re-verify the actual delivered inner files after Store processing.
+   package, with no missing/extra executable content. Keep prepared, returned
+   signed and directly downloaded artifacts as distinct observations.
+   Reconcile and re-verify the actual delivered inner files after all transformations.
    If required signatures are removed or altered incompatibly, release remains
    blocked pending resolution/owner decision, without a catalog-only exemption.
 5. Record each stage's final full-file hashes/lengths and protected approval;
@@ -250,7 +269,7 @@ as a substitute for these controls. [S19, S20, S22, S31]
 
 ## 5. Authenticode verification before publishing
 
-Apply the per-file Authenticode checks to required supported artifacts on every route. The MSI command applies only if MSI is selected; section 6.1 supplies the separate Store package/catalog checks. Unsupported commands do not waive required signatures: choose the admitted format verifier and retain distinct results. For section 7.1's accepted interim self-signed MSI, use its separately labelled verification environment and clean-machine trust observation; the recipe below is not permission to suppress an untrusted-chain error or claim public trust.
+Apply the per-file Authenticode checks to required supported artifacts on every route. The MSI command applies only if MSI is selected; section 6.1 supplies the separate direct-package/catalog checks. Unsupported commands do not waive required signatures: choose the admitted format verifier and retain distinct results. For section 7.1's accepted interim self-signed MSI, use its separately labelled verification environment and clean-machine trust observation; the recipe below is not permission to suppress an untrusted-chain error or claim public trust.
 
 Use the admitted Windows SDK's SignTool on the actual returned files. Example commands below are **verification recipes, not executed results**; substitute the real file names and run from a trusted tool environment.
 
@@ -279,7 +298,7 @@ Clock-dependent verification is particularly relevant for this application. Qual
 
 ### 5.1 Wrong-clock and offline activation matrix
 
-This matrix applies to the selected Store MSIX and to any MSI profile the owner
+This matrix applies to the selected directly distributed MSIX and any MSI profile the owner
 later selects; the profile-specific verifier and trust evidence stay distinct.
 
 CHECK-9/18/23 must cover the code needed to reach recovery, including signature
@@ -313,7 +332,7 @@ information, and this amendment does not approve disabling required checks. [S17
 
 **Qualification refinement, 8 November 2026:** reuse W11-W10/P6 and
 CHECK-18/23/26/27. The amended owner requirement makes embedded Authenticode
-mandatory for every shipped PE, including Store payloads. Apply these PE cases
+mandatory for every shipped PE, including direct-MSIX payloads. Apply these PE cases
 to that inventory; do not transfer a PE-specific CVE to MSI/MSIX containers or
 script formats. Final-byte custody applies at every admitted release stage.
 Current Windows execution holds remain; these cases have **not been run**.
@@ -351,7 +370,7 @@ Refine the existing verification receipt and custody rules as follows:
    release record, then compare the exact files through handoff and publication.
    A new digest computed from an unapproved download, or a replaceable checksum
    sidecar alone, supplies no approval authority. Keep pre-signing, returned,
-   submitted and Store-delivered observations distinct; an authorized later
+   packaged and directly delivered observations distinct; an authorized later
    transformation requires a new stage's verification and approved record.
 4. **Qualify provider and native behavior.** The SignPath reference's
    `authenticode-verify` description does not establish its effective padding
@@ -405,8 +424,9 @@ global Wintrust policy. W11-W10/S6.4 owns the
 | Route | Suitable role for this project | Limitation |
 | --- | --- | --- |
 | **SignPath Foundation** | Possible free OSS signer for required inner files on MSIX or a later selected MSI | Provider selection, eligibility and exact format/provenance policy remain open. This particular service is not mandatory; supported production signing for required artifacts is mandatory before release |
-| **Microsoft Store with a complete MSIX** | Selected first submission direction for the complete hardened product; accepted MSIX packages receive Store signing | Actual service/capability acceptance and package qualification remain open; no split service/UI installers or automatic fallback |
-| **Microsoft Store with MSI/EXE** | Possible listing/distribution route for an already signed complete installer | The developer must supply trusted signatures; it does not provide free signing for an unsigned MSI |
+| **Directly distributed complete MSIX** | Selected delivery format and channel direction under OD-05 §7.9 | Signing/provider and target-device trust are deferred and unresolved; local preparation continues |
+| **Microsoft Store with a complete MSIX** | Rejected by David on 21 November 2026 because of publisher indemnity obligations | Historical comparison only; no Store account, submission or certification work |
+| **Microsoft Store with MSI/EXE** | Rejected Store publication route | Retained comparison: trusted publisher signatures would still be required; not a NevroTick task |
 | **Azure Artifact Signing Public Trust** | Paid hosted-signing alternative when the applicant is eligible | Not a free OSS entitlement; identity/geography restrictions apply |
 | **Commercial public code-signing provider** | Possible later owner-selected alternative if cost, identity verification and provider policies are acceptable | Obtain current eligibility and price directly; no free availability or automatic fallback assumed |
 | **Owner-controlled interim self-signed certificate** | Explicitly accepted interim MSI release profile in section 7.1 | No public CA/Windows publisher trust or warning-free installation promise; channel, installed-code and native compatibility still need qualification |
@@ -418,131 +438,75 @@ Azure Artifact Signing currently requires a paid Azure subscription. Public Trus
 
 A valid signature also does **not guarantee the absence of SmartScreen prompts**. Reputation and other Windows protections remain separate considerations. Microsoft's current guidance says EV certificates no longer automatically bypass SmartScreen reputation checks. Paying for EV solely to promise warning-free installation would be an unsound plan. [S11]
 
-### 6.1 Store MSIX trust and publication boundaries
+<a id="61-store-msix-trust-and-publication-boundaries"></a>
 
-The [MSIX/Store plan](plans/windows-msix-store.md), including the 3 November
-owner amendment, defines the selected complete hardened MSIX direction. Source
-and design preparation, later local candidate qualification, David's initial
-controlled Store submission, and qualification of the actual Store-delivered
-artifact are separate stages. Neither Store acceptance before preparation nor
-a final Store signature before initial submission is required. No account,
-accepted capability, signed artifact or executed Windows result is claimed.
+### 6.1 Direct MSIX trust and publication boundaries
+
+The [MSIX plan](plans/windows-msix-store.md) and
+[OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+select direct distribution without Microsoft Store publication. Source/package
+preparation continues while signing is deferred. Later local/test-signed
+qualification, final signing and direct-download verification remain separate;
+no Store-produced artifact is required or expected.
 
 [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
-makes enhanced build provenance optional: GitHub/Sigstore attestations,
-independent reproducible builds and a public verification bundle are not release
-blockers. [The provenance record](plans/release-provenance.md) explains their
-possible use and the Store transformation. Required signing/trust, exact
-artifact custody, SBOM/licence and installed-payload checks below remain distinct.
+keeps enhanced provenance optional. The [provenance record](plans/release-provenance.md)
+retains historical Store transformation research; current mandatory custody
+covers the actual build, signing and direct publication. No independent rebuild,
+GitHub/Sigstore attestation or public proof bundle becomes a new release gate.
 
-For an accepted Store MSIX, Microsoft supplies the outer package signature after
-certification; no purchased developer certificate/token is required for that
-outer signature. This does not supply the required inner-file signatures:
-their production signer, supported formats and custody remain open qualification
-work under section 4.1. No paid service is selected. Current Individual and Company onboarding waive
-their former registration fees through `storedeveloper.microsoft.com`. Select
-the truthful account type and verify country/document eligibility; old portal
-flows and broad market-availability statements are not sufficient evidence.
-Store MSI/EXE submissions still require trusted installer and PE signatures;
-the initial OpenPGP profile does not meet that requirement.
+Final public MSIX installation needs target-device trust in the package signer.
+A self-signed package is not automatically trusted on unchanged consumer Windows;
+local trust substitutions establish only their recorded laboratory result.
+The ordinary direct-distribution route can use a trusted code-signing certificate
+or suitable signing service, but no provider, eligibility or acceptance is
+established here. Do not request that customers import development roots or
+weaken Windows protection. Resolve this later signing work under the owner's
+deferred decision; do not block unrelated development on it. [S35]
 
-Microsoft documents a common catalog signature for the files in an MSIX app.
-This supports a package-aware trust candidate and must not be dismissed as trust
-only in an outer archive. It does not establish an independently usable embedded
-Authenticode signature on every extracted EXE/DLL. The current owner requirement
-therefore verifies both levels independently, including all other supported
-shipped formats in section 4.1. The selected preparation requires the following
-distinct controls; the plan owns their detailed contract.
+Microsoft's package catalog authenticates package content; it does not establish
+an independent embedded Authenticode signature on each extracted PE. Preserve
+both package and supported individual signatures under section 4.1, with these
+separate qualification owners:
 
-- **Sealed executable content and runtime package integrity.** Declare
-  `uap10:PackageIntegrity` with `uap10:Content Enforcement="on"` explicitly,
-  using the supported namespace/schema and target OS. Keep all executable
-  product payloads in the protected declared package/dependency graph. Do not
-  enable executable mutable/external package content or load product code from
-  writable data. An absent or empty
-  integrity declaration is not enforcement evidence. Qualify actual service,
-  UI and helper launch paths with tampered and intact packages and supported
-  repair. See [plan section 3.1](plans/windows-msix-store.md#31-package-integrity-and-sealed-executable-content). [S19]
-- **Store-compatible Code Integrity Guard (CIG).** Require the documented Store
-  allowance where the role loads Store-signed code: the Exploit Protection
-  names are `MicrosoftSignedOnly` and `AllowStoreSignedBinaries`. Strict
-  Microsoft-only loading without that allowance is a different policy. Record
-  the actual API/configuration representation, activation phase and readback
-  for each real launch path, including SCM; a setter called after startup does
-  not prove coverage of earlier module loads. Verify the complete actual
-  import/DLL closure, including delayed and provider loads. See
-  [plan section 3.2](plans/windows-msix-store.md#32-store-compatible-code-integrity-guard). [S20]
-- **Role-specific protections.** Apply the strongest compatible supported and
-  verified profile separately to the engine, broker, ordinary UI and elevated
-  helper. Do not apply an unqualified blanket flag set or silently disable a
-  required control to get a role to start. Record supported activation phase,
-  readback and both refusal and valid-operation behavior. See
-  [plan section 3.3](plans/windows-msix-store.md#33-strongest-compatible-process-protections)
-  and [development hardening section 6.4](windows-time-development-hardening.md#64-per-process-mitigation-qualification).
-- **Product authorization beyond signer class.** Bind the installed package's
-  exact identity, approved release and payload to the helper/IPC contract.
-  An unrelated valid Store package may satisfy a signer-class check; it must
-  fail NevroTick role authorization beside the intended valid package. CIG
-  and package signing do not grant NevroTick privileges.
-- **Final distributed-artifact evidence.** Keep source/build, locally tested
-  candidate and Store-delivered identities separately. After Store signing,
-  reconcile the final package, catalog, manifest, required per-file signatures,
-  payload hashes, SBOM and
-  installed-file identity; read back the effective per-role protections and
-  observed DLL closure on the actual delivered artifact. Use tampered,
-  substituted, unsigned or unapproved DLL/package controls together with
-  valid startup, cryptography, UI/helper, maintenance and recovery controls.
-  Observe valid update/repair as well as refusal. The independent cases and
-  CHECK-16/18/23/26 evidence belong to
-  [plan section 3.4](plans/windows-msix-store.md#34-threats-and-independent-controls).
-- **Compiled leap-data provenance.** The [selected calendar and policy](plans/leap-second-policy.md#3-knowledge-and-distribution-contract)
-  ship as reviewed immutable generated data within that same authenticated
-  complete release. Bind pinned inputs, generator identity, normalized revision
-  and digest, and supported coverage to build and submitted/delivered payload
-  records. `#h` or a standalone checksum is not release authentication. Do not
-  add a separate downloader, runtime leap-file path, hot update or TUF authority.
-  Package corruption is an integrity failure; valid unknown future coverage is
-  a distinct policy state. Authorized update/rollback preserves protected floors,
-  consumed correction authority and mandatory recovery.
-- **Wrong-clock and offline availability.** Apply section 5.1 to first
-  installation, pre-login startup, helper activation, maintenance and recovery.
-  Signing and timestamping alone do not settle those paths.
-
-Local test signing qualifies only the explicitly recorded laboratory trust
-environment. It cannot substitute for final Store-artifact checks. Failure of
-a required protection blocks the affected operation or authority; it does not
-authorize weaker recovery code, expanded privilege or an automatic MSI route.
-
-The Store Web Installer can offer website/GitHub-first acquisition of a published
-free MSIX through the Store backend. It is an online delivery entry point, not a
-standalone offline full installer or a separately managed prerequisite product.
-Official `winget download` supports package/dependency acquisition and an offline
-license workflow, but availability, licensing, rehosting and actual offline
-behavior still need route-specific evidence. It is not a free signature service
-for arbitrary newly built GitHub artifacts.
-
-Private audience and package flights can support a later controlled release;
-they do not waive certification or capability restrictions. Choose private
-audience before first public publication if needed. A listing rollback to an
-older package does not downgrade already updated installations: a corrective
-higher-version release and compatible state recovery remain necessary. Preserve
-David's exact-candidate release authority, truthful publisher/package identity,
-and all [architecture §19.4 gates](windows-time-architecture.md#194-future-complete-msix-gate).
-The [W11-W10 owner-selected MSIX assignment](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
-owns the preparation and later qualification work. David performs Store
-submission and controls visibility/release; broad release requires the final
-Store-artifact checks above. MSI delivery remains conditional on a later owner
-decision; SignPath may also supply inner-file signatures for MSIX if qualified.
-The unsigned-MSI/OpenPGP exception is superseded.
+- **Sealed code and package integrity:** explicit `uap10:PackageIntegrity` /
+  `uap10:Content Enforcement="on"`, protected declared executable/dependency
+  content and actual intact/tampered launch observations. No mutable or external
+  executable content is admitted. [Plan §3.1](plans/windows-msix-store.md#31-package-integrity-and-sealed-executable-content)
+  owns the detailed contract. [S19]
+- **Direct-route CIG and other mitigations:** an ordinary publisher signature
+  does not satisfy Microsoft/Store signer classes. Reconcile the exact per-role
+  DLL closure, initial/late-load phase, supported policy and effective evidence
+  under [plan §3.2](plans/windows-msix-store.md#32-store-compatible-code-integrity-guard)
+  and architecture §15.4. Retain the strongest supported compatible setting;
+  record concrete incompatibilities and owner dispositions rather than silently
+  weakening a role or inheriting an impossible Store-signature assumption. [S20]
+- **Independent product authorization:** bind package identity, approved release,
+  actual installed payload and permitted operation. A valid unrelated signed
+  package, including one signed by Microsoft Store, grants no NevroTick
+  helper/IPC authority.
+- **Final distributed bytes:** preserve prepared, signed and downloaded hashes;
+  verify catalog/manifest, every required individual signature, actual imports,
+  SBOM/licence inventory and installed identities. Qualify normal and denied
+  activation, cryptography, UI, maintenance and recovery using the final direct
+  artifact. CHECK-16/18/23/26 keep their existing owners.
+- **Bundled data:** pinned leap/calendar/catalogue input, generator, normalized
+  revision/digest and supported coverage travel in the same complete release.
+  A checksum alone is not authentication. No runtime downloader, hot update or
+  TUF authority is selected; correction preserves protected floors and spent
+  authority.
+- **Wrong-clock/offline behavior:** section 5.1 still applies to installation,
+  pre-login startup, helper activation, update, repair and removal. Signing and
+  timestamping alone do not settle availability or safe refusal.
 
 Use [release-policy §4](release-policy.md#4-distribution-containment-choose-the-actual-store-operation)
-to distinguish initial private audience, later flights, gradual updates, halt and
-availability controls. Record publication containment separately from installed
-recovery and any publishing-authority incident. A corrective package must qualify
-the affected state and actual delivery route; a Store signature does not prove
-that malicious same-product publication through a compromised account is
-independently rejected on the device. [Section 7](release-policy.md#7-compromised-publisher-repository-or-build-authority)
-preserves that residual and the distinct MSA/Entra/application recovery routes.
+for the chosen direct channel's controlled availability, withdrawal and correction.
+Hosting, access control and an optional `.appinstaller` update feed remain
+unselected; none can be assumed to recall installed copies. Store flights,
+Partner Center visibility and Store rollback are historical research only.
+David retains exact-candidate release authority; the existing W11-W10/W11-W05
+chain owns native and final-artifact evidence. A genuine protection failure is
+not waived by direct distribution. MSI remains a later owner choice.
 
 <a id="7-development-and-the-accepted-initial-openpgp-release-profile"></a>
 <a id="7-development-signing-and-the-superseded-openpgp-profile"></a>
@@ -663,22 +627,22 @@ self-signatures, not unsigned installers supplemented only by detached signature
 | --- | --- | --- |
 | Chrony/source and exact dependency-license position | Maintainer and qualified license reviewer | Open; preserve architecture gates |
 | Complete MSIX, service/capability justification and sealed executable inventory | Package/Windows owner | Selected preparation direction; implementation and native qualification remain open |
-| Explicit package-content enforcement and role-specific Store-compatible CIG/mitigations | Windows/security verifier | Plan sections 3.1–3.4 and CHECK-16/18/23/26; exact-path readbacks and behavioral controls not executed |
-| Store account, initial controlled submission and capability/certification acceptance | David Osipov / Microsoft Store | David performs submission; external acceptance is not established by preparation |
-| Protected source/build candidate and final Store-delivered package/catalog/payload identity | Build/release verifier | Keep both identities and validated SBOM assets; actual Store artifact not available or qualified |
+| Explicit package-content enforcement and role-specific direct-route CIG/mitigations | Windows/security verifier | Plan sections 3.1–3.4 and CHECK-16/18/23/26; Store-signer assumptions require disposition, and native controls remain open |
+| Microsoft Store publication | David Osipov | Rejected under OD-05 §7.9; no account, submission, certification or refusal gate |
+| Protected source/build candidate and final directly delivered package/catalog/payload identity | Build/release verifier | Bind prepared, signed and downloaded identities and SBOM assets; final signing and direct-artifact qualification remain open |
 | Immutable normalized leap calendar/policy and reproducible provenance | Domain/build/release verifier | NV-LP-001 selects the same authenticated complete-release channel; generated data, revision/digest binding and final-artifact evidence remain to be implemented and qualified |
 | Valid/tampered/unsigned/substituted/unrelated-Store-package controls | Release/security verifier | Package trust, CIG and NevroTick role authorization require separate evidence; not executed |
 | Wrong-clock/offline activation and recovery | Windows/release/security verifier | Section 5.1 cases required on the selected artifact; not executed |
-| Every shipped signable artifact, including nonbinary files, plus outer package | Build/package/security verifier | Section 4.1 defines inventory, signing order and expected identities; production provider capability, complete coverage and post-Store preservation are open |
+| Every shipped signable artifact, including nonbinary files, plus outer package | Build/package/security verifier | Section 4.1 defines inventory, signing order and expected identities; production provider capability, complete coverage and final delivered-signature preservation are open |
 | Embedded PE padding checks and complete final-byte binding | Release/security verifier | Every shipped PE requires its embedded result; section 5.2's strict-policy readback and behavioral cases are not executed |
-| Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final Store-artifact evidence required before broad release |
-| Exact-candidate visibility and broad release after post-Store qualification | David Osipov | Owner decision retained; no publication by this work |
+| Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final direct-artifact evidence required before broad release |
+| Exact-candidate direct availability and broad release | David Osipov | Signing/delivery selection deferred; no publication or released artifact established |
 | Per-format native signing capability and SignPath eligibility if pursued | Maintainer / provider / verifier | Required inner-file capability also applies to MSIX; missing capability blocks release, not independent source preparation. MSI delivery remains conditional; the OpenPGP-only exception is superseded |
 | Interim self-signed MSI, if MSI delivery is later selected | Owner / release / Windows verifier | OD-05 §7.8 accepts the profile; section 7.1 requires approved-key coverage, truthful public-trust failure, actual channel/installed-code qualification and later signer migration. No key or signed artifact is established |
 | Stable-support and transition commitment | David Osipov / release owner | [Release-policy §2](release-policy.md#2-support-status-and-proposed-baseline) is proposed; no stable series, support lifetime, backport schedule or response deadline approved |
 | Renewal, revocation, access removal and recovery | Release/security owner | [Operational procedures are written](release-policy.md#7-compromised-publisher-repository-or-build-authority); actual private inventory and applicable renewal/access/recovery rehearsals remain pending and required before public release |
 
-**OPEN-11 tracks acceptance and qualification of the selected Store MSIX route and its required per-file signatures.** MSI delivery remains a later owner choice, with no unsigned/OpenPGP-only exception. Preparation does not wait for speculative Store preapproval. Initial controlled submission does not claim completed post-Store checks. Broad release requires actual delivered-artifact coverage, installed-file trust, protection and lifecycle evidence, with David's exact-candidate decision. A provider account, a screenshot of a certificate or this guide alone is insufficient.
+**OPEN-11 tracks the selected direct-MSIX route's unresolved signing/trust and qualification.** Signing selection is deferred; source and package preparation continue. MSI remains a later owner choice, and no unsigned/OpenPGP-only exception is introduced. Eventual public distribution requires actual delivered-artifact coverage, installed trust, protection and lifecycle evidence with David's exact-candidate decision. No Store submission or refusal is required. A provider account, certificate screenshot or this guide alone supplies no signing or release pass.
 
 ## 9. Sources and related documents
 
@@ -701,7 +665,7 @@ Primary sources checked for the 8 November all-signable shipping requirement:
 
 The per-file requirement is David's policy, stronger than what a package signature
 alone establishes; these references do not prove provider acceptance, signing
-implementation, Store preservation of signatures or native runtime enforcement.
+implementation, preservation of final signatures or native runtime enforcement.
 
 Primary sources checked for the 8 November PE-padding refinement:
 
@@ -754,3 +718,5 @@ Primary provider and Microsoft pages were checked on 28 October 2026. Eligibilit
 - **S11:** [Microsoft guidance on SmartScreen reputation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
 
 Companion documents: [architecture revision 1.4](windows-time-architecture.md), [development-environment hardening](windows-time-development-hardening.md), and [update-system assessment](windows-time-update-assessment.md). This guide is independently readable; the architecture remains authoritative for product scope, authority boundaries and unresolved design gates.
+
+- **S35:** [Direct MSIX distribution and trusted certificates](https://learn.microsoft.com/en-us/windows/msix/app-installer/installing-windows10-apps-web). Public trust, laboratory certificate substitution and package creation are separate; no signing provider is selected by this reference.
