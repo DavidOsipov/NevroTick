@@ -1,11 +1,10 @@
-# Inert S0.2 Windows service source fixture
+# S0.2 Windows service source fixture
 
 This standalone experimental workspace prepares real SCM entry points and their
 shared owner for W11-W05/S0.2/S3.1, CHECK-27. It is outside the product workspace
 and implements no production service, account provisioning or clock authority.
-All Windows execution and installation remain held. The existing Windows task
-owns the source card, admission and later native permission; this README grants
-none of them.
+The existing Windows task owns the source card, scoped Windows execution,
+and installation holds.
 
 The two executable compositions select only these laboratory identities:
 
@@ -32,7 +31,7 @@ requires only ChangeNotify; Broker requires ChangeNotify plus disabled Systemtim
 Missing or extra privileges, including unknown or disabled extras, refuse startup.
 ChangeNotify may be enabled or disabled. These are checked representation facts,
 not a native token or installed-identity qualification. A later sequential permit
-owns the genuine inert control loop and
+owns the actual control loop and the broker's read-only observations and
 completes before terminal reporting. These permits do not overlap or enlarge the
 one-slot capacity.
 
@@ -51,12 +50,25 @@ Argument zero is ignored SCM metadata. Counts above one are rejected without
 reading the vector or strings. The process command line selects no role, path,
 endpoint, policy or control privilege.
 
-Running means only that the inert control loop can receive Stop. HandlerEx reads
-no event/context pointer and invokes no application closure. It decodes through
-the existing `StopNotification`, coalesces Stop and unparks the already-published
-owner thread. Interrogate and unsupported controls cause no status report. The
-owner rechecks the sticky bit and original monotonic deadline after every wake,
-including spurious wakes and Stop delivered immediately before parking.
+Running acknowledges the admitted control loop. The Engine advertises Stop.
+The broker also advertises time-change and power notices through its bound
+static handler. `HandlerEx` ignores event and context pointers. Stop closes the broker
+mailbox, publishes the existing sticky bit and wakes the owner. A delivered
+time-change notice advances the live revision and wakes the same thread. A
+delivered suspend blocks capture until the broker observes automatic resume,
+which opens a fresh revision. The owner rechecks Stop and the original
+monotonic deadline after every wake.
+
+Under its original permit the broker can retain a checked raw QPC/FILETIME read
+for the initial revision and for later notices. A one-second lab cadence also
+observes consecutive brackets during quiet periods. A changed frequency,
+counter regression, or backward FILETIME retires the original revision.
+A final revision check orders reads and sampled invalidations against
+concurrent notices. `retained_broker_clock_read` exposes the final historical
+attempt, and `retained_broker_clock_break` preserves the latest sampled cause
+after recovery. Physical delivery, UTC mapping
+and installed service qualification have separate exits. See the
+[SCM time-change checkpoint](../../tasks/windows11-integration.md#broker-scm-time-change-and-renewable-raw-observation--22-november-2026).
 
 The owner thread handle and notification have process-lifetime static custody,
 without reset or callback-context deallocation. Each report initializes all seven
@@ -130,9 +142,11 @@ restart, elevation or additional runtime.
 The exact external Windows edge is existing `windows-sys` 0.61.2, defaults off,
 with `Win32_Foundation`, `Win32_Security`, `Win32_System_Services` and
 `Win32_System_Threading`. The other direct edge is the existing path-owned
-`windows-platform`. The private test-only managed loopback composition adds the local Engine as a
-dev-dependency with defaults disabled. It exercises owned loopback UDP and one
-joined thread, while normal executable graphs retain the two existing edges.
+`windows-platform`. The Windows executable graph also admits the existing
+local `windows-platform-native` leaf for the broker's clock reads. The private
+managed loopback composition adds the local Engine as a dev-dependency with
+defaults disabled and exercises owned loopback UDP and one joined thread. The
+Windows ETW and Time binding features remain test-only.
 The lock preserves admitted registry identities. The retained
 graph/ordinary-check receipts cover their frozen candidate; changed source or
 features require refreshed admission before dependent checks.

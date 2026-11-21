@@ -109,12 +109,53 @@ separated by hyphens, with no directory. The name and filename each fit
 The selected table generates `authoring/service-events.man` for the Windows
 SDK Message Compiler and fills the corresponding fields in
 `authoring/event-inputs.json`. The JSON resource is a package-relative
-filename for message and metadata resources. The compiler input uses one
-disabled Operational channel and omits installed file paths. The checked-in
+filename for message and metadata resources. The compiler input uses the same
+validated filename in `resourceFileName` and `messageFileName`, with one
+disabled Operational channel. The installed provider needs its own resolved
+paths. The checked-in
 product source leaves this table unset. Authoring a candidate leaves
 `diagnostics.provider` pending until the installed provider is qualified.
 See the [installed delivery task](../tasks/windows11-integration.md#installed-event-delivery-contract-preparation--21-november-2026)
 for producer and package ownership.
+
+### Build the event resource DLL
+
+With a provider selected, the [MD-P4 build command](build_event_resource.py)
+takes a checked generated tree and the compiled `service-events.res` and
+`status.json` from the admitted offline Windows SDK 10.0.28000.2705 run.
+Use the receipt SHA-256 from the separate reviewed compiler export. The
+builder checks the selected manifest, tool identities, both compiler
+completions and the resource inventory projection in that receipt. The
+original compiler logs and their verification stay with the export owner.
+
+```sh
+python3 -I -B metadata/build_event_resource.py \
+  --generation "$metadata_output_parent/candidate" \
+  --resource-object "$compiler_export/service-events.res" \
+  --compiler-receipt "$compiler_export/status.json" \
+  --compiler-receipt-sha256 "$reviewed_compiler_receipt_sha256" \
+  --output "$metadata_output_parent/event-resource"
+```
+
+Use the same `--root` and `--source` as generation when selecting a lab
+fixture. The default providerless record refuses this command. The builder
+uses the existing admitted WSL Rust/LLVM toolchain and offline namespace. It
+checks the emitted AMD64 DLL's resource-only layout, exact compiled leaves,
+provider, event descriptors, template fields, references and en-US messages
+before publishing the DLL and its receipt together. Use an owned local Linux
+output parent supporting atomic no-replace rename. An existing destination
+is refused. Exit 3 preserves a visible candidate when the parent flush
+acknowledgement is missing. Inspect that candidate before any retry.
+
+The portable build controls run separately from the source-pipeline suite.
+
+```sh
+python3 -I -X dev -Werror -B -m unittest discover -s metadata -p test_event_resource_build.py
+```
+
+The build receipt covers the unsigned DLL. Package assembly, individual
+signing, installed provider access, retention and rendered events remain
+with their existing owners. See the [compiled DLL checkpoint](../tasks/windows11-integration.md#maintained-event-resource-dll-build--21-november-2026).
 
 ## Edit field values and dispositions
 

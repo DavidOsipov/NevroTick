@@ -62,7 +62,7 @@ _COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "740b0155aa5c2f75f7d9811f7fd038118320307323c7ade8194841cb193b39b1"
+REVIEWED_POLICY_SHA256: str | None = "768570384e4a687f2f7363c46fdf44d69c2655255384bd9d633912775be0ef24"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)

@@ -397,6 +397,11 @@ impl Rig {
                     wait.min(remaining)
                 }
                 InvocationPoll::Overdue => remaining,
+                InvocationPoll::WriterReleaseUnconfirmed(_) => {
+                    return Err(
+                        "fixture without a writer reported unconfirmed writer release".into(),
+                    );
+                }
             };
             thread::park_timeout(wait);
             if started.elapsed() >= CLOSE_WAIT {

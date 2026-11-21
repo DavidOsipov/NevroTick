@@ -156,6 +156,9 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
             add("diagnostics.event_provider." + field, "authoring/event-inputs.json", "/" + target)
         add("diagnostics.event_provider", _EVENT_MANIFEST, "instrumentation/events/provider",
             representation="compile-only-provider-and-fixed-event-schema")
+        for attribute in ("resourceFileName", "messageFileName"):
+            add("diagnostics.event_provider.package_resource_file", _EVENT_MANIFEST,
+                "instrumentation/events/provider/@" + attribute, representation="compiler-resource-leaf")
     add("fields", "field-coverage.json", "/", representation="dispositions-and-source-contract")
     public = ["metadata.json", "rust/product.rs"]
     for component in model.components:
@@ -472,7 +475,9 @@ def _verify_event_manifest(provider: EventProvider, raw: bytes) -> None:
         ("instrumentation", 1, {}),
         ("events", 1, {}),
         ("provider", 4, {"name": provider.name, "guid": "{" + provider.guid + "}",
-                         "symbol": "NEVROTICK_SERVICE_PROVIDER"}),
+                         "symbol": "NEVROTICK_SERVICE_PROVIDER",
+                         "resourceFileName": provider.package_resource_file,
+                         "messageFileName": provider.package_resource_file}),
         ("channels", 1, {}),
         ("channel", 0, {"name": provider.name + "/Operational", "chid": "ServiceOperational",
                         "value": "16", "type": "Operational", "enabled": "false"}),

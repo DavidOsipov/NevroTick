@@ -1,0 +1,527 @@
+"""Exercise service cross-link export with inert emitted PE/PDB fixtures."""
+from __future__ import annotations
+
+import contextlib
+import hashlib
+import importlib.util
+import io
+import json
+from pathlib import Path
+import shutil
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+from uuid import UUID
+
+from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
+
+ROOT = Path(__file__).resolve().parents[2]
+SPEC = importlib.util.spec_from_file_location(
+    "service_cross_link_under_test", ROOT / "scripts/cross-link-service-fixture.py",
+)
+CROSS = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(CROSS)
+ENGINE, BROKER = CROSS.BINS
+
+
+class ServiceArtifactExport(unittest.TestCase):
+    def setUp(self):
+        scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(scratch.cleanup)
+        private = Path(scratch.name)
+        self.root = private / "source"
+        self.records = self.root / "records"
+        self.records.mkdir(parents=True)
+        self.cache = private / "cache"
+        self.stable = private / "stable"
+        self.vendor = private / "vendor"
+        self.vendor.mkdir()
+        self.libraries = private / "libraries"
+        self.llvm = self.stable / "lib/rustlib/x86_64-unknown-linux-gnu/bin"
+        self.llvm.mkdir(parents=True)
+        for tool in ("rust-lld", "llvm-readobj"):
+            path = self.llvm / tool
+            path.touch()
+            path.chmod(0o700)
+        for name in (CROSS.SELF, CROSS.PE_READER, CROSS.METRICS_EXPORT_HELPER, ".cargo/config.toml"):
+            destination = self.root / name
+            destination.parent.mkdir(exist_ok=True)
+            shutil.copyfile(ROOT / name, destination)
+        self.index = {"path": "fixture-index", "sha256": "fixture-index-sha"}
+        self.identity = {CROSS.SELF: CROSS.C.PRODUCT.sha256(self.root / CROSS.SELF)}
+        self.checkpoint = self.records / "source.json"
+        self.sdk = private / "sdk.json"
+        self.sdk_inventory = private / "sdk-inventory.json"
+        for path in (self.checkpoint, self.sdk, self.sdk_inventory):
+            path.write_text("{}")
+        self.tools = {
+            "stable": self.stable,
+            "inventories": {},
+            "readonly_roots": [],
+            "installation_pointer": "fixture-installation",
+            "installation_pointer_sha256": "fixture-installation-sha",
+            "policy_sha256": "fixture-policy-sha",
+        }
+        self.pairs = {
+            ENGINE: (_image(3, pdb_path=ENGINE.replace("-", "_") + ".pdb", guid=_UI_GUID), _pdb(guid=_UI_GUID)),
+            BROKER: (_image(3, pdb_path=BROKER + ".pdb", guid=_OBSERVE_GUID), _pdb(guid=_OBSERVE_GUID)),
+        }
+        self.symbols = {ENGINE: ENGINE.replace("-", "_") + ".pdb", BROKER: BROKER + ".pdb"}
+        for object_, name, replacement in (
+            (CROSS, "ROOT", self.root),
+            (CROSS.Q, "RECORDS", self.records),
+            (CROSS.Q, "CACHE", self.cache),
+            (CROSS.Q, "DISK_FLOOR", 0),
+        ):
+            self.enterContext(patch.object(object_, name, replacement))
+        checkpoint = {
+            "candidate_sha256": "fixture-candidate",
+            "index_after": self.index,
+            "tools": {"stable": str(self.stable)},
+            "vendor": {"path": str(self.vendor), "inventory_sha256": CROSS.Q.canonical({}), "files": 0},
+        }
+        for object_, name, output in (
+            (CROSS.Q, "no_ambient_flags", None),
+            (CROSS.resource, "setrlimit", None),
+            (CROSS, "source_prerequisites", ({}, self.identity, checkpoint, {},
+                                             hashlib.sha256(self.checkpoint.read_bytes()).hexdigest())),
+            (CROSS.Q, "source_identity", ({}, self.identity)),
+            (CROSS.Q, "admit_service_tools", {}),
+            (CROSS.Q, "tool_identity", checkpoint["tools"]),
+            (CROSS.Q, "index_identity", self.index),
+            (CROSS.C.ANALYSIS, "admit", self.tools),
+            (CROSS.C.PRODUCT, "windows_libraries", (self.libraries, {})),
+            (CROSS.C.PRODUCT, "library_inventory", {}),
+            (CROSS.C.PRODUCT, "admit_vendor", {}),
+        ):
+            self.enterContext(patch.object(object_, name, return_value=output))
+        self.enterContext(patch.object(CROSS.C.RUNTIME, "run", side_effect=self.execute_fixture))
+        self.enterContext(contextlib.redirect_stdout(io.StringIO()))
+
+    def execute_fixture(self, root, work, command, **_kwargs):
+        release = Path("target") / CROSS.TARGET / "release"
+        if command[0] == str(self.stable / "bin/cargo"):
+            self.assertEqual(root, self.root)
+            build = work / release
+            build.mkdir(parents=True)
+            ledger = [str(self.llvm / "rust-lld"), "-flavor", "link"]
+            ledger.extend("/libpath:" + str(self.libraries / scope) for scope in CROSS.LIBRARY_SCOPES)
+            calls = []
+            output = []
+            for name, (image, symbols) in self.pairs.items():
+                leaf = name + ".exe"
+                (build / leaf).write_bytes(image)
+                (build / self.symbols[name]).write_bytes(symbols)
+                calls.append(json.dumps([*ledger, "/out:" + leaf]))
+                output.append(json.dumps({
+                    "reason": "compiler-artifact",
+                    "executable": str(Path("/work") / release / leaf),
+                    "target": {"name": name, "kind": ["bin"]},
+                    "profile": {"opt_level": "3", "debug_assertions": False},
+                }))
+            (work / "linker-calls.jsonl").write_text("\n".join(calls) + "\n")
+            return {"exit_code": 0, "failure": None, "output": "\n".join(output)}
+        self.assertEqual(command[:5], [
+            str(self.llvm / "llvm-readobj"), "--file-headers", "--coff-load-config",
+            "--coff-debug-directory", "--coff-imports",
+        ])
+        self.assertIn(command[5], [str(Path("/work") / release / (name + ".exe")) for name in CROSS.BINS])
+        return {"exit_code": 0, "failure": None, "output": "inspected " + Path(command[5]).name}
+
+    def run_link(self, label):
+        return CROSS.run(SimpleNamespace(
+            label=label, lane="link", source_checkpoint=self.checkpoint,
+            sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
+        ))
+
+    def receipt(self, label):
+        return json.loads((self.records / ("cross-" + label + ".json")).read_text())
+
+    def assert_healthy(self, label):
+        self.assertEqual(self.run_link(label), "passed")
+        receipt = self.receipt(label)
+        self.assertTrue(receipt["bookends_passed"])
+        self.assertTrue(receipt["index_bytes_unchanged"])
+        self.assertEqual(receipt["index_before"], receipt["index_after"])
+        self.assertEqual(receipt["index_after"], self.index)
+        self.assertEqual(receipt["source_sha256"], self.identity)
+        self.assertEqual(receipt["checkpoint_sha256"], hashlib.sha256(b"{}").hexdigest())
+        self.assertFalse(receipt["native_execution"])
+        self.assertEqual(len(receipt["commands"]), 3)
+        self.assertEqual(set(receipt["artifacts"]), {ENGINE, BROKER})
+        directory = self.records / ("cross-" + label + "-artifacts")
+        expected_names = set()
+        for name, (image, symbols) in self.pairs.items():
+            artifact = receipt["artifacts"][name]
+            image_name = name + ".exe"
+            symbol_name = self.symbols[name]
+            log_name = name + "-llvm-readobj.txt"
+            expected_names.update((image_name, symbol_name, log_name))
+            self.assertEqual(self.root / artifact["image"], directory / image_name)
+            self.assertEqual(self.root / artifact["pdb"], directory / symbol_name)
+            self.assertEqual((directory / image_name).read_bytes(), image)
+            self.assertEqual((directory / symbol_name).read_bytes(), symbols)
+            self.assertEqual((directory / log_name).read_text(), "inspected " + image_name)
+            self.assertEqual(artifact["image_sha256"], hashlib.sha256(image).hexdigest())
+            self.assertEqual(artifact["pdb_sha256"], hashlib.sha256(symbols).hexdigest())
+        self.assertEqual({path.name for path in directory.iterdir()}, expected_names)
+
+    def assert_rejected_then_restored(self, label, bad_symbols):
+        image, expected_symbols = self.pairs[BROKER]
+        self.pairs[BROKER] = image, bad_symbols
+        with self.assertRaisesRegex(CROSS.Incomplete, "PDB GUID or age"):
+            self.run_link(label)
+        self.assertFalse((self.records / ("cross-" + label + "-artifacts")).exists())
+        receipt = self.receipt(label)
+        self.assertEqual(receipt["status"], "incomplete")
+        self.assertFalse(receipt["bookends_passed"])
+        self.assertFalse(receipt["native_execution"])
+        self.assertNotIn("artifacts", receipt)
+        self.assertIn("PDB GUID or age", receipt["custody_error"])
+        self.assertEqual({path.name for path in self.records.iterdir()}, {"source.json", "cross-" + label + ".json"})
+        self.pairs[BROKER] = image, expected_symbols
+        restored = label + "-restored"
+        self.assert_healthy(restored)
+        self.assertEqual(self.receipt(restored)["artifacts"][BROKER]["pdb_identity"], {
+            "guid": str(UUID(bytes_le=_OBSERVE_GUID)),
+            "age": 1,
+            "sha256": hashlib.sha256(expected_symbols).hexdigest(),
+        })
+
+    def test_valid_fixed_roles_export_exact_bytes_and_receipt(self):
+        self.assert_healthy("healthy")
+
+    def run_libtest_link(self, label, *, fault=None):
+        """Drive the release libtest export using inert compiler output and PE/PDB bytes."""
+        proc_hash = "0123456789abcdef"
+        name = "nevrotick_windows_service_fixture"
+        package = "nevrotick-windows-service-fixture"
+        package_root = "/work/source/tools/windows-service-fixture"
+        out = Path("target") / CROSS.TARGET / "release" / "build" / package / proc_hash / "out"
+        image = out / (name + "-" + proc_hash + ".exe")
+        symbols = image.with_suffix(".pdb")
+        image_bytes = _image(3, pdb_path=symbols.name, guid=_UI_GUID)
+        symbol_bytes = _pdb(guid=_OBSERVE_GUID if fault == "symbol-guid" else _UI_GUID)
+        cargo = [
+            str(self.stable / "bin/cargo"), "--verbose", "--verbose", "--config",
+            f'target.{CROSS.TARGET}.linker="/work/linker"', "test", "--manifest-path",
+            package_root + "/Cargo.toml", "--release", "--target", CROSS.TARGET,
+            "--frozen", "--offline", "--jobs", "1", "--lib", "--no-run",
+            "--message-format=json-render-diagnostics",
+        ]
+        emitted = "/work/" + str(image)
+        artifact = {
+            "reason": "compiler-artifact",
+            "package_id": f"path+file://{package_root}#{package}@0.0.0",
+            "manifest_path": package_root + "/Cargo.toml",
+            "target": {"name": name, "kind": ["lib"], "crate_types": ["lib"],
+                       "src_path": package_root + "/src/lib.rs", "edition": "2024", "test": True},
+            "profile": {"opt_level": "3", "debug_assertions": False,
+                        "overflow_checks": True, "debuginfo": 1, "test": True},
+            "features": [], "fresh": False,
+            "executable": emitted, "filenames": [emitted, "/work/" + str(symbols)],
+        }
+
+        def execute(root, work, command, **_kwargs):
+            self.assertEqual(root, self.root)
+            if command[0] != cargo[0]:
+                self.assertEqual(command, [
+                    str(self.llvm / "llvm-readobj"), "--file-headers", "--coff-load-config",
+                    "--coff-debug-directory", "--coff-imports", emitted,
+                ])
+                return {"exit_code": 0, "failure": None, "output": "inspected"}
+            self.assertEqual(command, cargo)
+            (work / out).mkdir(parents=True)
+            (work / image).write_bytes(image_bytes)
+            (work / symbols).write_bytes(symbol_bytes)
+            ledger = [str(self.llvm / "rust-lld"), "-flavor", "link"]
+            ledger.extend("/libpath:" + str(self.libraries / scope) for scope in CROSS.LIBRARY_SCOPES)
+            ledger.append("/OUT:" + (emitted if fault != "link-output" else "/work/other.exe"))
+            (work / "linker-calls.jsonl").write_text(json.dumps(ledger) + "\n")
+            if fault == "normal-library":
+                artifact["profile"]["test"] = False
+            if fault == "other-package":
+                artifact["package_id"] += "-other"
+            if fault == "other-path":
+                artifact["executable"] = emitted.replace(proc_hash + ".exe", "f" * 16 + ".exe")
+                artifact["filenames"] = [artifact["executable"]]
+            rows = [artifact]
+            if fault == "duplicate":
+                rows.append(artifact)
+            if fault != "missing-completion":
+                rows.append({"reason": "build-finished", "success": True})
+            return {"exit_code": 0, "failure": None, "output": "\n".join(map(json.dumps, rows)),
+                    "command": ["sandbox", "--", *(reversed(command) if fault == "argv-order" else command)]}
+
+        with patch.object(CROSS.C.RUNTIME, "run", side_effect=execute):
+            status = CROSS.run(SimpleNamespace(
+                label=label, lane="libtest-link", source_checkpoint=self.checkpoint,
+                sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
+            ))
+        receipt = self.receipt(label)
+        self.assertEqual(status, "passed")
+        self.assertEqual(receipt["lane"], "libtest-link")
+        self.assertTrue(receipt["bookends_passed"])
+        self.assertFalse(receipt["native_execution"])
+        self.assertEqual(len(receipt["commands"]), 2)
+        self.assertEqual(set(receipt["artifacts"]), {name})
+        export = receipt["artifacts"][name]
+        self.assertEqual(Path(export["image"]).name, image.name)
+        self.assertEqual(Path(export["pdb"]).name, symbols.name)
+        self.assertEqual((self.root / export["image"]).read_bytes(), image_bytes)
+        self.assertEqual((self.root / export["pdb"]).read_bytes(), symbol_bytes)
+        self.assertEqual(export["pdb_identity"]["guid"], str(UUID(bytes_le=_UI_GUID)))
+
+    def test_libtest_link_publishes_only_the_bound_hashed_artifact_pair(self):
+        self.run_libtest_link("healthy-libtest")
+
+    def test_libtest_link_refuses_a_wrong_artifact_link_or_pdb(self):
+        cases = {
+            "normal-library": "source or release profile",
+            "other-package": "source or release profile",
+            "other-path": "output path",
+            "duplicate": "one actual",
+            "missing-completion": "one actual",
+            "link-output": "linker output",
+            "argv-order": "ordered Cargo command",
+            "symbol-guid": "PDB GUID or age",
+        }
+        for fault, error in cases.items():
+            with self.subTest(fault=fault), self.assertRaisesRegex(CROSS.Incomplete, error):
+                self.run_libtest_link(fault, fault=fault)
+            self.assertNotIn("artifacts", self.receipt(fault))
+            self.assertFalse((self.records / ("cross-" + fault + "-artifacts")).exists())
+
+    def test_same_basename_pdb_from_other_role_rejects_both_exports(self):
+        self.assert_rejected_then_restored("wrong-role", self.pairs[ENGINE][1])
+
+    def test_same_guid_wrong_age_rejects_both_exports(self):
+        self.assert_rejected_then_restored("wrong-age", _pdb(guid=_OBSERVE_GUID, age=2))
+
+    def test_original_symbols_must_survive_both_llvm_inspections(self):
+        def drift_after_second_inspection(root, work, command, **kwargs):
+            result = self.execute_fixture(root, work, command, **kwargs)
+            if command[-1].endswith(BROKER + ".exe"):
+                symbols = work / "target" / CROSS.TARGET / "release" / self.symbols[ENGINE]
+                symbols.write_bytes(_pdb(guid=_UI_GUID, age=2))
+            return result
+
+        with patch.object(CROSS.C.RUNTIME, "run", side_effect=drift_after_second_inspection):
+            with self.assertRaisesRegex(CROSS.Incomplete, "Copied or emitted artifact changed"):
+                self.run_link("drift")
+        self.assertFalse((self.records / "cross-drift-artifacts").exists())
+        self.assertNotIn("artifacts", self.receipt("drift"))
+        self.assert_healthy("drift-restored")
+
+    def test_late_index_change_refuses_publication(self):
+        hash_file = CROSS.C.PRODUCT.sha256
+        changed = False
+
+        def hash_staged(path):
+            nonlocal changed
+            if path.parent.parent.name.startswith(".cross-publish-"):
+                changed = True
+            return hash_file(path)
+
+        def index():
+            return dict(self.index, sha256="replacement") if changed else self.index
+
+        with (patch.object(CROSS.C.PRODUCT, "sha256", side_effect=hash_staged),
+              patch.object(CROSS.Q, "index_identity", side_effect=index)):
+            with self.assertRaisesRegex(CROSS.Incomplete, "Staging bytes changed before cross-lane publication"):
+                self.run_link("index-drift")
+        self.assertTrue(changed)
+        self.assertFalse((self.records / "cross-index-drift-artifacts").exists())
+        self.assertNotIn("artifacts", self.receipt("index-drift"))
+        self.assert_healthy("index-restored")
+
+    def test_dangling_receipt_path_refuses_before_build(self):
+        link = self.records / "cross-foreign.json"
+        link.symlink_to(self.records / "missing.json")
+        with self.assertRaisesRegex(CROSS.Incomplete, "Cross record exists"):
+            self.run_link("foreign")
+        self.assertTrue(link.is_symlink())
+        self.assertFalse((self.cache / "cross-foreign").exists())
+        self.assert_healthy("fresh-neighbor")
+
+
+class ServiceSourcePrerequisites(unittest.TestCase):
+    """Drive the receiver from actual-shaped, separately written graph and checkpoint receipts."""
+
+    def setUp(self):
+        scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(scratch.cleanup)
+        self.records = Path(scratch.name)
+        self.graph_path = self.records / "graph.json"
+        self.checkpoint_path = self.records / "checkpoint.json"
+        self.index = {"path": "/checkout/.git/index", "sha256": "index"}
+        self.identity = {CROSS.Q.SELF: CROSS.C.PRODUCT.sha256(ROOT / CROSS.Q.SELF),
+                         "service.rs": "product-source"}
+        self.policy = {"name": "guarded-service-policy"}
+        self.feature_delta = {"standalone_lock": "locked"}
+        self.cargo = "/toolchain/bin/cargo"
+        self.vendor = {"path": "/reviewed/vendor", "inventory_sha256": "vendor-bytes", "files": 2}
+        self.fixture_names = ["integration::gnu_executable", "unit::fixture_control"]
+        self.platform_names = ["unit::platform_control"]
+        self.doc_names = ["crates/windows-platform/src/lib.rs - (line 9) - compile fail"]
+        self.expected = {
+            "fixture-test": CROSS.Q.canonical(self.fixture_names),
+            "platform-test": CROSS.Q.canonical(self.platform_names),
+            "platform-doc": CROSS.Q.canonical(self.doc_names),
+            "fixture-doc": CROSS.Q.canonical([]),
+        }
+        for name, value in (
+            ("RECORDS", self.records),
+            ("source_identity", lambda: (self.policy, self.identity)),
+            ("index_identity", lambda: self.index),
+            ("manifest_admission", lambda policy: self.feature_delta),
+            ("graph_row", lambda policy, target, *raw: {"target": target, "raw": list(raw)}),
+        ):
+            self.enterContext(patch.object(CROSS.Q, name, value))
+
+    @staticmethod
+    def command(argv, output=""):
+        return {"argv": argv, "namespace_argv": argv, "exit_code": 0, "failure": None, "output": output}
+
+    @staticmethod
+    def successful_test_output(names):
+        cases = "".join("test " + name + " ... ok\n" for name in names)
+        return (cases + f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; "
+                "0 measured; 0 filtered out; finished in 0.00s\n")
+
+    def records_for_candidate(self):
+        binding = {
+            "candidate_sha256": CROSS.Q.canonical(self.identity),
+            "recipe_sha256": self.identity[CROSS.Q.SELF],
+            "config_sha256": "bf3fb733cfe6fb5967458dbedebabe113c6e322b137f88b9e920e796cf38815d",
+            "feature_delta": self.feature_delta,
+            "vendor": self.vendor,
+            "tools": {"stable": "/reviewed/toolchain"},
+        }
+        common = {
+            **binding,
+            "schema_version": 1,
+            "scope": "source-only inert service fixture",
+            "status": "passed",
+            "bookends_passed": True,
+            "index_bytes_unchanged": True,
+            "index_before": dict(self.index),
+            "index_after": dict(self.index),
+            "native_execution": False,
+            "source_sha256": self.identity,
+            "graph_binding": dict(binding),
+        }
+        graph_commands = [self.command(argv, f"observed result {index}") for index, argv in
+                          enumerate(CROSS.Q.graph_commands(self.cargo))]
+        graph = {**common, "lane": "graph", "commands": graph_commands, "graph_rows": [
+            {"target": target, "raw": [row["output"] for row in graph_commands[index:index + 3]]}
+            for index, target in zip((0, 3), CROSS.Q.TARGETS, strict=True)
+        ]}
+        test_commands = {
+            tuple(CROSS.Q.lane_commands(lane, self.cargo)[0]): self.successful_test_output(names)
+            for lane, names in (
+                ("fixture-test", self.fixture_names), ("fixture-optimized", self.fixture_names),
+                ("platform-test", self.platform_names), ("platform-optimized", self.platform_names),
+                ("platform-doc", self.doc_names), ("fixture-doc", []),
+            )
+        }
+        checkpoint = {**common, "lane": "privilege-checkpoint", "commands": [
+            self.command(argv, test_commands.get(tuple(argv), "successful configured command"))
+            for argv in CROSS.Q.lane_commands("privilege-checkpoint", self.cargo)
+        ]}
+        return graph, checkpoint
+
+    def write_records(self, graph, checkpoint, *, replace_digest=None):
+        self.graph_path.write_text(json.dumps(graph))
+        graph_digest = hashlib.sha256(self.graph_path.read_bytes()).hexdigest()
+        checkpoint["received_graph_path"] = str(self.graph_path)
+        checkpoint["received_graph_sha256"] = replace_digest if replace_digest is not None else graph_digest
+        self.checkpoint_path.write_text(json.dumps(checkpoint))
+        return graph_digest
+
+    def admit(self):
+        # The small control roster is fixed independently of receipt stdout.
+        with patch.object(CROSS, "SOURCE_TEST_ROSTERS", self.expected, create=True):
+            return CROSS.source_prerequisites(self.checkpoint_path)
+
+    def test_configured_graph_and_checkpoint_reach_current_named_case_admission(self):
+        graph, checkpoint = self.records_for_candidate()
+        graph_digest = self.write_records(graph, checkpoint)
+        policy, identity, received, graph_hashes, checkpoint_digest = self.admit()
+        self.assertEqual(policy, self.policy)
+        self.assertEqual(identity, self.identity)
+        self.assertEqual(received, checkpoint)
+        self.assertEqual(graph_hashes, {str(self.graph_path): graph_digest})
+        self.assertEqual(checkpoint_digest, hashlib.sha256(self.checkpoint_path.read_bytes()).hexdigest())
+
+    def test_graph_digest_and_current_binding_are_required(self):
+        graph, checkpoint = self.records_for_candidate()
+        self.write_records(graph, checkpoint, replace_digest="wrong old digest")
+        with self.assertRaisesRegex(CROSS.Incomplete, "graph receipt digest"):
+            self.admit()
+        graph["tools"] = {"stable": "/other/toolchain"}
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "graph.*binding"):
+            self.admit()
+
+    def test_graph_requires_six_actual_commands_in_configured_order(self):
+        graph, checkpoint = self.records_for_candidate()
+        graph["commands"] = graph["commands"][:4]
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "six actual"):
+            self.admit()
+
+    def test_missing_and_substituted_configured_checkpoint_commands_are_refused(self):
+        graph, checkpoint = self.records_for_candidate()
+        original = checkpoint["commands"].pop()
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "checkpoint commands"):
+            self.admit()
+        checkpoint["commands"].append({**original, "argv": ["/host/bin/cargo", *original["argv"][1:]]})
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "checkpoint command"):
+            self.admit()
+
+    def test_namespace_command_must_match_literal_configured_command(self):
+        graph, checkpoint = self.records_for_candidate()
+        graph_command = graph["commands"][0]
+        graph_command["namespace_argv"] = ["/other/bin/cargo", *graph_command["argv"][1:]]
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "graph namespace command"):
+            self.admit()
+        graph, checkpoint = self.records_for_candidate()
+        checkpoint["commands"][-1]["namespace_argv"] = [self.cargo, "check"]
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "checkpoint command"):
+            self.admit()
+
+    def test_same_size_substitution_and_ignored_case_are_refused(self):
+        graph, checkpoint = self.records_for_candidate()
+        commands = checkpoint["commands"]
+        fixture_command = next(row for row in commands if row["argv"] ==
+                               CROSS.Q.lane_commands("fixture-optimized", self.cargo)[0])
+        fixture_command["output"] = self.successful_test_output([self.fixture_names[0], "unit::unknown_case"])
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "fixture-optimized.*roster"):
+            self.admit()
+        fixture_command["output"] = self.successful_test_output(self.fixture_names).replace("0 ignored", "1 ignored")
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "fixture-optimized.*skipped"):
+            self.admit()
+
+    def test_source_and_index_epochs_must_match_receipts(self):
+        graph, checkpoint = self.records_for_candidate()
+        checkpoint["source_sha256"] = {**self.identity, "service.rs": "some older product"}
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "current complete source"):
+            self.admit()
+        graph, checkpoint = self.records_for_candidate()
+        graph["index_after"] = {**self.index, "sha256": "changed"}
+        self.write_records(graph, checkpoint)
+        with self.assertRaisesRegex(CROSS.Incomplete, "graph.*index"):
+            self.admit()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -10,11 +10,13 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import stat
 import sys
+import tempfile
 import time
 import tomllib
 
@@ -200,11 +202,13 @@ def load(name, relative):
 ALLOCATION = load("engine_native_allocation", "scripts/verify-time-domain-windows-allocation.py")
 PRODUCT, ANALYSIS, ENV = ALLOCATION.PRODUCT, ALLOCATION.ANALYSIS, ALLOCATION.ENV
 PE = load("engine_native_pe", "scripts/cross-link-service-fixture.py")
+WINDOWS_PE = load("engine_native_windows_pe", "scripts/windows_pe.py")
 Incomplete = ENV.Incomplete
 EXTRAS = (SELF, LAUNCHER, CPU, FACADE_CONSUMER, "scripts/verify-time-domain-windows-allocation.py",
           "scripts/cross-link-service-fixture.py", "scripts/windows_pe.py", "tools/windows-service-fixture/qualification.py",
           "scripts/portable-analysis.py", "scripts/prepare-product.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
           "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py",
+          "scripts/tests/test_windows_pe.py",
           "scripts/tests/fixtures/engine-facade-fault-v19.rs.txt")
 CONTROL_SOURCE = '''//! Fixed healthy, failing and waiting native-supervisor controls.
 use std::{
@@ -915,6 +919,66 @@ def engine_libraries(output, work, source, *, vendor, evidence=None):
     return libraries, sorted(directories)
 
 
+def export_build_artifacts(images, work, output, run):
+    """Admit the complete image and symbol set before exposing any pair."""
+    inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
+    artifacts, admitted = {}, []
+    with tempfile.TemporaryDirectory(prefix="engine-export-", dir=work) as private:
+        stage = Path(private)
+        for name, image in images.items():
+            raw = PE.pe_readback(image)
+            run(name + "-pe", [inspector, "--file-headers", "--coff-load-config", "--coff-debug-directory",
+                               "--coff-imports", "/work/" + str(image.relative_to(work))])
+            require(PRODUCT.sha256(image) == raw["image_sha256"], "Emitted image changed after hardening readback.")
+            pdb = image.with_suffix(".pdb")
+            try:
+                binary, symbols, identity = WINDOWS_PE.read_export_pair(image, pdb, subsystem="console")
+            except ValueError as error:
+                raise Incomplete(str(error)) from error
+            require(binary[1] == raw["image_sha256"], "Emitted image changed after hardening readback.")
+            for original, suffix, (data, digest) in ((image, ".exe", binary), (pdb, ".pdb", symbols)):
+                leaf = name + suffix
+                with (stage / leaf).open("xb") as target:
+                    target.write(data)
+                admitted.append((original, leaf, digest))
+            # Keep at most one pair's snapshots in memory.
+            del binary, symbols, data
+            artifacts[name + ".exe"] = {"path": str(output / (name + ".exe")),
+                                         "sha256": raw["image_sha256"], "pe": raw,
+                                         "pdb_sha256": identity["sha256"], "pdb": identity}
+        for original, leaf, digest in admitted:
+            destination = output / leaf
+            require(not destination.exists() and not destination.is_symlink(),
+                    "Engine artifact export refuses existing destinations.")
+            require(PRODUCT.sha256(original) == digest and PRODUCT.sha256(stage / leaf) == digest,
+                    "Admitted source or staged artifact changed before export.")
+        published = []
+        try:
+            for original, leaf, digest in admitted:
+                staged = stage / leaf
+                destination = output / leaf
+                os.link(staged, destination)
+                published.append((staged, destination))
+                require(PRODUCT.sha256(destination) == PRODUCT.sha256(original) == digest,
+                        "Export changed emitted bytes.")
+        except BaseException as error:
+            remaining = []
+            for staged, destination in reversed(published):
+                try:
+                    if os.path.samestat(staged.lstat(), destination.lstat()):
+                        destination.unlink()
+                    else:
+                        remaining.append(destination.name)
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    remaining.append(destination.name)
+            if remaining:
+                raise Incomplete(f"{error}; artifact rollback incomplete: {', '.join(remaining)}.") from error
+            raise
+    return artifacts
+
+
 def build(args, report):
     """Freeze exact inputs, build offline, inspect emitted PE declarations, and re-admit."""
     facade = getattr(args, "facade_consumer", False)
@@ -1088,23 +1152,7 @@ def build(args, report):
             images["engine-tests"] = engine_artifact(run("engine-libtest-link", cargo), work,
                                                        features=test_features)
         report["artifacts"] = {}
-        inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
-        for name, image in images.items():
-            raw = PE.pe_readback(image)
-            image_hash = raw["image_sha256"]
-            run(name + "-pe", [inspector, "--file-headers", "--coff-load-config", "--coff-debug-directory",
-                               "--coff-imports", "/work/" + str(image.relative_to(work))])
-            require(PRODUCT.sha256(image) == image_hash, "Emitted image changed after hardening readback.")
-            pdb = image.with_suffix(".pdb")
-            require(pdb.is_file() and not pdb.is_symlink(), "Matching emitted PDB is absent.")
-            pdb_hash = PRODUCT.sha256(pdb)
-            for original, destination, digest in ((image, args.output_dir / (name + ".exe"), image_hash),
-                                                  (pdb, args.output_dir / (name + ".pdb"), pdb_hash)):
-                shutil.copyfile(original, destination)
-                require(PRODUCT.sha256(destination) == PRODUCT.sha256(original) == digest,
-                        "Export changed emitted bytes.")
-            report["artifacts"][name + ".exe"] = {"path": str(args.output_dir / (name + ".exe")),
-                                                 "sha256": image_hash, "pe": raw, "pdb_sha256": pdb_hash}
+        report["artifacts"] = export_build_artifacts(images, work, args.output_dir, run)
         build_completed = True
     except BaseException as error:
         primary_error = error

@@ -189,6 +189,31 @@ pub(super) enum WriterClose {
     Loss,
 }
 
+/// Physical join did not establish that the backend released its resources.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum ReleaseUnconfirmed {
+    /// The original process-local registration and bounded failure status.
+    Provider {
+        /// Historical identity of the registration held by the writer.
+        registration: std::num::NonZeroU64,
+        /// Status returned by the release attempt.
+        status: std::num::NonZeroU32,
+    },
+    /// Unwind prevented observation of confirmed release.
+    WriterPanicked,
+}
+
+/// Preserve known write loss alongside uncertainty about release.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct UnconfirmedWriter {
+    /// Original release refusal or missing observation from the joined thread.
+    pub(super) release: ReleaseUnconfirmed,
+    /// A retained local loss observation. Its absence gives no delivery assurance.
+    pub(super) loss_observed: bool,
+}
+
 /// The remaining observation needed while the same writer is still owned.
 #[derive(Clone, Copy)]
 pub(super) enum ClosePending {
@@ -204,6 +229,9 @@ pub(super) enum ClosePending {
         )
     )]
     JoinTail,
+    /// The worker has joined and no further independent release wake is expected.
+    #[cfg(test)]
+    ReleaseUnconfirmed(UnconfirmedWriter),
 }
 
 /// One prompt, bounded adapter. Construction admits no work or live resource.
@@ -321,11 +349,21 @@ impl<W: EventWriter> Delivery<W> {
         if let Phase::Closed(outcome) = self.phase {
             return Poll::Ready(outcome);
         }
+        #[cfg(test)]
+        if self.release_unconfirmed().is_some() {
+            return Poll::Pending;
+        }
         let progress: Result<WriterClose, ClosePending> = self.writer.poll_close(mode, wake);
         let outcome: WriterClose = match progress {
             Ok(outcome) => outcome,
             Err(pending) => {
-                if !self.needs_join_tail() {
+                #[cfg(test)]
+                if let ClosePending::ReleaseUnconfirmed(mut observation) = pending {
+                    observation.loss_observed |= self.refused;
+                    self.phase = Phase::Closing(ClosePending::ReleaseUnconfirmed(observation));
+                    return Poll::Pending;
+                }
+                if !self.needs_join_tail() || !matches!(pending, ClosePending::Wake) {
                     self.phase = Phase::Closing(pending);
                 }
                 return Poll::Pending;
@@ -346,6 +384,15 @@ impl<W: EventWriter> Delivery<W> {
             self.phase,
             Phase::Open { attempted: true } | Phase::Closing(_)
         )
+    }
+
+    /// Preserve the joined writer's unresolved release apart from either wake state.
+    #[cfg(test)]
+    pub(super) const fn release_unconfirmed(&self) -> Option<UnconfirmedWriter> {
+        match self.phase {
+            Phase::Closing(ClosePending::ReleaseUnconfirmed(observation)) => Some(observation),
+            _ => None,
+        }
     }
 
     /// Expose the final local disposition to the same invocation's receipt.

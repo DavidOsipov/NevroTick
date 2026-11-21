@@ -15,6 +15,8 @@ import unittest
 from unittest.mock import patch
 import uuid
 
+from test_windows_pe import _image, _pdb
+
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("engine_native_under_test", ROOT / "scripts/verify-engine-native.py")
 NATIVE = importlib.util.module_from_spec(SPEC)
@@ -24,6 +26,18 @@ NATIVE = importlib.util.module_from_spec(SPEC)
 with patch.object(Path, "home", return_value=Path("/tmp/nevrotick-native-control-home")):
     SPEC.loader.exec_module(NATIVE)
 HASH = "a" * 64
+
+
+def emit_windows_fixture(path):
+    """Emit an inert matching PE/PDB for a fake linker command."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix != ".exe":
+        path.write_bytes(b"synthetic emitted metadata")
+        return
+    symbols = path.with_suffix(".pdb")
+    guid = uuid.uuid5(uuid.NAMESPACE_OID, path.name).bytes_le
+    path.write_bytes(_image(3, pdb_path=symbols.name, guid=guid))
+    symbols.write_bytes(_pdb(guid=guid))
 
 # Separate peer/trust/isolated-process cases retained by their canonical native owners.
 MANUAL_NATIVE_EXPECTATIONS = (
@@ -345,6 +359,39 @@ class NativeNestedProcessAdmission(unittest.TestCase):
 
 class EngineArtifactAdmission(unittest.TestCase):
     """Synthetic old/new Cargo layouts preserve exact Windows libtest custody."""
+
+    def test_late_export_failure_rolls_back_only_owned_links(self):
+        for replacement in (False, True):
+            with self.subTest(replacement=replacement), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                work = output / "work"
+                image = work / "emitted.exe"
+                emit_windows_fixture(image)
+                real_link = os.link
+                prior = output / "engine-tests.exe"
+
+                def refuse_pdb(source, destination):
+                    if destination.suffix == ".pdb":
+                        if replacement:
+                            prior.unlink()
+                            prior.write_bytes(b"foreign output")
+                        raise OSError("late publication failure")
+                    real_link(source, destination)
+
+                export = NATIVE.export_build_artifacts
+                args = ({"engine-tests": image}, work, output, lambda *_: None)
+                with patch.object(NATIVE.os, "link", side_effect=refuse_pdb):
+                    if replacement:
+                        with self.assertRaisesRegex(NATIVE.Incomplete, "rollback incomplete: engine-tests.exe"):
+                            export(*args)
+                        self.assertEqual(prior.read_bytes(), b"foreign output")
+                        prior.unlink()
+                    else:
+                        with self.assertRaisesRegex(OSError, "late publication failure"):
+                            export(*args)
+                self.assertEqual(list(output.iterdir()), [work])
+                self.assertEqual(set(export(*args)), {"engine-tests.exe"})
+                self.assertEqual(prior.read_bytes(), image.read_bytes())
 
     def test_old_and_new_selector_require_exact_owner_profile_and_canonical_file(self):
         for folder in ("deps", "build/nevrotick-engine/" + "a" * 16 + "/out"):
@@ -1019,8 +1066,7 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                 commands.append((active["fault"], list(argv)))
                 if "-o" in argv:
                     path = output / "work" / argv[argv.index("-o") + 1].removeprefix("/work/")
-                    path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"synthetic emitted PE or metadata")
-                    if path.suffix == ".exe": path.with_suffix(".pdb").write_bytes(b"synthetic emitted PDB")
+                    emit_windows_fixture(path)
                     if active["fault"] and path.name == "engine-facade-consumer.exe" and drift == "normal_libraries":
                         normal["nevrotick_engine"].write_bytes(b"changed normal library")
                 return {"command": argv, "exit_code": 0, "failure": None, "output": "synthetic external observation\n"}
@@ -1031,10 +1077,12 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                     normal[name] = path
                     evidence["/work/" + str(path.relative_to(work))] = {"sha256": NATIVE.PRODUCT.sha256(path)}
                 return dict(normal), sorted({path.parent for path in normal.values()})
-            def pe(image):
-                if active["fault"] and drift == "exported_artifacts" and image.name == "engine-facade-consumer.exe":
+            export = NATIVE.export_build_artifacts
+            def export_then_drift(*args):
+                artifacts = export(*args)
+                if active["fault"] and drift == "exported_artifacts":
                     (active["output"] / "gated-launcher.exe").write_bytes(b"changed exported image")
-                return {"image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()}
+                return artifacts
             def args(output, fault):
                 output.mkdir()
                 return NATIVE.argparse.Namespace(output_dir=output, vendor_dir=vendor, toolchain_dir=toolchain,
@@ -1054,7 +1102,7 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                   patch.object(NATIVE.ANALYSIS, "admit", side_effect=lambda *_args, **_kw: stable()),
                   patch.object(NATIVE.ENV, "require_admitted_compiler"),
                   patch.object(NATIVE.ENV, "run", side_effect=command),
-                  patch.object(NATIVE.PE, "pe_readback", side_effect=pe),
+                  patch.object(NATIVE, "export_build_artifacts", side_effect=export_then_drift),
                   patch.object(NATIVE, "engine_libraries", side_effect=libraries)):
                 healthy_args = args(base / "healthy", False)
                 active.update(output=healthy_args.output_dir, fault=False, overlay_seen=False)
@@ -1648,10 +1696,7 @@ class PlacementEngineCohortAdmission(unittest.TestCase):
                 else:
                     emitted = None
                 if emitted is not None:
-                    emitted.parent.mkdir(parents=True, exist_ok=True)
-                    emitted.write_bytes(b"synthetic emitted artifact")
-                    if emitted.suffix == ".exe":
-                        emitted.with_suffix(".pdb").write_bytes(b"synthetic emitted PDB")
+                    emit_windows_fixture(emitted)
                 return {"command": argv, "exit_code": 0, "failure": None, "output": text}
 
             args = NATIVE.argparse.Namespace(output_dir=output, vendor_dir=vendor, toolchain_dir=toolchain,
@@ -1669,15 +1714,15 @@ class PlacementEngineCohortAdmission(unittest.TestCase):
                   patch.object(NATIVE.PRODUCT, "boundary_control"),
                   patch.object(NATIVE.ANALYSIS, "admit", return_value=stable),
                   patch.object(NATIVE.ENV, "require_admitted_compiler"),
-                  patch.object(NATIVE.ENV, "run", side_effect=observe),
-                  patch.object(NATIVE.PE, "pe_readback", side_effect=lambda image: {
-                      "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()})):
+                  patch.object(NATIVE.ENV, "run", side_effect=observe)):
                 NATIVE.build(args, report)
             self.assertEqual(report["status"], "passed")
             self.assertIs(report["placement_cohort"], True)
             self.assertEqual(report["test_features"], [])
             self.assertTrue(report["bookends_passed"])
-            self.assertEqual((output / "engine-tests.exe").read_bytes(), b"synthetic emitted artifact")
+            emitted = output / "work" / artifact.removeprefix("/work/")
+            self.assertEqual((output / "engine-tests.exe").read_bytes(), emitted.read_bytes())
+            self.assertEqual((output / "engine-tests.pdb").read_bytes(), emitted.with_suffix(".pdb").read_bytes())
 
     def test_native_refuses_mismatched_build_or_hash_valid_foreign_roster_before_staging(self):
         source = {"placement-source": HASH}
@@ -2136,11 +2181,15 @@ class EvidenceCustody(unittest.TestCase):
                 def external_command(command, **_kwargs):
                     if "-o" in command:
                         path = output / "work" / command[command.index("-o") + 1].removeprefix("/work/")
-                        path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"synthetic emitted artifact")
-                        if path.suffix == ".exe": path.with_suffix(".pdb").write_bytes(b"synthetic matching PDB")
+                        emit_windows_fixture(path)
                         if path.name == "engine-facade-consumer.exe":
                             if fault == "sdk-drift": sdk_file.write_bytes(b"changed SDK input")
                             elif fault == "normal-drift": normal["nevrotick_engine"].write_bytes(b"changed normal library")
+                            elif fault == "wrong-pdb":
+                                path.with_suffix(".pdb").write_bytes(path.with_name("gate-control.pdb").read_bytes())
+                            elif fault == "wrong-age":
+                                guid = uuid.uuid5(uuid.NAMESPACE_OID, path.name).bytes_le
+                                path.with_suffix(".pdb").write_bytes(_pdb(guid=guid, age=2))
                     elif fault == "image-drift" and "--coff-load-config" in command:
                         if command[-1].endswith("/engine-facade-consumer.exe"):
                             observed = output / "work" / command[-1].removeprefix("/work/")
@@ -2167,15 +2216,18 @@ class EvidenceCustody(unittest.TestCase):
                       patch.object(NATIVE.ANALYSIS, "admit", return_value=stable),
                       patch.object(NATIVE.ENV, "require_admitted_compiler"),
                       patch.object(NATIVE.ENV, "run", side_effect=external_command),
-                      patch.object(NATIVE.PE, "pe_readback", side_effect=lambda image: {
-                          "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest()}),
                       patch.object(NATIVE, "engine_libraries", side_effect=normal_libraries)):
                     if fault == "old-shadow":
                         namespace["engine_libraries"] = NATIVE.engine_libraries
                     if fault:
-                        message = {"normal-drift": "normal_libraries", "image-drift": "after hardening readback"}.get(
-                            fault, "windows_libraries")
+                        message = {
+                            "normal-drift": "normal_libraries", "image-drift": "after hardening readback",
+                            "wrong-pdb": "PDB GUID or age", "wrong-age": "PDB GUID or age",
+                        }.get(fault, "windows_libraries")
                         with self.assertRaisesRegex(NATIVE.Incomplete, message): build(args, report)
+                        if fault in ("wrong-pdb", "wrong-age"):
+                            self.assertEqual(list(output.glob("*.exe")) + list(output.glob("*.pdb")), [])
+                            self.assertEqual(report["artifacts"], {})
                     else:
                         build(args, report)
                         self.assertEqual(report["status"], "passed")
@@ -2186,7 +2238,7 @@ class EvidenceCustody(unittest.TestCase):
                         self.assertEqual(report["normal_library_inputs"].keys(),
                                          {"/work/" + str(path.relative_to(output / "work")) for path in normal.values()})
 
-        for fault in (None, "old-shadow", "sdk-drift", "normal-drift", "image-drift"):
+        for fault in (None, "old-shadow", "sdk-drift", "normal-drift", "image-drift", "wrong-pdb", "wrong-age"):
             with self.subTest(fault=fault): run_case(fault)
 
     def test_native_staging_refuses_traversal_with_valid_neighbor(self):

@@ -8788,6 +8788,979 @@ returned successfully. The 12-second `wsb list --raw` attempt timed out before
 returning a session inventory. Confirm ownership and refresh headroom before
 launch. This preflight launched no guest or SDK tool.
 
+**SDK agreement and executable trust readback.** David accepted the exact
+BuildTools `10.0.28000.2705` agreement identified above for this offline
+compiler-only pilot. The archive's NuGet catalogue size and SHA-512 were
+rechecked. All four prepared tool files matched their exact archive members.
+Windows PowerShell on the host returned `Valid` and `Authenticode` for each
+file, observed the timestamp certificate, and built the code-signing chain
+with offline revocation checks and zero chain errors. The three-certificate
+chains ended at Microsoft Root Certificate Authority 2010. An inert SDK EXE
+copy with one signed byte changed returned `HashMismatch`. Its byte-exact
+restored counterpart returned `Valid` with the original chain. The six
+file hashes matched both transfer and readback bookends. Only the specific
+signature-readback staging directory was removed.
+
+The raw report is `host-signature-readback.json` under
+`~/.local/share/nevrotick/mdp4-event-compiler-20261121.PX1cTr9n/`, SHA-256
+`cf5fb831ea29b6ec57c7e9af529e640cc5dedea5d348b0674cacaed4d0666920`.
+This verifies the exact tool inputs under the current host verifier. Guest
+execution and packaged signature acceptance keep their own requirements.
+
+The refreshed host observation found 9,535 MiB available, Windows build
+26300 and `MicrosoftWindows.WindowsSandbox` `0.8.114.0`. The direct WSL
+inventory and a Windows-shell invocation timed out at 18 and 22 seconds.
+Both returned zero inventory bytes. The read-only HCS inventory refused the
+current token with exit 27. When David requested a visible launch, the CLI
+returned host exit zero but emitted a `localhost:80` gRPC timeout and no
+Sandbox ID. The Windows file launcher then opened a visible Sandbox window
+with the exact offline configuration and two limited shares. David observed
+“System Exception was thrown” before the guest was ready. The Windows
+application log query exposed no corresponding exception code. A second
+launch removed both shares and retained the same offline and Protected Client
+settings. Windows reported the Sandbox feature enabled and 8,191 MiB
+available. David observed the same exception. The mappings alone therefore
+do not explain the failure. No repeat launch followed.
+
+The bounded `compile-events-guest.ps1` invocation is prepared under the same
+evidence directory, SHA-256
+`b714f10e3f8316941cb7d00b61ecfb16956eb077e75427e9e8446d02b193872f`.
+The inbox Windows PowerShell parser reported 1,746 tokens and zero errors
+without executing the script. The independent `read-event-dll.py` candidate
+binds the linked PE leaves to the Message Compiler intermediates and checks
+descriptors, ordered template fields and complete 32-bit message IDs. Actual
+compiler output and healthy/substituted controls are required before accepting
+that readback. No SDK compiler ran in the failed Sandbox startup attempts.
+
+##### MD-P4 native compiler and linked event resource fixture — 21 November 2026
+
+David opened a usable guest and turned off its network access. CLI `0.8.114.0`
+identified his guest as `20dc0fe0-dea5-46e2-864f-2b96889b0335`. Each compiler
+dispatch checked that there was no IPv4 or IPv6 default route. The selected
+ExistingLogin commands received only the five checksum-matched input files
+through read-only shares and wrote bounded results through separate pilot
+output shares. The owner-provided guest remained available.
+
+The first exact input `f5239d8b…` reached `mc.exe -um` and exited 1 with
+`For Provider 'NevroTick-TestService' attribute resourceFileName is required.`
+The process was reaped, RC stayed unstarted and the guest removed private
+scratch. The SDK accepted a private neighbor with only the two resource
+filename attributes added. The maintained generator now derives both
+attributes from the existing validated `package_resource_file`. The delivery
+checker independently requires both exact attributes and their model binding.
+The checked-in providerless profile still omits the manifest. The fixture
+channel remains disabled and installed provider status remains pending.
+
+The maintained candidate passed `validate`, `generate` and `check` before
+dispatching exact generated manifest SHA-256
+`8d1f73d7e6c88d324c740bec8982533d98950798bfee6a1d097acb50d266ea2e`.
+MC and RC each exited zero and were reaped. Five compiled intermediates,
+four bounded logs and the guest receipt were hash-checked on export. Pinned
+Rust 1.100.0 `rust-lld` linked the `.res` into an AMD64 resource-only DLL.
+It contains the exact MC `WEVT_TEMPLATE` and en-US message-table bytes.
+Independent readback found the five ordered UInt8/UInt64 payload fields,
+channel 16, version 1 and full keyword `0x8000000000000001` for both events.
+IDs 2 and 4 bind to full message resource IDs `0xB0010002` and `0xB0010004`.
+The latter message retains `%5` for `Cause`.
+
+The exact reader rejected swapped message bindings, a wrong message-ID high
+word with unchanged low bits, and a missing channel keyword bit. The earlier
+reader accepted the last control and retains that result. The unmodified and
+byte-exact restored images passed. The independent reviewer rechecked the
+input, compiler results, raw linked leaf bytes and controls. All 23 delivery
+and 108 pipeline tests passed, including missing, wrong and rooted resource
+filenames through the actual generation boundary.
+
+Raw receipts and the work scripts are under
+`~/.local/share/nevrotick/mdp4-event-compiler-20261121.PX1cTr9n/`.
+`compiled-generated-exact.json` SHA-256 is
+`dfb54e7fc7fd86fdb923d824659af0073bdeef99184deecb14ebe65865a3cfce`, with
+linked DLL SHA-256 `1f40efb8ffd693d4c7480a61e844cae9c706ae69bc1dc3ecd4eb8fb47e094189`.
+`compiler-generated-link-readback.json` binds both LLVM commands and executable
+hashes, SHA-256 `b8e39fdf92fa046db644ff7d6ad1bd393e934712608a28d99f39989c61df08e5`.
+This closes the two-event compiler fixture. Installed publisher paths, event
+delivery under intended tokens, message rendering and complete MSIX delivery
+retain their existing runtime and qualification owners.
+
+##### MD-P4 native resource readback without publisher installation — 21 November 2026
+
+W11-W08/W11-W10, CHECK-18/23. The exact resource-only DLL `1f40efb8…`
+and four bounded controls were observed on the owner-provided offline guest
+`20dc0fe0-dea5-46e2-864f-2b96889b0335`, guest build 26100 and an x64
+ExistingLogin process. Each invocation used private copies of the admitted
+bytes and checked their hashes again after both queries. Input and result
+shares were separate. The probe used `TdhLoadManifestFromBinary`, one
+size-probe/data read for the event array and each event's information, and
+en-US `FormatMessageW` through a resource-only module mapping. It released
+that mapping and removed its private scratch. Each invocation exited before
+the next started. No provider installation or event write was required.
+
+| Case | Actual Windows observation and verdict |
+| --- | --- |
+| Healthy and byte-identical restored | TDH returned the exact fixture provider, both complete descriptors, and all five ordered names and UInt8/UInt64 type pairs for each event. Explicit resource lookups under `0xB0010002` and `0xB0010004` returned both expected texts with CRLF and `%5` intact. TDH's event-message view ended both texts with one space. |
+| Swapped message bindings | TDH resolved the other event's text for each descriptor. The two direct ID-to-message lookups still returned their original text. The comparison rejected the incorrect event-to-message binding. |
+| Missing channel keyword bit | TDH observed the modified event 2 mask `0x0000000000000001` while event 4 kept `0x8000000000000001`. The comparison rejected the incomplete mask. |
+| Absent event resources | The resource-only DLL still mapped. TDH loading and all three message lookups returned 1813. No event row was accepted. |
+
+The healthy resource also refused `0xB0000002` with 317 despite identical low
+16 bits to `0xB0010002`. Every fresh process observed 1168 and zero bytes for
+the fixture GUID before any binary load. A final fresh query with no binary
+load again returned 1168 and zero bytes. Guest exit zero in a negative case
+confirmed completed observation and cleanup. Acceptance used actual statuses,
+descriptors and resource contents. Independent review matched the source,
+artifact bytes, guest receipts and exact differing bytes in the controls.
+
+Raw sources, stages and receipts are under
+`~/.local/share/nevrotick/mdp4-native-readback-20261121.PfkYqAjh/`.
+`native-observation-verdict.json` SHA-256 is
+`e16c8170d92785a54d318f083a450520a9347cfbf6a68ab248e8267572b75293`.
+`post-restored.json` SHA-256 is
+`df811ce496cc6bf2e1ade08c32f6a4409553d7ba0a33a084e2f24a1f5d5bc9fd`.
+The source keeps TDH's native return values and both message text views.
+Installed publisher identity, intended token access, real event delivery,
+retention and packaged message rendering retain their existing exits.
+[TDH binary cache](https://learn.microsoft.com/windows/win32/api/tdh/nf-tdh-tdhloadmanifestfrombinary) ·
+[Event metadata query](https://learn.microsoft.com/windows/win32/api/tdh/nf-tdh-tdhgetmanifesteventinformation) ·
+[Resource-only mapping](https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw)
+
+##### Maintained event resource DLL build — 21 November 2026
+
+W11-W10/MD-P4 with W11-W08, CHECK-18/23. The
+[maintained build command](../metadata/README.md#build-the-event-resource-dll)
+checks a frozen source generation, then matches its manifest to the exact
+independently admitted MC/RC receipt and compiled resource object. That
+receipt's input, completion and artifact projection is checked by the command.
+The compiler export separately owns validation of all five files and four
+logs. The actual pinned Rust 1.100.0 linker reads the sealed resource object in
+the existing offline stable-core namespace. The admitted Rust/LLVM payload and
+named helpers are hash-checked. The Linux runtime libraries used by the linker
+are mounted read-only under the existing execution contract.
+
+The emitted image has only the two expected en-US leaves in its read-only
+resource section. The reader compares both to the original RC bytes and
+checks the named provider, event descriptors, referenced levels, channel and
+keyword, ordered scalar widths, full message IDs and texts. Two completed
+outputs publish together under atomic no-replace rename. An existing empty
+destination created after preflight retains its inode. A lost post-rename
+parent flush acknowledgement keeps the published candidate and reports exit 3.
+
+| Control | Result |
+| --- | --- |
+| Checked original generation and admitted native compiler export | The maintained WSL link emitted the exact DLL `1f40efb8ffd693d4c7480a61e844cae9c706ae69bc1dc3ecd4eb8fb47e094189`. The prior TDH and message readback applies to these same bytes. |
+| Changed only the lab provider GUID | The checked manifest changed from `8d1f73d7…` to `820dd0cf…`. The old receipt was refused before link. A mismatched digest was independently refused. Neither case published output. |
+| Fresh SDK compiler pair for the changed manifest | Offline Sandbox build 26100 ran the same pinned MC and RC. Both exited zero and were reaped. Guest scratch was removed. The exact WSL link and a repeat from the same frozen inputs each emitted `68c2d2c8941c92a0111ea06d938e26dfdd9a367206760e8b6f66326566a80fa1` and an identical receipt. The new compiled GUID matched the changed source. The en-US message table was unchanged. |
+| Compiled reference sensitivity | The first reader accepted an Information descriptor pointing at the Error level row. The maintained reader refused the same modified bytes. Changed keyword count, keyword target and channel reference also refused. The healthy/restored DLLs passed. The missing high keyword bit, swapped message and wrong high message-ID word each refused. |
+| Portable ownership and admission controls | The maintained test selection passed all four cases, including the late empty destination and successful publication after the destination was removed. The default providerless source refused before any link. |
+| Injected flush failures through the actual builder | Staged-file flush failure returned exit 1 after the real link, published nothing and removed staging. Final parent flush failure returned exit 3 with the complete DLL and receipt still visible and byte-identical to the healthy publication. |
+
+Raw guest stages, compiler exports, stale refusals, reference controls and
+linked outputs are in
+`~/.local/share/nevrotick/mdp4-maintained-event-resource-20261121.BuYrtXin/`.
+The new compiler receipt SHA-256 is
+`353ab41ca8aa835addb77921492b3134957ef0e8fe032f2c885393941d47d6e0`.
+The final baseline and changed link receipts are
+`051debc626ccea967f6ab9c7d3b3a84720c96ec3930a773aed9ed9fc0a87796a`
+and `638320fc971837ea147ab34ddb39fcdc8f4bec74775532186ede08911dfc50ec`.
+The two temporary Sandbox shares are empty. The owner-provided guest is
+still running.
+
+Planning and implementation used the existing MD-P4 owner, metadata
+generation/readback and package artifact skills. The two isolated reader
+writers inspected the pinned artifact profile and ran targeted structural
+and semantic, including truncation, controls. A separate reviewer traced the
+integrated compiler-to-publication boundary and identified reference and
+publication gaps that the final controls address. The reviewer rechecked the
+repaired source and reconciled all three final artifacts and both compiler
+exports. Both binary readers passed strict mypy. The combined Python discovery
+completed 255 tests, and the final location of the four build cases was
+rechecked separately. Coverage and generated mutation campaigns were not run.
+The original source tool's qualification selections remain separate. This compiled slice
+uses the admitted synthetic provider. Product provider selection, included
+package path, individual signing, installed event delivery/access, retention,
+cleanup and complete MSIX remain open under their existing owners.
+
+##### Portable submission of the compiled event layout — 21 November 2026
+
+W11-W08 with W11-W05/W11-W10, CHECK-17/18/21/23/27. The existing portable
+writer receives the original `WriterRecord` after required memory admission.
+Before checking the current mode and original drain cutoff, it prepares one
+sealed submission with the descriptor and five fixed byte fields. The backend
+consumes this submission. It receives no strings, arbitrary payload bytes or
+provider identity from the caller. The owner keeps one writer-held and one
+queued record, and a paused write retains the original record for the next
+admission check. Physical join still precedes terminal status.
+
+The Rust implementation, contract, service and diagnostics privacy skills
+guided the closed descriptor selection and fixed field encoding. Both fixture
+descriptors match the independent TDH readback of `1f40efb8ffd6…`. The five
+fields have widths `1/8/1/8/1` in manifest order. Sequence and elapsed
+nanoseconds use explicit little-endian bytes. The projection keeps accepted,
+historical-after-fault and unavailable observations distinct. It preserves
+the original role, sequence and permitted cause.
+
+The lifecycle and regression checks drive the actual service invocation into
+one attempted Running report for each outcome. Acknowledgement emits only ID 2
+with cause 0. Refusal emits only ID 4 with the original report-failure cause
+and preserves the native status error through writer retirement. Both reach
+the actual threaded backend with optional output off, keep the final wake
+separate from physical exit, and join before the terminal call. The queue
+control observes unavailability and a nonzero historical coordinate from the
+broker role. With the original cutoff reached, it sees close without a second
+write. It also refuses a third record while the first is held and the second
+occupies the queue. The existing refused-start control observes no backend
+effect. Independent source review compared the literal assertion expectations
+with the raw descriptor and template review, checked the real admission and
+failure paths and audited both source and execution identities. The closed
+record has no raw parser or new scheduler. This child uses direct boundary and
+lifecycle controls. Broader fuzz and native concurrency keep their own scope.
+
+The first development invocation stopped at the Clippy function-length limit
+in the queue test (`event-layout-development-2111a.json`, SHA-256
+`94793b3b7ea3e1f7143b6964756e505e51963eb75f4c0d8af460babc826cec1b`).
+The corrected candidate moved the expectation into a test helper. It also
+keeps the private encoding in `diagnostics_thread.rs`, the existing writer
+coverage and direct-replay subject. `event-layout-development-2111b.json`
+at candidate `6f0c9895adcb288c3943923807cc65527f3bbcdaef422b27bc4462fd89418f80`
+passed all 12 configured lanes. Each GNU mode ran 121 fixture and 70 platform
+cases. The platform ran 28 doctests, and fixture discovery found zero. Both
+GNU and MSVC Clippy passed. The receipt SHA-256 is
+`eb70b3cf4b184525a731a43cb17b9ecca075acb512293891d7399df8c01af4a4`.
+
+The current 654-input candidate
+`313da6dfe748b50f103caa55e11d73b1d191ce7310bf9f623582f8b4aac4ebfe`
+adds the explicit `Option<PreparedEvent>` annotation. Independent readback
+matched the other 653 input hashes and showed that removing only the
+annotation recovered the previous writer hash. The optimized and unchanged
+platform results retain the scope of the earlier invocation. Fresh Rust
+1.100.0 graph, fixture GNU Clippy, fixture GNU ordinary and fixture
+`x86_64-pc-windows-msvc` Clippy all passed on the explicit-type candidate.
+The ordinary command executed 121 tests including all three real writer
+controls. The Git index, source, exact compiler and vendor bookends passed.
+
+| Current receipt under `artifacts/windows-services/recovery-20261107-v1/` | SHA-256 |
+| --- | --- |
+| `event-layout-graph-2111c.json` | `ffc648572a780b394f22ac59a53d784dbf9059babf698bd35d58b09bf6b67854` |
+| `event-layout-clippy-2111c.json` | `29b53e1209240a710423a1cf8e439b586f071c06866c4bf824586462697019d4` |
+| `event-layout-ordinary-2111c.json` | `176dc50bff70428da1c7d7f455f098e5ebf9761536c6386b90905a9fbbe9ecf5` |
+| `event-layout-msvc-clippy-2111c.json` | `69f9676f39cdbe520315b5d47e2fdfb12efea52a2902eeee7241abcb33c8eeef` |
+
+The bounded supervisor retained each attempt and retired its private tmpfs
+and build outputs. The logs and three custody records are under
+`~/.local/share/nevrotick/service-event-layout-20261121.avrrvbp2/`.
+
+Required writer coverage and mutation qualification remain open under the
+existing 90% and 95% gates. The durable WSL route requires 6 GiB free on ext4,
+and 4.6 GiB was available at this checkpoint. Next freeze the native
+submission claim immediately before the Windows call and the disposition when
+provider release is uncertain. One bounded same-process ETW file capture can
+test the real writer and independent descriptor/payload readback after the
+exact SDK feature graph, executable and guest scope are admitted. The fixed
+service entry points currently use memory routing. Installed publisher access,
+retention, message rendering and complete MSIX delivery keep their existing
+gates. [Private Windows trace sessions](https://learn.microsoft.com/en-us/windows/win32/etw/configuring-and-starting-a-private-logger-session) ·
+[Provider release](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventunregister)
+
+##### Final writer submission and unresolved release — 21 November 2026
+
+W11-W05/W11-W08, CHECK-14/17/21/27. The portable service writer transfers
+the original prepared packet with one non-transferable `SubmitOnce` value.
+Backend preparation has no external effect. Consuming the value checks the
+writer mode and, for drain, samples the original exclusive cutoff before the
+selected synchronous submission. A mode change returns the original
+`WriterRecord` to the same owner for reconsideration. Expiry or retirement
+prevents a new effect. One previously claimed call remains in custody
+through its return and physical join. This claim is the local admission
+point. Future Windows registration needs a separate current claim, and the
+native write adapter must enter its one call inside the guarded closure.
+
+`ThreadedWriter` now latches the exact join observation. A returned provider
+release error carries the original registration identity and status alongside
+known local loss. An unwind without a retained release observation stays
+unconfirmed. A false loss flag then means there is no retained loss evidence.
+The service retains its first failure and any independently observed writer
+refusal. It keeps polling the original worker while completion is pending.
+After that worker completes, the driver can see the distinct unconfirmed
+release outcome. This result supplies neither a further writer wake nor a
+`SERVICE_STOPPED` acknowledgement or final receipt. The fixture retains its
+existing guard against destroying the unresolved owner. A production failed
+`Stopped` requires release or completed recovery, including any selected,
+acknowledged handoff. This child selects no production recovery mechanism.
+
+The Rust contract, service, lifecycle and privacy procedures guided the fixed
+submission scope, custody through return, and separate redacted disposition.
+The direct queue control holds real backend preparation after the payload is
+ready and releases it only after the host selects its original drain
+deadline. The valid neighbor emits the original exactly once. An expired
+drain observes no write, and later poll deadlines cannot extend it. The
+returned release refusal is sticky with and without separately observed loss.
+The real host child combines a refused Running report, local write loss and
+unconfirmed release. It observes the latched fault while the original service
+worker remains pending, then checks its exact returned cause, no terminal
+status and no final receipt after the worker finishes. The healthy close
+neighbor retains the same original report refusal and one failed terminal
+status. The configured Linux subprocess checks unresolved abandonment with an
+independent watchdog and disabled core dumps. These deterministic checks
+exercise the new execution branches and custody boundaries. No new parsing
+or raw-input surface is introduced. Native lifecycle, memory diagnostics and
+installed evidence retain their applicability at the real Windows adapter.
+
+The first configured development attempt (`writer-custody-development-2111a.json`)
+stopped in fixture formatting before compiler or product tests. Its SHA-256
+is `a6270a39689f6fd59b57f13de63ef2647312d62fca9be2b9fdad54ad746bc04b`.
+The next candidate applies the fixture's actual Cargo formatter, carries the known
+loss alongside the release observation, and includes the joint worker/writer
+control identified in source review.
+
+The 654-input Rust 1.100.0 candidate
+`7c6a7d4a84a098de2538b0f03ed8952e27a42c19368d83e3412daa983e7db47d`
+passed six configured graph commands and twelve development commands. It
+executed 121 fixture tests and 70 platform tests in each GNU mode, with
+28 platform doctests and zero fixture doctests discovered. The selected
+threaded, queue and unresolved-owner subprocess tests executed in both modes.
+GNU and `x86_64-pc-windows-msvc` Clippy, format and fixture rustdoc passed.
+Source, vendor, compiler and index bookends matched. The bounded build retired
+its private scratch. The canonical receipt directory is
+`artifacts/windows-services/recovery-20261107-v1/`.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `writer-custody-graph-2111b.json` | `267d43843d9b12c08ed8ba6ddcde3564cbd10347df29fd1137d2d9237ee85595` |
+| `writer-custody-development-2111b.json` | `683f8782ada972df8adfb86c884d2570377a8d78f5e00890b78e0e35580663d8` |
+
+The direct fault control used a separate worktree. Its first preflight
+refused the absent output directory before any command. After creating the
+owned output directory, its six graph commands passed. The only selected
+source difference let a stale Open selection bypass the current checks.
+The configured fixture test exited 101 with 119 passes and one failure.
+The queue detected an actual late ID 2 write before close at
+`write began after its cutoff`. The unmodified candidate observed only
+close at expiry and exactly one original write before a valid drain cutoff.
+Both bookends held. Independent review matched the 654 healthy input hashes,
+both test modes, the actual injected condition and assertion outcome. The
+fault test receipt SHA-256 is
+`8a27c8bae989c211b7eeba0ddabbeba81cc27546b74ebe122e32ba9f0f13087d`.
+The graph receipt, exact patch, and restoration check are in
+`~/.local/share/nevrotick/service-writer-custody-20261121.r1nenn2t/cutoff-fault-evidence/`.
+All 654 hashes matched after restoration. The temporary worktree and build
+scratch were retired. This targeted check earns no generated-mutant credit.
+
+Native registration needs its own current admission. The pinned equivalent of
+`REGHANDLE` is a signed 64-bit binding, and the adapter must preserve the
+opaque bits in an unresolved-release observation. The private trace reader
+needs the ETW and Time features in the exact fixture development graph and
+a bound MSVC test-executable link. The offline trace child can then observe
+actual event fields and release independently of installer or service
+registration. Native execution, installed recovery and the durable 90% and
+95% gates remain open. The capacity review found that verified spare build
+targets and duplicate seals cannot reach the 6 GiB ext4 launch floor without
+displacing protected inputs or evidence.
+
+##### Windows private trace writer fixture — 21 November 2026
+
+W11-W05/W11-W08 with W11-W10, CHECK-14/17/19/21/23/26/27. The Windows
+test composition selects one fixed fixture provider on the existing writer
+thread. Taking its registration claim is separate from preparing and
+claiming any `EventWrite`. A returned registration remains owned across the
+cutoff until explicit `EventUnregister`. Failed registration ends that
+writer without another attempt or a zero-handle write. Failed release
+retains the original status and registration bits and leaves service
+completion unavailable. The publisher uses the pinned Windows ABI in a
+test-only native leaf. The two fixed service entries keep their original
+composition.
+
+The direct registration controls hold preparation before the claim and
+hold a successful call through expiry. The former enters no registration,
+and the latter observes release of the same token without a write. A timely
+refused registration observes one call and no write or retry. The Windows
+fixture uses a private same-process ETL session and the actual fixture
+host with scripted SCM outcomes. Its independently constructed oracle
+requires exactly one matching provider and PID, all seven descriptor fields,
+the 19 payload bytes for each Running outcome, and zero recorded loss. The
+explicitly selected ignored test checks actual writer and trace teardown.
+There is no raw application parsing or change to the production SCM entry.
+
+Only the Windows development closure gains the exact `windows-sys` ETW
+and Time features. Both lockfiles and normal feature trees are unchanged.
+The first configured graph attempt caught the obsolete complete-manifest
+binding before Cargo started. The configured cooldown producer then
+reproduced the complete root lock from accepted checkpoint `0498765` with
+zero registry additions, removals or exceptions. Only the fixture manifest
+differed in the 21-manifest context. The canonical policy and its exact pin
+now carry the fresh observed resolution, while the original failed receipt
+is retained. The raw resolution and Cargo result are under
+`~/.local/share/nevrotick/service-etw-cooldown-20261121.n8Aa27eP/resolution/`.
+The subsequent six-command graph passed. The first integrated development
+attempt retained a Clippy test-length error. Moving the admission controls
+into their own helper preserves the existing GNU test roster and all
+expectations.
+
+The current 656-input candidate
+`b3c9f33f8e25390a408e081e1c8fc651780734edb2400ef3ea3a92969225652b`
+passed all six graph and twelve development commands. Ordinary and optimized
+GNU modes each ran 121 fixture and 70 platform cases. The platform passed
+28 doctests and the fixture discovered zero. GNU and MSVC Clippy, formatting
+and fixture rustdoc passed with matching custody bookends. The fixture Python
+selection passed 76 controls, the cross-link selection 15, the dependency
+profile 36 and the cooldown selection two. The actual Windows test is a
+separate explicitly selected lane.
+
+| Configured receipt under `artifacts/windows-services/recovery-20261107-v1/` | SHA-256 |
+| --- | --- |
+| `etw-native-graph-2111a.json` | `02b3902c946cb0fcbf4ab1e91b5330f7a025da9fbb49bee6c0a359ee5b613dc6` |
+| `etw-native-development-2111b.json` | `6d967e8786e717c37f5c75003dc345b53bd3d1d5065a4e82cba4cb9f620d476c` |
+| `etw-native-graph-2111c.json` | `b920942a9060aa5669fee6e0ac4308e16ebf1d861e83b510d85eb3827474cc5f` |
+| `etw-native-development-2111c.json` | `4195c7840cf6b5d73619728f5c759f917def5c7a1df57996a6f44ff2edfb630f` |
+| `cross-etw-native-link-2111c.json` | `eeafeda9fe5a44d81ecdce5f4e25fdfa1059a4d66bbae523c1632cad8bf70c0b` |
+
+The new `libtest-link` lane linked one release MSVC library-test executable
+from that exact development checkpoint. The two normal service executable
+roles still use their existing lane. Compiler and linker observations agreed
+on the exact hash-named output. The PE and its original same-stem PDB matched
+CodeView GUID `5717957e-8d04-22a5-4c4c-44205044422e` and age 1. The image
+SHA-256 is `bd434680f517f010a2191eb22c7db63f11a1e2f979f8a3475b2cde8993f88808`.
+Independent PE and PDB parsing also verified AMD64 console identity and all
+nine ETW imports through `advapi32.dll`.
+
+The exact image ran the single selected native test on Windows Sandbox
+`20dc0fe0-dea5-46e2-864f-2b96889b0335`, build 26100, with no IPv4 or IPv6
+default route. Both private traces observed one event from PID 2120. The
+acknowledged report produced ID 2, level 4 and cause 0. The refused report
+produced ID 4, level 2 and cause 10. Both had version 1, channel 16, opcode
+and task zero, and mask `0x8000000000000001`. The actual 19 bytes matched
+the expected Engine component, sequence 2, accepted elapsed observation
+25 ns and original cause. Captures confirmed zero lost events and buffers,
+and separate writer, trace and file teardown. The guest child exited zero,
+was reaped, rechecked the input bytes and removed the private scratch.
+
+The first host export rejected the expected zero-byte stderr file. The
+same exported bytes were collected and independently checked without
+rerunning the native test. The host removed the staged executable and
+results. The running Sandbox retains the two empty mapped directories,
+which the CLI could not detach. No guest restart or host configuration
+change was needed. Raw host and guest observations and the exact launcher
+are under `~/.local/share/nevrotick/service-etw-native-20261121.a9b_uk2d/`.
+The guest receipt SHA-256 is
+`6b5ffc8696ebbb16865224fef0f78e28ad2936fc91ae8e44ddecb5bc212949cd`,
+stdout SHA-256 is
+`95500e42f4caaa5953370dffb78a3b7ac7745fa2f2444592601fcf028f8eb4f8`,
+and the recovery verdict SHA-256 is
+`7bd641d8282df9b83473f445b4749ea5ba94e6dbdee6873571e3c378e0126fa9`.
+
+The Rust contract, native lifecycle, dependency-admission, regression and
+independent-review skills guided the composed candidate. Separate workers
+owned the exact feature admission, MSVC test executable link receiver, and
+bounded ETW controller and file consumer. The coordinator owns integration,
+the real service fixture driver and guest evidence. Installed publisher
+identity, token and archive access, production recovery on failed release,
+Event Log retention and package delivery remain open. The 90% and 95% gates
+retain their existing owners and resource prerequisites.
+
+##### Broker-owned raw adjustment observation — 21 November 2026
+
+W11-W05/S0.4, P3 to P4, CHECK-10/25/27. The private broker
+composition now requests one read from the existing Windows adjustment
+adapter inside the actual service lifecycle invocation. The default Engine
+and broker executables still use the inert worker. The probe selects only
+an admitted broker with a dormant inert worker. The initial token profile
+and acknowledged Running transition precede the call. The same invocation
+retains its existing work permit throughout the synchronous getter.
+
+The owner samples its monotonic clock and observes sticky Stop immediately
+before the call and after actual return. The original Running deadline is
+exclusive. A viable bracket keeps both raw words and the mode in the
+invocation's historical receipt. Stop, expiry and a reversed clock retire
+returned words. A native failure retains its original code, including zero,
+independently of any lifecycle failure. Receipt extraction still requires
+the terminal transition. The fixture grants no rate, ownership, calibration
+or current mapping authority. The synchronous call supplies no upper bound
+on the time Windows can spend inside it.
+
+The only graph addition is an existing first-party native Windows leaf as
+a direct Windows-only dev edge. The fixture lock gained only that edge.
+Root lock reproduction returned zero registry changes under OD-19. The
+graph reader requires the exact direct dev edge and retains separate normal
+and development scopes. The first development attempt stopped at E0063 in
+an older dispatcher test's receipt projection. Its graph and failure remain
+recorded. The correction initializes the unused probe field there. The retry
+also checks Stop arriving in the final pre-read clock observation and checks
+the exact original lifecycle errors at the late read boundaries. That retry
+stopped at fixture Clippy because the new tests lacked their exact error and
+panic documentation. The documented cases preserve the strict lint policy.
+The configured retry retains both failed attempts and the original shared
+480-second allowance.
+
+The final 658-input candidate `07159311cc1e15f82ace7ba46c9b9910100240110c0ad59fe0b0750796827e03`
+passed GNU/MSVC dependency admission and all twelve configured development
+commands. The runner executed 126 fixture and 70 platform cases in each of
+ordinary and optimized modes and 28 platform doctests. Five fixture cases
+exercise one-shot admission, full-width results, original native errors,
+late Stop, exact expiry and reversed time. All 25 graph and 15 artifact
+reader controls passed. The cross-link reader binds the previously verified
+GNU roster plus the exact five new cases. Registry source and root lock
+are unchanged. The graph and development receipts are
+`broker-observation-graph-2111c.json` and
+`broker-observation-development-2111c.json` under the existing service
+evidence root.
+
+The configured MSVC libtest link passed. Its independently matched PE/PDB
+pair includes the getter import. The image imports no clock setter or
+`AdjustTokenPrivileges`. The exact image `d886f7c1e19845f3e7a2c66e4a9fe1126d51b2f16babddbcf52c945f51105035`
+ran the single selected guest case on build 26100 with no default route.
+The actual broker receipt matched separate getter calls before and after
+the host poll. Both raw words were 10,000,000 and Windows indicated that
+programmed periodic adjustment was disabled. The child exited zero and
+was reaped, its private image was checked again and removed, and both
+mapped directories are empty. The runner requires the stable comparison
+marker and the surrounding child, result and cleanup evidence.
+
+The exact cross-link receipt is `cross-broker-observation-link-2111c.json`,
+SHA-256 `8148082ecc365757ce281e9db696e03baa2a9a62f1aca58504339baac8ce88b1`.
+Raw graph/development/link supervision, guest launch, stdout, status and
+confirmed share retirement are under
+`~/.local/share/nevrotick/service-broker-observation-20261121.nfjvsPEe/`.
+`native-verdict.json` SHA-256 is
+`55265556d3f657130e758f7aa7e4c6d919489ed3e66a3ddbb8ef2b73ed20c075`.
+The graph, development and link supervisors together used 396.278 of their
+original 480 seconds, including the two failed attempts. All temporary
+worktrees and source and build scratch were removed.
+
+The service lifecycle and Rust contract skills guided the owner and
+receipt changes. Separate workers owned the probe, its host cases and
+the graph admission, with the coordinator owning the combined build,
+guest execution and readback. Independent review reconciled all 658
+working source inputs, the three passing receipts and the exact guest
+output with cleanup. The guest used scripted token and SCM
+inputs with an actual Windows getter. The observations qualify that read
+and its receipt transfer. They supply no installed SCM or service-token
+evidence, mapping continuity, correction, recovery or MSIX acceptance.
+Coverage and mutation remain open at their existing owners and disk floors.
+Continue S0.4/W11-W02 with the actual paired QPC and precise UTC observer.
+Its outputs must reach the broker's generation and invalidation owner before
+an Engine consumer can use them to admit a sample.
+[Windows adjustment getter](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise)
+
+##### Broker-owned QPC and precise FILETIME observation — 21 November 2026
+
+S0.4/W11-W02 with W11-W05 and W11-W01, CHECK-10/11/25/27. The
+[Windows clock leaf](../crates/windows-platform-native/src/windows_clock.rs)
+reads QPC frequency, the first signed QPC counter, precise FILETIME and
+the final signed counter in that order. The native ABI follows the pinned
+Windows bindings. The FILETIME value preserves both unsigned DWORDs.
+The [checked coordinate owner](../crates/windows-platform-native/src/clock_coordinates.rs)
+retains the complete raw values, requires a positive frequency and permits
+equal counters. A reversed pair or a failed frequency or counter call
+produces an explicit failure with the original Win32 code where applicable.
+This read has no clock write or privilege change.
+
+The selected Windows broker fixture sends those coordinates through the
+existing one-shot read slot and retains the typed result in its historical
+receipt. Adjustment and coordinate selections stay distinct and compete
+for that same slot. The acknowledged Running, current permit, Stop and
+monotonic cutoff checks are the same guards on both reads. The default
+service binaries keep the inert composition. Production generation and
+invalidation, a calibrated UTC mapping and the Engine-to-Core consumer
+remain separate.
+
+The focused 625-input package candidate
+`0be7190e7e4369c18143dca588e8f825d78b5a01be5ad1923e5593064e595b27`
+passed its boundary check and ran 12 GNU library cases in each mode,
+including seven new bracket and error cases, plus two negative doctests.
+GNU and MSVC Clippy passed for the platform-native package. LLVM reported
+138/138 executable lines for `clock_coordinates.rs` including its inline
+controls. The Windows-only FFI file has no GNU line result. The two
+critical files are recorded separately in the verification manifest.
+
+The first selected fixture graph passed. The full checkpoint stopped
+at Windows fixture Clippy on a documentation code span. The correction
+preserves the lint rule. The new run retains the original 480-second
+graph, development and link allowance after charging the first attempt.
+The final 660-input fixture candidate
+`ab22b54bafa94e921ddd18843966e16cb04dfc118dd1c77a2b23438c47222a32`
+passed the configured graph, development and Windows MSVC libtest link.
+The development run executed 126 fixture cases and 70 platform cases in
+each of ordinary and optimized modes, plus 28 platform doctests. The first
+attempt and the final graph, development and link used 341.220 seconds of
+the shared 480-second allowance. The independent readback matched the
+current source roster and the linked PE and PDB. The graph, development
+and link receipts are under `artifacts/windows-services/recovery-20261107-v1/`
+with the `clock-coordinate` label and `2111b` suffix.
+
+The owned offline Windows Sandbox on build 26100 passed both selected
+broker cases using that linked executable. The guest recorded a 10 MHz
+frequency that matched the enclosing high-resolution .NET Stopwatch.
+The independent outer QPC interval advanced and enclosed the child's
+interval and its valid equal inner ticks. The FILETIME fell between the
+separate wall-clock readings. The child exited zero and was reaped.
+Scratch was removed, inputs rechecked, and both mapped directories cleared.
+The independent review also checked that the host readback rejected a
+cached child interval, a mismatched frequency and a FILETIME outside its
+bracket. Temporal containment establishes local observation order only.
+UTC accuracy, continuity and usable mapping remain open.
+
+The selected GNU default cargo-mutants 27.1.0 run executed 13 generated
+variants of `clock_coordinates.rs`. It caught all 11 viable variants, with
+two compiler-unviable variants and zero survivors or timeouts. The
+independent review checked the raw classifications and the selected
+file's 95% gate. The original setup refusals and the duplicate
+`--frozen` baseline failure remain recorded. The generated inventory
+exercised the raw accessors and reversal predicate. Separate portable
+tests cover frequency and error order. The Windows-only FFI file's line
+and mutation gates remain open. The guest evidence covers the selected
+read-only fixture. Installed service, production invalidation and
+Engine-to-Core admission remain with their existing owners.
+
+Raw build, guest, and mutation readback evidence is retained under
+`~/.local/share/nevrotick/service-clock-coordinates-20261121.zQxBkUtu/`.
+The native verdict SHA-256 is
+`14a95fe6ca44da9a130677b9e73967fcd4e662439c2e8c7b9c9e3c4cac16b262`.
+The GNU mutation accounting SHA-256 is
+`1489784c68f9929433ab0df2d0eaeca47e0bcaa4569b825556b4b5329afca888`.
+[QPC guidance](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps)
+
+##### Broker power invalidation of an in-flight read — 21 November 2026
+
+S0.4/W11-W02, W11-W05 and CHECK-10/11/25/27. The selected broker-coordinate
+fixture binds its original pending read to the single process-owned Windows
+power subscription. The first delivered suspend or automatic-resume notice
+retires that context. The callback only publishes a sticky retirement.
+It can do so during registration, while the native getter runs, or during
+final admission. The broker holds no fence lock across the read or release.
+
+The receiver keeps acknowledged Running, the original work permit, Stop,
+monotonic order and the original deadline. A context retired before the read
+admits zero getter calls. Once called, the getter returns under the original
+permit. The final decision is ordered atomically against invalidation.
+A crossing read keeps its retirement reason and any original native failure.
+Power delivery after the decision does not rewrite the historical receipt.
+Dropping or closing the context retires it before unregistering. The selected
+Windows test explicitly closes the original subscription and records close
+failure independently of the coordinate result.
+
+The portable histories drive the existing invocation receiver before, during
+and after capture and check exact call counts, history and native error zero.
+The two files are listed for separate scope in the verification manifest.
+The existing one-shot subscription cannot establish later coverage or reopen
+an invalidated context. This test-selected path remains separate from the
+default service binaries, which are inert. Physical power delivery, a
+renewable broker generation, time-change/discontinuity feeds, calibration and
+current Engine admission retain their own exits.
+
+The 661-input candidate
+`ae188287ecf6b7559b00fdc496202a8759fa1ce42201fefec929018ff3f77c0b`
+passed six graph, 12 development and two MSVC link commands. Both GNU
+modes ran 128 fixture and 70 platform cases, with 28 platform doctests.
+The fixture roster adds exactly two power controls. The cross-link reader
+now admits the observed roster, and all 15 cross-link reader test cases
+passed. The first attempt reached Windows Clippy and failed at the new
+test helper's missing panic contract. Its raw failure and the final
+`broker-power` graph, development and link receipts are under
+`artifacts/windows-services/recovery-20261107-v1/`.
+
+The isolated fault changes one source path and discards the result of the
+final atomic guard. Its graph passed and the fixture test reached the
+intended assertion with Cargo exit 101. A read interrupted by invalidation
+incorrectly returned `Observed` instead of `Retired(PowerContext)`.
+The other 126 unit cases passed in that process. The delivered candidate
+retains the original successful input hashes and both passing GNU modes.
+The first attempt, final graph/development/link and focused fault occupied
+404.743 seconds of the shared 480-second build allowance. The fault is a
+targeted sensitivity control with zero generated-mutant credit.
+
+The exact linked image passed both selected native tests on the owned
+offline build-26100 Sandbox. The coordinate test registered the real power
+observer, retained QPC and FILETIME within separate reference brackets,
+then refused a second broker invocation using the same spent watch.
+The original subscription closed explicitly before that test returned.
+The guest child exited zero and was reaped. The input identity was
+rechecked, scratch removed and the two mapped directories emptied.
+Independent review matched the source and PE/PDB identities, the
+executed test roster, and the guest refusal and close observations.
+Native unregister failure and physical delivery remain to be exercised.
+The verdict SHA-256 is
+`1ddb86ffb4c388484fc1b59e77cc96e842949c6697e0d98cf541a0c881384076`.
+Raw controller, build and guest records are under
+`~/.local/share/nevrotick/service-broker-power-20261121.19O5I0DK/`.
+
+Architecture and Rust contract review selected the same existing receiver
+and single-use process observer. Lifecycle, model and regression QA selected
+finite explicit histories and the two-platform lane. There is no new byte
+parser, arbitrary input range, clock effect, UI or package path in this child.
+The required per-file coverage and generated mutation qualification remain
+open. At execution the disk supported the 4 GiB development reserve, with
+4.38 GiB available before the run. The durable service metrics launch
+requires 6 GiB available. Scope the two files explicitly before that run.
+
+Next connect invalidation to the broker's renewable owner at the real control
+boundary. The existing SCM projection advertises Stop and the fixture callback
+knows Stop and Interrogate. Windows delivers time-change notification through
+`HandlerEx` only when the service advertises `SERVICE_ACCEPT_TIMECHANGE`.
+Bind acceptance to the broker's live registered context. Use the notification
+to withdraw the existing generation and perform observation and revalidation
+outside the callback. Retrospective delivery supplies no atomic time-change
+barrier. Sampled discontinuities and acknowledged product corrections still
+need their own producers and end-to-end controls.
+[Windows control callback](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex) ·
+[Windows status projection](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_status)
+
+##### Broker SCM time change and renewable raw observation — 22 November 2026
+
+S0.4/W11-W02, W11-W05 and CHECK-10/11/25/27. The fixed Windows broker
+registration now selects a broker-only `HandlerEx` and a process-lifetime
+mailbox. Engine retains its Stop and Interrogate handler. Broker startup arms
+the mailbox before the Running status attempt that advertises `0x201`. This
+retains a possible notice delivered while that call is in flight. A failed
+report preserves its original error and closes the mailbox. The first getter
+requires acknowledged Running and the same work permit as the control loop.
+
+`SERVICE_CONTROL_TIMECHANGE` compares and advances a checked process-local
+revision and wakes the owner. The callback ignores the event payload.
+Revision exhaustion and Stop close the mailbox permanently. The serialized
+owner reads precise FILETIME and its enclosing QPC coordinates on the initial
+revision or a fresh notice, at most once per selected revision. Pending
+notices take one mailbox slot. A read crossed by another notice loses admission
+at the final revision check. A retired read retains an exact native error that
+already occurred. A subsequent notice never rewrites history. A later read
+replaces the one historical slot with that new attempt under the same original
+deadline. Stopped retains the last attempt, independent of the original
+service result. It grants no current mapping or clock authority.
+
+The fixed laboratory broker reuses the existing native clock leaf as a direct
+Windows dependency. The Engine behavior and ETW test-only feature separation
+are preserved. The controlled root dependency resolution retained both lock
+graphs without registry additions or removals. The graph policy and compiler
+admission record bind the new role of that existing local dependency.
+
+The configured graph and 12-row development checkpoint passed on the
+663-input candidate
+`2d2c8032d830b26137327dd31610a725e5d30234e93bbcbe6147ed8f0ada36c5`.
+Both GNU modes ran 131 fixture and 70 platform cases, plus 28 platform
+doctests. The graph reader was tested first against the old dependency role,
+then passed 25 focused controls. The prior root manifest binding also
+refused the changed manifest before fresh cooldown admission. The new
+binding passed the 28 dependency graph controls. The link reader retained
+all earlier names and required exactly the three new GNU cases in each mode.
+The 15 link-reader controls passed. The initial GNU Clippy refusal retains
+the deprecated atomic call and invalid documentation span diagnostics.
+The repair uses `try_update` on the pinned compiler and keeps the lint rules.
+
+The isolated fault removes only the final revision check. The graph passed
+and the real receiver test failed with Cargo exit 101 at the expected
+assertion. The crossed attempt became `Completed(Err(0))` in place of
+`Retired(Generation, Some(0))`. The other 129 unit cases passed. The live
+candidate retained its prior hashes and both passing GNU results. All
+development, link and fault attempts consumed 467.573 of the original
+480 seconds. The sensitivity result carries zero generated-mutant credit.
+
+The portable host control exercises a failed Running acknowledgement and
+zero getter calls, a quiet initial revision, and early and crossing notices
+followed by an admitted fresh read. The second wait is 23 ms shorter, with
+both observations under the original deadline. Independent component
+controls exercise callback scope, counter exhaustion and preservation of
+the original error zero when a notice crosses the getter. These histories
+use the actual shared status and observation receiver. Architecture/Rust
+contract, service lifecycle, dependency admission and regression skills
+defined the source boundary and configured checks. Fuzzing and UI/package
+checks remain with their existing holds or owners. This change introduces
+no byte parser, user-facing UI or package payload.
+
+The configured MSVC cross-link passed for the exact libtest and both fixed
+role binaries. Independent readback matched the exported EXE/PDB pairs and
+their CodeView identities. The broker binary imports the precise FILETIME
+getter in addition to its SCM entries. Both role images carry the configured
+static mitigation declarations. Both lack imports for system-time setters
+or token privilege adjustment. Installed mitigation effectiveness has its
+own qualification.
+
+The offline build-26100 Sandbox ran the exact one selected native test with
+scripted status and event delivery and the real Windows clock getter. The
+renewed capture retained 10 MHz QPC and equal inner ticks inside the separate
+parent Stopwatch interval, and FILETIME inside separate wall-clock readings.
+The child exited zero and was reaped. The same Sandbox remained up, with no
+default routes, input drift or retained files in either mapped directory.
+The independent readback matched those observations and the native verdict
+SHA-256 `7118e9d7cfe884d6557de35c13a3c357ef19fea92c937e61d6821f29f954cc0e`.
+Raw native evidence is under
+`~/.local/share/nevrotick/service-broker-timechange-20261122.g0J7uSh9/`.
+Configured source and link receipts are under
+`artifacts/windows-services/recovery-20261107-v1/` with the `broker-timechange`
+label. Fresh metrics remain with the manifest-selected owners and the
+existing durable disk floor. Retain the 90% line and 95% mutation gates.
+
+The fixture README was updated after those runs to describe the fixed
+source roles and dependency scope. This documentation-only update changes
+one entry of the 663-file source map. The verified executable, test,
+tool, lock, manifest and configuration inputs retain their recorded bytes.
+
+Windows time-change notices are retrospective. Installed SCM delivery, renewable
+power coverage, sampled discontinuity and actual correction acknowledgement
+have their own exits. UTC mapping still requires calibrated finite error,
+drift, independent date and scale, and validity for the complete Engine
+exchange. The read-only lab entry does not change Windows time or privileges.
+
+##### Broker SCM power delivery and repeatable observation — 22 November 2026
+
+S0.4/W11-W02, W11-W05 and CHECK-10/11/25/27. The fixed Windows broker
+advertises Stop, time change and `SERVICE_ACCEPT_POWEREVENT` (`0x241`)
+through the existing registered `HandlerEx`. The callback decodes the
+delivered control and subtype without reading the event payload. Only
+impending suspend and automatic resume enter this power route. The Engine
+keeps its Stop-only mask. No configuration, dependency, token, additional
+registration or wake mechanism is needed for the selected route.
+
+One atomic mailbox combines the current ordinal and read eligibility.
+Suspend invalidates the original revision and blocks observation. Time
+change while suspended advances the ordinal and keeps the read gate
+closed. Automatic resume advances and reopens observation even if no
+suspend notice was observed. A read crossed by both notices still refers
+to the original ordinal and retires. Stop, failure and exhaustion close
+the mailbox permanently. The fixed permit and monotonic deadline are
+shared across all reads. The terminal receipt preserves the observed
+historical attempt or exact refusal. The separate one-shot `PowrProf`
+fixture retains its prior scope.
+
+Architecture and Windows service review verified the callback, status bits
+and lifetime against Microsoft documentation. Lifecycle and Rust contract
+review selected one combined state, an explicit exhaustion boundary and
+scripted controls through the real owner. Pending and refused Running,
+unsupported event types, late Stop controls and the largest suspended
+value have independent expectations. Two successful cycles and an unpaired
+automatic resume exercise the original deadline and exact getter counts.
+A complete pair delivered before a getter returns exercises retirement
+even when the mailbox is awake again at the final decision.
+
+On the 664-input candidate
+`e7dc88648dfe46722c6bf53d0adf1e5984f20546f76b6975dd5ecc44f325d005`,
+all six graph and 12 development commands passed. Each GNU mode ran 135
+fixture cases and 70 platform cases, with 28 platform doctests. The link
+reader retains the previous 131 fixture names and adds exactly the four
+new power cases. The initial GNU Clippy attempt exposed the pass-by-value
+enum and missing test panic contracts. The correction keeps the enum
+value-sized and the lint rules intact. Coverage and generated mutation
+qualification remain open at the existing owners and disk floors.
+
+The isolated fault removes the final revision check in the receiver alone.
+Its graph passed and the actual receiver and original time-change crossing
+control failed at their expected assertions with Cargo exit 101. A full
+suspend/resume pair incorrectly produced `Completed(Err(0))` in place of
+`Retired(Generation, Some(0))` without the final check. The other 132 unit
+cases passed. The delivered 664-input candidate remained unchanged.
+Development, links and the targeted fault consumed 459.959 seconds of the
+shared 480-second allowance. This sensitivity control carries zero generated
+mutation credit.
+
+The MSVC libtest and both fixed-role images cross-linked with the same
+source map. Independent readback matched the delivered EXE/PDB pairs.
+The offline build-26100 Sandbox ran the exact broker power test with
+scripted control delivery and the real Windows coordinate getter. A
+successful raw read crossed by both power notices was retired. The
+later admitted read retained 10 MHz QPC and precise FILETIME within
+independent process QPC and wall-clock brackets. The guest child exited
+zero and was reaped. Its scratch was removed and both mapped directories
+were left empty. The guest stayed offline and running.
+
+Raw Sandbox evidence is under
+`~/.local/share/nevrotick/service-broker-scm-power-20261122.U3f4t5vw/`.
+The native verdict SHA-256 is
+`51e95e2e7340c64109fabbdb8e52a1c2eb016bdad5c86dccb04ea9606a218dae`.
+The configured graph, development and link receipts use the
+`broker-scm-power` label under `artifacts/windows-services/recovery-20261107-v1/`.
+
+The selected controls model delivered events. Windows documents that
+automatic resume can be omitted in an immediate sleep-to-hibernation
+transition. Installed delivery, latency, Modern Standby and physical
+transition completeness remain open. Qualify sampled discontinuities,
+correction acknowledgements and the mapping's finite error, date, scale
+and validity before current Engine admission.
+[SCM status fields](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_status) ·
+[HandlerEx](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex) ·
+[Automatic resume](https://learn.microsoft.com/en-us/windows/win32/power/pbt-apmresumeautomatic)
+
+##### Sampled broker clock discontinuity — 22 November 2026
+
+S0.4/W11-W01/W11-W02 and W11-W05, CHECK-10/11/25/27. The actual fixed
+Windows laboratory broker samples quiet periods through its existing
+serialized permit. The explicit one-second lab cadence schedules the next
+read from observed completion and clamps the park to the original Running
+cutoff. Early wakes leave that due time intact. A late wake takes one
+fresh read and starts a new period. Suspend blocks the sampling wait and
+getter. Stop, actual notice and previously admitted scope remain binding.
+
+The receiver compares consecutive successful brackets from the same awake
+revision and owner thread. Changed QPC frequency, QPC reversal between
+brackets, and backward FILETIME are independently typed contradictions.
+Counter and wall equality remain eligible. The final compare-and-exchange
+advances only the original awake revision. A concurrently delivered notice
+or Stop can win the decision. On disagreement the result retires and the
+new revision awaits its next due sample with an empty baseline. Getter
+failure preserves its exact error and interrupts the comparable sequence.
+The terminal receipt exposes the most recent raw attempt and separately
+retains the latest sampled cause across successful re-observation.
+
+Rust contract and boundary QA selected the three comparisons using the
+existing checked native coordinates. Lifecycle QA selected actual quiet
+Running waits, a spurious wake, late wake with no catch-up, preserved
+history after re-observation and a delivered notice racing the comparison.
+Independent comparator controls cover precedence, equality and integer
+extremes. Windows documents boot-fixed QPC frequency and same-thread
+ordering. A raw wall reversal leaves its cause open. Forward steps and
+rate departures need a qualified physical error and drift envelope. Date,
+scale, full-exchange validity, installed SCM delivery and correction
+acknowledgement remain with their owners.
+[QPC timing and frequency](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps) ·
+[Precise FILETIME getter](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime)
+
+The 667-input candidate `6b2213c9…e289` passed all six graph lanes.
+The configured development run recorded successful formatting, GNU
+platform and fixture Clippy, MSVC fixture Clippy, and ordinary GNU
+execution of 70 platform and 144 fixture cases. Live source readback
+matched all 667 inputs. The 4 GiB WSL disk reserve stopped the platform
+optimized compilation, leaving the development receipt incomplete.
+The first two attempts stopped at compiler lint diagnostics, corrected
+before this candidate. The three attempts used 211.37 seconds of the
+original 480-second allowance. Receipts are
+`broker-sampled-{graph,development}-2211c.json` in the existing service
+recovery evidence directory.
+
+The retry reused the exact C graph with the disk guard unchanged. The D
+source receipt passes all 12 lanes, with 70 platform and 144 fixture cases
+in each GNU mode, 28 platform doctests, GNU/MSVC lint and fixture rustdoc.
+The cross-link reader's roster retains all 135 prior names and the nine
+new executed cases. Both profiles matched it and all 15 reader controls
+passed. Only the required MSVC x64-v3 release libtest was linked for this
+observation. Development and link attempts consumed 457.94 of the original
+480 seconds. All private build mounts retired. No historical evidence was
+deleted. The D receipts are `broker-sampled-development-2211d.json` and
+`cross-broker-sampled-link-2211d.json` in the same recovery directory.
+
+The exact linked image `1ea62f640db2…98fb` passed one selected ignored
+broker test in the owner's offline Windows Sandbox, build 26100. The
+real getter returned a 10 MHz QPC frequency matching the independent
+Stopwatch. The child QPC bracket was inside the parent bracket, and the
+FILETIME value was inside its independent local read enclosure. Static
+imports include the three getter functions and omit the clock-write and
+privilege-adjustment functions. Both jobs returned zero. The child was
+reaped, source bytes rechecked and staged files removed. The guest and
+empty attached directories were retained. Independent readback matched
+the graph, all 667 source inputs, both artifact hashes and the exact
+executed test. Native verdict digest `3882a58cd49b…0dea` is retained with
+the raw files under `service-broker-sampled-20261122.2lBd0Xxl`.
+
+Selected lifecycle control verifies observation with real getters and
+scripted waits. Actual wall-step and physical power delivery, installed
+SCM and both fixed-role links on this candidate remain open. The fixture
+metrics need durable disk capacity and their own admitted inventories.
+The next bounded S0.4/W11-W05 source action is a live redacted availability
+decision from acknowledged Running and a successful current-revision
+sample, observed through the same host before teardown. Use the original
+cutoff and final awake revision check. Exercise failed acknowledgement,
+getter failure, notice/Stop before the decision, suspend/fresh resume,
+and exact cutoff. The historical receipt stays historical. The independent
+architecture review found that no private Engine–broker IPC connection or
+peer/session owner exists yet. S0.3/S3.2 must freeze these owners and the
+bounded request/reply contract before selecting a strict decoder and
+transport. The current Engine path continues to withhold mapped admission
+until independent reference, era and scale inputs are qualified.
+
 ##### Engine collection and timer cleanup transfer — 21 November 2026
 
 W11-W05/S3.1 and CHECK-27 retain the original series decision independently

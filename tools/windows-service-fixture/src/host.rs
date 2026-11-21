@@ -45,7 +45,17 @@ use crate::{
 };
 
 #[cfg(test)]
-use crate::diagnostics::WriterClose;
+use crate::diagnostics::{UnconfirmedWriter, WriterClose};
+#[cfg(any(windows, test))]
+use crate::{ClockReadRetirement, SampledClockBreak};
+#[cfg(any(windows, test))]
+use crate::{NativeBrokerClockRead, broker_clock_change::NativeBrokerReader};
+
+#[cfg(test)]
+#[path = "broker_observation.rs"]
+mod broker_observation;
+#[cfg(test)]
+use broker_observation::{BrokerObservation, BrokerProbe};
 
 /// Wake the existing owner thread with one coalesced, retained unpark token.
 /// A worker retains at most one clone and publishes state before notification.
@@ -375,12 +385,32 @@ pub(super) struct HostReceipt {
     actual_result: Result<(), FixtureError>,
     /// Finite consumed originals, loss and health from that same invocation.
     diagnostics: DiagnosticSnapshot,
+    /// Last historical SCM-observed broker read from the actual Windows driver.
+    #[cfg(any(windows, test))]
+    broker_clock_read: Option<NativeBrokerClockRead>,
+    /// Latest sampled revision invalidation, independent of subsequent reads.
+    #[cfg(any(windows, test))]
+    broker_clock_break: Option<SampledClockBreak>,
     /// Local completion and loss observation from the portable writer control.
     #[cfg(test)]
     writer_close: Option<WriterClose>,
+    /// Historical result of the explicitly selected, completed broker getter.
+    #[cfg(test)]
+    broker_observation: Option<BrokerObservation>,
 }
 
 impl HostReceipt {
+    /// Borrow the terminal record without reobserving time or policy.
+    #[cfg(any(windows, test))]
+    pub(super) const fn broker_clock_read(&self) -> Option<NativeBrokerClockRead> {
+        self.broker_clock_read
+    }
+
+    /// Read the original historical break without starting another observation.
+    #[cfg(any(windows, test))]
+    pub(super) const fn broker_clock_break(&self) -> Option<SampledClockBreak> {
+        self.broker_clock_break
+    }
     /// Read the original result without consuming its coherent diagnostic history.
     pub(super) const fn result(&self) -> &Result<(), FixtureError> {
         &self.actual_result
@@ -389,6 +419,12 @@ impl HostReceipt {
     /// Read actual portable consumption; this makes no native/durable delivery claim.
     pub(super) const fn diagnostics(&self) -> &DiagnosticSnapshot {
         &self.diagnostics
+    }
+
+    /// Borrow the outcome of the selected local broker read from this receipt.
+    #[cfg(test)]
+    const fn broker_observation(&self) -> Option<BrokerObservation> {
+        self.broker_observation
     }
 
     /// Deliberately consume a receipt when a caller needs only the original result.
@@ -409,8 +445,14 @@ impl HostReceipt {
         Self {
             actual_result: Err(error),
             diagnostics: diagnostics.finish(),
+            #[cfg(any(windows, test))]
+            broker_clock_read: None,
+            #[cfg(any(windows, test))]
+            broker_clock_break: None,
             #[cfg(test)]
             writer_close: None,
+            #[cfg(test)]
+            broker_observation: None,
         }
     }
 
@@ -436,6 +478,9 @@ pub(super) enum InvocationPoll {
     JoinTail(Duration),
     /// A deadline or unusable clock ended ordinary waiting; retain the same owner.
     Overdue,
+    /// The writer joined but its release remains unconfirmed. No writer wake follows.
+    #[cfg(test)]
+    WriterReleaseUnconfirmed(UnconfirmedWriter),
     /// Actual cleanup and the sole terminal report attempt have completed.
     Finished,
 }
@@ -496,6 +541,12 @@ pub(super) struct ServiceInvocation<
     custody: WorkerCustody,
     /// The original owner's level-triggered, coalesced notification target.
     wake: WorkerWake,
+    /// Configured native broker reader, held by the same Running permit.
+    #[cfg(any(windows, test))]
+    broker_clock_reader: Option<NativeBrokerReader>,
+    /// Only the explicit broker fixture can select one read before preparation.
+    #[cfg(test)]
+    broker_probe: Option<BrokerProbe>,
     /// Trusted observation history retained across every poll and deadline.
     observed: ObservedClock,
     /// Fixed startup or shutdown deadline; repeated polls never renew it.
@@ -769,6 +820,23 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
                 return;
             }
         }
+        #[cfg(any(windows, test))]
+        if let Some(mut reader) = self.broker_clock_reader.take() {
+            reader.poll(self.observed.last_trusted, || {
+                self.broker_bracket_edge(clock, notification, deadline)
+            });
+            self.broker_clock_reader = Some(reader);
+            if self.admission_closed {
+                return;
+            }
+        }
+        #[cfg(test)]
+        {
+            self.poll_broker_probe(clock, notification);
+            if self.admission_closed {
+                return;
+            }
+        }
         if let Err(error) = self.worker.poll_running(&self.wake) {
             self.worker_failed(error);
             return;
@@ -789,6 +857,10 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
     /// Fence first, attempt `StopPending` once, then request bounded cancellation.
     fn begin_stop(&mut self, clock: &mut impl Clock) {
         self.admission_closed = true;
+        #[cfg(any(windows, test))]
+        if let Some(reader) = &self.broker_clock_reader {
+            reader.close();
+        }
         if let Some(writer) = &mut self.writer {
             writer.fence();
         }
@@ -965,6 +1037,14 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         if self.phase == WorkerPhase::Finished {
             return InvocationPoll::Finished;
         }
+        #[cfg(test)]
+        if matches!(
+            self.custody,
+            WorkerCustody::Dormant | WorkerCustody::Finished
+        ) && let Some(release) = self.writer.as_ref().and_then(Delivery::release_unconfirmed)
+        {
+            return InvocationPoll::WriterReleaseUnconfirmed(release);
+        }
         if self.custody == WorkerCustody::Joining
             || self.writer.as_ref().is_some_and(Delivery::needs_join_tail)
         {
@@ -1004,6 +1084,17 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             self.overdue = true;
             return InvocationPoll::Overdue;
         }
+        #[cfg(any(windows, test))]
+        if self.phase == WorkerPhase::Running
+            && let Some(due) =
+                self.broker_clock_reader
+                    .as_ref()
+                    .and_then(|reader: &NativeBrokerReader| {
+                        reader.sample_wait(self.observed.last_trusted)
+                    })
+        {
+            return InvocationPoll::Pending(remaining.min(due));
+        }
         InvocationPoll::Pending(remaining)
     }
 
@@ -1030,9 +1121,48 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         Some(HostReceipt {
             actual_result: result,
             diagnostics: self.diagnostics.finish(),
+            #[cfg(any(windows, test))]
+            broker_clock_read: self
+                .broker_clock_reader
+                .as_ref()
+                .and_then(NativeBrokerReader::history),
+            #[cfg(any(windows, test))]
+            broker_clock_break: self
+                .broker_clock_reader
+                .as_ref()
+                .and_then(NativeBrokerReader::last_discontinuity),
             #[cfg(test)]
             writer_close: self.writer.as_ref().and_then(Delivery::outcome),
+            #[cfg(test)]
+            broker_observation: self.observed_broker_probe(),
         })
+    }
+
+    /// Apply the owner-clock, cutoff and Stop rules at both read edges.
+    ///
+    /// # Errors
+    /// Retire an inadmissible bracket and preserve the owning failure and fence.
+    #[cfg(any(windows, test))]
+    fn broker_bracket_edge(
+        &mut self,
+        clock: &mut impl Clock,
+        notification: &StopNotification,
+        deadline: Instant,
+    ) -> Result<Instant, ClockReadRetirement> {
+        if notification.stop_requested() {
+            self.admission_closed = true;
+        }
+        let now: Instant = self.observe(clock).ok_or(ClockReadRetirement::Clock)?;
+        if let Err(error) = running_remaining(deadline, now) {
+            self.overdue = true;
+            self.fail(error);
+            return Err(ClockReadRetirement::Deadline);
+        }
+        if self.admission_closed || notification.stop_requested() {
+            self.admission_closed = true;
+            return Err(ClockReadRetirement::Stop);
+        }
+        Ok(now)
     }
 
     /// Move the unchanged original primary and secondary objects into their result.
@@ -1254,6 +1384,10 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
         admission_closed,
         custody: WorkerCustody::Dormant,
         wake: WorkerWake::current(),
+        #[cfg(any(windows, test))]
+        broker_clock_reader: None,
+        #[cfg(test)]
+        broker_probe: None,
         observed,
         phase_deadline,
         run_deadline: None,
@@ -1276,7 +1410,7 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
     Ok(invocation)
 }
 
-/// Drive the same actual invocation for both inert native executable compositions.
+/// Construct the existing control-only laboratory invocation.
 /// An overdue step retains the original lifecycle, reporter, worker and charge;
 /// this function cannot return `ServiceMain` until Finished is physically observed.
 ///
@@ -1291,7 +1425,7 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
     wait: &mut W,
     notification: &StopNotification,
 ) -> HostReceipt {
-    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = match start_invocation(
+    let invocation: ServiceInvocation<A::Reporter, InertWorker> = match start_invocation(
         role,
         argc,
         factory,
@@ -1303,17 +1437,63 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
         Ok(invocation) => invocation,
         Err(receipt) => return receipt,
     };
+    drive_service(invocation, clock, wait, notification)
+}
+
+/// Bind the real read-only broker composition to the same serialized service owner.
+#[cfg(any(windows, test))]
+pub(super) fn run_broker_service<A: StatusFactory, C: Clock, W: Wait>(
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    wait: &mut W,
+    notification: &StopNotification,
+    reader: NativeBrokerReader,
+) -> HostReceipt {
+    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = match start_invocation(
+        LabRole::ClockBroker,
+        argc,
+        factory,
+        token_observer,
+        clock,
+        notification,
+        InertWorker::new(),
+    ) {
+        Ok(invocation) => invocation,
+        Err(receipt) => return receipt,
+    };
+    invocation.broker_clock_reader = Some(reader);
+    drive_service(invocation, clock, wait, notification)
+}
+
+/// Retain the same lifecycle and charge through every poll and actual finish.
+fn drive_service<R: StatusReporter<Error = NativeError>>(
+    mut invocation: ServiceInvocation<R, InertWorker>,
+    clock: &mut impl Clock,
+    wait: &mut impl Wait,
+    notification: &StopNotification,
+) -> HostReceipt {
     loop {
         match invocation.poll(clock, notification) {
             InvocationPoll::Pending(remaining) => wait.park(remaining),
             InvocationPoll::JoinTail(relative) => wait.park(relative),
             InvocationPoll::Overdue => wait.park_until_notified(),
+            #[cfg(test)]
+            // This driver selects no writer. The test driver observes this case directly.
+            InvocationPoll::WriterReleaseUnconfirmed(_) => std::process::abort(),
             InvocationPoll::Finished => {
                 return invocation.take_receipt().unwrap_or_else(|| HostReceipt {
                     actual_result: Err(FixtureError::OutcomeUnavailable),
                     diagnostics: invocation.diagnostics.finish(),
+                    #[cfg(any(windows, test))]
+                    broker_clock_read: None,
+                    #[cfg(any(windows, test))]
+                    broker_clock_break: None,
                     #[cfg(test)]
                     writer_close: None,
+                    #[cfg(test)]
+                    broker_observation: None,
                 });
             }
         }

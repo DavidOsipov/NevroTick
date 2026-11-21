@@ -32820,12 +32820,12 @@
     "resolution": {
       "scope": "product",
       "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-      "baseline_admission_sha256": "130f428b965e1629ae848089611efcfe96dfd1265f3d324f2b78731e347e6a30",
+      "baseline_admission_sha256": "dfb5c017797054e31d46994c800285dd7cbdd23ea9d44e59be9dd34002b395b6",
       "retained_exception_decisions": [],
       "acquisition_filesystem": {
         "bytes": 536870912,
         "inodes": 16384,
-        "device": 123
+        "device": 118
       },
       "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
       "candidate_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
@@ -32834,9 +32834,9 @@
       "operation": "workspace",
       "package": null,
       "version": null,
-      "started_utc": "2026-11-20T19:22:50Z",
-      "finished_utc": "2026-11-20T19:22:57Z",
-      "cutoff_utc": "2026-11-06T19:22:50Z",
+      "started_utc": "2026-11-21T20:10:41Z",
+      "finished_utc": "2026-11-21T20:10:45Z",
+      "cutoff_utc": "2026-11-07T20:10:41Z",
       "cargo_sha256": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
       "configuration_sha256": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
       "manifests_sha256": {
@@ -32860,7 +32860,7 @@
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/upstream/Cargo.toml": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2",
         "tools/state-guidance/engine/Cargo.toml": "24977c21e8278af8296af5600446f0272640f442c8a8729df3c7593facf5f077",
         "tools/state-guidance/harness/Cargo.toml": "9f53c09ee2f7730ead9694b28e67293f790edb723c31217bdcff6a561a942ea5",
-        "tools/windows-service-fixture/Cargo.toml": "0a9e2f25030b1f081872e3ab81249b922e47d39bf3e31a5370ee47339c73baeb"
+        "tools/windows-service-fixture/Cargo.toml": "50c9155df6b7e57fc06b6ee3fb0fc3826b742140e0129b720fa6adfddf7c33d9"
       },
       "command": [
         "/toolchain/bin/cargo",
@@ -32873,8 +32873,8 @@
       "removed": [],
       "publication": [],
       "exception": null,
-      "metadata_inventory_sha256": "544692560e91d4e0aaf1568c5f172828ecb5e36c8f5b4d0fd4ee4610b7ef043e",
-      "result_sha256": "064e13939700a435af9aefba0bed8adf883cf0692501911c597b3d99afe035c4",
+      "metadata_inventory_sha256": "56e0043f07d737d43a5c41c0deb7cb2100cd90f065a515027f25be385623df0c",
+      "result_sha256": "173b972edce33e4f00c1ff11b6fd695500e0fb9e18d947259ccaa5b4037a267e",
       "generated_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
       "proposed_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db"
     }

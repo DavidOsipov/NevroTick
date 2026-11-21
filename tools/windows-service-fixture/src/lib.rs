@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Inert S0.2 laboratory service hosts, separate from the product workspace.
+//! Fixed-role laboratory service hosts, separate from the product workspace.
 //!
 //! The two public entries select fixed laboratory roles. They accept no service
 //! names, handles, accounts, commands or function pointers. Windows hosting is
 //! source preparation only; ordinary GNU entry points return `WindowsOnly`.
-//! Running means that the inert Stop control loop is available, never that a
+//! Running means that the admitted control loop is available, never that a
 //! product service, authenticated time, provisioning or clock authority exists.
 #![deny(unsafe_code)]
 
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
+mod broker_clock_change;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
 mod diagnostics;
@@ -20,18 +23,38 @@ mod error;
 mod host;
 #[cfg(windows)]
 mod native;
+#[cfg(all(windows, test))]
+mod native_etw_capture;
+#[cfg(all(windows, test))]
+mod native_etw_writer;
 
 pub use error::{
     FixtureError, NativeError, NativeOperation, TokenCleanupOutcome, TokenObservationCause,
     TokenObservationFailure,
 };
 
+#[cfg(any(windows, test))]
+pub use broker_clock_change::{
+    BrokerClockRead, ClockReadRetirement, SampledClockBreak, SampledClockDiscontinuity,
+};
+
+/// Historical last broker read from the native service fixture.
+#[cfg(windows)]
+pub type NativeBrokerClockRead = BrokerClockRead<
+    windows_platform_native::ClockCoordinates,
+    windows_platform_native::ClockReadError,
+>;
+
+/// Host-only scripted observation of the same broker receiver.
+#[cfg(all(not(windows), test))]
+type NativeBrokerClockRead = BrokerClockRead<u64, u32>;
+
 /// Fixed role selected by its executable composition, never by SCM arguments.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum LabRole {
     /// Inert laboratory acquisition-role host, with no networking or clock calls.
     Engine,
-    /// Inert laboratory broker-role host, with no privileged effects.
+    /// Read-only laboratory broker-role host, with no privileged effects.
     ClockBroker,
 }
 
@@ -79,12 +102,28 @@ pub fn engine_entry() -> Result<(), &'static FixtureError> {
     entry(LabRole::Engine)
 }
 
-/// Enter only the fixed inert laboratory broker host.
+/// Enter only the fixed read-only laboratory broker host.
 ///
 /// # Errors
 /// Returns `WindowsOnly` on other hosts, or the actual bounded fixture failure.
 pub fn broker_entry() -> Result<(), &'static FixtureError> {
     entry(LabRole::ClockBroker)
+}
+
+/// Read the broker's last raw observation from this process's terminal receipt.
+/// This historical value carries no current mapping or correction authority.
+#[cfg(windows)]
+#[must_use]
+pub fn retained_broker_clock_read() -> Option<NativeBrokerClockRead> {
+    native::retained_broker_clock_read()
+}
+
+/// Read the broker's latest sampled invalidation after the invocation returns.
+/// The record remains historical through any subsequent re-observation.
+#[cfg(windows)]
+#[must_use]
+pub fn retained_broker_clock_break() -> Option<SampledClockBreak> {
+    native::retained_broker_clock_break()
 }
 
 /// Borrow the bounded historical snapshot from this process's actual host receipt.

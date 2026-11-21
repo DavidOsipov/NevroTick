@@ -1248,9 +1248,42 @@ Current shared diagnostics passes 936/963 executable lines
 and 240/240 viable generated variants. The fixture-wide metrics still
 need durable WSL capacity and fresh exact bindings. The matching Microsoft
 SDK archive and authoring fixture are frozen for Message Compiler and
-linked-resource readback. Admit the exact licence and tools for that
-compiler-only job, then continue the provider-bound writer and intended-token
-observations under W11-W08 and W11-W10.
+linked-resource readback. David accepted the exact SDK agreement for the
+offline pilot. All four SDK tools passed embedded-signature and code-signing
+chain checks on the host, with a rejected changed-byte control and a healthy
+restored copy. The [MD-P4 compiler and resource fixture](../../tasks/windows11-integration.md#md-p4-native-compiler-and-linked-event-resource-fixture--21-november-2026)
+passed in David's offline guest after the generator supplied both validated
+DLL filename attributes. Independent readback verified both exact event
+descriptors, templates and full 32-bit message bindings on the resource-only
+DLL. The wrong keyword and two message substitution controls refused as
+intended. The [native resource readback](../../tasks/windows11-integration.md#md-p4-native-resource-readback-without-publisher-installation--21-november-2026)
+also matched both descriptors, all five fields and both en-US messages
+through Windows APIs. It distinguished wrong bindings, the omitted channel
+keyword and absent resources, and observed no fixture metadata in a fresh
+process after cleanup. The [maintained DLL build](../../tasks/windows11-integration.md#maintained-event-resource-dll-build--21-november-2026)
+now consumes a checked generation and admitted compiler export, links in the
+existing offline WSL namespace and checks the final resource bytes before
+publication. It reproduced the previously observed DLL, refused stale
+compiler inputs and independently read back a freshly compiled provider GUID
+change. Continue from the compiled resource at the actual package and
+installed publisher boundary. Provider paths, writer delivery and
+intended-token observations remain under W11-W08 and W11-W10.
+
+The [portable submission layout](../../tasks/windows11-integration.md#portable-submission-of-the-compiled-event-layout--21-november-2026)
+now passes the two exact compiled descriptors and five ordered fields into
+the existing threaded backend. The actual service invocation controls
+exercise acknowledgement and refusal, optional output off, original cutoff
+and physical join. The [portable custody checkpoint](../../tasks/windows11-integration.md#final-writer-submission-and-unresolved-release--21-november-2026)
+now checks the current mode and original cutoff immediately before the selected
+effect. It preserves unconfirmed release and known loss after physical join
+while keeping both `Stopped` and the final receipt unavailable. The
+[Windows private trace fixture](../../tasks/windows11-integration.md#windows-private-trace-writer-fixture--21-november-2026)
+now passes separate registration and guarded writes through actual Windows
+APIs. Independent file replay observed the two exact service packets and
+cleanup in the offline guest. Continue the installed provider identity,
+effective access and recovery contract with W11-W05/W11-W08/W11-W10.
+Writer coverage, mutation, installed retention and package evidence retain
+their existing exits.
 
 The [Engine collection and timer cleanup transfer](../../tasks/windows11-integration.md#engine-collection-and-timer-cleanup-transfer--21-november-2026)
 preserves a final Stale decision beside a reaped timer failure. The private
@@ -1288,8 +1321,12 @@ The [EXE/PDB pair admission follow-up](../../tasks/build-optimization.md#configu
 now binds both PDBs to the actual UI and Observe executables before export.
 The configured Windows replay passed all 32 rows. Independent readback
 matched the new pairs, and the live receiver refused both a wrong-role PDB
-and an age-only mismatch with empty destinations. Service and Engine fixture
-symbol admission retain their separate owners.
+and an age-only mismatch with empty destinations. The [fixture follow-up](../../tasks/build-optimization.md#engine-and-service-fixture-symbol-admission)
+extends the same checks to the service and Engine exporters. All four actual
+Engine facade pairs passed fresh cross-link and independent readback. The
+service exporter passed focused host controls and both configured service
+roles cross-linked after the receiver admitted the fresh graph and source
+checkpoint. Independent readback matched both actual service PE/PDB pairs.
 
 The child composes one real, explicit managed-loopback Engine series with the
 existing portable service invocation. Its first source stage changes neither
@@ -1302,6 +1339,33 @@ thread join, paired operation/cleanup failure handling and its exact local graph
 Do not repeat the inert lifecycle qualification or add another historical-field
 wrapper as a substitute. Positive Engine-to-Core admission still needs the real
 clock-effect/invalidation owner, finite mapping evidence and independent date/scale.
+
+The [broker-owned raw adjustment observation](../../tasks/windows11-integration.md#broker-owned-raw-adjustment-observation--21-november-2026)
+binds the existing Windows getter to the broker's acknowledged Running
+transition in a selected fixture. Its receipt separates a bracketed read,
+native failure and retirement under the original Stop and time guards. The
+[paired QPC and FILETIME observer](../../tasks/windows11-integration.md#broker-owned-qpc-and-precise-filetime-observation--21-november-2026)
+feeds the same fixture receipt through the existing guarded slot and passed
+the selected read-only Windows Sandbox cases. Portable coordinate metrics
+and Windows-only FFI metrics retain separate scopes. The
+[broker power invalidation child](../../tasks/windows11-integration.md#broker-power-invalidation-of-an-in-flight-read--21-november-2026)
+binds that selected receiving path to one subscribed observation context. The
+[broker SCM time-change child](../../tasks/windows11-integration.md#broker-scm-time-change-and-renewable-raw-observation--22-november-2026)
+wires renewable raw observation into the fixed Windows laboratory broker
+entry. The Engine laboratory entry retains its control-only behavior. Continue
+through the [broker SCM power child](../../tasks/windows11-integration.md#broker-scm-power-delivery-and-repeatable-observation--22-november-2026),
+which binds delivered suspend and automatic resume to the same revision owner.
+The [broker sampled-discontinuity child](../../tasks/windows11-integration.md#sampled-broker-clock-discontinuity--22-november-2026)
+compares consecutive quiet brackets and retires a conflicting raw revision.
+The exact 667-input child passed configured development and its selected
+Windows read-only observation. Continue to a live broker availability
+decision under the same serialized owner before adding the private Engine
+request. Existing S0.3/S3.2 owners still need to bind the sender, receiver,
+session and IPC contract.
+Actual SCM delivery, the calibrated forward-step envelope and correction
+acknowledgement have their own exits. Qualify finite error,
+drift and full-exchange validity before Engine admission. Production recovery
+still needs ownership inputs, a qualified consumer and installed service evidence.
 
 
 **Published qualified source child — 17 November 2026, `238b9ae`:**

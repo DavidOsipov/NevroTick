@@ -31,6 +31,11 @@ use crate::{
     TokenObservationCause, TokenObservationFailure,
 };
 
+#[path = "broker_clock_change_tests.rs"]
+mod broker_clock_change_tests;
+#[path = "broker_observation_tests.rs"]
+mod broker_observation_tests;
+
 /// Historical event-order view over real consumed v2 bytes. This is a test
 /// observation only; it neither drains queues nor encodes production records.
 struct DiagnosticRouteView {
@@ -1934,7 +1939,10 @@ fn receipt_fixture(actual_result: Result<(), FixtureError>) -> super::HostReceip
     super::HostReceipt {
         actual_result,
         diagnostics: router.finish(),
+        broker_clock_read: None,
+        broker_clock_break: None,
         writer_close: None,
+        broker_observation: None,
     }
 }
 
@@ -3938,15 +3946,20 @@ mod worker_tests {
         };
 
         use super::{
-            Component, ConsumerState, FixtureError, InvocationPoll, LifecycleError,
-            LifecycleObservationClaim, MemoryConsumer, Rig, ScmControl, ServiceInvocation,
-            Settings, Sinks, TestResult, WriterClose, WriterFields, writer_fields,
+            ConsumerState, Event, FixtureError, InvocationPoll, LifecycleError, MemoryConsumer,
+            NativeError, NativeOperation, Rig, ScmControl, ServiceInvocation, Settings, Sinks,
+            TestResult, WriterClose,
         };
-        use crate::diagnostics::threaded::{ThreadedWriter, WriterBackend};
-        use windows_platform::diagnostics::{DecodedRecord, WriterRecord};
+        use crate::diagnostics::threaded::{
+            BackendClose, EventDescriptor, SubmitOnce, ThreadedWriter, WriteAttempt, WriterBackend,
+        };
+        use windows_platform::diagnostics::DecodedRecord;
 
         /// Real waits are independent of the host's manually advanced monotonic input.
         const REAL_WAIT: Duration = Duration::from_secs(5);
+
+        /// Descriptor and individually delimited field bytes at backend entry.
+        type ObservedSubmission = (EventDescriptor, [Vec<u8>; 5]);
 
         /// Independent facts from the two actual thread boundaries.
         #[derive(Default)]
@@ -3962,7 +3975,7 @@ mod worker_tests {
         /// A finite local backend which observes real offered metadata and real close.
         struct Backend {
             /// Complete original fields observed at the actual writer.
-            records: SyncSender<WriterFields>,
+            records: SyncSender<ObservedSubmission>,
             /// Record entry to the actual backend close.
             close_entered: SyncSender<()>,
             /// Hold close until the test advances the host clock.
@@ -3973,17 +3986,25 @@ mod worker_tests {
 
         impl WriterBackend for Backend {
             /// Consume one real record; a full observation channel reports actual local loss.
-            fn write(&mut self, record: WriterRecord) -> bool {
-                self.records.try_send(writer_fields(&record)).is_ok()
+            fn write(&mut self, submission: SubmitOnce<'_>) -> WriteAttempt {
+                let observed: ObservedSubmission = (
+                    *submission.event().descriptor(),
+                    submission.event().fields().map(<[u8]>::to_vec),
+                );
+                submission.submit(|| self.records.try_send(observed).is_ok())
             }
 
             /// Hold actual backend close before the writer can publish its final marker.
-            fn close(self) -> bool {
+            fn close(self) -> BackendClose {
                 self.facts.closes.fetch_add(1, Ordering::AcqRel);
                 let released: bool = self.close_entered.try_send(()).is_ok()
                     && self.close_release.recv_timeout(REAL_WAIT).is_ok();
                 self.facts.close_released.store(released, Ordering::Release);
-                released
+                if released {
+                    Ok(WriterClose::Drained)
+                } else {
+                    Ok(WriterClose::Loss)
+                }
             }
         }
 
@@ -4036,14 +4057,32 @@ mod worker_tests {
         fn finish_writer<B: WriterBackend>(rig: &mut Rig<ThreadedWriter<B>>) -> TestResult {
             let _stop: ScmControl = rig.notification.handle_control(1);
             let started: Instant = Instant::now();
-            while rig.poll()? != InvocationPoll::Finished {
+            loop {
+                match rig.poll()? {
+                    InvocationPoll::Finished => return Ok(()),
+                    InvocationPoll::WriterReleaseUnconfirmed(observation) => {
+                        use crate::diagnostics::ReleaseUnconfirmed;
+                        let reason: String = match observation.release {
+                            ReleaseUnconfirmed::Provider { status, .. } => {
+                                format!("writer provider release unconfirmed, status {status}")
+                            }
+                            ReleaseUnconfirmed::WriterPanicked => {
+                                "writer panicked before confirming provider release".into()
+                            }
+                        };
+                        eprintln!("{reason}");
+                        return Err(reason.into());
+                    }
+                    InvocationPoll::Pending(_)
+                    | InvocationPoll::JoinTail(_)
+                    | InvocationPoll::Overdue => {}
+                }
                 if started.elapsed() >= REAL_WAIT {
-                    eprintln!("portable host test could not join its original writer");
-                    std::process::abort();
+                    eprintln!("test could not join its original writer");
+                    return Err("writer join observation timed out".into());
                 }
                 thread::sleep(Duration::from_millis(1));
             }
-            Ok(())
         }
 
         /// Observe the actual backend and owned thread before allowing physical exit.
@@ -4054,23 +4093,50 @@ mod worker_tests {
         fn observe_held_writer(
             rig: &mut Rig<ThreadedWriter<Backend>>,
             release: &mut Release,
-            records_rx: &Receiver<WriterFields>,
+            records_rx: &Receiver<ObservedSubmission>,
             close_rx: &Receiver<()>,
             tail_rx: &Receiver<()>,
             facts: &Facts,
+            refuse_running: bool,
         ) -> TestResult<usize> {
             rig.advance(Duration::from_nanos(25))?;
             assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            let running: [u32; 7] = [16, 4, 1, 0, 0, 0, 0];
+            assert_eq!(rig.count(&Event::StatusAttempt(running)), 1);
             assert_eq!(
-                records_rx.recv_timeout(REAL_WAIT)?,
-                (
-                    Component::Engine,
-                    2,
-                    LifecycleObservationClaim::LastAccepted(25),
-                    2,
-                    0
-                ),
-                "S31-THREADED-real-Running-record"
+                rig.count(&Event::StatusAcknowledged(running)),
+                usize::from(!refuse_running)
+            );
+            let (descriptor, observed): ObservedSubmission = records_rx.recv_timeout(REAL_WAIT)?;
+            let (id, level, cause): (u16, u8, u8) = if refuse_running {
+                (4, 2, 10)
+            } else {
+                (2, 4, 0)
+            };
+            assert_eq!(
+                descriptor,
+                EventDescriptor {
+                    id,
+                    version: 1,
+                    channel: 16,
+                    level,
+                    opcode: 0,
+                    task: 0,
+                    keyword: 0x8000_0000_0000_0001,
+                },
+                "S31-THREADED-selected-descriptor"
+            );
+            let fields: [&[u8]; 5] = [
+                &[1],
+                &[2, 0, 0, 0, 0, 0, 0, 0],
+                &[1],
+                &[25, 0, 0, 0, 0, 0, 0, 0],
+                &[cause],
+            ];
+            assert_eq!(
+                observed.each_ref().map(Vec::as_slice),
+                fields,
+                "S31-THREADED-original-fields"
             );
             let _stop: ScmControl = rig.notification.handle_control(1);
             assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
@@ -4101,16 +4167,17 @@ mod worker_tests {
             Ok(status_count)
         }
 
-        /// The real writer's final wake is not physical thread completion.
+        /// Check both actual Running outcomes before releasing physical thread exit.
         /// # Errors
         /// Preserve bounded backend, fixture, clock, gate, observation and join failures.
         /// # Panics
         /// Reject lost Running bytes, early Stopped/receipt, or missing relative join polling.
-        #[test]
-        fn actual_writer_final_wake_retains_physical_join() -> TestResult {
+        fn check_writer_join(refuse_running: bool) -> TestResult {
             let facts: Arc<Facts> = Arc::new(Facts::default());
-            let (records_tx, records_rx): (SyncSender<WriterFields>, Receiver<WriterFields>) =
-                sync_channel(16);
+            let (records_tx, records_rx): (
+                SyncSender<ObservedSubmission>,
+                Receiver<ObservedSubmission>,
+            ) = sync_channel(16);
             let (close_tx, close_rx): (SyncSender<()>, Receiver<()>) = sync_channel(1);
             let (release_close_tx, release_close_rx): (SyncSender<()>, Receiver<()>) =
                 sync_channel(1);
@@ -4128,8 +4195,13 @@ mod worker_tests {
                 facts: Arc::clone(&facts),
             };
             let tail_facts: Arc<Facts> = Arc::clone(&facts);
+            let cause: NativeError = NativeError::new(NativeOperation::Status, 814);
+            let mut settings: Settings = Settings::default();
+            if refuse_running {
+                settings.report_failures.push((4, cause));
+            }
             let mut rig: Rig<ThreadedWriter<Backend>> = Rig::start_with_writer(
-                Settings::default(),
+                settings,
                 Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
                 move |_, _| {
                     Some(ThreadedWriter::with_exit_tail(backend, move || {
@@ -4154,6 +4226,7 @@ mod worker_tests {
                         &close_rx,
                         &tail_rx,
                         &facts,
+                        refuse_running,
                     )
                 }));
             drop(release);
@@ -4172,14 +4245,110 @@ mod worker_tests {
                 Some(WriterClose::Drained),
                 "S31-THREADED-actual-writer-close-receipt"
             );
-            assert_eq!(
-                receipt.result(),
-                &Err(FixtureError::Lifecycle(LifecycleError::DeadlineElapsed))
-            );
+            let original: LifecycleError<NativeError> = if refuse_running {
+                LifecycleError::Report(cause)
+            } else {
+                LifecycleError::DeadlineElapsed
+            };
+            assert_eq!(receipt.result(), &Err(FixtureError::Lifecycle(original)));
+            assert_eq!(receipt.diagnostics().optional().history().len(), 0);
+            assert!(records_rx.try_recv().is_err());
             assert_eq!(rig.statuses().len(), status_count + 1);
             assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
             assert_eq!(facts.closes.load(Ordering::Acquire), 1);
             assert!(facts.tail_released.load(Ordering::Acquire));
+            Ok(())
+        }
+
+        /// The writer's final wake leaves physical join pending on either outcome.
+        /// # Errors
+        /// Preserve an original fixture, writer or observation failure.
+        #[test]
+        fn actual_writer_final_wake_retains_physical_join() -> TestResult {
+            check_writer_join(false)?;
+            check_writer_join(true)
+        }
+
+        /// Drive a registered fixture publisher through the real service decision.
+        ///
+        /// # Errors
+        /// Preserve fixture setup, publisher release and receipt errors.
+        /// # Panics
+        /// Reject any change to the original SCM outcome or exact submission result.
+        #[cfg(windows)]
+        fn drive_native_writer(
+            rig: &mut Rig<ThreadedWriter<crate::native_etw_writer::FixturePublisher>>,
+            refusal: Option<NativeError>,
+        ) -> TestResult {
+            rig.advance(Duration::from_nanos(25))?;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            rig.script.borrow_mut().completion = Poll::Ready(Ok(()));
+            let _first: InvocationPoll = rig.poll()?;
+            finish_writer(rig)?;
+            let running: [u32; 7] = [16, 4, 1, 0, 0, 0, 0];
+            assert_eq!(rig.count(&Event::StatusAttempt(running)), 1);
+            assert_eq!(
+                rig.count(&Event::StatusAcknowledged(running)),
+                usize::from(refusal.is_none())
+            );
+            let receipt: crate::host::HostReceipt = rig
+                .invocation
+                .as_mut()
+                .and_then(ServiceInvocation::take_receipt)
+                .ok_or("missing native writer receipt")?;
+            assert_eq!(receipt.writer_close, Some(WriterClose::Drained));
+            assert_eq!(receipt.diagnostics().optional().history().len(), 0);
+            let expected: Result<(), FixtureError> = refusal
+                .map_or(Ok(()), |cause: NativeError| {
+                    Err(FixtureError::Lifecycle(LifecycleError::Report(cause)))
+                });
+            assert_eq!(receipt.result(), &expected);
+            Ok(())
+        }
+
+        /// Observe the two actual native packets in separate same-process sessions.
+        ///
+        /// # Errors
+        /// Preserve native capture, fixture status, or teardown failures.
+        #[cfg(windows)]
+        #[test]
+        #[ignore = "requires an explicitly admitted offline Windows trace fixture"]
+        fn native_writer_captures_acknowledged_and_refused_running() -> TestResult {
+            use crate::native_etw_writer::FixturePublisher;
+            for (refused, id, level, cause) in [(false, 2_u16, 4_u8, 0_u8), (true, 4, 2, 10)] {
+                let refusal: Option<NativeError> =
+                    refused.then_some(NativeError::new(NativeOperation::Status, 814));
+                let mut settings: Settings = Settings::default();
+                if let Some(error) = refusal {
+                    settings.report_failures.push((4, error));
+                }
+                let mut rig: Rig<ThreadedWriter<FixturePublisher>> = Rig::start_with_writer(
+                    settings,
+                    Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+                    |_, _| {
+                        Some(ThreadedWriter::with_exit_tail(
+                            FixturePublisher::new(),
+                            || {},
+                        ))
+                    },
+                )?;
+                let descriptor: EventDescriptor = EventDescriptor {
+                    id,
+                    version: 1,
+                    channel: 16,
+                    level,
+                    opcode: 0,
+                    task: 0,
+                    keyword: 0x8000_0000_0000_0001,
+                };
+                let fields: [u8; 19] =
+                    [1, 2, 0, 0, 0, 0, 0, 0, 0, 1, 25, 0, 0, 0, 0, 0, 0, 0, cause];
+                crate::native_etw_capture::capture(
+                    || drive_native_writer(&mut rig, refusal),
+                    descriptor,
+                    fields,
+                )?;
+            }
             Ok(())
         }
 
@@ -4191,15 +4360,17 @@ mod worker_tests {
 
         impl WriterBackend for DeniedBackend {
             /// Mark an unexpected write if startup leaked into the adapter.
-            fn write(&mut self, _record: WriterRecord) -> bool {
-                self.touched.store(true, Ordering::Release);
-                true
+            fn write(&mut self, submission: SubmitOnce<'_>) -> WriteAttempt {
+                submission.submit(|| {
+                    self.touched.store(true, Ordering::Release);
+                    true
+                })
             }
 
             /// Mark an unexpected backend start even if its record was discarded.
-            fn close(self) -> bool {
+            fn close(self) -> BackendClose {
                 self.touched.store(true, Ordering::Release);
-                true
+                Ok(WriterClose::Drained)
             }
         }
 
@@ -4240,6 +4411,99 @@ mod worker_tests {
                 }
             }
             assert_eq!(primary_causes, [4]);
+            Ok(())
+        }
+
+        /// Fixture release refusal from the real writer thread.
+        #[cfg(target_os = "linux")]
+        struct UnreleasedBackend(crate::diagnostics::ReleaseUnconfirmed);
+
+        #[cfg(target_os = "linux")]
+        impl WriterBackend for UnreleasedBackend {
+            /// An attempted local write reports loss as a separate fact.
+            fn write(&mut self, submission: SubmitOnce<'_>) -> WriteAttempt {
+                submission.submit(|| false)
+            }
+
+            /// Report the uncertainty after the writer returns and joins.
+            fn close(self) -> BackendClose {
+                Err(self.0)
+            }
+        }
+
+        /// Exercise the actual host refusal and unresolved-provider drop guard.
+        /// # Errors
+        /// Propagate real fixture startup and observation failures.
+        /// # Panics
+        /// Fails on an attempted Stopped, lost cause or invented completion.
+        #[cfg(target_os = "linux")]
+        pub(super) fn check_unconfirmed_release() -> TestResult {
+            use crate::diagnostics::{Delivery, ReleaseUnconfirmed, UnconfirmedWriter};
+            use std::num::{NonZeroU32, NonZeroU64};
+
+            let release: ReleaseUnconfirmed = ReleaseUnconfirmed::Provider {
+                registration: NonZeroU64::MIN,
+                status: NonZeroU32::new(6).ok_or("missing release refusal status")?,
+            };
+            let cause: NativeError = NativeError::new(NativeOperation::Status, 814);
+            let mut rig: Rig<ThreadedWriter<UnreleasedBackend>> = Rig::start_with_writer(
+                Settings {
+                    report_failures: vec![(4, cause)],
+                    ..Settings::default()
+                },
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+                move |_, _| {
+                    Some(ThreadedWriter::with_exit_tail(
+                        UnreleasedBackend(release),
+                        || {},
+                    ))
+                },
+            )?;
+            rig.trace.borrow_mut().destructor_markers = true;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            rig.script.borrow_mut().completion = Poll::Pending;
+            let started: Instant = Instant::now();
+            let expected: UnconfirmedWriter = UnconfirmedWriter {
+                release,
+                loss_observed: true,
+            };
+            loop {
+                let poll: InvocationPoll = rig.poll()?;
+                assert!(matches!(
+                    poll,
+                    InvocationPoll::Pending(_) | InvocationPoll::JoinTail(_)
+                ));
+                if rig
+                    .owner()?
+                    .writer
+                    .as_ref()
+                    .and_then(Delivery::release_unconfirmed)
+                    == Some(expected)
+                {
+                    break;
+                }
+                if started.elapsed() >= REAL_WAIT {
+                    return Err("writer did not expose the joined release refusal".into());
+                }
+                thread::park_timeout(Duration::from_millis(1));
+            }
+            assert!(rig.take_result().is_none());
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            rig.script.borrow_mut().completion = Poll::Ready(Ok(()));
+            let expected: InvocationPoll = InvocationPoll::WriterReleaseUnconfirmed(expected);
+            assert_eq!(rig.poll()?, expected);
+            assert_eq!(rig.poll()?, expected);
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            assert_eq!(
+                rig.owner()?.failure(),
+                Some(&FixtureError::Lifecycle(LifecycleError::Report(cause)))
+            );
+            assert!(rig.statuses().iter().all(|status| status[1] != 1));
+            assert!(rig.take_result().is_none());
+            let invocation: super::Invocation<ThreadedWriter<UnreleasedBackend>> =
+                rig.invocation.take().ok_or("missing joined writer owner")?;
+            eprintln!("fixture-worker-unresolved-drop-entered");
+            drop(invocation);
             Ok(())
         }
     }
@@ -6565,6 +6829,11 @@ mod worker_tests {
 
         match std::env::var(OWNER_DROP_CHILD_MODE) {
             Ok(mode) => {
+                if mode == "writer-release-unconfirmed" {
+                    threaded_writer_controls::check_unconfirmed_release()?;
+                    eprintln!("fixture-worker-owner-drop-returned");
+                    return Ok(());
+                }
                 if matches!(mode.as_str(), "writer-healthy" | "writer-unresolved") {
                     let close: Rc<CloseSignal> = Rc::new(CloseSignal::default());
                     if mode == "writer-healthy" {
@@ -6617,6 +6886,7 @@ mod worker_tests {
             "unresolved",
             "writer-healthy",
             "writer-unresolved",
+            "writer-release-unconfirmed",
         ] {
             let output = Command::new(std::env::current_exe()?)
                 .args([

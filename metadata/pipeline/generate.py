@@ -290,15 +290,16 @@ def _store_csv(model: Metadata) -> bytes:
 def _service_events(provider: EventProvider) -> bytes:
     """Render compiler input from the revalidated provider and fixed field order.
 
-    Admission restricts the substituted name and GUID to XML-safe ASCII. The
-    package deployment owner supplies the installed message and metadata paths.
+    Admission restricts the substituted values to XML-safe ASCII. The compiler
+    receives the checked resource leaf, while deployment owns the installed paths.
     """
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events"
     xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events">
   <instrumentation>
     <events>
-      <provider name="{provider.name}" guid="{{{provider.guid}}}" symbol="NEVROTICK_SERVICE_PROVIDER">
+      <provider name="{provider.name}" guid="{{{provider.guid}}}" symbol="NEVROTICK_SERVICE_PROVIDER"
+          resourceFileName="{provider.package_resource_file}" messageFileName="{provider.package_resource_file}">
         <channels>
           <channel name="{provider.name}/Operational" chid="ServiceOperational"
               type="Operational" value="16" enabled="false"/>

@@ -253,10 +253,131 @@ class EngineCompositionGraphTests(unittest.TestCase):
                                "`-- nevrotick-engine v0.0.0 (/work/source/crates/nevrotick-engine)|\n")
         return policy, data, normal, development
 
-    def receive(self, fixture):
+    def receive(self, fixture, target=Q.TARGETS[0]):
         """Use actual metadata, target and both tree-role checks, with no mocked reader."""
         policy, data, normal, development = fixture
-        return Q.graph_row(policy, Q.TARGETS[0], json.dumps(data), normal, development)
+        return Q.graph_row(policy, target, json.dumps(data), normal, development)
+
+    def windows_fixture(self):
+        """Supply independently specified MSVC edges and separate feature sets."""
+        policy, data, normal, development = self.fixture()
+        policy["rows"][Q.TARGETS[1]] = {"package_scopes": {
+            **policy["rows"][Q.TARGETS[0]]["package_scopes"],
+            "nevrotick-engine": {"features": {}, "local_features": {
+                "nevrotick-engine@0.0.0": {"target": [[]]},
+                "windows-platform-native@0.0.0": {"target": [[]]},
+            }},
+        }}
+        leaf = "windows-platform-native"
+        leaf_path = "/work/source/crates/" + leaf
+        data["packages"].append({"id": leaf, "name": leaf, "version": "0.0.0", "source": None,
+                                 "license": "GPL-2.0-only", "manifest_path": leaf_path + "/Cargo.toml",
+                                 "targets": [
+                                     {"name": "windows_platform_native", "kind": ["lib"], "crate_types": ["lib"],
+                                      "src_path": leaf_path + "/src/lib.rs"},
+                                     {"name": "subscription_lifecycle", "kind": ["test"], "crate_types": ["bin"],
+                                      "src_path": leaf_path + "/tests/subscription_lifecycle.rs"},
+                                 ]})
+        data["resolve"]["nodes"].append({"id": leaf, "features": [], "deps": []})
+        data["resolve"]["nodes"][2]["deps"].append({"pkg": leaf, "dep_kinds": [
+            {"kind": None, "target": "cfg(windows)"},
+        ]})
+        data["resolve"]["nodes"][0]["deps"].append({"pkg": leaf, "dep_kinds": [
+            {"kind": None, "target": "cfg(windows)"},
+        ]})
+        normal_features = ["Win32", "Win32_Foundation", "Win32_Security", "Win32_System",
+                           "Win32_System_Services", "Win32_System_Threading"]
+        test_features = sorted([*normal_features, "Win32_System_Diagnostics", "Win32_System_Diagnostics_Etw",
+                                "Win32_System_Time"])
+        for name, version, features in (("windows-link", "0.2.1", []),
+                                         ("windows-sys", "0.61.2", test_features)):
+            policy["packages"].append({"name": name, "version": version, "license": "MIT OR Apache-2.0",
+                                       "links": None, "build_script": False, "proc_macro": False})
+            data["packages"].append({"id": name, "name": name, "version": version,
+                                     "source": "registry+https://github.com/rust-lang/crates.io-index",
+                                     "license": "MIT OR Apache-2.0", "targets": [{"kind": ["lib"]}]})
+            data["resolve"]["nodes"].append({"id": name, "features": features, "deps": []})
+        data["resolve"]["nodes"][0]["deps"].append({"pkg": "windows-sys", "dep_kinds": [
+            {"kind": None, "target": "cfg(windows)"}, {"kind": "dev", "target": "cfg(windows)"},
+        ]})
+        windows_tree = (f"|-- {leaf} v0.0.0 ({leaf_path})|\n"
+                        "|-- windows-sys v0.61.2|{}\n|   `-- windows-link v0.2.1|\n`-- windows-platform")
+        normal = normal.replace("`-- windows-platform", windows_tree.format(",".join(normal_features)))
+        development = development.replace("`-- windows-platform", windows_tree.format(",".join(test_features)))
+        development = development.replace("`-- nevrotick-engine", "|-- nevrotick-engine")
+        development += f"|   `-- {leaf} v0.0.0 ({leaf_path})|\n"
+        development += f"`-- windows-sys v0.61.2|{','.join(test_features)}\n    `-- windows-link v0.2.1|\n"
+        return policy, data, normal, development
+
+    def test_windows_etw_features_are_admitted_only_in_development(self):
+        result = self.receive(self.windows_fixture(), Q.TARGETS[1])
+        normal = result["contexts"]["windows-sys@0.61.2"]["target"][0]
+        test = result["development_contexts"]["windows-sys@0.61.2"]["target"][0]
+        self.assertEqual(set(test) - set(normal), {"Win32_System_Diagnostics", "Win32_System_Diagnostics_Etw",
+                                                  "Win32_System_Time"})
+        policy, data, normal_tree, development = self.windows_fixture()
+        with self.assertRaisesRegex(Q.Incomplete, "Unexpected metadata package"):
+            self.receive((policy, data, normal_tree, development))
+        # Use the Windows test closure behind the production edges.
+        with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
+            self.receive((policy, data, development.split("[dev-dependencies]", 1)[0], development), Q.TARGETS[1])
+        # Keep the unified metadata closure while an individual test-tree binding is missing.
+        with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
+            self.receive((policy, data, normal_tree, development.replace(",Win32_System_Time", "")), Q.TARGETS[1])
+
+    def test_windows_etw_requires_exact_resolved_edges(self):
+        fixture = self.windows_fixture()
+        edges = fixture[1]["resolve"]["nodes"][0]["deps"][-1]["dep_kinds"]
+        edges.reverse()
+        self.receive(fixture, Q.TARGETS[1])
+        for invalid in ({"kind": None, "target": "cfg(windows)"}, {"kind": "dev", "target": None}):
+            with self.subTest(invalid=invalid):
+                edges[0] = invalid
+                with self.assertRaisesRegex(Q.Incomplete, "dependency kinds"):
+                    self.receive(fixture, Q.TARGETS[1])
+
+    def test_native_observer_requires_a_direct_windows_normal_edge_in_metadata(self):
+        fixture = self.windows_fixture()
+        result = self.receive(fixture, Q.TARGETS[1])
+        identity = "windows-platform-native@0.0.0"
+        self.assertEqual(result["contexts"][identity], {"target": [[]]})
+        self.assertEqual(result["development_contexts"][identity], {"target": [[]]})
+        gnu = self.receive(self.fixture())
+        self.assertNotIn(identity, gnu["contexts"])
+        self.assertNotIn(identity, gnu["development_contexts"])
+        changed_edge = next(dep for dep in fixture[1]["resolve"]["nodes"][0]["deps"]
+                            if dep["pkg"] == "windows-platform-native")
+        for wrong_kinds in ([], [{"kind": "dev", "target": "cfg(windows)"}],
+                            [{"kind": "build", "target": "cfg(windows)"}],
+                            [{"kind": None, "target": None}],
+                            [{"kind": None, "target": "cfg(windows)"}] * 2):
+            with self.subTest(wrong_kinds=wrong_kinds):
+                changed_edge["dep_kinds"] = wrong_kinds
+                with self.assertRaisesRegex(Q.Incomplete, "dependency kinds"):
+                    self.receive(fixture, Q.TARGETS[1])
+
+    def test_native_observer_trees_require_one_direct_normal_edge(self):
+        policy, data, normal, development = self.windows_fixture()
+        self.receive((policy, data, normal, development), Q.TARGETS[1])
+        direct = "|-- windows-platform-native v0.0.0 (/work/source/crates/windows-platform-native)|\n"
+        normal_without_direct = normal.replace(direct, "")
+        development_without_direct = development.replace(direct, "")
+        final_child = direct.replace("|-- ", "`-- ", 1)
+        cases = (
+            ("indirect normal", normal_without_direct + "    " + final_child, development),
+            ("indirect development", normal, development_without_direct),
+            ("normal build edge", normal_without_direct + "[build-dependencies]\n" + final_child, development),
+            ("development build edge", normal, development_without_direct.replace(
+                "[dev-dependencies]\n", "[build-dependencies]\n" + final_child + "[dev-dependencies]\n")),
+            ("development dev edge", normal, development_without_direct.replace(
+                "[dev-dependencies]\n", "[dev-dependencies]\n" + direct)),
+            ("duplicate normal", normal.replace(direct, direct + direct), development),
+            ("duplicate development", normal, development.replace(direct, direct + direct)),
+        )
+        for defect, normal_tree, development_tree in cases:
+            with self.subTest(defect=defect):
+                with self.assertRaisesRegex(Q.Incomplete, "native observer dependency"):
+                    self.receive((policy, data, normal_tree, development_tree), Q.TARGETS[1])
 
     def test_healthy_distinct_graphs_keep_engine_test_only(self):
         result = self.receive(self.fixture())

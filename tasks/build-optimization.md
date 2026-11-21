@@ -1884,3 +1884,65 @@ The service fixture and Engine native reports establish byte custody. Semantic
 PDB pair admission remains open for those two exporters. The shared reader
 hash changes their future candidate bindings. Installed behavior and complete
 MSIX delivery remain under W11-W10 and their respective native owners.
+
+### Engine and service fixture symbol admission
+
+The sibling exporters now require the original CodeView basename, GUID and
+age for every selected pair before publishing any pair. The Engine exporter
+uses private staging and retires already published owned links if a later
+publication fails. It preserves a foreign replacement. The service exporter
+uses one private directory publication after verifying PE declarations,
+LLVM inspection, input hashes and the final index. Failed publication or
+receipt custody leaves the lane incomplete.
+
+The baseline accepted substituted symbols with the correct basename. The
+Engine and service controls refuse wrong-role and age-only substitutions
+before export. Healthy and restored controls export exact bytes. The service
+controls also reject a drifting symbol, index drift and an existing linked
+receipt. All 110 focused Python cases pass. The first actual Engine lane
+refused the missing test-helper import in sealed source. Adding that exact
+test fixture to the runner's helper inventory made the import reachable.
+
+The configured Engine facade cross-build passed all 20 lanes after the fix.
+The 623 product inputs and 17 helper inputs matched that checkpoint and
+all four physical PE/PDB pairs passed independent LLVM CodeView, GUID, age
+and hash comparison. Both attempts consumed 141.74 seconds cumulatively.
+Evidence is under `~/.local/share/nevrotick/windows-sibling-pdb-20261121.XcyOx9CT/`.
+The independent readback has SHA-256
+`096782e577cacfea5d080c2a8b72cb601558ed5990b8b56a32a7630ac5b5b8ca`.
+The later service receipt repair changed a shared Engine helper. The earlier
+Engine build receipt keeps its original helper identity.
+
+The service cross-link receiver previously required a four-command graph
+while the configured graph producer and its own semantic reader required
+six. It also expected receipt paths and test counts from an old source
+checkpoint. The receiver now checks the exact current six-command graph and
+twelve-command source checkpoint, reads and hashes the same receipt bytes,
+reconciles the source, index, command, vendor and tool identities, and binds
+the independently reviewed full test names. Controls reject stale or
+substituted receipts, wrong commands, same-count wrong tests and skipped
+cases. Direct invocation now reaches all 13 service reader/export controls.
+
+Fresh configured graph and source checks passed on 654 inputs, candidate
+`c142837a97520cfb5cc11fb51bdcd8f31aa2061588bf72ba65a47ec9e9e1da6a`.
+Each profile ran exactly 70 platform and 121 fixture tests. The matched source
+checkpoint also ran 28 platform doctests and the explicitly empty fixture
+doctest selection. Six graph, twelve source and three cross-link commands
+passed under the current tool, vendor, index and resource guards. Both fixed
+AMD64 console roles cross-linked and exported. Independent LLVM matched the
+exact CodeView basename, GUID, age and hashes of both PE/PDB pairs. The shared
+reader refused the freshly built broker PDB under the engine PDB basename
+and accepted the restored file. An independent reviewer confirmed the command
+and named-roster evidence against the current test declarations.
+
+The source graph, checkpoint and link receipts `pair-current-graph-2111a.json`,
+`pair-current-development-2111a.json` and `cross-pair-current-link-2111a.json`
+are under `artifacts/windows-services/recovery-20261107-v1/`. The cross-link
+accepts the exact checkpoint via `--source-checkpoint`. The link receipt's
+SHA-256 is `437c8b73dcf84fd3cde76c3bcfcf85646d7fe27952a60569b0e3c7c509a87213`.
+The `service-cross-current-20261121.sC3OnkTu` evidence directory under
+`~/.local/share/nevrotick/` retains both bounded scratch supervisors and
+independent PE/PDB readback SHA-256
+`1f39e02a3e8308a6b2c6f55dece3df872abeeed0c8f0f4312437f16663eba212`.
+Native Engine and service qualification and each existing metric gate retain
+their separate evidence.

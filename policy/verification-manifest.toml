@@ -7,6 +7,9 @@ critical_file_minimum_mutation_percent = 95
 security_modules = [
     { name = "windows-resume-observation", package = "windows-platform-native", files = ["crates/windows-platform-native/src/resume_slot.rs", "crates/windows-platform-native/src/windows_resume.rs"], scope = "one-shot automatic-resume delivery and disarm before PowrProf retirement for the observe CLI; selected GNU slot controls and Windows source/link checks require exact candidate evidence; runtime delivery, calibrated mapping, services and clock authority remain separate" },
     { name = "windows-adjustment-observation", package = "windows-platform-native", files = ["crates/windows-platform-native/src/windows_adjustment.rs"], scope = "read-only precise Windows adjustment words, mode and original native error for the observe CLI; native, coverage and mutation qualification remain open; no calibration or clock effects" },
+    { name = "windows-clock-coordinates", package = "windows-platform-native", files = ["crates/windows-platform-native/src/clock_coordinates.rs", "crates/windows-platform-native/src/windows_clock.rs"], scope = "read-only precise Windows FILETIME enclosed by signed QPC readings and paired with positive boot frequency; raw-only checked sample brackets, staged original errors, and selected broker fixture transfer; calibration, mapping lifecycle and per-file qualification remain separate" },
+    { name = "fixture-broker-clock-power-generation", package = "nevrotick-windows-service-fixture", files = ["tools/windows-service-fixture/src/broker_observation.rs", "tools/windows-service-fixture/src/broker_power.rs"], scope = "one selected broker observation fenced by the original subscribed power generation; exact failed getter attribution and immutable history; per-file portable and Windows target qualification open; no recurring power coverage, calibrated mapping or clock authority" },
+    { name = "fixture-broker-clock-change-receiver", package = "nevrotick-windows-service-fixture", files = ["tools/windows-service-fixture/src/broker_clock_change.rs", "tools/windows-service-fixture/src/broker_clock_continuity.rs"], scope = "fixed broker SCM clock and power callbacks, acknowledged Running observation owner, bounded revision sampling and raw contradiction invalidation; per-file qualification open; forward-step envelope, physical delivery and current mapped authority remain separate" },
     { name = "engine-ke-preview-target", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/ke_preview_target.rs"], scope = "checked numeric loopback TLS destination and literal verification identity for diagnostic and source-owned KE Preview; candidate-specific EP1 metrics belong to tasks/engine-transport-pilot.md" },
     { name = "engine-source-owned-ke-preview", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"], scope = "source-owned KE Preview without protected transmission, and explicit revision-checked protected loopback probe and bounded successor modes; reports retain normal-joined history or the original failure; candidate-specific EP1 qualification belongs to tasks/engine-transport-pilot.md" },
     { name = "engine-managed-source-policy", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/source_policy.rs"], scope = "bounded same-process laboratory source and canonical endpoint KoD ownership, irreversible send allowance, current-revision re-enable and actual plain and protected loopback UDP send/receive guards; candidate-specific qualification belongs to tasks/engine-transport-pilot.md; production configuration, persistence, calibrated freshness, native qualification and clock authority remain separate" },
@@ -107,6 +110,12 @@ critical_files = [
     "crates/windows-platform-native/src/resume_slot.rs",
     "crates/windows-platform-native/src/windows_resume.rs",
     "crates/windows-platform-native/src/windows_adjustment.rs",
+    "crates/windows-platform-native/src/clock_coordinates.rs",
+    "crates/windows-platform-native/src/windows_clock.rs",
+    "tools/windows-service-fixture/src/broker_observation.rs",
+    "tools/windows-service-fixture/src/broker_power.rs",
+    "tools/windows-service-fixture/src/broker_clock_change.rs",
+    "tools/windows-service-fixture/src/broker_clock_continuity.rs",
     "crates/time-core/src/conditioned_fit.rs",
     "crates/time-core/src/conditioned_fit/arithmetic.rs",
     "crates/time-core/src/conditioned_window.rs",
@@ -172,8 +181,8 @@ critical_files = [
     "crates/time-core/src/combination/lifecycle/chart.rs",
 ]
 feature_matrix = [
-    { package = "windows-platform-native", target = "x86_64-unknown-linux-gnu", scope = "portable automatic-resume slot behavior and compile-fail check for Windows-only subscription", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "windows-platform-native", target = "x86_64-pc-windows-msvc", scope = "native resume and clock adjustment readers linked by the observe CLI; actual resume delivery, teardown and adjustment-observation qualification remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "windows-platform-native", target = "x86_64-unknown-linux-gnu", scope = "portable resume slot, coordinate bracket construction and compile-fail check for Windows-only subscription", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "windows-platform-native", target = "x86_64-pc-windows-msvc", scope = "native resume and adjustment observers and bracketed QPC/FILETIME receiver; delivery, teardown and clock calibration require separate evidence", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "windows-platform", target = "x86_64-unknown-linux-gnu", scope = "portable shared service lifecycle model, integration contracts and doctests; actual SCM and service qualification remain open", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "windows-platform", target = "x86_64-pc-windows-msvc", scope = "shared pure service lifecycle library/test-consumer compilation; no SCM adapter, native execution, provisioning or installed lifecycle qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-engine", target = "x86_64-unknown-linux-gnu", scope = "laboratory loopback engine library and observe CLI, runtime-boundary tests, doctests and separate real entrypoint observations; no production acquisition qualification", dependency_owner = "policy/ui-m0-dependencies.json" },

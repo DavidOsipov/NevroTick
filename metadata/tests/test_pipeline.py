@@ -721,8 +721,8 @@ class GeneratedFactTests(SourceFixture):
         provider = root.find("./{*}instrumentation/{*}events/{*}provider")
         self.assertIsNotNone(provider)
         self.assertEqual(provider.get("guid"), "{407b0d7f-0220-4ca1-9e6b-d0a6c0d33380}")
-        self.assertNotIn("resourceFileName", provider.attrib)
-        self.assertNotIn("messageFileName", provider.attrib)
+        self.assertEqual(provider.get("resourceFileName"), "nevrotick-test-events.dll")
+        self.assertEqual(provider.get("messageFileName"), "nevrotick-test-events.dll")
         channel = provider.find("./{*}channels/{*}channel")
         self.assertEqual((channel.get("name"), channel.get("enabled")),
                          ("NevroTick-TestService/Operational", "false"))

@@ -2,6 +2,8 @@
 //! Portable fixture writer with bounded admission and a physically joined owner.
 
 use std::{
+    marker::PhantomData,
+    rc::Rc,
     sync::{
         Arc, OnceLock,
         atomic::{AtomicBool, AtomicU8, Ordering},
@@ -13,8 +15,176 @@ use std::{
 
 use windows_platform::diagnostics::WriterRecord;
 
-use super::{CloseMode, ClosePending, EventWriter, WriterClose};
+use super::{
+    CloseMode, ClosePending, EventWriter, ReleaseUnconfirmed, UnconfirmedWriter, WriterClose,
+};
 use crate::host::WorkerWake;
+
+mod event_payload {
+    //! Submission layout of the two events in the compiled service fixture.
+
+    use windows_platform::diagnostics::{LifecycleObservationClaim, WriterRecord};
+
+    /// Descriptor values read back from the compiled fixture manifest.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub(crate) struct EventDescriptor {
+        /// Catalogue event identifier.
+        pub(crate) id: u16,
+        /// Event layout version.
+        pub(crate) version: u8,
+        /// Fixture Operational channel index.
+        pub(crate) channel: u8,
+        /// Event severity level.
+        pub(crate) level: u8,
+        /// Manifest opcode.
+        pub(crate) opcode: u8,
+        /// Manifest task.
+        pub(crate) task: u16,
+        /// Manifest keyword mask including the channel bit.
+        pub(crate) keyword: u64,
+    }
+
+    /// One live router record in the exact layout expected by the fixture backend.
+    #[must_use]
+    pub(crate) struct PreparedEvent {
+        /// Fixed descriptor selected by the admitted event.
+        descriptor: EventDescriptor,
+        /// Original emitting service role.
+        component: [u8; 1],
+        /// Original invocation-local sequence, in little-endian order.
+        sequence: [u8; 8],
+        /// Original observation kind.
+        observation_kind: [u8; 1],
+        /// Original elapsed coordinate, in little-endian order.
+        observed_elapsed_ns: [u8; 8],
+        /// Original permitted cause or canonical zero.
+        cause: [u8; 1],
+    }
+
+    impl PreparedEvent {
+        /// Project only a live routed record. An event outside the compiled pair
+        /// has no submission layout. Projection performs no I/O or clock reads.
+        pub(super) fn from_record(record: &WriterRecord) -> Option<Self> {
+            let (id, level): (u16, u8) = match record.event_id() {
+                2 => (2, 4),
+                4 => (4, 2),
+                _ => return None,
+            };
+            let (observation_kind, observed_elapsed_ns): (u8, u64) = match record.observation() {
+                LifecycleObservationClaim::Unavailable => (0, 0),
+                LifecycleObservationClaim::LastAccepted(elapsed_ns) => (1, elapsed_ns),
+                LifecycleObservationClaim::HistoricalAfterClockFault(elapsed_ns) => (2, elapsed_ns),
+            };
+            Some(Self {
+                descriptor: EventDescriptor {
+                    id,
+                    version: 1,
+                    channel: 16,
+                    level,
+                    opcode: 0,
+                    task: 0,
+                    keyword: 0x8000_0000_0000_0001,
+                },
+                component: [record.component().code()],
+                sequence: record.sequence().to_le_bytes(),
+                observation_kind: [observation_kind],
+                observed_elapsed_ns: observed_elapsed_ns.to_le_bytes(),
+                cause: [record.cause_code()],
+            })
+        }
+
+        /// Borrow the descriptor tied to these fields.
+        pub(crate) const fn descriptor(&self) -> &EventDescriptor {
+            &self.descriptor
+        }
+
+        /// Borrow the five fields in manifest order, with no padding between bytes
+        /// within each field.
+        pub(crate) fn fields(&self) -> [&[u8]; 5] {
+            [
+                &self.component,
+                &self.sequence,
+                &self.observation_kind,
+                &self.observed_elapsed_ns,
+                &self.cause,
+            ]
+        }
+    }
+}
+pub(crate) use event_payload::{EventDescriptor, PreparedEvent};
+
+/// Admission of the original writer's one provider registration attempt.
+pub(crate) struct RegisterOnce<'a> {
+    /// Original writer fence and cutoff.
+    shared: &'a Shared,
+    /// Mode in which registration was selected.
+    mode: u8,
+    /// The synchronous registration belongs to this writer thread.
+    thread_bound: PhantomData<Rc<()>>,
+}
+
+impl RegisterOnce<'_> {
+    /// Enter the synchronous registration only under its own current claim.
+    pub(crate) fn register(self, effect: impl FnOnce() -> bool) -> RegistrationAttempt {
+        let attempt: Attempt = if start_write(self.shared, self.mode) {
+            Attempt::Returned(effect())
+        } else {
+            Attempt::Unstarted
+        };
+        RegistrationAttempt(attempt)
+    }
+}
+
+/// Outcome produced by consuming the registration claim.
+#[must_use]
+pub(crate) struct RegistrationAttempt(Attempt);
+
+/// One prepared event and its current admission boundary on the writer thread.
+pub(crate) struct SubmitOnce<'a> {
+    /// The same packet remains in place through preparation and actual return.
+    event: &'a PreparedEvent,
+    /// The original writer gate, never a backend-supplied clock or deadline.
+    shared: &'a Shared,
+    /// The mode which selected this record for preparation.
+    mode: u8,
+    /// Prevent transfer to another thread, including a scoped thread.
+    thread_bound: PhantomData<Rc<()>>,
+}
+
+impl SubmitOnce<'_> {
+    /// Inspect the exact packet while preparing the backend call.
+    pub(crate) const fn event(&self) -> &PreparedEvent {
+        self.event
+    }
+
+    /// Invoke one synchronous effect after preparation and a fresh gate check.
+    /// The backend enters the effect here and retains custody through its return.
+    pub(crate) fn submit(self, effect: impl FnOnce() -> bool) -> WriteAttempt {
+        if start_write(self.shared, self.mode) {
+            WriteAttempt(Attempt::Returned(effect()))
+        } else {
+            WriteAttempt(Attempt::Unstarted)
+        }
+    }
+}
+
+/// A backend can return only an outcome produced by its own submission gate.
+#[must_use]
+pub(crate) struct WriteAttempt(Attempt);
+
+/// Interpret the result without allowing another effect for the same attempt.
+enum Attempt {
+    /// The backend returned a local success or loss.
+    Returned(bool),
+    /// The current gate refused to start the effect.
+    Unstarted,
+}
+
+/// Observe completed local cleanup or preserve the original provider uncertainty.
+pub(crate) type BackendClose = Result<WriterClose, ReleaseUnconfirmed>;
+
+/// Keep write observations when the original backend leaves its release uncertain.
+type JoinedWriter = Result<WriterClose, UnconfirmedWriter>;
 
 /// The host still accepts offers and the writer can start a record.
 const OPEN: u8 = 0;
@@ -26,16 +196,26 @@ const DRAINING: u8 = 2;
 const RETIRED: u8 = 3;
 
 /// A dormant portable backend. Only its owned writer thread performs effects.
-/// Dormant destruction has no external effects. All backend resource cleanup
-/// occurs in its closure, including on unwind. The portable backend and its
-/// hook exclude blocking TLS teardown and custom panic-payload destructors.
+/// Dormant destruction has no external effects. Resource release is attempted
+/// on this same thread. An unwind cannot supply an unobserved release result.
+/// The backend and its hook exclude custom panic-payload destructors.
 pub(crate) trait WriterBackend: Send + 'static {
-    /// Consume one admitted record. False observes local loss.
-    fn write(&mut self, record: WriterRecord) -> bool;
+    /// Prepare any fixed registration input and take a current registration claim.
+    /// The portable default performs no native registration.
+    fn register(&mut self, registration: RegisterOnce<'_>) -> RegistrationAttempt {
+        registration.register(|| true)
+    }
 
-    /// Release all local resources before returning. False observes local loss.
-    /// Backend resources must also resolve when the thread unwinds.
-    fn close(self) -> bool;
+    /// Prepare one packet without effects, then consume its gate immediately before
+    /// entering the synchronous write. Provider registration needs its own admission.
+    fn write(&mut self, submission: SubmitOnce<'_>) -> WriteAttempt;
+
+    /// Attempt actual release. A completed thread alone cannot confirm release.
+    /// Retain the original registration and status when release is unconfirmed.
+    ///
+    /// # Errors
+    /// Returns the uncertainty observed by this resource owner.
+    fn close(self) -> BackendClose;
 }
 
 /// A fixture barrier after the final marker and before physical exit.
@@ -47,6 +227,8 @@ pub(crate) struct ThreadedWriter<B> {
     dormant: Option<(B, ExitTail)>,
     /// The same thread stays owned until its actual completion is joined.
     job: Option<Job>,
+    /// A joined outcome remains observable without rejoining or retrying release.
+    joined: Option<JoinedWriter>,
 }
 
 /// All host-side controls for the single original thread.
@@ -56,7 +238,7 @@ struct Job {
     /// Monotonic gate and return observation shared with this thread.
     shared: Arc<Shared>,
     /// The only completion owner of the original job.
-    thread: JoinHandle<WriterClose>,
+    thread: JoinHandle<JoinedWriter>,
 }
 
 /// Control values observed without a host lock across backend effects.
@@ -102,6 +284,7 @@ impl<B: WriterBackend> ThreadedWriter<B> {
         Self {
             dormant: Some((backend, Box::new(tail))),
             job: None,
+            joined: None,
         }
     }
 
@@ -121,9 +304,9 @@ impl<B: WriterBackend> ThreadedWriter<B> {
             shared: Arc::clone(&shared),
             wake: wake.clone(),
         };
-        let worker: std::io::Result<JoinHandle<WriterClose>> =
+        let worker: std::io::Result<JoinHandle<JoinedWriter>> =
             thread::Builder::new().spawn(move || {
-                let outcome: WriterClose = run(backend, &marker.shared, receiver);
+                let outcome: JoinedWriter = run(backend, &marker.shared, receiver);
                 marker.publish();
                 tail();
                 outcome
@@ -174,6 +357,9 @@ impl<B: WriterBackend> EventWriter for ThreadedWriter<B> {
         _wake: &WorkerWake,
     ) -> Result<WriterClose, ClosePending> {
         self.fence();
+        if let Some(joined) = self.joined {
+            return joined.map_err(ClosePending::ReleaseUnconfirmed);
+        }
         let Some(job) = self.job.take() else {
             return Ok(WriterClose::Drained);
         };
@@ -196,15 +382,18 @@ impl<B: WriterBackend> EventWriter for ThreadedWriter<B> {
             self.job = Some(job);
             return Err(pending);
         }
-        // Only joining consumes the original handle. The selected portable
-        // backend keeps blocking work within the observed closure.
-        Ok(job.thread.join().unwrap_or(WriterClose::Loss))
+        // Physical join can succeed without a confirmed provider release.
+        let joined: JoinedWriter = job.thread.join().unwrap_or(Err(UnconfirmedWriter {
+            release: ReleaseUnconfirmed::WriterPanicked,
+            loss_observed: false,
+        }));
+        self.joined = Some(joined);
+        joined.map_err(ClosePending::ReleaseUnconfirmed)
     }
 }
 
-/// Claim a logical start against the same atomic gate used by the host.
-/// Recheck time and mode at the portable effect boundary. A native sink may
-/// need its own admission check at the actual submission boundary.
+/// Claim a logical start against the current host mode and original cutoff.
+/// One claimed synchronous call remains in custody if Stop follows the claim.
 fn start_write(shared: &Shared, mode: u8) -> bool {
     shared
         .mode
@@ -220,13 +409,17 @@ fn start_write(shared: &Shared, mode: u8) -> bool {
 }
 
 /// Consume only the two bounded locations. The host never holds a sink lock.
+///
+/// # Errors
+/// Preserve an explicit backend release uncertainty even after local loss.
 fn run<B: WriterBackend>(
     mut backend: B,
     shared: &Shared,
     receiver: Receiver<WriterRecord>,
-) -> WriterClose {
+) -> JoinedWriter {
     let mut pending: Option<WriterRecord> = None;
     let mut loss: bool = false;
+    let mut registered: bool = false;
     loop {
         let mode: u8 = shared.mode.load(Ordering::Acquire);
         if mode == FENCED {
@@ -254,22 +447,62 @@ fn run<B: WriterBackend>(
             thread::park();
             continue;
         };
-        if start_write(shared, mode) {
-            loss |= !backend.write(record);
-        } else if mode == DRAINING && shared.mode.load(Ordering::Acquire) == DRAINING {
-            // The mode remained current, so this refusal was the original cutoff.
-            loss = true;
-            break;
+        let attempt: Attempt = if registered {
+            let Some(event): Option<PreparedEvent> = PreparedEvent::from_record(&record) else {
+                loss = true;
+                continue;
+            };
+            let submission: SubmitOnce<'_> = SubmitOnce {
+                event: &event,
+                shared,
+                mode,
+                thread_bound: PhantomData,
+            };
+            backend.write(submission).0
         } else {
-            pending = Some(record);
+            let registration: RegisterOnce<'_> = RegisterOnce {
+                shared,
+                mode,
+                thread_bound: PhantomData,
+            };
+            match backend.register(registration).0 {
+                Attempt::Returned(success) => {
+                    if !success {
+                        loss = true;
+                        break;
+                    }
+                    // Keep the original, then take a fresh write claim after registration.
+                    registered = true;
+                    pending = Some(record);
+                    continue;
+                }
+                Attempt::Unstarted => Attempt::Unstarted,
+            }
+        };
+        match attempt {
+            Attempt::Returned(success) => loss |= !success,
+            Attempt::Unstarted
+                if mode == DRAINING && shared.mode.load(Ordering::Acquire) == DRAINING =>
+            {
+                // The mode remained current, so the original cutoff refused this call.
+                loss = true;
+                break;
+            }
+            Attempt::Unstarted => pending = Some(record),
         }
     }
     drop(receiver);
-    loss |= !backend.close();
+    let closed: WriterClose =
+        backend
+            .close()
+            .map_err(|release: ReleaseUnconfirmed| UnconfirmedWriter {
+                release,
+                loss_observed: loss,
+            })?;
     if loss {
-        WriterClose::Loss
+        Ok(WriterClose::Loss)
     } else {
-        WriterClose::Drained
+        Ok(closed)
     }
 }
 

@@ -41,7 +41,8 @@ CACHE = Path.home() / ".local/share/nevrotick/service-verification-cache-2026110
 TARGETS = ("x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc")
 FEATURES = ["Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading"]
 OLD_FEATURES = ["Win32_Foundation", "Win32_System_Services"]
-LOCK_SHA256 = "7174fe521a3280939e6a0516f95a3bbf251c0b51b7f5e08fec61bf12dd4af3b5"
+WINDOWS_DEV_FEATURES = ["Win32_System_Diagnostics_Etw", "Win32_System_Time"]
+LOCK_SHA256 = "b18d0e235af7a07a3b3d1ee676fb6087db11c42a25f87bb1a7de5e57aa8ff704"
 LOCK_METADATA_ONLY = {"wasi@0.11.1+wasi-snapshot-preview1", "r-efi@6.0.0"}
 JOBS = 1
 SECONDS = 180
@@ -391,7 +392,7 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
 
 
 def manifest_admission(policy):
-    """Admit only the fixed lab compositions and the two source-card feature additions."""
+    """Admit the fixed lab compositions, Windows observation adapter and test bindings."""
     manifest = tomllib.loads((ROOT / MANIFEST).read_text())
     fragment = tomllib.loads((ROOT / "policy/rust-workspace.toml").read_text())
     expected = {
@@ -403,8 +404,15 @@ def manifest_admission(policy):
         "dependencies": {"windows-platform": {"version": "=0.0.0", "path": "../../crates/windows-platform"}},
         "dev-dependencies": {"nevrotick-engine": {"version": "=0.0.0",
                              "path": "../../crates/nevrotick-engine", "default-features": False}},
-        "target": {"cfg(windows)": {"dependencies": {"windows-sys": {
-            "version": "=0.61.2", "default-features": False, "features": FEATURES}}}},
+        "target": {"cfg(windows)": {
+            "dependencies": {
+                "windows-platform-native": {"version": "=0.0.0", "path": "../../crates/windows-platform-native"},
+                "windows-sys": {"version": "=0.61.2", "default-features": False, "features": FEATURES},
+            },
+            "dev-dependencies": {
+                "windows-sys": {"version": "=0.61.2", "default-features": False, "features": WINDOWS_DEV_FEATURES},
+            },
+        }},
         "bin": [{"name": "nevrotick-lab-s02-engine", "path": "src/bin/engine.rs"},
                 {"name": "nevrotick-lab-s02-broker", "path": "src/bin/broker.rs"}],
         "lints": {"workspace": True},
@@ -412,7 +420,7 @@ def manifest_admission(policy):
     }
     require(manifest == expected, "Standalone fixture manifest differs from its fixed source card.")
     lock_path = ROOT / TOOL / "Cargo.lock"
-    require(C.PRODUCT.sha256(lock_path) == LOCK_SHA256, "Standalone registry lock changed.")
+    require(C.PRODUCT.sha256(lock_path) == LOCK_SHA256, "Standalone lock changed.")
     lock = tomllib.loads(lock_path.read_text())
     expected_ids = {identity for target in TARGETS
                     for identity in expected_contexts(policy, target, development=True)
@@ -439,6 +447,7 @@ def manifest_admission(policy):
             "Standalone lock closure differs from the fixed local consumers.")
     return {"before_features": OLD_FEATURES, "after_features": FEATURES,
             "added_features": sorted(set(FEATURES) - set(OLD_FEATURES)),
+            "windows_dev_features": WINDOWS_DEV_FEATURES,
             "lock_sha256": LOCK_SHA256, "external_packages": sorted(expected_ids)}
 
 
@@ -460,9 +469,11 @@ def expected_contexts(policy, target, *, development=False):
     expected["nevrotick-windows-service-fixture@0.0.0"] = {"target": [[]]}
     if target == TARGETS[1]:
         expected["windows-link@0.2.1"] = {"target": [[]]}
-        expected["windows-sys@0.61.2"] = {"target": [["Win32", "Win32_Foundation", "Win32_Security",
-                                                           "Win32_System", "Win32_System_Services",
-                                                           "Win32_System_Threading"]]}
+        expected["windows-platform-native@0.0.0"] = {"target": [[]]}
+        windows_features = ["Win32", "Win32_System", *FEATURES]
+        if development:
+            windows_features.extend(["Win32_System_Diagnostics", *WINDOWS_DEV_FEATURES])
+        expected["windows-sys@0.61.2"] = {"target": [sorted(windows_features)]}
     if development:
         engine = policy["rows"][target]["package_scopes"]["nevrotick-engine"]
         for identity, roles in {**engine["features"], **engine["local_features"]}.items():
@@ -562,10 +573,18 @@ def graph_row(policy, target, metadata_output, tree_output, development_tree_out
         "nevrotick-engine": [{"kind": "dev", "target": None}],
     }
     if target == TARGETS[1]:
-        expected_edges["windows-sys"] = [{"kind": None, "target": "cfg(windows)"}]
+        expected_edges["windows-platform-native"] = [{"kind": None, "target": "cfg(windows)"}]
+        expected_edges["windows-sys"] = [{"kind": None, "target": "cfg(windows)"},
+                                         {"kind": "dev", "target": "cfg(windows)"}]
     require(len(actual_edges) == len(nodes[roots[0]["id"]]["deps"]),
             "Duplicate standalone dependency identity.")
-    require(actual_edges == expected_edges, "Engine must remain an exact development-only dependency.")
+    # Cargo groups dependency kinds by package. Require every exact edge and
+    # reject duplicates without assigning meaning to the order of those kinds.
+    require(actual_edges.keys() == expected_edges.keys()
+            and all(type(actual_edges[name]) is list and len(actual_edges[name]) == len(edges)
+                    and all(edge in actual_edges[name] for edge in edges)
+                    for name, edges in expected_edges.items()),
+            "Standalone dependency kinds differ from the exact normal and development-only edges.")
     normal = tree_contexts(policy, target, tree_output, development=False)
     development = tree_contexts(policy, target, development_tree_output, development=True)
     return {"target": target, "contexts": normal, "development_contexts": development,
@@ -574,10 +593,11 @@ def graph_row(policy, target, metadata_output, tree_output, development_tree_out
 
 
 def tree_contexts(policy, target, tree_output, *, development):
-    """Compare actual normal or test-role features with independently admitted supplier scopes."""
+    """Check supplier feature contexts and the fixture's direct Windows adapter edge."""
     records = {p["name"] + "@" + p["version"]: p for p in policy["packages"]}
     expected = expected_contexts(policy, target, development=development)
     contexts, stack, sections = {}, {}, {}
+    native_observer_edges = []
     roots = 0
     for line in tree_output.splitlines():
         marker = re.fullmatch(r"((?:\|   |    )*)\[(build|dev)-dependencies\]", line)
@@ -585,7 +605,7 @@ def tree_contexts(policy, target, tree_output, *, development):
             depth = len(marker[1]) // 4
             require(depth in stack, "Orphan build-dependency marker.")
             require(marker[2] != "dev" or development, "Dev edge in production feature tree.")
-            sections[depth] = marker[2] == "build"
+            sections[depth] = marker[2]
             continue
         match = re.fullmatch(r"((?:(?:\|   |    )*(?:\|-- |`-- ))?)([a-zA-Z0-9_-]+) v([^ |]+)([^|]*)\|([^\r\n]*)", line)
         require(match is not None, "Malformed complete Cargo feature tree.")
@@ -607,7 +627,10 @@ def tree_contexts(policy, target, tree_output, *, development):
             role = "target"
         else:
             require(depth - 1 in stack, "Tree has an orphan dependency.")
-            role = "host" if macro or sections.get(depth - 1) or stack[depth - 1] == "host" else "target"
+            section = sections.get(depth - 1)
+            role = "host" if macro or section == "build" or stack[depth - 1] == "host" else "target"
+            if depth == 1 and name == "windows-platform-native":
+                native_observer_edges.append(section)
         for old_depth in list(stack):
             if old_depth >= depth:
                 del stack[old_depth]
@@ -617,6 +640,10 @@ def tree_contexts(policy, target, tree_output, *, development):
         if features not in observed:
             observed.append(features)
             observed.sort()
+    # The Engine's transitive edge can supply the same feature context in the test tree.
+    expected_native_edges = [None] if target == TARGETS[1] else []
+    require(native_observer_edges == expected_native_edges,
+            "Actual native observer dependency must be one direct normal edge in each Windows tree.")
     require(roots == 1 and contexts == expected, "Actual normal/build feature contexts differ from admission.")
     return contexts
 

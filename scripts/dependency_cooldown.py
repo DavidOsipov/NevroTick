@@ -34,6 +34,24 @@ APPROVED_EXCEPTIONS: dict[str, str] = {}
 # same code review as the existing policy pin. This stores no duplicate graph.
 # Prior concrete exception IDs stay attached to that exact accepted checkpoint.
 APPROVED_BASELINES: dict[str, dict] = {
+    # Reproduce the unchanged root lock with the broker runtime observation adapter.
+    "fe13f2fca26a7a0b6c535009c70834b8f4c3524150abc381a2d9aa014bb0fdc1": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
+    # Reproduce the unchanged root lock with the broker observation test manifest.
+    "dfb5c017797054e31d46994c800285dd7cbdd23ea9d44e59be9dd34002b395b6": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
+    # Reproduce the unchanged root lock with the fixture ETW test manifest.
+    "8902f77c0141c352531d7b7f917fb9621d83a2cb48824104dbbfea9ed4e071ee": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
     # Keep the same root graph after admitting the laboratory peer manifest.
     "130f428b965e1629ae848089611efcfe96dfd1265f3d324f2b78731e347e6a30": {
         "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",

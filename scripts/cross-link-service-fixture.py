@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-link the two fixed inert lab images and inspect their declarations.
+"""Cross-link fixed inert lab images or the service fixture library's libtest.
 
 Linux execution only. Never execute, sign, install or package a Windows image.
 Authoritative code, raw records and copied PE/PDB outputs stay in the checkout;
@@ -15,6 +15,7 @@ if sys.flags.optimize:
 
 import argparse
 import fcntl
+import hashlib
 import importlib.util
 import json
 import os
@@ -22,6 +23,7 @@ from pathlib import Path
 import re
 import resource
 import shutil
+import tempfile
 import time
 import tomllib
 
@@ -35,6 +37,8 @@ C = Q.C
 Incomplete = Q.Incomplete
 TARGET = "x86_64-pc-windows-msvc"
 BINS = ("nevrotick-lab-s02-engine", "nevrotick-lab-s02-broker")
+FIXTURE_PACKAGE = "nevrotick-windows-service-fixture"
+FIXTURE_LIBRARY = "nevrotick_windows_service_fixture"
 LIBRARY_SCOPES = ("crt/lib/x86_64", "sdk/lib/um/x86_64", "sdk/lib/ucrt/x86_64")
 PE_READER = "scripts/windows_pe.py"
 PE_SPEC = importlib.util.spec_from_file_location("windows_pe", ROOT / PE_READER)
@@ -42,50 +46,95 @@ PE = importlib.util.module_from_spec(PE_SPEC)
 PE_SPEC.loader.exec_module(PE)
 
 
+SOURCE_CARGO = "/toolchain/bin/cargo"
+SOURCE_CONFIG_SHA256 = hashlib.sha256(
+    b'[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory="/vendor"\n'
+).hexdigest()
+METRICS_READER = Q.TOOL + "/metrics.py"
+METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
+# The renewable SCM roster plus nine sampled broker continuity cases.
+# Platform and fixture doctest scopes retain their independently reviewed roster.
+SOURCE_TEST_ROSTERS = {
+    "fixture-test": "f6abec2bfdc2bcfdbb11323b74c8ebb166f23d2073b551e99d7598aa0cbfefcc",
+    "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
+    "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
+    "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+}
+
+
+def read_source_record(path, readers):
+    """Decode and hash the same bounded, canonical receipt snapshot."""
+    Q.require(path.is_absolute() and path.parent == Q.RECORDS,
+              "Source receipt must be a main-repository record.")
+    data = C.read_analysis_bytes(path, maximum=C.ANALYSIS_JSON_MAX_BYTES)
+    try:
+        return readers.decode_record(data), hashlib.sha256(data).hexdigest()
+    except readers.Incomplete as error:
+        raise Incomplete(str(error)) from error
+
+
+def require_source_epoch(record, lane, identity, candidate, index):
+    """Require producer scope, actual success and unchanged source/index custody."""
+    Q.require(type(record.get("schema_version")) is int and record["schema_version"] == 1
+              and record.get("lane") == lane and record.get("scope") == "source-only inert service fixture"
+              and record.get("status") == "passed" and record.get("bookends_passed") is True
+              and record.get("index_bytes_unchanged") is True and record.get("native_execution") is False
+              and not record.get("custody_error"), f"The {lane} source receipt is incomplete.")
+    Q.require(record.get("source_sha256") == identity and record.get("candidate_sha256") == candidate
+              and record.get("recipe_sha256") == identity[Q.SELF],
+              f"The {lane} receipt does not describe the current complete source and recipe.")
+    Q.require(record.get("index_before") == record.get("index_after") == index,
+              f"The {lane} receipt belongs to a different or incomplete index epoch.")
+
+
 def source_prerequisites(path):
-    """Receive complete current ordinary source evidence, never summary flags alone."""
-    path = path.resolve(strict=True)
-    Q.require(path.parent == Q.RECORDS, "Source checkpoint must be a main-repository record.")
-    checkpoint = C.read_analysis_json(path)
+    """Receive the current configured graph and batched ordinary source results."""
+    readers = C.load_module("service_cross_link_receipt_readers", ROOT / METRICS_READER)
+    checkpoint, checkpoint_digest = read_source_record(path.absolute(), readers)
     policy, identity = Q.source_identity()
-    Q.require(checkpoint.get("current_source_matches") is True
-              and checkpoint.get("source_sha256") == identity
-              and checkpoint.get("candidate_sha256") == Q.canonical(identity)
-              and checkpoint.get("recipe_sha256") == C.PRODUCT.sha256(ROOT / Q.SELF),
-              "Source checkpoint does not describe the current complete compiler inputs.")
-    expected = {"graph", "fixture-test", "platform-test", "platform-clippy", "fixture-clippy", "windows-clippy",
-                "platform-fmt", "fixture-fmt", "platform-doc", "fixture-doc", "fixture-rustdoc",
-                "platform-optimized", "fixture-optimized"}
-    received, records = set(), {}
-    for row in checkpoint["records"]:
-        record_path = ROOT / row["path"]
-        Q.require(record_path.parent == Q.RECORDS and record_path == record_path.resolve(strict=True)
-                  and C.PRODUCT.sha256(record_path) == row["sha256"], "Prerequisite raw record changed.")
-        record = C.read_analysis_json(record_path)
-        lane = record.get("lane")
-        Q.require(lane in expected and lane not in received and record.get("status") == "passed"
-                  and record.get("bookends_passed") is True and record.get("index_bytes_unchanged") is True
-                  and not record.get("custody_error") and record.get("source_sha256") == identity
-                  and record.get("candidate_sha256") == checkpoint["candidate_sha256"]
-                  and record.get("index_before") == record.get("index_after"), "A source prerequisite is incomplete.")
-        commands = record.get("commands")
-        Q.require(type(commands) is list and len(commands) == (4 if lane == "graph" else 1)
-                  and all(type(command.get("exit_code")) is int and command["exit_code"] == 0
-                          and "failure" in command and command["failure"] is None for command in commands),
-                  "A required actual source command is missing or failed.")
-        cargo = record["tools"]["stable"] + "/bin/cargo"
-        if lane == "graph":
-            Q.receive_graph(record, record["graph_binding"], policy, cargo)
-        else:
-            Q.require([command["argv"] for command in commands] == Q.lane_commands(lane, cargo),
-                      "Source prerequisite command differs from its literal lane.")
-        received.add(lane)
-        records[str(record_path.relative_to(ROOT))] = row["sha256"]
-    Q.require(received == expected, "Source checkpoint omits a required lane.")
-    for owner, count in (("platform_debug", 39), ("fixture_debug", 37), ("platform_release", 39),
-                         ("fixture_release", 37), ("platform_doctests", 8)):
-        Q.require(len(checkpoint["actual_tests"][owner]) == count, "Frozen source cohort changed.")
-    return policy, identity, checkpoint, records
+    candidate, index = Q.canonical(identity), Q.index_identity()
+    require_source_epoch(checkpoint, "privilege-checkpoint", identity, candidate, index)
+    binding_keys = ("candidate_sha256", "recipe_sha256", "config_sha256", "feature_delta", "vendor", "tools")
+    binding = {key: checkpoint.get(key) for key in binding_keys}
+    Q.require(checkpoint.get("graph_binding") == binding and binding["config_sha256"] == SOURCE_CONFIG_SHA256
+              and binding["feature_delta"] == Q.manifest_admission(policy)
+              and type(binding["vendor"]) is dict and type(binding["tools"]) is dict,
+              "Checkpoint graph binding differs from the admitted source configuration.")
+
+    graph_path = checkpoint.get("received_graph_path")
+    Q.require(type(graph_path) is str, "Checkpoint omits the raw graph receipt path.")
+    graph, graph_digest = read_source_record(Path(graph_path), readers)
+    Q.require(checkpoint.get("received_graph_sha256") == graph_digest, "Checkpoint graph receipt digest changed.")
+    require_source_epoch(graph, "graph", identity, candidate, index)
+    Q.require({key: graph.get(key) for key in binding_keys} == binding,
+              "Raw graph receipt fields differ from the checkpoint's graph binding.")
+    Q.receive_graph(graph, binding, policy, SOURCE_CARGO)
+    Q.require(all(row.get("namespace_argv") == row["argv"] for row in graph["commands"]),
+              "Actual graph namespace command differs from its configured invocation.")
+
+    commands = checkpoint.get("commands")
+    expected = Q.lane_commands("privilege-checkpoint", SOURCE_CARGO)
+    Q.require(type(commands) is list and len(commands) == len(expected),
+              "A required actual checkpoint command is missing from the configured checkpoint commands.")
+    output_by_command = {}
+    for row, argv in zip(commands, expected, strict=True):
+        Q.require(type(row) is dict and row.get("argv") == row.get("namespace_argv") == argv
+                  and type(row.get("exit_code")) is int and row["exit_code"] == 0
+                  and "failure" in row and row["failure"] is None and type(row.get("output")) is str,
+                  "A required actual checkpoint command changed or failed.")
+        output_by_command[tuple(argv)] = row["output"]
+    for lane, roster in (
+        ("platform-test", "platform-test"), ("platform-optimized", "platform-test"),
+        ("fixture-test", "fixture-test"), ("fixture-optimized", "fixture-test"),
+        ("platform-doc", "platform-doc"), ("fixture-doc", "fixture-doc"),
+    ):
+        argv, = Q.lane_commands(lane, SOURCE_CARGO)
+        try:
+            names = readers.executed_tests(output_by_command[tuple(argv)], allow_empty=lane == "fixture-doc")
+        except readers.Incomplete as error:
+            raise Incomplete(f"{lane}: {error}") from error
+        Q.require(Q.canonical(names) == SOURCE_TEST_ROSTERS[roster], f"The {lane} executed test roster changed.")
+    return policy, identity, checkpoint, {graph_path: graph_digest}, checkpoint_digest
 
 
 def pe_readback(path):
@@ -95,13 +144,63 @@ def pe_readback(path):
     except ValueError as error:
         raise Incomplete(str(error)) from error
 
+
+def libtest_artifact(output, work):
+    """Require one fresh, package-bound release libtest at its private Cargo path."""
+    package_root = "/work/source/" + Q.TOOL
+    expected_path = (
+        re.escape(f"/work/target/{TARGET}/release/build/{FIXTURE_PACKAGE}/")
+        + r"([0-9a-f]{16})/out/" + FIXTURE_LIBRARY + r"-\1\.exe"
+    )
+    found = None
+    finished = False
+    for line in output.splitlines():
+        if not line.startswith("{"):
+            continue
+        item = C.ANALYSIS.decode(line.encode("utf-8"))
+        Q.require(not finished, "Cargo emitted JSON after its libtest build completion.")
+        if item.get("reason") == "build-finished":
+            Q.require(item.get("success") is True, "Cargo reports unsuccessful libtest compilation.")
+            finished = True
+        if item.get("reason") != "compiler-artifact" or item.get("executable") is None:
+            continue
+        Q.require(found is None, "Expected one actual emitted fixture libtest executable.")
+        target, profile = item.get("target"), item.get("profile")
+        Q.require(item.get("package_id") == f"path+file://{package_root}#{FIXTURE_PACKAGE}@0.0.0"
+                  and item.get("manifest_path") == package_root + "/Cargo.toml"
+                  and type(target) is dict and target.get("name") == FIXTURE_LIBRARY
+                  and target.get("kind") == target.get("crate_types") == ["lib"]
+                  and target.get("src_path") == package_root + "/src/lib.rs"
+                  and target.get("edition") == "2024" and target.get("test") is True
+                  and type(profile) is dict and profile.get("test") is True
+                  and profile.get("opt_level") == "3" and profile.get("debug_assertions") is False
+                  and profile.get("overflow_checks") is True
+                  and type(profile.get("debuginfo")) is int and profile["debuginfo"] == 1
+                  and item.get("features") == [] and item.get("fresh") is False,
+                  "Fixture libtest source or release profile differs from the admitted target.")
+        executable = item["executable"]
+        Q.require(type(executable) is str and re.fullmatch(expected_path, executable),
+                  "Unexpected fixture libtest output path.")
+        pdb = str(Path(executable).with_suffix(".pdb"))
+        Q.require(item.get("filenames") in ([executable], [executable, pdb], [pdb, executable]),
+                  "Cargo filenames differ from the selected fixture libtest outputs.")
+        found = item
+    Q.require(finished and found is not None, "Expected one actual emitted fixture libtest executable.")
+    image = work / Path(found["executable"]).relative_to("/work")
+    Q.require(image.is_file() and image.resolve(strict=True) == image,
+              "Fixture libtest output path must resolve to the private emitted executable.")
+    return image, found
+
+
 def run(args):
     """Admit current source/SDK/tools, then perform only the explicitly selected Linux lane."""
     Q.no_ambient_flags()
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    Q.require(args.lane in ("ready", "link", "libtest-link"), "Unknown service cross-link lane.")
     Q.require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh label.")
     destination = Q.RECORDS / ("cross-" + args.label + ".json")
-    Q.require(not destination.exists() and shutil.disk_usage(ROOT).free >= Q.DISK_FLOOR,
+    Q.require(not destination.exists() and not destination.is_symlink()
+              and shutil.disk_usage(ROOT).free >= Q.DISK_FLOOR,
               "Cross record exists or less than 2GiB free.")
     Q.CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     Q.require(Q.CACHE == Q.CACHE.resolve() and Q.CACHE.stat().st_mode & 0o077 == 0, "Derived cache is not private.")
@@ -112,15 +211,24 @@ def run(args):
     record = {"scope": "Linux cross-link and static PE declarations only", "lane": args.lane, "status": "incomplete",
               "commands": [], "bookends_passed": False, "native_execution": False, "started_unix": time.time(),
               "work": str(work), "limits": {"jobs": 1, "cpu_seconds": 180, "wall_seconds": 180, "core_bytes": 0}}
+    staging = None
     try:
-        policy, identity, checkpoint, prerequisites = source_prerequisites(args.source_checkpoint)
+        metrics_helper = ROOT / METRICS_EXPORT_HELPER
+        metrics_helper_sha256 = C.PRODUCT.sha256(metrics_helper)
+        policy, identity, checkpoint, prerequisites, checkpoint_digest = source_prerequisites(args.source_checkpoint)
         record.update(source_sha256=identity, candidate_sha256=checkpoint["candidate_sha256"],
                       recipe_sha256=C.PRODUCT.sha256(ROOT / SELF), pe_reader_sha256=C.PRODUCT.sha256(ROOT / PE_READER),
-                      prerequisite_records_sha256=prerequisites,
-                      checkpoint_path=str(args.source_checkpoint.resolve()), checkpoint_sha256=C.PRODUCT.sha256(args.source_checkpoint.resolve()),
+                      metrics_export_helper_sha256=metrics_helper_sha256,
+                      prerequisite_records_sha256={str(Path(path).relative_to(ROOT)): digest
+                                                   for path, digest in prerequisites.items()},
+                      checkpoint_path=str(args.source_checkpoint.absolute()), checkpoint_sha256=checkpoint_digest,
                       index_before=Q.index_identity())
+        Q.require(record["index_before"] == checkpoint["index_after"], "Source checkpoint index changed before cross admission.")
         admitted = C.ANALYSIS.admit(ROOT, profile="stable-core")
         stable = admitted["stable"]
+        Q.require(checkpoint["tools"].get("stable") == str(stable)
+                  and checkpoint["tools"] == Q.tool_identity(Q.admit_service_tools()),
+                  "Cross tools differ from the current source checkpoint.")
         sdk_config, sdk_inventory = args.sdk_config.resolve(strict=True), args.sdk_inventory.resolve(strict=True)
         sdk_hashes = {str(path): C.PRODUCT.sha256(path) for path in (sdk_config, sdk_inventory)}
         C.read_analysis_json(sdk_config)
@@ -150,6 +258,8 @@ def run(args):
         vendor = args.vendor_dir.resolve(strict=True)
         vendor_map = C.PRODUCT.admit_vendor(vendor, policy)
         record["vendor"] = {"path": str(vendor), "inventory_sha256": Q.canonical(vendor_map)}
+        Q.require(checkpoint["vendor"] == {**record["vendor"], "files": len(vendor_map)},
+                  "Cross vendor differs from the current source checkpoint.")
         source = work / "source"
         source.mkdir(mode=0o700)
         for name in identity:
@@ -167,10 +277,11 @@ def run(args):
                       "Current or sealed source changed.")
             Q.require(C.PRODUCT.sha256(ROOT / SELF) == record["recipe_sha256"]
                       and C.PRODUCT.sha256(ROOT / PE_READER) == record["pe_reader_sha256"]
+                      and C.PRODUCT.sha256(metrics_helper) == metrics_helper_sha256
                       and C.PRODUCT.sha256(config) == config_sha and C.PRODUCT.sha256(wrapper) == wrapper_sha,
                       "Cross recipe, sealed configuration or linker changed.")
             Q.require(Q.index_identity() == record["index_before"], "Staging bytes changed during cross lane.")
-            for name, digest in {**sdk_hashes, **{str(ROOT / name): sha for name, sha in prerequisites.items()},
+            for name, digest in {**sdk_hashes, **prerequisites,
                                  record["checkpoint_path"]: record["checkpoint_sha256"]}.items():
                 Q.require(C.PRODUCT.sha256(Path(name)) == digest, "Prerequisite or SDK receipt changed.")
 
@@ -193,61 +304,87 @@ def run(args):
             results = [execute([str(linker), "-flavor", "link", "--version"]), execute([str(inspector), "--version"])]
             succeeded = all(result["exit_code"] == 0 for result in results)
         else:
+            libtest = args.lane == "libtest-link"
+            subcommand = "test" if libtest else "build"
+            selection = ["--lib", "--no-run"] if libtest else ["--bin", BINS[0], "--bin", BINS[1]]
             command = [str(stable / "bin/cargo"), "--verbose", "--verbose", "--config", f'target.{TARGET}.linker="/work/linker"',
-                       "build", "--manifest-path", "/work/source/" + Q.MANIFEST, "--release", "--target", TARGET,
-                       "--frozen", "--offline", "--jobs", "1", "--bin", BINS[0], "--bin", BINS[1],
+                       subcommand, "--manifest-path", "/work/source/" + Q.MANIFEST, "--release", "--target", TARGET,
+                       "--frozen", "--offline", "--jobs", "1", *selection,
                        "--message-format=json-render-diagnostics"]
             result = execute(command)
+            if libtest:
+                namespace_argv = result.get("command")
+                Q.require(type(namespace_argv) is list and namespace_argv[-len(command) - 1:] == ["--", *command],
+                          "The executed namespace argv differs from the ordered Cargo command.")
             succeeded = result["exit_code"] == 0
             if succeeded:
-                emitted = {}
-                for line in result["output"].splitlines():
-                    if not line.startswith("{"):
-                        continue
-                    item = C.ANALYSIS.decode(line.encode("utf-8"))
-                    if item.get("reason") != "compiler-artifact" or item.get("executable") is None:
-                        continue
-                    name = item["target"]["name"]
-                    expected = f"/work/target/{TARGET}/release/{name}.exe"
-                    Q.require(name in BINS and name not in emitted and item["target"]["kind"] == ["bin"]
-                              and item["executable"] == expected and item["profile"]["opt_level"] == "3"
-                              and item["profile"]["debug_assertions"] is False, "Unexpected actual Cargo executable.")
-                    emitted[name] = work / Path(expected).relative_to("/work")
-                Q.require(set(emitted) == set(BINS), "Actual Cargo output omits a fixed composition.")
+                if libtest:
+                    image, artifact = libtest_artifact(result["output"], work)
+                    emitted = {FIXTURE_LIBRARY: image}
+                    record["cargo_libtest_artifact"] = artifact
+                else:
+                    emitted = {}
+                    for line in result["output"].splitlines():
+                        if not line.startswith("{"):
+                            continue
+                        item = C.ANALYSIS.decode(line.encode("utf-8"))
+                        if item.get("reason") != "compiler-artifact" or item.get("executable") is None:
+                            continue
+                        name = item["target"]["name"]
+                        expected = f"/work/target/{TARGET}/release/{name}.exe"
+                        Q.require(name in BINS and name not in emitted and item["target"]["kind"] == ["bin"]
+                                  and item["executable"] == expected and item["profile"]["opt_level"] == "3"
+                                  and item["profile"]["debug_assertions"] is False, "Unexpected actual Cargo executable.")
+                        emitted[name] = work / Path(expected).relative_to("/work")
+                    Q.require(set(emitted) == set(BINS), "Actual Cargo output omits a fixed composition.")
                 linker_log = C.read_analysis_text(work / "linker-calls.jsonl", maximum=1024 * 1024)
                 calls = [C.ANALYSIS.decode(line.encode("utf-8")) for line in linker_log.splitlines()]
-                Q.require(len(calls) == 2 and all(type(call) is list and call[:len(paths)] == paths
+                Q.require(len(calls) == len(emitted) and all(type(call) is list and call[:len(paths)] == paths
                           and all(type(argument) is str for argument in call) for call in calls),
-                          "Actual linker call ledger differs from the two fixed link invocations.")
+                          "Actual linker call ledger differs from the selected link invocations.")
+                if libtest:
+                    linked = [argument[5:] for argument in calls[0] if argument.lower().startswith("/out:")]
+                    Q.require(linked == [artifact["executable"]],
+                              "The linker output differs from the Cargo-attributed fixture libtest.")
                 record["actual_linker_argv"] = calls
                 artifacts = Q.RECORDS / ("cross-" + args.label + "-artifacts")
-                artifacts.mkdir(mode=0o700)
-                record["artifacts"] = {}
+                staging = tempfile.TemporaryDirectory(prefix=".cross-publish-", dir=Q.RECORDS)
+                staged = Path(staging.name) / "artifacts"
+                staged.mkdir(mode=0o700)
+                artifact_rows, admitted_hashes = {}, {}
                 for name, image in emitted.items():
-                    pdb_names = {name + ".pdb", name.replace("-", "_") + ".pdb"}
+                    pdb_names = {image.with_suffix(".pdb").name} if libtest else {
+                        name + ".pdb", name.replace("-", "_") + ".pdb",
+                    }
                     pdbs = [image.parent / value for value in pdb_names if (image.parent / value).is_file()]
                     Q.require(len(pdbs) == 1 and not pdbs[0].is_symlink(), "Matching emitted PDB is missing or ambiguous.")
                     pdb = pdbs[0]
                     readback = pe_readback(image)
                     image_hash = readback["image_sha256"]
-                    Q.require(readback["codeview_path"].replace("\\", "/").split("/")[-1] == pdb.name,
-                              "Selected PDB does not match the image's CodeView basename.")
+                    try:
+                        image_snapshot, symbol_snapshot, symbol_identity = PE.read_export_pair(
+                            image, pdb, subsystem="console",
+                        )
+                    except ValueError as error:
+                        raise Incomplete(str(error)) from error
+                    Q.require(image_snapshot[1] == image_hash, "PE changed after hardening readback.")
                     observed = execute([str(inspector), "--file-headers", "--coff-load-config", "--coff-debug-directory",
                                         "--coff-imports", str(Path("/work") / image.relative_to(work))])
                     Q.require(observed["exit_code"] == 0, "Independent LLVM PE inspection failed.")
-                    Q.require(C.PRODUCT.sha256(image) == image_hash, "PE changed after hardening readback.")
-                    pdb_hash = C.PRODUCT.sha256(pdb)
-                    for original, digest in ((image, image_hash), (pdb, pdb_hash)):
-                        copied = artifacts / original.name
-                        shutil.copyfile(original, copied)
-                        Q.require(C.PRODUCT.sha256(copied) == C.PRODUCT.sha256(original) == digest,
-                                  "Copied artifact changed.")
-                    (artifacts / (name + "-llvm-readobj.txt")).write_text(observed["output"])
-                    record["artifacts"][name] = {"image": str((artifacts / image.name).relative_to(ROOT)),
-                                                 "image_sha256": image_hash,
-                                                 "pdb": str((artifacts / pdb.name).relative_to(ROOT)),
-                                                 "pdb_sha256": pdb_hash, "raw_pe": readback}
-                Q.require(len({item["image_sha256"] for item in record["artifacts"].values()}) == 2,
+                    Q.require(C.PRODUCT.sha256(image) == image_hash, "PE changed after LLVM inspection.")
+                    for original, (snapshot, digest) in ((image, image_snapshot), (pdb, symbol_snapshot)):
+                        with (staged / original.name).open("xb") as copied:
+                            copied.write(snapshot)
+                        admitted_hashes[original] = digest
+                    # Release this pair's snapshots before reading the next pair.
+                    del image_snapshot, symbol_snapshot, snapshot
+                    (staged / (name + "-llvm-readobj.txt")).write_text(observed["output"])
+                    artifact_rows[name] = {"image": str((artifacts / image.name).relative_to(ROOT)),
+                                           "image_sha256": image_hash,
+                                           "pdb": str((artifacts / pdb.name).relative_to(ROOT)),
+                                           "pdb_sha256": symbol_identity["sha256"], "pdb_identity": symbol_identity,
+                                           "raw_pe": readback}
+                Q.require(len({item["image_sha256"] for item in artifact_rows.values()}) == len(emitted),
                           "Distinct fixed-role compositions unexpectedly have identical bytes.")
         check()
         Q.require(C.PRODUCT.library_inventory(libraries) == library_map
@@ -256,7 +393,19 @@ def run(args):
         Q.require(all(after[key] == admitted[key] for key in ("stable", "inventories", "readonly_roots",
                     "installation_pointer", "installation_pointer_sha256", "policy_sha256")), "Stable tools changed.")
         check()
-        record.update(bookends_passed=True, index_bytes_unchanged=True, index_after=Q.index_identity(),
+        if staging is not None:
+            for original, digest in admitted_hashes.items():
+                Q.require(C.PRODUCT.sha256(staged / original.name) == C.PRODUCT.sha256(original) == digest,
+                          "Copied or emitted artifact changed before publication.")
+        index_after = Q.index_identity()
+        Q.require(index_after == record["index_before"], "Staging bytes changed before cross-lane publication.")
+        if staging is not None:
+            Q.require(not artifacts.exists() and not artifacts.is_symlink(),
+                      "Cross artifact destination already exists.")
+            # The cache writer lock serializes cross-lane publication.
+            staged.rename(artifacts)
+            record["artifacts"] = artifact_rows
+        record.update(bookends_passed=True, index_bytes_unchanged=True, index_after=index_after,
                       status="passed" if succeeded else "failed")
     except Exception as error:
         record["custody_error"] = str(error)
@@ -267,16 +416,21 @@ def run(args):
             Q.write_new(destination, record)
             print(json.dumps({"record": str(destination), "status": record["status"], "commands": len(record["commands"])}), flush=True)
         finally:
-            os.close(writer)
+            try:
+                if staging is not None:
+                    staging.cleanup()
+            finally:
+                os.close(writer)
     return record["status"]
 
 
 def main():
-    """Select only readiness or the two-composition Linux cross-link lane."""
+    """Select readiness, fixed compositions or the isolated fixture libtest."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("lane", choices=("ready", "link"))
+    parser.add_argument("lane", choices=("ready", "link", "libtest-link"))
     parser.add_argument("--label", required=True)
-    parser.add_argument("--source-checkpoint", type=Path, default=Q.RECORDS / "source-checkpoint-v2.json")
+    parser.add_argument("--source-checkpoint", type=Path, required=True,
+                        help="Current qualification.py privilege-checkpoint receipt and its bound graph")
     parser.add_argument("--vendor-dir", type=Path, required=True)
     parser.add_argument("--sdk-config", type=Path, default=Path.home() / ".local/share/nevrotick/xwin.json")
     parser.add_argument("--sdk-inventory", type=Path,

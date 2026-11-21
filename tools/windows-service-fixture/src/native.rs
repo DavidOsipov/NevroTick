@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Private Win32 hosting for the two inert fixed laboratory compositions.
+//! Private Win32 hosting for the two fixed laboratory compositions.
 //!
 //! A process attempts one dispatcher. Its `ServiceMain` publishes its existing
 //! Rust thread handle before handler registration. The callback touches only
@@ -17,19 +17,20 @@ use std::{
 };
 
 use windows_platform::{
-    scm::{ScmControl, ScmStatus, StopNotification},
+    scm::{ScmStatus, StopNotification},
     service::{ServiceState, ServiceStatus, StatusReporter},
 };
 use windows_sys::Win32::{
     Foundation::GetLastError,
     System::Services::{
-        RegisterServiceCtrlHandlerExW, SERVICE_STATUS, SERVICE_TABLE_ENTRYW, SetServiceStatus,
-        StartServiceCtrlDispatcherW,
+        LPHANDLER_FUNCTION_EX, RegisterServiceCtrlHandlerExW, SERVICE_STATUS, SERVICE_TABLE_ENTRYW,
+        SetServiceStatus, StartServiceCtrlDispatcherW,
     },
 };
 
 use crate::{
-    FixtureError, LabRole, NativeError, NativeOperation,
+    FixtureError, LabRole, NativeBrokerClockRead, NativeError, NativeOperation, SampledClockBreak,
+    broker_clock_change::{self, BrokerClockChanges, ControlDisposition, sampled_native_reader},
     host::{self, Clock, Dispatcher, HostReceipt, StatusFactory, Wait},
 };
 
@@ -41,6 +42,8 @@ mod token;
 static DISPATCH_ATTEMPTED: AtomicBool = AtomicBool::new(false);
 /// Static bounded Stop custody remains valid through process termination.
 static STOP: StopNotification = StopNotification::new();
+/// This broker-only process-lifetime receiver never owns an event payload.
+static CLOCK_CHANGES: BrokerClockChanges = BrokerClockChanges::new();
 /// Exactly one initialized existing `ServiceMain` thread handle, never reset/taken.
 static OWNER: OnceLock<Thread> = OnceLock::new();
 /// Immutable actual owner result; no successful status is published before acknowledgement.
@@ -102,6 +105,15 @@ impl StatusFactory for NativeFactory {
     /// # Errors
     /// Preserve registration's immediate native error; construct no token on failure.
     fn register(&mut self, role: LabRole) -> Result<NativeReporter, NativeError> {
+        let changes: Option<&'static BrokerClockChanges> = match role {
+            LabRole::Engine => None,
+            LabRole::ClockBroker => Some(&CLOCK_CHANGES),
+        };
+        let handler: LPHANDLER_FUNCTION_EX = if changes.is_some() {
+            Some(broker_control_handler)
+        } else {
+            Some(engine_control_handler)
+        };
         #[expect(
             unsafe_code,
             reason = "register the fixed inert role and static callback"
@@ -110,11 +122,7 @@ impl StatusFactory for NativeFactory {
         // exact system ABI and retains no event/context pointer. OWNER and STOP
         // are initialized/static before registration and outlive every callback.
         let handle = unsafe {
-            RegisterServiceCtrlHandlerExW(
-                role.wide_name().as_ptr(),
-                Some(control_handler),
-                ptr::null(),
-            )
+            RegisterServiceCtrlHandlerExW(role.wide_name().as_ptr(), handler, ptr::null())
         };
         let Some(handle) = NonNull::new(handle) else {
             #[expect(unsafe_code, reason = "retain the exact registration failure")]
@@ -126,6 +134,7 @@ impl StatusFactory for NativeFactory {
         };
         Ok(NativeReporter {
             token: Some(StatusToken(handle)),
+            changes,
         })
     }
 }
@@ -137,6 +146,8 @@ struct StatusToken(NonNull<c_void>);
 struct NativeReporter {
     /// A registered token until terminal reporting, then permanently None.
     token: Option<StatusToken>,
+    /// Original broker callback receiver issued by this registration path.
+    changes: Option<&'static BrokerClockChanges>,
 }
 
 impl StatusReporter for NativeReporter {
@@ -157,36 +168,38 @@ impl StatusReporter for NativeReporter {
             return Err(NativeError::new(NativeOperation::Status, 6));
         };
         let projected = ScmStatus::from_status(status);
-        let raw = SERVICE_STATUS {
-            dwServiceType: projected.service_type(),
-            dwCurrentState: projected.current_state(),
-            dwControlsAccepted: projected.controls_accepted(),
-            dwWin32ExitCode: projected.win32_exit_code(),
-            dwServiceSpecificExitCode: projected.service_specific_exit_code(),
-            dwCheckPoint: projected.checkpoint(),
-            dwWaitHint: projected.wait_hint_ms(),
-        };
-        #[expect(
-            unsafe_code,
-            reason = "one checked status report with registration-owned custody"
-        )]
-        // SAFETY: The private non-null token came from successful registration;
-        // raw fully initializes the seven fields from checked portable status.
-        // The stack value remains live for this synchronous call.
-        // Terminal custody was removed before this attempt, so it cannot repeat.
-        let reported = unsafe { SetServiceStatus(pointer.as_ptr(), &raw const raw) };
-        if reported == 0 {
+        broker_clock_change::report_status(self.changes, status.state(), |extra: u32| {
+            let raw: SERVICE_STATUS = SERVICE_STATUS {
+                dwServiceType: projected.service_type(),
+                dwCurrentState: projected.current_state(),
+                dwControlsAccepted: projected.controls_accepted() | extra,
+                dwWin32ExitCode: projected.win32_exit_code(),
+                dwServiceSpecificExitCode: projected.service_specific_exit_code(),
+                dwCheckPoint: projected.checkpoint(),
+                dwWaitHint: projected.wait_hint_ms(),
+            };
             #[expect(
                 unsafe_code,
-                reason = "capture the status failure before cleanup can alter it"
+                reason = "one checked status report with registration-owned custody"
             )]
-            // SAFETY: No native call, formatter or destructor has intervened since
-            // SetServiceStatus failed on this thread.
-            let code = unsafe { GetLastError() };
-            let error = NativeError::new(NativeOperation::Status, code);
-            return Err(error);
-        }
-        Ok(())
+            // SAFETY: The private non-null token came from successful registration;
+            // raw fully initializes the seven fields from checked portable status.
+            // The stack value remains live for this synchronous call.
+            // Terminal custody was removed before this attempt, so it cannot repeat.
+            let reported = unsafe { SetServiceStatus(pointer.as_ptr(), &raw const raw) };
+            if reported == 0 {
+                #[expect(
+                    unsafe_code,
+                    reason = "capture the status failure before cleanup can alter it"
+                )]
+                // SAFETY: No native call, formatter or destructor has intervened since
+                // SetServiceStatus failed on this thread.
+                let code = unsafe { GetLastError() };
+                let error = NativeError::new(NativeOperation::Status, code);
+                return Err(error);
+            }
+            Ok(())
+        })
     }
 }
 
@@ -220,22 +233,33 @@ extern "system" fn broker_service_main(argc: u32, _argv: *mut *mut u16) {
     service_main(LabRole::ClockBroker, argc);
 }
 
-/// Execute fallible inert hosting without permitting Rust unwind across the ABI.
+/// Execute fallible hosting without permitting Rust unwind across the ABI.
 /// An unexpected panic terminates this fixture instead of resuming its work.
 fn service_main(role: LabRole, argc: u32) {
     host::guard_service_main(|| {
         let receipt: HostReceipt = if OWNER.set(thread::current()).is_err() {
             HostReceipt::owner_already_set(role)
         } else {
-            host::run_service(
-                role,
-                argc,
-                &mut NativeFactory,
-                &mut token::NativeTokenObserver,
-                &mut NativeClock,
-                &mut NativeWait,
-                &STOP,
-            )
+            match role {
+                LabRole::Engine => host::run_service(
+                    role,
+                    argc,
+                    &mut NativeFactory,
+                    &mut token::NativeTokenObserver,
+                    &mut NativeClock,
+                    &mut NativeWait,
+                    &STOP,
+                ),
+                LabRole::ClockBroker => host::run_broker_service(
+                    argc,
+                    &mut NativeFactory,
+                    &mut token::NativeTokenObserver,
+                    &mut NativeClock,
+                    &mut NativeWait,
+                    &STOP,
+                    sampled_native_reader(&CLOCK_CHANGES),
+                ),
+            }
         };
         // This is only an immutable acknowledgement receipt: no cleanup, new
         // operation, logging or status-context reuse follows terminal reporting.
@@ -244,22 +268,37 @@ fn service_main(role: LabRole, argc: u32) {
     });
 }
 
-/// Decode only supported controls and wake the pre-initialized owner on Stop.
-/// This path allocates nothing, takes no Rust lock, reads no event pointer and
-/// invokes no application closure. Static custody lasts until process termination.
-extern "system" fn control_handler(
+/// The Engine's static callback admits only its original controls.
+extern "system" fn engine_control_handler(
     control: u32,
     _event_type: u32,
     _event_data: *mut c_void,
     _context: *mut c_void,
 ) -> u32 {
-    let decoded = STOP.handle_control(control);
-    if decoded == ScmControl::Stop
+    handle_control(control, 0, None)
+}
+
+/// The broker also accepts clock and power notices on its live receiver.
+/// Decode the control/subtype without reading or retaining the event pointer.
+extern "system" fn broker_control_handler(
+    control: u32,
+    event_type: u32,
+    _event_data: *mut c_void,
+    _context: *mut c_void,
+) -> u32 {
+    handle_control(control, event_type, Some(&CLOCK_CHANGES))
+}
+
+/// Publish the bounded owning wake after the control has updated its mailbox.
+fn handle_control(control: u32, event_type: u32, changes: Option<&BrokerClockChanges>) -> u32 {
+    let disposition: ControlDisposition =
+        broker_clock_change::deliver(changes, &STOP, control, event_type);
+    if disposition.wake
         && let Some(owner) = OWNER.get()
     {
         owner.unpark();
     }
-    decoded.return_code()
+    disposition.status
 }
 
 /// Borrow the immutable snapshot from the same once-published actual result.
@@ -268,6 +307,16 @@ extern "system" fn control_handler(
 pub(super) fn retained_diagnostics()
 -> Option<&'static windows_platform::diagnostics::DiagnosticSnapshot> {
     OUTCOME.get().map(HostReceipt::diagnostics)
+}
+
+/// Read the actual broker receipt's last historical attempt, when available.
+pub(super) fn retained_broker_clock_read() -> Option<NativeBrokerClockRead> {
+    OUTCOME.get().and_then(HostReceipt::broker_clock_read)
+}
+
+/// Read the last sampled break from the original broker's terminal receipt.
+pub(super) fn retained_broker_clock_break() -> Option<SampledClockBreak> {
+    OUTCOME.get().and_then(HostReceipt::broker_clock_break)
 }
 
 /// Enter one actual fixed-role dispatcher with no install/start-service operations.
