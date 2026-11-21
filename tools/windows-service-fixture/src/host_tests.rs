@@ -31,6 +31,91 @@ use crate::{
     TokenObservationCause, TokenObservationFailure,
 };
 
+/// Historical event-order view over real consumed v2 bytes. This is a test
+/// observation only; it neither drains queues nor encodes production records.
+struct DiagnosticRouteView {
+    /// Complete actual consumed bytes, including every new metadata field.
+    raw: Vec<[u8; 128]>,
+    /// Historical literal projection used by retained lifecycle assertions.
+    records: Vec<[u8; 9]>,
+    /// Reached explicit consumer rejection, independent of queue admission.
+    rejected: u64,
+    /// Distinct reached consumer-full and unavailable counters.
+    loss: (u64, u64),
+}
+
+impl DiagnosticRouteView {
+    /// Inspect only actual accepted originals in chronological order.
+    fn records(&self) -> &[[u8; 9]] {
+        &self.records
+    }
+    /// Read complete actual bytes for synthetic-secret output observations.
+    fn raw(&self) -> &[[u8; 128]] {
+        &self.raw
+    }
+    /// Observe loss without retrying, acknowledging or changing service custody.
+    const fn loss(&self) -> (u64, u64) {
+        self.loss
+    }
+    /// Project stable historical fields; new v2 literal checks are separate.
+    fn from_route(route: &windows_platform::diagnostics::RouteSnapshot) -> Self {
+        let records: Vec<[u8; 9]> = route
+            .history()
+            .records()
+            .map(|record| {
+                [
+                    1,
+                    record[2],
+                    record[3],
+                    if record[4] == 1 { 2 } else { 1 },
+                    record[7],
+                    record[8],
+                    record[9],
+                    record[10],
+                    record[11],
+                ]
+            })
+            .collect();
+        Self {
+            raw: route.history().records().copied().collect(),
+            records,
+            rejected: route.health().consumer_rejected().value(),
+            loss: (
+                route.health().consumer_full().value(),
+                route.health().consumer_unavailable().value(),
+            ),
+        }
+    }
+}
+
+/// Test convenience for reading normal-source snapshots; no consumer substitute.
+trait DiagnosticView {
+    /// Read a snapshot of the actual required consumer.
+    fn required(&self) -> DiagnosticRouteView;
+    /// Read optional consumption when its real profile admitted a duplicate.
+    fn optional(&self) -> Option<DiagnosticRouteView>;
+}
+
+impl DiagnosticView for crate::diagnostics::Diagnostics {
+    fn required(&self) -> DiagnosticRouteView {
+        DiagnosticRouteView::from_route(self.snapshot().required())
+    }
+    fn optional(&self) -> Option<DiagnosticRouteView> {
+        let snapshot: windows_platform::diagnostics::DiagnosticSnapshot = self.snapshot();
+        (snapshot.optional().health().filtered().value() == 0)
+            .then(|| DiagnosticRouteView::from_route(snapshot.optional()))
+    }
+}
+
+/// Convert a refused startup receipt to its original error for legacy test helpers.
+/// An impossible clean startup refusal remains an explicit unavailable outcome.
+fn startup_error(receipt: super::HostReceipt) -> FixtureError {
+    match receipt.into_result() {
+        Err(error) => error,
+        Ok(()) => FixtureError::OutcomeUnavailable,
+    }
+}
+
 /// A healthy native-shaped driver must return normally after its sole Stop wake.
 /// The parent has no unresolved owner, so even a child's fatal custody failure
 /// remains an ordinary failed behavior assertion with its original output.
@@ -476,6 +561,7 @@ fn execute(
         &mut wait,
         notification,
     )
+    .into_result()
 }
 
 /// Inspect only effects actually delivered to the reporter.
@@ -616,7 +702,8 @@ fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(
                 &mut clock,
                 &notification,
                 InertWorker::new(),
-            )?;
+            )
+            .map_err(startup_error)?;
             let expected_result = if argc == 2 {
                 Err(FixtureError::UnsupportedArguments)
             } else if let Some(error) = start_failure {
@@ -627,7 +714,11 @@ fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(
                 Ok(())
             };
             // Snapshot immediately, before Stop/poll can republish a missing fact.
-            let initial_records = invocation.diagnostics.required().records().to_vec();
+            let initial_snapshot: windows_platform::diagnostics::DiagnosticSnapshot =
+                invocation.diagnostics.snapshot();
+            let initial_pending: usize = initial_snapshot.required().pending();
+            let initial_records: Vec<[u8; 9]> =
+                invocation.diagnostics.required().records().to_vec();
             let optional_was_off = invocation.diagnostics.optional().is_none();
             let initial_failure_matched = invocation.failure() == expected_result.as_ref().err();
             let initial_work = invocation.outstanding_work();
@@ -640,7 +731,9 @@ fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(
                     break;
                 }
             }
-            let result = invocation.take_result();
+            let result = invocation
+                .take_receipt()
+                .map(crate::host::HostReceipt::into_result);
             assert!(finished);
             assert_eq!(result, Some(expected_result));
             assert!(initial_failure_matched);
@@ -664,10 +757,272 @@ fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(
                     0,
                 ]);
             }
-            assert_eq!(initial_records, expected_records);
+            let empty: [[u8; 9]; 0] = [];
+            assert_eq!(initial_records, empty);
+            assert_eq!(initial_pending, expected_records.len());
             assert_eq!(invocation.outstanding_work(), 0);
         }
     }
+    Ok(())
+}
+
+/// Registration has no lifecycle clock observation or invocation; its receipt
+/// retains the original native error and only the actual primary failure.
+/// # Panics
+/// Fails if registration invents startup/completion, reads time or hides the cause.
+#[test]
+fn registration_failure_returns_original_error_and_consumed_failure_only_receipt() {
+    for (role, component) in [(LabRole::Engine, 1_u8), (LabRole::ClockBroker, 2_u8)] {
+        let observation: Rc<RefCell<Observations>> = Rc::new(RefCell::new(Observations::default()));
+        let notification: StopNotification = StopNotification::new();
+        let error: NativeError =
+            NativeError::new(NativeOperation::Register, u32::from_le_bytes(*b"KEY!"));
+        let mut factory: Factory = Factory {
+            observations: Rc::clone(&observation),
+            failure: Some(error),
+        };
+        let mut clock: ScriptedClock = ScriptedClock {
+            observations: Vec::new(),
+            reads: 0,
+        };
+        let mut wait: TestWait<'_> = TestWait {
+            time: Rc::new(RefCell::new(Time {
+                current: Instant::now(),
+                backwards_once: false,
+                backwards_persistent: false,
+            })),
+            observations: Rc::clone(&observation),
+            actions: Vec::new(),
+            next: 0,
+            notification: &notification,
+        };
+        let receipt: super::HostReceipt = run_service(
+            role,
+            1,
+            &mut factory,
+            &mut HealthyTokenObserver(role),
+            &mut clock,
+            &mut wait,
+            &notification,
+        );
+        assert_eq!(receipt.result(), &Err(FixtureError::Native(error)));
+        let snapshot: &windows_platform::diagnostics::DiagnosticSnapshot = receipt.diagnostics();
+        assert!(snapshot.sealed());
+        let mut expected: [u8; 128] = [0; 128];
+        expected[..8].copy_from_slice(&[2, 1, component, 4, 1, 2, 1, 9]);
+        expected[8] = 1;
+        assert_eq!(snapshot.required().history().get(0), Some(&expected));
+        assert_eq!(snapshot.required().history().len(), 1);
+        assert_eq!(snapshot.required().health().queued().value(), 1);
+        assert_eq!(snapshot.required().health().consumer_attempts().value(), 1);
+        assert_eq!(snapshot.required().health().accepted().value(), 1);
+        assert_eq!(snapshot.optional().health().filtered().value(), 1);
+        assert_eq!(clock.reads, 0);
+        assert_eq!(observation.borrow().events, [Event::Register(role)]);
+    }
+}
+
+/// Owner refusal and a checked invalid budget retain only their own no-invocation
+/// failure; neither helper claims an impossible native/lifecycle observation.
+/// # Errors
+/// Propagates checked test setup failures or an unexpectedly accepted invalid budget.
+/// # Panics
+/// Fails if the result differs or either snapshot invents StartObserved/Finished.
+#[test]
+fn no_invocation_owner_and_budget_receipts_have_honest_unavailable_metadata()
+-> Result<(), Box<dyn Error>> {
+    for role in [LabRole::Engine, LabRole::ClockBroker] {
+        let owner_receipt: super::HostReceipt = super::HostReceipt::owner_already_set(role);
+        let budget_error: windows_platform::service::BudgetError =
+            windows_platform::service::PendingBudget::new(0, 0)
+                .err()
+                .ok_or("invalid budget fixture unexpectedly accepted")?;
+        let budget_receipt: super::HostReceipt = super::HostReceipt::startup_failure(
+            FixtureError::Budget(budget_error),
+            crate::diagnostics::Diagnostics::new(
+                role,
+                crate::diagnostics::Sinks::new(
+                    windows_platform::diagnostics::MemoryConsumer::new(
+                        windows_platform::diagnostics::ConsumerState::Available,
+                    ),
+                    None,
+                ),
+            ),
+        );
+        for (receipt, expected_error, cause) in [
+            (owner_receipt, FixtureError::OwnerAlreadySet, 3_u8),
+            (budget_receipt, FixtureError::Budget(budget_error), 8_u8),
+        ] {
+            assert_eq!(receipt.result(), &Err(expected_error));
+            let snapshot: &windows_platform::diagnostics::DiagnosticSnapshot =
+                receipt.diagnostics();
+            assert_eq!(snapshot.required().history().len(), 1);
+            let record: Option<&[u8; 128]> = snapshot.required().history().get(0);
+            assert!(record.is_some_and(|bytes| bytes[3] == 4
+                && bytes[7] == cause
+                && bytes[16..128].iter().all(|byte| *byte == 0)));
+            assert!(!snapshot.health().rate_clock_fault());
+        }
+    }
+    Ok(())
+}
+
+/// Normal inert hosting retains real consumed originals in the same immutable
+/// receipt as its result; optional Off and snapshot reads add no clock calls.
+/// # Errors
+/// Refuse only unrepresentable independent fixture coordinates.
+/// # Panics
+/// Fails if metadata/time/read count, sequence, output, custody or result changes.
+#[test]
+fn actual_host_receipt_preserves_producer_time_across_delayed_consumption()
+-> Result<(), Box<dyn Error>> {
+    let base: Instant = Instant::now();
+    let observations: Vec<Instant> = (0_u64..10)
+        .map(|index| {
+            base.checked_add(Duration::from_millis(index))
+                .ok_or("independent clock fixture unavailable")
+        })
+        .collect::<Result<Vec<Instant>, &str>>()?;
+    let observation: Rc<RefCell<Observations>> = Rc::new(RefCell::new(Observations::default()));
+    let notification: StopNotification = StopNotification::new();
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observation),
+        failure: None,
+    };
+    let mut clock: ScriptedClock = ScriptedClock {
+        observations,
+        reads: 0,
+    };
+    let mut wait: TestWait<'_> = TestWait {
+        time: Rc::new(RefCell::new(Time {
+            current: base,
+            backwards_once: false,
+            backwards_persistent: false,
+        })),
+        observations: Rc::clone(&observation),
+        actions: vec![WaitAction::Stop(Duration::ZERO)],
+        next: 0,
+        notification: &notification,
+    };
+    let receipt: super::HostReceipt = run_service(
+        LabRole::Engine,
+        1,
+        &mut factory,
+        &mut HealthyTokenObserver(LabRole::Engine),
+        &mut clock,
+        &mut wait,
+        &notification,
+    );
+    assert_eq!(receipt.result(), &Ok(()));
+    let snapshot: &windows_platform::diagnostics::DiagnosticSnapshot = receipt.diagnostics();
+    let expected: [(u8, u64); 4] = [
+        (1, 1_000_000),
+        (2, 3_000_000),
+        (3, 7_000_000),
+        (8, 9_000_000),
+    ];
+    assert_eq!(snapshot.required().history().len(), expected.len());
+    for (index, (bytes, (event_id, elapsed))) in snapshot
+        .required()
+        .history()
+        .records()
+        .zip(expected)
+        .enumerate()
+    {
+        let mut literal: [u8; 128] = [0; 128];
+        literal[..8].copy_from_slice(&[2, 1, 1, event_id, 3, 5, 1, 0]);
+        literal[8..16].copy_from_slice(&u64::try_from(index + 1)?.to_le_bytes());
+        literal[16] = 1;
+        literal[17..25].copy_from_slice(&elapsed.to_le_bytes());
+        assert_eq!(bytes, &literal);
+    }
+    assert_eq!(snapshot.required().health().queued().value(), 4);
+    assert_eq!(snapshot.required().health().consumer_attempts().value(), 4);
+    assert_eq!(snapshot.required().health().accepted().value(), 4);
+    assert_eq!(snapshot.optional().health().filtered().value(), 4);
+    assert!(snapshot.required().history_complete());
+    assert_eq!(clock.reads, 10);
+    assert_eq!(statuses(&observation).last(), Some(&[16, 1, 0, 0, 0, 0, 0]));
+    assert_eq!(receipt.result(), &Ok(()));
+    assert_eq!(clock.reads, 10);
+    Ok(())
+}
+
+/// A genuine reversed lifecycle observation preserves its last accepted producer
+/// coordinate as historical, latches rate fault, and performs no recovery read.
+/// # Errors
+/// Refuse unrepresentable independent monotonic fixture coordinates.
+/// # Panics
+/// Fails if fault metadata is invented, erased or replaced with consumption time.
+#[test]
+fn actual_clock_reversal_keeps_historical_coordinate_and_sticky_diagnostic_fault()
+-> Result<(), Box<dyn Error>> {
+    let base: Instant = Instant::now();
+    let mut script: Vec<Instant> = (0_u64..8)
+        .map(|index| {
+            base.checked_add(Duration::from_millis(index))
+                .ok_or("independent clock fixture unavailable")
+        })
+        .collect::<Result<Vec<Instant>, &str>>()?;
+    script.push(
+        base.checked_add(Duration::from_millis(6))
+            .ok_or("fault fixture unavailable")?,
+    );
+    let observation: Rc<RefCell<Observations>> = Rc::new(RefCell::new(Observations::default()));
+    let notification: StopNotification = StopNotification::new();
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observation),
+        failure: None,
+    };
+    let mut clock: ScriptedClock = ScriptedClock {
+        observations: script,
+        reads: 0,
+    };
+    let mut wait: TestWait<'_> = TestWait {
+        time: Rc::new(RefCell::new(Time {
+            current: base,
+            backwards_once: false,
+            backwards_persistent: false,
+        })),
+        observations: Rc::clone(&observation),
+        actions: vec![WaitAction::Stop(Duration::ZERO)],
+        next: 0,
+        notification: &notification,
+    };
+    let receipt: super::HostReceipt = run_service(
+        LabRole::Engine,
+        1,
+        &mut factory,
+        &mut HealthyTokenObserver(LabRole::Engine),
+        &mut clock,
+        &mut wait,
+        &notification,
+    );
+    assert_eq!(receipt.result(), &Err(FixtureError::ClockReversed));
+    let snapshot: &windows_platform::diagnostics::DiagnosticSnapshot = receipt.diagnostics();
+    let expected: [(u8, u8, u64); 5] = [
+        (1, 1, 1_000_000),
+        (2, 1, 3_000_000),
+        (3, 1, 7_000_000),
+        (4, 2, 7_000_000),
+        (8, 2, 7_000_000),
+    ];
+    assert_eq!(snapshot.required().history().len(), expected.len());
+    for (bytes, (id, kind, elapsed)) in snapshot.required().history().records().zip(expected) {
+        assert_eq!(bytes[3], id);
+        assert_eq!(bytes[16], kind);
+        assert_eq!(&bytes[17..25], &elapsed.to_le_bytes());
+        assert!(bytes[25..128].iter().all(|byte| *byte == 0));
+    }
+    assert!(snapshot.health().rate_clock_fault());
+    assert!(snapshot.health().actual_clock_fault().value() > 0);
+    assert_eq!(snapshot.health().elapsed_overflow().value(), 0);
+    assert_eq!(snapshot.health().origin_order_fault().value(), 0);
+    assert_eq!(clock.reads, 9);
+    assert_eq!(
+        statuses(&observation).last(),
+        Some(&[16, 1, 0, 1066, 1, 0, 0])
+    );
     Ok(())
 }
 
@@ -1154,6 +1509,7 @@ fn execute_scripted_clock(
         &mut wait,
         notification,
     )
+    .into_result()
 }
 
 /// Reversal during preparation, readiness, work admission, activation/health/wake
@@ -1565,6 +1921,22 @@ fn preexisting_stop_cannot_reset_an_expired_startup_deadline() -> Result<(), Fix
     Ok(())
 }
 
+/// Supply coherent test receipts for the dispatcher combiner only; this does not
+/// impersonate an invocation, native completion or a successful service status.
+fn receipt_fixture(actual_result: Result<(), FixtureError>) -> super::HostReceipt {
+    let mut router: windows_platform::diagnostics::Router =
+        windows_platform::diagnostics::Router::new(
+            windows_platform::diagnostics::Component::Engine,
+            windows_platform::diagnostics::OptionalProfile::Off,
+            windows_platform::diagnostics::ImportanceMask::all(),
+            windows_platform::diagnostics::MemoryRoutes::available(),
+        );
+    super::HostReceipt {
+        actual_result,
+        diagnostics: router.finish(),
+    }
+}
+
 /// Dispatcher failure must remain visible beside a previously successful owner.
 ///
 /// # Panics
@@ -1574,7 +1946,7 @@ fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
     let once = AtomicBool::new(false);
     let outcome = OnceLock::new();
     let dispatch_failure = OnceLock::new();
-    assert!(outcome.set(Ok(())).is_ok());
+    assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
     let failure = NativeError::new(NativeOperation::Dispatch, 17);
     let mut driver = Driver {
         roles: vec![],
@@ -1588,7 +1960,7 @@ fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
         &dispatch_failure,
     );
     assert!(matches!(result, Err(FixtureError::Native(actual)) if *actual == failure));
-    assert_eq!(outcome.get(), Some(&Ok(())));
+    assert_eq!(outcome.get().map(super::HostReceipt::result), Some(&Ok(())));
     assert_eq!(dispatch_failure.get(), Some(&FixtureError::Native(failure)));
     assert_eq!(
         dispatch_with_outcome(
@@ -1614,7 +1986,11 @@ fn dispatcher_failure_leaves_failed_or_missing_owner_receipts_unchanged() {
         let outcome = OnceLock::new();
         let dispatch_failure = OnceLock::new();
         if owner_failed {
-            assert!(outcome.set(Err(FixtureError::ClockReversed)).is_ok());
+            assert!(
+                outcome
+                    .set(receipt_fixture(Err(FixtureError::ClockReversed)))
+                    .is_ok()
+            );
         }
         let failure = NativeError::new(
             NativeOperation::Dispatch,
@@ -1635,7 +2011,10 @@ fn dispatcher_failure_leaves_failed_or_missing_owner_receipts_unchanged() {
             Err(&FixtureError::Native(failure))
         );
         let expected_owner = owner_failed.then_some(Err(FixtureError::ClockReversed));
-        assert_eq!(outcome.get(), expected_owner.as_ref());
+        assert_eq!(
+            outcome.get().map(super::HostReceipt::result),
+            expected_owner.as_ref()
+        );
         assert_eq!(dispatch_failure.get(), Some(&FixtureError::Native(failure)));
         assert_eq!(driver.roles, [LabRole::Engine]);
     }
@@ -1652,9 +2031,13 @@ fn successful_dispatch_projects_the_actual_owner_receipt() {
         let outcome = OnceLock::new();
         let dispatch_failure = OnceLock::new();
         if receipt == 0 {
-            assert!(outcome.set(Ok(())).is_ok());
+            assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
         } else if receipt == 1 {
-            assert!(outcome.set(Err(FixtureError::ClockReversed)).is_ok());
+            assert!(
+                outcome
+                    .set(receipt_fixture(Err(FixtureError::ClockReversed)))
+                    .is_ok()
+            );
         }
         let mut driver = Driver {
             roles: vec![],
@@ -1686,7 +2069,7 @@ fn duplicate_entry_is_rejected_even_with_a_successful_owner_receipt() {
     let once = AtomicBool::new(false);
     let outcome = OnceLock::new();
     let dispatch_failure = OnceLock::new();
-    assert!(outcome.set(Ok(())).is_ok());
+    assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
     let mut driver = Driver {
         roles: vec![],
         failure: None,
@@ -1903,7 +2286,8 @@ fn execute_observation(
         &mut clock,
         &mut wait,
         notification,
-    );
+    )
+    .into_result();
     (result, observer.calls)
 }
 
@@ -2300,7 +2684,8 @@ fn denied_startup_preserves_the_first_representable_shutdown_observation()
             &mut clock,
             &mut wait,
             &notification,
-        ),
+        )
+        .into_result(),
         Err(FixtureError::UnsupportedArguments)
     );
     assert_eq!(clock.reads, 3);
@@ -2386,7 +2771,8 @@ fn run_deadline_representability_precedes_running_and_preserves_startup_expiry()
                 &mut clock,
                 &mut wait,
                 &notification,
-            );
+            )
+            .into_result();
             actual.push((
                 role,
                 case,
@@ -2449,12 +2835,13 @@ mod worker_tests {
         WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake,
         start_invocation_with_diagnostics,
     };
+    use super::{DiagnosticRouteView, DiagnosticView};
     use crate::{
         FixtureError, LabRole, NativeError, NativeOperation, TokenCleanupOutcome,
-        TokenObservationCause, TokenObservationFailure,
-        diagnostics::{MemorySink, Sinks},
-        error::WorkerError,
+        TokenObservationCause, TokenObservationFailure, diagnostics::Sinks, error::WorkerError,
     };
+
+    use windows_platform::diagnostics::{ConsumerState, MemoryConsumer};
 
     /// Test construction errors remain distinct from assertions about host behavior.
     type TestResult<T = ()> = Result<T, Box<dyn Error>>;
@@ -2895,7 +3282,10 @@ mod worker_tests {
         /// # Errors
         /// Propagate checked construction of the independently selected token fixture.
         fn start(settings: Settings) -> TestResult<Self> {
-            Self::start_with_sinks(settings, Sinks::new(MemorySink::new(true), None))
+            Self::start_with_sinks(
+                settings,
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+            )
         }
 
         /// Pass finite diagnostic sinks to the same actual startup and decision owner.
@@ -2943,7 +3333,7 @@ mod worker_tests {
                 (worker, sinks),
             ) {
                 Ok(invocation) => (Some(invocation), None),
-                Err(error) => (None, Some(error)),
+                Err(receipt) => (None, Some(super::startup_error(receipt))),
             };
             Ok(Self {
                 invocation,
@@ -3058,7 +3448,8 @@ mod worker_tests {
         fn take_result(&mut self) -> Option<Result<(), FixtureError>> {
             self.invocation
                 .as_mut()
-                .and_then(ServiceInvocation::take_result)
+                .and_then(ServiceInvocation::take_receipt)
+                .map(super::super::HostReceipt::into_result)
         }
 
         /// Supply a real test-worker completion and finitely settle the same owner.
@@ -3082,7 +3473,9 @@ mod worker_tests {
                     InvocationPoll::Finished
                 ) {
                     self.finished = true;
-                    return invocation.take_result();
+                    return invocation
+                        .take_receipt()
+                        .map(crate::host::HostReceipt::into_result);
                 }
             }
             None
@@ -3112,18 +3505,21 @@ mod worker_tests {
     enum DiagnosticSinkCondition {
         /// Every bounded record fits and is accepted.
         Healthy,
-        /// All sixteen slots were already occupied before owner construction.
+        /// The reached concrete consumer refuses because its destination is full.
         Full,
+        /// The reached concrete consumer explicitly rejects each queued original.
+        Reject,
         /// The selected output destination refuses every admission attempt.
         Unavailable,
     }
 
     /// Construct a finite sink condition before the real service startup runs.
-    fn diagnostic_sink(condition: DiagnosticSinkCondition) -> MemorySink {
+    fn diagnostic_sink(condition: DiagnosticSinkCondition) -> MemoryConsumer {
         match condition {
-            DiagnosticSinkCondition::Healthy => MemorySink::new(true),
-            DiagnosticSinkCondition::Full => MemorySink::full(),
-            DiagnosticSinkCondition::Unavailable => MemorySink::new(false),
+            DiagnosticSinkCondition::Healthy => MemoryConsumer::new(ConsumerState::Available),
+            DiagnosticSinkCondition::Full => MemoryConsumer::new(ConsumerState::Full),
+            DiagnosticSinkCondition::Reject => MemoryConsumer::new(ConsumerState::Reject),
+            DiagnosticSinkCondition::Unavailable => MemoryConsumer::new(ConsumerState::Unavailable),
         }
     }
 
@@ -3134,19 +3530,25 @@ mod worker_tests {
     /// # Panics
     /// Fails if accepted records, retained first records or loss counts differ.
     fn assert_diagnostic_sink(
-        sink: &MemorySink,
+        sink: &DiagnosticRouteView,
         condition: DiagnosticSinkCondition,
         expected: &[[u8; 9]],
     ) -> TestResult {
-        let attempted = u32::try_from(expected.len())?;
+        let attempted: u64 = u64::try_from(expected.len())?;
+        let empty: [[u8; 9]; 0] = [];
         match condition {
             DiagnosticSinkCondition::Healthy => {
                 assert_eq!(sink.records(), expected);
                 assert_eq!(sink.loss(), (0, 0));
             }
             DiagnosticSinkCondition::Full => {
-                assert_eq!(sink.records(), &[[0; 9]; 16]);
+                assert_eq!(sink.records(), empty);
                 assert_eq!(sink.loss(), (attempted, 0));
+            }
+            DiagnosticSinkCondition::Reject => {
+                assert_eq!(sink.records(), empty);
+                assert_eq!(sink.rejected, attempted);
+                assert_eq!(sink.loss(), (0, 0));
             }
             DiagnosticSinkCondition::Unavailable => {
                 let empty: &[[u8; 9]] = &[];
@@ -3172,10 +3574,12 @@ mod worker_tests {
                     role,
                     ..Settings::default()
                 },
-                Sinks::new(MemorySink::new(true), None),
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
             )?;
             let started = [[1, role_code, 1, 1, 0, 1, 0, 0, 0]];
-            assert_eq!(rig.owner()?.diagnostics.required().records(), &started);
+            let empty: [[u8; 9]; 0] = [];
+            assert_eq!(rig.owner()?.diagnostics.required().records(), empty);
+            assert_eq!(rig.owner()?.diagnostics.snapshot().required().pending(), 1);
             assert!(rig.owner()?.diagnostics.optional().is_none());
             for _ in 0..8 {
                 assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
@@ -3241,7 +3645,7 @@ mod worker_tests {
     /// Fails if any sink condition changes lifecycle, custody, original failure or output.
     #[test]
     fn diagnostics_sink_faults_preserve_primary_cleanup_and_actual_completion() -> TestResult {
-        use DiagnosticSinkCondition::{Full, Healthy, Unavailable};
+        use DiagnosticSinkCondition::{Full, Healthy, Reject, Unavailable};
 
         let stop_error = NativeError::new(NativeOperation::Status, 7443);
         let terminal_error = NativeError::new(NativeOperation::Status, 7441);
@@ -3256,8 +3660,14 @@ mod worker_tests {
             [1, 1, 8, 1, 0, 8, 0, 0, 0],
         ];
         let mut outcomes = Vec::new();
-        for required in [Healthy, Full, Unavailable] {
-            for optional in [None, Some(Healthy), Some(Full), Some(Unavailable)] {
+        for required in [Healthy, Full, Reject, Unavailable] {
+            for optional in [
+                None,
+                Some(Healthy),
+                Some(Full),
+                Some(Reject),
+                Some(Unavailable),
+            ] {
                 let mut rig = Rig::start_with_sinks(
                     Settings {
                         report_failures: vec![(3, stop_error), (1, terminal_error)],
@@ -3286,7 +3696,7 @@ mod worker_tests {
                 assert_eq!(rig.statuses(), statuses_before_completion);
                 assert!(!rig.statuses().iter().any(|raw| raw[1] == 1));
                 assert_diagnostic_sink(
-                    rig.owner()?.diagnostics.required(),
+                    &rig.owner()?.diagnostics.required(),
                     required,
                     &expected[..5],
                 )?;
@@ -3312,11 +3722,11 @@ mod worker_tests {
                     assert_eq!(rig.poll()?, InvocationPoll::Finished);
                     assert!(rig.take_result().is_none());
                 }
-                assert_diagnostic_sink(rig.owner()?.diagnostics.required(), required, &expected)?;
+                assert_diagnostic_sink(&rig.owner()?.diagnostics.required(), required, &expected)?;
                 match (optional, rig.owner()?.diagnostics.optional()) {
                     (None, None) => {}
                     (Some(condition), Some(sink)) => {
-                        assert_diagnostic_sink(sink, condition, &expected)?;
+                        assert_diagnostic_sink(&sink, condition, &expected)?;
                     }
                     _ => return Err("the optional diagnostic route changed presence".into()),
                 }
@@ -3352,7 +3762,10 @@ mod worker_tests {
                     },
                     ..Settings::default()
                 },
-                Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+                Sinks::new(
+                    MemoryConsumer::new(ConsumerState::Available),
+                    Some(MemoryConsumer::new(ConsumerState::Available)),
+                ),
             )?;
             if deadline {
                 let _observation = rig.poll()?;
@@ -3367,7 +3780,15 @@ mod worker_tests {
                 [1, 1, 4, 2, cause_code, 2, 0, 0, 0],
                 [1, 1, 3, 1, 0, 3, 0, 0, 0],
             ];
-            assert_eq!(rig.owner()?.diagnostics.required().records(), &expected);
+            let consumed: usize = if deadline { 2 } else { 1 };
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &expected[..consumed]
+            );
+            assert_eq!(
+                rig.owner()?.diagnostics.snapshot().required().pending(),
+                3 - consumed
+            );
             // Pending initialization retains its charge. Ready acknowledged real
             // initialization completion; refused Running admits no running charge.
             assert_eq!(rig.owner()?.outstanding_work(), u32::from(deadline));
@@ -3417,7 +3838,10 @@ mod worker_tests {
         for failed in [false, true] {
             let mut rig = Rig::start_with_sinks(
                 Settings::default(),
-                Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+                Sinks::new(
+                    MemoryConsumer::new(ConsumerState::Available),
+                    Some(MemoryConsumer::new(ConsumerState::Available)),
+                ),
             )?;
             {
                 let mut script = rig.script.borrow_mut();
@@ -3462,7 +3886,7 @@ mod worker_tests {
                 .ok_or("healthy optional sink disappeared")?;
             for sink in [rig.owner()?.diagnostics.required(), optional] {
                 assert_eq!(sink.records(), expected);
-                let emitted = sink.records().iter().flatten().copied().collect::<Vec<_>>();
+                let emitted: Vec<u8> = sink.raw().iter().flatten().copied().collect();
                 for secret in secrets {
                     assert!(!emitted.windows(secret.len()).any(|bytes| bytes == secret));
                 }
@@ -3499,7 +3923,10 @@ mod worker_tests {
                 report_failures: vec![(4, running_error), (3, stop_error), (1, terminal_error)],
                 ..Settings::default()
             },
-            Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+            Sinks::new(
+                MemoryConsumer::new(ConsumerState::Available),
+                Some(MemoryConsumer::new(ConsumerState::Available)),
+            ),
         )?;
         rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
         let _observation = rig.poll()?;
@@ -3540,7 +3967,7 @@ mod worker_tests {
             .ok_or("healthy optional sink disappeared")?;
         for sink in [rig.owner()?.diagnostics.required(), optional] {
             assert_eq!(sink.records(), &expected);
-            let emitted = sink.records().iter().flatten().copied().collect::<Vec<_>>();
+            let emitted: Vec<u8> = sink.raw().iter().flatten().copied().collect();
             for secret in native_secrets {
                 assert!(!emitted.windows(secret.len()).any(|bytes| bytes == secret));
             }
@@ -4158,7 +4585,7 @@ mod worker_tests {
                     capture: Capture::Entries(entries),
                     ..Settings::default()
                 },
-                Sinks::new(MemorySink::new(true), None),
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
             )?;
             assert!(matches!(
                 rig.settle(Ok(())),
@@ -5071,7 +5498,7 @@ mod worker_tests {
     /// Fails if sinks alter custody, precedence, facts, required routing or native codes.
     #[test]
     fn late_joined_facts_preserve_status_precedence_across_sink_faults() -> TestResult {
-        use DiagnosticSinkCondition::{Full, Healthy, Unavailable};
+        use DiagnosticSinkCondition::{Full, Healthy, Reject, Unavailable};
 
         let running: NativeError = NativeError::new(NativeOperation::Status, 814);
         let stopping: NativeError = NativeError::new(NativeOperation::Status, 813);
@@ -5086,8 +5513,14 @@ mod worker_tests {
             [1, 1, 7, 2, 10, 7, 0, 0, 0],
             [1, 1, 8, 1, 0, 8, 0, 0, 0],
         ];
-        for required in [Healthy, Full, Unavailable] {
-            for optional in [None, Some(Healthy), Some(Full), Some(Unavailable)] {
+        for required in [Healthy, Full, Reject, Unavailable] {
+            for optional in [
+                None,
+                Some(Healthy),
+                Some(Full),
+                Some(Reject),
+                Some(Unavailable),
+            ] {
                 let mut rig: Rig = Rig::start_with_sinks(
                     Settings {
                         report_failures: vec![(4, running), (3, stopping), (1, terminal)],
@@ -5120,11 +5553,11 @@ mod worker_tests {
                     Some(&LifecycleError::Report(terminal))
                 );
                 assert_eq!(rig.owner()?.outstanding_work(), 0);
-                assert_diagnostic_sink(rig.owner()?.diagnostics.required(), required, &expected)?;
+                assert_diagnostic_sink(&rig.owner()?.diagnostics.required(), required, &expected)?;
                 match (optional, rig.owner()?.diagnostics.optional()) {
                     (None, None) => {}
                     (Some(condition), Some(sink)) => {
-                        assert_diagnostic_sink(sink, condition, &expected)?;
+                        assert_diagnostic_sink(&sink, condition, &expected)?;
                     }
                     _ => return Err("optional diagnostic route changed presence".into()),
                 }

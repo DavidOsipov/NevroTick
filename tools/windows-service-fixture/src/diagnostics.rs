@@ -1,264 +1,154 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Fixture-private portable diagnostic policy, not a native or durable logger.
+//! Fixture-owned typed error projection into the sole shared diagnostic policy.
 //!
-//! Only closed typed events reach encoding. Each route owns sixteen nine-byte
-//! records and saturating full/unavailable counters. Admission has no I/O, lock,
-//! callback, allocation, retry or flush. Optional output cannot consume required
-//! capacity. Sequence exhaustion refuses new records instead of wrapping. The
-//! v1 byte order is version, role, event, severity, cause, then four little-endian
-//! sequence bytes. Codes belong only to this fixture contract.
-//! The sequence belongs only to one retained invocation; it asserts no process/restart
-//! identity, generation, UTC truth, acknowledged status or work completion.
-//! Native providers, output draining/flush and authorized debug sessions remain
-//! with their existing owners. No arbitrary text or error chain is admitted.
+//! This adapter never formats or traverses error chains. The shared router owns
+//! catalogue semantics, validation, encoding, finite queues, consumption and health.
+//! It has no service, worker, native completion or clock authority.
 
-use windows_platform::service::LifecycleError;
+use windows_platform::{
+    diagnostics::{
+        Component, DiagnosticObservation, DiagnosticSnapshot, ImportanceMask, LifecycleCause,
+        MemoryConsumer, MemoryRoutes, OptionalProfile, PrimaryCause, Router, WorkerCause,
+    },
+    service::LifecycleError,
+};
+
+pub(super) use windows_platform::diagnostics::ServiceEvent as Event;
 
 use crate::{FixtureError, LabRole, NativeError, error::WorkerError};
 
-/// Fixture-only memory allocation per route, independent of product disk budgets.
-const CAPACITY: usize = 16;
-/// Exact v1 record size; no Rust enum or struct layout is serialized.
-const RECORD_BYTES: usize = 9;
-
-/// Reviewed bounded cause; only the exhaustive typed projections construct it.
-#[derive(Clone, Copy)]
-pub(super) struct FailureCode(u8);
-
-impl FailureCode {
-    /// Preserve useful categories without traversing or formatting retained causes.
-    pub(super) fn from_fixture(error: &FixtureError) -> Self {
-        Self(match error {
-            FixtureError::WindowsOnly => 1,
-            FixtureError::AlreadyDispatched => 2,
-            FixtureError::OwnerAlreadySet => 3,
-            FixtureError::UnsupportedArguments => 4,
-            FixtureError::ClockReversed => 5,
-            FixtureError::ClockOverflow => 6,
-            FixtureError::RunLimitElapsed => 7,
-            FixtureError::Budget(_) => 8,
-            FixtureError::Native(_) => 9,
-            FixtureError::Lifecycle(error) => return Self::from_lifecycle(error),
-            FixtureError::Worker(error) => return Self::from_worker(*error),
-            FixtureError::TokenObservation(_) => 24,
-            FixtureError::PrivilegeAdmission(_) => 25,
-            FixtureError::ServiceFailed => 26,
-            FixtureError::OutcomeUnavailable => 27,
-            // Arbitrary nested public errors cannot grow diagnostic traversal.
-            FixtureError::Cleanup(_) => 28,
-        })
-    }
-
-    /// Map every lifecycle refusal distinctly; native error text/code stays typed.
-    pub(super) const fn from_lifecycle(error: &LifecycleError<NativeError>) -> Self {
-        Self(match error {
-            LifecycleError::Report(_) => 10,
-            LifecycleError::DeadlineElapsed => 11,
-            LifecycleError::InvalidTransition => 12,
-            LifecycleError::ReportingFailed => 13,
-            LifecycleError::TimeReversed => 14,
-            LifecycleError::DeadlineOverflow => 15,
-            LifecycleError::CheckpointOverflow => 16,
-            LifecycleError::OutstandingWork => 17,
-            LifecycleError::WorkLimit => 18,
-            LifecycleError::FailureOutcomeRequired => 19,
-        })
-    }
-
-    /// Keep initialization, activation, health and completed cleanup distinct.
-    pub(super) const fn from_worker(error: WorkerError) -> Self {
-        Self(match error {
-            WorkerError::Preparation => 20,
-            WorkerError::Activation => 21,
-            WorkerError::Running => 22,
-            WorkerError::Cleanup => 23,
-        })
+/// Project the complete original error once without inspecting nested payloads.
+pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
+    match error {
+        FixtureError::WindowsOnly => PrimaryCause::WindowsOnly,
+        FixtureError::AlreadyDispatched => PrimaryCause::AlreadyDispatched,
+        FixtureError::OwnerAlreadySet => PrimaryCause::OwnerAlreadySet,
+        FixtureError::UnsupportedArguments => PrimaryCause::UnsupportedArguments,
+        FixtureError::ClockReversed => PrimaryCause::ClockReversed,
+        FixtureError::ClockOverflow => PrimaryCause::ClockOverflow,
+        FixtureError::RunLimitElapsed => PrimaryCause::RunLimitElapsed,
+        FixtureError::Budget(_) => PrimaryCause::Budget,
+        FixtureError::Native(_) => PrimaryCause::Native,
+        FixtureError::Lifecycle(error) => match error {
+            LifecycleError::Report(_) => PrimaryCause::LifecycleReport,
+            LifecycleError::DeadlineElapsed => PrimaryCause::LifecycleDeadlineElapsed,
+            LifecycleError::InvalidTransition => PrimaryCause::LifecycleInvalidTransition,
+            LifecycleError::ReportingFailed => PrimaryCause::LifecycleReportingFailed,
+            LifecycleError::TimeReversed => PrimaryCause::LifecycleTimeReversed,
+            LifecycleError::DeadlineOverflow => PrimaryCause::LifecycleDeadlineOverflow,
+            LifecycleError::CheckpointOverflow => PrimaryCause::LifecycleCheckpointOverflow,
+            LifecycleError::OutstandingWork => PrimaryCause::LifecycleOutstandingWork,
+            LifecycleError::WorkLimit => PrimaryCause::LifecycleWorkLimit,
+            LifecycleError::FailureOutcomeRequired => PrimaryCause::LifecycleFailureOutcomeRequired,
+        },
+        FixtureError::Worker(error) => match error {
+            WorkerError::Preparation => PrimaryCause::WorkerPreparation,
+            WorkerError::Activation => PrimaryCause::WorkerActivation,
+            WorkerError::Running => PrimaryCause::WorkerRunning,
+            WorkerError::Cleanup => PrimaryCause::WorkerCleanup,
+        },
+        FixtureError::TokenObservation(_) => PrimaryCause::TokenObservation,
+        FixtureError::PrivilegeAdmission(_) => PrimaryCause::PrivilegeAdmission,
+        FixtureError::ServiceFailed => PrimaryCause::ServiceFailed,
+        FixtureError::OutcomeUnavailable => PrimaryCause::OutcomeUnavailable,
+        FixtureError::Cleanup(_) => PrimaryCause::NestedCleanupNotTraversed,
     }
 }
 
-/// Decision-owner facts; no caller-supplied text, field name or raw payload.
-#[derive(Clone, Copy)]
-pub(super) enum Event {
-    /// The invocation exists; this is not a successful startup status claim.
-    StartObserved,
-    /// Dormant readiness and the Running status were actually acknowledged.
-    RunningAcknowledged,
-    /// The owner fenced new admission before fallible Stop work.
-    AdmissionClosed,
-    /// The existing earliest failure, not an additional error chain.
-    PrimaryFailure(FailureCode),
-    /// A later actual completion acknowledged failed cleanup.
-    CompletionFailure(FailureCode),
-    /// A later `StopPending` report was refused or unacknowledged.
-    StopReportFailure(FailureCode),
-    /// A later terminal report was refused or unacknowledged.
-    TerminalReportFailure(FailureCode),
-    /// Custody resolved and terminal reporting attempted, including failed reports.
-    /// This explicitly does not mean successful Stopped or a Clean result.
-    Finished,
-    /// A retained original operation failure, independent of cleanup or Stop.
-    OperationFailure(FailureCode),
-}
-
-impl Event {
-    /// Stable explicit (event, severity, cause) mapping: INFO=1, ERROR=2.
-    const fn fields(self) -> (u8, u8, u8) {
-        match self {
-            Self::StartObserved => (1, 1, 0),
-            Self::RunningAcknowledged => (2, 1, 0),
-            Self::AdmissionClosed => (3, 1, 0),
-            Self::PrimaryFailure(code) => (4, 2, code.0),
-            Self::CompletionFailure(code) => (5, 2, code.0),
-            Self::StopReportFailure(code) => (6, 2, code.0),
-            Self::TerminalReportFailure(code) => (7, 2, code.0),
-            Self::Finished => (8, 1, 0),
-            Self::OperationFailure(code) => (9, 2, code.0),
-        }
+/// Preserve each lifecycle refusal while retaining native payloads at their owner.
+pub(super) const fn lifecycle_cause(error: &LifecycleError<NativeError>) -> LifecycleCause {
+    match error {
+        LifecycleError::Report(_) => LifecycleCause::Report,
+        LifecycleError::DeadlineElapsed => LifecycleCause::DeadlineElapsed,
+        LifecycleError::InvalidTransition => LifecycleCause::InvalidTransition,
+        LifecycleError::ReportingFailed => LifecycleCause::ReportingFailed,
+        LifecycleError::TimeReversed => LifecycleCause::TimeReversed,
+        LifecycleError::DeadlineOverflow => LifecycleCause::DeadlineOverflow,
+        LifecycleError::CheckpointOverflow => LifecycleCause::CheckpointOverflow,
+        LifecycleError::OutstandingWork => LifecycleCause::OutstandingWork,
+        LifecycleError::WorkLimit => LifecycleCause::WorkLimit,
+        LifecycleError::FailureOutcomeRequired => LifecycleCause::FailureOutcomeRequired,
     }
 }
 
-/// Sole encoding producer; private bytes prevent arbitrary sink payload admission.
-#[derive(Clone, Copy)]
-struct EncodedRecord([u8; RECORD_BYTES]);
-
-/// Concrete finite sink. Unavailable admission is a bounded injected sink failure,
-/// not a native channel observation. No callback can stall the service owner.
-pub(super) struct MemorySink {
-    /// Fixed encoded storage; only the initialized prefix is observable.
-    records: [[u8; RECORD_BYTES]; CAPACITY],
-    /// Always in 0..=CAPACITY, changed only after obtaining a free slot.
-    len: usize,
-    /// Fixed route availability; it changes no service policy or authority.
-    available: bool,
-    /// Saturating count of admissions refused by a full route.
-    full: u32,
-    /// Saturating count of admissions refused by an unavailable route.
-    unavailable: u32,
-}
-
-impl MemorySink {
-    /// Construct empty fixed storage with explicit route availability.
-    pub(super) const fn new(available: bool) -> Self {
-        Self {
-            records: [[0; RECORD_BYTES]; CAPACITY],
-            len: 0,
-            available,
-            full: 0,
-            unavailable: 0,
-        }
-    }
-
-    /// Attempt exactly once, retaining the first records and independent loss.
-    /// A full/unavailable sink neither retries nor recursively emits a failure.
-    fn try_emit(&mut self, record: EncodedRecord) {
-        if !self.available {
-            self.unavailable = self.unavailable.saturating_add(1);
-            return;
-        }
-        if let Some(slot) = self.records.get_mut(self.len) {
-            *slot = record.0;
-            self.len += 1;
-        } else {
-            self.full = self.full.saturating_add(1);
-        }
-    }
-
-    /// Observe only the admitted prefix, without draining or acknowledging work.
-    #[cfg(test)]
-    pub(super) fn records(&self) -> &[[u8; RECORD_BYTES]] {
-        self.records.get(..self.len).unwrap_or(&[])
-    }
-
-    /// Read (full, unavailable) loss without emitting a recursive health event.
-    #[cfg(test)]
-    pub(super) const fn loss(&self) -> (u32, u32) {
-        (self.full, self.unavailable)
-    }
-
-    /// Inject preoccupied storage; sentinel bytes are a test fixture, never emitted
-    /// by a production encoder or a claimed observed service transition.
-    #[cfg(test)]
-    pub(super) const fn full() -> Self {
-        Self {
-            records: [[0; RECORD_BYTES]; CAPACITY],
-            len: CAPACITY,
-            available: true,
-            full: 0,
-            unavailable: 0,
-        }
+/// Keep preparation, activation, running and cleanup causes distinct.
+pub(super) const fn worker_cause(error: WorkerError) -> WorkerCause {
+    match error {
+        WorkerError::Preparation => WorkerCause::Preparation,
+        WorkerError::Activation => WorkerCause::Activation,
+        WorkerError::Running => WorkerCause::Running,
+        WorkerError::Cleanup => WorkerCause::Cleanup,
     }
 }
 
-/// Process composition of separate routes. None means optional output is off;
-/// no user filter string, environment directive or extra authority is accepted.
+/// Finite executable composition; optional absence selects the shared Off profile.
+/// Consumers carry no callbacks, paths or authority over the service owner.
 pub(super) struct Sinks {
-    /// Independent required route, including INFO events.
-    required: MemorySink,
-    /// Optional duplicate context cannot consume the required allocation.
-    optional: Option<MemorySink>,
+    /// Independent fixed routes, always present even when optional output is Off.
+    routes: MemoryRoutes,
+    /// Optional duplicate eligibility, owned by the shared router.
+    optional: OptionalProfile,
 }
 
 impl Sinks {
-    /// Bind finite concrete routes without executing external work.
-    pub(super) const fn new(required: MemorySink, optional: Option<MemorySink>) -> Self {
-        Self { required, optional }
+    /// Bind both finite consumers without starting work or accepting raw bytes.
+    pub(super) fn new(required: MemoryConsumer, optional: Option<MemoryConsumer>) -> Self {
+        let (optional, profile): (MemoryConsumer, OptionalProfile) = match optional {
+            Some(consumer) => (consumer, OptionalProfile::Info),
+            None => (
+                MemoryConsumer::new(windows_platform::diagnostics::ConsumerState::Available),
+                OptionalProfile::Off,
+            ),
+        };
+        Self {
+            routes: MemoryRoutes::new(required, optional),
+            optional: profile,
+        }
     }
 }
 
-/// One invocation's projection and routing owner, holding no service capability.
+/// One role-bound invocation's shared routing owner; no semantic table lives here.
 pub(super) struct Diagnostics {
-    /// Fixed composition role, bound inside actual invocation construction.
-    role: LabRole,
-    /// Next local sequence; None permanently refuses sequence reuse.
-    next_sequence: Option<u32>,
-    /// Saturating loss after sequence exhaustion, separately visible from sinks.
-    sequence_loss: u32,
-    /// Two independent fixed resource allocations.
-    sinks: Sinks,
+    /// Sole reusable producer/queue/consumer owner, retained through final receipt.
+    router: Router,
 }
 
 impl Diagnostics {
-    /// Begin at local sequence one; no cross-process identity is asserted.
-    pub(super) const fn new(role: LabRole, sinks: Sinks) -> Self {
+    /// Bind a fixed role once, with no positive metadata issuer or ambient read.
+    pub(super) fn new(role: LabRole, sinks: Sinks) -> Self {
+        let component: Component = match role {
+            LabRole::Engine => Component::Engine,
+            LabRole::ClockBroker => Component::ClockBroker,
+        };
         Self {
-            role,
-            next_sequence: Some(1),
-            sequence_loss: 0,
-            sinks,
+            router: Router::new(
+                component,
+                sinks.optional,
+                ImportanceMask::all(),
+                sinks.routes,
+            ),
         }
     }
 
-    /// Project before queuing, attempt required first, then the optional route.
-    /// Return no service decision or success/failure signal to the caller.
-    pub(super) fn emit(&mut self, event: Event) {
-        let Some(sequence) = self.next_sequence else {
-            self.sequence_loss = self.sequence_loss.saturating_add(1);
-            return;
-        };
-        self.next_sequence = sequence.checked_add(1);
-        let role = match self.role {
-            LabRole::Engine => 1,
-            LabRole::ClockBroker => 2,
-        };
-        let (event, severity, cause) = event.fields();
-        let [a, b, c, d] = sequence.to_le_bytes();
-        let record = EncodedRecord([1, role, event, severity, cause, a, b, c, d]);
-        self.sinks.required.try_emit(record);
-        if let Some(optional) = &mut self.sinks.optional {
-            optional.try_emit(record);
-        }
+    /// Emit only an actual closed decision and its frozen lifecycle observation.
+    pub(super) fn emit(&mut self, event: Event, observation: DiagnosticObservation) {
+        self.router.emit(event, observation);
     }
 
-    /// Observe the actual required output without modifying owner decisions.
-    #[cfg(test)]
-    pub(super) const fn required(&self) -> &MemorySink {
-        &self.sinks.required
+    /// Attempt at most one original per route, without reading time or service state.
+    pub(super) fn pump_one(&mut self) {
+        self.router.pump_one();
     }
 
-    /// Observe optional output, preserving explicit Off as absence.
+    /// Observe actual consumption and health without advancing either owner.
     #[cfg(test)]
-    pub(super) const fn optional(&self) -> Option<&MemorySink> {
-        self.sinks.optional.as_ref()
+    pub(super) fn snapshot(&self) -> DiagnosticSnapshot {
+        self.router.snapshot()
+    }
+
+    /// Seal production and consume at most sixteen remaining originals per route.
+    pub(super) fn finish(&mut self) -> DiagnosticSnapshot {
+        self.router.finish()
     }
 }
 

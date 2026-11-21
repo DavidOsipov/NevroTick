@@ -694,6 +694,114 @@ class EvidenceTests(unittest.TestCase):
             with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
                 MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
 
+    def service_diagnostics_role(self):
+        """Independent one-owner child; the prior service gates remain literal."""
+        _, historical = self.service_lifecycle_role()
+        subjects = (("diagnostics", "crates/windows-platform/src/diagnostics.rs"),)
+        return (MODULE.Scope("windows-platform", subjects, "policy/service-analysis.json"),
+                {**historical, "schema_version": 6, "subjects": dict(subjects),
+                 "critical_files": ["crates/windows-platform/src/diagnostics.rs"],
+                 "mutation_jobs": 4, "mutation_process_limit": 512})
+
+    def test_service_schema6_admits_only_the_shared_diagnostics_child(self):
+        scope, policy = self.service_diagnostics_role()
+        for lane in ("coverage", "mutation", "all"):
+            self.assertEqual(MODULE.admission_profile(
+                SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy), "stable-core")
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        for wrong in (MODULE.Scope("nevrotick-windows-service-fixture", scope.subjects, scope.policy),
+                      MODULE.Scope(scope.package, (("diagnostics", "tools/windows-service-fixture/src/diagnostics.rs"),), scope.policy),
+                      MODULE.Scope(scope.package, (("other", scope.subjects[0][1]),), scope.policy),
+                      MODULE.Scope(scope.package, (*scope.subjects, ("lifecycle", "crates/windows-platform/src/service.rs")), scope.policy),
+                      MODULE.Scope(scope.package, scope.subjects * 2, scope.policy),
+                      MODULE.Scope(scope.package, scope.subjects, "other.json")):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+        for key, value in (("schema_version", True), ("schema_version", 6.0), ("schema_version", 5),
+                ("subjects", {}), ("critical_files", []), ("tool_admission_profile", "full"),
+                ("coverage_minimum_line_percent", 89), ("mutation_minimum_viable_killed_percent", 94),
+                ("mutation_jobs", True), ("mutation_jobs", 1), ("mutation_process_limit", 128),
+                ("jobs", 12), ("test_threads", 2), ("coverage_test_threads", True),
+                ("coverage_wall_seconds", 301), ("enumeration_wall_seconds", 121),
+                ("mutation_wall_seconds", 1201), ("mutation_build_seconds", 91),
+                ("mutation_test_seconds", 61), ("maximum_mutants", 513),
+                ("mutation_message_format", "human"), ("mutation_equivalences", [{"excluded": True}]),
+                ("mutation_error_values", {})):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {name: value for name, value in policy.items() if name != key})
+        for lane in ("enumerate", "contracts", "fuzz", "proof"):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+
+    def test_service_diagnostics_coverage_uses_the_package_and_exact_full_export_owner(self):
+        scope, policy = self.service_diagnostics_role()
+        full = "/work/source/crates/windows-platform/src/diagnostics.rs"
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary); report = {}; calls = []
+            def run(label, command, timeout):
+                calls.append(label)
+                self.assertEqual((label, timeout), ("coverage", 300))
+                self.assertEqual(command, [str(work / "tools/cargo-llvm-cov"), "llvm-cov", "--package", "windows-platform",
+                    "--frozen", "--jobs", "6", "--lib", "--tests", "--json", "--output-path", "/work/coverage.json",
+                    "--failure-mode", "any", "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                    "--fail-under-file-lines", "90", "--", "--test-threads=1"])
+                (work / "coverage.json").write_text(json.dumps({"data": [{"files": [
+                    {"filename": full, "summary": {"lines": {"count": 10, "covered": 9}}},
+                    {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics.rs",
+                     "summary": {"lines": {"count": 10, "covered": 10}}}]}]}))
+                return "test result: ok. 2 passed; 0 failed; 0 ignored;"
+            MODULE.run_analysis_lanes(scope, dict(scope.subjects), policy, work, work / "tools", run, report, "coverage")
+            self.assertEqual(calls, ["coverage"])
+            self.assertEqual(set(report["coverage"]), {"diagnostics"})
+            self.assertEqual(report["coverage"]["diagnostics"]["line_percent"], 90)
+            self.assertEqual(report["coverage"]["diagnostics"]["tests_executed"], 2)
+        for files in ([], [{"filename": full, "summary": {"lines": {"count": 0, "covered": 0}}}],
+                      [{"filename": full, "summary": {"lines": {"count": 10, "covered": 8}}}],
+                      [{"filename": "/work/source/tools/windows-service-fixture/src/diagnostics.rs",
+                        "summary": {"lines": {"count": 10, "covered": 10}}}]):
+            with self.subTest(files=files), self.assertRaises(MODULE.Incomplete):
+                MODULE.coverage_counts(scope, {"data": [{"files": files}]}, full)
+
+    def test_service_diagnostics_mutation_keeps_exact_package_file_and_nonempty_generated_inventory(self):
+        scope, policy = self.service_diagnostics_role()
+        tools = Path("/admitted/tools"); report = {}; calls = []
+        descriptor = {"name": "diagnostic_guard", "file": "crates/windows-platform/src/diagnostics.rs",
+                      "package": "windows-platform", "replacement": "false"}
+        expected = ["/admitted/tools/cargo-mutants", "mutants", "--package", "windows-platform", "--file",
+                    "crates/windows-platform/src/diagnostics.rs", "--test-workspace", "false", "--cap-lints", "false",
+                    "--jobs", "4", "--jobserver", "true", "--jobserver-tasks", "4", "--cargo-arg=--message-format=json"]
+        def run(label, command, timeout):
+            calls.append(label)
+            self.assertEqual(label, "mutation-enumeration:diagnostics")
+            self.assertEqual(command, [*expected, "--list", "--json"])
+            self.assertEqual(timeout, 120)
+            return json.dumps([descriptor])
+        with patch.object(MODULE.time, "monotonic", return_value=100):
+            listing = MODULE.enumerate_mutation_inventories(scope, dict(scope.subjects), policy, tools, run, report,
+                deadline=220, maximum_per_file=512, maximum_total=512)
+            with self.assertRaisesRegex(MODULE.Incomplete, "empty"):
+                MODULE.enumerate_mutation_inventories(scope, dict(scope.subjects), policy, tools,
+                    lambda *args: "[]", {}, deadline=220, maximum_per_file=512, maximum_total=512)
+        self.assertEqual(calls, ["mutation-enumeration:diagnostics"])
+        self.assertEqual(listing.inventories, {"diagnostics": {"diagnostic_guard": descriptor}})
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_reviewed_mutation_inventories(scope, policy, listing.inventories)
+        policy["mutation_inventories"] = {"diagnostics": {"count": 1,
+            "sha256": MODULE.canonical_sha256(listing.inventories["diagnostics"])}}
+        MODULE.admit_reviewed_mutation_inventories(scope, policy, listing.inventories)
+        command = [*expected, "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                   "--output", "/work/mutation/diagnostics"]
+        MODULE.mutation_campaign_command(scope, tools, "diagnostics", command,
+            expected_jobs=4, expected_message_format="json", policy=policy)
+        for old, new in (("windows-platform", "nevrotick-windows-service-fixture"),
+                         ("crates/windows-platform/src/diagnostics.rs", "tools/windows-service-fixture/src/diagnostics.rs")):
+            with self.subTest(replacement=new), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(scope, tools, "diagnostics", [new if item == old else item for item in command],
+                    expected_jobs=4, expected_message_format="json", policy=policy)
+
     def test_service_schemas_reject_crossed_worker_and_task_profiles(self):
         old_scope, old_policy = self.service_lifecycle_role()
         subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
@@ -5316,6 +5424,73 @@ class EngineSourcePolicyAdmissionTests(unittest.TestCase):
         poison = copy.deepcopy(policy); poison["binding"]["source_file_count"] = True
         with self.assertRaises(MODULE.Incomplete):
             MODULE.admit_reviewed_mutation_inventories(self.scope, poison, {"source_policy": inventory})
+
+
+
+
+class ServiceCodecAdmissionTests(unittest.TestCase):
+    """Exact schema7 only; preserve historical global/stable admission contracts."""
+
+    @staticmethod
+    def fixture():
+        policy = json.loads((ROOT / "policy/service-analysis.json").read_text())
+        return MODULE.Scope("windows-platform", (("diagnostics", "crates/windows-platform/src/diagnostics.rs"),),
+                            "policy/service-analysis.json"), policy
+
+    def test_full_admission_is_exclusive_to_explicit_exact_codec_fuzz(self):
+        scope, policy = self.fixture()
+        for lane in ("coverage", "mutation", "all", "contracts", "fuzz"):
+            expected = "full" if lane == "fuzz" else "stable-core"
+            self.assertEqual(MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile=expected),
+                                                     scope, policy), expected)
+            wrong = "stable-core" if lane == "fuzz" else "full"
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile=wrong), scope, policy)
+        for lane in ("enumerate", "proof", "unknown", None):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+        for change in ({"schema_version": True}, {"schema_version": 7.0}, {"subjects": {}},
+                       {"tool_admission_profile": "full"}, {"mutation_jobs": 1},
+                       {"coverage_minimum_line_percent": 89}, {"mutation_minimum_viable_killed_percent": 94},
+                       {"external_contracts": {}}, {"coverage_guided_fuzzing": {}}, {"foreign": 1}):
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane="fuzz", tool_admission_profile="full"), scope, {**policy, **change})
+        for wrong in (MODULE.Scope("time-domain", scope.subjects, scope.policy),
+                      MODULE.Scope(scope.package, (("diagnostics", "foreign.rs"),), scope.policy),
+                      MODULE.Scope(scope.package, scope.subjects, "foreign.json")):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane="fuzz", tool_admission_profile="full"), wrong, policy)
+
+    def test_codec_library_and_raw_refusal_cause_keep_actual_artifact_and_primary_owner(self):
+        manifest = "/work/source/crates/windows-platform/Cargo.toml"
+        artifact = {"reason": "compiler-artifact", "package_id": "path+file:///work/source/crates/windows-platform#0.0.0",
+                    "manifest_path": manifest, "target": {"name": "windows_platform", "kind": ["lib"]},
+                    "filenames": ["/work/target/debug/libwindows_platform.rlib"]}
+        self.assertEqual(MODULE.library_artifact(json.dumps(artifact), "windows-platform", manifest),
+                         "/work/target/debug/libwindows_platform.rlib")
+        for wrong in ({"target": {"name": "windows_platform", "kind": ["test"]}},
+                      {"manifest_path": "/work/source/crates/time-domain/Cargo.toml"},
+                      {"filenames": []}):
+            with self.subTest(wrong=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.library_artifact(json.dumps({**artifact, **wrong}), "windows-platform", manifest)
+        for active, passive in (("Component", "ComponentClaim"), ("ServiceEvent", "ServiceEventClaim")):
+            path = "/work/contract-inputs/codec_claim.rs"
+            diagnostic = EvidenceTests._external_diagnostic(message=f"expected `{active}`, found `{passive}`", line=5)
+            diagnostic["spans"][0]["file_name"] = path
+            diagnostic["rendered"] = "error[E0308]: mismatched types\n"
+            specimen = {"code": "E0308", "line": 5, "tokens": [active, passive]}
+            raw = {"exit_code": 1, "failure": None, "output": json.dumps(diagnostic)}
+            MODULE.privacy_error(raw, "E0308")
+            MODULE.compiler_cause(raw, specimen, path)
+            for change in ({"exit_code": 0}, {"failure": "timeout"}, {"output": ""},
+                           {"output": json.dumps({**diagnostic, "message": "expected u8, found u16"})}):
+                with self.subTest(active=active, change=change), self.assertRaises(MODULE.Incomplete):
+                    MODULE.compiler_cause({**raw, **change}, specimen, path)
+            wrong = copy.deepcopy(diagnostic); wrong["spans"][0]["file_name"] = "/work/foreign.rs"
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.compiler_cause({**raw, "output": json.dumps(wrong)}, specimen, path)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.compiler_cause(raw["output"], specimen, path)
 
 
 if __name__ == "__main__":

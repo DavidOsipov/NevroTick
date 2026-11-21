@@ -30,7 +30,7 @@ use windows_sys::Win32::{
 
 use crate::{
     FixtureError, LabRole, NativeError, NativeOperation,
-    host::{self, Clock, Dispatcher, StatusFactory, Wait},
+    host::{self, Clock, Dispatcher, HostReceipt, StatusFactory, Wait},
 };
 
 /// Fixed self-token capture, isolated from the SCM callback surface.
@@ -44,7 +44,7 @@ static STOP: StopNotification = StopNotification::new();
 /// Exactly one initialized existing `ServiceMain` thread handle, never reset/taken.
 static OWNER: OnceLock<Thread> = OnceLock::new();
 /// Immutable actual owner result; no successful status is published before acknowledgement.
-static OUTCOME: OnceLock<Result<(), FixtureError>> = OnceLock::new();
+static OUTCOME: OnceLock<HostReceipt> = OnceLock::new();
 /// Separately owned original dispatcher failure; never replaces the owner receipt.
 /// Initially empty, written only after this process's sole dispatch attempt fails.
 static DISPATCH_FAILURE: OnceLock<FixtureError> = OnceLock::new();
@@ -224,8 +224,8 @@ extern "system" fn broker_service_main(argc: u32, _argv: *mut *mut u16) {
 /// An unexpected panic terminates this fixture instead of resuming its work.
 fn service_main(role: LabRole, argc: u32) {
     host::guard_service_main(|| {
-        let result = if OWNER.set(thread::current()).is_err() {
-            Err(FixtureError::OwnerAlreadySet)
+        let receipt: HostReceipt = if OWNER.set(thread::current()).is_err() {
+            HostReceipt::owner_already_set(role)
         } else {
             host::run_service(
                 role,
@@ -240,7 +240,7 @@ fn service_main(role: LabRole, argc: u32) {
         // This is only an immutable acknowledgement receipt: no cleanup, new
         // operation, logging or status-context reuse follows terminal reporting.
         // A dispatcher-return race without a receipt is explicitly unavailable.
-        let _earlier_outcome = OUTCOME.set(result);
+        let _earlier_outcome = OUTCOME.set(receipt);
     });
 }
 
@@ -260,6 +260,14 @@ extern "system" fn control_handler(
         owner.unpark();
     }
     decoded.return_code()
+}
+
+/// Borrow the immutable snapshot from the same once-published actual result.
+/// Before a receipt exists this returns None; observation never polls, consumes,
+/// drains, reports status or acknowledges worker/native/durable completion.
+pub(super) fn retained_diagnostics()
+-> Option<&'static windows_platform::diagnostics::DiagnosticSnapshot> {
+    OUTCOME.get().map(HostReceipt::diagnostics)
 }
 
 /// Enter one actual fixed-role dispatcher with no install/start-service operations.

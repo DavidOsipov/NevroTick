@@ -24,6 +24,7 @@ use nevrotick_engine::{
     SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, Status, TransportFacts,
 };
 use windows_platform::{
+    diagnostics::{ConsumerState, DiagnosticSnapshot, MemoryConsumer},
     privilege_observation::{PrivilegeLuid, PrivilegeSnapshot, ServicePrivilegeIds},
     scm::StopNotification,
     service::{LifecycleError, ServiceState, ServiceStatus, StatusReporter, StopOutcome},
@@ -35,10 +36,11 @@ use super::{
 use crate::{
     FixtureError, LabRole, NativeError, NativeOperation, TokenCleanupOutcome,
     TokenObservationCause, TokenObservationFailure,
+    diagnostics::Sinks,
     error::WorkerError,
     host::{
         Clock, InvocationPoll, ServiceInvocation, StatusFactory, TokenObserver, Worker,
-        WorkerCompletion, WorkerFinish, WorkerWake, start_invocation,
+        WorkerCompletion, WorkerFinish, WorkerWake, start_invocation_with_diagnostics,
     },
 };
 
@@ -212,8 +214,9 @@ fn worker_for(
 ) -> Check<(EngineWorker, SourceConfigurationSnapshot)> {
     let authority: &Mutex<SourcePolicyAuthority> = AUTHORITY
         .get_or_init(|| {
+            // Existing cases own 0..10; the four diagnostic histories own 11..14.
             let limits: SourcePolicyLimits =
-                SourcePolicyLimits::new(11, 16, Duration::from_millis(1), Duration::from_secs(1))?;
+                SourcePolicyLimits::new(15, 16, Duration::from_millis(1), Duration::from_secs(1))?;
             SourcePolicyAuthority::install(limits).map(Mutex::new)
         })
         .as_ref()
@@ -274,6 +277,26 @@ impl Rig {
         peer: &Rc<UdpSocket>,
         terminal_trace: TerminalTrace,
     ) -> Check<Self> {
+        Self::start_observing_with_sinks(
+            worker,
+            admission,
+            peer,
+            terminal_trace,
+            Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+        )
+    }
+
+    /// Select finite concrete consumers before the same actual host invocation.
+    /// This changes no Engine worker, status, clock, peer or completion owner.
+    /// # Errors
+    /// Preserve the same original observer/startup failures as ordinary hosting.
+    fn start_observing_with_sinks(
+        worker: EngineWorker,
+        admission: Admission,
+        peer: &Rc<UdpSocket>,
+        terminal_trace: TerminalTrace,
+        sinks: Sinks,
+    ) -> Check<Self> {
         let proof: Arc<Shared> = Arc::clone(&worker.shared);
         let stop: Rc<StopNotification> = Rc::new(StopNotification::new());
         let acknowledged: Rc<RefCell<Vec<ServiceStatus>>> = Rc::new(RefCell::new(Vec::new()));
@@ -287,14 +310,20 @@ impl Rig {
         }));
         let mut clock: OwnerClock = OwnerClock(Instant::now());
         let mut token: Token = observed_token(admission)?;
-        let invocation: Invocation = start_invocation(
+        let invocation: Invocation = start_invocation_with_diagnostics(
             LabRole::Engine,
             0,
             &mut factory,
             &mut token,
             &mut clock,
             &stop,
-            worker,
+            (worker, sinks),
+        )
+        .map_err(
+            |receipt: crate::host::HostReceipt| match receipt.into_result() {
+                Err(error) => error,
+                Ok(()) => FixtureError::OutcomeUnavailable,
+            },
         )?;
         Ok(Self {
             invocation,
@@ -620,8 +649,18 @@ fn managed_service_acquisition_retains_real_report_without_admitting_time() -> C
     tail.release()?;
     rig.finish()?;
     assert_eq!(rig.invocation.outstanding_work(), 0);
-    assert_eq!(rig.invocation.take_result(), Some(Ok(())));
-    assert_eq!(rig.invocation.take_result(), None);
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Ok(()))
+    );
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        None
+    );
     assert_eq!(rig.report()?.series().end(), SeriesEnd::Completed);
     assert!(peer_has_no_datagram(&peer)?);
     assert_eq!(
@@ -633,6 +672,170 @@ fn managed_service_acquisition_retains_real_report_without_admitting_time() -> C
             ServiceState::Stopped
         ]
     );
+    Ok(())
+}
+
+/// Independently observe all diagnostic consumer outcomes and literal healthy
+/// originals after the actual Engine host has completed and joined.
+/// # Panics
+/// Fails if enqueue, consumption, literal fields or completeness differ.
+fn assert_diagnostic_history(snapshot: &DiagnosticSnapshot, state: ConsumerState) {
+    let health: &windows_platform::diagnostics::RouteHealth = snapshot.required().health();
+    assert_eq!(health.queued().value(), 4);
+    assert_eq!(health.consumer_attempts().value(), 4);
+    assert_eq!(
+        health.accepted().value(),
+        if state == ConsumerState::Available {
+            4
+        } else {
+            0
+        }
+    );
+    assert_eq!(
+        health.consumer_full().value(),
+        if state == ConsumerState::Full { 4 } else { 0 }
+    );
+    assert_eq!(
+        health.consumer_rejected().value(),
+        if state == ConsumerState::Reject { 4 } else { 0 }
+    );
+    assert_eq!(
+        health.consumer_unavailable().value(),
+        if state == ConsumerState::Unavailable {
+            4
+        } else {
+            0
+        }
+    );
+    assert_eq!(
+        snapshot.required().history_complete(),
+        state == ConsumerState::Available
+    );
+    assert_eq!(snapshot.optional().health().accepted().value(), 4);
+    if state == ConsumerState::Available {
+        assert!(
+            snapshot
+                .required()
+                .history()
+                .records()
+                .eq(snapshot.optional().history().records())
+        );
+    }
+    for (sequence, (bytes, event_id)) in
+        (1_u64..).zip(snapshot.optional().history().records().zip([1_u8, 2, 3, 8]))
+    {
+        assert_eq!(&bytes[..8], &[2, 1, 1, event_id, 3, 5, 1, 0]);
+        assert_eq!(&bytes[8..16], &sequence.to_le_bytes());
+        assert_eq!(bytes[16], 1);
+        assert!(bytes[25..128].iter().all(|byte| *byte == 0));
+    }
+    assert!(snapshot.sealed());
+    assert_eq!(snapshot.required().pending(), 0);
+}
+
+/// One case with four real loopback histories: diagnostic consumer refusal must
+/// preserve the original completed series, zero admitted time and physical join.
+/// The peer is an owned socket and the original worker guard joins on every exit.
+/// # Errors
+/// Preserve actual construction, peer I/O, finite pause and join failures.
+/// # Panics
+/// Fails if queue admission is mistaken for consumer acceptance or changes work.
+#[test]
+fn real_engine_join_and_series_survive_each_diagnostic_consumer_condition() -> Check {
+    let _case: MutexGuard<'_, ()> = exclusive_case();
+    for (index, state) in [
+        (11_usize, ConsumerState::Available),
+        (12_usize, ConsumerState::Full),
+        (13_usize, ConsumerState::Reject),
+        (14_usize, ConsumerState::Unavailable),
+    ] {
+        let peer: Rc<UdpSocket> = peer()?;
+        let endpoint: SocketAddr = peer.local_addr()?;
+        let (mut worker, expected): (EngineWorker, SourceConfigurationSnapshot) =
+            worker_for(index, endpoint, endpoint)?;
+        let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
+        worker.hooks.after_return = Some(hook);
+        let mut rig: Rig = Rig::start_observing_with_sinks(
+            worker,
+            Admission::Accept,
+            &peer,
+            TerminalTrace::Silent,
+            Sinks::new(
+                MemoryConsumer::new(state),
+                Some(MemoryConsumer::new(ConsumerState::Available)),
+            ),
+        )?;
+        assert!(peer_has_no_datagram(&peer)?);
+        assert!(matches!(rig.step(), InvocationPoll::Pending(_)));
+        assert_eq!(rig.invocation.outstanding_work(), 1);
+        for _ in 0..3 {
+            let (query, client): ([u8; PACKET_BYTES], SocketAddr) = receive_query(&peer)?;
+            respond(&peer, &query, client)?;
+        }
+        tail.wait()?;
+        assert_eq!(rig.report()?.series().end(), SeriesEnd::Completed);
+        assert_eq!(rig.report()?.series().admitted_sample_count(), 0);
+        assert!(rig.report()?.series().primary_failure().is_none());
+        assert!(rig.report()?.series().stop_cleanup_failure().is_none());
+        assert!(
+            rig.report()?
+                .series()
+                .invalidate_cleanup_failure()
+                .is_none()
+        );
+        assert_eq!(rig.report()?.series().attempts().len(), 3);
+        for attempt in rig.report()?.series().attempts() {
+            let slot: &SlotReport = attempt.report().ok_or("missing real completed slot")?;
+            assert!(slot.sent());
+            assert_eq!(slot.status(), Status::Header);
+            let facts: &TransportFacts = slot.facts().ok_or("missing original transport facts")?;
+            assert!(
+                facts
+                    .source_configuration()
+                    .is_some_and(|actual| actual.same_configuration(&expected))
+            );
+            assert!(matches!(
+                facts.measurement(),
+                Err(MeasurementRefusal::Unavailable)
+            ));
+        }
+        rig.request_stop();
+        assert_eq!(
+            rig.step(),
+            InvocationPoll::JoinTail(Duration::from_millis(20))
+        );
+        assert_eq!(rig.invocation.outstanding_work(), 1);
+        assert!(!rig.states().contains(&ServiceState::Stopped));
+        assert!(rig.invocation.take_receipt().is_none());
+        tail.release()?;
+        rig.finish()?;
+        assert!(rig.worker.returned.load(Ordering::Acquire));
+        assert_eq!(rig.invocation.outstanding_work(), 0);
+        let receipt: crate::host::HostReceipt = rig
+            .invocation
+            .take_receipt()
+            .ok_or("joined host receipt missing")?;
+        assert_eq!(receipt.result(), &Ok(()));
+        let snapshot: &DiagnosticSnapshot = receipt.diagnostics();
+        assert_diagnostic_history(snapshot, state);
+        assert_eq!(
+            rig.invocation
+                .take_receipt()
+                .map(crate::host::HostReceipt::into_result),
+            None
+        );
+        assert_eq!(rig.report()?.series().end(), SeriesEnd::Completed);
+        assert!(peer_has_no_datagram(&peer)?);
+        assert_eq!(
+            rig.states(),
+            [
+                ServiceState::StartPending,
+                ServiceState::Running,
+                ServiceState::StopPending,
+                ServiceState::Stopped
+            ]
+        );
+    }
     Ok(())
 }
 
@@ -661,7 +864,10 @@ fn service_admission_and_running_acknowledgement_gate_real_engine_activation() -
         assert!(rig.worker.result.get().is_none());
         assert!(!rig.worker.returned.load(Ordering::Acquire));
         assert!(peer_has_no_datagram(&peer)?);
-        let output: Option<Result<(), FixtureError>> = rig.invocation.take_result();
+        let output: Option<Result<(), FixtureError>> = rig
+            .invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result);
         match admission {
             Admission::DenyToken => {
                 assert_eq!(
@@ -713,7 +919,9 @@ fn real_managed_preparation_refusal_preserves_the_source_policy_error() -> Check
         )))
     ));
     assert_eq!(
-        rig.invocation.take_result(),
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
         Some(Err(FixtureError::Worker(WorkerError::Preparation)))
     );
     assert!(peer_has_no_datagram(&peer)?);
@@ -773,7 +981,12 @@ fn stop_between_engine_prepare_and_control_publication_is_sticky() -> Check {
             .all(|attempt| { attempt.not_started_cause() == Some(SeriesNotStartedCause::Stopped) })
     );
     assert_eq!(report.series().admitted_sample_count(), 0);
-    assert_eq!(rig.invocation.take_result(), Some(Ok(())));
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Ok(()))
+    );
     assert!(
         rig.worker
             .gate
@@ -846,7 +1059,12 @@ fn stop_during_real_receive_retains_charge_through_expired_join_tail() -> Check 
     tail.release()?;
     rig.finish()?;
     assert_eq!(rig.invocation.outstanding_work(), 0);
-    assert!(matches!(rig.invocation.take_result(), Some(Err(_))));
+    assert!(matches!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Err(_))
+    ));
     assert!(
         rig.acknowledged
             .borrow()
@@ -907,7 +1125,9 @@ fn real_stale_engine_report_closes_service_admission_without_erasing_the_report(
     assert!(rig.invocation.admission_closed());
     assert_eq!(rig.invocation.outstanding_work(), 0);
     assert_eq!(
-        rig.invocation.take_result(),
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
         Some(Err(FixtureError::Worker(WorkerError::Running)))
     );
     let report: &AcquisitionReport = rig.report()?;
@@ -979,7 +1199,9 @@ fn duplicate_original_control_publication_stops_the_real_series_and_closes_admis
     rig.finish()?;
     assert_eq!(rig.invocation.outstanding_work(), 0);
     assert_eq!(
-        rig.invocation.take_result(),
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
         Some(Err(FixtureError::Worker(WorkerError::Running)))
     );
     let report: &AcquisitionReport = rig.report()?;
@@ -1084,7 +1306,9 @@ fn poisoned_control_publication_retires_the_real_preparation_without_sending() -
     assert_eq!(rig.invocation.outstanding_work(), 0);
     assert!(rig.worker.result.get().is_none());
     assert_eq!(
-        rig.invocation.take_result(),
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
         Some(Err(FixtureError::Worker(WorkerError::Running)))
     );
     assert!(peer_has_no_datagram(&peer)?);
@@ -1249,7 +1473,12 @@ mod unwind {
         rig.finish()?;
         assert_eq!(rig.invocation.outstanding_work(), 0);
         assert_eq!(rig.report()?.series().end(), SeriesEnd::Stopped);
-        assert_eq!(rig.invocation.take_result(), Some(Ok(())));
+        assert_eq!(
+            rig.invocation
+                .take_receipt()
+                .map(crate::host::HostReceipt::into_result),
+            Some(Ok(()))
+        );
         assert!(peer_has_no_datagram(&peer)?);
         eprintln!("{CHILD_FINISHED}");
         Ok(())

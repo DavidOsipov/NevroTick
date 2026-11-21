@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "windows-platform-diagnostics-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+seeded-defect = []
+forwarding-defect = []
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+windows-platform = { path = "../source/crates/windows-platform" }
+
+[[bin]]
+name = "codec"
+path = "target.rs"
+test = false
+doc = false
+bench = false

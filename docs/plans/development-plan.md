@@ -504,8 +504,8 @@ experiments, implementation, interoperability and benefit measurements
 remain unselected and unexecuted. Keep the NTPv4 + NTS baseline and DEC-1 Core.
 This does not add a V1 exit, import a ready implementation item into §8.4's
 hardening queue, or make the proposal an automatic MATH-0 assignment. Current
-§7 continues the W11-W08 first portable catalogue/routing stage after the selected
-P3 Engine composition checkpoint. The accepted post-V1 order remains MATH-0 →
+§7 records the qualified W11-W08 portable catalogue/routing checkpoint and
+its delivery and retention continuation. The accepted post-V1 order remains MATH-0 →
 TRUST-0 → MT-0 → Khronos/Ananke → GEO-0 → Android; native, fuzz, storage, UI and
 formal-work restrictions retain their existing scope.
 
@@ -1200,25 +1200,32 @@ existing [W11-W05/S3.1 Engine composition child](../../tasks/windows11-integrati
 as the bounded source prerequisite. Its [selected source qualification](../../tasks/windows11-integration.md#s31-real-engine-selected-qualification--21-november-2026)
 now completes the None-schedule portable composition: current integrated development,
 all four executable-line gates and the full current worker replay pass, with
-explicit unchanged-owner reuse for the three native-tool cohorts. Native Windows,
+explicit unchanged-owner reuse for the three native-tool cohorts. Signed commit
+`65b8e9a` published that candidate to `main`. Native Windows,
 general worker cleanup transfer and parent P3 remain separate. This narrowly
 supersedes the temporary Core/Engine-only scheduling restriction for the selected
 P3 source child, while retaining Core/Engine priority and every actual hold.
 
-**Next bounded product action — 21 November 2026:** implement all five obligations
-of the existing [W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026).
-Its complete contract freeze and fresh-context independent plan review are ready;
-source implementation, connected service-decision → bounded consumer/health path
-and affected qualification remain planned.
-The current nine-event source supplies real producers; independent operational
-importance, finite optional filtering and inspectable normal-source consumption
-remain missing. Include explicit unavailable producer facts, limits, version
-compatibility and failing-consumer behavior; a new enum alone is insufficient.
-No dependency, native API, diagnostic-session authority or execution hold is
-selected by this continuation. Keep the completed lifecycle evidence scoped;
-rerun affected checks if the next change invalidates it. Final service identities,
-per-role configuration and the supported MSIX pre-start bridge are unfinished
-work at their existing owners, not blanket permission prohibitions.
+**Qualified portable product checkpoint — 21 November 2026.** The
+[W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026)
+connects actual service decisions to a shared checked catalogue and router,
+bounded memory consumers and one retained result and health receipt.
+Development41 passed all twelve lanes on `6ee49a91…`, including 112 fixture
+and 67 platform cases per GNU test mode, 26 platform doctests, format checks,
+GNU and Windows-target Clippy, and fixture rustdoc. The exact decoder and
+passive-claim boundaries retain Fuzz32 and Contracts31 evidence. Shared41
+covered 884/912 executable lines and caught 239/239 viable variants with
+fresh artifacts. The fixture's four line gates and critical-file mutation
+evidence carry forward through the reviewed source and caller scopes.
+The repaired schema 7 reader accepted all 398 existing raw classifications
+on readback and refuses stale Build artifacts. The public campaign stays closed.
+
+Continue the existing delivery and retention stage under W11-W08, with
+W11-W10 and the installed service owners. Freeze the provider and channel
+mapping, access matrix, finite storage and flush behavior before a native
+delivery claim. Final service identities, per-role configuration, installed
+behavior and the supported MSIX pre-start bridge retain their existing
+requirements and execution holds.
 
 The child composes one real, explicit managed-loopback Engine series with the
 existing portable service invocation. Its first source stage changes neither

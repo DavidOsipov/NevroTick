@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure three frozen portable service owners through the existing analysis custodian.
+"""Measure the exact frozen portable service role through the existing custodian.
 
 GPL-2.0-only. No acquisition, host Cargo fallback, native Windows execution,
 formal work, error substitutions or mutation exclusions are admitted here.
@@ -23,6 +23,7 @@ SPEC = importlib.util.spec_from_file_location("service_analysis_shared", ROOT / 
 COMMON = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMMON)
 Incomplete = COMMON.Incomplete
+CODEC = None
 POLICY = "policy/service-analysis.json"
 WRAPPER = "scripts/verify-service-analysis.py"
 CONTROLS = "scripts/tests/test_verify_service_analysis.py"
@@ -34,19 +35,32 @@ PRIVILEGE_SOURCE = "crates/windows-platform/src/privilege_observation.rs"
 PRIVILEGE_TEST_SOURCE = "crates/windows-platform/tests/privilege_observation.rs"
 PRIVILEGE_CONTRACT_SOURCE = "crates/windows-platform/tests/privilege_observation_contracts.rs"
 SUBJECTS = {"lifecycle": SOURCE, "scm": SCM_SOURCE, "privilege": PRIVILEGE_SOURCE}
-ATTRIBUTED_SOURCES = (SOURCE, TEST_SOURCE, SCM_SOURCE, SCM_TEST_SOURCE,
-                      PRIVILEGE_SOURCE, PRIVILEGE_TEST_SOURCE, PRIVILEGE_CONTRACT_SOURCE)
-COMPILER_TARGETS = {"windows_platform", "service", "scm", "privilege_observation", "privilege_observation_contracts"}
+LEGACY_ATTRIBUTED_SOURCES = (SOURCE, TEST_SOURCE, SCM_SOURCE, SCM_TEST_SOURCE,
+                           PRIVILEGE_SOURCE, PRIVILEGE_TEST_SOURCE, PRIVILEGE_CONTRACT_SOURCE)
+DIAGNOSTICS_SOURCE = "crates/windows-platform/src/diagnostics.rs"
+DIAGNOSTICS_UNIT_SOURCE = "crates/windows-platform/src/diagnostics_tests.rs"
+DIAGNOSTICS_TEST_SOURCE = "crates/windows-platform/tests/diagnostics.rs"
+DIAGNOSTICS_SUBJECTS = {"diagnostics": DIAGNOSTICS_SOURCE}
+DIAGNOSTICS_ATTRIBUTED_SOURCES = (DIAGNOSTICS_SOURCE, DIAGNOSTICS_UNIT_SOURCE, DIAGNOSTICS_TEST_SOURCE)
+DIAGNOSTICS_COMPILER_SOURCES = {
+    "windows_platform": (DIAGNOSTICS_SOURCE, DIAGNOSTICS_UNIT_SOURCE),
+    "diagnostics": (DIAGNOSTICS_TEST_SOURCE,),
+}
+ATTRIBUTED_SOURCES = (*LEGACY_ATTRIBUTED_SOURCES, DIAGNOSTICS_SOURCE,
+                      DIAGNOSTICS_UNIT_SOURCE, DIAGNOSTICS_TEST_SOURCE)
+LEGACY_COMPILER_TARGETS = {"windows_platform", "service", "scm", "privilege_observation", "privilege_observation_contracts"}
+COMPILER_TARGETS = LEGACY_COMPILER_TARGETS | {"diagnostics"}
 SCOPE = COMMON.Scope("windows-platform", tuple(SUBJECTS.items()), POLICY)
-BOUND_INPUTS = (
+LEGACY_BOUND_INPUTS = (
     "Cargo.toml", "Cargo.lock", "crates/windows-platform/Cargo.toml",
-    "crates/windows-platform/src/lib.rs", *ATTRIBUTED_SOURCES, WRAPPER, CONTROLS,
+    "crates/windows-platform/src/lib.rs", *LEGACY_ATTRIBUTED_SOURCES, WRAPPER, CONTROLS,
     "scripts/portable-analysis.py", "scripts/tests/test_portable_analysis.py",
     "scripts/analysis-runtime.py", "scripts/check-analysis.py", "scripts/analysis-controls.py",
     "scripts/prepare-product.py", "scripts/verify.py", "scripts/slint_dependency_profile.py",
     "policy/verification-manifest.toml", "policy/analysis-tools.json", "policy/tool-manifest.json",
     "policy/ui-m0-dependencies.json", ".cargo/config.toml", ".cargo/mutants.toml",
 )
+BOUND_INPUTS = (*LEGACY_BOUND_INPUTS, DIAGNOSTICS_SOURCE, DIAGNOSTICS_UNIT_SOURCE, DIAGNOSTICS_TEST_SOURCE)
 FIXED_POLICY = {
     "schema_version": 5, "package": "windows-platform", "subjects": SUBJECTS,
     "critical_files": list(SUBJECTS.values()), "tool_admission_profile": "stable-core",
@@ -58,6 +72,18 @@ FIXED_POLICY = {
     "mutation_message_format": "json", "maximum_mutants": 512,
     "mutation_equivalences": [],
 }
+DIAGNOSTICS_FIXED_POLICY = {
+    **FIXED_POLICY, "schema_version": 6, "subjects": DIAGNOSTICS_SUBJECTS,
+    "critical_files": [DIAGNOSTICS_SOURCE],
+}
+CODEC_FIXED_POLICY = {**DIAGNOSTICS_FIXED_POLICY, "schema_version": 7}
+CODEC_INPUTS = (
+    "policy/service-diagnostics-fuzz-manifest.toml", "policy/service-diagnostics-fuzz.lock",
+    "policy/service-diagnostics-fuzz-target.rs", "scripts/service_diagnostics_analysis.py",
+    "scripts/run-service-analysis.py", "scripts/verify-time-domain-analysis.py", "policy/ntp-wire-analysis.json",
+    "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt",
+)
+CODEC_BOUND_INPUTS = (*BOUND_INPUTS, *CODEC_INPUTS)
 HEX = re.compile(r"[a-f0-9]{64}\Z")
 REMAINING_QUALIFICATION = [
     "Independent source/function/guard reconciliation against the complete generated descriptor inventory, including omitted functions.",
@@ -65,10 +91,48 @@ REMAINING_QUALIFICATION = [
 ]
 
 
+def codec_module():
+    """Load new executable helper bytes only for the role that binds them."""
+    global CODEC
+    if CODEC is None:
+        spec = importlib.util.spec_from_file_location(
+            "service_diagnostics_analysis", ROOT / "scripts/service_diagnostics_analysis.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        if module.INPUTS != CODEC_INPUTS:
+            raise Incomplete("Codec helper input closure differs from its bound role.")
+        module.bind(COMMON, ROOT)
+        CODEC = module
+    return CODEC
+
+
+def selected_subjects(policy: dict) -> dict[str, str]:
+    """Choose only an exact current or retained historical wrapper role."""
+    schema = policy.get("schema_version")
+    if type(schema) is not int or schema not in {5, 6, 7}:
+        raise Incomplete("Unknown exact service wrapper schema.")
+    return SUBJECTS if schema == 5 else DIAGNOSTICS_SUBJECTS
+
+
+def bound_inputs(policy: dict) -> tuple[str, ...]:
+    """Keep the historical freeze intact and bind all new shared controls."""
+    selected_subjects(policy)
+    return (LEGACY_BOUND_INPUTS if policy["schema_version"] == 5 else
+            CODEC_BOUND_INPUTS if policy["schema_version"] == 7 else BOUND_INPUTS)
+
+
 def validate_policy(policy: dict, *, require_binding: bool = True, campaign: bool = False) -> dict:
     """Reject arbitrary subjects, weakened gates, exceptions and incomplete freezes."""
-    if (type(policy) is not dict or set(policy) != set(FIXED_POLICY) | {"binding", "mutation_inventories"}
-            or any(type(policy.get(k)) is not type(v) or policy[k] != v for k, v in FIXED_POLICY.items())):
+    if type(policy) is not dict:
+        raise Incomplete("Service analysis requires an exact policy object.")
+    subjects = selected_subjects(policy)
+    fixed = (FIXED_POLICY if policy["schema_version"] == 5 else
+             CODEC_FIXED_POLICY if policy["schema_version"] == 7 else DIAGNOSTICS_FIXED_POLICY)
+    extra = {"coverage_guided_fuzzing", "external_contracts"} if policy["schema_version"] == 7 else set()
+    if policy["schema_version"] == 7:
+        codec_module().require_specs(policy)
+    if (set(policy) != set(fixed) | {"binding", "mutation_inventories"} | extra
+            or any(type(policy.get(k)) is not type(v) or policy[k] != v for k, v in fixed.items())):
         raise Incomplete("Service analysis requires its exact source-only scope, gates and budgets.")
     binding = policy["binding"]
     if binding is None:
@@ -78,7 +142,7 @@ def validate_policy(policy: dict, *, require_binding: bool = True, campaign: boo
           or set(binding) != {"source_file_count", "candidate_sha256", "inputs_sha256", "ordinary_tests", "doctests"}
           or type(binding["source_file_count"]) is not int or binding["source_file_count"] <= 0
           or type(binding["candidate_sha256"]) is not str or HEX.fullmatch(binding["candidate_sha256"]) is None
-          or type(binding["inputs_sha256"]) is not dict or set(binding["inputs_sha256"]) != set(BOUND_INPUTS)
+          or type(binding["inputs_sha256"]) is not dict or set(binding["inputs_sha256"]) != set(bound_inputs(policy))
           or any(type(value) is not str or HEX.fullmatch(value) is None for value in binding["inputs_sha256"].values())):
         raise Incomplete("Service candidate/source binding is malformed or incomplete.")
     if binding is not None:
@@ -91,8 +155,8 @@ def validate_policy(policy: dict, *, require_binding: bool = True, campaign: boo
         if set(binding["ordinary_tests"]) & set(binding["doctests"]):
             raise Incomplete("Service ordinary and doctest identities overlap.")
     inventories = policy["mutation_inventories"]
-    if type(inventories) is not dict or (inventories and set(inventories) != set(SUBJECTS)):
-        raise Incomplete("Service descriptor review must cover all three exact portable subjects.")
+    if type(inventories) is not dict or (inventories and set(inventories) != set(subjects)):
+        raise Incomplete("Service descriptor review must cover every exact selected portable subject.")
     if inventories:
         for record in inventories.values():
             if (type(record) is not dict or set(record) != {"count", "sha256"}
@@ -120,11 +184,11 @@ def read_policy(root: Path, *, campaign: bool) -> dict:
             or any(COMMON.PRODUCT.sha256(root / name) != digest for name, digest in binding["inputs_sha256"].items())):
         raise Incomplete("Service candidate, source or analysis helpers changed after freezing.")
     manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
-    for source in SUBJECTS.values():
+    for source in selected_subjects(policy).values():
         if (manifest.get("critical_files", []).count(source) != 1
                 or sum(module.get("package") == SCOPE.package and source in module.get("files", [])
                        for module in manifest.get("security_modules", [])) != 1):
-            raise Incomplete("Service analysis requires all three exact critical/security owner registrations.")
+            raise Incomplete("Service analysis requires every exact selected critical/security owner registration.")
     return policy
 
 
@@ -156,12 +220,20 @@ def owned_log(directory: Path, value: str) -> bytes:
     return COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
 
 
-def selected_span(value: str) -> bool:
-    """Recognize only selected source/test paths in the owned mutation namespace."""
+def owned_span(value: str, sources: tuple[str, ...]) -> bool:
+    """Match an exact role-owned source through the custodian's namespace aliases."""
     if type(value) is not str or ".." in PurePosixPath(value).parts:
         return False
-    return value in ATTRIBUTED_SOURCES or (value.startswith("/work/")
-        and any(value.endswith("/" + selected) for selected in ATTRIBUTED_SOURCES))
+    return value in sources or (value.startswith("/work/")
+        and any(value.endswith("/" + selected) for selected in sources))
+
+
+def selected_span(value: str, policy: dict | None = None) -> bool:
+    """Recognize only the selected role's source/test paths in owned output."""
+    schema = None if policy is None else policy.get("schema_version")
+    sources = (LEGACY_ATTRIBUTED_SOURCES if schema == 5 else
+               DIAGNOSTICS_ATTRIBUTED_SOURCES if schema in {6, 7} else ATTRIBUTED_SOURCES)
+    return owned_span(value, sources)
 
 
 def validate_phases(outcome: dict) -> None:
@@ -171,11 +243,15 @@ def validate_phases(outcome: dict) -> None:
         raise Incomplete("Service mutation phases must use the fixed JSON diagnostic format.")
 
 
-def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: str = "lifecycle") -> dict:
+def validate_causes(directory: Path, outcomes: dict, policy: dict, *,
+                    subject: str = "lifecycle", require_fresh_build: bool = False) -> dict:
     """Separate owned behavioral failures from actual compiler-unviable variants."""
-    if subject not in SUBJECTS:
+    subjects = selected_subjects(policy)
+    if subject not in subjects:
         raise Incomplete("Service mutation causes require one exact portable subject.")
-    expected_file = SUBJECTS[subject]
+    expected_file = subjects[subject]
+    compiler_targets = (LEGACY_COMPILER_TARGETS if policy["schema_version"] == 5
+                        else set(DIAGNOSTICS_COMPILER_SOURCES))
     rows = outcomes.get("outcomes")
     if type(rows) is not list or not 1 <= len(rows) <= 513 or any(type(row) is not dict for row in rows):
         raise Incomplete("Service mutation causes lack their bounded outcome records.")
@@ -183,7 +259,7 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
     for row in rows:
         validate_phases(row)
         summary = row.get("summary")
-        if summary not in {"CaughtMutant", "Unviable"}:
+        if summary not in {"CaughtMutant", "Unviable"} and not (require_fresh_build and summary == "MissedMutant"):
             continue
         scenario = row.get("scenario")
         mutant = scenario.get("Mutant") if type(scenario) is dict else None
@@ -193,6 +269,10 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
             raise Incomplete("Service failure cause has a duplicate or out-of-scope identity.")
         data = owned_log(directory, row.get("log_path", ""))
         text = data.decode("utf-8")
+        if require_fresh_build and summary in {"CaughtMutant", "MissedMutant"}:
+            validate_diagnostics_build_artifacts(mutant["name"], row["phase_results"], text)
+        if summary == "MissedMutant":
+            continue
         if re.search(r"HARNESS_INCOMPLETE|Cannot allocate memory|memory allocation of [^\n]*failed|"
                      r"No space left on device|No such file or directory|Permission denied|"
                      r"failed to (?:run custom build command|execute process)|could not execute process|"
@@ -217,8 +297,11 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
             for item in errors:
                 message = item["message"]
                 primary = [span for span in message["spans"] if span.get("is_primary") is True]
-                if (item["target"].get("name") not in COMPILER_TARGETS
-                        or any(not selected_span(span.get("file_name")) for span in primary)):
+                target = item["target"].get("name")
+                compiler_sources = (DIAGNOSTICS_COMPILER_SOURCES.get(target, ())
+                                    if policy["schema_version"] in {6, 7} else LEGACY_ATTRIBUTED_SOURCES)
+                if (item["target"].get("name") not in compiler_targets
+                        or any(not owned_span(span.get("file_name"), compiler_sources) for span in primary)):
                     raise Incomplete("Service unviable output includes a foreign compiler error.")
                 if primary:
                     causes.append(message)
@@ -242,9 +325,11 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
             if name not in policy["binding"]["ordinary_tests"] or f"test {name} ... FAILED" not in text:
                 continue
             assertion = re.search(r"panicked at ([^\n]+?):(\d+):\d+:\nassertion[^\n]*failed", body)
-            if assertion is not None and selected_span(assertion[1]):
+            if assertion is not None and selected_span(assertion[1], policy):
                 failures.append({"test": name, "kind": "assertion", "source": assertion[1], "line": int(assertion[2])})
-            elif (re.search(r"^Error: (?:InvalidTransition|ReportingFailed|OutstandingWork|DeadlineElapsed|DeadlineOverflow|TimeReversed|BudgetError|WorkLimit|CheckpointOverflow|FailureOutcomeRequired|Report\(|Bounds|Length|DuplicatePrivilege|DuplicateTargetIds|UnsupportedAttributes|RemovedEntry|EnginePrivilegeError)\b", body, re.MULTILINE)
+            # Only retained lifecycle/privilege Result tests emit these errors.
+            # Diagnostics tests return unit and require their own assertion source.
+            elif policy["schema_version"] == 5 and (re.search(r"^Error: (?:InvalidTransition|ReportingFailed|OutstandingWork|DeadlineElapsed|DeadlineOverflow|TimeReversed|BudgetError|WorkLimit|CheckpointOverflow|FailureOutcomeRequired|Report\(|Bounds|Length|DuplicatePrivilege|DuplicateTargetIds|UnsupportedAttributes|RemovedEntry|EnginePrivilegeError)\b", body, re.MULTILINE)
                   or re.search(
                       r"^Error: (?:Forbidden\(EnginePrivilegeError \{ privilege: (?:SystemTime|Debug|Impersonate), "
                       r"state: (?:PresentDisabled|PresentEnabled) \}\)|MissingRequired\((?:ChangeNotify|SystemTime)\)"
@@ -256,9 +341,63 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
     return {"failures": checked, "compiler_or_harness_kill_credit": 0}
 
 
+def validate_diagnostics_build_artifacts(mutant: str, phases: list[dict], text: str) -> None:
+    """Require all three exact schema 7 subject targets to rebuild for this overlay."""
+    lines = text.splitlines()
+    build, test = ("*** " + " ".join(phase["argv"]) for phase in phases)
+    if lines.count(build) != 1 or lines.count(test) != 1:
+        raise Incomplete(f"Diagnostics mutation lacks exact Build and Test log sections: {mutant}")
+    build_lines = [line for line in lines[lines.index(build) + 1:lines.index(test)] if line]
+    if (not build_lines or build_lines[-1] != "*** result: Success"
+            or any(line.startswith("*** ") for line in build_lines[:-1])):
+        raise Incomplete(f"Diagnostics mutation lacks the successful Build log section: {mutant}")
+
+    manifest_source = "crates/windows-platform/Cargo.toml"
+    roles = {
+        ("windows_platform", ("lib",), False): "src/lib.rs",
+        ("windows_platform", ("lib",), True): "src/lib.rs",
+        ("diagnostics", ("test",), True): "tests/diagnostics.rs",
+    }
+    observed = {}
+    manifests = set()
+    for line in build_lines[:-1]:
+        if not line.startswith("{"):
+            continue
+        try:
+            artifact = json.loads(line)
+        except (ValueError, RecursionError) as error:
+            raise Incomplete(f"Diagnostics mutation has malformed Build JSON: {mutant}") from error
+        if type(artifact) is not dict or artifact.get("reason") != "compiler-artifact":
+            continue
+        manifest = artifact.get("manifest_path")
+        if not owned_span(manifest, (manifest_source,)) or not manifest.startswith("/work/"):
+            continue
+        root = manifest.removesuffix("/Cargo.toml")
+        if artifact.get("package_id") != f"path+file://{root}#0.0.0":
+            continue
+        target, profile = artifact.get("target"), artifact.get("profile")
+        if type(target) is not dict or type(profile) is not dict:
+            raise Incomplete(f"Diagnostics mutation has malformed subject Build artifacts: {mutant}")
+        name, kind, test_profile = target.get("name"), target.get("kind"), profile.get("test")
+        if type(name) is not str or type(kind) is not list or type(test_profile) is not bool:
+            raise Incomplete(f"Diagnostics mutation has malformed subject Build roles: {mutant}")
+        for role, source in roles.items():
+            if (name, kind, test_profile) != (role[0], list(role[1]), role[2]):
+                continue
+            if (target.get("src_path") != f"{root}/{source}" or role in observed
+                    or type(artifact.get("fresh")) is not bool):
+                raise Incomplete(f"Diagnostics mutation lacks complete unique subject Build artifacts: {mutant}")
+            observed[role] = artifact["fresh"]
+            manifests.add(manifest)
+    if set(observed) != set(roles) or len(manifests) != 1:
+        raise Incomplete(f"Diagnostics mutation lacks complete unique subject Build artifacts: {mutant}")
+    if any(observed.values()):
+        raise Incomplete(f"Diagnostics mutation used stale subject Build artifacts: {mutant}")
+
+
 def validate_baseline(work: Path, policy: dict, *, subject: str = "lifecycle") -> dict:
     """Check complete actual baseline execution and per-variant causes before scoring."""
-    if subject not in SUBJECTS:
+    if subject not in selected_subjects(policy):
         raise Incomplete("Service baseline requires one exact portable subject.")
     directory = work / "mutation" / subject / "mutants.out"
     outcomes = COMMON.read_analysis_json(directory / "outcomes.json")
@@ -271,19 +410,33 @@ def validate_baseline(work: Path, policy: dict, *, subject: str = "lifecycle") -
     validate_phases(baselines[0])
     data = owned_log(directory, baselines[0].get("log_path", ""))
     return {**validate_execution(data.decode("utf-8"), policy, doctests=True),
-            "log_sha256": hashlib.sha256(data).hexdigest(), "causes": validate_causes(directory, outcomes, policy, subject=subject)}
+            "log_sha256": hashlib.sha256(data).hexdigest(),
+            "causes": validate_causes(directory, outcomes, policy, subject=subject,
+                                      require_fresh_build=policy["schema_version"] == 7)}
 
 
 def execute(args, report: dict) -> None:
     """Run only the fixed lane through unchanged source/tool/namespace custody."""
-    if args.lane not in {"enumerate", "coverage", "mutation", "all"}:
+    if args.lane not in {"enumerate", "coverage", "mutation", "all", "contracts", "fuzz"}:
         raise Incomplete("Unknown service analysis lane.")
     policy = read_policy(ROOT, campaign=args.lane in {"mutation", "all"})
+    if args.lane in {"contracts", "fuzz"}:
+        if policy["schema_version"] != 7:
+            raise Incomplete("Codec lanes require the exact schema7 diagnostics role.")
+        deadline = getattr(args, "deadline_monotonic", None)
+        if type(deadline) is not float:
+            raise Incomplete("Codec lanes require the caller's remaining parent wall deadline.")
+        if deadline - time.monotonic() > 3600:
+            raise Incomplete("Codec deadline exceeds the original one-hour QA budget.")
+        codec_module().remaining(deadline, 1)
+    subjects = selected_subjects(policy)
+    scope = COMMON.Scope("windows-platform", tuple(subjects.items()), POLICY)
     session_args = argparse.Namespace(**vars(args))
+    session_args.tool_admission_profile = "full" if args.lane == "fuzz" else "stable-core"
     if args.lane == "enumerate":
         session_args.lane = "mutation"
-    session = COMMON.Session(ROOT, session_args, report, SCOPE, policy, BOUND_INPUTS)
-    report.update(subjects=SUBJECTS, candidate_sha256=policy["binding"]["candidate_sha256"],
+    session = COMMON.Session(ROOT, session_args, report, scope, policy, bound_inputs(policy))
+    report.update(subjects=subjects, candidate_sha256=policy["binding"]["candidate_sha256"],
                   qualification_passed=False, metrics_passed=False, campaign_admission=False,
                   remaining_independent_qualification=list(REMAINING_QUALIFICATION),
                   generation_gap_controls="Function/guard and Garde-derived coverage require separate source/inventory reconciliation.")
@@ -298,6 +451,7 @@ def execute(args, report: dict) -> None:
             report.setdefault("baseline_execution", {})[subject] = validate_baseline(session.work, policy, subject=subject)
         return result
 
+    primary_failure: BaseException | None = None
     try:
         binding = policy["binding"]
         if (len(session.product_identity) != binding["source_file_count"]
@@ -305,10 +459,14 @@ def execute(args, report: dict) -> None:
                 or any(COMMON.PRODUCT.sha256(session.source / name) != digest for name, digest in binding["inputs_sha256"].items())
                 or COMMON.read_analysis_json(session.source / POLICY) != policy):
             raise Incomplete("Captured service candidate or protected helpers differ from the frozen policy.")
-        if args.lane == "enumerate":
-            listing = COMMON.enumerate_mutation_inventories(SCOPE, SUBJECTS, policy, session.tools, run, report,
+        if args.lane == "contracts":
+            codec_module().contracts(session, policy["external_contracts"], report, args.deadline_monotonic)
+        elif args.lane == "fuzz":
+            codec_module().fuzz(session, policy["coverage_guided_fuzzing"], report, args.deadline_monotonic)
+        elif args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(scope, subjects, policy, session.tools, run, report,
                 deadline=time.monotonic() + policy["enumeration_wall_seconds"], maximum_per_file=512, maximum_total=512)
-            if set(listing.inventories) != set(SUBJECTS):
+            if set(listing.inventories) != set(subjects):
                 raise Incomplete("Service enumeration omitted an exact portable subject.")
             report["listed_inventories"] = listing.inventories
             report["listed_inventory_bindings"] = {
@@ -317,22 +475,32 @@ def execute(args, report: dict) -> None:
                 for name, items in listing.inventories.items()}
         else:
             report["campaign_admission"] = args.lane in {"mutation", "all"}
-            COMMON.run_analysis_lanes(SCOPE, SUBJECTS, policy, session.work, session.tools, run, report, args.lane)
+            COMMON.run_analysis_lanes(scope, subjects, policy, session.work, session.tools, run, report, args.lane)
+    except BaseException as error:
+        primary_failure = error
+        raise
     finally:
-        session.finish()
-    if args.lane != "enumerate":
+        try:
+            session.finish()
+        except BaseException as error:
+            if primary_failure is None:
+                raise
+            report["secondary_failure"] = {
+                "stage": "session.finish", "type": type(error).__name__, "error": str(error)}
+    if args.lane in {"coverage", "mutation", "all"}:
         report["metrics_passed"] = True
 
 
 def main(argv=None) -> int:
     """Report incomplete preparation honestly and retain owned execution receipts."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("enumerate", "coverage", "mutation", "all"), required=True)
+    parser.add_argument("--lane", choices=("enumerate", "coverage", "mutation", "all", "contracts", "fuzz"), required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--vendor-dir", type=Path)
+    parser.add_argument("--deadline-monotonic", type=float)
     args = parser.parse_args(argv)
     args.tool_admission_profile = "stable-core"
-    report = {"status": "incomplete", "scope": "portable service lifecycle " + args.lane,
+    report = {"status": "incomplete", "scope": "portable service analysis " + args.lane,
               "qualification_passed": False, "metrics_passed": False,
               "remaining_independent_qualification": list(REMAINING_QUALIFICATION)}
     try:

@@ -25,6 +25,7 @@ use std::{
 };
 
 use windows_platform::{
+    diagnostics::{ConsumerState, DiagnosticObservation, DiagnosticSnapshot, MemoryConsumer},
     privilege_observation::PrivilegeSnapshot,
     scm::StopNotification,
     service::{
@@ -35,7 +36,7 @@ use windows_platform::{
 
 use crate::{
     FixtureError, LabRole, NativeError, TokenObservationFailure,
-    diagnostics::{Diagnostics, Event, FailureCode, MemorySink, Sinks},
+    diagnostics::{Diagnostics, Event, Sinks, lifecycle_cause, primary_cause, worker_cause},
     error::{ServiceFailure, WorkerError},
 };
 
@@ -231,6 +232,8 @@ pub(super) trait Clock {
 struct ObservedClock {
     /// Last observation actually accepted in nondecreasing order.
     last_trusted: Instant,
+    /// First actual lifecycle observation; never rewritten on consumption or fault.
+    origin: Instant,
     /// Sticky refusal of every subsequent ordinary observation.
     reversed: bool,
 }
@@ -238,9 +241,10 @@ struct ObservedClock {
 impl ObservedClock {
     /// Establish the first observation without claiming an earlier time origin.
     fn new(source: &mut impl Clock) -> Self {
-        let last_trusted = source.now();
+        let last_trusted: Instant = source.now();
         Self {
             last_trusted,
+            origin: last_trusted,
             reversed: false,
         }
     }
@@ -325,7 +329,7 @@ pub(super) fn dispatch_with_outcome<'a, D: Dispatcher>(
     role: LabRole,
     attempted: &AtomicBool,
     driver: &mut D,
-    outcome: &'a OnceLock<Result<(), FixtureError>>,
+    outcome: &'a OnceLock<HostReceipt>,
     dispatch_failure: &'a OnceLock<FixtureError>,
 ) -> Result<(), &'a FixtureError> {
     if let Err(error) = dispatch_once(role, attempted, driver) {
@@ -335,8 +339,10 @@ pub(super) fn dispatch_with_outcome<'a, D: Dispatcher>(
         return Err(dispatch_failure.get_or_init(|| error));
     }
     match outcome.get() {
-        Some(Ok(())) => Ok(()),
-        Some(Err(error)) => Err(error),
+        Some(receipt) => match receipt.result() {
+            Ok(()) => Ok(()),
+            Err(error) => Err(error),
+        },
         None => Err(&FixtureError::OutcomeUnavailable),
     }
 }
@@ -351,6 +357,60 @@ pub(super) fn guard_service_main<F: FnOnce() + std::panic::UnwindSafe>(body: F) 
         // Keep this named binding alive until the non-returning call. Dropping
         // an arbitrary panic payload could itself execute code or panic again.
         std::process::abort();
+    }
+}
+
+/// One immutable result and diagnostic history from the same actual invocation.
+/// Snapshot delivery never acknowledges worker/native completion or changes failure.
+#[must_use = "retain the original result together with its diagnostic history"]
+pub(super) struct HostReceipt {
+    /// Original result objects with unchanged primary/secondary ownership.
+    actual_result: Result<(), FixtureError>,
+    /// Finite consumed originals, loss and health from that same invocation.
+    diagnostics: DiagnosticSnapshot,
+}
+
+impl HostReceipt {
+    /// Read the original result without consuming its coherent diagnostic history.
+    pub(super) const fn result(&self) -> &Result<(), FixtureError> {
+        &self.actual_result
+    }
+
+    /// Read actual portable consumption; this makes no native/durable delivery claim.
+    pub(super) const fn diagnostics(&self) -> &DiagnosticSnapshot {
+        &self.diagnostics
+    }
+
+    /// Deliberately consume a receipt when a caller needs only the original result.
+    ///
+    /// # Errors
+    /// Returns the original operation failure, preserving its cleanup facts.
+    #[cfg(test)]
+    pub(super) fn into_result(self) -> Result<(), FixtureError> {
+        self.actual_result
+    }
+
+    /// Finalize an honest failure before an invocation or lifecycle observation exists.
+    fn startup_failure(error: FixtureError, mut diagnostics: Diagnostics) -> Self {
+        diagnostics.emit(
+            Event::PrimaryFailure(primary_cause(&error)),
+            DiagnosticObservation::unavailable(),
+        );
+        Self {
+            actual_result: Err(error),
+            diagnostics: diagnostics.finish(),
+        }
+    }
+
+    /// Refuse native owner publication without inventing an invocation or clock read.
+    pub(super) fn owner_already_set(role: LabRole) -> Self {
+        Self::startup_failure(
+            FixtureError::OwnerAlreadySet,
+            Diagnostics::new(
+                role,
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+            ),
+        )
     }
 }
 
@@ -453,6 +513,17 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
 }
 
 impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> {
+    /// Freeze the last genuine observation before the shared queue handoff.
+    /// This computes checked relative metadata and performs no new clock read.
+    fn emit(&mut self, event: Event) {
+        let observation: DiagnosticObservation = DiagnosticObservation::from_lifecycle(
+            self.observed.origin,
+            self.observed.last_trusted,
+            self.observed.reversed,
+        );
+        self.diagnostics.emit(event, observation);
+    }
+
     /// Retain kind/code once, preserving primary and each fixed secondary slot.
     fn worker_failed(&mut self, failure: WorkerFailure) {
         self.admission_closed = true;
@@ -493,45 +564,37 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
             && let Some(error) = &self.failure
         {
             self.diagnosed_failures[0] = true;
-            self.diagnostics
-                .emit(Event::PrimaryFailure(FailureCode::from_fixture(error)));
+            self.emit(Event::PrimaryFailure(primary_cause(error)));
         }
         if !self.diagnosed_failures[1]
             && let Some(error) = self.completion_failure
         {
             self.diagnosed_failures[1] = true;
-            self.diagnostics
-                .emit(Event::CompletionFailure(FailureCode::from_worker(error)));
+            self.emit(Event::CompletionFailure(worker_cause(error)));
         }
         if !self.diagnosed_failures[2]
             && let Some(error) = &self.stop_failure
         {
             self.diagnosed_failures[2] = true;
-            self.diagnostics
-                .emit(Event::StopReportFailure(FailureCode::from_lifecycle(error)));
+            self.emit(Event::StopReportFailure(lifecycle_cause(error)));
         }
         if !self.diagnosed_failures[3]
             && let Some(error) = &self.terminal_failure
         {
             self.diagnosed_failures[3] = true;
-            self.diagnostics
-                .emit(Event::TerminalReportFailure(FailureCode::from_lifecycle(
-                    error,
-                )));
+            self.emit(Event::TerminalReportFailure(lifecycle_cause(error)));
         }
         if !self.diagnosed_operations[0]
             && let Some(WorkerFailure::Operation(error)) = self.primary_worker_failure
         {
             self.diagnosed_operations[0] = true;
-            self.diagnostics
-                .emit(Event::OperationFailure(FailureCode::from_worker(error)));
+            self.emit(Event::OperationFailure(worker_cause(error)));
         }
         if !self.diagnosed_operations[1]
             && let Some(error) = self.operation_failure
         {
             self.diagnosed_operations[1] = true;
-            self.diagnostics
-                .emit(Event::OperationFailure(FailureCode::from_worker(error)));
+            self.emit(Event::OperationFailure(worker_cause(error)));
         }
     }
 
@@ -621,7 +684,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     Ok(()) => {
                         self.run_deadline = Some(deadline);
                         self.phase = WorkerPhase::Running;
-                        self.diagnostics.emit(Event::RunningAcknowledged);
+                        self.emit(Event::RunningAcknowledged);
                     }
                     Err(error) => self.fail(FixtureError::Lifecycle(error)),
                 }
@@ -700,7 +763,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
     /// Fence first, attempt `StopPending` once, then request bounded cancellation.
     fn begin_stop(&mut self, clock: &mut impl Clock) {
         self.admission_closed = true;
-        self.diagnostics.emit(Event::AdmissionClosed);
+        self.emit(Event::AdmissionClosed);
         let now = self.observed.cleanup_observation(clock, &mut self.failure);
         self.publish_failures();
         if self.owner.state() == Some(ServiceState::StartPending) {
@@ -786,13 +849,13 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         }
         self.publish_failures();
         self.phase = WorkerPhase::Finished;
-        self.diagnostics.emit(Event::Finished);
+        self.emit(Event::Finished);
     }
 
     /// Take one finite, nonblocking step while retaining every original owner.
     /// Every state-changing wake must be published before the worker notification.
     /// Repeated Stop, spurious wakes and overdue polls never renew a deadline.
-    pub(super) fn poll(
+    fn poll_step(
         &mut self,
         clock: &mut impl Clock,
         notification: &StopNotification,
@@ -861,30 +924,54 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         InvocationPoll::Pending(remaining)
     }
 
+    /// Preserve the exact lifecycle step, then attempt one queued original per route.
+    /// Every return path, including overdue and finished, has the same pump bound.
+    pub(super) fn poll(
+        &mut self,
+        clock: &mut impl Clock,
+        notification: &StopNotification,
+    ) -> InvocationPoll {
+        let poll: InvocationPoll = self.poll_step(clock, notification);
+        self.diagnostics.pump_one();
+        poll
+    }
+
     /// Consume the result once, only after actual completion and terminal attempt.
     /// Secondary cleanup/report facts are wrapped once with one bounded allocation.
-    pub(super) fn take_result(&mut self) -> Option<Result<(), FixtureError>> {
+    pub(super) fn take_receipt(&mut self) -> Option<HostReceipt> {
         if self.phase != WorkerPhase::Finished || self.result_taken {
             return None;
         }
         self.result_taken = true;
+        let result: Result<(), FixtureError> = self.take_actual_result();
+        Some(HostReceipt {
+            actual_result: result,
+            diagnostics: self.diagnostics.finish(),
+        })
+    }
+
+    /// Move the unchanged original primary and secondary objects into their result.
+    ///
+    /// # Errors
+    /// Returns the retained primary failure and any independently observed cleanup failures.
+    fn take_actual_result(&mut self) -> Result<(), FixtureError> {
         let Some(primary) = self.failure.take() else {
-            return Some(Ok(()));
+            return Ok(());
         };
         if self.operation_failure.is_none()
             && self.completion_failure.is_none()
             && self.stop_failure.is_none()
             && self.terminal_failure.is_none()
         {
-            return Some(Err(primary));
+            return Err(primary);
         }
-        Some(Err(FixtureError::Cleanup(ServiceFailure::new(
+        Err(FixtureError::Cleanup(ServiceFailure::new(
             primary,
             self.operation_failure.take(),
             self.completion_failure.take(),
             self.stop_failure.take(),
             self.terminal_failure.take(),
-        ))))
+        )))
     }
 
     /// Read intended state from this invocation's original lifecycle.
@@ -933,6 +1020,10 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> Drop for ServiceInvocati
 ///
 /// # Errors
 /// Preserve registration or fixed laboratory budget construction failure.
+#[expect(
+    clippy::result_large_err,
+    reason = "the frozen startup contract retains two fixed 16-record histories and original result without adding a failure-path heap allocation"
+)]
 pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
     role: LabRole,
     argc: u32,
@@ -941,7 +1032,7 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
     clock: &mut C,
     notification: &StopNotification,
     worker: P,
-) -> Result<ServiceInvocation<A::Reporter, P>, FixtureError> {
+) -> Result<ServiceInvocation<A::Reporter, P>, HostReceipt> {
     start_invocation_with_diagnostics(
         role,
         argc,
@@ -949,7 +1040,10 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
         token_observer,
         clock,
         notification,
-        (worker, Sinks::new(MemorySink::new(true), None)),
+        (
+            worker,
+            Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+        ),
     )
 }
 
@@ -959,8 +1053,12 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
 /// output composition cannot label the invocation as a different service role.
 ///
 /// # Errors
-/// Preserve pre-invocation registration/budget failure; that reporting remains
-/// outside this portable invocation-owned diagnostic seam.
+/// Preserve pre-invocation registration/budget failure and its honest bounded
+/// diagnostic snapshot without inventing a lifecycle invocation or observation.
+#[expect(
+    clippy::result_large_err,
+    reason = "the frozen startup contract retains two fixed 16-record histories and original result without adding a failure-path heap allocation"
+)]
 pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: Worker>(
     role: LabRole,
     argc: u32,
@@ -969,11 +1067,27 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
     clock: &mut C,
     notification: &StopNotification,
     composition: (P, Sinks),
-) -> Result<ServiceInvocation<A::Reporter, P>, FixtureError> {
-    let (worker, sinks) = composition;
-    let reporter = factory.register(role).map_err(FixtureError::Native)?;
-    let budget =
-        PendingBudget::new(LAB_WAIT_HINT_MS, LAB_PENDING_MS).map_err(FixtureError::Budget)?;
+) -> Result<ServiceInvocation<A::Reporter, P>, HostReceipt> {
+    let (worker, sinks): (P, Sinks) = composition;
+    let diagnostics: Diagnostics = Diagnostics::new(role, sinks);
+    let reporter: A::Reporter = match factory.register(role) {
+        Ok(reporter) => reporter,
+        Err(error) => {
+            return Err(HostReceipt::startup_failure(
+                FixtureError::Native(error),
+                diagnostics,
+            ));
+        }
+    };
+    let budget: PendingBudget = match PendingBudget::new(LAB_WAIT_HINT_MS, LAB_PENDING_MS) {
+        Ok(budget) => budget,
+        Err(error) => {
+            return Err(HostReceipt::startup_failure(
+                FixtureError::Budget(error),
+                diagnostics,
+            ));
+        }
+    };
     let mut owner = ServiceLifecycle::new(
         role.service_role(),
         reporter,
@@ -1029,12 +1143,12 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
         stop_failure: None,
         terminal_failure: None,
         result_taken: false,
-        diagnostics: Diagnostics::new(role, sinks),
+        diagnostics,
         diagnosed_failures: [false; 4],
         diagnosed_operations: [false; 2],
         thread_bound: PhantomData,
     };
-    invocation.diagnostics.emit(Event::StartObserved);
+    invocation.emit(Event::StartObserved);
     invocation.publish_failures();
     Ok(invocation)
 }
@@ -1053,8 +1167,8 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
     clock: &mut C,
     wait: &mut W,
     notification: &StopNotification,
-) -> Result<(), FixtureError> {
-    let mut invocation = start_invocation(
+) -> HostReceipt {
+    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = match start_invocation(
         role,
         argc,
         factory,
@@ -1062,16 +1176,20 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
         clock,
         notification,
         InertWorker::new(),
-    )?;
+    ) {
+        Ok(invocation) => invocation,
+        Err(receipt) => return receipt,
+    };
     loop {
         match invocation.poll(clock, notification) {
             InvocationPoll::Pending(remaining) => wait.park(remaining),
             InvocationPoll::JoinTail(relative) => wait.park(relative),
             InvocationPoll::Overdue => wait.park_until_notified(),
             InvocationPoll::Finished => {
-                return invocation
-                    .take_result()
-                    .unwrap_or(Err(FixtureError::OutcomeUnavailable));
+                return invocation.take_receipt().unwrap_or_else(|| HostReceipt {
+                    actual_result: Err(FixtureError::OutcomeUnavailable),
+                    diagnostics: invocation.diagnostics.finish(),
+                });
             }
         }
     }

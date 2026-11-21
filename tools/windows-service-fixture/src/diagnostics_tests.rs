@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Independent wire expectations and finite sink boundary observations.
+//! Actual adapter -> shared queue -> concrete consumer observations.
 
-use windows_platform::service::{BudgetError, LifecycleError};
+use windows_platform::{
+    diagnostics::{ConsumerState, DecodedRecord, DiagnosticObservation, MemoryConsumer},
+    service::{BudgetError, LifecycleError},
+};
 
-use super::{Diagnostics, Event, FailureCode, MemorySink, Sinks};
+use super::{Diagnostics, Event, Sinks, lifecycle_cause, primary_cause, worker_cause};
 use crate::{FixtureError, LabRole, NativeError, NativeOperation, error::WorkerError};
 
-/// Token/privilege/cleanup categories preserve useful meaning without walking
-/// nested failures or formatting native payloads.
+/// The typed projection keeps its independently fixed cause without formatting.
 /// # Errors
-/// Propagate construction failure of the independently encoded privilege fixture.
+/// Propagate only checked fixture construction failures.
 /// # Panics
-/// Fails if private-token or bounded cleanup details enter the output category.
+/// Fails if a cause loses its fixed category or retains a raw payload.
 #[test]
 fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
 -> Result<(), Box<dyn std::error::Error>> {
@@ -30,7 +32,7 @@ fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
         TokenCleanupOutcome::Failed(NativeError::new(NativeOperation::TokenClose, u32::MAX)),
         TokenCleanupOutcome::NotOpened,
     ));
-    assert_eq!(FailureCode::from_fixture(&failure).0, 24);
+    assert_eq!(primary_cause(&failure).code(), 24);
     let ids = ServicePrivilegeIds::new([
         PrivilegeLuid::new(17, 0),
         PrivilegeLuid::new(23, 0),
@@ -44,7 +46,7 @@ fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
         .err()
         .ok_or("disabled privilege admitted")?;
     assert_eq!(
-        FailureCode::from_fixture(&FixtureError::PrivilegeAdmission(admission)).0,
+        primary_cause(&FixtureError::PrivilegeAdmission(admission)).code(),
         25
     );
     let nested = FixtureError::Cleanup(ServiceFailure::new(
@@ -54,60 +56,15 @@ fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
         None,
         None,
     ));
-    assert_eq!(FailureCode::from_fixture(&nested).0, 28);
+    assert_eq!(primary_cause(&nested).code(), 28);
     Ok(())
 }
 
-/// Every event has an independently fixed wire meaning, honest severity and order.
+/// The typed projection keeps its independently fixed cause without formatting.
+/// # Errors
+/// Propagate only checked fixture construction failures.
 /// # Panics
-/// Fails if the encoder changes a field, role, sequence or optional route.
-#[test]
-fn literal_events_reach_both_routes_with_explicit_version_and_role() {
-    for (role, role_code) in [(LabRole::Engine, 1), (LabRole::ClockBroker, 2)] {
-        let mut diagnostics = Diagnostics::new(
-            role,
-            Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
-        );
-        for event in [
-            Event::StartObserved,
-            Event::RunningAcknowledged,
-            Event::AdmissionClosed,
-            Event::PrimaryFailure(FailureCode::from_worker(WorkerError::Preparation)),
-            Event::CompletionFailure(FailureCode::from_worker(WorkerError::Cleanup)),
-            Event::StopReportFailure(FailureCode::from_lifecycle(&LifecycleError::Report(
-                NativeError::new(NativeOperation::Status, 771),
-            ))),
-            Event::TerminalReportFailure(FailureCode::from_lifecycle(
-                &LifecycleError::ReportingFailed,
-            )),
-            Event::Finished,
-            Event::OperationFailure(FailureCode::from_worker(WorkerError::Running)),
-        ] {
-            diagnostics.emit(event);
-        }
-        let expected = [
-            [1, role_code, 1, 1, 0, 1, 0, 0, 0],
-            [1, role_code, 2, 1, 0, 2, 0, 0, 0],
-            [1, role_code, 3, 1, 0, 3, 0, 0, 0],
-            [1, role_code, 4, 2, 20, 4, 0, 0, 0],
-            [1, role_code, 5, 2, 23, 5, 0, 0, 0],
-            [1, role_code, 6, 2, 10, 6, 0, 0, 0],
-            [1, role_code, 7, 2, 13, 7, 0, 0, 0],
-            [1, role_code, 8, 1, 0, 8, 0, 0, 0],
-            [1, role_code, 9, 2, 22, 9, 0, 0, 0],
-        ];
-        assert_eq!(diagnostics.required().records(), expected);
-        assert_eq!(
-            diagnostics.optional().map(MemorySink::records),
-            Some(expected.as_slice())
-        );
-        assert_eq!(diagnostics.required().loss(), (0, 0));
-    }
-}
-
-/// Cause projection is useful but never traverses arbitrary source/error text.
-/// # Panics
-/// Fails if two distinct lifecycle or worker causes collapse or change wire code.
+/// Fails if a cause loses its fixed category or retains a raw payload.
 #[test]
 fn every_lifecycle_and_worker_category_has_a_fixed_cause() {
     for (failure, expected) in [
@@ -125,9 +82,9 @@ fn every_lifecycle_and_worker_category_has_a_fixed_cause() {
         (LifecycleError::WorkLimit, 18),
         (LifecycleError::FailureOutcomeRequired, 19),
     ] {
-        assert_eq!(FailureCode::from_lifecycle(&failure).0, expected);
+        assert_eq!(lifecycle_cause(&failure).code(), expected);
         assert_eq!(
-            FailureCode::from_fixture(&FixtureError::Lifecycle(failure)).0,
+            primary_cause(&FixtureError::Lifecycle(failure)).code(),
             expected
         );
     }
@@ -137,17 +94,19 @@ fn every_lifecycle_and_worker_category_has_a_fixed_cause() {
         (WorkerError::Running, 22),
         (WorkerError::Cleanup, 23),
     ] {
-        assert_eq!(FailureCode::from_worker(failure).0, expected);
+        assert_eq!(worker_cause(failure).code(), expected);
         assert_eq!(
-            FailureCode::from_fixture(&FixtureError::Worker(failure)).0,
+            primary_cause(&FixtureError::Worker(failure)).code(),
             expected
         );
     }
 }
 
-/// Ordinary invocation failures retain separate stable categories.
+/// The typed projection keeps its independently fixed cause without formatting.
+/// # Errors
+/// Propagate only checked fixture construction failures.
 /// # Panics
-/// Fails if mapping copies a numeric native payload or erases useful causes.
+/// Fails if a cause loses its fixed category or retains a raw payload.
 #[test]
 fn fixture_categories_do_not_include_arbitrary_native_codes() {
     for (failure, expected) in [
@@ -166,110 +125,175 @@ fn fixture_categories_do_not_include_arbitrary_native_codes() {
         (FixtureError::ServiceFailed, 26),
         (FixtureError::OutcomeUnavailable, 27),
     ] {
-        assert_eq!(FailureCode::from_fixture(&failure).0, expected);
+        assert_eq!(primary_cause(&failure).code(), expected);
     }
 }
 
-/// Each route preserves its first sixteen records; later traffic is bounded loss.
-/// # Panics
-/// Fails if overflow replaces earlier records, grows memory, wraps or retries.
-#[test]
-fn full_and_unavailable_routes_have_independent_saturating_loss() {
-    let mut diagnostics = Diagnostics::new(
-        LabRole::Engine,
-        Sinks::new(MemorySink::new(true), Some(MemorySink::new(false))),
-    );
-    for _ in 0..18 {
-        diagnostics.emit(Event::StartObserved);
-    }
-    assert_eq!(diagnostics.required().records().len(), 16);
-    assert_eq!(
-        diagnostics.required().records().first(),
-        Some(&[1, 1, 1, 1, 0, 1, 0, 0, 0])
-    );
-    assert_eq!(
-        diagnostics.required().records().last(),
-        Some(&[1, 1, 1, 1, 0, 16, 0, 0, 0])
-    );
-    assert_eq!(diagnostics.required().loss(), (2, 0));
-    assert_eq!(diagnostics.optional().map(MemorySink::loss), Some((0, 18)));
-    diagnostics.sinks.required.full = u32::MAX;
-    if let Some(optional) = &mut diagnostics.sinks.optional {
-        optional.unavailable = u32::MAX;
-    }
-    diagnostics.emit(Event::Finished);
-    assert_eq!(diagnostics.required().loss(), (u32::MAX, 0));
-    assert_eq!(
-        diagnostics.optional().map(MemorySink::loss),
-        Some((0, u32::MAX))
-    );
+/// Independently construct the complete v2 literal with unavailable live issuers.
+/// Actual lifecycle zero is represented by kind1 and a zero coordinate.
+fn literal(
+    role: u8,
+    id: u8,
+    level: u8,
+    importance: u8,
+    cause: u8,
+    sequence: u8,
+    observed: bool,
+) -> [u8; 128] {
+    let mut bytes: [u8; 128] = [0; 128];
+    bytes[..8].copy_from_slice(&[2, 1, role, id, level, importance, 1, cause]);
+    bytes[8] = sequence;
+    bytes[16] = u8::from(observed);
+    bytes
 }
 
-/// Required INFO remains attempted when optional is Off, full or unavailable.
+/// Both routes consume the exact originals, including independent level/importance.
 /// # Panics
-/// Fails if required routing depends on an optional route or optional loss.
+/// Fails if any complete byte, role, order, cause, availability or route differs.
 #[test]
-fn optional_output_cannot_suppress_required_info() {
-    for optional in [None, Some(MemorySink::full()), Some(MemorySink::new(false))] {
-        let mut diagnostics = Diagnostics::new(
-            LabRole::ClockBroker,
-            Sinks::new(MemorySink::new(true), optional),
+fn complete_v2_literals_reach_actual_consumers() {
+    for (role, code) in [(LabRole::Engine, 1), (LabRole::ClockBroker, 2)] {
+        let mut diagnostics: Diagnostics = Diagnostics::new(
+            role,
+            Sinks::new(
+                MemoryConsumer::new(ConsumerState::Available),
+                Some(MemoryConsumer::new(ConsumerState::Available)),
+            ),
         );
-        diagnostics.emit(Event::RunningAcknowledged);
+        let events: [(Event, u8, u8, u8, u8); 9] = [
+            (Event::StartObserved, 1, 3, 5, 0),
+            (Event::RunningAcknowledged, 2, 3, 5, 0),
+            (Event::AdmissionClosed, 3, 3, 5, 0),
+            (
+                Event::PrimaryFailure(primary_cause(&FixtureError::Worker(
+                    WorkerError::Preparation,
+                ))),
+                4,
+                1,
+                2,
+                20,
+            ),
+            (
+                Event::CompletionFailure(worker_cause(WorkerError::Cleanup)),
+                5,
+                1,
+                2,
+                23,
+            ),
+            (
+                Event::StopReportFailure(lifecycle_cause(&LifecycleError::Report(
+                    NativeError::new(NativeOperation::Status, 771),
+                ))),
+                6,
+                1,
+                2,
+                10,
+            ),
+            (
+                Event::TerminalReportFailure(lifecycle_cause(&LifecycleError::ReportingFailed)),
+                7,
+                1,
+                2,
+                13,
+            ),
+            (Event::Finished, 8, 3, 5, 0),
+            (
+                Event::OperationFailure(worker_cause(WorkerError::Running)),
+                9,
+                1,
+                2,
+                22,
+            ),
+        ];
+        let mut expected: Vec<[u8; 128]> = Vec::new();
+        for (sequence, (event, id, level, importance, cause)) in (1_u8..).zip(events) {
+            diagnostics.emit(event, DiagnosticObservation::unavailable());
+            expected.push(literal(code, id, level, importance, cause, sequence, false));
+        }
+        let queued: windows_platform::diagnostics::DiagnosticSnapshot = diagnostics.snapshot();
+        assert_eq!(queued.required().pending(), 9);
+        assert!(queued.required().history().is_empty());
+        let snapshot: windows_platform::diagnostics::DiagnosticSnapshot = diagnostics.finish();
+        assert!(snapshot.sealed());
+        for route in [snapshot.required(), snapshot.optional()] {
+            let actual: Vec<[u8; 128]> = route.history().records().copied().collect();
+            assert_eq!(actual, expected);
+            assert_eq!(route.health().queued().value(), 9);
+            assert_eq!(route.health().consumer_attempts().value(), 9);
+            assert_eq!(route.health().accepted().value(), 9);
+            assert_eq!(route.pending(), 0);
+            assert!(route.history_complete());
+        }
+    }
+}
+
+/// Available queues and failing consumers are independently observed; a successful
+/// enqueue never implies acceptance, completeness or native/durable delivery.
+/// # Panics
+/// Fails if any selected failure is hidden or prevents the healthy route consuming.
+#[test]
+fn queue_admission_is_independent_from_every_consumer_outcome() {
+    for state in [
+        ConsumerState::Available,
+        ConsumerState::Full,
+        ConsumerState::Reject,
+        ConsumerState::Unavailable,
+    ] {
+        let mut diagnostics: Diagnostics = Diagnostics::new(
+            LabRole::Engine,
+            Sinks::new(
+                MemoryConsumer::new(state),
+                Some(MemoryConsumer::new(ConsumerState::Available)),
+            ),
+        );
+        diagnostics.emit(
+            Event::PrimaryFailure(primary_cause(&FixtureError::Native(NativeError::new(
+                NativeOperation::Register,
+                0x5345_4352,
+            )))),
+            DiagnosticObservation::unavailable(),
+        );
+        let queued: windows_platform::diagnostics::DiagnosticSnapshot = diagnostics.snapshot();
+        assert_eq!(queued.required().health().queued().value(), 1);
+        assert_eq!(queued.required().health().consumer_attempts().value(), 0);
+        diagnostics.pump_one();
+        let snapshot: windows_platform::diagnostics::DiagnosticSnapshot = diagnostics.finish();
+        let health: &windows_platform::diagnostics::RouteHealth = snapshot.required().health();
+        assert_eq!(health.queued().value(), 1);
+        assert_eq!(health.consumer_attempts().value(), 1);
         assert_eq!(
-            diagnostics.required().records(),
-            [[1, 2, 2, 1, 0, 1, 0, 0, 0]]
+            health.accepted().value(),
+            u64::from(state == ConsumerState::Available)
         );
-        assert_eq!(diagnostics.required().loss(), (0, 0));
+        assert_eq!(
+            health.consumer_full().value(),
+            u64::from(state == ConsumerState::Full)
+        );
+        assert_eq!(
+            health.consumer_rejected().value(),
+            u64::from(state == ConsumerState::Reject)
+        );
+        assert_eq!(
+            health.consumer_unavailable().value(),
+            u64::from(state == ConsumerState::Unavailable)
+        );
+        assert_eq!(
+            snapshot.required().history_complete(),
+            state == ConsumerState::Available
+        );
+        assert_eq!(snapshot.optional().health().accepted().value(), 1);
+        assert_eq!(
+            snapshot.optional().history().get(0),
+            Some(&literal(1, 4, 1, 2, 9, 1, false))
+        );
     }
 }
 
-/// Lost required delivery cannot block a healthy optional route or create a retry.
+/// Historical v1 bytes remain an explicit prior contract, rejected by the v2 reader.
 /// # Panics
-/// Fails if required failure suppresses optional delivery or records false receipt.
+/// Fails if the current passive decoder silently reinterprets historical bytes.
 #[test]
-fn unavailable_required_still_attempts_optional_exactly_once() {
-    let mut diagnostics = Diagnostics::new(
-        LabRole::Engine,
-        Sinks::new(MemorySink::new(false), Some(MemorySink::new(true))),
-    );
-    diagnostics.emit(Event::Finished);
-    let empty: &[[u8; 9]] = &[];
-    assert_eq!(diagnostics.required().records(), empty);
-    assert_eq!(diagnostics.required().loss(), (0, 1));
-    assert_eq!(
-        diagnostics.optional().map(MemorySink::records),
-        Some([[1, 1, 8, 1, 0, 1, 0, 0, 0]].as_slice())
-    );
-}
-
-/// The final sequence remains usable; no later record reuses or wraps its identity.
-/// # Panics
-/// Fails if exact exhaustion loses the last valid event, wraps or retries.
-#[test]
-fn sequence_exhaustion_preserves_the_last_record_and_reports_loss() {
-    let mut diagnostics = Diagnostics::new(
-        LabRole::Engine,
-        Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
-    );
-    diagnostics.next_sequence = Some(u32::MAX - 1);
-    diagnostics.emit(Event::StartObserved);
-    diagnostics.emit(Event::Finished);
-    diagnostics.emit(Event::StartObserved);
-    assert_eq!(
-        diagnostics.required().records(),
-        [
-            [1, 1, 1, 1, 0, 254, 255, 255, 255],
-            [1, 1, 8, 1, 0, 255, 255, 255, 255],
-        ]
-    );
-    assert_eq!(diagnostics.sequence_loss, 1);
-    assert_eq!(diagnostics.required().loss(), (0, 0));
-    diagnostics.sequence_loss = u32::MAX;
-    diagnostics.emit(Event::Finished);
-    assert_eq!(diagnostics.sequence_loss, u32::MAX);
-    assert_eq!(
-        diagnostics.optional().map(MemorySink::records),
-        Some(diagnostics.required().records())
-    );
+fn historical_v1_literal_is_not_a_supported_v2_record() {
+    let historical: [u8; 9] = [1, 1, 4, 2, 9, 1, 0, 0, 0];
+    assert!(DecodedRecord::decode(&historical).is_err());
 }

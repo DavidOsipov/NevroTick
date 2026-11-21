@@ -7608,8 +7608,9 @@ stage. No proposed shared crate is presumed to exist.
 <a id="w11-w08-first-portable-contract--21-november-2026"></a>
 
 **Whole first portable stage — contract freeze, 21 November 2026.** Planning and
-fresh-context independent review are complete; implementation and all product
-checks below remain **planned**. This continues all five obligations above,
+fresh-context independent review are complete; source is applied and the initial
+integrated development selection has executed. Current static/compiler/fuzz and
+metric qualification below remains **in progress**. This continues all five obligations above,
 not only catalogue enums. Baseline HEAD is `78f8ae931c7139d37e0ff36ed18e41dabf8c72ff`;
 the preserved dirty 648-input source is `02c515363237d1c3c3f7adfc1808dcd0de62546105f97e83390d44675d0256e4`.
 The root index remains unchanged. Current S3.1 qualification retains its exact
@@ -7624,8 +7625,9 @@ canonical authorities and frozen contract without conversation inheritance;
 Its preserved predecessor `logger-stage1-plan-review09.json` was REVISE:
 LOGGER09-R01 identified garde rejection allocation despite a no-allocation
 claim; LOGGER09-R02 identified loss of an overflow fault when wire time becomes
-Unavailable. Contract10 resolves those planning issues; executed implementation
-evidence is still due. Reviewer agreement is no product/native pass.
+Unavailable. Contract10 resolves those planning issues; the source and scoped
+execution record below retain the remaining acceptance work. Reviewer agreement
+is no product/native pass.
 
 **Owners and contract.** Add the sole reusable catalogue/checked codec/router to
 `crates/windows-platform/src/diagnostics.rs`; keep actual error projection and
@@ -7697,7 +7699,10 @@ per route after each lifecycle poll and at most16 per route when sealing.
 Concrete Healthy/Full/Reject/Unavailable consumers perform no callback, lock,
 I/O or retry; an available queue with rejected consumption remains observable.
 Queue admission, consumer attempt/acceptance, refusal, overwrite and unknown
-native delivery stay separate. A single private `HostReceipt` pairs the original
+native delivery stay separate. Snapshot completeness covers producer loss and
+both selected memory routes. Deliberate optional filtering leaves the selected
+history complete when production and delivery succeed. A single private
+`HostReceipt` pairs the original
 operation result with its bounded snapshot, through `run_service`, normal native
 OUTCOME and dispatcher projection. Pre-invocation registration/OWNER failures
 retain their original error and useful PrimaryFailure without inventing
@@ -7724,7 +7729,211 @@ Planning applied plan-code-change, plan-architecture, plan-threat-model,
 evolve-data-contracts, security-privacy-logging, qa-test-planning and
 plan-independent-review to the actual owner/error/codec/consumer path and
 THR-8/10/18 with CHECK-14/17/21/25/26/27. Implementation applies its Rust/service
-and contract owners; selected QA obligations above remain planned, not passed.
+and contract owners. Its current evidence is scoped below; unexecuted obligations
+remain open.
+
+**Applied source and development evidence — 21 November 2026.** The shared
+`windows-platform::diagnostics` owner now supplies the sole catalogue, checked
+128-byte codec, bounded routes, concrete consumers and inspectable health. The
+actual service invocation emits through that owner and retains one `HostReceipt`
+containing its original result and diagnostic snapshot. The normal native source
+projects the same retained receipt; its worker remains inert. These are source
+changes, not installed/native service qualification.
+
+At source candidate `b34301289f1c9e0a0616e08eceff425a2a381e99b85be597fbd5e2bfcd1a8067`
+(651 admitted inputs), the configured offline GNU runs passed112 fixture cases
+(111 library plus one entrypoint),67 platform cases (22 new diagnostics cases,
+45 existing) and26 doctests (18 new, eight existing). Receipts are
+`logger-stage1-fixture13.json`, `logger-stage1-platform13.json` and
+`logger-stage1-doc13.json` under
+`artifacts/windows-services/recovery-20261107-v1/`. The writer's earlier claim
+of14 external cases was a source-count error:13 external plus nine private
+diagnostic cases actually executed. No missing case is counted.
+
+Fresh-context source review found LOGGER-PIPELINE10-R01: decoded event/component
+getters exposed active producer types. The repair returns separate passive
+`ServiceEventClaim`/`ComponentClaim` observations with no conversion to active
+producer authority. `logger-pipeline-source-review13.json` accepts that source
+boundary for configured qualification. On private candidate `0fa4dffc…`,
+`logger-codec-contracts31` retained both intended E0308 causes and executed
+the legal consumer against the copied Cargo library. The doctests also passed.
+
+Independent service-reader review found LOGGER-ADMISSION10-R01: crossed compiler
+target/source attribution could exclude a schema6 variant from its viable
+denominator. The bounded repair restricts attribution to the selected diagnostics
+targets and their actual owned source. Its real-reader RED had five failing
+subcases; GREEN ran28 wrapper controls. Eleven shared-profile and ten target/graph
+controls passed separately. The public policy remains closed, with no invented
+binding, inventory, exclusion or mutation credit. Historical schema5 criteria
+and the90%/95% thresholds remain unchanged.
+
+The first Rust attempts retain an unused-mut compilation refusal and a test
+configuration-revision collision; the latter was repaired by distinct, bounded
+test-owned source IDs, preserving production process-once admission. Subsequent
+Clippy attempts retained production documentation/redundant-attribute and test
+documentation findings. Their causal repairs preserve the snapshot type's
+`must_use` obligation and all product guards. Failed receipts and owned failure
+artifacts remain available; later attempts do not relabel them passing.
+
+| Stage/skill and requirement | Actual action and status | Remaining condition/owner |
+| --- | --- | --- |
+| Rust/contracts/service/privacy; CHECK-14/17/21/25/26/27 | `logger-stage1-development20.json` records 12 passing lanes at `5d70e25c…`, including GNU and Windows-target Clippy. | Final combined review and affected checks after changes to bound helpers. |
+| Positive/negative/boundary/property/model/integration/lifecycle/fault QA | Development20 passed 112 fixture cases and 67 platform cases per GNU test mode, plus 26 platform doctests. The tests include literal wire refusals, all-byte substitutions, bounded histories and real service/Engine consumer controls. | Windows behavioral qualification remains a separate obligation. |
+| Contract/static QA | Contracts31 passed both intended raw E0308 checks and the executed legal consumer. Reader controls passed after repairs for cleanup error precedence, legacy helper custody and GNU graph admission. | Final candidate custody and review. |
+| Structured fuzzing; P3 raw decoder | Fuzz32 admitted the GNU graph and ran 256 callbacks each with the healthy and restored decoder. It observed 145 accepted and 111 rejected inputs initially, and 146 accepted and 110 rejected inputs after restoration. Both fault controls reached their specified assertions and exited 77. The independent reviewer checked the raw callbacks and custody. | Fuzz27 and Fuzz31 retain their notice and inventory refusals. Fuzz32 covers decoder semantics on `0fa4dffc…`. ASan detector qualification remains open. |
+| Resource QA | Development20 passed the strengthened fixed storage and single garde-report layout checks on the pinned GNU compiler. | The checks observe the selected layout and do not measure allocator RSS. |
+| Coverage/mutation QA | Shared41 passed the current shared-owner line and mutation gates. Coverage35 and Adjudication38 passed fixture line and selected generated gates at their original source identity. | The reviewed fixture bridge below retains the scoped evidence, including the earlier unchanged-worker replay. Branch and native delivery evidence remain separate. |
+| Native/sanitizer/UI/package/formal applicability | This source adds no unsafe/native ownership or UI/package effect; no new sanitizer/Loom/Miri campaign is selected for its fixed safe, synchronous memory owner. | Native delivery/service lifecycle, packaging and broader qualification remain separate open scopes. Formal execution is deferred by OD-10; AES, storage and UI holds remain. |
+
+The original stage and codec execution windows expired over the interruption.
+Their incomplete records retain the original deadlines. The 21 November resumed
+checkpoint records its separate allowance and actual commands in
+`logger-finish-owner22.json` under the same Engine composition evidence directory.
+The root index has remained unchanged through these checks.
+
+The integrated review found one reporting defect and one attribution defect.
+The public Rust regression at `1669102f…` reached an optional consumer rejection
+with complete required delivery, then failed because the aggregate snapshot
+reported complete history. The repair includes both routes in the aggregate.
+The intentional-filtering neighbor still calls neither the optional queue nor
+its consumer. Isolated producer-counter cases exercise the exact limit and the
+first saturated increment through actual emissions. Separately, ten synthetic
+reader cases reproduced incorrect mutation credit from legacy service and
+privilege errors under diagnostics schemas 6 and 7. The corrected reader
+requires a diagnostics-owned assertion cause for those schemas and retains
+schema 5's legacy handling. All 37 service reader, 193 shared analysis, 56
+fixture-tooling and 39 environment controls passed on the integrated inputs.
+The reviewer accepted the five-file source change on `cb8ada38…`.
+Development35 passed all twelve configured lanes on the integrated 651-input
+fixture candidate `51746b33…`. The public history regression passes in both
+GNU test modes. Each mode ran 67 platform and 112 fixture cases. The run also
+passed 26 platform doctests, format checks, GNU and Windows-target Clippy,
+and fixture rustdoc. Its receipt is `logger-integrated-development35.json`,
+SHA-256 `670be0660e6c6b02d4de0d2bbe2a80a4dcec2fa3a9cb8ff93c4ba09e7448a5e1`.
+
+Independent comparison of all 641 retained Fuzz32 input paths found six changed
+files in the new private snapshot. The Rust change affects only aggregate
+snapshot reporting, and the target reaches the passive decoder and its original
+helpers. The source changes to tests, mutation attribution and the private
+binding leave the decoder, corpus, compiler profile, graph and fuzz driver
+intact. Reuse Fuzz32 for that unchanged decoder scope at its original candidate.
+
+Metrics33 retained both extension-discovery failures before any measurement.
+The tools were installed with matching reviewed hashes. The launcher omitted
+their directory from its host path. The graph command passed before the
+launcher's additional free-space threshold stopped the batch. The next batch
+includes the two installed extensions on its host path, keeps the configured
+4 GiB disk stop and rebinds the corrected source.
+
+The fixture's fresh ordinary run executed all 112 selected cases. Its
+instrumented run passed the four file gates, with 602/645 host lines, 132/132
+error lines, 90/90 fixture diagnostics lines and 186/193 worker lines. The
+fixture enumerator retained 99 host, 42 error and six diagnostics descriptors.
+These measurements belong to `51746b33…`. The subsequent shared enumeration
+stopped before dispatch when the RAM workspace held the previous fixture builds.
+After verifying the complete fixture receipts and exports and confirming the
+failed lane had created no work directory, the coordinator retired that
+namespace. Shared metrics use a fresh workspace under the same allowance.
+Shared coverage36 passed with 884/912 executable lines (96.93%) and all 67
+selected platform cases on `cb8ada38…`. Enumeration36 retained 398 exact
+descriptors for the shared diagnostics owner. Neither line result records
+branch evidence. The independent fixture inventory review covers all 147
+listed descriptors and records the ungenerated diagnostic category arms.
+
+Fixture mutation37 ran all 99 host descriptors. Cargo-mutants recorded 53
+catches, 43 compiler refusals, three survivors and zero timeouts. The receiving
+check refused three abort-only logs. Error and adapter mutation had not started
+in that run. The three survivors match the independently reviewed current
+equivalences recorded in [the fixture task](windows-service-fixture-equivalences.md#wsf-logger-eq-inert-poll-from).
+Retain the original incomplete receipt. Adjudication38 uses the exact three
+generated overlays through the supervised healthy-driver case, with clean
+controls on both sides, and runs the outstanding 42 error and six adapter variants.
+Adjudication38 passed those healthy controls and each exact overlay produced
+the selected parent assertion with exit 101. Across the host file, the result
+retains 53 attributable catches, 43 compiler refusals and three reviewed
+equivalences. The adjusted score is 53/53 viable. Error passed 17/17 viable with
+25 compiler refusals. The adapter passed 1/1 viable with five compiler refusals.
+All three file gates passed with complete export and custody on `51746b33…`.
+
+Shared mutation37 ran all 398 diagnostics descriptors. Cargo-mutants recorded
+235 catches, 158 compiler refusals, five survivors and zero timeouts. The
+reader refused 14 raw catch logs that did not contain an owned behavioral
+assertion. Those include valid-input operation panics, iterator assertions in
+the standard library and an iterator that drove a collector to process abort.
+No raw catch count serves as a qualification score here. The original full
+export is retained under `logger-runtime-receipts/logger-shared-mutation37`.
+Two existing tests now observe equal and distinct causes independently, verify
+chronological records and exact remaining iterator counts, and exercise the
+first real history overwrite. A bounded test observer checks that valid
+routing and iteration complete without a panic. It caps the sequence read at
+the sixteen retained records plus one overrun observation. This leaves the
+reader's assertion attribution policy in force.
+
+After the WSL restart, retain the original completed fixture and shared
+receipts. Charge the elapsed wall interval against the same checkpoint
+allowance. Shared39 stopped at an unused test import. Shared40 caught all
+five survivors with fresh artifacts, then failed assertion attribution
+because the panic-boundary test used a custom assertion message. The ordinary
+assertion form reached the intended reader rule in Shared41.
+
+Shared41 passed 67 instrumented cases and 884/912 executable lines on
+`ebcd4425…`. Its 93-case mutation baseline passed. The complete 398-variant
+run caught all 239 viable variants, with 159 compiler refusals, zero
+survivors, zero timeouts and zero exclusions. Independent artifact review
+matched every viable row to fresh Build output for the platform library,
+unit tests and diagnostics integration target.
+
+The freshness review of the original Shared37 archive found five viable
+rows that reused artifacts. In one row the reused executable produced the
+previous overlay's panic. The schema 7 reader now checks each viable Build
+record against its exact command and rejects stale, missing, duplicate,
+wrong-phase and wrong-package artifacts. It checks freshness and behavior
+from the same bounded log snapshot. The focused control reproduced six
+missing refusals before the repair. All 38 service reader and 193 shared
+analysis controls passed after integration. The repaired reader refused the
+five old rows and accepted the unchanged Shared41 raw export, all 398
+classifications and the 93-case baseline. That readback used the final
+reader's own hash and retains the execution's original policy binding.
+
+Only the two platform test files changed inside the fixture's admitted
+source set after Adjudication38. One is compiled only with the platform's
+`cfg(test)`, and the other is a separately selected platform integration
+target. The fixture builds the platform library as a normal dependency and
+executes neither test target. Independent review matched the complete
+fixture context, all retained rosters, all five direct host build/test
+bookends and the fresh raw artifacts for the host, error and adapter.
+Carry the fixture line and mutation gates forward through that scoped bridge.
+
+**Portable qualification exit — 21 November 2026.** Development41 passed
+all twelve lanes at `6ee49a91b9bffbb6b531285465dbd2f72954803ee0042636ffa928ad6a621bd6`.
+Each GNU mode ran 67 platform and 112 fixture cases. The run also passed
+26 platform doctests, both format checks, all three Clippy lanes and fixture
+rustdoc. The receipt SHA-256 is
+`5b803a9baf2422f5ec8a2dd81e9a370acc4ec6a9b990684ca93fb12729aa5360`.
+Independent closeout checked all 239 viable Shared41 entries against fresh
+subject artifacts and the executed test paths, and accepted the original
+execution and guarded readback for the scoped portable exit.
+
+The first-stage catalogue, checked diagnostics codec, bounded memory routes,
+real service event projection and original outcome receipt meet the portable
+acceptance criteria. Next, freeze installed provider and channel delivery,
+retention, access and cleanup under the existing W11-W08/W11-W10 plan.
+Native delivery, credentials and provisioning, the two-family matrix, and
+hardened MSIX qualification remain open.
+
+The earlier S3.1 checkpoint was published as signed commit
+`65b8e9a253fc6440beab61ebd53681940997380a`. Its detached staged tree matched all
+648 qualified inputs, passed the redacted secret scan and retained the original
+qualification scope. The fast-forward to `origin/main` was verified after the
+push. GitHub reported its configured bypass for two pending checks. The
+working checkout retained its active source and index during logger measurement.
+
+The worker source and all 37 retained original mutation variants were checked
+byte-for-byte. All historical behavioral kills used worker tests retained by
+the current roster. The updated receipt projection preserves the assertions
+and the expansion to 15 fixture source IDs reserves four IDs for the added
+diagnostic cases. The current 112-case integration and worker line gate pass.
+The historical worker replay remains evidence at its original binding.
 
 The portable exit is a reached, bounded, inspectable event pipeline and health
 consumer at the declared source boundary. It is not production Windows delivery,

@@ -1,15 +1,11 @@
 {
-  "schema_version": 5,
+  "schema_version": 7,
   "package": "windows-platform",
   "subjects": {
-    "lifecycle": "crates/windows-platform/src/service.rs",
-    "scm": "crates/windows-platform/src/scm.rs",
-    "privilege": "crates/windows-platform/src/privilege_observation.rs"
+    "diagnostics": "crates/windows-platform/src/diagnostics.rs"
   },
   "critical_files": [
-    "crates/windows-platform/src/service.rs",
-    "crates/windows-platform/src/scm.rs",
-    "crates/windows-platform/src/privilege_observation.rs"
+    "crates/windows-platform/src/diagnostics.rs"
   ],
   "tool_admission_profile": "stable-core",
   "coverage_minimum_line_percent": 90,
@@ -27,108 +23,393 @@
   "mutation_message_format": "json",
   "maximum_mutants": 512,
   "mutation_equivalences": [],
-  "binding": {
-    "source_file_count": 436,
-    "candidate_sha256": "212546396aff08c9b7bf84452137124d5ea91f7dff01627c0b271854d6b58a24",
-    "inputs_sha256": {
-      "Cargo.toml": "ed63de18dbcaa3dcb8dc0ac3142bb4c868373a6d21171e6181b3f5d754b5d84e",
-      "Cargo.lock": "fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba",
-      "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066",
-      "crates/windows-platform/src/lib.rs": "feb774174024cd5c34b9e82f9b41256f96e8ac5362b8dad4e5423edb2b1f4707",
-      "crates/windows-platform/src/service.rs": "947a54b02859ec6fbfe998fa7a19a24ca522ab3c84dfca1fd70033fe7f545c31",
-      "crates/windows-platform/tests/service.rs": "d531c98ed085c16dc8dfc4d3f1330b59ebd88ec40e78d38a0aba511cf5009c7a",
-      "crates/windows-platform/src/scm.rs": "1502efbdf1f564d507e02767fd20964e0c87602278231b6c470652043518e9d0",
-      "crates/windows-platform/tests/scm.rs": "3d61d23119eb418822870042788e9aed7b7e5cd314403fb6e83bb0e0d9cb703b",
-      "crates/windows-platform/src/privilege_observation.rs": "88fabdfc2f317cc38fdcd02f8f2fe2bcb84831be91ac01ad71aa7aceaea2c509",
-      "crates/windows-platform/tests/privilege_observation.rs": "eafe62765ce5f34776c4155e50bb3e6ddecbd21fefbd16c8af890b7af17ffcfd",
-      "crates/windows-platform/tests/privilege_observation_contracts.rs": "f8271c7fe6d4de2b979ab7daa74d6d596fdf262ed8ad84f75e67b679ad420eb7",
-      "scripts/verify-service-analysis.py": "13f4db09734ae8a61c74e0247ba75e964e6562ed8e5f57ae1fb929c0ebcf62f6",
-      "scripts/tests/test_verify_service_analysis.py": "78374338707cdbf00bc307efa75ec2db56d79fb5860c2d46381dfff57506cb4d",
-      "scripts/portable-analysis.py": "d4a369717aa56df32b70fdf4a12e11f0bccdb4e2173c491b796ad59f3eb836fa",
-      "scripts/tests/test_portable_analysis.py": "ada21fc7d6b1b45133393b120b719ee8d693392386c9b0c12d2e233ed9c125df",
-      "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
-      "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
-      "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
-      "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
-      "scripts/verify.py": "597e99afdcda566ac19fdd28f05db30b0c46cb0fe1f05c413a63750ac3eef9a5",
-      "scripts/slint_dependency_profile.py": "1940751d0dfd4b4b390e9ee6fff66b4d86f63d169397b31612a25ff81fbe9c87",
-      "policy/verification-manifest.toml": "f0bc6e9cb4b0288f9b974990efd20264205db000039667d8cb89973d616f3890",
-      "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
-      "policy/tool-manifest.json": "48d120c94a3bb52a36bd28c1bbfc2f17a9297edae4579eb0ee6225b5766322fd",
-      "policy/ui-m0-dependencies.json": "e6deed9d31a93547e61ec72ae75ffea471242c491abc7a855c598342c5d7dac9",
-      ".cargo/config.toml": "ae88d5eebb6e1da17cb2f3f292ac1e7b29d3fbe2ccbb41516414582d9afcfd52",
-      ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b"
-    },
-    "ordinary_tests": [
-      "backwards_time_and_invalid_transitions_never_report",
-      "both_roles_follow_the_same_truthful_status_trace",
-      "budget_admission_agrees_with_the_complete_small_boundary_grid",
-      "checking_a_stuck_phase_does_not_fabricate_progress",
-      "complete_zero_and_unrelated_captures_preserve_named_absence_only",
-      "completion_is_required_for_readiness_and_bounded_capacity",
-      "concurrent_notifications_preserve_a_single_sticky_stop_request",
-      "controls_decode_only_stop_and_interrogate",
-      "count_neighbors_and_header_only_counts_remain_distinct",
-      "dropping_or_cancelling_a_permit_never_completes_the_operation",
-      "duplicate_target_and_unrelated_records_both_reject",
-      "each_isolated_lookup_collision_is_rejected",
-      "earlier_report_failure_requires_an_explicit_failed_terminal_outcome",
-      "early_stop_preserves_pending_limits_without_fabricating_running",
-      "equal_low_halves_preserve_all_signed_high_bits",
-      "error_projection_is_bounded_while_the_original_cause_remains_available",
-      "every_lifecycle_phase_has_the_exact_seven_field_projection",
-      "every_target_presence_and_known_attribute_combination_refuses_engine",
-      "exact_profiles_preserve_all_accepted_named_attributes",
-      "exact_profiles_reject_missing_extras_and_enabled_clock",
-      "failed_cleanup_maps_the_exact_service_specific_error_code",
-      "failed_cleanup_progress_retains_custody_and_the_original_deadline",
-      "failed_start_or_running_report_fences_work_but_allows_cleanup",
-      "failed_stop_report_never_reopens_admission_or_restarts_shutdown",
-      "final_slot_targets_and_maximum_byte_neighbors_are_checked",
-      "late_completion_is_bound_to_the_original_invocation",
-      "mixed_record_order_preserves_presence_and_current_enablement",
-      "notification_is_coalesced_and_unrelated_controls_have_no_effect",
-      "one_entry_requires_exactly_sixteen_bytes",
-      "parallel_completion_restores_only_the_explicit_job_capacity",
-      "pending_limits_are_mandatory_without_product_defaults",
-      "produced_capture_refusals_have_bounded_useful_redacted_messages",
-      "produced_forbidden_refusals_preserve_named_sources_and_bounded_messages",
-      "produced_profile_refusals_without_sources_keep_useful_bounded_messages",
-      "progress_does_not_extend_startup_and_exact_deadline_rejects",
-      "raw_capture_failures_never_become_absence",
-      "receiving_a_stop_is_separate_from_the_owners_authorized_transition",
-      "repeated_stop_checks_time_without_repeating_the_status_effect",
-      "snapshot_and_role_refusals_keep_unknown_capture_data_private",
-      "startup_deadline_failure_cannot_be_hidden_by_a_clean_terminal_outcome",
-      "stop_deadline_overrun_requires_a_failed_terminal_outcome",
-      "successful_pending_report_does_not_clear_the_permanent_failure_fence",
-      "terminal_deadline_guard_cannot_be_bypassed_by_omitting_the_observer",
-      "terminal_report_is_never_retried_even_when_it_fails",
-      "unrelated_attributes_cannot_be_filtered_into_absence"
+  "binding": null,
+  "mutation_inventories": {},
+  "coverage_guided_fuzzing": {
+    "locked_registry_packages": [
+      {
+        "name": "arbitrary",
+        "version": "1.5.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
+      },
+      {
+        "name": "castaway",
+        "version": "0.2.4",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "dec551ab6e7578819132c713a93c022a05d60159dc86e7a7050223577484c55a",
+        "dependencies": [
+          "rustversion"
+        ]
+      },
+      {
+        "name": "cc",
+        "version": "1.10.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "86e055fa6e3e40ad6187ba25b6855eeb635d5271f8e0f0e1e9a5826b8d75bea0",
+        "dependencies": [
+          "find-msvc-tools",
+          "jobserver",
+          "libc",
+          "shlex"
+        ]
+      },
+      {
+        "name": "cfg-if",
+        "version": "1.0.5",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+      },
+      {
+        "name": "compact_str",
+        "version": "0.9.1",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "9dfdd1c2274d9aa354115b09dc9a901d6c5576818cdf70d14cae2bdb47df00ab",
+        "dependencies": [
+          "castaway",
+          "cfg-if",
+          "itoa",
+          "rustversion",
+          "ryu",
+          "static_assertions"
+        ]
+      },
+      {
+        "name": "find-msvc-tools",
+        "version": "0.1.15",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
+      },
+      {
+        "name": "garde",
+        "version": "0.23.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "5d7f479d28d1daedf23970890723b8774d120aa627abcb33c1d7c93d0965e6c3",
+        "dependencies": [
+          "compact_str",
+          "garde_derive",
+          "smallvec"
+        ]
+      },
+      {
+        "name": "garde_derive",
+        "version": "0.23.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "7b0252cacdca8e6f30a900e6d436fbf294e23f674b9288ca4a5bd35976bef87c",
+        "dependencies": [
+          "proc-macro2",
+          "quote",
+          "syn"
+        ]
+      },
+      {
+        "name": "getrandom",
+        "version": "0.4.3",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
+        "dependencies": [
+          "cfg-if",
+          "libc",
+          "r-efi"
+        ]
+      },
+      {
+        "name": "itoa",
+        "version": "1.0.18",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+      },
+      {
+        "name": "jobserver",
+        "version": "0.1.35",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3",
+        "dependencies": [
+          "getrandom",
+          "libc"
+        ]
+      },
+      {
+        "name": "libc",
+        "version": "0.2.191",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
+      },
+      {
+        "name": "libfuzzer-sys",
+        "version": "0.4.13",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a9fd2f41a1cba099f79a0b6b6c35656cf7c03351a7bae8ff0f28f25270f929d2",
+        "dependencies": [
+          "arbitrary",
+          "cc"
+        ]
+      },
+      {
+        "name": "proc-macro2",
+        "version": "1.0.107",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+        "dependencies": [
+          "unicode-ident"
+        ]
+      },
+      {
+        "name": "quote",
+        "version": "1.0.47",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
+        "dependencies": [
+          "proc-macro2"
+        ]
+      },
+      {
+        "name": "r-efi",
+        "version": "6.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
+      },
+      {
+        "name": "rustversion",
+        "version": "1.0.23",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+      },
+      {
+        "name": "ryu",
+        "version": "1.0.23",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
+      },
+      {
+        "name": "shlex",
+        "version": "2.0.1",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+      },
+      {
+        "name": "smallvec",
+        "version": "1.16.4",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
+      },
+      {
+        "name": "static_assertions",
+        "version": "1.1.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+      },
+      {
+        "name": "syn",
+        "version": "2.0.119",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297",
+        "dependencies": [
+          "proc-macro2",
+          "quote",
+          "unicode-ident"
+        ]
+      },
+      {
+        "name": "unicode-ident",
+        "version": "1.0.27",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+      }
     ],
-    "doctests": [
-      "crates/windows-platform/src/lib.rs - (line 34) - compile fail",
-      "crates/windows-platform/src/lib.rs - (line 40) - compile fail",
-      "crates/windows-platform/src/lib.rs - (line 9)",
-      "crates/windows-platform/src/privilege_observation.rs - privilege_observation (line 19) - compile fail",
-      "crates/windows-platform/src/privilege_observation.rs - privilege_observation (line 9) - compile fail",
-      "crates/windows-platform/src/scm.rs - scm (line 18)",
-      "crates/windows-platform/src/scm.rs - scm (line 30) - compile fail",
-      "crates/windows-platform/src/scm.rs - scm (line 38) - compile fail"
-    ]
+    "gnu_reachable_features": {
+      "arbitrary": [],
+      "castaway": [
+        "alloc"
+      ],
+      "cc": [
+        "parallel"
+      ],
+      "cfg-if": [],
+      "compact_str": [],
+      "find-msvc-tools": [],
+      "garde": [
+        "derive"
+      ],
+      "garde_derive": [],
+      "itoa": [],
+      "jobserver": [],
+      "libc": [
+        "default",
+        "std"
+      ],
+      "libfuzzer-sys": [
+        "default",
+        "link_libfuzzer"
+      ],
+      "proc-macro2": [
+        "default",
+        "proc-macro"
+      ],
+      "quote": [
+        "default",
+        "proc-macro"
+      ],
+      "rustversion": [],
+      "ryu": [],
+      "shlex": [
+        "default",
+        "std"
+      ],
+      "smallvec": [],
+      "static_assertions": [],
+      "syn": [
+        "clone-impls",
+        "default",
+        "derive",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro"
+      ],
+      "unicode-ident": []
+    },
+    "gnu_dependency_edges": {
+      "arbitrary": [],
+      "castaway": [
+        "rustversion"
+      ],
+      "cc": [
+        "find-msvc-tools",
+        "jobserver",
+        "libc",
+        "shlex"
+      ],
+      "cfg-if": [],
+      "compact_str": [
+        "castaway",
+        "cfg-if",
+        "itoa",
+        "rustversion",
+        "ryu",
+        "static_assertions"
+      ],
+      "find-msvc-tools": [],
+      "garde": [
+        "compact_str",
+        "garde_derive",
+        "smallvec"
+      ],
+      "garde_derive": [
+        "proc-macro2",
+        "quote",
+        "syn"
+      ],
+      "itoa": [],
+      "jobserver": [
+        "libc"
+      ],
+      "libc": [],
+      "libfuzzer-sys": [
+        "arbitrary",
+        "cc"
+      ],
+      "proc-macro2": [
+        "unicode-ident"
+      ],
+      "quote": [
+        "proc-macro2"
+      ],
+      "rustversion": [],
+      "ryu": [],
+      "shlex": [],
+      "smallvec": [],
+      "static_assertions": [],
+      "syn": [
+        "proc-macro2",
+        "quote",
+        "unicode-ident"
+      ],
+      "unicode-ident": [],
+      "windows-platform": [
+        "garde"
+      ],
+      "windows-platform-diagnostics-fuzz": [
+        "libfuzzer-sys",
+        "windows-platform"
+      ]
+    },
+    "selected_grants": {
+      "arbitrary": "MIT",
+      "castaway": "MIT",
+      "cc": "MIT",
+      "cfg-if": "MIT",
+      "compact_str": "MIT",
+      "find-msvc-tools": "MIT",
+      "garde": "MIT",
+      "garde_derive": "MIT",
+      "getrandom": "MIT",
+      "itoa": "MIT",
+      "jobserver": "MIT",
+      "libc": "MIT",
+      "libfuzzer-sys": "MIT; bundled native Apache-2.0 WITH LLVM-exception",
+      "proc-macro2": "MIT",
+      "quote": "MIT",
+      "r-efi": "MIT",
+      "rustversion": "MIT",
+      "ryu": "BSL-1.0",
+      "shlex": "MIT",
+      "smallvec": "MIT",
+      "static_assertions": "MIT",
+      "syn": "MIT",
+      "unicode-ident": "MIT AND Unicode-3.0"
+    },
+    "control_lock_sha256": "945748a17cd2ccd01376b3326f9c7b37612a0bc19c725bacffeff6fdb36a333b",
+    "manifest": "policy/service-diagnostics-fuzz-manifest.toml",
+    "lockfile": "policy/service-diagnostics-fuzz.lock",
+    "target_source": "policy/service-diagnostics-fuzz-target.rs",
+    "tool_admission_profile": "full",
+    "target": "x86_64-unknown-linux-gnu",
+    "nightly": "nightly-2026-10-28",
+    "cargo_fuzz_version": "0.13.2",
+    "cargo_fuzz_sha256": "f87d63fc80e4f897a32ead5df85bd67665afb6a63ed92bb0d2b0473e15295eba",
+    "sanitizer": "address",
+    "control_seed": "start-observed",
+    "forwarded_control_seed": "running-acknowledged",
+    "rejected_seed": "reserved-108",
+    "flags": [
+      "-runs=256",
+      "-max_len=4096",
+      "-timeout=2",
+      "-rss_limit_mb=512",
+      "-malloc_limit_mb=256",
+      "-max_total_time=30"
+    ],
+    "features": [
+      "seeded-defect",
+      "forwarding-defect"
+    ],
+    "native_workers": 1,
+    "build_seconds": 600,
+    "metadata_seconds": 120,
+    "native_seconds": 90,
+    "maximum_callbacks": 512,
+    "maximum_input_bytes": 4096,
+    "Cargo.toml_sha256": "717da09d49803b45cc863510896c8606da4493d84818b7da0c17af9a953c6f86",
+    "Cargo.lock_sha256": "78972066990e67a1cbbb53c331ba1c2944785f3e5a103672f9d133099c86d803",
+    "target.rs_sha256": "0b84ed523f55e5d02bd4cf18bd3e1d0de6659f5295c171b51434ceffd2f001da",
+    "seed_count": 209,
+    "seed_identity_sha256": "9fb856f6a42e4336f21b7a82c639dd15e406981cd9b241bb1ac0cf2099984cfe"
   },
-  "mutation_inventories": {
-    "lifecycle": {
-      "count": 53,
-      "sha256": "6b0c26ca69165cc0b1eca40786c7883413835757a7c5be5b7a38a713a41ed031"
-    },
-    "scm": {
-      "count": 24,
-      "sha256": "826a85bdb95825d972a1460054a8c05c76a6b33692d9592b23579e140281a5db"
-    },
-    "privilege": {
-      "count": 42,
-      "sha256": "5c5aaaa980cee306352d59333ab865951c1fb57e2843d5213386ee555462540b"
-    }
+  "external_contracts": {
+    "tool_admission_profile": "stable-core",
+    "wall_seconds": 300,
+    "compiler_seconds": 60,
+    "legal_seconds": 30,
+    "negative_count": 2,
+    "legal_count": 1,
+    "library_build_count": 1,
+    "package": "windows-platform",
+    "target": "ordinary-host",
+    "error_code": "E0308",
+    "passive_claims": [
+      "ComponentClaim",
+      "ServiceEventClaim"
+    ]
   }
 }

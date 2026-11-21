@@ -25,6 +25,52 @@ Assumptions and invalidation: Invalidate on return-type/From implementation chan
 
 Reviewed independently by /root/s31_metrics_plan_review through source and retained raw evidence only; no proof/compiler/test job was run by this reviewer. Source/invariant changes require re-review.
 
+## WSF-LOGGER-EQ-INERT-POLL-FROM
+
+Fixture candidate `51746b3327bb953c9224e2ab2d773d438a0fb3a35a66a48109572ffa4a090987`,
+host source `18a35f1796827a6f3fa0a9f18d00ad9c4da3f6dd68877c0519a4d46ed3bc38be`.
+Mutation37 records the exact `host.rs:150:9` replacement as `MissedMutant`.
+Rendered diff SHA-256 `7f90e7479276d224b4fa7344494bcbaad468462f197df8229feeba147ac3cd04`.
+
+Pinned Rust 1.100.0 implements `Poll::from(value)` as `Poll::Ready(value)`.
+The typed value is `Ok(())` for every admitted worker and wake state. Both bodies
+ignore their arguments. Neither performs a wake, changes state or emits an event.
+The independent review checked both cancelled and uncancelled states and the
+current caller. Changing the conversion or letting preparation depend on state
+invalidates this equivalence.
+
+## WSF-LOGGER-EQ-JOIN-TAIL-OR-AND
+
+The same fixture candidate and host source apply. Mutation37 records
+`host.rs:890:50` replacing `||` with `&&` as `MissedMutant`.
+Rendered diff SHA-256 `e80b68e6e49fa796d11ab6380846e741afd4c194151eed07a64822e1b4c30dec`.
+
+The real stop call precedes the Joining path in this poll. Reversal implies
+overdue, and overdue with a trusted observation entails an absent or elapsed
+deadline. Only overdue without reversal can distinguish the branches.
+Both return the fixed join-tail wait in that state. The variant additionally
+repeats the deadline failure call after stop has recorded the primary failure
+and set the diagnostic publication flags. The repeated call changes no failure
+slot, emitted record, counter, status or custody. Each path pumps diagnostics
+once. The independent review challenged a future deadline with overdue set,
+which the checked stop transition excludes. Allowing that state or a second
+diagnostic publication invalidates this equivalence.
+
+## WSF-LOGGER-EQ-JOIN-TAIL-POSITIVE-GUARD
+
+The same fixture candidate and host source apply. Mutation37 records
+`host.rs:896:40` replacing `!remaining.is_zero()` with `true` as `MissedMutant`.
+Rendered diff SHA-256 `cf9b9f882a00fae17cb52d4402fb9e810c8c5b5f3b3be14eaba17ed180df880e`.
+
+A Joining poll reaches this match arm only after a successful stop observation
+with a trusted coordinate before the deadline. Both guards select the same
+positive duration and the same bounded wait. At equality, expiry, reversal or
+absent deadline, the preceding stop transition sends execution to the outer
+wait branch. The independent review challenged an equal deadline without the
+overdue flag, which that transition excludes. Both paths pump diagnostics once.
+An intervening observation or an expiry check that admits equality invalidates
+this equivalence. All three current equivalences receive zero kill credit.
+
 ## WSF-EQ-JOIN-TAIL-OR-AND
 
 src/host.rs:827:50: replace || with && in ServiceInvocation<R, P>::poll

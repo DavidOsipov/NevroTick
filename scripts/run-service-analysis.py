@@ -23,6 +23,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import signal
 import stat
 import subprocess
 import time
@@ -32,13 +33,18 @@ ROOT = Path(__file__).resolve().parents[1]
 RECORDS = ROOT / "artifacts/windows-services/recovery-20261107-v1"
 CACHE = Path.home() / ".local/share/nevrotick/service-verification-cache-20261107-v1"
 PRODUCER = ROOT / "scripts/verify-service-analysis.py"
-LANES = ("enumerate", "coverage", "mutation", "all")
+LANES = ("enumerate", "coverage", "mutation", "all", "contracts", "fuzz")
 DISK_FLOOR = 2 * 1024 ** 3
 MAX_FILE = 268435456  # Existing runtime's exact RLIMIT_FSIZE, including binaries.
 MAX_ENTRIES = 200000
 BOUND_FILES = ("scripts/run-service-analysis.py", "scripts/verify-service-analysis.py",
                "scripts/portable-analysis.py", "scripts/check-analysis.py",
                "scripts/analysis-runtime.py", "policy/service-analysis.json")
+CODEC_BOUND_FILES = (*BOUND_FILES,
+               "scripts/service_diagnostics_analysis.py", "policy/service-diagnostics-fuzz-manifest.toml",
+               "policy/service-diagnostics-fuzz.lock", "policy/service-diagnostics-fuzz-target.rs",
+               "scripts/tests/test_verify_service_analysis.py", "scripts/tests/test_portable_analysis.py",
+               "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt")
 RULES = {
     "retain": ["work/target/llvm-cov-target/**", "**/*.profdata", "**/*.profraw",
                "all other regular producer files except the literal caches below"],
@@ -209,8 +215,10 @@ def index_identity():
 
 def bindings(common):
     """Use the existing bounded custody reader for frontend/producer inputs."""
+    policy = common.read_analysis_json(ROOT / "policy/service-analysis.json")
+    names = CODEC_BOUND_FILES if policy.get("schema_version") == 7 else BOUND_FILES
     return {name: hashlib.sha256(common.read_analysis_bytes(ROOT / name, maximum=16 * 1024 * 1024)).hexdigest()
-            for name in BOUND_FILES}
+            for name in names}
 
 
 def main(argv=None):
@@ -219,7 +227,11 @@ def main(argv=None):
     parser.add_argument("--lane", required=True, choices=LANES)
     parser.add_argument("--label", required=True)
     parser.add_argument("--vendor-dir", required=True, type=Path)
+    parser.add_argument("--deadline-monotonic", type=float)
     args = parser.parse_args(argv)
+    if args.lane in {"contracts", "fuzz"}:
+        require(args.deadline_monotonic is not None and 1 < args.deadline_monotonic - time.monotonic() <= 3600,
+                "Codec lanes require the original remaining shared wall deadline, at most one hour.")
     require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label), "Invalid fresh record label.")
     require(not any(key in {"RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "RUSTDOCFLAGS", "CARGO_ENCODED_RUSTDOCFLAGS"}
                     or (key.startswith("CARGO_TARGET_") and key.endswith(("_RUSTFLAGS", "_RUSTDOCFLAGS")))
@@ -244,7 +256,10 @@ def main(argv=None):
                    "started_ns": time.time_ns(), "native_execution": "NOTRUN", "formal_execution": "NOTRUN"}
         command = [sys.executable, "-B", str(PRODUCER), "--lane", args.lane,
                    "--output-dir", str(output), "--vendor-dir", str(args.vendor_dir)]
+        if args.deadline_monotonic is not None:
+            command.extend(["--deadline-monotonic", str(args.deadline_monotonic)])
         receipt["command"] = command
+        receipt["deadline_monotonic"] = args.deadline_monotonic
         write_new(record / "invocation.json", receipt)
         common, before, epoch, result = None, None, None, None
         errors = []
@@ -257,7 +272,23 @@ def main(argv=None):
             receipt.update(input_hashes_before=before, index_before=epoch)
             write_new(record / "admission.json", {"input_hashes": before, "index": epoch})
             with (record / "producer.stdout").open("xb") as stdout, (record / "producer.stderr").open("xb") as stderr:
-                result = subprocess.run(command, cwd=ROOT, stdout=stdout, stderr=stderr, check=False)
+                if args.deadline_monotonic is not None:
+                    left = args.deadline_monotonic - time.monotonic()
+                    require(left > 0, "Shared wall deadline exhausted before producer dispatch.")
+                else:
+                    left = None
+                if left is None:
+                    result = subprocess.run(command, cwd=ROOT, stdout=stdout, stderr=stderr, check=False)
+                else:
+                    # Own the entire new-lane producer tree through timeout and reap.
+                    process = subprocess.Popen(command, cwd=ROOT, stdout=stdout, stderr=stderr, start_new_session=True)
+                    try:
+                        code = process.wait(timeout=left)
+                        result = subprocess.CompletedProcess(command, code)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(process.pid, signal.SIGKILL)
+                        process.wait()
+                        raise ValueError("Shared codec deadline exhausted; owned producer tree killed and reaped.")
             receipt["producer_exit_code"] = result.returncode
         except Exception as error:
             errors.append(type(error).__name__ + ": " + str(error))
@@ -274,6 +305,8 @@ def main(argv=None):
         try:
             if output.exists():
                 exported = export_tree(output, record / "raw", record)
+                if args.deadline_monotonic is not None:
+                    require(time.monotonic() <= args.deadline_monotonic, "Shared wall deadline exhausted during export/bookends.")
                 receipt["export_complete"] = True
                 receipt["exported_files"] = len(exported)
                 report = common.read_analysis_json(record / "raw/verification.json")

@@ -101,6 +101,7 @@ SERVICE_LIFECYCLE_SUBJECTS = (("lifecycle", "crates/windows-platform/src/service
 SERVICE_SCM_SUBJECTS = (*SERVICE_LIFECYCLE_SUBJECTS, ("scm", "crates/windows-platform/src/scm.rs"))
 SERVICE_PRIVILEGE_SUBJECTS = (*SERVICE_SCM_SUBJECTS,
                             ("privilege", "crates/windows-platform/src/privilege_observation.rs"))
+SERVICE_DIAGNOSTICS_SUBJECTS = (("diagnostics", "crates/windows-platform/src/diagnostics.rs"),)
 
 FREQUENCY_PRIOR_SUBJECTS = (
     ("frequency_state", "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs"),
@@ -2966,7 +2967,11 @@ def admission_profile(args, scope, policy):
     profile = getattr(args, "tool_admission_profile", "full")
     if type(profile) is not str or profile not in ANALYSIS.ADMISSION_PROFILES:
         raise Incomplete("Unknown analysis admission profile.")
-    if policy.get("tool_admission_profile", "full") != profile:
+    codec_fuzz = (type(policy) is dict and type(policy.get("schema_version")) is int
+                  and policy.get("schema_version") == 7 and scope.package == "windows-platform"
+                  and scope.policy == "policy/service-analysis.json" and args.lane == "fuzz")
+    expected_profile = "full" if codec_fuzz else policy.get("tool_admission_profile", "full")
+    if expected_profile != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
     if _core_h02_role(scope, policy):
         require_core_h02_role(scope, policy)
@@ -3003,17 +3008,21 @@ def admission_profile(args, scope, policy):
             raise Incomplete("Frequency-prior admits only its stable compiler/coverage/mutation lanes.")
         return profile
     if (scope.package == "windows-platform" or scope.policy == "policy/service-analysis.json"
-            or scope.subjects in (SERVICE_LIFECYCLE_SUBJECTS, SERVICE_SCM_SUBJECTS, SERVICE_PRIVILEGE_SUBJECTS)
+            or scope.subjects in (SERVICE_LIFECYCLE_SUBJECTS, SERVICE_SCM_SUBJECTS,
+                                  SERVICE_PRIVILEGE_SUBJECTS, SERVICE_DIAGNOSTICS_SUBJECTS)
             or policy.get("package") == "windows-platform"):
         # This exact portable owner uses the complete admitted stable payload.
         # No nightly, proof tool or unrelated analyzer is executed or borrowed.
         # Preserve the exact historical rows. Schema 5 adds only the checked
         # privilege owner to schema 4's four-worker, mutation-only 512-task row.
+        # Schema 6 selects only the shared diagnostics owner with the same gates.
         schema = policy.get("schema_version")
-        if type(schema) is not int or schema not in {1, 2, 3, 4, 5}:
+        if type(schema) is not int or schema not in {1, 2, 3, 4, 5, 6, 7}:
             raise Incomplete("Unknown exact service analysis schema.")
-        workers, process_limit = {1: (4, 128), 2: (4, 128), 3: (1, 128), 4: (4, 512), 5: (4, 512)}[schema]
+        workers, process_limit = {1: (4, 128), 2: (4, 128), 3: (1, 128),
+                                  4: (4, 512), 5: (4, 512), 6: (4, 512), 7: (4, 512)}[schema]
         subjects = (SERVICE_LIFECYCLE_SUBJECTS if schema == 1 else
+                    SERVICE_DIAGNOSTICS_SUBJECTS if schema in {6, 7} else
                     SERVICE_PRIVILEGE_SUBJECTS if schema == 5 else SERVICE_SCM_SUBJECTS)
         facts = {
             "schema_version": schema, "package": "windows-platform", "subjects": dict(subjects),
@@ -3025,10 +3034,24 @@ def admission_profile(args, scope, policy):
             "mutation_process_limit": process_limit, "mutation_message_format": "json", "maximum_mutants": 512,
             "mutation_equivalences": [],
         }
-        if (profile != "stable-core" or args.lane not in {"coverage", "mutation", "all"}
+        extra = set()
+        lanes = {"coverage", "mutation", "all"}
+        required_profile = "stable-core"
+        if schema == 7:
+            spec = importlib.util.spec_from_file_location("service_codec_admission", ROOT / "scripts/service_diagnostics_analysis.py")
+            codec = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(codec)
+            try:
+                codec.require_specs(policy)
+            except ValueError as error:
+                raise Incomplete(str(error)) from error
+            extra = {"coverage_guided_fuzzing", "external_contracts"}
+            lanes |= {"contracts", "fuzz"}
+            required_profile = "full" if args.lane == "fuzz" else "stable-core"
+        if (profile != required_profile or args.lane not in lanes
                 or type(scope) is not Scope or scope.package != "windows-platform"
                 or scope.policy != "policy/service-analysis.json" or scope.subjects != subjects
-                or type(policy) is not dict or set(policy) != set(facts) | {"binding", "mutation_inventories"}
+                or type(policy) is not dict or set(policy) != set(facts) | {"binding", "mutation_inventories"} | extra
                 or any(type(policy.get(key)) is not type(value) or policy[key] != value for key, value in facts.items())):
             raise Incomplete("Service analysis requires its exact stable-only lifecycle role, gates and budgets.")
         return profile

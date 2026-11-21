@@ -227,7 +227,8 @@ class EngineCompositionGraphTests(unittest.TestCase):
                 ("entrypoints", "test", "bin", "tests/entrypoints.rs")],
             "windows-platform": [("windows_platform", "lib", "lib", "src/lib.rs"),
                 *[(name, "test", "bin", "tests/" + name + ".rs") for name in (
-                    "service", "scm", "privilege_observation", "privilege_observation_contracts")]],
+                    "service", "scm", "privilege_observation", "privilege_observation_contracts",
+                    "diagnostics")]],
             "nevrotick-engine": [("nevrotick_engine", "lib", "lib", "src/lib.rs"),
                 ("nevrotick-observe", "bin", "bin", "src/bin/nevrotick-observe.rs"),
                 *[(name, "test", "bin", "tests/" + name + ".rs") for name in (
@@ -268,6 +269,25 @@ class EngineCompositionGraphTests(unittest.TestCase):
         policy, data, normal, _development = self.fixture()
         with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
             self.receive((policy, data, normal, normal))
+
+    def test_shared_diagnostics_target_requires_its_actual_declared_source(self):
+        """Admit the real new consumer, refusing absent, foreign or gated substitutes."""
+        self.assertTrue(self.receive(self.fixture())["engine_in_tests"])
+        for defect in ("absent", "foreign-source", "wrong-kind", "gated"):
+            with self.subTest(defect=defect):
+                fixture = self.fixture()
+                targets = fixture[1]["packages"][1]["targets"]
+                diagnostic = next(target for target in targets if target["name"] == "diagnostics")
+                if defect == "absent":
+                    targets.remove(diagnostic)
+                elif defect == "foreign-source":
+                    diagnostic["src_path"] = "/work/source/crates/windows-platform/tests/service.rs"
+                elif defect == "wrong-kind":
+                    diagnostic["kind"] = ["example"]
+                else:
+                    diagnostic["required-features"] = ["unadmitted-profile"]
+                with self.assertRaisesRegex(Q.Incomplete, "target set|gated local target"):
+                    self.receive(fixture)
 
     def test_promoting_engine_edge_to_production_is_refused(self):
         fixture = self.fixture()

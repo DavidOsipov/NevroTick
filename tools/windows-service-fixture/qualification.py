@@ -437,7 +437,8 @@ LOCAL_OWNERS = {name: "crates/" + name for name in (
     "windows-platform", "nevrotick-engine", "ntp-wire", "time-domain", "windows-platform-native")}
 LOCAL_OWNERS["nevrotick-windows-service-fixture"] = TOOL
 LOCAL_TESTS = {
-    "windows-platform": ("service", "scm", "privilege_observation", "privilege_observation_contracts"),
+    "windows-platform": ("service", "scm", "privilege_observation", "privilege_observation_contracts",
+                         "diagnostics"),
     "nevrotick-engine": ("execute_entered", "prepare_entered", "prepare_release", "quality",
                          "runtime_boundary", "series", "session"),
     "ntp-wire": ("datagram", "header", "nts_client_request", "nts_export", "nts_ke", "nts_negotiation",

@@ -16,6 +16,7 @@ use nevrotick_windows_service_fixture::FixtureError;
 #[test]
 fn gnu_entries_fail_windows_only_without_a_console_service_fallback() -> Result<(), Box<dyn Error>>
 {
+    assert!(nevrotick_windows_service_fixture::retained_diagnostics().is_none());
     assert!(matches!(
         nevrotick_windows_service_fixture::engine_entry(),
         Err(FixtureError::WindowsOnly)
@@ -33,5 +34,6 @@ fn gnu_entries_fail_windows_only_without_a_console_service_fallback() -> Result<
         assert_eq!(result.stdout.as_slice(), b"");
         assert_eq!(result.stderr.as_slice(), b"");
     }
+    assert!(nevrotick_windows_service_fixture::retained_diagnostics().is_none());
     Ok(())
 }

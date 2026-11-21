@@ -87,6 +87,25 @@ pub fn broker_entry() -> Result<(), &'static FixtureError> {
     entry(LabRole::ClockBroker)
 }
 
+/// Borrow the bounded historical snapshot from this process's actual host receipt.
+///
+/// Returns `None` before a receipt exists, after dispatch without an owner receipt,
+/// and on non-Windows hosts. Observation neither polls nor drains diagnostics and
+/// cannot acknowledge work, cleanup, native delivery, service identity or UTC truth.
+/// The snapshot and original operation result belong to the same retained receipt.
+#[must_use]
+pub fn retained_diagnostics() -> Option<&'static windows_platform::diagnostics::DiagnosticSnapshot>
+{
+    #[cfg(windows)]
+    {
+        native::retained_diagnostics()
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
 /// Select a native fixture without adding a console/debug fallback.
 ///
 /// # Errors
