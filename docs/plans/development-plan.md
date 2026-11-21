@@ -489,6 +489,32 @@ Prepare the cases under LIT-0; run the estimator comparison after actual V1.
 Its source-scoring observations remain advisory inputs under DATA/R/C owners,
 without importing the paper's pool, constants or authentication description.
 
+### 4.7 NTPv5 and F323 research disposition
+
+**21 November 2026:** David requested documentation of the preceding software
+comparison and improvement recommendations. The
+[pinned assessment](../supporting-reviews/ntpv5-benefits-and-adoption.md) and
+[existing protocol task](../../tasks/s0.1-protocol-comparison.md#ntpv5-and-f323-research-handoff--21-november-2026)
+retain the findings and conditional owner/check map. F323 over NTPv4 + NTS is the
+proposed narrower benefit experiment; a full NTPv5 adapter is a separate candidate
+requiring an exact compatible draft and its own admission contract.
+
+**Disposition:** the linked task records the completed documentation/source review;
+experiments, implementation, interoperability and benefit measurements
+remain unselected and unexecuted. Keep the NTPv4 + NTS baseline and DEC-1 Core.
+This does not add a V1 exit, import a ready implementation item into §8.4's
+hardening queue, or make the proposal an automatic MATH-0 assignment. Current
+§7 continues the W11-W08 first portable catalogue/routing stage after the selected
+P3 Engine composition checkpoint. The accepted post-V1 order remains MATH-0 →
+TRUST-0 → MT-0 → Khronos/Ananke → GEO-0 → Android; native, fuzz, storage, UI and
+formal-work restrictions retain their existing scope.
+
+If a later bounded experiment is selected, first freeze its hypothesis, exact
+endpoint/protocol/draft, ownership, independent oracle, limits and exit in the
+existing protocol/Engine task. Revalidate the source pins then; route numerical
+history and Windows mapping changes to their existing owners. A documented
+comparison supplies neither measured accuracy nor production sample eligibility.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading

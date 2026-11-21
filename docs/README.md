@@ -9,6 +9,18 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**NTPv5 and F323 research — 21 November 2026:** the
+[source-pinned comparison](supporting-reviews/ntpv5-benefits-and-adoption.md)
+compares NevroTick, ntpd-rs's experimental draft-09 implementation and the current
+NTPv5 draft-10. It proposes a bounded Chrony F323 experiment over NTPv4 + NTS for
+finer root-error metadata and remote frequency estimation, followed by a separate
+version-specific NTPv5 evaluation if justified. The
+[protocol task](../tasks/s0.1-protocol-comparison.md#ntpv5-and-f323-research-handoff--21-november-2026)
+owns the evidence and conditional implementation handoff;
+[development §4.7](plans/development-plan.md#47-ntpv5-and-f323-research-disposition)
+preserves the current product continuation and accepted post-V1 order. These are
+research proposals, not implemented support, measured accuracy or a new V1 gate.
+
 **Timestamp qualification — 18 November 2026:** the
 [W11-W01 matrix](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 adds concrete clock/capability, RX/TX, NIC calibration, transition, fallback and
@@ -1191,6 +1203,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [ntp-usg-reuse-assessment.md](supporting-reviews/ntp-usg-reuse-assessment.md): pinned comparison of protected exchanges, cookie/control lifecycles, numerical consumers, clock feedback, benchmarks and feature-specific CI; concrete cases routed to existing S0.1/S1.3/S1.4/S2.2/P4 owners, with file-grant and dependency limits. Selects no donor code, controller or new dependency.
 - [chrony-ntpsec-noncore-research.md](supporting-reviews/chrony-ntpsec-noncore-research.md): Langer/TPKI and wider non-core literature, evidence limits, pre-V1 actual-consumer regressions and early acceptance-case preparation under OD-18/LIT-0. The [development handoff](plans/development-plan.md#46-apply-the-chronyntpsec-non-core-literature) routes existing W11, engine, catalogue and time-assurance owners; longer implementations retain explicit prerequisites and current roadmap order.
 - [tychron-fulltext-assessment.md](supporting-reviews/tychron-fulltext-assessment.md): complete Tychron chapter assessment, exact offset/asymmetry limitation, qualified Chrony/NTPsec results, population and plot checks, and concrete MATH-W04/W05 comparison cases. It resolves the earlier full-text gap while keeping model implementation and adoption conditional under the existing post-V1 experiment.
+- [ntpv5-benefits-and-adoption.md](supporting-reviews/ntpv5-benefits-and-adoption.md): dated NevroTick/ntpd-rs/draft comparison, F323 experiment proposal, authenticated metadata ownership, version-specific compatibility and independent benefit measurements. Exact source pins and draft identity bound the findings; existing protocol, Engine, Core and Windows owners retain implementation and qualification.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 
