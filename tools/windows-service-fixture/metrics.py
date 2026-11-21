@@ -14,6 +14,7 @@ if sys.flags.optimize:
 sys.dont_write_bytecode = True
 
 import argparse
+from contextlib import contextmanager
 import fcntl
 import hashlib
 import importlib.util
@@ -24,6 +25,8 @@ from pathlib import Path, PurePosixPath
 import re
 import resource
 import shutil
+import signal
+import stat
 import time
 
 HERE = Path(__file__).resolve().parent
@@ -42,6 +45,10 @@ C = Q.C
 E = load("fixture_metric_export", Q.ROOT / "scripts/run-service-analysis.py")
 Incomplete = C.Incomplete
 PACKAGE = "nevrotick-windows-service-fixture"
+LIBRARY = "nevrotick_windows_service_fixture"
+FIXTURE_TARGETS = {LIBRARY: ("lib", "src/lib.rs"), "entrypoints": ("test", "tests/entrypoints.rs"),
+                   "nevrotick-lab-s02-engine": ("bin", "src/bin/engine.rs"),
+                   "nevrotick-lab-s02-broker": ("bin", "src/bin/broker.rs")}
 NATIVE_SUBJECTS = {"host": "src/host.rs", "error": "src/error.rs", "diagnostics": "src/diagnostics.rs"}
 SUBJECTS = {**NATIVE_SUBJECTS, "engine_worker": "src/engine_worker.rs"}
 SCOPE = C.Scope(PACKAGE, tuple(NATIVE_SUBJECTS.items()), "fixture-local")
@@ -100,7 +107,7 @@ def decode_record(data):
     return value
 
 
-def executed_tests(text, expected=None, *, allow_doctests=False):
+def executed_tests(text, expected=None, *, allow_doctests=False, allow_empty=False):
     """Require named successful tests and exact zero-skipped native summaries."""
     require(type(text) is str, "Test output must be actual text.")
     names, summaries = [], []
@@ -113,7 +120,7 @@ def executed_tests(text, expected=None, *, allow_doctests=False):
             match = re.fullmatch(r"test ([^\r\n]+?) \.\.\. ok", line)
             require(match is not None, "Test execution lacks a named successful completion.")
             names.append(match[1])
-    require(summaries and names and sum(summaries) == len(names) and len(set(names)) == len(names),
+    require(summaries and (names or allow_empty) and sum(summaries) == len(names) and len(set(names)) == len(names),
             "Test execution is empty, duplicated or inconsistent.")
     if expected is not None:
         actual = [name for name in names if not (allow_doctests and " - (line " in name)]
@@ -321,32 +328,89 @@ def owned_log(directory, value):
     return C.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
 
 
+def native_log_phases(row: dict, text: str) -> dict[str, str]:
+    """Bind one pinned cargo-mutants log to the scenario, commands, results and tested build."""
+    require(type(row) is dict and type(text) is str, "Native log requires an outcome and text.")
+    C.mutation_phases(SCOPE, row)
+    scenario = row.get("scenario")
+    baseline = scenario == "Baseline"
+    mutant = scenario.get("Mutant") if type(scenario) is dict else {}
+    require((baseline and row.get("summary") == "Success") or (
+                type(mutant) is dict and row.get("summary") in ("CaughtMutant", "MissedMutant", "Unviable")
+                and mutant.get("package") == PACKAGE and mutant.get("file") in NATIVE_SUBJECTS.values()
+                and type(mutant.get("name")) is str and mutant["name"]),
+            "Native log belongs to an unknown fixture owner.")
+    phases = row["phase_results"]
+    markers = ["*** baseline"] if baseline else ["*** " + mutant["name"], "*** mutation diff:"]
+    for phase in phases:
+        require("--message-format=json" in phase["argv"], "Native fixture mutation requires Cargo JSON.")
+        markers.extend(["*** " + " ".join(phase["argv"]),
+                        "*** result: Success" if phase["process_status"] == "Success" else "*** result: Failure(101)"])
+    lines = text.splitlines()
+    delimiters = [i for i, line in enumerate(lines) if line.startswith("*** ")]
+    require([lines[i] for i in delimiters] == markers and not any(lines[:delimiters[0]])
+            and not any(lines[delimiters[-1] + 1:]), "Native log scenario, phase commands or results disagree.")
+    sections = {}
+    phase_bounds = delimiters[1 if baseline else 2:]
+    for phase, start, end in zip(phases, phase_bounds[::2], phase_bounds[1::2], strict=True):
+        sections[phase["phase"]] = "\n".join(lines[start + 1:end])
+    if len(phases) == 2:
+        require(not any(lines[phase_bounds[1] + 1:phase_bounds[2]]), "Unexpected data between native phases.")
+    reject_infrastructure_failure(text)
+    if row["summary"] == "Unviable":
+        finished = [line for line in sections["Build"].splitlines() if line.startswith('{"reason":"build-finished"')]
+        require(len(finished) == 1 and decode_record(finished[0].encode()).get("success") is False,
+                "Unviable mutation lacks its failed Cargo Build.")
+        return sections
+    require(not re.search(r"error\[E\d+\]|could not compile", sections["Build"]),
+            "Successful fixture Build contains a compiler failure.")
+    root = "/work/native-source/" + Q.TOOL
+    artifacts = fixture_build_artifacts(sections["Build"], root,
+                                        subject_file=mutant.get("file"), allow_cached=baseline)
+    sections["Test"] = fixture_test_runtime(sections["Test"], root, artifacts,
+        complete=row["summary"] != "CaughtMutant", verbose=True, subject=mutant.get("file"))
+    return sections
+
+
 def mutation_causes(directory, outcomes, expected_tests, equivalences=()):
-    """Separate assertions, compiler-unviable faults and zero-credit equivalents."""
+    """Read each raw mutant once and bind cause or survival to its own admitted phases."""
     causes = {}
-    for name, (entry, row) in equivalent_misses(outcomes, equivalences).items():
-        data = owned_log(directory, row.get("log_path", ""))
-        causes[name] = {"kind": "reviewed-equivalent-survivor", "kill_credit": 0,
-                        "equivalence_id": entry["id"], "proof": entry["proof"],
-                        "log_sha256": hashlib.sha256(data).hexdigest()}
+    equivalents = equivalent_misses(outcomes, equivalences)
     for row in outcomes["outcomes"]:
-        if row.get("summary") not in {"CaughtMutant", "Unviable"}:
+        if row.get("scenario") == "Baseline":
             continue
-        mutant = row["scenario"]["Mutant"]
         data = owned_log(directory, row.get("log_path", ""))
-        text = data.decode("utf-8")
-        causes[mutant["name"]] = classify_cause(text, expected_tests, compiler=row["summary"] == "Unviable")
+        sections = native_log_phases(row, data.decode("utf-8"))
+        name = row["scenario"]["Mutant"]["name"]
+        require(name not in causes, "Duplicate native mutation evidence.")
+        if row["summary"] == "MissedMutant":
+            executed_tests(sections["Test"], expected_tests, allow_doctests=True)
+            cause = {"kind": "survived", "kill_credit": 0}
+            if name in equivalents:
+                entry, _ = equivalents[name]
+                cause.update(kind="reviewed-equivalent-survivor", equivalence_id=entry["id"], proof=entry["proof"])
+        elif row["summary"] == "Unviable":
+            cause = classify_cause(sections["Build"], expected_tests, compiler=True, native_subject=row["scenario"]["Mutant"]["file"])
+        else:
+            require(row["summary"] == "CaughtMutant", "Unclassified native mutation evidence.")
+            cause = classify_cause(sections["Test"], expected_tests)
+        causes[name] = {**cause, "log_sha256": hashlib.sha256(data).hexdigest()}
     return causes
 
 
-def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = False,
-                   required_source: str | None = None) -> dict:
-    """Attribute actual failures; shared by native results and tagged direct replay."""
+def reject_infrastructure_failure(text: str) -> None:
+    """Deny qualification when native output records a tool, resource or custody failure."""
     require(not re.search(r"HARNESS_INCOMPLETE|Cannot allocate memory|memory allocation of [^\n]*failed|"
                           r"No space left on device|No such file or directory|Permission denied|"
                           r"failed to (?:run custom build command|execute process)|could not execute process|"
                           r"internal compiler error", text),
             "Mutation failure has an infrastructure cause.")
+
+
+def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = False,
+                   required_source: str | None = None, native_subject: str | None = None) -> dict:
+    """Attribute actual failures; shared by native results and tagged direct replay."""
+    reject_infrastructure_failure(text)
     diagnostics = []
     for line in text.splitlines():
         if line.startswith('{"reason":') and '"compiler-message"' in line:
@@ -360,16 +424,37 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
                 diagnostics.append(item)
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     if compiler:
+        root = ("/work/native-source/" if native_subject is not None else "/work/source/") + Q.TOOL
+        # On GNU these private modules and their callers compile only into the fixture libtest.
+        callers = {"src/host.rs": {"src/host.rs", "src/host_tests.rs", "src/engine_worker.rs", "src/engine_worker_tests.rs"},
+                   "src/diagnostics.rs": {"src/diagnostics.rs", "src/diagnostics_tests.rs", "src/host.rs",
+                                          "src/host_tests.rs", "src/engine_worker_tests.rs"}}
+        if native_subject in callers:
+            failures = [line for line in text.splitlines() if line.startswith("error:")]
+            require(failures and all(line.startswith("error: could not compile `" + PACKAGE + "` (lib test) due to ")
+                                     for line in failures), "Cfg-only mutation did not fail in the fixture libtest.")
         attributed = []
         for item in diagnostics:
             spans = item["message"].get("spans")
             require(type(spans) is list and all(type(span) is dict for span in spans),
                     "Compiler error lacks source attribution.")
             primary = [span for span in spans if span.get("is_primary") is True]
-            require(type(item.get("target")) is dict and item["target"].get("name") in {
-                        "nevrotick_windows_service_fixture", "nevrotick-lab-s02-engine",
-                        "nevrotick-lab-s02-broker", "entrypoints"}
-                    and all(selected_span(span.get("file_name")) and (required_source is None or
+            target = item.get("target")
+            name = target.get("name") if type(target) is dict else None
+            require(type(name) is str and name in FIXTURE_TARGETS
+                    and item.get("package_id") == "path+file://" + root + "#" + PACKAGE + "@0.0.0"
+                    and item.get("manifest_path") == root + "/Cargo.toml",
+                    "Mutation compiler diagnostic has a different package, manifest or target.")
+            kind, target_source = FIXTURE_TARGETS[name]
+            require(target.get("kind") == [kind] and target.get("src_path") == root + "/" + target_source
+                    and (required_source is None or name == LIBRARY),
+                    "Mutation compiler diagnostic has a different target role or source.")
+            if native_subject in callers:
+                accepted = callers[native_subject]
+                paths = {prefix + path for path in accepted for prefix in ("", Q.TOOL + "/", root + "/")}
+                require(name == LIBRARY and all(span.get("file_name") in paths for span in primary),
+                        "Cfg-only mutation compiler diagnostic has a different target or primary source.")
+            require(all((native_subject in callers or selected_span(span.get("file_name"))) and (required_source is None or
                         span.get("file_name") in {required_source, Q.TOOL + "/" + required_source,
                                                  "/work/source/" + Q.TOOL + "/" + required_source})
                         for span in primary),
@@ -501,38 +586,113 @@ def replay_clean_command() -> list[str]:
             "--target-dir", "/work/target", "-p", PACKAGE, "--frozen", "--offline"]
 
 
-def fresh_fixture_build(output: str) -> int:
-    """Reject cached fixture artifacts while retaining legitimate dependency cache reuse."""
-    require(type(output) is str, "Fresh fixture Build requires actual Cargo JSON output.")
-    selected = 0
-    libtest = False
-    package_prefix = "path+file:///work/source/" + Q.TOOL + "#"
+def fixture_build_artifacts(output: str, root: str, *, subject_file: str | None = None,
+                            allow_cached: bool = False) -> dict:
+    """Identify every fixture target once and require the roles affected by this build to recompile."""
+    require(type(output) is str, "Fixture Build requires actual Cargo JSON output.")
+    expected = {(name, test) for name in FIXTURE_TARGETS for test in (False, True) if name != "entrypoints" or test}
+    # On GNU, cfg(any(windows, test)) includes host and diagnostics only in the
+    # fixture libtest. The common error module also feeds the normal library and its users.
+    rebuilt = {(LIBRARY, True)} if subject_file in {"src/host.rs", "src/diagnostics.rs"} else expected
+    manifest = root + "/Cargo.toml"
+    package_id = "path+file://" + root + "#" + PACKAGE + "@0.0.0"
+    observed = {}
+    finished = False
     for line in output.splitlines():
         if not line.startswith("{"):
             continue
         item = decode_record(line.encode())
+        require(not finished, "Fixture Build emitted Cargo data after its completion.")
+        if item.get("reason") == "build-finished":
+            require(item.get("success") is True, "Fixture Build reports unsuccessful compilation.")
+            finished = True
+        if item.get("reason") == "compiler-message":
+            require(type(item.get("message")) is dict and item["message"].get("level") != "error",
+                    "Successful fixture Build contains a compiler error.")
         if item.get("reason") != "compiler-artifact":
             continue
-        package_id = item.get("package_id")
-        if type(package_id) is not str or not package_id.startswith(package_prefix):
+        if item.get("manifest_path") != manifest and item.get("package_id") != package_id:
             continue
-        require(package_id[len(package_prefix):] in {PACKAGE + "@0.0.0", "0.0.0"}
-                and type(item.get("target")) is dict and item["target"].get("name") in {
-                    "nevrotick_windows_service_fixture", "nevrotick-lab-s02-engine",
-                    "nevrotick-lab-s02-broker", "entrypoints"}
-                and item.get("manifest_path") == "/work/source/" + Q.MANIFEST
-                and item.get("fresh") is False,
-                "Selected fixture Build used a cached or malformed artifact after package cleaning.")
-        selected += 1
-        if item["target"]["name"] == "nevrotick_windows_service_fixture":
-            require(item["target"].get("kind") == ["lib"]
-                    and item["target"].get("src_path") == "/work/source/" + Q.TOOL + "/src/lib.rs"
-                    and type(item.get("profile")) is dict
-                    and type(item["profile"].get("test")) is bool,
-                    "Fixture library artifact lacks its actual manifest, source or test profile.")
-            libtest |= item["profile"]["test"] is True
-    require(selected > 0 and libtest, "Successful Build lacks the freshly compiled fixture libtest.")
-    return selected
+        target, profile = item.get("target"), item.get("profile")
+        require(item.get("manifest_path") == manifest and item.get("package_id") == package_id
+                and type(target) is dict and type(target.get("name")) is str and target["name"] in FIXTURE_TARGETS
+                and type(profile) is dict and type(profile.get("test")) is bool,
+                "Fixture Build artifact package, manifest or target differs.")
+        name, test = target["name"], profile["test"]
+        role = (name, test)
+        kind, source = FIXTURE_TARGETS[name]
+        require(role in expected and role not in observed and target.get("kind") == [kind]
+                and target.get("src_path") == root + "/" + source and type(item.get("fresh")) is bool,
+                "Fixture Build artifact is duplicated, malformed or has the wrong source role.")
+        require(allow_cached or role not in rebuilt or item["fresh"] is False,
+                "Fixture Build cached an artifact that must compile the selected source.")
+        executable = item.get("executable")
+        if test:
+            require(type(executable) is str and re.fullmatch(
+                        r"/work/target/debug/build/" + PACKAGE + r"/([0-9a-f]{16})/out/"
+                        + re.escape(name.replace("-", "_")) + r"-\1", executable)
+                    and item.get("filenames") == [executable],
+                    "Fixture Build lacks the selected test executable.")
+        observed[role] = executable
+    require(finished and set(observed) == expected, "Fixture Build lacks completion or seven distinct target roles.")
+    return observed
+
+
+def fixture_test_runtime(output: str, root: str, built: dict, *, complete: bool, verbose: bool, subject: str | None = None) -> str:
+    """Bind Test's own artifact declarations and observed launches to the selected Build roles."""
+    reject_infrastructure_failure(output)
+    require(not re.search(r"error\[E\d+\]|could not compile", output), "Fixture Test contains a compiler failure.")
+    # The Cargo producer emits this JSON record before displaying any actual libtest invocation.
+    boundaries = list(re.finditer(r'^\{"reason": *"build-finished"[^\n]*\}$', output, re.M))
+    require(len(boundaries) == 1, "Fixture Test lacks a unique Cargo compilation boundary.")
+    boundary = boundaries[0].end()
+    # A Test invocation may compile the same role again from its active variant.
+    # Its declared executable must still match the Build declaration and the actual launch.
+    tested = fixture_build_artifacts(output[:boundary], root, allow_cached=True)
+    library = "nevrotick_windows_service_fixture"
+    sources = {library: "unittests src/lib.rs", "nevrotick-lab-s02-engine": "unittests src/bin/engine.rs",
+               "nevrotick-lab-s02-broker": "unittests src/bin/broker.rs", "entrypoints": "tests/entrypoints.rs"}
+    programs = {}
+    for name, source in sources.items():
+        path = tested[(name, True)]
+        require(path == built[(name, True)], "Fixture Test executable differs from its selected Build role.")
+        display = f"`{path}`" if verbose else f"{source} ({path})"
+        programs["     Running " + display] = name
+
+    lines = output[boundary:].splitlines()
+    launches = []
+    for index, line in enumerate(lines):
+        if line.startswith("     Running "):
+            if verbose and line.startswith("     Running `/toolchain/bin/rustdoc "):
+                require(complete and {role for _, role in launches} == set(sources),
+                        "Fixture doctests cannot supply an ordinary test failure.")
+                launches.append((index, "rustdoc"))
+            else:
+                require(line in programs, "Fixture Test ran an unexpected executable.")
+                launches.append((index, programs[line]))
+    roles = [role for _, role in launches]
+    require(roles and roles[0] == library and len(roles) == len(set(roles))
+            and (not complete or set(sources) <= set(roles)), "Fixture Test lacks its selected executable launches.")
+    # Each GNU libtest emits its own summary. A successful predecessor cannot
+    # supply the assertion for a later failure in a distinct executable.
+    blocks = ["\n".join(lines[start:end]) for (start, _), end in
+              zip(launches, [index for index, _ in launches[1:]] + [len(lines)], strict=True)]
+    for block in (blocks if complete else blocks[:-1]):
+        require(sum(line.startswith("test result:") for line in block.splitlines()) == 1,
+                "An earlier or successful fixture program lacks its own result.")
+        executed_tests(block, allow_empty=True)
+    if complete:
+        return "\n".join(blocks)
+    require((subject == "src/error.rs" or roles[-1] == library)
+            and not re.search(r"^test result: ok\.", blocks[-1], re.M),
+            "Failed fixture Test does not identify an affected failing program.")
+    return blocks[-1]
+
+
+def fresh_fixture_build(output: str) -> int:
+    """A package-cleaned replay must emit seven rebuilt fixture roles; dependencies may be cached."""
+    return len(fixture_build_artifacts(output, "/work/source/" + Q.TOOL))
+
 
 def initial_replay_target(work: Path) -> dict:
     """Admit a new empty private target; Cargo owns its eventual cache marker."""
@@ -570,10 +730,13 @@ def replay_outcome(build: dict, test: dict | None, expected: list[str]) -> dict:
         return {"kind": "compiler-unviable", "cause": classify_cause(build["output"], expected,
                     compiler=True, required_source="src/engine_worker.rs"), "kill_credit": 0}
     require(build["exit_code"] == 0 and test is not None, "Replay Build did not complete.")
+    require(test["exit_code"] in (0, 101), "Replay Test has an unclassified native exit.")
+    root = "/work/source/" + Q.TOOL
+    artifacts = fixture_build_artifacts(build["output"], root)
+    runtime = fixture_test_runtime(test["output"], root, artifacts, complete=test["exit_code"] == 0, verbose=False)
     if test["exit_code"] == 0:
-        return {"kind": "survived", "tests": executed_tests(test["output"], expected), "kill_credit": 0}
-    require(test["exit_code"] == 101, "Replay Test has an unclassified native exit.")
-    return {"kind": "killed", "cause": classify_cause(test["output"], expected), "kill_credit": 1}
+        return {"kind": "survived", "tests": executed_tests(runtime, expected), "kill_credit": 0}
+    return {"kind": "killed", "cause": classify_cause(runtime, expected), "kill_credit": 1}
 
 
 def replay_score(rows: dict, inventory: dict, *, complete: bool) -> dict:
@@ -602,13 +765,30 @@ def check_variant(session, source: Path, identity: dict) -> None:
             "Owned replay derivative differs from its exact variant identity.")
 
 
+def recorded_command(session, source, label, command, seconds, *, variant_sha256=None, **options):
+    """Retain an available bounded observation once, before a durable deadline can unwind."""
+    identity = {"label": label, "argv": command}
+    if variant_sha256 is not None:
+        identity["variant_sha256"] = variant_sha256
+
+    def retain(result):
+        session.record["commands"].append({**identity, **result})
+
+    deadline = getattr(getattr(session, "args", None), "deadline_monotonic", None)
+    if deadline is not None:
+        options.update(deadline_monotonic=deadline, on_group_return=retain)
+    result = Q.run_command(session.work, command, session.admitted, session.vendor, source,
+                           timeout=seconds, cpu_seconds=seconds, **options)
+    if deadline is None:
+        retain(result)
+    return result
+
+
 def replay_command(session, source: Path, identity: dict, label: str, command: list[str], seconds: int) -> dict:
     """Retain raw failure observations before attribution; never relax Session.check."""
     check_variant(session, source, identity)
-    result = Q.run_command(session.work, command, session.admitted, session.vendor, source,
-                           timeout=seconds, cpu_seconds=seconds, mutation=True, cwd=source / Q.TOOL)
-    session.record["commands"].append({"label": label, "argv": command,
-                                      "variant_sha256": Q.canonical(identity), **result})
+    result = recorded_command(session, source, label, command, seconds, mutation=True,
+                              cwd=source / Q.TOOL, variant_sha256=Q.canonical(identity))
     check_variant(session, source, identity)
     return result
 
@@ -752,8 +932,12 @@ def execute_worker(session) -> None:
     for label, command in zip(("Build", "Test"), commands, strict=True):
         baseline = session.run("worker-baseline:" + label, command, seconds(90 if label == "Build" else 60))
         if label == "Build":
-            record["baseline_fresh_fixture_artifacts"] = fresh_fixture_build(baseline["output"])
-        if label == "Test": executed_tests(baseline["output"], session.tests)
+            baseline_artifacts = fixture_build_artifacts(baseline["output"], "/work/source/" + Q.TOOL)
+            record["baseline_fresh_fixture_artifacts"] = len(baseline_artifacts)
+        if label == "Test":
+            runtime = fixture_test_runtime(baseline["output"], "/work/source/" + Q.TOOL, baseline_artifacts,
+                                           complete=True, verbose=False)
+            executed_tests(runtime, session.tests)
     for command in Q.lane_commands("fixture-doc", "/toolchain/bin/cargo"):
         docs = session.run("worker-baseline:doc", command, seconds(60))
         if re.search(r"^test result: ok\. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;", docs["output"], re.M):
@@ -793,8 +977,12 @@ def execute_worker(session) -> None:
             for label, command in zip(("Build", "Test"), commands, strict=True):
                 closing = session.run("worker-closing:" + label, command, seconds(90 if label == "Build" else 60))
                 if label == "Build":
-                    record["closing_fresh_fixture_artifacts"] = fresh_fixture_build(closing["output"])
-                if label == "Test": executed_tests(closing["output"], session.tests)
+                    closing_artifacts = fixture_build_artifacts(closing["output"], "/work/source/" + Q.TOOL)
+                    record["closing_fresh_fixture_artifacts"] = len(closing_artifacts)
+                if label == "Test":
+                    runtime = fixture_test_runtime(closing["output"], "/work/source/" + Q.TOOL, closing_artifacts,
+                                                   complete=True, verbose=False)
+                    executed_tests(runtime, session.tests)
         except Exception as closing_error:
             record["closing_error"] = type(closing_error).__name__ + ": " + str(closing_error)
             if replay_error is None:
@@ -836,10 +1024,8 @@ def native_mutation_run(session, subject, seconds):
     state["runs"].append(observation)
     command = Q.native_mutation_command(session.admitted, subject)
     try:
-        result = Q.run_command(session.work, command, session.admitted, session.vendor, derivative,
-                               timeout=seconds, cpu_seconds=seconds, mutation=True,
-                               cwd=derivative / Q.TOOL, native_subject=subject)
-        session.record["commands"].append({"label": "mutation:" + subject, "argv": command, **result})
+        result = recorded_command(session, derivative, "mutation:" + subject, command, seconds,
+                                  mutation=True, cwd=derivative / Q.TOOL, native_subject=subject)
     except Exception as error:
         observation["command_error"] = type(error).__name__ + ": " + str(error)
         raise
@@ -960,10 +1146,8 @@ class Session:
         """Retain actual command output even when the native command fails."""
         self.check()
         require(shutil.disk_usage(Q.ROOT).free >= Q.DISK_FLOOR, "Less than 4 GiB before metric command.")
-        result = Q.run_command(self.work, command, self.admitted, self.vendor, self.source,
-                               timeout=seconds, cpu_seconds=seconds, mutation=mutation,
-                               cwd=self.source / Q.TOOL)
-        self.record["commands"].append({"label": label, "argv": command, **result})
+        result = recorded_command(self, self.source, label, command, seconds,
+                                  mutation=mutation, cwd=self.source / Q.TOOL)
         self.check()
         successful(result, mutation=mutation)
         return result
@@ -1048,11 +1232,11 @@ def execute(session):
         directory = session.work / "mutation" / subject / "mutants.out"
         outcomes = C.read_analysis_json(directory / "outcomes.json")
         selected_equivalences = [entry for entry in equivalences if entry["mutant"]["file"] == filename]
-        equivalent_misses(outcomes, selected_equivalences)
         score = C.mutation_counts(SCOPE, outcomes, inventories[subject], filename,
                                  native_exit_code=result["exit_code"], equivalences=selected_equivalences, defer_gate=True)
         baseline = next(row for row in outcomes["outcomes"] if row["scenario"] == "Baseline")
-        score["baseline_tests"] = executed_tests(owned_log(directory, baseline.get("log_path", "")).decode("utf-8"),
+        baseline_log = owned_log(directory, baseline.get("log_path", "")).decode("utf-8")
+        score["baseline_tests"] = executed_tests(native_log_phases(baseline, baseline_log)["Test"],
                                                  session.tests, allow_doctests=True)
         score["failure_causes"] = mutation_causes(directory, outcomes, session.tests, selected_equivalences)
         record["mutation"][subject] = score
@@ -1060,6 +1244,97 @@ def execute(session):
     require(all(row["gate_passed"] for row in record["mutation"].values()),
             "Complete fixture mutation accounting has unresolved survivors or a score below 95 percent.")
     record["metrics_passed"] = True
+
+
+def durable_roots(cache, records, label):
+    """Admit existing evidence roots on the WSL distro's block-backed ext4 root mount."""
+    def mount_id(directory):
+        descriptor = os.open(directory, os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            info = Path(f"/proc/self/fdinfo/{descriptor}").read_text()
+            match = re.search(r"^mnt_id:\s*(\d+)$", info, re.MULTILINE)
+            require(match is not None, "Cannot identify the retained directory mount.")
+            return match[1]
+        finally:
+            os.close(descriptor)
+
+    require(not cache.is_relative_to(records) and not records.is_relative_to(cache),
+            "Durable work and record directories must be separate.")
+    root_id = mount_id(Path("/"))
+    for path in (cache, records):
+        E.directory(path)
+        require(mount_id(path) == root_id, "Durable metrics require the distro root mount for work and receipts.")
+    selected = (cache / "writer.lock", cache / label, records / (label + "-evidence"), records / (label + ".json"),
+                records / "durable-metric-stages")
+    with Path("/proc/self/mountinfo").open("rb") as stream:
+        table = stream.read(1024 ** 2 + 1)
+    require(len(table) <= 1024 ** 2, "Mount table exceeds observation bound.")
+    fields, backing = [], []
+    for line in table.decode().splitlines():
+        mount, filesystem = line.split(" - ")
+        entry = mount.split()
+        point = Path(re.sub(r"\\([0-7]{3})", lambda match: chr(int(match[1], 8)), entry[4]))
+        require(not any(point.is_relative_to(path) for path in selected),
+                "Selected durable metric paths contain a nested mount.")
+        if entry[0] == root_id:
+            fields, backing = entry, filesystem.split()
+    require(fields[3:5] == ["/", "/"] and backing[0] == "ext4"
+            and re.fullmatch(r"/dev/(sd[a-z]+[0-9]*|nvme[0-9]+n[0-9]+(?:p[0-9]+)?)", backing[1]),
+            "Durable metrics require the supported ext4 distro disk.")
+    device = Path(backing[1]).stat()
+    require(stat.S_ISBLK(device.st_mode) and device.st_rdev == Path("/").stat().st_dev,
+            "Distro root mount backing device differs.")
+    return {"mount_id": root_id, "device": backing[1], "filesystem": backing[0],
+            "work_root": str(cache), "record_root": str(records)}
+
+
+def boot_id():
+    """Observe the kernel clock epoch used by an absolute monotonic deadline."""
+    value = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+    require(re.fullmatch(r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", value), "Invalid Linux boot ID.")
+    return value
+
+
+def bind_stage(records, stage_id, deadline, *, create):
+    """Pin the first stage/boot/deadline once; repeated labels use the same bytes."""
+    expected = {"stage_id": stage_id, "boot_id": boot_id(), "deadline_monotonic": deadline}
+    directory = records / "durable-metric-stages"
+    if create:
+        directory.mkdir(mode=0o700, exist_ok=True)
+    E.directory(directory)
+    stage_directory = directory / stage_id
+    path = stage_directory / "binding.json"
+    if create:
+        try:
+            stage_directory.mkdir(mode=0o700)
+        except FileExistsError:
+            pass
+        else:
+            Q.write_new(path, expected)
+    E.directory(stage_directory)
+    data = C.read_analysis_bytes(path, maximum=4096)
+    require(decode_record(data) == expected, "Durable metric stage boot or absolute deadline changed.")
+    return {**expected, "binding_sha256": hashlib.sha256(data).hexdigest()}
+
+
+@contextmanager
+def stage_time(deadline, activity):
+    """Interrupt in-process metric work on the same absolute cutoff as its children."""
+    if deadline is None:
+        yield
+        return
+    require(signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0),
+            "Durable metrics require ownership of the process timer.")
+    previous = signal.signal(signal.SIGALRM, Q.stage_expired)
+    try:
+        signal.setitimer(signal.ITIMER_REAL, Q.wall_timeout(math.inf, deadline))
+        yield
+        Q.wall_timeout(1, deadline)
+    except Q.StageExpired as error:
+        raise Incomplete(f"Cumulative metric deadline exhausted during {activity}.") from error
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 def run(args):
@@ -1074,18 +1349,31 @@ def run(args):
             "Exact equivalence review applies only to the mutation lane.")
     require(not args.lane.startswith("worker-replay") or (args.direct_inventory is not None
             and args.reviewed_inventory is not None), "Replay requires direct enumeration and independent review.")
+    deadline = getattr(args, "deadline_monotonic", None)
+    stage_id = getattr(args, "durable_stage", None)
+    require((stage_id is None) == (deadline is None), "Durable metrics require both stage ID and absolute deadline.")
+    if stage_id is not None:
+        require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", stage_id), "Invalid durable metric stage ID.")
+        Q.wall_timeout(1, deadline)
+    durable = durable_roots(Q.CACHE, Q.RECORDS, args.label) if stage_id is not None else None
     Q.CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     E.directory(Q.CACHE)
     require(Q.CACHE.stat().st_mode & 0o077 == 0 and Q.RECORDS.is_dir(), "Private cache/record root is not ready.")
-    require(shutil.disk_usage(Q.ROOT).free >= Q.DISK_FLOOR, "Less than 4 GiB before metric admission.")
+    if stage_id is None:
+        require(shutil.disk_usage(Q.ROOT).free >= Q.DISK_FLOOR, "Less than 4 GiB before metric admission.")
     destination = Q.RECORDS / (args.label + ".json")
     evidence = Q.RECORDS / (args.label + "-evidence")
     archive = evidence / "raw"
     output = Q.CACHE / args.label
-    require(not destination.exists() and not evidence.exists() and not output.exists(), "Metric label already owns evidence.")
     writer = os.open(Q.CACHE / "writer.lock", os.O_CREAT | os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW, 0o600)
     try:
         fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if durable is not None:
+            stage = bind_stage(Q.RECORDS, stage_id, deadline, create=True)
+            Q.wall_timeout(1, deadline)
+            require(shutil.disk_usage(Q.CACHE).free >= 6 * 1024 ** 3,
+                    "Durable fixture metrics require 6 GiB before launch.")
+        require(not destination.exists() and not evidence.exists() and not output.exists(), "Metric label already owns evidence.")
         output.mkdir(mode=0o700)
         evidence.mkdir(mode=0o700)
         selected = ({"engine_worker": SUBJECTS["engine_worker"]} if args.lane.startswith("worker-")
@@ -1098,28 +1386,44 @@ def run(args):
                   "native_execution": False, "formal_execution": False,
                   "remaining_qualification": ["Independent function/guard, derive/macro and unsafe/cfg omission reconciliation.",
                                               "Windows-native service and memory/lifecycle evidence remain separate."]}
+        if durable is not None:
+            record.update(durable_roots=durable, deadline_monotonic=deadline, durable_stage=stage)
         errors = []
         session = None
         try:
-            session = Session(args, record, output)
-            execute(session)
-            session.finish()
+            with stage_time(deadline, "metric admission, execution and bookends"):
+                session = Session(args, record, output)
+                execute(session)
+                session.finish()
             record["status"] = "passed"
+        except (KeyboardInterrupt, SystemExit) as error:
+            errors.append("Metric execution interrupted: " + type(error).__name__)
+            raise
         except Exception as error:
             errors.append(type(error).__name__ + ": " + str(error))
         finally:
             try:
-                E.export_tree(output, archive, evidence, disk_floor=Q.DISK_FLOOR)
+                with stage_time(deadline, "export"):
+                    E.export_tree(output, archive, evidence, disk_floor=Q.DISK_FLOOR)
+                    if durable is not None:
+                        require(durable_roots(Q.CACHE, Q.RECORDS, args.label) == durable, "Durable metric mount identity changed.")
+                        require(bind_stage(Q.RECORDS, stage_id, deadline, create=False) == stage,
+                                "Durable metric stage binding changed during execution.")
                 record.update(export_complete=True, archive=str(archive))
+            except (KeyboardInterrupt, SystemExit) as error:
+                errors.append("Evidence export interrupted: " + type(error).__name__)
+                raise
             except Exception as error:
                 errors.append("Evidence export: " + type(error).__name__ + ": " + str(error))
-            record.update(errors=errors, finished_unix=time.time())
-            if errors:
-                record["status"] = "incomplete"
-                record["metrics_passed"] = False
-            Q.write_new(destination, record)
-            print(json.dumps({"record": str(destination), "status": record["status"],
-                              "metrics_passed": record["metrics_passed"]}), flush=True)
+            finally:
+                record.update(errors=errors, finished_unix=time.time())
+                if errors or record["status"] != "passed":
+                    record.update(status="incomplete", metrics_passed=False, qualification_passed=False)
+                    if "pilot_passed" in record:
+                        record["pilot_passed"] = False
+                Q.write_new(destination, record)
+                print(json.dumps({"record": str(destination), "status": record["status"],
+                                  "metrics_passed": record["metrics_passed"]}), flush=True)
         return record["status"]
     finally:
         os.close(writer)
@@ -1133,6 +1437,9 @@ def main():
     parser.add_argument("--graph-receipt", type=Path, required=True)
     parser.add_argument("--test-receipt", type=Path, required=True)
     parser.add_argument("--vendor-dir", type=Path, required=True)
+    parser.add_argument("--durable-stage", help="Stable ID for all lanes under one original boot and deadline.")
+    parser.add_argument("--deadline-monotonic", type=float,
+                        help="Use the durable WSL distro disk and the original stage's absolute monotonic deadline.")
     parser.add_argument("--direct-inventory", type=Path)
     parser.add_argument("--pilot-mutant")
     parser.add_argument("--inventory-receipt", type=Path)

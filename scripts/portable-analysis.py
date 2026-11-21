@@ -1672,15 +1672,25 @@ def test_count(output: str) -> int:
     return sum(int(n) for n, _ in counts)
 
 
-def tool_path(root: Path, name: str) -> Path:
-    """Select only the installed hash-pinned extension; never acquire a tool."""
+def tool_path(root: Path, name: str, *, copy_to: Path | None = None) -> Path:
+    """Admit an installed extension and, when preparing a run, its actual private copy."""
     found = shutil.which(name)
+    if found is None and name in ("cargo-llvm-cov", "cargo-mutants"):
+        # Service supervisors can strip Cargo's bin directory from PATH.
+        # Look up only this executable there; retain the manifest digest check.
+        found = shutil.which(name, path=str(Path.home() / ".cargo/bin"))
     if not found:
         raise Incomplete(f"Missing installed analysis extension: {name}.")
     path = Path(found).resolve(strict=True)
     entry = next(item for item in json.loads((root / "policy/tool-manifest.json").read_text())["tools"]
                  if item["name"] == name)
-    PRODUCT.ENV.require_admitted_binary(path, entry["binary_sha256"], name)
+    expected = entry["binary_sha256"]
+    PRODUCT.ENV.require_admitted_binary(path, expected, name)
+    if copy_to is not None:
+        shutil.copyfile(path, copy_to)
+        PRODUCT.ENV.require_admitted_binary(copy_to, expected, name)
+        copy_to.chmod(0o500)
+        return copy_to
     return path
 
 
@@ -3398,10 +3408,7 @@ class Session:
                     ("cargo-mutants",) if args.lane == "mutation" else ())
         self.protected_tools = {}
         for name in selected:
-            origin = tool_path(self.root, name)
-            shutil.copyfile(origin, self.tools / name); (self.tools / name).chmod(0o500)
-            if PRODUCT.sha256(origin) != PRODUCT.sha256(self.tools / name):
-                raise Incomplete("Analysis tool changed while its sealed copy was prepared.")
+            tool_path(self.source, name, copy_to=self.tools / name)
         self.protected_tools[self.tools] = PRODUCT.inventory(self.tools)
         (self.work / "cargo-home").mkdir(mode=0o700)
         self.configure('[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory='

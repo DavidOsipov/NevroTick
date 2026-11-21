@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import os
 import sys
 import json
 from pathlib import Path
@@ -61,9 +62,12 @@ class AccountingTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text('additional_cargo_args=["--frozen"]\ncap_lints=false\n'
                                 if relative == ".cargo/mutants.toml" else "inert runner input\n")
-            identity = {relative: MODULE.PRODUCT.sha256(checkout / relative)
-                        for relative in (".cargo/mutants.toml", MODULE.NTS_KE)}
             origin = scratch / "cargo-mutants"; origin.write_text("inert extension bytes")
+            origin.chmod(0o700)
+            (checkout / "policy/tool-manifest.json").write_text(json.dumps({"tools": [
+                {"name": origin.name, "binary_sha256": hashlib.sha256(b"inert extension bytes").hexdigest()}]}))
+            identity = {relative: MODULE.PRODUCT.sha256(checkout / relative)
+                        for relative in (".cargo/mutants.toml", MODULE.NTS_KE, "policy/tool-manifest.json")}
             policy = {"mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
                       "coverage_guided_fuzzing": {"target_source": "fixture/target.rs", "llvm_notice": "fixture/NOTICE"}}
             admitted = {"base": payload, "stable": stable, "policy_sha256": "a" * 64, "inventories": []}
@@ -79,7 +83,7 @@ class AccountingTests(unittest.TestCase):
                   patch.object(MODULE.ANALYSIS, "admit", return_value=admitted),
                   patch.object(MODULE.PRODUCT, "admit_vendor", return_value={}),
                   patch.object(MODULE, "require_current_candidate"),
-                  patch.object(MODULE, "tool_path", return_value=origin),
+                  patch.dict(os.environ, {"PATH": str(scratch)}),
                   patch.object(MODULE.RUNTIME, "run", return_value=result, side_effect=runtime_effect) as runtime,
                   patch.object(MODULE.COMMON, "run_analysis_lanes", side_effect=lanes)):
                 MODULE.execute(args, {})
@@ -661,8 +665,11 @@ class AccountingTests(unittest.TestCase):
         examples = MODULE.contract_examples()
         legacy = {name: value for name, value in examples.items() if not name.startswith("nts_request_")}
         self.assertEqual(len(legacy), 89)
+        # 0e19ed1 changed the private RawDatagram field from tail to input.
+        # The probe must reach field privacy (E0451), not fail on an unknown field.
+        self.assertIn("RawDatagram { header, input: &[], count: 0 }", legacy["raw_datagram_construction"][0])
         self.assertEqual(hashlib.sha256(json.dumps(legacy, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
-                         "b8c2cfcae8e1c39292205f39099f80c1a0556ae84b0e487c15dcd363dee53949")
+                         "4f729729c3d951fcbf88e57cc65023422755ad2c95bdfa2d042c4ed146f71be7")
         self.assertIsNone(examples["legal"][1])
         for name in ("raw_header_construction", "timestamp_construction", "frame_limits_construction",
                      "raw_datagram_construction", "raw_extension_construction", "extension_fields_construction"):

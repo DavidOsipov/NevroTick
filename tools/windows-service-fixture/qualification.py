@@ -19,11 +19,13 @@ import fcntl
 import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import re
 import resource
 import shutil
+import signal
 import stat
 import subprocess
 import time
@@ -250,13 +252,35 @@ def native_mutation_command(admitted, subject):
             "--output", "/work/mutation/" + subject]
 
 
+class StageExpired(Incomplete):
+    """The optional parent stage clock expired inside Python work."""
+
+
+def stage_expired(_number, _frame):
+    raise StageExpired("Cumulative metric deadline exhausted.")
+
+
+def wall_timeout(limit, deadline):
+    """Reduce a lane limit against the unchanged stage clock at actual dispatch."""
+    if deadline is None:
+        return limit
+    require(type(deadline) in (int, float) and math.isfinite(deadline),
+            "Invalid cumulative metric deadline.")
+    remaining = deadline - time.monotonic()
+    require(remaining > 0, "Cumulative metric deadline exhausted.")
+    return min(limit, remaining)
+
+
 def run_command(work, command, admitted, vendor, source, *, timeout=180,
-                cpu_seconds=None, mutation=False, cwd=None, native_subject=None):
+                cpu_seconds=None, mutation=False, cwd=None, native_subject=None, deadline_monotonic=None,
+                on_group_return=None):
     """Seal inputs, permitting only the selected private native mutation output file."""
     require(isinstance(command, list) and command
             and all(isinstance(item, str) and item and "\0" not in item for item in command),
             "Service execution requires a nonempty literal argv.")
     require(type(mutation) is bool, "Mutation resource selection must be explicit.")
+    require(on_group_return is None or (deadline_monotonic is not None and callable(on_group_return)),
+            "The optional durable command observer requires a deadline.")
     require(native_subject is None or (type(native_subject) is str and native_subject in NATIVE_MUTATION_FILES),
             "Native write authority requires one closed subject.")
     if native_subject is None:
@@ -342,11 +366,28 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
     args.extend(["--", admitted["helpers"]["prlimit"]["path"], "--as=8589934592",
                  "--cpu=" + str(cpu_seconds), "--nproc=" + ("512" if mutation else "128"),
                  "--nofile=4096" if mutation else "--nofile=256", "--fsize=268435456", "--", *invocation])
-    result = C.PRODUCT.ENV.run(args, cwd=ROOT, timeout=timeout,
-                               environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
-                               stdin=subprocess.DEVNULL, resource_guard=resource_stop_reason)
+    # The process-group owner enforces the same deadline, including its own
+    # kill and reap. An asynchronous alarm between Popen and custody setup
+    # must never detach a child or interrupt its mandatory cleanup.
+    handoff = deadline_monotonic is not None and signal.getsignal(signal.SIGALRM) is stage_expired
+    if handoff:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+    try:
+        result = C.PRODUCT.ENV.run(args, cwd=ROOT, timeout=wall_timeout(timeout, deadline_monotonic),
+                                   environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+                                   stdin=subprocess.DEVNULL, resource_guard=resource_stop_reason)
+        result = {**result, "namespace_argv": invocation}
+        if on_group_return is not None:
+            on_group_return(result)
+    finally:
+        if handoff:
+            left = deadline_monotonic - time.monotonic()
+            if left > 0:
+                signal.setitimer(signal.ITIMER_REAL, left)
+    if handoff and left <= 0:
+        raise StageExpired("Cumulative metric deadline exhausted after process-group cleanup.")
     check_service_tools(admitted)
-    return {**result, "namespace_argv": invocation}
+    return result
 
 
 def manifest_admission(policy):

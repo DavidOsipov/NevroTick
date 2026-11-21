@@ -8283,6 +8283,94 @@ the writer is still in flight. Preserve the first failure and the separate
 post-terminal event meanings. Message Compiler readback, live writer
 integration, package capability and installed behavior are future gates.
 
+##### Service verification workflow repair — 21 November 2026
+
+W11-W05/W11-W08, CHECK-19/25/27. The interval `20be018..c034f4b`
+contains six commits. The repair order was to reproduce the reader's
+false admission, trace the actual Cargo targets and consumers, then fix
+repeatable setup, fixture and custody failures. The implementation and
+checks use the existing standalone fixture and shared readers.
+
+| Owner and guarantee | Observed counterexample | Repair or disposition |
+| --- | --- | --- |
+| Fixture mutation reader, Cargo Build → actual test executable | The same caught assertion survived a missing, cached, duplicate or wrong-command Build record. | Validate ordered Build/Test evidence from each bounded log, compiled roles for that file, launched program and causal observation. Apply build and roster checks to surviving overlays, including equivalents. Check direct worker replay separately against its own Cargo output. |
+| Shared and wire tool admission, selected extension → private executable | The stripped supervisor PATH hid both installed extensions. Replacing the selected tool between its first hash and copy could make subsequent origin/copy hashes agree on different bytes. | Use the installed Cargo bin directory as the fallback for the two known extensions and verify the private copy against the original manifest pin. A mismatched explicit PATH selection still refuses. Retain final-reader and exporter controls alongside the selected producer mode. |
+| Real service-worker fixture, scenario → process-owned source | Historical `engine-compose-full-ordinary02` and `logger-stage1-fixture11` each reached an unintended second initial installation. | Reserve one of the 15 process-local sources under the authority lock before binding a socket. Callers no longer assign the index. Supervised children own a fresh process and catalogue. |
+| Fixture campaign owner, raw work and cumulative time → retry/retirement | Native05 lost its dirty derivative after the reserve stop and failed export. The later Shared41 supervisor could also choose unmount with a missing expected directory and an unaccounted sibling. The latter was reproduced at the decision callback. | Use the [disk-backed stage](../tools/windows-service-fixture/README.md) for the next fixture metric campaign. Bind the original stage/boot/deadline, retain original files on failure, and admit export independently of score. Native05 stays incomplete. |
+| Engine response and service diagnostics, accepted input → actual consumer | Version/mode and authenticated inner plaintext needed independent controls despite high generated scores. The diagnostics owner needed distinct cause and overwrite histories. | Existing consumer tests already exercise these cases. Keep the healthy v4 server next to the two header refusals, and the authenticated empty body next to the valid-tag forbidden body. Retain the diagnostics' first-cause and chronology checks. These controls add no generated kills. |
+| Engine scope inventory, managed configuration → joined result | The manifest still described only never-send Preview and denied protected integration. The Sandbox consumer calls `invoke_nts_protected` with the bounded successor plan. | Correct the two scope descriptions. Keep the separate Preview and explicitly authorized protected loopback contracts. At `c034f4b`, the closed KE binding differs for managed preview, datagram, response and source policy. Historical scores retain their original graph, test selection and candidate. |
+
+**Evidence and reuse.** The original fixture cohort is `51746b33…`.
+`logger-fixture-mutation37` contains the 99 host variants.
+`logger-fixture-adjudication38` contains 42 error and six diagnostics
+variants plus separate supervised host observations. Reader-only
+reconciliation checks the original export hashes and the 112-case ordinary
+roster. Three raw host aborts still need that separate observation. The
+37 worker variants belong to `engine-compose-final-worker-replay08`.
+The shared platform's five stale Shared37 artifacts were a separate
+incident. The earlier response, service and metadata exits retain their
+recorded scope. The first failed collector, stop and export receipts remain.
+The existing outer owner recorded 10,537.0987 seconds used from its
+11,100-second allowance across attempts. Native05's lost bytes cannot be
+reconstructed from that timing. No second loss or stale historical fixture
+execution was established.
+
+The two execution modes have different pilot evidence. The ten-command
+`engine-compose-worker-pilot03` recorded the direct worker's healthy,
+faulted and restored results and completed its export. In the Cargo-mutants
+mode, Mutation37 completed its host export but remained incomplete, and
+Adjudication38 recorded restored derivatives for error and diagnostics.
+The revised consumer checks these actual logs. When the producer, target
+layout or export path changes, exercise that mode's fault and restoration
+before admitting a full cohort. The disk-backed runner's first full run
+still belongs to the next admitted campaign.
+
+The additional wire check found one inherited oracle mismatch. Commit
+`0e19ed1` changed the private `RawDatagram` field from `tail` to `input`
+and updated its construction probe. Of the 89 historical consumer
+definitions since `e76863f`, that one literal changed and all diagnostic
+requirements stayed identical. The source-inventory test now checks the
+current field and the reviewed complete fingerprint.
+
+**Final reader and interrupted-run controls.** The independent review
+found that an unrelated executable could still supply an assertion, and
+an interruption after provisional scoring could leave positive flags.
+The revised reader checks which executable actually failed and checks
+compiler refusals against the fixture package, manifest, target and source.
+The runner clears provisional credit on interruption. A real child wrote
+a known line, timed out and was reaped. The receipt kept its command,
+output, exit code and timeout reason exactly once. Output still buffered
+inside an interrupted child may be unavailable.
+
+For the combined 652-input fixture candidate
+`17f71526efa15c7be7f8078f73a62445eddb659eafa945019db348e582999ae7`,
+68 fixture and 336 selected shared-reader, environment, wire and Core
+Python controls passed (404 total). Hash-bound readback of the 147
+Cargo-mutants and 37 direct worker variants took 1.09 seconds. The reader
+refused all three abort-only records. The 20 direct behavioral catches and
+17 compiler refusals agree with the original replay. The checks provide
+no new candidate mutation score. The final independent reviewer accepted
+the tested attribution, interruption and deadline corrections.
+
+The configured Rust 1.100 GNU fixture lanes passed with that same input
+digest and verified source and index before and after execution. The four
+`workflow-*-2111c.json` receipts in `artifacts/windows-services/recovery-20261107-v1/`
+record six graph commands (27.35 s), formatting (22.49 s), all-target
+Clippy (29.75 s) and 111 library tests plus one entrypoint test (36.50 s).
+These are successive whole-lane times, including preparation and checks.
+The first graph attempt `workflow-graph-2111a` stopped before any command
+because its outer namespace lacked a usable `/dev/null`. Providing the
+device corrected that setup. The two temporary build and comparison
+directories were removed after checking the durable receipts. The full
+disk-backed mutation campaign remains open at 4.3 GiB available versus
+its 6 GiB launch requirement. Windows and formal execution were outside
+this workflow repair.
+
+The portable service and protected-successor work remain genuine product
+progress. The next Windows delivery checkpoint still requires the
+pre-terminal writer handoff and Message Compiler/native readback described
+above. No mutation threshold, package gate or post-V1 proof decision changed.
+
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
 **Status:** researched/planned, not implemented or natively qualified.

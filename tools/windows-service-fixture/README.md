@@ -190,6 +190,39 @@ Cargo cleaning and fresh fixture libtest artifacts for variants and restoration.
 Platform-only measurements do not qualify these callers. The existing W11 task
 retains the exact candidates, first failures and native/production limits.
 
+When changing a collector, start with its own selection. Run the fixture
+reader controls with `python3 -IB -m unittest discover -s tools/windows-service-fixture`
+and the shared service reader with
+`python3 -IB -m unittest discover -s scripts/tests -p test_verify_service_analysis.py`.
+Use the raw Build and Test logs from an admitted run to check the revised
+reader before scheduling another build. A worker replay pilot exercises
+direct-file generation and restoration. The three ordinary cargo-mutants
+owners instead use the pinned tool's in-place Build/Test output. Every viable
+variant, including a reviewed equivalent, must show a new build of each role
+containing the mutation and a launch of the corresponding test executable.
+On GNU, host and diagnostics affect the libtest. The common error module also
+feeds the normal library and its dependents. Cargo can reuse unaffected
+artifacts. An abort without a selected assertion still needs its separate
+supervised observation.
+
+For a changed producer or environment, check tool discovery, the admitted
+graph, formatting and Clippy before an expensive cohort. Follow a real
+healthy/fault/restored selection through the intended reader and export.
+Reuse a matching receipt when those inputs and consumers still match.
+
+For a fixture metric stage on WSL, run the existing `metrics.py` lane with
+`--durable-stage <stage-id> --deadline-monotonic <absolute-deadline>` on the
+distro disk. Supply the existing graph, test, and any required inventory
+receipts as usual. Use a fresh output label for each attempt and the same
+stage ID and deadline for retries. The first attempt binds the deadline and
+Linux boot ID under `durable-metric-stages/`. After a reboot or authorized
+budget amendment, record the prior usage and remaining allowance before
+starting the named successor. This route requires 6 GiB free at launch,
+keeps the 4-GiB execution/export reserve, and leaves the original disk
+workspace accessible after an interruption or incomplete export. A child
+may still have output in its own buffers when interrupted. An incomplete
+receipt cannot establish a passing score.
+
 The configured Linux runner admits the observed core collector before abort
 controls. File collectors use process RLIMIT_CORE 0; pipe collectors use the
 Linux sentinel 1 that refuses before launching the collector. Both soft and hard

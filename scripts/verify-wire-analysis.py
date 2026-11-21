@@ -156,18 +156,6 @@ def test_count(output: str) -> int:
     return COMMON.test_count(output)
 
 
-def tool_path(root: Path, name: str) -> Path:
-    """Select only the installed hash-pinned extension; never acquire a tool."""
-    found = shutil.which(name)
-    if not found:
-        raise Incomplete(f"Missing installed analysis extension: {name}.")
-    path = Path(found).resolve(strict=True)
-    entry = next(item for item in json.loads((root / "policy/tool-manifest.json").read_text())["tools"]
-                 if item["name"] == name)
-    PRODUCT.ENV.require_admitted_binary(path, entry["binary_sha256"], name)
-    return path
-
-
 def privacy_error(result: dict, expected: str) -> None:
     """Require the intended compiler privacy diagnostic, not any compile failure."""
     codes = set(re.findall(r"error\[(E\d+)\]", result.get("output", "")))
@@ -1070,12 +1058,8 @@ def execute(args, report: dict) -> None:
                 ("cargo-mutants",) if args.lane == "mutation" else ())
     tool_identity = {}
     for name in selected:
-        origin = tool_path(ROOT, name)
-        shutil.copyfile(origin, tools / name)
-        (tools / name).chmod(0o500)
-        tool_identity[name] = PRODUCT.sha256(origin)
-    if any(PRODUCT.sha256(tools / name) != digest for name, digest in tool_identity.items()):
-        raise Incomplete("An analysis extension changed while its sealed copy was prepared.")
+        tool = COMMON.tool_path(source, name, copy_to=tools / name)
+        tool_identity[name] = PRODUCT.sha256(tool)
     protected_tools = {tools: PRODUCT.inventory(tools)}
     (work / "cargo-home").mkdir()
     (work / "cargo-home/config.toml").write_text(

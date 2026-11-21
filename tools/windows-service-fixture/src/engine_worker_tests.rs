@@ -6,6 +6,7 @@ use std::{
     error::Error,
     io,
     net::{Ipv4Addr, SocketAddr, UdpSocket},
+    ops::Range,
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     rc::Rc,
     sync::{
@@ -21,7 +22,8 @@ use std::{
 use nevrotick_engine::{
     AcquisitionError, AcquisitionReport, ControlHandle, MeasurementRefusal, SeriesConfig,
     SeriesEnd, SeriesNotStartedCause, SlotReport, SourceAddressSet, SourceConfigurationSnapshot,
-    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, Status, TransportFacts,
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, Status,
+    TransportFacts,
 };
 use windows_platform::{
     diagnostics::{ConsumerState, DiagnosticSnapshot, MemoryConsumer},
@@ -62,9 +64,18 @@ const PEER_TRANSMIT: u64 = 0xd001_0203_5566_7788;
 const RUNNING_ERROR: NativeError = NativeError::new(NativeOperation::Status, 711);
 /// Keep actual process-wide policy transactions separate under parallel libtest too.
 static CASE: Mutex<()> = Mutex::new(());
-/// Real process-once owner, with a separate source index for every scenario.
-static AUTHORITY: OnceLock<Result<Mutex<SourcePolicyAuthority>, SourcePolicyError>> =
-    OnceLock::new();
+/// Each of the fifteen parent scenarios installs one source configuration.
+const SOURCE_COUNT: usize = 15;
+/// Each subprocess starts with its own unclaimed catalogue.
+static SOURCES: OnceLock<Result<Mutex<FixtureSources>, SourcePolicyError>> = OnceLock::new();
+
+/// Issue each process-local source once, even across separately filtered or reordered tests.
+struct FixtureSources {
+    /// Only this owner can install a source's first configuration.
+    authority: SourcePolicyAuthority,
+    /// Remaining catalogue indices, consumed before binding any loopback socket.
+    unused: Range<usize>,
+}
 
 /// Independent choices at the real host observation boundaries.
 #[derive(Clone, Copy)]
@@ -203,31 +214,44 @@ fn exclusive_case() -> MutexGuard<'static, ()> {
         .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
-/// Allocate one real policy source and independently select the service peer.
+/// Borrow the process's only Engine policy authority and its remaining source indices.
+///
+/// # Errors
+/// Preserve limit, installation and mutex custody failures.
+fn fixture_sources() -> Check<MutexGuard<'static, FixtureSources>> {
+    let sources: &Mutex<FixtureSources> = SOURCES
+        .get_or_init(|| {
+            let limits: SourcePolicyLimits = SourcePolicyLimits::new(
+                SOURCE_COUNT,
+                16,
+                Duration::from_millis(1),
+                Duration::from_secs(1),
+            )?;
+            Ok(Mutex::new(FixtureSources {
+                authority: SourcePolicyAuthority::install(limits)?,
+                unused: 0..SOURCE_COUNT,
+            }))
+        })
+        .as_ref()
+        .map_err(|error: &SourcePolicyError| *error)?;
+    sources
+        .lock()
+        .map_err(|_| "fixture authority custody was poisoned".into())
+}
+
+/// Install the reserved source's first configuration and independently select the service peer.
 ///
 /// # Errors
 /// Preserve policy installation, source/endpoint admission and worker construction failures.
 fn worker_for(
-    index: usize,
+    source: SourceHandle,
     installed: SocketAddr,
     selected: SocketAddr,
 ) -> Check<(EngineWorker, SourceConfigurationSnapshot)> {
-    let authority: &Mutex<SourcePolicyAuthority> = AUTHORITY
-        .get_or_init(|| {
-            // Existing cases own 0..10; the four diagnostic histories own 11..14.
-            let limits: SourcePolicyLimits =
-                SourcePolicyLimits::new(15, 16, Duration::from_millis(1), Duration::from_secs(1))?;
-            SourcePolicyAuthority::install(limits).map(Mutex::new)
-        })
-        .as_ref()
-        .map_err(|error: &SourcePolicyError| *error)?;
-    let mut authority: MutexGuard<'_, SourcePolicyAuthority> = authority
-        .lock()
-        .map_err(|_| "fixture authority custody was poisoned")?;
-    let source: nevrotick_engine::SourceHandle = authority.source(index)?;
     let addresses: SourceAddressSet = SourceAddressSet::new(&[installed])?;
-    let snapshot: SourceConfigurationSnapshot =
-        authority.install_source_configuration(&source, addresses)?;
+    let snapshot: SourceConfigurationSnapshot = fixture_sources()?
+        .authority
+        .install_source_configuration(&source, addresses)?;
     let config: SeriesConfig =
         SeriesConfig::new(selected, Duration::from_secs(3), Duration::from_secs(12))?;
     Ok((EngineWorker::new(source, config)?, snapshot))
@@ -466,14 +490,22 @@ impl Pause {
     }
 }
 
-/// Bind only an owned IPv4 loopback peer.
+/// Reserve one unused source before binding its owned IPv4 loopback peer.
 ///
 /// # Errors
-/// Preserve the actual socket bind or timeout configuration failure.
-fn peer() -> Check<Rc<UdpSocket>> {
+/// Refuse an exhausted catalogue before socket I/O and preserve policy and socket failures.
+fn source_and_peer() -> Check<(SourceHandle, Rc<UdpSocket>)> {
+    let source: SourceHandle = {
+        let mut sources: MutexGuard<'_, FixtureSources> = fixture_sources()?;
+        let index: usize = sources
+            .unused
+            .next()
+            .ok_or("fixture source catalogue exhausted")?;
+        sources.authority.source(index)?
+    };
     let socket: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))?;
     socket.set_read_timeout(Some(WAIT))?;
-    Ok(Rc::new(socket))
+    Ok((source, Rc::new(socket)))
 }
 
 /// Check the actual receive queue without waiting or responding.
@@ -534,10 +566,10 @@ fn respond(peer: &UdpSocket, query: &[u8; PACKET_BYTES], client: SocketAddr) -> 
 #[test]
 fn dormant_preparation_and_cancelled_activation_preserve_the_first_inactive_failure() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let remote: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(9, remote, remote)?;
+        worker_for(source, remote, remote)?;
     let wake: WorkerWake = WorkerWake::current();
 
     assert_eq!(worker.activate(), Err(WorkerError::Activation));
@@ -591,10 +623,10 @@ fn dormant_preparation_and_cancelled_activation_preserve_the_first_inactive_fail
 #[test]
 fn managed_service_acquisition_retains_real_report_without_admitting_time() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let remote: SocketAddr = peer.local_addr()?;
     let (mut worker, expected): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(0, remote, remote)?;
+        worker_for(source, remote, remote)?;
     let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.after_return = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -743,16 +775,16 @@ fn assert_diagnostic_history(snapshot: &DiagnosticSnapshot, state: ConsumerState
 #[test]
 fn real_engine_join_and_series_survive_each_diagnostic_consumer_condition() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    for (index, state) in [
-        (11_usize, ConsumerState::Available),
-        (12_usize, ConsumerState::Full),
-        (13_usize, ConsumerState::Reject),
-        (14_usize, ConsumerState::Unavailable),
+    for state in [
+        ConsumerState::Available,
+        ConsumerState::Full,
+        ConsumerState::Reject,
+        ConsumerState::Unavailable,
     ] {
-        let peer: Rc<UdpSocket> = peer()?;
+        let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
         let endpoint: SocketAddr = peer.local_addr()?;
         let (mut worker, expected): (EngineWorker, SourceConfigurationSnapshot) =
-            worker_for(index, endpoint, endpoint)?;
+            worker_for(source, endpoint, endpoint)?;
         let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
         worker.hooks.after_return = Some(hook);
         let mut rig: Rig = Rig::start_observing_with_sinks(
@@ -848,15 +880,15 @@ fn real_engine_join_and_series_survive_each_diagnostic_consumer_condition() -> C
 #[test]
 fn service_admission_and_running_acknowledgement_gate_real_engine_activation() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    for (index, admission) in [
-        (1, Admission::DenyToken),
-        (2, Admission::DenyRunning),
-        (3, Admission::StopAtRunning),
+    for admission in [
+        Admission::DenyToken,
+        Admission::DenyRunning,
+        Admission::StopAtRunning,
     ] {
-        let peer: Rc<UdpSocket> = peer()?;
+        let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
         let endpoint: SocketAddr = peer.local_addr()?;
         let (worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-            worker_for(index, endpoint, endpoint)?;
+            worker_for(source, endpoint, endpoint)?;
         let mut rig: Rig = Rig::start(worker, admission, &peer)?;
         rig.finish()?;
         assert!(rig.invocation.admission_closed());
@@ -904,10 +936,10 @@ fn service_admission_and_running_acknowledgement_gate_real_engine_activation() -
 #[test]
 fn real_managed_preparation_refusal_preserves_the_source_policy_error() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let installed: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))?;
     let (worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(4, installed.local_addr()?, peer.local_addr()?)?;
+        worker_for(source, installed.local_addr()?, peer.local_addr()?)?;
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
     rig.finish()?;
     assert!(!rig.states().contains(&ServiceState::Running));
@@ -937,10 +969,10 @@ fn real_managed_preparation_refusal_preserves_the_source_policy_error() -> Check
 #[test]
 fn stop_between_engine_prepare_and_control_publication_is_sticky() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let endpoint: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(5, endpoint, endpoint)?;
+        worker_for(source, endpoint, endpoint)?;
     let (publication, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.before_control = Some(hook);
     let (return_tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
@@ -1006,10 +1038,10 @@ fn stop_between_engine_prepare_and_control_publication_is_sticky() -> Check {
 #[test]
 fn stop_during_real_receive_retains_charge_through_expired_join_tail() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let endpoint: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(6, endpoint, endpoint)?;
+        worker_for(source, endpoint, endpoint)?;
     let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.after_return = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -1088,10 +1120,10 @@ fn stop_during_real_receive_retains_charge_through_expired_join_tail() -> Check 
 #[test]
 fn real_stale_engine_report_closes_service_admission_without_erasing_the_report() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let endpoint: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(7, endpoint, endpoint)?;
+        worker_for(source, endpoint, endpoint)?;
     let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.after_return = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -1147,10 +1179,10 @@ fn real_stale_engine_report_closes_service_admission_without_erasing_the_report(
 #[test]
 fn duplicate_original_control_publication_stops_the_real_series_and_closes_admission() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let endpoint: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(10, endpoint, endpoint)?;
+        worker_for(source, endpoint, endpoint)?;
     let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.after_return = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -1275,10 +1307,10 @@ fn cleanup_failure_policy_reports_either_or_both_failures() {
 #[test]
 fn poisoned_control_publication_retires_the_real_preparation_without_sending() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
-    let peer: Rc<UdpSocket> = peer()?;
+    let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let endpoint: SocketAddr = peer.local_addr()?;
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(8, endpoint, endpoint)?;
+        worker_for(source, endpoint, endpoint)?;
     let (publication, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.before_control = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -1327,12 +1359,12 @@ mod unwind {
         time::{Duration, Instant},
     };
 
-    use nevrotick_engine::{SeriesEnd, SourceConfigurationSnapshot};
+    use nevrotick_engine::{SeriesEnd, SourceConfigurationSnapshot, SourceHandle};
     use windows_platform::service::StopOutcome;
 
     use super::{
         Admission, Check, EngineWorker, InvocationPoll, PACKET_BYTES, Rig, TerminalTrace, WAIT,
-        exclusive_case, peer, peer_has_no_datagram, receive_query, worker_for,
+        exclusive_case, peer_has_no_datagram, receive_query, source_and_peer, worker_for,
     };
 
     /// Child selection is private to the exact test executable and never reaches a native host.
@@ -1432,11 +1464,11 @@ mod unwind {
     /// absent peer activity, premature completion, an unexpected report or dirty Stop.
     fn run_unwind_child(mode: ChildMode) -> Check {
         let _case: MutexGuard<'_, ()> = exclusive_case();
-        let peer: Rc<std::net::UdpSocket> = peer()?;
+        let (source, peer): (SourceHandle, Rc<std::net::UdpSocket>) = source_and_peer()?;
         let endpoint: SocketAddr = peer.local_addr()?;
         // Each child has its own process-wide Engine policy authority.
         let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
-            worker_for(0, endpoint, endpoint)?;
+            worker_for(source, endpoint, endpoint)?;
         if mode == ChildMode::Unwind {
             std::panic::set_hook(Box::new(|info: &std::panic::PanicHookInfo<'_>| {
                 if info.payload().is::<WorkerUnwindPayload>() {

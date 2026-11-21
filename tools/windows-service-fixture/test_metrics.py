@@ -61,6 +61,75 @@ def outcomes(summary="CaughtMutant"):
     return report
 
 
+def fixture_artifacts(root="/work/native-source/tools/windows-service-fixture", *, cfg_only=False):
+    """Author the two library profiles, four binaries and entrypoints independently of the reader."""
+    roles = (("nevrotick_windows_service_fixture", "lib", "src/lib.rs", True),
+             ("nevrotick_windows_service_fixture", "lib", "src/lib.rs", False),
+             ("nevrotick-lab-s02-engine", "bin", "src/bin/engine.rs", False),
+             ("nevrotick-lab-s02-broker", "bin", "src/bin/broker.rs", False),
+             ("nevrotick-lab-s02-engine", "bin", "src/bin/engine.rs", True),
+             ("nevrotick-lab-s02-broker", "bin", "src/bin/broker.rs", True),
+             ("entrypoints", "test", "tests/entrypoints.rs", True))
+    rows = []
+    for index, (name, kind, source, test) in enumerate(roles):
+        tag = f"{index:016x}"
+        executable = None if kind == "lib" else "/work/target/debug/" + name
+        if test:
+            executable = ("/work/target/debug/build/nevrotick-windows-service-fixture/" + tag
+                          + "/out/" + name.replace("-", "_") + "-" + tag)
+        rows.append({"reason": "compiler-artifact", "manifest_path": root + "/Cargo.toml",
+                     "package_id": "path+file://" + root + "#nevrotick-windows-service-fixture@0.0.0",
+                     "target": {"name": name, "kind": [kind], "src_path": root + "/" + source},
+                     "profile": {"test": test}, "fresh": cfg_only and index != 0, "executable": executable,
+                     "filenames": [executable] if executable else []})
+    return rows
+
+
+def build_messages(rows):
+    dependency = {"reason": "compiler-artifact", "package_id": "registry+https://crates.io#dep@1.0.0",
+                  "target": {"name": "dep"}, "fresh": True}
+    return "\n".join(json.dumps(row) for row in [dependency, *rows, {"reason": "build-finished", "success": True}])
+
+
+def direct_build():
+    return build_messages(fixture_artifacts("/work/source/tools/windows-service-fixture"))
+
+
+def fixture_test_output(body, *, verbose=False, complete=False, test_rows=None):
+    """Author Cargo's Test-stage artifacts, successful compilation and actual run lines."""
+    root = ("/work/native-source" if verbose else "/work/source") + "/tools/windows-service-fixture"
+    rows = fixture_artifacts(root)
+    test_rows = [{**item, "fresh": True} for item in rows] if test_rows is None else test_rows
+    sources = ("unittests src/lib.rs", "unittests src/bin/engine.rs",
+               "unittests src/bin/broker.rs", "tests/entrypoints.rs")
+    runs = []
+    for source, item in zip(sources, [row for row in rows if row["profile"]["test"]], strict=True):
+        path = item["executable"]
+        runs.append(f"     Running `{path}`" if verbose else f"     Running {source} ({path})")
+    blocks = [runs[0], body]
+    if complete:
+        for run in runs[1:]:
+            blocks.extend((run, execution(())))
+    return "\n".join([build_messages(test_rows), *blocks])
+
+
+def native_log(row, body, *, rows=None):
+    """Use literal cargo-mutants delimiters and native commands from the test oracle."""
+    baseline = row["scenario"] == "Baseline"
+    header = "*** baseline" if baseline else "*** " + row["scenario"]["Mutant"]["name"] + "\n\n*** mutation diff:"
+    build = "*** cargo test --no-run --verbose --package=nevrotick-windows-service-fixture@0.0.0 --message-format=json --frozen"
+    test = "*** cargo test --verbose --package=nevrotick-windows-service-fixture@0.0.0 --message-format=json --frozen"
+    if row["summary"] == "Unviable":
+        refusal = "error: could not compile `nevrotick-windows-service-fixture` (lib test) due to 1 previous error"
+        return "\n".join((header, build, body, refusal, '{"reason":"build-finished","success":false}', "*** result: Failure(101)"))
+    if rows is None:
+        rows = fixture_artifacts(cfg_only=not baseline and row["scenario"]["Mutant"]["file"] != "src/error.rs")
+    complete = row["summary"] != "CaughtMutant"
+    status = "Success" if complete else "Failure(101)"
+    return "\n".join([header, build, build_messages(rows), "*** result: Success", test,
+                      fixture_test_output(body, verbose=True, complete=complete), "*** result: " + status])
+
+
 def review_fixture():
     """Concrete independent review entries, never automatic generation credit."""
     reconciliation = {"functions_and_guards": ["owner_guard: readiness cannot precede acknowledgement"],
@@ -115,8 +184,8 @@ def retirement_fixture(work):
     identity = {**session.identity, M.WORKER: hashlib.sha256(b"variant\n").hexdigest()}
     raw = {"name": "exact pilot", "package": "single_file", "file": "engine_worker.rs"}
     clean = {"exit_code": 0, "failure": None, "output": "cleaned"}
-    build = {"exit_code": 0, "failure": None, "output": "compiled"}
-    test = {"exit_code": 101, "failure": None, "output": "thread 'healthy_owner' panicked at src/engine_worker_tests.rs:9:5:\nassertion failed\n"}
+    build = {"exit_code": 0, "failure": None, "output": direct_build()}
+    test = {"exit_code": 101, "failure": None, "output": fixture_test_output("thread 'healthy_owner' panicked at src/engine_worker_tests.rs:9:5:\nassertion failed\n")}
     row = {"raw": raw, "source_sha256": identity[M.WORKER], "variant_sha256": M.Q.canonical(identity),
            "Clean": clean, "Build": build, "Test": test, **M.replay_outcome(build, test, session.tests)}
     session.record = {"direct_inventory": {raw["name"]: raw}, "commands": [
@@ -174,27 +243,33 @@ class FixtureMetricControls(unittest.TestCase):
                 M.direct_inventory(json.dumps(rows), source)
 
     def test_direct_replay_failure_causes_are_typed_and_source_attributed(self):
-        build = {"exit_code": 0, "failure": None, "output": "compiled"}
+        build = {"exit_code": 0, "failure": None, "output": direct_build()}
         text = ("thread 'healthy_owner' panicked at src/engine_worker_tests.rs:12:5:\n"
                 "assertion `left == right` failed\nprocess abort signal SIGABRT\n")
-        test = {"exit_code": 101, "failure": None, "output": text}
+        test = {"exit_code": 101, "failure": None, "output": fixture_test_output(text)}
         self.assertEqual(M.replay_outcome(build, test, ["healthy_owner"])["kind"], "killed")
-        self.assertEqual(M.replay_outcome(build, {**test, "exit_code": 0, "output": execution()},
+        self.assertEqual(M.replay_outcome(build, {**test, "exit_code": 0, "output": fixture_test_output(execution(), complete=True)},
                                         ["healthy_owner", "failed_cleanup"])["kind"], "survived")
         for bad in ("process abort signal SIGABRT\n", text.replace("engine_worker_tests.rs", "foreign.rs"),
                     text.replace("healthy_owner", "unselected_test"), text + "No space left on device\n",
                     text.replace("assertion `left == right` failed", "arbitrary panic")):
             with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
-                M.replay_outcome(build, {**test, "output": bad}, ["healthy_owner"])
+                M.replay_outcome(build, {**test, "output": fixture_test_output(bad)}, ["healthy_owner"])
         for broken in ({**test, "exit_code": True}, {**test, "failure": "timeout"}, {**test, "exit_code": -6}):
             with self.subTest(broken=broken), self.assertRaises(M.Incomplete):
                 M.replay_outcome(build, broken, ["healthy_owner"])
-        diagnostic = {"reason": "compiler-message", "target": {"name": "nevrotick_windows_service_fixture"},
+        worker_target = fixture_artifacts("/work/source/tools/windows-service-fixture")[0]
+        diagnostic = {"reason": "compiler-message", "target": worker_target["target"],
+                      "package_id": worker_target["package_id"], "manifest_path": worker_target["manifest_path"],
                       "message": {"level": "error", "message": "mismatched types",
                                   "spans": [{"is_primary": True, "file_name": "src/engine_worker.rs"}]}}
         refused = {"exit_code": 101, "failure": None, "output": json.dumps(diagnostic) + "\n"}
         row = M.replay_outcome(refused, None, ["healthy_owner"])
         self.assertEqual((row["kind"], row["kill_credit"]), ("compiler-unviable", 0))
+        for field, foreign in (("package_id", "foreign"), ("manifest_path", "/foreign/Cargo.toml"),
+                               ("target", fixture_artifacts("/work/source/tools/windows-service-fixture")[-1]["target"])):
+            with self.subTest(field=field), self.assertRaises(M.Incomplete):
+                M.replay_outcome({**refused, "output": json.dumps({**diagnostic, field: foreign})}, None, ["healthy_owner"])
         for filename in ("src/host.rs", "foreign.rs", "../src/engine_worker.rs"):
             diagnostic["message"]["spans"][0]["file_name"] = filename
             with self.subTest(filename=filename), self.assertRaises(M.Incomplete):
@@ -202,31 +277,125 @@ class FixtureMetricControls(unittest.TestCase):
         with self.assertRaises(M.Incomplete):
             M.replay_outcome({**refused, "output": "error[E0001] arbitrary refusal"}, None, ["healthy_owner"])
 
+    def test_replay_and_native_score_only_runs_from_the_matching_test_artifacts(self):
+        assertion = "thread 'healthy_owner' panicked at src/engine_worker_tests.rs:12:5:\nassertion failed"
+        for verbose in (False, True):
+            root = ("/work/native-source" if verbose else "/work/source") + "/tools/windows-service-fixture"
+            rows = fixture_artifacts(root)
+            for complete in (False, True):
+                body = execution(("healthy_owner",)) if complete else assertion
+                row = outcomes("MissedMutant" if complete else "CaughtMutant")["outcomes"][1]
+                original = fixture_test_output(body, verbose=verbose, complete=complete)
+                def receive(test_output):
+                    if verbose:
+                        raw = native_log(row, body).replace(original, test_output)
+                        phases = M.native_log_phases(row, raw)
+                        if complete:
+                            return M.executed_tests(phases["Test"], ["healthy_owner"])
+                        return M.classify_cause(phases["Test"], ["healthy_owner"])
+                    return M.replay_outcome({"exit_code": 0, "failure": None, "output": direct_build()},
+                        {"exit_code": 0 if complete else 101, "failure": None, "output": test_output}, ["healthy_owner"])
+                # Cargo can legitimately rebuild the same selected Test role under the same frozen overlay.
+                receive(fixture_test_output(body, verbose=verbose, complete=complete, test_rows=rows))
+                other = copy.deepcopy(rows)
+                other[0]["executable"] = other[0]["executable"].replace("0000000000000000", "0123456789abcdef")
+                other[0]["filenames"] = [other[0]["executable"]]
+                wrong_executable = fixture_test_output(body, verbose=verbose, complete=complete, test_rows=other)
+                before_dispatch, running = original.split("     Running ", 1)
+                changes = {"no Test artifact": fixture_test_output(body, verbose=verbose, complete=complete, test_rows=rows[1:]),
+                           "changed executable": wrong_executable,
+                           "different program ran": before_dispatch + "     Running " + running.replace(rows[0]["executable"], other[0]["executable"], 1),
+                           "no launch": original.replace("     Running ", "previously ran "),
+                           "cause before launch": before_dispatch + body + "\n     Running " + running.replace(body, "", 1),
+                           "cause before compilation": body + "\n" + original.replace(body, "", 1)}
+                for reason, bad in changes.items():
+                    with self.subTest(verbose=verbose, complete=complete, reason=reason), self.assertRaises(M.Incomplete):
+                        receive(bad)
+
+    def test_caught_requires_the_failing_program_to_contain_the_selected_source(self):
+        assertion = "thread 'healthy_owner' panicked at tests/entrypoints.rs:12:5:\nassertion failed"
+        for verbose in (True, False):
+            def score(subject, previous, failure):
+                caught = outcomes()["outcomes"][1]
+                caught["scenario"]["Mutant"]["file"] = subject
+                body = fixture_test_output(previous, verbose=verbose, complete=True)
+                # The last program is the real entrypoints test, after the three successful libtests.
+                body = body.removesuffix(execution(())) + failure
+                if verbose:
+                    initial = fixture_test_output(assertion, verbose=True)
+                    value = native_log(caught, assertion).replace(initial, body)
+                    return M.classify_cause(M.native_log_phases(caught, value)["Test"], ["healthy_owner"])
+                return M.replay_outcome({"exit_code": 0, "failure": None, "output": direct_build()},
+                    {"exit_code": 101, "failure": None, "output": body}, ["healthy_owner"])
+            for subject in (("src/host.rs", "src/diagnostics.rs") if verbose else ("src/engine_worker.rs",)):
+                with self.subTest(verbose=verbose, subject=subject), self.assertRaises(M.Incomplete):
+                    score(subject, execution(("passing_neighbor",)), assertion)
+            if verbose:
+                self.assertEqual(score("src/error.rs", execution(("passing_neighbor",)), assertion)["kind"],
+                                 "behavioral-assertion")
+                for previous, final in ((assertion + "\n" + execution(("passing_neighbor",)), "entrypoints failed"),
+                                        ("incomplete prior launch", assertion), (execution(()), assertion + "\n" + execution(()))):
+                    with self.assertRaises(M.Incomplete):
+                        score("src/error.rs", previous, final)
+
+    def test_common_error_compile_failure_requires_its_fixture_package(self):
+        row = outcomes("Unviable")["outcomes"][1]
+        row["scenario"]["Mutant"]["file"] = "src/error.rs"
+        role = fixture_artifacts()[0]
+        item = {"reason": "compiler-message", "target": role["target"], "package_id": role["package_id"],
+                "manifest_path": role["manifest_path"], "message": {"level": "error", "message": "mismatched types",
+                "spans": [{"is_primary": True, "file_name": "src/error.rs"}]}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def receive(diagnostic):
+                (root / row["log_path"]).write_text(native_log(row, json.dumps(diagnostic)))
+                return M.mutation_causes(root, {"outcomes": [row]}, [])["host guard"]
+            self.assertEqual(receive(item)["kind"], "compiler-unviable")
+            for bad in ({"package_id": "foreign"}, {"manifest_path": "/foreign/Cargo.toml"},
+                        {"target": {**role["target"], "src_path": "/foreign/src/lib.rs"}}):
+                with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
+                    receive({**item, **bad})
+
+    def test_cfg_only_compile_failure_requires_its_libtest_and_a_consumer_span(self):
+        for subject, caller in (("host", "src/host_tests.rs"), ("diagnostics", "src/host.rs")):
+            row = outcomes("Unviable")["outcomes"][1]
+            row["scenario"]["Mutant"]["file"] = f"src/{subject}.rs"
+            target = fixture_artifacts()[0]
+            item = {"reason": "compiler-message", "target": target["target"], "package_id": target["package_id"],
+                    "manifest_path": target["manifest_path"], "message": {"level": "error", "message": "mismatched types",
+                    "spans": [{"is_primary": True, "file_name": caller}]}}
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                def receive(diagnostic, profile="lib test"):
+                    log = native_log(row, json.dumps(diagnostic)).replace("(lib test) due to", f"({profile}) due to")
+                    (root / row["log_path"]).write_text(log)
+                    return M.mutation_causes(root, {"outcomes": [row]}, [])["host guard"]
+                self.assertEqual(receive(item)["kind"], "compiler-unviable")
+                for bad, profile in (({**item, "target": fixture_artifacts()[-1]["target"]}, "lib test"),
+                        ({**item, "package_id": "foreign"}, "lib test"), (item, "lib"),
+                        ({**item, "message": {**item["message"], "spans": [
+                            {"is_primary": True, "file_name": "tests/entrypoints.rs"}]}}, "lib test")):
+                    with self.subTest(subject=subject, diagnostic=bad, profile=profile), self.assertRaises(M.Incomplete):
+                        receive(bad, profile)
+
     def test_replay_clean_is_package_scoped_and_successful_build_artifacts_are_fresh(self):
         self.assertEqual(M.replay_clean_command(), ["/toolchain/bin/cargo", "clean", "--manifest-path",
                          "/work/source/tools/windows-service-fixture/Cargo.toml", "--target-dir", "/work/target",
                          "-p", "nevrotick-windows-service-fixture", "--frozen", "--offline"])
-        artifact = {"reason": "compiler-artifact",
-                    "package_id": "path+file:///work/source/tools/windows-service-fixture#nevrotick-windows-service-fixture@0.0.0",
-                    "manifest_path": "/work/source/tools/windows-service-fixture/Cargo.toml",
-                    "target": {"name": "nevrotick_windows_service_fixture", "kind": ["lib"],
-                               "src_path": "/work/source/tools/windows-service-fixture/src/lib.rs"},
-                    "profile": {"test": True}, "fresh": False}
-        dependency = {"reason": "compiler-artifact", "package_id": "registry+https://crates.io#dep@1.0.0",
-                      "target": {"name": "dep"}, "fresh": True}
-        output = json.dumps(dependency) + "\n" + json.dumps(artifact) + "\n"
-        self.assertEqual(M.fresh_fixture_build(output), 1)
-        for bad in ("", json.dumps(dependency), json.dumps({**artifact, "fresh": True}),
-                    json.dumps({**artifact, "fresh": 0}), json.dumps({**artifact, "fresh": None}),
-                    json.dumps({**artifact, "package_id": "path+file:///foreign#nevrotick-windows-service-fixture@0.0.0"}),
-                    json.dumps({**artifact, "target": {"name": "foreign"}}),
-                    json.dumps({**artifact, "manifest_path": "/foreign/Cargo.toml"}),
-                    json.dumps({**artifact, "profile": {"test": False}}),
-                    json.dumps({**artifact, "profile": {"test": 1}}),
-                    json.dumps({**artifact, "target": {**artifact["target"], "kind": ["bin"]}}),
-                    json.dumps({**artifact, "target": {**artifact["target"], "src_path": "/foreign/lib.rs"}})):
-            with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
-                M.fresh_fixture_build(bad)
+        rows = fixture_artifacts("/work/source/tools/windows-service-fixture")
+        self.assertEqual(M.fresh_fixture_build(build_messages(rows)), 7)
+        for offset in range(len(rows)):
+            changed = copy.deepcopy(rows)
+            changed[offset]["fresh"] = True
+            for bad in (changed, rows[:offset] + rows[offset + 1:], rows + [rows[offset]]):
+                with self.subTest(offset=offset), self.assertRaises(M.Incomplete):
+                    M.fresh_fixture_build(build_messages(bad))
+        for fields in ({"fresh": 0}, {"fresh": None}, {"package_id": "path+file:///foreign#0.0.0"},
+                       {"manifest_path": "/foreign/Cargo.toml"}, {"profile": {"test": 1}},
+                       {"target": {**rows[0]["target"], "kind": ["bin"]}},
+                       {"target": {**rows[0]["target"], "src_path": "/foreign/lib.rs"}}):
+            with self.subTest(fields=fields), self.assertRaises(M.Incomplete):
+                M.fresh_fixture_build(build_messages([{**rows[0], **fields}, *rows[1:]]))
 
     def test_initial_replay_target_is_absent_or_empty_without_manual_cargo_marker(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -294,16 +463,14 @@ class FixtureMetricControls(unittest.TestCase):
                         result.update(exit_code=101, output="clean refused")
                     elif label.endswith(":Build"):
                         cached = (cached_variant and label == "worker:0:Build") or (cached_closing and label == "worker-closing:Build")
-                        result["output"] = json.dumps({"reason": "compiler-artifact",
-                            "package_id": "path+file:///work/source/tools/windows-service-fixture#nevrotick-windows-service-fixture@0.0.0",
-                            "manifest_path": "/work/source/tools/windows-service-fixture/Cargo.toml",
-                            "target": {"name": "nevrotick_windows_service_fixture", "kind": ["lib"],
-                                       "src_path": "/work/source/tools/windows-service-fixture/src/lib.rs"},
-                            "profile": {"test": True}, "fresh": cached}) + "\n"
+                        rows = fixture_artifacts("/work/source/tools/windows-service-fixture")
+                        rows[0]["fresh"] = cached
+                        result["output"] = build_messages(rows)
                     elif label == "worker:0:Test":
-                        result.update(exit_code=101, output="thread 'healthy_owner' panicked at src/engine_worker_tests.rs:9:5:\nassertion failed\n")
+                        result.update(exit_code=101, output=fixture_test_output(
+                            "thread 'healthy_owner' panicked at src/engine_worker_tests.rs:9:5:\nassertion failed\n"))
                     elif label.endswith(":Test"):
-                        result["output"] = execution(("healthy_owner",))
+                        result["output"] = fixture_test_output(execution(("healthy_owner",)), complete=True)
                     elif label.endswith(":doc"):
                         result["output"] = "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0s\n"
                     return result
@@ -569,7 +736,9 @@ class FixtureMetricControls(unittest.TestCase):
         text = ("test bounded_output ... FAILED\n\n---- bounded_output stdout ----\n"
                 "thread 'bounded_output' panicked at src/diagnostics_tests.rs:120:5:\n"
                 "assertion `left == right` failed\n  left: 1\n right: 2\n\nfailures:\n")
-        diagnostic = {"reason": "compiler-message", "target": {"name": "nevrotick_windows_service_fixture"},
+        target = fixture_artifacts()[0]
+        diagnostic = {"reason": "compiler-message", "target": target["target"],
+                      "manifest_path": target["manifest_path"], "package_id": target["package_id"],
                       "message": {"level": "error", "message": "mismatched types",
                                   "spans": [{"is_primary": True, "file_name": "src/diagnostics.rs"}]}}
         with tempfile.TemporaryDirectory() as temporary:
@@ -577,7 +746,8 @@ class FixtureMetricControls(unittest.TestCase):
             for summary in ("CaughtMutant", "Unviable"):
                 report = outcomes(summary)
                 report["outcomes"][1]["scenario"]["Mutant"] = item
-                (directory / "mutant.log").write_text(text if summary == "CaughtMutant" else json.dumps(diagnostic) + "\n")
+                (directory / "mutant.log").write_text(native_log(report["outcomes"][1],
+                    text if summary == "CaughtMutant" else json.dumps(diagnostic)))
                 causes = M.mutation_causes(directory, report, ["bounded_output"])
                 if summary == "CaughtMutant":
                     self.assertEqual(causes[item["name"]]["kind"], "behavioral-assertion")
@@ -763,10 +933,79 @@ class FixtureMetricControls(unittest.TestCase):
             self.assertEqual((result["raw_denominator"], result["adjusted_denominator"]), (2, 1))
             self.assertEqual((result["raw_viable_killed_percent"], result["adjusted_viable_killed_percent"]), (50, 100))
             self.assertEqual(report, before)
-            (root / "mutant.log").write_text(execution())
+            (root / "mutant.log").write_text(native_log(outcomes("MissedMutant")["outcomes"][1], execution()))
             cause = M.mutation_causes(root, outcomes("MissedMutant"), ["healthy_owner", "failed_cleanup"], [entry])
             self.assertEqual(cause["host guard"]["kind"], "reviewed-equivalent-survivor")
             self.assertEqual(cause["host guard"]["kill_credit"], 0)
+
+    def test_native_viability_requires_its_own_build_for_catches_and_all_survivors(self):
+        assertion = "thread 'healthy_owner' panicked at src/host_tests.rs:45:9:\nassertion failed"
+        caught = outcomes()["outcomes"][1]
+        missed = outcomes("MissedMutant")["outcomes"][1]
+        equivalence = {"id": "FX-EQ-001", "mutant": missed["scenario"]["Mutant"], "proof": {"reviewer": "independent"}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for row, body, equivalents, kind in ((caught, assertion, [], "behavioral-assertion"),
+                    (missed, execution(("healthy_owner",)), [], "survived"),
+                    (missed, execution(("healthy_owner",)), [equivalence], "reviewed-equivalent-survivor")):
+                path = root / row["log_path"]
+                report = {"outcomes": [row]}
+                healthy = native_log(row, body)
+                path.write_text(healthy)
+                cause = M.mutation_causes(root, report, ["healthy_owner"], equivalents)["host guard"]
+                self.assertEqual(cause["kind"], kind)
+                self.assertEqual(cause["log_sha256"], hashlib.sha256(healthy.encode()).hexdigest())
+                artifact = fixture_artifacts(cfg_only=True)[0]
+                encoded = json.dumps(artifact)
+                build_end = "*** result: Success"
+                test_command = "*** cargo test --verbose"
+                changes = {
+                    "cached": healthy.replace(encoded, json.dumps({**artifact, "fresh": True})),
+                    "missing": healthy.replace(encoded, ""),
+                    "duplicate": healthy.replace(encoded, encoded + "\n" + encoded),
+                    "Test artifact only": healthy.replace(encoded, "").replace(body, encoded + "\n" + body),
+                    "wrong package": healthy.replace(encoded, json.dumps({**artifact, "package_id": "foreign"})),
+                    "wrong source": healthy.replace(encoded, json.dumps({**artifact, "target": {
+                        **artifact["target"], "src_path": "/work/source/tools/windows-service-fixture/src/lib.rs"}})),
+                    "missing executable": healthy.replace(encoded, json.dumps({**artifact, "executable": None})),
+                    "wrong program": healthy.replace("Running `" + artifact["executable"], "Running `/foreign/program"),
+                    "wrong scenario": healthy.replace("*** host guard", "*** other guard"),
+                    "wrong command": healthy.replace("test --no-run", "test --all-targets"),
+                    "extra phase": healthy.replace(test_command, "*** cargo run\n" + test_command),
+                    "duplicate Test": healthy.replace(test_command, test_command + "\n" + test_command),
+                    "wrong Build result": healthy.replace(build_end, "*** result: Failure(101)", 1),
+                    "cause only in Build": healthy.replace(body, "").replace(build_end, body + "\n" + build_end, 1),
+                    "infrastructure failure in Build": healthy.replace(build_end, "No space left on device\n" + build_end, 1),
+                }
+                for label, changed in changes.items():
+                    with self.subTest(kind=kind, label=label), self.assertRaises(M.Incomplete):
+                        path.write_text(changed)
+                        M.mutation_causes(root, report, ["healthy_owner"], equivalents)
+                foreign_argv = copy.deepcopy(row)
+                for phase in foreign_argv["phase_results"]:
+                    phase["argv"].remove("--message-format=json")
+                path.write_text(healthy.replace(" --message-format=json", ""))
+                with self.assertRaises(M.Incomplete):
+                    M.mutation_causes(root, {"outcomes": [foreign_argv]}, ["healthy_owner"], equivalents)
+
+    def test_native_error_rebuilds_every_consumer_and_cfg_only_owners_reuse_other_roles(self):
+        assertion = "thread 'healthy_owner' panicked at src/error_tests.rs:45:9:\nassertion failed"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for filename in ("src/host.rs", "src/diagnostics.rs", "src/error.rs"):
+                row = outcomes()["outcomes"][1]
+                row["scenario"]["Mutant"]["file"] = filename
+                for index in range(7):
+                    artifacts = fixture_artifacts()
+                    artifacts[index]["fresh"] = True
+                    (root / row["log_path"]).write_text(native_log(row, assertion, rows=artifacts))
+                    with self.subTest(owner=filename, index=index):
+                        if filename == "src/error.rs" or index == 0:
+                            with self.assertRaises(M.Incomplete):
+                                M.mutation_causes(root, {"outcomes": [row]}, ["healthy_owner"])
+                        else:
+                            causes = M.mutation_causes(root, {"outcomes": [row]}, ["healthy_owner"])
+                            self.assertEqual(causes["host guard"]["kind"], "behavioral-assertion")
 
     def test_equivalence_cannot_hide_unknown_changed_duplicate_nonmissed_faults_or_timeouts(self):
         entry = {"id": "FX-EQ-001", "mutant": descriptor(), "proof": {"reviewer": "reviewer"}}
@@ -788,30 +1027,32 @@ class FixtureMetricControls(unittest.TestCase):
                 "assertion `left == right` failed\n  left: 1\n right: 2\n\nfailures:\n")
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            (directory / "mutant.log").write_text(text)
+            (directory / "mutant.log").write_text(native_log(outcomes()["outcomes"][1], text))
             checked = M.mutation_causes(directory, outcomes(), ["healthy_owner"])
             self.assertEqual(checked["host guard"]["kind"], "behavioral-assertion")
             for bad in (text.replace("src/host_tests.rs", "foreign.rs"),
                         text.replace("assertion `left == right` failed", "test fixture construction failed"),
                         text + "No space left on device\n", text.replace("healthy_owner", "foreign_case")):
-                (directory / "mutant.log").write_text(bad)
+                (directory / "mutant.log").write_text(native_log(outcomes()["outcomes"][1], bad))
                 with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
                     M.mutation_causes(directory, outcomes(), ["healthy_owner"])
             with self.assertRaises(M.Incomplete):
                 M.owned_log(directory, "../mutant.log")
 
     def test_compiler_unviable_is_source_attributed_and_never_killed(self):
-        diagnostic = {"reason": "compiler-message", "target": {"name": "nevrotick_windows_service_fixture"},
+        target = fixture_artifacts()[0]
+        diagnostic = {"reason": "compiler-message", "target": target["target"],
+                      "manifest_path": target["manifest_path"], "package_id": target["package_id"],
                       "message": {"level": "error", "message": "mismatched types",
                                   "spans": [{"is_primary": True, "file_name": "src/host.rs"}]}}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            (directory / "mutant.log").write_text(json.dumps(diagnostic) + "\n")
+            (directory / "mutant.log").write_text(native_log(outcomes("Unviable")["outcomes"][1], json.dumps(diagnostic)))
             causes = M.mutation_causes(directory, outcomes("Unviable"), ["healthy_owner"])
             self.assertEqual(causes["host guard"]["kill_credit"], 0)
             for file in ("foreign.rs", "../src/host.rs"):
                 diagnostic["message"]["spans"][0]["file_name"] = file
-                (directory / "mutant.log").write_text(json.dumps(diagnostic) + "\n")
+                (directory / "mutant.log").write_text(native_log(outcomes("Unviable")["outcomes"][1], json.dumps(diagnostic)))
                 with self.subTest(file=file), self.assertRaises(M.Incomplete):
                     M.mutation_causes(directory, outcomes("Unviable"), ["healthy_owner"])
 
@@ -822,7 +1063,7 @@ class FixtureMetricControls(unittest.TestCase):
                 "process didn't exit successfully (signal: 6, SIGABRT: process abort signal)\n")
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            (directory / "mutant.log").write_text(text)
+            (directory / "mutant.log").write_text(native_log(outcomes()["outcomes"][1], text))
             checked = M.mutation_causes(directory, outcomes(), ["healthy_owner"])
             self.assertEqual(checked["host guard"]["causes"], [{"test": "healthy_owner", "source": "src/host_tests.rs",
                               "line": 120, "kind": "unbuffered-semantic-assertion"}])
@@ -831,7 +1072,7 @@ class FixtureMetricControls(unittest.TestCase):
                         text.replace("assertion `left == right` failed", "test fixture construction failed"),
                         text.replace("assertion `left == right` failed", "arbitrary panic message"),
                         text + "Cannot allocate memory\n"):
-                (directory / "mutant.log").write_text(bad)
+                (directory / "mutant.log").write_text(native_log(outcomes()["outcomes"][1], bad))
                 with self.subTest(bad=bad), self.assertRaises(M.Incomplete):
                     M.mutation_causes(directory, outcomes(), ["healthy_owner"])
 

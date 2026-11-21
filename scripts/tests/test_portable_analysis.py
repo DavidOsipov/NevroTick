@@ -57,6 +57,53 @@ def complete_report(value):
     return value
 
 
+class InstalledExtensionTests(unittest.TestCase):
+    def test_sanitized_path_preserves_pins_and_explicit_tool_selection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            installed = root / ".cargo/bin"
+            selected = root / "selected"
+            installed.mkdir(parents=True)
+            selected.mkdir()
+            (root / "policy").mkdir()
+            entries = []
+            for name in ("cargo-mutants", "cargo-llvm-cov"):
+                tool = installed / name
+                tool.write_bytes(name.encode())
+                tool.chmod(0o700)
+                entries.append({"name": name, "binary_sha256": hashlib.sha256(name.encode()).hexdigest()})
+            (root / "policy/tool-manifest.json").write_text(json.dumps({"tools": entries}))
+            with patch.dict(os.environ, {"PATH": str(selected), "HOME": str(root)}):
+                for entry in entries:
+                    name = entry["name"]
+                    with self.subTest(name=name):
+                        self.assertEqual(MODULE.tool_path(root, name), installed / name)
+                        explicit = selected / name
+                        explicit.write_bytes(b"different")
+                        explicit.chmod(0o700)
+                        with self.assertRaisesRegex(MODULE.PRODUCT.ENV.Incomplete, "digest differs"):
+                            MODULE.tool_path(root, name)
+                        explicit.write_bytes(name.encode())
+                        self.assertEqual(MODULE.tool_path(root, name), explicit)
+                        explicit.unlink()
+                        private_copy = root / name
+                        self.assertEqual(MODULE.tool_path(root, name, copy_to=private_copy), private_copy)
+                        self.assertEqual(private_copy.read_bytes(), name.encode())
+                        private_copy.unlink()
+
+                        original_copy = MODULE.shutil.copyfile
+                        def replace_before_copy(source, destination):
+                            source.write_bytes(b"updated after admission")
+                            return original_copy(source, destination)
+
+                        with patch.object(MODULE.shutil, "copyfile", side_effect=replace_before_copy):
+                            with self.assertRaisesRegex(MODULE.PRODUCT.ENV.Incomplete, "digest differs"):
+                                MODULE.tool_path(root, name, copy_to=private_copy)
+                        (installed / name).chmod(0o600)
+                        with self.assertRaisesRegex(MODULE.Incomplete, "Missing installed"):
+                            MODULE.tool_path(root, name)
+
+
 class CargoContractArtifactTests(unittest.TestCase):
     """Synthetic layout controls; actual compiler messages are separate evidence."""
 
