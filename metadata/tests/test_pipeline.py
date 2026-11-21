@@ -689,10 +689,81 @@ class GeneratedFactTests(SourceFixture):
         self.assertIsNone(events["provider_guid"])
         self.assertIsNone(events["event_schema_version"])
         self.assertIsNone(events["message_resource"])
+        self.assertFalse((self.output / "authoring/service-events.man").exists())
         self.assertEqual(
             [(row["path"], row["owner"], row["required_stage"]) for row in events["pending"]],
             [("diagnostics.provider", "W11-W08", "release")],
         )
+
+    def test_event_provider_reaches_compile_only_manifest(self) -> None:
+        self.replace_once("[fields]", (
+            '[diagnostics.event_provider]\n'
+            'name = "NevroTick-TestService"\n'
+            'guid = "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380"\n'
+            'package_resource_file = "nevrotick-test-events.dll"\n\n'
+            '[fields]'
+        ))
+        self.require_success(self.cli("validate"))
+        self.generate()
+        self.require_success(self.cli("check", output=self.output))
+        events = json_data(self.output / "authoring/event-inputs.json")
+        self.assertEqual(events["provider_name"], "NevroTick-TestService")
+        self.assertEqual(events["provider_guid"], "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380")
+        self.assertEqual(events["message_resource"], "nevrotick-test-events.dll")
+        self.assertEqual(events["event_schema_version"], 1)
+        self.assertEqual([row["path"] for row in events["pending"]], ["diagnostics.provider"])
+        self.assertFalse(json_data(self.output / "authoring/msix-inputs.json")["complete_manifest"])
+
+        source = self.output / "authoring/service-events.man"
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(source.read_bytes())
+        self.assertEqual(root.tag, "{http://schemas.microsoft.com/win/2004/08/events}instrumentationManifest")
+        provider = root.find("./{*}instrumentation/{*}events/{*}provider")
+        self.assertIsNotNone(provider)
+        self.assertEqual(provider.get("guid"), "{407b0d7f-0220-4ca1-9e6b-d0a6c0d33380}")
+        self.assertNotIn("resourceFileName", provider.attrib)
+        self.assertNotIn("messageFileName", provider.attrib)
+        channel = provider.find("./{*}channels/{*}channel")
+        self.assertEqual((channel.get("name"), channel.get("enabled")),
+                         ("NevroTick-TestService/Operational", "false"))
+        self.assertEqual(
+            [(event.get("value"), event.get("level"), event.get("version"))
+             for event in provider.findall("./{*}events/{*}event")],
+            [("2", "win:Informational", "1"), ("4", "win:Error", "1")],
+        )
+        self.assertEqual(
+            [(field.get("name"), field.get("inType"))
+             for field in provider.findall("./{*}templates/{*}template/{*}data")],
+            [("Component", "win:UInt8"), ("Sequence", "win:UInt64"),
+             ("ObservationKind", "win:UInt8"), ("ObservedElapsedNs", "win:UInt64"),
+             ("Cause", "win:UInt8")],
+        )
+        changed = source.read_bytes().replace(b'win:Informational', b'win:Warning')
+        source.write_bytes(changed)
+        self.require_rejection(self.cli("check", output=self.output))
+        self.assertEqual(source.read_bytes(), changed)
+
+    def test_incomplete_or_malformed_event_provider_never_generates(self) -> None:
+        valid = (
+            '[diagnostics.event_provider]\n'
+            'name = "NevroTick-TestService"\n'
+            'guid = "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380"\n'
+            'package_resource_file = "nevrotick-test-events.dll"\n\n'
+        )
+        for old, new in (
+            ('package_resource_file = "nevrotick-test-events.dll"\n', ""),
+            ("\nname", "\ninstall = true\nname"),
+            ("NevroTick-TestService", "NevroTick-<XML"),
+            ("NevroTick-TestService", "NevroTick-" + "x" * 54),
+            ('"407b0d7f-0220-4ca1-9e6b-d0a6c0d33380"', "true"),
+            ("407b0d7f-0220-4ca1-9e6b-d0a6c0d33380", "00000000-0000-0000-0000-000000000000"),
+            ("nevrotick-test-events.dll", "../nevrotick-test-events.dll"),
+            ("nevrotick-test-events.dll", "nevrotick-test-events.dll:side"),
+        ):
+            with self.subTest(old=old, new=new):
+                self.record.write_text(self.original_record.replace("[fields]", valid.replace(old, new) + "[fields]"))
+                self.require_rejection(self.cli("generate", output=self.output))
+                self.assertFalse(self.output.exists())
 
     def test_real_component_versions_roles_and_licenses(self) -> None:
         self.generate()

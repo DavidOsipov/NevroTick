@@ -24,7 +24,7 @@ import shutil
 import stat
 import xml.etree.ElementTree as ET
 
-from .contract import (Component, FieldValue, InputDigest, Metadata, MetadataError, PendingField,
+from .contract import (Component, EventProvider, FieldValue, InputDigest, Metadata, MetadataError, PendingField,
                        Product, load_metadata, validate_model)
 from .delivery import delivery_contract, verify_delivery
 from .fields import FIELD_BY_KEY
@@ -287,6 +287,57 @@ def _store_csv(model: Metadata) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
+def _service_events(provider: EventProvider) -> bytes:
+    """Render compiler input from the revalidated provider and fixed field order.
+
+    Admission restricts the substituted name and GUID to XML-safe ASCII. The
+    package deployment owner supplies the installed message and metadata paths.
+    """
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events"
+    xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events">
+  <instrumentation>
+    <events>
+      <provider name="{provider.name}" guid="{{{provider.guid}}}" symbol="NEVROTICK_SERVICE_PROVIDER">
+        <channels>
+          <channel name="{provider.name}/Operational" chid="ServiceOperational"
+              type="Operational" value="16" enabled="false"/>
+        </channels>
+        <keywords>
+          <keyword name="ServiceLifecycle" mask="0x1"/>
+        </keywords>
+        <templates>
+          <template tid="ServiceEventV1">
+            <data name="Component" inType="win:UInt8"/>
+            <data name="Sequence" inType="win:UInt64"/>
+            <data name="ObservationKind" inType="win:UInt8"/>
+            <data name="ObservedElapsedNs" inType="win:UInt64"/>
+            <data name="Cause" inType="win:UInt8"/>
+          </template>
+        </templates>
+        <events>
+          <event value="2" version="1" symbol="RunningAcknowledged" level="win:Informational"
+              channel="ServiceOperational" keywords="ServiceLifecycle" template="ServiceEventV1"
+              message="$(string.RunningAcknowledged)"/>
+          <event value="4" version="1" symbol="PrimaryFailure" level="win:Error"
+              channel="ServiceOperational" keywords="ServiceLifecycle" template="ServiceEventV1"
+              message="$(string.PrimaryFailure)"/>
+        </events>
+      </provider>
+    </events>
+  </instrumentation>
+  <localization>
+    <resources culture="en-US">
+      <stringTable>
+        <string id="RunningAcknowledged" value="The Service Control Manager acknowledged Running."/>
+        <string id="PrimaryFailure" value="The service recorded its first failure (cause %5)."/>
+      </stringTable>
+    </resources>
+  </localization>
+</instrumentationManifest>
+""".encode("utf-8")
+
+
 def build_outputs(model: Metadata) -> dict[str, bytes]:
     """Revalidate a model and return a bounded fixed-name projection set in memory."""
     validate_model(model)
@@ -348,12 +399,18 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                       "technical_name": _field_value(model, f"component.{item.id}.scm.name") or None}
                      for item in model.components if item.id in ("engine", "broker")],
         "fields": _field_rows(model, ("catalogue.A.", "component.engine.scm.", "component.broker.scm."))})
+    provider = model.event_provider
     outputs["authoring/event-inputs.json"] = _json({
-        "schema_version": 1, "kind": "partial-event-authoring-inputs", "provider_name": None,
-        "provider_guid": None, "event_schema_version": None, "message_resource": None,
+        "schema_version": 1, "kind": "partial-event-authoring-inputs",
+        "provider_name": provider.name if provider else None,
+        "provider_guid": provider.guid if provider else None,
+        "event_schema_version": 1 if provider else None,
+        "message_resource": provider.package_resource_file if provider else None,
         "pending": [_record(item) for item in model.pending
                     if item.path.startswith(("diagnostics.", "event.", "provider."))],
         "fields": _field_rows(model, ("catalogue.C.",))})
+    if provider is not None:
+        outputs["authoring/service-events.man"] = _service_events(provider)
     if len(outputs) >= MAX_OUTPUT_FILES or sum(map(len, outputs.values())) > MAX_OUTPUT_TOTAL:
         raise MetadataError("output-budget")
     if any(len(value) > MAX_OUTPUT_FILE for value in outputs.values()):

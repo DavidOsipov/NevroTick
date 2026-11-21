@@ -117,6 +117,15 @@ class FieldValue:
 
 
 @dataclass(frozen=True, slots=True)
+class EventProvider:
+    """Source candidate identity and package resource leaf, without installed state."""
+
+    name: str
+    guid: str
+    package_resource_file: str
+
+
+@dataclass(frozen=True, slots=True)
 class Metadata:
     """Immutable admitted intent and observations; not a release approval."""
 
@@ -130,6 +139,7 @@ class Metadata:
     inputs: tuple[InputDigest, ...]
     file_version_revision: int = 0
     fields: tuple[FieldValue, ...] = ()
+    event_provider: EventProvider | None = None
 
 
 def _string(value: object) -> str:
@@ -150,6 +160,28 @@ def _keys(table: dict[str, object], required: set[str], optional: set[str], fiel
     """Reject unknown or missing owned fields before using any candidate value."""
     if set(table) - required - optional or required - set(table):
         raise MetadataError(f"{field}: missing or unknown fields")
+
+
+def _validate_event_provider(provider: EventProvider) -> None:
+    """Require a canonical provider and a single bounded package resource leaf."""
+    if type(provider) is not EventProvider:
+        raise MetadataError("diagnostics.event_provider: invalid typed record")
+    try:
+        name: object = provider.name
+        guid: object = provider.guid
+        resource: object = provider.package_resource_file
+    except AttributeError as error:
+        raise MetadataError("diagnostics.event_provider: incomplete typed record") from error
+    if (type(name) is not str or len(name) > 63
+            or re.fullmatch(r"NevroTick-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", name) is None):
+        raise MetadataError("diagnostics.event_provider.name: invalid provider name")
+    if (type(guid) is not str
+            or re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", guid) is None
+            or guid == "00000000-0000-0000-0000-000000000000"):
+        raise MetadataError("diagnostics.event_provider.guid: expected canonical nonnil GUID")
+    if (type(resource) is not str or len(resource) > 63
+            or re.fullmatch(r"nevrotick-[a-z0-9]+(?:-[a-z0-9]+)*\.dll", resource) is None):
+        raise MetadataError("diagnostics.event_provider.package_resource_file: invalid resource leaf")
 
 
 def _text(value: object, field: str, limit: int = 1024, *, multiline: bool = False) -> str:
@@ -602,6 +634,8 @@ def validate_model(metadata: Metadata) -> None:
         raise MetadataError("platform: target or CPU floor differs from the owned policy")
     if type(metadata.file_version_revision) is not int or not 0 <= metadata.file_version_revision <= 65535:
         raise MetadataError("version_policy: prototype revision must be a Windows u16")
+    if metadata.event_provider is not None:
+        _validate_event_provider(metadata.event_provider)
     product = metadata.product
     if type(product) is not Product or product.name != "NevroTick" or product.publisher != "David Osipov":
         raise MetadataError("product: unapproved product or publisher identity")
@@ -724,9 +758,17 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
             return records[path][0]
 
         source_table = read(relative)
-        _keys(source_table, {"schema_version", "product", "platform", "version_policy", "components", "pending", "fields"}, set(), "metadata")
+        _keys(source_table, {"schema_version", "product", "platform", "version_policy", "components", "pending", "fields"}, {"diagnostics"}, "metadata")
         if type(source_table["schema_version"]) is not int or source_table["schema_version"] != 1:
             raise MetadataError("schema_version: expected integer 1")
+        event_provider: EventProvider | None = None
+        if "diagnostics" in source_table:
+            diagnostics = _table(source_table["diagnostics"], "diagnostics")
+            _keys(diagnostics, {"event_provider"}, set(), "diagnostics")
+            provider = _table(diagnostics["event_provider"], "diagnostics.event_provider")
+            _keys(provider, {"name", "guid", "package_resource_file"}, set(), "diagnostics.event_provider")
+            event_provider = EventProvider(_string(provider["name"]), _string(provider["guid"]),
+                                           _string(provider["package_resource_file"]))
         product = _table(source_table["product"], "product")
         _keys(product, {"name", "publisher", "description"}, {"homepage"}, "product")
         platform = _table(source_table["platform"], "platform")
@@ -815,7 +857,8 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
                                           _string(package["repository"]), None if homepage is None else _string(homepage)),
                          _string(platform["target"]), _string(platform["cpu_floor"]), tuple(admitted),
                          tuple(sorted(pending_fields, key=_pending_path)),
-                         tuple(records[path][1] for path in sorted(records)), revision)
+                         tuple(records[path][1] for path in sorted(records)), revision,
+                         event_provider=event_provider)
         # Resolve immutable aliases after base source facts are available. The
         # source file remains the only authoring location; derived facts are not
         # independently editable copies.
@@ -843,7 +886,7 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
                          for field in sorted(authored_fields, key=_field_key))
         value = Metadata(value.schema_version, value.stage, value.product, value.target,
                          value.cpu_floor, value.components, value.pending, value.inputs,
-                         value.file_version_revision, resolved)
+                         value.file_version_revision, resolved, value.event_provider)
         validate_model(value)
         return value
     finally:

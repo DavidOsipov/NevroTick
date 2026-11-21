@@ -8160,6 +8160,129 @@ Reviewer comprehension, retained verbatim:
 >
 > The relevant system contract remains a staged diagnostics design. The first logger child must reach a bounded portable event and independent health consumer through the real service invocation. Production Windows sinks, secured event history, SCM observers, complete service-token/package provisioning and UI integration require their separate later admissions and evidence. Logging cannot confer service/clock authority or manufacture readiness. The current Core/Engine queue, Windows/fuzz/storage/UI holds and post-V1 formal deferral remain in force.
 
+##### Installed event delivery contract preparation — 21 November 2026
+
+At `78c52cef65bf4161540316087f8febf4977d3779`, the fixed native service
+entrypoints reach the qualified memory routes with the inert worker. The Engine
+composition is exercised in the fixture tests. The installed provider name,
+GUID, schema and message resource are still pending in the
+[metadata source](../metadata/product.toml). The generator supplies partial
+authoring inputs. There is no installed provider candidate to exercise yet.
+
+**Package candidate.** Evaluate one enabled, manifest-based Operational channel
+under package-level `desktop8:Extension Category="windows.eventTracing"`.
+The schema supports fixed provider identity, package resource/message paths and
+channel access, isolation and logging settings. Check service visibility before
+interactive logon. Declaring `desktop7:Scope="machine"` requires the
+`Microsoft.classicAppCompatElevated_8wekyb3d8bbwe` custom capability. W11-W10
+owns establishing applicability and authorization for the real package identity,
+then qualifying installation, upgrade, repair and removal on both supported
+Windows families.
+The separate SCM privileges, service SIDs and pre-start provisioning bridge
+remain with W11-W05. [Provider schema][logger-appx-provider],
+[Channel schema][logger-appx-channel], [Custom capabilities][logger-appx-cap].
+
+**Publication and retention.** Treat installed manifest registration and the
+writer's process-local `EventRegister` lifetime separately. Keep a failed
+registration visible as a sink failure even though writes with its zero handle
+have no effect. Evaluate Custom isolation for the required channel
+since Application and System isolation ignore the write permissions in the
+channel access descriptor. Custom isolation consumes a separate ETW session.
+Freeze distinct rights for publication, provider registration/enabling, session
+control and file access, channel read/clear/configure and redacted export. Check
+legitimate and denied access using the actual tokens, including an unrelated
+process requesting the same provider identity. The ordinary UI uses the secured
+read path. Evaluate a finite
+circular active log with automatic backup disabled as the first bounded profile.
+Its overwrite behavior and history gaps must be visible. Derive a limit from the
+selected event size/rate and history requirement, measure physical allocation
+separately and preserve administrator-owned settings. [Runtime registration][logger-event-register],
+[Provider/session rights][logger-event-access], [Channel isolation][logger-channel-type],
+[Channel logging semantics][logger-channel-logging].
+
+| Contract and owner | First discriminating observation | Disposition |
+| --- | --- | --- |
+| W11-W08, CHECK-17/21/27. Project `RunningAcknowledged` (ID 2, INFO) and the `PrimaryFailure` (ID 4, ERROR) from a refused Running report. | Required INFO with optional Off reaches the writer after actual acknowledgement. The refused report emits ID 4 as its first failure with no ID 2. The bounded handoff preserves original producer facts and accepts only a live producer record. | Source traced. Freeze the native descriptors, template fields and writer contract before implementation. |
+| W11-W05/W11-W08, CHECK-14/17/27. Fence and drain to the admitted deadline, resolve native call custody and unregister the provider before the single `SERVICE_STOPPED` call on a complete shutdown. | A stalled or refused write leaves explicit loss or unresolved work. A deadline or successful write return cannot acknowledge teardown or durable history. | Source traced. Freeze the pre-terminal SCM disposition and custody for unfinished calls at the deadline. The owner determines `Finished` and any terminal failure after the `finish_stop` attempt, which can refuse before invoking SCM. Keep their installed-history obligation open. Windows can terminate the process after `SERVICE_STOPPED`. [SetServiceStatus][logger-service-stop], [EventUnregister][logger-event-unregister]. |
+| W11-W10 with W11-W08, CHECK-18/23/26/27. Match descriptors and signed message resources to the installed publisher and package. | Independently query and render both events on the exact installed candidate. Distinguish missing resources, wrong identities, channel refusal and retention loss. | Pending final identities, capability applicability and exact package/resource inputs. `EventWrite` can succeed even when no session records the event. [EventWrite][logger-event-write]. |
+
+Planning, metadata, privacy and package review applied to the publisher and
+shutdown boundaries above. On this checkout, the metadata CLI validated 731
+fields, generated 15 files into an owned temporary tree and passed read-only
+`check`. Independent readback confirmed the partial MSIX inputs, unset provider
+values and absence of an AppxManifest. The first readback used the wrong MSIX
+JSON leaf name after successful generation and checking. The corrected readback
+passed and the temporary tree was removed. No package build or Windows check ran.
+
+Next, bind the candidate provider/resource values,
+reader and writer access, and finite retention/drain policy to the existing
+owners. Then implement the pre-terminal producer slice with independent write,
+loss and completion controls. Native checks need that exact candidate and its
+owned Windows environment.
+
+[logger-appx-provider]: https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-desktop8-provider
+[logger-appx-channel]: https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-desktop8-channel
+[logger-appx-cap]: https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations#custom-capabilities
+[logger-channel-type]: https://learn.microsoft.com/en-us/windows/win32/wes/eventmanifestschema-channeltype-complextype
+[logger-channel-logging]: https://learn.microsoft.com/en-us/windows/win32/wes/eventmanifestschema-channelloggingtype-complextype
+[logger-service-stop]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus
+[logger-event-register]: https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventregister
+[logger-event-unregister]: https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventunregister
+[logger-event-access]: https://learn.microsoft.com/en-us/windows/win32/api/evntcons/nf-evntcons-eventaccesscontrol
+[logger-event-write]: https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventwrite
+
+##### Two-event compiler input checkpoint — 21 November 2026
+
+W11-W08/W11-W10, CHECK-17/18/21/23/26/27. The metadata CLI now admits an
+optional, complete provider candidate from the owned TOML. It emits a fixed
+Message Compiler input for ID 2 `RunningAcknowledged` and ID 4
+`PrimaryFailure`, plus the same candidate identity and DLL leaf in the
+existing authoring JSON. The Windows payload version is 1. Its five ordered
+fields are the component, local sequence, lifecycle observation kind,
+original elapsed nanoseconds and first-cause code. The portable record
+remains version 2. The checked-in TOML leaves the provider candidate unset.
+The emitted compiler input has a disabled channel and no deployment paths.
+The installed-provider and MSIX obligations remain open.
+
+Validation used the metadata, privacy and contract-testing skills. The
+implementation worker supplied the typed TOML admission in an isolated tree.
+The coordinator integrated it with independent output verification. The
+fresh-context review accepted the combined source after the parser repair.
+A real CLI regression first refused the newly specified candidate. It passed
+after implementation. The review then found a producer mutation that placed
+a nonbreaking space in an element-only container. The initial observer
+accepted it. The repaired observer accepts only XML formatting whitespace
+and rejects that output. The source controls also refuse a substituted
+identity, channel, namespace, enablement, event ID, payload width and installed
+path, and retain the absent-profile and well-formed fixture neighbors.
+
+On CPython 3.12.3, `python3 -I -B -m unittest discover -s metadata/tests -q`
+passed all 251 tests. The real validate → generate → check journey for the
+temporary provider fixture produced 16 files. The 1,948-byte manifest's
+SHA-256 is `f5239d8b6121ca99cc4db4edd0ccc6929137cf7f3038f3a6e2e43faadeddca6b`.
+All 14 default payloads match `78c52ce` byte for byte. The generated receipt
+binds the current checker and generator. The initial strict typing pass
+found unchecked library types at two new boundaries. The corrected source
+passed the configured `metadata/qualification/typing.py` lane with all eight
+production modules, the legal consumer and five intended rejections. The
+local evidence is
+`service-event-manifest-20261121.752l_rie/typing/result.json` under
+`~/.local/share/nevrotick/`, SHA-256
+`77f0ae5841bf42dedb1df55d2e610c588c5b8ea91c249a1e081993976dc2b49f`.
+The disposable authoring outputs, writer worktree and checker store were
+removed. Full current per-file metrics remain open. The targeted producer
+controls do not contribute to the generated mutation score.
+
+The independent service trace found that one poll can refuse Running, emit
+the first failure, and reach `finish_stop` before the outer diagnostics
+pump. The writer child needs a reached pre-terminal handoff inside the Stop
+owner before `finish_stop`. Test the same-poll refused Running path with
+immediate worker completion, delayed writer completion and a terminal-only
+failure control. Guard against re-polling an already finished worker when
+the writer is still in flight. Preserve the first failure and the separate
+post-terminal event meanings. Message Compiler readback, live writer
+integration, package capability and installed behavior are future gates.
+
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
 **Status:** researched/planned, not implemented or natively qualified.

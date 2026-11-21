@@ -1227,6 +1227,15 @@ delivery claim. Final service identities, per-role configuration, installed
 behavior and the supported MSIX pre-start bridge retain their existing
 requirements and execution holds.
 
+The [installed event delivery preparation](../../tasks/windows11-integration.md#installed-event-delivery-contract-preparation--21-november-2026)
+identifies the declarative MSIX provider candidate and its machine-scope
+capability prerequisite. Freeze the publisher/resource identity and bounded
+pre-terminal writer contract first. Windows may terminate the process after
+`SERVICE_STOPPED`, so terminal reporting and durable event delivery retain
+separate exit evidence. The [two-event compiler input](../../tasks/windows11-integration.md#two-event-compiler-input-checkpoint--21-november-2026)
+now reaches the metadata CLI and independent source readback. The writer still
+needs a pre-terminal handoff before the same poll can finish the service.
+
 The child composes one real, explicit managed-loopback Engine series with the
 existing portable service invocation. Its first source stage changes neither
 native service entrypoints nor the two inert executable defaults. It advances

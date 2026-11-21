@@ -53,6 +53,42 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.require_rejection(self.cli("generate", output=invalid))
         self.assertFalse(invalid.exists())
 
+    def test_wrong_event_mapping_is_refused_before_publication(self) -> None:
+        self.copy_pipeline()
+        self.replace_once("[fields]", (
+            '[diagnostics.event_provider]\n'
+            'name = "NevroTick-TestService"\n'
+            'guid = "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380"\n'
+            'package_resource_file = "nevrotick-test-events.dll"\n\n'
+            '[fields]'
+        ))
+        self.generate()
+        producer = self.root / "metadata/pipeline/generate.py"
+        original = producer.read_text()
+        faults = (
+            ('value="2" version="1"', 'value="3" version="1"'),
+            ('name="Sequence" inType="win:UInt64"', 'name="Sequence" inType="win:UInt32"'),
+            ('<provider name="{provider.name}"', '<provider name="NevroTick-OtherService"'),
+            ('guid="{{{provider.guid}}}"', 'guid="{{1ed10840-1c77-44c4-91b4-e796f8729064}}"'),
+            ('name="{provider.name}/Operational"', 'name="{provider.name}/Other"'),
+            ('level="win:Error"\n              channel="ServiceOperational"',
+             'level="win:Error"\n              channel="Unrelated"'),
+            ('enabled="false"', 'enabled="true"'),
+            ('symbol="NEVROTICK_SERVICE_PROVIDER"', 'symbol="NEVROTICK_SERVICE_PROVIDER" resourceFileName="other.dll"'),
+            ('symbol="NEVROTICK_SERVICE_PROVIDER"', 'symbol="NEVROTICK_SERVICE_PROVIDER" messageFileName="other.dll"'),
+            ('xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events"',
+             'xmlns:win="urn:wrong"'),
+            ('<templates>', '<templates xmlns:win="urn:wrong">'),
+            ('<events>\n      <provider', '<events>&#160;\n      <provider'),
+        )
+        for old, new in faults:
+            with self.subTest(old=old):
+                self.assertEqual(original.count(old), 1)
+                producer.write_text(original.replace(old, new))
+                untouched = self.base / "invalid-manifest"
+                self.require_rejection(self.cli("generate", output=untouched))
+                self.assertFalse(untouched.exists())
+
     def test_description_edit_reaches_required_views_and_old_tree_stays_stale(self) -> None:
         self.require_success(self.cli("generate", output=self.output))
         old = json_data(self.output / "metadata.json")["product"]["description"]
@@ -98,6 +134,20 @@ class DeliveryObservationTests(SourceFixture):
     def reject(self, outputs: object) -> None:
         with self.assertRaises(self.contract.MetadataError):
             self.delivery.verify_delivery(self.model, outputs)
+
+    def test_direct_event_provider_model_cannot_bypass_admission(self) -> None:
+        provider = self.contract.EventProvider(
+            "NevroTick-TestService", "407b0d7f-0220-4ca1-9e6b-d0a6c0d33380", "nevrotick-test-events.dll",
+        )
+        model = dataclasses.replace(self.model, event_provider=provider)
+        outputs = self.generator.build_outputs(model)
+        self.delivery.verify_delivery(model, outputs)
+        for forged in (dataclasses.replace(provider, package_resource_file="../foreign.dll"),
+                       object.__new__(self.contract.EventProvider)):
+            with self.subTest(provider_type=type(forged)):
+                invalid = dataclasses.replace(model, event_provider=forged)
+                with self.assertRaisesRegex(self.contract.MetadataError, "diagnostics.event_provider"):
+                    self.generator.build_outputs(invalid)
 
     def json_change(self, name: str, change) -> dict[str, bytes]:
         outputs = self.outputs.copy()

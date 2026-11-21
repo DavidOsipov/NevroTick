@@ -88,6 +88,26 @@ command must fail; removing pending descriptions is not permission to invent
 Store identity, service technical names, provider GUIDs or release mappings.
 Source validation/generation does not claim release readiness.
 
+### Service event authoring candidate
+
+W11-W08 can supply an optional `[diagnostics.event_provider]` table in the
+same source record. Supply all three fields together. `name` is an ASCII
+`NevroTick-` name with alphanumeric segments separated by hyphens.
+`guid` is a lowercase, unbraced nonzero GUID. `package_resource_file` is
+a lowercase `nevrotick-*.dll` filename made of alphanumeric segments
+separated by hyphens, with no directory. The name and filename each fit
+63 characters.
+
+The selected table generates `authoring/service-events.man` for the Windows
+SDK Message Compiler and fills the corresponding fields in
+`authoring/event-inputs.json`. The JSON resource is a package-relative
+filename for message and metadata resources. The compiler input uses one
+disabled Operational channel and omits installed file paths. The checked-in
+product source leaves this table unset. Authoring a candidate leaves
+`diagnostics.provider` pending until the installed provider is qualified.
+See the [installed delivery task](../tasks/windows11-integration.md#installed-event-delivery-contract-preparation--21-november-2026)
+for producer and package ownership.
+
 ## Edit field values and dispositions
 
 The main product/component sections own their existing facts. The `[fields]`
@@ -146,12 +166,14 @@ encoding rule, not a promise that every Unicode character is accepted.
 | `authoring/display.xml` | Escaped custom XML authoring projection, namespace `urn:nevrotick:metadata:authoring:1` |
 | `authoring/msix-inputs.json` | Explicitly partial MSIX authoring data; no guessed package identity or runnable manifest |
 | `authoring/service-inputs.json` | Planned engine/broker display/purpose data; no chosen SCM name, account or service behavior |
-| `authoring/event-inputs.json` | Explicitly pending event-provider/resource inputs; no generated provider or event catalogue |
+| `authoring/event-inputs.json` | Partial provider inputs and pending installed qualification |
+| `authoring/service-events.man` | Conditional compiler input with the two selected service event descriptors and fixed payload template |
 | `authoring/store.csv` | Custom review-field export with `field,value,status`; not a Partner Center upload schema |
 | `authoring/project-inputs.json` | Internal project/rights/assets/locales/platform/build authoring data for explicit downstream consumers |
 | `receipt.json` | Source/code identities and complete payload sizes/hashes; excludes its own hash to avoid circularity |
 
-The fixed tree currently has 15 files. `field-register.json`,
+The checked-in source generates 15 files. A source with a provider candidate
+adds the instrumentation manifest. `field-register.json`,
 `field-coverage.json` and all `authoring/` projections are internal authoring
 evidence and may include contact, regulatory, operational or provenance details. They are not
 automatically package payloads or public support exports. Public `metadata.json`

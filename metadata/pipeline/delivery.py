@@ -16,12 +16,14 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
-from .contract import Component, InputDigest, Metadata, MetadataError, PendingField, Product, validate_model
+from .contract import (Component, EventProvider, InputDigest, Metadata, MetadataError, PendingField,
+                       Product, validate_model)
 from .fields import FIELD_BY_KEY
 
 _MAX_FILE = 1024 * 1024
 _MAX_TOTAL = 4 * _MAX_FILE
 _NAMESPACE = "urn:nevrotick:metadata:authoring:1"
+_EVENT_MANIFEST = "authoring/service-events.man"
 # Deliberately independent of generate.PUBLIC_STRINGS: a wrong producer mapping
 # must not redefine the expected delivery contract at the same time.
 _PUBLIC_FACTS = (
@@ -144,7 +146,16 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
     add("fields:catalogue.C.*", "authoring/event-inputs.json", "/fields",
         representation="exact-owned-prefix-selection")
     add("pending:diagnostics.provider", "authoring/event-inputs.json", "/pending",
-        representation="pending-owner-without-invented-provider")
+        representation=("unresolved-installed-provider" if model.event_provider is not None
+                        else "pending-owner-without-invented-provider"))
+    internal = list(_INTERNAL)
+    if model.event_provider is not None:
+        internal.append(_EVENT_MANIFEST)
+        for field, target in (("name", "provider_name"), ("guid", "provider_guid"),
+                              ("package_resource_file", "message_resource")):
+            add("diagnostics.event_provider." + field, "authoring/event-inputs.json", "/" + target)
+        add("diagnostics.event_provider", _EVENT_MANIFEST, "instrumentation/events/provider",
+            representation="compile-only-provider-and-fixed-event-schema")
     add("fields", "field-coverage.json", "/", representation="dispositions-and-source-contract")
     public = ["metadata.json", "rust/product.rs"]
     for component in model.components:
@@ -152,15 +163,15 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
             public.extend(("rust/" + component.id + ".rs", "rc/" + component.id + ".rc"))
     modes = {"json": "exact-typed-whole-record", "rs": "exact-generated-constant-subset",
              "rc": "exact-prototype-versioninfo-subset", "xml": "exact-authoring-tree",
-             "csv": "exact-review-rows"}
+             "csv": "exact-review-rows", "man": "exact-source-event-schema"}
     artifacts = [{"artifact": artifact, "observation": modes[artifact.rsplit(".", 1)[1]]}
-                 for artifact in sorted(public + list(_INTERNAL))]
+                 for artifact in sorted(public + internal)]
     return {"schema_version": 1, "scope": "generated-source", "status": "required-source-contract",
             "binding_scope": "selected-facts-and-complete-artifact-records",
             "locator_convention": "semantic-members; collections keyed by admitted component id or service role",
             "obligation_count": len(obligations), "obligations": obligations,
             "artifact_contracts": artifacts,
-            "public_artifacts": public, "internal_only_artifacts": list(_INTERNAL),
+            "public_artifacts": public, "internal_only_artifacts": internal,
             "compiled_artifact_readback": "not-run", "native_installed_readback": "not-run",
             "package_privacy_readback": "not-run", "release_qualified": False}
 
@@ -233,8 +244,11 @@ def _expected_json(model: Metadata) -> dict[str, object]:
                          for item in model.components if item.id in {"engine", "broker"}],
             "fields": _rows(model, ("catalogue.A.", "component.engine.scm.", "component.broker.scm."))},
         "authoring/event-inputs.json": {"schema_version": 1, "kind": "partial-event-authoring-inputs",
-            "provider_name": None, "provider_guid": None, "event_schema_version": None,
-            "message_resource": None,
+            "provider_name": model.event_provider.name if model.event_provider is not None else None,
+            "provider_guid": model.event_provider.guid if model.event_provider is not None else None,
+            "event_schema_version": None if model.event_provider is None else 1,
+            "message_resource": (model.event_provider.package_resource_file
+                                 if model.event_provider is not None else None),
             "pending": [_record(item) for item in model.pending
                         if item.path.startswith(("diagnostics.", "event.", "provider."))],
             "fields": _rows(model, ("catalogue.C.",))},
@@ -435,6 +449,68 @@ def _csv(raw: bytes) -> list[list[str]]:
     return rows
 
 
+def _verify_event_manifest(provider: EventProvider, raw: bytes) -> None:
+    """Verify the complete small compiler-input tree independently of generation."""
+    if (len(raw) > 4096 or not raw.startswith(b'<?xml version="1.0" encoding="utf-8"?>\n')
+            or b"<!" in raw or raw.count(b"<?") != 1):
+        raise MetadataError("delivery-event-manifest-envelope")
+    namespace = "http://schemas.microsoft.com/win/2004/08/events"
+    # The QName values below refer to win:. ElementTree does not preserve
+    # namespace declarations in attributes, so check that binding in the
+    # generated envelope and disallow any nested binding.
+    header = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        f'<instrumentationManifest xmlns="{namespace}"\n'
+        '    xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events">\n'
+    ).encode("ascii")
+    if not raw.startswith(header) or re.search(rb"[ \t\r\n]xmlns(?:[:=]|[ \t\r\n])", raw[len(header):]):
+        raise MetadataError("delivery-event-manifest-namespace")
+    # Preorder tag, number of children and attributes together fix every parent
+    # and field order. Unknown attributes (including installation paths) fail.
+    expected = [
+        ("instrumentationManifest", 2, {}),
+        ("instrumentation", 1, {}),
+        ("events", 1, {}),
+        ("provider", 4, {"name": provider.name, "guid": "{" + provider.guid + "}",
+                         "symbol": "NEVROTICK_SERVICE_PROVIDER"}),
+        ("channels", 1, {}),
+        ("channel", 0, {"name": provider.name + "/Operational", "chid": "ServiceOperational",
+                        "value": "16", "type": "Operational", "enabled": "false"}),
+        ("keywords", 1, {}),
+        ("keyword", 0, {"name": "ServiceLifecycle", "mask": "0x1"}),
+        ("templates", 1, {}),
+        ("template", 5, {"tid": "ServiceEventV1"}),
+    ]
+    expected.extend(
+        ("data", 0, {"name": name, "inType": "win:" + encoding})
+        for name, encoding in (("Component", "UInt8"), ("Sequence", "UInt64"),
+                               ("ObservationKind", "UInt8"), ("ObservedElapsedNs", "UInt64"),
+                               ("Cause", "UInt8"))
+    )
+    expected.append(("events", 2, {}))
+    expected.extend(
+        ("event", 0, {"value": identifier, "version": "1", "symbol": name, "level": level,
+                      "channel": "ServiceOperational", "keywords": "ServiceLifecycle",
+                      "template": "ServiceEventV1", "message": "$(string." + name + ")"})
+        for identifier, name, level in (("2", "RunningAcknowledged", "win:Informational"),
+                                        ("4", "PrimaryFailure", "win:Error"))
+    )
+    expected.extend((
+        ("localization", 1, {}),
+        ("resources", 1, {"culture": "en-US"}),
+        ("stringTable", 2, {}),
+        ("string", 0, {"id": "RunningAcknowledged",
+                       "value": "The Service Control Manager acknowledged Running."}),
+        ("string", 0, {"id": "PrimaryFailure",
+                       "value": "The service recorded its first failure (cause %5)."}),
+    ))
+    nodes = list(ET.fromstring(raw).iter())
+    if (any((node.text or "").strip(" \t\r\n") or (node.tail or "").strip(" \t\r\n") for node in nodes)
+            or [(node.tag, len(node), node.attrib) for node in nodes]
+            != [("{" + namespace + "}" + tag, children, attrs) for tag, children, attrs in expected]):
+        raise MetadataError("delivery-event-manifest-facts")
+
+
 def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
     """Enforce exact interpreted source facts and explicit exposure boundaries.
 
@@ -450,6 +526,8 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
         raise MetadataError("delivery-output-budget-or-type")
     expected_json = _expected_json(model)
     expected_paths = set(expected_json) | {"rust/product.rs", "authoring/display.xml", "authoring/store.csv"}
+    if model.event_provider is not None:
+        expected_paths.add(_EVENT_MANIFEST)
     for component in model.components:
         if component.emittable:
             expected_paths.update(("rust/" + component.id + ".rs", "rc/" + component.id + ".rc"))
@@ -460,6 +538,8 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
         for name, expected in expected_json.items():
             if not _equal(_json(outputs[name]), expected):
                 raise MetadataError("delivery-json-facts")
+        if model.event_provider is not None:
+            _verify_event_manifest(model.event_provider, outputs[_EVENT_MANIFEST])
         expected_rust: dict[str, object] = {"PRODUCT_NAME": model.product.name, "PUBLISHER": model.product.publisher,
             "PRODUCT_DESCRIPTION": model.product.description, "REPOSITORY": model.product.repository,
             "TARGET": model.target, "CPU_FLOOR": model.cpu_floor,
