@@ -49,11 +49,22 @@ See the [product roadmap](ROADMAP.md) and
 
 ## Distribution: MSIX, without Microsoft Store
 
-**NevroTick will not be published in Microsoft Store.** I reject the Store's
-publisher terms, including its broad requirement to defend and indemnify
-Microsoft and other covered parties against claims related to the application.
-I consider that an unacceptable condition for publishing this project.
-See [Microsoft's App Developer Agreement v8.11, section 10(c)](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf).
+**NevroTick will not be published in Microsoft Store.**
+
+The [Windows SDK licence](https://aka.ms/WinSDKLicenseURL), under its conditions
+for distributing "Distributable Code", includes this requirement:
+
+> Indemnify, defend, and hold harmless Microsoft from any claims, including attorneys’ fees, related to the distribution or use of your programs.
+
+The Store separately imposes a broad duty to defend, indemnify and hold Microsoft
+and other covered parties harmless against specified third-party claims,
+including paying attorneys' fees, under
+[Microsoft's App Developer Agreement v8.11, section 10(c)](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf).
+
+**I publicly condemn these requirements. I do not give a shit whether they are
+called "normal business practice" or "industry standard".** I consider this an
+unacceptable transfer of legal risk to developers. Being common does not make
+it acceptable. I will not accept the Store's terms to publish this project.
 
 The selected release format remains **one complete MSIX, distributed directly
 outside the Store**. Signing and certificate trust remain unresolved and will be
