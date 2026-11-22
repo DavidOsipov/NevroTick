@@ -92,7 +92,7 @@ fn classification(id: u8) -> Option<(u8, u8, u8, u8)> {
     match id {
         1 | 2 | 3 | 8 => Some((3, 5, 0, 0)),
         4 => Some((1, 2, 1, 28)),
-        5 | 9 => Some((1, 2, 20, 23)),
+        5 | 9 | 10 => Some((1, 2, 20, 23)),
         6 | 7 => Some((1, 2, 10, 19)),
         _ => None,
     }

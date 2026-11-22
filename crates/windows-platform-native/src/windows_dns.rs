@@ -37,21 +37,56 @@ const QUERY_OPTIONS: u64 = 0x1000 | 0x0080 | 0x0800;
 const SECTION_MASK: u32 = 0b11;
 /// `DnsSectionAnswer`.
 const ANSWER_SECTION: u32 = 1;
+/// `DnsSectionQuestion`, also observed on Windows' inline local IPv4 result.
+const QUESTION_SECTION: u32 = 0;
 /// Maximum inspected nodes, including aliases and non-address records.
 const MAX_RECORDS: usize = 32;
 /// The thread object has reached its signaled termination state.
 const WAIT_OBJECT_0: u32 = 0;
+/// `COMPUTER_NAME_FORMAT::ComputerNamePhysicalDnsFullyQualified`.
+const PHYSICAL_DNS_FQDN: i32 = 7;
 /// At most one actual native operation can retain this process's DNS storage.
 static QUERY_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 #[link(name = "kernel32")]
 #[expect(
     unsafe_code,
-    reason = "Windows nonblocking thread termination observation ABI"
+    reason = "Windows thread termination and physical DNS name observation ABIs"
 )]
 unsafe extern "system" {
     /// Query a live waitable handle, with a zero-millisecond timeout here.
     fn WaitForSingleObject(handle: *mut c_void, milliseconds: u32) -> u32;
+    /// Read the physical machine DNS name into caller-provided UTF-16 storage.
+    fn GetComputerNameExW(name_type: i32, buffer: *mut u16, size: *mut u32) -> i32;
+}
+
+/// Check the exact absolute localhost or OS-reported physical DNS name.
+/// An unavailable or oversized native name gives no match.
+#[expect(
+    unsafe_code,
+    reason = "Read the local physical DNS name into bounded, initialized UTF-16 storage"
+)]
+fn is_local_dns_name(name: &DnsQueryName) -> bool {
+    if name.is_localhost() {
+        return true;
+    }
+    let mut buffer: [u16; 255] = [u16::MAX; 255];
+    let mut length: u32 = 255;
+    // SAFETY: the writable buffer has length UTF-16 units. The API updates
+    // length in that same writable local and retains neither pointer.
+    let status: i32 =
+        unsafe { GetComputerNameExW(PHYSICAL_DNS_FQDN, buffer.as_mut_ptr(), &raw mut length) };
+    if status == 0 {
+        return false;
+    }
+    let Ok(length): Result<usize, _> = usize::try_from(length) else {
+        return false;
+    };
+    let Some((reported, terminator)): Option<(&[u16], &[u16])> = buffer.split_at_checked(length)
+    else {
+        return false;
+    };
+    terminator.first() == Some(&0) && name.matches_reported_dns_name(reported)
 }
 
 /// Poll a DNS worker's actual Windows thread termination without waiting.
@@ -215,7 +250,9 @@ impl Drop for RecordList {
     }
 }
 
-/// Copy the complete bounded family from the actual owned answer section.
+/// Copy the complete bounded answer family or the inline local IPv4 singleton.
+/// The name check runs only for the eligible singleton shape and carries no
+/// endpoint or source authority.
 /// # Errors
 /// Refuse overlong lists, unexpected address sizes or capacity overflow.
 #[expect(
@@ -225,6 +262,7 @@ impl Drop for RecordList {
 fn copy_answers(
     list: &RecordList,
     family: DnsAddressFamily,
+    is_inline_local_name: impl Fn() -> bool,
 ) -> Result<DnsAddresses, DnsAddressError> {
     let mut current: *mut RecordHeader = list.0;
     let mut answer: DnsAddresses = DnsAddresses::empty();
@@ -245,12 +283,20 @@ fn copy_answers(
             .cast();
         // SAFETY: only initialized native section bits are read from this field.
         let flags: u32 = unsafe { flags.read() };
-        if kind == family.wire_record_type() && flags & SECTION_MASK == ANSWER_SECTION {
+        let section: u32 = flags & SECTION_MASK;
+        let local_ipv4: bool = section == QUESTION_SECTION
+            && family == DnsAddressFamily::V4
+            && current == list.0
+            && next.is_null();
+        if kind == family.wire_record_type() && (section == ANSWER_SECTION || local_ipv4) {
             let length: *const u16 = prefix
                 .wrapping_byte_add(std::mem::offset_of!(RecordHeader, data_len))
                 .cast();
             // SAFETY: the record's fixed prefix contains its active data length.
             let data_len: u16 = unsafe { length.read() };
+            if local_ipv4 && (data_len != 4 || !is_inline_local_name()) {
+                return Err(DnsAddressError::Empty);
+            }
             let data: *const u8 = prefix.wrapping_byte_add(size_of::<RecordHeader>()).cast();
             let address: IpAddr = match (family, data_len) {
                 (DnsAddressFamily::V4, 4) => {
@@ -267,7 +313,9 @@ fn copy_answers(
                 }
                 _ => return Err(DnsAddressError::Malformed),
             };
-            answer.push(address)?;
+            if !local_ipv4 || address == IpAddr::V4(Ipv4Addr::LOCALHOST) {
+                answer.push(address)?;
+            }
         }
         current = next;
     }
@@ -310,7 +358,9 @@ fn complete(query: &NativeQuery, result: *mut QueryResult, immediate: Option<i32
                 _ if version != STRUCTURE_VERSION || status == REQUEST_PENDING => {
                     Err(DnsAddressError::Malformed)
                 }
-                0 => copy_answers(&records, query.family),
+                0 => copy_answers(&records, query.family, || {
+                    immediate == Some(0) && is_local_dns_name(&query.name)
+                }),
                 code => Err(DnsAddressError::Native(code)),
             }
         }
@@ -493,15 +543,164 @@ impl DnsAddressQuery {
 #[cfg(test)]
 mod tests {
     use std::{
-        cell::RefCell,
+        cell::{Cell, RefCell},
+        env,
         error::Error,
         io,
+        mem::ManuallyDrop,
+        net::{IpAddr, Ipv4Addr},
+        ptr::null_mut,
         sync::mpsc::{self, Receiver, Sender},
         thread,
         time::{Duration, Instant},
     };
 
-    use super::dns_worker_thread_exited;
+    use super::{
+        DnsAddressError, DnsAddressFamily, DnsAddressQuery, DnsAddresses, DnsQueryName,
+        RecordHeader, RecordList, copy_answers, dns_worker_thread_exited,
+    };
+
+    /// A native-shaped A record with initialized, contiguous payload storage.
+    #[repr(C)]
+    struct FixtureRecord {
+        /// Prefix inspected while this stack allocation remains live.
+        header: RecordHeader,
+        /// Active IPv4 union member.
+        address: [u8; 4],
+    }
+
+    impl FixtureRecord {
+        /// Materialize a test record with independently chosen native fields.
+        const fn new(section: u32, length: u16, address: [u8; 4]) -> Self {
+            Self {
+                header: RecordHeader {
+                    next: null_mut(),
+                    name: null_mut(),
+                    kind: 1,
+                    data_len: length,
+                    flags: section,
+                    ttl: 0,
+                    reserved: 0,
+                },
+                address,
+            }
+        }
+    }
+
+    const _: [(); size_of::<RecordHeader>()] = [(); std::mem::offset_of!(FixtureRecord, address)];
+
+    /// Parse a stack-owned record without transferring it to the `WinDNS` allocator.
+    /// # Errors
+    /// Preserve the production parser's outcome.
+    fn copy_fixture(
+        head: &mut FixtureRecord,
+        family: DnsAddressFamily,
+        is_inline_local_name: impl Fn() -> bool,
+    ) -> Result<DnsAddresses, DnsAddressError> {
+        let records: ManuallyDrop<RecordList> =
+            ManuallyDrop::new(RecordList(std::ptr::from_mut(head).cast()));
+        copy_answers(&records, family, is_inline_local_name)
+    }
+
+    /// Preserve ordinary Answer and malformed outcomes without evaluating local identity.
+    /// # Errors
+    /// Propagate an ordinary valid Answer refusal.
+    /// # Panics
+    /// Refuse changed Answer payload, malformed classification or local-name work.
+    #[test]
+    fn ordinary_answer_ignores_local_name_check() -> Result<(), DnsAddressError> {
+        let checked: Cell<bool> = Cell::new(false);
+        let local_name = || {
+            checked.set(true);
+            false
+        };
+        let address: [u8; 4] = [192, 0, 2, 4];
+        let mut good: FixtureRecord = FixtureRecord::new(1, 4, address);
+        let mut malformed: FixtureRecord = FixtureRecord::new(1, 3, address);
+        let copied: DnsAddresses = copy_fixture(&mut good, DnsAddressFamily::V4, local_name)?;
+        assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::from(address))]));
+        assert!(matches!(
+            copy_fixture(&mut malformed, DnsAddressFamily::V4, local_name),
+            Err(DnsAddressError::Malformed)
+        ));
+        assert!(!checked.get());
+        Ok(())
+    }
+
+    /// Exercise the local singleton and supported neighboring refusals.
+    /// # Errors
+    /// Propagate a refusal of a valid singleton or Answer.
+    /// # Panics
+    /// Refuse output from any ineligible record or changed local output.
+    #[test]
+    fn local_ipv4_record_requires_exact_shape_and_identity() -> Result<(), DnsAddressError> {
+        let loopback: [u8; 4] = [127, 0, 0, 1];
+        let mut local: FixtureRecord = FixtureRecord::new(0, 4, loopback);
+        let copied: DnsAddresses = copy_fixture(&mut local, DnsAddressFamily::V4, || true)?;
+        assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::LOCALHOST)]));
+        assert!(matches!(
+            copy_fixture(&mut local, DnsAddressFamily::V4, || false),
+            Err(DnsAddressError::Empty)
+        ));
+        assert!(matches!(
+            copy_fixture(&mut local, DnsAddressFamily::V6, || true),
+            Err(DnsAddressError::Empty)
+        ));
+        for (section, length, address) in [
+            (0, 3, loopback),
+            (0, 4, [127, 0, 0, 2]),
+            (0, 4, [192, 0, 2, 4]),
+            (2, 4, loopback),
+            (3, 4, loopback),
+        ] {
+            let mut refused: FixtureRecord = FixtureRecord::new(section, length, address);
+            assert!(matches!(
+                copy_fixture(&mut refused, DnsAddressFamily::V4, || true),
+                Err(DnsAddressError::Empty)
+            ));
+        }
+        let mut additional: FixtureRecord = FixtureRecord::new(0, 4, loopback);
+        local.header.next = (&raw mut additional).cast();
+        assert!(matches!(
+            copy_fixture(&mut local, DnsAddressFamily::V4, || true),
+            Err(DnsAddressError::Empty)
+        ));
+        let mut answer: FixtureRecord = FixtureRecord::new(1, 4, loopback);
+        local.header.next = (&raw mut answer).cast();
+        let copied: DnsAddresses = copy_fixture(&mut local, DnsAddressFamily::V4, || false)?;
+        assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::LOCALHOST)]));
+        Ok(())
+    }
+
+    /// Check both native inline local lookups through the public adapter.
+    /// # Errors
+    /// Refuse missing fixture setup, failed DNS completion or failed record controls.
+    /// # Panics
+    /// Require exact loopback results, available once each before the test returns.
+    #[test]
+    #[ignore = "requires the admitted offline Windows local-host supervisor"]
+    fn local_ipv4_delivers_exact_loopback_once() -> Result<(), Box<dyn Error>> {
+        let machine: String = env::var("NEVROTICK_LAB_LOCAL_DNS_NAME")
+            .map_err(|_| io::Error::other("offline fixture hostname unavailable"))?;
+        let machine: DnsQueryName = DnsQueryName::new(&machine)?;
+        assert!(!machine.is_localhost());
+        let machine: DnsAddressQuery = DnsAddressQuery::start(machine, DnsAddressFamily::V4)?;
+        let localhost: DnsAddressQuery =
+            DnsAddressQuery::start(DnsQueryName::new("localhost.")?, DnsAddressFamily::V4)?;
+        for mut query in [machine, localhost] {
+            assert!(query.pending.is_none());
+            let addresses: DnsAddresses = query
+                .try_complete()
+                .ok_or_else(|| io::Error::other("local IPv4 result was not immediately ready"))??;
+            assert!(addresses.iter().eq([IpAddr::V4(Ipv4Addr::LOCALHOST)]));
+            assert!(query.try_complete().is_none());
+        }
+        println!("dns_inline_local_results=matched");
+        ordinary_answer_ignores_local_name_check()?;
+        local_ipv4_record_requires_exact_shape_and_identity()?;
+        println!("dns_inline_record_controls=matched");
+        Ok(())
+    }
 
     /// Both sides have a finite watchdog, including during unwinding.
     const WATCHDOG: Duration = Duration::from_secs(5);

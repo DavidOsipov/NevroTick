@@ -187,7 +187,7 @@ pub const RECORD_BYTES: usize = 128;
 /// Fixed pending and recent capacity for each independent portable route.
 pub const ROUTE_CAPACITY: usize = 16;
 /// Number of fixed catalogue keys per route, independent of causes or metadata.
-const EVENT_COUNT: usize = 9;
+const EVENT_COUNT: usize = 10;
 /// Checked elapsed nanoseconds required for one finite-window refill.
 const WINDOW_NS: u64 = 1_000_000_000;
 
@@ -650,7 +650,7 @@ impl TryFrom<u8> for WorkerCause {
     }
 }
 
-/// The nine actual service decision events; causes are event-specific closed types.
+/// Actual service decision events with event-specific closed causes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ServiceEvent {
     /// Invocation exists after actual registration and budget construction.
@@ -671,6 +671,8 @@ pub enum ServiceEvent {
     Finished,
     /// Original whole invocation operation failure.
     OperationFailure(WorkerCause),
+    /// Cleanup failure while native custody remains unresolved.
+    PendingCleanupFailure(WorkerCause),
 }
 
 impl ServiceEvent {
@@ -687,6 +689,7 @@ impl ServiceEvent {
             Self::TerminalReportFailure(_) => 7,
             Self::Finished => 8,
             Self::OperationFailure(_) => 9,
+            Self::PendingCleanupFailure(_) => 10,
         }
     }
 
@@ -702,6 +705,7 @@ impl ServiceEvent {
             Self::TerminalReportFailure(_) => 6,
             Self::Finished => 7,
             Self::OperationFailure(_) => 8,
+            Self::PendingCleanupFailure(_) => 9,
         }
     }
 
@@ -714,7 +718,9 @@ impl ServiceEvent {
             | Self::AdmissionClosed
             | Self::Finished => 0,
             Self::PrimaryFailure(cause) => cause.code(),
-            Self::CompletionFailure(cause) | Self::OperationFailure(cause) => cause.code(),
+            Self::CompletionFailure(cause)
+            | Self::OperationFailure(cause)
+            | Self::PendingCleanupFailure(cause) => cause.code(),
             Self::StopReportFailure(cause) | Self::TerminalReportFailure(cause) => cause.code(),
         }
     }
@@ -879,6 +885,13 @@ pub const CATALOGUE: [EventDescriptor; EVENT_COUNT] = [
     },
     EventDescriptor {
         id: 9,
+        level: TechnicalLevel::Error,
+        importance: Importance::High,
+        cause_min: 20,
+        cause_max: 23,
+    },
+    EventDescriptor {
+        id: 10,
         level: TechnicalLevel::Error,
         importance: Importance::High,
         cause_min: 20,
@@ -1385,6 +1398,7 @@ fn event_from_checked(bytes: &[u8; RECORD_BYTES]) -> Option<ServiceEvent> {
         7 => LifecycleCause::from_checked_code(cause).map(ServiceEvent::TerminalReportFailure),
         8 => Some(ServiceEvent::Finished),
         9 => WorkerCause::from_checked_code(cause).map(ServiceEvent::OperationFailure),
+        10 => WorkerCause::from_checked_code(cause).map(ServiceEvent::PendingCleanupFailure),
         _ => None,
     }
 }
@@ -1801,11 +1815,11 @@ impl RouteHealth {
     }
 }
 
-/// Nine reserved first-ID credits and 23 shared repeat credits per finite window.
+/// Ten reserved first-ID credits and 22 shared repeat credits per finite window.
 struct RouteBudget {
     /// Per-ID charges, bounded to four and indexed only by typed event.
     used: [u8; EVENT_COUNT],
-    /// Repeats may not consume the nine first-ID reservations.
+    /// Repeats may not consume the first-ID reservations.
     repeat_remaining: u8,
 }
 
@@ -1814,7 +1828,7 @@ impl RouteBudget {
     const fn initial() -> Self {
         Self {
             used: [0; EVENT_COUNT],
-            repeat_remaining: 23,
+            repeat_remaining: 22,
         }
     }
     /// Charge once before queue attempt; failure/refusal cannot refund or retry.

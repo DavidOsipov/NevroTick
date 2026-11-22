@@ -1189,7 +1189,13 @@ keeps original native clock observations through the actual protected
 receipt. The selected GNU EP1 development and four Windows host cases
 passed. Continue with native socket placement, independent mapping and
 uncertainty, and affected-file qualification before positive Core
-admission. The [retained SCM process](../../tasks/windows11-integration.md#retain-the-running-scm-process--22-november-2026)
+admission. The [protected capture facade witness](../../tasks/engine-transport-pilot.md#check-the-original-protected-capture-triplet-in-the-facade-fixture)
+checks the original recorded triplet on the joined receipt. The
+[matching peer and controller](../../tasks/engine-transport-pilot.md#build-the-matching-protected-capture-peer--22-november-2026)
+now pass frozen build and host-side admission. The authenticated
+Windows exchange still needs fresh offline/date admission and the
+owner's normal confirmation of the guest's temporary lab root. The
+[retained SCM process](../../tasks/windows11-integration.md#retain-the-running-scm-process--22-november-2026)
 passes its portable custody cases. Its next dependency is a fixed
 SCM-hosted broker listener and the restricted Engine's access and
 identity proof, with the existing installed provisioning gates.
@@ -1481,8 +1487,23 @@ token and installed role under its restricted profile. The
 [operation-bound wake and reply child](../../tasks/windows11-integration.md#bind-broker-wakes-and-reply-bytes-to-each-operation--22-november-2026)
 ties completion hints to the queued accept and reply fragments to their
 original frame. Both role links and thirteen selected offline Windows
-fixture cases passed. The next slice connects the original duplex pipe to
-one bounded availability exchange under the existing owner and cutoff.
+fixture cases passed. The
+[same-connection fixture](../../tasks/windows11-integration.md#carry-the-identified-request-and-reply-over-one-duplex-pipe--22-november-2026)
+now carries an identified request and its correlated reply on the same
+native duplex pipe. Two offline Windows selectors passed. The
+[actual accept handoff fixture](../../tasks/windows11-integration.md#carry-the-observed-native-accept-into-the-guarded-duplex-exchange--22-november-2026)
+takes that connection from the native accept record into the same
+broker fixture permit. Four offline Windows cases passed, with the
+fixed deny and cancellation neighbors. The
+[fixed broker accept cutoff](../../tasks/windows11-integration.md#bound-the-fixed-broker-accept-with-the-service-owners-cutoff)
+now shares the service owner's time and Stop checks. The four host
+controls and one real Windows accept cancellation case passed. Carry the
+guard into the admitted exchange when the installed peer guards and
+fixed-role grants are qualified.
+The [pending cleanup diagnostic](../../tasks/windows11-integration.md#report-a-failed-cleanup-while-broker-custody-remains-pending--22-november-2026)
+preserves the earlier status failure and reports the unresolved close
+in the live required memory route. Both GNU modes passed. External
+Windows delivery during unresolved custody stays with W11-W08.
 The retained wake libtest image lists all three pre-start selectors.
 The
 [SCM configuration child](../../tasks/windows11-integration.md#observe-configured-service-startup-before-provisioning--22-november-2026)
@@ -2968,9 +2989,10 @@ feeds the [joined Engine address round](../../tasks/engine-transport-pilot.md#wi
 through a retained native worker. The
 [cancellation path](../../tasks/engine-transport-pilot.md#request-cancellation-from-the-retired-windows-dns-worker)
 makes one best-effort request on retirement and retains actual completion
-custody. Next, qualify Windows immediate, pending and retired completion,
-the cancellation/callback overlap, and routing under the existing DNS and
-source-policy owners. Keep production admission and changed-file coverage
+custody. The [inline local IPv4 case](../../tasks/engine-transport-pilot.md#admit-the-observed-inline-local-ipv4-result--22-november-2026)
+now copies the exact observed Windows loopback result through the adapter.
+Continue ordinary Answer, pending and retired completion, callback/cancellation
+overlap and routing under the same DNS and source-policy owners. Keep production admission and changed-file coverage
 and mutation open.
 
 The reviewed Core

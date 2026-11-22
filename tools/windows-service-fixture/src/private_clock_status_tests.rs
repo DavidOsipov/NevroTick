@@ -41,22 +41,23 @@ use crate::{
         PipeIdentity, PipeIdentityError, ensure_unimpersonated, own_process_identity,
     },
     native_pipe_pair::{
-        LabClientContext, LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader,
-        LabPipeWriter, open_lab_identification_pipe, open_lab_pipe, open_lab_reply_pipe,
+        LabClientContext, LabDuplexPipe, LabIdentificationPipe, LabOverlappedWriter, LabPipeError,
+        LabPipeReader, LabPipeWriter, open_lab_duplex_pipe, open_lab_identification_pipe,
+        open_lab_pipe, open_lab_reply_pipe,
     },
     native_pipe_read::{
         IdentifiedReadError, IdentifiedRequestRead, NativeCancel, NativePipeRead, NativeReadBytes,
         NativeReadError, NativeReadPoll, NativeReadStart, RetiredRead,
     },
     native_pipe_worker::{
-        ActiveRequestRead, NativePipeWorker, NativePipeWorkerError, ReadRetirement,
+        ActiveRequestRead, NativePipeWorker, NativePipeWorkerError, PreparedDuplex, ReadRetirement,
         RetiringRequestRead,
     },
     native_pipe_write::{NativeWritePoll, NativeWriteStart},
 };
 
 /// Stable slots include the existing native pipe histories and the Stop neighbor.
-const BROKER_CASES: usize = 28;
+const BROKER_CASES: usize = 30;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -796,7 +797,7 @@ fn write_identified_fragment(
         native_fixture_result(ensure_unimpersonated())?;
         Ok(completed)
     } else {
-        Err("identified read did not deliver a fragment".into())
+        native_fixture_result(Err("identified read did not deliver a fragment"))
     }
 }
 
@@ -952,33 +953,91 @@ fn write_completed_fragment(
     }
 }
 
-/// Prove the original broker still samples while an actual Windows read waits,
-/// then complete the request or stop the same owner with its body read uncollected.
+/// Distinguish service admission refusal from failed native slot preparation.
+#[cfg(windows)]
+enum DuplexAdmissionError {
+    /// The original session expired or stopped before adopting a connection.
+    Session(SessionFault),
+    /// The worker could not attach the admitted native transport.
+    Worker(NativePipeWorkerError),
+}
+
+/// Transfer the already-connected transport under this exact session and worker.
+/// # Errors
+/// Refuses a stale session or unable worker without creating a request or reply.
+#[cfg(windows)]
+fn attach_duplex(
+    session: &mut BrokerStatusSession<'_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    ready: PreparedDuplex,
+) -> Result<NativePipeRead, DuplexAdmissionError> {
+    session
+        .check_receive_edge()
+        .map_err(DuplexAdmissionError::Session)?;
+    session
+        .owner
+        .worker
+        .attach_duplex(ready)
+        .map_err(DuplexAdmissionError::Worker)
+}
+
+/// Acquire the original accept under Running and attach its prepared slots at the live edge.
+/// # Errors
+/// Retains native failure or reports unexpected refusal or admission.
+/// # Panics
+/// Fails if Running lacks its permit or a refused handoff issued a request.
+#[cfg(windows)]
+fn connect_for_session(
+    session: &mut BrokerStatusSession<'_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    client: &EngineStatusClient,
+    pipe_instance: u32,
+    peer: PipeIdentity,
+    exit: NativeIngressExit,
+) -> Result<Option<NativePipeRead>, Box<dyn Error>> {
+    native_fixture_result(session.check_client_edge(&client.connection))?;
+    assert!(session.owner.permit.is_some());
+    let connected: LabDuplexPipe = native_fixture_result(open_lab_duplex_pipe(pipe_instance))?;
+    native_fixture_result(session.check_receive_edge())?;
+    let ready: PreparedDuplex = native_fixture_result(PreparedDuplex::new(connected, peer))?;
+    let expected: Option<SessionFault> = match exit {
+        NativeIngressExit::StopBeforeAttach => {
+            let _notice: crate::broker_clock_change::ControlDisposition =
+                deliver(Some(session.clock.mailbox), session.stop, 1, 0);
+            Some(SessionFault::Closed)
+        }
+        NativeIngressExit::ExpireBeforeAttach => {
+            session.clock.now = session.cutoff;
+            Some(SessionFault::Expired)
+        }
+        _ => None,
+    };
+    match attach_duplex(session, ready) {
+        Err(DuplexAdmissionError::Session(error)) if Some(error) == expected => {
+            assert!(session.owner.worker.request_read().is_none());
+            assert_eq!(client.next, Some(1));
+            assert!(session.last.is_none());
+            Ok(None)
+        }
+        Ok(reader) if expected.is_none() => Ok(Some(reader)),
+        Ok(_) => Err("broker adopted the connected pipe after losing admission".into()),
+        Err(DuplexAdmissionError::Session(error)) => native_fixture_result(Err(error)),
+        Err(DuplexAdmissionError::Worker(error)) => native_fixture_result(Err(error)),
+    }
+}
+
+/// Prove the original broker still samples while an actual Windows read waits.
+/// The broker responds on that same duplex pipe or stops with the body read uncollected.
 /// # Errors
 /// Returns native pipe, invocation, frame or reply failure.
 /// # Panics
 /// Fails if an idle read completes early or successful data fails to reach the broker.
 #[cfg(windows)]
-fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(), Box<dyn Error>> {
+fn native_read_feeds_broker<const N: usize, const READS: u32>(
+    exit: NativeIngressExit,
+) -> Result<(), Box<dyn Error>> {
     let pipe_instance: u32 = u32::try_from(N)?;
-    let pipe: LabIdentificationPipe = native_fixture_result(open_lab_identification_pipe(
-        pipe_instance,
-        LabClientContext::Identification,
-    ))?;
     let process_identity: PipeIdentity = native_fixture_result(own_process_identity())?;
-    let (reply_reader, reply_writer): (LabPipeReader, LabOverlappedWriter) =
-        native_fixture_result(open_lab_reply_pipe(
-            pipe_instance
-                .checked_add(0x100)
-                .ok_or("invalid reply case")?,
-        ))?;
-    let mut reply_read: NativePipeRead = native_fixture_result(NativePipeRead::new(reply_reader))?;
-    let worker: NativePipeWorker = native_fixture_result(NativePipeWorker::with_request_read(
-        reply_writer,
-        pipe,
-        process_identity,
-    ))?;
-    with_broker_worker_reads::<N, 2, _, NativePipeWorker>(worker, |owner, clock, stop| {
+    let worker: NativePipeWorker = NativePipeWorker::awaiting_connection();
+    with_broker_worker_reads::<N, READS, _, NativePipeWorker>(worker, |owner, clock, stop| {
         let (mut session, mut client): (
             BrokerStatusSession<'_, Reporter, ScriptClock<'_>, NativePipeWorker>,
             EngineStatusClient,
@@ -988,7 +1047,11 @@ fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(
             stop,
             LabRole::Engine,
         ))?;
-        native_fixture_result(session.check_client_edge(&client.connection))?;
+        let Some(mut reply_read) =
+            connect_for_session(&mut session, &client, pipe_instance, process_identity, exit)?
+        else {
+            return Ok(());
+        };
         let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
         let mut pipe: BoundRequestPipe = BoundRequestPipe::new(&pending);
         let delivery: Delivery<'_> = pending.delivery();
@@ -1043,6 +1106,9 @@ fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(
                 return stop_after_native_read_expiry(&mut request, body);
             }
             NativeIngressExit::Reply => {}
+            NativeIngressExit::StopBeforeAttach | NativeIngressExit::ExpireBeforeAttach => {
+                return Err("closed broker reached request dispatch".into());
+            }
         }
         let native_body: NativeReadBytes =
             write_identified_fragment(&mut pipe, &mut request, &pending)?;
@@ -1063,6 +1129,10 @@ fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(
 #[cfg(windows)]
 #[derive(Clone, Copy)]
 enum NativeIngressExit {
+    /// Stop after operation preparation and before the worker attaches the slots.
+    StopBeforeAttach,
+    /// Let the original connection cutoff reach equality before slot attachment.
+    ExpireBeforeAttach,
     /// Complete the identified request and deliver the broker reply.
     Reply,
     /// Stop after the body read signals, while the result still awaits collection.
@@ -1608,10 +1678,12 @@ fn wait_for_retired_read(
 #[test]
 #[ignore = "requires an explicitly admitted offline Windows pipe and read-only clock fixture"]
 fn native_read_completes_or_drains_while_broker_polls() -> Result<(), Box<dyn Error>> {
-    native_read_feeds_broker::<15>(NativeIngressExit::Reply)?;
-    native_read_feeds_broker::<25>(NativeIngressExit::Stop)?;
-    native_read_feeds_broker::<26>(NativeIngressExit::ExpireThenStop)?;
-    native_read_feeds_broker::<27>(NativeIngressExit::CompleteThenStop)?;
+    native_read_feeds_broker::<15, 2>(NativeIngressExit::Reply)?;
+    native_read_feeds_broker::<25, 2>(NativeIngressExit::Stop)?;
+    native_read_feeds_broker::<26, 2>(NativeIngressExit::ExpireThenStop)?;
+    native_read_feeds_broker::<27, 2>(NativeIngressExit::CompleteThenStop)?;
+    native_read_feeds_broker::<28, 1>(NativeIngressExit::StopBeforeAttach)?;
+    native_read_feeds_broker::<29, 1>(NativeIngressExit::ExpireBeforeAttach)?;
     native_reply_refuses_foreign_reader()?;
     native_request_refuses_body_at_cutoff()?;
     native_read_drains_after_expiry()?;

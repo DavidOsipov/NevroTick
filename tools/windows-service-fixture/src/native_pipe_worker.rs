@@ -7,7 +7,9 @@ use crate::{
     error::WorkerError,
     host::{Worker, WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake},
     native_pipe_identity::PipeIdentity,
-    native_pipe_pair::{LabIdentificationPipe, LabOverlappedWriter, LabPipeError},
+    native_pipe_pair::{
+        LabDuplexPipe, LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader,
+    },
     native_pipe_read::{
         IdentifiedReadError, IdentifiedRequestRead, NativeCancel, NativePipeRead, NativeReadBytes,
         NativeReadError, NativeReadPoll, NativeReadStart, RetiredRead,
@@ -181,6 +183,40 @@ impl RetiringRequestRead<'_> {
     }
 }
 
+/// Allocated but unsubmitted slots for the exact connected duplex transport.
+pub(super) struct PreparedDuplex {
+    /// Engine-side read on the original client handle.
+    client_read: NativePipeRead,
+    /// Broker-side identified read on the original server handle.
+    broker_read: IdentifiedRequestRead,
+    /// Broker-side write on that same server handle.
+    broker_write: NativePipeWrite,
+}
+
+impl PreparedDuplex {
+    /// Allocate all idle slots before the receiving owner rechecks currentness.
+    /// # Errors
+    /// Retains the allocation failure. No native read or write has been submitted.
+    pub(super) fn new(
+        pipe: LabDuplexPipe,
+        expected: PipeIdentity,
+    ) -> Result<Self, NativePipeWorkerError> {
+        let (ingress, reader, writer): (LabIdentificationPipe, LabPipeReader, LabOverlappedWriter) =
+            pipe.into_transport();
+        let client_read: NativePipeRead =
+            NativePipeRead::new(reader).map_err(NativePipeWorkerError::Read)?;
+        let broker_read: IdentifiedRequestRead =
+            IdentifiedRequestRead::new(ingress, expected).map_err(NativePipeWorkerError::Read)?;
+        let broker_write: NativePipeWrite =
+            NativePipeWrite::new(writer).map_err(NativePipeWorkerError::Native)?;
+        Ok(Self {
+            client_read,
+            broker_read,
+            broker_write,
+        })
+    }
+}
+
 /// One serialized fixture worker whose pipe resources follow native completion.
 pub(super) struct NativePipeWorker {
     /// Host-owned activation and irreversible Stop fence.
@@ -230,15 +266,25 @@ impl NativePipeWorker {
     /// # Errors
     /// Preserves a failure to create the private completion event.
     pub(super) fn new(writer: LabOverlappedWriter) -> Result<Self, NativeWriteError> {
-        Ok(Self {
+        Ok(Self::dormant(Some(NativePipeWrite::new(writer)?)))
+    }
+
+    /// Prepare the duplex worker without exposing a request or reply slot.
+    pub(super) fn awaiting_connection() -> Self {
+        Self::dormant(None)
+    }
+
+    /// Keep the same retirement state before any Running permit can be issued.
+    fn dormant(write: Option<NativePipeWrite>) -> Self {
+        Self {
             phase: Phase::Dormant,
             read: None,
-            write: Some(NativePipeWrite::new(writer)?),
+            write,
             cancellation: None,
             terminal: None,
             completion_error: None,
             read_retirement: ReadRetirement::default(),
-        })
+        }
     }
 
     /// Bind the original request reader before Running admits any pipe operation.
@@ -253,6 +299,26 @@ impl NativePipeWorker {
         worker.read =
             Some(IdentifiedRequestRead::new(pipe, expected).map_err(NativePipeWorkerError::Read)?);
         Ok(worker)
+    }
+
+    /// Move prepared, unsubmitted slots into this worker without further native calls.
+    /// # Errors
+    /// Refuses replacing existing custody or binding outside Running.
+    pub(super) fn attach_duplex(
+        &mut self,
+        ready: PreparedDuplex,
+    ) -> Result<NativePipeRead, NativePipeWorkerError> {
+        if self.phase != Phase::Active || self.read.is_some() || self.write.is_some() {
+            return Err(NativePipeWorkerError::Inactive);
+        }
+        let PreparedDuplex {
+            client_read,
+            broker_read,
+            broker_write,
+        } = ready;
+        self.read = Some(broker_read);
+        self.write = Some(broker_write);
+        Ok(client_read)
     }
 
     /// Lend the original ingress slot only during acknowledged Running.

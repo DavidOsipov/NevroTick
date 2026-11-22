@@ -9,7 +9,10 @@ use crate::native_broker_wait::PendingCompletionWake;
 use crate::{
     NativeError,
     error::WorkerError,
-    host::{Worker, WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake},
+    host::{
+        Clock, ConnectionEdge, ConnectionWait, RunningConnection, Worker, WorkerCompletion,
+        WorkerFailure, WorkerFinish, WorkerWake,
+    },
 };
 
 /// Whether the original accept submission requires a separate observation.
@@ -74,7 +77,11 @@ enum RunningAccept {
     Queued,
     /// A Running observation failed with native completion unconfirmed.
     FencedQueued,
-    /// Submission was refused or a terminal result was observed.
+    /// Local expiry fenced admission and requested cancellation once.
+    Retiring(Option<WorkerError>),
+    /// Local retirement completed; keep the reservation until service Stop.
+    Parked,
+    /// Submission was refused or an unexpected terminal result was observed.
     Retired,
 }
 
@@ -129,6 +136,59 @@ where
             ),
         }
     }
+
+    /// Retire the same pending accept at its local cutoff, retaining its event,
+    /// storage and endpoint until physical completion.
+    ///
+    /// # Errors
+    /// Keep the first cancellation refusal while native completion is still owed.
+    fn retire_accept(
+        endpoint: &mut E,
+        accept: &mut RunningAccept,
+    ) -> Result<ConnectionWait, WorkerFailure> {
+        *accept = RunningAccept::Retiring(None);
+        if let Err(error) = endpoint.request_accept_cancel() {
+            let error: WorkerError = WorkerError::EndpointAcceptCleanup(error);
+            *accept = RunningAccept::Retiring(Some(error));
+            return Err(WorkerFailure::Cleanup(error));
+        }
+        Ok(ConnectionWait::Drain)
+    }
+
+    /// Admit a terminal accept result only at a fresh owner edge. The fixed
+    /// laboratory endpoint has no client data admission.
+    ///
+    /// # Errors
+    /// A terminal result while eligible is unexpected on the fixed endpoint.
+    fn terminal_accept(
+        accept: &mut RunningAccept,
+        edge: &ConnectionEdge,
+    ) -> Result<ConnectionWait, WorkerFailure> {
+        if matches!(edge, ConnectionEdge::Open(_)) {
+            *accept = RunningAccept::Retired;
+            return Err(WorkerFailure::Operation(
+                WorkerError::EndpointUnexpectedCompletion,
+            ));
+        }
+        *accept = RunningAccept::Parked;
+        Ok(ConnectionWait::Service)
+    }
+
+    /// Choose the original cutoff for live work, or begin local retirement.
+    ///
+    /// # Errors
+    /// Preserve a cancellation refusal at local expiry.
+    fn pending_accept(
+        endpoint: &mut E,
+        accept: &mut RunningAccept,
+        edge: &ConnectionEdge,
+    ) -> Result<ConnectionWait, WorkerFailure> {
+        match edge {
+            ConnectionEdge::Open(cutoff) => Ok(ConnectionWait::Cutoff(*cutoff)),
+            ConnectionEdge::Expired => Self::retire_accept(endpoint, accept),
+            ConnectionEdge::Closed => Ok(ConnectionWait::Service),
+        }
+    }
 }
 
 impl<A, E> Worker for BrokerEndpointWorker<A, E>
@@ -165,43 +225,72 @@ where
         Ok(())
     }
 
-    /// Submit once and observe the queued accept during admitted host polls.
-    /// No connection is dispatched from the laboratory reservation.
+    /// Submit once and observe the queued accept using the serialized host's
+    /// fresh time and Stop checks. The cutoff retires only the local accept.
     /// # Errors
     /// Refuses a poll outside Running or following retirement. A submission
     /// failure or unexpected terminal result fences service operation. A
     /// failed observation leaves the pending accept charged through Stop.
-    fn poll_running(&mut self, _wake: &WorkerWake) -> Result<(), WorkerFailure> {
+    fn poll_running_with_connection<C: Clock>(
+        &mut self,
+        _wake: &WorkerWake,
+        connection: &mut RunningConnection<'_, C>,
+    ) -> Result<ConnectionWait, WorkerFailure> {
         let State::Running(endpoint, accept) = &mut self.state else {
             return Err(WorkerFailure::Operation(WorkerError::Running));
         };
         match accept {
             RunningAccept::Unsubmitted => {
-                *accept = RunningAccept::Retired;
-                match endpoint.begin_accept() {
+                if !matches!(connection.edge(), ConnectionEdge::Open(_)) {
+                    return Ok(ConnectionWait::Service);
+                }
+                let start: Result<AcceptStart, NativeError> = endpoint.begin_accept();
+                let after: ConnectionEdge = connection.edge();
+                match start {
                     Ok(AcceptStart::Queued) => {
                         *accept = RunningAccept::Queued;
-                        Ok(())
+                        Self::pending_accept(endpoint, accept, &after)
                     }
-                    Ok(AcceptStart::Connected) => Err(WorkerFailure::Operation(
-                        WorkerError::EndpointUnexpectedCompletion,
-                    )),
-                    Err(error) => Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error))),
+                    Ok(AcceptStart::Connected) => Self::terminal_accept(accept, &after),
+                    Err(error) => {
+                        *accept = RunningAccept::Retired;
+                        Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error)))
+                    }
                 }
             }
-            RunningAccept::Queued => match endpoint.poll_accept() {
-                Ok(Poll::Pending) => Ok(()),
+            RunningAccept::Queued => {
+                match connection.edge() {
+                    ConnectionEdge::Open(_) => {}
+                    ConnectionEdge::Expired => return Self::retire_accept(endpoint, accept),
+                    ConnectionEdge::Closed => return Ok(ConnectionWait::Service),
+                }
+                let completion: Result<Poll<AcceptCompletion>, NativeError> =
+                    endpoint.poll_accept();
+                let after: ConnectionEdge = connection.edge();
+                match completion {
+                    Ok(Poll::Pending) => Self::pending_accept(endpoint, accept, &after),
+                    Ok(Poll::Ready(AcceptCompletion::Connected | AcceptCompletion::Cancelled)) => {
+                        Self::terminal_accept(accept, &after)
+                    }
+                    Err(error) => {
+                        *accept = RunningAccept::FencedQueued;
+                        Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error)))
+                    }
+                }
+            }
+            RunningAccept::Retiring(cleanup) => match endpoint.poll_accept() {
+                Ok(Poll::Pending) => Ok(ConnectionWait::Drain),
                 Ok(Poll::Ready(AcceptCompletion::Connected | AcceptCompletion::Cancelled)) => {
-                    *accept = RunningAccept::Retired;
-                    Err(WorkerFailure::Operation(
-                        WorkerError::EndpointUnexpectedCompletion,
-                    ))
+                    *accept = RunningAccept::Parked;
+                    Ok(ConnectionWait::Service)
                 }
                 Err(error) => {
-                    *accept = RunningAccept::FencedQueued;
-                    Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error)))
+                    let error: WorkerError =
+                        *cleanup.get_or_insert(WorkerError::EndpointAcceptCleanup(error));
+                    Err(WorkerFailure::Cleanup(error))
                 }
             },
+            RunningAccept::Parked => Ok(ConnectionWait::Service),
             RunningAccept::FencedQueued | RunningAccept::Retired => {
                 Err(WorkerFailure::Operation(WorkerError::Running))
             }
@@ -215,14 +304,18 @@ where
         self.state = match previous {
             State::Dormant(_) | State::Refused => State::Closing(None),
             State::Prepared(endpoint)
-            | State::Running(endpoint, RunningAccept::Unsubmitted | RunningAccept::Retired) => {
-                State::Closing(Some(endpoint))
-            }
+            | State::Running(
+                endpoint,
+                RunningAccept::Unsubmitted | RunningAccept::Parked | RunningAccept::Retired,
+            ) => State::Closing(Some(endpoint)),
             State::Running(mut endpoint, RunningAccept::Queued | RunningAccept::FencedQueued) => {
                 let cleanup: Option<WorkerError> = endpoint
                     .request_accept_cancel()
                     .err()
                     .map(WorkerError::EndpointAcceptCleanup);
+                State::Draining(endpoint, cleanup)
+            }
+            State::Running(endpoint, RunningAccept::Retiring(cleanup)) => {
                 State::Draining(endpoint, cleanup)
             }
             retained @ (State::Closing(_)
@@ -276,7 +369,10 @@ where
     #[cfg(windows)]
     fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
         match &mut self.state {
-            State::Running(endpoint, RunningAccept::Queued | RunningAccept::FencedQueued)
+            State::Running(
+                endpoint,
+                RunningAccept::Queued | RunningAccept::FencedQueued | RunningAccept::Retiring(_),
+            )
             | State::Draining(endpoint, _) => endpoint.completion_wake(),
             _ => None,
         }

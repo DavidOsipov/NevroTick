@@ -141,7 +141,7 @@ fn decoder_rejects_classification_tags_canonical_payloads_and_reserved_bytes() {
         (2, 0),
         (2, 3),
         (3, 0),
-        (3, 10),
+        (3, 11),
         (4, 1),
         (4, 2),
         (4, 4),
@@ -294,6 +294,7 @@ fn raw_cause_domain_properties_cover_all_256_values_and_event_neighbours() {
         (6, 10, 19),
         (7, 10, 19),
         (9, 20, 23),
+        (10, 20, 23),
     ] {
         for cause in 0u8..=29 {
             let mut bytes: [u8; 128] = literal();
@@ -310,13 +311,13 @@ fn raw_cause_domain_properties_cover_all_256_values_and_event_neighbours() {
     }
 }
 
-/// Code-owned nine-event classes/IDs reach real routes; no synthetic live events exist.
+/// Code-owned event classes and IDs reach the required and optional routes.
 ///
 /// # Panics
 /// Fails if the independent oracle observes a contract violation.
 #[test]
 fn all_live_events_have_independent_literal_classes_and_exact_causes() {
-    let events: [(ServiceEvent, u8, u8); 9] = [
+    let events: [(ServiceEvent, u8, u8); 10] = [
         (ServiceEvent::StartObserved, 1, 0),
         (ServiceEvent::RunningAcknowledged, 2, 0),
         (ServiceEvent::AdmissionClosed, 3, 0),
@@ -338,6 +339,11 @@ fn all_live_events_have_independent_literal_classes_and_exact_causes() {
         ),
         (ServiceEvent::Finished, 8, 0),
         (ServiceEvent::OperationFailure(WorkerCause::Running), 9, 22),
+        (
+            ServiceEvent::PendingCleanupFailure(WorkerCause::Cleanup),
+            10,
+            23,
+        ),
     ];
     let mut actual: Router = router(
         ConsumerState::Available,
@@ -372,8 +378,8 @@ fn all_live_events_have_independent_literal_classes_and_exact_causes() {
         actual.pump_one();
     }
     let snapshot: DiagnosticSnapshot = actual.finish();
-    assert_eq!(snapshot.required().history().len(), 9);
-    assert_eq!(snapshot.optional().history().len(), 9);
+    assert_eq!(snapshot.required().history().len(), 10);
+    assert_eq!(snapshot.optional().history().len(), 10);
     for (ordinal, (_, id, cause)) in events.into_iter().enumerate() {
         let bytes: Option<&[u8; 128]> = snapshot.required().history().get(ordinal);
         assert!(bytes.is_some());
@@ -594,7 +600,7 @@ fn original_observation_is_frozen_before_delayed_consumption_and_restart() {
 /// Fails if the independent oracle observes a contract violation.
 #[test]
 fn aggregate_model_preserves_first_id_reservations_and_latest_sixteen_originals() {
-    let events: [ServiceEvent; 9] = [
+    let events: [ServiceEvent; 10] = [
         ServiceEvent::StartObserved,
         ServiceEvent::RunningAcknowledged,
         ServiceEvent::AdmissionClosed,
@@ -604,6 +610,7 @@ fn aggregate_model_preserves_first_id_reservations_and_latest_sixteen_originals(
         ServiceEvent::TerminalReportFailure(LifecycleCause::Report),
         ServiceEvent::Finished,
         ServiceEvent::OperationFailure(WorkerCause::Preparation),
+        ServiceEvent::PendingCleanupFailure(WorkerCause::Cleanup),
     ];
     let mut actual: Router = router(
         ConsumerState::Available,
@@ -625,7 +632,7 @@ fn aggregate_model_preserves_first_id_reservations_and_latest_sixteen_originals(
         actual.pump_one();
     }
     let reserved: DiagnosticSnapshot = actual.snapshot();
-    assert_eq!(reserved.required().health().accepted().value(), 12);
+    assert_eq!(reserved.required().health().accepted().value(), 13);
     assert_eq!(
         reserved
             .required()
@@ -635,7 +642,15 @@ fn aggregate_model_preserves_first_id_reservations_and_latest_sixteen_originals(
         Some(60)
     );
     assert_eq!(reserved.required().health().per_event(0), None);
-    assert_eq!(reserved.required().health().per_event(10), None);
+    assert_eq!(
+        reserved
+            .required()
+            .health()
+            .per_event(10)
+            .and_then(|event: &windows_platform::diagnostics::EventHealth| event.first_cause()),
+        Some(23)
+    );
+    assert_eq!(reserved.required().health().per_event(11), None);
     for event in events.into_iter().skip(1) {
         for _ in 0..3 {
             actual.emit(event, DiagnosticObservation::unavailable());
@@ -644,7 +659,7 @@ fn aggregate_model_preserves_first_id_reservations_and_latest_sixteen_originals(
     }
     let snapshot: DiagnosticSnapshot = actual.finish();
     assert_eq!(snapshot.required().health().accepted().value(), 32);
-    assert_eq!(snapshot.required().health().suppressed().value(), 64);
+    assert_eq!(snapshot.required().health().suppressed().value(), 68);
     assert_eq!(snapshot.required().history().len(), 16);
     assert_eq!(
         snapshot.required().health().history_overwritten().value(),
@@ -748,14 +763,14 @@ fn cause_variation_and_synthetic_secret_rejection_keep_useful_closed_diagnostics
 }
 
 /// Finite replay compares actual FIFO, losses and consumed originals after every action.
-/// Eligibility is independent arithmetic for four complete nine-ID rounds: attempts
-/// 1..32 have credits and 33..36 are coalesced; no production reducer computes truth.
+/// Eligibility is independent arithmetic for four complete ten-ID rounds: attempts
+/// 1..32 have credits and 33..40 are coalesced; no production reducer computes truth.
 ///
 /// # Panics
 /// Fails if the independent oracle observes a contract violation.
 #[test]
 fn bounded_history_model_checks_every_emit_and_pump_transition() {
-    let events: [ServiceEvent; 9] = [
+    let events: [ServiceEvent; 10] = [
         ServiceEvent::StartObserved,
         ServiceEvent::RunningAcknowledged,
         ServiceEvent::AdmissionClosed,
@@ -765,6 +780,7 @@ fn bounded_history_model_checks_every_emit_and_pump_transition() {
         ServiceEvent::TerminalReportFailure(LifecycleCause::Report),
         ServiceEvent::Finished,
         ServiceEvent::OperationFailure(WorkerCause::Preparation),
+        ServiceEvent::PendingCleanupFailure(WorkerCause::Cleanup),
     ];
     for pump_period in [1u64, 2, 5, 37] {
         let mut actual: Router = router(
@@ -777,7 +793,7 @@ fn bounded_history_model_checks_every_emit_and_pump_transition() {
         let mut admitted: u64 = 0;
         let mut queue_full: u64 = 0;
         let mut attempts: u64 = 0;
-        for event in events.into_iter().cycle().take(36) {
+        for event in events.into_iter().cycle().take(40) {
             attempts += 1;
             actual.emit(event, DiagnosticObservation::unavailable());
             if attempts <= 32 {

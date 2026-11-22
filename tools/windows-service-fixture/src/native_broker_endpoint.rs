@@ -40,6 +40,9 @@ use crate::{
     native_broker_wait::{CompletionWakeState, PendingCompletionWake},
 };
 
+#[cfg(test)]
+use crate::native_pipe_pair::LabUnconnectedDuplexPipe;
+
 /// UTF-16 projection of `\\.\pipe\NevroTick-Lab-S02-Broker-Reservation` and its terminator.
 const RESERVATION_NAME: [u16; 46] = [
     92, 92, 46, 92, 112, 105, 112, 101, 92, 78, 101, 118, 114, 111, 84, 105, 99, 107, 45, 76, 97,
@@ -73,7 +76,9 @@ enum AcceptState {
         /// The one cancellation request was attempted. Completion is still owed.
         cancellation_requested: bool,
     },
-    /// Submission did not queue or a terminal result was observed.
+    /// The original accept connected without an attempted cancellation.
+    Connected,
+    /// Submission failed, or a pending accept settled after cancellation.
     Retired,
 }
 
@@ -120,6 +125,18 @@ pub(super) struct NativeBrokerEndpoint {
     event: OwnedHandle,
     /// The creation result, with best-effort release if explicit close is bypassed.
     handle: OwnedHandle,
+    /// Only the sealed test pipe can hand its connection to the fixture transport.
+    #[cfg(test)]
+    fixture_pipe: bool,
+}
+
+/// Refusal to hand the original server handle to the duplex fixture.
+#[cfg(test)]
+pub(super) enum FixtureConnectionError {
+    /// Retains the original endpoint and any unsettled accept.
+    Ineligible(NativeBrokerEndpoint),
+    /// The accept event close failed. The idle pipe also received one close attempt.
+    AcceptEventClose(NativeError),
 }
 
 impl NativeBrokerEndpoint {
@@ -178,17 +195,7 @@ impl NativeBrokerEndpoint {
             lpSecurityDescriptor: descriptor_ptr,
             bInheritHandle: 0,
         };
-        let event: OwnedHandle = create_accept_event()?;
-        let accept: AcceptRecord = AcceptRecord {
-            storage: Box::pin(AcceptStorage {
-                overlapped: UnsafeCell::new(OVERLAPPED {
-                    hEvent: event.as_raw_handle(),
-                    ..OVERLAPPED::default()
-                }),
-                _pin: PhantomPinned,
-            }),
-            state: AcceptState::Ready,
-        };
+        let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
         #[expect(unsafe_code, reason = "reserve only the fixed local lab pipe name")]
         // SAFETY: The name has a terminating NUL. The initialized attributes,
         // descriptor and ACL remain valid through this synchronous call.
@@ -222,7 +229,52 @@ impl NativeBrokerEndpoint {
             accept,
             event,
             handle,
+            #[cfg(test)]
+            fixture_pipe: false,
         })
+    }
+
+    /// Bind the original unconnected test server to its one native accept.
+    ///
+    /// # Errors
+    /// Preserve event creation failure. The idle fixture server has no queued
+    /// accept and drops on refusal.
+    #[cfg(test)]
+    pub(super) fn for_duplex_fixture(
+        server: LabUnconnectedDuplexPipe,
+    ) -> Result<Self, NativeError> {
+        let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
+        Ok(Self {
+            accept,
+            event,
+            handle: server.into_handle(),
+            fixture_pipe: true,
+        })
+    }
+
+    /// Hand off exactly the connected fixture handle after retiring its accept.
+    ///
+    /// # Errors
+    /// Return ineligible endpoints intact, including pending or cancelled work.
+    /// If the accept event close fails, attempt one pipe close and retain the
+    /// earlier error without handing off a connection.
+    #[cfg(test)]
+    pub(super) fn into_connected_fixture(self) -> Result<OwnedHandle, FixtureConnectionError> {
+        if !self.fixture_pipe || !matches!(self.accept.state, AcceptState::Connected) {
+            return Err(FixtureConnectionError::Ineligible(self));
+        }
+        let Self {
+            accept,
+            event,
+            handle,
+            fixture_pipe: _,
+        } = self;
+        drop(accept);
+        if let Err(error) = close_handle(event) {
+            let _pipe_result: Result<(), NativeError> = close_handle(handle);
+            return Err(FixtureConnectionError::AcceptEventClose(error));
+        }
+        Ok(handle)
     }
 
     /// Release both original handles once, with no outstanding native I/O.
@@ -235,6 +287,8 @@ impl NativeBrokerEndpoint {
             accept,
             event,
             handle,
+            #[cfg(test)]
+                fixture_pipe: _,
         } = self;
         drop(accept);
         let pipe_result: Result<(), NativeError> = close_handle(handle);
@@ -267,17 +321,18 @@ impl Reservation for NativeBrokerEndpoint {
         let connected: BOOL =
             unsafe { ConnectNamedPipe(self.handle.as_raw_handle(), self.accept.pointer()) };
         if connected != 0 {
-            self.accept.state = AcceptState::Retired;
+            self.accept.state = AcceptState::Connected;
             return Ok(AcceptStart::Connected);
         }
         let error: NativeError = last_error(operation);
         if error.code() == ERROR_IO_PENDING {
             return Ok(AcceptStart::Queued);
         }
-        self.accept.state = AcceptState::Retired;
         if error.code() == ERROR_PIPE_CONNECTED {
+            self.accept.state = AcceptState::Connected;
             return Ok(AcceptStart::Connected);
         }
+        self.accept.state = AcceptState::Retired;
         Err(error)
     }
 
@@ -322,9 +377,13 @@ impl Reservation for NativeBrokerEndpoint {
     /// Refuses an unqueued observation and preserves custody on unknown failures.
     fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError> {
         let operation: NativeOperation = NativeOperation::BrokerEndpointAcceptCompletion;
-        if !matches!(self.accept.state, AcceptState::Pending { .. }) {
+        let AcceptState::Pending {
+            cancellation_requested,
+            ..
+        } = self.accept.state
+        else {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
-        }
+        };
         let mut ignored: u32 = 0;
         #[expect(
             unsafe_code,
@@ -341,7 +400,11 @@ impl Reservation for NativeBrokerEndpoint {
             )
         };
         if complete != 0 {
-            self.accept.state = AcceptState::Retired;
+            self.accept.state = if cancellation_requested {
+                AcceptState::Retired
+            } else {
+                AcceptState::Connected
+            };
             return Ok(Poll::Ready(AcceptCompletion::Connected));
         }
         let error: NativeError = last_error(operation);
@@ -367,6 +430,25 @@ impl Reservation for NativeBrokerEndpoint {
     fn close(self) -> Result<(), NativeError> {
         Self::close(self)
     }
+}
+
+/// Prepare the single pinned accept record and its original completion event.
+///
+/// # Errors
+/// Preserve the event creation failure. No native accept is submitted here.
+fn prepare_accept() -> Result<(AcceptRecord, OwnedHandle), NativeError> {
+    let event: OwnedHandle = create_accept_event()?;
+    let accept: AcceptRecord = AcceptRecord {
+        storage: Box::pin(AcceptStorage {
+            overlapped: UnsafeCell::new(OVERLAPPED {
+                hEvent: event.as_raw_handle(),
+                ..OVERLAPPED::default()
+            }),
+            _pin: PhantomPinned,
+        }),
+        state: AcceptState::Ready,
+    };
+    Ok((accept, event))
 }
 
 /// Create the independent noninherited manual-reset event for one accept.

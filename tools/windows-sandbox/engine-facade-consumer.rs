@@ -67,15 +67,15 @@ use std::{
     num::NonZeroU16,
     process::ExitCode,
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use nevrotick_engine::{
     KePreviewTarget, ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, SoftwareClock, SourceAddressSet,
-    SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicyError,
-    SourcePolicyLimits, SourcePolicySnapshot, SourceProtectedProbeFailure,
-    SourceProtectedProbeReport,
+    ManagedProtectedRestriction, ManagedProtectedTerminal, ProtectedNativeClockObservation,
+    SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
+    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
+    SourceProtectedProbeFailure, SourceProtectedProbeReport,
 };
 
 /// Fixed program atom consumed by the Engine's actual CLI entrypoint.
@@ -491,22 +491,72 @@ fn successor_peer(variable: &'static str) -> Result<SocketAddr, SetupFailure> {
     )))
 }
 
-/// Check the issued definition, receive bracket and fixed native peer wire values.
+/// Check the original native observations against their corresponding software brackets.
+///
+/// The protected socket takes all three captures on its current-thread worker.
+/// Verify local chronology and exact representation of its original Windows wall reads.
+fn successor_clock_captures_match(receipt: &ManagedProtectedReceipt) -> bool {
+    let [before_send, after_send, receive]: [SoftwareClock; 3] =
+        receipt.application_clock_captures();
+    let native: [Option<ProtectedNativeClockObservation>; 3] =
+        receipt.application_native_clock_captures();
+    let [
+        Some(ProtectedNativeClockObservation::Recorded(before_coordinates)),
+        Some(ProtectedNativeClockObservation::Recorded(after_coordinates)),
+        Some(ProtectedNativeClockObservation::Recorded(receive_coordinates)),
+    ] = native
+    else {
+        return false;
+    };
+    // From 1601-01-01 through 1970-01-01 the Gregorian calendar spans
+    // 134,774 days. Compare elapsed time from that epoch with each whole raw value.
+    let Some(filetime_epoch): Option<SystemTime> =
+        UNIX_EPOCH.checked_sub(Duration::from_hours(134_774 * 24))
+    else {
+        return false;
+    };
+    if before_send.monotonic_after() > after_send.monotonic()
+        || after_send.monotonic_after() > receive.monotonic()
+        || receive.monotonic_after() != receipt.received_at()
+        || receipt.received_at() > receipt.committed_at()
+        || before_coordinates.qpc_after() > after_coordinates.qpc_before()
+        || after_coordinates.qpc_after() > receive_coordinates.qpc_before()
+    {
+        return false;
+    }
+    [
+        (before_send, before_coordinates),
+        (after_send, after_coordinates),
+        (receive, receive_coordinates),
+    ]
+    .into_iter()
+    .all(|(capture, coordinates)| {
+        let wall: SystemTime = capture.utc();
+        let raw_elapsed_ns: u128 = u128::from(coordinates.filetime_100ns()) * 100;
+        capture.monotonic() <= capture.monotonic_after()
+            && coordinates.frequency_hz() == before_coordinates.frequency_hz()
+            && coordinates.qpc_before() <= coordinates.qpc_after()
+            && wall
+                .duration_since(filetime_epoch)
+                .is_ok_and(|elapsed: Duration| elapsed.as_nanos() == raw_elapsed_ns)
+    })
+}
+
+/// Check the issued definition, native capture triplet and fixed authenticated peer wire values.
 fn successor_receipt_matches(
     receipt: &ManagedProtectedReceipt,
     expected: &SourceConfigurationSnapshot,
 ) -> bool {
-    let [_, _, receive]: [SoftwareClock; 3] = receipt.application_clock_captures();
     let peer_timestamps: [u64; 2] = receipt.peer_timestamps().map(|timestamp| timestamp.bits());
     receipt.configuration().same_configuration(expected)
-        && receive.monotonic_after() == receipt.received_at()
-        && receipt.received_at() <= receipt.committed_at()
         && peer_timestamps == [0x0123_4567_89ab_d000, 0x0123_4567_89ab_e000]
+        && successor_clock_captures_match(receipt)
 }
 
 /// Check any retained history against the definition issued for this invocation.
 /// # Errors
-/// Refuse a different retained revision or inconsistent original receive placement.
+/// Refuse a different retained revision, unavailable clock observations, or inconsistent
+/// native or software chronology or wall representation.
 fn check_successor_failure(
     failure: &SourceProtectedProbeFailure,
     expected: &SourceConfigurationSnapshot,
@@ -570,8 +620,9 @@ fn check_successor_restriction(
 
 /// Require original receipt identity and order before emitting the joined witness.
 /// # Errors
-/// Refuse foreign revisions, inconsistent successor order, or an initial restriction
-/// without authentication and exactly one submitted send.
+/// Refuse foreign revisions, unavailable or inconsistent clock evidence, inconsistent
+/// successor order, or an initial restriction without authentication and exactly one
+/// submitted send.
 fn check_successor_report(
     report: &ManagedProtectedReport,
     expected: &SourceConfigurationSnapshot,

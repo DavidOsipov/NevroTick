@@ -2,10 +2,14 @@
 //! Named pipe endpoints for bounded Windows completion and peer observations.
 
 use std::fmt;
+use std::io::{self, Write as _};
 use std::mem::size_of;
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
 use std::ptr;
-use std::sync::Arc;
+use std::rc::{Rc, Weak};
+use std::task::Poll;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use windows_sys::Win32::Foundation::{
     ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE, INVALID_HANDLE_VALUE, LocalFree,
@@ -15,9 +19,9 @@ use windows_sys::Win32::Security::Authorization::{
 };
 use windows_sys::Win32::Security::{PSECURITY_DESCRIPTOR, SECURITY_ATTRIBUTES};
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED, FILE_WRITE_DATA,
-    OPEN_EXISTING, PIPE_ACCESS_INBOUND, PIPE_ACCESS_OUTBOUND, SECURITY_ANONYMOUS,
-    SECURITY_IDENTIFICATION, SECURITY_SQOS_PRESENT, SYNCHRONIZE, WriteFile,
+    CreateFileW, FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED, FILE_READ_DATA,
+    FILE_WRITE_DATA, OPEN_EXISTING, PIPE_ACCESS_DUPLEX, PIPE_ACCESS_INBOUND, PIPE_ACCESS_OUTBOUND,
+    SECURITY_ANONYMOUS, SECURITY_IDENTIFICATION, SECURITY_SQOS_PRESENT, SYNCHRONIZE, WriteFile,
 };
 use windows_sys::Win32::System::Pipes::{
     ConnectNamedPipe, CreateNamedPipeW, GetNamedPipeClientProcessId, GetNamedPipeServerProcessId,
@@ -25,8 +29,19 @@ use windows_sys::Win32::System::Pipes::{
 };
 use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 
+use crate::{
+    NativeError,
+    broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
+    native_broker_endpoint::{FixtureConnectionError, NativeBrokerEndpoint},
+    native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
+    native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll},
+};
+
 /// Largest inert write and configured server buffer size, in bytes.
 const MAX_WRITE_BYTES: u32 = 80;
+
+/// Fixture-only bound for observing the original accept or draining after refusal.
+const ACCEPT_WAIT: Duration = Duration::from_secs(2);
 
 /// A fixed local fixture name with its terminating NUL.
 struct LabPipeName(Vec<u16>);
@@ -43,15 +58,30 @@ impl LabPipeName {
     }
 }
 
-/// Private, read-only endpoint opened for overlapped I/O.
+/// Read slot's ownership share of the original overlapped endpoint.
 pub(super) struct LabPipeReader {
-    handle: OwnedHandle,
+    /// Original endpoint that stays open for any read in this slot.
+    handle: Rc<OwnedHandle>,
+    /// Directional identity present only for paired overlapped transfers.
     reply_pair: Option<ReplyPipePair>,
 }
 
-/// Identity minted only when the native reply pipe's two handles are opened.
+/// Directional identity derived from both original handle owners.
+/// A completed read can carry this identity without retaining either handle.
 #[derive(Clone)]
-pub(super) struct ReplyPipePair(Arc<()>);
+pub(super) struct ReplyPipePair {
+    /// Allocation owning the endpoint on which read completion is collected.
+    reader: Weak<OwnedHandle>,
+    /// Allocation owning the connected endpoint on which the bytes are written.
+    writer: Weak<OwnedHandle>,
+}
+
+impl ReplyPipePair {
+    /// Compare both ordered allocations, including identity after a handle closes.
+    fn matches(&self, other: &Self) -> bool {
+        self.reader.ptr_eq(&other.reader) && self.writer.ptr_eq(&other.writer)
+    }
+}
 
 impl LabPipeReader {
     /// Return the identity of the owned reply endpoint, if this is one.
@@ -72,13 +102,66 @@ pub(super) struct LabPipeWriter(OwnedHandle);
 /// Both original endpoints of an inbound pipe with client identity capture.
 pub(super) struct LabIdentificationPipe {
     reader: LabPipeReader,
-    writer: LabPipeWriter,
+    writer: LabRequestWriter,
 }
 
 impl LabIdentificationPipe {
     /// Transfer both endpoints to their single request-transport owner.
-    pub(super) fn into_transport(self) -> (LabPipeReader, LabPipeWriter) {
+    pub(super) fn into_transport(self) -> (LabPipeReader, LabRequestWriter) {
         (self.reader, self.writer)
+    }
+}
+
+/// Exact identification client's writer, selected when the pair was opened.
+pub(super) struct LabRequestWriter(RequestWriter);
+
+/// Native I/O mode of the original identification client.
+enum RequestWriter {
+    /// Existing write-only client uses its original synchronous transport.
+    Synchronous(LabPipeWriter),
+    /// The duplex client shares its overlapped endpoint with the reply reader.
+    Overlapped(NativePipeWrite),
+}
+
+impl LabRequestWriter {
+    /// Write one already-admitted inert fixture fragment from the exact client.
+    /// # Errors
+    /// Preserve submission, transfer, or bounded observation failure.
+    pub(super) fn write(&mut self, bytes: &[u8]) -> Result<(), LabPipeError> {
+        match &mut self.0 {
+            RequestWriter::Synchronous(writer) => writer.write(bytes),
+            RequestWriter::Overlapped(writer) => writer.write_fixture_fragment(bytes),
+        }
+    }
+}
+
+/// The original overlapped server for one unconnected, per-process duplex fixture.
+/// Only this factory can issue a server for the shared native accept owner.
+pub(super) struct LabUnconnectedDuplexPipe(OwnedHandle);
+
+impl LabUnconnectedDuplexPipe {
+    /// Transfer the only server handle without duplicating or reopening the pipe.
+    pub(super) fn into_handle(self) -> OwnedHandle {
+        self.0
+    }
+}
+
+/// Both directions of the same connected pair. Only its native factory can mint it.
+pub(super) struct LabDuplexPipe {
+    /// Broker request reader and matching Engine request writer.
+    request: LabIdentificationPipe,
+    /// Engine reply reader sharing the original Engine endpoint.
+    reply_reader: LabPipeReader,
+    /// Broker reply writer sharing the original broker endpoint.
+    reply_writer: LabOverlappedWriter,
+}
+
+impl LabDuplexPipe {
+    /// Transfer both directions together into the fixture's consuming transport.
+    pub(super) fn into_transport(
+        self,
+    ) -> (LabIdentificationPipe, LabPipeReader, LabOverlappedWriter) {
+        (self.request, self.reply_reader, self.reply_writer)
     }
 }
 
@@ -91,10 +174,22 @@ pub(super) enum LabClientContext {
     Anonymous,
 }
 
-/// Private server endpoint opened for overlapped reply writes.
+/// Write slot's ownership share of the original overlapped endpoint.
 pub(super) struct LabOverlappedWriter {
-    handle: OwnedHandle,
+    /// Original endpoint that stays open for any write in this slot.
+    handle: Rc<OwnedHandle>,
+    /// Both endpoint owners in the direction of this transfer.
     reply_pair: ReplyPipePair,
+    /// Roles for issuing current native PID queries in the correct direction.
+    side: PipeSide,
+}
+
+/// Which original handle is the server for bidirectional peer queries.
+enum PipeSide {
+    /// The server writes.
+    Server,
+    /// The client writes.
+    Client,
 }
 
 impl LabOverlappedWriter {
@@ -105,7 +200,7 @@ impl LabOverlappedWriter {
         &self,
         pair: Option<&ReplyPipePair>,
     ) -> Result<(), LabPipeError> {
-        if pair.is_none_or(|pair: &ReplyPipePair| !Arc::ptr_eq(&self.reply_pair.0, &pair.0)) {
+        if pair.is_none_or(|pair: &ReplyPipePair| !self.reply_pair.matches(pair)) {
             return Err(LabPipeError::ForeignReplyPair);
         }
         Ok(())
@@ -116,7 +211,11 @@ impl LabOverlappedWriter {
     /// Refuses a foreign pair or missing or different native peer identity.
     pub(super) fn check_reply_reader(&self, reader: &LabPipeReader) -> Result<(), LabPipeError> {
         self.require_reply_pair(reader.reply_pair())?;
-        check_peers(&self.handle, &reader.handle, std::process::id())
+        let (server, client): (&OwnedHandle, &OwnedHandle) = match self.side {
+            PipeSide::Server => (&self.handle, &reader.handle),
+            PipeSide::Client => (&reader.handle, &self.handle),
+        };
+        check_peers(server, client, std::process::id())
     }
 }
 
@@ -135,6 +234,8 @@ enum ServerMode {
     Overlapped,
     /// Server reads an inbound request and captures the just-read client context.
     ReadIdentity(LabClientContext),
+    /// One connection carries identification requests and correlated replies.
+    Duplex,
 }
 
 impl LabPipeWriter {
@@ -197,6 +298,16 @@ pub(super) enum LabPipeError {
     WriteSize,
     /// The paired reader has no unused admission for this exact write size.
     WriteSlot,
+    /// Preparation, observation, or release of the original accept failed.
+    AcceptNative(NativeError),
+    /// The broker accept did not follow the fixture's bounded connection history.
+    AcceptHistory(&'static str),
+    /// The original duplex client write failed.
+    OverlappedWrite(NativeWriteError),
+    /// The duplex client write exceeded its fixture observation allowance.
+    WriteTimeout,
+    /// The duplex client reached a terminal result without a write count.
+    WriteTerminated(NativeWritePoll),
     /// The native call reported fewer or more than the expected number of bytes.
     ShortWrite { expected: u32, written: u32 },
 }
@@ -223,6 +334,18 @@ impl fmt::Display for LabPipeError {
             Self::WriteSlot => {
                 formatter.write_str("fixture request write has no matching read slot")
             }
+            Self::AcceptNative(cause) => write!(formatter, "duplex fixture accept: {cause}"),
+            Self::AcceptHistory(cause) => formatter.write_str(cause),
+            Self::OverlappedWrite(cause) => {
+                write!(
+                    formatter,
+                    "overlapped fixture request write refused: {cause:?}"
+                )
+            }
+            Self::WriteTimeout => formatter.write_str("fixture request write timed out"),
+            Self::WriteTerminated(outcome) => {
+                write!(formatter, "fixture request write ended as {outcome:?}")
+            }
             Self::ShortWrite { expected, written } => {
                 write!(
                     formatter,
@@ -246,7 +369,7 @@ pub(super) fn open_lab_pipe(case: u32) -> Result<(LabPipeReader, LabPipeWriter),
     let (server, client): (OwnedHandle, OwnedHandle) = open_pair(case, ServerMode::Synchronous)?;
     Ok((
         LabPipeReader {
-            handle: client,
+            handle: Rc::new(client),
             reply_pair: None,
         },
         LabPipeWriter(server),
@@ -260,16 +383,10 @@ pub(super) fn open_lab_reply_pipe(
     case: u32,
 ) -> Result<(LabPipeReader, LabOverlappedWriter), LabPipeError> {
     let (server, client): (OwnedHandle, OwnedHandle) = open_pair(case, ServerMode::Overlapped)?;
-    let pair: ReplyPipePair = ReplyPipePair(Arc::new(()));
-    Ok((
-        LabPipeReader {
-            handle: client,
-            reply_pair: Some(pair.clone()),
-        },
-        LabOverlappedWriter {
-            handle: server,
-            reply_pair: pair,
-        },
+    Ok(paired_direction(
+        Rc::new(client),
+        Rc::new(server),
+        PipeSide::Server,
     ))
 }
 
@@ -284,11 +401,202 @@ pub(super) fn open_lab_identification_pipe(
         open_pair(case, ServerMode::ReadIdentity(context))?;
     Ok(LabIdentificationPipe {
         reader: LabPipeReader {
-            handle: server,
+            handle: Rc::new(server),
             reply_pair: None,
         },
-        writer: LabPipeWriter(client),
+        writer: LabRequestWriter(RequestWriter::Synchronous(LabPipeWriter(client))),
     })
+}
+
+/// Open one test-only, per-process duplex pipe with a fixed identification client.
+/// # Errors
+/// Refuse native setup, peer, or client write-slot setup failure before exposing the pair.
+pub(super) fn open_lab_duplex_pipe(pipe_instance: u32) -> Result<LabDuplexPipe, LabPipeError> {
+    let (mut accept, client): (NativeBrokerEndpoint, OwnedHandle) =
+        open_signaled_duplex_accept(pipe_instance)?;
+    let completion: Result<Poll<AcceptCompletion>, NativeError> = accept.poll_accept();
+    match completion {
+        Ok(Poll::Ready(AcceptCompletion::Connected)) => {}
+        Ok(Poll::Ready(AcceptCompletion::Cancelled) | Poll::Pending) => {
+            return Err(retire_duplex_accept(
+                accept,
+                LabPipeError::AcceptHistory("signaled duplex accept did not report a connection"),
+                None,
+            ));
+        }
+        Err(cause) => {
+            return Err(retire_duplex_accept(
+                accept,
+                LabPipeError::AcceptNative(cause),
+                None,
+            ));
+        }
+    }
+    let server: OwnedHandle = match accept.into_connected_fixture() {
+        Ok(server) => server,
+        Err(FixtureConnectionError::Ineligible(endpoint)) => {
+            return Err(retire_duplex_accept(
+                endpoint,
+                LabPipeError::AcceptHistory("completed duplex accept refused the original server"),
+                None,
+            ));
+        }
+        Err(FixtureConnectionError::AcceptEventClose(cause)) => {
+            return Err(LabPipeError::AcceptNative(cause));
+        }
+    };
+    check_peers(&server, &client, std::process::id())?;
+    let server: Rc<OwnedHandle> = Rc::new(server);
+    let client: Rc<OwnedHandle> = Rc::new(client);
+    let (request_reader, request_writer): (LabPipeReader, LabOverlappedWriter) =
+        paired_direction(Rc::clone(&server), Rc::clone(&client), PipeSide::Client);
+    let (reply_reader, reply_writer): (LabPipeReader, LabOverlappedWriter) =
+        paired_direction(client, server, PipeSide::Server);
+    let request_writer: NativePipeWrite =
+        NativePipeWrite::new(request_writer).map_err(LabPipeError::OverlappedWrite)?;
+    Ok(LabDuplexPipe {
+        request: LabIdentificationPipe {
+            reader: request_reader,
+            writer: LabRequestWriter(RequestWriter::Overlapped(request_writer)),
+        },
+        reply_reader,
+        reply_writer,
+    })
+}
+
+/// Submit on an empty server before opening its matching identified client.
+/// A successful return retains the exact charged accept after its completion wake.
+///
+/// # Errors
+/// Preserves setup, submission or wait refusal through bounded accept retirement.
+fn open_signaled_duplex_accept(
+    case: u32,
+) -> Result<(NativeBrokerEndpoint, OwnedHandle), LabPipeError> {
+    let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
+    let control: BrokerControlWake =
+        BrokerControlWake::new().map_err(LabPipeError::AcceptNative)?;
+    let server: LabUnconnectedDuplexPipe =
+        LabUnconnectedDuplexPipe(create_server(&name, ServerMode::Duplex)?);
+    let mut accept: NativeBrokerEndpoint =
+        NativeBrokerEndpoint::for_duplex_fixture(server).map_err(LabPipeError::AcceptNative)?;
+    match connect_duplex_client(&mut accept, &name, &control) {
+        Ok(client) => Ok((accept, client)),
+        Err(original) => Err(retire_duplex_accept(accept, original, None)),
+    }
+}
+
+/// Observe the actual pending accept before and after opening the exact client.
+///
+/// # Errors
+/// Preserves submission, client or wait failure. The caller retains the accept on refusal.
+fn connect_duplex_client(
+    accept: &mut NativeBrokerEndpoint,
+    name: &LabPipeName,
+    control: &BrokerControlWake,
+) -> Result<OwnedHandle, LabPipeError> {
+    if accept.begin_accept().map_err(LabPipeError::AcceptNative)? != AcceptStart::Queued {
+        return Err(LabPipeError::AcceptHistory(
+            "empty duplex server did not queue its accept",
+        ));
+    }
+    let mut wait: BrokerWait = BrokerWait::new();
+    let before_client: WakeSource = wait
+        .observe(control, Duration::ZERO, accept.completion_wake())
+        .map_err(LabPipeError::AcceptNative)?;
+    if before_client != WakeSource::Timeout {
+        return Err(LabPipeError::AcceptHistory(
+            "duplex accept woke before its client opened",
+        ));
+    }
+    let client: OwnedHandle = open_client(name, ServerMode::Duplex)?;
+    let after_client: WakeSource = wait
+        .observe(control, ACCEPT_WAIT, accept.completion_wake())
+        .map_err(LabPipeError::AcceptNative)?;
+    if after_client != WakeSource::Completion {
+        return Err(LabPipeError::AcceptHistory(
+            "duplex accept lacked its original completion wake",
+        ));
+    }
+    Ok(client)
+}
+
+/// Return the first refusal after targeted cancellation and actual terminal observation.
+/// An unresolved native operation remains owned until the supervised fixture aborts.
+fn retire_duplex_accept(
+    mut accept: NativeBrokerEndpoint,
+    original: LabPipeError,
+    prior_cancel: Option<Result<(), NativeError>>,
+) -> LabPipeError {
+    if accept.completion_wake().is_some() {
+        let cancellation: Result<(), NativeError> =
+            prior_cancel.unwrap_or_else(|| accept.request_accept_cancel());
+        let completion: Result<AcceptCompletion, LabPipeError> = drain_duplex_accept(&mut accept);
+        if completion.is_err() {
+            let _diagnostic: io::Result<()> = writeln!(
+                io::stderr().lock(),
+                "duplex accept still pending after {original:?}; cancel {cancellation:?}; drain {completion:?}",
+            );
+            std::process::abort();
+        }
+        if let Err(cause) = cancellation {
+            let _diagnostic: io::Result<()> = writeln!(
+                io::stderr().lock(),
+                "duplex cancel after {original:?}: {cause:?}"
+            );
+        }
+    }
+    if let Err(cause) = accept.close() {
+        let _diagnostic: io::Result<()> = writeln!(
+            io::stderr().lock(),
+            "duplex close after {original:?}: {cause:?}"
+        );
+    }
+    original
+}
+
+/// Poll for physical retirement without relying on a second hint from a signaled event.
+///
+/// # Errors
+/// Preserves exact observation failure or expiry with the original operation still owned.
+fn drain_duplex_accept(
+    accept: &mut NativeBrokerEndpoint,
+) -> Result<AcceptCompletion, LabPipeError> {
+    let started: Instant = Instant::now();
+    loop {
+        let remaining: Duration = ACCEPT_WAIT.saturating_sub(started.elapsed());
+        if remaining.is_zero() {
+            return Err(LabPipeError::AcceptHistory(
+                "duplex accept retirement timed out",
+            ));
+        }
+        if let Poll::Ready(completion) = accept.poll_accept().map_err(LabPipeError::AcceptNative)? {
+            return Ok(completion);
+        }
+        thread::sleep(remaining.min(Duration::from_millis(1)));
+    }
+}
+
+/// Mint a directional binding from endpoints already checked by the pair opener.
+fn paired_direction(
+    reader: Rc<OwnedHandle>,
+    writer: Rc<OwnedHandle>,
+    side: PipeSide,
+) -> (LabPipeReader, LabOverlappedWriter) {
+    let pair: ReplyPipePair = ReplyPipePair {
+        reader: Rc::downgrade(&reader),
+        writer: Rc::downgrade(&writer),
+    };
+    (
+        LabPipeReader {
+            handle: reader,
+            reply_pair: Some(pair.clone()),
+        },
+        LabOverlappedWriter {
+            handle: writer,
+            reply_pair: pair,
+            side,
+        },
+    )
 }
 
 /// Recheck the exact paired request handles against the running fixture process.
@@ -296,9 +604,14 @@ pub(super) fn open_lab_identification_pipe(
 /// Refuses unavailable or foreign native peer identity.
 pub(super) fn check_request_peers(
     reader: &LabPipeReader,
-    writer: &LabPipeWriter,
+    writer: &LabRequestWriter,
 ) -> Result<(), LabPipeError> {
-    check_peers(&reader.handle, &writer.0, std::process::id())
+    match &writer.0 {
+        RequestWriter::Synchronous(writer) => {
+            check_peers(&reader.handle, &writer.0, std::process::id())
+        }
+        RequestWriter::Overlapped(writer) => writer.check_pipe_reader(reader),
+    }
 }
 
 /// Open and admit both ends of one local pipe for the selected mode.
@@ -335,6 +648,10 @@ fn open_client(name: &LabPipeName, mode: ServerMode) -> Result<OwnedHandle, LabP
         }
         ServerMode::Synchronous | ServerMode::Overlapped => (
             GENERIC_READ,
+            FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
+        ),
+        ServerMode::Duplex => (
+            FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE,
             FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
         ),
     };
@@ -436,6 +753,11 @@ fn create_server(name: &LabPipeName, mode: ServerMode) -> Result<OwnedHandle, La
         ServerMode::ReadIdentity(_) => (
             PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
             0,
+            MAX_WRITE_BYTES,
+        ),
+        ServerMode::Duplex => (
+            PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+            MAX_WRITE_BYTES,
             MAX_WRITE_BYTES,
         ),
     };
@@ -552,6 +874,10 @@ fn last_error(operation: &'static str) -> LabPipeError {
     let code: u32 = unsafe { GetLastError() };
     LabPipeError::Native { operation, code }
 }
+
+#[cfg(test)]
+#[path = "native_pipe_duplex_tests.rs"]
+mod duplex_tests;
 
 #[cfg(test)]
 mod tests {

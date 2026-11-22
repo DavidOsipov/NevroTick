@@ -10933,6 +10933,211 @@ conversation. Installed identity and grants, native handle and heap
 diagnostics, and the existing 90% executable-line and 95% per-critical-file
 mutation gates remain open for the affected owners.
 
+###### Carry the identified request and reply over one duplex pipe — 22 November 2026
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. The Windows library-test factory
+opens one local duplex pair. It shares each of the two original handle
+owners between the appropriate directions and keeps a separate event
+and pinned slot for every outstanding read or write. Completed bytes
+carry weak directional identity for those actual owners. They cannot
+keep a handle open or authorize a new connection that reused the name.
+The client uses the fixture's explicit identification context and
+individual data rights. The fixed service endpoint retains its empty
+DACL.
+
+The serialized broker fixture now completes the request and correlated
+reply on that duplex connection. The same cases cover Stop with a
+queued read, discarding a physically completed read after Stop, and
+expiry followed by Stop. The separate cutoff-before-body case still
+uses the identified simplex sender. A second native case independently
+checks both shared handle owners, exact bidirectional bytes, crossed
+direction refusal and the same-name successor's refusal of a predecessor's
+completion. The first Windows-target check found that switching every
+identified positive case had left the simplex mode unused. Restoring
+that control and preserving the original failure alongside an unresolved
+low-level drain resolved the review findings.
+
+On base `5b74bd257d99ff9ba7a174715a4832f2d5be821a`, tree
+`13803bd35c01c9d09e98d76725a630f71d4ae37f` binds
+716 inputs to
+`02ac27d7b9ce9e843b7ecd6a759dd3f7fe64d86ae28d76ac9c969c036e9516ab`.
+Six graph commands and all twelve configured development lanes passed
+on Rust 1.100.0. Each GNU mode ran 176 fixture and 70 platform tests.
+All 28 platform doctests and 30 verifier controls passed. The dependency
+rows and feature sets retain the published selection. The exact x64-v3
+MSVC libtest linked and passed PE/PDB inspection. In offline Windows
+Sandbox build 26100, both selected tests passed. Both native children
+were reaped and staged files removed after image rechecks. The link
+receipt hashes to `10650a6d298a7634bc2fe157be6b8fbd7f47a246a9b2a8a19c577a658cfe361c`.
+The first failure, stage receipts, symbols and raw outputs are under
+`~/.local/share/nevrotick/broker-duplex-composition-20261122.yyIiHUJY/`.
+
+The fixture connects by opening the client on its own test pipe. Its
+synchronous polling has finite test bounds. The actual fixed
+`ServiceMain` still needs to transfer its original accept to a guarded
+request and reply under the same permit, cap each owner wait by the
+original connection cutoff, and drain any submitted operation through
+Stop. The installed role profile, access and identity evidence, native
+handle and heap diagnostics, and affected qualification gates remain open.
+
+###### Report a failed cleanup while broker custody remains pending — 22 November 2026
+
+W11-W05/W11-W08 and CHECK-17/25/27. The host previously deferred
+the second failure until completion. When a close remained unconfirmed,
+that completion never arrived. The host now retains the first pending
+cleanup cause alongside the original primary cause and attempts a single
+required memory-route event immediately. Repeated polls retain the
+original work charge where applicable. The event does not confirm
+cleanup, allow another close attempt or acknowledge Stopped.
+
+This candidate extends the earlier nine-ID fixture catalogue with
+ERROR/High event 10, PendingCleanupFailure. The existing 128-byte v2
+record and IDs 1–9 keep their meanings. Strict earlier readers refuse
+the added ID. The 32-attempt window now reserves ten first-ID attempts
+and allows 22 shared repeat attempts, with the original per-ID cap.
+The fixed Windows ServiceMain still publishes its snapshot after a
+receipt. A permanently pending invocation has no external native
+diagnostic delivery. The native sink and reader owner retain that work.
+
+The predecessor with the new fixture control exited 101 at the required
+route assertion. It recorded the original status failure but omitted
+event 10. The repaired fixture checks both failed Running and failed
+StopPending histories, the exact retained cause, one close attempt and
+absence of terminal status and receipt over repeated polls. Independent
+source review traced the live required-route consumer and the separate
+terminal fact. Shared decoder and bounded-history controls exercise
+the added ID and rate partition. The maintained fuzz oracle understands
+the added event. No fuzz campaign or new per-file qualification ran.
+
+With the preceding duplex and capture changes, tree
+`397ee96de7e23e745deb36e7dd68390cb069f9d4` binds 716 service inputs to
+`d7ac3c28c6e202060ac83c9895e12aa040918c0fc6214732775c3c85b8204bae`.
+Six dependency checks and all 12 configured development lanes passed.
+Both GNU modes executed 177 fixture and 70 platform cases, including
+all 13 shared diagnostics cases and the paired host histories. All 28
+platform doctests and MSVC Clippy passed. The RED and repaired receipts
+hash to `54bceb18bbddbf5f0bcf66894aed856f4cc997832dced2977f4a22392f5467fa`
+and `0452c6d81fd73c69a9d1f73be66f74e01344bb5ddd6700c5a1226a74abb05660`
+under `~/.local/share/nevrotick/pending-cleanup-20261122.y3xcNr79/`.
+Derived scratch was removed. The close fault was scripted at the fixture
+reservation, with no native failure injection or Windows delivery claim.
+
+###### Carry the observed native accept into the guarded duplex exchange — 22 November 2026
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. The duplex fixture now uses the
+fixed broker adapter's original overlapped accept record and completion
+wake. It queues before opening its matching client, observes the
+native terminal result, releases the accept event and consumes the
+exact server handle into the duplex transport. A wake alone cannot
+supply the handle. An attempted cancellation also fences transfer when
+the original physical operation reports a successful connection.
+Refused waits retain the record through targeted cancellation and
+terminal observation or supervised abort. The protected empty DACL
+and connection behavior of the fixed service endpoint stay in force.
+
+The real serialized broker fixture holds its Running work permit
+through native accept and duplex attachment. It prepares all receive
+and reply slots while idle and checks its original session again
+immediately before installation, with no intervening native call.
+Both Stop and equality at the original session cutoff refuse
+attachment after preparation, with no request issued and one original
+clock observation. The healthy case uses the accepted server for both
+directions. Existing pending, completed-before-Stop, expiry and foreign
+reply controls retain their separate assertions.
+
+The first configured development attempt stopped on six Windows-target
+Clippy diagnostics. Independent review also found an early-refusal
+sampling expectation and a check followed by native slot allocation.
+The revised test prepares idle slots before the final check and expects
+one sample at either early refusal. The second attempt refused a
+Windows test const type mismatch. The corrected evidence uses `u32`
+for the sample count as required by the actual fixture.
+
+On base `5b74bd257d99ff9ba7a174715a4832f2d5be821a`, tree `3721a5c4f3b9d63b597068ff2857c293f0d25118`
+binds 716 inputs to
+`5a3fd979ed017d10ae45f043dd44bee27a7936534d183d50c83799d12424547a`.
+All six graph commands, twelve development lanes and 30 verifier
+controls passed. Each GNU mode ran 176 fixture and 70 platform cases.
+The 28 platform doctests passed. The graph and feature sets match the
+prior duplex stage. The MSVC x64-v3 libtest and both fixed-role images
+linked with matching PE/PDB readback. Their receipts are
+`000c433e0683062d37acce9c4e6e3da9dec6d2fa5ded5b4d59fd7947bb113b6e` and
+`c65b1634af3206a3c32c190a30cbccdff41ed6b2e96382df2722ae83daa3fb1b`. The exact libtest passed four
+selected runs in offline Sandbox build 26100. The runs covered duplex
+transport, the real fixture host exchange, fixed endpoint data denial
+and fixed accept cancellation. All children exited, were reaped and
+the owned files were removed. Receipts, first failures and retained
+images are under `~/.local/share/nevrotick/duplex-accept-20261122.howL3VQS/`.
+
+The native accept waits in this fixture use their own finite bound.
+The fixed `ServiceMain` still needs host-owned wait and cancellation
+through the original connection cutoff, and admitted installed role
+and peer identity before any client data grant. Effective installed
+access, native handle and heap diagnostics and the affected per-file
+gates remain open.
+
+###### Bound the fixed broker accept with the service owner's cutoff
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. The fixed broker ServiceMain now
+uses one five-second laboratory connection window starting at the
+first admitted accept. The serialized host checks the original Stop
+and fresh monotonic time on both sides of native submission and
+completion. The next requested wait respects the earlier connection
+cutoff as well as the original Running deadline and clock sample.
+The service's existing 60-second Running allowance remains anchored
+at Ready. The fixed pipe still has its protected empty DACL.
+
+At equality an outstanding accept is cancelled once and retains its
+exact record and event until terminal observation. A reached completion
+after expiry or Stop is discarded. The original work permit and
+reservation are retained through service shutdown. A locally retired
+accept cannot rearm. Pending local retirement uses the existing finite
+20ms recheck bound, and a subsequent Stop inherits the same record and
+first cleanup failure. A cancel request provides no completion.
+[Windows cancellation contract](https://learn.microsoft.com/windows/win32/api/ioapiset/nf-ioapiset-cancelioex)
+
+The service and Rust contract changes use the existing owner.
+The lifecycle controls cover one millisecond before and equality,
+Stop and expiry during native submission and completion, timely
+unexpected completion, and a distinct later error after refused
+cancellation. They observe the original work charge, no repeat
+cancellation, exact stop-time release and final primary error.
+Independent source review strengthened the submission and first-error
+controls. The earlier source had no connection-level cutoff. A
+predecessor execution of these new controls was not performed.
+
+The first configured graph attempt refused the tmpfs reserve before
+compilation. The durable checkout's first development run caught two
+unnecessary by-value edge arguments. Borrowing these observations
+resolved both. The next integrated development run passed. The
+cross-link verifier's fixture roster was then reconciled against both
+actual GNU modes and an independent prediction. The only additions
+were the pending-cleanup case and the four new cutoff cases.
+All 23 verifier controls passed, including source and index custody,
+same-size test substitution and ignored-case refusal.
+
+The final six graph and twelve development commands passed on tested
+tree `15ff66ebcf2518cbbc1fb3182f365dae342a0042` with 716 service inputs and candidate `d6794ab208e87393f0e4cddf2046a830067ee48e0378ad6c3a329bfdfcc4fdbb`.
+Each GNU mode ran 181 fixture and 70 platform cases.
+The 28 platform doctests and GNU and Windows-target Clippy passed.
+The x64-v3 MSVC fixture and both fixed-role images linked and passed
+PE/PDB readback. The exact fixture executed five cases in offline
+Sandbox build 26100, comprising four deterministic host controls and
+the actual native queued-accept cancellation neighbor. Both offline
+bookends, five child exits and owned staging cleanup passed. The four
+host controls use scripted lifecycle and clock inputs. The native
+neighbor observes real Win32 cancellation and completion. The fixture
+does not install or start the SCM-hosted broker.
+
+Development, libtest link, fixed-role link and native receipts hash to
+`4f4f13bbcfae0d7297971c8857450935af5cd668d94db8b09f2dad38fada8771`, `f18345c775374e8a0036b99fb86cbe1dcb163b1ad15310a516b5766cb02ecb31`,
+`b38730cb8281fa9dfdea974f9b6151263d9cf26023f36dfdf7f7466b0a76bddc` and `c2806e68adabc258467a8fcd8fb85479828e03660d92ffff9a90cd6ccfcf3086`
+under `~/.local/share/nevrotick/broker-owner-wait-20261122.3sA8xQ7S/`.
+Admitted installed identity and data grants, installed wait-to-exchange
+execution and native handle and heap diagnostics remain open. The
+90% executable-line and 95% per-critical-file mutation gates retain
+their existing owners and none are claimed by these cases.
+
 ##### Retain the original pipe, process and token objects — 22 November 2026
 
 W11-W05/S0.3/S3.2 and CHECK-2/25/27. The distinct-process native pipe

@@ -7,6 +7,7 @@ use std::{
     os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, OwnedHandle},
     pin::Pin,
     ptr::null,
+    time::{Duration, Instant},
 };
 
 use windows_sys::Win32::{
@@ -22,10 +23,13 @@ use windows_sys::Win32::{
 };
 
 use crate::{
-    native_pipe_pair::{LabOverlappedWriter, LabPipeError},
+    native_pipe_pair::{LabOverlappedWriter, LabPipeError, LabPipeReader},
     native_pipe_read::{NativeCancel, NativePipeRead, NativeReadBytes},
     private_clock_wire::MAX_FRAME_LEN,
 };
+
+/// Real-time bound on each fixture write observation and its cancellation drain.
+const FIXTURE_WRITE_WAIT: Duration = Duration::from_secs(2);
 
 /// Local custody or native call refusal, retaining the original Win32 code.
 #[derive(Debug, Eq, PartialEq)]
@@ -114,6 +118,13 @@ impl NativePipeWrite {
     /// Refuses a different pair or failed native peer observations.
     pub(super) fn check_reply_reader(&self, reader: &NativePipeRead) -> Result<(), LabPipeError> {
         reader.check_reply_writer(&self.writer)
+    }
+
+    /// Check the request reader on the opposite side of this exact duplex writer.
+    /// # Errors
+    /// Refuses a foreign direction or failed current native peer query.
+    pub(super) fn check_pipe_reader(&self, reader: &LabPipeReader) -> Result<(), LabPipeError> {
+        self.writer.check_reply_reader(reader)
     }
 
     /// Match bytes from a completed physical read to the retained writer.
@@ -303,6 +314,62 @@ impl NativePipeWrite {
     /// Whether terminal completion still needs to be collected.
     pub(super) const fn is_pending(&self) -> bool {
         self.outstanding.is_some()
+    }
+
+    /// Satisfy one test sender's bounded write while the paired read is queued.
+    /// # Errors
+    /// Return the original failure after collecting the terminal result. An
+    /// unresolved drain aborts the isolated fixture while it still owns the slot.
+    pub(super) fn write_fixture_fragment(&mut self, bytes: &[u8]) -> Result<(), LabPipeError> {
+        let expected: u32 = u32::try_from(bytes.len()).map_err(|_| LabPipeError::WriteSize)?;
+        let _submitted: NativeWriteStart =
+            self.begin(bytes).map_err(LabPipeError::OverlappedWrite)?;
+        let terminal: NativeWritePoll = match self.wait_for_fixture_write() {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                if self.is_pending() {
+                    let cancellation: Result<NativeCancel, NativeWriteError> =
+                        self.request_cancel();
+                    let drained: Result<NativeWritePoll, LabPipeError> =
+                        self.wait_for_fixture_write();
+                    if self.is_pending() {
+                        use std::io::Write;
+                        let _diagnostic: std::io::Result<()> = writeln!(
+                            std::io::stderr().lock(),
+                            "fixture write still pending after {error}; cancel {cancellation:?}; drain {drained:?}",
+                        );
+                        std::process::abort();
+                    }
+                }
+                return Err(error);
+            }
+        };
+        let NativeWritePoll::Written(count) = terminal else {
+            return Err(LabPipeError::WriteTerminated(terminal));
+        };
+        let written: u32 = u32::try_from(count).map_err(|_| LabPipeError::WriteSize)?;
+        if written != expected {
+            return Err(LabPipeError::ShortWrite { expected, written });
+        }
+        Ok(())
+    }
+
+    /// Collect the exact slot's terminal result within one fixed real-time allowance.
+    /// # Errors
+    /// Preserve a native observation failure or expiry with the slot still owned.
+    fn wait_for_fixture_write(&mut self) -> Result<NativeWritePoll, LabPipeError> {
+        let started: Instant = Instant::now();
+        loop {
+            let remaining: Duration = FIXTURE_WRITE_WAIT.saturating_sub(started.elapsed());
+            if remaining.is_zero() {
+                return Err(LabPipeError::WriteTimeout);
+            }
+            let outcome: NativeWritePoll = self.poll().map_err(LabPipeError::OverlappedWrite)?;
+            if outcome != NativeWritePoll::Pending {
+                return Ok(outcome);
+            }
+            std::thread::sleep(remaining.min(Duration::from_millis(1)));
+        }
     }
 }
 

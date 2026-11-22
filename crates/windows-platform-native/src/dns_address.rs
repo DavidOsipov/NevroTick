@@ -60,6 +60,35 @@ impl DnsQueryName {
     pub(super) const fn as_ptr(&self) -> *const u16 {
         self.wide.as_ptr()
     }
+
+    /// Recognize the exact checked absolute localhost name.
+    #[cfg(windows)]
+    pub(super) fn is_localhost(&self) -> bool {
+        let localhost: &str = "localhost.\0";
+        self.wide
+            .iter()
+            .copied()
+            .take(localhost.len())
+            .eq(localhost.encode_utf16())
+    }
+
+    /// Compare an OS-reported DNS name using ASCII folding and one final root.
+    /// The reported slice excludes the terminating zero from the native buffer.
+    #[cfg(any(windows, test))]
+    pub(super) fn matches_reported_dns_name(&self, reported: &[u16]) -> bool {
+        let root: u16 = u16::from(b'.');
+        let reported: &[u16] = reported.strip_suffix(&[root]).unwrap_or(reported);
+        let Some((name, suffix)): Option<(&[u16], &[u16])> =
+            self.wide.split_at_checked(reported.len())
+        else {
+            return false;
+        };
+        suffix.starts_with(&[root, 0])
+            && name.iter().zip(reported).all(|(checked, unit)| {
+                u8::try_from(*unit)
+                    .is_ok_and(|byte: u8| u16::from(byte.to_ascii_lowercase()) == *checked)
+            })
+    }
 }
 
 impl fmt::Debug for DnsQueryName {
@@ -426,6 +455,39 @@ mod tests {
                 .map_err(|_| io::Error::other("DNS wait control panicked"))?;
             assert!(matches!(outcome, Err(DnsAddressError::Native(9_503))));
             assert_eq!(cancellation, expected);
+        }
+        Ok(())
+    }
+
+    /// Require the exact Windows DNS name after ASCII folding and root handling.
+    /// # Errors
+    /// Propagate an invalid healthy query fixture.
+    /// # Panics
+    /// Reject partial names, suffixes, multiple roots and invalid reported units.
+    #[test]
+    fn reported_dns_name_matches_only_exact_absolute_name() -> Result<(), DnsNameError> {
+        let qualified: DnsQueryName = DnsQueryName::new("Node.Example.")?;
+        let domainless: DnsQueryName = DnsQueryName::new("Node.")?;
+        for reported in ["node.example", "NODE.EXAMPLE."] {
+            let units: Vec<u16> = reported.encode_utf16().collect();
+            assert!(qualified.matches_reported_dns_name(&units));
+            assert!(!domainless.matches_reported_dns_name(&units));
+        }
+        for reported in ["node", "NODE."] {
+            let units: Vec<u16> = reported.encode_utf16().collect();
+            assert!(domainless.matches_reported_dns_name(&units));
+            assert!(!qualified.matches_reported_dns_name(&units));
+        }
+        for reported in [
+            "",
+            "node.example..",
+            "other.node.example",
+            "node.example.invalid",
+            "node.example\0",
+            "nóde.example",
+        ] {
+            let units: Vec<u16> = reported.encode_utf16().collect();
+            assert!(!qualified.matches_reported_dns_name(&units));
         }
         Ok(())
     }

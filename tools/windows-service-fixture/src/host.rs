@@ -148,7 +148,22 @@ pub(super) trait Worker {
     ///
     /// # Errors
     /// Retain any failure as cause while the original permit remains charged.
-    fn poll_running(&mut self, wake: &WorkerWake) -> Result<(), WorkerFailure>;
+    fn poll_running(&mut self, _wake: &WorkerWake) -> Result<(), WorkerFailure> {
+        Err(WorkerFailure::Operation(WorkerError::Running))
+    }
+
+    /// Drive one Running step. The fixed broker uses the owner at each accept edge.
+    /// Other workers retain their ordinary Running behavior.
+    ///
+    /// # Errors
+    /// Retain the operation or cleanup failure under the same Running permit.
+    fn poll_running_with_connection<C: Clock>(
+        &mut self,
+        wake: &WorkerWake,
+        _connection: &mut RunningConnection<'_, C>,
+    ) -> Result<ConnectionWait, WorkerFailure> {
+        self.poll_running(wake).map(|()| ConnectionWait::Service)
+    }
 
     /// Request cancellation once after admission is permanently fenced.
     /// This prompt request itself provides no completion or cleanup acknowledgement.
@@ -222,6 +237,8 @@ const LAB_WAIT_HINT_MS: u32 = 1000;
 const LAB_PENDING_MS: u32 = 10_000;
 /// Explicit maximum useful laboratory control-loop interval.
 const LAB_RUNNING: Duration = Duration::from_millis(60_000);
+/// One-shot laboratory connection establishment and exchange window.
+const LAB_CONNECTION: Duration = Duration::from_secs(5);
 /// Fixture-only maximum relative wait request for cleanup without a reliable wake.
 /// Early/spurious returns remain possible; this is no wake-rate guarantee.
 const CLEANUP_RECHECK_WAIT: Duration = Duration::from_millis(20);
@@ -262,6 +279,84 @@ pub(super) trait TokenObserver {
 pub(super) trait Clock {
     /// Observe time without modifying or normalizing an earlier observation.
     fn now(&mut self) -> Instant;
+}
+
+/// Current admission at an accept submission or observation edge.
+#[must_use = "recheck connection admission before deciding the accept result"]
+pub(super) enum ConnectionEdge {
+    /// The serialized owner still admits the original connection.
+    Open(Instant),
+    /// The connection's cutoff elapsed while the service is still Running.
+    Expired,
+    /// The service is fenced by Stop or its own clock or deadline.
+    Closed,
+}
+
+/// A connection can shorten the owner's ordinary wait without renewing any deadline.
+#[must_use = "respect the endpoint's next observation bound"]
+#[derive(Debug, Eq, PartialEq)]
+pub(super) enum ConnectionWait {
+    /// Only the service's existing wait bounds apply.
+    Service,
+    /// A pending accept is still eligible under the original connection cutoff.
+    Cutoff(Instant),
+    /// Cancellation was requested and exact native completion is still owed.
+    Drain,
+}
+
+/// A short borrow of the serialized host's time and Stop authorities.
+pub(super) struct RunningConnection<'a, C> {
+    /// The same monotonic history used by the service.
+    observed: &'a mut ObservedClock,
+    /// The invocation's original clock source.
+    clock: &'a mut C,
+    /// The invocation's original control receiver.
+    notification: &'a StopNotification,
+    /// The unchanged service lifetime anchored at Ready.
+    run_deadline: Instant,
+    /// Set at the first admitted accept edge and never renewed.
+    cutoff: &'a mut Option<Instant>,
+    /// Close service admission if Stop or a service fault was observed.
+    closed: bool,
+    /// Keep the first service failure for the lifecycle owner.
+    failure: Option<FixtureError>,
+}
+
+impl<C: Clock> RunningConnection<'_, C> {
+    /// Observe current owner time and Stop before or after one native accept call.
+    /// An expired connection alone does not close the service or return its permit.
+    pub(super) fn edge(&mut self) -> ConnectionEdge {
+        if self.closed {
+            return ConnectionEdge::Closed;
+        }
+        self.closed = self.notification.stop_requested();
+        let now: Instant = match self.observed.observe(self.clock) {
+            Ok(now) => now,
+            Err(error) => {
+                self.closed = true;
+                self.failure = Some(error);
+                return ConnectionEdge::Closed;
+            }
+        };
+        self.failure = running_remaining(self.run_deadline, now).err();
+        self.closed |= self.notification.stop_requested() || self.failure.is_some();
+        if self.closed {
+            return ConnectionEdge::Closed;
+        }
+        match *self.cutoff {
+            Some(cutoff) if now >= cutoff => ConnectionEdge::Expired,
+            Some(cutoff) => ConnectionEdge::Open(cutoff),
+            None => {
+                let Some(cutoff) = now.checked_add(LAB_CONNECTION) else {
+                    self.closed = true;
+                    self.failure = Some(FixtureError::ClockOverflow);
+                    return ConnectionEdge::Closed;
+                };
+                *self.cutoff = Some(cutoff);
+                ConnectionEdge::Open(cutoff)
+            }
+        }
+    }
 }
 
 /// Fixture-local observation custody; a reversal permanently ends ordinary use.
@@ -625,6 +720,8 @@ pub(super) struct ServiceInvocation<
     phase_deadline: Option<Instant>,
     /// Fixed laboratory maximum running interval, established at Ready.
     run_deadline: Option<Instant>,
+    /// Original one-shot broker connection cutoff, established at accept admission.
+    connection_cutoff: Option<Instant>,
     /// Current shutdown expiry or unusable time prohibits ordinary waiting.
     overdue: bool,
     /// Earliest cause, never overwritten by cleanup or status failures.
@@ -633,6 +730,8 @@ pub(super) struct ServiceInvocation<
     primary_worker_failure: Option<WorkerFailure>,
     /// Sole distinct later operation failure, never confused with cleanup.
     operation_failure: Option<WorkerError>,
+    /// First failed cleanup observation while native custody remains unresolved.
+    pending_cleanup_failure: Option<WorkerError>,
     /// Sole later failed actual completion observation.
     completion_failure: Option<WorkerError>,
     /// Sole later failed `StopPending` operation.
@@ -842,54 +941,54 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
     }
 
     /// Activate and observe health under the separate acknowledged Running charge.
-    fn run(&mut self, clock: &mut impl Clock, notification: &StopNotification) {
+    fn run<C: Clock>(&mut self, clock: &mut C, notification: &StopNotification) -> ConnectionWait {
         if notification.stop_requested() {
             self.admission_closed = true;
         }
         let Some(now) = self.observe(clock) else {
-            return;
+            return ConnectionWait::Service;
         };
         let Some(deadline) = self.run_deadline else {
             self.fail(FixtureError::OutcomeUnavailable);
-            return;
+            return ConnectionWait::Service;
         };
         if let Err(error) = running_remaining(deadline, now) {
             self.overdue = true;
             self.fail(error);
-            return;
+            return ConnectionWait::Service;
         }
         if self.admission_closed || notification.stop_requested() {
             self.admission_closed = true;
-            return;
+            return ConnectionWait::Service;
         }
         if self.custody == WorkerCustody::Prepared {
             match self.owner.begin_work(now) {
                 Ok(permit) => self.permit = Some(permit),
                 Err(error) => {
                     self.fail(FixtureError::Lifecycle(error));
-                    return;
+                    return ConnectionWait::Service;
                 }
             }
             self.custody = WorkerCustody::Active;
             if let Err(error) = self.worker.activate() {
                 self.worker_failed(WorkerFailure::Operation(error));
-                return;
+                return ConnectionWait::Service;
             }
             // Activation is a boundary: recheck Stop and time before health/wait.
             if notification.stop_requested() {
                 self.admission_closed = true;
             }
             let Some(now) = self.observe(clock) else {
-                return;
+                return ConnectionWait::Service;
             };
             if let Err(error) = running_remaining(deadline, now) {
                 self.overdue = true;
                 self.fail(error);
-                return;
+                return ConnectionWait::Service;
             }
             if self.admission_closed || notification.stop_requested() {
                 self.admission_closed = true;
-                return;
+                return ConnectionWait::Service;
             }
         }
         #[cfg(any(windows, test))]
@@ -899,19 +998,55 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             });
             self.broker_clock_reader = Some(reader);
             if self.admission_closed {
-                return;
+                return ConnectionWait::Service;
             }
         }
         #[cfg(test)]
         {
             self.poll_broker_probe(clock, notification);
             if self.admission_closed {
-                return;
+                return ConnectionWait::Service;
             }
         }
-        if let Err(error) = self.worker.poll_running(&self.wake) {
+        self.poll_running_worker(clock, notification, deadline)
+    }
+
+    /// Apply the worker's current accept edges to the original Running owner.
+    /// An earlier connection cutoff can shorten the wait but cannot stop service life.
+    fn poll_running_worker<C: Clock>(
+        &mut self,
+        clock: &mut C,
+        notification: &StopNotification,
+        deadline: Instant,
+    ) -> ConnectionWait {
+        let mut connection: RunningConnection<'_, C> = RunningConnection {
+            observed: &mut self.observed,
+            clock,
+            notification,
+            run_deadline: deadline,
+            cutoff: &mut self.connection_cutoff,
+            closed: false,
+            failure: None,
+        };
+        let wait: Result<ConnectionWait, WorkerFailure> = self
+            .worker
+            .poll_running_with_connection(&self.wake, &mut connection);
+        let RunningConnection {
+            closed, failure, ..
+        } = connection;
+        if let Err(error) = wait {
             self.worker_failed(error);
-            return;
+        }
+        self.admission_closed |= closed;
+        if let Some(error) = failure {
+            if self.observed.reversed {
+                self.phase_deadline = None;
+            }
+            self.overdue |= error == FixtureError::RunLimitElapsed;
+            self.fail(error);
+        }
+        if self.admission_closed {
+            return ConnectionWait::Service;
         }
         // A bounded health method can still consume time. Reobserve before
         // deriving the remaining absolute wait, preserving Stop before the read.
@@ -924,6 +1059,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             self.overdue = true;
             self.fail(error);
         }
+        wait.unwrap_or(ConnectionWait::Service)
     }
 
     /// Fence first, attempt `StopPending` once, then request bounded cancellation.
@@ -977,12 +1113,15 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             WorkerFinish::Pending => WorkerCustody::Cancelling,
             WorkerFinish::JoinTailPending => WorkerCustody::Joining,
             WorkerFinish::NativeDrainPending { cleanup_failure } => {
-                // Retain an observed first failure immediately. With a prior
-                // primary cause, report a secondary completion fact at terminal observation.
-                if self.failure.is_none()
+                if self.pending_cleanup_failure.is_none()
                     && let Some(error) = cleanup_failure
                 {
-                    self.worker_failed(WorkerFailure::Cleanup(error));
+                    self.pending_cleanup_failure = Some(error);
+                    if self.failure.is_none() {
+                        self.worker_failed(WorkerFailure::Cleanup(error));
+                    } else if self.primary_worker_failure != Some(WorkerFailure::Cleanup(error)) {
+                        self.emit(Event::PendingCleanupFailure(worker_cause(error)));
+                    }
                 }
                 WorkerCustody::DrainingNative
             }
@@ -1100,9 +1239,11 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         if self.phase == WorkerPhase::Preparing && !self.admission_closed {
             self.prepare(clock, notification);
         }
-        if self.phase == WorkerPhase::Running {
-            self.run(clock, notification);
-        }
+        let connection_wait: ConnectionWait = if self.phase == WorkerPhase::Running {
+            self.run(clock, notification)
+        } else {
+            ConnectionWait::Service
+        };
         if notification.stop_requested() {
             self.admission_closed = true;
         }
@@ -1168,6 +1309,17 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             self.overdue = true;
             return InvocationPoll::Overdue;
         }
+        let remaining: Duration = if self.phase == WorkerPhase::Running {
+            match connection_wait {
+                ConnectionWait::Service => remaining,
+                ConnectionWait::Cutoff(cutoff) => {
+                    remaining.min(cutoff.saturating_duration_since(self.observed.last_trusted))
+                }
+                ConnectionWait::Drain => remaining.min(CLEANUP_RECHECK_WAIT),
+            }
+        } else {
+            remaining
+        };
         #[cfg(any(windows, test))]
         if self.phase == WorkerPhase::Running
             && let Some(due) =
@@ -1580,10 +1732,12 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
         observed,
         phase_deadline,
         run_deadline: None,
+        connection_cutoff: None,
         overdue: false,
         failure,
         primary_worker_failure: None,
         operation_failure: None,
+        pending_cleanup_failure: None,
         completion_failure: None,
         stop_failure: None,
         terminal_failure: None,

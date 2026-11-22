@@ -26,7 +26,7 @@ use windows_sys::Win32::{
 use crate::{
     native_pipe_identity::{PipeIdentity, PipeIdentityError, capture},
     native_pipe_pair::{
-        LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader, LabPipeWriter,
+        LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader, LabRequestWriter,
         ReplyPipePair, check_request_peers,
     },
     private_clock_wire::MAX_FRAME_LEN,
@@ -159,8 +159,8 @@ impl std::fmt::Display for IdentifiedReadError {
 pub(super) struct IdentifiedRequestRead {
     /// Exact ingress server and original native completion owner.
     read: NativePipeRead,
-    /// The original synchronous client paired at native construction.
-    writer: LabPipeWriter,
+    /// The original request client paired at native construction.
+    writer: LabRequestWriter,
     /// At most one client write can follow each admitted, queued read.
     client_write_available: bool,
     /// Required local fixture principal and logon identity.
@@ -177,7 +177,7 @@ impl IdentifiedRequestRead {
         pipe: LabIdentificationPipe,
         expected: PipeIdentity,
     ) -> Result<Self, NativeReadError> {
-        let (reader, writer): (LabPipeReader, LabPipeWriter) = pipe.into_transport();
+        let (reader, writer): (LabPipeReader, LabRequestWriter) = pipe.into_transport();
         Ok(Self {
             read: NativePipeRead::new(reader)?,
             writer,

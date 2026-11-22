@@ -30559,6 +30559,48 @@ link receipt `dc68ac67…4279b` are under
 Native qualification still needs an independently controlled actual
 Answer, pending callback and cancellation, routing and the per-file metrics.
 
+##### Admit the observed inline local IPv4 result — 22 November 2026
+
+W11-W03 DNS-3 and CHECK-25/27. A second offline diagnostic used the
+actual callback-enabled query. Both the guest's checked physical name
+and `localhost.` returned one inline section-zero A record with exactly
+the independently expected `127.0.0.1` bytes. The original adapter then
+returned Empty once for each. This confirms the last diagnostic's
+shape through the real query and adds the missing payload observation.
+
+Accept that specific singleton on successful inline IPv4 completion
+for the exact checked `localhost.` or Windows-reported physical DNS
+name. Require the four original bytes to equal `127.0.0.1`. Keep the
+ordinary Answer path, record and address caps, cancellation custody,
+and Engine source admission and destination guards. The name check
+establishes an exact local-name comparison. DNS record provenance,
+endpoint identity, and routing authority require separate evidence.
+[WinDNS completion](https://learn.microsoft.com/windows/win32/api/windns/nf-windns-dnsqueryex#remarks)
+and [Windows physical DNS name](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getcomputernameexw).
+
+The first cross-link attempt refused an unformatted API name in a doc
+comment. The corrected Rust 1.100.0 x64-v3 MSVC link and Clippy passed
+on tree `b0313475bd3ffa3c23f5687b86b0c50bb4da9319` with product digest `f736ebe3b38764aef011285651b615347e9ea1317d7ce01f4d27830ecb5dc89f`. The same image
+executed one exact case in offline Windows Sandbox build 26100.
+It held both results unread, then observed the expected address once
+per query. Its direct decoder controls exercised an ordinary Answer,
+malformed lengths, nonlocal or late results, other sections or address
+family, multiple records and wrong addresses. Offline bookends,
+process reaping and owned mapping cleanup passed. The link and native
+receipts hash to `5908f41140d850ba8630302463d24c95619c92ccc84ecba62422ba1c4d648cce` and `9ac5ecc9bacfe0e6e92889c7139c2f7663ef753f4890b6c9412731d08455a3b3`, under
+`~/.local/share/nevrotick/dns-local-repair-20261122.WPUU04Du/`.
+
+The combined candidate with the pending-cleanup diagnostic passed six
+service graph checks and the MSVC service-fixture Clippy lane. The first
+Clippy command exited zero but its custody record caught an index refresh
+during a concurrent staged scan. The sequential retry passed with unchanged
+index bytes. Its receipt hashes to
+`4d36c7805421c03aebdb7c868be16403cd78a036b92be4be559e98a5e0b1d4a4`.
+
+Ordinary native Answer completion, pending callback/cancellation overlap,
+IPv6 and other local name/address configurations, positive Engine routing,
+and the affected per-file qualification remain open.
+
 ##### Protected KE membership at issuance and effects
 
 REQ-8/BND-1 and CHECK-6/21/25/27. Three Engine regressions isolate membership
@@ -30843,3 +30885,71 @@ Compact development and Windows receipts are in
 `~/.local/share/nevrotick/protected-clock-windows-20261122.qVRqLdAU`.
 The native transcript SHA-256 is
 `802a9b3ee2063ad46c78ac26412c03722c9b3f25721ea2fe1124bd8da0f1c5fd`.
+
+
+###### Check the original protected capture triplet in the facade fixture
+
+W11-W01/S2.1 and CHECK-6/7/11/14/21/24/25/27. The external Windows
+facade fixture checks the three recorded native bracket observations
+on each ordinary joined receipt. It verifies local software and QPC
+order, one frequency, original receive and commit order, and an exact
+wall conversion computed independently from the 1601 epoch. The
+existing same-revision and authenticated peer wire checks remain in
+the receiving path. Independent Rust-contract review removed an
+overrestrictive nonnegative-QPC assertion while retaining signed
+ordering. The fixture keeps `mapping-unavailable eligible=0 fresh_sync=0`.
+
+At base `5b74bd257d99ff9ba7a174715a4832f2d5be821a`, all 646 product
+inputs retained digest
+`4845f1467ee696292ff420cd71f54e2713862df80c235f9ebe341d22308afc79`.
+The corrected fixture's extra input is
+`1f105420539bbf78a3c7ed56382ace5cf29e6af8208c375438faa5b42d26735a`
+on tested tree `6fc3a024ec44cdfa3c470b3d9b29f964be4e62ff`. The
+configured `verify-engine-native.py --lane build --facade-consumer --jobs 2`
+completed all 20 commands on Rust 1.100.0 with the locked target graph,
+admitted SDK and x64-v3 MSVC target. Format, Clippy, link, PE/PDB
+readback and input bookends passed. The receipt
+`78845de62b238b607bbf5e3bcfe94f7440833f48ca10b6d3706ad024d82d07a4`
+and linked facade are under
+`~/.local/share/nevrotick/protected-capture-joined-20261122.vRoFtA3h/build-v2/`.
+
+The next run needs the exact ordinary successor peer, re-admitted
+controller and authorized temporary trust in the current offline guest.
+The supported refusal selectors do not execute this history. The prior
+positive controller pins its old native image, peer and guest, so its
+result stays with those inputs. No fresh ordinary successor execution
+occurred. An independent peer-side measurement of placement, calibrated
+uncertainty, effective invalidation, production date/scale admission and
+positive Engine-to-Core admission remain open.
+
+###### Build the matching protected-capture peer — 22 November 2026
+
+W11-W01/S2.1 and CHECK-6/7/11/14/21/24/25/27. The DNS and diagnostic
+changes advanced the exact protected product map. Rebuilt the four
+facade PE/PDB pairs against stage `d0e5b11f5986cd40263796bc0d24fb82f0f40db8` with
+all 646 product inputs bound to `f736ebe3b38764aef011285651b615347e9ea1317d7ce01f4d27830ecb5dc89f`.
+The configured Windows-target build passed all 20 lanes, including
+format, compiler, Clippy, link, artifact readback and input bookends.
+
+The successor-peer preflight initially refused a local run-recipe
+binding error before tool admission. The corrected recipe verified all
+2,233 tracked files, the same 646 product inputs and 17 facade
+helpers, and the 112 unchanged standalone inputs. It then passed ten
+lanes, including the exact 31 cases in each ordinary and optimized GNU
+mode, both target graphs, GNU and MSVC Clippy, and x64-v3 MSVC link and
+independent PE/PDB readback on Rust 1.100.0. The owned peer compiler
+scratch was retired.
+
+The ordinary controller admitted the exact new facade and peer, their
+raw execution and artifact receipts, and the existing offline guest
+record. The admission and the image-digest substitution controls ran
+on the host. Each wrong image pin was refused and the restored pair
+passed. None called the guest. The host controls hash to `5294b869c40c7b3a3b78d03642c8e92613090380b2206fd87c7f1ec13d11875c`.
+Retained receipt digests are `d63e6391f0c92cb25fa20ba5a09d388d7d923b78390cdefebd038905875c6cb6` for
+the facade, `261fda96044e2c60ec3cd6139afdc91ba19e933f0011cd55567047841c0e3f26` for the peer, and
+`f7b6e5fe3f22ced476d8f525cf355b59d851d38ea5f38ce51c54f09f23d5bb6d` for controller admission under
+`~/.local/share/nevrotick/protected-capture-current-20261122.89yEiW7o/`. The pending Windows step
+requires fresh offline/date admission and the owner's normal guest
+confirmation of the exact temporary lab root. Authenticated dialogue,
+independent placement calibration, date and scale and positive Core
+admission retain their own exits.

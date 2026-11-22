@@ -172,6 +172,16 @@ later cleanup fact occupy fixed slots beside the existing status failures.
 operation slot with ERROR severity and fixed worker cause codes. Event IDs 1–8,
 nine-byte records and each sixteen-record route retain their meanings and limits.
 
+The v2 diagnostic catalogue adds required ERROR/High event 10 for the first
+native cleanup failure observed while an earlier primary error and unresolved
+worker custody are both present. Event 5 retains its separate actual-completion
+meaning. The live host can route the pending observation before a terminal receipt.
+The fixed laboratory ServiceMain exposes its portable snapshot only after a receipt,
+so an unresolved invocation still has no externally available native delivery.
+The 128-byte v2 layout and IDs 1–9 retain their meanings. An older strict reader
+refuses the new ID. The first route attempt per ID remains reserved within the
+existing 32-attempt window (ten first-ID credits and 22 shared repeat credits).
+
 For the test-only real-thread composition, a current terminal marker permits a
 distinct join-tail wait through the owner's existing wait primitive. Its requested
 duration is at most 20 ms, clamped to the original remaining phase deadline before
