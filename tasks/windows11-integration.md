@@ -13867,6 +13867,50 @@ The report stays `assembly-inputs-incomplete` with null identity and all four
 roles unadmitted. Final manifest assembly, variants, PRI, signature,
 native rendering and installation remain open.
 
+##### Export scale and target-size MSIX artwork — 23 November 2026
+
+W11-W10/P6, MD-P4 and CHECK-18/20/26/27. The default Windows cross-build
+keeps the existing three-file branding input and also accepts one complete
+51-file selection. It binds three unchanged manifest base paths, six scale
+PNG variants and 42 target-size and theme-qualified PNGs to the same checked
+authoring. The verifier compares the exact roster, lengths and SHA-256 before
+build and again at export. Partial selections and changed input bytes refuse
+before artwork publication. The export records each file's manifest role,
+dimensions, byte count and digest.
+
+Metadata and package-artifact QA checked repeatable renders from the approved
+artwork, exact decoded pixels and the exported receipt. All 180 verifier
+controls passed on Python 3.12.3. The first test run reached the kernel-limit
+control with an incompatible outer address-space cap. The corrected run
+preserved the sandbox and the configured inner limits. The independent
+artifact probe used the actual producer and receiver to check both complete
+selections, a missing variant and two changed-byte cases.
+
+All 35 configured Windows cross-build lanes passed in WSL with Rust 1.100.0
+for the default profile on `x86_64-pc-windows-msvc` with the v3 floor. The tested
+source tree was `09cc98ae2776725cec4c638882c8c78b4f764bf7` over
+`6be403a13922c5c310d6f79c0c100e8349aa3dd0`. Later edits to the operator
+and task documentation leave all build and test inputs unchanged. The
+runner independently matched the two linked EXE/PDB pairs, report and
+authoring files. Independent retained-artifact readback matched the exact
+role, dimensions and SHA-256 for every one of the 51 PNGs (704,763 bytes).
+The build and readback exited zero. The run took 469.31 seconds and
+retired its owned scratch.
+
+The build and retained-artifact readback are under
+`~/.local/share/nevrotick/msix-qualified-export-20261123.TVKZv8ae/`.
+The `cross-build.json` digest is
+`c08c66584f572aca36346d19fe072c53ddd48f5c2442dd2d6e817d6e34bda7d4`.
+The `retained-export-readback.json` digest is
+`daf3a9967904b08b0cc584852ca1879c17b8daf6ab8ad397fd22ca033198f9b0`.
+The reproducible image preparation and independent pixel controls are under
+`~/.local/share/nevrotick/msix-qualified-artwork-20261123.G0pzNyog/`.
+Independent source review traced the same authoring and export consumers.
+The report remains `assembly-inputs-incomplete` with null package identity
+and four unadmitted roles. Native PRI indexing and resource selection,
+theme and DPI observations, manifest and payload assembly, signing and
+installed lifecycle remain open.
+
 ##### Retain checked MSIX authoring alongside the linked images
 
 W11-W10/P6, MD-P4 and CHECK-18/20/26/27. The configured schema-3 Windows

@@ -7,6 +7,7 @@ Windows cross-linking supplies no native UI, service or release qualification.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Set
 from contextlib import ExitStack
 import ctypes
 import errno
@@ -155,6 +156,153 @@ MSIX_BASE_ARTWORK = {
     ),
     "Square150x150Logo.png": (
         "VisualElements/@Square150x150Logo", 150, 20874, "062c8fed203a15745d9a31668d0e0e092ddba537832e2534e6e9ab5f7bbc7b9e",
+    ),
+}
+# Qualified images use the same three unqualified manifest paths.
+MSIX_VARIANT_ARTWORK = {
+    "PackageLogo.scale-200.png": (
+        "Properties/Logo", 100, 11343, "3cc4b770643c26b3eafe022f16636056c118bd255e23aab53d5241d673a1ef60",
+    ),
+    "PackageLogo.scale-400.png": (
+        "Properties/Logo", 200, 32639, "08eab8242e9237ec077d281a666269338b00f79f0ec50c9ca5a905a8a0e6bad9",
+    ),
+    "Square150x150Logo.scale-200.png": (
+        "VisualElements/@Square150x150Logo", 300, 61221, "346ab8b79a7f0f2ec77a31953a463e7079a990ccff98712a137e67f0d03d312d",
+    ),
+    "Square150x150Logo.scale-400.png": (
+        "VisualElements/@Square150x150Logo", 600, 179490, "c19908b16111f79db51f115b684170cd9959df5ebd40cd315e4a0fa2e7219a7b",
+    ),
+    "Square44x44Logo.scale-200.png": (
+        "VisualElements/@Square44x44Logo", 88, 11657, "004a305e513f5af9333491b3a003eaac982bd2a8827eb7b0f6e8467ecc86d83a",
+    ),
+    "Square44x44Logo.scale-400.png": (
+        "VisualElements/@Square44x44Logo", 176, 36304, "0754d5073d245a294ea9c308a42a02ecc49a8c7901a7b74d0b2486d587db2e94",
+    ),
+    "Square44x44Logo.targetsize-16.png": (
+        "VisualElements/@Square44x44Logo", 16, 692, "15fadf4e1d2a79437a903288f1195323dd04e3e68ec15f1cf3634d56a85ed0db",
+    ),
+    "Square44x44Logo.targetsize-16_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 16, 692, "15fadf4e1d2a79437a903288f1195323dd04e3e68ec15f1cf3634d56a85ed0db",
+    ),
+    "Square44x44Logo.targetsize-16_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 16, 823, "dbd4506dbea8832851e9ced3a585b0732f76a99866391be4f8d9ed99e67b57c0",
+    ),
+    "Square44x44Logo.targetsize-20.png": (
+        "VisualElements/@Square44x44Logo", 20, 1253, "09deed9fba6850f0f33d617b5c7fe735a36e69730b9fded2bc3ad3cf3cdd2dfc",
+    ),
+    "Square44x44Logo.targetsize-20_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 20, 1253, "09deed9fba6850f0f33d617b5c7fe735a36e69730b9fded2bc3ad3cf3cdd2dfc",
+    ),
+    "Square44x44Logo.targetsize-20_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 20, 1391, "7db01213576a6b4e900e3b5474ba7c98e0b34ffe997ea15765194611ebb4ee67",
+    ),
+    "Square44x44Logo.targetsize-24.png": (
+        "VisualElements/@Square44x44Logo", 24, 1164, "3a865759c141dd468b234ce647b580c4507ff0c0d1ef520a85012a4ef1d59816",
+    ),
+    "Square44x44Logo.targetsize-24_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 24, 1164, "3a865759c141dd468b234ce647b580c4507ff0c0d1ef520a85012a4ef1d59816",
+    ),
+    "Square44x44Logo.targetsize-24_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 24, 1423, "b2a481bbe1f7986d4878de8151f917d03bdeafde4ba6c4461c3c34abdf1ef9b8",
+    ),
+    "Square44x44Logo.targetsize-256.png": (
+        "VisualElements/@Square44x44Logo", 256, 52768, "ead4e2eb86f1eb0bba15ca0ac26e436479eb5b1863859610d0cd2bf4b15a7673",
+    ),
+    "Square44x44Logo.targetsize-256_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 256, 52768, "ead4e2eb86f1eb0bba15ca0ac26e436479eb5b1863859610d0cd2bf4b15a7673",
+    ),
+    "Square44x44Logo.targetsize-256_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 256, 52768, "ead4e2eb86f1eb0bba15ca0ac26e436479eb5b1863859610d0cd2bf4b15a7673",
+    ),
+    "Square44x44Logo.targetsize-30.png": (
+        "VisualElements/@Square44x44Logo", 30, 2227, "24b7552559572fa7cefbb536e1f28233c7b28bde68bedb09492186942745ba20",
+    ),
+    "Square44x44Logo.targetsize-30_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 30, 2227, "24b7552559572fa7cefbb536e1f28233c7b28bde68bedb09492186942745ba20",
+    ),
+    "Square44x44Logo.targetsize-30_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 30, 2525, "d26e14788a29ae05c6ec35314daeeac5dbd1ae2b1caffc8fcfc5188279b454e0",
+    ),
+    "Square44x44Logo.targetsize-32.png": (
+        "VisualElements/@Square44x44Logo", 32, 1845, "a88ab8794adaef2a547180dd00769bab1e3dfc298daf48a779913dbed32157ac",
+    ),
+    "Square44x44Logo.targetsize-32_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 32, 1845, "a88ab8794adaef2a547180dd00769bab1e3dfc298daf48a779913dbed32157ac",
+    ),
+    "Square44x44Logo.targetsize-32_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 32, 2223, "dd91abcb6dd24500c12b2966303263136f398d2fc8e5bc095985dfd32975939d",
+    ),
+    "Square44x44Logo.targetsize-36.png": (
+        "VisualElements/@Square44x44Logo", 36, 2797, "e6e335f2d5938e9cf2cbeb363b218e6457d508dca9f604c7a9575659d5c1bea2",
+    ),
+    "Square44x44Logo.targetsize-36_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 36, 2797, "e6e335f2d5938e9cf2cbeb363b218e6457d508dca9f604c7a9575659d5c1bea2",
+    ),
+    "Square44x44Logo.targetsize-36_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 36, 3250, "d9938cf5cdb32d344591a5af8f22a9a2eb186dfb3e081c33c439af02fd008e3e",
+    ),
+    "Square44x44Logo.targetsize-40.png": (
+        "VisualElements/@Square44x44Logo", 40, 3187, "0db6ea746c22261d7a56efafd95f6a2b801693a8052913c0b1d822761e09ffb6",
+    ),
+    "Square44x44Logo.targetsize-40_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 40, 3187, "0db6ea746c22261d7a56efafd95f6a2b801693a8052913c0b1d822761e09ffb6",
+    ),
+    "Square44x44Logo.targetsize-40_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 40, 3752, "55e81205345682de158722e4608bcd824d2a6a725e1ff608aa3fcff54ec8bd55",
+    ),
+    "Square44x44Logo.targetsize-48.png": (
+        "VisualElements/@Square44x44Logo", 48, 3139, "574623fed8f96e9a75b5822749da4726aa820ac14498a0c252f7458fe34a1aca",
+    ),
+    "Square44x44Logo.targetsize-48_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 48, 3139, "574623fed8f96e9a75b5822749da4726aa820ac14498a0c252f7458fe34a1aca",
+    ),
+    "Square44x44Logo.targetsize-48_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 48, 3922, "993fecdfb1f908e2a77fd65ae27a5960c0ed689f3c2abeec600cef4ac31ba8a1",
+    ),
+    "Square44x44Logo.targetsize-60.png": (
+        "VisualElements/@Square44x44Logo", 60, 6586, "ddf8cb7d20600cf5e5a2a998a0c844ced8d46e8afac27cd823c4d73c08e5d939",
+    ),
+    "Square44x44Logo.targetsize-60_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 60, 6586, "ddf8cb7d20600cf5e5a2a998a0c844ced8d46e8afac27cd823c4d73c08e5d939",
+    ),
+    "Square44x44Logo.targetsize-60_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 60, 6716, "c3ec576d3a0f3edc840c21d36b7d88f71c847e3e410534809155be07539b0add",
+    ),
+    "Square44x44Logo.targetsize-64.png": (
+        "VisualElements/@Square44x44Logo", 64, 5689, "118d2789ed9bffee67cc9421b9371f016c2b02268f600a6e04a920d23e7b64f0",
+    ),
+    "Square44x44Logo.targetsize-64_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 64, 5689, "118d2789ed9bffee67cc9421b9371f016c2b02268f600a6e04a920d23e7b64f0",
+    ),
+    "Square44x44Logo.targetsize-64_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 64, 6187, "a34ffb770d953a53514b8a7651ad614efd30319aeeede2a60a80432fbc8dfcf3",
+    ),
+    "Square44x44Logo.targetsize-72.png": (
+        "VisualElements/@Square44x44Logo", 72, 8557, "b62bd2a0d88fb923da05698e8075c0c3c080e47f7c8537d08a77cf9bcd8a4f07",
+    ),
+    "Square44x44Logo.targetsize-72_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 72, 8557, "b62bd2a0d88fb923da05698e8075c0c3c080e47f7c8537d08a77cf9bcd8a4f07",
+    ),
+    "Square44x44Logo.targetsize-72_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 72, 8557, "b62bd2a0d88fb923da05698e8075c0c3c080e47f7c8537d08a77cf9bcd8a4f07",
+    ),
+    "Square44x44Logo.targetsize-80.png": (
+        "VisualElements/@Square44x44Logo", 80, 9962, "21642b153551a285066c660e78985e98f73443332c1211be372ee0c01576a086",
+    ),
+    "Square44x44Logo.targetsize-80_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 80, 9962, "21642b153551a285066c660e78985e98f73443332c1211be372ee0c01576a086",
+    ),
+    "Square44x44Logo.targetsize-80_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 80, 9962, "21642b153551a285066c660e78985e98f73443332c1211be372ee0c01576a086",
+    ),
+    "Square44x44Logo.targetsize-96.png": (
+        "VisualElements/@Square44x44Logo", 96, 13269, "904b35ea33dba2d64a5590a87bf47d6b440fe938821c6345295b6a95d7e652a6",
+    ),
+    "Square44x44Logo.targetsize-96_altform-lightunplated.png": (
+        "VisualElements/@Square44x44Logo", 96, 13269, "904b35ea33dba2d64a5590a87bf47d6b440fe938821c6345295b6a95d7e652a6",
+    ),
+    "Square44x44Logo.targetsize-96_altform-unplated.png": (
+        "VisualElements/@Square44x44Logo", 96, 13269, "904b35ea33dba2d64a5590a87bf47d6b440fe938821c6345295b6a95d7e652a6",
     ),
 }
 RC_COMPILER = "/tools/llvm/bin/llvm-rc"
@@ -1437,7 +1585,7 @@ def export_windows_build(work: Path, output: Path, *, source: Path, report: dict
             if inspection is not None:
                 inspection = dict(inspection)
                 if base_artwork is not None:
-                    inspection["base_artwork"] = export_msix_base_artwork(
+                    inspection["base_artwork"] = export_msix_artwork(
                         base_artwork, stage, staging_descriptor=staging_descriptor)
                 if authoring is not None:
                     inspection["authoring_export"] = export_msix_authoring(
@@ -2111,10 +2259,20 @@ def export_msix_authoring(frozen: dict[str, bytes], output: Path, *, inspection:
     return {"scope": "private-assembly-source", "export_root": "msix-authoring", "files": files}
 
 
-def read_msix_base_artwork(directory: Path, *, staging_descriptor: int | None = None) -> dict[str, bytes]:
-    """Retain just the three pinned, single-link base images from an explicit directory."""
+def _msix_artwork_selection(names: Set[str]) -> tuple[str, dict[str, tuple[str, int, int, str]]]:
+    """Select the exact base roster or the complete pinned qualified roster."""
+    if names == MSIX_BASE_ARTWORK.keys():
+        return "candidate-base-resources", MSIX_BASE_ARTWORK
+    qualified = MSIX_BASE_ARTWORK | MSIX_VARIANT_ARTWORK
+    if names == qualified.keys():
+        return "candidate-scale-and-target-resources", qualified
+    raise ENV.Incomplete("Windows MSIX artwork differs from the selected input set.")
+
+
+def read_msix_artwork(directory: Path, *, staging_descriptor: int | None = None) -> dict[str, bytes]:
+    """Hold the exact pinned base or qualified artwork snapshot from an explicit directory."""
     directory = directory.absolute()
-    refused = "Windows MSIX base artwork differs from the selected input set."
+    refused = "Windows MSIX artwork differs from the selected input set."
     try:
         resolved = Path(os.path.realpath(directory, strict=True))
         if not _matches_msix_export_path(directory, resolved, staging_descriptor):
@@ -2123,17 +2281,17 @@ def read_msix_base_artwork(directory: Path, *, staging_descriptor: int | None = 
         parent = os.open(directory, dir_flags)
         try:
             initial = _artwork_identity(os.fstat(parent))
+            allowed = MSIX_BASE_ARTWORK.keys() | MSIX_VARIANT_ARTWORK.keys()
             seen = set()
             with os.scandir(parent) as entries:
                 for entry in entries:
-                    if entry.name in seen or entry.name not in MSIX_BASE_ARTWORK:
+                    if entry.name in seen or entry.name not in allowed:
                         raise ENV.Incomplete(refused)
                     seen.add(entry.name)
-            if seen != MSIX_BASE_ARTWORK.keys():
-                raise ENV.Incomplete(refused)
+            _, selected = _msix_artwork_selection(seen)
             frozen = {}
             flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
-            for name, (_, _, length, expected) in MSIX_BASE_ARTWORK.items():
+            for name, (_, _, length, expected) in selected.items():
                 with os.fdopen(os.open(name, flags, dir_fd=parent), "rb") as stream:
                     before = os.fstat(stream.fileno())
                     if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size != length:
@@ -2154,14 +2312,14 @@ def read_msix_base_artwork(directory: Path, *, staging_descriptor: int | None = 
         raise ENV.Incomplete(refused) from error
 
 
-def export_msix_base_artwork(frozen: dict[str, bytes], output: Path, *,
-                            staging_descriptor: int | None = None) -> dict:
-    """Publish held image bytes in the owned export and read back the exact three leaves."""
-    if (frozen.keys() != MSIX_BASE_ARTWORK.keys()
-            or any(len(data) != MSIX_BASE_ARTWORK[name][2]
-                   or hashlib.sha256(data).hexdigest() != MSIX_BASE_ARTWORK[name][3]
-                   for name, data in frozen.items())):
-        raise ENV.Incomplete("Invalid retained Windows MSIX base artwork snapshot.")
+def export_msix_artwork(frozen: dict[str, bytes], output: Path, *,
+                       staging_descriptor: int | None = None) -> dict:
+    """Publish held image bytes in the owned export and verify the same selected roster."""
+    scope, selected = _msix_artwork_selection(frozen.keys())
+    if any(len(data) != selected[name][2]
+           or hashlib.sha256(data).hexdigest() != selected[name][3]
+           for name, data in frozen.items()):
+        raise ENV.Incomplete("Invalid retained Windows MSIX artwork snapshot.")
     assembly_inputs = output / "msix-inputs"
     assembly_inputs.mkdir(mode=0o700)
     assets = assembly_inputs / "Assets"
@@ -2169,12 +2327,12 @@ def export_msix_base_artwork(frozen: dict[str, bytes], output: Path, *,
     for name, data in frozen.items():
         with (assets / name).open("xb") as stream:
             stream.write(data)
-    if read_msix_base_artwork(assets, staging_descriptor=staging_descriptor) != frozen:
-        raise ENV.Incomplete("Windows MSIX base artwork changed during export.")
-    return {"scope": "candidate-base-resources", "export_root": "msix-inputs",
+    if read_msix_artwork(assets, staging_descriptor=staging_descriptor) != frozen:
+        raise ENV.Incomplete("Windows MSIX artwork changed during export.")
+    return {"scope": scope, "export_root": "msix-inputs",
             "files": {"Assets/" + name: {"manifest_field": field, "width": dimension,
                                          "height": dimension, "bytes": length, "sha256": digest}
-                      for name, (field, dimension, length, digest) in MSIX_BASE_ARTWORK.items()}}
+                      for name, (field, dimension, length, digest) in selected.items()}}
 
 
 def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) -> tuple[Path, dict, dict]:
@@ -2262,7 +2420,7 @@ def execute(root: Path, args, report: dict) -> None:
         raise ENV.Incomplete("MSIX authoring export requires a Windows cross-build artifact output.")
     if artwork_dir is not None and args.output_dir.resolve().is_relative_to(artwork_dir.absolute()):
         raise ENV.Incomplete("Windows artifact output overlaps the selected MSIX artwork.")
-    base_artwork = read_msix_base_artwork(artwork_dir) if artwork_dir is not None else None
+    base_artwork = read_msix_artwork(artwork_dir) if artwork_dir is not None else None
     if profile != "default":
         if policy["schema_version"] != 3:
             raise ENV.Incomplete("The Engine prototype requires its admitted schema-3 feature graph.")
@@ -2512,7 +2670,7 @@ def execute(root: Path, args, report: dict) -> None:
                     or ADVISORY.receipt_digest(args.advisory_receipt) != report["advisory_receipt_sha256"]):
                 raise ENV.Incomplete("Advisory/index snapshot changed or expired during verification.")
             report["advisory_freshness"] = "separate acquisition receipt and snapshot verified; at most 24 hours old"
-        if artwork_dir is not None and read_msix_base_artwork(artwork_dir) != base_artwork:
+        if artwork_dir is not None and read_msix_artwork(artwork_dir) != base_artwork:
             raise ENV.Incomplete("Windows MSIX base artwork changed during verification.")
         if base_artwork is not None and msix_inspection is None:
             raise ENV.Incomplete("Windows MSIX base artwork has no checked authoring generation.")

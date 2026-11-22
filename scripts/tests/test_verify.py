@@ -1848,7 +1848,7 @@ class DirectMsixSourceInspectionTests(unittest.TestCase):
                         VERIFY.execute(ROOT, args, {})
 
 
-class DirectMsixBaseArtworkTests(unittest.TestCase):
+class DirectMsixArtworkTests(unittest.TestCase):
     def setUp(self):
         private = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="msix-artwork-control-")))
         self.assets = private / "Assets"
@@ -1870,11 +1870,34 @@ class DirectMsixBaseArtworkTests(unittest.TestCase):
         for name, data in self.images.items():
             (self.assets / name).write_bytes(data)
 
+    def test_pinned_qualified_roster_matches_the_selected_manifest_roles(self):
+        expected = {}
+        for stem, role, first, second in (
+            ("PackageLogo", "Properties/Logo", 100, 200),
+            ("Square44x44Logo", "VisualElements/@Square44x44Logo", 88, 176),
+            ("Square150x150Logo", "VisualElements/@Square150x150Logo", 300, 600),
+        ):
+            expected[f"{stem}.scale-200.png"] = (role, first)
+            expected[f"{stem}.scale-400.png"] = (role, second)
+        for size in (16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256):
+            for theme in ("", "_altform-unplated", "_altform-lightunplated"):
+                expected[f"Square44x44Logo.targetsize-{size}{theme}.png"] = (
+                    "VisualElements/@Square44x44Logo", size,
+                )
+        self.assertEqual(
+            {name: (role, size) for name, (role, size, _, _) in VERIFY.MSIX_VARIANT_ARTWORK.items()},
+            expected,
+        )
+        self.assertTrue(VERIFY.MSIX_BASE_ARTWORK.keys().isdisjoint(expected))
+        for _, _, length, value in VERIFY.MSIX_VARIANT_ARTWORK.values():
+            self.assertGreater(length, 0)
+            self.assertRegex(value, r"^[0-9a-f]{64}$")
+
     def test_actual_export_binds_exact_retained_bytes_to_package_roles(self):
-        frozen = VERIFY.read_msix_base_artwork(self.assets)
+        frozen = VERIFY.read_msix_artwork(self.assets)
         # The export uses a held snapshot, never a fresh read after admission.
         (self.assets / "PackageLogo.png").write_bytes(b"bad")
-        self.assertEqual(VERIFY.export_msix_base_artwork(frozen, self.output), {
+        self.assertEqual(VERIFY.export_msix_artwork(frozen, self.output), {
             "scope": "candidate-base-resources",
             "export_root": "msix-inputs",
             "files": {
@@ -1890,55 +1913,102 @@ class DirectMsixBaseArtworkTests(unittest.TestCase):
                           for p in self.output.rglob("*") if p.is_file()},
                          {"msix-inputs/Assets/" + name: data for name, data in self.images.items()})
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
+
+    def test_qualified_artwork_exports_the_same_complete_snapshot(self):
+        variants = {
+            "PackageLogo.scale-200.png": ("Properties/Logo", 100, b"tile"),
+            "Square44x44Logo.targetsize-24_altform-unplated.png": (
+                "VisualElements/@Square44x44Logo", 24, b"dark",
+            ),
+        }
+        pins = {name: (role, size, len(data), digest(data))
+                for name, (role, size, data) in variants.items()}
+        for name, (_, _, data) in variants.items():
+            (self.assets / name).write_bytes(data)
+        with patch.object(VERIFY, "MSIX_VARIANT_ARTWORK", pins):
+            frozen = VERIFY.read_msix_artwork(self.assets)
+            expected = {**self.images, **{name: data for name, (_, _, data) in variants.items()}}
+            self.assertEqual(frozen, expected)
+            (self.assets / "PackageLogo.scale-200.png").write_bytes(b"dark")
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the selected input set"):
+                VERIFY.read_msix_artwork(self.assets)
+            emitted = VERIFY.export_msix_artwork(frozen, self.output)
+        self.assertEqual(emitted["scope"], "candidate-scale-and-target-resources")
+        self.assertEqual(set(emitted["files"]), {"Assets/" + name for name in expected})
+        for name, (role, size, data) in variants.items():
+            relative = "Assets/" + name
+            self.assertEqual(emitted["files"][relative], {
+                "manifest_field": role, "width": size, "height": size,
+                "bytes": len(data), "sha256": digest(data),
+            })
+            self.assertEqual((self.output / "msix-inputs" / relative).read_bytes(), data)
+
+    def test_partial_qualified_roster_and_substituted_snapshot_are_refused(self):
+        first = "Square44x44Logo.targetsize-16.png"
+        second = "Square44x44Logo.targetsize-32.png"
+        role = "VisualElements/@Square44x44Logo"
+        pins = {first: (role, 16, 3, digest(b"one")), second: (role, 32, 3, digest(b"two"))}
+        with patch.object(VERIFY, "MSIX_VARIANT_ARTWORK", pins):
+            self.assertEqual(VERIFY.read_msix_artwork(self.assets), self.images)
+            (self.assets / first).write_bytes(b"one")
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the selected input set"):
+                VERIFY.read_msix_artwork(self.assets)
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the selected input set"):
+                VERIFY.export_msix_artwork({**self.images, first: b"one"}, self.output)
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Invalid retained Windows MSIX artwork"):
+                VERIFY.export_msix_artwork(
+                    {**self.images, first: b"two", second: b"one"}, self.output,
+                )
+        self.assertEqual(list(self.output.iterdir()), [])
 
     def test_refuses_swapped_same_size_or_extra_input_before_export(self):
         logo = self.assets / "PackageLogo.png"
         logo.write_bytes(b"two")
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
         forged = {**self.images, logo.name: b"two"}
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.export_msix_base_artwork(forged, self.output)
+            VERIFY.export_msix_artwork(forged, self.output)
         self.assertEqual(list(self.output.iterdir()), [])
         logo.write_bytes(b"one")
         extra = self.assets / "packagelogo.png"
         extra.write_bytes(b"one")
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
         extra.unlink()
         logo.unlink()
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
 
     def test_refuses_linked_leaves_and_linked_input_root(self):
         logo = self.assets / "PackageLogo.png"
         foreign = self.assets.parent / "foreign.png"
         foreign.hardlink_to(logo)
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
         logo.unlink()
         logo.symlink_to(foreign)
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(self.assets)
+            VERIFY.read_msix_artwork(self.assets)
         logo.unlink()
         logo.write_bytes(b"one")
         alias = self.assets.parent / "alias"
         alias.symlink_to(self.assets, target_is_directory=True)
         with self.assertRaises(VERIFY.ENV.Incomplete):
-            VERIFY.read_msix_base_artwork(alias)
-        self.assertEqual(VERIFY.read_msix_base_artwork(self.assets), self.images)
+            VERIFY.read_msix_artwork(alias)
+        self.assertEqual(VERIFY.read_msix_artwork(self.assets), self.images)
 
     def test_looped_input_path_is_a_scoped_artwork_refusal(self):
         alias = self.assets.parent / "loop"
         alias.symlink_to(alias, target_is_directory=True)
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the selected input set"):
-            VERIFY.read_msix_base_artwork(alias)
+            VERIFY.read_msix_artwork(alias)
 
     def test_cli_receipt_cannot_replace_an_input_or_exported_image(self):
         def execute(root, args, report):
             report["msix_assembly_inputs"] = {
-                "base_artwork": VERIFY.export_msix_base_artwork(self.images, self.output),
+                "base_artwork": VERIFY.export_msix_artwork(self.images, self.output),
             }
 
         command = ["--lane", "windows", "--vendor-dir", str(self.assets),
@@ -1955,11 +2025,11 @@ class DirectMsixBaseArtworkTests(unittest.TestCase):
 
     def test_cli_exports_candidate_artwork_and_a_disjoint_receipt(self):
         def execute(root, args, report):
-            frozen = VERIFY.read_msix_base_artwork(args.msix_branding_dir)
+            frozen = VERIFY.read_msix_artwork(args.msix_branding_dir)
             report["msix_assembly_inputs"] = {
                 "assembly_ready": False,
                 "package_identity": None,
-                "base_artwork": VERIFY.export_msix_base_artwork(frozen, args.output_dir),
+                "base_artwork": VERIFY.export_msix_artwork(frozen, args.output_dir),
             }
 
         receipt_path = self.output.parent / "receipt.json"
@@ -1983,7 +2053,7 @@ class DirectMsixBaseArtworkTests(unittest.TestCase):
         with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 3}, {})):
             with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "output overlaps the selected MSIX artwork"):
                 VERIFY.execute(ROOT, args, {})
-        self.assertEqual(VERIFY.read_msix_base_artwork(self.assets), self.images)
+        self.assertEqual(VERIFY.read_msix_artwork(self.assets), self.images)
 
     def test_refuses_selection_outside_an_exporting_schema_3_windows_lane(self):
         cases = (("portable", 3, self.output), ("dependencies", 3, self.output),

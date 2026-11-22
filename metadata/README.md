@@ -79,10 +79,11 @@ and lists pending field IDs and owners. The current sources report
 payload slots. The command prints the report to stdout.
 
 The [Windows artifact verifier](../TOOLING.md#starting-implementation) can
-attach the exact base branding PNG candidates to this checked assembly
-handoff. It accepts an explicit `--msix-branding-dir` in the Windows
-cross-build lane with an artifact output directory. The source record and
-its pending production inputs remain authoritative.
+attach the three base branding PNGs or the complete pinned 51-file
+selection to this checked assembly handoff. It accepts an explicit
+`--msix-branding-dir` in the Windows cross-build lane with an artifact
+output directory. The manifest references retain their base names.
+The source record and its pending production inputs remain authoritative.
 
 `--root PATH` selects an explicit source checkout; `--source PATH` selects a
 different admitted source file within that checkout. Neither controls Python

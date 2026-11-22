@@ -1580,6 +1580,9 @@ now exports their exact bytes when selected and binds them to the same
 checked generation as both linked images. All 35 configured WSL cross-build
 rows passed in that checkpoint. The [checked authoring paths](../../tasks/windows11-integration.md#bind-the-selected-artwork-paths-to-checked-msix-authoring)
 now bind each selected base PNG to its exact manifest field before export.
+The [scale and target-size artwork export](../../tasks/windows11-integration.md#export-scale-and-target-size-msix-artwork--23-november-2026)
+passed the configured Windows cross-build and independently matched all 51
+exported files to their pinned bytes, dimensions and manifest roles.
 The [private authoring export](../../tasks/windows11-integration.md#retain-checked-msix-authoring-alongside-the-linked-images)
 retains the original checked inputs and generation receipt next to both
 linked images. It passed the full Windows cross-build and the exact export
@@ -1591,7 +1594,7 @@ one tree. Fault controls distinguish an absent, retryable slot from a
 completed rename with unconfirmed path or durability.
 Complete assembly still needs the product roles and approved identity and
 activation inputs. Verify the effective UI token after installed activation.
-Native appearance, qualified variants and complete assembly remain open.
+Native PRI and appearance qualification and complete assembly remain open.
 Actual SCM delivery, the calibrated forward-step envelope and correction
 acknowledgement have their own exits. Qualify finite error,
 drift and full-exchange validity before Engine admission. Production recovery

@@ -2600,14 +2600,16 @@ its separate VERSIONINFO and import checks. This is static image evidence
 for the UI role.
 
 For the schema-3 Windows lane with an explicit `--output-dir`, add
-`--msix-branding-dir /absolute/path/to/Assets` to export the three pinned
-base PNG candidates. This directory supplies exactly the three selected
-regular files. The verifier reads the bytes before the build, rechecks the
-input set before export and records the emitted role, dimensions, size and
-SHA-256 under `msix_assembly_inputs.base_artwork`. The emitted paths are
-under `msix-inputs/Assets` within the artifact output. Package identity,
-production executables, native display and installed qualification retain
-their existing requirements.
+`--msix-branding-dir /absolute/path/to/Assets`. The input directory supplies
+either the three pinned base PNGs or all 51 files in the pinned selection.
+The larger selection adds 200% and 400% scale variants for each base role
+and 14 target sizes across each of the three app-list icon families.
+The verifier checks the exact roster, size and SHA-256 before the build
+and rechecks the full snapshot before export. It publishes exact bytes
+under `msix-inputs/Assets`. The `msix_assembly_inputs.base_artwork` receipt
+identifies the scope, role, dimensions, size and hash of every exported file.
+Package identity, production executables, PRI resolution, native display
+and installed qualification retain their existing requirements.
 
 Use `--export-msix-authoring` with the same schema-3 Windows lane and an
 explicit `--output-dir` to retain the inspected package, service and event
