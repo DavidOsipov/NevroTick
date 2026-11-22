@@ -30280,9 +30280,102 @@ test selections and exact source scope. Protected KE membership refusal
 remains source-reviewed. Changed-file coverage and generated mutation
 qualification stay open.
 
-The resolver task and its joined completion remain open. The next Engine step
-is one bounded owned invocation that retains its original control and cutoff
-through completion. A later, already-credited round may adopt a changed set
-only after the active cursor and socket retire. The Windows DNS owner under
-W11-W03 still needs its own producer. Current source has no maintained
-platform DNS adapter with actual cancellation and completion custody.
+##### Joined laboratory refresh and precredited successor
+
+REQ-8/BND-1 and CHECK-6/8/21/25/27. The explicit
+`SourceHandle::prepare_address_round_refresh` entry validates the bounded
+laboratory answer, reserves both candidate batches under the original
+operation timeout and refuses correlation token reuse across the batches.
+The existing `execute_address_round` runtime owns one cooperative lookup
+task and keeps the original control, timers and monotonic cutoff. The
+lookup models a supplied local answer. The invocation holds a single
+nonqueueing permit from its actual policy cell, including during ordinary
+numeric execution for an opted-in source.
+
+The first round retains its frozen order and original socket ownership.
+Only its actual exhaustion can admit the joined answer. Stop, revision
+replacement and cutoff while waiting retire and join the lookup. Matching
+canonical membership retains the published allocation and order without
+issuing a successor. A changed result must fit the installed envelope and
+endpoint capacity. Adoption holds the current control read and checks the
+originating cell permit. It stages the complete bindings before rechecking
+the absolute cutoff under policy custody. It publishes the membership and
+bindings together, preserving the installed configuration revision and
+source and endpoint restrictions. The later round reuses the same cutoff,
+control and effect guards. `AddressRoundReport::refresh()` records its
+outcome separately from the original acquisition and cleanup history.
+
+The Rust contract and lifecycle work used an independent policy writer and
+public-path test writer, followed by integrated review of the actual owners.
+The common first-round setup retains its existing contention and refusal
+behavior. Real loopback peers each observed one query with fresh request
+tokens. The ordered attempt report and driver trace follow both original
+attempts before the changed successor, with original source identity and
+retained RATE accounting. Reordering the same answer retained the original
+order and caused no later send. Adjacent budget controls differ by one
+nanosecond. Pending cooperative tasks were reaped on Stop, same-address
+administrative replacement and deadline. The actual adoption transaction
+refused foreign permits, out-of-envelope results, insufficient endpoint
+capacity and an expired cutoff without publishing endpoints.
+
+The final 632-input subject
+`fea5e6cec0c2292115946660c045248381ffab85f310d7ace21607f7e7f2ed98`
+on Git base `9f2defdb084940907252c6033737e16fd041a2b8` passed 47 ordinary
+and 47 optimized address-round tests, 75 ordinary source-policy tests, format,
+GNU Clippy and Windows-target EP1 Clippy. The isolated cutoff omission ran
+one test and exited 101 at the required expired-admission assertion. It
+earns zero generated mutation credit. The first compiler and lint refusals
+remain recorded. The final run took 117.59 seconds, matched its source,
+tool, vendor and index bookends, and retired private scratch. Raw records
+are under
+`~/.local/share/nevrotick/engine-joined-refresh-final-20261122.rj8hpLfG/`.
+
+##### Windows system DNS through the joined address round
+
+REQ-8/BND-1, THR-26, W11-W03 DNS-3 and CHECK-21/25/27. The
+[Windows address producer](windows11-integration.md#w11-w03-bounded-windows-address-query-producer)
+now reaches the same joined-result consumer as the laboratory answer. Only
+the source policy authority can declare this optional Windows lookup. The
+declaration fixes the absolute checked name, one address family and one UDP
+port. Preparation reserves the maximum bounded successor allowance before
+either round runs. The original round and successor remain loopback-only.
+
+One process slot owns the actual resolver thread. Under the original
+control and source guards, dispatch checks the current cutoff and commits
+once against retirement. The blocking WinDNS call and callback wait run
+with those guards released. An already admitted dispatch may enter WinDNS
+after Stop returns. Retirement prevents a still-reserved dispatch and
+discards its answer. The next admission can reap a retired thread only after
+the actual thread exits. A stalled worker retains that slot. On Windows the
+owner polls the same owned thread handle with zero timeout. Only a signaled
+thread can be joined, including when Rust's completion flag is already set
+during thread-local teardown. A wait error retains custody. The report's
+pending observation records worker custody at retirement. The native producer
+separately holds its query permit through completion of the callback and
+submitter. [Windows wait contract](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject).
+
+The same original permit, control and absolute cutoff guard adoption after
+actual thread join and original-round exhaustion. A joined address must
+fit the installed envelope before a successor can send. Initial timing,
+restrictions, attempt history and native failures retain their separate
+meanings. The bounded retirement design issues no `DnsCancelQuery`.
+
+Independent review found that Rust's finish flag can precede Windows
+thread exit. The repaired join paths share the exit check. The Windows-only
+test holds a worker in thread-local teardown, then releases it and checks
+that the same handle signals and can be joined. That test was cross-compiled.
+The executed GNU custody control covers retirement before dispatch, busy
+custody, late result discard, a cancelled wait, and once-only joined delivery.
+
+Rust 1.100.0 passed 297 ordinary GNU Engine tests, 48 optimized address-round
+tests, seven address-round doctests and 35 portable native-leaf tests. Workspace
+format, GNU all-target Clippy, Windows MSVC all-target Clippy with Engine EP1,
+and the isolated runner boundary control passed. The 636-input subject
+`b160aa2e5f7810811091e8394743ce3ce77e84b6df5a35d67c6707d8d3eddf3f` on Git base
+`9f2defdb084940907252c6033737e16fd041a2b8` matched source, tool, vendor and
+index bookends and retired its scratch. Raw evidence is in
+`~/.local/share/nevrotick/engine-windows-dns-final-20261122.0Seqotjw/`.
+Earlier log-reader, lint and disk-reserve refusals retain their results.
+Windows DNS execution, cancellation, local path and routing observation,
+authenticated delegation, changed-file coverage and generated mutation remain
+open. This slice admits no production acquisition or Core sample.

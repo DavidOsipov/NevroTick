@@ -24,6 +24,9 @@ use windows_platform_native::read_clock_coordinates;
 mod clock_coordinates;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
+mod dns_address;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
 mod resume_slot;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
@@ -39,6 +42,8 @@ mod windows_adjustment;
 #[cfg(windows)]
 mod windows_clock;
 #[cfg(windows)]
+mod windows_dns;
+#[cfg(windows)]
 mod windows_resume;
 #[cfg(windows)]
 mod windows_service_configuration;
@@ -49,6 +54,10 @@ mod windows_service_status;
 
 #[cfg(any(windows, test))]
 pub use clock_coordinates::{ClockCoordinates, ClockReadError};
+#[cfg(any(windows, test))]
+pub use dns_address::{
+    DnsAddressError, DnsAddressFamily, DnsAddresses, DnsNameError, DnsQueryName,
+};
 #[cfg(any(windows, test))]
 pub use service_configuration::ConfigurationStringError;
 #[cfg(any(windows, test))]
@@ -61,6 +70,8 @@ pub use service_status::{
 pub use windows_adjustment::{ClockAdjustment, read_clock_adjustment};
 #[cfg(windows)]
 pub use windows_clock::read_clock_coordinates;
+#[cfg(windows)]
+pub use windows_dns::{DnsAddressQuery, dns_worker_thread_exited};
 #[cfg(windows)]
 pub use windows_resume::{ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch};
 #[cfg(windows)]

@@ -79,8 +79,8 @@ pub use relative::{
 };
 pub use series::address_round::{
     AddressAttempt, AddressPolicyRefusal, AddressPolicyRefusalScope, AddressRoundConfig,
-    AddressRoundConfigError, AddressRoundEnd, AddressRoundReport, PreparedAddressRound,
-    execute_address_round, prepare_address_round,
+    AddressRoundConfigError, AddressRoundEnd, AddressRoundRefreshOutcome, AddressRoundReport,
+    PreparedAddressRound, execute_address_round, prepare_address_round,
 };
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
@@ -195,6 +195,13 @@ pub enum PilotError {
     RuntimeBuild(IoCause),
     /// An owned timer task panicked; no panic text is retained.
     ControlTask,
+    /// An opted-in address round or native lookup already holds custody.
+    ResolutionBusy,
+    /// The owned resolver task failed or returned without a complete declaration.
+    ResolverTask,
+    /// A native Windows address lookup supplied a bounded failure.
+    #[cfg(windows)]
+    NativeResolution(windows_platform_native::DnsAddressError),
     /// Timer cleanup failed; both tasks were still aborted and reaped.
     ControlCleanup {
         /// Optional primary pilot error retained as a safe fixed summary.
@@ -232,6 +239,10 @@ impl PilotError {
             Self::EnteredRuntime => "entered_runtime",
             Self::RuntimeBuild(_) => "runtime_build",
             Self::ControlTask => "control_task",
+            Self::ResolutionBusy => "resolution_busy",
+            Self::ResolverTask => "resolver_task",
+            #[cfg(windows)]
+            Self::NativeResolution(_) => "native_resolution",
             Self::ControlCleanup { .. } => "control_cleanup",
         }
     }

@@ -3,11 +3,16 @@
 //!
 //! This owner reuses the existing actual socket and request machinery, but never
 //! combines endpoints into the same-peer series, a fit, a source vote or Core
-//! history. A reply is unauthenticated transport evidence only. DNS refresh,
-//! local-path observations, cross-round admission and protected NTS are absent.
+//! history. A reply is unauthenticated transport evidence only. A separate
+//! laboratory entry admits one owned resolver answer and one later round.
+//! On Windows its source owner can select the system DNS address producer.
 
 #[path = "address_round/progress.rs"]
 mod progress;
+#[path = "address_round/refresh.rs"]
+mod refresh;
+
+pub use refresh::AddressRoundRefreshOutcome;
 
 use std::{
     fmt,
@@ -205,6 +210,8 @@ pub struct PreparedAddressRound {
     control: watch::Receiver<Control>,
     /// Internal sender prevents external-handle drop from ending or spinning the round.
     handle: ControlHandle,
+    /// One optional precredited laboratory successor.
+    refresh: Option<refresh::QueryPlan>,
 }
 
 impl fmt::Debug for PreparedAddressRound {
@@ -288,6 +295,7 @@ fn prepare_with_policy(
             packets,
             control,
             handle: handle.clone(),
+            refresh: None,
         },
         handle,
     ))
@@ -400,6 +408,10 @@ pub struct AddressRoundReport {
     stop_cleanup: Option<FailureSummary>,
     /// Actual returned invalidation-timer cleanup failure, if any.
     invalidate_cleanup: Option<FailureSummary>,
+    /// Independent terminal outcome from the selected resolver path.
+    refresh: Option<AddressRoundRefreshOutcome>,
+    /// Whether a retired native worker remained in retained custody on return.
+    native_refresh_pending: bool,
 }
 
 impl AddressRoundReport {
@@ -412,6 +424,8 @@ impl AddressRoundReport {
             primary: None,
             stop_cleanup: None,
             invalidate_cleanup: None,
+            refresh: None,
+            native_refresh_pending: false,
         }
     }
 
@@ -427,7 +441,8 @@ impl AddressRoundReport {
         &self.policy_refusals
     }
 
-    /// Return the whole-round outcome, including any failure during timer cleanup.
+    /// Return the original round outcome, including any failure during timer cleanup.
+    /// Call `refresh()` for the independent successor disposition.
     #[must_use]
     pub fn end(&self) -> AddressRoundEnd {
         if self.stop_cleanup.is_some() || self.invalidate_cleanup.is_some() {
@@ -453,6 +468,18 @@ impl AddressRoundReport {
     #[must_use]
     pub fn cleanup_errors(&self) -> [Option<FailureSummary>; 2] {
         [self.stop_cleanup, self.invalidate_cleanup]
+    }
+
+    /// Borrow the outcome of the explicitly selected resolver path.
+    #[must_use]
+    pub const fn refresh(&self) -> Option<&AddressRoundRefreshOutcome> {
+        self.refresh.as_ref()
+    }
+
+    /// Observe retained native retirement custody at the time of this report.
+    #[must_use]
+    pub const fn native_refresh_pending(&self) -> bool {
+        self.native_refresh_pending
     }
 
     /// Stop on the original failure without discarding any preceding completions.
@@ -984,6 +1011,14 @@ async fn run_owned(
     stop_when: Option<Instant>,
     invalidate_when: Option<Instant>,
 ) -> AddressRoundReport {
+    let permit: Option<tokio::sync::OwnedSemaphorePermit> = match prepared
+        .source_policy
+        .as_ref()
+        .map_or(Ok(None), RoundBindings::reserve_resolution_driver)
+    {
+        Ok(permit) => permit,
+        Err(error) => return AddressRoundReport::empty().fail(error),
+    };
     let handle = prepared.handle.clone();
     let stop = match start_timer(stop_when, handle.clone(), TimerAction::Stop) {
         Ok(job) => job,
@@ -992,7 +1027,7 @@ async fn run_owned(
     let (report, invalidate_cleanup) =
         match start_timer(invalidate_when, handle, TimerAction::Invalidate) {
             Ok(invalidate) => {
-                let report = run_round(prepared, origin, deadline).await;
+                let report = refresh::run(prepared, permit.as_ref(), origin, deadline).await;
                 (report, finish_timer(invalidate).await)
             }
             Err(error) => (AddressRoundReport::empty().fail(error), Ok(())),
@@ -1001,12 +1036,14 @@ async fn run_owned(
     reconcile_cleanup(report, stop_cleanup, invalidate_cleanup)
 }
 
-/// Execute one permitted frozen round in a privately owned current-thread runtime.
+/// Execute a frozen round in a privately owned current-thread runtime.
 ///
-/// No automatic new round, production backoff reset or sample admission follows.
-/// Original active time includes runtime setup. At most one socket and two sleep
-/// tasks are owned; all Rust owners end before return. This makes no native AFD
-/// completion/retention claim. Historical results survive later cancellation.
+/// The explicit resolver entry can precredit one successor under the original
+/// absolute deadline. At most one request socket, two sleep tasks and one
+/// resolver are owned. A retired Windows resolver can retain its process
+/// slot after return. The next native start may reap it after actual exit.
+/// Historical results survive later cancellation. No native AFD completion,
+/// production backoff reset or sample admission follows.
 /// # Errors
 /// Reject entered context or deadline/runtime setup before driving acquisition.
 /// Later setup/invariant and cleanup failures are retained in the returned report.

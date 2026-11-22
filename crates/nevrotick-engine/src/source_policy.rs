@@ -20,7 +20,7 @@ use std::{
 
 use garde::Validate;
 use ntp_wire::RawHeader;
-use tokio::sync::{Notify, futures::OwnedNotified, watch};
+use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore, futures::OwnedNotified, watch};
 
 use super::{
     AcquisitionSession, LiveSlot, PACKET_BYTES, Phase, SEND_READY_CAP, SendBracket, SeriesConfig,
@@ -60,14 +60,16 @@ pub enum SourceScale {
 
 /// Sealed configuration construction and issuance within the actual policy owner.
 mod configuration {
-    use std::{fmt, num::NonZeroU64, sync::Arc};
+    use std::{fmt, num::NonZeroU64, sync::Arc, time::Instant};
 
     use garde::Validate;
 
     use super::{
-        EndpointKey, PolicyGuard, RecordKey, SocketAddr, SourceHandle, SourceIdentity,
-        SourcePolicyAuthority, SourcePolicyError, SourceScale,
+        EndpointKey, PolicyGuard, RecordKey, RoundBindingPlan, RoundBindings, SocketAddr,
+        SourceBinding, SourceHandle, SourceIdentity, SourcePolicyAuthority, SourcePolicyError,
+        SourceScale,
     };
+    use crate::PilotError;
 
     /// Checked, complete allowed endpoints for one numeric laboratory source.
     /// Operation order, deadlines and experimental declarations are separate.
@@ -330,6 +332,11 @@ mod configuration {
             self.configuration.as_ref()
         }
 
+        /// Report whether this context carries actually selected round membership.
+        pub(super) const fn has_membership(&self) -> bool {
+            self.membership.is_some()
+        }
+
         /// Compare the complete original managed/unmanaged receiving context.
         pub(crate) fn same_optional(left: Option<&Self>, right: Option<&Self>) -> bool {
             match (left, right) {
@@ -484,6 +491,92 @@ mod configuration {
                 _ => Err(SourcePolicyError::ConfigurationChanged),
             }
         }
+    }
+
+    /// Consume a complete checked answer for the originating selected context.
+    ///
+    /// The caller holds the live control read and the exclusive resolved-round
+    /// permit. The policy transaction stages endpoint slots before publishing any
+    /// new binding or selection. Equal canonical membership retains the original
+    /// order and allocation, and all restriction fields survive a change.
+    /// # Errors
+    /// Reject stale authority, disabled source, out-of-envelope addresses,
+    /// exhausted endpoint capacity or the original cutoff before publication.
+    pub(super) fn adopt_resolution(
+        original: &SourceBinding,
+        answer: SourceAddressSet,
+        deadline: Instant,
+    ) -> Result<Option<RoundBindings>, PilotError> {
+        let source: &SourceHandle = &original.source;
+        let mut guard: PolicyGuard<'_> = source.cell.lock().map_err(PilotError::SourcePolicy)?;
+        let state: &mut super::PolicyState = guard.state_mut().map_err(PilotError::SourcePolicy)?;
+        state.binding(original).map_err(PilotError::SourcePolicy)?;
+        let record: &mut super::Record = state
+            .sources
+            .get_mut(source.index)
+            .ok_or(PilotError::SourcePolicy(SourcePolicyError::UnknownSource))?;
+        record.available().map_err(PilotError::SourcePolicy)?;
+        let config: &mut ConfigState = state
+            .configurations
+            .get_mut(source.index)
+            .ok_or(PilotError::SourcePolicy(SourcePolicyError::UnknownSource))?;
+        let current: &SourceAddressSet =
+            config
+                .membership
+                .as_deref()
+                .ok_or(PilotError::SourcePolicy(
+                    SourcePolicyError::ConfigurationChanged,
+                ))?;
+        let snapshot: &SourceConfigurationSnapshot =
+            original
+                .context
+                .configuration()
+                .ok_or(PilotError::SourcePolicy(
+                    SourcePolicyError::ConfigurationChanged,
+                ))?;
+        if !answer
+            .keys
+            .iter()
+            .flatten()
+            .all(|key| snapshot.addresses.contains(*key))
+        {
+            return Err(PilotError::SourcePolicy(SourcePolicyError::Foreign));
+        }
+        let staged: Option<(Arc<SourceAddressSet>, RoundBindingPlan)> = if answer.len()
+            == current.len()
+            && answer
+                .keys
+                .iter()
+                .flatten()
+                .all(|key| current.contains(*key))
+        {
+            None
+        } else {
+            let membership: Arc<SourceAddressSet> = Arc::new(answer);
+            let context: SourceContext = SourceContext {
+                source: original.context.identity().clone(),
+                configuration: Some(snapshot.clone()),
+                membership: Some(Arc::clone(&membership)),
+            };
+            let bindings: RoundBindingPlan = RoundBindingPlan::stage(
+                source,
+                &context,
+                &record.changes,
+                &state.endpoints,
+                &membership.keys,
+            )
+            .map_err(PilotError::SourcePolicy)?;
+            Some((membership, bindings))
+        };
+        if Instant::now() >= deadline {
+            return Err(PilotError::PolicyAdmissionDeadline);
+        }
+        let Some((membership, bindings)) = staged else {
+            return Ok(None);
+        };
+        config.membership = Some(membership);
+        record.changed = true;
+        Ok(Some(bindings.publish(&mut state.endpoints)))
     }
 
     /// Issue the first membership within the original administration envelope.
@@ -1772,6 +1865,8 @@ struct PolicyCell {
     state: Mutex<PolicyState>,
     /// Read-only release is distinct from an actual policy change.
     released: Arc<Notify>,
+    /// One nonqueueing driver across all resolved laboratory rounds in this cell.
+    resolution_driver: Arc<Semaphore>,
     /// One fixed test pulse at the real setup-contention wait, never a callback.
     #[cfg(test)]
     setup_contention_probe: Mutex<Option<std::sync::mpsc::SyncSender<()>>>,
@@ -1817,6 +1912,7 @@ impl PolicyCell {
                 endpoints,
             }),
             released: Arc::new(Notify::new()),
+            resolution_driver: Arc::new(Semaphore::new(1)),
             #[cfg(test)]
             setup_contention_probe: Mutex::new(None),
         }))
@@ -2270,79 +2366,50 @@ impl SourceHandle {
         &self,
         peers: &[SocketAddr],
     ) -> Result<RoundBindings, SourcePolicyError> {
+        self.bind_round_selected(peers, RoundSelection::Fixed)
+    }
+
+    /// Bind an entire initial round only when its ordered membership is selected.
+    /// # Errors
+    /// Refuse a missing selection or any fixed-round admission failure before
+    /// publishing endpoint slots.
+    pub(super) fn bind_round_for_refresh(
+        &self,
+        peers: &[SocketAddr],
+    ) -> Result<RoundBindings, SourcePolicyError> {
+        self.bind_round_selected(peers, RoundSelection::RequireMembership)
+    }
+
+    /// Share the fixed and refresh paths' original validation and slot planning.
+    /// # Errors
+    /// All shape, selection and capacity failures precede slot publication.
+    fn bind_round_selected(
+        &self,
+        peers: &[SocketAddr],
+        selection: RoundSelection,
+    ) -> Result<RoundBindings, SourcePolicyError> {
         if peers.is_empty() || peers.len() > 3 {
             return Err(SourcePolicyError::InvalidSelection);
         }
-        let mut keys = [None; 3];
+        let mut keys: [Option<EndpointKey>; 3] = [None; 3];
         for (key, peer) in keys.iter_mut().zip(peers) {
             *key = Some(EndpointKey::new(*peer)?);
         }
-        let mut guard = self.cell.lock()?;
-        let context = SourceContext::capture(self, &guard, configuration::Selection::Round(&keys))?;
-        let state = guard.state_mut()?;
-        let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
-        let mut positions = [None; 3];
-        let mut publications = [None; 3];
-        for (position, key) in keys.iter().copied().enumerate().take(peers.len()) {
-            let key = key.ok_or(SourcePolicyError::InvalidEndpoint)?;
-            let existing = state
-                .endpoints
-                .iter()
-                .position(|entry| entry.key == Some(key));
-            let planned = publications
-                .iter()
-                .flatten()
-                .find_map(|(index, value)| (*value == key).then_some(*index));
-            let index = if let Some(index) = existing.or(planned) {
-                index
-            } else {
-                let index = state
-                    .endpoints
-                    .iter()
-                    .enumerate()
-                    .find_map(|(index, entry)| {
-                        (entry.key.is_none()
-                            && !publications
-                                .iter()
-                                .flatten()
-                                .any(|(used, _)| *used == index))
-                        .then_some(index)
-                    })
-                    .ok_or(SourcePolicyError::Capacity)?;
-                publications[position] = Some((index, key));
-                index
-            };
-            positions[position] = Some(index);
+        let mut guard: PolicyGuard<'_> = self.cell.lock()?;
+        let context: SourceContext =
+            SourceContext::capture(self, &guard, configuration::Selection::Round(&keys))?;
+        if matches!(selection, RoundSelection::RequireMembership) && !context.has_membership() {
+            return Err(SourcePolicyError::ConfigurationChanged);
         }
-        let mut bindings = std::array::from_fn(|_| None);
-        for (position, binding) in bindings.iter_mut().enumerate().take(peers.len()) {
-            let endpoint = positions[position].ok_or(SourcePolicyError::Capacity)?;
-            *binding = Some(SourceBinding {
-                source: self.clone(),
-                context: context.clone(),
-                endpoint,
-                key: keys[position].ok_or(SourcePolicyError::InvalidEndpoint)?,
-                source_changes: source_changes.clone(),
-                endpoint_changes: state
-                    .endpoints
-                    .get(endpoint)
-                    .ok_or(SourcePolicyError::Capacity)?
-                    .record
-                    .changes
-                    .clone(),
-            });
-        }
-        // All fallible work and complete result construction precede publication.
-        for (index, endpoint) in state.endpoints.iter_mut().enumerate() {
-            if let Some((_, key)) = publications
-                .iter()
-                .flatten()
-                .find(|(slot, _)| *slot == index)
-            {
-                endpoint.key = Some(*key);
-            }
-        }
-        Ok(RoundBindings { bindings })
+        let state: &mut PolicyState = guard.state_mut()?;
+        let plan: RoundBindingPlan = RoundBindingPlan::stage(
+            self,
+            &context,
+            &state.record(RecordKey::Source(self.index))?.changes,
+            &state.endpoints,
+            &keys,
+        )?;
+        Ok(plan.publish(&mut state.endpoints))
     }
 
     /// Create a managed session from the original checked one-peer configuration.
@@ -2394,6 +2461,102 @@ impl SourceHandle {
     }
 }
 
+/// Select the admission contract for a complete numeric address round.
+#[derive(Clone, Copy)]
+enum RoundSelection {
+    /// Respect any installed selection, retaining the legacy numeric path.
+    Fixed,
+    /// Require selected membership for a round that owns one refresh.
+    RequireMembership,
+}
+
+/// All endpoint publications and returned bindings for one validated round.
+struct RoundBindingPlan {
+    /// Complete result, constructed before publishing any endpoint keys.
+    result: RoundBindings,
+    /// New keys for quota-admitted, previously empty permanent slots.
+    publications: [Option<(usize, EndpointKey)>; 3],
+}
+
+impl RoundBindingPlan {
+    /// Plan through the actual cell's endpoint table without changing it.
+    /// # Errors
+    /// Refuse exhausted permanent slots or missing endpoint records atomically.
+    fn stage(
+        source: &SourceHandle,
+        context: &SourceContext,
+        source_changes: &watch::Sender<()>,
+        endpoints: &[EndpointRecord],
+        keys: &[Option<EndpointKey>; 3],
+    ) -> Result<Self, SourcePolicyError> {
+        let mut publications: [Option<(usize, EndpointKey)>; 3] = [None; 3];
+        let mut bindings: [Option<SourceBinding>; 3] = std::array::from_fn(|_| None);
+        for (position, (key, binding)) in keys
+            .iter()
+            .copied()
+            .flatten()
+            .zip(&mut bindings)
+            .enumerate()
+        {
+            let existing: Option<usize> = endpoints.iter().position(|entry| entry.key == Some(key));
+            let planned: Option<usize> = publications
+                .iter()
+                .flatten()
+                .find_map(|(index, value)| (*value == key).then_some(*index));
+            let endpoint: usize = if let Some(index) = existing.or(planned) {
+                index
+            } else {
+                let index: usize = endpoints
+                    .iter()
+                    .enumerate()
+                    .find_map(|(index, entry)| {
+                        (entry.key.is_none()
+                            && !publications
+                                .iter()
+                                .flatten()
+                                .any(|(used, _)| *used == index))
+                        .then_some(index)
+                    })
+                    .ok_or(SourcePolicyError::Capacity)?;
+                publications[position] = Some((index, key));
+                index
+            };
+            *binding = Some(SourceBinding {
+                source: source.clone(),
+                context: context.clone(),
+                endpoint,
+                key,
+                source_changes: source_changes.clone(),
+                endpoint_changes: endpoints
+                    .get(endpoint)
+                    .ok_or(SourcePolicyError::Capacity)?
+                    .record
+                    .changes
+                    .clone(),
+            });
+        }
+        Ok(Self {
+            result: RoundBindings { bindings },
+            publications,
+        })
+    }
+
+    /// Publish into the same, exclusively guarded endpoint table used in staging.
+    fn publish(self, endpoints: &mut [EndpointRecord]) -> RoundBindings {
+        for (index, endpoint) in endpoints.iter_mut().enumerate() {
+            if let Some((_, key)) = self
+                .publications
+                .iter()
+                .flatten()
+                .find(|(slot, _)| *slot == index)
+            {
+                endpoint.key = Some(*key);
+            }
+        }
+        self.result
+    }
+}
+
 /// Complete bounded endpoint custody issued atomically by one actual source.
 #[derive(Clone)]
 pub(super) struct RoundBindings {
@@ -2402,6 +2565,105 @@ pub(super) struct RoundBindings {
 }
 
 impl RoundBindings {
+    /// Report whether the issued round retained selected membership.
+    pub(super) fn has_membership(&self) -> bool {
+        self.bindings
+            .iter()
+            .flatten()
+            .next()
+            .is_some_and(|binding| binding.context.has_membership())
+    }
+
+    /// Return the original binding that describes this complete resolved round.
+    /// # Errors
+    /// A fixed numeric round supplies no resolved-round authority.
+    fn resolved_binding(&self) -> Result<&SourceBinding, SourcePolicyError> {
+        self.bindings
+            .iter()
+            .flatten()
+            .next()
+            .filter(|binding| binding.context.has_membership())
+            .ok_or(SourcePolicyError::ConfigurationChanged)
+    }
+
+    /// Reserve this policy cell's only resolved driver without queuing.
+    /// # Errors
+    /// Refuse a competing resolved round without starting a driver or worker.
+    pub(super) fn reserve_resolution_driver(
+        &self,
+    ) -> Result<Option<OwnedSemaphorePermit>, crate::PilotError> {
+        if !self.has_membership() {
+            return Ok(None);
+        }
+        let original: &SourceBinding = self
+            .resolved_binding()
+            .map_err(crate::PilotError::SourcePolicy)?;
+        Arc::clone(&original.source.cell.resolution_driver)
+            .try_acquire_owned()
+            .map(Some)
+            .map_err(|_| crate::PilotError::ResolutionBusy)
+    }
+
+    /// Subscribe to changes of the actual source before rechecking current authority.
+    /// # Errors
+    /// Refuse bindings without selected membership.
+    pub(super) fn resolution_changes(&self) -> Result<watch::Receiver<()>, SourcePolicyError> {
+        Ok(self.resolved_binding()?.source_changes.subscribe())
+    }
+
+    /// Recheck the complete issued source context and source-wide availability.
+    /// # Errors
+    /// Reject unavailable custody, a changed definition or membership, or a
+    /// retained source-wide refusal. Endpoint restrictions stay independently bound.
+    pub(super) fn resolution_current(&self) -> Result<(), SourcePolicyError> {
+        self.with_current_resolution(|| ())
+    }
+
+    /// Keep the original policy binding current through a nonblocking decision.
+    /// # Errors
+    /// Reject changed or unavailable source authority before the decision.
+    pub(super) fn with_current_resolution<T>(
+        &self,
+        decide: impl FnOnce() -> T,
+    ) -> Result<T, SourcePolicyError> {
+        let original: &SourceBinding = self.resolved_binding()?;
+        let guard: PolicyGuard<'_> = original.source.cell.lock()?;
+        let state: &PolicyState = guard.state()?;
+        state.binding(original)?;
+        state
+            .record(RecordKey::Source(original.source.index))?
+            .available()?;
+        Ok(decide())
+    }
+
+    /// Adopt one joined answer while the caller holds the original control read
+    /// and the resolved driver permit. A canonical match retains current order.
+    /// # Errors
+    /// Reject invalid, foreign, stale, disabled or expired answers without
+    /// changing endpoint allocations, membership or retained restriction fields.
+    pub(super) fn adopt_resolution(
+        &self,
+        peers: &[SocketAddr],
+        deadline: Instant,
+        permit: &OwnedSemaphorePermit,
+        control: &watch::Ref<'_, crate::Control>,
+    ) -> Result<Option<Self>, crate::PilotError> {
+        let original: &SourceBinding = self
+            .resolved_binding()
+            .map_err(crate::PilotError::SourcePolicy)?;
+        if permit.num_permits() != 1
+            || !Arc::ptr_eq(permit.semaphore(), &original.source.cell.resolution_driver)
+        {
+            return Err(crate::PilotError::SourcePolicy(SourcePolicyError::Foreign));
+        }
+        if control.stop || control.epoch != 0 {
+            return Err(crate::PilotError::SourcePolicy(SourcePolicyError::Stale));
+        }
+        let answer: SourceAddressSet =
+            SourceAddressSet::new(peers).map_err(crate::PilotError::SourcePolicy)?;
+        configuration::adopt_resolution(original, answer, deadline)
+    }
+
     /// Derive the actual candidate's mode; absent/foreign entries never downgrade.
     /// # Errors
     /// Reject a destination outside this immutable issued batch.

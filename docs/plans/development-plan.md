@@ -2845,9 +2845,16 @@ remain separate.
 The [initial ordered membership gate](../../tasks/engine-transport-pilot.md#initial-ordered-membership-gate)
 adds an explicit laboratory source-policy selection to the real address round.
 The selection preserves the administrative definition and its KoD records.
-The next P2 child owns bounded resolver completion and later-round adoption
-under the original cutoff and allowance. W11-W03 still owns the native DNS
-supplier and its completion evidence.
+The [joined laboratory refresh](../../tasks/engine-transport-pilot.md#joined-laboratory-refresh-and-precredited-successor)
+consumes one joined answer after original round exhaustion and can use one
+already-budgeted successor under the original cutoff. Current GNU UDP and
+lifecycle controls and Windows-target lint passed. The
+[W11-W03 Windows address query producer](../../tasks/windows11-integration.md#w11-w03-bounded-windows-address-query-producer)
+feeds the [joined Engine address round](../../tasks/engine-transport-pilot.md#windows-system-dns-through-the-joined-address-round)
+through a retained native worker. Next, qualify actual Windows immediate,
+pending and retired completion, cancellation request semantics, and routing
+under the existing DNS and source-policy owners. Keep production admission and
+changed-file coverage and mutation open.
 
 The reviewed Core
 [frequency-request/achieved-baseline operation](../../tasks/s1.3-source-selection-readiness.md#technical-freeze-candidate--actual-coordinate-conversion-and-base-feedback)

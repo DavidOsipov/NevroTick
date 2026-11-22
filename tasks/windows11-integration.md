@@ -756,6 +756,53 @@ The added privacy/Forget boundary uses existing DNS-C14/15. Add paired NRPT
 matching/nonmatching names, immediate/pending resolver paths and an enrollment
 case that preserves local discovery after an intervening administrator edit.
 
+#### W11-W03 bounded Windows address query producer
+
+DNS-3 and CHECK-25/27 now have a source checkpoint in
+`windows-platform-native`. The Rust contract and lifecycle review froze one
+absolute ASCII hostname, one A or AAAA family, OS-managed DNS policy and one
+process-local native query permit. The checked result retains up to three
+unique addresses in answer order. The adapter inspects at most 32 native
+records and reads only the initialized fields and the selected address
+payload. The result carries addresses and a bounded status.
+
+The native call supplies the pinned version 1 request, name and result
+buffers. The submitter keeps a reference through return, including when
+the callback completes before that return. The pending path transfers
+one reference to the actual callback. Immediate return takes and settles
+that same reference itself. Each completed record list is released through
+the matching DNS allocator before copied addresses or an error are
+published. Dropping the receiver retires delivery. The pending native
+operation retains the storage and permit until actual callback completion.
+
+Independent review compared the x64 field sizes, offsets and constants
+against the admitted SDK and checked both completion paths against
+Microsoft's documentation and sample. Current source handles the
+callback's supplied result pointer and reads only its defined fields.
+[Microsoft DNS query contract](https://learn.microsoft.com/windows/win32/api/windns/nf-windns-dnsqueryex)
+and [Microsoft asynchronous query sample](https://github.com/microsoft/Windows-classic-samples/blob/main/Samples/DNSAsyncQuery/cpp/DnsQueryEx.cpp).
+
+Rust 1.100.0 in the configured isolated WSL runner passed 35 portable
+native-leaf tests, workspace format, GNU Clippy and the Windows-target
+all-target Clippy selection for the native leaf and Engine EP1. Portable
+controls exercise absolute name syntax and terminator bounds, bounded
+deduplication and failure atomicity, and provider permit retention after
+receiver abandonment. The 634-input subject
+`f8582ffc635939a44171fe7ab8b1d7a6cec9ad2187c100ce28ee6e0779a0f817`
+is based on `9f2defdb084940907252c6033737e16fd041a2b8` and includes the
+current Engine laboratory refresh. Source, tool, vendor and index bookends
+matched, and the runner retired private scratch. The earlier lint failures
+retain their original results. Raw evidence is in
+`~/.local/share/nevrotick/win-dns-address-close-20261122.wrKBaPDR/`.
+The verification manifest records both new files as critical owners.
+
+The [joined Engine round](engine-transport-pilot.md#windows-system-dns-through-the-joined-address-round)
+now invokes this producer from a retained worker and consumes its copied
+answer through current membership admission. Native cancellation request
+semantics, actual Windows immediate and pending callback tests, routing
+observations, coverage and generated mutation remain open. Use the existing
+Windows DNS execution and snapshot owners for those exits.
+
 ### W11-W04 Qualify service-scoped network restrictions
 
 **Owner/stage:** security/lifecycle/platform; P0/P3 and installed P6 path.
