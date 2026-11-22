@@ -144,6 +144,8 @@ fn duplicate_header(original: &Completion) -> Result<Completion, PilotError> {
                     send_before: facts.send_before,
                     send_after: facts.send_after,
                     read_return: facts.read_return,
+                    #[cfg(windows)]
+                    native_clock: facts.native_clock,
                     processing: facts.processing,
                     peer_receive_bits: facts.peer_receive_bits,
                     peer_transmit_bits: facts.peer_transmit_bits,
@@ -421,7 +423,7 @@ async fn source_provenance_receiving_case(
         tokio::time::timeout(Duration::from_secs(2), slot.socket.recv_from(&mut buffer)).await??;
     let selected = SeriesRead {
         result: classify_read_result(NativeDatagramPlatform::current(), Ok(read)),
-        read: SoftwareClock::capture(),
+        read: ApplicationClockCapture::software_only(SoftwareClock::capture()),
     };
     let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
     let observed = handle_series_read(
@@ -534,7 +536,10 @@ async fn selected_native_reply_with_profile(
     let result = classify_read_result(NativeDatagramPlatform::current(), Ok(result?));
     Ok(SelectedReply {
         slot,
-        selected: SeriesRead { result, read },
+        selected: SeriesRead {
+            result,
+            read: ApplicationClockCapture::software_only(read),
+        },
         buffer: received,
         deadline,
     })
@@ -854,7 +859,7 @@ fn synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects()
             length: PACKET_BYTES,
             source: peer(),
         },
-        read: SoftwareClock::capture(),
+        read: ApplicationClockCapture::software_only(SoftwareClock::capture()),
     };
     let buffer = [0; RECEIVE_BYTES];
     let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
@@ -3587,8 +3592,14 @@ async fn source_configuration_fixture(
                 return Err(PilotError::InternalState.into());
             };
             let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
-            let staged = stage_reply(&slot, &buffer[..length], peer, read, limits)
-                .map_err(|_| PilotError::InternalState)?;
+            let staged: StagedReply = stage_reply(
+                &slot,
+                &buffer[..length],
+                peer,
+                ApplicationClockCapture::software_only(read),
+                limits,
+            )
+            .map_err(|_| PilotError::InternalState)?;
             Ok(FinalGuardFixture {
                 slot,
                 staged: Some(staged),

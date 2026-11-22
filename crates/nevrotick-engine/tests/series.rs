@@ -109,6 +109,57 @@ fn fixture_measurement_prerequisites(facts: &TransportFacts, require_dates: bool
     fixture_capture_model(&captures, require_dates)
 }
 
+/// Verify the original native and software captures from a real Windows series reply.
+/// # Errors
+/// Preserve missing, refused or inconsistent clock evidence and its verifier failure.
+#[cfg(windows)]
+fn check_native_capture_triplet(facts: &TransportFacts) -> Check<()> {
+    use nevrotick_engine::NativeClockObservation;
+    use windows_platform_native::ClockCoordinates;
+
+    let filetime_epoch: SystemTime = SystemTime::UNIX_EPOCH
+        .checked_sub(Duration::from_hours(134_774 * 24))
+        .ok_or_else(|| io::Error::other("Windows epoch is unavailable"))?;
+    let software: [SoftwareClock; 3] =
+        [facts.send_before(), facts.send_after(), facts.read_return()];
+    let mut previous: Option<(std::num::NonZeroU64, i64)> = None;
+    for (capture, native) in software
+        .into_iter()
+        .zip(facts.application_native_clock_captures())
+    {
+        let coordinates: ClockCoordinates = match native {
+            Some(NativeClockObservation::Recorded(value)) => value,
+            Some(NativeClockObservation::ReadRefused(error)) => {
+                return Err(
+                    io::Error::other(format!("native clock read refused: {error:?}")).into(),
+                );
+            }
+            Some(NativeClockObservation::UnrepresentableWall(_)) => {
+                return Err(io::Error::other("native wall value is unrepresentable").into());
+            }
+            None => {
+                let reason: &str = "real series reply lost its original native clock observation";
+                series_process::semantic_check_failed(reason);
+                return Err(io::Error::other(reason).into());
+            }
+        };
+        let wall: Duration = capture.utc().duration_since(filetime_epoch)?;
+        check(
+            wall.as_nanos() == u128::from(coordinates.filetime_100ns()) * 100,
+            "native FILETIME differs from its paired software wall",
+        )?;
+        check(
+            coordinates.qpc_before() <= coordinates.qpc_after()
+                && previous.is_none_or(|(frequency, end)| {
+                    frequency == coordinates.frequency_hz() && end <= coordinates.qpc_before()
+                }),
+            "original native clock brackets lost chronology or frequency",
+        )?;
+        previous = Some((coordinates.frequency_hz(), coordinates.qpc_after()));
+    }
+    Ok(())
+}
+
 /// Assert an independently valid pure product result without formatting its cause.
 /// # Errors
 /// Keep the original typed result for the existing propagation path.
@@ -607,6 +658,8 @@ fn healthy_report_checks(report: &SeriesReport, observed: &PeerObservations) -> 
             "wrong receive count",
         )?;
         let row = facts(report, index)?;
+        #[cfg(windows)]
+        check_native_capture_triplet(row)?;
         let row_phase = check_exact_measurement(row, u8::try_from(index)?)?;
         let row_ticks = expected_reference(report.origin(), row)?;
         for anchor_index in 0..3 {

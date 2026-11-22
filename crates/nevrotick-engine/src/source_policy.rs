@@ -23,8 +23,9 @@ use ntp_wire::RawHeader;
 use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore, futures::OwnedNotified, watch};
 
 use super::{
-    AcquisitionSession, LiveSlot, PACKET_BYTES, Phase, SEND_READY_CAP, SendBracket, SeriesConfig,
-    SoftwareClock, StagedReply, TerminalOutcome, complete_send, finish_valid_reply,
+    AcquisitionSession, ApplicationClockCapture, LiveSlot, PACKET_BYTES, Phase, SEND_READY_CAP,
+    SendBracket, SeriesConfig, SoftwareClock, StagedReply, TerminalOutcome, complete_send,
+    finish_valid_reply,
 };
 
 /// Fixed maximum catalogue, not an adopted product source count.
@@ -950,7 +951,9 @@ fn force_configuration_revision_max_for_test(
 
 /// Sealed read capabilities preserve the real guarded observation positions.
 pub(super) mod observations {
-    use super::{Instant, SoftwareClock};
+    #[cfg(test)]
+    use super::SoftwareClock;
+    use super::{ApplicationClockCapture, Instant};
 
     /// A single deferred owner-clock read; construction samples nothing.
     pub(super) struct InstantRead {
@@ -1014,7 +1017,7 @@ pub(super) mod observations {
         #[cfg(test)]
         Fixed {
             /// Original before/after captures, copied only when consumed.
-            values: [SoftwareClock; 2],
+            values: [ApplicationClockCapture; 2],
             /// Next index, bounded by the fixed two-entry script.
             next: usize,
             /// Shared solely with an immutable test observation handle.
@@ -1033,9 +1036,9 @@ pub(super) mod observations {
         /// Capture at the current original guard/effect position.
         /// # Panics
         /// A test fixture reading beyond its two declared captures fails clearly.
-        pub(in super::super) fn capture(&mut self) -> SoftwareClock {
+        pub(in super::super) fn capture(&mut self) -> ApplicationClockCapture {
             match &mut self.source {
-                SendSource::Hardware => SoftwareClock::capture(),
+                SendSource::Hardware => ApplicationClockCapture::capture(),
                 #[cfg(test)]
                 SendSource::Fixed {
                     values,
@@ -1084,7 +1087,10 @@ pub(super) mod observations {
             (
                 Self {
                     source: SendSource::Fixed {
-                        values: [before, after],
+                        values: [
+                            ApplicationClockCapture::software_only(before),
+                            ApplicationClockCapture::software_only(after),
+                        ],
                         next: 0,
                         count: std::rc::Rc::clone(&count),
                     },
@@ -3537,8 +3543,9 @@ fn attempt_managed_send_observing(
         slot.finish(TerminalOutcome::SourcePolicy(SourcePolicyError::Foreign));
         return ManagedEffect::Handled;
     }
-    let before: SoftwareClock = observations.capture();
-    if !slot.admit_send_capture(&before, deadline) {
+    let before: ApplicationClockCapture = observations.capture();
+    let send_clock: SoftwareClock = before.software();
+    if !slot.admit_send_capture(&send_clock, deadline) {
         return ManagedEffect::Handled;
     }
     let state = match guard.state_mut() {
@@ -3549,7 +3556,7 @@ fn attempt_managed_send_observing(
         }
     };
     match state.earliest(&binding) {
-        Ok(Some(floor)) if before.mono_after < floor => {
+        Ok(Some(floor)) if send_clock.mono_after < floor => {
             if let LiveMode::Managed(live) = &mut slot.policy.mode {
                 live.wait = WaitState::Floor(floor);
             }
@@ -3561,13 +3568,14 @@ fn attempt_managed_send_observing(
             return ManagedEffect::Handled;
         }
     }
-    let (stamp, floor) = match state.reserve(&binding, &slot.identity, before.mono_after) {
-        Ok(reservation) => reservation,
-        Err(error) => {
-            slot.finish(TerminalOutcome::SourcePolicy(error));
-            return ManagedEffect::Handled;
-        }
-    };
+    let (stamp, floor): (Correlation, Instant) =
+        match state.reserve(&binding, &slot.identity, send_clock.mono_after) {
+            Ok(reservation) => reservation,
+            Err(error) => {
+                slot.finish(TerminalOutcome::SourcePolicy(error));
+                return ManagedEffect::Handled;
+            }
+        };
     slot.send_attempts += 1;
     let result = slot.socket.try_send_to(&slot.packet, slot.peer);
     let after = observations.capture();
@@ -3643,7 +3651,8 @@ fn commit_managed_reply_observing(
     if !matches!(slot.phase, Phase::Pending(_)) {
         return ManagedEffect::Handled;
     }
-    if now < candidate.read.mono_after {
+    let read: SoftwareClock = candidate.read.software();
+    if now < read.mono_after {
         slot.rejected += 1;
         return ManagedEffect::Handled;
     }
@@ -3668,9 +3677,7 @@ fn commit_managed_reply_observing(
         }
         if let Some(kind) = control {
             // Policy effects require the whole original receive bracket at or after send.
-            if candidate.read.mono < stamp.sent_at
-                || candidate.read.mono > candidate.read.mono_after
-            {
+            if read.mono < stamp.sent_at || read.mono > read.mono_after {
                 slot.rejected += 1;
                 return Ok(false);
             }

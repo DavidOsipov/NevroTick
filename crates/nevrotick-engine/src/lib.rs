@@ -11,6 +11,7 @@
 //! clock-domain mapping, era resolution, sample eligibility, authentication or UTC truth.
 #![forbid(unsafe_code)]
 
+mod clock_capture;
 mod measurement;
 mod quality;
 mod relative;
@@ -23,10 +24,12 @@ mod ke_preview_target;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 mod nts_ke_experiment;
 
+#[cfg(all(feature = "ke-association-prototype", windows))]
+pub use clock_capture::NativeClockObservation as ProtectedNativeClockObservation;
+#[cfg(windows)]
+pub use clock_capture::NativeClockObservation;
 #[cfg(feature = "ke-association-prototype")]
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
-#[cfg(all(feature = "ke-association-prototype", windows))]
-pub use nts_ke_experiment::managed_preview::ProtectedNativeClockObservation;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
     ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
@@ -98,6 +101,7 @@ pub use source_policy::{
     SourcePolicyTarget, SourceRestrictionSnapshot, SourceScale,
 };
 
+use clock_capture::ApplicationClockCapture;
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
 use std::{
     io,
@@ -563,6 +567,7 @@ pub struct SoftwareClock {
 }
 impl SoftwareClock {
     /// Capture adjacent local monotonic and wall readings without a mapping claim.
+    #[cfg(any(not(windows), test))]
     fn capture() -> Self {
         Self {
             mono: Instant::now(),
@@ -611,6 +616,9 @@ pub struct TransportFacts {
     send_after: SoftwareClock,
     /// Local readings when the selected receive future returned.
     read_return: SoftwareClock,
+    /// Original native dispositions alongside the three software brackets in acquisition order.
+    #[cfg(windows)]
+    native_clock: [Option<NativeClockObservation>; 3],
     /// Fresh exclusive-owner reading immediately before result commit.
     processing: Instant,
     /// Exact nonzero peer T2 representation without era interpretation.
@@ -725,6 +733,15 @@ impl TransportFacts {
     #[must_use]
     pub fn read_return(&self) -> SoftwareClock {
         self.read_return
+    }
+
+    /// Return the original Windows clock-read dispositions in pre-send,
+    /// send-return, then selected receive-return order. A missing value means
+    /// that capture did not invoke the Windows adapter.
+    #[cfg(windows)]
+    #[must_use]
+    pub const fn application_native_clock_captures(&self) -> [Option<NativeClockObservation>; 3] {
+        self.native_clock
     }
     /// Return the fresh exclusive-owner commit reading.
     #[must_use]
@@ -1039,9 +1056,9 @@ impl PilotReport {
 /// Local software bracket around one confirmed full native send.
 struct SendBracket {
     /// Taken immediately before `try_send_to`.
-    before: SoftwareClock,
+    before: ApplicationClockCapture,
     /// Taken immediately after its result.
-    after: SoftwareClock,
+    after: ApplicationClockCapture,
 }
 /// Private one-way query lifecycle; no terminal slot can be rearmed.
 enum Phase {
@@ -1211,7 +1228,7 @@ enum Wake {
         /// Classified actual return; consumed oversize never exposes partial bytes.
         result: NativeReadOutcome,
         /// Captured only when this receive future returned ready.
-        read: SoftwareClock,
+        read: ApplicationClockCapture,
     },
 }
 
@@ -1281,12 +1298,12 @@ fn attempt_send_observing(
         return *state;
     }
     slot.send_attempts += 1;
-    let before: SoftwareClock = observations.capture();
-    if !slot.admit_send_capture(&before, deadline) {
+    let before: ApplicationClockCapture = observations.capture();
+    if !slot.admit_send_capture(&before.software(), deadline) {
         return *state;
     }
     let result: io::Result<usize> = slot.socket.try_send_to(&slot.packet, slot.peer);
-    let after: SoftwareClock = observations.capture();
+    let after: ApplicationClockCapture = observations.capture();
     complete_send(slot, result, SendBracket { before, after });
     *state
 }
@@ -1371,7 +1388,7 @@ fn classify_read_result(
 /// Capture the adjacent software observation before classifying a selected return.
 /// The zero-or-one index is fixed by the private select branch, not external input.
 fn selected_read(slot: usize, result: io::Result<(usize, SocketAddr)>) -> Wake {
-    let read = SoftwareClock::capture();
+    let read: ApplicationClockCapture = ApplicationClockCapture::capture();
     Wake::Read {
         slot,
         result: classify_read_result(NativeDatagramPlatform::current(), result),
@@ -1442,7 +1459,7 @@ struct StagedReply {
     /// Actual saved send bracket captured by this owner.
     sent: SendBracket,
     /// Actual selected read-return observations.
-    read: SoftwareClock,
+    read: ApplicationClockCapture,
     /// Zero is control; ordinary values are one through fifteen.
     stratum: u8,
     /// Opaque reference-ID bits; only controls expose this value.
@@ -1461,7 +1478,7 @@ fn stage_reply(
     slot: &LiveSlot,
     bytes: &[u8],
     source: SocketAddr,
-    read: SoftwareClock,
+    read: ApplicationClockCapture,
     limits: FrameLimits,
 ) -> Result<StagedReply, Rejection> {
     let Phase::Pending(sent) = &slot.phase else {
@@ -1482,7 +1499,8 @@ fn stage_reply(
     if header.origin_timestamp().bits().to_be_bytes().as_slice() != &slot.packet[40..48] {
         return Err(Rejection::Origin);
     }
-    if read.mono < sent.after.mono_after {
+    let read_clock: SoftwareClock = read.software();
+    if read_clock.mono < sent.after.software().mono_after {
         return Err(Rejection::ReadBeforeSend);
     }
     let stratum = header.stratum();
@@ -1514,10 +1532,10 @@ fn stage_reply(
         measurement: measurement::measure_for_source(
             slot.profile,
             slot.policy.source_configuration(),
-            sent.before,
-            sent.after,
-            read,
-            read.mono_after,
+            sent.before.software(),
+            sent.after.software(),
+            read_clock,
+            read_clock.mono_after,
             header,
         ),
         profile: slot.profile,
@@ -1609,8 +1627,8 @@ struct ReadDatagram<'a> {
     bytes: &'a [u8],
     /// Actual source address returned by that same native receive.
     source: SocketAddr,
-    /// Adjacent software readings captured when that receive returned ready.
-    read: SoftwareClock,
+    /// Adjacent clock readings captured when that receive returned ready.
+    read: ApplicationClockCapture,
 }
 
 /// Commit checked packet facts only after the caller's fresh owner guards.
@@ -1632,18 +1650,20 @@ fn commit_reply(
     {
         return;
     }
-    if processing >= deadline || candidate.read.reaches_cutoff(deadline) {
+    let read: SoftwareClock = candidate.read.software();
+    if processing >= deadline || read.reaches_cutoff(deadline) {
         slot.rejected += 1;
         slot.expire();
         return;
     }
     // Windows can clamp a tiny negative checked duration to zero. Ordering must
     // reject that raw predecessor before accepting any computed age.
-    if processing < candidate.read.mono_after {
+    let received_at: Instant = read.mono_after;
+    if processing < received_at {
         slot.rejected += 1;
         return;
     }
-    let Some(age) = processing.checked_duration_since(candidate.read.mono_after) else {
+    let Some(age): Option<Duration> = processing.checked_duration_since(received_at) else {
         slot.rejected += 1;
         return;
     };
@@ -1659,11 +1679,12 @@ fn commit_reply(
 /// Commit an already checked ordinary/control result while managed policy custody
 /// remains with the concrete caller. This helper supplies no fresh permission.
 fn finish_valid_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instant) {
-    if processing < candidate.read.mono_after {
+    let received_at: Instant = candidate.read.software().mono_after;
+    if processing < received_at {
         slot.rejected += 1;
         return;
     }
-    if let Some(age) = processing.checked_duration_since(candidate.read.mono_after) {
+    if let Some(age) = processing.checked_duration_since(received_at) {
         finish_valid_reply_with_age(slot, candidate, processing, age);
     }
 }
@@ -1684,9 +1705,15 @@ fn finish_valid_reply_with_age(
             stratum: candidate.stratum,
             facts: Box::new(TransportFacts {
                 source_context: slot.policy.source_context(),
-                send_before: candidate.sent.before,
-                send_after: candidate.sent.after,
-                read_return: candidate.read,
+                send_before: candidate.sent.before.software(),
+                send_after: candidate.sent.after.software(),
+                read_return: candidate.read.software(),
+                #[cfg(windows)]
+                native_clock: [
+                    candidate.sent.before.native(),
+                    candidate.sent.after.native(),
+                    candidate.read.native(),
+                ],
                 processing,
                 peer_receive_bits: candidate.receive_bits,
                 peer_transmit_bits: candidate.transmit_bits,

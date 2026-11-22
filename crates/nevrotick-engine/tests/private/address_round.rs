@@ -1253,7 +1253,7 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
         &slot,
         &buffer[..length],
         sender,
-        capture,
+        crate::ApplicationClockCapture::software_only(capture),
         FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
     );
     assert!(

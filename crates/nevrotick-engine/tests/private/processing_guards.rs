@@ -172,7 +172,7 @@ impl Received {
                 NativeDatagramPlatform::current(),
                 Ok((self.length, self.source)),
             ),
-            read: self.read,
+            read: ApplicationClockCapture::software_only(self.read),
         }
     }
 }
@@ -359,13 +359,13 @@ fn check_unmanaged_send_cutoff(upper_position: Ordering) -> Result<(), Box<dyn E
             let Phase::Pending(bracket) = &slot.phase else {
                 return Err(io::Error::other("successful send lost its pending bracket").into());
             };
-            assert_eq!(bracket.before.mono, lower);
-            assert_eq!(bracket.before.mono_after, upper);
-            assert_eq!(bracket.before.utc, before.utc);
-            assert_eq!(bracket.after.mono, returned);
-            assert_eq!(bracket.after.mono_after, returned);
-            assert_eq!(bracket.after.utc, after.utc);
-            assert!(bracket.after.mono > deadline);
+            assert_eq!(bracket.before.software().mono, lower);
+            assert_eq!(bracket.before.software().mono_after, upper);
+            assert_eq!(bracket.before.software().utc, before.utc);
+            assert_eq!(bracket.after.software().mono, returned);
+            assert_eq!(bracket.after.software().mono_after, returned);
+            assert_eq!(bracket.after.software().utc, after.utc);
+            assert!(bracket.after.software().mono > deadline);
         } else {
             let received: io::Result<(usize, SocketAddr)> = peer.recv_from(&mut packet);
             if let Ok((length, origin)) = &received {
@@ -648,6 +648,8 @@ fn snapshot_facts(slot: &LiveSlot) -> Result<TransportFacts, Box<dyn Error>> {
         send_before: facts.send_before,
         send_after: facts.send_after,
         read_return: facts.read_return,
+        #[cfg(windows)]
+        native_clock: facts.native_clock,
         processing: facts.processing,
         peer_receive_bits: facts.peer_receive_bits,
         peer_transmit_bits: facts.peer_transmit_bits,
@@ -734,7 +736,7 @@ async fn check_guard(
             &slots[0],
             &first.bytes[..first.length],
             first.source,
-            first.read,
+            ApplicationClockCapture::software_only(first.read),
             limits
         )
         .is_ok()
@@ -847,12 +849,16 @@ async fn pilot_final_guard_case(
     );
     assert!(charge_selected_datagram(&mut slots[0], &selected));
     assert_eq!((slots[0].received, slots[0].rejected), (1, 0));
+    let capture: ApplicationClockCapture = ApplicationClockCapture::software_only(datagram.read);
+    #[cfg(windows)]
+    let capture: ApplicationClockCapture =
+        capture.with_scripted_refusal(Some(windows_platform_native::ClockReadError::After(37)));
     assert!(
         stage_reply(
             &slots[0],
             &datagram.bytes[..datagram.length],
             datagram.source,
-            datagram.read,
+            capture,
             limits,
         )
         .is_ok()
@@ -869,7 +875,7 @@ async fn pilot_final_guard_case(
         &ReadDatagram {
             bytes: &datagram.bytes[..datagram.length],
             source: datagram.source,
-            read: datagram.read,
+            read: capture,
         },
         limits,
         deadline,
@@ -905,8 +911,7 @@ async fn pilot_final_guard_case(
     let [first, neighbor] = slots;
     let first = first.into_report(0)?;
     let neighbor = neighbor.into_report(1)?;
-    check_final_reply_reports(&first, &neighbor, expected, action, &saved_neighbor)?;
-    Ok(())
+    check_final_reply_reports(&first, &neighbor, expected, action, &saved_neighbor)
 }
 
 /// Check the selected terminal and control before the historical refresh.
@@ -993,6 +998,19 @@ fn check_final_reply_reports(
         first.facts().is_some(),
         matches!(action, FinalReplyControl::PostcommitStop)
     );
+    #[cfg(windows)]
+    if let Some(facts) = first.facts() {
+        assert!(matches!(
+            facts.application_native_clock_captures(),
+            [
+                Some(_),
+                Some(_),
+                Some(NativeClockObservation::ReadRefused(
+                    windows_platform_native::ClockReadError::After(37),
+                ))
+            ]
+        ));
+    }
     assert_eq!((neighbor.received(), neighbor.rejected()), (1, 0));
     assert_eq!(neighbor.status(), Status::Header);
     check_fact_getters(
@@ -1125,6 +1143,8 @@ fn check_fact_getters(facts: &TransportFacts, saved: &TransportFacts) {
         assert_eq!(actual.mono_after, expected.mono_after);
         assert_eq!(actual.utc(), expected.utc);
     }
+    #[cfg(windows)]
+    assert!(facts.application_native_clock_captures() == saved.native_clock);
     assert_eq!(facts.processing(), saved.processing);
     assert_eq!(facts.peer_receive_bits(), 0x0102_0304_0506_0708);
     assert_eq!(facts.peer_transmit_bits(), 0x090a_0b0c_0d0e_0f10);
@@ -1274,7 +1294,7 @@ async fn inject_io_case(
                         NativeDatagramPlatform::current(),
                         Err(io::Error::other("synthetic read failure")),
                     ),
-                    read: SoftwareClock::capture(),
+                    read: ApplicationClockCapture::software_only(SoftwareClock::capture()),
                 },
                 &buffers,
                 limits,
@@ -1786,7 +1806,7 @@ fn check_literal_stage_rejections(
         let mut bytes = received.bytes;
         bytes[offset] = value;
         assert!(matches!(
-            stage_reply(slot, &bytes[..received.length], received.source, received.read, limits),
+            stage_reply(slot, &bytes[..received.length], received.source, ApplicationClockCapture::software_only(received.read), limits),
             Err(reason) if reason == expected
         ));
     }
@@ -1798,7 +1818,7 @@ fn check_literal_stage_rejections(
                 slot,
                 &bytes[..received.length],
                 received.source,
-                received.read,
+                ApplicationClockCapture::software_only(received.read),
                 limits
             ),
             Err(Rejection::Timestamp)
@@ -1809,6 +1829,7 @@ fn check_literal_stage_rejections(
     };
     let earlier = sent
         .after
+        .software()
         .mono_after
         .checked_sub(Duration::from_nanos(1))
         .ok_or_else(|| io::Error::other("send observation has no checked predecessor"))?;
@@ -1817,11 +1838,11 @@ fn check_literal_stage_rejections(
             slot,
             &received.bytes[..received.length],
             received.source,
-            SoftwareClock {
+            ApplicationClockCapture::software_only(SoftwareClock {
                 mono: earlier,
                 mono_after: earlier,
                 utc: received.read.utc
-            },
+            }),
             limits
         ),
         Err(Rejection::ReadBeforeSend)
@@ -1833,11 +1854,11 @@ fn check_literal_stage_rejections(
             slot,
             &received.bytes[..received.length],
             received.source,
-            SoftwareClock {
-                mono: sent.after.mono_after,
-                mono_after: sent.after.mono_after,
+            ApplicationClockCapture::software_only(SoftwareClock {
+                mono: sent.after.software().mono_after,
+                mono_after: sent.after.software().mono_after,
                 utc: received.read.utc
-            },
+            }),
             limits
         )
         .is_ok()
@@ -1847,7 +1868,7 @@ fn check_literal_stage_rejections(
             slot,
             &received.bytes[..received.length],
             received.source,
-            received.read,
+            ApplicationClockCapture::software_only(received.read),
             limits
         )
         .is_ok()
@@ -2094,10 +2115,10 @@ fn check_send_completion(
                 return Err(io::Error::other("full completion did not become pending").into());
             };
             assert!(slot.sent && !slot.can_send());
-            assert_eq!(saved.before.mono, bracket.before.mono);
-            assert_eq!(saved.before.utc, bracket.before.utc);
-            assert_eq!(saved.after.mono, bracket.after.mono);
-            assert_eq!(saved.after.utc, bracket.after.utc);
+            assert_eq!(saved.before.software().mono, bracket.before.software().mono);
+            assert_eq!(saved.before.software().utc, bracket.before.software().utc);
+            assert_eq!(saved.after.software().mono, bracket.after.software().mono);
+            assert_eq!(saved.after.software().utc, bracket.after.software().utc);
             complete_send(slot, Ok(0), bracket);
             assert!(matches!(&slot.phase, Phase::Pending(_)));
         }
@@ -2138,8 +2159,8 @@ fn completed_send_results_preserve_rearm_causes_and_one_way_history() -> Result<
             let [prepared, _neighbor] = prepared;
             let mut slot = live_slot(prepared)?;
             let bracket = SendBracket {
-                before: SoftwareClock::capture(),
-                after: SoftwareClock::capture(),
+                before: ApplicationClockCapture::software_only(SoftwareClock::capture()),
+                after: ApplicationClockCapture::software_only(SoftwareClock::capture()),
             };
             check_send_completion(&mut slot, scenario, bracket)
         })?;
@@ -2377,7 +2398,7 @@ async fn check_retired_selected_read(
                 NativeDatagramPlatform::Other,
                 Err(io::Error::other("synthetic post-retirement error")),
             ),
-            read: SoftwareClock::capture(),
+            read: ApplicationClockCapture::software_only(SoftwareClock::capture()),
         },
         &[[0_u8; RECEIVE_BYTES]; 2],
         limits,
@@ -2433,7 +2454,7 @@ async fn check_typed_oversize_accounting(
                 NativeDatagramPlatform::Windows,
                 Err(io::Error::from_raw_os_error(10040)),
             ),
-            read: SoftwareClock::capture(),
+            read: ApplicationClockCapture::software_only(SoftwareClock::capture()),
         },
         &[[0xff; RECEIVE_BYTES]; 2],
         limits,
@@ -2521,7 +2542,7 @@ async fn check_commit_processing_boundaries(
         &slots[0],
         &datagram.bytes[..datagram.length],
         datagram.source,
-        datagram.read,
+        ApplicationClockCapture::software_only(datagram.read),
         limits,
     )
     .map_err(|_| io::Error::other("real stratum-fifteen boundary neighbor did not stage"))?;
@@ -2572,8 +2593,8 @@ async fn check_commit_processing_boundaries(
         );
         assert_eq!(facts.read_return.mono, datagram.read.mono);
         assert_eq!(facts.read_return.utc, datagram.read.utc);
-        assert_eq!(facts.send_before.mono, staged.sent.before.mono);
-        assert_eq!(facts.send_after.mono, staged.sent.after.mono);
+        assert_eq!(facts.send_before.mono, staged.sent.before.software().mono);
+        assert_eq!(facts.send_after.mono, staged.sent.after.software().mono);
         assert_eq!(facts.peer_receive_bits, 0x0102_0304_0506_0708);
         assert_eq!(facts.peer_transmit_bits, 0x090a_0b0c_0d0e_0f10);
     } else {
@@ -2770,7 +2791,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
             &slots[0],
             &datagram.bytes[..datagram.length],
             datagram.source,
-            datagram.read,
+            ApplicationClockCapture::software_only(datagram.read),
             limits,
         )
         .map_err(|_| io::Error::other("original socket's real reply did not stage"))?;
@@ -2799,6 +2820,11 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
             Some(Status::Header)
         );
         let original = snapshot_facts(&slots[0])?;
+        #[cfg(windows)]
+        assert!(matches!(
+            original.application_native_clock_captures(),
+            [Some(_), Some(_), None]
+        ));
         let later = processing
             .checked_add(Duration::from_nanos(1))
             .ok_or(PilotError::DeadlineOverflow)?;
@@ -2810,7 +2836,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
             &slots[1],
             &neighbor.bytes[..neighbor.length],
             neighbor.source,
-            neighbor.read,
+            ApplicationClockCapture::software_only(neighbor.read),
             limits,
         )
         .map_err(|_| io::Error::other("preserved neighboring reply did not stage"))?;
@@ -3521,7 +3547,7 @@ fn complete_header_survives_actual_staging_and_terminal_projection() -> Result<(
             &slot,
             &datagram.bytes[..datagram.length],
             datagram.source,
-            datagram.read,
+            ApplicationClockCapture::software_only(datagram.read),
             FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
         )
         .map_err(|_| io::Error::other("complete literal metadata did not stage"))?;
@@ -4136,7 +4162,7 @@ fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(),
             &slot,
             &received.bytes[..received.length],
             received.source,
-            received.read,
+            ApplicationClockCapture::software_only(received.read),
             FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
         )
         .map_err(|_| io::Error::other("actual measurement reply did not stage"))?;
@@ -4188,7 +4214,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
             &slot,
             &received.bytes[..received.length],
             received.source,
-            received.read,
+            ApplicationClockCapture::software_only(received.read),
             limits,
         )
         .map_err(|_| io::Error::other("transport-only reply did not stage"))?;
@@ -4208,7 +4234,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
                 &slot,
                 &late.bytes[..late.length],
                 late.source,
-                late.read,
+                ApplicationClockCapture::software_only(late.read),
                 limits
             ),
             Err(Rejection::NoPending)

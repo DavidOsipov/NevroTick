@@ -30584,8 +30584,10 @@ on tree `b0313475bd3ffa3c23f5687b86b0c50bb4da9319` with product digest `f736ebe3
 executed one exact case in offline Windows Sandbox build 26100.
 It held both results unread, then observed the expected address once
 per query. Its direct decoder controls exercised an ordinary Answer,
-malformed lengths, nonlocal or late results, other sections or address
-family, multiple records and wrong addresses. Offline bookends,
+malformed lengths, a false local-eligibility predicate, other sections
+or address family, multiple records and wrong addresses. They supplied
+the eligibility decision directly and therefore did not exercise the
+completion-mode guard. Offline bookends,
 process reaping and owned mapping cleanup passed. The link and native
 receipts hash to `5908f41140d850ba8630302463d24c95619c92ccc84ecba62422ba1c4d648cce` and `9ac5ecc9bacfe0e6e92889c7139c2f7663ef753f4890b6c9412731d08455a3b3`, under
 `~/.local/share/nevrotick/dns-local-repair-20261122.WPUU04Du/`.
@@ -30600,6 +30602,64 @@ index bytes. Its receipt hashes to
 Ordinary native Answer completion, pending callback/cancellation overlap,
 IPv6 and other local name/address configurations, positive Engine routing,
 and the affected per-file qualification remain open.
+
+##### Check DNS completion context at the borrowed decoder — 23 November 2026
+
+W11-W03 DNS-3 and CHECK-25/27. The local singleton exception now checks
+the actual completion-mode argument inside the borrowed decoder.
+`complete` still takes WinDNS ownership and admits a successful completed
+result before decoding. The immediate call supplies its native status and
+the callback supplies `None`. The existing lazy local-name lookup
+and ordinary Answer parsing retain their scope. Every test record is
+Rust-owned with a fully initialized payload. The borrow ends before the
+fixture storage is released, and no fixture is given to the WinDNS
+deallocator.
+
+The completion regression requires the same section-zero IPv4
+loopback singleton to succeed for immediate completion and produce
+`Empty` for callback context, without a second name lookup. An ordinary
+Answer with callback context still passes. A separate list case checks
+first-observed address order and deduplication, three distinct addresses
+and the 32/33-node boundary. The structured fuzz test runs 4,096
+deterministic initialized records across eight partitions, with exact
+A/AAAA address, error and name-lookup expectations. It varies payload
+bytes, irrelevant flag bits and malformed sizes and includes unsupported
+sections and record types. The seed is `f2c495e1b88371a0`.
+
+Regression, Rust contract, structured-fuzzing, mutation and independent
+review skills scoped the exact cases. The first cross-build stopped on
+two test-only lints. Independent review then required fresh links after
+editing a linked fixture record; both final images use the corrected
+fixture. Rust 1.100.0 MSVC-target Clippy, x64-v3 libtest link and PE/PDB
+checks passed for tree `8477115f244e8385d55a878d59729d98d3c47968`.
+Its 647-input map is
+`6442330bc42f2b5d63e53dd5c85d9cc5a86ec8f1760452f664b705dc9f313b53`.
+
+The ordinary Windows build 26100 Sandbox discovered and ran precisely
+the three new tests. All passed. The private one-line sensitivity
+tree `3c49827a032a815510d81fb6cfd23289b1b5e32a` treated the absent
+immediate status as successful. The named regression exited 101 at
+the callback `Empty` assertion after its immediate control had passed.
+The separate ordinary Answer control in the same image exited 0.
+Exact process, stream and input bookends passed. The guest scratch
+and transferred bytes were retired, and both transfer directories
+were empty. The local evidence is under
+`~/.local/share/nevrotick/dns-completion-context-20261123.QBWZ31HJ/`:
+
+| Result | Receipt SHA-256 |
+| --- | --- |
+| `corrected-cross-03/verification.json` | `e0d7b807414b3cabe0471ab8434ce6cedaffacb1bd0b87584ad77e223a529be6` |
+| `native-recipe/dns_a3f10268a59d/verification.json` | `a167a0c26e9604194cde5584a9228f12d33e2af29032cbaa7be4a3b7fa2337a1` |
+| `callback-fault/cross-01/verification.json` | `decf77150ea34dda1b8e3d09bcc1df3ccdf5d8f38dbd4caf85a94b4f26a76cd4` |
+| `native-recipe/dns_54a3c3d10c4e/verification.json` | `76b23ec48bfe6d846eaf34b5e953efe55fc5b4912224200ddd6c2da47223e55f` |
+
+The borrowed tests execute the production decoder with modeled
+completion context. Real WinDNS callback delivery, cancel/free
+interleavings, normal native Answer routing and calibrated acquisition
+remain open. This finite fuzz run used the ordinary libtest image.
+Coverage-guided fuzzing, native memory-detector campaigns and
+affected-file coverage/mutation qualification remain separate. The
+manual guard fault earns no generated-mutant credit.
 
 ##### Protected KE membership at issuance and effects
 
@@ -30953,3 +31013,96 @@ requires fresh offline/date admission and the owner's normal guest
 confirmation of the exact temporary lab root. Authenticated dialogue,
 independent placement calibration, date and scale and positive Core
 admission retain their own exits.
+
+###### Observe the ordinary protected capture in Windows Sandbox — 23 November 2026
+
+W11-W01/S2.1 and CHECK-6/7/11/14/21/24/25/27. The existing
+`manage-windows-sandbox` and black-box acceptance procedure admitted the
+exact staged tree `d0e5b11f5986cd40263796bc0d24fb82f0f40db8` and the
+prepared facade and peer receipts above against the offline guest and
+the certificate validity window. David confirmed the guest's exact lab
+root installation and removal prompts.
+
+Both children exited and were reaped. The independently observed peer
+received two UDP requests and sent two replies without an extra receive.
+The facade reported an authenticated ordinary successor and the original
+checked capture order. Its two complete submissions left 30 checkouts,
+30 frames and 130,792 bytes available under the original allowances.
+The receiving consumer checked all three raw capture positions and the
+original FILETIME conversion. The report remains
+`measurement=mapping-unavailable eligible=0 fresh_sync=0`.
+
+All four child streams reached EOF. The fixture's root and CRL store
+rows matched the pre-run baseline, and the guest mappings were empty
+after export. The retained run is
+`~/.local/share/nevrotick/protected-capture-current-20261122.89yEiW7o/native/kefac_2a8a6211725c/`
+with verification SHA-256
+`dcb1f49f3d52f3b6b66e94aa61d0f048eb953ab3b7f06c25effbb7c813c2ae73`.
+This Windows witness covers the ordinary two-leg fixture on those exact
+images. Independent cross-endpoint capture placement, calibrated mapping
+and uncertainty, invalidation, production date and scale and positive
+Engine-to-Core admission retain their existing exits.
+
+###### Retain Windows clock coordinates through plain acquisition — 23 November 2026
+
+W11-W01/S2.1 and CHECK-6/7/8/11/14/21/25/27. The private shared
+application capture leaf now feeds the original send and receive
+brackets in the unmanaged pilot and the managed plain owner. A
+committed ordinary `TransportFacts` retains the original capture
+from before send, after the completed send and at the selected receive.
+On Windows the public observation keeps each QPC/FILETIME bracket or typed
+refusal; a software-only capture represents absence. This reuses the
+protected capture behavior and retains the protected public type
+path. Epoch, Stop, deadline, rejection accounting and measurement
+eligibility still go through their existing owners. No source,
+mapping or freshness authority follows from the retained observations.
+
+Planning and Rust contract work traced the original capture through
+the actual slot, series and managed policy receivers. The review
+required the moved leaf's unique security-module membership and
+critical-file entry to follow the source. The 90% executable-line
+and 95% per-critical-file mutation gates remain. Exact expected
+behavior includes the original three observations on commit and no
+facts on final refusal. The Windows fixture distinguishes a retained
+typed receive refusal from a software-only absence.
+
+In isolated Rust 1.100.0 development, tree
+`e96374336d9a2cd66ed8ebee62d44927fdd80435` passed 301 ordinary
+default cases, 635 ordinary EP1 cases, 91 EP1 doctests and 600
+optimized EP1 library cases, plus GNU/MSVC-target Clippy in both
+features and format checks. The first two attempts stopped on
+Clippy at the length of a changed test helper and an unnecessary
+type path. Their receipts remain. The final typed tree
+`6a968c6a0a7e50b9216ccb89dc08f7c6c541842d` adds explicit
+types at the existing inference sites. Its format, GNU and MSVC
+Clippy in both features and eight default series cases passed.
+Independent review confirmed the behavior-preserving type delta and
+the capture and refusal ownership. The 646-input final product map
+hashes to `d3cd909505b5da432582fa671a730976b4820b8c87a856ceb1f27ded59dc20c6`.
+Both isolated build directories were retired after their final
+bookends. Receipts are `d4e78bf8…cc549` and `c107c1e7…107c1`
+under `plain-capture-check-20261123.wre7AXDi/` and
+`plain-capture-types-20261123.jPJGg9bB/` respectively.
+
+The Windows triplet assertion lives in the public integration
+binary's healthy IPv4 and IPv6 cases. Existing native library
+selections do not reach it. The first private build recipe failed
+dependency admission because the partial capture omitted a required
+standalone manifest. The corrected complete-tree recipe built the exact
+default `series` test image and matched its CodeView PDB. The ten
+build/readback lanes passed and scratch was retired. The receipt is
+`914e768ba47b5314ddff37c989b3a56281a145bb6478f98ba0cad4ea195d3899`
+under `plain-capture-native-prep-20261123.XNVokmbf/cross-02/`.
+
+The owned Sandbox supervisor refused both dispatches before any
+test process started. It observed 2,071,584 and 2,043,128 KiB available
+against the 2,097,152 KiB floor. Both private guest directories were
+removed after verifying no matching live process. Exact inputs and
+outputs were checked and the transfer directories emptied. The
+`native-01/` and `native-02/` attempts retain failure and cleanup
+receipts. Resume those two cases when the guest can sustain the
+configured memory floor through supervisor startup.
+
+Affected-file metrics and the calibrated reference, issuer/revision,
+invalidation and date/scale inputs remain open. Property, fuzz and
+native metric campaigns have no new execution credit from these tests.

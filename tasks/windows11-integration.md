@@ -11775,6 +11775,31 @@ The successful run set HOME to the private temporary directory. Raw logs
 are under `~/.local/share/nevrotick/checkpoint-review-20261122.zY0YitlM/`.
 The later DNS type annotations and task text do not alter those inputs.
 
+###### Check the original ZIP directory and footer in S0.6 readback — 23 November 2026
+
+W11-W10/S0.6 and CHECK-18/26/27. The reader now confirms the
+single-disk entry counts, fixed ZIP64 record and locator where required,
+and exact central-directory byte span before opening the archive. It
+checks each raw directory row and requires disk zero. It retains
+payload equality, block-map and bounded expansion checks. The accepted
+layouts are the observed fixed MakeAppx ZIP64 footer and the ordinary
+ZIP fixture footer. [PKWARE APPNOTE §§4.3.14–16](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+
+The maintained package suite passes 27 tests, including 19 new CLI
+subcases. Those subcases bind each test archive's own digest and
+require its targeted structural refusal. Against `d9713b7`, 12
+discrepancies were accepted and seven reached another diagnostic. The
+new reader refuses all 19 with the intended diagnostic. Both retained
+nine-member MakeAppx archives produce the same success output as the
+predecessor. Both crossed input pairs still refuse on broker image
+bytes. `qa-independent-review` independently decoded the original
+directories and checked the bounded reader and actual CLI refusal path.
+No new package was built or installed for this change. Signature,
+trust, format parity and installed role qualification remain open.
+
+Raw results and frozen artifact checks remain under
+`~/.local/share/nevrotick/s06-zip-footer-20261123.MAWxbiam/`.
+
 ##### Read SCM service owner and DACL without mutation — 22 November 2026
 
 W11-W05/S0.6 and CHECK-1/2/15/16/27. The native adapter opens the local
@@ -14251,6 +14276,47 @@ The first failure, recovery and successful raw cases remain in
 `~/.local/share/nevrotick/observe-crt-native-20261122.omByBAXy/`
 with final verifier SHA-256
 `db0201dcf8ad1a4cd0e5adaca1c68af658fc1f03264e140a41fe003d555cc4b2`.
+
+###### Compare both exact Observe CRT images in Windows Sandbox — 23 November 2026
+
+W11-W10/P6 and CHECK-16/18/20/23/26. Rebuilt both Observe variants
+from `d9713b7e32af5f43a88c4185ad54b243defb4eeb`, bound to 660
+source and helper inputs with map SHA-256
+`1d8292aa60e3d30a12ff5c4174b4708cc25f395eb5e239d1dd4da5684dbf7d81`.
+Both used Rust 1.100.0, the MSVC target, x86-64-v3 and the same
+metadata, hardening and registry graph. Only the private static
+variant added `+crt-static`. The first attempt's export refused the
+wrong PDB filename. The second used the actual CodeView basename
+and independently matched both EXE/PDB identities. Crossed PDBs
+refused on GUID/age and restored pairs passed. The static image has
+25 direct imports versus 28 for dynamic. Its direct imports omit
+`vcruntime140.dll` and the six UCRT API-set imports.
+
+The package-artifact, Sandbox and black-box skills scoped the run to
+two ordinary unpackaged processes. The receiver and renderer refused
+12 focused faults before dispatch. In the offline Windows build
+26100 guest, each image sent one 48-byte request to each of two owned
+loopback peers. All four slots timed out ineligible without replies
+or extra sends, and both children exited zero and were reaped.
+Between 81 and 105 ms from the start of its launch attempt, the
+dynamic process's 13-module sample contained System32
+`VCRUNTIME140.dll` at version 14.51.36247.0. Between 57 and 77 ms
+from its own launch attempt, the static process's 12-module sample
+omitted that DLL. Both samples contained System32
+`ucrtbase.dll`. The samples matched the exact live PIDs, start times
+and private image hashes. Peers, private scratch and mappings were
+retired after observation.
+
+The paired build receipt is
+`5ba0647920f7c2e3f3f08e0b1f69e4b2a2c66331571dbdc84a88d8a9aff31854` under
+`~/.local/share/nevrotick/msix-crt-live-pair-20261123.aO5fZupL/verified/`.
+The native receipt is
+`bdc145f9b0c1167921850a0087f62e68230a6b88c4999b3df24a6dc04158e7d3`
+under `~/.local/share/nevrotick/observe-crt-pair-controller-20261123/pair_8c071f6333b7/`.
+The 478,646,272 bytes of private build scratch were retired after
+rehashing the retained pairs. Installed role loading, runtime
+redistribution and servicing, signing and full package lifecycle
+remain separate decisions and exit evidence.
 
 ###### Slint UI and service CRT continuation — 22 November 2026
 

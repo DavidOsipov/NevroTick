@@ -7,9 +7,9 @@ use std::net::SocketAddr;
 use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
-use ntp_wire::{NtpTimestamp, RawHeader};
 #[cfg(windows)]
-use windows_platform_native::{ClockCoordinates, ClockReadError};
+use crate::ProtectedNativeClockObservation;
+use ntp_wire::{NtpTimestamp, RawHeader};
 
 use super::{
     Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
@@ -422,22 +422,6 @@ pub enum ManagedProtectedPlan {
     /// One fresh verified KE, one initial protected request and at most one
     /// successor earned by the first committed ordinary authenticated reply.
     OneAuthenticatedSuccessor,
-}
-
-/// The native clock-read outcome retained at an original adapter boundary.
-///
-/// Recorded coordinates identify the original local QPC and FILETIME reading.
-/// They convey no clock continuity, UTC accuracy, or eligibility.
-#[cfg(windows)]
-#[must_use = "preserve the original native read disposition"]
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub enum ProtectedNativeClockObservation {
-    /// The exact raw read also supplied this point's software wall value.
-    Recorded(ClockCoordinates),
-    /// The original clock adapter refused; transport used its fallback wall read.
-    ReadRefused(ClockReadError),
-    /// The exact raw read was retained but cannot supply a checked software wall value.
-    UnrepresentableWall(ClockCoordinates),
 }
 
 /// A historical ordinary authenticated reply committed under the original source.

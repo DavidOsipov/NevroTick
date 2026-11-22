@@ -8,7 +8,8 @@
 use std::io;
 
 #[cfg(any(windows, test))]
-mod clock_capture;
+#[cfg(test)]
+use crate::clock_capture;
 
 /// Closed adapter failures; never retain packet, endpoint or library-error text.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -53,7 +54,10 @@ mod reached {
     use tokio::net::UdpSocket;
     use zeroize::Zeroizing;
 
-    use super::{DatagramError, clock_capture::ProtectedClockCapture};
+    use super::DatagramError;
+    #[cfg(windows)]
+    use crate::ProtectedNativeClockObservation;
+    use crate::clock_capture::ApplicationClockCapture as ProtectedClockCapture;
     use crate::nts_ke_experiment::association::AssociationOwner;
     #[cfg(test)]
     use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
@@ -63,8 +67,6 @@ mod reached {
         StagedProtectedSuccessor, Ticket,
     };
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
-    #[cfg(windows)]
-    use crate::nts_ke_experiment::managed_preview::ProtectedNativeClockObservation;
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
         Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase,

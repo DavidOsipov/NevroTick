@@ -20,13 +20,15 @@ use tokio::{
     time::{Instant as TokioInstant, Sleep, sleep_until},
 };
 
+#[cfg(test)]
+use super::SoftwareClock;
 use super::{
-    Control, ControlHandle, ControlSchedule, ExperimentalProfile, FailureSummary, IoCause,
-    IoOutcome, LiveSlot, MAX_TIMEOUT, NativeDatagramPlatform, NativeReadOutcome, PACKET_BYTES,
-    PilotError, RECEIVE_BYTES, Rejection, RunClockContext, SlotReport, SoftwareClock, StagedReply,
-    Status, TerminalOutcome, TimerAction, attempt_send, charge_selected_datagram,
-    classify_read_result, commit_reply, finish_timer, latest, prepare_slot, refresh_source_policy,
-    stage_reply, start_timer,
+    ApplicationClockCapture, Control, ControlHandle, ControlSchedule, ExperimentalProfile,
+    FailureSummary, IoCause, IoOutcome, LiveSlot, MAX_TIMEOUT, NativeDatagramPlatform,
+    NativeReadOutcome, PACKET_BYTES, PilotError, RECEIVE_BYTES, Rejection, RunClockContext,
+    SlotReport, StagedReply, Status, TerminalOutcome, TimerAction, attempt_send,
+    charge_selected_datagram, classify_read_result, commit_reply, finish_timer, latest,
+    prepare_slot, refresh_source_policy, stage_reply, start_timer,
 };
 use ntp_wire::FrameLimits;
 
@@ -894,8 +896,8 @@ enum SeriesWake {
 struct SeriesRead {
     /// Actual native read classification, bounded by the original receive buffer.
     result: NativeReadOutcome,
-    /// Original adjacent software observations.
-    read: SoftwareClock,
+    /// Original adjacent clock observations.
+    read: ApplicationClockCapture,
 }
 
 /// Await one bounded request; dropped receive futures cannot escape this owner.
@@ -913,7 +915,7 @@ async fn next_series_wake(
         () = &mut timer => SeriesWake::Deadline,
         () = slot.policy.wake() => SeriesWake::SourcePolicy,
         result = slot.socket.recv_from(buffer), if receive => {
-            let read = SoftwareClock::capture();
+            let read: ApplicationClockCapture = ApplicationClockCapture::capture();
             SeriesWake::Read(SeriesRead { result: classify_read_result(NativeDatagramPlatform::current(), result), read })
         },
         result = slot.socket.writable(), if writable => SeriesWake::Writable(result),
@@ -926,7 +928,7 @@ fn process_series_reply(
     control: &mut watch::Receiver<Control>,
     bytes: &[u8],
     source: SocketAddr,
-    read: SoftwareClock,
+    read: ApplicationClockCapture,
     limits: FrameLimits,
     deadline: Instant,
 ) -> Control {

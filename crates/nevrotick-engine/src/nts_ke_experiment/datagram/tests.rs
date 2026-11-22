@@ -1656,8 +1656,8 @@ fn managed_protected_policy_wait_checks_out_cookie_only_when_due() -> Result<(),
                 Some(2)
             );
             let (send_before, _, _): (
-                super::clock_capture::ProtectedClockCapture,
-                super::clock_capture::ProtectedClockCapture,
+                super::clock_capture::ApplicationClockCapture,
+                super::clock_capture::ApplicationClockCapture,
                 usize,
             ) = backend.send.ok_or(Failure::Control)?;
             let sent: Instant = send_before.software().monotonic_after();

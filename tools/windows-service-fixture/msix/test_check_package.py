@@ -115,6 +115,17 @@ def make_zip(members, deflated):
     return local.getvalue() + directory.getvalue() + end_record
 
 
+def with_zip64_end_records(classic):
+    """Give an ordinary fixture the fixed end-record layout MakeAppx emits."""
+    footer_offset = len(classic) - 22
+    count, size, offset = struct.unpack_from("<HII", classic, footer_offset + 10)
+    record = struct.pack("<4sQ2H2I4Q", b"PK\x06\x06", 44, 45, 45, 0, 0,
+                         count, count, size, offset)
+    locator = struct.pack("<4sIQI", b"PK\x06\x07", 0, footer_offset, 1)
+    legacy = b"PK\x05\x06" + b"\xff" * 16 + b"\0\0"
+    return classic[:footer_offset] + record + locator + legacy
+
+
 class PackageReaderTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
@@ -216,6 +227,79 @@ class PackageReaderTests(unittest.TestCase):
 
     def test_admits_streamed_deflate_with_two_blocks(self):
         self.assert_accepted(self.write_package(compressed=True))
+
+    def test_rejects_inconsistent_classic_zip_end_record(self):
+        members = self.write_package()
+        original = self.package.read_bytes()
+        self.assert_accepted(members)
+        footer = len(original) - 22
+        for label, offset, reason in (
+            ("disk number", 4, "ZIP disk fields differ"),
+            ("directory disk", 6, "ZIP disk fields differ"),
+            ("disk entry count", 8, "ZIP entry counts differ"),
+            ("total entry count", 10, "ZIP entry counts differ"),
+            ("directory size", 12, "ZIP central directory extent differs"),
+            ("directory offset", 16, "ZIP central directory extent differs"),
+        ):
+            with self.subTest(field=label):
+                changed = bytearray(original)
+                changed[footer + offset] ^= 1
+                self.package.write_bytes(changed)
+                self.assert_refused(reason)
+        self.package.write_bytes(original)
+        self.assert_accepted(members)
+
+    def test_rejects_inconsistent_zip64_end_records(self):
+        members = self.write_package(compressed=True)
+        original = with_zip64_end_records(self.package.read_bytes())
+        self.package.write_bytes(original)
+        self.assert_accepted(members)
+        record = len(original) - 98
+        for label, offset, reason in (
+            ("record size", 4, "ZIP64 end record differs"),
+            ("disk number", 16, "ZIP disk fields differ"),
+            ("directory disk", 20, "ZIP disk fields differ"),
+            ("disk entry count", 24, "ZIP entry counts differ"),
+            ("total entry count", 32, "ZIP entry counts differ"),
+            ("directory size", 40, "ZIP central directory extent differs"),
+            ("directory offset", 48, "ZIP central directory extent differs"),
+            ("locator disk", 60, "ZIP64 locator differs"),
+            ("locator offset", 64, "ZIP64 locator differs"),
+            ("locator disk count", 72, "ZIP64 locator differs"),
+            ("legacy placeholder", 86, "ZIP64 legacy fields differ"),
+        ):
+            with self.subTest(field=label):
+                changed = bytearray(original)
+                changed[record + offset] ^= 1
+                self.package.write_bytes(changed)
+                self.assert_refused(reason)
+        self.package.write_bytes(original)
+        self.assert_accepted(members)
+
+    def test_rejects_central_record_extending_past_the_directory(self):
+        members = self.write_package()
+        original = self.package.read_bytes()
+        self.assert_accepted(members)
+        last_header = original.rindex(b"PK\x01\x02", 0, len(original) - 22)
+        changed = bytearray(original)
+        # A one-byte comment is declared, but the record ends with the filename.
+        changed[last_header + 32] = 1
+        self.package.write_bytes(changed)
+        self.assert_refused("ZIP central directory extent differs")
+        self.package.write_bytes(original)
+        self.assert_accepted(members)
+
+    def test_rejects_central_entry_on_another_disk(self):
+        members = self.write_package()
+        original = self.package.read_bytes()
+        self.assert_accepted(members)
+        directory_start, = struct.unpack_from("<I", original, len(original) - 6)
+        changed = bytearray(original)
+        changed[directory_start + 34] = 1
+        self.package.write_bytes(changed)
+        self.assert_refused("ZIP disk fields differ")
+        self.package.write_bytes(original)
+        self.assert_accepted(members)
 
     def test_archive_digest_and_payload_mismatches_are_distinct(self):
         self.write_package()

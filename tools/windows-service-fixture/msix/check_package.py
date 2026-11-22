@@ -63,6 +63,11 @@ BLOCK_BYTES = 64 * 1024
 # The admitted MakeAppx stream ends with an empty final block after its
 # independently decodable, byte-aligned package blocks.
 DEFLATE_END = b"\x03\x00"
+ZIP_END = struct.Struct("<4s4H2IH")
+ZIP64_LOCATOR = struct.Struct("<4sIQI")
+ZIP64_END = struct.Struct("<4sQ2H2I4Q")
+ZIP64_LEGACY_FIELDS = (0xFFFF,) * 4 + (0xFFFFFFFF,) * 2
+CENTRAL_HEADER_BYTES = 46
 
 
 class Refused(ValueError):
@@ -329,18 +334,60 @@ def read_local_member(data: bytes, item: zipfile.ZipInfo, end: int) -> PackageMe
     return PackageMember(body, header_size, deflated)
 
 
+def check_zip_directory(data: bytes) -> int:
+    """Check the physical single-disk directory and return its declared offset."""
+    end_offset = len(data) - ZIP_END.size
+    reason = "unexpected ZIP comment, trailer or end record"
+    require(end_offset >= 0, reason)
+    signature, *fields, comment_size = ZIP_END.unpack_from(data, end_offset)
+    require(signature == b"PK\x05\x06" and comment_size == 0, reason)
+
+    directory_end = end_offset
+    locator_offset = end_offset - ZIP64_LOCATOR.size
+    legacy_fields = tuple(fields)
+    has_locator = locator_offset >= 0 and data.startswith(b"PK\x06\x07", locator_offset)
+    if has_locator or legacy_fields == ZIP64_LEGACY_FIELDS:
+        # The two admitted MakeAppx archives use the fixed ZIP64 record and
+        # put placeholders in every legacy field other than the comment size.
+        require(legacy_fields == ZIP64_LEGACY_FIELDS, "ZIP64 legacy fields differ")
+        directory_end = locator_offset - ZIP64_END.size
+        require(has_locator and directory_end >= 0, "ZIP64 locator differs")
+        _, disk, record_offset, disk_count = ZIP64_LOCATOR.unpack_from(data, locator_offset)
+        require(disk == 0 and record_offset == directory_end and disk_count == 1,
+                "ZIP64 locator differs")
+        signature, size, _, _, *fields = ZIP64_END.unpack_from(data, directory_end)
+        require(signature == b"PK\x06\x06" and size == ZIP64_END.size - 12,
+                "ZIP64 end record differs")
+
+    disk, directory_disk, disk_entries, total_entries, directory_size, directory_start = fields
+    require(disk == directory_disk == 0, "ZIP disk fields differ")
+    require(disk_entries == total_entries == len(ARCHIVE), "ZIP entry counts differ")
+    reason = "ZIP central directory extent differs"
+    require(0 < directory_start < directory_end and directory_start + directory_size == directory_end,
+            reason)
+    position = directory_start
+    for _ in range(total_entries):
+        require(position + CENTRAL_HEADER_BYTES <= directory_end
+                and data.startswith(b"PK\x01\x02", position), reason)
+        name_size, extra_size, comment_size = struct.unpack_from("<3H", data, position + 28)
+        position += CENTRAL_HEADER_BYTES + name_size + extra_size + comment_size
+    require(position == directory_end, reason)
+    return directory_start
+
+
 def read_archive(data: bytes) -> dict[str, PackageMember]:
+    directory_start = check_zip_directory(data)
     with zipfile.ZipFile(BytesIO(data)) as package:
         members = package.infolist()
         require(len(members) == len(ARCHIVE) and {item.orig_filename for item in members} == ARCHIVE,
                 "package inventory differs or contains duplicate, unsafe or signed members")
         require(sum(item.file_size for item in members) <= MAX_EXPANDED,
                 "expanded package exceeds the input bound")
-        require(data[-22:-18] == b"PK\x05\x06" and data[-2:] == b"\0\0",
-                "unexpected ZIP comment, trailer or end record")
+        require(package.start_dir == directory_start, "ZIP central directory extent differs")
+        require(all(item.volume == 0 for item in members), "ZIP disk fields differ")
         physical_members = sorted(members, key=lambda item: item.header_offset)
         require(physical_members[0].header_offset == 0, "unexpected bytes before ZIP payload")
-        file_ends = [item.header_offset for item in physical_members[1:]] + [package.start_dir]
+        file_ends = [item.header_offset for item in physical_members[1:]] + [directory_start]
         members_by_name = {}
         for item, end in zip(physical_members, file_ends, strict=True):
             name = item.orig_filename

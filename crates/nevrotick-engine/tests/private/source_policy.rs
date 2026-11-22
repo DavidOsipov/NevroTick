@@ -1110,7 +1110,7 @@ async fn reply_observing(
         Wake::Read {
             slot: 0,
             result,
-            read,
+            read: ApplicationClockCapture::software_only(read),
         },
         &buffers,
         ntp_wire::FrameLimits::new(PACKET_BYTES, 0).map_err(|_| "fixture frame limit refused")?,
@@ -1301,7 +1301,7 @@ fn managed_header_writes_receive_to_commit_age_only_for_ordered_capture() -> Che
             let Phase::Pending(sent) = &mut fixture.slots[0].phase else {
                 return Err("actual send is not pending".into());
             };
-            let earlier: Instant = sent.after.mono_after;
+            let earlier: Instant = sent.after.software().mono_after;
             let later: Instant = earlier
                 .checked_add(Duration::from_nanos(1))
                 .ok_or("one-nanosecond receive capture neighbor is unavailable")?;
@@ -1309,7 +1309,10 @@ fn managed_header_writes_receive_to_commit_age_only_for_ordered_capture() -> Che
                 (later, earlier)
             } else if send_return_reversed {
                 // Reverse only the middle bracket after the real send returned.
-                sent.after.mono = later;
+                sent.after = ApplicationClockCapture::software_only(SoftwareClock {
+                    mono: later,
+                    ..sent.after.software()
+                });
                 (later, later)
             } else {
                 (earlier, later)
@@ -1382,7 +1385,10 @@ fn managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply() -
         let Phase::Pending(sent) = &fixture.slots[0].phase else {
             return Err("actual send is not pending".into());
         };
-        let send_span: (Instant, Instant) = (sent.before.mono, sent.after.mono_after);
+        let send_span: (Instant, Instant) = (
+            sent.before.software().mono,
+            sent.after.software().mono_after,
+        );
         let before: [RecordFacts; 2] = facts(&fixture.binding)?;
         assert!(
             before
@@ -1407,7 +1413,7 @@ fn managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply() -
             "reversed receive capture must leave the original control request pending"
         );
         assert!(matches!(&pending.phase, Phase::Pending(saved)
-            if (saved.before.mono, saved.after.mono_after) == send_span));
+            if (saved.before.software().mono, saved.after.software().mono_after) == send_span));
         assert_eq!(pending.packet[40..48], packet[40..48]);
         assert_eq!(
             (pending.send_attempts, pending.received, pending.rejected),
@@ -1491,7 +1497,7 @@ async fn managed_plain_receive_start_boundary() -> Check<()> {
         "receive started before the reserved send and must leave the original control pending"
     );
     assert!(matches!(&pending.phase, Phase::Pending(saved)
-        if saved.before.mono_after == send.mono_after && saved.after.mono_after == early));
+        if saved.before.software().mono_after == send.mono_after && saved.after.software().mono_after == early));
     assert_eq!(pending.packet[40..48], packet[40..48]);
     assert_eq!(
         (pending.send_attempts, pending.received, pending.rejected),
@@ -1539,7 +1545,10 @@ fn actual_unknown_control_retains_pending_budget_and_accepts_reply_before_send_f
         let Phase::Pending(sent) = &fixture.slots[0].phase else {
             return Err("actual send is not pending".into());
         };
-        let send_coordinates = (sent.before.mono, sent.after.mono_after);
+        let send_coordinates: (Instant, Instant) = (
+            sent.before.software().mono,
+            sent.after.software().mono_after,
+        );
         let retained = facts(&fixture.binding)?;
         reply(&mut fixture, &packet, 0, UNKNOWN).await?;
         let slot = &fixture.slots[0];
@@ -1547,7 +1556,10 @@ fn actual_unknown_control_retains_pending_budget_and_accepts_reply_before_send_f
             return Err("unknown code consumed Pending".into());
         };
         assert_eq!(
-            (saved.before.mono, saved.after.mono_after),
+            (
+                saved.before.software().mono,
+                saved.after.software().mono_after
+            ),
             send_coordinates
         );
         assert_eq!((slot.received, slot.rejected), (1, 1));
@@ -1985,7 +1997,10 @@ fn modeled_would_block_keeps_both_real_kernel_reservation_debits() -> Check<()> 
         complete_send(
             &mut fixture.slots[0],
             Err(io::Error::from(io::ErrorKind::WouldBlock)),
-            SendBracket { before, after },
+            SendBracket {
+                before: ApplicationClockCapture::software_only(before),
+                after: ApplicationClockCapture::software_only(after),
+            },
         );
         assert!(matches!(fixture.slots[0].phase, Phase::Sending));
         assert!(!fixture.slots[0].sent);
@@ -2062,7 +2077,7 @@ async fn ordinary_candidate_observing(
         &fixture.slots[0],
         &bytes[..length],
         source,
-        read,
+        ApplicationClockCapture::software_only(read),
         ntp_wire::FrameLimits::new(PACKET_BYTES, 0).map_err(|_| "fixture frame limit refused")?,
     )
     .map_err(|_| "genuine managed response did not stage".into())
@@ -3559,7 +3574,7 @@ async fn final_leaf_guard_case(guard: FinalLeafGuard) -> Check<()> {
     let genuine_read = candidate.read;
     let before = facts(&fixture.binding)?;
     assert!(!fixture.control.borrow().stop);
-    assert!(candidate.read.mono_after < original_deadline);
+    assert!(candidate.read.software().mono_after < original_deadline);
     assert!(
         Instant::now() < original_deadline,
         "fixture did not stage before its original expiry"
@@ -3579,9 +3594,12 @@ async fn final_leaf_guard_case(guard: FinalLeafGuard) -> Check<()> {
         }
         FinalLeafGuard::FutureReadProposal => {
             // Deliberately invalid well-typed proposal, not a native observation.
-            candidate.read.mono_after = Instant::now()
-                .checked_add(Duration::from_secs(30))
-                .ok_or("fixture future read coordinate overflow")?;
+            candidate.read = ApplicationClockCapture::software_only(SoftwareClock {
+                mono_after: Instant::now()
+                    .checked_add(Duration::from_secs(30))
+                    .ok_or("fixture future read coordinate overflow")?,
+                ..candidate.read.software()
+            });
             final_leaf_with_control(&mut fixture, &candidate)
         }
     };
@@ -3815,7 +3833,7 @@ async fn final_policy_failure_case(
         slot.policy.refresh(&slot.identity)?;
     }
     assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
-    assert!(candidate.read.mono_after < original_deadline);
+    assert!(candidate.read.software().mono_after < original_deadline);
     let last_rejection = fixture.slots[0].last_rejection;
     let before = facts(&fixture.binding)?;
     let expected_error = introduce_final_policy_failure(&mut fixture, failure)?;
@@ -4018,17 +4036,17 @@ fn assert_modeled_send_custody(
     };
     assert_eq!(
         (
-            bracket.before.mono,
-            bracket.before.mono_after,
-            bracket.before.utc
+            bracket.before.software().mono,
+            bracket.before.software().mono_after,
+            bracket.before.software().utc
         ),
         (before.mono, before.mono_after, before.utc)
     );
     assert_eq!(
         (
-            bracket.after.mono,
-            bracket.after.mono_after,
-            bracket.after.utc
+            bracket.after.software().mono,
+            bracket.after.software().mono_after,
+            bracket.after.software().utc
         ),
         (after.mono, after.mono_after, after.utc)
     );
@@ -4244,7 +4262,7 @@ async fn modeled_commit_boundary_case(boundary: ModeledCommitBoundary) -> Check<
     let mut fixture = io_fixture()?;
     let original_deadline = fixture.deadline;
     let candidate = seeded_final_commit_candidate(&mut fixture).await?;
-    let read_return = candidate.read.mono_after;
+    let read_return: Instant = candidate.read.software().mono_after;
     let at = match boundary {
         ModeledCommitBoundary::BeforeRead => read_return
             .checked_sub(Duration::from_nanos(1))
@@ -4332,7 +4350,10 @@ fn assert_modeled_committed_history(
         .facts()
         .ok_or("modeled valid reply lost genuine Header facts")?;
     assert_eq!(historical.processing, processing);
-    assert_eq!(historical.read_return.mono_after, candidate.read.mono_after);
+    assert_eq!(
+        historical.read_return.mono_after,
+        candidate.read.software().mono_after
+    );
     assert!(Arc::ptr_eq(&historical.identity, &candidate.identity));
     assert_eq!(
         (fixture.slots[0].received, fixture.slots[0].rejected),
@@ -4412,10 +4433,10 @@ async fn modeled_send_time_commit_boundary(later: bool) -> Check<()> {
         return Err("genuine equal-time candidate lost its managed stamp".into());
     };
     assert_eq!(stamp.sent_at, at);
-    assert_eq!(candidate.sent.before.mono_after, at);
-    assert_eq!(candidate.sent.after.mono_after, at);
-    assert_eq!(candidate.read.mono, processing);
-    assert_eq!(candidate.read.mono_after, processing);
+    assert_eq!(candidate.sent.before.software().mono_after, at);
+    assert_eq!(candidate.sent.after.software().mono_after, at);
+    assert_eq!(candidate.read.software().mono, processing);
+    assert_eq!(candidate.read.software().mono_after, processing);
     assert_eq!(
         (fixture.slots[0].received, fixture.slots[0].rejected),
         (1, 0)
@@ -4491,8 +4512,8 @@ fn modeled_observation_scripts_are_deferred_coherent_and_bounded() -> Check<()> 
     assert_eq!(count.reads(), 1);
     let (mut script, count) = observations::SendReads::fixed(before, after);
     assert_eq!(count.reads(), 0);
-    assert_eq!(script.capture().mono_after, before.mono_after);
-    assert_eq!(script.capture().mono_after, after.mono_after);
+    assert_eq!(script.capture().software().mono_after, before.mono_after);
+    assert_eq!(script.capture().software().mono_after, after.mono_after);
     assert_eq!(count.reads(), 2);
     let exhausted = catch_unwind(AssertUnwindSafe(|| script.capture()));
     assert!(exhausted.is_err());
@@ -4532,7 +4553,8 @@ fn modeled_contended_send_and_commit_leave_deferred_observations_unread() -> Che
         assert_eq!(facts(&fixture.binding)?, retained);
         let candidate = seeded_final_commit_candidate(&mut fixture).await?;
         let retained = facts(&fixture.binding)?;
-        let (read, count) = observations::InstantRead::fixed(candidate.read.mono_after);
+        let (read, count): (observations::InstantRead, observations::ReadCount) =
+            observations::InstantRead::fixed(candidate.read.software().mono_after);
         let held = cell.lock()?;
         let effect = modeled_final_leaf(&mut fixture, &candidate, read);
         drop(held);

@@ -124,6 +124,8 @@ fn facts_with_wall(
         send_before: before,
         send_after: before,
         read_return: read,
+        #[cfg(windows)]
+        native_clock: [None; 3],
         processing,
         peer_receive_bits: receive_bits,
         peer_transmit_bits: transmit_bits,

@@ -251,8 +251,8 @@ impl Drop for RecordList {
 }
 
 /// Copy the complete bounded answer family or the inline local IPv4 singleton.
-/// The name check runs only for the eligible singleton shape and carries no
-/// endpoint or source authority.
+/// The name check runs only for a successful immediate completion with the
+/// eligible singleton shape. It carries no endpoint or source authority.
 /// # Errors
 /// Refuse overlong lists, unexpected address sizes or capacity overflow.
 #[expect(
@@ -262,7 +262,8 @@ impl Drop for RecordList {
 fn copy_answers(
     list: &RecordList,
     family: DnsAddressFamily,
-    is_inline_local_name: impl Fn() -> bool,
+    immediate: Option<i32>,
+    is_local_name: impl Fn() -> bool,
 ) -> Result<DnsAddresses, DnsAddressError> {
     let mut current: *mut RecordHeader = list.0;
     let mut answer: DnsAddresses = DnsAddresses::empty();
@@ -294,7 +295,7 @@ fn copy_answers(
                 .cast();
             // SAFETY: the record's fixed prefix contains its active data length.
             let data_len: u16 = unsafe { length.read() };
-            if local_ipv4 && (data_len != 4 || !is_inline_local_name()) {
+            if local_ipv4 && (data_len != 4 || immediate != Some(0) || !is_local_name()) {
                 return Err(DnsAddressError::Empty);
             }
             let data: *const u8 = prefix.wrapping_byte_add(size_of::<RecordHeader>()).cast();
@@ -358,8 +359,8 @@ fn complete(query: &NativeQuery, result: *mut QueryResult, immediate: Option<i32
                 _ if version != STRUCTURE_VERSION || status == REQUEST_PENDING => {
                     Err(DnsAddressError::Malformed)
                 }
-                0 => copy_answers(&records, query.family, || {
-                    immediate == Some(0) && is_local_dns_name(&query.name)
+                0 => copy_answers(&records, query.family, immediate, || {
+                    is_local_dns_name(&query.name)
                 }),
                 code => Err(DnsAddressError::Native(code)),
             }
@@ -560,18 +561,19 @@ mod tests {
         RecordHeader, RecordList, copy_answers, dns_worker_thread_exited,
     };
 
-    /// A native-shaped A record with initialized, contiguous payload storage.
+    /// A native-shaped address record with initialized, contiguous payload storage.
     #[repr(C)]
     struct FixtureRecord {
         /// Prefix inspected while this stack allocation remains live.
         header: RecordHeader,
-        /// Active IPv4 union member.
-        address: [u8; 4],
+        /// Storage for either address member, fully initialized in every fixture.
+        address: [u8; 16],
     }
 
     impl FixtureRecord {
         /// Materialize a test record with independently chosen native fields.
         const fn new(section: u32, length: u16, address: [u8; 4]) -> Self {
+            let [a, b, c, d]: [u8; 4] = address;
             Self {
                 header: RecordHeader {
                     next: null_mut(),
@@ -582,7 +584,7 @@ mod tests {
                     ttl: 0,
                     reserved: 0,
                 },
-                address,
+                address: [a, b, c, d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             }
         }
     }
@@ -595,12 +597,15 @@ mod tests {
     fn copy_fixture(
         head: &mut FixtureRecord,
         family: DnsAddressFamily,
-        is_inline_local_name: impl Fn() -> bool,
+        immediate: Option<i32>,
+        is_local_name: impl Fn() -> bool,
     ) -> Result<DnsAddresses, DnsAddressError> {
         let records: ManuallyDrop<RecordList> =
             ManuallyDrop::new(RecordList(std::ptr::from_mut(head).cast()));
-        copy_answers(&records, family, is_inline_local_name)
+        copy_answers(&records, family, immediate, is_local_name)
     }
+
+    mod record_tests;
 
     /// Preserve ordinary Answer and malformed outcomes without evaluating local identity.
     /// # Errors
@@ -617,10 +622,10 @@ mod tests {
         let address: [u8; 4] = [192, 0, 2, 4];
         let mut good: FixtureRecord = FixtureRecord::new(1, 4, address);
         let mut malformed: FixtureRecord = FixtureRecord::new(1, 3, address);
-        let copied: DnsAddresses = copy_fixture(&mut good, DnsAddressFamily::V4, local_name)?;
+        let copied: DnsAddresses = copy_fixture(&mut good, DnsAddressFamily::V4, None, local_name)?;
         assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::from(address))]));
         assert!(matches!(
-            copy_fixture(&mut malformed, DnsAddressFamily::V4, local_name),
+            copy_fixture(&mut malformed, DnsAddressFamily::V4, None, local_name),
             Err(DnsAddressError::Malformed)
         ));
         assert!(!checked.get());
@@ -636,14 +641,15 @@ mod tests {
     fn local_ipv4_record_requires_exact_shape_and_identity() -> Result<(), DnsAddressError> {
         let loopback: [u8; 4] = [127, 0, 0, 1];
         let mut local: FixtureRecord = FixtureRecord::new(0, 4, loopback);
-        let copied: DnsAddresses = copy_fixture(&mut local, DnsAddressFamily::V4, || true)?;
+        let copied: DnsAddresses =
+            copy_fixture(&mut local, DnsAddressFamily::V4, Some(0), || true)?;
         assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::LOCALHOST)]));
         assert!(matches!(
-            copy_fixture(&mut local, DnsAddressFamily::V4, || false),
+            copy_fixture(&mut local, DnsAddressFamily::V4, Some(0), || false),
             Err(DnsAddressError::Empty)
         ));
         assert!(matches!(
-            copy_fixture(&mut local, DnsAddressFamily::V6, || true),
+            copy_fixture(&mut local, DnsAddressFamily::V6, Some(0), || true),
             Err(DnsAddressError::Empty)
         ));
         for (section, length, address) in [
@@ -655,19 +661,20 @@ mod tests {
         ] {
             let mut refused: FixtureRecord = FixtureRecord::new(section, length, address);
             assert!(matches!(
-                copy_fixture(&mut refused, DnsAddressFamily::V4, || true),
+                copy_fixture(&mut refused, DnsAddressFamily::V4, Some(0), || true),
                 Err(DnsAddressError::Empty)
             ));
         }
         let mut additional: FixtureRecord = FixtureRecord::new(0, 4, loopback);
         local.header.next = (&raw mut additional).cast();
         assert!(matches!(
-            copy_fixture(&mut local, DnsAddressFamily::V4, || true),
+            copy_fixture(&mut local, DnsAddressFamily::V4, Some(0), || true),
             Err(DnsAddressError::Empty)
         ));
         let mut answer: FixtureRecord = FixtureRecord::new(1, 4, loopback);
         local.header.next = (&raw mut answer).cast();
-        let copied: DnsAddresses = copy_fixture(&mut local, DnsAddressFamily::V4, || false)?;
+        let copied: DnsAddresses =
+            copy_fixture(&mut local, DnsAddressFamily::V4, Some(0), || false)?;
         assert!(copied.iter().eq([IpAddr::V4(Ipv4Addr::LOCALHOST)]));
         Ok(())
     }

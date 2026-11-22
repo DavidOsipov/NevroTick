@@ -1192,9 +1192,14 @@ uncertainty, and affected-file qualification before positive Core
 admission. The [protected capture facade witness](../../tasks/engine-transport-pilot.md#check-the-original-protected-capture-triplet-in-the-facade-fixture)
 checks the original recorded triplet on the joined receipt. The
 [matching peer and controller](../../tasks/engine-transport-pilot.md#build-the-matching-protected-capture-peer--22-november-2026)
-now pass frozen build and host-side admission. The authenticated
-Windows exchange still needs fresh offline/date admission and the
-owner's normal confirmation of the guest's temporary lab root. The
+pass frozen build and host-side admission. The [ordinary protected Windows exchange](../../tasks/engine-transport-pilot.md#observe-the-ordinary-protected-capture-in-windows-sandbox--23-november-2026)
+passed on those exact images with two authenticated requests, checked
+original capture order and restored the fixture's root and CRL store
+rows. The [shared plain capture](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-plain-acquisition--23-november-2026)
+now carries the same three raw clock dispositions through the actual
+plain transport receipt. Development checks passed. The calibrated
+reference and broker-owned issuer remain prerequisites for production
+mapping, validity, uncertainty and admission. The
 [retained SCM process](../../tasks/windows11-integration.md#retain-the-running-scm-process--22-november-2026)
 passes its portable custody cases. Its next dependency is a fixed
 SCM-hosted broker listener and the restricted Engine's access and
@@ -1358,8 +1363,10 @@ terms, installed loader observations, role-specific hardening and runtime
 servicing.
 The [live dynamic Observe comparison](../../tasks/windows11-integration.md#observe-the-dynamic-vc-runtime-in-a-live-windows-process)
 reached the mapped System32 VC runtime during ordinary loopback acquisition
-in the offline Windows Sandbox. Its kept image is an unpackaged observer.
-Retain both exact variants for the next paired load comparison.
+in the offline Windows Sandbox. The [paired Observe run](../../tasks/windows11-integration.md#compare-both-exact-observe-crt-images-in-windows-sandbox--23-november-2026)
+rebuilt both variants from one snapshot. The DLL was present in the
+dynamic module sample and absent in the static sample. Both mapped
+`ucrtbase.dll`. Installed loading and redistribution remain open.
 
 The [linked PE hardening gate](../../tasks/build-optimization.md#linked-windows-pe-hardening-gate--21-november-2026)
 now checks each emitted UI and Observe image before metadata acceptance or
@@ -1519,8 +1526,10 @@ on those exact unsigned bytes. The
 checks the original package's declared block spans and refuses three metadata
 discrepancies that the earlier fixture reader accepted. The
 [XML encoding readback](../../tasks/windows11-integration.md#check-the-original-xml-encoding-during-unsigned-package-readback)
-checks the original XML bytes and retains local CLI regressions for the
-archive reader. The
+checks the original XML bytes and retains local CLI regressions. The
+[ZIP directory readback](../../tasks/windows11-integration.md#check-the-original-zip-directory-and-footer-in-s06-readback--23-november-2026)
+now independently confirms the single-disk directory and footer.
+Both retained MakeAppx outputs still pass. The
 [SCM security child](../../tasks/windows11-integration.md#read-scm-service-owner-and-dacl-without-mutation--22-november-2026)
 matched the separate owner and DACL readback on two existing offline
 guest services. The
