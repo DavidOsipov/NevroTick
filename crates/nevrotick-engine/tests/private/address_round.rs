@@ -752,6 +752,315 @@ fn correlated_control_ends_the_round_without_address_evasion() -> Check<()> {
     Ok(())
 }
 
+/// Compare both restriction records across a membership change with no traffic.
+/// # Panics
+/// Reject any change to the actual retained intervals, floors or revisions.
+fn assert_membership_preserved_restrictions(
+    before: &crate::SourcePolicySnapshot,
+    after: &crate::SourcePolicySnapshot,
+) {
+    for (original, current) in [
+        (before.source(), after.source()),
+        (before.endpoint(), after.endpoint()),
+    ] {
+        assert_eq!(current.interval(), original.interval());
+        assert_eq!(current.floor(), original.floor());
+        assert_eq!(current.revision(), original.revision());
+    }
+}
+
+/// First membership preserves the installed revision and real RATE floor while
+/// fencing earlier plans and admitting only the selected order through real UDP.
+/// # Errors
+/// Preserve fixture, policy, runtime and actual exchange failures.
+/// # Panics
+/// Reject stale or alternate traffic, weakened restrictions or lost cursor progress.
+#[test]
+fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Check<()> {
+    use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits, SourceScale};
+
+    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
+        1,
+        3,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source = authority.source(0)?;
+    let first = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let rate = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let (a, b, c) = (
+        first.local_addr()?,
+        second.local_addr()?,
+        rate.local_addr()?,
+    );
+    let snapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&[a, b, c])?)?;
+    let (old, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
+    let (rate_round, _) = source.prepare_address_round(checked_config(&[c])?)?;
+    let schedule = ControlSchedule::new(None, None)?;
+    let quiet_rate = rate.try_clone()?;
+    let rate_peer = ReplyPeer::spawn(rate, ReplyKind::Control)?;
+    let result = execute_address_round(rate_round, &schedule);
+    let (rate_report, query) = joined_result(result, rate_peer.finish())?;
+    check_query(&require_query(query)?);
+    assert_eq!(rate_report.end(), AddressRoundEnd::Control);
+    let before = source.policy_snapshot(c)?;
+    assert_eq!(before.source().interval(), Duration::from_millis(2));
+    assert!(before.source().floor().is_some() && before.endpoint().floor().is_some());
+
+    authority.select_initial_round_membership(&snapshot, SourceAddressSet::new(&[a, b])?)?;
+    let actual = source
+        .configuration_snapshot()?
+        .ok_or(PilotError::InternalState)?;
+    assert!(actual.same_configuration(&snapshot));
+    assert!(actual.addresses().allows(c));
+    assert_eq!(
+        authority.select_initial_round_membership(&snapshot, SourceAddressSet::new(&[b, a])?),
+        Err(SourcePolicyError::ConfigurationChanged),
+    );
+    let old_report = execute_address_round(old, &schedule)?;
+    let old_queries = (observe_queries(&first)?.0, observe_queries(&second)?.0);
+    assert!(
+        matches!(
+            old_report.primary_error(),
+            Some(PilotError::SourcePolicy(
+                SourcePolicyError::ConfigurationChanged
+            ))
+        ),
+        "an earlier numeric plan became effective without the selected membership: {old_queries:?}"
+    );
+    assert_eq!(old_queries, (0, 0));
+    assert_membership_preserved_restrictions(&before, &source.policy_snapshot(c)?);
+
+    let (previous_scale, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
+    let revised = authority.replace_source_scale(&snapshot, SourceScale::UnsmearedUtc)?;
+    for peers in [&[c][..], &[b, a], &[a]] {
+        assert!(matches!(
+            source.prepare_address_round(checked_config(peers)?),
+            Err(PilotError::SourcePolicy(SourcePolicyError::Foreign))
+        ));
+    }
+    assert!(matches!(
+        source.session(crate::SeriesConfig::new(
+            a,
+            Duration::from_millis(200),
+            Duration::from_secs(2)
+        )?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    let retired = execute_address_round(previous_scale, &schedule)?;
+    assert!(matches!(
+        retired.primary_error(),
+        Some(PilotError::SourcePolicy(
+            SourcePolicyError::ConfigurationChanged
+        ))
+    ));
+    assert_eq!(observe_queries(&first)?.0, 0);
+    assert_eq!(observe_queries(&second)?.0, 0);
+
+    let (current, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
+    let responder = ReplyPeer::spawn(second, ReplyKind::Ordinary)?;
+    let result = execute_address_round(current, &schedule);
+    let (report, query) = joined_result(result, responder.finish())?;
+    check_query(&require_query(query)?);
+    assert_eq!(report.round_end(), AddressRoundEnd::Reply);
+    assert_eq!(report.attempts().len(), 2);
+    assert_eq!(report.attempts()[0].peer(), a);
+    assert_eq!(report.attempts()[1].peer(), b);
+    let facts = report.attempts()[1]
+        .report()
+        .facts()
+        .ok_or(PilotError::InternalState)?;
+    assert!(
+        facts
+            .source_configuration()
+            .is_some_and(|original| original.same_configuration(&revised))
+    );
+    assert_eq!(observe_queries(&first)?.0, 1);
+    assert_eq!(observe_queries(&quiet_rate)?.0, 0);
+    Ok(())
+}
+
+/// Change membership after real registration and call the final send guard.
+/// # Errors
+/// Preserve native setup, readiness and finite wait failures.
+/// # Panics
+/// Reject any debit or received packet from the pre-membership slot.
+#[test]
+fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Check<()> {
+    use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
+
+    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
+        1,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let peer_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer = peer_socket.local_addr()?;
+    let source = authority.source(0)?;
+    let configuration =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&[peer])?)?;
+    let (mut prepared, _) = source.prepare_address_round(checked_config(&[peer])?)?;
+    let mode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let context = Arc::new(RunClockContext { origin });
+    let entered = runtime.enter();
+    let SetupOutcome::Ready(mut slot) = setup_address_request_bound(
+        peer,
+        prepared.packets[0],
+        context,
+        &mut prepared.control,
+        deadline,
+        deadline,
+        mode,
+    )?
+    else {
+        return Err(io::Error::other("original numeric socket did not reach readiness").into());
+    };
+    drop(entered);
+    runtime.block_on(async {
+        tokio::time::timeout_at(TokioInstant::from_std(deadline), slot.socket.writable()).await?
+    })?;
+    authority.select_initial_round_membership(&configuration, SourceAddressSet::new(&[peer])?)?;
+    let checkpoint = attempt_send(&mut slot, deadline, &prepared.control);
+    let sent = slot.sent;
+    let queries = observe_queries(&peer_socket)?.0;
+    assert!(
+        matches!(
+            slot.phase,
+            crate::Phase::Done(TerminalOutcome::SourcePolicy(
+                SourcePolicyError::ConfigurationChanged
+            ))
+        ),
+        "final send accepted an old membership at the same administrative revision: {sent}, {queries}"
+    );
+    assert!(!checkpoint.stop);
+    assert!(!sent);
+    assert_eq!(queries, 0);
+    let retained = source.policy_snapshot(peer)?;
+    assert!(retained.source().floor().is_none() && retained.endpoint().floor().is_none());
+    Ok(())
+}
+
+/// Run a correlated native query/reply through staging and the actual final guard.
+/// # Errors
+/// Preserve fixture, runtime, peer join, bounded wait and real policy failures.
+/// # Panics
+/// Require independent query bytes and one charged datagram at the commit seam.
+fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
+    use crate::{SoftwareClock, SourceAddressSet, SourcePolicyLimits};
+
+    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
+        1,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let peer_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer = peer_socket.local_addr()?;
+    let source = authority.source(0)?;
+    let members = SourceAddressSet::new(&[peer])?;
+    let configuration = authority.install_source_configuration(&source, members.clone())?;
+    let (mut prepared, _) = source.prepare_address_round(checked_config(&[peer])?)?;
+    let mode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let entered = runtime.enter();
+    let SetupOutcome::Ready(mut slot) = setup_address_request_bound(
+        peer,
+        prepared.packets[0],
+        Arc::new(RunClockContext { origin }),
+        &mut prepared.control,
+        deadline,
+        deadline,
+        mode,
+    )?
+    else {
+        return Err(io::Error::other("original request did not acquire its socket").into());
+    };
+    drop(entered);
+    let responder = ReplyPeer::spawn(peer_socket, ReplyKind::Ordinary)?;
+    let mut buffer = [0; RECEIVE_BYTES];
+    let received = runtime.block_on(async {
+        let cutoff = TokioInstant::from_std(deadline);
+        tokio::time::timeout_at(cutoff, slot.socket.writable()).await??;
+        let _checkpoint = attempt_send(&mut slot, deadline, &prepared.control);
+        let (length, sender) =
+            tokio::time::timeout_at(cutoff, slot.socket.recv_from(&mut buffer)).await??;
+        Ok::<_, Box<dyn Error>>((length, sender, SoftwareClock::capture()))
+    });
+    let joined = responder.finish();
+    let (length, sender, capture) = received?;
+    check_query(&require_query(joined?)?);
+    assert_eq!(length, PACKET_BYTES);
+    assert!(crate::charge_selected_datagram(
+        &mut slot,
+        &crate::NativeReadOutcome::Datagram {
+            length,
+            source: sender
+        },
+    ));
+    let staged = crate::stage_reply(
+        &slot,
+        &buffer[..length],
+        sender,
+        capture,
+        FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
+    );
+    assert!(
+        staged.is_ok(),
+        "the real reply must reach the late membership boundary"
+    );
+    let mut selection = None;
+    let _checkpoint = super::super::publish_series_reply_observing(
+        &mut slot,
+        &mut prepared.control,
+        staged,
+        deadline,
+        || {
+            selection = Some(if change_membership {
+                authority.select_initial_round_membership(&configuration, members)
+            } else {
+                Ok(())
+            });
+        },
+        || {},
+    );
+    selection.ok_or("receiving guard was never reached")??;
+    Ok(slot.into_report(0)?)
+}
+
+/// Changing membership after staging retires the consumed reply exactly once.
+/// # Errors
+/// Propagate actual execution or selection failure for either case.
+/// # Panics
+/// Refuse old history publication and preserve the genuine correlated neighbor.
+#[test]
+fn membership_selected_after_staging_fences_the_actual_final_receive() -> Check<()> {
+    let stale = membership_at_final_receive(true)?;
+    assert_eq!(
+        stale.source_policy_refusal(),
+        Some(crate::SourcePolicyError::ConfigurationChanged),
+        "final receive published a reply under the old membership"
+    );
+    assert!(stale.sent() && stale.facts().is_none());
+    assert_eq!((stale.received(), stale.rejected()), (1, 1));
+    let valid = membership_at_final_receive(false)?;
+    assert_eq!(valid.status(), Status::Header);
+    assert!(valid.sent() && valid.facts().is_some());
+    assert_eq!((valid.received(), valid.rejected()), (1, 0));
+    Ok(())
+}
+
 /// Rejected packets leave the actual first request available to its valid neighbor.
 /// # Errors
 /// Preserve native fixture/driver failure after joining the peer.
@@ -859,7 +1168,7 @@ fn preexisting_stop_and_invalidation_prevent_every_send() -> Check<()> {
     Ok(())
 }
 
-/// A genuine terminal header survives controls at both sides of the summary sample.
+/// A genuine terminal header and its summary survive later control and cleanup errors.
 /// # Errors
 /// Preserve actual runtime, peer, control and driver failures after joining.
 /// # Panics
@@ -896,7 +1205,6 @@ fn actual_header_survives_stop_and_invalidation_at_the_final_checkpoint() -> Che
                     }
                 },
             ));
-            drop(runtime);
             let seen = responder.finish();
             let (report, seen) = joined_result(Ok(report), seen)?;
             if let Some(error) = control_failure {
@@ -914,17 +1222,67 @@ fn actual_header_survives_stop_and_invalidation_at_the_final_checkpoint() -> Che
                 .ok_or_else(|| io::Error::other("historical header absent"))?;
             assert_eq!(actual.report().status(), Status::Header);
             assert!(actual.report().facts().is_some());
-            let expected = if phase == RoundCheckpoint::After {
-                AddressRoundEnd::Reply
-            } else if invalidated {
-                AddressRoundEnd::Stale
+            if phase == RoundCheckpoint::After {
+                assert_eq!(report.round_end(), AddressRoundEnd::Reply);
+                assert_eq!(report.end(), AddressRoundEnd::Reply);
+                if invalidated {
+                    check_reply_retained_after_failed_invalidation(report, &control, &runtime)?;
+                }
             } else {
-                AddressRoundEnd::Stopped
-            };
-            assert_eq!(report.end(), expected);
+                let expected: AddressRoundEnd = if invalidated {
+                    AddressRoundEnd::Stale
+                } else {
+                    AddressRoundEnd::Stopped
+                };
+                assert_eq!(report.round_end(), expected);
+                assert_eq!(report.end(), expected);
+            }
             assert_eq!(observe_queries(&next)?.0, 0);
         }
     }
+    Ok(())
+}
+
+/// Reap a genuine action error on the same watch after the real reply checkpoint.
+/// The private epoch seed exercises exhaustion without simulating 2^64 changes.
+/// # Errors
+/// Preserve fixture failures and an absent retained header.
+/// # Panics
+/// Require the original decision and header beside the actual cleanup error.
+fn check_reply_retained_after_failed_invalidation(
+    report: AddressRoundReport,
+    control: &ControlHandle,
+    runtime: &tokio::runtime::Runtime,
+) -> Check<()> {
+    control
+        .sender
+        .send_modify(|state: &mut Control| state.epoch = u64::MAX);
+    let mut observer: watch::Receiver<Control> = control.sender.subscribe();
+    let reaped: Result<(), PilotError> =
+        runtime.block_on(reap_future_invalidation(control, &mut observer))?;
+    assert!(observer.borrow().stop);
+    assert!(matches!(reaped, Err(PilotError::GenerationExhausted)));
+    assert_eq!(runtime.metrics().num_alive_tasks(), 0);
+    assert_eq!(control.sender.sender_count(), 1);
+    let report: AddressRoundReport = reconcile_cleanup(report, Ok(()), reaped);
+    assert_eq!(report.end(), AddressRoundEnd::Failure);
+    assert_eq!(
+        report.round_end(),
+        AddressRoundEnd::Reply,
+        "timer cleanup must preserve the serialized round decision"
+    );
+    assert_eq!(
+        report
+            .cleanup_errors()
+            .map(|cause| cause.map(FailureSummary::code)),
+        [None, Some("generation_exhausted")]
+    );
+    assert!(report.primary_error().is_none());
+    let [retained] = report.attempts() else {
+        return Err(io::Error::other("cleanup lost the historical header").into());
+    };
+    assert_eq!(retained.report().status(), Status::Header);
+    assert!(retained.report().facts().is_some());
     Ok(())
 }
 
@@ -1953,12 +2311,47 @@ fn private_counter_seed_run_owned_reaps_stop_on_due_invalidation_overflow() -> C
     Ok(())
 }
 
-/// Await an actual future invalidation job on a current-thread runtime.
-/// The private seed skips 2^64 public history; no task panic is manufactured.
+/// Await and reap an actual future invalidation job on the existing runtime.
 /// # Errors
 /// Preserve genuine watch/timeout failures and an expired-before-spawn fixture.
 /// # Panics
-/// Require actual notification, completion before reaping and the exact checked result.
+/// Require actual completion before reaping the job.
+async fn reap_future_invalidation(
+    control: &ControlHandle,
+    observation: &mut watch::Receiver<Control>,
+) -> Check<Result<(), PilotError>> {
+    let when: Instant = Instant::now()
+        .checked_add(Duration::from_millis(100))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let started: Result<Option<crate::TimerJob>, PilotError> =
+        start_timer(Some(when), control.clone(), TimerAction::Invalidate);
+    if Instant::now() >= when && !matches!(&started, Ok(Some(_))) {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "future invalidation fixture expired before an owned job was established",
+        )
+        .into());
+    }
+    let job: crate::TimerJob =
+        product_ok(started, "future invalidation returned an immediate error")?
+            .ok_or_else(|| io::Error::other("future invalidation job absent"))?;
+    let notified: Result<Result<(), watch::error::RecvError>, tokio::time::error::Elapsed> =
+        tokio::time::timeout(Duration::from_secs(2), observation.changed()).await;
+    let completed: bool = job.is_finished();
+    let reaped: Result<(), PilotError> = finish_timer(Some(job)).await;
+    notified??;
+    assert!(
+        completed,
+        "actual invalidation job was not complete before reaping"
+    );
+    Ok(reaped)
+}
+
+/// Exercise checked generation arithmetic without repeating public history.
+/// # Errors
+/// Preserve the future-timer fixture's actual failure.
+/// # Panics
+/// Require exact watch and runtime state at the last valid and exhausted generations.
 fn future_invalidation_boundary_case(seed: u64) -> Check<()> {
     let (mut prepared, control) = prepare_address_round(checked_config(&[declared_peer(41001)])?)?;
     control.sender.send_modify(|value| value.epoch = seed);
@@ -1966,31 +2359,8 @@ fn future_invalidation_boundary_case(seed: u64) -> Check<()> {
     assert_eq!(initial.epoch, seed);
     assert!(!initial.stop);
     let runtime = runtime()?;
-    let outcome: Check<_> = runtime.block_on(async {
-        let when = Instant::now()
-            .checked_add(Duration::from_millis(100))
-            .ok_or(PilotError::DeadlineOverflow)?;
-        let started = start_timer(Some(when), control.clone(), TimerAction::Invalidate);
-        if Instant::now() >= when && !matches!(&started, Ok(Some(_))) {
-            return Err(io::Error::new(
-                io::ErrorKind::TimedOut,
-                "future invalidation fixture expired before an owned job was established",
-            )
-            .into());
-        }
-        let job = product_ok(started, "future invalidation returned an immediate error")?;
-        assert!(
-            job.is_some(),
-            "future invalidation did not start its real job"
-        );
-        let job = job.ok_or_else(|| io::Error::other("future invalidation job absent"))?;
-        let notified =
-            tokio::time::timeout(Duration::from_secs(2), prepared.control.changed()).await;
-        let completed = job.is_finished();
-        let reaped = finish_timer(Some(job)).await;
-        Ok((notified, completed, reaped))
-    });
-    let (notified, completed, reaped) = outcome?;
+    let reaped: Result<(), PilotError> =
+        runtime.block_on(reap_future_invalidation(&control, &mut prepared.control))?;
     let state = *prepared.control.borrow_and_update();
     drop(prepared);
     if let Err(error) = reaped {
@@ -2001,11 +2371,6 @@ fn future_invalidation_boundary_case(seed: u64) -> Check<()> {
             error.as_str()
         );
     }
-    notified??;
-    assert!(
-        completed,
-        "actual invalidation job was not complete before reaping"
-    );
     assert_eq!(runtime.metrics().num_alive_tasks(), 0);
     assert_eq!(control.sender.sender_count(), 1);
     assert_eq!(state.epoch, u64::MAX);

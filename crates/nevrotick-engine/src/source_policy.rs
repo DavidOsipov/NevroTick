@@ -298,6 +298,16 @@ mod configuration {
         }
     }
 
+    /// Select historical inspection, a fixed binding or a complete address round.
+    pub(super) enum Selection<'a> {
+        /// Inspect administrative history without issuing a usable binding.
+        History,
+        /// Bind one numeric endpoint without a resolved-round owner.
+        Numeric(EndpointKey),
+        /// Bind the entire caller plan in its checked order.
+        Round(&'a [Option<EndpointKey>; 3]),
+    }
+
     /// One sealed source plus optional actually installed configuration context.
     #[derive(Clone)]
     pub(crate) struct SourceContext {
@@ -305,6 +315,8 @@ mod configuration {
         source: SourceIdentity,
         /// None denotes genuine historical lack of an installed configuration.
         configuration: Option<SourceConfigurationSnapshot>,
+        /// Actual allocation identity of a selected, ordered round membership.
+        membership: Option<Arc<SourceAddressSet>>,
     }
 
     impl SourceContext {
@@ -326,12 +338,15 @@ mod configuration {
                     let Self {
                         source,
                         configuration,
+                        membership,
                     } = left;
                     let Self {
                         source: other_source,
                         configuration: other_configuration,
+                        membership: other_membership,
                     } = right;
                     source.same_source(other_source)
+                        && same_membership(membership.as_ref(), other_membership.as_ref())
                         && match (configuration, other_configuration) {
                             (None, None) => true,
                             (Some(a), Some(b)) => a.same_configuration(b),
@@ -349,7 +364,7 @@ mod configuration {
         pub(super) fn capture(
             source: &SourceHandle,
             guard: &PolicyGuard<'_>,
-            keys: &[Option<EndpointKey>; 3],
+            selection: Selection<'_>,
         ) -> Result<Self, SourcePolicyError> {
             if !std::ptr::eq(guard.cell, source.cell.as_ref()) {
                 return Err(SourcePolicyError::Foreign);
@@ -365,17 +380,39 @@ mod configuration {
                 return Err(SourcePolicyError::Foreign);
             }
             let snapshot = configuration.snapshot()?;
-            if snapshot.as_ref().is_some_and(|value| {
-                keys.iter()
-                    .flatten()
-                    .any(|key| !value.addresses.contains(*key))
-            }) {
+            let admitted: bool = match (selection, configuration.membership.as_ref()) {
+                (Selection::History, _) => true,
+                (Selection::Round(keys), Some(members)) => members.keys == *keys,
+                (Selection::Numeric(_), Some(_)) => false,
+                (Selection::Round(keys), None) => snapshot.as_ref().is_none_or(|value| {
+                    keys.iter()
+                        .flatten()
+                        .all(|key| value.addresses.contains(*key))
+                }),
+                (Selection::Numeric(key), None) => snapshot
+                    .as_ref()
+                    .is_none_or(|value| value.addresses.contains(key)),
+            };
+            if !admitted {
                 return Err(SourcePolicyError::Foreign);
             }
             Ok(Self {
                 source: identity,
                 configuration: snapshot,
+                membership: configuration.membership.clone(),
             })
+        }
+    }
+
+    /// Compare issued identities independently from equal endpoint values.
+    fn same_membership(
+        original: Option<&Arc<SourceAddressSet>>,
+        current: Option<&Arc<SourceAddressSet>>,
+    ) -> bool {
+        match (original, current) {
+            (None, None) => true,
+            (Some(original), Some(current)) => Arc::ptr_eq(original, current),
+            (None, Some(_)) | (Some(_), None) => false,
         }
     }
 
@@ -385,6 +422,8 @@ mod configuration {
         source: SourceIdentity,
         /// Current installed snapshot; absence never supplies a positive witness.
         current: Option<SourceConfigurationSnapshot>,
+        /// Independently issued membership, cleared with administrative replacement.
+        membership: Option<Arc<SourceAddressSet>>,
         /// Sticky checked-revision exhaustion, independent of every `KoD` field.
         exhausted: bool,
     }
@@ -395,6 +434,7 @@ mod configuration {
             Self {
                 source,
                 current: None,
+                membership: None,
                 exhausted: false,
             }
         }
@@ -424,10 +464,18 @@ mod configuration {
                 return Err(SourcePolicyError::Foreign);
             }
             let current = self.snapshot()?;
+            if !same_membership(context.membership.as_ref(), self.membership.as_ref()) {
+                return Err(SourcePolicyError::ConfigurationChanged);
+            }
             match (current.as_ref(), context.configuration.as_ref()) {
                 (None, None) => Ok(()),
                 (Some(actual), Some(original)) if actual.same_configuration(original) => {
-                    if actual.addresses.contains(key) {
+                    if actual.addresses.contains(key)
+                        && self
+                            .membership
+                            .as_ref()
+                            .is_none_or(|members| members.contains(key))
+                    {
                         Ok(())
                     } else {
                         Err(SourcePolicyError::Foreign)
@@ -438,6 +486,48 @@ mod configuration {
         }
     }
 
+    /// Issue the first membership within the original administration envelope.
+    /// # Errors
+    /// Refuse foreign, stale, already selected or outside-envelope input.
+    pub(super) fn select_initial_membership(
+        authority: &mut SourcePolicyAuthority,
+        expected: &SourceConfigurationSnapshot,
+        members: SourceAddressSet,
+    ) -> Result<(), SourcePolicyError> {
+        if !Arc::ptr_eq(&authority.cell.identity_domain, &expected.source.domain) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let mut guard: PolicyGuard<'_> = authority.cell.lock()?;
+        let state: &mut super::PolicyState = guard.state_mut()?;
+        let index: usize = expected.source.index;
+        let config: &mut ConfigState = state
+            .configurations
+            .get_mut(index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let record: &mut super::Record = state
+            .sources
+            .get_mut(index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let current: SourceConfigurationSnapshot = config
+            .snapshot()?
+            .filter(|current| current.same_configuration(expected))
+            .ok_or(SourcePolicyError::ConfigurationChanged)?;
+        if config.membership.is_some() {
+            return Err(SourcePolicyError::ConfigurationChanged);
+        }
+        if !members
+            .keys
+            .iter()
+            .flatten()
+            .all(|key| current.addresses.contains(*key))
+        {
+            return Err(SourcePolicyError::Foreign);
+        }
+        config.membership = Some(Arc::new(members));
+        record.changed = true;
+        Ok(())
+    }
+
     /// Complete staged definition; accepted input types own their checked invariants.
     /// The target already owns checked shared data; cloning allocates nothing.
     struct Definition {
@@ -445,6 +535,8 @@ mod configuration {
         addresses: SourceAddressSet,
         /// Declaration provided by the authority for this exact definition.
         scale: SourceScale,
+        /// Scale-only replacement preserves the selected addresses and membership.
+        retain_membership: bool,
         /// None withdraws KE without changing the numeric source definition.
         #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
         preview_target: Option<crate::KePreviewTarget>,
@@ -504,6 +596,7 @@ mod configuration {
                     .and_then(NonZeroU64::new);
                 let Some(revision): Option<NonZeroU64> = successor else {
                     config.current = None;
+                    config.membership = None;
                     config.exhausted = true;
                     record.changed = true;
                     return Err(SourcePolicyError::ConfigurationUnavailable);
@@ -521,6 +614,9 @@ mod configuration {
             preview_target: definition.preview_target,
         };
         config.current = Some(snapshot.clone());
+        if !definition.retain_membership {
+            config.membership = None;
+        }
         record.changed = true;
         Ok(snapshot)
     }
@@ -536,6 +632,7 @@ mod configuration {
         let definition: Definition = Definition {
             addresses,
             scale: SourceScale::Unknown,
+            retain_membership: false,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: None,
         };
@@ -553,6 +650,7 @@ mod configuration {
         let definition: Definition = Definition {
             addresses,
             scale: SourceScale::Unknown,
+            retain_membership: false,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: None,
         };
@@ -574,6 +672,7 @@ mod configuration {
         let definition: Definition = Definition {
             addresses: expected.addresses.clone(),
             scale,
+            retain_membership: true,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: expected.preview_target.clone(),
         };
@@ -597,6 +696,7 @@ mod configuration {
         let definition: Definition = Definition {
             addresses,
             scale: SourceScale::Unknown,
+            retain_membership: false,
             preview_target: Some(target),
         };
         publish(authority, &ConfigurationUpdate::Install(source), definition)
@@ -615,6 +715,7 @@ mod configuration {
         let definition: Definition = Definition {
             addresses,
             scale: SourceScale::Unknown,
+            retain_membership: false,
             preview_target: Some(target),
         };
         publish(
@@ -690,7 +791,7 @@ mod configuration {
             .current
             .as_ref()
             .ok_or(SourcePolicyError::ConfigurationChanged)?;
-        if !current.same_configuration(&original.snapshot) {
+        if !current.same_configuration(&original.snapshot) || config.membership.is_some() {
             return Err(SourcePolicyError::ConfigurationChanged);
         }
         // Actual private issuance binds the immutable target to this exact
@@ -941,7 +1042,7 @@ pub enum SourcePolicyError {
     Foreign,
     /// A record revision, outstanding request or correlation epoch is stale.
     Stale,
-    /// The original optional configuration is no longer current.
+    /// The original configuration or selected round membership is no longer current.
     ConfigurationChanged,
     /// Configuration identity exhausted and cannot be issued again.
     ConfigurationUnavailable,
@@ -1850,6 +1951,7 @@ impl SourcePolicyAuthority {
     /// Atomically replace exactly the source identified by an actual current snapshot.
     /// A successful replacement issues a fresh configuration revision, including
     /// for equal address values. Existing `KoD` restrictions and targets remain intact.
+    /// The new numeric definition withdraws any selected round membership.
     /// # Errors
     /// Reject foreign/stale input unchanged. Revision exhaustion withdraws
     /// configuration and wakes the source without resetting its restrictions.
@@ -1861,8 +1963,24 @@ impl SourcePolicyAuthority {
         configuration::replace(self, expected, addresses)
     }
 
+    /// Restrict one installed laboratory source to its first complete ordered
+    /// membership. This option is set once per installed address definition.
+    /// It preserves the address envelope, scale and restriction records.
+    /// Fixed bindings and KE issuance for this source are fenced. An explicit
+    /// address round must match the selected order and still passes live policy.
+    /// # Errors
+    /// Refuse foreign, stale, exhausted, repeated or outside-envelope selection.
+    pub fn select_initial_round_membership(
+        &mut self,
+        expected: &SourceConfigurationSnapshot,
+        members: SourceAddressSet,
+    ) -> Result<(), SourcePolicyError> {
+        configuration::select_initial_membership(self, expected, members)
+    }
+
     /// Replace the declared time scale of the actual current source revision.
-    /// The addresses, KE target and restrictions retain their existing values.
+    /// The addresses, selected round membership, KE target and restrictions retain
+    /// their existing values.
     /// A fresh revision fences pending work. Completed facts retain their original
     /// declaration. Installing or replacing endpoints or a KE target initializes
     /// the new definition to [`SourceScale::Unknown`].
@@ -1897,6 +2015,7 @@ impl SourcePolicyAuthority {
     /// Replace exactly the actual current source definition with checked KE/UDP inputs.
     /// Equal input values still receive a fresh revision. This grants neither
     /// protected-datagram permission nor a reset of retained source/endpoint policy.
+    /// The replacement withdraws any selected plain round membership.
     /// # Errors
     /// Refuse foreign/stale input unchanged; checked revision exhaustion withdraws
     /// configuration while retaining every applicable restriction and floor.
@@ -2104,7 +2223,7 @@ impl SourceHandle {
         &self,
     ) -> Result<Option<SourceConfigurationSnapshot>, SourcePolicyError> {
         let guard = self.cell.lock()?;
-        let context = SourceContext::capture(self, &guard, &[None; 3])?;
+        let context = SourceContext::capture(self, &guard, configuration::Selection::History)?;
         Ok(context.configuration().cloned())
     }
 
@@ -2159,7 +2278,7 @@ impl SourceHandle {
             *key = Some(EndpointKey::new(*peer)?);
         }
         let mut guard = self.cell.lock()?;
-        let context = SourceContext::capture(self, &guard, &keys)?;
+        let context = SourceContext::capture(self, &guard, configuration::Selection::Round(&keys))?;
         let state = guard.state_mut()?;
         let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
         let mut positions = [None; 3];
@@ -2241,7 +2360,7 @@ impl SourceHandle {
     pub(super) fn bind(&self, peer: SocketAddr) -> Result<SourceBinding, SourcePolicyError> {
         let key = EndpointKey::new(peer)?;
         let mut guard = self.cell.lock()?;
-        let context = SourceContext::capture(self, &guard, &[Some(key), None, None])?;
+        let context = SourceContext::capture(self, &guard, configuration::Selection::Numeric(key))?;
         let state = guard.state_mut()?;
         let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
         let endpoint = if let Some(index) = state
@@ -2470,8 +2589,11 @@ impl ProtectedKeSource {
         policy.check(Some(peer))?;
         let source: &SourceHandle = &self.definition.source;
         let key: EndpointKey = EndpointKey::new(peer)?;
-        let context: SourceContext =
-            SourceContext::capture(source, &policy.guard, &[Some(key), None, None])?;
+        let context: SourceContext = SourceContext::capture(
+            source,
+            &policy.guard,
+            configuration::Selection::Numeric(key),
+        )?;
         let state: &mut PolicyState = policy.guard.state_mut()?;
         let source_changes: watch::Sender<()> = state
             .record(RecordKey::Source(source.index))?

@@ -30115,3 +30115,174 @@ that working pipeline. Original failures, holds and publication boundary remain.
 The ordinary native executables, mapping issuer, positive Core admission and
 installed-service/native/package exits remain open. No service/clock effect or
 formal work was admitted by this development result.
+
+### Address-round decision retained through timer cleanup — 22 November 2026
+
+REQ-8/BND-1 and reached CHECK-6/8/21/25/27. The fixed-snapshot round now
+retains its acquisition decision in `AddressRoundReport::round_end()`. The
+existing `end()` still reports `Failure` if either timer cleanup fails. The
+report preserves both typed cleanup causes, any primary cause and the original
+attempt history. The same rule applies to managed and unmanaged callers. The
+driver still chooses the round decision at its original checkpoint and reaps
+the two timers in the original order.
+
+The regression observes a correlated loopback header and the actual round
+decision, then seeds the same watch at its generation limit through the
+private fixture. It reaps a real future invalidation task that returns
+`GenerationExhausted` and feeds that result to the production reconciler. The
+predecessor dropped `Reply` at this boundary and failed the intended assertion
+with exit 101. The repaired result keeps `round_end() == Reply`, `end() ==
+Failure`, the header and the sole invalidation cleanup cause. The same test
+checks that earlier control reports `Stopped` or `Stale` and that the later
+control leaves the clean `Reply` decision intact. The independent timer test
+passed both the last valid generation and the exhaustion case. The regression
+composes the real round and cleanup receiver through a private fixture. The
+combined schedule in a single public `execute_address_round` invocation
+remains untested.
+
+The shared verifier's frozen default GNU route used Rust 1.100.0, the admitted
+vendor and private `/mnt/wsl` scratch. It passed 39 ordinary and 39
+`verify-release` address-round tests, four public managed consumer tests,
+two legal and five compile-fail address-round doctests, GNU all-target Engine
+Clippy and formatting. The first wrapper remains incomplete because it
+expected one doctest result group and received two. A follow-up failed before
+execution on an incorrect vendor path. The corrected follow-up executed both
+doctest groups and the managed cases, then stopped at four `missing_errors_doc`
+diagnostics in the pending SCM adapter. Added only the reached `# Errors`
+sections in `service_security.rs` and `windows_service_status.rs`. The final
+Engine `x86_64-pc-windows-msvc` all-target Clippy and format checks passed on
+the integrated source. Removing those exact doc additions restores the two
+predecessor hashes. The Windows-only dependency modules are outside the default
+GNU Engine graph, so its scoped execution is reused.
+
+The 631-input GNU successor `c720d81743fa93570a01bcdfde22d29dadeb54cfda74293389826d827039c4cb`
+and integrated candidate `c009e14878692321785440cf362c81a146e8152d34134672709c133bf73c1255`
+start at `430ffa64357f9baed2ecc85ed409a049207da240`. The lock stays
+`26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db`.
+The final source, index, compiler, MSVC target libraries and vendor bookends
+passed. Scratch was retired. Total command-wrapper time was 131.69 seconds
+across the four attempts. Raw receipts and the exact paired source are under
+`~/.local/share/nevrotick/engine-address-round-outcome-20261122.3iP3GOHd/`.
+The final `final-v3/summary.json` SHA-256 is
+`323895d55e4fcb32f52b98998eb41d57343a77588f360d2f30063081fc49b7c7`.
+
+`plan-code-change` froze the report boundary. `implement-rust` and
+`implement-rust-contracts` kept the acquisition and cleanup facts at the source
+owner. `qa-regression-selection`, `qa-state-concurrency-lifecycle` and
+`qa-environment-preflight` selected the actual watch, join and consumer cases
+in the isolated runner. Two fresh-context reviews traced the baseline and
+exact repair. The integrated reviewer inspected source, raw RED, GNU and MSVC
+results, the two comment-only differences and the final scratch cleanup. The
+runner and queue reviews separately confirmed the available GNU route and the
+open production-mapping inputs.
+Fresh changed-file coverage and mutation remain open under the closed
+address-round policy. The seeded boundary earns no generated mutation credit.
+Native Windows, production acquisition and positive Engine-to-Core admission
+retain their existing prerequisites.
+
+#### Bounded resolver-completion receiver after the fixed-snapshot round
+
+The next S2.1 source slice under REQ-8/BND-1 and CHECK-6/8/21/25/27 is a
+resolver completion consumed by the existing managed address-round owner.
+The installed source revision remains the policy envelope. Preserve the
+administrative replacement path, which may withdraw scale and KE state.
+Keep resolved membership and resolution identity separate from that revision.
+A complete, current answer with the same members preserves their existing
+order and revision. A permitted membership change can affect only a later
+round that already has an allowance. The active round keeps its frozen
+cursor. The next round retains the original deadline, source limits and KoD
+floors. Foreign, expired or retired completion supplies no send permission.
+
+Bind result custody to the real resolver invocation through actual completion,
+including retirement during Stop or replacement. Carry the resolution identity
+through the existing policy guard at send and receiving admission. The first
+portable behavior control must reach actual loopback UDP and observe packet
+counts, cursor progress and preserved restrictions. An opted-in resolved
+source must stay subject to this gate when called through numeric preparation.
+Production DNS and local path observation, authenticated delegation and
+protected cookie handling have their existing separate exits.
+
+##### Initial ordered membership gate
+
+The first implementation step under REQ-8/BND-1 and CHECK-6/8/21/25/27 adds
+`SourcePolicyAuthority::select_initial_round_membership`. Only the existing
+administrator can select the initial ordered subset of an actually installed
+definition. Checked membership carries its own allocation identity.
+Selection has no endpoint-publication, send-budget or restriction effect.
+It does not advance the installed configuration revision. Scale-only
+replacement advances that revision and retains the selected set. Explicit
+address or KE replacement withdraws the selection through the existing
+administrative path.
+
+The actual managed address round must match the entire selected order. Its
+`SourceContext` carries the membership through pre-socket admission, the
+shared final send/receiving guard and report transfer. Old prepared contexts
+without that membership are stale even when the installed revision still
+matches. Fixed one-peer sessions and protected KE lack resolved-round custody
+and are fenced while the selection is active. Unmanaged loopback remains a
+separate laboratory path.
+
+Development evidence uses Rust 1.100.0, the pinned vendor and isolated GNU
+loopback on 631 frozen inputs over `430ffa64357f9baed2ecc85ed409a049207da240`,
+product SHA-256
+`c9c2d7b1911dab5c66d0070dbda746d91d44cb6852d75327af2dadf9eb42ac76`.
+The Rust contract and lifecycle reviews traced fixed, managed and KE entry
+points to the actual effect checks. Independent review confirmed the scale
+replacement rule and examined the selected guard and retained results.
+Integration and environment checks used the configured sandbox after the
+host-network and source-write isolation controls passed.
+
+- 41 ordinary and 41 optimized address-round cases, seven doctests (two legal,
+  five compile-fail), formatting and GNU default Clippy passed. The new
+  loopback case retains actual RATE intervals, floors and both policy
+  revisions across initial selection and rejects subset, reordered and
+  off-membership fixed preparation. The accepted round tries its original
+  first peer before accepting a reply from the second.
+- An already registered and writable socket with the old membership sends
+  zero packets and leaves both floors empty. Removing only the membership
+  identity check in the isolated derivative made this same test exit 101
+  after the peer observed one native send. The original source was restored.
+  This targeted sensitivity control adds zero generated mutation credit.
+- All 11 selected GNU `ke-association-prototype` source-configuration cases
+  and Windows-target EP1 Clippy passed. The new late membership check at
+  receiving and protected effect sites was traced in source. Native Windows
+  and changed-owner 90% coverage and 95% mutation qualification remain open.
+
+Raw records are under `~/.local/share/nevrotick/` in
+`engine-address-membership-final-20261122.aL3WmeDZ` and
+`engine-address-membership-close-20261122.8GGR35Ay`. An earlier attempt hit
+the original 4 GiB disk reserve. Its retry passed ordinary execution and
+identified an overlong test, which was factored before freezing the final
+candidate. The initial final collector expected a single doctest summary,
+while Rust 1.100 emitted separate legal and compile-fail groups. The closeout
+read both existing exit-zero groups by exact source, tool and vendor match.
+It ran the remaining controls, verified both bookends and retired scratch.
+
+The final receiving control adds only test source. The new 631-input digest
+is `257cd93a2aa59fdb67c008c17f6aa1fa421fd1a8e1834a3b6cbade7f212ffbf0`.
+Real loopback UDP reaches the same reply staging and final publication logic.
+The observer selects membership after the earlier refresh and successful
+staging. The late effect refuses with `ConfigurationChanged`, preserves one
+consumed and rejected datagram, and publishes no facts. The unchanged neighbor
+commits with one consumed datagram and zero rejections. Independent review
+confirmed that prior rejection cannot satisfy these assertions.
+
+All 42 ordinary address-round cases, the exact optimized receive case,
+format and GNU Clippy passed on this test-only successor. Removing only the
+same membership check in the isolated derivative made the exact receive
+test exit 101 at the expected missing-refusal assertion. The compile-time
+fixture error on the first attempt remains recorded. The repaired runner
+retired scratch after matching restored current source, tools, vendor and
+index. Raw evidence is in
+`~/.local/share/nevrotick/engine-address-membership-receive-final-20261122.rk8xilAD`.
+Prior Windows-target EP1 and optimized group results retain their stated
+test selections and exact source scope. Protected KE membership refusal
+remains source-reviewed. Changed-file coverage and generated mutation
+qualification stay open.
+
+The resolver task and its joined completion remain open. The next Engine step
+is one bounded owned invocation that retains its original control and cutoff
+through completion. A later, already-credited round may adopt a changed set
+only after the active cursor and socket retire. The Windows DNS owner under
+W11-W03 still needs its own producer. Current source has no maintained
+platform DNS adapter with actual cancellation and completion custody.

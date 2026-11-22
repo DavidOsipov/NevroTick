@@ -393,7 +393,7 @@ pub struct AddressRoundReport {
     /// At most three actual terminal records in their original attempt order.
     attempts: Vec<AddressAttempt>,
     /// Fresh final decision, which does not rewrite historical records.
-    end: AddressRoundEnd,
+    round_end: AddressRoundEnd,
     /// Original setup/invariant failure, kept beside any cleanup failures.
     primary: Option<PilotError>,
     /// Actual returned stop-timer cleanup failure, if any.
@@ -408,7 +408,7 @@ impl AddressRoundReport {
         Self {
             policy_refusals: Vec::with_capacity(CAPACITY),
             attempts: Vec::with_capacity(CAPACITY),
-            end: AddressRoundEnd::Exhausted,
+            round_end: AddressRoundEnd::Exhausted,
             primary: None,
             stop_cleanup: None,
             invalidate_cleanup: None,
@@ -427,10 +427,20 @@ impl AddressRoundReport {
         &self.policy_refusals
     }
 
-    /// Return the final serialized round summary, distinct from transport history.
+    /// Return the whole-round outcome, including any failure during timer cleanup.
     #[must_use]
     pub fn end(&self) -> AddressRoundEnd {
-        self.end
+        if self.stop_cleanup.is_some() || self.invalidate_cleanup.is_some() {
+            AddressRoundEnd::Failure
+        } else {
+            self.round_end
+        }
+    }
+
+    /// Return the serialized acquisition decision before independent timer cleanup.
+    #[must_use]
+    pub const fn round_end(&self) -> AddressRoundEnd {
+        self.round_end
     }
 
     /// Return the original setup/invariant failure without losing cleanup facts.
@@ -447,7 +457,7 @@ impl AddressRoundReport {
 
     /// Stop on the original failure without discarding any preceding completions.
     fn fail(mut self, error: PilotError) -> Self {
-        self.end = AddressRoundEnd::Failure;
+        self.round_end = AddressRoundEnd::Failure;
         self.primary = Some(error);
         self
     }
@@ -893,13 +903,13 @@ where
     let mut progress = Progress::new(&prepared.config, deadline);
     loop {
         if let Some(end) = current_end(&mut prepared.control, deadline) {
-            report.end = end;
+            report.round_end = end;
             return report;
         }
         let claim = match progress.claim_next(Instant::now()) {
             Ok(Some(claim)) => claim,
             Ok(None) => {
-                report.end = current_end(&mut prepared.control, deadline)
+                report.round_end = current_end(&mut prepared.control, deadline)
                     .unwrap_or(AddressRoundEnd::Exhausted);
                 return report;
             }
@@ -922,7 +932,7 @@ where
                     observe,
                 ) {
                     Ok(Some(end)) => {
-                        report.end = end;
+                        report.round_end = end;
                         return report;
                     }
                     Ok(None) => {}
@@ -931,7 +941,7 @@ where
                 continue;
             }
             Ok(SetupOutcome::Retired(end)) => {
-                report.end = end;
+                report.round_end = end;
                 return report;
             }
             Err(error) => return report.fail(error),
@@ -946,7 +956,7 @@ where
             observe,
         ) {
             Ok(Some(end)) => {
-                report.end = end;
+                report.round_end = end;
                 return report;
             }
             Ok(None) => {}
@@ -963,9 +973,6 @@ fn reconcile_cleanup(
 ) -> AddressRoundReport {
     report.stop_cleanup = stop.err().map(FailureSummary::capture);
     report.invalidate_cleanup = invalidate.err().map(FailureSummary::capture);
-    if report.stop_cleanup.is_some() || report.invalidate_cleanup.is_some() {
-        report.end = AddressRoundEnd::Failure;
-    }
     report
 }
 

@@ -2704,9 +2704,22 @@ v3 mutation receipts stay incomplete and unchanged. The
 retains generation and mid-effect lock-lifetime limits; no native or production
 acquisition pass follows.
 
-The address-round admission remains closed against the later Core/shared-helper
-tree; its policy preserves historical bindings. Re-admit a new exact candidate
-before another run, as recorded at the Engine exit and in `TOOLING.md`.
+The [address-round report repair](../../tasks/engine-transport-pilot.md#address-round-decision-retained-through-timer-cleanup--22-november-2026)
+retains the saved round decision alongside any timer cleanup failure. The
+selected fault reproduced the lost `Reply`. The repaired result passed the
+selected GNU ordinary and optimized cases, four managed consumers, seven
+doctests and both-target Engine Clippy. The Windows-target check also reaches
+the pending SCM adapter's documented error contracts. The address-round metric
+policy still holds its historical binding. Fresh per-file coverage and
+mutation require exact re-admission. Native and production acquisition gates
+remain separate.
+
+The [initial ordered membership gate](../../tasks/engine-transport-pilot.md#initial-ordered-membership-gate)
+adds an explicit laboratory source-policy selection to the real address round.
+The selection preserves the administrative definition and its KoD records.
+The next P2 child owns bounded resolver completion and later-round adoption
+under the original cutoff and allowance. W11-W03 still owns the native DNS
+supplier and its completion evidence.
 
 The reviewed Core
 [frequency-request/achieved-baseline operation](../../tasks/s1.3-source-selection-readiness.md#technical-freeze-candidate--actual-coordinate-conversion-and-base-feedback)
