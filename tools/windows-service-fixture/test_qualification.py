@@ -394,11 +394,11 @@ class EngineCompositionGraphTests(unittest.TestCase):
         data["resolve"]["nodes"][0]["deps"].append({"pkg": leaf, "dep_kinds": [
             {"kind": None, "target": "cfg(windows)"},
         ]})
-        normal_features = ["Win32", "Win32_Foundation", "Win32_Security", "Win32_System",
-                           "Win32_System_Services", "Win32_System_Threading"]
-        test_features = sorted([*normal_features, "Win32_Security_Authorization", "Win32_Storage",
-                                "Win32_Storage_FileSystem", "Win32_System_Diagnostics", "Win32_System_Diagnostics_Etw",
-                                "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Time"])
+        normal_features = ["Win32", "Win32_Foundation", "Win32_Security", "Win32_Storage",
+                           "Win32_Storage_FileSystem", "Win32_System", "Win32_System_IO",
+                           "Win32_System_Pipes", "Win32_System_Services", "Win32_System_Threading"]
+        test_features = sorted([*normal_features, "Win32_Security_Authorization", "Win32_System_Diagnostics",
+                                "Win32_System_Diagnostics_Etw", "Win32_System_Time"])
         for name, version, features in (("windows-link", "0.2.1", []),
                                          ("windows-sys", "0.61.2", test_features)):
             policy["packages"].append({"name": name, "version": version, "license": "MIT OR Apache-2.0",
@@ -427,9 +427,8 @@ class EngineCompositionGraphTests(unittest.TestCase):
         result = self.receive(self.windows_fixture(), Q.TARGETS[1])
         normal = result["contexts"]["windows-sys@0.61.2"]["target"][0]
         test = result["development_contexts"]["windows-sys@0.61.2"]["target"][0]
-        development_only = {"Win32_Security_Authorization", "Win32_Storage", "Win32_Storage_FileSystem",
-                            "Win32_System_Diagnostics", "Win32_System_Diagnostics_Etw", "Win32_System_IO",
-                            "Win32_System_Pipes", "Win32_System_Time"}
+        development_only = {"Win32_Security_Authorization", "Win32_System_Diagnostics",
+                            "Win32_System_Diagnostics_Etw", "Win32_System_Time"}
         self.assertEqual(set(test) - set(normal), development_only)
         policy, data, normal_tree, development = self.windows_fixture()
         with self.assertRaisesRegex(Q.Incomplete, "Unexpected metadata package"):
@@ -437,6 +436,12 @@ class EngineCompositionGraphTests(unittest.TestCase):
         # Use the Windows test closure behind the production edges.
         with self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
             self.receive((policy, data, development.split("[dev-dependencies]", 1)[0], development), Q.TARGETS[1])
+        # Test-only availability must not mask a missing production binding.
+        for missing in ("Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Pipes"):
+            with self.subTest(missing=missing), self.assertRaisesRegex(Q.Incomplete, "feature contexts"):
+                missing_normal = normal_tree.replace(f",{missing},", ",")
+                self.assertNotEqual(missing_normal, normal_tree)
+                self.receive((policy, data, missing_normal, development), Q.TARGETS[1])
         # Keep the unified metadata closure while an individual test-tree binding is missing.
         for missing in sorted(development_only):
             with self.subTest(missing=missing), self.assertRaisesRegex(Q.Incomplete, "feature contexts"):

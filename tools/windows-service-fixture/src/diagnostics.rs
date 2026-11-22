@@ -49,8 +49,12 @@ pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
                 PrimaryCause::WorkerPreparation
             }
             WorkerError::Activation => PrimaryCause::WorkerActivation,
-            WorkerError::Running => PrimaryCause::WorkerRunning,
-            WorkerError::Cleanup | WorkerError::EndpointClose(_) => PrimaryCause::WorkerCleanup,
+            WorkerError::Running
+            | WorkerError::EndpointAccept(_)
+            | WorkerError::EndpointUnexpectedCompletion => PrimaryCause::WorkerRunning,
+            WorkerError::Cleanup
+            | WorkerError::EndpointAcceptCleanup(_)
+            | WorkerError::EndpointClose(_) => PrimaryCause::WorkerCleanup,
         },
         FixtureError::TokenObservation(_) => PrimaryCause::TokenObservation,
         FixtureError::PrivilegeAdmission(_) => PrimaryCause::PrivilegeAdmission,
@@ -81,8 +85,12 @@ pub(super) const fn worker_cause(error: WorkerError) -> WorkerCause {
     match error {
         WorkerError::Preparation | WorkerError::EndpointPreparation(_) => WorkerCause::Preparation,
         WorkerError::Activation => WorkerCause::Activation,
-        WorkerError::Running => WorkerCause::Running,
-        WorkerError::Cleanup | WorkerError::EndpointClose(_) => WorkerCause::Cleanup,
+        WorkerError::Running
+        | WorkerError::EndpointAccept(_)
+        | WorkerError::EndpointUnexpectedCompletion => WorkerCause::Running,
+        WorkerError::Cleanup
+        | WorkerError::EndpointAcceptCleanup(_)
+        | WorkerError::EndpointClose(_) => WorkerCause::Cleanup,
     }
 }
 

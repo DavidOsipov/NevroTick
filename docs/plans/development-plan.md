@@ -1461,11 +1461,15 @@ mapping qualification remain open.
 The [broker reservation child](../../tasks/windows11-integration.md#reserve-the-broker-endpoint-through-service-stop--22-november-2026)
 now holds the fixed local name in the actual broker `ServiceMain` from
 preparation through explicit Stop release. Three selected Windows cases
-passed, including client data-open refusal, collision and reacquisition. Continue
-with one bounded native accept and its completion custody under the existing
-S0.3/S3.2 genuine-server, service-grant and installed lifecycle owners.
-The connected broker's process and token must be observable under the
-restricted Engine profile. The
+passed, including client data-open refusal, collision and reacquisition.
+The [broker accept child](../../tasks/windows11-integration.md#retain-the-broker-accept-through-stop--22-november-2026)
+now queues a single accept under Running and retains its exact native
+completion through Stop. The configured development checks, both role links
+and seven selected Windows fixture cases passed. Continue the completion
+wake and genuine installed-peer proof under the existing S0.3/S3.2
+service-grant and installed lifecycle owners. The connected broker's
+process and token must be observable under the restricted Engine profile.
+The
 [SCM configuration child](../../tasks/windows11-integration.md#observe-configured-service-startup-before-provisioning--22-november-2026)
 provides a separate query-only readback and exact two-role linked inputs
 for the held pre-start MSIX probe. The

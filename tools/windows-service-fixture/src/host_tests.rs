@@ -5939,7 +5939,12 @@ mod worker_tests {
                         script.preparation = Poll::Ready(Ok(()));
                         script.activation = Err(failure);
                     }
-                    WorkerError::Running | WorkerError::Cleanup | WorkerError::EndpointClose(_) => {
+                    WorkerError::Running
+                    | WorkerError::EndpointAccept(_)
+                    | WorkerError::EndpointUnexpectedCompletion
+                    | WorkerError::Cleanup
+                    | WorkerError::EndpointAcceptCleanup(_)
+                    | WorkerError::EndpointClose(_) => {
                         script.preparation = Poll::Ready(Ok(()));
                         script.running = Err(failure);
                     }

@@ -34,6 +34,14 @@ pub enum NativeOperation {
     BrokerEndpointDescriptor,
     /// Acquire the fixed first instance under the explicit descriptor.
     BrokerEndpointCreate,
+    /// Create the private noninherited completion event before any submission.
+    BrokerEndpointAcceptEvent,
+    /// Submit the sole connection attempt on the held server instance.
+    BrokerEndpointAcceptSubmit,
+    /// Request cancellation of the exact outstanding connection attempt.
+    BrokerEndpointAcceptCancel,
+    /// Observe the exact connection attempt without waiting or releasing custody.
+    BrokerEndpointAcceptCompletion,
     /// Attempt explicit release of the original endpoint exactly once.
     BrokerEndpointClose,
 }
@@ -81,6 +89,16 @@ impl fmt::Display for NativeError {
             NativeOperation::TokenClose => "laboratory token handle close failed",
             NativeOperation::BrokerEndpointDescriptor => "laboratory broker descriptor failed",
             NativeOperation::BrokerEndpointCreate => "laboratory broker endpoint creation failed",
+            NativeOperation::BrokerEndpointAcceptEvent => "laboratory broker accept event failed",
+            NativeOperation::BrokerEndpointAcceptSubmit => {
+                "laboratory broker accept submission failed"
+            }
+            NativeOperation::BrokerEndpointAcceptCancel => {
+                "laboratory broker accept cancellation failed"
+            }
+            NativeOperation::BrokerEndpointAcceptCompletion => {
+                "laboratory broker accept completion unconfirmed"
+            }
             NativeOperation::BrokerEndpointClose => "laboratory broker endpoint close failed",
         })
     }
@@ -178,6 +196,12 @@ pub enum WorkerError {
     Cleanup,
     /// Descriptor or first-instance preparation failed before readiness.
     EndpointPreparation(NativeError),
+    /// Native accept submission or a Running observation failed.
+    EndpointAccept(NativeError),
+    /// The empty-DACL reservation observed a terminal result before the Stop fence.
+    EndpointUnexpectedCompletion,
+    /// Cancelling or collecting the original accept after the Stop fence failed.
+    EndpointAcceptCleanup(NativeError),
     /// An explicit close left endpoint release unconfirmed.
     EndpointClose(NativeError),
 }
@@ -191,6 +215,9 @@ impl fmt::Display for WorkerError {
             Self::Running => "laboratory worker operation failed",
             Self::Cleanup => "laboratory worker cleanup failed",
             Self::EndpointPreparation(_) => "laboratory broker endpoint preparation failed",
+            Self::EndpointAccept(_) => "laboratory broker accept failed",
+            Self::EndpointUnexpectedCompletion => "laboratory broker accept completed unexpectedly",
+            Self::EndpointAcceptCleanup(_) => "laboratory broker accept retirement failed",
             Self::EndpointClose(_) => "laboratory broker endpoint release unconfirmed",
         })
     }
@@ -200,8 +227,15 @@ impl Error for WorkerError {
     /// Retain the original typed endpoint cause separately from diagnostics.
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::EndpointPreparation(error) | Self::EndpointClose(error) => Some(error),
-            Self::Preparation | Self::Activation | Self::Running | Self::Cleanup => None,
+            Self::EndpointPreparation(error)
+            | Self::EndpointAccept(error)
+            | Self::EndpointAcceptCleanup(error)
+            | Self::EndpointClose(error) => Some(error),
+            Self::Preparation
+            | Self::Activation
+            | Self::Running
+            | Self::Cleanup
+            | Self::EndpointUnexpectedCompletion => None,
         }
     }
 }

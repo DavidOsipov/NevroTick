@@ -10776,6 +10776,57 @@ grants, effective descriptor inspection, genuine peer identity and package
 lifecycle remain open under §4.34.8, including the local RPC fallback if
 the proof is unavailable.
 
+###### Retain the broker accept through Stop — 22 November 2026
+
+W11-W05/S3.1/S3.2 and CHECK-2/25/27. The fixed broker `ServiceMain` keeps
+the one first-instance local pipe and prepares one private manual-reset
+event and pinned `OVERLAPPED`. Its worker submits the accept once under
+the acknowledged Running permit. The protected empty DACL stays in force.
+Immediate connection and a terminal observation while Running stop the
+fixture without dispatching a request.
+
+Stop closes admission and requests cancellation once on the original
+pipe and record. Both cancellation acceptance and `ERROR_NOT_FOUND`
+retain custody. A late connection is discarded. The owner keeps the
+original Stop deadline and reports Stopped only after collecting the
+terminal result and confirming both handle closes. An unrecognized
+completion error can leave StopPending unresolved. The first cleanup
+cause is retained, and secondary pending-release diagnostics remain open.
+Abnormal destruction with native work pending aborts the isolated fixture
+before releasing kernel-reachable storage. When pipe acquisition refuses,
+the idle provisional event uses RAII cleanup without a separate close
+observation. [Windows cancellation contract](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex)
+
+The repository service, IPC, lifecycle and dependency skills guided the
+implementation and qualification. The guarded resolver reproduced the
+root lock byte for byte and selected zero new registry packages. The
+standalone lock also matched. Only the MSVC normal `windows-sys` context
+gained four features. The actual GNU and MSVC development graph contexts
+matched the predecessor. Graph controls refused removing an individual
+production binding even when the development context supplied it.
+
+Candidate `688ab8220cdb8da6406412ed6d9d68a75281a64a09d578cffba23df1b5be6dd0`
+binds 711 inputs on tested tree `715f00f1d0d20dce381ddac7e43e36cacaaa4829`.
+Six graph commands and twelve development lanes passed. Each GNU mode
+ran 176 fixture and 70 platform tests. All 28 platform doctests passed.
+The first two development runs retain the test compile and lint refusals.
+Both fixed Windows service roles and the fixture test image linked with
+matching PDBs. The broker PE contains the five expected pipe, event and
+completion imports. The ordinary Windows build 26300 run verified the
+image hash at entry and exit, then passed seven selectors. Five exercised
+scripted host histories. The two native cases observed data-open and
+collision refusal, pending accept, actual cancelled completion, explicit
+release and reacquisition. The runner reaped its children and removed the
+owned Windows staging directory. Results and independent readback are in
+`~/.local/share/nevrotick/broker-accept-20261122.vYS8OlaY/`.
+
+Keep the 90% line and 95% per-critical-file mutation requirements for the
+two endpoint files. Native handle/heap diagnostics and installed SCM
+execution are open. Continue the completion wake path and genuine installed
+peer proof through §4.34.8, including the restricted Engine context and
+the local RPC fallback. Carry the separate package, provisioning and
+advisory requirements into the actual admitted installation.
+
 ##### Retain the original pipe, process and token objects — 22 November 2026
 
 W11-W05/S0.3/S3.2 and CHECK-2/25/27. The distinct-process native pipe

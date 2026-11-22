@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Endpoint ownership under the broker's single service lifecycle.
+//! One accept and its physical retirement under the broker's service lifecycle.
 
 use std::{mem, task::Poll};
 
@@ -9,13 +9,64 @@ use crate::{
     host::{Worker, WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake},
 };
 
-/// An owned endpoint whose explicit close establishes physical release.
+/// Whether the original accept submission requires a separate observation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "retain the original endpoint while its accept is queued"]
+pub(super) enum AcceptStart {
+    /// The exact native acceptance record remains charged.
+    Queued,
+    /// An unexpected connection completed during submission.
+    Connected,
+}
+
+/// A terminal disposition for the exact queued accept.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "distinguish a connection from acknowledged cancellation"]
+pub(super) enum AcceptCompletion {
+    /// A connection completed. The laboratory reservation admits no dispatch.
+    Connected,
+    /// Native cancellation completed.
+    Cancelled,
+}
+
+/// An owned endpoint with one preallocated accept and explicit close.
 pub(super) trait Reservation: Sized {
+    /// Submit the one accept under the acknowledged Running permit.
+    ///
+    /// # Errors
+    /// A submission refusal owns no queued accept.
+    fn begin_accept(&mut self) -> Result<AcceptStart, NativeError>;
+
+    /// Request cancellation of the previously queued accept, retaining it.
+    ///
+    /// # Errors
+    /// Preserve the first native cancellation refusal. Neither request
+    /// success nor refusal supplies a terminal observation.
+    fn request_accept_cancel(&mut self) -> Result<(), NativeError>;
+
+    /// Poll the exact queued accept without waiting.
+    ///
+    /// # Errors
+    /// An observation failure leaves completion unconfirmed.
+    fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError>;
+
     /// Consume this handle in one release attempt.
     ///
     /// # Errors
     /// Preserve the native failure. An error leaves release unconfirmed.
     fn close(self) -> Result<(), NativeError>;
+}
+
+/// Legal observations under the acknowledged Running permit.
+enum RunningAccept {
+    /// The prepared endpoint has not submitted its one accept.
+    Unsubmitted,
+    /// A native operation is still charged.
+    Queued,
+    /// A Running observation failed with native completion unconfirmed.
+    FencedQueued,
+    /// Submission was refused or a terminal result was observed.
+    Retired,
 }
 
 /// One ownership path from dormant preparation through physical release.
@@ -26,17 +77,19 @@ enum State<A, E> {
     Refused,
     /// The endpoint is held before the host acknowledges Running.
     Prepared(E),
-    /// The endpoint remains held for the acknowledged service lifetime.
-    Running(E),
-    /// Admission is closed. A previously acquired endpoint still belongs here.
-    Stopping(Option<E>),
+    /// An acknowledged service lifetime with tracked accept custody.
+    Running(E, RunningAccept),
+    /// Admission is closed. No accept is outstanding on this endpoint.
+    Closing(Option<E>),
+    /// Admission is closed and exactly one queued accept needs retirement.
+    Draining(E, Option<WorkerError>),
     /// A consumed close did not confirm physical release.
     CloseUnconfirmed(WorkerError),
     /// No endpoint was acquired or the original close completed.
-    Finished,
+    Finished(WorkerCompletion),
 }
 
-/// The fixed broker owns the reservation under its existing work permit.
+/// The fixed broker owns its reservation and accept under one work permit.
 pub(super) struct BrokerEndpointWorker<A, E> {
     /// All native acquisition and release state, confined to the host thread.
     state: State<A, E>,
@@ -51,6 +104,20 @@ where
     pub(super) const fn new(acquire: A) -> Self {
         Self {
             state: State::Dormant(acquire),
+        }
+    }
+
+    /// Attempt release only with no outstanding accept. Preserve the first
+    /// cleanup refusal even if the terminal release also fails.
+    fn release(endpoint: Option<E>, cleanup_failure: Option<WorkerError>) -> State<A, E> {
+        match endpoint.map_or(Ok(()), Reservation::close) {
+            Ok(()) => State::Finished(WorkerCompletion {
+                operation_failure: None,
+                cleanup_failure,
+            }),
+            Err(error) => State::CloseUnconfirmed(
+                cleanup_failure.unwrap_or(WorkerError::EndpointClose(error)),
+            ),
         }
     }
 }
@@ -85,49 +152,114 @@ where
             self.state = previous;
             return Err(WorkerError::Activation);
         };
-        self.state = State::Running(endpoint);
+        self.state = State::Running(endpoint, RunningAccept::Unsubmitted);
         Ok(())
     }
 
-    /// The reservation has no accept, frame, or independent work to dispatch.
+    /// Submit once and observe the queued accept during admitted host polls.
+    /// No connection is dispatched from the laboratory reservation.
     /// # Errors
-    /// A host poll outside Running reports a lifecycle refusal.
+    /// Refuses a poll outside Running or following retirement. A submission
+    /// failure or unexpected terminal result fences service operation. A
+    /// failed observation leaves the pending accept charged through Stop.
     fn poll_running(&mut self, _wake: &WorkerWake) -> Result<(), WorkerFailure> {
-        if matches!(self.state, State::Running(_)) {
-            Ok(())
-        } else {
-            Err(WorkerFailure::Operation(WorkerError::Running))
+        let State::Running(endpoint, accept) = &mut self.state else {
+            return Err(WorkerFailure::Operation(WorkerError::Running));
+        };
+        match accept {
+            RunningAccept::Unsubmitted => {
+                *accept = RunningAccept::Retired;
+                match endpoint.begin_accept() {
+                    Ok(AcceptStart::Queued) => {
+                        *accept = RunningAccept::Queued;
+                        Ok(())
+                    }
+                    Ok(AcceptStart::Connected) => Err(WorkerFailure::Operation(
+                        WorkerError::EndpointUnexpectedCompletion,
+                    )),
+                    Err(error) => Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error))),
+                }
+            }
+            RunningAccept::Queued => match endpoint.poll_accept() {
+                Ok(Poll::Pending) => Ok(()),
+                Ok(Poll::Ready(AcceptCompletion::Connected | AcceptCompletion::Cancelled)) => {
+                    *accept = RunningAccept::Retired;
+                    Err(WorkerFailure::Operation(
+                        WorkerError::EndpointUnexpectedCompletion,
+                    ))
+                }
+                Err(error) => {
+                    *accept = RunningAccept::FencedQueued;
+                    Err(WorkerFailure::Operation(WorkerError::EndpointAccept(error)))
+                }
+            },
+            RunningAccept::FencedQueued | RunningAccept::Retired => {
+                Err(WorkerFailure::Operation(WorkerError::Running))
+            }
         }
     }
 
-    /// Fence preparation and activation before signalling the owning thread.
+    /// Fence preparation and activation, cancel an outstanding accept once,
+    /// then signal the owning thread.
     fn request_cancel(&mut self, wake: &WorkerWake) {
         let previous: State<A, E> = mem::replace(&mut self.state, State::Refused);
         self.state = match previous {
-            State::Dormant(_) | State::Refused => State::Stopping(None),
-            State::Prepared(endpoint) | State::Running(endpoint) => State::Stopping(Some(endpoint)),
-            retained => retained,
+            State::Dormant(_) | State::Refused => State::Closing(None),
+            State::Prepared(endpoint)
+            | State::Running(endpoint, RunningAccept::Unsubmitted | RunningAccept::Retired) => {
+                State::Closing(Some(endpoint))
+            }
+            State::Running(mut endpoint, RunningAccept::Queued | RunningAccept::FencedQueued) => {
+                let cleanup: Option<WorkerError> = endpoint
+                    .request_accept_cancel()
+                    .err()
+                    .map(WorkerError::EndpointAcceptCleanup);
+                State::Draining(endpoint, cleanup)
+            }
+            retained @ (State::Closing(_)
+            | State::Draining(..)
+            | State::CloseUnconfirmed(_)
+            | State::Finished(_)) => retained,
         };
         wake.notify();
     }
 
-    /// Complete only after the original endpoint is observably released.
+    /// Discard the original accept's terminal result, then release the
+    /// endpoint. Pending work and ambiguous observations retain custody.
     fn poll_finished(&mut self, _wake: &WorkerWake) -> WorkerFinish {
-        if let State::Stopping(endpoint) = &mut self.state {
-            self.state = match endpoint.take().map_or(Ok(()), Reservation::close) {
-                Ok(()) => State::Finished,
-                Err(error) => State::CloseUnconfirmed(WorkerError::EndpointClose(error)),
-            };
-        }
+        let previous: State<A, E> = mem::replace(&mut self.state, State::Refused);
+        self.state = match previous {
+            State::Closing(endpoint) => Self::release(endpoint, None),
+            State::Draining(mut endpoint, cleanup) => match endpoint.poll_accept() {
+                Ok(Poll::Pending) => State::Draining(endpoint, cleanup),
+                Ok(Poll::Ready(AcceptCompletion::Connected | AcceptCompletion::Cancelled)) => {
+                    Self::release(Some(endpoint), cleanup)
+                }
+                Err(error) => State::Draining(
+                    endpoint,
+                    cleanup.or(Some(WorkerError::EndpointAcceptCleanup(error))),
+                ),
+            },
+            retained @ (State::Dormant(_)
+            | State::Refused
+            | State::Prepared(_)
+            | State::Running(..)
+            | State::CloseUnconfirmed(_)
+            | State::Finished(_)) => retained,
+        };
         match self.state {
-            State::Finished => WorkerFinish::Finished(WorkerCompletion {
-                operation_failure: None,
-                cleanup_failure: None,
-            }),
+            State::Finished(completion) => WorkerFinish::Finished(completion),
+            State::Draining(_, cleanup_failure) => {
+                WorkerFinish::NativeDrainPending { cleanup_failure }
+            }
             State::CloseUnconfirmed(error) => WorkerFinish::NativeDrainPending {
                 cleanup_failure: Some(error),
             },
-            _ => WorkerFinish::Pending,
+            State::Dormant(_)
+            | State::Refused
+            | State::Prepared(_)
+            | State::Running(..)
+            | State::Closing(_) => WorkerFinish::Pending,
         }
     }
 }
