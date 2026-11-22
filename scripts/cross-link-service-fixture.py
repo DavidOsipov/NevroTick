@@ -3,7 +3,7 @@
 
 Linux execution only. Never execute, sign, install or package a Windows image.
 Authoritative code, raw records and copied PE/PDB outputs stay in the checkout;
-the private persistent cache holds derived build inputs and compiler outputs.
+derived build inputs and compiler outputs may use an explicit private scratch root.
 Existing GPL-2.0-only repository licence applies.
 """
 from __future__ import annotations
@@ -21,8 +21,8 @@ import json
 import os
 from pathlib import Path
 import re
-import resource
 import shutil
+import subprocess
 import tempfile
 import time
 import tomllib
@@ -52,10 +52,10 @@ SOURCE_CONFIG_SHA256 = hashlib.sha256(
 ).hexdigest()
 METRICS_READER = Q.TOOL + "/metrics.py"
 METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
-# The fragment roster plus three broker lifecycle poll controls.
+# The fixture roster includes the private client-cutoff and SCM access controls.
 # Platform and fixture doctest scopes retain their independently reviewed roster.
 SOURCE_TEST_ROSTERS = {
-    "fixture-test": "64467094283278d02001f14577991a336f51aeaf61f3f151391bf4bfe9bd4199",
+    "fixture-test": "ab8985eaebc016df2dfae1b7aa8a340a8e530701b31d0f640f1549328d0c9455",
     "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
     "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
     "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
@@ -192,25 +192,54 @@ def libtest_artifact(output, work):
     return image, found
 
 
+def require_disk_headroom(stage, *, pending_bytes=0):
+    """Keep the checkout's reserve after any pending artifact copies."""
+    available = shutil.disk_usage(ROOT).free
+    required = Q.DISK_FLOOR + pending_bytes
+    Q.require(available >= required,
+              f"Cross-link disk reserve before {stage}: required {required} bytes, available {available} bytes.")
+
+
+def check_scratch_headroom(scratch, stage):
+    """Enforce the service runner's disk and memory budget on relocated work."""
+    reason = Q.resource_stop_reason(scratch)
+    Q.require(reason is None, f"Cross-link scratch resource stop before {stage}: {reason}.")
+
+
 def run(args):
     """Admit current source/SDK/tools, then perform only the explicitly selected Linux lane."""
     Q.no_ambient_flags()
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    core_policy = Q.disable_core_dumps()
     Q.require(args.lane in ("ready", "link", "libtest-link"), "Unknown service cross-link lane.")
     Q.require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh label.")
     destination = Q.RECORDS / ("cross-" + args.label + ".json")
-    Q.require(not destination.exists() and not destination.is_symlink()
-              and shutil.disk_usage(ROOT).free >= Q.DISK_FLOOR,
-              "Cross record exists or less than 2GiB free.")
+    Q.require(not destination.exists() and not destination.is_symlink(), "A prior cross-link record already exists.")
+    require_disk_headroom("admission")
+    scratch = args.scratch_root
+    if scratch is not None:
+        scratch = C.RUNTIME._directory(scratch, "Service cross-link scratch root")
+        C.RUNTIME._owned_work(scratch, ROOT)
+        Q.require(not C.RUNTIME._overlap(scratch, Q.CACHE), "Cross-link scratch overlaps the shared writer cache.")
+        check_scratch_headroom(scratch, "admission")
     Q.CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     Q.require(Q.CACHE == Q.CACHE.resolve() and Q.CACHE.stat().st_mode & 0o077 == 0, "Derived cache is not private.")
     writer = os.open(Q.CACHE / "writer.lock", os.O_CREAT | os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW, 0o600)
-    fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    work = Q.CACHE / ("cross-" + args.label)
-    work.mkdir(mode=0o700)
+    try:
+        fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        Q.require(not destination.exists() and not destination.is_symlink(), "A prior cross-link record already exists.")
+        work = (scratch or Q.CACHE) / ("cross-" + args.label)
+        Q.require(not work.exists() and not work.is_symlink(), "Cross-link work path already exists.")
+    except BaseException:
+        os.close(writer)
+        raise
     record = {"scope": "Linux cross-link and static PE declarations only", "lane": args.lane, "status": "incomplete",
               "commands": [], "bookends_passed": False, "native_execution": False, "started_unix": time.time(),
-              "work": str(work), "limits": {"jobs": 1, "cpu_seconds": 180, "wall_seconds": 180, "core_bytes": 0}}
+              "work": str(work), "limits": {"jobs": 1, "cpu_seconds": 180, "wall_seconds": 180,
+                         "core_bytes": core_policy["limit_bytes"], "core_dump_policy": core_policy,
+                         "disk_floor_bytes": Q.DISK_FLOOR}}
+    if scratch is not None:
+        record["limits"].update(scratch_disk_floor_bytes=Q.DISK_FLOOR,
+                                memory_available_floor_bytes=Q.MEMORY_FLOOR)
     staging = None
     try:
         metrics_helper = ROOT / METRICS_EXPORT_HELPER
@@ -231,8 +260,15 @@ def run(args):
                   "Cross tools differ from the current source checkpoint.")
         sdk_config, sdk_inventory = args.sdk_config.resolve(strict=True), args.sdk_inventory.resolve(strict=True)
         sdk_hashes = {str(path): C.PRODUCT.sha256(path) for path in (sdk_config, sdk_inventory)}
-        C.read_analysis_json(sdk_config)
+        sdk_settings = C.read_analysis_json(sdk_config)
         C.read_analysis_json(sdk_inventory)
+        vendor = args.vendor_dir.resolve(strict=True)
+        if scratch is not None:
+            readonly_inputs = [*admitted["readonly_roots"], vendor,
+                               Path(sdk_settings["root"]).resolve(strict=True), sdk_config, sdk_inventory]
+            Q.require(not any(C.RUNTIME._overlap(scratch, path) for path in readonly_inputs),
+                      "Cross-link scratch overlaps a read-only input.")
+        work.mkdir(mode=0o700)
         libraries, library_map = C.PRODUCT.windows_libraries(ROOT, stable, sdk_config, work, sdk_inventory)
         library_roots = [libraries / scope for scope in LIBRARY_SCOPES]
         llvm = stable / "lib/rustlib/x86_64-unknown-linux-gnu/bin"
@@ -255,7 +291,6 @@ def run(args):
         wrapper.chmod(0o500)
         wrapper_sha = C.PRODUCT.sha256(wrapper)
         record["linker_prefix_argv"] = paths
-        vendor = args.vendor_dir.resolve(strict=True)
         vendor_map = C.PRODUCT.admit_vendor(vendor, policy)
         record["vendor"] = {"path": str(vendor), "inventory_sha256": Q.canonical(vendor_map)}
         Q.require(checkpoint["vendor"] == {**record["vendor"], "files": len(vendor_map)},
@@ -273,6 +308,7 @@ def run(args):
 
         def check():
             """Keep current source, script, SDK receipt, prerequisites and derived inputs unchanged."""
+            Q.require(Q.check_core_dumps() == core_policy, "Cross core collector policy changed.")
             Q.require(Q.source_identity()[1] == identity and C.PRODUCT.inventory(source) == identity,
                       "Current or sealed source changed.")
             Q.require(C.PRODUCT.sha256(ROOT / SELF) == record["recipe_sha256"]
@@ -288,16 +324,26 @@ def run(args):
         def execute(command):
             """Run one finite literal host command with sealed inputs and preserve its actual result."""
             check()
-            Q.require(shutil.disk_usage(ROOT).free >= Q.DISK_FLOOR, "Less than 2GiB free before cross command.")
-            result = C.RUNTIME.run(ROOT, work, command, timeout=180,
-                                   readonly=[*admitted["readonly_roots"], vendor, *library_roots],
-                                   sealed=[source, config, wrapper], path_dirs=[stable / "bin", llvm],
-                                   environment={"RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc"),
-                                                "RUST_TEST_THREADS": "1"}, cwd=source, cpu_seconds=180, build_jobs=1)
+            require_disk_headroom("command execution")
+            options = dict(readonly=[*admitted["readonly_roots"], vendor, *library_roots],
+                           sealed=[source, config, wrapper], path_dirs=[stable / "bin", llvm],
+                           environment={"RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc"),
+                                        "RUST_TEST_THREADS": "1"}, cwd=source, cpu_seconds=180, build_jobs=1)
+            if scratch is None:
+                result = C.RUNTIME.run(ROOT, work, command, timeout=180, **options)
+            else:
+                check_scratch_headroom(work, "command execution")
+                namespace = C.RUNTIME.sandbox_command(ROOT, work, command, **options)
+                result = C.RUNTIME.ENV.run(
+                    namespace, cwd=ROOT, timeout=180, environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+                    stdin=subprocess.DEVNULL, resource_guard=lambda: Q.resource_stop_reason(work),
+                )
             record["commands"].append({"argv": command, **result})
             check()
             Q.require(result.get("failure") is None and type(result.get("exit_code")) is int,
-                      "Cross command lost runtime custody.")
+                      f"Cross command lost runtime custody: {result.get('failure')}.")
+            if scratch is not None:
+                check_scratch_headroom(work, "receipt readback")
             return result
 
         if args.lane == "ready":
@@ -372,6 +418,9 @@ def run(args):
                                         "--coff-imports", str(Path("/work") / image.relative_to(work))])
                     Q.require(observed["exit_code"] == 0, "Independent LLVM PE inspection failed.")
                     Q.require(C.PRODUCT.sha256(image) == image_hash, "PE changed after LLVM inspection.")
+                    if scratch is not None:
+                        staging_bytes = len(image_snapshot[0]) + len(symbol_snapshot[0]) + len(observed["output"].encode())
+                        require_disk_headroom("artifact staging", pending_bytes=staging_bytes)
                     for original, (snapshot, digest) in ((image, image_snapshot), (pdb, symbol_snapshot)):
                         with (staged / original.name).open("xb") as copied:
                             copied.write(snapshot)
@@ -400,6 +449,9 @@ def run(args):
         index_after = Q.index_identity()
         Q.require(index_after == record["index_before"], "Staging bytes changed before cross-lane publication.")
         if staging is not None:
+            if scratch is not None:
+                require_disk_headroom("artifact publication")
+                check_scratch_headroom(work, "artifact publication")
             Q.require(not artifacts.exists() and not artifacts.is_symlink(),
                       "Cross artifact destination already exists.")
             # The cache writer lock serializes cross-lane publication.
@@ -432,6 +484,8 @@ def main():
     parser.add_argument("--source-checkpoint", type=Path, required=True,
                         help="Current qualification.py privilege-checkpoint receipt and its bound graph")
     parser.add_argument("--vendor-dir", type=Path, required=True)
+    parser.add_argument("--scratch-root", type=Path,
+                        help="Existing private directory for derived link inputs and compiler outputs")
     parser.add_argument("--sdk-config", type=Path, default=Path.home() / ".local/share/nevrotick/xwin.json")
     parser.add_argument("--sdk-inventory", type=Path,
                         default=Path("/mnt/c/Users/perso/AppData/Local/NevroTick/ui-m0/xwin-installed-inventory.json"))

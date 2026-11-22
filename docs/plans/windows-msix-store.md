@@ -837,6 +837,41 @@ own-process services to connect immediately and do their initialization in
 and legitimate operation remain five separately recorded observations. [S43,
 S46, S47, S56]
 
+#### v3 admission at activation
+
+OD-07 requires a lower-baseline CPU and OS check before any v3 payload
+executes. `Identity.ProcessorArchitecture` declares `x64` and
+`TargetDeviceFamily` sets device-family and OS-version applicability. The
+documented dependency schema has no CPUID or XCR0 predicate. The PE
+machine field identifies AMD64. These metadata fields do not establish
+usable AVX state. [Identity](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-identity) · [TargetDeviceFamily](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-targetdevicefamily) · [Dependencies](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-dependencies) · [PE format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format)
+
+| Entry path | First execution edge and evidence status |
+| --- | --- |
+| S0.6 laboratory application | Packaged activation would load `Inert.exe`, built with v3. Its observed entry body calls only `ExitProcess(0)`. It supplies no prerequisite check or service activation. |
+| S0.6 laboratory engine and broker | SCM would load each v3 service executable independently from its `windows.service` declaration. Both start types are Disabled. Only packaging and readback are recorded. This fixture has no helper. |
+| Product UI | Packaged application activation would load its UI image and startup dependencies. The fixture Slint UI supplies no qualified pre-entry path for the product. |
+| Product engine and broker | Each own-process SCM image must have a compatible path before its first v3 execution. `ServiceMain` follows process creation and startup. Production service images and their prerequisite paths remain open. |
+| Product elevated helper | The approved UAC activation would load the helper image and startup dependencies. The supported activation path and image remain open. |
+| Direct launch and lifecycle reentry | Account for each reachable image or module through direct execution, SCM restart or recovery, and update, repair, Reset and reboot. Identify the executable and loader path before the first v3 instruction, including static imports, CRT and thread-local storage callbacks. A prior install or UI check establishes no current decision on these paths. |
+
+Windows runs imported DLL initialization before the executable entry point.
+The SCM invokes the configured service image independently of the UI.
+Retain the same service identity, prompt dispatcher connection, required
+creation-time protections and recovery access under the selected path.
+[DLL entry point](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-entry-point-function) · [Packaged service declaration](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-desktop6-service) · [Service startup](https://learn.microsoft.com/en-us/windows/win32/services/service-startup)
+
+The existing baseline-compatible diagnostic checks cumulative v2/v3 CPU
+features and reads XCR0 only after observing XSAVE and OSXSAVE. An owned
+build-26100 Sandbox ran the exact probe and reported `cpu-os-v3=accepted`.
+That one guest result and the unsigned fixture readback leave product
+launch enforcement open. W11-W10 and W11-W05 retain S0.6/P6 and the existing
+CHECK-19/20/26 artifact and CHECK-16/23 activation evidence. At the applicable
+native exit, observe refusal before v3 execution with a missing or VM-masked
+feature or unavailable vector state, and observe valid work on a supported
+v3 system. The installed §7.5 experiment remains held. The startup topology
+and signing/trust arrangements remain open. [x86-64 ISA levels](https://gitlab.com/x86-psABIs/x86-64-ABI/-/blob/master/x86-64-ABI/low-level-sys-info.tex) · [Diagnostic source](../../tools/windows-sandbox/cpu-os-v3-admission.rs) · [Guest probe execution](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026) · [Unsigned package checkpoint](../../tasks/windows11-integration.md#pack-the-disabled-service-s06-msix-fixture--22-november-2026)
+
 ### 7.3 Bounded blockers and the first later package experiment
 
 The source card's exit is **prepared with named unresolved mechanisms**, rather
@@ -1215,6 +1250,47 @@ machine/session, allowed operations, finite resources/time/output, cleanup and
 evidence custody. Scoped Sandbox readiness is not admission for this experiment.
 The probe after setup is nonmutating; it performs no setter, StartService or
 ControlService call, clock/W32Time work, production networking or first-UI setup.
+
+The [unsigned fixture package checkpoint](../../tasks/windows11-integration.md#pack-the-disabled-service-s06-msix-fixture--22-november-2026)
+supplies exact packed bytes for these linked laboratory service roles. Both
+declarations are Disabled. The receipt binds the lab-only identity and
+account input, archive readback and runtime prerequisite. The installation
+setup and handle-only probe retain their original admission and exit.
+The [bound package readback](../../tasks/windows11-integration.md#bind-unsigned-package-readback-to-the-recorded-makeappx-run--22-november-2026)
+matches the frozen inputs and recorded output digest before those unsigned
+bytes can be used as the fixture's pack evidence.
+The [SCM security adapter](../../tasks/windows11-integration.md#read-scm-service-owner-and-dacl-without-mutation--22-november-2026)
+preserves owner and DACL observations through a separate `READ_CONTROL`
+handle for step 2. Effective access under the proposed actor is still a
+separate handle observation in step 3.
+The [configuration identity child](../../tasks/windows11-integration.md#observe-the-configured-scm-binary-path-and-start-name--22-november-2026)
+adds the stored binary path and start name to the existing query in step 2.
+The [configured privilege child](../../tasks/windows11-integration.md#observe-scm-configured-required-privileges--22-november-2026)
+adds a separate bounded query for the stored required-privilege list. Absent
+and empty lists fail the eventual explicit role-profile check. No native
+result for this new query is established yet.
+The [configured SID-type child](../../tasks/windows11-integration.md#observe-the-configured-scm-service-sid-type--22-november-2026)
+adds the raw configured DWORD through the same query-only handle. Its
+activation follows the documented next system start. Step 2 observes those
+settings on the untouched deployment objects. The later fixed-changes stage
+compares them with the approved role profile.
+The resolved installed image, its package membership and effective token
+still require separate observations.
+The [two-role pre-start selector](../../tasks/windows11-integration.md#observe-the-two-installed-s06-service-roles-at-pre-start--22-november-2026)
+assembles the existing query-only reads for step 2. Its compiled source
+reports numeric fields and redacted shape only. Installed execution
+and independent identity/descriptor readback stay held. The [step-3
+access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
+prepares the separate required-right acquisition/close observations
+and the step-4 standard-user status-access/configuration-denial control.
+The [current WSL link](../../tasks/windows11-integration.md#link-the-current-pre-start-probe-and-inert-service-roles--22-november-2026)
+supplies the exact test PE/PDB and both current inert service roles.
+The [prepared pack input set](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
+now binds the current roles and retained packer inputs in WSL. The
+existing unsigned MSIX retains its original payload identity. Packing
+from the new input set awaits the existing Windows admission.
+The selectors remain unexecuted pending the admitted installed fixture
+and independently bound actor contexts.
 
 1. Use initially disabled inert functional-service fixtures. Observe whether
    deployment registers them without UI launch; keep absent registration separate

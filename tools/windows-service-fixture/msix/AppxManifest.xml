@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+         xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap uap10 desktop6 rescap">
+  <Identity Name="NevroTick.S06.ScmFixture" Publisher="CN=NevroTick S06 Laboratory"
+            Version="1.0.0.0" ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>NevroTick S0.6 SCM Fixture</DisplayName>
+    <PublisherDisplayName>NevroTick Laboratory</PublisherDisplayName>
+    <Logo>Assets\PackageLogo.png</Logo>
+    <uap10:PackageIntegrity>
+      <uap10:Content Enforcement="on" />
+    </uap10:PackageIntegrity>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.26100.0"
+                        MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+  <Applications>
+    <Application Id="Inert" Executable="Inert.exe"
+                 uap10:RuntimeBehavior="packagedClassicApp" uap10:TrustLevel="mediumIL">
+      <uap:VisualElements DisplayName="NevroTick S0.6 SCM Fixture"
+                          Description="Disabled service configuration fixture" BackgroundColor="transparent"
+                          Square44x44Logo="Assets\Square44x44Logo.png"
+                          Square150x150Logo="Assets\Square150x150Logo.png" AppListEntry="none" />
+      <Extensions>
+        <desktop6:Extension Category="windows.service" Executable="nevrotick-lab-s02-engine.exe"
+                            EntryPoint="Windows.FullTrustApplication">
+          <desktop6:Service Name="NevroTick-Lab-S02-Engine" StartupType="disabled" StartAccount="localService" />
+        </desktop6:Extension>
+        <desktop6:Extension Category="windows.service" Executable="nevrotick-lab-s02-broker.exe"
+                            EntryPoint="Windows.FullTrustApplication">
+          <desktop6:Service Name="NevroTick-Lab-S02-Broker" StartupType="disabled" StartAccount="localService" />
+        </desktop6:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="packagedServices" />
+  </Capabilities>
+</Package>

@@ -118,6 +118,18 @@ pub(super) enum WorkerFinish {
         )
     )]
     JoinTailPending,
+    /// Native completion needs a bounded recheck without a worker wake.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the selected native pipe worker is a laboratory test"
+        )
+    )]
+    NativeDrainPending {
+        /// First cleanup failure already observed, with custody still outstanding.
+        cleanup_failure: Option<WorkerError>,
+    },
     /// Actual completion/join acknowledges both independent result facts.
     Finished(WorkerCompletion),
 }
@@ -208,9 +220,9 @@ const LAB_WAIT_HINT_MS: u32 = 1000;
 const LAB_PENDING_MS: u32 = 10_000;
 /// Explicit maximum useful laboratory control-loop interval.
 const LAB_RUNNING: Duration = Duration::from_millis(60_000);
-/// Fixture-only maximum relative wait request after a real terminal marker.
+/// Fixture-only maximum relative wait request for cleanup without a reliable wake.
 /// Early/spurious returns remain possible; this is no wake-rate guarantee.
-const JOIN_TAIL_WAIT: Duration = Duration::from_millis(20);
+const CLEANUP_RECHECK_WAIT: Duration = Duration::from_millis(20);
 
 /// The one native dispatcher call; role selection never comes from raw input.
 pub(super) trait Dispatcher {
@@ -482,6 +494,8 @@ pub(super) enum InvocationPoll {
     Pending(Duration),
     /// Observe only marked thread-exit/join custody, without a new allowance.
     JoinTail(Duration),
+    /// Observe native completion without a wake or a new shutdown allowance.
+    NativeDrain(Duration),
     /// A deadline or unusable clock ended ordinary waiting; retain the same owner.
     Overdue,
     /// The writer joined but its release remains unconfirmed. No writer wake follows.
@@ -550,6 +564,8 @@ enum WorkerCustody {
     Cancelling,
     /// A current terminal marker awaits physical exit/join under the same custody.
     Joining,
+    /// A native operation awaits a terminal observation under the same custody.
+    DrainingNative,
     /// Finished acknowledged resolved actual work and cleanup custody.
     Finished,
 }
@@ -935,43 +951,49 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
 
     /// Observe physical worker completion and settle its original charge once.
     fn poll_stop_worker(&mut self, clock: &mut impl Clock) -> bool {
-        if !matches!(
+        if matches!(
             self.custody,
             WorkerCustody::Dormant | WorkerCustody::Finished
         ) {
-            match self.worker.poll_finished(&self.wake) {
-                pending @ (WorkerFinish::Pending | WorkerFinish::JoinTailPending) => {
-                    self.custody = if matches!(pending, WorkerFinish::JoinTailPending) {
-                        WorkerCustody::Joining
-                    } else {
-                        WorkerCustody::Cancelling
-                    };
-                    if let Some(now) = self.observe(clock) {
-                        if self.owner.state() == Some(ServiceState::StopPending) {
-                            self.check_pending(now);
-                        }
-                        if self.phase_deadline.is_none_or(|deadline| now >= deadline) {
-                            self.overdue = true;
-                        }
-                    } else {
-                        self.overdue = true;
-                    }
-                    return false;
-                }
-                WorkerFinish::Finished(result) => {
-                    self.custody = WorkerCustody::Finished;
-                    self.complete_permit();
-                    if let Some(error) = result.operation_failure {
-                        self.worker_failed(WorkerFailure::Operation(error));
-                    }
-                    if let Some(error) = result.cleanup_failure {
-                        self.worker_failed(WorkerFailure::Cleanup(error));
-                    }
-                    self.publish_failures();
-                }
-            }
+            return true;
         }
-        true
+        self.custody = match self.worker.poll_finished(&self.wake) {
+            WorkerFinish::Pending => WorkerCustody::Cancelling,
+            WorkerFinish::JoinTailPending => WorkerCustody::Joining,
+            WorkerFinish::NativeDrainPending { cleanup_failure } => {
+                // Retain an observed first failure immediately. With a prior
+                // primary cause, report a secondary completion fact at terminal observation.
+                if self.failure.is_none()
+                    && let Some(error) = cleanup_failure
+                {
+                    self.worker_failed(WorkerFailure::Cleanup(error));
+                }
+                WorkerCustody::DrainingNative
+            }
+            WorkerFinish::Finished(result) => {
+                self.custody = WorkerCustody::Finished;
+                self.complete_permit();
+                if let Some(error) = result.operation_failure {
+                    self.worker_failed(WorkerFailure::Operation(error));
+                }
+                if let Some(error) = result.cleanup_failure {
+                    self.worker_failed(WorkerFailure::Cleanup(error));
+                }
+                self.publish_failures();
+                return true;
+            }
+        };
+        if let Some(now) = self.observe(clock) {
+            if self.owner.state() == Some(ServiceState::StopPending) {
+                self.check_pending(now);
+            }
+            if self.phase_deadline.is_none_or(|deadline| now >= deadline) {
+                self.overdue = true;
+            }
+        } else {
+            self.overdue = true;
+        }
+        false
     }
 
     /// Observe both independently owned completions before attempting Stopped.
@@ -1085,26 +1107,32 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         {
             return InvocationPoll::WriterReleaseUnconfirmed(release);
         }
-        if self.custody == WorkerCustody::Joining
-            || self.writer.as_ref().is_some_and(Delivery::needs_join_tail)
+        if matches!(
+            self.custody,
+            WorkerCustody::Joining | WorkerCustody::DrainingNative
+        ) || self.writer.as_ref().is_some_and(Delivery::needs_join_tail)
         {
-            // The terminal marker permits only this relative cleanup observation.
+            // Completion without a reliable wake permits this relative observation.
             // Reversed time supplies no trusted deadline or arithmetic operand.
             let wait: Duration = if self.overdue || self.observed.reversed {
-                JOIN_TAIL_WAIT
+                CLEANUP_RECHECK_WAIT
             } else {
                 match self.phase_deadline.and_then(|deadline: Instant| {
                     deadline.checked_duration_since(self.observed.last_trusted)
                 }) {
-                    Some(remaining) if !remaining.is_zero() => remaining.min(JOIN_TAIL_WAIT),
+                    Some(remaining) if !remaining.is_zero() => remaining.min(CLEANUP_RECHECK_WAIT),
                     _ => {
                         self.overdue = true;
                         self.fail(FixtureError::Lifecycle(LifecycleError::DeadlineElapsed));
-                        JOIN_TAIL_WAIT
+                        CLEANUP_RECHECK_WAIT
                     }
                 }
             };
-            return InvocationPoll::JoinTail(wait);
+            return if self.custody == WorkerCustody::DrainingNative {
+                InvocationPoll::NativeDrain(wait)
+            } else {
+                InvocationPoll::JoinTail(wait)
+            };
         }
         if self.overdue {
             return InvocationPoll::Overdue;
@@ -1618,14 +1646,42 @@ pub(super) fn start_broker_invocation<A: StatusFactory, C: Clock>(
     notification: &StopNotification,
     reader: NativeBrokerReader,
 ) -> Result<ServiceInvocation<A::Reporter, InertWorker>, HostReceipt> {
-    let mut invocation: ServiceInvocation<A::Reporter, InertWorker> = start_invocation(
+    start_broker_worker(
+        argc,
+        factory,
+        token_observer,
+        clock,
+        notification,
+        reader,
+        InertWorker::new(),
+    )
+}
+
+/// Compose a dormant worker and a read-only observer under the fixed broker role.
+/// # Errors
+/// Returns the original pre-invocation failure receipt.
+#[cfg(any(windows, test))]
+#[expect(
+    clippy::result_large_err,
+    reason = "broker startup retains the same fixed pre-invocation receipt"
+)]
+fn start_broker_worker<A: StatusFactory, C: Clock, P: Worker>(
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    notification: &StopNotification,
+    reader: NativeBrokerReader,
+    worker: P,
+) -> Result<ServiceInvocation<A::Reporter, P>, HostReceipt> {
+    let mut invocation: ServiceInvocation<A::Reporter, P> = start_invocation(
         LabRole::ClockBroker,
         argc,
         factory,
         token_observer,
         clock,
         notification,
-        InertWorker::new(),
+        worker,
     )?;
     invocation.broker_clock_reader = Some(reader);
     Ok(invocation)
@@ -1641,7 +1697,9 @@ fn drive_service<R: StatusReporter<Error = NativeError>>(
     loop {
         match invocation.poll(clock, notification) {
             InvocationPoll::Pending(remaining) => wait.park(remaining),
-            InvocationPoll::JoinTail(relative) => wait.park(relative),
+            InvocationPoll::JoinTail(relative) | InvocationPoll::NativeDrain(relative) => {
+                wait.park(relative);
+            }
             InvocationPoll::Overdue => wait.park_until_notified(),
             #[cfg(test)]
             // This driver selects no writer. The test driver observes this case directly.

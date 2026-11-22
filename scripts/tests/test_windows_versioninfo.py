@@ -5,7 +5,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from windows_versioninfo import decode
+from windows_versioninfo import decode, decode_imports
 
 
 _FIXED = (0xFEEF04BD, 0x10000, 0x10002, 0x30004, 0x50006, 0x70008, 0x3F, 2, 0x40004, 1, 0, 0, 0)
@@ -226,6 +226,37 @@ class WindowsVersionInfoTests(unittest.TestCase):
         nested = record("outer", b"", 1, child)
         with self.assertRaisesRegex(ValueError, "block exceeds"):
             decode(readout(version_resource(fields=(nested,))))
+
+
+class WindowsImportTests(unittest.TestCase):
+    image = "/work/target/x86_64-pc-windows-msvc/release/nevrotick-ui.exe"
+    head = f"\nFile: {image}\nFormat: COFF-x86-64\nArch: x86_64\nAddressSize: 64bit\n"
+    direct = ("Import {\n  Name: KERNEL32.dll\n  ImportLookupTableRVA: 0x3088\n"
+              "  ImportAddressTableRVA: 0x3098\n  Symbol: ExitProcess (0)\n}\n")
+    delay = ("DelayImport {\n  Name: user32.dll\n  Attributes: 0x1\n"
+             "  ModuleHandle: 0x4018\n  ImportAddressTable: 0x4038\n  ImportNameTable: 0x3040\n"
+             "  BoundDelayImportTable: 0x0\n  UnloadDelayImportTable: 0x0\n"
+             "  Import {\n    Symbol: GetSystemMetrics (0)\n    Address: 0x140001030\n  }\n}\n")
+
+    def test_keeps_direct_and_delayed_modules_separate(self):
+        genuine = self.head + self.direct + self.delay
+        for output in (genuine, genuine.strip()):
+            self.assertEqual(decode_imports(output, image=self.image),
+                             {"direct": ["kernel32.dll"], "delay": ["user32.dll"]})
+        self.assertEqual(decode_imports(self.head + self.direct, image=self.image),
+                         {"direct": ["kernel32.dll"], "delay": []})
+
+    def test_refuses_wrong_image_partial_records_and_unsupported_names(self):
+        genuine = self.head + self.direct + self.delay
+        for report, reason in (
+            (genuine.replace("nevrotick-ui.exe", "nevrotick-observe.exe", 1), "different image"),
+            (genuine[:-2], "incomplete"),
+            (genuine.replace("user32.dll", "dir/user32.dll", 1), "descriptor output"),
+            (genuine.replace("  Attributes: 0x1", "  Attributes: 0x2", 1), "descriptor output"),
+            (genuine + " " * 65_536, "oversized"),
+        ):
+            with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
+                decode_imports(report, image=self.image)
 
 
 if __name__ == "__main__":

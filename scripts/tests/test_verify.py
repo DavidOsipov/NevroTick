@@ -1,7 +1,9 @@
 """Behavioral controls for product admission and result accounting; no Cargo execution."""
 import argparse
+from contextlib import redirect_stderr, redirect_stdout
 import hashlib
 import importlib.util
+import io
 import json
 from pathlib import Path
 import resource
@@ -1543,6 +1545,257 @@ class DependencyPolicyTests(unittest.TestCase):
                 VERIFY.product_deny(base, self.policy, "x86_64-unknown-linux-gnu")
 
 
+class DirectMsixSourceInspectionTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="direct-msix-inspection-control-")
+        self.addCleanup(temporary.cleanup)
+        self.metadata = Path(temporary.name)
+        self.generation = self.metadata / "generation"
+        tree = self.generation / "tree"
+        (tree / "authoring").mkdir(parents=True)
+        authoring = {}
+        for name in ("msix-inputs", "service-inputs", "event-inputs"):
+            path = f"authoring/{name}.json"
+            payload = json.dumps({"source": name}).encode()
+            (tree / path).write_bytes(payload)
+            authoring[path] = digest(payload)
+        receipt = json.dumps({"files": [{"path": path, "sha256": sha}
+                                        for path, sha in authoring.items()]}).encode()
+        (tree / "receipt.json").write_bytes(receipt)
+        self.generation_sha256 = digest(receipt)
+        self.report = {
+            "schema_version": 1,
+            "status": "assembly-inputs-incomplete",
+            "distribution_route": "direct-msix",
+            "package_identity": None,
+            "assembly_ready": False,
+            "generation_receipt_sha256": self.generation_sha256,
+            "authoring_inputs": authoring,
+            "roles": {
+                "ui": {"source_state": "fixture", "artifact_status": "not-admitted"},
+                "engine": {"source_state": "planned", "artifact_status": "not-admitted"},
+                "broker": {"source_state": "planned", "artifact_status": "not-admitted"},
+                "helper": {"source_state": "planned", "artifact_status": "not-admitted"},
+            },
+            "pending": [
+                {"path": path, "owner": owner, "required_stage": "release"}
+                for path, owner in sorted((
+                    ("release.version", "W11-W10/P6"),
+                    ("package.identity", "W11-W10/P6"),
+                    ("services.identities", "W11-W05"),
+                    ("diagnostics.provider", "W11-W08"),
+                    ("public.destinations", "W11-W10/P6"),
+                    ("release.qualification", "W11-W10/P6"),
+                ))
+            ],
+        }
+        self.commands = []
+
+    def inspect(self, output):
+        def run(label, command, *, extra):
+            self.commands.append((command, extra))
+            return output
+
+        return VERIFY.inspect_windows_msix(self.metadata, self.generation_sha256, run, source=ROOT)
+
+    def test_retains_source_report_from_the_read_only_matching_generation(self):
+        self.assertEqual(self.inspect(json.dumps(self.report)), self.report)
+        self.assertEqual(len(self.commands), 1)
+        command, mounts = self.commands[0]
+        self.assertEqual(command, ["python3", "-I", "-B", "metadata/pipeline/__main__.py",
+                                   "inspect-msix", "--output", "/metadata-output/tree"])
+        mount_at = mounts.index("--ro-bind")
+        self.assertEqual(tuple(mounts[mount_at:mount_at + 3]),
+                         ("--ro-bind", str(self.generation), "/metadata-output"))
+        self.assertNotIn("--bind", mounts)
+
+    def test_refuses_wrong_generation_and_invalid_stdout(self):
+        wrong_generation = {**self.report, "generation_receipt_sha256": "f" * 64}
+        for output in (json.dumps(wrong_generation), "", "not JSON", "[]", "null"):
+            with self.subTest(output=output), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.inspect(output)
+
+    def test_refuses_forged_release_claims_and_product_roles(self):
+        roles = self.report["roles"]
+        observer = {"source_state": "experiment", "artifact_status": "not-admitted"}
+        admitted_ui = {"source_state": "fixture", "artifact_status": "admitted"}
+        cases = (
+            {"assembly_ready": True},
+            {"assembly_ready": 0},
+            {"status": "assembly-inputs-complete"},
+            {"distribution_route": "store-msix"},
+            {"package_identity": {"name": "Unapproved.Control"}},
+            {"roles": {**roles, "ui": admitted_ui}},
+            {"roles": {**roles, "engine": observer}},
+            {"roles": {"ui": roles["ui"], "observer": observer,
+                       "broker": roles["broker"], "helper": roles["helper"]}},
+        )
+        for changed in cases:
+            with self.subTest(changed=changed), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.inspect(json.dumps({**self.report, **changed}))
+
+    def test_correct_receipt_hash_does_not_admit_wrong_authoring_or_pending_projection(self):
+        authoring = self.report["authoring_inputs"]
+        pending = self.report["pending"]
+        cases = (
+            {"authoring_inputs": {**authoring, "authoring/msix-inputs.json": "f" * 64}},
+            {"authoring_inputs": {**authoring, "authoring/service-events.man": "f" * 64}},
+            {"pending": pending[:-1]},
+            {"pending": [{**pending[0], "owner": "foreign"}, *pending[1:]]},
+        )
+        for changed in cases:
+            with self.subTest(changed=changed), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.inspect(json.dumps({**self.report, **changed}))
+
+
+class DirectMsixBaseArtworkTests(unittest.TestCase):
+    def setUp(self):
+        private = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="msix-artwork-control-")))
+        self.assets = private / "Assets"
+        self.assets.mkdir()
+        self.output = private / "export"
+        self.output.mkdir()
+        # The pinned-byte boundary does not decode PNGs. These small specimens
+        # exercise custody independently of the private production artwork.
+        self.images = {"PackageLogo.png": b"one", "Square44x44Logo.png": b"two",
+                       "Square150x150Logo.png": b"six"}
+        expected = {
+            "PackageLogo.png": ("Properties/Logo", 50),
+            "Square44x44Logo.png": ("VisualElements/@Square44x44Logo", 44),
+            "Square150x150Logo.png": ("VisualElements/@Square150x150Logo", 150),
+        }
+        self.pins = {name: (field, size, len(self.images[name]), digest(self.images[name]))
+                     for name, (field, size) in expected.items()}
+        self.enterContext(patch.object(VERIFY, "MSIX_BASE_ARTWORK", self.pins))
+        for name, data in self.images.items():
+            (self.assets / name).write_bytes(data)
+
+    def test_actual_export_binds_exact_retained_bytes_to_package_roles(self):
+        frozen = VERIFY.read_msix_base_artwork(self.assets)
+        # The export uses a held snapshot, never a fresh read after admission.
+        (self.assets / "PackageLogo.png").write_bytes(b"bad")
+        self.assertEqual(VERIFY.export_msix_base_artwork(frozen, self.output), {
+            "scope": "candidate-base-resources",
+            "export_root": "msix-inputs",
+            "files": {
+                "Assets/PackageLogo.png": {"manifest_field": "Properties/Logo", "width": 50,
+                                            "height": 50, "bytes": 3, "sha256": digest(b"one")},
+                "Assets/Square44x44Logo.png": {"manifest_field": "VisualElements/@Square44x44Logo",
+                                                "width": 44, "height": 44, "bytes": 3, "sha256": digest(b"two")},
+                "Assets/Square150x150Logo.png": {"manifest_field": "VisualElements/@Square150x150Logo",
+                                                  "width": 150, "height": 150, "bytes": 3, "sha256": digest(b"six")},
+            },
+        })
+        self.assertEqual({p.relative_to(self.output).as_posix(): p.read_bytes()
+                          for p in self.output.rglob("*") if p.is_file()},
+                         {"msix-inputs/Assets/" + name: data for name, data in self.images.items()})
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+
+    def test_refuses_swapped_same_size_or_extra_input_before_export(self):
+        logo = self.assets / "PackageLogo.png"
+        logo.write_bytes(b"two")
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+        forged = {**self.images, logo.name: b"two"}
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.export_msix_base_artwork(forged, self.output)
+        self.assertEqual(list(self.output.iterdir()), [])
+        logo.write_bytes(b"one")
+        extra = self.assets / "packagelogo.png"
+        extra.write_bytes(b"one")
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+        extra.unlink()
+        logo.unlink()
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+
+    def test_refuses_linked_leaves_and_linked_input_root(self):
+        logo = self.assets / "PackageLogo.png"
+        foreign = self.assets.parent / "foreign.png"
+        foreign.hardlink_to(logo)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+        logo.unlink()
+        logo.symlink_to(foreign)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(self.assets)
+        logo.unlink()
+        logo.write_bytes(b"one")
+        alias = self.assets.parent / "alias"
+        alias.symlink_to(self.assets, target_is_directory=True)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.read_msix_base_artwork(alias)
+        self.assertEqual(VERIFY.read_msix_base_artwork(self.assets), self.images)
+
+    def test_looped_input_path_is_a_scoped_artwork_refusal(self):
+        alias = self.assets.parent / "loop"
+        alias.symlink_to(alias, target_is_directory=True)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the selected input set"):
+            VERIFY.read_msix_base_artwork(alias)
+
+    def test_cli_receipt_cannot_replace_an_input_or_exported_image(self):
+        def execute(root, args, report):
+            report["msix_assembly_inputs"] = {
+                "base_artwork": VERIFY.export_msix_base_artwork(self.images, self.output),
+            }
+
+        command = ["--lane", "windows", "--vendor-dir", str(self.assets),
+                   "--msix-branding-dir", str(self.assets), "--output-dir", str(self.output)]
+        for location in (self.assets, self.output / "msix-inputs/Assets"):
+            err = io.StringIO()
+            with self.subTest(location=location), redirect_stdout(io.StringIO()), redirect_stderr(err):
+                with patch.object(VERIFY, "execute", side_effect=execute) as run:
+                    self.assertEqual(VERIFY.main([*command, "--json", str(location / "PackageLogo.png")]), 1)
+                self.assertIn("receipt overlaps protected MSIX inputs or artifact output", err.getvalue())
+                run.assert_not_called()
+                self.assertEqual(list(self.output.iterdir()), [])
+                self.assertEqual((self.assets / "PackageLogo.png").read_bytes(), b"one")
+
+    def test_cli_exports_candidate_artwork_and_a_disjoint_receipt(self):
+        def execute(root, args, report):
+            frozen = VERIFY.read_msix_base_artwork(args.msix_branding_dir)
+            report["msix_assembly_inputs"] = {
+                "assembly_ready": False,
+                "package_identity": None,
+                "base_artwork": VERIFY.export_msix_base_artwork(frozen, args.output_dir),
+            }
+
+        receipt_path = self.output.parent / "receipt.json"
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
+            with patch.object(VERIFY, "execute", side_effect=execute) as run:
+                self.assertEqual(VERIFY.main(["--lane", "windows", "--vendor-dir", str(self.assets),
+                                              "--msix-branding-dir", str(self.assets), "--output-dir",
+                                              str(self.output), "--json", str(receipt_path)]), 0)
+            run.assert_called_once()
+        self.assertEqual(err.getvalue(), "")
+        assembly = json.loads(receipt_path.read_bytes())["msix_assembly_inputs"]
+        self.assertIs(assembly["assembly_ready"], False)
+        self.assertIsNone(assembly["package_identity"])
+        for name, data in self.images.items():
+            path = "Assets/" + name
+            self.assertEqual((self.output / "msix-inputs" / path).read_bytes(), data)
+            self.assertEqual(assembly["base_artwork"]["files"][path]["sha256"], digest(data))
+
+    def test_windows_output_must_stay_outside_exact_artwork_directory(self):
+        args = argparse.Namespace(lane="windows", output_dir=self.assets / "new", msix_branding_dir=self.assets)
+        with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 3}, {})):
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "output overlaps the selected MSIX artwork"):
+                VERIFY.execute(ROOT, args, {})
+        self.assertEqual(VERIFY.read_msix_base_artwork(self.assets), self.images)
+
+    def test_refuses_selection_outside_an_exporting_schema_3_windows_lane(self):
+        cases = (("portable", 3, self.output), ("dependencies", 3, self.output),
+                 ("windows", 2, self.output), ("windows", 3, None))
+        for lane, schema, output in cases:
+            args = argparse.Namespace(lane=lane, output_dir=output, msix_branding_dir=self.assets)
+            with self.subTest(lane=lane, schema=schema, output=output):
+                with patch.object(VERIFY, "admit_product", return_value=({"schema_version": schema}, {})):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "requires a Windows cross-build artifact output"):
+                        VERIFY.execute(ROOT, args, {})
+
+
 class ExecutionAccountingTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="product-results-control-")
@@ -1932,12 +2185,16 @@ class ExecutionAccountingTests(unittest.TestCase):
         report = VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
         self.assertEqual(report["profile"], "release")
         self.assertEqual(report["target"], "x86_64-pc-windows-msvc")
+        self.assertEqual((report["component_role"], report["source_state"]), ("ui", "fixture"))
         self.assertEqual({entry.name: entry.read_bytes() for entry in output.iterdir()}, artifacts)
         self.assertEqual(report["sha256"], digest(artifacts["nevrotick-ui.exe"]))
         self.assertEqual(report["symbols"]["sha256"], digest(artifacts["nevrotick_ui.pdb"]))
         self.assertEqual(Path(report["symbols"]["path"]).name, "nevrotick_ui.pdb")
-        self.assertEqual(Path(report["engine"]["path"]).name, "nevrotick-observe.exe")
-        self.assertEqual(report["engine"]["symbols"]["sha256"], digest(artifacts["nevrotick_observe.pdb"]))
+        observer = report["engine"]
+        self.assertEqual((observer["component_role"], observer["source_state"]), ("observer", "experiment"))
+        self.assertEqual(Path(observer["path"]).name, "nevrotick-observe.exe")
+        self.assertEqual(observer["sha256"], digest(artifacts["nevrotick-observe.exe"]))
+        self.assertEqual(observer["symbols"]["sha256"], digest(artifacts["nevrotick_observe.pdb"]))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "existing destinations"):
             VERIFY.export_windows_artifacts(self.work, output, source=ROOT)
 

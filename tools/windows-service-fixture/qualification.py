@@ -132,11 +132,13 @@ def check_core_dumps():
     return policy
 
 
-def resource_stop_reason():
+def resource_stop_reason(scratch=None):
     """Return a fixed reason when this service command loses its declared headroom."""
     try:
         if shutil.disk_usage(ROOT).free < DISK_FLOOR:
             return "DISK_RESERVE"
+        if scratch is not None and shutil.disk_usage(scratch).free < DISK_FLOOR:
+            return "WORK_DISK_RESERVE"
         with Path("/proc/meminfo").open("rb") as stream:
             data = stream.read(65537)
         if len(data) > 65536:
@@ -289,7 +291,7 @@ def wall_timeout(limit, deadline):
 
 def run_command(work, command, admitted, vendor, source, *, timeout=180,
                 cpu_seconds=None, mutation=False, cwd=None, native_subject=None, deadline_monotonic=None,
-                on_group_return=None):
+                on_group_return=None, guard_scratch=False):
     """Seal inputs, permitting only the selected private native mutation output file."""
     require(isinstance(command, list) and command
             and all(isinstance(item, str) and item and "\0" not in item for item in command),
@@ -331,7 +333,10 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
                 "Native mutation file must be an existing unaliased regular file.")
     check_service_tools(admitted)
     check_core_dumps()
-    require(resource_stop_reason() is None, "Service resource headroom is unavailable before command.")
+    def guard_resources():
+        return resource_stop_reason(work if guard_scratch else None)
+
+    require(guard_resources() is None, "Service resource headroom is unavailable before command.")
     # Cargo creates target atomically with its own cache marker; never precreate it.
     for name in ("home", "tmp", "cargo-home"):
         (work / name).mkdir(mode=0o700, exist_ok=True)
@@ -391,7 +396,7 @@ def run_command(work, command, admitted, vendor, source, *, timeout=180,
     try:
         result = C.PRODUCT.ENV.run(args, cwd=ROOT, timeout=wall_timeout(timeout, deadline_monotonic),
                                    environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
-                                   stdin=subprocess.DEVNULL, resource_guard=resource_stop_reason)
+                                   stdin=subprocess.DEVNULL, resource_guard=guard_resources)
         result = {**result, "namespace_argv": invocation}
         if on_group_return is not None:
             on_group_return(result)
@@ -744,6 +749,22 @@ def lane_commands(lane, cargo):
     return commands[lane]
 
 
+def admit_scratch_root(path, lane):
+    """Admit an explicit private work parent for the two batched source lanes."""
+    if path is None:
+        return CACHE
+    require(lane in {"graph", "privilege-checkpoint"}, "Scratch relocation is only for graph and privilege-checkpoint.")
+    scratch = C.RUNTIME._directory(path, "Service scratch root")
+    C.RUNTIME._owned_work(scratch, ROOT)
+    require(not C.RUNTIME._overlap(scratch, CACHE), "Service scratch root overlaps the shared writer cache.")
+    return scratch
+
+
+def select_vendor(args):
+    """Resolve the selected vendor directory before its content admission."""
+    return (args.vendor_dir or Path(json.loads(C.PRODUCT.POINTER.read_text())["vendor_dir"])).resolve(strict=True)
+
+
 def run(args):
     """Freeze one current epoch, retain all raw outcomes, and publish success only after bookends."""
     no_ambient_flags()
@@ -753,6 +774,11 @@ def run(args):
     destination = RECORDS / (args.label + ".json")
     require(not destination.exists(), "A prior raw record must never be replaced.")
     require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 4GiB free before admission.")
+    scratch = getattr(args, "scratch_root", None)
+    work_parent = admit_scratch_root(scratch, args.lane)
+    if scratch is not None:
+        stop = resource_stop_reason(work_parent)
+        require(stop is None, f"Service scratch headroom is unavailable before admission: {stop}.")
     CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(CACHE.resolve() == CACHE and CACHE.stat().st_uid == os.geteuid()
             and CACHE.stat().st_mode & 0o077 == 0, "Derived cache must be canonical, owned and private.")
@@ -762,8 +788,21 @@ def run(args):
     except BlockingIOError:
         os.close(writer)
         raise Incomplete("Another service qualification writer is active.") from None
-    work = CACHE / args.label
-    work.mkdir(mode=0o700)
+    work = work_parent / args.label
+    admitted = vendor = None
+    try:
+        if scratch is not None:
+            if work.exists() or work.is_symlink():
+                raise FileExistsError(f"Service work path already exists: {work}")
+            vendor = select_vendor(args)
+            admitted = admit_service_tools()
+            inputs = [vendor, *admitted["readonly_roots"], *admitted["extensions"].values()]
+            require(not any(C.RUNTIME._overlap(work_parent, path) for path in inputs),
+                    "Service scratch root overlaps a read-only input.")
+        work.mkdir(mode=0o700)
+    except BaseException:
+        os.close(writer)
+        raise
     record = {"schema_version": 1, "scope": "source-only inert service fixture", "lane": args.lane,
               "status": "incomplete", "started_unix": time.time(), "commands": [],
               "bookends_passed": False, "index_bytes_unchanged": False, "work": str(work),
@@ -772,6 +811,8 @@ def run(args):
                          "core_dump_policy": core_policy,
                          "disk_floor_bytes": DISK_FLOOR, "memory_available_floor_bytes": MEMORY_FLOOR}, "native_execution": False}
     graph_receipt = None
+    if scratch is not None:
+        record["limits"]["scratch_disk_floor_bytes"] = DISK_FLOOR
     try:
         policy, identity = source_identity()
         record["source_sha256"] = identity
@@ -779,10 +820,12 @@ def run(args):
         record["recipe_sha256"] = identity[SELF]
         record["index_before"] = index_identity()
         record["feature_delta"] = manifest_admission(policy)
-        admitted = admit_service_tools()
+        if admitted is None:
+            admitted = admit_service_tools()
         # Selection supplies no trust: the complete chosen directory must still
         # match every current reviewed package byte and checksum map below.
-        vendor = (args.vendor_dir or Path(json.loads(C.PRODUCT.POINTER.read_text())["vendor_dir"])).resolve(strict=True)
+        if vendor is None:
+            vendor = select_vendor(args)
         vendor_identity = C.PRODUCT.admit_vendor(vendor, policy)
         record["vendor"] = {"path": str(vendor), "inventory_sha256": canonical(vendor_identity), "files": len(vendor_identity)}
         record["tools"] = tool_identity(admitted)
@@ -828,11 +871,14 @@ def run(args):
             check()
             require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 4GiB free before execution.")
             result = run_command(work, command, admitted, vendor, source,
-                                 timeout=SECONDS, cpu_seconds=SECONDS)
+                                 timeout=SECONDS, cpu_seconds=SECONDS, guard_scratch=scratch is not None)
             record["commands"].append({"argv": command, **result})
             check()
             require(result.get("failure") is None and type(result.get("exit_code")) is int,
                     "Execution lost wall/output/process custody.")
+            if scratch is not None:
+                stop = resource_stop_reason(work)
+                require(stop is None, f"Service scratch headroom was lost after command: {stop}.")
             if result["exit_code"] != 0:
                 break
         succeeded = len(record["commands"]) == len(commands) and all(
@@ -876,6 +922,8 @@ def main():
     parser.add_argument("--label", required=True)
     parser.add_argument("--graph-receipt", type=Path)
     parser.add_argument("--vendor-dir", type=Path)
+    parser.add_argument("--scratch-root", type=Path,
+                        help="Existing private derived-work parent for graph or privilege-checkpoint")
     args = parser.parse_args()
     try:
         status = run(args)

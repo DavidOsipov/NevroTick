@@ -5,13 +5,15 @@
 
 use std::{
     cell::Cell,
+    num::NonZeroUsize,
+    ops::Range,
     rc::Rc,
     time::{Duration, Instant},
 };
 
 use super::{
     BrokerAvailability, BrokerQueryFault, Clock, InertWorker, InvocationPoll, PrivateStatusIssue,
-    ServiceInvocation, StatusReporter, StopNotification,
+    ServiceInvocation, StatusReporter, StopNotification, Worker,
 };
 use crate::{
     LabRole, NativeError,
@@ -43,6 +45,8 @@ enum SessionFault {
     IdExhausted,
     /// Bounded wire admission or reply correlation refused.
     Frame(FrameError),
+    /// A reply write was issued twice or completed with an invalid count.
+    WriteProgress,
 }
 
 /// Exact identity and monotonic open state shared by the two fixture endpoints.
@@ -77,14 +81,18 @@ impl EngineStatusClient {
     /// Complete the ordinary exchange without releasing its intermediate reply.
     /// The result describes the broker's decision and carries no freshness lease.
     /// # Errors
-    /// Refuses failed delivery, broker admission or reply pairing.
-    fn read_availability<R: StatusReporter<Error = NativeError>, C: Clock>(
+    /// Refuses foreign or expired custody before delivery and rechecks the
+    /// original owner after reply correlation, before making the result visible.
+    fn read_availability<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>(
         &mut self,
-        receiver: &mut BrokerStatusSession<'_, R, C>,
+        receiver: &mut BrokerStatusSession<'_, R, C, P>,
     ) -> Result<BrokerAvailability, SessionFault> {
+        receiver.check_client_edge(&self.connection)?;
         let pending: PendingStatus<'_> = self.request()?;
         let reply: Reply = receiver.receive(pending.delivery())?;
-        Ok(if pending.resolve(reply)? {
+        let available: bool = pending.resolve(reply)?;
+        receiver.check_receive_edge()?;
+        Ok(if available {
             BrokerAvailability::Available
         } else {
             BrokerAvailability::Unavailable
@@ -133,22 +141,37 @@ impl PendingStatus<'_> {
     /// Refuses foreign, closed, malformed or miscorrelated replies.
     fn resolve(self, reply: Reply) -> Result<bool, SessionFault> {
         let Reply { connection, frame } = reply;
+        self.resolve_delivery(Delivery {
+            connection: &connection,
+            bytes: frame.as_bytes(),
+        })
+    }
+
+    /// Consume exactly one actual reply delivery on the pending request's connection.
+    /// # Errors
+    /// Refuses closed or foreign custody and malformed or miscorrelated bytes.
+    fn resolve_delivery(self, delivery: Delivery<'_>) -> Result<bool, SessionFault> {
         if !self.client.connection.get() {
             return Err(SessionFault::Closed);
         }
-        if !Rc::ptr_eq(&self.client.connection, &connection) {
+        if !Rc::ptr_eq(&self.client.connection, delivery.connection) {
             return Err(SessionFault::ForeignConnection);
         }
-        decode_reply(frame.as_bytes(), self.id).map_err(SessionFault::Frame)
+        decode_reply(delivery.bytes, self.id).map_err(SessionFault::Frame)
     }
 }
 
 /// Receiver owns one exclusive borrow of the broker, original clock and Stop source.
-struct BrokerStatusSession<'a, R: StatusReporter<Error = NativeError>, C: Clock> {
+struct BrokerStatusSession<
+    'a,
+    R: StatusReporter<Error = NativeError>,
+    C: Clock,
+    P: Worker = InertWorker,
+> {
     /// Independent identity of this in-memory transport.
     connection: Connection,
     /// Real acknowledged and serialized broker owner.
-    owner: &'a mut ServiceInvocation<R, InertWorker>,
+    owner: &'a mut ServiceInvocation<R, P>,
     /// The same monotonic observation provider the invocation uses.
     clock: &'a mut C,
     /// The original fixture notification bound at the composition boundary.
@@ -161,13 +184,15 @@ struct BrokerStatusSession<'a, R: StatusReporter<Error = NativeError>, C: Clock>
     remaining: u8,
 }
 
-impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'a, R, C> {
+impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
+    BrokerStatusSession<'a, R, C, P>
+{
     /// Compose one Engine sender and one real broker receiver under this exact owner.
     /// The in-memory fixture role is selected by trusted test composition.
     /// # Errors
     /// Refuses wrong role, reused ownership, unavailable owner or unrepresentable cutoff.
     fn open(
-        owner: &'a mut ServiceInvocation<R, InertWorker>,
+        owner: &'a mut ServiceInvocation<R, P>,
         clock: &'a mut C,
         stop: &'a StopNotification,
         peer: LabRole,
@@ -206,7 +231,8 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
     /// # Errors
     /// Refuses wrong owner, malformed input, replay, closed admission or expired cutoff.
     fn receive(&mut self, delivery: Delivery<'_>) -> Result<Reply, SessionFault> {
-        let mut inbound: InboundStatus<'_, 'a, R, C> = self.begin_receive(delivery.connection)?;
+        let mut inbound: InboundStatus<'_, 'a, R, C, P> =
+            self.begin_receive(delivery.connection)?;
         inbound
             .complete_fragment(delivery.bytes)?
             .ok_or(SessionFault::Frame(FrameError::Length))
@@ -219,7 +245,7 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
     fn begin_receive(
         &mut self,
         connection: &Connection,
-    ) -> Result<InboundStatus<'_, 'a, R, C>, SessionFault> {
+    ) -> Result<InboundStatus<'_, 'a, R, C, P>, SessionFault> {
         if !self.connection.get() {
             return Err(SessionFault::Closed);
         }
@@ -249,6 +275,41 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
             return Err(Self::owner_fault(fault));
         }
         Ok(())
+    }
+
+    /// Authorize a sender on the exact live connection and the original cutoff.
+    /// # Errors
+    /// Refuses closed, foreign, stopped or expired custody before submission.
+    fn check_client_edge(&mut self, connection: &Connection) -> Result<(), SessionFault> {
+        if !connection.get() {
+            return Err(SessionFault::Closed);
+        }
+        if !Rc::ptr_eq(connection, &self.connection) {
+            return Err(SessionFault::ForeignConnection);
+        }
+        self.check_receive_edge()
+    }
+
+    /// Reserve the producer's exact reply for one serialized delivery.
+    /// # Errors
+    /// Refuses closed or foreign custody and checks the original service and cutoff.
+    fn begin_reply(
+        &mut self,
+        reply: Reply,
+    ) -> Result<OutboundStatus<'_, 'a, R, C, P>, SessionFault> {
+        if !self.connection.get() {
+            return Err(SessionFault::Closed);
+        }
+        if !Rc::ptr_eq(&self.connection, &reply.connection) {
+            return Err(SessionFault::ForeignConnection);
+        }
+        self.check_receive_edge()?;
+        Ok(OutboundStatus {
+            receiver: self,
+            reply,
+            written: 0,
+            issued: None,
+        })
     }
 
     /// Check the completed frame and take the final guarded availability decision.
@@ -291,21 +352,140 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock> BrokerStatusSession<'
     }
 }
 
+/// One bounded broker response. The transport keeps any pending native
+/// operation independently until it observes a terminal result.
+struct OutboundStatus<
+    'session,
+    'owner,
+    R: StatusReporter<Error = NativeError>,
+    C: Clock,
+    P: Worker = InertWorker,
+> {
+    /// Owns the original clock, closure, cutoff and serialization.
+    receiver: &'session mut BrokerStatusSession<'owner, R, C, P>,
+    /// Exact response selected by the admitted broker.
+    reply: Reply,
+    /// Cumulative physically completed write bytes.
+    written: usize,
+    /// Maximum count the one outstanding write can report.
+    issued: Option<usize>,
+}
+
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus<'_, '_, R, C, P> {
+    /// Offer a nonempty prefix of the remaining response. The caller submits
+    /// the exact bytes once and reports only its actual terminal write count.
+    /// # Errors
+    /// Refuses a second unaccounted write, a complete reply or lost currentness.
+    fn next_write(&mut self, limit: NonZeroUsize) -> Result<&[u8], SessionFault> {
+        let range: Range<usize> = self.reserve_write(limit)?;
+        Ok(&self.reply.frame.as_bytes()[range])
+    }
+
+    /// Guard and reserve an exact nonempty response range before submission.
+    /// # Errors
+    /// Refuses a second unaccounted write, a complete reply or lost currentness.
+    fn reserve_write(&mut self, limit: NonZeroUsize) -> Result<Range<usize>, SessionFault> {
+        if !self.receiver.connection.get() {
+            return Err(SessionFault::Closed);
+        }
+        if self.issued.is_some() || self.written == self.reply.frame.as_bytes().len() {
+            return Err(SessionFault::WriteProgress);
+        }
+        self.receiver.check_receive_edge()?;
+        let remaining: usize = self.reply.frame.as_bytes().len() - self.written;
+        let extent: usize = remaining.min(limit.get());
+        let end: usize = self.written + extent;
+        self.issued = Some(extent);
+        Ok(self.written..end)
+    }
+
+    /// Charge only actual bytes and report whether the complete frame was written.
+    /// # Errors
+    /// Retires the connection on an ambiguous count or loss of original currentness.
+    fn complete_write(&mut self, count: usize) -> Result<bool, SessionFault> {
+        let extent: Option<usize> = self.issued.take();
+        if !extent.is_some_and(|extent: usize| count != 0 && count <= extent) {
+            self.receiver.close();
+            return Err(SessionFault::WriteProgress);
+        }
+        self.written = self.written.checked_add(count).ok_or_else(|| {
+            self.receiver.close();
+            SessionFault::WriteProgress
+        })?;
+        if !self.receiver.connection.get() {
+            return Err(SessionFault::Closed);
+        }
+        self.receiver.check_receive_edge()?;
+        Ok(self.written == self.reply.frame.as_bytes().len())
+    }
+
+    /// Resolve only the complete response read from this fixture stream.
+    /// # Errors
+    /// Refuses incomplete delivery, lost currentness, wrong connection or wire ID.
+    fn resolve_received(
+        mut self,
+        pending: PendingStatus<'_>,
+        received: &Frame,
+    ) -> Result<bool, SessionFault> {
+        let available: bool = self.decode_received(pending, received)?;
+        self.receiver.check_receive_edge()?;
+        Ok(available)
+    }
+
+    /// Decode within current logical custody while retaining the final publication guard.
+    /// # Errors
+    /// Refuses incomplete delivery, lost currentness, wrong connection or wire ID.
+    fn decode_received(
+        &mut self,
+        pending: PendingStatus<'_>,
+        received: &Frame,
+    ) -> Result<bool, SessionFault> {
+        if !self.receiver.connection.get() {
+            return Err(SessionFault::Closed);
+        }
+        if self.written != self.reply.frame.as_bytes().len() {
+            return Err(SessionFault::WriteProgress);
+        }
+        self.receiver.check_receive_edge()?;
+        pending.resolve_delivery(Delivery {
+            connection: &self.reply.connection,
+            bytes: received.as_bytes(),
+        })
+    }
+}
+
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
+    for OutboundStatus<'_, '_, R, C, P>
+{
+    /// Uncertain delivery retires the stream. A partial reply cannot be restarted.
+    fn drop(&mut self) {
+        if self.written != self.reply.frame.as_bytes().len() {
+            self.receiver.close();
+        }
+    }
+}
+
 /// One admitted receive. The trusted fixture transport supplies only bytes
 /// already delivered on the connection admitted by the session.
-struct InboundStatus<'session, 'owner, R: StatusReporter<Error = NativeError>, C: Clock> {
+struct InboundStatus<
+    'session,
+    'owner,
+    R: StatusReporter<Error = NativeError>,
+    C: Clock,
+    P: Worker = InertWorker,
+> {
     /// The exact receiving session remains exclusively reserved during assembly.
-    receiver: &'session mut BrokerStatusSession<'owner, R, C>,
+    receiver: &'session mut BrokerStatusSession<'owner, R, C, P>,
     /// Incomplete frame storage. Its absence marks a resolved receive.
     assembly: Option<FrameAssembly>,
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock> InboundStatus<'_, '_, R, C> {
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> InboundStatus<'_, '_, R, C, P> {
     /// Drive one service step while this receive retains exclusive custody.
     /// A live connection can shorten a Running wait. Closure retires just the
     /// local input and preserves the service's own progress or cleanup result.
     fn poll_broker(&mut self) -> InvocationPoll {
-        let receiver: &mut BrokerStatusSession<'_, R, C> = self.receiver;
+        let receiver: &mut BrokerStatusSession<'_, R, C, P> = self.receiver;
         let poll: InvocationPoll = receiver.owner.poll(receiver.clock, receiver.stop);
         if receiver.connection.get()
             && let InvocationPoll::Pending(wait) = poll
@@ -343,7 +523,9 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock> InboundStatus<'_, '_, R, 
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock> Drop for InboundStatus<'_, '_, R, C> {
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
+    for InboundStatus<'_, '_, R, C, P>
+{
     /// Retire undecided boundaries rather than restarting a partial request.
     fn drop(&mut self) {
         if self.assembly.is_some() {
@@ -352,7 +534,9 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock> Drop for InboundStatus<'_
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock> Drop for BrokerStatusSession<'_, R, C> {
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
+    for BrokerStatusSession<'_, R, C, P>
+{
     /// Loss of the local receiver also retires the shared transport binding.
     fn drop(&mut self) {
         self.close();

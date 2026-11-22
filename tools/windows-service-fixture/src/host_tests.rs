@@ -4075,6 +4075,7 @@ mod worker_tests {
                     }
                     InvocationPoll::Pending(_)
                     | InvocationPoll::JoinTail(_)
+                    | InvocationPoll::NativeDrain(_)
                     | InvocationPoll::Overdue => {}
                 }
                 if started.elapsed() >= REAL_WAIT {
@@ -6157,6 +6158,90 @@ mod worker_tests {
         assert!(matches!(rig.settle(Ok(())), Some(Err(_))));
         assert_eq!(rig.owner()?.outstanding_work(), 0);
         assert_eq!(rig.statuses().last(), Some(&[16, 1, 0, 1066, 1, 0, 0]));
+        Ok(())
+    }
+
+    /// Observe the same native drain before, at and after the original Stop cutoff.
+    /// A separate worker completion selects Clean only while time remains.
+    ///
+    /// # Panics
+    /// Fails if native drain loses its bounded poll, original custody or status ordering.
+    ///
+    /// # Errors
+    /// Propagate fixture construction failure or unrepresentable clock input.
+    #[test]
+    fn native_drain_retains_stop_custody_until_observed_completion() -> TestResult {
+        for (overdue, failed_cleanup) in [(false, false), (true, false), (true, true)] {
+            let mut rig: Rig = Rig::start(Settings {
+                role: LabRole::ClockBroker,
+                ..Settings::default()
+            })?;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+            assert_eq!(rig.count(&Event::Activate), 1);
+
+            rig.advance(Duration::from_secs(4))?;
+            let cleanup: Option<WorkerError> = failed_cleanup.then_some(WorkerError::Cleanup);
+            rig.script.borrow_mut().finish = Some(WorkerFinish::NativeDrainPending {
+                cleanup_failure: cleanup,
+            });
+            let _control: ScmControl = rig.notification.handle_control(1);
+            let drain: InvocationPoll = InvocationPoll::NativeDrain(Duration::from_millis(20));
+            assert_eq!(rig.poll()?, drain);
+            let mut expected_statuses: Vec<[u32; 7]> = vec![
+                [16, 2, 0, 0, 0, 1, 1000],
+                [16, 4, 1, 0, 0, 0, 0],
+                [16, 3, 0, 0, 0, 1, 1000],
+            ];
+            assert_eq!(rig.statuses(), expected_statuses);
+
+            rig.advance(Duration::from_millis(9_999))?;
+            assert_eq!(
+                rig.poll()?,
+                InvocationPoll::NativeDrain(Duration::from_millis(1))
+            );
+            let cleanup_error: Option<FixtureError> = cleanup.map(FixtureError::Worker);
+            assert_eq!(rig.failure(), cleanup_error.as_ref());
+            let deadline_error: FixtureError =
+                FixtureError::Lifecycle(LifecycleError::DeadlineElapsed);
+            let final_error: Option<FixtureError> =
+                cleanup_error.or(overdue.then_some(deadline_error));
+            if overdue {
+                rig.advance(Duration::from_millis(1))?;
+                assert_eq!(rig.poll()?, drain);
+                assert_eq!(rig.failure(), final_error.as_ref());
+                assert_eq!(rig.statuses(), expected_statuses);
+                rig.advance(Duration::from_millis(10_001))?;
+                let _control: ScmControl = rig.notification.handle_control(1);
+                assert_eq!(rig.poll()?, drain);
+                assert_eq!(rig.failure(), final_error.as_ref());
+            }
+            assert_eq!(rig.statuses(), expected_statuses);
+            assert_eq!(rig.owner()?.state(), Some(ServiceState::StopPending));
+            assert!(rig.owner()?.admission_closed());
+            assert_eq!(rig.owner()?.outstanding_work(), 1);
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            assert_eq!(rig.count(&Event::WorkerDropped), 0);
+            assert_eq!(rig.count(&Event::ReporterDropped), 0);
+            assert!(rig.take_result().is_none());
+
+            rig.script.borrow_mut().finish = Some(WorkerFinish::Finished(WorkerCompletion {
+                operation_failure: None,
+                cleanup_failure: cleanup,
+            }));
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            expected_statuses.push(if overdue {
+                [16, 1, 0, 1066, 1, 0, 0]
+            } else {
+                [16, 1, 0, 0, 0, 0, 0]
+            });
+            assert_eq!(rig.statuses(), expected_statuses);
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            assert_eq!(rig.take_result(), Some(final_error.map_or(Ok(()), Err)));
+            assert_eq!(rig.poll()?, InvocationPoll::Finished);
+            assert_eq!(rig.statuses(), expected_statuses);
+            assert!(rig.take_result().is_none());
+        }
         Ok(())
     }
 

@@ -100,6 +100,38 @@ class WindowsPeTests(unittest.TestCase):
                 self.assertEqual(readback["codeview_guid"], "12345678-9abc-def0-1234-56789abcdef0")
                 self.assertEqual(readback["codeview_age"], 1)
 
+    def test_import_counts_require_real_terminators_and_file_backed_tables(self) -> None:
+        empty = _image(2)
+        self.path.write_bytes(empty)
+        observed = PE.pe_readback(self.path, subsystem="gui", imports=True)
+        self.assertEqual(observed["direct_import_descriptors"], 0)
+        self.assertEqual(observed["delay_import_descriptors"], 0)
+
+        image = _image(2)
+        direct_directory, delay_directory = _OPTIONAL + 120, _OPTIONAL + 216
+        struct.pack_into("<II", image, direct_directory, 0x1200, 40)
+        struct.pack_into("<II", image, delay_directory, 0x1240, 64)
+        struct.pack_into("<I", image, 0x400 + 12, 0x1300)
+        struct.pack_into("<II", image, 0x440, 1, 0x1320)
+        self.path.write_bytes(image)
+        observed = PE.pe_readback(self.path, subsystem="gui", imports=True)
+        self.assertEqual(observed["direct_import_descriptors"], 1)
+        self.assertEqual(observed["delay_import_descriptors"], 1)
+        controls = (
+            (0x400 + 20, 1, "direct import directory has no null"),
+            (0x440 + 32, 1, "delay import directory has no null"),
+            (0x400 + 12, 0, "direct import directory has an unnamed"),
+            (0x440 + 4, 0, "delay import directory has an unnamed"),
+            (delay_directory + 4, 63, "delay import directory extent"),
+            (delay_directory, 0x13F0, "delay import directory exceeds"),
+        )
+        for offset, word, reason in controls:
+            with self.subTest(offset=offset), self.assertRaisesRegex(ValueError, reason):
+                wrong = bytearray(image)
+                struct.pack_into("<I", wrong, offset, word)
+                self.path.write_bytes(wrong)
+                PE.pe_readback(self.path, subsystem="gui", imports=True)
+
     def test_wrong_subsystem_and_unselected_role(self) -> None:
         with self.assertRaisesRegex(ValueError, "subsystem"):
             self.readback(_image(3))

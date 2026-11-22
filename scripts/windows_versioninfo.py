@@ -1,4 +1,4 @@
-"""Read the selected UI VERSIONINFO from bounded llvm-readobj output.
+"""Read selected Windows metadata from bounded llvm-readobj output.
 
 The caller owns the executable, reader and report identities and compares the
 decoded values with its independently reviewed metadata expectations.
@@ -11,6 +11,7 @@ from typing import NamedTuple, TypedDict
 
 
 _MAX_REPORT_CHARS = 32 * 1024
+_MAX_IMPORT_REPORT_BYTES = 64 * 1024
 _MAX_RESOURCE_BYTES = 4096
 _RESOURCE = re.compile(
     r"  Total Number of Resources: 1\n"
@@ -48,6 +49,24 @@ _RESOURCE = re.compile(
 )
 _DUMP_ROW = re.compile(r" {12}([0-9A-F]{4}): ([0-9A-F ]{2,37})\|([ -~]{1,16})\|")
 _TRANSLATION = (1033, 1200)
+_IMPORT_MODULE = r"(?P<name>[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,125}[A-Za-z0-9])?)"
+_IMPORT_RVA = r"0x[0-9A-F]{1,8}"
+_IMPORT_SYMBOL = r"[ -~]{0,512} \([0-9]{1,5}\)"
+_DELAY_THUNK = r"\n  Import \{\n    Symbol: " + _IMPORT_SYMBOL + r"\n    Address: 0x[0-9A-F]{1,16}\n  \}"
+_DIRECT_IMPORT = re.compile(
+    r"Import \{\n  Name: " + _IMPORT_MODULE + r"\n"
+    r"  ImportLookupTableRVA: " + _IMPORT_RVA + r"\n"
+    r"  ImportAddressTableRVA: " + _IMPORT_RVA
+    + r"(?:\n  Symbol: " + _IMPORT_SYMBOL + r")+"
+)
+_DELAY_IMPORT = re.compile(
+    r"DelayImport \{\n  Name: " + _IMPORT_MODULE + r"\n  Attributes: 0x1"
+    + "".join(r"\n  " + field + r": " + _IMPORT_RVA for field in (
+        "ModuleHandle", "ImportAddressTable", "ImportNameTable",
+        "BoundDelayImportTable", "UnloadDelayImportTable",
+    ))
+    + r"(?:" + _DELAY_THUNK + r")+"
+)
 
 
 class VersionInfo(TypedDict):
@@ -79,6 +98,36 @@ def _header(report: str, name: str) -> str:
     if len(blocks) != 1:
         raise ValueError("missing or duplicate PE header block")
     return blocks[0]
+
+
+def decode_imports(report: str, *, image: str) -> dict[str, list[str]]:
+    """Decode bounded direct and delay import module names for one linked image.
+
+    Receivers bind the pinned readobj call to the immutable PE and compare both
+    counts against the observed binary table shapes. Names are inert observations.
+    """
+    if not report.isascii() or len(report) > _MAX_IMPORT_REPORT_BYTES:
+        raise ValueError("invalid or oversized llvm-readobj import report")
+    # The maintained runner strips the surrounding line breaks from stdout.
+    report = report.strip("\n") + "\n"
+    prefix = f"File: {image}\nFormat: COFF-x86-64\nArch: x86_64\nAddressSize: 64bit\n"
+    if not report.startswith(prefix):
+        raise ValueError("PE import report identifies a different image")
+    *records, tail = report[len(prefix):].split("\n}\n")
+    if tail:
+        raise ValueError("incomplete PE import report")
+    direct: list[str] = []
+    delay: list[str] = []
+    for record in records:
+        ordinary = _DIRECT_IMPORT.fullmatch(record)
+        if ordinary is not None:
+            direct.append(ordinary["name"].lower())
+            continue
+        delayed = _DELAY_IMPORT.fullmatch(record)
+        if delayed is None:
+            raise ValueError("unsupported PE import descriptor output")
+        delay.append(delayed["name"].lower())
+    return {"direct": sorted(direct), "delay": sorted(delay)}
 
 
 def _resource_payload(report: str, subsystem: str) -> bytes:

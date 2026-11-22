@@ -2363,6 +2363,328 @@ fn retained_remap_is_not_ready_but_fresh_observations_replace_the_obligation() -
     Ok(())
 }
 
+/// Map the actual rate command to an independent signed actuator setting.
+fn modeled_actuator_ticks(requested_rate: f64) -> i32 {
+    let attainable: f64 = requested_rate.abs() * 768.0;
+    let ticks: i32 = [3_i32, 2, 1, 0]
+        .into_iter()
+        .find(|&ticks| f64::from(ticks) <= attainable)
+        .unwrap_or_default();
+    if requested_rate.is_sign_negative() {
+        -ticks
+    } else {
+        ticks
+    }
+}
+
+/// Compare two signed adaptive trajectories after partial delivery and a fresh fit.
+///
+/// Expect 124 initial phase ticks, 122 accounted after the first transient,
+/// 125 measured after independent oscillator drift, and 121 after two more
+/// active seconds of known delivery. Each tick is 1/1024 second.
+/// # Errors
+/// Preserve the operation, history and settlement failures from the actual owner.
+#[test]
+fn adaptive_oscillator_uses_fresh_phase_and_blocks_on_lost_acknowledgement() -> TestResult {
+    for sign in [1_i32, -1] {
+        for loses_ack in [false, true] {
+            drive_adaptive_oscillator(sign, loses_ack)?;
+        }
+    }
+    Ok(())
+}
+
+/// Drive the controller with genuine fitted rows and a quantized external actuator.
+/// # Errors
+/// Preserve actual checked inputs, issue and settlement errors.
+/// # Panics
+/// Reject an incorrect adaptive horizon, acknowledged displacement or cursor.
+fn drive_adaptive_oscillator(sign: i32, loses_ack: bool) -> TestResult {
+    let initial_ticks: i32 = sign * 124;
+    let phase_q32: i128 = i128::from(initial_ticks) << 22;
+    let a: Source = Source::new(11, 0, phase_q32)?;
+    let b: Source = Source::new(22, 0, phase_q32)?;
+    let chart: FixtureAffineChart = initial_chart()?;
+    let entries: [FixtureChartInterval<'_>; 2] = [a.entry(&chart, 4)?, b.entry(&chart, 4)?];
+    let strata: [FixturePrincipalStratum; 2] = strata()?;
+    let batch: FixtureChartBatch<'_, '_> = product_ok(FixtureChartBatch::new(
+        &chart,
+        MonotonicNs::new(4 * SECOND),
+        &entries,
+    ))?;
+    let mut producer: FixtureCombinationState = seed(&entries, &strata, 4)?;
+    let baseline_rate: f64 = f64::from(sign) / 1024.0;
+    let mut owner: FixturePhasePlanOwner<'_, '_> = start_with_profile(
+        &mut producer,
+        &chart,
+        &batch,
+        &strata,
+        adaptive_profile(32, 64, 0.0)?,
+        baseline_rate,
+    )?;
+    let first: FixturePhaseProposal<'_> =
+        product_ok(owner.issue(now(0, 4 * SECOND)?, FixturePhaseResidualPermission::Allow))?;
+    assert_eq!(first.ordinal(), label(1)?);
+    assert_eq!(first.correction_horizon().nanoseconds(), SECOND);
+    assert_eq!(first.aggregate_rate(), f64::from(sign * 125) / 1024.0);
+    let first_rate: i32 = modeled_actuator_ticks(first.aggregate_rate());
+    assert_eq!(first_rate, sign * 3);
+    let mut retired: FixturePhaseRetirement<'_> = settle_interval(
+        owner,
+        1,
+        ((0, SECOND), (4 * SECOND, 6 * SECOND)),
+        f64::from(first_rate) / 1024.0,
+        (31, 37),
+        true,
+        baseline_rate,
+    )?;
+    assert_eq!(
+        retired.remaining_phase_seconds(),
+        Some(f64::from(sign * 122) / 1024.0)
+    );
+
+    // One active second of free-running drift adds four ticks. The actual
+    // actuator subtracts three. The controller accounted for two transient ticks.
+    let plant_ticks: i32 = initial_ticks + sign * 4 - first_rate;
+    assert_eq!(plant_ticks, sign * 125);
+    let fresh_at: FixturePhaseNow = now(8 * SECOND, 20 * SECOND)?;
+    let mut fresh: FixturePhasePlanOwner<'_, '_> =
+        product_ok(retired.resume_fresh(fresh_at, baseline(baseline_rate)?))?;
+    let new_q32: i128 = i128::from(plant_ticks + first_rate) << 22;
+    let next_a: Source = Source::new(11, 4, new_q32)?;
+    let next_b: Source = Source::new(22, 4, new_q32)?;
+    receive_serialized_refresh(
+        &mut fresh,
+        &a,
+        &next_a,
+        &next_b,
+        &strata,
+        (8 * SECOND, 20 * SECOND),
+    )?;
+    let measured: f64 = f64::from(plant_ticks) / 1024.0;
+    assert_eq!(fresh.remaining_phase_seconds(), Some(measured));
+    let second: FixturePhaseProposal<'_> =
+        product_ok(fresh.issue(fresh_at, FixturePhaseResidualPermission::Allow))?;
+    assert_eq!(second.ordinal(), label(2)?);
+    // Independent OLS gives projected SD=(sqrt(5)+2 sqrt(3))/64.
+    // Ratio 4 and eight active seconds give area (sqrt(5)+2 sqrt(3))/4.
+    let horizon: f64 = 256.0 * (5.0_f64.sqrt() + 2.0 * 3.0_f64.sqrt()) / 125.0;
+    check_adaptive_horizon(&second, horizon)?;
+    assert!((second.aggregate_rate() - (baseline_rate + measured / horizon)).abs() <= 1.0e-10);
+    assert_eq!(second.active_deadline(), ActiveAwakeNs::new(40 * SECOND));
+    assert_eq!(second.monotonic_deadline(), MonotonicNs::new(84 * SECOND));
+    let second_rate: i32 = modeled_actuator_ticks(second.aggregate_rate());
+    assert_eq!(second_rate, sign * 3);
+    if loses_ack {
+        return require_adaptive_unknown(fresh, measured);
+    }
+    let known_ticks: i32 = plant_ticks + 2 * (sign - second_rate);
+    assert_eq!(known_ticks, sign * 121);
+    require_adaptive_known(fresh, second_rate, baseline_rate, known_ticks)
+}
+
+/// Require the healthy second acknowledgement to account the model's actual delivery.
+/// # Errors
+/// Preserve a real settlement failure or absent continuation.
+/// # Panics
+/// Reject estimated delivery or a cursor that loses the acknowledged endpoints.
+fn require_adaptive_known(
+    owner: FixturePhasePlanOwner<'_, '_>,
+    achieved: i32,
+    baseline_rate: f64,
+    known_ticks: i32,
+) -> TestResult {
+    let retired: FixturePhaseRetirement<'_> = settle_interval(
+        owner,
+        2,
+        ((8 * SECOND, 10 * SECOND), (20 * SECOND, 24 * SECOND)),
+        f64::from(achieved) / 1024.0,
+        (41, 43),
+        true,
+        baseline_rate,
+    )?;
+    check_debt(
+        retired.remaining_phase_seconds(),
+        retired.remaining_phase_error_seconds(),
+        f64::from(known_ticks) / 1024.0,
+    );
+    let cursor: &FixtureRateSettlementCursor = retired
+        .cursor()
+        .ok_or_else(|| io::Error::other("known delivery lost continuation custody"))?;
+    assert_eq!(cursor.next_ordinal(), Some(label(3)?));
+    assert_eq!(
+        cursor.last_active_end(),
+        Some(ActiveAwakeNs::new(10 * SECOND))
+    );
+    assert_eq!(
+        cursor.last_monotonic_end(),
+        Some(MonotonicNs::new(24 * SECOND))
+    );
+    Ok(())
+}
+
+/// Ambiguous delivery consumes the current operation and retains only historical facts.
+/// # Errors
+/// Preserve checked event identity or reject any nonblocked outcome.
+/// # Panics
+/// Detect refunded admission, changed committed endpoints or invented phase.
+fn require_adaptive_unknown(owner: FixturePhasePlanOwner<'_, '_>, measured: f64) -> TestResult {
+    let phase_error: Option<f64> = owner.remaining_phase_error_seconds();
+    let event: FixtureRateSettlement = FixtureRateSettlement::Unknown {
+        context: clocks()?,
+        ordinal: label(2)?,
+    };
+    let FixturePhaseSettlement::Unknown(blocked) =
+        owner.settle(event, None, now(10 * SECOND, 24 * SECOND)?)
+    else {
+        return Err(io::Error::other("adaptive acknowledgement loss must block the owner").into());
+    };
+    assert_eq!(
+        blocked.cursor().status(),
+        FixtureRateCursorStatus::Unresolved
+    );
+    assert_eq!(blocked.cursor().next_ordinal(), None);
+    assert_eq!(
+        blocked.cursor().last_active_end(),
+        Some(ActiveAwakeNs::new(SECOND))
+    );
+    assert_eq!(
+        blocked.cursor().last_monotonic_end(),
+        Some(MonotonicNs::new(6 * SECOND))
+    );
+    assert!(
+        matches!(blocked.event(), FixtureRateSettlement::Unknown { ordinal, .. } if *ordinal == label(2)?)
+    );
+    assert_eq!(blocked.last_known_phase_seconds(), Some(measured));
+    assert_eq!(blocked.last_known_phase_error_seconds(), phase_error);
+    assert_eq!(
+        blocked
+            .provenance()
+            .map(FixturePhaseProvenance::emitted_round),
+        Some(label(2)?)
+    );
+    Ok(())
+}
+
+/// Drive the actual phase owner with an independent finite oscillator and actuator.
+/// # Errors
+/// Preserve genuine history, issue, settlement, transfer and refreshed input errors.
+/// # Panics
+/// Reject request substitution, double delivery, stale phase or an invented effect.
+#[test]
+fn fixed_window_oscillator_follows_achieved_actuation_and_fresh_observations() -> TestResult {
+    for sign in [1_i32, -1] {
+        for refuse_second in [false, true] {
+            drive_fixed_window_oscillator(sign, refuse_second)?;
+        }
+    }
+    Ok(())
+}
+
+/// One two-delivery trajectory, with plant phase measured in 1/1024 seconds.
+/// # Errors
+/// Preserve genuine source history, clock, proposal and settlement errors.
+/// # Panics
+/// Reject mismatches between the independent plant and the actual owner.
+fn drive_fixed_window_oscillator(sign: i32, refuse_second: bool) -> TestResult {
+    let initial_ticks: i32 = sign * 32;
+    let initial_q32: i128 = i128::from(initial_ticks) << 22;
+    let a: Source = Source::new(11, 0, initial_q32)?;
+    let b: Source = Source::new(22, 0, initial_q32)?;
+    let chart: FixtureAffineChart = initial_chart()?;
+    let entries: [FixtureChartInterval<'_>; 2] = [a.entry(&chart, 4)?, b.entry(&chart, 4)?];
+    let strata: [FixturePrincipalStratum; 2] = strata()?;
+    let batch: FixtureChartBatch<'_, '_> = product_ok(FixtureChartBatch::new(
+        &chart,
+        MonotonicNs::new(4 * SECOND),
+        &entries,
+    ))?;
+    let mut producer: FixtureCombinationState = seed(&entries, &strata, 4)?;
+    let mut owner: FixturePhasePlanOwner<'_, '_> =
+        start(&mut producer, &chart, &batch, &strata, 0.0)?;
+    let initial_phase: f64 = f64::from(initial_ticks) / 1024.0;
+    assert_eq!(owner.remaining_phase_seconds(), Some(initial_phase));
+    let command: FixturePhaseProposal<'_> =
+        product_ok(owner.issue(now(0, 4 * SECOND)?, FixturePhaseResidualPermission::Allow))?;
+    let first_rate: f64 = f64::from(sign) / 256.0;
+    check_proposal(&command, 1, first_rate, first_rate)?;
+    let applied: i32 = modeled_actuator_ticks(command.aggregate_rate());
+    assert_eq!(applied, sign * 3);
+    let applied_ticks: i32 = 2 * applied;
+    let mut plant_ticks: i32 = initial_ticks + sign * 2 - applied_ticks;
+    assert_eq!(plant_ticks, sign * 28);
+
+    let mut retired: FixturePhaseRetirement<'_> = settle_interval(
+        owner,
+        1,
+        ((0, 2 * SECOND), (4 * SECOND, 6 * SECOND)),
+        f64::from(applied) / 1024.0,
+        (31, 7),
+        true,
+        0.0,
+    )?;
+    let accounted: f64 = f64::from(sign * 26) / 1024.0;
+    assert_eq!(retired.remaining_phase_seconds(), Some(accounted));
+    let refresh_time: FixturePhaseNow = now(4 * SECOND, 8 * SECOND)?;
+    let mut fresh: FixturePhasePlanOwner<'_, '_> =
+        product_ok(retired.resume_fresh(refresh_time, baseline(0.0)?))?;
+    assert_eq!(fresh.remaining_phase_seconds(), None);
+    // Source histories remain in the original chart basis. The actual new chart
+    // subtracts acknowledged displacement when projecting them into the plant's frame.
+    let fresh_q32: i128 = i128::from(plant_ticks + applied_ticks) << 22;
+    let new_a: Source = Source::new(11, 6, fresh_q32)?;
+    let new_b: Source = Source::new(22, 6, fresh_q32)?;
+    receive_serialized_refresh(
+        &mut fresh,
+        &a,
+        &new_a,
+        &new_b,
+        &strata,
+        (4 * SECOND, 8 * SECOND),
+    )?;
+    let measured: f64 = f64::from(plant_ticks) / 1024.0;
+    assert_eq!(fresh.remaining_phase_seconds(), Some(measured));
+    let second_rate: f64 = f64::from(sign * 7) / 2048.0;
+    if refuse_second {
+        let refused: FixturePhaseProposal<'_> =
+            product_ok(fresh.issue(refresh_time, FixturePhaseResidualPermission::Allow))?;
+        assert_eq!(refused.ordinal(), label(2)?);
+        assert_eq!(refused.aggregate_rate(), second_rate);
+        let committed: CursorSnapshot = cursor_snapshot(fresh.cursor());
+        fresh = no_effect(fresh, 2, refresh_time)?;
+        assert_eq!(fresh.cursor().last_active_end(), committed.2);
+        assert_eq!(fresh.cursor().last_monotonic_end(), committed.3);
+        assert_eq!(fresh.remaining_phase_seconds(), Some(measured));
+        assert!(fresh.proposal().is_none());
+    }
+    let command: FixturePhaseProposal<'_> =
+        product_ok(fresh.issue(refresh_time, FixturePhaseResidualPermission::Allow))?;
+    let ordinal: u64 = command.ordinal().get();
+    assert_eq!(ordinal, if refuse_second { 3 } else { 2 });
+    assert_eq!(command.aggregate_rate(), second_rate);
+    assert_eq!(command.active_deadline(), ActiveAwakeNs::new(12 * SECOND));
+    assert_eq!(command.monotonic_deadline(), MonotonicNs::new(24 * SECOND));
+    let applied: i32 = modeled_actuator_ticks(command.aggregate_rate());
+    assert_eq!(applied, sign * 2);
+    plant_ticks -= 2 * applied;
+    assert_eq!(plant_ticks, sign * 24);
+    let retired: FixturePhaseRetirement<'_> = settle_interval(
+        fresh,
+        ordinal,
+        ((4 * SECOND, 6 * SECOND), (8 * SECOND, 10 * SECOND)),
+        f64::from(applied) / 1024.0,
+        (37, 11),
+        false,
+        0.0,
+    )?;
+    check_debt(
+        retired.remaining_phase_seconds(),
+        retired.remaining_phase_error_seconds(),
+        f64::from(plant_ticks) / 1024.0,
+    );
+    Ok(())
+}
+
 /// Each deadline is independently exact and a later rewind cannot restore old debt.
 /// # Errors
 /// Preserve genuine setup, settlement and the subsequent fresh-context neighbor.
@@ -3121,6 +3443,89 @@ fn rejected_construction_returns_the_cursor_and_leaves_the_producer_unadvanced()
         matches!(product_ok(owner.receive_reference(&batch, &strata, now(0, 4 * SECOND)?))?, FixturePhaseReferenceAdmission::Accepted { emitted_round } if emitted_round == label(1)?)
     );
     check_issue(&mut owner, (0, 4 * SECOND), 1, (1.0 / 256.0, 5.0 / 1024.0))?;
+    Ok(())
+}
+
+/// Check admission one nanosecond before, at and after a genuine projection.
+/// # Errors
+/// Preserve checked source construction and legitimate phase-plan failures.
+/// # Panics
+/// Reject early phase authority, any state change on refusal or lost fresh credit.
+#[test]
+fn reference_projection_cannot_be_admitted_early() -> TestResult {
+    let a: Source = Source::new(11, 0, ORIGINAL_PHASE_Q32)?;
+    let b: Source = Source::new(22, 0, ORIGINAL_PHASE_Q32)?;
+    let chart: FixtureAffineChart = initial_chart()?;
+    let entries: [FixtureChartInterval<'_>; 2] = [a.entry(&chart, 4)?, b.entry(&chart, 4)?];
+    let strata: [FixturePrincipalStratum; 2] = strata()?;
+    let projected_at: u64 = 4 * SECOND;
+    let batch: FixtureChartBatch<'_, '_> = product_ok(FixtureChartBatch::new(
+        &chart,
+        MonotonicNs::new(projected_at),
+        &entries,
+    ))?;
+    let initial: FixturePhaseNow = now(0, projected_at - 1)?;
+    let early: FixturePhaseNow = now(1, projected_at - 1)?;
+
+    for admitted_at in [projected_at, projected_at + 1] {
+        let mut producer: FixtureCombinationState = seed(&entries, &strata, 4)?;
+        let mut owner: FixturePhasePlanOwner<'_, '_> = product_ok(FixturePhasePlanOwner::new(
+            &mut producer,
+            &chart,
+            FixtureRateSettlementCursor::new(&chart, clocks()?, label(1)?),
+            initial,
+            profile()?,
+            baseline(1.0 / 1024.0)?,
+        ))?;
+        let before: CursorSnapshot = cursor_snapshot(owner.cursor());
+        assert!(
+            matches!(
+                owner.receive_reference(&batch, &strata, early),
+                Err(FixturePhaseError::ReferenceInFuture)
+            ),
+            "a genuine projection cannot establish phase debt before its evaluation time"
+        );
+        assert_eq!(cursor_snapshot(owner.cursor()), before);
+        assert_eq!(owner.current_time().active(), initial.active());
+        assert_eq!(owner.current_time().monotonic(), initial.monotonic());
+        assert!(owner.provenance().is_none());
+        assert!(owner.proposal().is_none());
+        assert_eq!(owner.remaining_phase_seconds(), None);
+        assert_eq!(owner.last_known_phase_seconds(), None);
+        assert_eq!(owner.active_deadline(), None);
+        assert_eq!(owner.monotonic_deadline(), None);
+        assert!(matches!(
+            owner.issue(initial, FixturePhaseResidualPermission::Allow),
+            Err(FixturePhaseError::NoReference)
+        ));
+
+        let current: FixturePhaseNow = now(0, admitted_at)?;
+        let received: FixturePhaseReferenceAdmission =
+            product_ok(owner.receive_reference(&batch, &strata, current))?;
+        assert!(matches!(
+            received,
+            FixturePhaseReferenceAdmission::Accepted { emitted_round } if emitted_round == label(1)?
+        ));
+        assert_eq!(
+            owner.provenance().map(FixturePhaseProvenance::projected_at),
+            Some(MonotonicNs::new(projected_at))
+        );
+        check_debt(
+            owner.remaining_phase_seconds(),
+            owner.remaining_phase_error_seconds(),
+            1.0 / 32.0,
+        );
+        let proposal: FixturePhaseProposal<'_> =
+            product_ok(owner.issue(current, FixturePhaseResidualPermission::Allow))?;
+        assert_eq!(proposal.ordinal(), label(1)?);
+        assert_eq!(proposal.transient_rate(), 1.0 / 256.0);
+        assert_eq!(proposal.aggregate_rate(), 5.0 / 1024.0);
+        assert_eq!(proposal.active_deadline(), ActiveAwakeNs::new(8 * SECOND));
+        assert_eq!(
+            proposal.monotonic_deadline(),
+            MonotonicNs::new(admitted_at + 16 * SECOND)
+        );
+    }
     Ok(())
 }
 

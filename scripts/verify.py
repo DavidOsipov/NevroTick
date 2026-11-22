@@ -126,6 +126,21 @@ WINDOWS_UI_INPUT_FILES = (
     "scripts/tests/test_windows_versioninfo.py",
 )
 
+MSIX_INSPECTION_LANE = "windows-msix-inspect"
+MSIX_INSPECTION_MAX_OUTPUT = 16 * 1024
+# Base resources independently decoded from the reviewed brand kit. This is a
+# source-preparation selection, not an approved production payload inventory.
+MSIX_BASE_ARTWORK = {
+    "PackageLogo.png": (
+        "Properties/Logo", 50, 3873, "2f710c8f4824df9f8986df384a7778071758e6f38f3239788bae2bd0b191da46",
+    ),
+    "Square44x44Logo.png": (
+        "VisualElements/@Square44x44Logo", 44, 4324, "ed6d911e8ba391520bb64ab47d9f6ad026210986f305bb60e6330d2f016c4676",
+    ),
+    "Square150x150Logo.png": (
+        "VisualElements/@Square150x150Logo", 150, 20874, "062c8fed203a15745d9a31668d0e0e092ddba537832e2534e6e9ab5f7bbc7b9e",
+    ),
+}
 RC_COMPILER = "/tools/llvm/bin/llvm-rc"
 RC_LIBRARY = "/tools/llvm/lib/libLLVM.so.22.1"
 WINDOWS_UI_HOST_TOOLS = "lib/rustlib/x86_64-unknown-linux-gnu"
@@ -1280,7 +1295,7 @@ def export_windows_artifacts(work: Path, output: Path, *, source: Path,
     build = work / "target" / ENV.WINDOWS_TARGET / "release"
     pe = windows_pe_reader(source)
     artifacts, payloads = {}, {}
-    for role, name, subsystem in (("ui", PACKAGE, "gui"), ("engine", "nevrotick-observe", "console")):
+    for role, name, subsystem in (("ui", PACKAGE, "gui"), ("observer", "nevrotick-observe", "console")):
         binary = build / f"{name}.exe"
         names = {f"{name}.pdb", f"{name.replace('-', '_')}.pdb"}
         symbol_paths = [build / candidate for candidate in sorted(names) if (build / candidate).is_file()]
@@ -1293,7 +1308,7 @@ def export_windows_artifacts(work: Path, output: Path, *, source: Path,
             raise ENV.Incomplete(str(error)) from error
         if role == "ui" and ui_sha256 is not None and image[1] != ui_sha256:
             raise ENV.Incomplete("Windows UI bytes changed after version resource inspection.")
-        if role == "engine" and observe_sha256 is not None and image[1] != observe_sha256:
+        if role == "observer" and observe_sha256 is not None and image[1] != observe_sha256:
             raise ENV.Incomplete("Windows Observe bytes changed after version resource inspection.")
         payloads.update({binary: image, pdb: symbols})
         artifacts[role] = (binary, pdb, identity)
@@ -1309,10 +1324,12 @@ def export_windows_artifacts(work: Path, output: Path, *, source: Path,
     for role, (binary, pdb, symbols) in artifacts.items():
         entry = {"path": str(output / binary.name), "sha256": payloads[binary][1],
                  "profile": "release", "target": ENV.WINDOWS_TARGET,
+                 "component_role": role, "source_state": "fixture" if role == "ui" else "experiment",
                  "symbols": {"path": str(output / pdb.name), **symbols}}
         if role == "ui":
             result.update(entry)
         else:
+            # Preserve the original receipt key for the Observe executable.
             result["engine"] = entry
     return result
 
@@ -1730,6 +1747,125 @@ def generate_windows_metadata(generation: Path, run) -> None:
     run("ui-metadata-check", [*cli, "check", *args], extra=("--ro-bind", str(generation), "/metadata-output"))
 
 
+def inspect_windows_msix(metadata_dir: Path, generation_sha256: str, run, *, source: Path) -> dict:
+    """Bind the checked source-only assembly report to both link inputs."""
+    generation = metadata_dir / "generation"
+    output = run(MSIX_INSPECTION_LANE, ["python3", "-I", "-B", "metadata/pipeline/__main__.py",
+                                      "inspect-msix", "--output", "/metadata-output/tree"],
+                 extra=("--ro-bind", str(generation), "/metadata-output", "--remount-ro", "/work"))
+    spec = importlib.util.spec_from_file_location("msix_inspection_json", source / "scripts/protected_json.py")
+    reader = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reader)
+    try:
+        inspection = reader.read(output.encode("utf-8"))
+        with (generation / "tree/receipt.json").open("rb") as checked_receipt:
+            receipt_bytes = checked_receipt.read(reader.MAX_BYTES + 1)
+        receipt = reader.read(receipt_bytes)
+    except ValueError as error:
+        raise ENV.Incomplete("Invalid Windows MSIX source inspection output.") from error
+    if hashlib.sha256(receipt_bytes).hexdigest() != generation_sha256:
+        raise ENV.Incomplete("Windows MSIX generation receipt changed during inspection.")
+    if (type(inspection) is not dict or set(inspection) != {
+            "schema_version", "status", "distribution_route", "package_identity", "assembly_ready",
+            "generation_receipt_sha256", "authoring_inputs", "roles", "pending"}
+            or type(inspection["schema_version"]) is not int or inspection["schema_version"] != 1
+            or inspection["status"] != "assembly-inputs-incomplete"
+            or inspection["distribution_route"] != "direct-msix"
+            or inspection["package_identity"] is not None or inspection["assembly_ready"] is not False
+            or inspection["generation_receipt_sha256"] != generation_sha256):
+        raise ENV.Incomplete("Windows MSIX source inspection differs from the checked generation or scope.")
+    roles = {role: {"source_state": state, "artifact_status": "not-admitted"} for role, state in (
+        ("ui", "fixture"), ("engine", "planned"), ("broker", "planned"), ("helper", "planned"))}
+    if inspection["roles"] != roles:
+        raise ENV.Incomplete("Windows MSIX source inspection differs from the current assembly roles.")
+    required = {"authoring/msix-inputs.json", "authoring/service-inputs.json", "authoring/event-inputs.json"}
+    selected = required | {"authoring/service-events.man"}
+    # The child checked the bound receipt against all generated files and the
+    # frozen source before emitting its projection. Check the projected fields.
+    with (source / "metadata/product.toml").open("rb") as product:
+        pending = [{key: item[key] for key in ("path", "owner", "required_stage")}
+                   for item in tomllib.load(product)["pending"]]
+    try:
+        authoring = {row["path"]: row["sha256"] for row in receipt["files"] if row["path"] in selected}
+    except (KeyError, TypeError) as error:
+        raise ENV.Incomplete("Invalid Windows MSIX generation receipt file inventory.") from error
+    if not required <= authoring.keys() or inspection["authoring_inputs"] != authoring:
+        raise ENV.Incomplete("Windows MSIX source inspection differs from the checked authoring inputs.")
+    if inspection["pending"] != sorted(pending, key=lambda item: item["path"]):
+        raise ENV.Incomplete("Windows MSIX source inspection differs from the pending release inputs.")
+    return inspection
+
+
+def _artwork_identity(info: os.stat_result) -> tuple[int, ...]:
+    """Bind a regular input or its containing directory for one bounded read."""
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_nlink, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns)
+
+
+def read_msix_base_artwork(directory: Path) -> dict[str, bytes]:
+    """Retain just the three pinned, single-link base images from an explicit directory."""
+    directory = directory.absolute()
+    refused = "Windows MSIX base artwork differs from the selected input set."
+    try:
+        if Path(os.path.realpath(directory, strict=True)) != directory:
+            raise ENV.Incomplete(refused)
+        dir_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+        parent = os.open(directory, dir_flags)
+        try:
+            initial = _artwork_identity(os.fstat(parent))
+            seen = set()
+            with os.scandir(parent) as entries:
+                for entry in entries:
+                    if entry.name in seen or entry.name not in MSIX_BASE_ARTWORK:
+                        raise ENV.Incomplete(refused)
+                    seen.add(entry.name)
+            if seen != MSIX_BASE_ARTWORK.keys():
+                raise ENV.Incomplete(refused)
+            frozen = {}
+            flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+            for name, (_, _, length, expected) in MSIX_BASE_ARTWORK.items():
+                with os.fdopen(os.open(name, flags, dir_fd=parent), "rb") as stream:
+                    before = os.fstat(stream.fileno())
+                    if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size != length:
+                        raise ENV.Incomplete(refused)
+                    data = stream.read(length + 1)
+                    if (len(data) != length or hashlib.sha256(data).hexdigest() != expected
+                            or _artwork_identity(before) != _artwork_identity(os.fstat(stream.fileno()))
+                            or _artwork_identity(before) != _artwork_identity(
+                                os.stat(name, dir_fd=parent, follow_symlinks=False))):
+                        raise ENV.Incomplete(refused)
+                frozen[name] = data
+            if initial != _artwork_identity(os.stat(directory, follow_symlinks=False)):
+                raise ENV.Incomplete(refused)
+            return frozen
+        finally:
+            os.close(parent)
+    except OSError as error:
+        raise ENV.Incomplete(refused) from error
+
+
+def export_msix_base_artwork(frozen: dict[str, bytes], output: Path) -> dict:
+    """Publish held image bytes in the owned export and read back the exact three leaves."""
+    if (frozen.keys() != MSIX_BASE_ARTWORK.keys()
+            or any(len(data) != MSIX_BASE_ARTWORK[name][2]
+                   or hashlib.sha256(data).hexdigest() != MSIX_BASE_ARTWORK[name][3]
+                   for name, data in frozen.items())):
+        raise ENV.Incomplete("Invalid retained Windows MSIX base artwork snapshot.")
+    assembly_inputs = output / "msix-inputs"
+    assembly_inputs.mkdir(mode=0o700)
+    assets = assembly_inputs / "Assets"
+    assets.mkdir(mode=0o700)
+    for name, data in frozen.items():
+        with (assets / name).open("xb") as stream:
+            stream.write(data)
+    if read_msix_base_artwork(assets) != frozen:
+        raise ENV.Incomplete("Windows MSIX base artwork changed during export.")
+    return {"scope": "candidate-base-resources", "export_root": "msix-inputs",
+            "files": {"Assets/" + name: {"manifest_field": field, "width": dimension,
+                                         "height": dimension, "bytes": length, "sha256": digest}
+                      for name, (field, dimension, length, digest) in MSIX_BASE_ARTWORK.items()}}
+
+
 def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) -> tuple[Path, dict, dict]:
     """Compile the fixed role's checked input with an isolated output directory."""
     if role not in {"ui", "observe"}:
@@ -1758,7 +1894,7 @@ def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) ->
 
 
 def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict, run) -> dict:
-    """Admit static PE declarations and VERSIONINFO on the same linked bytes."""
+    """Read static PE declarations, VERSIONINFO and imports on the same linked bytes."""
     binaries = {"ui": PACKAGE, "observe": "nevrotick-observe"}
     if role not in binaries:
         raise ENV.Incomplete("Unsupported Windows version resource role.")
@@ -1769,7 +1905,7 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
     relative = f"target/{ENV.WINDOWS_TARGET}/release/{binaries[role]}.exe"
     binary = work / relative
     pe = windows_pe_reader(source)
-    declarations = pe.pe_readback(binary, subsystem="gui" if role == "ui" else "console")
+    declarations = pe.pe_readback(binary, subsystem="gui" if role == "ui" else "console", imports=True)
     identity = declarations["image_sha256"]
     report = run(f"{role}-versioninfo-readback", [f"/toolchain/{READOBJ}", "--file-headers",
                                                 "--coff-resources", f"/work/{relative}"],
@@ -1777,9 +1913,19 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
     actual = reader.decode(report, role=role)
     observed = {"fixed": list(actual["fixed"]), "strings": actual["strings"],
                 "translation": list(actual["translation"])}
-    if observed != expected or sha256(binary) != identity:
-        raise ENV.Incomplete(f"Linked {role} version resource differs from the checked source facts or image custody.")
-    return {"image_sha256": identity, "pe_declarations": declarations, **observed}
+    if observed != expected:
+        raise ENV.Incomplete(f"Linked {role} version resource differs from the checked source facts.")
+    imports = run(f"{role}-static-import-readback", [f"/toolchain/{READOBJ}", "--coff-imports",
+                                                    f"/work/{relative}"],
+                  extra=("--remount-ro", "/work"))
+    static_imports = reader.decode_imports(imports, image=f"/work/{relative}")
+    expected_counts = {kind: declarations[f"{kind}_import_descriptors"] for kind in ("direct", "delay")}
+    if {kind: len(modules) for kind, modules in static_imports.items()} != expected_counts:
+        raise ENV.Incomplete(f"Linked {role} import report differs from the image's descriptor counts.")
+    if sha256(binary) != identity:
+        raise ENV.Incomplete(f"Linked {role} image changed during static readback.")
+    return {"image_sha256": identity, "pe_declarations": declarations,
+            "static_imports": static_imports, **observed}
 
 
 def execute(root: Path, args, report: dict) -> None:
@@ -1788,6 +1934,13 @@ def execute(root: Path, args, report: dict) -> None:
     if profile not in {"default", SLINT.EP1_PROFILE}:
         raise ENV.Incomplete("Unknown prototype profile.")
     policy, source_identity = admit_product(root)
+    artwork_dir = getattr(args, "msix_branding_dir", None)
+    if artwork_dir is not None and (args.lane != "windows" or policy["schema_version"] != 3
+                                    or getattr(args, "output_dir", None) is None):
+        raise ENV.Incomplete("MSIX base artwork requires a Windows cross-build artifact output.")
+    if artwork_dir is not None and args.output_dir.resolve().is_relative_to(artwork_dir.absolute()):
+        raise ENV.Incomplete("Windows artifact output overlaps the selected MSIX artwork.")
+    base_artwork = read_msix_base_artwork(artwork_dir) if artwork_dir is not None else None
     if profile != "default":
         if policy["schema_version"] != 3:
             raise ENV.Incomplete("The Engine prototype requires its admitted schema-3 feature graph.")
@@ -1892,6 +2045,8 @@ def execute(root: Path, args, report: dict) -> None:
             clear_test_report(label, work)
             output_budget = ({"max_output": SLINT.MAX_METADATA_BYTES}
                              if policy["schema_version"] == 3 and label.startswith("dependency-metadata-") else {})
+            if label == MSIX_INSPECTION_LANE:
+                output_budget = {"max_output": MSIX_INSPECTION_MAX_OUTPUT}
             resources = command_resources(args.lane, label, command, profile=profile)
             invocation = sandbox(toolchain, work, source, vendor, command, extension, libraries,
                                  "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory,
@@ -1905,9 +2060,15 @@ def execute(root: Path, args, report: dict) -> None:
                              **output_budget)
             record = {"lane": label, "command": command, "exit_code": result["exit_code"],
                       "failure": result["failure"], "output": result["output"], "resource_profile": resources}
+            if label == MSIX_INSPECTION_LANE:
+                # The final receipt contains the checked structured projection.
+                del record["output"]
             if extra:
                 record["sandbox_command"] = invocation
             report["lanes"].append(record)
+            if label == MSIX_INSPECTION_LANE and (result["failure"] or result["exit_code"] != 0):
+                raise ENV.Incomplete(f"Windows MSIX source inspection failed: "
+                                     f"{result['failure'] or result['exit_code']}.")
             output = ENV.require_ok(result)
             if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls",
                          "ui-native-input-controls", "ui-versioninfo-controls", "windows-pe-controls"}:
@@ -1989,19 +2150,23 @@ def execute(root: Path, args, report: dict) -> None:
         if args.lane == "portable":
             report["test_counts"] = summarize_test_counts(
                 report["lanes"], patched_packages=patched_names, schema_version=policy["schema_version"])
+        msix_inspection = None
+        if ui_tools:
+            generation = sha256(metadata_dir / "generation/tree/receipt.json")
+            msix_inspection = inspect_windows_msix(metadata_dir, generation, run, source=source)
+            build = work / "target" / ENV.WINDOWS_TARGET / "release"
+            for role, filename in (("ui", f"{PACKAGE}.exe"), ("observe", "nevrotick-observe.exe")):
+                if report[f"{role}_versioninfo"].get("image_sha256") != sha256(build / filename):
+                    raise ENV.Incomplete(f"Windows {role} resource inspection or linked image custody is incomplete.")
+            if (any(report[f"{role}_versioninfo"]["generation_sha256"] != generation for role in version_roles.values())
+                    or sha256(metadata_dir / "generation/tree/receipt.json") != generation
+                    or admit_windows_ui_tools(toolchain, rc_compiler) != ui_tools):
+                raise ENV.Incomplete("Windows version resource source or tool custody is incomplete.")
         final_source = admit_product(root)[1]
         if args.lane == "windows":
             final_source.update({name: sha256(root / name) for name in WINDOWS_PE_INPUT_FILES})
         if ui_tools:
             final_source.update({name: sha256(root / name) for name in WINDOWS_UI_INPUT_FILES})
-            build = work / "target" / ENV.WINDOWS_TARGET / "release"
-            for role, filename in (("ui", f"{PACKAGE}.exe"), ("observe", "nevrotick-observe.exe")):
-                if report[f"{role}_versioninfo"].get("image_sha256") != sha256(build / filename):
-                    raise ENV.Incomplete(f"Windows {role} resource inspection or linked image custody is incomplete.")
-            generation = sha256(metadata_dir / "generation/tree/receipt.json")
-            if (any(report[f"{role}_versioninfo"]["generation_sha256"] != generation for role in version_roles.values())
-                    or admit_windows_ui_tools(toolchain, rc_compiler) != ui_tools):
-                raise ENV.Incomplete("Windows version resource source or tool custody is incomplete.")
         if sdk_inputs:
             final_source[SDK.POLICY] = sha256(root / SDK.POLICY)
             try:
@@ -2020,22 +2185,49 @@ def execute(root: Path, args, report: dict) -> None:
                     or ADVISORY.receipt_digest(args.advisory_receipt) != report["advisory_receipt_sha256"]):
                 raise ENV.Incomplete("Advisory/index snapshot changed or expired during verification.")
             report["advisory_freshness"] = "separate acquisition receipt and snapshot verified; at most 24 hours old"
-        report["status"] = "passed"
+        if artwork_dir is not None and read_msix_base_artwork(artwork_dir) != base_artwork:
+            raise ENV.Incomplete("Windows MSIX base artwork changed during verification.")
+        if base_artwork is not None and msix_inspection is None:
+            raise ENV.Incomplete("Windows MSIX base artwork has no checked authoring generation.")
+        if msix_inspection is not None:
+            report["msix_assembly_inputs"] = msix_inspection
         if args.output_dir:
             output = args.output_dir.resolve()
             if output == root or output.is_relative_to(root):
                 raise ENV.Incomplete("Artifact output must be outside the checkout.")
+            if artwork_dir is not None and output.is_relative_to(artwork_dir.absolute()):
+                raise ENV.Incomplete("Windows artifact output overlaps the selected MSIX artwork.")
             output.mkdir(mode=0o700)
             if args.lane == "windows":
                 ui_identity = report.get("ui_versioninfo", {}).get("image_sha256")
                 observe_identity = report.get("observe_versioninfo", {}).get("image_sha256")
                 report["artifact"] = export_windows_artifacts(work, output, source=source,
                                                               ui_sha256=ui_identity, observe_sha256=observe_identity)
+                if base_artwork is not None and msix_inspection is not None:
+                    msix_inspection["base_artwork"] = export_msix_base_artwork(base_artwork, output)
             elif args.lane == "portable":
                 report["engine_artifact"] = export_host_engine_artifact(work, output)
                 if capture_requested:
                     report["slint_captures"] = export_slint_captures(work, output)
+            report["status"] = "passed"
             (output / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
+        else:
+            report["status"] = "passed"
+
+
+def verification_receipt_destination(args, root: Path) -> Path:
+    """Keep a requested JSON receipt away from protected inputs and export slots."""
+    try:
+        receipt = ENV.external_receipt(args.json, root)
+        protected = [directory.resolve() for directory in (args.output_dir, args.msix_branding_dir)
+                     if directory is not None]
+    except ENV.Incomplete:
+        raise
+    except RuntimeError as error:
+        raise ENV.Incomplete("Verification receipt or output path could not be resolved.") from error
+    if any(receipt.is_relative_to(directory) for directory in protected):
+        raise ENV.Incomplete("Verification receipt overlaps protected MSIX inputs or artifact output.")
+    return receipt
 
 
 def main(argv=None) -> int:
@@ -2045,12 +2237,15 @@ def main(argv=None) -> int:
     parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE), default="default")
     parser.add_argument("--capture-slint", action="store_true")
     for name in ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
-                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc"):
+                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc", "msix-branding-dir"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
     report = {"scope": f"UI-M0, wire, domain, exchange, synthetic regression and controlled-loopback engine pilot {args.lane} verification", "status": "incomplete",
               "native_windows_execution": "not performed", "advisory_freshness": "not checked by this row"}
+    receipt = None
     try:
+        if args.json is not None:
+            receipt = verification_receipt_destination(args, ROOT)
         defaults = json.loads(POINTER.read_text()) if POINTER.is_file() else {}
         rust = json.loads((ROOT / "policy/tool-manifest.json").read_text())["rust"]
         defaults.setdefault("toolchain_dir", str(Path.home() / ".rustup/toolchains" / (rust["channel"] + "-" + rust["host"])))
@@ -2068,9 +2263,11 @@ def main(argv=None) -> int:
     except (ENV.Incomplete, OSError, ValueError, KeyError, TypeError, StopIteration, ET.ParseError) as error:
         report["status"] = "incomplete"
         report["error"] = str(error)
-    if args.json:
+    if receipt is not None:
         try:
-            ENV.external_receipt(args.json, ROOT).write_text(json.dumps(report, indent=2) + "\n")
+            if verification_receipt_destination(args, ROOT) != receipt:
+                raise ENV.Incomplete("Verification receipt destination changed during execution.")
+            receipt.write_text(json.dumps(report, indent=2) + "\n")
         except (ENV.Incomplete, OSError) as error:
             report["status"], report["error"] = "incomplete", str(error)
     print(f"{report['status'].upper()}: {report['scope']}")

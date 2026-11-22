@@ -28,11 +28,23 @@ mod native_etw_capture;
 #[cfg(all(windows, test))]
 mod native_etw_writer;
 #[cfg(all(windows, test))]
+mod native_peer_process;
+#[cfg(all(windows, test))]
+mod native_pipe_identity;
+#[cfg(all(windows, test))]
 mod native_pipe_pair;
 #[cfg(all(windows, test))]
 mod native_pipe_read;
+#[cfg(all(windows, test))]
+mod native_pipe_worker;
+#[cfg(all(windows, test))]
+mod native_pipe_write;
 #[cfg(test)]
 mod private_clock_wire;
+#[cfg(test)]
+mod scm_access_probe;
+#[cfg(all(windows, test))]
+mod scm_observation_tests;
 
 pub use error::{
     FixtureError, NativeError, NativeOperation, TokenCleanupOutcome, TokenObservationCause,

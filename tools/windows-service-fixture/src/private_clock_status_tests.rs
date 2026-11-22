@@ -4,43 +4,59 @@
 use std::{
     cell::Cell,
     error::Error,
+    num::NonZeroUsize,
     sync::atomic::{AtomicU32, Ordering::SeqCst},
     time::{Duration, Instant},
 };
 
 #[cfg(windows)]
 use std::io::Write;
+#[cfg(windows)]
+use windows_sys::Win32::Foundation::ERROR_CANT_OPEN_ANONYMOUS;
 
 use windows_platform::service::{ServiceStatus, StatusReporter};
 
 use super::{
     BrokerAvailability, BrokerStatusSession, Clock, Connection, Delivery, EngineStatusClient,
-    InertWorker, LabRole, NativeError, PendingStatus, Reply, ServiceInvocation, SessionFault,
-    StopNotification,
+    InertWorker, LabRole, NativeError, OutboundStatus, PendingStatus, Reply, ServiceInvocation,
+    SessionFault, StopNotification, Worker,
 };
 use crate::{
     BrokerClockRead, NativeOperation,
     broker_clock_change::{BrokerClockChanges, NativeBrokerReader, deliver, report_status},
     host::{
-        HostReceipt, InvocationPoll, StatusFactory, start_broker_invocation,
+        HostReceipt, InvocationPoll, StatusFactory, start_broker_worker,
         tests::HealthyTokenObserver,
     },
-    private_clock_wire::FrameError,
+    private_clock_wire::{
+        AssemblyProgress, Frame, FrameAssembly, FrameError, MAX_FRAME_LEN, encode_reply,
+    },
 };
 
 #[cfg(windows)]
 use super::InboundStatus;
 #[cfg(windows)]
 use crate::{
-    native_pipe_pair::{LabPipeReader, LabPipeWriter, open_lab_pipe},
-    native_pipe_read::{
-        NativeCancel, NativePipeRead, NativeReadBytes, NativeReadError, NativeReadPoll,
-        NativeReadStart,
+    native_pipe_identity::{
+        PipeIdentity, PipeIdentityError, ensure_unimpersonated, own_process_identity,
     },
+    native_pipe_pair::{
+        LabClientContext, LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader,
+        LabPipeWriter, open_lab_identification_pipe, open_lab_pipe, open_lab_reply_pipe,
+    },
+    native_pipe_read::{
+        IdentifiedReadError, IdentifiedRequestRead, NativeCancel, NativePipeRead, NativeReadBytes,
+        NativeReadError, NativeReadPoll, NativeReadStart, RetiredRead,
+    },
+    native_pipe_worker::{
+        ActiveRequestRead, NativePipeWorker, NativePipeWorkerError, ReadRetirement,
+        RetiringRequestRead,
+    },
+    native_pipe_write::{NativeWritePoll, NativeWriteStart},
 };
 
-/// Windows runs two additional branches of the selected native pipe test.
-const BROKER_CASES: usize = if cfg!(windows) { 17 } else { 15 };
+/// Stable slots include the existing native pipe histories and the Stop neighbor.
+const BROKER_CASES: usize = 27;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -113,8 +129,8 @@ enum DecisionAction {
 struct ScriptClock<'a> {
     /// Current monotonic time.
     now: Instant,
-    /// The first observation passes and the following observation triggers the action.
-    final_action: Option<(bool, DecisionAction)>,
+    /// Number of quiet observations before the selected transition.
+    final_action: Option<(u8, DecisionAction)>,
     /// Positive evidence that the selected final edge was reached.
     reached: bool,
     /// Original control ownership.
@@ -127,14 +143,14 @@ impl Clock for ScriptClock<'_> {
     /// Supply the current time and deliver a scheduled transition exactly once.
     fn now(&mut self) -> Instant {
         match self.final_action.take() {
-            Some((false, action)) => self.final_action = Some((true, action)),
-            Some((true, DecisionAction::Advance(time))) => {
+            Some((0, DecisionAction::Advance(time))) => {
                 self.now = time;
                 self.reached = true;
             }
-            Some((true, DecisionAction::Deliver(control))) => {
+            Some((0, DecisionAction::Deliver(control))) => {
                 self.reached = deliver(Some(self.mailbox), self.stop, control, 0).wake;
             }
+            Some((quiet, action)) => self.final_action = Some((quiet - 1, action)),
             None => {}
         }
         self.now
@@ -170,6 +186,22 @@ fn with_broker_reads<const N: usize, const READS: u32, T>(
         &StopNotification,
     ) -> T,
 ) -> Result<T, Box<dyn Error>> {
+    with_broker_worker_reads::<N, READS, T, InertWorker>(InertWorker::new(), exercise)
+}
+
+/// Use the real broker invocation with its selected dormant worker.
+/// # Errors
+/// Returns an unexpected startup or incomplete terminal observation.
+/// # Panics
+/// Fails if startup, terminal status or actual getter count differs.
+fn with_broker_worker_reads<const N: usize, const READS: u32, T, P: Worker>(
+    worker: P,
+    exercise: impl FnOnce(
+        &mut ServiceInvocation<Reporter, P>,
+        &mut ScriptClock<'_>,
+        &StopNotification,
+    ) -> T,
+) -> Result<T, Box<dyn Error>> {
     let mailbox: &'static BrokerClockChanges = &MAILBOXES[N];
     let stop: StopNotification = StopNotification::new();
     let mut clock: ScriptClock<'_> = ScriptClock {
@@ -183,13 +215,14 @@ fn with_broker_reads<const N: usize, const READS: u32, T>(
     let reader: NativeBrokerReader = NativeBrokerReader::new(mailbox, sample::<N>);
     #[cfg(not(windows))]
     let reader: NativeBrokerReader = NativeBrokerReader::new(mailbox, sample::<N, READS>);
-    let mut owner: ServiceInvocation<Reporter, InertWorker> = start_broker_invocation(
+    let mut owner: ServiceInvocation<Reporter, P> = start_broker_worker(
         0,
         &mut Reporter(mailbox),
         &mut HealthyTokenObserver(LabRole::ClockBroker),
         &mut clock,
         &stop,
         reader.with_sampling(|_, _| None),
+        worker,
     )
     .map_err(|_receipt: HostReceipt| "unexpected broker startup failure")?;
     let first: InvocationPoll = owner.poll(&mut clock, &stop);
@@ -197,8 +230,24 @@ fn with_broker_reads<const N: usize, const READS: u32, T>(
     // A refused transition may leave the script unused. Never trigger it during cleanup.
     clock.final_action = None;
     let _stop_disposition = deliver(Some(mailbox), &stop, 1, 0);
-    let last: InvocationPoll = owner.poll(&mut clock, &stop);
-    let receipt: HostReceipt = owner.take_receipt().ok_or("inert broker did not finish")?;
+    let started: Instant = Instant::now();
+    let last: InvocationPoll = loop {
+        let poll: InvocationPoll = owner.poll(&mut clock, &stop);
+        if let InvocationPoll::NativeDrain(wait) = poll {
+            if started.elapsed() >= Duration::from_secs(2) {
+                #[cfg(windows)]
+                let _diagnostic: std::io::Result<()> = writeln!(
+                    std::io::stderr().lock(),
+                    "broker cleanup could not observe native completion"
+                );
+                return Err("broker cleanup could not observe native completion".into());
+            }
+            std::thread::sleep(wait);
+        } else {
+            break poll;
+        }
+    };
+    let receipt: HostReceipt = owner.take_receipt().ok_or("broker did not finish")?;
     assert_eq!(first, InvocationPoll::Pending(Duration::from_secs(1)));
     assert_eq!(last, InvocationPoll::Finished);
     assert_eq!(receipt.result(), &Ok(()));
@@ -307,6 +356,94 @@ fn split_requests_publish_once_and_charge_one_attempt() -> Result<(), Box<dyn Er
         Ok((accepted, refused))
     })?;
     assert_eq!(actual, Ok(([true; 4], Some(SessionFault::Closed))));
+    Ok(())
+}
+
+/// A confirmed short write advances by its actual count. An ambiguous or
+/// expired transfer cannot reopen its connection or complete the request.
+/// # Errors
+/// Returns an unexpected fixture startup or cleanup failure.
+/// # Panics
+/// Fails when delivery, physical progress or original currentness differs.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn reply_write_retains_offset_and_original_cutoff() -> Result<(), Box<dyn Error>> {
+    let observed: Result<(), SessionFault> = with_broker::<17, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending: PendingStatus<'_> = client.request()?;
+        let reply: Reply = session.receive(pending.delivery())?;
+        let len: usize = reply.frame.as_bytes().len();
+        let mut sent: [u8; MAX_FRAME_LEN] = [0; MAX_FRAME_LEN];
+        let header: NonZeroUsize = NonZeroUsize::new(16).ok_or(SessionFault::WriteProgress)?;
+        let mut transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+            session.begin_reply(reply)?;
+        sent[..6].copy_from_slice(&transfer.next_write(header)?[..6]);
+        assert_eq!(
+            transfer.next_write(header),
+            Err(SessionFault::WriteProgress)
+        );
+        assert!(!transfer.complete_write(6)?);
+        let limit: NonZeroUsize = NonZeroUsize::new(len).ok_or(SessionFault::WriteProgress)?;
+        sent[6..len].copy_from_slice(transfer.next_write(limit)?);
+        assert!(transfer.complete_write(len - 6)?);
+        let AssemblyProgress::Pending(partial) = FrameAssembly::reply()
+            .push(&sent[..16])
+            .map_err(SessionFault::Frame)?
+        else {
+            return Err(SessionFault::WriteProgress);
+        };
+        let AssemblyProgress::Complete(received) =
+            partial.push(&sent[16..len]).map_err(SessionFault::Frame)?
+        else {
+            return Err(SessionFault::WriteProgress);
+        };
+        assert!(transfer.resolve_received(pending, &received)?);
+
+        let pending: PendingStatus<'_> = client.request()?;
+        let reply: Reply = session.receive(pending.delivery())?;
+        let mut transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+            session.begin_reply(reply)?;
+        let count: usize = transfer.next_write(header)?.len();
+        transfer.receiver.clock.now = transfer.receiver.cutoff;
+        assert_eq!(transfer.complete_write(count), Err(SessionFault::Expired));
+        assert_eq!(transfer.next_write(header), Err(SessionFault::Closed));
+        let late: Frame = encode_reply(pending.id, true);
+        assert_eq!(
+            transfer.resolve_received(pending, &late),
+            Err(SessionFault::Closed)
+        );
+        assert_eq!(client.request().err(), Some(SessionFault::Closed));
+        Ok(())
+    })?;
+    assert_eq!(observed, Ok(()));
+
+    let oversize: Result<(), SessionFault> = with_broker::<18, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let pending: PendingStatus<'_> = client.request()?;
+        let reply: Reply = session.receive(pending.delivery())?;
+        let mut transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+            session.begin_reply(reply)?;
+        let header: NonZeroUsize = NonZeroUsize::new(16).ok_or(SessionFault::WriteProgress)?;
+        assert_eq!(transfer.next_write(header)?.len(), 16);
+        assert_eq!(
+            transfer.complete_write(17),
+            Err(SessionFault::WriteProgress)
+        );
+        assert_eq!(transfer.next_write(header), Err(SessionFault::Closed));
+        let late: Frame = encode_reply(pending.id, true);
+        assert_eq!(
+            transfer.resolve_received(pending, &late),
+            Err(SessionFault::Closed)
+        );
+        assert_eq!(client.request().err(), Some(SessionFault::Closed));
+        Ok(())
+    })?;
+    assert_eq!(oversize, Ok(()));
     Ok(())
 }
 
@@ -491,6 +628,299 @@ fn wait_for_native_read(reader: &mut NativePipeRead) -> Result<NativeReadPoll, B
     }
 }
 
+/// Wait at most two real seconds for the actual ingress and identity observation.
+/// # Errors
+/// Returns the original native transport or capture refusal.
+#[cfg(windows)]
+fn wait_for_identified_read<E>(
+    mut poll: impl FnMut() -> Result<NativeReadPoll, E>,
+) -> Result<Option<NativeReadPoll>, E> {
+    let started: Instant = Instant::now();
+    loop {
+        match poll()? {
+            NativeReadPoll::Pending if started.elapsed() < Duration::from_secs(2) => {
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            NativeReadPoll::Pending => return Ok(None),
+            terminal => return Ok(Some(terminal)),
+        }
+    }
+}
+
+/// Retain the exact ingress operation while attempting bounded failed-read cleanup.
+#[cfg(windows)]
+fn retire_pending_identified_read(reader: &mut IdentifiedRequestRead) {
+    if !reader.is_pending() {
+        return;
+    }
+    if let Err(error) = reader.retire() {
+        let _diagnostic: std::io::Result<()> = writeln!(
+            std::io::stderr().lock(),
+            "identified read cancellation refused: {error:?}"
+        );
+    }
+    if wait_for_retired_read(|| reader.poll_retirement()).is_err() && reader.is_pending() {
+        let _diagnostic: std::io::Result<()> = writeln!(
+            std::io::stderr().lock(),
+            "identified ingress still owns its native read"
+        );
+    }
+}
+
+/// One paired native ingress bound by the lab composer to its logical connection.
+#[cfg(windows)]
+struct BoundRequestPipe {
+    connection: Connection,
+    request_id: super::RequestId,
+    submitted: usize,
+}
+
+/// Preserve logical refusal separately from native observations and failures.
+#[cfg(windows)]
+enum RequestSubmissionError {
+    Session(SessionFault),
+    Pipe(LabPipeError),
+}
+
+#[cfg(windows)]
+impl BoundRequestPipe {
+    /// Bind the paired endpoints to one issued request on the original connection.
+    fn new(pending: &PendingStatus<'_>) -> Self {
+        Self {
+            connection: std::rc::Rc::clone(pending.delivery().connection),
+            request_id: pending.id,
+            submitted: 0,
+        }
+    }
+
+    /// Submit the pending request's exact extent on the original paired handles.
+    /// # Errors
+    /// Refuses a foreign, inactive or expired request, extent or native peer.
+    fn submit(
+        &mut self,
+        ingress: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+        pending: &PendingStatus<'_>,
+    ) -> Result<(), RequestSubmissionError> {
+        if !std::rc::Rc::ptr_eq(&self.connection, pending.delivery().connection) {
+            return Err(RequestSubmissionError::Session(
+                SessionFault::ForeignConnection,
+            ));
+        }
+        if ingress.assembly.is_none() {
+            return Err(RequestSubmissionError::Session(SessionFault::Closed));
+        }
+        if pending.id != self.request_id {
+            return Err(RequestSubmissionError::Session(SessionFault::Frame(
+                FrameError::Correlation,
+            )));
+        }
+        let length = || RequestSubmissionError::Session(SessionFault::Frame(FrameError::Length));
+        let closed = || RequestSubmissionError::Session(SessionFault::Closed);
+        let read: ActiveRequestRead<'_> = ingress
+            .receiver
+            .owner
+            .worker
+            .request_read()
+            .ok_or_else(closed)?;
+        let count: usize = read
+            .client_write_span()
+            .and_then(|span: u32| usize::try_from(span).ok())
+            .ok_or_else(length)?;
+        let end: usize = self.submitted.checked_add(count).ok_or_else(length)?;
+        let bytes: &[u8] = pending
+            .delivery()
+            .bytes
+            .get(self.submitted..end)
+            .ok_or_else(length)?;
+        read.check_peers().map_err(RequestSubmissionError::Pipe)?;
+        ingress
+            .receiver
+            .check_client_edge(&self.connection)
+            .map_err(RequestSubmissionError::Session)?;
+        let mut read: ActiveRequestRead<'_> = ingress
+            .receiver
+            .owner
+            .worker
+            .request_read()
+            .ok_or_else(closed)?;
+        self.submitted = end;
+        if let Err(error) = read.write_from_client(bytes) {
+            ingress.receiver.close();
+            return Err(RequestSubmissionError::Pipe(error));
+        }
+        Ok(())
+    }
+}
+
+/// Lend the ingress slot from the same active owner that receives the request.
+/// # Errors
+/// Refuses a resolved receive, expired session, Stop or absent worker ingress.
+#[cfg(windows)]
+fn request_slot<'borrow>(
+    ingress: &'borrow mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+) -> Result<ActiveRequestRead<'borrow>, Box<dyn Error>> {
+    if ingress.assembly.is_none() || !ingress.receiver.connection.get() {
+        return native_fixture_result(Err(SessionFault::Closed));
+    }
+    native_fixture_result(ingress.receiver.check_receive_edge())?;
+    ingress
+        .receiver
+        .owner
+        .worker
+        .request_read()
+        .ok_or_else(|| "broker request read is inactive".into())
+}
+
+/// Write one fragment and return actual bytes only after successful native identification.
+/// # Errors
+/// Returns the original write, identity, transport or bounded wait failure.
+#[cfg(windows)]
+fn write_identified_fragment(
+    pipe: &mut BoundRequestPipe,
+    ingress: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    pending: &PendingStatus<'_>,
+) -> Result<NativeReadBytes, Box<dyn Error>> {
+    if let Err(error) = pipe.submit(ingress, pending) {
+        return match error {
+            RequestSubmissionError::Session(cause) => native_fixture_result(Err(cause)),
+            RequestSubmissionError::Pipe(cause) => native_fixture_result(Err(cause)),
+        };
+    }
+    let completed: Option<NativeReadPoll> =
+        wait_for_identified_read(|| native_fixture_result(request_slot(ingress)?.poll()))?;
+    if let Some(NativeReadPoll::Data(completed)) = completed {
+        native_fixture_result(ensure_unimpersonated())?;
+        Ok(completed)
+    } else {
+        Err("identified read did not deliver a fragment".into())
+    }
+}
+
+/// Observe a physical write terminal result within the fixture's real time bound.
+/// # Errors
+/// Returns the original observation failure or a finite timeout.
+#[cfg(windows)]
+fn wait_for_native_write(writer: &mut NativePipeWorker) -> Result<NativeWritePoll, Box<dyn Error>> {
+    let start: Instant = Instant::now();
+    loop {
+        let poll: NativeWritePoll = native_fixture_result(writer.poll_write())?;
+        if poll != NativeWritePoll::Pending {
+            return Ok(poll);
+        }
+        if start.elapsed() >= Duration::from_secs(2) {
+            let _diagnostic: std::io::Result<()> = writeln!(
+                std::io::stderr().lock(),
+                "native reply write still pending after two seconds"
+            );
+            return Err("native reply write did not reach completion".into());
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
+/// Deliver an actual broker reply to its original pending Engine receiver.
+/// # Errors
+/// Returns native, framing, currentness or correlation refusal.
+/// # Panics
+/// Fails when the selected empty byte pipe publishes a partial or absent response.
+#[cfg(windows)]
+fn receive_native_reply(
+    transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    pending: PendingStatus<'_>,
+    reader: &mut NativePipeRead,
+) -> Result<bool, Box<dyn Error>> {
+    // Only an admitted, idle reader can enter this transfer's cleanup scope.
+    transfer.receiver.owner.worker.check_reply_reader(reader)?;
+    if reader.is_pending() {
+        return native_fixture_result(Err(NativeReadError::Busy));
+    }
+    native_fixture_result(
+        transfer
+            .receiver
+            .check_client_edge(pending.delivery().connection),
+    )?;
+    let connection: Connection = std::rc::Rc::clone(&transfer.reply.connection);
+    let result: Result<bool, Box<dyn Error>> = transfer_native_reply(transfer, pending, reader);
+    if result.is_err() {
+        connection.set(false);
+        retire_pending_peer_read(reader);
+    }
+    result
+}
+
+/// Transfer one complete native response before releasing either logical owner.
+/// # Errors
+/// Returns native, framing, currentness or correlation refusal.
+/// # Panics
+/// Fails when the selected empty byte pipe publishes a partial or absent response.
+#[cfg(windows)]
+fn transfer_native_reply(
+    mut transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    pending: PendingStatus<'_>,
+    reader: &mut NativePipeRead,
+) -> Result<bool, Box<dyn Error>> {
+    let limit: NonZeroUsize = NonZeroUsize::new(16).ok_or("invalid fragment cap")?;
+    let mut assembly: FrameAssembly = FrameAssembly::reply();
+    loop {
+        let range: std::ops::Range<usize> = native_fixture_result(transfer.reserve_write(limit))?;
+        let span: usize = range.len();
+        let read_start: NativeReadStart = native_fixture_result(reader.begin(span))?;
+        native_fixture_result(transfer.receiver.check_receive_edge())?;
+        let bytes: &[u8] = &transfer.reply.frame.as_bytes()[range];
+        let writer: &mut NativePipeWorker = &mut transfer.receiver.owner.worker;
+        let _write_start: NativeWriteStart = native_fixture_result(writer.begin(bytes))?;
+        let write: NativeWritePoll = wait_for_native_write(writer)?;
+        let NativeWritePoll::Written(count) = write else {
+            let _diagnostic: std::io::Result<()> = writeln!(
+                std::io::stderr().lock(),
+                "native reply write ended with {write:?}"
+            );
+            return Err("native reply ended without a successful write".into());
+        };
+        let NativeReadPoll::Data(received) = wait_for_native_read(reader)? else {
+            return Err("native reply ended without bytes".into());
+        };
+        transfer
+            .receiver
+            .owner
+            .worker
+            .check_reply_completion(&received)?;
+        let complete: bool = native_fixture_result(transfer.complete_write(count))?;
+        assert_eq!(read_start, NativeReadStart::Queued);
+        assert_eq!(received.as_bytes().len(), count);
+        match native_fixture_result(assembly.push(received.as_bytes()))? {
+            AssemblyProgress::Pending(partial) => {
+                assert!(!complete);
+                assembly = partial;
+            }
+            AssemblyProgress::Complete(frame) => {
+                assert!(complete);
+                let available: bool =
+                    native_fixture_result(transfer.decode_received(pending, &frame))?;
+                transfer.receiver.owner.worker.check_reply_reader(reader)?;
+                native_fixture_result(transfer.receiver.check_receive_edge())?;
+                return Ok(available);
+            }
+        }
+    }
+}
+
+/// Request cancellation once for the peer's already-posted read and try to
+/// observe completion. Keep its first failure visible beside the caller's.
+#[cfg(windows)]
+fn retire_pending_peer_read(reader: &mut NativePipeRead) {
+    if !reader.is_pending() {
+        return;
+    }
+    if let Err(error) = reader.request_cancel() {
+        let _diagnostic: std::io::Result<()> = writeln!(
+            std::io::stderr().lock(),
+            "native peer read cleanup could not request cancellation: {error:?}"
+        );
+    }
+    let _completion: Result<_, Box<dyn Error>> = wait_for_native_read(reader);
+}
+
 /// Write one exact encoded fragment and observe its actual native terminal read.
 /// # Errors
 /// Returns a write failure, a completion observation failure or a non-data terminal result.
@@ -505,15 +935,7 @@ fn write_completed_fragment(
             std::io::stderr().lock(),
             "native fixture peer write failed: {error:?}"
         );
-        if reader.is_pending() {
-            if let Err(cancel_error) = reader.request_cancel() {
-                let _diagnostic: std::io::Result<()> = writeln!(
-                    std::io::stderr().lock(),
-                    "native fixture failure cleanup could not request cancellation: {cancel_error:?}"
-                );
-            }
-            let _completion: NativeReadPoll = wait_for_native_read(reader)?;
-        }
+        retire_pending_peer_read(reader);
         return Err(format!("{error:?}").into());
     }
     if let NativeReadPoll::Data(completed) = wait_for_native_read(reader)? {
@@ -524,17 +946,247 @@ fn write_completed_fragment(
 }
 
 /// Prove the original broker still samples while an actual Windows read waits,
-/// then pass two completed native fragments through the original receiver.
+/// then complete the request or stop the same owner with its body read pending.
 /// # Errors
 /// Returns native pipe, invocation, frame or reply failure.
 /// # Panics
 /// Fails if an idle read completes early or successful data fails to reach the broker.
 #[cfg(windows)]
-fn native_read_feeds_broker() -> Result<(), Box<dyn Error>> {
-    let (reader, writer): (LabPipeReader, LabPipeWriter) =
-        native_fixture_result(open_lab_pipe(15))?;
-    let mut read: NativePipeRead = native_fixture_result(NativePipeRead::new(reader))?;
-    with_broker_reads::<15, 2, _>(move |owner, clock, stop| {
+fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(), Box<dyn Error>> {
+    let case: u32 = u32::try_from(N)?;
+    let pipe: LabIdentificationPipe = native_fixture_result(open_lab_identification_pipe(
+        case,
+        LabClientContext::Identification,
+    ))?;
+    let process_identity: PipeIdentity = native_fixture_result(own_process_identity())?;
+    let (reply_reader, reply_writer): (LabPipeReader, LabOverlappedWriter) = native_fixture_result(
+        open_lab_reply_pipe(case.checked_add(0x100).ok_or("invalid reply case")?),
+    )?;
+    let mut reply_read: NativePipeRead = native_fixture_result(NativePipeRead::new(reply_reader))?;
+    let worker: NativePipeWorker = native_fixture_result(NativePipeWorker::with_request_read(
+        reply_writer,
+        pipe,
+        process_identity,
+    ))?;
+    with_broker_worker_reads::<N, 2, _, NativePipeWorker>(worker, |owner, clock, stop| {
+        let (mut session, mut client): (
+            BrokerStatusSession<'_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+            EngineStatusClient,
+        ) = native_fixture_result(BrokerStatusSession::open(
+            owner,
+            clock,
+            stop,
+            LabRole::Engine,
+        ))?;
+        native_fixture_result(session.check_client_edge(&client.connection))?;
+        let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
+        let mut pipe: BoundRequestPipe = BoundRequestPipe::new(&pending);
+        let delivery: Delivery<'_> = pending.delivery();
+        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+        let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker> =
+            native_fixture_result(session.begin_receive(delivery.connection))?;
+        let due: Instant = request.receiver.clock.now + Duration::from_secs(1);
+
+        let header_start: NativeReadStart =
+            native_fixture_result(request_slot(&mut request)?.begin(header.len()))?;
+        let header_idle: bool = matches!(
+            request_slot(&mut request)?.poll(),
+            Ok(NativeReadPoll::Pending)
+        );
+        let before: u32 = GETTERS[N].load(SeqCst);
+        request.receiver.clock.now = due;
+        let broker_poll: InvocationPoll = request.poll_broker();
+        let after: u32 = GETTERS[N].load(SeqCst);
+        let native_header: NativeReadBytes =
+            write_identified_fragment(&mut pipe, &mut request, &pending)?;
+        assert!(matches!(header_start, NativeReadStart::Queued));
+        assert!(header_idle);
+        assert_eq!((before, after), (1, 2));
+        assert_eq!(broker_poll, InvocationPoll::Pending(Duration::from_secs(1)));
+        assert_eq!(native_header.as_bytes(), header);
+        assert!(
+            native_fixture_result(request.complete_fragment(native_header.as_bytes()))?.is_none()
+        );
+
+        let body_start: NativeReadStart =
+            native_fixture_result(request_slot(&mut request)?.begin(body.len()))?;
+        let body_idle: bool = matches!(
+            request_slot(&mut request)?.poll(),
+            Ok(NativeReadPoll::Pending)
+        );
+        assert!(matches!(body_start, NativeReadStart::Queued));
+        assert!(body_idle);
+        if matches!(exit, NativeIngressExit::Stop) {
+            return stop_with_native_read(&mut request, body, NativeCancel::Requested);
+        }
+        if matches!(exit, NativeIngressExit::ExpireThenStop) {
+            request.receiver.clock.now = request.receiver.cutoff;
+            assert_eq!(
+                request.receiver.check_receive_edge(),
+                Err(SessionFault::Expired)
+            );
+            assert!(request_slot(&mut request).is_err());
+            let mut read: RetiringRequestRead<'_> = request
+                .receiver
+                .owner
+                .worker
+                .retiring_request_read()
+                .ok_or("broker cannot retire its original read")?;
+            let original: NativeCancel = native_fixture_result(read.retire())?;
+            assert_eq!(original, NativeCancel::Requested);
+            assert!(read.is_pending());
+            return stop_with_native_read(&mut request, body, original);
+        }
+        let native_body: NativeReadBytes =
+            write_identified_fragment(&mut pipe, &mut request, &pending)?;
+        assert!(!request_slot(&mut request)?.is_pending());
+        assert_eq!(native_body.as_bytes(), body);
+        let reply: Reply =
+            native_fixture_result(request.complete_fragment(native_body.as_bytes()))?
+                .ok_or("the broker did not reply to a complete native frame")?;
+        drop(request);
+        let transfer: OutboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker> =
+            native_fixture_result(session.begin_reply(reply))?;
+        assert!(receive_native_reply(transfer, pending, &mut reply_read)?);
+        Ok(())
+    })?
+}
+
+/// Selected terminal action for the same actual request and native ingress.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum NativeIngressExit {
+    /// Complete the identified request and deliver the broker reply.
+    Reply,
+    /// Stop the broker while its original body read is still outstanding.
+    Stop,
+    /// Expire the receive and request cancellation before the broker receives Stop.
+    ExpireThenStop,
+}
+
+/// Drive the actual service owner through Stop with its original queued ingress.
+/// # Errors
+/// Returns if the bounded native drain fails or the calling thread retains impersonation.
+/// # Panics
+/// Fails on premature worker settlement, admission, dispatch or wrong native retirement.
+#[cfg(windows)]
+fn stop_with_native_read(
+    request: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    body: &[u8],
+    original: NativeCancel,
+) -> Result<(), Box<dyn Error>> {
+    let _stop_disposition = deliver(
+        Some(request.receiver.clock.mailbox),
+        request.receiver.stop,
+        1,
+        0,
+    );
+    let started: Instant = Instant::now();
+    let mut poll: InvocationPoll = request.poll_broker();
+    assert!(request.receiver.owner.worker.request_read().is_none());
+    assert_eq!(
+        request.complete_fragment(body).err(),
+        Some(SessionFault::Closed)
+    );
+    assert!(request.receiver.last.is_none());
+    while let InvocationPoll::NativeDrain(wait) = poll {
+        let owner = &mut *request.receiver.owner;
+        assert_eq!(
+            owner.owner.state(),
+            Some(windows_platform::service::ServiceState::StopPending)
+        );
+        assert!(owner.permit.is_some() && owner.take_receipt().is_none());
+        if started.elapsed() >= Duration::from_secs(2) {
+            return Err("broker Stop did not observe native read completion".into());
+        }
+        std::thread::sleep(wait);
+        poll = request.poll_broker();
+    }
+    assert_eq!(poll, InvocationPoll::Finished);
+    assert!(request.receiver.owner.permit.is_none());
+    let retirement: &ReadRetirement = request.receiver.owner.worker.read_retirement();
+    assert_eq!(retirement.cancellation(), Some(Ok(original)));
+    assert_eq!(retirement.terminal(), Some(Ok(RetiredRead::Cancelled)));
+    native_fixture_result(ensure_unimpersonated())
+}
+
+/// Present a valid same-process reader from another pair to the reply consumer.
+/// # Errors
+/// Preserves setup, request, native operation or cleanup failure.
+/// # Panics
+/// Fails if a foreign pair gains admission or the transfer cancels its read.
+#[cfg(windows)]
+fn native_reply_refuses_foreign_reader() -> Result<(), Box<dyn Error>> {
+    let (reader, writer): (LabPipeReader, LabOverlappedWriter) =
+        native_fixture_result(open_lab_reply_pipe(24))?;
+    let original: NativePipeRead = native_fixture_result(NativePipeRead::new(reader))?;
+    let worker: NativePipeWorker = native_fixture_result(NativePipeWorker::new(writer))?;
+    let (other, other_writer): (LabPipeReader, LabOverlappedWriter) =
+        native_fixture_result(open_lab_reply_pipe(25))?;
+    let mut foreign: NativePipeRead = native_fixture_result(NativePipeRead::new(other))?;
+    foreign.check_reply_writer(&other_writer)?;
+
+    let observed: Result<_, Box<dyn Error>> = with_broker_worker_reads::<24, 1, _, NativePipeWorker>(
+        worker,
+        move |owner, clock, stop| {
+            let (mut session, mut client) = native_fixture_result(BrokerStatusSession::open(
+                owner,
+                clock,
+                stop,
+                LabRole::Engine,
+            ))?;
+            session.owner.worker.check_reply_reader(&original)?;
+            let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
+            let reply: Reply = native_fixture_result(session.receive(pending.delivery()))?;
+            let transfer = native_fixture_result(session.begin_reply(reply))?;
+            let started: NativeReadStart = native_fixture_result(foreign.begin(16))?;
+            let result: Result<bool, Box<dyn Error>> =
+                receive_native_reply(transfer, pending, &mut foreign);
+            let untouched: bool = matches!(foreign.poll(), Ok(NativeReadPoll::Pending));
+            let cancellation: Result<NativeCancel, NativeReadError> = foreign.request_cancel();
+            let terminal: Result<NativeReadPoll, Box<dyn Error>> =
+                wait_for_native_read(&mut foreign);
+            retire_pending_peer_read(&mut foreign);
+            let refusal: Option<&LabPipeError> =
+                result.as_ref().err().and_then(|error| error.downcast_ref());
+            Ok((
+                matches!(refusal, Some(LabPipeError::ForeignReplyPair)),
+                started == NativeReadStart::Queued && untouched,
+                matches!(
+                    native_fixture_result(cancellation)?,
+                    NativeCancel::Requested
+                ),
+                matches!(terminal?, NativeReadPoll::Cancelled) && !foreign.is_pending(),
+                !session.connection.get(),
+                session.remaining == super::FRAME_BUDGET - 1 && client.next == Some(2),
+                matches!(
+                    session.owner.worker.poll_write(),
+                    Err(NativePipeWorkerError::Native(
+                        crate::native_pipe_write::NativeWriteError::Idle
+                    ))
+                ),
+            ))
+        },
+    )?;
+    assert_eq!(observed?, (true, true, true, true, true, true, true));
+    Ok(())
+}
+
+/// Supply a complete valid request from a real anonymous pipe client.
+/// # Errors
+/// Returns setup, native submission, write or thread-context failure.
+/// # Panics
+/// Fails if a read without a proven client context can deliver bytes or reopen.
+#[cfg(windows)]
+fn native_anonymous_request_refuses_before_dispatch() -> Result<(), Box<dyn Error>> {
+    let pipe: LabIdentificationPipe = native_fixture_result(open_lab_identification_pipe(
+        21,
+        LabClientContext::Anonymous,
+    ))?;
+    let process_identity: PipeIdentity = native_fixture_result(own_process_identity())?;
+    let mut read: IdentifiedRequestRead =
+        native_fixture_result(IdentifiedRequestRead::new(pipe, process_identity))?;
+    with_broker::<20, _>(|owner, clock, stop| {
         let (mut session, mut client): (
             BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
             EngineStatusClient,
@@ -546,40 +1198,122 @@ fn native_read_feeds_broker() -> Result<(), Box<dyn Error>> {
         ))?;
         let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
         let delivery: Delivery<'_> = pending.delivery();
-        let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
-        let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+        let length: usize = delivery.bytes.len();
+        let request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
             native_fixture_result(session.begin_receive(delivery.connection))?;
-        let due: Instant = request.receiver.clock.now + Duration::from_secs(1);
-
-        let header_start: NativeReadStart = native_fixture_result(read.begin(header.len()))?;
-        let header_idle: bool = matches!(read.poll(), Ok(NativeReadPoll::Pending));
-        let before: u32 = GETTERS[15].load(SeqCst);
-        request.receiver.clock.now = due;
-        let broker_poll: InvocationPoll = request.poll_broker();
-        let after: u32 = GETTERS[15].load(SeqCst);
-        let native_header: NativeReadBytes = write_completed_fragment(&mut read, &writer, header)?;
-        assert!(matches!(header_start, NativeReadStart::Queued));
-        assert!(header_idle);
-        assert_eq!((before, after), (1, 2));
-        assert_eq!(broker_poll, InvocationPoll::Pending(Duration::from_secs(1)));
-        assert_eq!(native_header.as_bytes(), header);
+        let start: NativeReadStart = native_fixture_result(read.begin(length))?;
+        if let Err(error) = native_fixture_result(read.write_from_client(delivery.bytes)) {
+            retire_pending_identified_read(&mut read);
+            return Err(error);
+        }
+        let observed: Result<Option<NativeReadPoll>, IdentifiedReadError> =
+            wait_for_identified_read(|| read.poll());
+        retire_pending_identified_read(&mut read);
+        let reverted: Result<(), _> = ensure_unimpersonated();
+        let retired: bool = matches!(read.begin(1), Err(IdentifiedReadError::Retired));
+        drop(request);
+        let late: Frame = encode_reply(pending.id, true);
+        let refused: Result<bool, SessionFault> = pending.resolve(Reply {
+            connection: std::rc::Rc::clone(&session.connection),
+            frame: late,
+        });
+        assert_eq!(start, NativeReadStart::Queued);
         assert!(
-            native_fixture_result(request.complete_fragment(native_header.as_bytes()))?.is_none()
+            matches!(
+                observed.as_ref(),
+                Err(IdentifiedReadError::Identity {
+                    cause: PipeIdentityError::Native {
+                        operation: "OpenThreadToken",
+                        code: ERROR_CANT_OPEN_ANONYMOUS,
+                } | PipeIdentityError::AnonymousUser,
+                    received,
+                }) if *received == length
+            ),
+            "the complete anonymous request did not reach identity refusal: {:?}",
+            observed.as_ref().err()
         );
-
-        let body_start: NativeReadStart = native_fixture_result(read.begin(body.len()))?;
-        let body_idle: bool = matches!(read.poll(), Ok(NativeReadPoll::Pending));
-        let native_body: NativeReadBytes = write_completed_fragment(&mut read, &writer, body)?;
-        assert!(matches!(body_start, NativeReadStart::Queued));
-        assert!(body_idle);
-        assert!(!read.is_pending());
-        assert_eq!(native_body.as_bytes(), body);
-        let reply: Reply =
-            native_fixture_result(request.complete_fragment(native_body.as_bytes()))?
-                .ok_or("the broker did not reply to a complete native frame")?;
-        assert!(native_fixture_result(pending.resolve(reply))?);
+        native_fixture_result(reverted)?;
+        assert!(retired);
+        assert_eq!(session.last, None);
+        assert_eq!(refused, Err(SessionFault::Closed));
         Ok(())
     })?
+}
+
+/// Force an actual queued write under bounded same-process backpressure.
+/// # Errors
+/// Returns setup or unexpected submission, cancellation or completion results.
+/// # Panics
+/// Fails if a cancellation request releases the original operation early.
+#[cfg(windows)]
+fn native_reply_drains_pending_write() -> Result<(), Box<dyn Error>> {
+    let (_held_reader, writer): (LabPipeReader, LabOverlappedWriter) =
+        native_fixture_result(open_lab_reply_pipe(18))?;
+    let worker: NativePipeWorker = native_fixture_result(NativePipeWorker::new(writer))?;
+    with_broker_worker_reads::<19, 1, _, NativePipeWorker>(worker, |owner, clock, stop| {
+        let bytes: [u8; MAX_FRAME_LEN] = [0; MAX_FRAME_LEN];
+        for _ in 0..512 {
+            native_fixture_result(owner.broker_status_edge(clock, stop, None))?;
+            let start: NativeWriteStart = native_fixture_result(owner.worker.begin(&bytes))?;
+            match native_fixture_result(owner.worker.poll_write())? {
+                NativeWritePoll::Written(count) if count == bytes.len() => {}
+                NativeWritePoll::Pending if start == NativeWriteStart::Queued => {
+                    return stop_with_native_write(owner, clock, stop, &bytes);
+                }
+                observed => {
+                    return Err(format!("unexpected backpressure completion: {observed:?}").into());
+                }
+            }
+        }
+        Err("native reply write did not queue under the bounded backpressure control".into())
+    })?
+}
+
+/// Drive the original broker Stop owner while it retains a real submitted write.
+/// # Errors
+/// Returns any wrong wait or unconfirmed cleanup after two real seconds.
+/// # Panics
+/// Fails on premature acknowledgement, renewed admission or a wrong terminal fact.
+#[cfg(windows)]
+fn stop_with_native_write(
+    owner: &mut ServiceInvocation<Reporter, NativePipeWorker>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+    bytes: &[u8],
+) -> Result<(), Box<dyn Error>> {
+    let _stop_disposition = deliver(Some(clock.mailbox), stop, 1, 0);
+    let began: Instant = Instant::now();
+    let mut poll: InvocationPoll = owner.poll(clock, stop);
+    let refusals: Option<NativePipeWorkerError> = owner.worker.begin(bytes).err();
+    let mut held_until_terminal: bool = true;
+    while let InvocationPoll::NativeDrain(wait) = poll {
+        held_until_terminal &= owner.owner.state()
+            == Some(windows_platform::service::ServiceState::StopPending)
+            && owner.permit.is_some()
+            && owner.take_receipt().is_none();
+        if began.elapsed() >= Duration::from_secs(2) {
+            let _diagnostic: std::io::Result<()> = writeln!(
+                std::io::stderr().lock(),
+                "broker Stop still holds the original native write"
+            );
+            return Err("broker Stop did not observe native write completion".into());
+        }
+        std::thread::sleep(wait);
+        poll = owner.poll(clock, stop);
+    }
+    assert!(held_until_terminal);
+    assert_eq!(poll, InvocationPoll::Finished);
+    assert_eq!(refusals, Some(NativePipeWorkerError::Inactive));
+    assert!(owner.permit.is_none());
+    assert_eq!(
+        owner.worker.cancellation(),
+        Some(&Ok(NativeCancel::Requested))
+    );
+    assert_eq!(
+        owner.worker.terminal(),
+        Some(&Ok(NativeWritePoll::Cancelled))
+    );
+    Ok(())
 }
 
 /// Let the real receiver expire while an actual body read remains pending.
@@ -658,6 +1392,131 @@ fn native_read_drains_after_expiry() -> Result<(), Box<dyn Error>> {
     })?
 }
 
+/// Let the actual paired sender reach cutoff after an admitted header.
+/// # Errors
+/// Returns setup, authorized header transfer or terminal cancellation failure.
+/// # Panics
+/// Fails if the body is submitted, its native read is released early or an ID is refunded.
+#[cfg(windows)]
+fn native_request_refuses_body_at_cutoff() -> Result<(), Box<dyn Error>> {
+    let pair: LabIdentificationPipe = native_fixture_result(open_lab_identification_pipe(
+        23,
+        LabClientContext::Identification,
+    ))?;
+    let identity: PipeIdentity = native_fixture_result(own_process_identity())?;
+    let (_reader, writer): (LabPipeReader, LabOverlappedWriter) =
+        native_fixture_result(open_lab_reply_pipe(0x100 + 23))?;
+    let worker: NativePipeWorker =
+        native_fixture_result(NativePipeWorker::with_request_read(writer, pair, identity))?;
+    let observed: Result<_, Box<dyn Error>> =
+        with_broker_worker_reads::<23, 1, _, NativePipeWorker>(worker, |owner, clock, stop| {
+            let (mut session, mut client) = native_fixture_result(BrokerStatusSession::open(
+                owner,
+                clock,
+                stop,
+                LabRole::Engine,
+            ))?;
+            native_fixture_result(session.check_client_edge(&client.connection))?;
+            let pending: PendingStatus<'_> = native_fixture_result(client.request())?;
+            let mut pipe: BoundRequestPipe = BoundRequestPipe::new(&pending);
+            let delivery: Delivery<'_> = pending.delivery();
+            let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+            let mut ingress = native_fixture_result(session.begin_receive(delivery.connection))?;
+            // A second write of this size would still fit inside the frame. Its
+            // refusal therefore exercises the spent read slot, even before poll.
+            let (prefix, suffix): (&[u8], &[u8]) = header.split_at(8);
+            let _prefix_start: NativeReadStart =
+                native_fixture_result(request_slot(&mut ingress)?.begin(prefix.len()))?;
+            let first: Result<(), RequestSubmissionError> = pipe.submit(&mut ingress, &pending);
+            let repeated: bool = matches!(
+                pipe.submit(&mut ingress, &pending),
+                Err(RequestSubmissionError::Session(SessionFault::Frame(
+                    FrameError::Length
+                )))
+            );
+            let header_poll: Result<Option<NativeReadPoll>, Box<dyn Error>> =
+                wait_for_identified_read(|| {
+                    native_fixture_result(request_slot(&mut ingress)?.poll())
+                });
+            if let Err(error) = first {
+                return match error {
+                    RequestSubmissionError::Session(cause) => native_fixture_result(Err(cause)),
+                    RequestSubmissionError::Pipe(cause) => native_fixture_result(Err(cause)),
+                };
+            }
+            let Some(NativeReadPoll::Data(native_header)) = header_poll? else {
+                return Err("authorized header reached no data".into());
+            };
+            let admitted_prefix: bool = native_header.as_bytes() == prefix
+                && native_fixture_result(ingress.complete_fragment(native_header.as_bytes()))?
+                    .is_none();
+            let _suffix_start: NativeReadStart =
+                native_fixture_result(request_slot(&mut ingress)?.begin(suffix.len()))?;
+            let native_suffix: NativeReadBytes =
+                write_identified_fragment(&mut pipe, &mut ingress, &pending)?;
+            let admitted_header: bool = admitted_prefix
+                && native_suffix.as_bytes() == suffix
+                && native_fixture_result(ingress.complete_fragment(native_suffix.as_bytes()))?
+                    .is_none();
+            let body_start: NativeReadStart =
+                native_fixture_result(request_slot(&mut ingress)?.begin(body.len()))?;
+            ingress.receiver.clock.now = ingress.receiver.cutoff;
+            let refusal: bool = matches!(
+                pipe.submit(&mut ingress, &pending),
+                Err(RequestSubmissionError::Session(SessionFault::Expired))
+            );
+            assert!(request_slot(&mut ingress).is_err());
+            let mut read: RetiringRequestRead<'_> = ingress
+                .receiver
+                .owner
+                .worker
+                .retiring_request_read()
+                .ok_or("broker cannot retire its expired read")?;
+            let pending_at_refusal: bool = read.is_pending();
+            let cancel: Result<NativeCancel, NativeReadError> = read.retire();
+            let pending_after_cancel: bool = read.is_pending();
+            let terminal: RetiredRead = wait_for_retired_read(|| read.poll_retirement())?;
+            Ok((
+                admitted_header,
+                repeated,
+                body_start == NativeReadStart::Queued,
+                refusal,
+                pending_at_refusal && pending_after_cancel,
+                matches!(native_fixture_result(cancel)?, NativeCancel::Requested),
+                terminal == RetiredRead::Cancelled,
+                !read.is_pending(),
+                !ingress.receiver.connection.get() && ingress.receiver.last.is_none(),
+                ingress.receiver.remaining == super::FRAME_BUDGET - 1
+                    && pending.client.next == Some(2)
+                    && pipe.submitted == header.len(),
+            ))
+        })?;
+    assert_eq!(
+        observed?,
+        (true, true, true, true, true, true, true, true, true, true)
+    );
+    Ok(())
+}
+
+/// Observe a retired session read while the broker itself remains Running.
+/// # Errors
+/// Returns the original native failure or a bounded wait refusal.
+#[cfg(windows)]
+fn wait_for_retired_read(
+    mut poll: impl FnMut() -> Result<std::task::Poll<RetiredRead>, NativeReadError>,
+) -> Result<RetiredRead, Box<dyn Error>> {
+    let started: Instant = Instant::now();
+    loop {
+        if let std::task::Poll::Ready(terminal) = native_fixture_result(poll())? {
+            return Ok(terminal);
+        }
+        if started.elapsed() >= Duration::from_secs(2) {
+            return Err("retired session read did not complete".into());
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
 /// Exercise real native completion and the expiry/cancellation neighbor.
 /// # Errors
 /// Returns unexpected native pipe, invocation or exchange failure.
@@ -667,8 +1526,14 @@ fn native_read_drains_after_expiry() -> Result<(), Box<dyn Error>> {
 #[test]
 #[ignore = "requires an explicitly admitted offline Windows pipe and read-only clock fixture"]
 fn native_read_completes_or_drains_while_broker_polls() -> Result<(), Box<dyn Error>> {
-    native_read_feeds_broker()?;
-    native_read_drains_after_expiry()
+    native_read_feeds_broker::<15>(NativeIngressExit::Reply)?;
+    native_read_feeds_broker::<25>(NativeIngressExit::Stop)?;
+    native_read_feeds_broker::<26>(NativeIngressExit::ExpireThenStop)?;
+    native_reply_refuses_foreign_reader()?;
+    native_request_refuses_body_at_cutoff()?;
+    native_read_drains_after_expiry()?;
+    native_reply_drains_pending_write()?;
+    native_anonymous_request_refuses_before_dispatch()
 }
 
 /// The original Stop runs actual worker cleanup even while a request is incomplete.
@@ -793,6 +1658,10 @@ fn private_status_refuses_foreign_mismatched_and_late_replies() -> Result<(), Bo
                 BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
             let (mut other_session, mut other_sender) =
                 BrokerStatusSession::open(other, other_clock, other_stop, LabRole::Engine)?;
+            let wrong_receiver: Result<BrokerAvailability, SessionFault> =
+                sender.read_availability(&mut other_session);
+            let unspent: bool =
+                sender.next == Some(1) && other_session.remaining == super::FRAME_BUDGET;
             let pending = sender.request()?;
             let local: Reply = session.receive(pending.delivery())?;
             let foreign: Reply = {
@@ -817,6 +1686,8 @@ fn private_status_refuses_foreign_mismatched_and_late_replies() -> Result<(), Bo
             let reopened: Option<SessionFault> =
                 BrokerStatusSession::open(owner, clock, stop, LabRole::Engine).err();
             Ok::<_, SessionFault>((
+                wrong_receiver,
+                unspent,
                 foreign_result,
                 wrong_id,
                 late,
@@ -829,6 +1700,8 @@ fn private_status_refuses_foreign_mismatched_and_late_replies() -> Result<(), Bo
     assert_eq!(
         actual,
         Ok((
+            Err(SessionFault::ForeignConnection),
+            true,
             Err(SessionFault::ForeignConnection),
             Err(SessionFault::Frame(FrameError::Correlation)),
             Err(SessionFault::Closed),
@@ -888,7 +1761,9 @@ fn crossing<const N: usize>(
                 DecisionAction::Advance(admitted + Duration::from_secs(5))
             }
         };
-        session.clock.final_action = Some((false, action));
+        // The added client admission is quiet. Trigger at the broker decision,
+        // after the receiver has also admitted the first complete fragment.
+        session.clock.final_action = Some((2, action));
         let response: Result<BrokerAvailability, SessionFault> =
             client.read_availability(&mut session);
         Ok(DecisionObservation {
@@ -937,5 +1812,91 @@ fn private_status_rechecks_the_final_transition_and_cutoff() -> Result<(), Box<d
     });
     assert_eq!(crossing::<5>(Crossing::Deadline)?, expired);
     assert_eq!(crossing::<6>(Crossing::DeadlineWithoutSample)?, expired);
+    Ok(())
+}
+
+/// An expired client must refuse before consuming an ID or delivering a frame.
+/// # Errors
+/// Preserves a fixture startup, shutdown or unexpected healthy exchange failure.
+/// # Panics
+/// Fails if live or expired exchanges produce the wrong observation or accounting.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn private_status_client_refuses_send_at_original_cutoff() -> Result<(), Box<dyn Error>> {
+    let observed: Result<_, SessionFault> = with_broker::<21, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        session.clock.now = session
+            .cutoff
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or(SessionFault::Expired)?;
+        let live: BrokerAvailability = client.read_availability(&mut session)?;
+        let before: (Option<u64>, u8, Option<super::RequestId>) =
+            (client.next, session.remaining, session.last);
+        session.clock.now = session.cutoff;
+        let refused: Result<BrokerAvailability, SessionFault> =
+            client.read_availability(&mut session);
+        Ok((
+            live,
+            refused,
+            (client.next, session.remaining, session.last) == before,
+            session.connection.get(),
+        ))
+    })?;
+    assert_eq!(
+        observed,
+        Ok((
+            BrokerAvailability::Available,
+            Err(SessionFault::Expired),
+            true,
+            false
+        ))
+    );
+    Ok(())
+}
+
+/// A broker reply admitted before expiry cannot be newly published at expiry.
+/// # Errors
+/// Preserves a fixture startup or shutdown failure.
+/// # Panics
+/// Fails if the completed broker dispatch or the later client refusal is lost.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn private_status_client_rechecks_cutoff_after_broker_reply() -> Result<(), Box<dyn Error>> {
+    let observed: Result<_, SessionFault> = with_broker::<22, _>(|owner, clock, stop| {
+        let (mut session, mut client) =
+            BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+        let exchange_cutoff: Instant = session.cutoff;
+        // Send admission, request receipt and broker decision all see the
+        // earlier time. Only the receiving client's final observation expires.
+        session.clock.final_action = Some((3, DecisionAction::Advance(exchange_cutoff)));
+        let response: Result<BrokerAvailability, SessionFault> =
+            client.read_availability(&mut session);
+        Ok((
+            response,
+            session.clock.reached,
+            client.next,
+            session.remaining,
+            session.last,
+            session.connection.get(),
+        ))
+    })?;
+    assert_eq!(
+        observed,
+        Ok((
+            Err(SessionFault::Expired),
+            true,
+            Some(2),
+            super::FRAME_BUDGET - 1,
+            super::RequestId::new(1).ok(),
+            false
+        ))
+    );
     Ok(())
 }

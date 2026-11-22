@@ -142,7 +142,7 @@ rerun for this documentation assessment.
 | P3 services and secured state | Lifecycle/SCM foundation, exact-role privilege admission and bounded fixture diagnostics exist; selected platform/caller portable gates are complete. | Adopt real product workers, final identities/provisioning, secured IPC/state and actual native lifecycle/security behavior. |
 | P4 clock integration | Pure proposal/accounting and modeled acknowledged-delivery mechanisms exist in Core. | Implement and qualify the real broker, clock authority, W32Time handover/restoration and recovery in admitted Windows environments. |
 | P5 UI | Slint v0.4 fixture workflows and presentation/localization source exist; later AccessKit repairs have bounded controls. | Independent critical-text approval, live backend integration, triggered D1–D3 work and exact native/accessibility/resource/security qualification. |
-| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) emits checked partial direct-MSIX inputs and retires the Store CSV. Its [assembly input report](../../tasks/windows11-integration.md#direct-msix-assembly-input-inspection--22-november-2026) binds those inputs and identifies the four open payload slots. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
+| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) emits checked partial direct-MSIX inputs and retires the Store CSV. The [Windows verifier](../../tasks/windows11-integration.md#direct-msix-inputs-bound-to-linked-windows-images--22-november-2026) binds the inspected assembly inputs to the generation used for both version resources. All four production payload slots remain open. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
 | P7 final qualification | Acceptance, support/incident and release procedures are documented. | An integrated exact candidate, required native/package/security/operational evidence, support decisions and David's release approval. |
 
 The software still does not synchronize the user's clock. Completed subcomponents
@@ -1310,6 +1310,27 @@ the changed metadata, and the real console readback refused wrong-component
 and absent resources. The event compiler, installed delivery and complete
 MSIX retain their separate prerequisites.
 
+The [static import readback](../../tasks/windows11-integration.md#static-import-readback-for-the-linked-windows-images--22-november-2026)
+now binds direct and delayed import names to the exact UI and Observe images in
+the existing Windows link receipt. Scoped replay of the retained images found
+`VCRUNTIME140.dll` in both. The actual provider, dynamic and transitive loader
+closure, and installed role admission remain separate package requirements.
+
+The [VC runtime comparison](../../tasks/windows11-integration.md#vc-runtime-linkage-for-a-complete-direct-msix--22-november-2026)
+cross-linked the actual Observe release image with both original CRT PDBs
+and the same hardening flags. The static image removes the direct
+`VCRUNTIME140.dll` and UCRT API-set imports. The
+[Slint continuation](../../tasks/windows11-integration.md#slint-ui-and-service-crt-continuation--22-november-2026)
+also cross-linked the actual GUI release with those imports removed and no
+new direct modules. The two disabled service fixture roles now have exact
+dynamic and static comparisons with the same hardening. Their fresh graph
+and twelve-command checkpoint passed with private derived scratch and the
+existing disk reserve on both filesystems. Both static service fixture
+images remove the direct VC runtime and UCRT API-set imports. Complete
+package delivery still requires final role images, exact redistribution
+terms, installed loader observations, role-specific hardening and runtime
+servicing.
+
 The [linked PE hardening gate](../../tasks/build-optimization.md#linked-windows-pe-hardening-gate--21-november-2026)
 now checks each emitted UI and Observe image before metadata acceptance or
 export. The configured default Windows build passed all 32 rows. The
@@ -1370,13 +1391,120 @@ connects bounded partial input to the guarded receiver. The
 advances the broker lifecycle while the frame is pending. The
 [native pipe receive child](../../tasks/windows11-integration.md#native-private-pipe-receive-and-cancellation--22-november-2026)
 adds Windows overlapped read and cancellation custody in the private
-fixture. Continue through the existing S0.3/S3.2 write, service-stop
-completion and peer-identity owners.
+fixture. The
+[native reply child](../../tasks/windows11-integration.md#native-private-pipe-reply-and-write-custody--22-november-2026)
+connects the broker's response to the original Engine request with
+checked write progress. The
+[broker Stop child](../../tasks/windows11-integration.md#broker-stop-retains-native-pipe-custody--22-november-2026)
+binds the selected native write to the original service worker and
+holds its permit through terminal observation. The
+[native caller identity child](../../tasks/windows11-integration.md#identify-the-native-private-pipe-caller--22-november-2026)
+binds the selected request fragments to local identification-level
+token evidence before broker dispatch. The
+[client cutoff child](../../tasks/windows11-integration.md#client-cutoff-and-distinct-process-broker-pid-observation--22-november-2026)
+checks current fixture ownership before request admission and after reply
+correlation. The [native submission child](../../tasks/windows11-integration.md#guarded-native-client-fragment-submission--22-november-2026)
+applies the current-owner guard to each paired request write and gives
+each queued read one exact contiguous submission. The
+[native reply provenance child](../../tasks/windows11-integration.md#bind-native-reply-completion-to-its-original-pipe--22-november-2026)
+binds each physical read completion to the original writer before
+assembly and rechecks the pair before returning availability. The
+[SCM status child](../../tasks/windows11-integration.md#read-only-scm-status-for-the-connected-broker-proof--22-november-2026)
+adds a retained, query-only service handle and a checked historical
+Running PID observation. The
+[retained-peer child](../../tasks/windows11-integration.md#retain-the-original-pipe-process-and-token-objects--22-november-2026)
+ties the fixture's original connected pipe to query-only process and primary
+token objects and checks the same handles after child exit. The
+[broker request drain child](../../tasks/windows11-integration.md#broker-stop-retains-the-original-native-request-read--22-november-2026)
+binds an in-flight native request and its cancellation to the worker's
+existing Stop permit. The updated native selector awaits execution.
+Continue through
+the existing S0.3/S3.2 genuine-server, service-grant and installed lifecycle
+owners. The connected broker's process and token must be observable under
+the restricted Engine profile. The
+[SCM configuration child](../../tasks/windows11-integration.md#observe-configured-service-startup-before-provisioning--22-november-2026)
+provides a separate query-only readback and exact two-role linked inputs
+for the held pre-start MSIX probe. The
+[unsigned S0.6 fixture package](../../tasks/windows11-integration.md#pack-the-disabled-service-s06-msix-fixture--22-november-2026)
+binds those two images to disabled service declarations. Packing and
+independent member readback passed. The
+[bound package readback](../../tasks/windows11-integration.md#bind-unsigned-package-readback-to-the-recorded-makeappx-run--22-november-2026)
+now checks the recorded input inventory, output digest and local ZIP records
+on those exact unsigned bytes. The
+[compressed block readback](../../tasks/windows11-integration.md#verify-the-compressed-blocks-of-the-unsigned-makeappx-fixture--22-november-2026)
+checks the original package's declared block spans and refuses three metadata
+discrepancies that the earlier fixture reader accepted. The
+[SCM security child](../../tasks/windows11-integration.md#read-scm-service-owner-and-dacl-without-mutation--22-november-2026)
+matched the separate owner and DACL readback on two existing offline
+guest services. The
+[SCM configuration identity child](../../tasks/windows11-integration.md#observe-the-configured-scm-binary-path-and-start-name--22-november-2026)
+preserves the stored binary path and start name in the same bounded query as
+the startup fields. Its Windows fixture matched both fields against WMI on
+two reference services and refused both wrong-field controls. The
+[configured privilege child](../../tasks/windows11-integration.md#observe-scm-configured-required-privileges--22-november-2026)
+adds bounded raw `MULTI_SZ` observations through the same query-only handle.
+The [configured SID-type child](../../tasks/windows11-integration.md#observe-the-configured-scm-service-sid-type--22-november-2026)
+adds the stored DWORD through a separate bounded query. Portable checks and
+scoped MSVC consumer compilation passed. The
+[two-role pre-start selector](../../tasks/windows11-integration.md#observe-the-two-installed-s06-service-roles-at-pre-start--22-november-2026)
+now composes those query-only handles for the two fixed installed fixture
+keys. The Windows-target source and focused query/close pairing control
+passed. Its [scoped MSVC link and readback](../../tasks/windows11-integration.md#link-the-selected-pre-start-scm-observer--22-november-2026)
+matched the PE/PDB pair and expected SCM query imports. The full fixture
+now [links in private WSL scratch](../../tasks/windows11-integration.md#link-the-current-pre-start-probe-and-inert-service-roles--22-november-2026)
+under the existing reserve and retains the current test image and both
+fixed-role pairs. Native readback, installed identity and the provisioning
+actor's access decisions remain open. The
+[pre-start access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
+prepares separate handle-acquisition observations for the required rights
+and a standard-user denied configuration neighbor. The
+[current pack-input stage](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
+binds the new roles, the seven payload files and the six retained SDK
+inputs. The [maintained WSL stage](../../tasks/windows11-integration.md#publish-the-disabled-service-pack-inputs-as-one-tree--22-november-2026)
+now publishes those inputs and the inventory together. A real file-size
+failure leaves the final slot absent and permits a retry. The historical
+archive correctly refuses the new payload identity. Windows packing, the
+signed lab candidate and actor-bound native observations remain open.
+The [direct-MSIX branding candidates](../../tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026)
+provide three exact base PNGs from the approved artwork for the separate
+product package. The [Windows build handoff](../../tasks/windows11-integration.md#bind-base-artwork-to-the-windows-build-handoff--22-november-2026)
+now exports their exact bytes when selected and binds them to the same
+checked generation as both linked images. All 35 configured WSL cross-build
+rows passed. Native appearance, qualified variants and binding the selected
+resources in the complete assembly remain open.
 Actual SCM delivery, the calibrated forward-step envelope and correction
 acknowledgement have their own exits. Qualify finite error,
 drift and full-exchange validity before Engine admission. Production recovery
 still needs ownership inputs, a qualified consumer and installed service evidence.
 
+The [Phase reference chronology repair](../../tasks/s1.3-source-selection-readiness.md#phase-reference-projection-chronology--22-november-2026)
+refuses a genuinely future batch before the Core phase producer consumes
+its credit. The old-source regression failed and the corrected candidate
+passed ordinary and optimized tests, both target Clippy checks and the
+changed-file GNU line threshold. The [current phase-plan mutation run](../../tasks/s1.3-source-selection-readiness.md#current-phase-plan-mutation-results--22-november-2026)
+completed all 497 variants with a 99.06% raw viable score and no timeouts.
+The [separate report-only adjudication](../../tasks/s1.3-source-selection-readiness.md#phase-file-report-only-adjudication--22-november-2026)
+admits the three exact equivalents and closes this file's GNU fixture gate at
+317/317. The original wrapper failure and all raw results remain available.
+The six other owners' execution evidence retains its predecessor scope, and
+the current seven-owner union remains open. Production Engine-to-Core admission
+still needs the mapping and uncertainty trial.
+
+The [fixed-window actuator feedback trajectory](../../tasks/s1.3-source-selection-readiness.md#fixed-window-actuator-feedback-trajectory--22-november-2026)
+drives an independent quantized actuator with the actual Core controller output.
+Fresh fitted observations distinguish measured phase from the earlier delivery
+estimate. Both signs and the no-effect neighbor pass the focused GNU optimized
+test. A detached receipt substitution fails the independent phase assertion.
+This closes the selected simulated trajectory. Production admission and the
+remaining controller and native qualifications retain their separate exits.
+
+The [adaptive actuator feedback trajectory](../../tasks/s1.3-source-selection-readiness.md#adaptive-actuator-feedback-and-ambiguous-delivery--22-november-2026)
+drives the actual controller with a nonzero baseline and independently
+quantized delivery. Fresh fits replace drifted phase accounting. The known
+second delivery and permanent acknowledgement-loss branch pass on both signs
+in the focused GNU optimized run. Reporting lost acknowledgement as proven
+no effect fails the selected control. The native actuator and production
+mapping retain their existing prerequisites.
 
 **Published qualified source child — 17 November 2026, `238b9ae`:**
 [Managed logical-source provenance](../../tasks/engine-transport-pilot.md#managed-logical-source-provenance--implementation-contract--17-november-2026)

@@ -2,10 +2,12 @@
 """Controls for the service-local portable host admission and sandbox adapter."""
 from __future__ import annotations
 
+import fcntl
 import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import mock_open, patch
 
@@ -66,11 +68,17 @@ class HostAdmissionTests(unittest.TestCase):
                 config.parent.mkdir()
                 config.write_text("source-control\n")
                 admitted = {"stable": stable, "extensions": {}, "helpers": Q.host_helpers()}
+                use_scratch_guard = not mutation and source_name == "source"
                 with patch.object(Q, "check_core_dumps"), patch.object(Q, "check_service_tools") as check, patch.object(
                     Q.C.PRODUCT.ENV, "run", return_value={"exit_code": 0, "output": "controlled", "failure": None}
-                ) as execute:
+                ) as execute, patch.object(Q, "resource_stop_reason", return_value=None) as headroom:
                     result = Q.run_command(work, [str(stable / "bin/cargo"), "--version"], admitted,
-                                           vendor, source, timeout=180, mutation=mutation)
+                                           vendor, source, timeout=180, mutation=mutation, guard_scratch=use_scratch_guard)
+                    checked_root = work if use_scratch_guard else None
+                    headroom.assert_called_once_with(checked_root)
+                    headroom.reset_mock()
+                    self.assertIsNone(execute.call_args.kwargs["resource_guard"]())
+                    headroom.assert_called_once_with(checked_root)
                 self.assertFalse((work / "target").exists(), "Cargo must create its own cache directory and marker")
                 self.assertTrue(all((work / name).is_dir() for name in ("home", "tmp", "cargo-home")))
                 self.assertEqual(check.call_count, 2)
@@ -182,6 +190,74 @@ class ResourceHeadroomTests(unittest.TestCase):
         with patch.object(Q.shutil, "disk_usage", return_value=type("Disk", (), {"free": 2**60})()), patch.object(
                 Q.Path, "open", mock_open(read_data=b"MemFree: 999999999 kB\n")):
             self.assertEqual(Q.resource_stop_reason(), "RESOURCE_OBSERVATION")
+
+    def test_checkout_and_selected_scratch_each_keep_the_existing_reserve(self):
+        scratch = Path("/selected-work")
+        minimum = 4 * 1024 ** 3
+        cases = ((minimum, minimum, None), (minimum - 1, minimum, "DISK_RESERVE"),
+                 (minimum, minimum - 1, "WORK_DISK_RESERVE"))
+        for checkout_free, scratch_free, expected in cases:
+            with self.subTest(checkout=checkout_free, scratch=scratch_free):
+                free = {Q.ROOT: checkout_free, scratch: scratch_free}
+                with patch.object(Q.shutil, "disk_usage", side_effect=lambda path: SimpleNamespace(free=free[path])), patch.object(
+                        Q.Path, "open", mock_open(read_data=b"MemAvailable: 1048576 kB\n")):
+                    self.assertEqual(Q.resource_stop_reason(scratch), expected)
+
+    def test_selected_scratch_admission_preserves_defaults_and_rejects_aliases(self):
+        with tempfile.TemporaryDirectory(prefix="service-scratch-control-") as directory:
+            parent = Path(directory)
+            root, cache, scratch, public = (parent / name for name in ("repo", "cache", "scratch", "public"))
+            for path in (root, cache, scratch, public):
+                path.mkdir(mode=0o700)
+            public.chmod(0o755)
+            alias = parent / "alias"
+            alias.symlink_to(scratch, target_is_directory=True)
+            with patch.object(Q, "ROOT", root), patch.object(Q, "CACHE", cache):
+                self.assertEqual(Q.admit_scratch_root(None, "fixture-test"), cache)
+                self.assertEqual(Q.admit_scratch_root(scratch, "privilege-checkpoint"), scratch)
+                for path, lane in ((scratch, "fixture-test"), (public, "graph"), (alias, "graph"),
+                                   (root, "graph"), (cache, "graph"), (Path("relative"), "graph")):
+                    with self.subTest(path=path, lane=lane), self.assertRaises(Q.Incomplete):
+                        Q.admit_scratch_root(path, lane)
+
+    def test_existing_work_leaf_releases_shared_writer_without_a_receipt(self):
+        with tempfile.TemporaryDirectory(prefix="service-scratch-control-") as directory:
+            parent = Path(directory)
+            root, cache, scratch = (parent / name for name in ("repo", "cache", "scratch"))
+            records = root / "records"
+            records.mkdir(parents=True)
+            scratch.mkdir(mode=0o700)
+            label = "occupied"
+            work = scratch / label
+            work.mkdir(mode=0o700)
+            marker = work / "preserve"
+            marker.write_bytes(b"prior work")
+            with patch.object(Q, "ROOT", root), patch.object(Q, "CACHE", cache), patch.object(Q, "RECORDS", records), patch.object(
+                    Q, "disable_core_dumps"), patch.object(Q.shutil, "disk_usage", return_value=SimpleNamespace(free=2**60)):
+                with self.assertRaises(FileExistsError):
+                    Q.run(SimpleNamespace(label=label, lane="graph", scratch_root=scratch))
+            self.assertEqual(marker.read_bytes(), b"prior work")
+            self.assertEqual(list(records.iterdir()), [])
+            with (cache / "writer.lock").open("rb") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def test_scratch_cannot_place_derived_files_in_vendor_or_toolchain(self):
+        with tempfile.TemporaryDirectory(prefix="service-scratch-control-") as directory:
+            parent = Path(directory)
+            root, cache, vendor, compiler = (parent / name for name in ("repo", "cache", "vendor", "compiler"))
+            records = root / "records"
+            records.mkdir(parents=True)
+            vendor.mkdir(mode=0o700)
+            compiler.mkdir(mode=0o700)
+            tools = {"readonly_roots": [compiler], "extensions": {}}
+            with patch.object(Q, "ROOT", root), patch.object(Q, "CACHE", cache), patch.object(Q, "RECORDS", records), patch.object(
+                    Q, "disable_core_dumps"), patch.object(Q, "admit_service_tools", return_value=tools), patch.object(
+                    Q.shutil, "disk_usage", return_value=SimpleNamespace(free=2**60)):
+                for scratch in (vendor, compiler):
+                    with self.subTest(scratch=scratch), self.assertRaisesRegex(Q.Incomplete, "overlaps a read-only input"):
+                        Q.run(SimpleNamespace(label="protected", lane="graph", scratch_root=scratch, vendor_dir=vendor))
+                    self.assertEqual(list(scratch.iterdir()), [])
+            self.assertEqual(list(records.iterdir()), [])
 
 
 class CoreDumpAdmissionTests(unittest.TestCase):

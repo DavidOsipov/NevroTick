@@ -1,0 +1,392 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Query-only caller and primary-token identity evidence for the native pipe fixture.
+
+use std::fmt;
+use std::mem::{align_of, offset_of, size_of};
+use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
+use std::process;
+use std::ptr;
+
+use windows_sys::Win32::Foundation::{
+    ERROR_NO_TOKEN, GetLastError, HANDLE, INVALID_HANDLE_VALUE, TRUE,
+};
+use windows_sys::Win32::Security::{
+    GetTokenInformation, IsWellKnownSid, RevertToSelf, SID, SecurityIdentification, TOKEN_QUERY,
+    TOKEN_STATISTICS, TOKEN_TYPE, TOKEN_USER, TokenImpersonation, TokenPrimary, TokenStatistics,
+    TokenUser, WinAnonymousSid,
+};
+use windows_sys::Win32::System::Pipes::ImpersonateNamedPipeClient;
+use windows_sys::Win32::System::Threading::{
+    GetCurrentProcess, GetCurrentThread, OpenProcessToken, OpenThreadToken,
+};
+
+use crate::native_peer_process::same_kernel_object;
+
+/// Maximum binary SID size from the Win32 SDK's `SECURITY_MAX_SID_SIZE`.
+const MAX_SID_BYTES: usize = 68;
+/// Length of the fixed portion of a binary SID before its subauthorities.
+const SID_HEADER_BYTES: usize = offset_of!(SID, SubAuthority);
+/// Number of subauthorities that fit within the Windows SID limit.
+const MAX_SUBAUTHORITIES: usize = (MAX_SID_BYTES - SID_HEADER_BYTES) / size_of::<u32>();
+
+/// Checked user SID and logon-session identifier. This relation supplies test evidence only.
+#[derive(Eq, PartialEq)]
+pub(super) struct PipeIdentity {
+    /// Canonical binary SID followed by zero padding, with its length encoded in the SID.
+    user_sid: [u8; MAX_SID_BYTES],
+    /// Both halves of the token's logon-session LUID.
+    authentication_id: (i32, u32),
+}
+
+impl fmt::Debug for PipeIdentity {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("PipeIdentity")
+            .finish_non_exhaustive()
+    }
+}
+
+/// Failure to establish bounded, query-only token evidence.
+#[derive(Debug)]
+pub(super) enum PipeIdentityError {
+    /// A documented Win32 call failed and supplied this last-error code.
+    Native {
+        /// Win32 operation reporting the failure.
+        operation: &'static str,
+        /// Thread-local Win32 last error captured at the failure.
+        code: u32,
+    },
+    /// This thread already has an impersonation token.
+    AmbientThreadToken,
+    /// Token acquisition reported success without a valid owned handle.
+    InvalidTokenHandle,
+    /// Statistics did not supply the requested token type.
+    UnexpectedTokenType,
+    /// The captured impersonation token did not have identification-only quality of service.
+    UnexpectedImpersonationLevel,
+    /// A native output exceeded the supplied buffer or omitted required bytes.
+    InvalidTokenInformation,
+    /// The native output did not contain a complete and supported user SID.
+    InvalidSid,
+    /// The user SID denotes anonymous logon.
+    AnonymousUser,
+}
+
+impl fmt::Display for PipeIdentityError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Native { operation, code } => write!(formatter, "{operation} failed ({code})"),
+            Self::AmbientThreadToken => {
+                formatter.write_str("thread already has an impersonation token")
+            }
+            Self::InvalidTokenHandle => formatter.write_str("invalid acquired token handle"),
+            Self::UnexpectedTokenType => formatter.write_str("unexpected token type"),
+            Self::UnexpectedImpersonationLevel => {
+                formatter.write_str("unexpected impersonation level")
+            }
+            Self::InvalidTokenInformation => {
+                formatter.write_str("invalid token information extent")
+            }
+            Self::InvalidSid => formatter.write_str("invalid token user SID"),
+            Self::AnonymousUser => formatter.write_str("anonymous token user"),
+        }
+    }
+}
+
+impl std::error::Error for PipeIdentityError {}
+
+/// Capture the native identity associated with the server's most recent completed read.
+///
+/// The fixture read owner must serialize this call with reads and disconnects of
+/// this connected server instance. Token inspection starts only after reversion.
+///
+/// # Errors
+/// Reject an ambient thread token, failed capture, or unsuitable token evidence.
+/// A failed reversion aborts the supervised fixture process immediately.
+pub(super) fn capture(pipe: BorrowedHandle<'_>) -> Result<PipeIdentity, PipeIdentityError> {
+    let thread: HANDLE = current_thread();
+    ensure_unimpersonated()?;
+    let pipe_handle: HANDLE = pipe.as_raw_handle();
+
+    #[expect(
+        unsafe_code,
+        reason = "begin pipe caller capture on the current thread"
+    )]
+    // SAFETY: The pipe borrow keeps the handle live for this synchronous call.
+    // Windows rejects a handle that does not support server impersonation.
+    let impersonated: i32 = unsafe { ImpersonateNamedPipeClient(pipe_handle) };
+    if impersonated == 0 {
+        return Err(last_error("ImpersonateNamedPipeClient"));
+    }
+
+    let opened_token: Result<HANDLE, PipeIdentityError> = open_thread_token(thread);
+    #[expect(unsafe_code, reason = "end pipe impersonation on its original thread")]
+    // SAFETY: The call runs on the same thread immediately after its token query.
+    let reverted: i32 = unsafe { RevertToSelf() };
+    if reverted == 0 {
+        process::abort();
+    }
+
+    let token: OwnedHandle = take_opened_token(opened_token?)?;
+    query_identity(token.as_handle(), TokenImpersonation)
+}
+
+/// Confirm that the current fixture thread has no impersonation token.
+///
+/// # Errors
+/// Reject a present token or any result other than the native no-token status.
+pub(super) fn ensure_unimpersonated() -> Result<(), PipeIdentityError> {
+    match open_thread_token(current_thread()) {
+        Err(PipeIdentityError::Native {
+            code: ERROR_NO_TOKEN,
+            ..
+        }) => Ok(()),
+        Ok(raw_token) => {
+            let _ambient: OwnedHandle = take_opened_token(raw_token)?;
+            Err(PipeIdentityError::AmbientThreadToken)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// Borrow the current thread pseudohandle for same-thread token queries.
+fn current_thread() -> HANDLE {
+    #[expect(unsafe_code, reason = "obtain the calling thread's pseudohandle")]
+    // SAFETY: This result is a pseudohandle for the calling thread and isn't closed.
+    unsafe {
+        GetCurrentThread()
+    }
+}
+
+/// Capture the fixture process's primary-token identity as the independent control.
+///
+/// # Errors
+/// Reject failure to acquire or inspect the query-only primary-token handle.
+pub(super) fn own_process_identity() -> Result<PipeIdentity, PipeIdentityError> {
+    #[expect(unsafe_code, reason = "obtain the fixture process's pseudohandle")]
+    // SAFETY: This call returns a borrowed pseudohandle for the current process.
+    let process_handle: HANDLE = unsafe { GetCurrentProcess() };
+    let token: OwnedHandle = open_primary_token(process_handle)?;
+    query_identity(token.as_handle(), TokenPrimary)
+}
+
+/// A query-only primary token retained for object comparison in the fixture.
+pub(super) struct RetainedPrimaryToken(OwnedHandle);
+
+impl RetainedPrimaryToken {
+    /// Observe a primary token through an already retained process object.
+    /// # Errors
+    /// Refuse impersonation, denied queries and unsuitable native token data.
+    pub(super) fn open(process: BorrowedHandle<'_>) -> Result<Self, PipeIdentityError> {
+        ensure_unimpersonated()?;
+        let token: OwnedHandle = open_primary_token(process.as_raw_handle())?;
+        let _identity: PipeIdentity = query_identity(token.as_handle(), TokenPrimary)?;
+        Ok(Self(token))
+    }
+
+    /// Check that two live query handles refer to the same native token object.
+    /// Object equality is independent of shared user and logon-session identity.
+    pub(super) fn refers_to(&self, other: &Self) -> bool {
+        same_kernel_object(self.0.as_handle(), other.0.as_handle())
+    }
+}
+
+/// Open a query-only primary token while the caller keeps its process handle live.
+/// # Errors
+/// Preserve the native failure or refuse an invalid returned token handle.
+fn open_primary_token(process_handle: HANDLE) -> Result<OwnedHandle, PipeIdentityError> {
+    let mut raw_token: HANDLE = ptr::null_mut();
+    #[expect(unsafe_code, reason = "open only a query handle to the primary token")]
+    // SAFETY: The private callers retain the process handle during the call.
+    // The output is live and writable for one HANDLE.
+    let opened: i32 = unsafe { OpenProcessToken(process_handle, TOKEN_QUERY, &raw mut raw_token) };
+    if opened == 0 {
+        return Err(last_error("OpenProcessToken"));
+    }
+    take_opened_token(raw_token)
+}
+
+/// Acquire a query-only handle using the process-level access check.
+///
+/// The caller must immediately transfer a successful raw handle to an owner
+/// after any required reversion.
+///
+/// # Errors
+/// Return the native last error when Windows refuses to open the thread token.
+fn open_thread_token(thread: HANDLE) -> Result<HANDLE, PipeIdentityError> {
+    let mut raw_token: HANDLE = ptr::null_mut();
+    #[expect(
+        unsafe_code,
+        reason = "capture only query rights on the current thread token"
+    )]
+    // SAFETY: The caller supplies its current-thread pseudohandle. The handle
+    // output is live and writable. OpenAsSelf admits identification-level queries.
+    let opened: i32 = unsafe { OpenThreadToken(thread, TOKEN_QUERY, TRUE, &raw mut raw_token) };
+    if opened == 0 {
+        return Err(last_error("OpenThreadToken"));
+    }
+    Ok(raw_token)
+}
+
+/// Transfer a successful token acquisition's handle to its sole closing owner.
+///
+/// # Errors
+/// Reject a null or invalid result handle.
+fn take_opened_token(raw_token: HANDLE) -> Result<OwnedHandle, PipeIdentityError> {
+    if raw_token.is_null() || raw_token == INVALID_HANDLE_VALUE {
+        return Err(PipeIdentityError::InvalidTokenHandle);
+    }
+    #[expect(
+        unsafe_code,
+        reason = "transfer confirmed Win32 token ownership to Rust"
+    )]
+    // SAFETY: The callers pass only the returned handle from a successful open.
+    // The sentinel checks exclude invalid handles and no other owner closes it.
+    let token: OwnedHandle = unsafe { OwnedHandle::from_raw_handle(raw_token) };
+    Ok(token)
+}
+
+/// Snapshot a documented last error immediately after its failed native call.
+fn last_error(operation: &'static str) -> PipeIdentityError {
+    #[expect(unsafe_code, reason = "read the calling thread's Win32 last error")]
+    // SAFETY: This function reads only the current thread's last-error slot.
+    let code: u32 = unsafe { GetLastError() };
+    PipeIdentityError::Native { operation, code }
+}
+
+/// Validate the token type and impersonation level before extracting identity.
+///
+/// # Errors
+/// Reject a failed query, unexpected token type or level, or invalid user SID.
+fn query_identity(
+    token: BorrowedHandle<'_>,
+    expected_type: TOKEN_TYPE,
+) -> Result<PipeIdentity, PipeIdentityError> {
+    let mut statistics: TOKEN_STATISTICS = TOKEN_STATISTICS::default();
+    let capacity: u32 = u32::try_from(size_of::<TOKEN_STATISTICS>())
+        .map_err(|_| PipeIdentityError::InvalidTokenInformation)?;
+    let mut written: u32 = 0;
+    #[expect(unsafe_code, reason = "read the fixed TOKEN_STATISTICS Win32 layout")]
+    // SAFETY: The handle remains live. Both outputs are writable and the ABI
+    // structure occupies the supplied byte count with all fields initialized.
+    let success: i32 = unsafe {
+        GetTokenInformation(
+            token.as_raw_handle(),
+            TokenStatistics,
+            (&raw mut statistics).cast(),
+            capacity,
+            &raw mut written,
+        )
+    };
+    if success == 0 {
+        return Err(last_error("GetTokenInformation(TokenStatistics)"));
+    }
+    if written != capacity {
+        return Err(PipeIdentityError::InvalidTokenInformation);
+    }
+    if statistics.TokenType != expected_type {
+        return Err(PipeIdentityError::UnexpectedTokenType);
+    }
+    if expected_type == TokenImpersonation
+        && statistics.ImpersonationLevel != SecurityIdentification
+    {
+        return Err(PipeIdentityError::UnexpectedImpersonationLevel);
+    }
+    Ok(PipeIdentity {
+        user_sid: query_user_sid(token)?,
+        authentication_id: (
+            statistics.AuthenticationId.HighPart,
+            statistics.AuthenticationId.LowPart,
+        ),
+    })
+}
+
+/// Aligned caller-owned `TokenUser` output, with inline storage for the largest SID.
+#[repr(C)]
+struct TokenUserBuffer {
+    /// Native header with the pointer to the returned SID.
+    header: TOKEN_USER,
+    /// Inline bytes from which a checked SID may be copied.
+    sid_storage: [u8; MAX_SID_BYTES],
+}
+
+/// Read a complete supported SID only from the native call's own output buffer.
+///
+/// # Errors
+/// Reject a failed query, an incomplete or malformed SID, or anonymous logon.
+fn query_user_sid(token: BorrowedHandle<'_>) -> Result<[u8; MAX_SID_BYTES], PipeIdentityError> {
+    let mut output: TokenUserBuffer = TokenUserBuffer {
+        header: TOKEN_USER::default(),
+        sid_storage: [0; MAX_SID_BYTES],
+    };
+    let capacity: u32 = u32::try_from(size_of::<TokenUserBuffer>())
+        .map_err(|_| PipeIdentityError::InvalidTokenInformation)?;
+    let mut written: u32 = 0;
+    #[expect(
+        unsafe_code,
+        reason = "read TOKEN_USER and inline SID bytes into bounded storage"
+    )]
+    // SAFETY: The borrowed token remains live and the caller owns both outputs.
+    // The repr(C) buffer starts with an aligned TOKEN_USER and fits the SID.
+    let success: i32 = unsafe {
+        GetTokenInformation(
+            token.as_raw_handle(),
+            TokenUser,
+            (&raw mut output).cast(),
+            capacity,
+            &raw mut written,
+        )
+    };
+    if success == 0 {
+        return Err(last_error("GetTokenInformation(TokenUser)"));
+    }
+
+    let written: usize =
+        usize::try_from(written).map_err(|_| PipeIdentityError::InvalidTokenInformation)?;
+    if written > size_of::<TokenUserBuffer>() {
+        return Err(PipeIdentityError::InvalidTokenInformation);
+    }
+    let written_sid_bytes: usize = written
+        .checked_sub(offset_of!(TokenUserBuffer, sid_storage))
+        .ok_or(PipeIdentityError::InvalidTokenInformation)?;
+    let written_sid_bytes: usize = written_sid_bytes.min(MAX_SID_BYTES);
+    let sid_address: usize = output.header.User.Sid.addr();
+    let sid_offset: usize = sid_address
+        .checked_sub(output.sid_storage.as_ptr().addr())
+        .ok_or(PipeIdentityError::InvalidSid)?;
+    if !sid_address.is_multiple_of(align_of::<SID>()) {
+        return Err(PipeIdentityError::InvalidSid);
+    }
+    let sid_bytes: &[u8] = output
+        .sid_storage
+        .get(sid_offset..written_sid_bytes)
+        .ok_or(PipeIdentityError::InvalidSid)?;
+    let [1, subauthority_count, ..] = sid_bytes else {
+        return Err(PipeIdentityError::InvalidSid);
+    };
+    let count: usize = usize::from(*subauthority_count);
+    if count > MAX_SUBAUTHORITIES {
+        return Err(PipeIdentityError::InvalidSid);
+    }
+    let length: usize = SID_HEADER_BYTES + count * size_of::<u32>();
+    let sid: &[u8] = sid_bytes
+        .get(..length)
+        .ok_or(PipeIdentityError::InvalidSid)?;
+    #[expect(
+        unsafe_code,
+        reason = "reject the Windows well-known anonymous logon SID"
+    )]
+    // SAFETY: The slice starts at the validated SID alignment and contains the
+    // complete checked header and all declared subauthorities. The call reads it.
+    let anonymous: i32 = unsafe { IsWellKnownSid(sid.as_ptr().cast_mut().cast(), WinAnonymousSid) };
+    if anonymous != 0 {
+        return Err(PipeIdentityError::AnonymousUser);
+    }
+
+    let mut identity: [u8; MAX_SID_BYTES] = [0; MAX_SID_BYTES];
+    identity
+        .get_mut(..length)
+        .ok_or(PipeIdentityError::InvalidSid)?
+        .copy_from_slice(sid);
+    Ok(identity)
+}

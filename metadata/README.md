@@ -78,6 +78,12 @@ and lists pending field IDs and owners. The current sources report
 `assembly-inputs-incomplete` with a null package identity and four open
 payload slots. The command prints the report to stdout.
 
+The [Windows artifact verifier](../TOOLING.md#starting-implementation) can
+attach the exact base branding PNG candidates to this checked assembly
+handoff. It accepts an explicit `--msix-branding-dir` in the Windows
+cross-build lane with an artifact output directory. The source record and
+its pending production inputs remain authoritative.
+
 `--root PATH` selects an explicit source checkout; `--source PATH` selects a
 different admitted source file within that checkout. Neither controls Python
 imports, output names, templates, executable commands or network access.

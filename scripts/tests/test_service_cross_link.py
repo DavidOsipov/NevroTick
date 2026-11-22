@@ -34,10 +34,13 @@ class ServiceArtifactExport(unittest.TestCase):
         self.records = self.root / "records"
         self.records.mkdir(parents=True)
         self.cache = private / "cache"
+        self.scratch = private / "scratch"
+        self.scratch.mkdir(mode=0o700)
         self.stable = private / "stable"
         self.vendor = private / "vendor"
         self.vendor.mkdir()
         self.libraries = private / "libraries"
+        self.libraries.mkdir(mode=0o700)
         self.llvm = self.stable / "lib/rustlib/x86_64-unknown-linux-gnu/bin"
         self.llvm.mkdir(parents=True)
         for tool in ("rust-lld", "llvm-readobj"):
@@ -49,16 +52,18 @@ class ServiceArtifactExport(unittest.TestCase):
             destination.parent.mkdir(exist_ok=True)
             shutil.copyfile(ROOT / name, destination)
         self.index = {"path": "fixture-index", "sha256": "fixture-index-sha"}
+        self.core_policy = {"collector_kind": "pipe", "limit_bytes": 1}
         self.identity = {CROSS.SELF: CROSS.C.PRODUCT.sha256(self.root / CROSS.SELF)}
         self.checkpoint = self.records / "source.json"
         self.sdk = private / "sdk.json"
         self.sdk_inventory = private / "sdk-inventory.json"
         for path in (self.checkpoint, self.sdk, self.sdk_inventory):
             path.write_text("{}")
+        self.sdk.write_text(json.dumps({"root": str(self.libraries)}))
         self.tools = {
             "stable": self.stable,
             "inventories": {},
-            "readonly_roots": [],
+            "readonly_roots": [self.stable],
             "installation_pointer": "fixture-installation",
             "installation_pointer_sha256": "fixture-installation-sha",
             "policy_sha256": "fixture-policy-sha",
@@ -70,9 +75,11 @@ class ServiceArtifactExport(unittest.TestCase):
         self.symbols = {ENGINE: ENGINE.replace("-", "_") + ".pdb", BROKER: BROKER + ".pdb"}
         for object_, name, replacement in (
             (CROSS, "ROOT", self.root),
+            (CROSS.Q, "ROOT", self.root),
             (CROSS.Q, "RECORDS", self.records),
             (CROSS.Q, "CACHE", self.cache),
             (CROSS.Q, "DISK_FLOOR", 0),
+            (CROSS.Q, "MEMORY_FLOOR", 0),
         ):
             self.enterContext(patch.object(object_, name, replacement))
         checkpoint = {
@@ -83,7 +90,8 @@ class ServiceArtifactExport(unittest.TestCase):
         }
         for object_, name, output in (
             (CROSS.Q, "no_ambient_flags", None),
-            (CROSS.resource, "setrlimit", None),
+            (CROSS.Q, "disable_core_dumps", self.core_policy),
+            (CROSS.Q, "check_core_dumps", self.core_policy),
             (CROSS, "source_prerequisites", ({}, self.identity, checkpoint, {},
                                              hashlib.sha256(self.checkpoint.read_bytes()).hexdigest())),
             (CROSS.Q, "source_identity", ({}, self.identity)),
@@ -129,10 +137,11 @@ class ServiceArtifactExport(unittest.TestCase):
         self.assertIn(command[5], [str(Path("/work") / release / (name + ".exe")) for name in CROSS.BINS])
         return {"exit_code": 0, "failure": None, "output": "inspected " + Path(command[5]).name}
 
-    def run_link(self, label):
+    def run_link(self, label, *, scratch_root=None):
         return CROSS.run(SimpleNamespace(
             label=label, lane="link", source_checkpoint=self.checkpoint,
             sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
+            scratch_root=scratch_root,
         ))
 
     def receipt(self, label):
@@ -148,6 +157,8 @@ class ServiceArtifactExport(unittest.TestCase):
         self.assertEqual(receipt["source_sha256"], self.identity)
         self.assertEqual(receipt["checkpoint_sha256"], hashlib.sha256(b"{}").hexdigest())
         self.assertFalse(receipt["native_execution"])
+        self.assertEqual(receipt["limits"]["core_dump_policy"], self.core_policy)
+        self.assertEqual(receipt["limits"]["core_bytes"], 1)
         self.assertEqual(len(receipt["commands"]), 3)
         self.assertEqual(set(receipt["artifacts"]), {ENGINE, BROKER})
         directory = self.records / ("cross-" + label + "-artifacts")
@@ -192,7 +203,38 @@ class ServiceArtifactExport(unittest.TestCase):
     def test_valid_fixed_roles_export_exact_bytes_and_receipt(self):
         self.assert_healthy("healthy")
 
-    def run_libtest_link(self, label, *, fault=None):
+    def test_reserve_boundary_and_existing_record_have_distinct_diagnostics(self):
+        minimum = 4 * 1024 ** 3
+        free = SimpleNamespace(free=minimum - 1)
+        with patch.object(CROSS.Q, "DISK_FLOOR", minimum), patch.object(CROSS.shutil, "disk_usage", return_value=free):
+            with self.assertRaisesRegex(CROSS.Incomplete, f"required {minimum} bytes, available {free.free} bytes"):
+                self.run_link("disk-boundary")
+            self.assertFalse(self.cache.exists())
+            free.free = minimum
+            self.assert_healthy("disk-boundary")
+            receipt = self.records / "cross-disk-boundary.json"
+            previous = receipt.read_bytes()
+            with self.assertRaisesRegex(CROSS.Incomplete, "prior cross-link record already exists"):
+                self.run_link("disk-boundary")
+            self.assertEqual(receipt.read_bytes(), previous)
+
+    def test_disk_reserve_lost_before_command_uses_same_threshold(self):
+        minimum = 4 * 1024 ** 3
+        free = [SimpleNamespace(free=minimum), SimpleNamespace(free=minimum - 1)]
+        with patch.object(CROSS.Q, "DISK_FLOOR", minimum), patch.object(CROSS.shutil, "disk_usage", side_effect=free):
+            with self.assertRaisesRegex(CROSS.Incomplete, f"required {minimum} bytes, available {minimum - 1} bytes"):
+                self.run_link("disk-lost")
+        self.assertEqual(self.receipt("disk-lost")["commands"], [])
+        self.assertFalse((self.records / "cross-disk-lost-artifacts").exists())
+
+    def test_core_collector_change_refuses_before_cross_command(self):
+        with patch.object(CROSS.Q, "check_core_dumps", return_value={"collector_kind": "file", "limit_bytes": 0}):
+            with self.assertRaisesRegex(CROSS.Incomplete, "core collector policy changed"):
+                self.run_link("changed-collector")
+        self.assertEqual(self.receipt("changed-collector")["commands"], [])
+        self.assertFalse((self.records / "cross-changed-collector-artifacts").exists())
+
+    def run_libtest_link(self, label, *, fault=None, relocated=False):
         """Drive the release libtest export using inert compiler output and PE/PDB bytes."""
         proc_hash = "0123456789abcdef"
         name = "nevrotick_windows_service_fixture"
@@ -254,10 +296,14 @@ class ServiceArtifactExport(unittest.TestCase):
             return {"exit_code": 0, "failure": None, "output": "\n".join(map(json.dumps, rows)),
                     "command": ["sandbox", "--", *(reversed(command) if fault == "argv-order" else command)]}
 
-        with patch.object(CROSS.C.RUNTIME, "run", side_effect=execute):
+        runtime = self.relocated_runtime(label, execute) if relocated else patch.object(
+            CROSS.C.RUNTIME, "run", side_effect=execute,
+        )
+        with runtime:
             status = CROSS.run(SimpleNamespace(
                 label=label, lane="libtest-link", source_checkpoint=self.checkpoint,
                 sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
+                scratch_root=self.scratch if relocated else None,
             ))
         receipt = self.receipt(label)
         self.assertEqual(status, "passed")
@@ -275,6 +321,120 @@ class ServiceArtifactExport(unittest.TestCase):
 
     def test_libtest_link_publishes_only_the_bound_hashed_artifact_pair(self):
         self.run_libtest_link("healthy-libtest")
+
+    @contextlib.contextmanager
+    def relocated_runtime(self, label, execute):
+        """Receive the actual guarded dispatch while emitting an inert build result."""
+        work = self.scratch / ("cross-" + label)
+
+        def sandbox(root, observed_work, command, **options):
+            self.assertEqual(root, self.root)
+            self.assertEqual(observed_work, work)
+            self.assertEqual(options["cwd"], work / "source")
+            self.assertEqual(options["cpu_seconds"], 180)
+            self.assertEqual(options["build_jobs"], 1)
+            self.assertEqual(options["readonly"][0:2], [self.stable, self.vendor])
+            self.assertEqual(options["sealed"], [work / "source", work / "cargo-home/config.toml", work / "linker"])
+            return ["sandbox", "--", *command]
+
+        def supervise(argv, *, cwd, timeout, environment, stdin, resource_guard):
+            self.assertEqual(cwd, self.root)
+            self.assertEqual(timeout, 180)
+            self.assertEqual(environment, {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
+            self.assertEqual(stdin, CROSS.subprocess.DEVNULL)
+            reason = resource_guard()
+            if reason is not None:
+                return {"exit_code": -9, "failure": "resource stop: " + reason,
+                        "output": "", "command": argv}
+            return dict(execute(cwd, work, argv[2:]), command=argv)
+
+        with (patch.object(CROSS.C.RUNTIME, "sandbox_command", side_effect=sandbox),
+              patch.object(CROSS.C.RUNTIME.ENV, "run", side_effect=supervise)):
+            yield
+
+    def test_relocated_libtest_keeps_export_and_receipt_in_checkout(self):
+        self.run_libtest_link("relocated", relocated=True)
+        receipt = self.receipt("relocated")
+        self.assertEqual(receipt["work"], str(self.scratch / "cross-relocated"))
+        self.assertEqual(receipt["limits"]["scratch_disk_floor_bytes"], CROSS.Q.DISK_FLOOR)
+        self.assertFalse((self.cache / "cross-relocated").exists())
+
+    def test_relocated_work_reserve_boundary_and_mid_command_stop(self):
+        minimum = 4 * 1024 ** 3
+        free = minimum - 1
+        checks = []
+
+        def disk(path):
+            if path.is_relative_to(self.scratch):
+                checks.append(path)
+                # The third scratch sample is taken by the active command supervisor.
+                return SimpleNamespace(free=minimum - 1 if len(checks) == 3 else free)
+            return SimpleNamespace(free=minimum + 1024 * 1024)
+
+        with (patch.object(CROSS.Q, "DISK_FLOOR", minimum),
+              patch.object(CROSS.shutil, "disk_usage", side_effect=disk)):
+            with self.assertRaisesRegex(CROSS.Incomplete, "before admission: WORK_DISK_RESERVE"):
+                self.run_link("low-scratch", scratch_root=self.scratch)
+            self.assertFalse(self.cache.exists())
+            free = minimum
+            checks.clear()
+            with self.relocated_runtime("mid-stop", self.execute_fixture):
+                with self.assertRaisesRegex(CROSS.Incomplete, "resource stop: WORK_DISK_RESERVE"):
+                    self.run_link("mid-stop", scratch_root=self.scratch)
+            receipt = self.receipt("mid-stop")
+            self.assertEqual(receipt["status"], "incomplete")
+            self.assertEqual(receipt["commands"][0]["failure"], "resource stop: WORK_DISK_RESERVE")
+            self.assertFalse((self.records / "cross-mid-stop-artifacts").exists())
+
+    def test_relocation_refuses_tool_vendor_and_sdk_aliases_before_work_creation(self):
+        for scratch in (self.vendor, self.stable, self.libraries):
+            scratch.chmod(0o700)
+            with self.subTest(scratch=scratch):
+                label = "overlap-" + scratch.name
+                with self.assertRaisesRegex(CROSS.Incomplete, "overlaps a read-only input"):
+                    self.run_link(label, scratch_root=scratch)
+                self.assertFalse((scratch / ("cross-" + label)).exists())
+                self.assertEqual(self.receipt(label)["commands"], [])
+        alias = self.scratch.with_name("alias")
+        alias.symlink_to(self.scratch)
+        with self.assertRaisesRegex(CROSS.Incomplete, "without symlink redirection"):
+            self.run_link("with-alias", scratch_root=alias)
+
+    def test_receipt_created_before_lock_acquisition_preserves_prior_publication(self):
+        label = "existing-after-lock"
+        path = self.records / ("cross-" + label + ".json")
+        prior = b'{"lane": "ready", "prior": true}\n'
+        flock = CROSS.fcntl.flock
+
+        def acquire(fd, operation):
+            flock(fd, operation)
+            path.write_bytes(prior)
+
+        try:
+            with (patch.object(CROSS.fcntl, "flock", side_effect=acquire),
+                  self.relocated_runtime(label, self.execute_fixture)):
+                with self.assertRaisesRegex(CROSS.Incomplete, "prior cross-link record already exists"):
+                    self.run_link(label, scratch_root=self.scratch)
+        finally:
+            self.assertEqual(path.read_bytes(), prior)
+            self.assertFalse((self.records / ("cross-" + label + "-artifacts")).exists())
+            self.assertFalse((self.scratch / ("cross-" + label)).exists())
+        self.assert_healthy("after-refusal")
+
+    def test_relocated_publication_reserves_checkout_space_for_staged_bytes(self):
+        minimum = 4 * 1024 ** 3
+
+        def disk(path):
+            return SimpleNamespace(free=minimum + (1 if path == self.root else 1024 * 1024))
+
+        with (patch.object(CROSS.Q, "DISK_FLOOR", minimum),
+              patch.object(CROSS.shutil, "disk_usage", side_effect=disk),
+              self.relocated_runtime("no-copy", self.execute_fixture)):
+            with self.assertRaisesRegex(CROSS.Incomplete, "disk reserve before artifact staging"):
+                self.run_link("no-copy", scratch_root=self.scratch)
+        self.assertFalse((self.records / "cross-no-copy-artifacts").exists())
+        self.assertNotIn("artifacts", self.receipt("no-copy"))
+        self.assertFalse(list(self.records.glob(".cross-publish-*")))
 
     def test_libtest_link_refuses_a_wrong_artifact_link_or_pdb(self):
         cases = {
@@ -339,7 +499,7 @@ class ServiceArtifactExport(unittest.TestCase):
     def test_dangling_receipt_path_refuses_before_build(self):
         link = self.records / "cross-foreign.json"
         link.symlink_to(self.records / "missing.json")
-        with self.assertRaisesRegex(CROSS.Incomplete, "Cross record exists"):
+        with self.assertRaisesRegex(CROSS.Incomplete, "prior cross-link record already exists"):
             self.run_link("foreign")
         self.assertTrue(link.is_symlink())
         self.assertFalse((self.cache / "cross-foreign").exists())

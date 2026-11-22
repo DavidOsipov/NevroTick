@@ -51,17 +51,20 @@ def _read_artifact(path: Path, *, maximum: int, kind: str) -> bytes:
     return data
 
 
-def pe_readback(path: Path, *, subsystem: str) -> dict[str, str | int]:
+def pe_readback(path: Path, *, subsystem: str, imports: bool = False) -> dict[str, str | int]:
     """Read bounded raw PE structures independently of Cargo/LLVM text output.
 
     Enforce AMD64/PE32+, relocations, declared CFG/ASLR/NX/high-entropy VA,
     strict CET metadata, restrictive loader flags and no writable executable
-    section. These are image declarations, never effective Windows policy.
+    section. The optional LLD import-table shape check binds a subsequent
+    reader's descriptor inventory. These are static image declarations.
     """
-    return _pe_declarations(_read_artifact(path, maximum=MAX_PE_BYTES, kind="PE"), path, subsystem)
+    return _pe_declarations(_read_artifact(path, maximum=MAX_PE_BYTES, kind="PE"), path, subsystem,
+                            imports=imports)
 
 
-def _pe_declarations(data: bytes, path: Path, subsystem: str) -> dict[str, str | int]:
+def _pe_declarations(data: bytes, path: Path, subsystem: str, *,
+                     imports: bool = False) -> dict[str, str | int]:
     """Read one immutable image and its matching RSDS identity."""
     _require(type(subsystem) is str and subsystem in _SUBSYSTEMS, "Unknown selected executable subsystem.")
 
@@ -112,6 +115,20 @@ def _pe_declarations(data: bytes, path: Path, subsystem: str) -> dict[str, str |
         """Read one fixed PE32+ data-directory pair."""
         return unpack("<I", optional + 112 + number * 8), unpack("<I", optional + 116 + number * 8)
 
+    def import_count(number: int, width: int, name_field: int, subject: str) -> int:
+        """Count fixed-width LLD descriptors before the observed null terminator."""
+        rva, size = directory(number)
+        if rva == size == 0:
+            return 0
+        _require(size >= 2 * width and size % width == 0, f"{subject} extent is invalid.")
+        start = file_offset(rva, size, subject)
+        last = start + size - width
+        _require(data[last:last + width] == bytes(width),
+                 f"{subject} has no null terminator.")
+        _require(all(unpack("<I", offset + name_field) != 0 for offset in range(start, last, width)),
+                 f"{subject} has an unnamed active descriptor.")
+        return size // width - 1
+
     reloc_rva, reloc_size = directory(5)
     _require(reloc_rva != 0 and reloc_size >= 8, "Relocation directory is missing.")
     file_offset(reloc_rva, reloc_size)
@@ -157,12 +174,16 @@ def _pe_declarations(data: bytes, path: Path, subsystem: str) -> dict[str, str |
     _require(len(codeview) == 1 and codeview[0][0].replace("\\", "/").split("/")[-1] in pdb_names,
               "Image does not identify its matching PDB basename.")
     pdb_path, guid, age = codeview[0]
-    return {"machine": "AMD64", "format": "PE32+", "subsystem": subsystem, "image_sha256": hashlib.sha256(data).hexdigest(), "dll_characteristics": dll,
+    observed = {"machine": "AMD64", "format": "PE32+", "subsystem": subsystem, "image_sha256": hashlib.sha256(data).hexdigest(), "dll_characteristics": dll,
             "file_characteristics": characteristics, "sections": count, "relocations_bytes": reloc_size,
             "dependent_load_flags": dependent, "guard_flags": guard, "guard_function_count": table_count,
             "extended_dll_characteristics": cet[0], "codeview_path": pdb_path,
             "codeview_guid": guid, "codeview_age": age,
             "limit": "Static image declarations only; no native mitigation or service behavior is qualified."}
+    if imports:
+        observed["direct_import_descriptors"] = import_count(1, 20, 12, "PE direct import directory")
+        observed["delay_import_descriptors"] = import_count(13, 32, 4, "PE delay import directory")
+    return observed
 
 
 def _pdb_info(data: bytes) -> dict[str, str | int]:

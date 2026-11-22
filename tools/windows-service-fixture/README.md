@@ -19,6 +19,29 @@ There is no public raw service-name, handle, callback or dispatcher API.
 GNU entry points return the typed `WindowsOnly` error and exit unsuccessfully;
 they provide no console service fallback.
 
+## Prepare the disabled-service MSIX pack inputs from WSL
+
+Supply the fixed two-role linker receipt, its expected digest, the admitted
+inert launcher and the previously admitted MakeAppx input directory. Use a
+fresh output path under an owned external parent.
+
+```sh
+python3 -I -B tools/windows-service-fixture/msix/prepare_payload.py \
+  --receipt "$role_link_receipt" --receipt-sha256 "$role_link_sha256" \
+  --inert "$inert_launcher" --inert-sha256 "$inert_sha256" \
+  --sdk-source "$makeappx_inputs" --output "$pack_input_output"
+```
+
+The output has `payload/`, `sdk/` and `input-set.json`. The JSON printed by
+the command includes the inventory digest consumed by the existing offline
+packer. Omitting `--sdk-source` emits just the payload tree and its file
+digests. Exit 3 means the tree was published and the final directory flush
+failed. Read back its contents before attempting another output.
+The [S0.6 task](../../tasks/windows11-integration.md#publish-the-disabled-service-pack-inputs-as-one-tree--22-november-2026)
+records the pinned inputs, independent archive controls and Windows gates.
+
+## Fixture contracts and execution
+
 Both roles use the explicit laboratory card limits: pending wait hint 1,000 ms,
 startup/stop allowance 10,000 ms and maximum Running interval 60,000 ms. These are
 not product defaults or measured Windows latency guarantees. The Running deadline
@@ -208,6 +231,16 @@ metric exports explicitly preserve 4 GiB before and during copying. Original inp
 confined to the selected file at both namespace aliases. Each replay
 starts from an absent/empty private target, then requires successful package-only
 Cargo cleaning and fresh fixture libtest artifacts for variants and restoration.
+
+For `graph` and `privilege-checkpoint`, `--scratch-root` can select an existing
+private, user-owned directory outside the checkout and read-only inputs. For
+example, create a private child of the WSL tmpfs with
+`mktemp -d /mnt/wsl/nevrotick-service.XXXXXXXX` and pass its absolute path.
+The runner creates a new label directory there and checks the 4-GiB reserve
+on both filesystems. Raw receipts stay in the existing main-repository
+directory, and the shared cache lock still serializes writers. Retire the
+owned derived work only after process exit and receipt inspection. Metrics
+and Windows cross-link retain their existing storage routes.
 Platform-only measurements do not qualify these callers. The existing W11 task
 retains the exact candidates, first failures and native/production limits.
 

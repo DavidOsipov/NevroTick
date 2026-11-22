@@ -7,6 +7,7 @@ use std::{
     os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, OwnedHandle},
     pin::Pin,
     ptr::{null, null_mut},
+    task::Poll,
 };
 
 use windows_sys::Win32::{
@@ -21,10 +22,17 @@ use windows_sys::Win32::{
     },
 };
 
-use crate::{native_pipe_pair::LabPipeReader, private_clock_wire::MAX_FRAME_LEN};
+use crate::{
+    native_pipe_identity::{PipeIdentity, PipeIdentityError, capture},
+    native_pipe_pair::{
+        LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader, LabPipeWriter,
+        ReplyPipePair, check_request_peers,
+    },
+    private_clock_wire::MAX_FRAME_LEN,
+};
 
 /// Local custody or native call refusal, retaining the original Win32 code.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum NativeReadError {
     /// The private completion event could not be acquired.
     Event(u32),
@@ -59,12 +67,19 @@ pub(super) struct NativeReadBytes {
     bytes: [u8; MAX_FRAME_LEN],
     /// Checked actual transfer count.
     len: usize,
+    /// Pair of the physical reader that produced this completion.
+    reply_pair: Option<ReplyPipePair>,
 }
 
 impl NativeReadBytes {
     /// Return only the bytes acknowledged by the completed read.
     pub(super) fn as_bytes(&self) -> &[u8] {
         &self.bytes[..self.len]
+    }
+
+    /// Return the pair of the actual source, when this was a native reply.
+    pub(super) const fn reply_pair(&self) -> Option<&ReplyPipePair> {
+        self.reply_pair.as_ref()
     }
 }
 
@@ -80,13 +95,202 @@ pub(super) enum NativeReadPoll {
     Disconnected,
 }
 
+/// A terminal read after the owner closed admission. No frame bytes escape.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum RetiredRead {
+    /// The operation won the cancellation race. Its bytes were discarded.
+    Discarded,
+    /// Cancellation ended the operation.
+    Cancelled,
+    /// The peer closed the pipe.
+    Disconnected,
+}
+
 /// Result of requesting cancellation of the occupied slot.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum NativeCancel {
     /// Windows accepted the cancellation request.
     Requested,
     /// Windows found no matching operation to cancel.
     NotFound,
+}
+
+/// Refusal at the actual native identification edge.
+#[derive(Debug)]
+pub(super) enum IdentifiedReadError {
+    /// The operation itself did not produce a trusted terminal read.
+    Transport(NativeReadError),
+    /// The native client token could not be obtained or validated.
+    Identity {
+        /// Original token capture or validation failure.
+        cause: PipeIdentityError,
+        /// Exact completed length. No bytes escape this refusal.
+        received: usize,
+    },
+    /// The consumed bytes and their captured context are inadmissible.
+    Unattributed,
+    /// An earlier identity refusal permanently closed this reader.
+    Retired,
+}
+
+impl std::fmt::Display for IdentifiedReadError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Transport(cause) => write!(formatter, "native read refused: {cause:?}"),
+            Self::Identity { cause, received } => {
+                write!(
+                    formatter,
+                    "pipe identity refused after {received} bytes: {cause:?}"
+                )
+            }
+            Self::Unattributed => {
+                formatter.write_str("pipe fragment has no matching client identity")
+            }
+            Self::Retired => formatter.write_str("identified pipe reader is retired"),
+        }
+    }
+}
+
+/// One inbound reader that releases bytes only after capturing their client context.
+pub(super) struct IdentifiedRequestRead {
+    /// Exact ingress server and original native completion owner.
+    read: NativePipeRead,
+    /// The original synchronous client paired at native construction.
+    writer: LabPipeWriter,
+    /// At most one client write can follow each admitted, queued read.
+    client_write_available: bool,
+    /// Required local fixture principal and logon identity.
+    expected: PipeIdentity,
+    /// Permanent refusal after admission or attribution is lost.
+    retired: bool,
+}
+
+impl IdentifiedRequestRead {
+    /// Create an idle reader with the required identity selected by fixture composition.
+    /// # Errors
+    /// Refuses failure to acquire the original completion event.
+    pub(super) fn new(
+        pipe: LabIdentificationPipe,
+        expected: PipeIdentity,
+    ) -> Result<Self, NativeReadError> {
+        let (reader, writer): (LabPipeReader, LabPipeWriter) = pipe.into_transport();
+        Ok(Self {
+            read: NativePipeRead::new(reader)?,
+            writer,
+            client_write_available: false,
+            expected,
+            retired: false,
+        })
+    }
+
+    /// Verify both original handles before the logical submission guard.
+    /// # Errors
+    /// Refuses unavailable or foreign same-process peer observations.
+    pub(super) fn check_peers(&self) -> Result<(), LabPipeError> {
+        check_request_peers(&self.read.reader, &self.writer)
+    }
+
+    /// Return the extent that may still accept one paired client write.
+    pub(super) const fn client_write_span(&self) -> Option<u32> {
+        if self.client_write_available {
+            self.read.outstanding
+        } else {
+            None
+        }
+    }
+
+    /// Write from the paired client. The fixture caller owns current authorization.
+    /// The anonymous control deliberately uses this raw entry to exercise refusal.
+    /// # Errors
+    /// Refuses a used slot or wrong extent. Once admitted, preserves native or short-write failure.
+    pub(super) fn write_from_client(&mut self, bytes: &[u8]) -> Result<(), LabPipeError> {
+        let count: u32 = u32::try_from(bytes.len()).map_err(|_error| LabPipeError::WriteSlot)?;
+        if self.client_write_span() != Some(count) {
+            return Err(LabPipeError::WriteSlot);
+        }
+        self.client_write_available = false;
+        self.writer.write(bytes)
+    }
+
+    /// Admit one bounded native fragment while the reader can still authenticate it.
+    /// # Errors
+    /// Refuses a retired reader, invalid extent, occupied slot or native submission.
+    pub(super) fn begin(&mut self, span: usize) -> Result<NativeReadStart, IdentifiedReadError> {
+        if self.retired {
+            return Err(IdentifiedReadError::Retired);
+        }
+        let started: NativeReadStart = self
+            .read
+            .begin(span)
+            .map_err(IdentifiedReadError::Transport)?;
+        self.client_write_available = started == NativeReadStart::Queued;
+        Ok(started)
+    }
+
+    /// Capture context of newly completed bytes before releasing them or reading again.
+    /// # Errors
+    /// Refuses native failure, empty completion or incomplete or mismatched identity.
+    pub(super) fn poll(&mut self) -> Result<NativeReadPoll, IdentifiedReadError> {
+        if self.retired {
+            return Err(IdentifiedReadError::Retired);
+        }
+        let completion: NativeReadPoll =
+            self.read.poll().map_err(IdentifiedReadError::Transport)?;
+        match completion {
+            NativeReadPoll::Pending => Ok(completion),
+            NativeReadPoll::Data(ref completed) => {
+                // Retire by default until this exact fragment's identity is established.
+                self.retired = true;
+                if completed.as_bytes().is_empty() {
+                    return Err(IdentifiedReadError::Unattributed);
+                }
+                let actual: PipeIdentity =
+                    capture(self.read.reader.as_handle()).map_err(|cause: PipeIdentityError| {
+                        IdentifiedReadError::Identity {
+                            cause,
+                            received: completed.as_bytes().len(),
+                        }
+                    })?;
+                if actual != self.expected {
+                    return Err(IdentifiedReadError::Unattributed);
+                }
+                self.retired = false;
+                Ok(completion)
+            }
+            NativeReadPoll::Cancelled | NativeReadPoll::Disconnected => {
+                self.retired = true;
+                Ok(completion)
+            }
+        }
+    }
+
+    /// Close admission before requesting cancellation of the original operation.
+    /// # Errors
+    /// Preserves the native cancellation error and retains occupied custody.
+    pub(super) fn retire(&mut self) -> Result<NativeCancel, NativeReadError> {
+        self.retired = true;
+        self.client_write_available = false;
+        self.read.request_cancel()
+    }
+
+    /// Collect physical completion after the Stop fence, without client impersonation.
+    /// # Errors
+    /// Preserves completion refusal and leaves an unconfirmed operation occupied.
+    pub(super) fn poll_retirement(&mut self) -> Result<Poll<RetiredRead>, NativeReadError> {
+        self.retired = true;
+        self.client_write_available = false;
+        Ok(match self.read.poll()? {
+            NativeReadPoll::Pending => Poll::Pending,
+            NativeReadPoll::Data(_) => Poll::Ready(RetiredRead::Discarded),
+            NativeReadPoll::Cancelled => Poll::Ready(RetiredRead::Cancelled),
+            NativeReadPoll::Disconnected => Poll::Ready(RetiredRead::Disconnected),
+        })
+    }
+
+    /// Observe whether completion still needs to be collected.
+    pub(super) const fn is_pending(&self) -> bool {
+        self.read.is_pending()
+    }
 }
 
 /// Stable storage accessed by Win32 from submission through actual completion.
@@ -115,6 +319,16 @@ pub(super) struct NativePipeRead {
 }
 
 impl NativePipeRead {
+    /// Match the retained writer to this reader before starting or publishing a reply.
+    /// # Errors
+    /// Refuses a foreign pair or unavailable or foreign native peer identity.
+    pub(super) fn check_reply_writer(
+        &self,
+        writer: &LabOverlappedWriter,
+    ) -> Result<(), LabPipeError> {
+        writer.check_reply_reader(&self.reader)
+    }
+
     /// Create an initially idle slot for the exact owned pipe.
     /// # Errors
     /// Returns the event creation error and drops the unused endpoint.
@@ -222,7 +436,11 @@ impl NativePipeRead {
             // SAFETY: Windows reported successful completion before this
             // copy. The whole buffer was initialized at allocation.
             let bytes: [u8; MAX_FRAME_LEN] = unsafe { *slot.bytes.get() };
-            return Ok(NativeReadPoll::Data(NativeReadBytes { bytes, len }));
+            return Ok(NativeReadPoll::Data(NativeReadBytes {
+                bytes,
+                len,
+                reply_pair: self.reader.reply_pair().cloned(),
+            }));
         }
         match last_error() {
             ERROR_IO_INCOMPLETE => Ok(NativeReadPoll::Pending),

@@ -335,6 +335,8 @@ pub enum FixturePhaseError {
         /// Independently ordered clock whose current value was rejected.
         clock: FixtureRateClock,
     },
+    /// The reference batch was projected after the admitted monotonic reading.
+    ReferenceInFuture,
     /// Adding an explicit finite horizon overflowed its own clock.
     ClockOverflow,
     /// The local settlement cursor is unresolved or exhausted.
@@ -416,6 +418,7 @@ impl fmt::Display for FixturePhaseError {
             Self::ValidationInvariant => "fixture phase: validation invariant",
             Self::ClockContextMismatch => "fixture phase: clock context mismatch",
             Self::TimeRegression { .. } => "fixture phase: clock moved backwards",
+            Self::ReferenceInFuture => "fixture phase: reference projection is in the future",
             Self::ClockOverflow => "fixture phase: deadline overflow",
             Self::CursorUnavailable => "fixture phase: cursor unavailable",
             Self::CursorMappingMismatch => "fixture phase: cursor mapping mismatch",
@@ -1231,9 +1234,11 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
     }
 
     /// Commit genuine producer advancement, then separately admit one finite debt.
+    /// The batch projection must be at or before the current monotonic reading.
     /// # Errors
-    /// Pre-admission rejects preserve the producer and owner. Post-advance phase
-    /// refusal is `AdmittedNoPlan` and retains the producer's actual consumed credit.
+    /// Reject a future projection before advancing the producer or changing the
+    /// owner. Post-advance phase refusal is `AdmittedNoPlan` and retains the
+    /// producer's actual consumed credit.
     pub fn receive_reference<'batch, 'entries>(
         &mut self,
         batch: &'batch FixtureChartBatch<'entries, 'chart>,
@@ -1251,6 +1256,9 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             });
         }
         check_now(self.last_now, &self.cursor, now)?;
+        if batch.projected_at() > now.monotonic {
+            return Err(FixturePhaseError::ReferenceInFuture);
+        }
         let (active_deadline, monotonic_deadline) = deadlines(self.profile, now)?;
         let outcome = self
             .producer

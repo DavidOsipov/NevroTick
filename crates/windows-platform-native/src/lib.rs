@@ -25,18 +25,47 @@ mod clock_coordinates;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
 mod resume_slot;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
+mod service_configuration;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
+mod service_security;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
+mod service_status;
 #[cfg(windows)]
 mod windows_adjustment;
 #[cfg(windows)]
 mod windows_clock;
 #[cfg(windows)]
 mod windows_resume;
+#[cfg(windows)]
+mod windows_service_configuration;
+#[cfg(windows)]
+mod windows_service_security;
+#[cfg(windows)]
+mod windows_service_status;
 
 #[cfg(any(windows, test))]
 pub use clock_coordinates::{ClockCoordinates, ClockReadError};
+#[cfg(any(windows, test))]
+pub use service_configuration::ConfigurationStringError;
+#[cfg(any(windows, test))]
+pub use service_security::{ReportedDacl, ReportedServiceSecurity, ServiceSecurityError};
+#[cfg(any(windows, test))]
+pub use service_status::{
+    InvalidServiceKey, ReportedServiceStatus, RunningServiceRefusal, ServiceKey,
+};
 #[cfg(windows)]
 pub use windows_adjustment::{ClockAdjustment, read_clock_adjustment};
 #[cfg(windows)]
 pub use windows_clock::read_clock_coordinates;
 #[cfg(windows)]
 pub use windows_resume::{ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch};
+#[cfg(windows)]
+pub use windows_service_configuration::{ReportedServiceConfiguration, ServiceConfigurationQuery};
+#[cfg(windows)]
+pub use windows_service_security::ServiceSecurityQuery;
+#[cfg(windows)]
+pub use windows_service_status::{ServiceQueryError, ServiceStatusQuery};

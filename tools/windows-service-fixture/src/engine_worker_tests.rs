@@ -393,9 +393,9 @@ impl Rig {
             let remaining: Duration = CLOSE_WAIT.saturating_sub(started.elapsed());
             let wait: Duration = match observed {
                 InvocationPoll::Finished => return Ok(()),
-                InvocationPoll::Pending(wait) | InvocationPoll::JoinTail(wait) => {
-                    wait.min(remaining)
-                }
+                InvocationPoll::Pending(wait)
+                | InvocationPoll::JoinTail(wait)
+                | InvocationPoll::NativeDrain(wait) => wait.min(remaining),
                 InvocationPoll::Overdue => remaining,
                 InvocationPoll::WriterReleaseUnconfirmed(_) => {
                     return Err(

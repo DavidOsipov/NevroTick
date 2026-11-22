@@ -165,7 +165,7 @@ pub enum WorkerError {
     Activation,
     /// Operational health failed while its original work remained charged.
     Running,
-    /// Actual completion resolved custody with a failed cleanup outcome.
+    /// Cleanup failed. Physical completion has its own observation.
     Cleanup,
 }
 

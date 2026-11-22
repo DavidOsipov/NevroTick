@@ -1287,6 +1287,19 @@ qualification: required Garde/guard omission controls, generation reconciliation
 and independent review remain explicit in the task. These portable commands do
 not execute Windows, register/start services, qualify provisioning or lift holds.
 
+For the fixed service roles or a held Windows fixture test selector, reuse the
+current `qualification.py` graph and `privilege-checkpoint` receipts with
+`scripts/cross-link-service-fixture.py`. `libtest-link` emits the MSVC test
+PE/PDB in WSL. `link` emits the two inert service roles. When the checkout has
+its 4 GiB reserve but lacks additional compiler space, supply
+`--scratch-root /absolute/private/work-parent`. Use a fresh owned
+`mktemp -d /mnt/wsl/nevrotick-service-cross.XXXXXXXX` child on WSL. The
+relocated run enforces the 4 GiB reserve on both filesystems and a 1 GiB
+available-memory floor throughout its sandboxed commands. The shared writer
+lock, the raw receipt and the checked exports remain in their existing
+locations. Use a fresh label and retire the owned compiler scratch after
+artifact readback.
+
 
 The [top-level metadata pipeline](metadata/README.md) owns the single editable
 [product record](metadata/product.toml) and portable generation/readback tools.
@@ -2546,7 +2559,7 @@ python3 -B scripts/verify.py
 | --- | --- |
 | `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the seven admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
-| `--lane windows --llvm-rc /usr/lib/llvm-22/bin/llvm-rc --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and Observe CLI. Verifies both linked version resources and exports the two executables and matching PDBs to new external output. Native execution remains separate. |
+| `--lane windows --llvm-rc /usr/lib/llvm-22/bin/llvm-rc --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy, separate release links for the UI fixture and Observe diagnostic, and inspection of the direct-MSIX source inputs used for both links. Exports both executables and their matching PDBs to new external output. Native execution remains separate. |
 
 The Windows release links select the admitted LLVM 22.1.8 `llvm-rc` and its
 matching sibling `lib/libLLVM.so.22.1`. Use the regular installation layout
@@ -2560,13 +2573,36 @@ in the resource filename to the final executable's `cargo rustc` invocation.
 The bounded PE reader checks the emitted machine, subsystem, relocation,
 CFG, ASLR, DEP, strict CET, dependent-load and section declarations of both
 images. The pinned LLVM reader independently checks their VERSIONINFO fields.
-Both checks run even when `--output-dir` is omitted. Export checks each
+The Windows receipt also binds their direct and delay import module names to
+the same image hashes and checked binary descriptor counts. These are static
+declarations. Package dependency resolution and native loader checks are separate.
+The runner also executes `inspect-msix` on the checked tree and binds its
+source-only result to the exact generation used for both version resources.
+These checks run even when `--output-dir` is omitted. Export checks each
 inspected image hash and matches its CodeView basename, GUID and age against
 the selected PDB before writing either pair. The reader accepts the emitted
 MSF 7 format with 4 KiB pages and a VC70 Info header. The receipt records the
-source, compiler, resource, image and symbol identities.
+source, compiler, resource, image and symbol identities. It labels the UI as
+`ui/fixture` and Observe as `observer/experiment` under the existing
+`artifact.engine` key. The assembly receipt keeps all four product roles
+unadmitted.
 Runtime mitigations, package, signing and installation retain their own gates.
 [Pinned LLVM RC options](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/tools/llvm-rc/Opts.td#L34-L39)
+
+For the schema-3 Windows lane with an explicit `--output-dir`, add
+`--msix-branding-dir /absolute/path/to/Assets` to export the three pinned
+base PNG candidates. This directory supplies exactly the three selected
+regular files. The verifier reads the bytes before the build, rechecks the
+input set before export and records the emitted role, dimensions, size and
+SHA-256 under `msix_assembly_inputs.base_artwork`. The emitted paths are
+under `msix-inputs/Assets` within the artifact output. Package identity,
+production executables, native display and installed qualification retain
+their existing requirements.
+
+Use a resolvable `--json` destination outside both the artifact output and
+selected artwork directories. A failure to admit those paths is reported
+on stderr. The Windows row writes its own `verification.json` inside the
+artifact output.
 
 For [EP1](tasks/engine-transport-pilot.md#ep1--actual-ke-producer-into-engine-ownership),
 add `--profile engine-ke-association` to the selected dependency, portable or
