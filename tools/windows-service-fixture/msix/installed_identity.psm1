@@ -170,10 +170,11 @@ function Read-S06InstalledIdentity {
 
     # The trusted supervisor binds these expected hashes to the signed input.
     [pscustomobject]@{
-        schema_version = 1
+        schema_version = 2
         outcome = 'observed-installed-images'
         run_id = $RunId.ToString('D')
         signed_package_sha256 = $SignedPackageSha256
+        package_full_name = $PackageFullName
         roles = $roles
     }
 }

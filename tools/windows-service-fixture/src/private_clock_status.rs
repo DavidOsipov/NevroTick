@@ -6,7 +6,6 @@
 use std::{
     cell::Cell,
     num::NonZeroUsize,
-    ops::Range,
     rc::Rc,
     time::{Duration, Instant},
 };
@@ -18,7 +17,7 @@ use super::{
 use crate::{
     LabRole, NativeError,
     private_clock_wire::{
-        AssemblyProgress, Frame, FrameAssembly, FrameError, RequestId, decode_reply,
+        AssemblyProgress, Frame, FrameAssembly, FrameError, ReplyWrite, RequestId, decode_reply,
         decode_request, encode_reply, encode_request,
     },
 };
@@ -304,11 +303,11 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
             return Err(SessionFault::ForeignConnection);
         }
         self.check_receive_edge()?;
+        let Reply { connection, frame } = reply;
         Ok(OutboundStatus {
             receiver: self,
-            reply,
-            written: 0,
-            issued: None,
+            connection,
+            write: ReplyWrite::new(frame),
         })
     }
 
@@ -363,12 +362,10 @@ struct OutboundStatus<
 > {
     /// Owns the original clock, closure, cutoff and serialization.
     receiver: &'session mut BrokerStatusSession<'owner, R, C, P>,
-    /// Exact response selected by the admitted broker.
-    reply: Reply,
-    /// Cumulative physically completed write bytes.
-    written: usize,
-    /// Maximum count the one outstanding write can report.
-    issued: Option<usize>,
+    /// Original connection independently retained through reply correlation.
+    connection: Connection,
+    /// Exact reply and the one active fragment's progress.
+    write: ReplyWrite,
 }
 
 impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus<'_, '_, R, C, P> {
@@ -377,46 +374,41 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus
     /// # Errors
     /// Refuses a second unaccounted write, a complete reply or lost currentness.
     fn next_write(&mut self, limit: NonZeroUsize) -> Result<&[u8], SessionFault> {
-        let range: Range<usize> = self.reserve_write(limit)?;
-        Ok(&self.reply.frame.as_bytes()[range])
+        let _extent: NonZeroUsize = self.reserve_write(limit)?;
+        self.write
+            .pending_bytes()
+            .ok_or(SessionFault::WriteProgress)
     }
 
     /// Guard and reserve an exact nonempty response range before submission.
     /// # Errors
     /// Refuses a second unaccounted write, a complete reply or lost currentness.
-    fn reserve_write(&mut self, limit: NonZeroUsize) -> Result<Range<usize>, SessionFault> {
+    fn reserve_write(&mut self, limit: NonZeroUsize) -> Result<NonZeroUsize, SessionFault> {
         if !self.receiver.connection.get() {
             return Err(SessionFault::Closed);
         }
-        if self.issued.is_some() || self.written == self.reply.frame.as_bytes().len() {
+        if !self.write.can_reserve() {
             return Err(SessionFault::WriteProgress);
         }
         self.receiver.check_receive_edge()?;
-        let remaining: usize = self.reply.frame.as_bytes().len() - self.written;
-        let extent: usize = remaining.min(limit.get());
-        let end: usize = self.written + extent;
-        self.issued = Some(extent);
-        Ok(self.written..end)
+        self.write
+            .reserve(limit)
+            .map_err(|_| SessionFault::WriteProgress)
     }
 
     /// Charge only actual bytes and report whether the complete frame was written.
     /// # Errors
     /// Retires the connection on an ambiguous count or loss of original currentness.
     fn complete_write(&mut self, count: usize) -> Result<bool, SessionFault> {
-        let extent: Option<usize> = self.issued.take();
-        if !extent.is_some_and(|extent: usize| count != 0 && count <= extent) {
+        if self.write.complete(count).is_err() {
             self.receiver.close();
             return Err(SessionFault::WriteProgress);
         }
-        self.written = self.written.checked_add(count).ok_or_else(|| {
-            self.receiver.close();
-            SessionFault::WriteProgress
-        })?;
         if !self.receiver.connection.get() {
             return Err(SessionFault::Closed);
         }
         self.receiver.check_receive_edge()?;
-        Ok(self.written == self.reply.frame.as_bytes().len())
+        Ok(self.write.is_complete())
     }
 
     /// Resolve only the complete response read from this fixture stream.
@@ -443,12 +435,12 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus
         if !self.receiver.connection.get() {
             return Err(SessionFault::Closed);
         }
-        if self.written != self.reply.frame.as_bytes().len() {
+        if !self.write.is_complete() {
             return Err(SessionFault::WriteProgress);
         }
         self.receiver.check_receive_edge()?;
         pending.resolve_delivery(Delivery {
-            connection: &self.reply.connection,
+            connection: &self.connection,
             bytes: received.as_bytes(),
         })
     }
@@ -459,7 +451,7 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
 {
     /// Uncertain delivery retires the stream. A partial reply cannot be restarted.
     fn drop(&mut self) {
-        if self.written != self.reply.frame.as_bytes().len() {
+        if !self.write.is_complete() {
             self.receiver.close();
         }
     }

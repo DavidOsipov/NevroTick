@@ -53,8 +53,20 @@ process under the admitted deployment user. The supervisor supplies
 and each role's `Bytes` and `Sha256` values using the `Engine` and
 `Broker` parameter prefixes. Derive them from independent inspection
 of the exact final signed lab artifact. The companion emits one readback
-record after both role and registration checks. Join it to the existing
-SCM selector in the same supervised run. Retain native errors privately.
+record after both role and registration checks. Schema 2 includes the matched
+package full name. Retain native errors privately.
+
+Use `join_prestart` in [the receipt reader](msix/prestart_receipts.py) from the
+admitted supervisor. Supply its independently verified signed package and role
+members, then the companion and three exact selector captures from the same
+untouched deployment window. Run each selector separately with `--exact
+--ignored --nocapture --test-threads=1 --format pretty --color never`. Bind each
+capture to the retained child
+process and its observed effective-token context before handing over stdout.
+The deployment context supplies identity and the two-role observation. The
+proposed provisioning actor and standard user supply their own access captures.
+Keep the original capture and signed-artifact inputs in supervisor custody. The
+reader performs no Windows operation and returns only the joined observations.
 The [fixture task](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 records the companion's path and file controls and the held setup.
 

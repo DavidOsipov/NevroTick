@@ -28,6 +28,8 @@ mod host;
 mod native;
 #[cfg(windows)]
 mod native_broker_endpoint;
+#[cfg(windows)]
+mod native_broker_wait;
 #[cfg(all(windows, test))]
 mod native_etw_capture;
 #[cfg(all(windows, test))]

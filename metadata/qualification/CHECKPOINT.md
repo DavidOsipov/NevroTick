@@ -59,10 +59,26 @@ because five other files were outside the selected run. Its compact
 receipt, raw outcomes and review are in `fields-reviewed-replay/` at the
 same evidence root. Scratch copies were removed after export.
 
-The earlier coverage receipt applies to its exact 261-test suite. The
-added import control needs a current context/coverage receipt for the
-full campaign. The five remaining 95% file gates and native/package
-qualification remain in this task chain.
+The current MD-P3 refresh ran 262 tests successfully in 720.647 seconds
+on `4dca6cd25be3962e6c8f19b357fbff354d6f4930`. All 36 bound inputs match
+the broker wake candidate. Independent SQLite readback reconciled all
+335 expected CLI subprocesses and excluded 28 altered-source observations.
+The applicable line gates passed for `__main__` (46/49), `contract`
+(611/666), `delivery` (292/313), `generate` (345/362) and `text_policy`
+(39/39). `fields` remains at 19/20, with the copied duplicate-registry
+control excluded from healthy source coverage.
+
+The first driver exited 1 when the 256 MiB file cap stopped JSON export.
+The unchanged report stage completed from the retained SQLite inputs under
+the 1 GiB scratch file cap with 749.864 cumulative executed seconds.
+The current coverage receipt SHA-256 is
+`3f534ca7c9f3cce879ea277a123764d3eadd29549d7cd131d4a66c515ca6ecf8`
+and the exact context map SHA-256 is
+`7004257b45f44ea16468bf9e3033d37bfb026cfb2fc49c32f2297e18f331a9d5`.
+They are under `~/.local/share/nevrotick/metadata-p3-coverage-4dca6cd.5Zlb381W/`
+with the first failure, compact raw archive and independent readback.
+The five remaining 95% mutation file gates and native/package qualification
+remain in this task chain.
 
 ## Completed finite repair — 8 November 2026
 

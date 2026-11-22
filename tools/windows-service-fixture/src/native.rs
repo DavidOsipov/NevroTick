@@ -2,9 +2,8 @@
 //! Private Win32 hosting for the two fixed laboratory compositions.
 //!
 //! A process attempts one dispatcher. Its `ServiceMain` publishes its existing
-//! Rust thread handle before handler registration. The callback touches only
-//! static notification state and that initialized handle; no context allocation,
-//! event pointer, closure or dynamic string crosses the callback lifetime.
+//! Rust thread handle before handler registration. The callback uses only
+//! process-owned notification state and handles.
 //! Expected errors remain fallible. An unexpected `ServiceMain` panic aborts this
 //! inert process; this selects no shipping privileged-process fault policy.
 
@@ -21,7 +20,7 @@ use windows_platform::{
     service::{ServiceState, ServiceStatus, StatusReporter},
 };
 use windows_sys::Win32::{
-    Foundation::GetLastError,
+    Foundation::{ERROR_ALREADY_EXISTS, GetLastError},
     System::Services::{
         LPHANDLER_FUNCTION_EX, RegisterServiceCtrlHandlerExW, SERVICE_STATUS, SERVICE_TABLE_ENTRYW,
         SetServiceStatus, StartServiceCtrlDispatcherW,
@@ -32,6 +31,7 @@ use crate::{
     FixtureError, LabRole, NativeBrokerClockRead, NativeError, NativeOperation, SampledClockBreak,
     broker_clock_change::{self, BrokerClockChanges, ControlDisposition, sampled_native_reader},
     host::{self, Clock, Dispatcher, HostReceipt, StatusFactory, Wait},
+    native_broker_wait::{BrokerControlWake, BrokerWait, PendingCompletionWake, WakeSource},
 };
 
 /// Fixed self-token capture, isolated from the SCM callback surface.
@@ -44,6 +44,10 @@ static DISPATCH_ATTEMPTED: AtomicBool = AtomicBool::new(false);
 static STOP: StopNotification = StopNotification::new();
 /// This broker-only process-lifetime receiver never owns an event payload.
 static CLOCK_CHANGES: BrokerClockChanges = BrokerClockChanges::new();
+/// The broker callback can outlive the invocation. Its one unnamed event stays
+/// owned for the process lifetime because SCM provides no handler-unregister
+/// acknowledgement. The invocation owns and retires its separate accept event.
+static BROKER_WAKE: OnceLock<BrokerControlWake> = OnceLock::new();
 /// Exactly one initialized existing `ServiceMain` thread handle, never reset/taken.
 static OWNER: OnceLock<Thread> = OnceLock::new();
 /// Immutable actual owner result; no successful status is published before acknowledgement.
@@ -103,24 +107,29 @@ impl StatusFactory for NativeFactory {
     /// Register only the static role handler after its owner handle is initialized.
     ///
     /// # Errors
-    /// Preserve registration's immediate native error; construct no token on failure.
+    /// Preserve wake preparation or registration failure before constructing a token.
     fn register(&mut self, role: LabRole) -> Result<NativeReporter, NativeError> {
-        let changes: Option<&'static BrokerClockChanges> = match role {
-            LabRole::Engine => None,
-            LabRole::ClockBroker => Some(&CLOCK_CHANGES),
-        };
-        let handler: LPHANDLER_FUNCTION_EX = if changes.is_some() {
-            Some(broker_control_handler)
-        } else {
-            Some(engine_control_handler)
-        };
+        let (handler, changes): (LPHANDLER_FUNCTION_EX, Option<&'static BrokerClockChanges>) =
+            match role {
+                LabRole::Engine => (Some(engine_control_handler), None),
+                LabRole::ClockBroker => {
+                    let wake: BrokerControlWake = BrokerControlWake::new()?;
+                    if BROKER_WAKE.set(wake).is_err() {
+                        return Err(NativeError::new(
+                            NativeOperation::BrokerWakePrepare,
+                            ERROR_ALREADY_EXISTS,
+                        ));
+                    }
+                    (Some(broker_control_handler), Some(&CLOCK_CHANGES))
+                }
+            };
         #[expect(
             unsafe_code,
             reason = "register the fixed inert role and static callback"
         )]
         // SAFETY: The role's static name is NUL-terminated. The callback has the
-        // exact system ABI and retains no event/context pointer. OWNER and STOP
-        // are initialized/static before registration and outlive every callback.
+        // exact system ABI and receives no context pointer. Applicable callback
+        // state is initialized before registration and outlives every callback.
         let handle = unsafe {
             RegisterServiceCtrlHandlerExW(role.wide_name().as_ptr(), handler, ptr::null())
         };
@@ -223,6 +232,28 @@ impl Wait for NativeWait {
     }
 }
 
+impl Wait for BrokerWait {
+    /// Keep the existing thread park available for bounded fallback.
+    fn park(&mut self, timeout: Duration) {
+        thread::park_timeout(timeout);
+    }
+
+    /// Observe only scheduling hints on the same owner, or fall back after error.
+    fn park_with_completion(
+        &mut self,
+        timeout: Duration,
+        completion: Option<PendingCompletionWake<'_>>,
+    ) -> Result<(), NativeError> {
+        if let Some(control) = BROKER_WAKE.get()
+            && self.observe(control, timeout, completion)? != WakeSource::Fallback
+        {
+            return Ok(());
+        }
+        self.park(timeout);
+        Ok(())
+    }
+}
+
 /// Fixed engine `ServiceMain` entry; SCM argument pointers are never read or retained.
 extern "system" fn engine_service_main(argc: u32, _argv: *mut *mut u16) {
     service_main(LabRole::Engine, argc);
@@ -255,7 +286,7 @@ fn service_main(role: LabRole, argc: u32) {
                     &mut NativeFactory,
                     &mut token::NativeTokenObserver,
                     &mut NativeClock,
-                    &mut NativeWait,
+                    &mut BrokerWait::new(),
                     &STOP,
                     (
                         sampled_native_reader(&CLOCK_CHANGES),
@@ -298,10 +329,16 @@ extern "system" fn broker_control_handler(
 fn handle_control(control: u32, event_type: u32, changes: Option<&BrokerClockChanges>) -> u32 {
     let disposition: ControlDisposition =
         broker_clock_change::deliver(changes, &STOP, control, event_type);
-    if disposition.wake
-        && let Some(owner) = OWNER.get()
-    {
-        owner.unpark();
+    if disposition.wake {
+        if changes.is_some()
+            && let Some(wake) = BROKER_WAKE.get()
+        {
+            wake.signal();
+        }
+        // Retain the Rust notification for Engine and broker fallback waits.
+        if let Some(owner) = OWNER.get() {
+            owner.unpark();
+        }
     }
     disposition.status
 }

@@ -560,12 +560,13 @@ mod tests {
     use std::ffi::OsStr;
     use std::io::{self, Read};
     use std::num::NonZeroU32;
-    use std::os::windows::io::AsHandle;
+    use std::os::windows::{ffi::OsStrExt, io::AsHandle};
+    use std::path::PathBuf;
     use std::process::{self, Child, Command, ExitStatus, Stdio};
     use std::thread;
     use std::time::{Duration, Instant};
 
-    use windows_platform_native::{PeerProcess, PeerProcessError};
+    use windows_platform_native::{PeerProcess, PeerProcessError, ReportedProcessImageName};
     use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 
     use super::{
@@ -610,6 +611,8 @@ mod tests {
         process: PeerProcess,
         /// Query-only handle to the primary token captured while the process was live.
         token: RetainedPrimaryToken,
+        /// Literal image name obtained from the original supervised launch input.
+        expected_image: Vec<u16>,
     }
 
     impl RetainedFixturePeer {
@@ -627,6 +630,7 @@ mod tests {
             if !self.token.refers_to(&current) {
                 return Err("fixture primary token object changed".into());
             }
+            self.check_image(&self.expected_image)?;
             if self.process.package_full_name()?.is_some() {
                 return Err(
                     "the copied-out fixture process has unexpected package identity".into(),
@@ -638,9 +642,24 @@ mod tests {
             }
             Ok(())
         }
+
+        /// Compare the literal native Win32 name to independent launch input.
+        /// # Errors
+        /// Preserve a native observation refusal or reject different image units.
+        fn check_image(&self, expected: &[u16]) -> Check<()> {
+            let observed: ReportedProcessImageName = self.process.image_name()?;
+            if observed.as_wide() != expected {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "retained fixture executable name differs from the expected image",
+                )
+                .into());
+            }
+            Ok(())
+        }
     }
 
-    /// Bind the child process and token objects to the PID reported by the client end.
+    /// Bind the child process, token and literal image observation to the client end.
     ///
     /// The API reference describes a server-created input handle. Exercise the
     /// client-opened handle directly, with no request, reply or service effects.
@@ -650,7 +669,9 @@ mod tests {
     #[test]
     #[ignore = "requires the admitted distinct-process Windows fixture supervisor"]
     fn read_only_client_reports_live_child_pid() -> Check<()> {
-        let mut child: Child = Command::new(std::env::current_exe()?)
+        let executable: PathBuf = std::env::current_exe()?;
+        let expected_image: Vec<u16> = executable.as_os_str().encode_wide().collect();
+        let mut child: Child = Command::new(executable)
             .args([
                 "--exact",
                 PID_PROBE_CHILD_TEST,
@@ -665,7 +686,8 @@ mod tests {
             .stderr(Stdio::inherit())
             .spawn()?;
         let started: Instant = Instant::now();
-        let observed: Check<RetainedFixturePeer> = observe_server_peer(&child, started);
+        let observed: Check<RetainedFixturePeer> =
+            observe_server_peer(&child, started, expected_image);
         drop(child.stdin.take());
         match reap_child(&mut child, started, PROBE_WAIT) {
             Ok(status) if status.success() => {
@@ -680,7 +702,7 @@ mod tests {
                     return Err("child reap at the exact cutoff was accepted".into());
                 }
                 println!(
-                    "peer-observation process=matched token=matched foreign-process=refused foreign-pipe=refused exited=refused cutoff=refused package=absent"
+                    "peer-observation process=matched token=matched image=matched wrong-image=refused foreign-process=refused foreign-pipe=refused exited=refused cutoff=refused package=absent"
                 );
                 Ok(())
             }
@@ -738,7 +760,11 @@ mod tests {
     /// # Errors
     /// Retry only an absent pipe. Reject a failed query, mismatched PID, exited child
     /// or expired observation budget. Transfer the handles only after all checks.
-    fn observe_server_peer(child: &Child, started: Instant) -> Check<RetainedFixturePeer> {
+    fn observe_server_peer(
+        child: &Child,
+        started: Instant,
+        expected_image: Vec<u16>,
+    ) -> Check<RetainedFixturePeer> {
         let expected: NonZeroU32 =
             NonZeroU32::new(child.id()).ok_or("PID probe child had no PID")?;
         let parent_pid: NonZeroU32 =
@@ -787,11 +813,25 @@ mod tests {
                     "opened token differs from query through independent spawn handle".into(),
                 );
             }
-            let peer: RetainedFixturePeer = RetainedFixturePeer {
+            let mut peer: RetainedFixturePeer = RetainedFixturePeer {
                 client,
                 process,
                 token,
+                expected_image,
             };
+            let wrong_image: Vec<u16> = OsStr::new(r"C:\NevroTick-S02-wrong-role.exe")
+                .encode_wide()
+                .collect();
+            let original_image: Vec<u16> = std::mem::replace(&mut peer.expected_image, wrong_image);
+            let mismatch: Check<()> = peer.check_current(started);
+            peer.expected_image = original_image;
+            if !matches!(
+                mismatch,
+                Err(error) if error.downcast_ref::<io::Error>()
+                    .is_some_and(|cause: &io::Error| cause.kind() == io::ErrorKind::InvalidData)
+            ) {
+                return Err("the live process did not reach the wrong-image refusal".into());
+            }
             peer.check_current(started)?;
             return Ok(peer);
         }

@@ -4,7 +4,7 @@
 use std::{
     cell::UnsafeCell,
     marker::PhantomPinned,
-    os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, OwnedHandle},
+    os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, IntoRawHandle, OwnedHandle},
     pin::Pin,
     ptr,
     task::Poll,
@@ -37,6 +37,7 @@ use windows_sys::{
 use crate::{
     NativeError, NativeOperation,
     broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
+    native_broker_wait::{CompletionWakeState, PendingCompletionWake},
 };
 
 /// UTF-16 projection of `\\.\pipe\NevroTick-Lab-S02-Broker-Reservation` and its terminator.
@@ -62,14 +63,16 @@ const _: () = assert!(size_of::<EmptyAcl>() == 8);
 const _: () = assert!(size_of::<SECURITY_ATTRIBUTES>() == 24);
 
 /// Submission and cancellation history of the sole exact native record.
-#[derive(Clone, Copy, Eq, PartialEq)]
 enum AcceptState {
     /// The event and record are initialized; no accept has been attempted.
     Ready,
     /// An accept may still be outstanding on the original pipe.
-    Queued,
-    /// The one cancellation request has been attempted; completion is still owed.
-    Cancelling,
+    Pending {
+        /// The same hint remains charged from queueing through cancellation.
+        wake: CompletionWakeState,
+        /// The one cancellation request was attempted. Completion is still owed.
+        cancellation_requested: bool,
+    },
     /// Submission did not queue or a terminal result was observed.
     Retired,
 }
@@ -100,7 +103,7 @@ impl AcceptRecord {
 impl Drop for AcceptRecord {
     /// Fail fast on invalid destruction while the kernel may still write.
     fn drop(&mut self) {
-        if matches!(self.state, AcceptState::Queued | AcceptState::Cancelling) {
+        if matches!(self.state, AcceptState::Pending { .. }) {
             // The service owner retains this allocation during ordinary Stop.
             // An invalid drop cannot release pending storage or claim Stopped.
             std::process::abort();
@@ -247,10 +250,13 @@ impl Reservation for NativeBrokerEndpoint {
     /// Refuses a repeated submission and preserves any native submission error.
     fn begin_accept(&mut self) -> Result<AcceptStart, NativeError> {
         let operation: NativeOperation = NativeOperation::BrokerEndpointAcceptSubmit;
-        if self.accept.state != AcceptState::Ready {
+        if !matches!(self.accept.state, AcceptState::Ready) {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         }
-        self.accept.state = AcceptState::Queued;
+        self.accept.state = AcceptState::Pending {
+            wake: CompletionWakeState::new(),
+            cancellation_requested: false,
+        };
         #[expect(
             unsafe_code,
             reason = "submit one accept with the owned overlapped record"
@@ -281,10 +287,17 @@ impl Reservation for NativeBrokerEndpoint {
     /// Refuses an ineligible request or reports its original native error.
     fn request_accept_cancel(&mut self) -> Result<(), NativeError> {
         let operation: NativeOperation = NativeOperation::BrokerEndpointAcceptCancel;
-        if self.accept.state != AcceptState::Queued {
+        let AcceptState::Pending {
+            cancellation_requested,
+            ..
+        } = &mut self.accept.state
+        else {
+            return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+        };
+        if *cancellation_requested {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         }
-        self.accept.state = AcceptState::Cancelling;
+        *cancellation_requested = true;
         #[expect(
             unsafe_code,
             reason = "target the exact original accept without freeing it"
@@ -309,10 +322,7 @@ impl Reservation for NativeBrokerEndpoint {
     /// Refuses an unqueued observation and preserves custody on unknown failures.
     fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError> {
         let operation: NativeOperation = NativeOperation::BrokerEndpointAcceptCompletion;
-        if !matches!(
-            self.accept.state,
-            AcceptState::Queued | AcceptState::Cancelling
-        ) {
+        if !matches!(self.accept.state, AcceptState::Pending { .. }) {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         }
         let mut ignored: u32 = 0;
@@ -343,6 +353,14 @@ impl Reservation for NativeBrokerEndpoint {
             }
             _ => Err(error),
         }
+    }
+
+    /// Lend the event and the same wake state until native completion retires it.
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        let AcceptState::Pending { wake, .. } = &mut self.accept.state else {
+            return None;
+        };
+        Some(wake.lend(self.event.as_handle()))
     }
 
     /// Preserve the actual release result under the serialized host.
@@ -403,27 +421,26 @@ fn last_error(operation: NativeOperation) -> NativeError {
 mod tests {
     use std::{
         error::Error,
-        os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle},
+        os::windows::io::{FromRawHandle, OwnedHandle},
         ptr,
         sync::{Mutex, MutexGuard},
         task::Poll,
+        time::Duration,
     };
 
     use windows_sys::Win32::{
-        Foundation::{
-            ERROR_ACCESS_DENIED, GetLastError, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0,
-        },
+        Foundation::{ERROR_ACCESS_DENIED, GetLastError, HANDLE, INVALID_HANDLE_VALUE},
         Storage::FileSystem::{
             CreateFileW, FILE_READ_DATA, FILE_WRITE_DATA, OPEN_EXISTING, SECURITY_IDENTIFICATION,
             SECURITY_SQOS_PRESENT, SYNCHRONIZE,
         },
-        System::Threading::WaitForSingleObject,
     };
 
     use super::NativeBrokerEndpoint;
     use crate::{
         NativeError, NativeOperation,
         broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
+        native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
     };
 
     /// Serialize the only tests using the same process's fixed reservation name.
@@ -490,43 +507,48 @@ mod tests {
         Ok(())
     }
 
-    /// Observe a real pending and cancelled accept, then release and reacquire.
+    /// Wake the same broker wait for two sequential accepts, releasing each.
     ///
     /// # Errors
     /// Propagates native failures. If completion is still unconfirmed, the
     /// fixture's invalid-drop safeguard terminates the isolated test process.
     /// # Panics
-    /// Fails on unexpected readiness, missing event signal or a wrong outcome.
+    /// Fails on unexpected readiness, a wrong wake source or a wrong outcome.
     #[test]
     fn queued_accept_cancels_to_completion_before_release() -> Result<(), Box<dyn Error>> {
         let _name: MutexGuard<'_, ()> = RESERVATION_TEST
             .lock()
             .map_err(|_| "reservation test lock poisoned")?;
-        let mut endpoint: NativeBrokerEndpoint = NativeBrokerEndpoint::acquire()?;
-        assert!(matches!(endpoint.begin_accept()?, AcceptStart::Queued));
-        assert!(matches!(endpoint.poll_accept()?, Poll::Pending));
-        endpoint.request_accept_cancel()?;
+        let control: BrokerControlWake = BrokerControlWake::new()?;
+        let mut wait: BrokerWait = BrokerWait::new();
+        for _ in 0..2 {
+            let mut endpoint: NativeBrokerEndpoint = NativeBrokerEndpoint::acquire()?;
+            assert!(endpoint.completion_wake().is_none());
+            assert!(matches!(endpoint.begin_accept()?, AcceptStart::Queued));
+            assert!(matches!(endpoint.poll_accept()?, Poll::Pending));
+            let before_cancel: WakeSource =
+                wait.observe(&control, Duration::ZERO, endpoint.completion_wake())?;
+            endpoint.request_accept_cancel()?;
 
-        #[expect(
-            unsafe_code,
-            reason = "observe the owned accept event within the test bound"
-        )]
-        // SAFETY: The event handle is live and private. This finite wait only
-        // observes the kernel signal. The exact result still comes from poll.
-        let observed: u32 = unsafe { WaitForSingleObject(endpoint.event.as_raw_handle(), 2_000) };
-        let completion: Poll<AcceptCompletion> = endpoint.poll_accept()?;
-        assert!(
-            completion.is_ready(),
-            "accept still pending after event wait status {observed}"
-        );
-        endpoint.close()?;
-        assert_eq!(observed, WAIT_OBJECT_0);
-        assert!(matches!(
-            completion,
-            Poll::Ready(AcceptCompletion::Cancelled)
-        ));
-
-        NativeBrokerEndpoint::acquire()?.close()?;
+            let observed: Result<WakeSource, NativeError> =
+                wait.observe(&control, Duration::from_secs(2), endpoint.completion_wake());
+            let repeated: Result<WakeSource, NativeError> =
+                wait.observe(&control, Duration::ZERO, endpoint.completion_wake());
+            let completion: Poll<AcceptCompletion> = endpoint.poll_accept()?;
+            assert!(
+                completion.is_ready(),
+                "accept still pending after broker wait"
+            );
+            assert!(endpoint.completion_wake().is_none());
+            endpoint.close()?;
+            assert_eq!(before_cancel, WakeSource::Timeout);
+            assert_eq!(observed?, WakeSource::Completion);
+            assert_eq!(repeated?, WakeSource::Timeout);
+            assert!(matches!(
+                completion,
+                Poll::Ready(AcceptCompletion::Cancelled)
+            ));
+        }
         Ok(())
     }
 }

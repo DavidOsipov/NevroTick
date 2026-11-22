@@ -42,6 +42,12 @@ pub enum NativeOperation {
     BrokerEndpointAcceptCancel,
     /// Observe the exact connection attempt without waiting or releasing custody.
     BrokerEndpointAcceptCompletion,
+    /// Prepare the broker's process-lifetime control signal before registration.
+    BrokerWakePrepare,
+    /// Signal the broker owner after publishing a control notice.
+    BrokerWakeSignal,
+    /// Wait on the exact control and optional accept completion signals.
+    BrokerWakeWait,
     /// Attempt explicit release of the original endpoint exactly once.
     BrokerEndpointClose,
 }
@@ -99,6 +105,9 @@ impl fmt::Display for NativeError {
             NativeOperation::BrokerEndpointAcceptCompletion => {
                 "laboratory broker accept completion unconfirmed"
             }
+            NativeOperation::BrokerWakePrepare => "laboratory broker wake preparation failed",
+            NativeOperation::BrokerWakeSignal => "laboratory broker wake signal failed",
+            NativeOperation::BrokerWakeWait => "laboratory broker wake wait failed",
             NativeOperation::BrokerEndpointClose => "laboratory broker endpoint close failed",
         })
     }

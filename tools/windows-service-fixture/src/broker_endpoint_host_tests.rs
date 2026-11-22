@@ -3,6 +3,12 @@
 
 use std::{cell::Cell, task::Poll};
 
+#[cfg(windows)]
+use std::os::windows::io::BorrowedHandle;
+
+#[cfg(windows)]
+use crate::native_broker_wait::{BrokerControlWake, CompletionWakeState, PendingCompletionWake};
+
 use super::{
     Event, Factory, HealthyTokenObserver, Observations, Rc, RefCell, TestClock, TestWait, Time,
     WaitAction, statuses,
@@ -55,6 +61,41 @@ struct AcceptScript<'a> {
     polls: &'a [Result<Poll<AcceptCompletion>, NativeError>],
 }
 
+/// Inject one wait failure, then let the real owner drive its fallback waits.
+#[cfg(windows)]
+struct FailedWait<'a> {
+    /// Retains the existing scripted clock and observations.
+    fallback: TestWait<'a>,
+    /// The original adapter failure is already available to the owner.
+    failed: bool,
+}
+
+#[cfg(windows)]
+impl crate::host::Wait for FailedWait<'_> {
+    /// Keep the original test wait on every fallback observation.
+    fn park(&mut self, timeout: Duration) {
+        crate::host::Wait::park(&mut self.fallback, timeout);
+    }
+
+    /// Refuse exactly one native wait, leaving actual completion to the worker.
+    /// # Panics
+    /// Panics if the host drops the charged worker's signal on either wait.
+    fn park_with_completion(
+        &mut self,
+        timeout: Duration,
+        completion: Option<PendingCompletionWake<'_>>,
+    ) -> Result<(), NativeError> {
+        assert!(completion.is_some());
+        if self.failed {
+            self.park(timeout);
+            Ok(())
+        } else {
+            self.failed = true;
+            Err(NativeError::new(NativeOperation::BrokerWakeWait, 6))
+        }
+    }
+}
+
 /// The accept queues and then reports terminal cancellation on Stop.
 const CANCELLABLE_ACCEPT: AcceptScript<'static> = AcceptScript {
     start: Ok(AcceptStart::Queued),
@@ -74,6 +115,9 @@ struct TestEndpoint<'a> {
     accept: AcceptScript<'a>,
     /// Number of completion observations already collected.
     polls: usize,
+    /// Selected live signal for a test that checks handoff to the actual host wait.
+    #[cfg(windows)]
+    hint: Option<(BorrowedHandle<'a>, CompletionWakeState)>,
 }
 
 impl Reservation for TestEndpoint<'_> {
@@ -100,6 +144,13 @@ impl Reservation for TestEndpoint<'_> {
             .unwrap_or(Ok(Poll::Pending));
         self.polls += 1;
         result
+    }
+
+    /// Lend the selected live signal and its scripted operation state together.
+    #[cfg(windows)]
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        let (event, state): &mut (BorrowedHandle<'_>, CompletionWakeState) = self.hint.as_mut()?;
+        Some(state.lend(*event))
     }
 
     /// Record release on the original handle, preserving any real fixture refusal.
@@ -194,6 +245,8 @@ fn broker_endpoint_is_owned_before_running_until_physical_release() {
                 failure: None,
                 accept: CANCELLABLE_ACCEPT,
                 polls: 0,
+                #[cfg(windows)]
+                hint: None,
             })
         };
         #[cfg(windows)]
@@ -294,6 +347,95 @@ fn verify_journey(
     assert_eq!(recorded.calls, [EndpointCall::Close(Some(3))]);
 }
 
+/// A broken wait reaches the running owner and retains custody through fallback.
+///
+/// # Errors
+/// Returns an unexpected failure to create the private event for the handoff.
+///
+/// # Panics
+/// Fails if the host bypasses the Windows wait, retires the accept on failure,
+/// or loses the original operation before publishing its failed status.
+#[cfg(windows)]
+#[test]
+fn broker_wait_failure_preserves_the_original_accept_until_fallback_completion()
+-> Result<(), NativeError> {
+    static CHANGES: BrokerClockChanges = BrokerClockChanges::new();
+    let observation: Rc<RefCell<Observations>> = Rc::new(RefCell::new(Observations::default()));
+    let trace: RefCell<EndpointTrace> = RefCell::default();
+    let event: BrokerControlWake = BrokerControlWake::new()?;
+    let stop: StopNotification = StopNotification::new();
+    let time: Rc<RefCell<Time>> = Rc::new(RefCell::new(Time {
+        current: Instant::now(),
+        backwards_once: false,
+        backwards_persistent: false,
+    }));
+    let mut clock: TestClock = TestClock(Rc::clone(&time));
+    let mut reporting: Factory = Factory {
+        observations: Rc::clone(&observation),
+        failure: None,
+    };
+    let mut wait: FailedWait<'_> = FailedWait {
+        failed: false,
+        fallback: TestWait {
+            time,
+            observations: Rc::clone(&observation),
+            actions: vec![WaitAction::Spurious(Duration::from_millis(20))],
+            next: 0,
+            notification: &stop,
+        },
+    };
+    let acquire = || -> Result<TestEndpoint<'_>, NativeError> {
+        Ok(TestEndpoint {
+            observations: &observation,
+            endpoints: &trace,
+            failure: None,
+            accept: AcceptScript {
+                polls: &[
+                    Ok(Poll::Pending),
+                    Ok(Poll::Ready(AcceptCompletion::Cancelled)),
+                ],
+                ..CANCELLABLE_ACCEPT
+            },
+            polls: 0,
+            #[cfg(windows)]
+            hint: Some((event.test_event(), CompletionWakeState::new())),
+        })
+    };
+    let reader: NativeBrokerReader = crate::broker_clock_change::sampled_native_reader(&CHANGES);
+    let receipt: HostReceipt = run_broker_service_with_worker(
+        0,
+        &mut reporting,
+        &mut HealthyTokenObserver(LabRole::ClockBroker),
+        &mut clock,
+        &mut wait,
+        &stop,
+        (reader, BrokerEndpointWorker::new(acquire)),
+    );
+    assert_eq!(
+        receipt.result(),
+        &Err(FixtureError::Native(NativeError::new(
+            NativeOperation::BrokerWakeWait,
+            6
+        )))
+    );
+    assert_eq!(wait.fallback.next, 1);
+    assert_eq!(
+        trace.borrow().calls,
+        [
+            EndpointCall::Begin(Some(4)),
+            EndpointCall::Cancel(Some(3)),
+            EndpointCall::Poll(Some(3)),
+            EndpointCall::Poll(Some(3)),
+            EndpointCall::Close(Some(3)),
+        ]
+    );
+    assert_eq!(
+        statuses(&observation).last(),
+        Some(&[16, 1, 0, 1066, 1, 0, 0])
+    );
+    Ok(())
+}
+
 /// The real host retains the queued accept through its original Stop deadline.
 ///
 /// # Panics
@@ -341,6 +483,8 @@ fn broker_accept_late_completion_remains_owned_past_stop_cutoff() {
                 ..CANCELLABLE_ACCEPT
             },
             polls: 0,
+            #[cfg(windows)]
+            hint: None,
         })
     };
     #[cfg(windows)]
@@ -434,6 +578,8 @@ fn broker_worker_fences_running_accept_refusal_and_unexpected_completion() {
                     ..CANCELLABLE_ACCEPT
                 },
                 polls: 0,
+                #[cfg(windows)]
+                hint: None,
             })
         };
         let mut worker: BrokerEndpointWorker<_, TestEndpoint<'_>> =
@@ -517,6 +663,8 @@ fn broker_worker_preserves_accept_custody_and_first_cleanup_failure() {
                     ..CANCELLABLE_ACCEPT
                 },
                 polls: 0,
+                #[cfg(windows)]
+                hint: None,
             })
         };
         let mut worker: BrokerEndpointWorker<_, TestEndpoint<'_>> =
@@ -588,6 +736,8 @@ fn broker_worker_retains_unconfirmed_endpoint_release_without_retry() {
             failure: Some(raw),
             accept: CANCELLABLE_ACCEPT,
             polls: 0,
+            #[cfg(windows)]
+            hint: None,
         })
     };
     let mut worker: BrokerEndpointWorker<_, TestEndpoint<'_>> = BrokerEndpointWorker::new(acquire);

@@ -41,6 +41,9 @@ mod leap_presentation;
 mod package_full_name;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
+mod process_image_name;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
 mod resume_slot;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
@@ -84,6 +87,8 @@ pub use dns_address::{
 pub use leap_presentation::{LeapPresentation, LeapPresentationError};
 #[cfg(any(windows, test))]
 pub use package_full_name::{PackageFullNameError, ReportedPackageFullName};
+#[cfg(any(windows, test))]
+pub use process_image_name::{ProcessImageNameError, ReportedProcessImageName};
 #[cfg(any(windows, test))]
 pub use service_configuration::ConfigurationStringError;
 #[cfg(windows)]

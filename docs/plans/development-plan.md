@@ -1227,8 +1227,9 @@ on readback and refuses stale Build artifacts. The public campaign stays closed.
 
 The [current source metadata checkpoint](../../metadata/qualification/CHECKPOINT.md#direct-msix-activation-authoring--22-november-2026)
 passes activation authoring CLI readback, strict typing and all five
-declared executable-line gates on its 261-test candidate. Its complete
-mutation inventory has 9,244 variants; full per-file qualification is
+declared executable-line gates on the current 262-test candidate, with
+335 subprocesses and a current test-to-line context map. Its complete
+mutation inventory has 9,244 variants. Full per-file qualification is
 still open. Assembly depends on the actual admitted product roles and
 release metadata pending under W11-W10.
 
@@ -1465,10 +1466,24 @@ passed, including client data-open refusal, collision and reacquisition.
 The [broker accept child](../../tasks/windows11-integration.md#retain-the-broker-accept-through-stop--22-november-2026)
 now queues a single accept under Running and retains its exact native
 completion through Stop. The configured development checks, both role links
-and seven selected Windows fixture cases passed. Continue the completion
-wake and genuine installed-peer proof under the existing S0.3/S3.2
-service-grant and installed lifecycle owners. The connected broker's
-process and token must be observable under the restricted Engine profile.
+and seven selected Windows fixture cases passed. The
+[completion wake child](../../tasks/windows11-integration.md#wake-the-broker-owner-on-accept-or-control--22-november-2026)
+now couples the same native operation to the owner wait while retaining the
+original deadlines and release requirements. Current development checks,
+both role links and twelve selected Windows cases passed. Continue one
+bounded inert availability exchange and genuine installed-peer proof under
+S0.3/S3.2. The [retained peer image observation](../../tasks/windows11-integration.md#observe-the-executable-name-on-the-retained-pipe-peer)
+now compares the literal image name in the same connected-process check as
+the token, original cutoff and liveness checks. The ordinary Windows child
+control refused a wrong image and accepted the original launch input. The
+installed Engine must demonstrate access to the genuine broker process,
+token and installed role under its restricted profile. The
+[operation-bound wake and reply child](../../tasks/windows11-integration.md#bind-broker-wakes-and-reply-bytes-to-each-operation--22-november-2026)
+ties completion hints to the queued accept and reply fragments to their
+original frame. Both role links and thirteen selected offline Windows
+fixture cases passed. The next slice connects the original duplex pipe to
+one bounded availability exchange under the existing owner and cutoff.
+The retained wake libtest image lists all three pre-start selectors.
 The
 [SCM configuration child](../../tasks/windows11-integration.md#observe-configured-service-startup-before-provisioning--22-november-2026)
 provides a separate query-only readback and exact two-role linked inputs
@@ -1503,7 +1518,11 @@ keys. Its
 [installed-image companion](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 binds both SCM image paths and observed file bytes to the exact registration
 and the approved signed artifact inputs. The strict path and file-handle
-controls passed in the owned guest. The installed run remains held. The
+controls passed in the owned guest. The
+[pre-start receipt join](../../tasks/windows11-integration.md#join-the-s06-installed-identity-and-pre-start-receipts)
+passed its portable controls for exact run, artifact, process and actor
+correlation and the original SCM transcripts. The installed supervisor and
+signed lab run remain open. The
 Windows-target source and focused query/close pairing control
 passed. Its [scoped MSVC link and readback](../../tasks/windows11-integration.md#link-the-selected-pre-start-scm-observer--22-november-2026)
 matched the PE/PDB pair and expected SCM query imports. The full fixture

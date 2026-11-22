@@ -14,7 +14,7 @@ const MAX_CATEGORY_BYTES: usize = 64;
 /// Exact native failure boundaries, including zero after a reported API failure.
 const RAW_CODES: [u32; 3] = [0, 1, u32::MAX];
 /// Complete currently selected native-effect classes.
-const OPERATIONS: [NativeOperation; 15] = [
+const OPERATIONS: [NativeOperation; 18] = [
     NativeOperation::Dispatch,
     NativeOperation::Register,
     NativeOperation::Status,
@@ -29,6 +29,9 @@ const OPERATIONS: [NativeOperation; 15] = [
     NativeOperation::BrokerEndpointAcceptSubmit,
     NativeOperation::BrokerEndpointAcceptCancel,
     NativeOperation::BrokerEndpointAcceptCompletion,
+    NativeOperation::BrokerWakePrepare,
+    NativeOperation::BrokerWakeSignal,
+    NativeOperation::BrokerWakeWait,
     NativeOperation::BrokerEndpointClose,
 ];
 
@@ -75,6 +78,9 @@ fn native_categories_are_code_independent_and_operation_specific() {
             NativeOperation::BrokerEndpointAcceptSubmit => "accept submission",
             NativeOperation::BrokerEndpointAcceptCancel => "accept cancellation",
             NativeOperation::BrokerEndpointAcceptCompletion => "accept completion",
+            NativeOperation::BrokerWakePrepare => "wake preparation",
+            NativeOperation::BrokerWakeSignal => "wake signal",
+            NativeOperation::BrokerWakeWait => "wake wait",
             NativeOperation::BrokerEndpointClose => "endpoint close",
         };
         assert!(baseline.contains(semantic_token));

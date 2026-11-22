@@ -35,6 +35,8 @@ use windows_platform::{
     },
 };
 
+#[cfg(windows)]
+use crate::native_broker_wait::PendingCompletionWake;
 use crate::{
     FixtureError, LabRole, NativeError, TokenObservationFailure,
     diagnostics::{
@@ -156,6 +158,13 @@ pub(super) trait Worker {
     /// an acknowledged recovery handoff if required. Unresolved cleanup is Pending.
     /// A failed completion retains its typed cause alongside earlier failures.
     fn poll_finished(&mut self, wake: &WorkerWake) -> WorkerFinish;
+
+    /// Borrow a queued operation's event and wake state across a synchronous park.
+    /// A wake grants the owner only another poll.
+    #[cfg(windows)]
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        None
+    }
 }
 
 /// Inert Engine worker and control for the broker without endpoint acquisition.
@@ -320,6 +329,20 @@ pub(super) trait Wait {
     /// Wait at most the requested interval according to the selected primitive.
     /// Scheduling may delay resumption; every return requires fresh guards.
     fn park(&mut self, timeout: Duration);
+
+    /// Wait on the owner wake and optional exact worker signal within this bound.
+    ///
+    /// # Errors
+    /// An adapter failure fences admission. The owner still polls actual work.
+    #[cfg(windows)]
+    fn park_with_completion(
+        &mut self,
+        timeout: Duration,
+        _completion: Option<PendingCompletionWake<'_>>,
+    ) -> Result<(), NativeError> {
+        self.park(timeout);
+        Ok(())
+    }
 
     /// Retain an overdue invocation until a state-change notification arrives.
     /// There is no remaining deadline or heartbeat; this makes no bounded native
@@ -1720,8 +1743,16 @@ fn drive_service<R: StatusReporter<Error = NativeError>, P: Worker>(
 ) -> HostReceipt {
     loop {
         match invocation.poll(clock, notification) {
-            InvocationPoll::Pending(remaining) => wait.park(remaining),
-            InvocationPoll::JoinTail(relative) | InvocationPoll::NativeDrain(relative) => {
+            InvocationPoll::Pending(relative)
+            | InvocationPoll::JoinTail(relative)
+            | InvocationPoll::NativeDrain(relative) => {
+                #[cfg(windows)]
+                if let Err(error) =
+                    wait.park_with_completion(relative, invocation.worker.completion_wake())
+                {
+                    invocation.fail(FixtureError::Native(error));
+                }
+                #[cfg(not(windows))]
                 wait.park(relative);
             }
             InvocationPoll::Overdue => wait.park_until_notified(),

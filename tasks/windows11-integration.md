@@ -10827,6 +10827,112 @@ peer proof through §4.34.8, including the restricted Engine context and
 the local RPC fallback. Carry the separate package, provisioning and
 advisory requirements into the actual admitted installation.
 
+###### Wake the broker owner on accept or control — 22 November 2026
+
+W11-W05/S3.1/S3.2 and CHECK-2/25/27. The fixed broker registers its
+handler after creating an unnamed, noninherited control event. The event
+lives through process exit because the static callback has no independent
+drain acknowledgement. The callback publishes Stop or the clock/power
+revision before signaling. Engine retains its thread notification wait.
+
+The broker owner borrows the original pending accept's event for the
+duration of its finite synchronous wait. Where both signals are set,
+control wins. The manual-reset accept event permits one scheduling hint
+for that single accept. The live owner checks the original deadlines and
+Stop state, polls the exact operation for completion and observes both
+closes before Stopped. A wait or observed signal failure fences ordinary
+operation and selects the existing bounded thread wait for cleanup. A
+failed signal cannot interrupt a native wait already in progress. Its
+observation may await that wait's timeout, and terminal completion without
+another wait can leave that error in the process latch. Wake latency has
+yet to be measured under SCM control and clock/power delivery.
+[Windows wait contract](https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects)
+
+Rust contract, service, IPC, lifecycle and failure-triage review traced the
+actual callback, host driver, original pinned record and physical release.
+The first development run stopped on seven Windows test documentation
+lints. After adding the error and panic contracts and preparing the ignored
+receipt directory in the new worktree, the 712-input candidate
+`b42d137b743b058956b044387944a05c94d03f954255d32ed0d2dd8cd76845a0`
+on tested tree `6fe2f530319b286a7e52c70665e5f31dc3c6f11f`, based on
+`74127394dc12dc07c1a8b1fdf6263c1d5d157201`, passed six graph commands and
+twelve development lanes. Each GNU mode ran 176 fixture and 70 platform
+tests. All 28 platform doctests and 30 verifier controls passed. The lockfiles
+and dependency feature sets are unchanged from `7412739`.
+
+The MSVC library test image and both fixed-role PE/PDB pairs linked and
+passed independent readback. The broker's confirmed imports include
+`WaitForMultipleObjects`, `SetEvent`, `CreateEventW` and the four pipe and
+completion calls. Windows build 26300 ran twelve selected cases under an
+ordinary token on the exact linked image. They include real overlapped
+accept cancellation followed by its completion wake, control priority,
+retained early signals, a repeated completion hint, finite rounding and
+injected wake failures. The failure case reaches the actual broker host
+driver and retains the original charged accept through fallback and close.
+The linked test binary also listed all three selected pre-start SCM tests.
+Those three were only listed. The children exited and Windows staging was
+removed. The first failure, raw results, readback and current PE/PDB pairs
+are retained under `~/.local/share/nevrotick/broker-wake-20261122.CTJPzRZo/`.
+
+The next source slice is one bounded, inert availability exchange in the
+same `ServiceMain` owner. Preserve the empty DACL until an admitted fixed
+profile supplies the client rights and peer identity. The Engine must bind
+its exact connection, original SCM observation, live process and token to
+the installed component before sending or accepting that response. Keep
+the same-run signed-package, actor and pre-start observation join with
+§4.34.8 and MSIX §7.5. Installed SCM callback delivery, effective grants,
+handle/heap diagnostics and the three endpoint files' 90% executable-line
+and 95% per-file mutation gates are open. The local RPC fallback remains
+conditional on evidence that the restricted named-pipe proof cannot be made.
+
+###### Bind broker wakes and reply bytes to each operation — 22 November 2026
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. Each queued native accept now
+owns its scheduling hint beside its pinned record. The actual broker wait
+borrows both that state and the event for one synchronous wait. A control
+wake, timeout or failed wait leaves the hint available. A selected
+completion wake spends it once after the control-failure check. The owner
+still polls the original operation before releasing its resources.
+
+The private availability fixture's reply now owns its frame and its one
+pending fragment. The native submit path borrows only that fragment. A
+short completion advances by the physically reported prefix, with the
+original cutoff still in force. A missing reservation, zero completion or
+overcount fences further writes. The receiving owner retains connection
+identity and rechecks currentness before accepting the response.
+
+The Rust contract, service, IPC and lifecycle review followed both
+transfers through their actual consumers. Review strengthened the
+failed-wait fallback, unsignaled event and sequential-accept controls.
+The first development attempt found a test-only `windows-sys` import
+error. The corrected 715-input candidate
+`752e57d8ad7382b96a0eac76e3fb95288921386d6ff69614656f55e1f3a14d82`
+on tested tree `3fd601f28b6ffbdcfdf48f14b547f61347dc153d`, based on
+`74127394dc12dc07c1a8b1fdf6263c1d5d157201`, passed six graph commands
+and twelve configured development lanes. Each GNU mode ran 176 fixture
+and 70 platform cases, including the short-write and original-cutoff
+control. All 28 platform doctests and 30 verifier controls passed.
+Dependency rows, feature sets and lockfiles stayed the same.
+
+The configured x64-v3 MSVC test image and both fixed-role PE/PDB pairs
+linked and passed static readback. The exact test image ran 12 selected
+wake and accept cases and one native paired-pipe reply case in the
+offline Windows Sandbox, build 26100. The runs observed real accept
+cancellation and completion wakes, the injected wait failure through the
+actual host driver, and a physically written reply with the expected
+Stop/expiry and rejected-peer controls. Both children were reaped and
+owned staging files were removed. The first failure, final receipts,
+output and linked artifacts are under
+`~/.local/share/nevrotick/broker-operation-20261122.zUncSkhx/`.
+
+The next slice connects the actual broker accept to one bounded availability
+exchange on its original duplex connection. Keep the original cutoff,
+pinned completion, same-connection peer admission and actual Stop drain
+at that boundary. The paired test does not establish an installed SCM
+conversation. Installed identity and grants, native handle and heap
+diagnostics, and the existing 90% executable-line and 95% per-critical-file
+mutation gates remain open for the affected owners.
+
 ##### Retain the original pipe, process and token objects — 22 November 2026
 
 W11-W05/S0.3/S3.2 and CHECK-2/25/27. The distinct-process native pipe
@@ -10993,6 +11099,50 @@ bits before selecting its projection. The current laboratory predicate accepts
 exactly `0x10`. A packaged service may report `SERVICE_PKG_SERVICE` (`0x200`)
 in combination with other type bits. The installed readback must establish
 the expected exact type before admitting it. [MSIX provisioning experiment](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+
+###### Observe the executable name on the retained pipe peer
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. `PeerProcess` now queries
+`QueryFullProcessImageNameW` on the same limited-query process handle. One
+initialized 1,024-unit buffer admits the exclusive payload length and exact
+terminator. A refusal preserves the immediate native error. Success exposes
+literal Win32 wide units, with a maximum payload of 1,023 units for this
+fixture. The exact expected image spelling comes from the original supervised
+launch input. The live peer check compares it after the pipe and primary
+token checks, then observes process liveness and the original cutoff.
+An image name alone supplies no file identity or installed authority.
+[Windows query contract](https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-queryfullprocessimagenamew)
+
+Rust contract and IPC security review checked the Win32 ABI, initialized
+extent, error preservation, same-handle use and caller-supplied expectation.
+Independent review moved the wrong-image control into the same complete
+consumer as the healthy case. Both GNU modes passed 50 native-leaf tests,
+including three focused controls for wide-unit preservation, exclusive
+count and terminator, and native error precedence. Four compile-fail
+doctests and GNU and MSVC Clippy passed. The 646 leaf-runner input hashes
+match the final fixture candidate.
+
+Candidate `e1fb06a5ea696dfc413bf9c17db3e16558fcdc9d6423cccde68b45ec687c0ba9`
+on tested tree `0b80a7eca29013766c603ebfca45c719605662a2` binds 715 inputs
+and passed six graph commands, twelve development lanes and the MSVC
+libtest link and PE/PDB readback. The graph and lockfiles retain the broker
+wake selection. Ordinary Windows build 26300 executed the exact distinct-
+process selector on the linked image. The wrong image was refused through
+the live peer check and its restored neighbor succeeded. The retained
+process, token, pipe and exit/cutoff observations passed, and the original
+child was reaped before staging removal. Raw outputs and the image and
+symbols are under `~/.local/share/nevrotick/peer-image-20261122.Q4YXyFRg/`.
+
+Continue the one bounded native availability exchange on the original
+accepted duplex pipe under the same broker worker permit. Keep the
+clock/Stop/deadline decision at the host, with a short typed handoff to
+the worker for one parsed request and bounded reply. Completion wake
+disarm must follow the exact submission when moving from accept to read
+and write, and the original session cutoff must bound the next wait.
+Retain the empty DACL until an admitted role profile exists. The installed
+package, service SID and restricted Engine access remain required at both
+client boundaries. Native handle diagnostics and the 90% executable-line
+and 95% per-file mutation gates remain open for the image and peer owners.
 
 ##### Broker Stop retains the original native request read — 22 November 2026
 
@@ -11760,6 +11910,35 @@ failed the intended soft-hyphen refusal. The exact ordinal source passed
 again afterward. The installed selector, continuous inactivity, actor rights and exact
 signed lab setup remain held. Raw receipts are indexed under
 `~/.local/share/nevrotick/installed-image-20261122.qsWtlrfd/`.
+
+###### Join the S0.6 installed identity and pre-start receipts
+
+W11-W05/S0.6, W11-W10 and CHECK-1/2/15/16/18/26/27. The installed
+identity companion emits schema 2 with the matched package full name.
+The [receipt reader](../tools/windows-service-fixture/msix/prestart_receipts.py)
+joins it to the three exact pre-start libtest transcripts. It compares
+independently supplied signed package and member facts, run and actor
+identity, retained process bookends and exact observer input hashes. The
+SCM reports must retain both fixed roles, Disabled/Stopped samples, access
+mask order, successful close acknowledgements and the specific standard-user
+denial. Impossible descriptor summaries refuse even when both captures agree.
+The result preserves raw service-type bits for subsequent qualification.
+
+The package and privilege review checked the maintained producers, the
+pinned libtest formatter and the descriptor projection. A producer-shaped
+transcript initially refused at the final two newlines. The descriptor
+control then exposed six invalid matching projections. The reader now
+admits the exact complete transcript and rejects each invalid projection.
+All 23 component tests passed on the combined staged inputs. PowerShell
+syntax parsing also passed. Receipts include both first failures and the
+successful combined run in the retained `peer-image-20261122.Q4YXyFRg`
+directory. These controls use synthetic independently bound inputs.
+
+The installed supervisor still owns actual signed-byte admission, token
+and process observation and a quiescent deployment window. The reader
+has no installed supervisor caller yet. The signed lab install, joined
+native run, exact protected descriptor comparison and supported unattended
+provisioning and servicing remain open under §7.5 and §4.34.8.
 
 ###### Link the selected pre-start SCM observer — 22 November 2026
 

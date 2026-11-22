@@ -6,7 +6,7 @@
 //! admission uses a closed JSON object within a 64-byte limit. Connection
 //! identity, request authority and work budgets belong to the caller.
 
-use std::fmt;
+use std::{fmt, mem, num::NonZeroUsize};
 
 use garde::Validate;
 use serde::de::{Deserializer as _, Error as _, IgnoredAny, MapAccess, Visitor};
@@ -79,6 +79,96 @@ impl Frame {
     #[must_use]
     pub(super) fn as_bytes(&self) -> &[u8] {
         &self.bytes[..self.len]
+    }
+}
+
+/// An operation disagreed with the one outstanding bounded reply write.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct WriteProgressError;
+
+/// Custody of the one fragment issued from the immutable reply.
+enum ReplyWritePhase {
+    /// No fragment is outstanding. A nonempty remainder may be reserved.
+    Ready,
+    /// The exact extent that the live transport may report as completed.
+    Pending(NonZeroUsize),
+    /// An ambiguous completion permanently fences further writes.
+    Ambiguous,
+}
+
+/// Own one reply's exact bytes and logical progress independently of native I/O.
+/// The transport retains the actual operation through terminal observation.
+#[must_use]
+pub(super) struct ReplyWrite {
+    /// Original bounded response selected by the broker.
+    frame: Frame,
+    /// Number of bytes from the original prefix confirmed by the transport.
+    written: usize,
+    /// Whether an extent is queued or its outcome is ambiguous.
+    phase: ReplyWritePhase,
+}
+
+impl ReplyWrite {
+    /// Put one intact response under the serialized write owner.
+    pub(super) const fn new(frame: Frame) -> Self {
+        Self {
+            frame,
+            written: 0,
+            phase: ReplyWritePhase::Ready,
+        }
+    }
+
+    /// Check progress without spending a reservation before the owner guard.
+    pub(super) const fn can_reserve(&self) -> bool {
+        matches!(self.phase, ReplyWritePhase::Ready) && self.written < self.frame.len
+    }
+
+    /// Reserve a nonempty prefix of the unwritten bytes on this exact reply.
+    /// # Errors
+    /// Refuses an outstanding, complete or ambiguous write.
+    pub(super) fn reserve(
+        &mut self,
+        limit: NonZeroUsize,
+    ) -> Result<NonZeroUsize, WriteProgressError> {
+        if !self.can_reserve() {
+            return Err(WriteProgressError);
+        }
+        let extent: NonZeroUsize =
+            NonZeroUsize::new((self.frame.len - self.written).min(limit.get()))
+                .ok_or(WriteProgressError)?;
+        self.phase = ReplyWritePhase::Pending(extent);
+        Ok(extent)
+    }
+
+    /// Lend the original immutable fragment reserved for the next native submission.
+    pub(super) fn pending_bytes(&self) -> Option<&[u8]> {
+        let ReplyWritePhase::Pending(extent) = self.phase else {
+            return None;
+        };
+        self.frame
+            .as_bytes()
+            .get(self.written..self.written + extent.get())
+    }
+
+    /// Account for exactly the reported physical prefix of the reserved fragment.
+    /// # Errors
+    /// A missing reservation, zero result or overreported count fences this reply.
+    pub(super) fn complete(&mut self, count: usize) -> Result<(), WriteProgressError> {
+        let phase: ReplyWritePhase = mem::replace(&mut self.phase, ReplyWritePhase::Ambiguous);
+        let ReplyWritePhase::Pending(extent) = phase else {
+            return Err(WriteProgressError);
+        };
+        if count == 0 || count > extent.get() {
+            return Err(WriteProgressError);
+        }
+        self.written = self.written.checked_add(count).ok_or(WriteProgressError)?;
+        self.phase = ReplyWritePhase::Ready;
+        Ok(())
+    }
+
+    /// Observe whether the entire reply prefix was physically accounted for.
+    pub(super) const fn is_complete(&self) -> bool {
+        matches!(self.phase, ReplyWritePhase::Ready) && self.written == self.frame.len
     }
 }
 

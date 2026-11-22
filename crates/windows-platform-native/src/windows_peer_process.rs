@@ -12,9 +12,12 @@ use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle,
 use crate::package_full_name::{
     PACKAGE_NAME_BUFFER, UNWRITTEN_NAME_UNIT, decode_package_full_name,
 };
-use crate::{PackageFullNameError, ReportedPackageFullName};
+use crate::process_image_name::{PROCESS_IMAGE_NAME_BUFFER, read_process_image_name};
+use crate::{
+    PackageFullNameError, ProcessImageNameError, ReportedPackageFullName, ReportedProcessImageName,
+};
 
-/// The Win32 process right needed to read the PID and query the primary token.
+/// The Win32 process right needed to observe process metadata and query the primary token.
 const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
 /// The Win32 process right needed to poll the retained object for exit.
 const PROCESS_SYNCHRONIZE: u32 = 0x0010_0000;
@@ -34,6 +37,13 @@ unsafe extern "system" {
     fn GetProcessId(process: *mut c_void) -> u32;
     /// Return the package full name of the process, including its terminator.
     fn GetPackageFullName(process: *mut c_void, length: *mut u32, name: *mut u16) -> i32;
+    /// Read the full executable name with a wide-unit capacity and output count.
+    fn QueryFullProcessImageNameW(
+        process: *mut c_void,
+        flags: u32,
+        name: *mut u16,
+        count: *mut u32,
+    ) -> i32;
     /// Read the object's signal state with a timeout in milliseconds.
     fn WaitForSingleObject(handle: *mut c_void, milliseconds: u32) -> u32;
     /// Obtain the immediate native error on the calling thread.
@@ -173,6 +183,41 @@ impl PeerProcess {
             )
         };
         decode_package_full_name(status, count, units)
+    }
+
+    /// Observe the Win32 executable image name on the original retained process.
+    ///
+    /// The fixture query uses one buffer capped at 1,024 wide units including
+    /// the terminator. The caller checks the independently expected path and
+    /// the original peer's liveness and deadline where it uses this observation.
+    ///
+    /// # Errors
+    /// Retain the immediate Win32 error, including insufficient capacity, or
+    /// reject a malformed successful result.
+    pub fn image_name(&self) -> Result<ReportedProcessImageName, ProcessImageNameError> {
+        read_process_image_name(
+            |units: &mut [u16; PROCESS_IMAGE_NAME_BUFFER], count: &mut u32| {
+                #[expect(
+                    unsafe_code,
+                    reason = "observe the retained process's Win32 image name"
+                )]
+                // SAFETY: The retained handle stays open with limited query access.
+                // Flags zero request Win32 path format. The writable array covers the
+                // input count in wide units and does not alias the writable DWORD.
+                let status: i32 = unsafe {
+                    QueryFullProcessImageNameW(
+                        self.handle.as_raw_handle(),
+                        0,
+                        units.as_mut_ptr(),
+                        &raw mut *count,
+                    )
+                };
+                if status == 0 {
+                    return Err(last_error());
+                }
+                Ok(())
+            },
+        )
     }
 
     /// Read the PID confirmed when the retained handle was opened.

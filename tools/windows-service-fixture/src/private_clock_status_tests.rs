@@ -386,9 +386,12 @@ fn reply_write_retains_offset_and_original_cutoff() -> Result<(), Box<dyn Error>
             Err(SessionFault::WriteProgress)
         );
         assert!(!transfer.complete_write(6)?);
+        assert!(transfer.write.pending_bytes().is_none());
+        assert!(transfer.write.can_reserve());
         let limit: NonZeroUsize = NonZeroUsize::new(len).ok_or(SessionFault::WriteProgress)?;
         sent[6..len].copy_from_slice(transfer.next_write(limit)?);
         assert!(transfer.complete_write(len - 6)?);
+        assert!(transfer.write.pending_bytes().is_none());
         let AssemblyProgress::Pending(partial) = FrameAssembly::reply()
             .push(&sent[..16])
             .map_err(SessionFault::Frame)?
@@ -433,6 +436,8 @@ fn reply_write_retains_offset_and_original_cutoff() -> Result<(), Box<dyn Error>
             transfer.complete_write(17),
             Err(SessionFault::WriteProgress)
         );
+        assert!(!transfer.write.can_reserve());
+        assert!(transfer.write.pending_bytes().is_none());
         assert_eq!(transfer.next_write(header), Err(SessionFault::Closed));
         let late: Frame = encode_reply(pending.id, true);
         assert_eq!(
@@ -838,7 +843,7 @@ fn receive_native_reply(
             .receiver
             .check_client_edge(pending.delivery().connection),
     )?;
-    let connection: Connection = std::rc::Rc::clone(&transfer.reply.connection);
+    let connection: Connection = std::rc::Rc::clone(&transfer.connection);
     let result: Result<bool, Box<dyn Error>> = transfer_native_reply(transfer, pending, reader);
     if result.is_err() {
         connection.set(false);
@@ -861,11 +866,14 @@ fn transfer_native_reply(
     let limit: NonZeroUsize = NonZeroUsize::new(16).ok_or("invalid fragment cap")?;
     let mut assembly: FrameAssembly = FrameAssembly::reply();
     loop {
-        let range: std::ops::Range<usize> = native_fixture_result(transfer.reserve_write(limit))?;
-        let span: usize = range.len();
+        let extent: NonZeroUsize = native_fixture_result(transfer.reserve_write(limit))?;
+        let span: usize = extent.get();
         let read_start: NativeReadStart = native_fixture_result(reader.begin(span))?;
         native_fixture_result(transfer.receiver.check_receive_edge())?;
-        let bytes: &[u8] = &transfer.reply.frame.as_bytes()[range];
+        let bytes: &[u8] = transfer
+            .write
+            .pending_bytes()
+            .ok_or("reserved reply fragment is absent")?;
         let writer: &mut NativePipeWorker = &mut transfer.receiver.owner.worker;
         let _write_start: NativeWriteStart = native_fixture_result(writer.begin(bytes))?;
         let write: NativeWritePoll = wait_for_native_write(writer)?;

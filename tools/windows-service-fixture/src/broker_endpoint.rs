@@ -3,6 +3,9 @@
 
 use std::{mem, task::Poll};
 
+#[cfg(windows)]
+use crate::native_broker_wait::PendingCompletionWake;
+
 use crate::{
     NativeError,
     error::WorkerError,
@@ -49,6 +52,12 @@ pub(super) trait Reservation: Sized {
     /// # Errors
     /// An observation failure leaves completion unconfirmed.
     fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError>;
+
+    /// Borrow only the pending accept's event and one-shot wake state.
+    #[cfg(windows)]
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        None
+    }
 
     /// Consume this handle in one release attempt.
     ///
@@ -260,6 +269,16 @@ where
             | State::Prepared(_)
             | State::Running(..)
             | State::Closing(_) => WorkerFinish::Pending,
+        }
+    }
+
+    /// Expose a borrowed hint only while the exact accept is charged.
+    #[cfg(windows)]
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        match &mut self.state {
+            State::Running(endpoint, RunningAccept::Queued | RunningAccept::FencedQueued)
+            | State::Draining(endpoint, _) => endpoint.completion_wake(),
+            _ => None,
         }
     }
 }
