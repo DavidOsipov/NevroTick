@@ -1339,6 +1339,8 @@ fn cli_argument_boundary_rejections() -> Check<()> {
         &["--invalidate-after-ms", "0", "--invalidate-after-ms", "0"][..],
         &["--clock-adjustment", "write"][..],
         &["--clock-adjustment", "raw", "--clock-adjustment", "raw"][..],
+        &["--leap-presentation", "write"][..],
+        &["--leap-presentation", "raw", "--leap-presentation", "raw"][..],
     ] {
         let mut arguments = base.to_vec();
         arguments.extend_from_slice(extra);
@@ -1349,6 +1351,9 @@ fn cli_argument_boundary_rejections() -> Check<()> {
         let mut arguments = base.to_vec();
         arguments.extend(["--clock-adjustment", "raw"]);
         argument_rejection(&arguments, "clock_adjustment_unavailable")?;
+        let mut arguments = base.to_vec();
+        arguments.extend(["--leap-presentation", "raw"]);
+        argument_rejection(&arguments, "leap_presentation_unavailable")?;
     }
     argument_rejection(
         &[

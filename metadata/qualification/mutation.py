@@ -39,11 +39,16 @@ TABLE_TEST = (
 )
 CRITICAL_FILES = {"metadata/pipeline/" + name for name in
                   ("__main__.py", "contract.py", "delivery.py", "fields.py", "generate.py", "text_policy.py")}
+SOURCE_MODULES = CRITICAL_FILES | {"metadata/__init__.py", "metadata/pipeline/__init__.py"}
 MODEL_TESTS = ["test_field_coverage.ExpandedModelTests." + name for name in (
     "test_all_seven_record_types_reject_ordinary_assignment_and_deletion",
     "test_all_seven_record_types_have_fixed_attribute_layout",
     "test_complete_field_register_has_reviewed_shape_values_and_catalogue_binding",
 )]
+REGISTRY_TEST = "test_field_coverage.ExpandedModelTests.test_registry_rejects_duplicate_keys_at_import"
+STORE_HISTORY_TEST = (
+    "test_field_coverage.ExpandedFieldTests.test_store_history_is_not_an_active_source_requirement"
+)
 ANNOTATION_TEST = (
     "test_typing_contracts.AnnotationContractTests."
     "test_owned_annotations_are_resolved_and_public_interfaces_are_present"
@@ -186,8 +191,12 @@ def context_selection(row: dict[str, Any], contexts: dict[str, Any],
     name = row["file"]
     if row.get("annotation_only"):
         return [ANNOTATION_TEST], "independent-stdlib-authored-type-contract-readback"
-    if name.endswith("/fields.py") or any(low <= row["start"][0] <= high
-                                             for low, high in contexts.get("record_spans", {}).get(name, [])):
+    if name == "metadata/pipeline/fields.py":
+        if row.get("definition") == "retained_store_field":
+            return [STORE_HISTORY_TEST], "independent-store-history-delivery"
+        if not row.get("definition"):
+            return [*MODEL_TESTS, REGISTRY_TEST], "independent-field-registry-import-and-model"
+    if any(low <= row["start"][0] <= high for low, high in contexts.get("record_spans", {}).get(name, [])):
         return MODEL_TESTS, "independent-seven-record-immutability-layout-and-complete-registry-cohort"
     # The table is executed during import, before unittest test contexts exist.
     # Its independent complete digest/shape test is a direct assertion on every
@@ -213,15 +222,80 @@ def context_selection(row: dict[str, Any], contexts: dict[str, Any],
     return sorted(reached, key=lambda test: (durations.get(test, 1e6), test)), rationale
 
 
-def load_contexts(path: Path | None, sources: dict[str, bytes]) -> dict[str, Any]:
-    """Adapt coverage.py's retained per-line contexts without inventing reaches."""
+def unique_coverage_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject ambiguous JSON keys before a context can replace an observation."""
+    result = dict(pairs)
+    if len(result) != len(pairs):
+        raise ValueError("Duplicate key in coverage context report")
+    return result
+
+
+def coverage_files(report: dict[str, Any], sources: dict[str, bytes]) -> dict[str, dict[str, list[str]]]:
+    """Normalize both admitted coverage shapes to source file, line, and test IDs."""
+    line_limits = {name: len(source.splitlines()) for name, source in sources.items() if name in SOURCE_MODULES}
+    files: dict[str, dict[str, list[str]]] = {}
+    if "files" in report:
+        # Older raw coverage reports already index observations by file and line.
+        file_rows = report["files"]
+        if not isinstance(file_rows, dict):
+            raise ValueError("Invalid file map in coverage context report")
+        for name, row in file_rows.items():
+            if name not in line_limits or not isinstance(row, dict):
+                raise ValueError("Invalid source file in coverage context report")
+            lines = row.get("contexts", row)
+            if not isinstance(lines, dict):
+                raise ValueError("Invalid line map in coverage context report")
+            limit = line_limits[name]
+            for line, tests in lines.items():
+                if (len(line) > len(str(limit)) or not line.isascii() or not line.isdecimal()
+                        or line.startswith("0") or int(line) > limit):
+                    raise ValueError("Invalid source line in coverage context report")
+                if (not isinstance(tests, list) or not tests or any(type(test) is not str for test in tests)
+                        or len(tests) != len(set(tests))):
+                    raise ValueError("Invalid test observations in coverage context report")
+            files[name] = lines
+    else:
+        # test-line-contexts.json indexes the same observations by test first.
+        for test, observations in report.items():
+            if not isinstance(observations, dict) or not observations:
+                raise ValueError("Invalid test observation in coverage context report")
+            for name, lines in observations.items():
+                if name not in line_limits or not isinstance(lines, list) or not lines:
+                    raise ValueError("Invalid source observation in coverage context report")
+                reached = files.setdefault(name, {})
+                for line in lines:
+                    if type(line) is not int or not 1 <= line <= line_limits[name]:
+                        raise ValueError("Invalid source line in coverage context report")
+                    tests = reached.setdefault(str(line), [])
+                    if test in tests:
+                        raise ValueError("Duplicate line observation in coverage context report")
+                    tests.append(test)
+    if not any(files.values()):
+        raise ValueError("Missing line observations in supplied coverage context report")
+    return files
+
+
+def load_contexts(path: Path | None, sources: dict[str, bytes], *, report_bytes: bytes | None = None) -> dict[str, Any]:
+    """Admit the coverage snapshot and derive the unchanged fallback scope facts."""
     result: dict[str, Any] = {"files": {}, "durations": {}}
-    if path:
-        raw = json.loads(path.read_text())
-        result["files"] = {name: row.get("contexts", row) for name, row in raw.get("files", {}).items()}
+    if path is not None:
+        data = path.read_bytes() if report_bytes is None else report_bytes
+        report = json.loads(data, object_pairs_hook=unique_coverage_object)
+        if not isinstance(report, dict):
+            raise ValueError("Invalid coverage context report")
+        result["files"] = coverage_files(report, sources)
         test_result = path.with_name("test-result.json")
-        result["durations"] = (json.loads(test_result.read_text()).get("test_durations", {})
-                               if test_result.exists() else raw.get("durations", {}))
+        if test_result.exists():
+            test_report = json.loads(test_result.read_bytes(), object_pairs_hook=unique_coverage_object)
+            if not isinstance(test_report, dict):
+                raise ValueError("Invalid test result in coverage context report")
+            durations = test_report.get("test_durations", {})
+        else:
+            durations = report.get("durations", {}) if "files" in report else {}
+        if not isinstance(durations, dict) or any(type(value) not in (int, float) or not 0 <= value < float("inf")
+                                                  for value in durations.values()):
+            raise ValueError("Invalid test durations in coverage context report")
+        result["durations"] = durations
     for node in ast.parse(sources["metadata/pipeline/text_policy.py"]).body:
         targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
         if any(isinstance(target, ast.Name) and target.id == "_FORBIDDEN_RANGES" for target in targets):
@@ -402,7 +476,7 @@ def main() -> int:
         print(json.dumps({"controls": "passed", "output": str(args.output)}))
         return 0
     manifest = json.loads((ROOT / "metadata/qualification/manifest.json").read_text())
-    if set(manifest["critical_files"]) != CRITICAL_FILES or set(manifest["source_modules"]) != CRITICAL_FILES | {"metadata/__init__.py", "metadata/pipeline/__init__.py"}:
+    if set(manifest["critical_files"]) != CRITICAL_FILES or set(manifest["source_modules"]) != SOURCE_MODULES:
         parser.error("The complete independent eight-module/six-critical-file scope is required")
     if manifest["minimum_adjusted_mutation_percent"] < 95:
         parser.error("The per-critical-file 95 percent minimum cannot be reduced")
@@ -410,17 +484,21 @@ def main() -> int:
              + [path.relative_to(ROOT).as_posix() for path in sorted((ROOT / "metadata/tests").glob("*.py"))]
              + [CATALOGUE])
     sources = snapshot(ROOT, names)
+    report_bytes = None
     if args.contexts:
         if not args.context_binding:
             parser.error("A source-hash context binding is required with --contexts")
-        binding = json.loads(args.context_binding.read_text())
+        binding_bytes = args.context_binding.read_bytes()
+        binding = json.loads(binding_bytes)
         if binding["source_hashes"] != {name: digest(sources[name]) for name in manifest["source_modules"]}:
             parser.error("Coverage contexts do not match this frozen production source")
+        report_bytes = args.contexts.read_bytes()
         write_json(args.output / "selection-source.json", {
-            "contexts": str(args.contexts), "contexts_sha256": digest(args.contexts.read_bytes()),
-            "binding": str(args.context_binding), "binding_sha256": digest(args.context_binding.read_bytes()),
+            "contexts": str(args.contexts), "contexts_sha256": digest(report_bytes),
+            "binding": str(args.context_binding), "binding_sha256": digest(binding_bytes),
             "source_hashes": binding["source_hashes"],
         })
+    contexts = load_contexts(args.contexts, sources, report_bytes=report_bytes)
     write_json(args.output / "candidate.json", {
         "sources": {name: digest(raw) for name, raw in sources.items()},
         "manifest_sha256": digest((ROOT / "metadata/qualification/manifest.json").read_bytes()),
@@ -489,10 +567,13 @@ def main() -> int:
                                       for key in ("discovered", "run", "successful", "elapsed")},
                           "output": str(args.output)}))
         return 0
-    contexts = load_contexts(args.contexts, sources)
+    observed_ids = {test for lines in contexts["files"].values() for tests in lines.values() for test in tests if test}
+    if not observed_ids.issubset(healthy_ids):
+        raise ValueError("Coverage context tests are outside the passing baseline discovery")
     contexts["durations"] = {**contexts.get("durations", {}), **healthy["report"]["test_durations"]}
-    if args.contexts:
-        write_json(args.output / "contexts.json", contexts)
+    # Keep the original hash-bound coverage map and the selected tests. A second,
+    # inverted copy repeats long test IDs for every reached line and is derived
+    # from those same inputs.
     selected_rows = rows
     if args.ids:
         requested = set(json.loads(args.ids.read_text()))

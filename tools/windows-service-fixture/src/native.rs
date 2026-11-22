@@ -250,14 +250,19 @@ fn service_main(role: LabRole, argc: u32) {
                     &mut NativeWait,
                     &STOP,
                 ),
-                LabRole::ClockBroker => host::run_broker_service(
+                LabRole::ClockBroker => host::run_broker_service_with_worker(
                     argc,
                     &mut NativeFactory,
                     &mut token::NativeTokenObserver,
                     &mut NativeClock,
                     &mut NativeWait,
                     &STOP,
-                    sampled_native_reader(&CLOCK_CHANGES),
+                    (
+                        sampled_native_reader(&CLOCK_CHANGES),
+                        crate::broker_endpoint::BrokerEndpointWorker::new(
+                            crate::native_broker_endpoint::NativeBrokerEndpoint::acquire,
+                        ),
+                    ),
                 ),
             }
         };

@@ -14,7 +14,7 @@
     "crates/windows-platform-native/Cargo.toml": "64195ca97a7389b0317447799c0cc65ed4b75c51126728d3870abdbb1964c6a2"
   },
   "first_party_build_scripts": {
-    "crates/nevrotick-ui/build.rs": "2bfbba4d4a2c68d6f6de6e21aaf45daaff2b200431d60b291e6ebf53b675e3da"
+    "crates/nevrotick-ui/build.rs": "ffd74071d15720b35fb5264c5a6540073aad0289420f0eb4b06f2faf81b63645"
   },
   "packages": [
     {

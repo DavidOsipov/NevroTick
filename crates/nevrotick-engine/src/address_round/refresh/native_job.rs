@@ -47,10 +47,16 @@ pub(super) struct DispatchAdmission {
 
 impl DispatchAdmission {
     /// Only the first dispatch admitted before retirement can enter the adapter.
-    pub(super) fn admit(self) -> bool {
+    pub(super) fn admit(&self) -> bool {
         self.state
             .compare_exchange(RESERVED, DISPATCHED, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
+    }
+
+    /// Report whether this worker's invocation has requested retirement.
+    #[cfg(any(windows, test))]
+    pub(super) fn retirement_requested(&self) -> bool {
+        self.state.load(Ordering::Acquire) == RETIRED
     }
 }
 
@@ -225,6 +231,8 @@ mod tests {
     }
 
     /// Reap a retired thread through normal admission and hold the next admitted dispatch.
+    /// The worker reports a live dispatch, then its retirement state on the first
+    /// advance, and returns on the second advance.
     /// # Errors
     /// Return a fixture preparation or worker start failure.
     async fn start_successor(
@@ -232,19 +240,22 @@ mod tests {
     ) -> Result<(NativeResolverJob, Sender<()>, Receiver<bool>), Box<dyn Error>> {
         loop {
             let prepared: RefreshPlan = answer(peer)?;
-            let (dispatched, observed): (Sender<bool>, Receiver<bool>) = mpsc::channel();
-            let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
+            let (report, observed): (Sender<bool>, Receiver<bool>) = mpsc::channel();
+            let (advance, advanced): (Sender<()>, Receiver<()>) = mpsc::channel();
             match NativeResolverJob::start(move |admission| {
-                let admitted: bool = admission.admit();
-                if dispatched.send(admitted).is_err()
-                    || !admitted
-                    || released.recv_timeout(WATCHDOG).is_err()
+                let dispatched_once: bool = admission.admit() && !admission.admit();
+                let live_dispatch: bool = dispatched_once && !admission.retirement_requested();
+                if report.send(live_dispatch).is_err()
+                    || !live_dispatch
+                    || advanced.recv_timeout(WATCHDOG).is_err()
+                    || report.send(admission.retirement_requested()).is_err()
+                    || advanced.recv_timeout(WATCHDOG).is_err()
                 {
                     return Err(resolver_task());
                 }
                 Ok(prepared)
             }) {
-                Ok(job) => return Ok((job, release, observed)),
+                Ok(job) => return Ok((job, advance, observed)),
                 Err(PilotError::ResolutionBusy) => tokio::time::sleep(COMPLETION_CHECK).await,
                 Err(error) => return Err(error.into()),
             }
@@ -256,7 +267,8 @@ mod tests {
     /// # Errors
     /// Return failed fixture preparation or a bounded thread/watchdog failure.
     /// # Panics
-    /// Detect invalid dispatch, premature slot release, lost or reused results.
+    /// Detect invalid dispatch, missed retirement, premature slot release, or
+    /// lost or reused results.
     #[test]
     fn retirement_closes_dispatch_and_preserves_actual_thread_custody() -> Result<(), Box<dyn Error>>
     {
@@ -270,7 +282,7 @@ mod tests {
             if entered.send(()).is_err() || released.recv_timeout(WATCHDOG).is_err() {
                 return Err(resolver_task());
             }
-            let _reported = dispatched.send(admission.admit());
+            let _reported: Result<(), mpsc::SendError<bool>> = dispatched.send(admission.admit());
             // Offer a late answer anyway to ensure successor custody discards it.
             Ok(old_answer)
         })?;
@@ -286,7 +298,30 @@ mod tests {
         let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
             .enable_time()
             .build()?;
-        let (mut current, release_current, observed_current) = runtime.block_on(async {
+        for explicit_retirement in [true, false] {
+            let (retiring, advance, observed): (NativeResolverJob, Sender<()>, Receiver<bool>) =
+                runtime.block_on(async {
+                    tokio::time::timeout(WATCHDOG, start_successor(old_peer)).await?
+                })?;
+            assert!(observed.recv_timeout(WATCHDOG)?);
+            if explicit_retirement {
+                assert!(retiring.retire());
+            } else {
+                drop(retiring);
+            }
+            advance.send(())?;
+            assert!(observed.recv_timeout(WATCHDOG)?);
+            assert!(matches!(
+                NativeResolverJob::start(|_| Err(resolver_task())),
+                Err(PilotError::ResolutionBusy)
+            ));
+            advance.send(())?;
+        }
+        let (mut current, advance_current, observed_current): (
+            NativeResolverJob,
+            Sender<()>,
+            Receiver<bool>,
+        ) = runtime.block_on(async {
             tokio::time::timeout(WATCHDOG, start_successor(current_peer)).await?
         })?;
         assert!(observed_current.recv_timeout(WATCHDOG)?);
@@ -299,8 +334,10 @@ mod tests {
             NativeResolverJob::start(|_| Err(resolver_task())),
             Err(PilotError::ResolutionBusy)
         ));
-        release_current.send(())?;
-        let joined =
+        advance_current.send(())?;
+        assert!(!observed_current.recv_timeout(WATCHDOG)?);
+        advance_current.send(())?;
+        let joined: Result<RefreshPlan, AddressRoundRefreshOutcome> =
             runtime.block_on(async { tokio::time::timeout(WATCHDOG, current.wait()).await })?;
         let Ok(joined) = joined else {
             return Err(PilotError::ResolverTask.into());

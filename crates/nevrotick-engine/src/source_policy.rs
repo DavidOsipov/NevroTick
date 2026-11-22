@@ -3013,7 +3013,7 @@ impl ProtectedEndpointGuard<'_> {
         &mut self,
         authorization: crate::nts_ke_experiment::VerifiedRetiredControl<'_>,
     ) -> Result<(), SourcePolicyError> {
-        use crate::nts_ke_experiment::ProtectedControlKind;
+        use crate::nts_ke_experiment::{ControlSubmission, ProtectedControlKind};
 
         let now: Instant = authorization.decided_at();
         let kind: ControlKind = match authorization.kind() {
@@ -3021,13 +3021,15 @@ impl ProtectedEndpointGuard<'_> {
             ProtectedControlKind::Deny => ControlKind::Deny,
             ProtectedControlKind::Restrict => ControlKind::Restrict,
         };
-        let [prior, pending]: [(&ProtectedSendStamp, &Arc<()>); 2] =
+        let (prior, pending): (Option<ControlSubmission<'_>>, ControlSubmission<'_>) =
             authorization.into_submissions();
-        if Arc::ptr_eq(prior.1, pending.1) {
+        if prior.is_some_and(|prior| Arc::ptr_eq(prior.1, pending.1)) {
             return Err(SourcePolicyError::Foreign);
         }
         let state: &mut PolicyState = self.guard.state_mut()?;
-        state.receiving(&self.original.binding, &prior.0.correlation, prior.1)?;
+        if let Some(prior) = prior {
+            state.receiving(&self.original.binding, &prior.0.correlation, prior.1)?;
+        }
         state.receiving(&self.original.binding, &pending.0.correlation, pending.1)?;
         state.control(&self.original.binding, kind, now)
     }

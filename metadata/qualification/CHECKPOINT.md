@@ -14,6 +14,56 @@ outcomes or a resumable checkpoint. W11-W10 retains results and any demonstrated
 metadata repairs; shared schema/manifest/lock/policy custody stays coordinated.
 All unrelated native/package, formal, fuzz, storage and UI holds remain.
 
+## Direct MSIX activation authoring — 22 November 2026
+
+W11-W10 and MD-P1–MD-P3. The portable activation candidate on staged tree
+`d69f74dca2495897c5ed5eb1bcd37274349c1fda` passed strict typing for eight
+production modules, a legal consumer and five intended negative controls.
+The isolated source CLI validated, generated, checked and inspected 14
+outputs. Independent readback matched all outputs and input digests.
+Release validation refused the six pending items, and the inspection
+kept package identity unset and assembly readiness false.
+
+Coverage ran 261 tests and accounted for all 335 expected subprocesses.
+All five required security modules exceeded the 90% line gate. A sixth
+active file, `fields.py`, reached 19/20 lines. The coverage receipt SHA-256
+is `5d636c647b8ce25444aed8887417290c8587cd5f15e90f984e8cb1404435d6ba`.
+The exact source and context binding, compact raw coverage and CLI
+readback are under `~/.local/share/nevrotick/msix-activation-coverage-20261122.48szNZQ7/retry.rgbngFW7/`.
+
+The independent tool admission verified 30 locked distributions for
+Cosmic Ray 8.7.0, including the pinned `yattag` source build, and seven
+runner controls. The complete inventory generated 9,244 variants across
+six files, with zero filters. The runner now consumes the current
+test-to-line map and checks the selected cases against the passing baseline.
+An initial fields run passed the entire baseline, then stopped on the
+file cap while writing a redundant inverted map. Removing that copy
+preserves the source-bound context and per-variant selected tests. The
+first complete fields execution retained two assertion kills, four
+survivors and six startup-review outcomes. Independent review found that
+the blanket registry cohort omitted the existing Store-history consumer.
+The driver now selects that test and checks duplicate keys through an
+owned import of the actual registry with one repeated row.
+
+The exact rerun on `171409c955d80c0542fec37735a7165eb02f06f3` passed
+all 262 unmodified tests in 101.19 seconds. It ran all twelve `fields.py`
+variants on four workers. The five assertion kills include the recovered
+Store-history test and both duplicate-guard faults. Six import-breaking
+variants failed the real valid-source CLI assertion and were independently
+admitted as startup kills. One survivor is equivalent because a dict built
+by one insertion per tuple entry cannot have more keys than the tuple.
+That exclusion earns zero kills. The exact file result is 11/11 after
+review (11/12 raw), with zero unresolved outcomes. The complete inventory
+digest still matches the earlier enumeration. The invocation exited 1
+because five other files were outside the selected run. Its compact
+receipt, raw outcomes and review are in `fields-reviewed-replay/` at the
+same evidence root. Scratch copies were removed after export.
+
+The earlier coverage receipt applies to its exact 261-test suite. The
+added import control needs a current context/coverage receipt for the
+full campaign. The five remaining 95% file gates and native/package
+qualification remain in this task chain.
+
 ## Completed finite repair — 8 November 2026
 
 David explicitly requested fixing the seven-quote metadata defect. The finite

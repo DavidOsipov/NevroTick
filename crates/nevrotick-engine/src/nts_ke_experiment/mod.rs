@@ -39,7 +39,7 @@ mod recovery;
 use association::AssociationCandidate;
 #[cfg(any(windows, test))]
 use association::AssociationOwner;
-pub(crate) use association::ledger::VerifiedRetiredControl;
+pub(crate) use association::ledger::{ControlSubmission, VerifiedRetiredControl};
 #[cfg(any(windows, test))]
 use process::ProcessAdmission;
 #[cfg(any(windows, test))]

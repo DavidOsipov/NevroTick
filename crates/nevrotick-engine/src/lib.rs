@@ -25,6 +25,8 @@ mod nts_ke_experiment;
 
 #[cfg(feature = "ke-association-prototype")]
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
+#[cfg(all(feature = "ke-association-prototype", windows))]
+pub use nts_ke_experiment::managed_preview::ProtectedNativeClockObservation;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
     ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,

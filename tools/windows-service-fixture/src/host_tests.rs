@@ -33,6 +33,8 @@ use crate::{
 
 #[path = "broker_clock_change_tests.rs"]
 mod broker_clock_change_tests;
+#[path = "broker_endpoint_host_tests.rs"]
+mod broker_endpoint_host_tests;
 #[path = "broker_observation_tests.rs"]
 mod broker_observation_tests;
 
@@ -5930,12 +5932,14 @@ mod worker_tests {
             {
                 let mut script = rig.script.borrow_mut();
                 match failure {
-                    WorkerError::Preparation => script.preparation = Poll::Ready(Err(failure)),
+                    WorkerError::Preparation | WorkerError::EndpointPreparation(_) => {
+                        script.preparation = Poll::Ready(Err(failure));
+                    }
                     WorkerError::Activation => {
                         script.preparation = Poll::Ready(Ok(()));
                         script.activation = Err(failure);
                     }
-                    WorkerError::Running | WorkerError::Cleanup => {
+                    WorkerError::Running | WorkerError::Cleanup | WorkerError::EndpointClose(_) => {
                         script.preparation = Poll::Ready(Ok(()));
                         script.running = Err(failure);
                     }

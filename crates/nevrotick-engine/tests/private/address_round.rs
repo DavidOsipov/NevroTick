@@ -759,14 +759,33 @@ fn assert_membership_preserved_restrictions(
     before: &crate::SourcePolicySnapshot,
     after: &crate::SourcePolicySnapshot,
 ) {
-    for (original, current) in [
+    let restrictions: [(
+        &crate::SourceRestrictionSnapshot,
+        &crate::SourceRestrictionSnapshot,
+    ); 2] = [
         (before.source(), after.source()),
         (before.endpoint(), after.endpoint()),
-    ] {
+    ];
+    for (original, current) in restrictions {
         assert_eq!(current.interval(), original.interval());
         assert_eq!(current.floor(), original.floor());
         assert_eq!(current.revision(), original.revision());
     }
+}
+
+/// Execute a prepared round and check the actual query returned by its peer.
+/// # Errors
+/// Preserve runtime, joined peer and missing-query failures.
+fn execute_round_with_reply(
+    round: PreparedAddressRound,
+    schedule: &ControlSchedule,
+    peer: ReplyPeer,
+) -> Check<AddressRoundReport> {
+    let result: Result<AddressRoundReport, PilotError> = execute_address_round(round, schedule);
+    let (report, query): (AddressRoundReport, Option<SeenQuery>) =
+        joined_result(result, peer.finish())?;
+    check_query(&require_query(query)?);
+    Ok(report)
 }
 
 /// First membership preserves the installed revision and real RATE floor while
@@ -779,38 +798,36 @@ fn assert_membership_preserved_restrictions(
 fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Check<()> {
     use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits, SourceScale};
 
-    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
-        1,
-        3,
-        Duration::from_millis(1),
-        Duration::from_millis(4),
-    )?)?;
-    let source = authority.source(0)?;
-    let first = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-    let second = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-    let rate = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-    let (a, b, c) = (
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 3, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let rate: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let (a, b, c): (SocketAddr, SocketAddr, SocketAddr) = (
         first.local_addr()?,
         second.local_addr()?,
         rate.local_addr()?,
     );
-    let snapshot =
+    let snapshot: crate::SourceConfigurationSnapshot =
         authority.install_source_configuration(&source, SourceAddressSet::new(&[a, b, c])?)?;
-    let (old, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
-    let (rate_round, _) = source.prepare_address_round(checked_config(&[c])?)?;
-    let schedule = ControlSchedule::new(None, None)?;
-    let quiet_rate = rate.try_clone()?;
-    let rate_peer = ReplyPeer::spawn(rate, ReplyKind::Control)?;
-    let result = execute_address_round(rate_round, &schedule);
-    let (rate_report, query) = joined_result(result, rate_peer.finish())?;
-    check_query(&require_query(query)?);
+    let (old, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[a, b])?)?;
+    let (rate_round, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[c])?)?;
+    let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+    let quiet_rate: UdpSocket = rate.try_clone()?;
+    let rate_peer: ReplyPeer = ReplyPeer::spawn(rate, ReplyKind::Control)?;
+    let rate_report: AddressRoundReport =
+        execute_round_with_reply(rate_round, &schedule, rate_peer)?;
     assert_eq!(rate_report.end(), AddressRoundEnd::Control);
-    let before = source.policy_snapshot(c)?;
+    let before: crate::SourcePolicySnapshot = source.policy_snapshot(c)?;
     assert_eq!(before.source().interval(), Duration::from_millis(2));
     assert!(before.source().floor().is_some() && before.endpoint().floor().is_some());
 
     authority.select_initial_round_membership(&snapshot, SourceAddressSet::new(&[a, b])?)?;
-    let actual = source
+    let actual: crate::SourceConfigurationSnapshot = source
         .configuration_snapshot()?
         .ok_or(PilotError::InternalState)?;
     assert!(actual.same_configuration(&snapshot));
@@ -819,8 +836,8 @@ fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Ch
         authority.select_initial_round_membership(&snapshot, SourceAddressSet::new(&[b, a])?),
         Err(SourcePolicyError::ConfigurationChanged),
     );
-    let old_report = execute_address_round(old, &schedule)?;
-    let old_queries = (observe_queries(&first)?.0, observe_queries(&second)?.0);
+    let old_report: AddressRoundReport = execute_address_round(old, &schedule)?;
+    let old_queries: (u16, u16) = (observe_queries(&first)?.0, observe_queries(&second)?.0);
     assert!(
         matches!(
             old_report.primary_error(),
@@ -833,9 +850,12 @@ fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Ch
     assert_eq!(old_queries, (0, 0));
     assert_membership_preserved_restrictions(&before, &source.policy_snapshot(c)?);
 
-    let (previous_scale, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
-    let revised = authority.replace_source_scale(&snapshot, SourceScale::UnsmearedUtc)?;
-    for peers in [&[c][..], &[b, a], &[a]] {
+    let (previous_scale, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[a, b])?)?;
+    let revised: crate::SourceConfigurationSnapshot =
+        authority.replace_source_scale(&snapshot, SourceScale::UnsmearedUtc)?;
+    let foreign_orders: [&[SocketAddr]; 3] = [&[c], &[b, a], &[a]];
+    for peers in foreign_orders {
         assert!(matches!(
             source.prepare_address_round(checked_config(peers)?),
             Err(PilotError::SourcePolicy(SourcePolicyError::Foreign))
@@ -849,7 +869,7 @@ fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Ch
         )?),
         Err(SourcePolicyError::Foreign)
     ));
-    let retired = execute_address_round(previous_scale, &schedule)?;
+    let retired: AddressRoundReport = execute_address_round(previous_scale, &schedule)?;
     assert!(matches!(
         retired.primary_error(),
         Some(PilotError::SourcePolicy(
@@ -859,24 +879,21 @@ fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Ch
     assert_eq!(observe_queries(&first)?.0, 0);
     assert_eq!(observe_queries(&second)?.0, 0);
 
-    let (current, _) = source.prepare_address_round(checked_config(&[a, b])?)?;
-    let responder = ReplyPeer::spawn(second, ReplyKind::Ordinary)?;
-    let result = execute_address_round(current, &schedule);
-    let (report, query) = joined_result(result, responder.finish())?;
-    check_query(&require_query(query)?);
+    let (current, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[a, b])?)?;
+    let responder: ReplyPeer = ReplyPeer::spawn(second, ReplyKind::Ordinary)?;
+    let report: AddressRoundReport = execute_round_with_reply(current, &schedule, responder)?;
     assert_eq!(report.round_end(), AddressRoundEnd::Reply);
     assert_eq!(report.attempts().len(), 2);
     assert_eq!(report.attempts()[0].peer(), a);
     assert_eq!(report.attempts()[1].peer(), b);
-    let facts = report.attempts()[1]
+    let facts: &crate::TransportFacts = report.attempts()[1]
         .report()
         .facts()
         .ok_or(PilotError::InternalState)?;
-    assert!(
-        facts
-            .source_configuration()
-            .is_some_and(|original| original.same_configuration(&revised))
-    );
+    assert!(facts.source_configuration().is_some_and(
+        |original: &crate::SourceConfigurationSnapshot| original.same_configuration(&revised)
+    ));
     assert_eq!(observe_queries(&first)?.0, 1);
     assert_eq!(observe_queries(&quiet_rate)?.0, 0);
     Ok(())
@@ -895,7 +912,7 @@ fn require_refresh_timeout_pair(
     assert_eq!(report.round_end(), AddressRoundEnd::Exhausted);
     assert!(report.primary_error().is_none());
     assert!(report.policy_refusals().is_empty());
-    let [first, second] = report.attempts() else {
+    let [first, second]: &[AddressAttempt] = report.attempts() else {
         return Err(
             io::Error::other("original address-round history must retain both peers").into(),
         );
@@ -965,15 +982,18 @@ fn joined_refresh_changes_membership_after_original_udp_round_exhausts() -> Chec
         joined_result(result, responder.finish())?;
     let query: SeenQuery = require_query(seen)?;
     check_query(&query);
-    let Some(AddressRoundRefreshOutcome::Successor(later)) = report.refresh() else {
+    let Some(AddressRoundRefreshOutcome::Successor(successor_report)): Option<
+        &AddressRoundRefreshOutcome,
+    > = report.refresh() else {
         return Err(
             io::Error::other("joined refresh did not reach the precredited successor").into(),
         );
     };
+    let later: &AddressRoundReport = successor_report;
     classify_native_report(later)?;
     assert_eq!(later.round_end(), AddressRoundEnd::Reply);
     assert!(later.refresh().is_none());
-    let [accepted] = later.attempts() else {
+    let [accepted]: &[AddressAttempt] = later.attempts() else {
         return Err(io::Error::other("successor must record one actual attempt").into());
     };
     assert_eq!(accepted.peer(), c);
@@ -981,11 +1001,9 @@ fn joined_refresh_changes_membership_after_original_udp_round_exhausts() -> Chec
     assert!(accepted.report().sent());
     let facts: &crate::TransportFacts =
         accepted.report().facts().ok_or(PilotError::InternalState)?;
-    assert!(
-        facts
-            .source_configuration()
-            .is_some_and(|actual| actual.same_configuration(&installed))
-    );
+    assert!(facts.source_configuration().is_some_and(
+        |actual: &crate::SourceConfigurationSnapshot| actual.same_configuration(&installed)
+    ));
 
     let stale: AddressRoundReport = execute_address_round(old, &schedule)?;
     assert!(matches!(
@@ -999,13 +1017,22 @@ fn joined_refresh_changes_membership_after_original_udp_round_exhausts() -> Chec
         Err(PilotError::SourcePolicy(SourcePolicyError::Foreign))
     ));
     let tokens: [[u8; 8]; 2] = require_refresh_timeout_pair(&report, [(a, &first), (b, &second)])?;
-    assert!(tokens.iter().all(|token| token != &query.bytes[40..48]));
+    assert!(
+        tokens
+            .iter()
+            .all(|token: &[u8; 8]| token != &query.bytes[40..48])
+    );
     assert_eq!(observe_queries(&successor)?.0, 0);
     let after: crate::SourcePolicySnapshot = source.policy_snapshot(c)?;
-    for (original, current, sends) in [
+    let restrictions: [(
+        &crate::SourceRestrictionSnapshot,
+        &crate::SourceRestrictionSnapshot,
+        u64,
+    ); 2] = [
         (before.source(), after.source(), 3),
         (before.endpoint(), after.endpoint(), 1),
-    ] {
+    ];
+    for (original, current, sends) in restrictions {
         assert_eq!(current.interval(), original.interval());
         assert!(current.floor() >= original.floor());
         assert_eq!(
@@ -1107,27 +1134,25 @@ fn refresh_preparation_requires_credit_for_both_rounds() -> Check<()> {
 fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Check<()> {
     use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
 
-    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
-        1,
-        1,
-        Duration::from_millis(1),
-        Duration::from_millis(4),
-    )?)?;
-    let peer_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-    let peer = peer_socket.local_addr()?;
-    let source = authority.source(0)?;
-    let configuration =
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let peer_socket: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer: SocketAddr = peer_socket.local_addr()?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let configuration: crate::SourceConfigurationSnapshot =
         authority.install_source_configuration(&source, SourceAddressSet::new(&[peer])?)?;
-    let (mut prepared, _) = source.prepare_address_round(checked_config(&[peer])?)?;
-    let mode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
-    let runtime = runtime()?;
-    let origin = Instant::now();
-    let deadline = origin
+    let (mut prepared, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[peer])?)?;
+    let mode: SourceMode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let origin: Instant = Instant::now();
+    let deadline: Instant = origin
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
-    let context = Arc::new(RunClockContext { origin });
-    let entered = runtime.enter();
-    let SetupOutcome::Ready(mut slot) = setup_address_request_bound(
+    let context: Arc<RunClockContext> = Arc::new(RunClockContext { origin });
+    let entered: tokio::runtime::EnterGuard<'_> = runtime.enter();
+    let SetupOutcome::Ready(mut slot): SetupOutcome = setup_address_request_bound(
         peer,
         prepared.packets[0],
         context,
@@ -1144,9 +1169,9 @@ fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Chec
         tokio::time::timeout_at(TokioInstant::from_std(deadline), slot.socket.writable()).await?
     })?;
     authority.select_initial_round_membership(&configuration, SourceAddressSet::new(&[peer])?)?;
-    let checkpoint = attempt_send(&mut slot, deadline, &prepared.control);
-    let sent = slot.sent;
-    let queries = observe_queries(&peer_socket)?.0;
+    let checkpoint: Control = attempt_send(&mut slot, deadline, &prepared.control);
+    let sent: bool = slot.sent;
+    let queries: u16 = observe_queries(&peer_socket)?.0;
     assert!(
         matches!(
             slot.phase,
@@ -1159,7 +1184,7 @@ fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Chec
     assert!(!checkpoint.stop);
     assert!(!sent);
     assert_eq!(queries, 0);
-    let retained = source.policy_snapshot(peer)?;
+    let retained: crate::SourcePolicySnapshot = source.policy_snapshot(peer)?;
     assert!(retained.source().floor().is_none() && retained.endpoint().floor().is_none());
     Ok(())
 }
@@ -1170,28 +1195,27 @@ fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Chec
 /// # Panics
 /// Require independent query bytes and one charged datagram at the commit seam.
 fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
-    use crate::{SoftwareClock, SourceAddressSet, SourcePolicyLimits};
+    use crate::{SoftwareClock, SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
 
-    let mut authority = crate::source_policy::isolated_authority(SourcePolicyLimits::new(
-        1,
-        1,
-        Duration::from_millis(1),
-        Duration::from_millis(4),
-    )?)?;
-    let peer_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-    let peer = peer_socket.local_addr()?;
-    let source = authority.source(0)?;
-    let members = SourceAddressSet::new(&[peer])?;
-    let configuration = authority.install_source_configuration(&source, members.clone())?;
-    let (mut prepared, _) = source.prepare_address_round(checked_config(&[peer])?)?;
-    let mode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
-    let runtime = runtime()?;
-    let origin = Instant::now();
-    let deadline = origin
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let peer_socket: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer: SocketAddr = peer_socket.local_addr()?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let members: SourceAddressSet = SourceAddressSet::new(&[peer])?;
+    let configuration: crate::SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, members.clone())?;
+    let (mut prepared, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&[peer])?)?;
+    let mode: SourceMode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let origin: Instant = Instant::now();
+    let deadline: Instant = origin
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
-    let entered = runtime.enter();
-    let SetupOutcome::Ready(mut slot) = setup_address_request_bound(
+    let entered: tokio::runtime::EnterGuard<'_> = runtime.enter();
+    let SetupOutcome::Ready(mut slot): SetupOutcome = setup_address_request_bound(
         peer,
         prepared.packets[0],
         Arc::new(RunClockContext { origin }),
@@ -1204,18 +1228,18 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
         return Err(io::Error::other("original request did not acquire its socket").into());
     };
     drop(entered);
-    let responder = ReplyPeer::spawn(peer_socket, ReplyKind::Ordinary)?;
-    let mut buffer = [0; RECEIVE_BYTES];
-    let received = runtime.block_on(async {
-        let cutoff = TokioInstant::from_std(deadline);
+    let responder: ReplyPeer = ReplyPeer::spawn(peer_socket, ReplyKind::Ordinary)?;
+    let mut buffer: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+    let received: Check<(usize, SocketAddr, SoftwareClock)> = runtime.block_on(async {
+        let cutoff: TokioInstant = TokioInstant::from_std(deadline);
         tokio::time::timeout_at(cutoff, slot.socket.writable()).await??;
-        let _checkpoint = attempt_send(&mut slot, deadline, &prepared.control);
-        let (length, sender) =
+        let _checkpoint: Control = attempt_send(&mut slot, deadline, &prepared.control);
+        let (length, sender): (usize, SocketAddr) =
             tokio::time::timeout_at(cutoff, slot.socket.recv_from(&mut buffer)).await??;
-        Ok::<_, Box<dyn Error>>((length, sender, SoftwareClock::capture()))
+        Ok((length, sender, SoftwareClock::capture()))
     });
-    let joined = responder.finish();
-    let (length, sender, capture) = received?;
+    let joined: io::Result<Option<SeenQuery>> = responder.finish();
+    let (length, sender, capture): (usize, SocketAddr, SoftwareClock) = received?;
     check_query(&require_query(joined?)?);
     assert_eq!(length, PACKET_BYTES);
     assert!(crate::charge_selected_datagram(
@@ -1225,7 +1249,7 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
             source: sender
         },
     ));
-    let staged = crate::stage_reply(
+    let staged: Result<crate::StagedReply, crate::Rejection> = crate::stage_reply(
         &slot,
         &buffer[..length],
         sender,
@@ -1236,8 +1260,8 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
         staged.is_ok(),
         "the real reply must reach the late membership boundary"
     );
-    let mut selection = None;
-    let _checkpoint = super::super::publish_series_reply_observing(
+    let mut selection: Option<Result<(), SourcePolicyError>> = None;
+    let _checkpoint: Control = super::super::publish_series_reply_observing(
         &mut slot,
         &mut prepared.control,
         staged,
@@ -1262,7 +1286,7 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
 /// Refuse old history publication and preserve the genuine correlated neighbor.
 #[test]
 fn membership_selected_after_staging_fences_the_actual_final_receive() -> Check<()> {
-    let stale = membership_at_final_receive(true)?;
+    let stale: SlotReport = membership_at_final_receive(true)?;
     assert_eq!(
         stale.source_policy_refusal(),
         Some(crate::SourcePolicyError::ConfigurationChanged),
@@ -1270,7 +1294,7 @@ fn membership_selected_after_staging_fences_the_actual_final_receive() -> Check<
     );
     assert!(stale.sent() && stale.facts().is_none());
     assert_eq!((stale.received(), stale.rejected()), (1, 1));
-    let valid = membership_at_final_receive(false)?;
+    let valid: SlotReport = membership_at_final_receive(false)?;
     assert_eq!(valid.status(), Status::Header);
     assert!(valid.sent() && valid.facts().is_some());
     assert_eq!((valid.received(), valid.rejected()), (1, 0));
@@ -1391,26 +1415,29 @@ fn preexisting_stop_and_invalidation_prevent_every_send() -> Check<()> {
 /// Require the exact historical header and phase-dependent current summary.
 #[test]
 fn actual_header_survives_stop_and_invalidation_at_the_final_checkpoint() -> Check<()> {
-    for invalidated in [false, true] {
-        for phase in [RoundCheckpoint::Before, RoundCheckpoint::After] {
-            let first = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-            let next = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
-            let peers = [first.local_addr()?, next.local_addr()?];
-            let (prepared, control) = prepare_address_round(checked_config(&peers)?)?;
-            let runtime = runtime()?;
-            let origin = Instant::now();
-            let deadline = origin
+    let invalidation_cases: [bool; 2] = [false, true];
+    let checkpoints: [RoundCheckpoint; 2] = [RoundCheckpoint::Before, RoundCheckpoint::After];
+    for invalidated in invalidation_cases {
+        for phase in checkpoints {
+            let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+            let next: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+            let peers: [SocketAddr; 2] = [first.local_addr()?, next.local_addr()?];
+            let (prepared, control): (PreparedAddressRound, ControlHandle) =
+                prepare_address_round(checked_config(&peers)?)?;
+            let runtime: tokio::runtime::Runtime = runtime()?;
+            let origin: Instant = Instant::now();
+            let deadline: Instant = origin
                 .checked_add(Duration::from_secs(2))
                 .ok_or(PilotError::DeadlineOverflow)?;
-            let responder = ReplyPeer::spawn(first, ReplyKind::Ordinary)?;
-            let mut control_failure = None;
-            let mut seen_checkpoint = false;
-            let report = runtime.block_on(run_round_with(
+            let responder: ReplyPeer = ReplyPeer::spawn(first, ReplyKind::Ordinary)?;
+            let mut control_failure: Option<PilotError> = None;
+            let mut seen_checkpoint: bool = false;
+            let report: AddressRoundReport = runtime.block_on(run_round_with(
                 prepared,
                 origin,
                 deadline,
                 &mut setup_address_request,
-                &mut |index, reached| {
+                &mut |index: u8, reached: RoundCheckpoint| {
                     if index == 0 && reached == phase {
                         seen_checkpoint = true;
                         if invalidated {
@@ -1421,8 +1448,9 @@ fn actual_header_survives_stop_and_invalidation_at_the_final_checkpoint() -> Che
                     }
                 },
             ));
-            let seen = responder.finish();
-            let (report, seen) = joined_result(Ok(report), seen)?;
+            let seen: io::Result<Option<SeenQuery>> = responder.finish();
+            let (report, seen): (AddressRoundReport, Option<SeenQuery>) =
+                joined_result(Ok(report), seen)?;
             if let Some(error) = control_failure {
                 return Err(error.into());
             }
@@ -1432,7 +1460,7 @@ fn actual_header_survives_stop_and_invalidation_at_the_final_checkpoint() -> Che
                 "actual driver omitted the terminal checkpoint"
             );
             assert_eq!(report.attempts().len(), 1);
-            let actual = report
+            let actual: &AddressAttempt = report
                 .attempts()
                 .first()
                 .ok_or_else(|| io::Error::other("historical header absent"))?;
@@ -1490,11 +1518,11 @@ fn check_reply_retained_after_failed_invalidation(
     assert_eq!(
         report
             .cleanup_errors()
-            .map(|cause| cause.map(FailureSummary::code)),
+            .map(|cause: Option<FailureSummary>| cause.map(FailureSummary::code)),
         [None, Some("generation_exhausted")]
     );
     assert!(report.primary_error().is_none());
-    let [retained] = report.attempts() else {
+    let [retained]: &[AddressAttempt] = report.attempts() else {
         return Err(io::Error::other("cleanup lost the historical header").into());
     };
     assert_eq!(retained.report().status(), Status::Header);
@@ -2569,18 +2597,21 @@ async fn reap_future_invalidation(
 /// # Panics
 /// Require exact watch and runtime state at the last valid and exhausted generations.
 fn future_invalidation_boundary_case(seed: u64) -> Check<()> {
-    let (mut prepared, control) = prepare_address_round(checked_config(&[declared_peer(41001)])?)?;
-    control.sender.send_modify(|value| value.epoch = seed);
-    let initial = *prepared.control.borrow_and_update();
+    let (mut prepared, control): (PreparedAddressRound, ControlHandle) =
+        prepare_address_round(checked_config(&[declared_peer(41001)])?)?;
+    control
+        .sender
+        .send_modify(|value: &mut Control| value.epoch = seed);
+    let initial: Control = *prepared.control.borrow_and_update();
     assert_eq!(initial.epoch, seed);
     assert!(!initial.stop);
-    let runtime = runtime()?;
+    let runtime: tokio::runtime::Runtime = runtime()?;
     let reaped: Result<(), PilotError> =
         runtime.block_on(reap_future_invalidation(&control, &mut prepared.control))?;
-    let state = *prepared.control.borrow_and_update();
+    let state: Control = *prepared.control.borrow_and_update();
     drop(prepared);
     if let Err(error) = reaped {
-        let expected_boundary =
+        let expected_boundary: bool =
             seed == u64::MAX && matches!(error, PilotError::GenerationExhausted);
         eprintln!(
             "ADDRESS_ROUND_TIMER_RESULT expected_boundary={expected_boundary} code={}",

@@ -12,8 +12,8 @@ use super::{
     Budget, ClientExit, Failure,
     protected_packet::{
         Correlation, DENY_BYTES, NAK_BYTES, PacketFailure, REPLY_BYTES, REQUEST_BYTES,
-        SuccessorCorrelation, admit_and_seal, admit_successor, correlated_nak, seal_deny,
-        seal_ordinary_successor,
+        SuccessorCorrelation, admit_and_seal, admit_and_seal_initial_deny, admit_successor,
+        correlated_nak, seal_deny, seal_ordinary_successor,
     },
 };
 
@@ -113,6 +113,54 @@ impl ProtectedUdp {
 
         self.initial_exchange(budget, c2s, s2c, fill, &now)
             .map(|_: Correlation| ())
+    }
+
+    /// Return one authenticated initial DENY, erase both exporters, and observe client exit.
+    ///
+    /// The originally advertised socket and its deadline remain owned through the
+    /// receive-only observation. Any datagram after the one reply refuses completion.
+    ///
+    /// # Errors
+    /// Preserve exchange refusal, an unexpected datagram or acknowledgement failure.
+    pub(super) fn exchange_initial_deny_observe_exit(
+        self,
+        budget: &Budget,
+        c2s: &mut Zeroizing<[u8; 32]>,
+        s2c: &mut Zeroizing<[u8; 32]>,
+        fill: impl FnOnce(&mut [u8; 16]) -> Result<(), Failure>,
+        read_exit: impl FnMut() -> Result<Option<ClientExit>, Failure>,
+    ) -> Result<(), Failure> {
+        let reply: Result<(), Failure> = self.reply_to_initial_deny(budget, c2s, s2c, fill);
+        c2s.zeroize();
+        s2c.zeroize();
+        reply?;
+        self.observe_client_exit(budget, read_exit, Instant::now)
+    }
+
+    /// Use the KE cookie and original directional exporters for the only reply.
+    ///
+    /// # Errors
+    /// Preserve the first deadline, I/O, entropy or packet refusal.
+    fn reply_to_initial_deny(
+        &self,
+        budget: &Budget,
+        c2s: &[u8; 32],
+        s2c: &[u8; 32],
+        fill: impl FnOnce(&mut [u8; 16]) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        if self.deadline != budget.deadline {
+            return Err(Failure::Deadline);
+        }
+        let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
+            self.receive(budget, &Instant::now)?;
+        let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
+        budget.poll(Instant::now())?;
+        fill(&mut nonce)?;
+        budget.poll(Instant::now())?;
+        let reply: Zeroizing<[u8; DENY_BYTES]> =
+            admit_and_seal_initial_deny(&request[..REQUEST_BYTES], c2s, s2c, &nonce)
+                .map_err(Failure::Datagram)?;
+        self.send_reply(budget, &Instant::now, sender, &reply[..])
     }
 
     /// Use one listener and the original exporters for an ordinary reply and a DENY.

@@ -527,9 +527,9 @@ fn check_successor_failure(
     Ok(())
 }
 
-/// Inspect the actual policy and alias records after a joined restriction effect.
+/// Inspect the policy and alias records after the joined restriction passes report checks.
 /// # Errors
-/// Refuse a mismatched ordinal, endpoint, effect, or shared policy state.
+/// Refuse a mismatched endpoint, effect, or shared policy state.
 fn check_successor_restriction(
     restriction: &ManagedProtectedRestriction,
     source: &SourceHandle,
@@ -547,8 +547,7 @@ fn check_successor_restriction(
         "DENY" | "RSTR" => (true, Duration::from_millis(1)),
         _ => return Err(SetupFailure::ManagedSuccessorHistory),
     };
-    if restriction.serial() != 2
-        || restriction.remote() != remote
+    if restriction.remote() != remote
         || [actual.source(), actual.endpoint(), shared.endpoint()]
             .into_iter()
             .any(|record| {
@@ -571,8 +570,8 @@ fn check_successor_restriction(
 
 /// Require original receipt identity and order before emitting the joined witness.
 /// # Errors
-/// Refuse foreign revisions or a terminal/NAK observation inconsistent with the
-/// original receipt, including success or an admitted NAK without a first receipt.
+/// Refuse foreign revisions, inconsistent successor order, or an initial restriction
+/// without authentication and exactly one submitted send.
 fn check_successor_report(
     report: &ManagedProtectedReport,
     expected: &SourceConfigurationSnapshot,
@@ -587,7 +586,7 @@ fn check_successor_report(
     }) {
         return Err(SetupFailure::ManagedSuccessorHistory);
     }
-    let terminal: Option<Instant> = match report.terminal() {
+    let successor_terminal_at: Option<Instant> = match report.terminal() {
         ManagedProtectedTerminal::Ordinary(receipt)
             if successor_receipt_matches(receipt, expected) =>
         {
@@ -596,7 +595,17 @@ fn check_successor_report(
         ManagedProtectedTerminal::Restriction(restriction)
             if restriction.configuration().same_configuration(expected) =>
         {
-            Some(restriction.decided_at())
+            match restriction.serial() {
+                1 if restriction.authenticated()
+                    && first.is_none()
+                    && report.attempted_sends() == 1
+                    && report.fully_submitted_sends() == 1 =>
+                {
+                    None
+                }
+                2 => Some(restriction.decided_at()),
+                _ => return Err(SetupFailure::ManagedSuccessorHistory),
+            }
         }
         ManagedProtectedTerminal::Refused(failure) => {
             check_successor_failure(failure, expected)?;
@@ -606,7 +615,7 @@ fn check_successor_report(
             return Err(SetupFailure::ManagedSuccessorHistory);
         }
     };
-    if terminal.is_some_and(|observed: Instant| {
+    if successor_terminal_at.is_some_and(|observed: Instant| {
         first_commit.is_none_or(|committed: Instant| observed < committed)
             || nak.is_some_and(|received: Instant| observed < received)
     }) {
@@ -643,10 +652,12 @@ fn write_successor_report(
 ) -> io::Result<()> {
     let report: Option<&ManagedProtectedReport> = outcome.ok();
     let first: Option<&ManagedProtectedReceipt> = report.and_then(ManagedProtectedReport::first);
-    let (first_state, configuration, order): (&str, &str, &str) = if first.is_some() {
-        ("committed", "original", "valid")
-    } else {
-        ("none", "none", "none")
+    let terminal_result: Result<&ManagedProtectedTerminal, &SourceProtectedProbeFailure> =
+        outcome.map(ManagedProtectedReport::terminal);
+    let (first_state, configuration, order): (&str, &str, &str) = match (first, terminal_result) {
+        (Some(_), _) => ("committed", "original", "valid"),
+        (None, Ok(ManagedProtectedTerminal::Restriction(_))) => ("none", "original", "none"),
+        (None, _) => ("none", "none", "none"),
     };
     let (terminal, ordinary, restriction, authenticated, failure): (
         &str,
@@ -654,7 +665,7 @@ fn write_successor_report(
         &str,
         &str,
         Option<&SourceProtectedProbeFailure>,
-    ) = match outcome.map(ManagedProtectedReport::terminal) {
+    ) = match terminal_result {
         Ok(ManagedProtectedTerminal::Ordinary(receipt)) => {
             ("ordinary", Some(receipt), "none", "1", None)
         }

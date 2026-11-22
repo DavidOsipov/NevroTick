@@ -7,6 +7,9 @@
 
 use std::io;
 
+#[cfg(any(windows, test))]
+mod clock_capture;
+
 /// Closed adapter failures; never retain packet, endpoint or library-error text.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum DatagramError {
@@ -50,15 +53,18 @@ mod reached {
     use tokio::net::UdpSocket;
     use zeroize::Zeroizing;
 
-    use super::DatagramError;
+    use super::{DatagramError, clock_capture::ProtectedClockCapture};
     use crate::nts_ke_experiment::association::AssociationOwner;
     #[cfg(test)]
     use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
     use crate::nts_ke_experiment::association::ledger::{
-        CookieReplacement, LedgerError, PendingSubmission, Receipt, RequestInput, RequestPhase,
-        RetiredCommit, SendOutcome, StagedProtectedControl, StagedProtectedSuccessor, Ticket,
+        CookieReplacement, LedgerError, PendingSubmission, ProtectedControlLeg, Receipt,
+        RequestInput, RequestPhase, RetiredCommit, SendOutcome, StagedProtectedControl,
+        StagedProtectedSuccessor, Ticket,
     };
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
+    #[cfg(windows)]
+    use crate::nts_ke_experiment::managed_preview::ProtectedNativeClockObservation;
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
         Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase,
@@ -192,7 +198,7 @@ mod reached {
         /// Original socket-instance identity retained by historical completion.
         pub(super) identity: Arc<()>,
         /// Exact before/after software captures and expected complete packet length.
-        pub(super) send: Option<(SoftwareClock, SoftwareClock, usize)>,
+        pub(super) send: Option<(ProtectedClockCapture, ProtectedClockCapture, usize)>,
     }
 
     /// Check the actual bound endpoint and selected peer before registration.
@@ -282,20 +288,35 @@ mod reached {
             association.invoke_guarded(ticket, sender)
         }
 
+        /// Capture the original send boundary using the selected actual adapter.
+        fn capture_send_clock(&self) -> ProtectedClockCapture {
+            match &self.io {
+                #[cfg(any(windows, all(test, target_os = "linux")))]
+                Io::Native(_) => ProtectedClockCapture::capture(),
+                #[cfg(test)]
+                Io::Script(_) => ProtectedClockCapture::software_only(SoftwareClock::capture()),
+            }
+        }
+
         /// Observe one synchronous return before interpreting any packet bytes.
-        fn receive(&mut self, buffer: &mut [u8; RECEIVE_BYTES]) -> (Read, SoftwareClock) {
+        fn receive(&mut self, buffer: &mut [u8; RECEIVE_BYTES]) -> (Read, ProtectedClockCapture) {
             match &mut self.io {
                 #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(socket) => {
                     let result = socket.try_recv_from(buffer);
-                    let observed = SoftwareClock::capture();
+                    let observed: ProtectedClockCapture = ProtectedClockCapture::capture();
                     (classify_read(result), observed)
                 }
                 #[cfg(test)]
                 Io::Script(script) => {
                     let result: Read = script.receive(buffer);
                     let observed: SoftwareClock = SoftwareClock::capture();
-                    (result, script.observe_read_return(observed))
+                    let capture: ProtectedClockCapture =
+                        ProtectedClockCapture::software_only(script.observe_read_return(observed));
+                    #[cfg(windows)]
+                    let capture: ProtectedClockCapture =
+                        capture.with_scripted_refusal(script.clock_refusals[2]);
+                    (result, capture)
                 }
             }
         }
@@ -348,17 +369,26 @@ mod reached {
             if remote != backend.remote || backend.send.is_some() {
                 return Err(Failure::Endpoint);
             }
-            let before: SoftwareClock = SoftwareClock::capture();
+            let before: ProtectedClockCapture = backend.capture_send_clock();
             #[cfg(test)]
-            let before: SoftwareClock = match &backend.io {
+            let before: ProtectedClockCapture = match &backend.io {
                 #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(_) => before,
-                Io::Script(script) => script.observe_send_before(before),
+                Io::Script(script) => {
+                    let capture: ProtectedClockCapture = ProtectedClockCapture::software_only(
+                        script.observe_send_before(before.software()),
+                    );
+                    #[cfg(windows)]
+                    let capture: ProtectedClockCapture =
+                        capture.with_scripted_refusal(script.clock_refusals[0]);
+                    capture
+                }
             };
-            check_capture_order(before.monotonic(), before.monotonic_after())?;
-            guard.control.published(before.monotonic_after())?;
+            let bracket: SoftwareClock = before.software();
+            check_capture_order(bracket.monotonic(), bracket.monotonic_after())?;
+            guard.control.published(bracket.monotonic_after())?;
             let stamp: Option<ProtectedSendStamp> =
-                guard.reserve(remote, &backend.identity, before.monotonic_after())?;
+                guard.reserve(remote, &backend.identity, bracket.monotonic_after())?;
             let work: Option<&ProtectedDatagramWork> =
                 guard.control.control.datagram_work.as_deref();
             if let Some(work) = work {
@@ -382,7 +412,7 @@ mod reached {
             {
                 let _previous: usize = work.fully_submitted_sends.fetch_add(1, Ordering::Relaxed);
             }
-            let after: SoftwareClock = SoftwareClock::capture();
+            let after: ProtectedClockCapture = backend.capture_send_clock();
             let control: &Control = guard.control.control;
             drop(guard);
             backend.send = Some((before, after, packet.len()));
@@ -392,8 +422,13 @@ mod reached {
                 #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(_) => {}
                 Io::Script(script) => {
-                    let after: SoftwareClock = script.observe_send_after(after)?;
-                    backend.send = Some((before, after, packet.len()));
+                    let after: SoftwareClock = script.observe_send_after(after.software())?;
+                    let capture: ProtectedClockCapture =
+                        ProtectedClockCapture::software_only(after);
+                    #[cfg(windows)]
+                    let capture: ProtectedClockCapture =
+                        capture.with_scripted_refusal(script.clock_refusals[1]);
+                    backend.send = Some((before, capture, packet.len()));
                 }
             }
             if cancel_after {
@@ -443,6 +478,9 @@ mod reached {
         pub(super) send_after: SoftwareClock,
         /// Actual selected receive-return observations, captured before parsing.
         pub(super) read_return: SoftwareClock,
+        /// Native read outcomes at the same three original adapter boundaries.
+        #[cfg(windows)]
+        native_clock: [Option<ProtectedNativeClockObservation>; 3],
         /// Captured bound endpoint from the original owned socket.
         pub(super) local: SocketAddr,
         /// Same immutable association endpoint that received the submitted packet.
@@ -479,12 +517,13 @@ mod reached {
     #[must_use = "observe the retired control through its original owner"]
     pub(in super::super) struct RetiredProtectedControl<'control>(StagedProtectedControl<'control>);
 
-    /// Either private successor result, after the shared driver and backend retire.
+    /// A protected response after the shared driver and backend retire.
+    #[must_use = "consume the response through its original association"]
     #[expect(
         clippy::large_enum_variant,
         reason = "keep the bounded returned history and cookie transfer inline after retirement"
     )]
-    pub(in super::super) enum RetiredProtectedSuccessor<'control> {
+    pub(in super::super) enum RetiredProtectedResponse<'control> {
         /// A complete ordinary reply with the existing final commit boundary.
         Ordinary(ProtectedCompletion<'control>),
         /// An exact control with its Pending request still held.
@@ -494,7 +533,7 @@ mod reached {
     /// Retired candidate and independent receive observation, awaiting final commit.
     pub(in super::super) struct ObservedRetiredSuccessor<'control> {
         /// Exact retired candidate from the original pending operation.
-        candidate: RetiredProtectedSuccessor<'control>,
+        candidate: RetiredProtectedResponse<'control>,
         /// Original first NAK, retained if final commit later refuses.
         first_nak_at: Option<Instant>,
     }
@@ -503,7 +542,7 @@ mod reached {
         /// Transfer the actual candidate and its separate observation to the receiver.
         pub(in super::super) fn into_parts(
             self,
-        ) -> (RetiredProtectedSuccessor<'control>, Option<Instant>) {
+        ) -> (RetiredProtectedResponse<'control>, Option<Instant>) {
             (self.candidate, self.first_nak_at)
         }
     }
@@ -663,6 +702,9 @@ mod reached {
         send_after: SoftwareClock,
         /// Original selected receive-return bracket, never refreshed at detachment.
         read_return: SoftwareClock,
+        /// Native read outcomes ordered as send-before, send-return and read-return.
+        #[cfg(windows)]
+        native_clock: [Option<ProtectedNativeClockObservation>; 3],
         /// Actual socket's original bound endpoint.
         local: SocketAddr,
         /// Actual checked peer endpoint, without independent-source authority.
@@ -1109,6 +1151,14 @@ mod reached {
             [self.send_before, self.send_after, self.read_return]
         }
 
+        /// Copy the original native read outcomes without a new clock read.
+        #[cfg(windows)]
+        pub(in super::super) const fn native_captures(
+            &self,
+        ) -> [Option<ProtectedNativeClockObservation>; 3] {
+            self.native_clock
+        }
+
         /// Inspect actual historical endpoints without reissuing socket custody.
         #[cfg(test)]
         pub(in super::super) const fn endpoints(&self) -> (SocketAddr, SocketAddr) {
@@ -1309,6 +1359,8 @@ mod reached {
                 send_before,
                 send_after,
                 read_return,
+                #[cfg(windows)]
+                native_clock,
                 local,
                 remote,
                 packet_bytes,
@@ -1329,6 +1381,8 @@ mod reached {
                 send_before,
                 send_after,
                 read_return,
+                #[cfg(windows)]
+                native_clock,
                 local,
                 remote,
                 self.identity,
@@ -1354,6 +1408,8 @@ mod reached {
                 send_before,
                 send_after,
                 read_return,
+                #[cfg(windows)]
+                native_clock,
                 local,
                 remote,
                 packet_bytes,
@@ -1374,6 +1430,8 @@ mod reached {
                 send_before,
                 send_after,
                 read_return,
+                #[cfg(windows)]
+                native_clock,
                 local,
                 remote,
                 identity: self.identity,
@@ -1490,11 +1548,11 @@ mod reached {
         /// Exact concrete socket/back-end identity.
         backend: &'a Backend,
         /// Capture preceding the actual synchronous send.
-        send_before: SoftwareClock,
+        send_before: ProtectedClockCapture,
         /// Capture following the same synchronous send.
-        send_after: SoftwareClock,
+        send_after: ProtectedClockCapture,
         /// Capture before any interpretation of the selected packet.
-        read_return: SoftwareClock,
+        read_return: ProtectedClockCapture,
         /// Local packet extent, independent of either received length or peer fields.
         packet_bytes: usize,
     }
@@ -1503,6 +1561,8 @@ mod reached {
     enum ReceiveState {
         /// Existing ordinary one-shot and component paths.
         Ordinary,
+        /// The bounded first leg additionally admits an S2C-authenticated restriction.
+        ProtectedInitial,
         /// The admitted successor can retain one nonterminal NAK before completing.
         ProtectedSuccessor {
             /// The actual first NAK arrival. Later reads still spend credits.
@@ -1532,6 +1592,21 @@ mod reached {
                 Self::Control(_) => Err(Failure::Control),
             }
         }
+
+        /// Detach the candidate only after the caller has retired both I/O owners.
+        fn into_retired(self, attempts: Attempts) -> RetiredProtectedResponse<'control> {
+            match self {
+                Self::Ordinary(operation) => {
+                    RetiredProtectedResponse::Ordinary(ProtectedCompletion {
+                        operation,
+                        attempts,
+                    })
+                }
+                Self::Control(staged) => {
+                    RetiredProtectedResponse::Control(RetiredProtectedControl(staged))
+                }
+            }
+        }
     }
 
     /// Admit one charged disposition through the selected path in the same ledger.
@@ -1544,50 +1619,66 @@ mod reached {
         reply: ObservedReply<'_>,
         state: &mut ReceiveState,
     ) -> Result<Option<SelectedOperation<'control>>, Failure> {
+        let read_return: SoftwareClock = reply.read_return.software();
         let (receipt, replacement, submission): (Receipt, CookieReplacement, PendingSubmission) =
             match state {
-                ReceiveState::Ordinary => association.stage_concrete_reply(
-                    reply.consumed,
-                    reply.remote,
-                    &reply.read_return,
-                )?,
-                ReceiveState::ProtectedSuccessor { first_nak_at } => match association
-                    .stage_concrete_successor(
+                ReceiveState::Ordinary => {
+                    association.stage_concrete_reply(reply.consumed, reply.remote, &read_return)?
+                }
+                ReceiveState::ProtectedInitial | ReceiveState::ProtectedSuccessor { .. } => {
+                    let leg: ProtectedControlLeg =
+                        if matches!(state, ReceiveState::ProtectedInitial) {
+                            ProtectedControlLeg::Initial
+                        } else {
+                            ProtectedControlLeg::Successor
+                        };
+                    match association.stage_concrete_protected_response(
                         control,
                         reply.consumed,
                         reply.remote,
-                        &reply.read_return,
+                        &read_return,
+                        leg,
                     )? {
-                    StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
-                        (receipt, replacement, submission)
-                    }
-                    StagedProtectedSuccessor::Control(staged) => {
-                        return Ok(Some(SelectedOperation::Control(staged)));
-                    }
-                    StagedProtectedSuccessor::NtsNak(observation) => {
-                        let (arrived_at, exhausted): (Instant, bool) = observation.into_parts();
-                        if first_nak_at.is_none() {
-                            *first_nak_at = Some(arrived_at);
-                            if let Some(work) = control.datagram_work.as_deref() {
-                                let _recorded: &Instant =
-                                    work.first_nak_at.get_or_init(|| arrived_at);
+                        StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
+                            (receipt, replacement, submission)
+                        }
+                        StagedProtectedSuccessor::Control(staged) => {
+                            return Ok(Some(SelectedOperation::Control(staged)));
+                        }
+                        StagedProtectedSuccessor::NtsNak(observation) => {
+                            let ReceiveState::ProtectedSuccessor { first_nak_at } = state else {
+                                return Err(Failure::Control);
+                            };
+                            let (arrived_at, exhausted): (Instant, bool) = observation.into_parts();
+                            if first_nak_at.is_none() {
+                                *first_nak_at = Some(arrived_at);
+                                if let Some(work) = control.datagram_work.as_deref() {
+                                    let _recorded: &Instant =
+                                        work.first_nak_at.get_or_init(|| arrived_at);
+                                }
                             }
+                            if exhausted {
+                                return Err(Failure::Ledger(LedgerError::ReceiveWork));
+                            }
+                            return Ok(None);
                         }
-                        if exhausted {
-                            return Err(Failure::Ledger(LedgerError::ReceiveWork));
-                        }
-                        return Ok(None);
                     }
-                },
+                }
             };
         let (cookies, cookie_bytes): (usize, usize) = replacement.population();
         Ok(Some(SelectedOperation::Ordinary(OperationCompletion {
             history: OperationHistory {
                 control,
                 receipt,
-                send_before: reply.send_before,
-                send_after: reply.send_after,
-                read_return: reply.read_return,
+                send_before: reply.send_before.software(),
+                send_after: reply.send_after.software(),
+                read_return,
+                #[cfg(windows)]
+                native_clock: [
+                    reply.send_before.native(),
+                    reply.send_after.native(),
+                    reply.read_return.native(),
+                ],
                 local: reply.backend.local,
                 remote: reply.backend.remote,
                 packet_bytes: reply.packet_bytes,
@@ -1673,9 +1764,16 @@ mod reached {
     ) -> Result<SelectedOperation<'control>, Failure> {
         wait(backend, control, Interest::Write, attempts, None).await?;
         backend.send_prepared(association, ticket, control)?;
-        let (send_before, send_after, packet_bytes) =
-            backend.send.ok_or(failed(DatagramError::Capture))?;
-        check_capture_order(send_before.monotonic_after(), send_after.monotonic())?;
+        let (send_before, send_after, packet_bytes): (
+            ProtectedClockCapture,
+            ProtectedClockCapture,
+            usize,
+        ) = backend.send.ok_or(failed(DatagramError::Capture))?;
+        let send_after_bracket: SoftwareClock = send_after.software();
+        check_capture_order(
+            send_before.software().monotonic_after(),
+            send_after_bracket.monotonic(),
+        )?;
         let mut buffer = Zeroizing::new([0; RECEIVE_BYTES]);
         let mut pending_policy: Option<LivePolicy> =
             association.observe_pending_policy(&backend.identity)?;
@@ -1690,7 +1788,7 @@ mod reached {
         loop {
             attempts.spend(control)?;
             drop(control.published_guard()?);
-            let (read, observed) = backend.receive(&mut buffer);
+            let (read, observed): (Read, ProtectedClockCapture) = backend.receive(&mut buffer);
             match read {
                 Read::WouldBlock => {
                     wait(
@@ -1717,9 +1815,10 @@ mod reached {
                         backend: &backend.identity,
                         packet: Some(packet),
                     };
-                    if let Err(error) =
-                        check_capture_order(send_after.monotonic_after(), observed.monotonic())
-                    {
+                    if let Err(error) = check_capture_order(
+                        send_after_bracket.monotonic_after(),
+                        observed.software().monotonic(),
+                    ) {
                         association.charge_discarded_reply(consumed)?;
                         return Err(error);
                     }
@@ -1786,6 +1885,43 @@ mod reached {
         exchange_with_attempts(association, control, fill, make_backend, Attempts(ATTEMPTS))
     }
 
+    /// Retire the bounded first native request and its selected protected response.
+    /// # Errors
+    /// Preserve the original admission, socket, driver and receive refusals.
+    #[cfg(windows)]
+    pub(in super::super) fn exchange_initial<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+    ) -> Result<RetiredProtectedResponse<'control>, Failure> {
+        exchange_initial_with(association, control, fill, Backend::bind)
+    }
+
+    /// Start the single bounded managed first leg with its original driver credits.
+    /// # Errors
+    /// Refuse another mode or previously earned continuation before any I/O.
+    pub(super) fn exchange_initial_with<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+    ) -> Result<RetiredProtectedResponse<'control>, Failure> {
+        if control.datagram_work.is_none() {
+            return Err(Failure::Control);
+        }
+        association.check_fresh_exchange()?;
+        let mut attempts: Attempts = Attempts(ATTEMPTS);
+        let selected: SelectedOperation<'control> = retire_operation(
+            association,
+            control,
+            fill,
+            make_backend,
+            &mut attempts,
+            &mut ReceiveState::ProtectedInitial,
+        )?;
+        Ok(selected.into_retired(attempts))
+    }
+
     /// Exercise a second genuine retired request under the original association.
     /// # Errors
     /// Refuse missing or stale authentication before any new backend or entropy.
@@ -1834,7 +1970,7 @@ mod reached {
         control: &'control Control,
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_script: impl FnOnce(SocketAddr) -> Script,
-    ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+    ) -> Result<RetiredProtectedResponse<'control>, Failure> {
         exchange_successor_mixed_with(association, control, fill, |remote: SocketAddr| {
             Ok(super::tests::backend(remote, make_script(remote)))
         })
@@ -1849,7 +1985,7 @@ mod reached {
         control: &'control Control,
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
-    ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+    ) -> Result<RetiredProtectedResponse<'control>, Failure> {
         exchange_successor_observing(association, control, fill, make_backend)
             .map(|observed: ObservedRetiredSuccessor<'control>| observed.into_parts().0)
             .map_err(|failure: SuccessorFailure| failure.cause())
@@ -1895,26 +2031,15 @@ mod reached {
         );
         let first_nak_at: Option<Instant> = match state {
             ReceiveState::ProtectedSuccessor { first_nak_at } => first_nak_at,
-            ReceiveState::Ordinary => None,
+            ReceiveState::Ordinary | ReceiveState::ProtectedInitial => None,
         };
         let selected: SelectedOperation<'control> =
             outcome.map_err(|cause: Failure| SuccessorFailure {
                 cause,
                 first_nak_at,
             })?;
-        let candidate: RetiredProtectedSuccessor<'control> = match selected {
-            SelectedOperation::Ordinary(operation) => {
-                RetiredProtectedSuccessor::Ordinary(ProtectedCompletion {
-                    operation,
-                    attempts,
-                })
-            }
-            SelectedOperation::Control(staged) => {
-                RetiredProtectedSuccessor::Control(RetiredProtectedControl(staged))
-            }
-        };
         Ok(ObservedRetiredSuccessor {
-            candidate,
+            candidate: selected.into_retired(attempts),
             first_nak_at,
         })
     }
@@ -2037,14 +2162,14 @@ mod reached {
 }
 
 #[cfg(windows)]
-pub(super) use reached::{exchange, exchange_successor};
+pub(super) use reached::{exchange, exchange_initial, exchange_successor};
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{
     Attempts, BoundFirstHistory, CommittedFirstProtected, CommittedProtected, CompletionProjection,
     ConsumedDatagram, GuardedSender, ManagedProtectedHistory, ManagedProtectedProjection,
     ObservedRetiredSuccessor, ProtectedCompletion, ProtectedDatagramWork, ProtectedHistory,
-    ReceivedCompletion, ReceivedInvocation, RetiredProtectedControl, RetiredProtectedSuccessor,
+    ReceivedCompletion, ReceivedInvocation, RetiredProtectedControl, RetiredProtectedResponse,
     RetiredReply, RetiredReplyParts, SuccessorFailure, receive_joined,
 };
 

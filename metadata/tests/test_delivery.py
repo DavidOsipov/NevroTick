@@ -31,9 +31,24 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.require_success(self.cli("check", output=self.output))
         name = "authoring/msix-inputs.json"
         status = json_data(self.output / name)
-        self.assertEqual((status["schema_version"], status.get("distribution_route")), (2, "direct-msix"))
+        self.assertEqual((status["schema_version"], status.get("distribution_route")), (3, "direct-msix"))
         self.assertIs(status["complete_manifest"], False)
         self.assertIsNone(status["identity"])
+        self.assertEqual(status["ui_activation"], {
+            "role": "ui", "executable": "nevrotick-ui.exe", "application_id": None,
+            "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
+            "visual_elements": {
+                "Square44x44Logo": "Assets/Square44x44Logo.png",
+                "Square150x150Logo": "Assets/Square150x150Logo.png",
+            },
+        })
+        logos = {row["key"]: (row["value"], row["status"]) for row in status["fields"]}
+        self.assertEqual(logos["catalogue.B.6.2.Package/Properties/Logo"],
+                         ("Assets/PackageLogo.png", "derived"))
+        self.assertEqual(logos["catalogue.B.6.5.uap:VisualElements/@Square44x44Logo"],
+                         ("Assets/Square44x44Logo.png", "populated"))
+        self.assertEqual(logos["catalogue.B.6.5.uap:VisualElements/@Square150x150Logo"],
+                         ("Assets/Square150x150Logo.png", "populated"))
         pending = {row["path"]: row["reason"] for row in status["pending"]}
         self.assertIn("Name and Publisher", pending["package.identity"])
         self.assertIn("services.identities", pending)
@@ -43,6 +58,14 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.require_rejection(self.cli("check", output=self.output))
         self.assertEqual(legacy.read_text(), "field,value,status\n")
         self.require_rejection(self.cli("validate", "--stage", "release"))
+
+    def test_direct_msix_artwork_refuses_unsafe_relative_paths(self) -> None:
+        for path in ("PackageLogo.png", "Square44x44Logo.png", "Square150x150Logo.png"):
+            with self.subTest(path=path):
+                self.write_record(self.original_record)
+                self.replace_once(f'"Assets/{path}"', f'"Assets/../{path}"')
+                self.require_rejection(self.cli("generate", output=self.output))
+                self.assertFalse(self.output.exists())
 
     def test_inspect_msix_binds_inputs_and_reports_only_incomplete_preparation(self) -> None:
         """A legitimate owned generation supplies hashes and four unadmitted product roles."""
@@ -513,6 +536,24 @@ class DeliveryObservationTests(SourceFixture):
         ):
             with self.subTest(field=field):
                 self.reject(self.json_change(name, lambda data: data.__setitem__(field, value)))
+
+    def test_direct_msix_receiver_refuses_conflicting_ui_activation(self) -> None:
+        name = "authoring/msix-inputs.json"
+        self.delivery.verify_delivery(self.model, self.outputs)
+        for field, value in (
+            ("role", "observer"),
+            ("executable", "nevrotick-observe.exe"),
+            ("application_id", "Invented.App"),
+            ("trust_level", "appContainer"),
+            ("runtime_behavior", "win32App"),
+            ("EntryPoint", "Windows.FullTrustApplication"),
+            ("visual_elements", {
+                "Square44x44Logo": "Assets/Square150x150Logo.png",
+                "Square150x150Logo": "Assets/Square44x44Logo.png",
+            }),
+        ):
+            with self.subTest(field=field):
+                self.reject(self.json_change(name, lambda data: data["ui_activation"].__setitem__(field, value)))
 
     def test_direct_observer_requires_exact_plain_types_paths_and_budgets(self) -> None:
         self.reject({})

@@ -1,10 +1,8 @@
 # Portable metadata qualification
 
-The full campaign remains incomplete. On 8 November the owner reopened the
-bounded parser-budget repair and its affected checks; the seven-quote regression
-and all 247 current metadata tests now pass. Fresh strict typing, causal controls
-and subprocess-aware coverage also pass; every declared security module meets
-its 90% line gate. This is not full mutation qualification. Read the [current amendment and historical restart checkpoint](CHECKPOINT.md)
+The full campaign remains incomplete. The [current activation checkpoint](CHECKPOINT.md#direct-msix-activation-authoring--22-november-2026)
+records 261 passing metadata tests, strict typing, source CLI readback and
+passing 90% line gates on the tested candidate. Read the [assignment and historical restart checkpoint](CHECKPOINT.md)
 and [W11-W10 task](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need)
 before another campaign. The old `/tmp` evidence directory is now absent;
 its recorded partial outcomes are historical and cannot be re-admitted without
@@ -72,7 +70,7 @@ alone is not tool admission.
      --contexts /absolute/coverage-evidence/test-line-contexts.json \
      --context-binding /absolute/coverage-evidence/binding.json \
      --output /absolute/fresh-mutation-evidence \
-     --workers 10 --timeout 180
+     --workers 4 --timeout 180
    ```
 
    `--enumerate-only`, `--baseline-only`, `--limit` and `--ids` produce narrower

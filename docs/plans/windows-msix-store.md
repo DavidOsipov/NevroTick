@@ -1279,7 +1279,12 @@ still require separate observations.
 The [two-role pre-start selector](../../tasks/windows11-integration.md#observe-the-two-installed-s06-service-roles-at-pre-start--22-november-2026)
 assembles the existing query-only reads for step 2. Its compiled source
 reports numeric fields and redacted shape only. Installed execution
-and independent identity/descriptor readback stay held. The [step-3
+and independent identity/descriptor readback stay held. The
+[installed-image companion](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
+checks each fixed role against the registered exact lab package. The
+path and file controls passed in Windows Sandbox. The joined installed
+run requires the independent signed artifact, deployment subject and
+same supervised observation window. The [step-3
 access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
 prepares the separate required-right acquisition/close observations
 and the step-4 standard-user status-access/configuration-denial control.
@@ -1287,10 +1292,11 @@ The [current WSL link](../../tasks/windows11-integration.md#link-the-current-pre
 supplies the exact test PE/PDB and both current inert service roles.
 The [prepared pack input set](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
 now binds the current roles and retained packer inputs in WSL. The
-existing unsigned MSIX retains its original payload identity. Packing
-from the new input set awaits the existing Windows admission.
-The selectors remain unexecuted pending the admitted installed fixture
-and independently bound actor contexts.
+[current unsigned lab MSIX](../../tasks/windows11-integration.md#pack-the-current-disabled-service-input-set-in-the-offline-lab)
+was packed in the admitted offline Sandbox and checked against the
+matching inventory. The historical archive retains its original payload
+identity. The selectors remain unexecuted pending the admitted installed
+fixture and independently bound actor contexts.
 
 1. Use initially disabled inert functional-service fixtures. Observe whether
    deployment registers them without UI launch; keep absent registration separate

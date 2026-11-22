@@ -13,6 +13,8 @@ use windows_platform::{scm::ScmControl, scm::StopNotification, service::ServiceS
 mod continuity;
 
 pub use continuity::SampledClockDiscontinuity;
+#[cfg(windows)]
+pub use continuity::{BrokerClockSample, BrokerClockSampleError};
 
 /// Initial state before the first attempted Running report.
 const UNARMED: u64 = 0;
@@ -241,7 +243,7 @@ pub enum ClockReadRetirement {
     Clock,
     /// The separate one-shot power observer retired the selected fixture read.
     PowerContext,
-    /// The original raw bracket disagreed with its preceding same-revision bracket.
+    /// The raw observation disagreed with its preceding same-revision sample.
     Discontinuity(SampledClockDiscontinuity),
 }
 
@@ -293,7 +295,7 @@ struct Sampling<T> {
     previous: Option<T>,
     /// Next allowed quiet read measured from the last observed completion.
     due: Option<Instant>,
-    /// Pure comparison of consecutive checked coordinates.
+    /// Pure comparison of consecutive checked observations.
     compare: fn(&T, &T) -> Option<SampledClockDiscontinuity>,
     /// Last sampled invalidation, retaining evidence after reacquisition.
     last_break: Option<SampledClockBreak>,
@@ -501,15 +503,12 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
 
 /// The native broker's checked read with its original staged Win32 failure.
 #[cfg(windows)]
-pub(super) type NativeBrokerReader = BrokerClockReader<
-    windows_platform_native::ClockCoordinates,
-    windows_platform_native::ClockReadError,
->;
+pub(super) type NativeBrokerReader = BrokerClockReader<BrokerClockSample, BrokerClockSampleError>;
 
 /// Select the real Windows reader and comparison for the fixed broker.
 #[cfg(windows)]
 pub(super) fn sampled_native_reader(changes: &'static BrokerClockChanges) -> NativeBrokerReader {
-    NativeBrokerReader::new(changes, windows_platform_native::read_clock_coordinates)
+    NativeBrokerReader::new(changes, BrokerClockSample::read)
         .with_sampling(continuity::compare_native)
 }
 

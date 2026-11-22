@@ -15,10 +15,13 @@ use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
 use tokio::sync::watch;
 use zeroize::Zeroizing;
 
+#[cfg(windows)]
+use windows_platform_native::ClockReadError;
+
 use super::super::ProtectedControlKind;
 use super::DatagramError;
 use super::reached::{
-    Backend, Interest, Io, OperationCompletion, Read, RetiredProtectedSuccessor,
+    Backend, Interest, Io, OperationCompletion, Read, RetiredProtectedResponse,
     check_capture_order, classify_read, exchange_successor_mixed, exchange_successor_observing,
     exchange_successor_with, exchange_with, operation,
 };
@@ -157,6 +160,9 @@ pub(super) struct Script {
     send_before: Option<SoftwareClock>,
     /// Optional closed fixture date, independent of the actual host clock.
     fixed_utc: Option<SystemTime>,
+    /// Scripted read refusals for the original pre-send, send-return and receive-return points.
+    #[cfg(windows)]
+    pub(super) clock_refusals: [Option<ClockReadError>; 3],
     /// Optional genuine same-byte replacement after readiness and before final custody.
     replace_before_guard: Option<GuardReplacement>,
     send_calls: usize,
@@ -192,6 +198,8 @@ impl Script {
             send,
             send_before: None,
             fixed_utc: None,
+            #[cfg(windows)]
+            clock_refusals: [None; 3],
             replace_before_guard: None,
             send_calls: 0,
             receive_calls: 0,
@@ -564,6 +572,14 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
                         .ok_or(Failure::Control)?,
                     mono_after,
                 });
+                #[cfg(windows)]
+                {
+                    script.clock_refusals = [
+                        Some(ClockReadError::Frequency(7)),
+                        Some(ClockReadError::Before(5)),
+                        Some(ClockReadError::After(9)),
+                    ];
+                }
             } else {
                 // Fixed era-zero date shared by the admitted and refused model cases.
                 script.fixed_utc = Some(
@@ -1158,7 +1174,7 @@ fn check_mixed_last_frame(last: &LastMixedFrame) -> Result<(), Failure> {
         };
         // The single-thread driver only publishes the depth immediately after a real read.
         let residue: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(32));
-        let selected: Result<RetiredProtectedSuccessor<'_>, Failure> =
+        let selected: Result<RetiredProtectedResponse<'_>, Failure> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 assert_eq!(peer, remote);
                 let mut reads: Vec<ScriptRead> = (0..30)
@@ -1172,7 +1188,7 @@ fn check_mixed_last_frame(last: &LastMixedFrame) -> Result<(), Failure> {
             });
         let phase: RequestPhase = match last {
             LastMixedFrame::Deny => {
-                let RetiredProtectedSuccessor::Control(retired) = selected? else {
+                let RetiredProtectedResponse::Control(retired) = selected? else {
                     return Err(Failure::Control);
                 };
                 retired.check_current(owner)?;
@@ -1639,9 +1655,12 @@ fn managed_protected_policy_wait_checks_out_cookie_only_when_due() -> Result<(),
                     .checked_sub(before.endpoint().revision()),
                 Some(2)
             );
-            let (send_before, _, _): (SoftwareClock, SoftwareClock, usize) =
-                backend.send.ok_or(Failure::Control)?;
-            let sent: Instant = send_before.monotonic_after();
+            let (send_before, _, _): (
+                super::clock_capture::ProtectedClockCapture,
+                super::clock_capture::ProtectedClockCapture,
+                usize,
+            ) = backend.send.ok_or(Failure::Control)?;
+            let sent: Instant = send_before.software().monotonic_after();
             assert!(sent >= next_floor.get() && sent < control.expiry);
             assert_eq!(after.source().floor(), sent.checked_add(interval));
             assert_eq!(after.endpoint().floor(), sent.checked_add(maximum));
@@ -1882,7 +1901,7 @@ fn managed_protected_policy_wait_last_credit_refuses_before_cookie_checkout() ->
             assert!(Instant::now() < floor && floor < control.expiry);
             assert_eq!(owner.cookie_population()?, (1, 12));
             let entropy_calls: Cell<usize> = Cell::new(0);
-            let result: Result<RetiredProtectedSuccessor<'_>, Failure> = exchange_successor_mixed(
+            let result: Result<RetiredProtectedResponse<'_>, Failure> = exchange_successor_mixed(
                 owner,
                 control,
                 |output| {
@@ -2879,7 +2898,7 @@ pub(in crate::nts_ke_experiment) fn scripted_managed_successor<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
     kind: ProtectedControlKind,
-) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+) -> Result<RetiredProtectedResponse<'control>, Failure> {
     exchange_successor_mixed(
         association,
         control,
@@ -2900,6 +2919,48 @@ pub(in crate::nts_ke_experiment) fn scripted_managed_successor<'control>(
     )
 }
 
+/// Drive the selected independently sealed restriction against the first request.
+/// # Errors
+/// Preserve the actual bounded driver, packet and retirement refusal.
+#[cfg(any(windows, target_os = "linux"))]
+pub(in crate::nts_ke_experiment) fn scripted_managed_initial_control<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+    kind: ProtectedControlKind,
+) -> Result<RetiredProtectedResponse<'control>, Failure> {
+    super::reached::exchange_initial_with(
+        association,
+        control,
+        successor_entropy,
+        |peer: SocketAddr| {
+            let packet: &'static [u8; 124] = match kind {
+                ProtectedControlKind::Rate => &PROTECTED_RATE,
+                ProtectedControlKind::Deny => &PROTECTED_DENY,
+                ProtectedControlKind::Restrict => &PROTECTED_RESTRICTION,
+            };
+            let reads: Vec<ScriptRead> = vec![
+                ScriptRead::Packet(&CORRELATED_NTSN, peer),
+                ScriptRead::Packet(&CORRELATED_DENY, peer),
+                ScriptRead::Packet(&RATE_BAD_TAG, peer),
+                ScriptRead::Packet(packet, peer),
+                ScriptRead::Failed(io::ErrorKind::UnexpectedEof),
+            ];
+            Ok(backend(peer, Script::new(ScriptSend::Full, reads)))
+        },
+    )
+}
+
+/// Run the bounded first leg through the actual socket and retirement.
+/// # Errors
+/// Preserve the original admission, socket, driver and receiving refusal.
+#[cfg(any(windows, target_os = "linux"))]
+pub(in crate::nts_ke_experiment) fn loopback_managed_initial<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+) -> Result<RetiredProtectedResponse<'control>, Failure> {
+    super::reached::exchange_initial_with(association, control, entropy, Backend::bind)
+}
+
 /// Run the first ordinary leg through the actual socket and retirement.
 /// # Errors
 /// Preserve the original admission, socket, driver and receiving refusal.
@@ -2918,7 +2979,7 @@ pub(in crate::nts_ke_experiment) fn loopback_managed_first<'control>(
 pub(in crate::nts_ke_experiment) fn loopback_managed_successor<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
-) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+) -> Result<RetiredProtectedResponse<'control>, Failure> {
     super::reached::exchange_successor_mixed_with(
         association,
         control,
@@ -2949,7 +3010,7 @@ pub(in crate::nts_ke_experiment) fn loopback_native_managed_successor<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
     fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
-) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+) -> Result<RetiredProtectedResponse<'control>, Failure> {
     let first: Receipt = association.last_receipt().ok_or(Failure::Control)?;
     assert_eq!((first.serial(), first.cookie_counts()), (1, (1, 1)));
     assert_eq!(association.cookie_population()?, (1, 12));
@@ -2966,9 +3027,9 @@ pub(in crate::nts_ke_experiment) fn loopback_native_managed_successor<'control>(
         }
     );
 
-    let retired: RetiredProtectedSuccessor<'control> =
+    let retired: RetiredProtectedResponse<'control> =
         super::reached::exchange_successor_mixed_with(association, control, fill, Backend::bind)?;
-    assert!(matches!(&retired, RetiredProtectedSuccessor::Control(_)));
+    assert!(matches!(&retired, RetiredProtectedResponse::Control(_)));
     assert_eq!(
         association.status(),
         Status {
@@ -3600,7 +3661,7 @@ fn managed_protected_deny_retires_only_the_exact_authenticated_successor() -> Re
         let other_port: u16 = remote.port().checked_add(1).ok_or(Failure::Endpoint)?;
         let other_peer: SocketAddr = SocketAddr::new(remote.ip(), other_port);
         let mut backend_lifetime: Option<std::sync::Weak<()>> = None;
-        let selected: RetiredProtectedSuccessor<'_> =
+        let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 assert_eq!(peer, remote);
                 let script: Script = Script::new(
@@ -3617,7 +3678,7 @@ fn managed_protected_deny_retires_only_the_exact_authenticated_successor() -> Re
                 backend_lifetime = Some(Arc::downgrade(&script.lifetime));
                 script
             })?;
-        let RetiredProtectedSuccessor::Control(retired) = selected else {
+        let RetiredProtectedResponse::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let lifetime: std::sync::Weak<()> = backend_lifetime.ok_or(Failure::Control)?;
@@ -3715,7 +3776,7 @@ fn managed_retired_deny_refuses_receive_capture_at_cutoff() -> Result<(), Failur
         let first_receipt: Receipt = first.history().receipt;
         first.commit_for_successor(owner)?;
         let mut backend_lifetime: Option<std::sync::Weak<()>> = None;
-        let selected: RetiredProtectedSuccessor<'_> =
+        let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 let mut script: Script = Script::new(
                     ScriptSend::Full,
@@ -3725,7 +3786,7 @@ fn managed_retired_deny_refuses_receive_capture_at_cutoff() -> Result<(), Failur
                 backend_lifetime = Some(Arc::downgrade(&script.lifetime));
                 script
             })?;
-        let RetiredProtectedSuccessor::Control(retired) = selected else {
+        let RetiredProtectedResponse::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let lifetime: std::sync::Weak<()> = backend_lifetime.ok_or(Failure::Control)?;
@@ -3802,7 +3863,7 @@ fn check_retired_deny_receive_order(invalid: &InvalidReceiveTail) -> Result<(), 
         let first_receipt: Receipt = first.history().receipt;
         first.commit_for_successor(owner)?;
         let mut backend_lifetime: Option<std::sync::Weak<()>> = None;
-        let selected: RetiredProtectedSuccessor<'_> =
+        let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 let mut script: Script = Script::new(
                     ScriptSend::Full,
@@ -3812,7 +3873,7 @@ fn check_retired_deny_receive_order(invalid: &InvalidReceiveTail) -> Result<(), 
                 backend_lifetime = Some(Arc::downgrade(&script.lifetime));
                 script
             })?;
-        let RetiredProtectedSuccessor::Control(retired) = selected else {
+        let RetiredProtectedResponse::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let lifetime: std::sync::Weak<()> = backend_lifetime.ok_or(Failure::Control)?;
@@ -3911,7 +3972,7 @@ fn known_protected_datagram_with_invalid_capture_charges_frame_and_bytes() -> Re
                 .map_err(Failure::SourcePolicy)?;
             let read_residue: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(usize::MAX));
             let mut backend_lifetime: Option<std::sync::Weak<()>> = None;
-            let result: Result<RetiredProtectedSuccessor<'_>, Failure> =
+            let result: Result<RetiredProtectedResponse<'_>, Failure> =
                 exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                     let mut reads: Vec<ScriptRead> = (0..preceding)
                         .map(|_| ScriptRead::Packet(&PROTECTED_UNKNOWN, peer))
@@ -4022,11 +4083,11 @@ fn assert_managed_retired_deny(
         assert_eq!(first_receipt.serial(), 1);
         assert_eq!(owner.cookie_population()?, (1, 12));
         let before: Status = owner.status();
-        let selected: RetiredProtectedSuccessor<'_> =
+        let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 Script::new(ScriptSend::Full, vec![ScriptRead::Packet(packet, peer)])
             })?;
-        let RetiredProtectedSuccessor::Control(retired) = selected else {
+        let RetiredProtectedResponse::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let pending: Status = owner.status();
@@ -4243,9 +4304,9 @@ fn managed_retired_rate_preserves_independent_intervals_and_exact_next_send() ->
                 let first_receipt: Receipt = first.history().receipt;
                 first.commit_for_successor(owner)?;
                 let before: Status = owner.status();
-                let selected: RetiredProtectedSuccessor<'_> =
+                let selected: RetiredProtectedResponse<'_> =
                     scripted_managed_successor(owner, control, ProtectedControlKind::Rate)?;
-                let RetiredProtectedSuccessor::Control(retired) = selected else {
+                let RetiredProtectedResponse::Control(retired) = selected else {
                     return Err(Failure::Control);
                 };
                 let pending: Status = owner.status();
@@ -4338,7 +4399,7 @@ fn managed_protected_ordinary_follows_rejected_controls_without_renewal() -> Res
         let expiry: Instant = control.expiry;
         first_managed_exchange(owner, control, 0)?.commit_for_successor(owner)?;
         let mut backend_lifetime: Option<std::sync::Weak<()>> = None;
-        let selected: RetiredProtectedSuccessor<'_> =
+        let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
                 assert_eq!(peer, remote);
                 let script: Script = Script::new(
@@ -4353,7 +4414,7 @@ fn managed_protected_ordinary_follows_rejected_controls_without_renewal() -> Res
                 backend_lifetime = Some(Arc::downgrade(&script.lifetime));
                 script
             })?;
-        let RetiredProtectedSuccessor::Ordinary(retired) = selected else {
+        let RetiredProtectedResponse::Ordinary(retired) = selected else {
             return Err(Failure::Control);
         };
         let lifetime: std::sync::Weak<()> = backend_lifetime.ok_or(Failure::Control)?;
@@ -4423,7 +4484,7 @@ fn managed_successor_nak_leaves_ordinary_reply_opportunity() -> Result<(), Failu
         let residue: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(3));
         let captures: Arc<Mutex<Vec<SoftwareClock>>> = Arc::new(Mutex::new(Vec::with_capacity(2)));
         let mut lifetime: Option<std::sync::Weak<()>> = None;
-        let (selected, first_nak_at): (RetiredProtectedSuccessor<'_>, Option<Instant>) =
+        let (selected, first_nak_at): (RetiredProtectedResponse<'_>, Option<Instant>) =
             exchange_successor_observing(owner, control, successor_entropy, |peer: SocketAddr| {
                 assert_eq!(peer, remote);
                 let mut script: Script = Script::new(
@@ -4441,7 +4502,7 @@ fn managed_successor_nak_leaves_ordinary_reply_opportunity() -> Result<(), Failu
             })
             .map_err(|failure| failure.cause())?
             .into_parts();
-        let RetiredProtectedSuccessor::Ordinary(retired) = selected else {
+        let RetiredProtectedResponse::Ordinary(retired) = selected else {
             return Err(Failure::Control);
         };
         assert_eq!(residue.load(Ordering::Relaxed), 1);

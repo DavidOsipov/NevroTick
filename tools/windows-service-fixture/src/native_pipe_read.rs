@@ -13,12 +13,13 @@ use std::{
 use windows_sys::Win32::{
     Foundation::{
         ERROR_BROKEN_PIPE, ERROR_IO_INCOMPLETE, ERROR_IO_PENDING, ERROR_NOT_FOUND,
-        ERROR_OPERATION_ABORTED, GetLastError, HANDLE,
+        ERROR_OPERATION_ABORTED, GetLastError, HANDLE, WAIT_EVENT, WAIT_FAILED, WAIT_OBJECT_0,
+        WAIT_TIMEOUT,
     },
     Storage::FileSystem::ReadFile,
     System::{
         IO::{CancelIoEx, GetOverlappedResult, OVERLAPPED},
-        Threading::CreateEventW,
+        Threading::{CreateEventW, WaitForSingleObject},
     },
 };
 
@@ -99,7 +100,10 @@ pub(super) enum NativeReadPoll {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum RetiredRead {
     /// The operation won the cancellation race. Its bytes were discarded.
-    Discarded,
+    Discarded {
+        /// Exact transfer count established by the retired native operation.
+        len: usize,
+    },
     /// Cancellation ended the operation.
     Cancelled,
     /// The peer closed the pipe.
@@ -281,10 +285,37 @@ impl IdentifiedRequestRead {
         self.client_write_available = false;
         Ok(match self.read.poll()? {
             NativeReadPoll::Pending => Poll::Pending,
-            NativeReadPoll::Data(_) => Poll::Ready(RetiredRead::Discarded),
+            NativeReadPoll::Data(completed) => Poll::Ready(RetiredRead::Discarded {
+                len: completed.as_bytes().len(),
+            }),
             NativeReadPoll::Cancelled => Poll::Ready(RetiredRead::Cancelled),
             NativeReadPoll::Disconnected => Poll::Ready(RetiredRead::Disconnected),
         })
+    }
+
+    /// Wait for the original operation to signal while leaving its result uncollected.
+    /// # Errors
+    /// Refuses an idle slot and preserves timeout or native wait failure.
+    #[expect(
+        unsafe_code,
+        reason = "Observe the original owned read event without collecting bytes"
+    )]
+    pub(super) fn wait_for_read_signal(&self) -> std::io::Result<()> {
+        if !self.read.is_pending() {
+            return Err(std::io::Error::other("no outstanding native read"));
+        }
+        // SAFETY: The borrow keeps the private manual-reset event alive for this
+        // finite wait. Waiting does not access the kernel-owned read storage.
+        let result: WAIT_EVENT =
+            unsafe { WaitForSingleObject(self.read.event.as_raw_handle(), 2_000) };
+        match result {
+            WAIT_OBJECT_0 => Ok(()),
+            WAIT_TIMEOUT => Err(std::io::ErrorKind::TimedOut.into()),
+            WAIT_FAILED => Err(std::io::Error::last_os_error()),
+            code => Err(std::io::Error::other(format!(
+                "unexpected native read wait result: {code}"
+            ))),
+        }
     }
 
     /// Observe whether completion still needs to be collected.

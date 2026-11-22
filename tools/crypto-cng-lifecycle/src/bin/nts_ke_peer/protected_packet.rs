@@ -79,11 +79,33 @@ pub(super) fn admit_and_seal(
     s2c_key: &[u8; 32],
     response_nonce: &[u8; 16],
 ) -> Result<(Correlation, Zeroizing<[u8; REPLY_BYTES]>), PacketFailure> {
-    let cookie: &[u8] = super::RESPONSE.get(16..28).ok_or(PacketFailure::Shape)?;
-    let correlation: Correlation = authenticate(request, c2s_key, cookie)?;
+    let correlation: Correlation = authenticate_initial(request, c2s_key)?;
     let reply: Zeroizing<[u8; REPLY_BYTES]> =
         seal_reply(&correlation, s2c_key, response_nonce, &REPLACEMENT_COOKIE)?;
     Ok((correlation, reply))
+}
+
+/// Authenticate the initial request with its KE-issued cookie and seal a DENY.
+///
+/// # Errors
+/// Refuse an invalid request or a sealing failure without returning reply bytes.
+pub(super) fn admit_and_seal_initial_deny(
+    request: &[u8],
+    c2s_key: &[u8; 32],
+    s2c_key: &[u8; 32],
+    nonce: &[u8; 16],
+) -> Result<Zeroizing<[u8; DENY_BYTES]>, PacketFailure> {
+    let correlation: Correlation = authenticate_initial(request, c2s_key)?;
+    seal_correlated_deny(&correlation, s2c_key, nonce)
+}
+
+/// Require the original cookie from this fixture's successful KE response.
+///
+/// # Errors
+/// Preserve cookie selection and request authentication refusals.
+fn authenticate_initial(request: &[u8], c2s_key: &[u8; 32]) -> Result<Correlation, PacketFailure> {
+    let cookie: &[u8] = super::RESPONSE.get(16..28).ok_or(PacketFailure::Shape)?;
+    authenticate(request, c2s_key, cookie)
 }
 
 /// Admit the one successor using the issued cookie and fresh request correlation.
@@ -255,6 +277,18 @@ pub(super) fn seal_deny(
     nonce: &[u8; 16],
 ) -> Result<Zeroizing<[u8; DENY_BYTES]>, PacketFailure> {
     let SuccessorCorrelation { current } = correlation;
+    seal_correlated_deny(&current, s2c_key, nonce)
+}
+
+/// Seal the same cookie-free DENY after either request has been authenticated.
+///
+/// # Errors
+/// Refuse a provider failure without returning reply bytes.
+fn seal_correlated_deny(
+    current: &Correlation,
+    s2c_key: &[u8; 32],
+    nonce: &[u8; 16],
+) -> Result<Zeroizing<[u8; DENY_BYTES]>, PacketFailure> {
     let mut reply: Zeroizing<[u8; DENY_BYTES]> = Zeroizing::new([0; DENY_BYTES]);
     let (aad, envelope): (&mut [u8], &mut [u8]) = reply.as_mut().split_at_mut(REPLY_PREFIX_BYTES);
     aad[0] = 0x24;

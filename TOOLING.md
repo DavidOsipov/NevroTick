@@ -2589,6 +2589,16 @@ unadmitted.
 Runtime mitigations, package, signing and installation retain their own gates.
 [Pinned LLVM RC options](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/tools/llvm-rc/Opts.td#L34-L39)
 
+The x64 MSVC UI link embeds application manifest resource ID 1 with
+`asInvoker` and `uiAccess=false`. The Windows lane reads it from the linked
+PE beside VERSIONINFO and records its SHA-256 under
+`ui_versioninfo.execution_manifest`. It checks directory and payload bounds,
+disjointness and exact execution declarations. The same generation's checked
+`packagedClassicApp` and `mediumIL` UI authoring must name this executable and
+its two visual assets. The Application ID stays unresolved. Observe keeps
+its separate VERSIONINFO and import checks. This is static image evidence
+for the UI role.
+
 For the schema-3 Windows lane with an explicit `--output-dir`, add
 `--msix-branding-dir /absolute/path/to/Assets` to export the three pinned
 base PNG candidates. This directory supplies exactly the three selected
@@ -2598,6 +2608,22 @@ SHA-256 under `msix_assembly_inputs.base_artwork`. The emitted paths are
 under `msix-inputs/Assets` within the artifact output. Package identity,
 production executables, native display and installed qualification retain
 their existing requirements.
+
+Use `--export-msix-authoring` with the same schema-3 Windows lane and an
+explicit `--output-dir` to retain the inspected package, service and event
+authoring inputs and their upstream generation receipt under `msix-authoring/`.
+The verifier confirms each output's size and SHA-256 in
+`msix_assembly_inputs.authoring_export`. This private assembly input directory
+contains a subset of the original generation. Keep it outside the package
+payload and use the other required assembly and role inputs before packing.
+
+The Windows lane publishes a fresh `--output-dir` as one directory with both
+PE/PDB pairs, selected MSIX inputs and `verification.json`. Use a local Linux
+filesystem with no-replace rename and directory flush support. The parent
+must be owned by the invoking user or root. Shared writes require the sticky
+bit. A failure before rename leaves an unused final name available for retry.
+A `publication-uncertain` result means rename completed but the final path
+or directory flush could not be confirmed. Inspect that output before retrying.
 
 Use a resolvable `--json` destination outside both the artifact output and
 selected artwork directories. A failure to admit those paths is reported

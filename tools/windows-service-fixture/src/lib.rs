@@ -13,6 +13,9 @@
 mod broker_clock_change;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
+mod broker_endpoint;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
 mod diagnostics;
 #[cfg(test)]
 #[forbid(unsafe_code)]
@@ -23,6 +26,8 @@ mod error;
 mod host;
 #[cfg(windows)]
 mod native;
+#[cfg(windows)]
+mod native_broker_endpoint;
 #[cfg(all(windows, test))]
 mod native_etw_capture;
 #[cfg(all(windows, test))]
@@ -56,12 +61,12 @@ pub use broker_clock_change::{
     BrokerClockRead, ClockReadRetirement, SampledClockBreak, SampledClockDiscontinuity,
 };
 
+#[cfg(windows)]
+pub use broker_clock_change::{BrokerClockSample, BrokerClockSampleError};
+
 /// Historical last broker read from the native service fixture.
 #[cfg(windows)]
-pub type NativeBrokerClockRead = BrokerClockRead<
-    windows_platform_native::ClockCoordinates,
-    windows_platform_native::ClockReadError,
->;
+pub type NativeBrokerClockRead = BrokerClockRead<BrokerClockSample, BrokerClockSampleError>;
 
 /// Host-only scripted observation of the same broker receiver.
 #[cfg(all(not(windows), test))]

@@ -119,13 +119,6 @@ pub(super) enum WorkerFinish {
     )]
     JoinTailPending,
     /// Native completion needs a bounded recheck without a worker wake.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "the selected native pipe worker is a laboratory test"
-        )
-    )]
     NativeDrainPending {
         /// First cleanup failure already observed, with custody still outstanding.
         cleanup_failure: Option<WorkerError>,
@@ -165,7 +158,7 @@ pub(super) trait Worker {
     fn poll_finished(&mut self, wake: &WorkerWake) -> WorkerFinish;
 }
 
-/// Actual default worker for both fixed-role laboratory executable compositions.
+/// Inert Engine worker and control for the broker without endpoint acquisition.
 /// It owns no product work, native jobs, accounts, clocks or network effects.
 pub(super) struct InertWorker {
     /// Published before the completion wake; cancellation changes no native state.
@@ -1615,6 +1608,32 @@ pub(super) fn run_service<A: StatusFactory, C: Clock, W: Wait>(
 
 /// Bind the real read-only broker composition to the same serialized service owner.
 #[cfg(any(windows, test))]
+pub(super) fn run_broker_service_with_worker<A: StatusFactory, C: Clock, W: Wait, P: Worker>(
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    wait: &mut W,
+    notification: &StopNotification,
+    composition: (NativeBrokerReader, P),
+) -> HostReceipt {
+    let (reader, worker): (NativeBrokerReader, P) = composition;
+    match start_broker_worker(
+        argc,
+        factory,
+        token_observer,
+        clock,
+        notification,
+        reader,
+        worker,
+    ) {
+        Ok(invocation) => drive_service(invocation, clock, wait, notification),
+        Err(receipt) => receipt,
+    }
+}
+
+/// Drive the same broker clock path with the inert control worker.
+#[cfg(test)]
 pub(super) fn run_broker_service<A: StatusFactory, C: Clock, W: Wait>(
     argc: u32,
     factory: &mut A,
@@ -1624,16 +1643,21 @@ pub(super) fn run_broker_service<A: StatusFactory, C: Clock, W: Wait>(
     notification: &StopNotification,
     reader: NativeBrokerReader,
 ) -> HostReceipt {
-    match start_broker_invocation(argc, factory, token_observer, clock, notification, reader) {
-        Ok(invocation) => drive_service(invocation, clock, wait, notification),
-        Err(receipt) => receipt,
-    }
+    run_broker_service_with_worker(
+        argc,
+        factory,
+        token_observer,
+        clock,
+        wait,
+        notification,
+        (reader, InertWorker::new()),
+    )
 }
 
 /// Bind the reader only to the fixed broker role and its existing owner.
 /// # Errors
 /// Returns the original pre-invocation failure receipt.
-#[cfg(any(windows, test))]
+#[cfg(test)]
 #[expect(
     clippy::result_large_err,
     reason = "broker startup preserves the original fixed receipt without introducing a heap allocation"
@@ -1688,8 +1712,8 @@ fn start_broker_worker<A: StatusFactory, C: Clock, P: Worker>(
 }
 
 /// Retain the same lifecycle and charge through every poll and actual finish.
-fn drive_service<R: StatusReporter<Error = NativeError>>(
-    mut invocation: ServiceInvocation<R, InertWorker>,
+fn drive_service<R: StatusReporter<Error = NativeError>, P: Worker>(
+    mut invocation: ServiceInvocation<R, P>,
     clock: &mut impl Clock,
     wait: &mut impl Wait,
     notification: &StopNotification,

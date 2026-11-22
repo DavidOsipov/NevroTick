@@ -78,10 +78,16 @@ enum Scenario {
     ReplaceAfterCommit,
     /// Offer an otherwise valid endpoint outside the installed UDP set.
     OutsideEndpoint,
+    /// Join an ordinary protected result under an unchanged source and membership.
+    ProtectedHealthy,
     /// Replace a protected source just before the actual send.
     ProtectedBeforeSend,
     /// Replace a protected source after actual exchange retirement.
     ProtectedBeforeReplyCommit,
+    /// Select equal-endpoint initial membership just before the actual send.
+    ProtectedMembershipBeforeSend,
+    /// Select equal-endpoint initial membership after actual exchange retirement.
+    ProtectedMembershipBeforeReplyCommit,
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
     /// Exercise distinct original placement endpoints through joined projection.
@@ -97,8 +103,11 @@ impl Scenario {
     const fn protected(self) -> bool {
         matches!(
             self,
-            Self::ProtectedBeforeSend
+            Self::ProtectedHealthy
+                | Self::ProtectedBeforeSend
                 | Self::ProtectedBeforeReplyCommit
+                | Self::ProtectedMembershipBeforeSend
+                | Self::ProtectedMembershipBeforeReplyCommit
                 | Self::ProtectedAfterCommit
                 | Self::ProtectedPlacementAfterCommit
                 | Self::ProtectedSmearedAfterCommit
@@ -582,6 +591,18 @@ impl PreviewProducer {
         self.replacement = Some(newer);
         Ok(())
     }
+
+    /// Select the installed singleton as the first round membership.
+    /// # Panics
+    /// Refuse fixture setup failure before it can masquerade as the worker's refusal.
+    fn select_membership(&mut self) {
+        let selection: Result<(), SourcePolicyError> =
+            self.authority.select_initial_round_membership(
+                &self.configuration,
+                self.configuration.addresses().clone(),
+            );
+        assert_eq!(selection, Ok(()));
+    }
 }
 
 impl Producer for PreviewProducer {
@@ -634,13 +655,25 @@ impl Producer for PreviewProducer {
             } else {
                 None
             };
-        let (completion, captures): (ProtectedCompletion<'tx>, [SoftwareClock; 3]) =
+        let exchange: Result<(ProtectedCompletion<'tx>, [SoftwareClock; 3]), Failure> =
             managed_component_exchange(association, control, preceding, reply, pre_send, || {
-                if matches!(self.scenario, Scenario::ProtectedBeforeSend) {
-                    self.replace_definition()?;
+                match self.scenario {
+                    Scenario::ProtectedBeforeSend => self.replace_definition()?,
+                    Scenario::ProtectedMembershipBeforeSend => self.select_membership(),
+                    _ => {}
                 }
                 Ok(())
-            })?;
+            });
+        if matches!(self.scenario, Scenario::ProtectedMembershipBeforeSend) && exchange.is_err() {
+            let status: Status = association.status();
+            assert_eq!(status.phase, RequestPhase::Prepared);
+            assert_eq!(
+                (status.attempts, status.frames, status.bytes),
+                (31, 32, 131_072)
+            );
+            assert_eq!((status.used, status.uids), (0, 1));
+        }
+        let (completion, captures): (ProtectedCompletion<'tx>, [SoftwareClock; 3]) = exchange?;
         self.original_captures = Some(captures);
         assert_eq!(association.cookie_population()?, (0, 0));
         if preceding.is_some() {
@@ -663,6 +696,19 @@ impl Producer for PreviewProducer {
                     .replace_source_scale(&self.configuration, SourceScale::Smeared)
                     .map_err(Failure::SourcePolicy)?,
             );
+        }
+        if matches!(
+            self.scenario,
+            Scenario::ProtectedMembershipBeforeReplyCommit
+        ) {
+            let status: Status = association.status();
+            assert_eq!(status.phase, RequestPhase::Idle);
+            assert_eq!(
+                (status.attempts, status.frames, status.bytes),
+                (31, 31, 130_932)
+            );
+            assert_eq!((status.used, status.uids), (1, 1));
+            self.select_membership();
         }
         if let Some(stop) = self.stop_before_commit.take() {
             assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
@@ -1014,7 +1060,10 @@ fn run_with_hooks(
             .source
             .policy_snapshot(fixture.allowed)
             .map_err(Failure::SourcePolicy)?;
-        let should_debit: bool = !matches!(scenario, Scenario::ProtectedBeforeSend);
+        let should_debit: bool = !matches!(
+            scenario,
+            Scenario::ProtectedBeforeSend | Scenario::ProtectedMembershipBeforeSend
+        );
         assert_eq!(actual.source().floor().is_some(), should_debit);
         assert_eq!(actual.endpoint().floor().is_some(), should_debit);
     } else {
@@ -1766,6 +1815,21 @@ fn assert_original_receipt_captures(
             .ok_or(Failure::Control)?,
     ];
     let actual: [SoftwareClock; 3] = receipt.application_clock_captures();
+    #[cfg(windows)]
+    {
+        use crate::ProtectedNativeClockObservation::ReadRefused;
+        use windows_platform_native::ClockReadError;
+
+        assert!(
+            receipt.application_native_clock_captures()
+                == [
+                    Some(ReadRefused(ClockReadError::Frequency(7))),
+                    Some(ReadRefused(ClockReadError::Before(5))),
+                    Some(ReadRefused(ClockReadError::After(9))),
+                ],
+            "same ordered read refusals must survive the actual joined receipt"
+        );
+    }
     assert_eq!(actual.map(SoftwareClock::utc), expected_wall);
     for (actual, original) in actual.into_iter().zip(original) {
         assert_eq!(actual.monotonic(), original.monotonic());
@@ -1977,6 +2041,113 @@ fn managed_protected_worker_refuses_replacement_at_both_effects() -> Result<(), 
         assert!(projected.retained_configuration().is_none());
     }
     Ok(())
+}
+
+/// Check the real joined refusal while the original configuration stays installed.
+/// # Errors
+/// Preserve actual source snapshot refusal or missing configuration/result.
+/// # Panics
+/// Reject a different cause, an effect or retry, or committed history after refusal.
+fn assert_protected_membership_refusal(run: Run, received_reply: bool) -> Result<(), Failure> {
+    let cause: Failure = Failure::SourcePolicy(SourcePolicyError::ConfigurationChanged);
+    assert!(
+        matches!(&run.outcome, Err(RunFailed::Operation(failure)) if failure.primary == cause),
+        "the joined protected operation must refuse selected membership at this effect"
+    );
+    let failure: RunFailed = run.outcome.err().ok_or(Failure::Control)?;
+    let projected: SourceProtectedProbeFailure =
+        SourceProtectedProbeFailure::from_run_failure(failure);
+    assert_eq!(
+        projected.source_policy_error(),
+        Some(SourcePolicyError::ConfigurationChanged)
+    );
+    assert!(projected.retained_configuration().is_none());
+    assert!(projected.retained_first().is_none());
+    assert!(projected.admission_cleanup_labels().is_none());
+    assert_eq!(run.work.calls, [1, 0, 1, 0]);
+    assert_eq!(run.work.after.end, Some(End::Failure));
+    assert_eq!(run.work.last_failure, Some(Failed::from(cause)));
+    assert_eq!(run.work.original_captures.is_some(), received_reply);
+    assert_eq!(
+        (
+            run.work.after.transactions,
+            run.work.after.refusals,
+            run.work.after.observations,
+            run.work.after.contexts
+        ),
+        (1, 0, 2, 1)
+    );
+    let current: SourceConfigurationSnapshot = run
+        .source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    assert!(current.same_configuration(&run.expected));
+    assert_eq!(current.addresses().len(), 1);
+    assert!(current.addresses().allows(COMPONENT_UDP));
+    assert!(matches!(
+        run.source.capture_ke_preview(),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    Ok(())
+}
+
+/// A prepared protected request cannot send after selecting equal-endpoint membership.
+/// # Errors
+/// Preserve actual setup, worker or joined receiving refusal.
+#[test]
+fn managed_protected_worker_refuses_membership_before_send() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let run: Run = run(&SLOT, &ADMISSION, Scenario::ProtectedMembershipBeforeSend)?;
+    assert_protected_membership_refusal(run, false)
+}
+
+/// A retired protected reply cannot commit after selecting equal-endpoint membership.
+/// The same operation with unchanged authority still publishes its joined report.
+/// # Errors
+/// Preserve actual setup, worker or joined receiving refusal.
+/// # Panics
+/// Reject a missing healthy send/receive, or a different configuration or report.
+#[test]
+fn managed_protected_worker_refuses_membership_before_reply_commit() -> Result<(), Failure> {
+    static HEALTHY_SLOT: WorkerSlot = WorkerSlot::new();
+    static HEALTHY_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static REPLY_SLOT: WorkerSlot = WorkerSlot::new();
+    static REPLY_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let healthy: Run = run(
+        &HEALTHY_SLOT,
+        &HEALTHY_ADMISSION,
+        Scenario::ProtectedHealthy,
+    )?;
+    let completion: ReceivedCompletion = healthy
+        .outcome
+        .map_err(|failure: RunFailed| operation_primary(&failure))?;
+    assert!(completion.summary().transmitted);
+    #[cfg(windows)]
+    {
+        let receipt: ManagedProtectedReceipt =
+            protected_receipt(&completion).ok_or(Failure::Control)?;
+        assert!(
+            receipt
+                .application_native_clock_captures()
+                .iter()
+                .all(Option::is_none)
+        );
+    }
+    let report: SourceProtectedProbeReport = protected_report(completion)?;
+    assert!(report.configuration().same_configuration(&healthy.expected));
+    assert_eq!(report.leap_indicator(), 0);
+    assert_eq!(healthy.work.calls, [1, 0, 1, 0]);
+    assert_eq!(healthy.work.after.end, Some(End::Completed));
+    assert!(healthy.work.original_captures.is_some());
+
+    let refused: Run = run(
+        &REPLY_SLOT,
+        &REPLY_ADMISSION,
+        Scenario::ProtectedMembershipBeforeReplyCommit,
+    )?;
+    assert_protected_membership_refusal(refused, true)
 }
 
 /// Direct Preview callers cannot convert the managed protected association.

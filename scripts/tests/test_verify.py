@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import resource
 import shutil
@@ -1553,10 +1554,19 @@ class DirectMsixSourceInspectionTests(unittest.TestCase):
         self.generation = self.metadata / "generation"
         tree = self.generation / "tree"
         (tree / "authoring").mkdir(parents=True)
+        self.activation = {
+            "role": "ui", "executable": "nevrotick-ui.exe", "application_id": None,
+            "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
+            "visual_elements": {
+                "Square44x44Logo": "Assets/Square44x44Logo.png",
+                "Square150x150Logo": "Assets/Square150x150Logo.png",
+            },
+        }
         authoring = {}
         for name in ("msix-inputs", "service-inputs", "event-inputs"):
             path = f"authoring/{name}.json"
-            payload = json.dumps({"source": name}).encode()
+            fields = {"schema_version": 3, "ui_activation": self.activation, "fields": []}
+            payload = json.dumps(fields if name == "msix-inputs" else {"source": name}).encode()
             (tree / path).write_bytes(payload)
             authoring[path] = digest(payload)
         receipt = json.dumps({"files": [{"path": path, "sha256": sha}
@@ -1591,15 +1601,117 @@ class DirectMsixSourceInspectionTests(unittest.TestCase):
         }
         self.commands = []
 
-    def inspect(self, output):
+    def inspect(self, output, *, require_base_artwork=False, linked_ui=None):
+        if linked_ui is None:
+            linked_ui = {
+                "generation_sha256": self.generation_sha256,
+                "strings": {"OriginalFilename": "nevrotick-ui.exe"},
+                "execution_manifest": {"level": "asInvoker", "ui_access": False},
+            }
+
         def run(label, command, *, extra):
             self.commands.append((command, extra))
             return output
 
-        return VERIFY.inspect_windows_msix(self.metadata, self.generation_sha256, run, source=ROOT)
+        return VERIFY.inspect_windows_msix(self.metadata, self.generation_sha256, run, source=ROOT,
+                                          linked_ui=linked_ui, require_base_artwork=require_base_artwork)
+
+    def bind_artwork_rows(self, rows, *, overrides=None, description=""):
+        document = json.dumps({
+            "schema_version": 3, "fields": rows, "description": description,
+            "ui_activation": self.activation if overrides is None else {**self.activation, **overrides},
+        }).encode()
+        self.bind_authoring_payload(document)
+
+    def bind_authoring_payload(self, document):
+        tree = self.generation / "tree"
+        path = "authoring/msix-inputs.json"
+        (tree / path).write_bytes(document)
+        self.report["authoring_inputs"][path] = digest(document)
+        receipt = json.dumps({"files": [{"path": name, "sha256": sha}
+                                        for name, sha in self.report["authoring_inputs"].items()]}).encode()
+        (tree / "receipt.json").write_bytes(receipt)
+        self.generation_sha256 = digest(receipt)
+        self.report["generation_receipt_sha256"] = self.generation_sha256
+
+    def test_ui_activation_refuses_rehashed_unapproved_declarations(self):
+        for overrides in (
+            {"role": "observer"},
+            {"executable": "subdir/nevrotick-ui.exe"},
+            {"trust_level": "appContainer"},
+            {"runtime_behavior": "win32App"},
+            {"EntryPoint": "Windows.FullTrustApplication"},
+        ):
+            self.bind_artwork_rows([], overrides=overrides)
+            with self.subTest(overrides=overrides), self.assertRaisesRegex(
+                    VERIFY.ENV.Incomplete, "checked application profile"):
+                self.inspect(json.dumps(self.report))
+        self.bind_artwork_rows([])
+        self.assertEqual(self.inspect(json.dumps(self.report))["ui_activation"], self.activation)
+
+    def test_ui_activation_preserves_multiline_unicode_authoring_text(self):
+        self.bind_artwork_rows([], description="Résumé de l'application.\n\tDeuxième ligne.")
+        self.assertEqual(self.inspect(json.dumps(self.report))["ui_activation"], self.activation)
+
+    def test_ui_activation_refuses_duplicate_decoded_keys(self):
+        self.bind_artwork_rows([])
+        path = self.generation / "tree/authoring/msix-inputs.json"
+        valid = path.read_bytes()
+        activation = json.dumps(self.activation).encode()
+        duplicate = rb'{"trust_lev\u0065l": "mediumIL", ' + activation[1:]
+        self.assertEqual(valid.count(activation), 1)
+        self.bind_authoring_payload(valid.replace(activation, duplicate))
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Invalid Windows MSIX UI activation authoring"):
+            self.inspect(json.dumps(self.report))
+        self.bind_authoring_payload(valid)
+        self.assertEqual(self.inspect(json.dumps(self.report))["ui_activation"], self.activation)
+
+    def test_ui_activation_requires_the_exact_linked_application(self):
+        linked = {
+            "generation_sha256": self.generation_sha256,
+            "strings": {"OriginalFilename": "nevrotick-ui.exe"},
+            "execution_manifest": {"level": "asInvoker", "ui_access": False},
+        }
+        for overrides in (
+            {"strings": {"OriginalFilename": "nevrotick-observe.exe"}},
+            {"execution_manifest": {"level": "requireAdministrator", "ui_access": False}},
+            {"execution_manifest": {"level": "asInvoker", "ui_access": True}},
+            {"generation_sha256": "a" * 64},
+        ):
+            with self.subTest(overrides=overrides), self.assertRaisesRegex(
+                    VERIFY.ENV.Incomplete, "linked UI role or generation"):
+                self.inspect(json.dumps(self.report), linked_ui={**linked, **overrides})
+        self.assertEqual(self.inspect(json.dumps(self.report), linked_ui=linked)["ui_activation"], self.activation)
+
+    def test_selected_artwork_requires_matching_paths_from_the_checked_generation(self):
+        rows = [
+            {"key": "catalogue.B.6.2.Package/Properties/Logo",
+             "value": "Assets/PackageLogo.png", "status": "derived"},
+            {"key": "catalogue.B.6.5.uap:VisualElements/@Square44x44Logo",
+             "value": "Assets/Square44x44Logo.png", "status": "populated"},
+            {"key": "catalogue.B.6.5.uap:VisualElements/@Square150x150Logo",
+             "value": "Assets/Square150x150Logo.png", "status": "populated"},
+        ]
+        self.bind_artwork_rows(rows)
+        observed = self.inspect(json.dumps(self.report), require_base_artwork=True)
+        self.assertEqual(observed, {**self.report, "ui_activation": self.activation})
+        leaf = self.generation / "tree/authoring/msix-inputs.json"
+        leaf.write_bytes(b"{}")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the checked generation"):
+            self.inspect(json.dumps(self.report), require_base_artwork=True)
+
+        for changed, issue in (
+            ([{**rows[0], "value": rows[1]["value"]}, {**rows[1], "value": rows[0]["value"]}, rows[2]],
+             "role or package path differs"),
+            ([*rows, rows[0]], "role or package path differs"),
+            (rows[:-1], "authoring rows are incomplete"),
+        ):
+            self.bind_artwork_rows(changed)
+            with self.subTest(issue=issue), self.assertRaisesRegex(VERIFY.ENV.Incomplete, issue):
+                self.inspect(json.dumps(self.report), require_base_artwork=True)
 
     def test_retains_source_report_from_the_read_only_matching_generation(self):
-        self.assertEqual(self.inspect(json.dumps(self.report)), self.report)
+        self.assertEqual(self.inspect(json.dumps(self.report)), {**self.report, "ui_activation": self.activation})
         self.assertEqual(len(self.commands), 1)
         command, mounts = self.commands[0]
         self.assertEqual(command, ["python3", "-I", "-B", "metadata/pipeline/__main__.py",
@@ -1646,6 +1758,94 @@ class DirectMsixSourceInspectionTests(unittest.TestCase):
         for changed in cases:
             with self.subTest(changed=changed), self.assertRaises(VERIFY.ENV.Incomplete):
                 self.inspect(json.dumps({**self.report, **changed}))
+
+    def test_export_retains_only_the_bound_private_assembly_inputs(self):
+        tree = self.generation / "tree"
+        manifest = "authoring/service-events.man"
+        (tree / manifest).write_bytes(b"event compiler source")
+        (tree / "authoring/private-input.toml").write_bytes(b"do not copy")
+        self.report["authoring_inputs"][manifest] = digest((tree / manifest).read_bytes())
+        self.bind_artwork_rows([])
+        inspected = self.inspect(json.dumps(self.report))
+        held = VERIFY.read_msix_authoring_snapshot(tree, inspected)
+        expected = {name: (tree / name).read_bytes() for name in (
+            "receipt.json", "authoring/msix-inputs.json", "authoring/service-inputs.json",
+            "authoring/event-inputs.json", manifest,
+        )}
+        shutil.rmtree(tree)
+        exported = VERIFY.export_msix_authoring(held, self.metadata, inspection=inspected)
+        destination = self.metadata / "msix-authoring"
+        self.assertEqual(exported["scope"], "private-assembly-source")
+        self.assertEqual(exported["export_root"], destination.name)
+        self.assertEqual({path.relative_to(destination).as_posix(): path.read_bytes()
+                          for path in destination.rglob("*") if path.is_file()}, expected)
+        self.assertEqual(exported["files"], {name: {"bytes": len(data), "sha256": digest(data)}
+                                             for name, data in expected.items()})
+        self.assertEqual(destination.stat().st_mode & 0o777, 0o700)
+        self.assertTrue(all((destination / name).stat().st_mode & 0o077 == 0 for name in expected))
+
+    def test_export_snapshot_refuses_changed_or_rebound_checked_inputs(self):
+        tree = self.generation / "tree"
+        inspected = self.inspect(json.dumps(self.report))
+        for name in ("receipt.json", "authoring/event-inputs.json"):
+            path = tree / name
+            original = path.read_bytes()
+            path.write_bytes(b"x" + original[1:])
+            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "checked generation"):
+                VERIFY.read_msix_authoring_snapshot(tree, inspected)
+            path.write_bytes(original)
+        leaf = tree / "authoring/service-inputs.json"
+        alias = self.metadata / "equivalent-bytes.json"
+        alias.hardlink_to(leaf)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "checked generation"):
+            VERIFY.read_msix_authoring_snapshot(tree, inspected)
+        alias.unlink()
+        self.assertEqual(set(VERIFY.read_msix_authoring_snapshot(tree, inspected)),
+                         {*inspected["authoring_inputs"], "receipt.json"})
+
+    def test_export_refuses_unselected_paths_before_creating_output(self):
+        inspected = self.inspect(json.dumps(self.report))
+        held = VERIFY.read_msix_authoring_snapshot(self.generation / "tree", inspected)
+        for name in ("../outside", "authoring/private-input.json"):
+            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "export inventory"):
+                VERIFY.export_msix_authoring({**held, name: b"outside selection"}, self.metadata,
+                                              inspection=inspected)
+        self.assertFalse((self.metadata / "msix-authoring").exists())
+        self.assertFalse((self.metadata / "outside").exists())
+
+    def test_export_refuses_substitution_and_readback_failure_without_publishing(self):
+        inspected = self.inspect(json.dumps(self.report))
+        held = VERIFY.read_msix_authoring_snapshot(self.generation / "tree", inspected)
+        for name in ("receipt.json", "authoring/event-inputs.json"):
+            replacement = {**held, name: b"x" + held[name][1:]}
+            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "retained.*snapshot"):
+                VERIFY.export_msix_authoring(replacement, self.metadata, inspection=inspected)
+        readback = VERIFY.read_bound_msix_leaf
+
+        def changed_output(path, sha, **kwargs):
+            if path.name == "event-inputs.json":
+                path.write_bytes(b"x" + path.read_bytes()[1:])
+            return readback(path, sha, **kwargs)
+
+        with patch.object(VERIFY, "read_bound_msix_leaf", side_effect=changed_output):
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "checked generation"):
+                VERIFY.export_msix_authoring(held, self.metadata, inspection=inspected)
+        self.assertEqual(set(self.metadata.iterdir()), {self.generation})
+        VERIFY.export_msix_authoring(held, self.metadata, inspection=inspected)
+        destination = self.metadata / "msix-authoring"
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "already exists"):
+            VERIFY.export_msix_authoring(held, self.metadata, inspection=inspected)
+        self.assertEqual(set(self.metadata.iterdir()), {self.generation, destination})
+        self.assertEqual((destination / "receipt.json").read_bytes(), held["receipt.json"])
+
+    def test_authoring_export_requires_an_exporting_schema_3_windows_lane(self):
+        for lane, schema, output in (("portable", 3, self.metadata), ("windows", 2, self.metadata),
+                                     ("windows", 3, None)):
+            args = argparse.Namespace(lane=lane, output_dir=output, export_msix_authoring=True)
+            with self.subTest(lane=lane, schema=schema, output=output):
+                with patch.object(VERIFY, "admit_product", return_value=({"schema_version": schema}, {})):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "authoring export requires"):
+                        VERIFY.execute(ROOT, args, {})
 
 
 class DirectMsixBaseArtworkTests(unittest.TestCase):
@@ -2176,6 +2376,368 @@ class ExecutionAccountingTests(unittest.TestCase):
         for name, payload in artifacts.items():
             (release / name).write_bytes(payload)
         return release, output, artifacts
+
+    def run_windows_publication(self, release, output, report):
+        """Run the unchanged verification coordinator with only build effects simulated."""
+        project = self.work / "windows-projection"
+        project.mkdir(exist_ok=True)
+        names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+                 *VERIFY.WINDOWS_PE_INPUT_FILES)
+        for name in names:
+            destination = project / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, destination)
+        identity = {name: digest((project / name).read_bytes()) for name in names}
+        for directory in ("vendor", "toolchain", "scratch"):
+            (self.work / directory).mkdir(exist_ok=True)
+        inventory = project / "inventory.json"
+        inventory.touch()
+        args = argparse.Namespace(lane="windows", vendor_dir=self.work / "vendor",
+                                  toolchain_dir=self.work / "toolchain", scratch_root=self.work / "scratch",
+                                  nextest=None, deny=None, output_dir=output,
+                                  xwin_inventory=inventory, xwin_config=inventory)
+
+        def simulated_build(_toolchain, work, _source, _vendor, command, *_args, **_context):
+            shutil.copytree(release, work / "target/x86_64-pc-windows-msvc/release")
+            return command
+
+        with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 2}, identity)), \
+                patch.object(VERIFY, "admit_vendor", return_value={}), \
+                patch.object(VERIFY, "admit_tools", return_value={}), \
+                patch.object(VERIFY, "windows_libraries", return_value=None), \
+                patch.object(VERIFY, "commands", return_value=[]), \
+                patch.object(VERIFY, "boundary_control"), \
+                patch.object(VERIFY, "sandbox", side_effect=simulated_build), \
+                patch.object(VERIFY.ENV, "run", return_value={
+                    "exit_code": 0, "failure": None, "output": "Ran 1 test in 0.001s\n\nOK\n"}):
+            VERIFY.execute(project, args, report)
+
+    def test_windows_publication_late_write_failure_leaves_no_tree_and_retry_succeeds(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        original_open = Path.open
+
+        def fail_receipt(path, mode="r", *args, **kwargs):
+            if path.name == "verification.json" and mode in {"w", "xb"}:
+                self.assertEqual({name: (path.parent / name).read_bytes() for name in artifacts}, artifacts)
+                raise OSError("injected late receipt write failure")
+            return original_open(path, mode, *args, **kwargs)
+
+        with patch.object(Path, "open", fail_receipt), self.assertRaisesRegex(OSError, "late receipt"):
+            self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertFalse(output.exists(), "late receipt failure left a partial export at the final path")
+        self.assertEqual(list(self.work.glob(".windows-export-*")), [])
+
+        report = {"status": "incomplete"}
+        self.run_windows_publication(release, output, report)
+        self.assertEqual(json.loads((output / "verification.json").read_bytes()), report)
+        self.assertEqual(set(p.name for p in output.iterdir()), {*artifacts, "verification.json"})
+        self.assertEqual(report["status"], "passed")
+        ui = report["artifact"]
+        self.assertEqual(Path(ui["path"]), output / "nevrotick-ui.exe")
+        self.assertEqual(Path(ui["engine"]["symbols"]["path"]), output / "nevrotick_observe.pdb")
+
+    def test_windows_publication_never_replaces_racing_empty_directory(self):
+        release, output, _ = self.windows_release_fixture()
+        output.rmdir()
+        original = VERIFY._publish_windows_export
+        competing = []
+
+        def race(parent, staging, name):
+            output.mkdir()
+            competing.append(output.stat().st_ino)
+            original(parent, staging, name)
+
+        with patch.object(VERIFY, "_publish_windows_export", race), self.assertRaises(FileExistsError):
+            self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertEqual([output.stat().st_ino], competing)
+        self.assertEqual(list(output.iterdir()), [])
+        self.assertEqual(list(self.work.glob(".windows-export-*")), [])
+
+    def test_windows_publication_post_rename_flush_failure_preserves_complete_tree(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        original_sync = os.fsync
+
+        def fail_parent(descriptor):
+            if os.path.samestat(self.work.stat(), os.fstat(descriptor)):
+                self.assertTrue(output.is_dir(), "parent flush ran before the complete tree was published")
+                raise OSError("injected post-rename parent flush failure")
+            original_sync(descriptor)
+
+        report = {"status": "incomplete"}
+        with patch.object(os, "fsync", fail_parent), self.assertRaisesRegex(
+                VERIFY.WindowsOutputPublicationUncertain, "Windows export rename completed"):
+            self.run_windows_publication(release, output, report)
+        self.assertEqual(report["status"], "publication-uncertain")
+        self.assertIn("Windows export rename completed.", report["error"])
+        self.assertNotIn("artifact", report)
+        visible = json.loads((output / "verification.json").read_bytes())
+        self.assertEqual(visible["status"], "passed")
+        self.assertEqual({name: (output / name).read_bytes() for name in artifacts}, artifacts)
+        self.assertEqual(list(self.work.glob(".windows-export-*")), [])
+        with self.assertRaises(FileExistsError):
+            self.run_windows_publication(release, output, {"status": "incomplete"})
+
+    def test_windows_publication_refuses_a_dangling_output_link(self):
+        release, output, _ = self.windows_release_fixture()
+        output.rmdir()
+        other = self.work / "must-not-appear"
+        output.symlink_to(other, target_is_directory=True)
+        with self.assertRaises(FileExistsError):
+            self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertEqual(output.readlink(), other)
+        self.assertFalse(other.exists())
+
+    def test_windows_publication_cleans_original_parent_after_path_replacement(self):
+        release, _, _ = self.windows_release_fixture()
+        parent = self.work / "owned-parent"
+        parent.mkdir()
+        moved = self.work / "moved-parent"
+        original = VERIFY.export_windows_artifacts
+        replacement = []
+
+        def move_parent(work, staging, **kwargs):
+            [name] = [entry.name for entry in parent.iterdir()]
+            parent.rename(moved)
+            parent.mkdir()
+            foreign = parent / name
+            foreign.mkdir()
+            replacement.append(foreign)
+            return original(work, staging, **kwargs)
+
+        with patch.object(VERIFY, "export_windows_artifacts", move_parent), self.assertRaisesRegex(
+                VERIFY.ENV.Incomplete, "parent changed"):
+            self.run_windows_publication(release, parent / "export", {"status": "incomplete"})
+        self.assertEqual(list(moved.iterdir()), [])
+        self.assertEqual(list(parent.iterdir()), replacement)
+        self.assertEqual(list(replacement[0].iterdir()), [])
+
+    def test_windows_publication_distinguishes_complete_visible_from_external_success(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        original_sync = os.fsync
+        external = self.work / "external.json"
+        receipt = b'{"exact": "generation"}'
+        leaf = b'{"exact": "checked authoring"}'
+        authoring = {"receipt.json": receipt, **{path: leaf for path in VERIFY.MSIX_REQUIRED_AUTHORING}}
+        inspection = {
+            "generation_receipt_sha256": digest(receipt),
+            "authoring_inputs": {path: digest(leaf) for path in VERIFY.MSIX_REQUIRED_AUTHORING},
+            "assembly_ready": False,
+        }
+        images = {name: f"held-{name}".encode() for name in VERIFY.MSIX_BASE_ARTWORK}
+        pins = {name: (field, size, len(images[name]), digest(images[name]))
+                for name, (field, size, _, _) in VERIFY.MSIX_BASE_ARTWORK.items()}
+
+        def execute_export(root, args, report):
+            report["msix_assembly_inputs"] = inspection
+            VERIFY.export_windows_build(
+                self.work, args.output_dir, source=root, report=report, base_artwork=images, authoring=authoring)
+
+        def fail_parent(descriptor):
+            if os.path.samestat(self.work.stat(), os.fstat(descriptor)):
+                self.assertTrue(output.is_dir())
+                raise OSError("injected post-rename parent flush failure")
+            original_sync(descriptor)
+
+        with patch.object(VERIFY, "execute", execute_export), \
+                patch.object(VERIFY, "MSIX_BASE_ARTWORK", pins), patch.object(os, "fsync", fail_parent):
+            result = VERIFY.main(["--lane", "windows", "--vendor-dir", str(release),
+                                  "--output-dir", str(output), "--json", str(external)])
+        self.assertEqual(result, 1)
+        external_report = json.loads(external.read_bytes())
+        self.assertEqual(external_report["status"], "publication-uncertain")
+        self.assertNotIn("artifact", external_report)
+        self.assertEqual(external_report["msix_assembly_inputs"], inspection)
+        visible = json.loads((output / "verification.json").read_bytes())
+        self.assertEqual(visible["status"], "passed")
+        self.assertFalse(visible["msix_assembly_inputs"]["assembly_ready"])
+        expected = {**artifacts, **{"msix-authoring/" + name: data for name, data in authoring.items()},
+                    **{"msix-inputs/Assets/" + name: data for name, data in images.items()}}
+        self.assertEqual({p.relative_to(output).as_posix(): p.read_bytes()
+                          for p in output.rglob("*") if p.is_file() and p.name != "verification.json"},
+                         expected)
+
+    def test_windows_publication_reports_replaced_visible_slot_as_uncertain(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        retained = self.work / "moved-complete-export"
+        original_sync = os.fsync
+
+        def displace_export(descriptor):
+            if os.path.samestat(self.work.stat(), os.fstat(descriptor)):
+                output.rename(retained)
+                output.mkdir()
+            original_sync(descriptor)
+
+        report = {"status": "incomplete"}
+        with patch.object(os, "fsync", displace_export), self.assertRaises(
+                VERIFY.WindowsOutputPublicationUncertain):
+            self.run_windows_publication(release, output, report)
+        self.assertEqual(report["status"], "publication-uncertain")
+        self.assertEqual(list(output.iterdir()), [])
+        self.assertEqual({name: (retained / name).read_bytes() for name in artifacts}, artifacts)
+        self.assertEqual(json.loads((retained / "verification.json").read_bytes())["status"], "passed")
+
+    def test_windows_publication_keeps_uncertainty_if_external_receipt_also_fails(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        external = self.work / "external.json"
+        original_sync = os.fsync
+        original_open = Path.open
+
+        def execute_export(root, args, report):
+            VERIFY.export_windows_build(
+                self.work, args.output_dir, source=root, report=report, base_artwork=None, authoring=None)
+
+        def fail_parent(descriptor):
+            if os.path.samestat(self.work.stat(), os.fstat(descriptor)):
+                self.assertTrue(output.is_dir())
+                raise OSError("injected post-rename parent flush failure")
+            original_sync(descriptor)
+
+        def fail_external(path, mode="r", *args, **kwargs):
+            if path == external and mode == "w":
+                raise PermissionError("injected external receipt access failure")
+            return original_open(path, mode, *args, **kwargs)
+
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(VERIFY, "execute", execute_export), patch.object(os, "fsync", fail_parent), \
+                patch.object(Path, "open", fail_external), redirect_stdout(stdout), redirect_stderr(stderr):
+            result = VERIFY.main(["--lane", "windows", "--vendor-dir", str(release),
+                                  "--output-dir", str(output), "--json", str(external)])
+        self.assertEqual(result, 1)
+        self.assertTrue(stdout.getvalue().startswith("PUBLICATION-UNCERTAIN:"))
+        self.assertIn("Windows export rename completed.", stderr.getvalue())
+        self.assertIn("External JSON receipt failed (PermissionError).", stderr.getvalue())
+        self.assertFalse(external.exists())
+        self.assertEqual({name: (output / name).read_bytes() for name in artifacts}, artifacts)
+        self.assertEqual(json.loads((output / "verification.json").read_bytes())["status"], "passed")
+
+    def test_windows_publication_keeps_precommit_failure_if_cleanup_also_fails(self):
+        release, output, _ = self.windows_release_fixture()
+        output.rmdir()
+        original_open = Path.open
+        original_rmtree = shutil.rmtree
+
+        def fail_receipt(path, mode="r", *args, **kwargs):
+            if path.name == "verification.json" and mode == "xb":
+                raise OSError("injected primary staged receipt failure")
+            return original_open(path, mode, *args, **kwargs)
+
+        def fail_cleanup(path, *args, **kwargs):
+            if Path(path).name.startswith(".windows-export-"):
+                raise PermissionError("injected staging cleanup failure")
+            original_rmtree(path, *args, **kwargs)
+
+        with patch.object(Path, "open", fail_receipt), patch.object(shutil, "rmtree", fail_cleanup):
+            with self.assertRaisesRegex(OSError, "primary staged receipt failure") as failure:
+                self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertEqual(failure.exception.__notes__,
+                         ["Windows export staging cleanup failed (PermissionError)."])
+        self.assertFalse(output.exists())
+        leftovers = list(self.work.glob(".windows-export-*"))
+        self.assertEqual(len(leftovers), 1)
+        self.assertEqual(len(list(leftovers[0].iterdir())), 4)
+        original_rmtree(leftovers[0])
+
+    def test_windows_publication_refuses_shared_parent_without_sticky_bit(self):
+        release, _, artifacts = self.windows_release_fixture()
+        shared = self.work / "shared-parent"
+        shared.mkdir()
+        shared.chmod(0o775)
+        output = shared / "export"
+        with patch.object(tempfile, "mkdtemp", wraps=tempfile.mkdtemp) as mkdir:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "trusted parent"):
+                self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertFalse(any(str(call.kwargs.get("prefix", "")).startswith(".windows-export-")
+                             for call in mkdir.call_args_list))
+        self.assertEqual(list(shared.iterdir()), [])
+        shared.chmod(0o1777)
+        report = {"status": "incomplete"}
+        self.run_windows_publication(release, output, report)
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual({name: (output / name).read_bytes() for name in artifacts}, artifacts)
+
+    def test_windows_publication_refuses_parent_owned_by_an_untrusted_account(self):
+        release, _, _ = self.windows_release_fixture()
+        parent = self.work / "untrusted-parent"
+        parent.mkdir()
+        parent.chmod(0o1777)
+        original_fstat = os.fstat
+
+        def untrusted_owner(descriptor):
+            actual = original_fstat(descriptor)
+            if os.path.samestat(parent.stat(), actual):
+                fields = list(actual)
+                fields[4] = os.geteuid() + 1
+                return os.stat_result(fields)
+            return actual
+
+        with patch.object(os, "fstat", untrusted_owner), self.assertRaisesRegex(
+                VERIFY.ENV.Incomplete, "trusted parent"):
+            self.run_windows_publication(release, parent / "export", {"status": "incomplete"})
+        self.assertEqual(list(parent.iterdir()), [])
+
+    def test_windows_publication_preserves_unknown_staging_when_first_stat_fails(self):
+        release, output, _ = self.windows_release_fixture()
+        output.rmdir()
+        original_stat = Path.stat
+
+        def fail_stat(path, *args, **kwargs):
+            if path.name.startswith(".windows-export-"):
+                raise PermissionError("injected initial staging identity failure")
+            return original_stat(path, *args, **kwargs)
+
+        with patch.object(Path, "stat", fail_stat), self.assertRaisesRegex(
+                PermissionError, "initial staging identity failure") as failure:
+            self.run_windows_publication(release, output, {"status": "incomplete"})
+        self.assertIn("Unknown object preserved", "\n".join(getattr(failure.exception, "__notes__", ())))
+        self.assertFalse(output.exists())
+        [unknown] = self.work.glob(".windows-export-*")
+        self.assertTrue(unknown.is_dir())
+        self.assertEqual(list(unknown.iterdir()), [])
+        unknown.rmdir()
+
+    def test_windows_publication_keeps_recorded_uncertainty_after_descriptor_cleanup_error(self):
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        external = self.work / "external.json"
+        original_sync, original_close = os.fsync, os.close
+        closed_stage = []
+
+        def execute_export(root, args, report):
+            VERIFY.export_windows_build(
+                self.work, args.output_dir, source=root, report=report, base_artwork=None, authoring=None)
+
+        def fail_parent(descriptor):
+            if os.path.samestat(self.work.stat(), os.fstat(descriptor)):
+                self.assertTrue(output.is_dir())
+                raise OSError("injected post-rename parent flush failure")
+            original_sync(descriptor)
+
+        def fail_staging_close(descriptor):
+            was_staged = output.exists() and os.path.samestat(output.stat(), os.fstat(descriptor))
+            original_close(descriptor)
+            if was_staged:
+                closed_stage.append(descriptor)
+                raise PermissionError("injected staging close failure after physical close")
+
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(VERIFY, "execute", execute_export), patch.object(os, "fsync", fail_parent), \
+                patch.object(os, "close", fail_staging_close), redirect_stdout(stdout), redirect_stderr(stderr):
+            result = VERIFY.main(["--lane", "windows", "--vendor-dir", str(release),
+                                  "--output-dir", str(output), "--json", str(external)])
+        self.assertEqual(result, 1)
+        self.assertEqual(len(closed_stage), 1)
+        self.assertTrue(stdout.getvalue().startswith("PUBLICATION-UNCERTAIN:"))
+        self.assertIn("Windows export rename completed.", stderr.getvalue())
+        self.assertIn("Verification cleanup failed (PermissionError).", stderr.getvalue())
+        observed = json.loads(external.read_bytes())
+        self.assertEqual(observed["status"], "publication-uncertain")
+        self.assertNotIn("artifact", observed)
+        self.assertEqual({name: (output / name).read_bytes() for name in artifacts}, artifacts)
 
     def test_windows_export_selects_release_and_preserves_matching_symbols(self):
         release, output, artifacts = self.windows_release_fixture()

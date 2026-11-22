@@ -8,7 +8,10 @@ use std::{
 };
 
 use tokio::sync::watch;
-use windows_platform_native::{DnsAddressFamily, DnsAddressQuery, DnsAddresses, DnsQueryName};
+use windows_platform_native::{
+    DnsAddressError, DnsAddressFamily, DnsAddressQuery, DnsAddresses, DnsCancellationRequest,
+    DnsQueryName,
+};
 
 use super::{
     AddressRoundConfig, AddressRoundConfigError, AddressRoundEnd, AddressRoundRefreshOutcome,
@@ -99,11 +102,19 @@ pub(super) fn start(
                 })
                 .map_err(policy_refusal)??;
         }
-        let addresses: DnsAddresses = DnsAddressQuery::start(plan.name, plan.family)
-            .and_then(DnsAddressQuery::wait)
-            .map_err(|error| {
+        let query: DnsAddressQuery =
+            DnsAddressQuery::start(plan.name, plan.family).map_err(|error| {
                 AddressRoundRefreshOutcome::Failed(PilotError::NativeResolution(error))
             })?;
+        // Only the worker sees a cancellation request status. Retirement can
+        // already have published; the joined DNS outcome still has its own cause.
+        let (answer, _cancellation): (
+            Result<DnsAddresses, DnsAddressError>,
+            DnsCancellationRequest,
+        ) = query.wait_with_retirement(|| dispatch.retirement_requested());
+        let addresses: DnsAddresses = answer.map_err(|error| {
+            AddressRoundRefreshOutcome::Failed(PilotError::NativeResolution(error))
+        })?;
         let peers: Vec<SocketAddr> = addresses
             .iter()
             .map(|address| SocketAddr::new(address, plan.port.get()))

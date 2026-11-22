@@ -584,6 +584,60 @@ fn ke_preview_check(
     guard.check(peer)
 }
 
+/// Select the same endpoint without changing its installed revision.
+/// # Errors
+/// Preserve real construction, selection and legal KE issuance failures.
+/// # Panics
+/// Reject a grant or endpoint allocation after selection, or a lost fresh neighbor.
+#[cfg(feature = "ke-association-prototype")]
+#[test]
+fn source_configuration_selected_round_fences_ke_issuance() -> Check<()> {
+    let mut authority: SourcePolicyAuthority = isolated_authority(limits(1, 1)?)?;
+    let source: SourceHandle = authority.source(0)?;
+    let peer: SocketAddr = endpoint(43252);
+    let target: crate::KePreviewTarget = crate::KePreviewTarget::new(endpoint(4460), "localhost")?;
+    let addresses: SourceAddressSet = SourceAddressSet::new(&[peer])?;
+    let original: SourceConfigurationSnapshot =
+        authority.install_ke_preview_configuration(&source, addresses.clone(), target.clone())?;
+    let protected: ProtectedKeSource = authority.authorize_protected_ke(&original)?;
+    ke_preview_check(protected.definition(), Some(peer))?;
+    assert!(matches!(
+        authority.endpoint_target(peer),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+
+    authority.select_initial_round_membership(&original, addresses.clone())?;
+    let selected: SourceConfigurationSnapshot = installed(&source)?;
+    assert!(selected.same_configuration(&original));
+    assert_eq!(
+        ke_preview_check(protected.definition(), Some(peer)),
+        Err(SourcePolicyError::ConfigurationChanged)
+    );
+    assert!(matches!(
+        authority.authorize_protected_ke(&selected),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    assert!(matches!(
+        source.capture_ke_preview(),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    assert!(matches!(
+        authority.endpoint_target(peer),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+
+    let refreshed: SourceConfigurationSnapshot =
+        authority.replace_ke_preview_configuration(&selected, addresses, target)?;
+    assert!(!refreshed.same_configuration(&original));
+    assert!(matches!(
+        authority.authorize_protected_ke(&original),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    let fresh: ProtectedKeSource = authority.authorize_protected_ke(&refreshed)?;
+    ke_preview_check(fresh.definition(), Some(peer))?;
+    Ok(())
+}
+
 /// Replace just the declaration and verify the actual KE admission on both revisions.
 /// # Errors
 /// Preserve any unexpected issuer, capture or refreshed guard failure.

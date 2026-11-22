@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import argparse
 from base64 import b64encode
+from codecs import BOM_UTF8
 from dataclasses import dataclass
 from hashlib import sha256
 from io import BytesIO
 import json
 import os
 from pathlib import Path
+import re
 import stat
 import struct
 from xml.etree import ElementTree as ET
@@ -152,13 +154,29 @@ def read_input_set(path: Path, expected_sha256: str) -> dict[str, str]:
 
 
 def parse_xml(data: bytes, label: str) -> ET.Element:
+    """Validate the fixture's UTF-8 profile and parse the original XML bytes."""
     require(0 < len(data) <= MAX_XML, f"{label} exceeds the XML input bound")
-    xml = data.decode("utf-8-sig")
-    require("<!DOCTYPE" not in xml and "<!ENTITY" not in xml,
-            f"{label} contains a document type or entity declaration")
+    encoding_error = f"{label} must use UTF-8 XML encoding"
     try:
-        return ET.fromstring(xml)
-    except ET.ParseError as error:
+        data.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise Refused(encoding_error) from error
+    # NUL is invalid in XML and can trigger a UTF-16/UTF-32 autodetection.
+    require(b"\0" not in data, encoding_error)
+    require(b"<!DOCTYPE" not in data and b"<!ENTITY" not in data,
+            f"{label} contains a document type or entity declaration")
+
+    start = data.removeprefix(BOM_UTF8)
+    if re.match(rb"<\?xml[ \t\r\n]", start):
+        declaration = start.partition(b"?>")[0]
+        encoding = re.search(
+            rb"""[ \t\r\n]encoding[ \t\r\n]*=[ \t\r\n]*(['"])([A-Za-z][A-Za-z0-9._-]*)\1""",
+            declaration,
+        )
+        require(encoding is None or encoding[2].lower() == b"utf-8", encoding_error)
+    try:
+        return ET.fromstring(data)
+    except (ET.ParseError, LookupError, ValueError) as error:
         raise Refused(f"invalid {label} XML") from error
 
 

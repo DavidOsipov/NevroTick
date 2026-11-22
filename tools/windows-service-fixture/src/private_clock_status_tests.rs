@@ -56,23 +56,22 @@ use crate::{
 };
 
 /// Stable slots include the existing native pipe histories and the Stop neighbor.
-const BROKER_CASES: usize = 27;
+const BROKER_CASES: usize = 28;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
 /// Calls of the original raw getter, separated from trusted deadline observations.
 static GETTERS: [AtomicU32; BROKER_CASES] = [const { AtomicU32::new(0) }; BROKER_CASES];
 
-/// Observe the same Windows coordinate adapter used by the fixed broker.
+/// Observe the same paired Windows clock sample used by the fixed broker.
 /// # Errors
 /// Preserve the actual Windows adapter's raw failure.
 /// # Panics
 /// Panics if the selected fixture has no assigned counter.
 #[cfg(windows)]
-fn sample<const N: usize>()
--> Result<windows_platform_native::ClockCoordinates, windows_platform_native::ClockReadError> {
+fn sample<const N: usize>() -> Result<crate::BrokerClockSample, crate::BrokerClockSampleError> {
     let _previous: u32 = GETTERS[N].fetch_add(1, SeqCst);
-    windows_platform_native::read_clock_coordinates()
+    crate::BrokerClockSample::read()
 }
 
 /// Observe one known value through the portable broker reader.
@@ -946,22 +945,25 @@ fn write_completed_fragment(
 }
 
 /// Prove the original broker still samples while an actual Windows read waits,
-/// then complete the request or stop the same owner with its body read pending.
+/// then complete the request or stop the same owner with its body read uncollected.
 /// # Errors
 /// Returns native pipe, invocation, frame or reply failure.
 /// # Panics
 /// Fails if an idle read completes early or successful data fails to reach the broker.
 #[cfg(windows)]
 fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(), Box<dyn Error>> {
-    let case: u32 = u32::try_from(N)?;
+    let pipe_instance: u32 = u32::try_from(N)?;
     let pipe: LabIdentificationPipe = native_fixture_result(open_lab_identification_pipe(
-        case,
+        pipe_instance,
         LabClientContext::Identification,
     ))?;
     let process_identity: PipeIdentity = native_fixture_result(own_process_identity())?;
-    let (reply_reader, reply_writer): (LabPipeReader, LabOverlappedWriter) = native_fixture_result(
-        open_lab_reply_pipe(case.checked_add(0x100).ok_or("invalid reply case")?),
-    )?;
+    let (reply_reader, reply_writer): (LabPipeReader, LabOverlappedWriter) =
+        native_fixture_result(open_lab_reply_pipe(
+            pipe_instance
+                .checked_add(0x100)
+                .ok_or("invalid reply case")?,
+        ))?;
     let mut reply_read: NativePipeRead = native_fixture_result(NativePipeRead::new(reply_reader))?;
     let worker: NativePipeWorker = native_fixture_result(NativePipeWorker::with_request_read(
         reply_writer,
@@ -1011,31 +1013,28 @@ fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(
         let body_start: NativeReadStart =
             native_fixture_result(request_slot(&mut request)?.begin(body.len()))?;
         let body_idle: bool = matches!(
-            request_slot(&mut request)?.poll(),
-            Ok(NativeReadPoll::Pending)
+            native_fixture_result(request_slot(&mut request)?.poll())?,
+            NativeReadPoll::Pending
         );
-        assert!(matches!(body_start, NativeReadStart::Queued));
-        assert!(body_idle);
-        if matches!(exit, NativeIngressExit::Stop) {
-            return stop_with_native_read(&mut request, body, NativeCancel::Requested);
+        if body_start != NativeReadStart::Queued || !body_idle {
+            return native_fixture_result(Err("body read was not queued on the empty pipe"));
         }
-        if matches!(exit, NativeIngressExit::ExpireThenStop) {
-            request.receiver.clock.now = request.receiver.cutoff;
-            assert_eq!(
-                request.receiver.check_receive_edge(),
-                Err(SessionFault::Expired)
-            );
-            assert!(request_slot(&mut request).is_err());
-            let mut read: RetiringRequestRead<'_> = request
-                .receiver
-                .owner
-                .worker
-                .retiring_request_read()
-                .ok_or("broker cannot retire its original read")?;
-            let original: NativeCancel = native_fixture_result(read.retire())?;
-            assert_eq!(original, NativeCancel::Requested);
-            assert!(read.is_pending());
-            return stop_with_native_read(&mut request, body, original);
+        match exit {
+            NativeIngressExit::CompleteThenStop => {
+                return stop_after_native_read_completion(&mut pipe, &mut request, &pending, body);
+            }
+            NativeIngressExit::Stop => {
+                return stop_with_native_read(
+                    &mut request,
+                    body,
+                    NativeCancel::Requested,
+                    RetiredRead::Cancelled,
+                );
+            }
+            NativeIngressExit::ExpireThenStop => {
+                return stop_after_native_read_expiry(&mut request, body);
+            }
+            NativeIngressExit::Reply => {}
         }
         let native_body: NativeReadBytes =
             write_identified_fragment(&mut pipe, &mut request, &pending)?;
@@ -1058,13 +1057,82 @@ fn native_read_feeds_broker<const N: usize>(exit: NativeIngressExit) -> Result<(
 enum NativeIngressExit {
     /// Complete the identified request and deliver the broker reply.
     Reply,
+    /// Stop after the body read signals, while the result still awaits collection.
+    CompleteThenStop,
     /// Stop the broker while its original body read is still outstanding.
     Stop,
     /// Expire the receive and request cancellation before the broker receives Stop.
     ExpireThenStop,
 }
 
-/// Drive the actual service owner through Stop with its original queued ingress.
+/// Publish Stop after physical body completion while the original read is still owned.
+/// # Errors
+/// Preserves submission, completion-event or Stop failure.
+/// # Panics
+/// Fails if the complete request lacked custody, dispatched or escaped discard.
+#[cfg(windows)]
+fn stop_after_native_read_completion(
+    pipe: &mut BoundRequestPipe,
+    request: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    pending: &PendingStatus<'_>,
+    body: &[u8],
+) -> Result<(), Box<dyn Error>> {
+    if let Err(error) = pipe.submit(request, pending) {
+        return match error {
+            RequestSubmissionError::Session(failure) => native_fixture_result(Err(failure)),
+            RequestSubmissionError::Pipe(failure) => native_fixture_result(Err(failure)),
+        };
+    }
+    let read: ActiveRequestRead<'_> = request_slot(request)?;
+    native_fixture_result(read.wait_for_read_signal())?;
+    let uncollected: bool = read.is_pending();
+    let permit_held: bool = request.receiver.owner.permit.is_some();
+    let undispatched: bool = request.receiver.last.is_none();
+    stop_with_native_read(
+        request,
+        body,
+        NativeCancel::NotFound,
+        RetiredRead::Discarded { len: body.len() },
+    )?;
+    assert_eq!(pipe.submitted, pending.delivery().bytes.len());
+    assert!(uncollected && permit_held && undispatched);
+    Ok(())
+}
+
+/// Retire the original read at the receive cutoff, then publish Stop on the same owner.
+/// # Errors
+/// Preserves operation retirement or Stop failure.
+/// # Panics
+/// Fails if expiry admits the read or Stop loses the original cancellation result.
+#[cfg(windows)]
+fn stop_after_native_read_expiry(
+    request: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
+    body: &[u8],
+) -> Result<(), Box<dyn Error>> {
+    request.receiver.clock.now = request.receiver.cutoff;
+    let expired: Result<(), SessionFault> = request.receiver.check_receive_edge();
+    let refused: bool = request_slot(request).is_err();
+    let mut read: RetiringRequestRead<'_> = request
+        .receiver
+        .owner
+        .worker
+        .retiring_request_read()
+        .ok_or("broker cannot retire its original read")?;
+    let original: NativeCancel = native_fixture_result(read.retire())?;
+    let uncollected: bool = read.is_pending();
+    stop_with_native_read(
+        request,
+        body,
+        NativeCancel::Requested,
+        RetiredRead::Cancelled,
+    )?;
+    assert_eq!(expired, Err(SessionFault::Expired));
+    assert!(refused && uncollected);
+    assert_eq!(original, NativeCancel::Requested);
+    Ok(())
+}
+
+/// Drive the actual service owner through Stop with its original uncollected ingress.
 /// # Errors
 /// Returns if the bounded native drain fails or the calling thread retains impersonation.
 /// # Panics
@@ -1074,6 +1142,7 @@ fn stop_with_native_read(
     request: &mut InboundStatus<'_, '_, Reporter, ScriptClock<'_>, NativePipeWorker>,
     body: &[u8],
     original: NativeCancel,
+    terminal: RetiredRead,
 ) -> Result<(), Box<dyn Error>> {
     let _stop_disposition = deliver(
         Some(request.receiver.clock.mailbox),
@@ -1083,30 +1152,35 @@ fn stop_with_native_read(
     );
     let started: Instant = Instant::now();
     let mut poll: InvocationPoll = request.poll_broker();
-    assert!(request.receiver.owner.worker.request_read().is_none());
-    assert_eq!(
-        request.complete_fragment(body).err(),
-        Some(SessionFault::Closed)
-    );
-    assert!(request.receiver.last.is_none());
+    let admission_closed: bool = request.receiver.owner.worker.request_read().is_none();
+    let late_fragment: Option<SessionFault> = request.complete_fragment(body).err();
+    let undispatched: bool = request.receiver.last.is_none();
+    let mut drain_held: bool = true;
     while let InvocationPoll::NativeDrain(wait) = poll {
-        let owner = &mut *request.receiver.owner;
-        assert_eq!(
-            owner.owner.state(),
-            Some(windows_platform::service::ServiceState::StopPending)
-        );
-        assert!(owner.permit.is_some() && owner.take_receipt().is_none());
+        let owner: &mut ServiceInvocation<Reporter, NativePipeWorker> =
+            &mut *request.receiver.owner;
+        drain_held &= owner.owner.state()
+            == Some(windows_platform::service::ServiceState::StopPending)
+            && owner.permit.is_some()
+            && owner.take_receipt().is_none();
         if started.elapsed() >= Duration::from_secs(2) {
-            return Err("broker Stop did not observe native read completion".into());
+            return native_fixture_result(Err(
+                "broker Stop did not observe native read completion",
+            ));
         }
         std::thread::sleep(wait);
         poll = request.poll_broker();
     }
-    assert_eq!(poll, InvocationPoll::Finished);
+    if poll != InvocationPoll::Finished {
+        return native_fixture_result(Err(poll));
+    }
+    assert!(admission_closed && undispatched && drain_held);
+    assert_eq!(late_fragment, Some(SessionFault::Closed));
     assert!(request.receiver.owner.permit.is_none());
     let retirement: &ReadRetirement = request.receiver.owner.worker.read_retirement();
     assert_eq!(retirement.cancellation(), Some(Ok(original)));
-    assert_eq!(retirement.terminal(), Some(Ok(RetiredRead::Cancelled)));
+    assert_eq!(retirement.terminal(), Some(Ok(terminal)));
+    assert!(request.receiver.last.is_none());
     native_fixture_result(ensure_unimpersonated())
 }
 
@@ -1529,6 +1603,7 @@ fn native_read_completes_or_drains_while_broker_polls() -> Result<(), Box<dyn Er
     native_read_feeds_broker::<15>(NativeIngressExit::Reply)?;
     native_read_feeds_broker::<25>(NativeIngressExit::Stop)?;
     native_read_feeds_broker::<26>(NativeIngressExit::ExpireThenStop)?;
+    native_read_feeds_broker::<27>(NativeIngressExit::CompleteThenStop)?;
     native_reply_refuses_foreign_reader()?;
     native_request_refuses_body_at_cutoff()?;
     native_read_drains_after_expiry()?;

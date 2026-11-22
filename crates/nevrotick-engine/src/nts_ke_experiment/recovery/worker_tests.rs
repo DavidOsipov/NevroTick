@@ -1432,6 +1432,361 @@ fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failur
     Ok(PreparedInvocation::checked_fixture(config, control))
 }
 
+/// Submit the actual bounded first request and observe the sealed result after join.
+/// # Errors
+/// Preserve source admission, fixture, worker and joined operation refusal.
+/// # Panics
+/// Fail if the invocation admits another producer operation or loses its original facts.
+#[cfg(any(windows, target_os = "linux"))]
+fn run_initial_restriction(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    kind: ProtectedControlKind,
+    replace_configuration: bool,
+) -> Result<(), Failure> {
+    use std::net::SocketAddr;
+
+    use crate::{
+        SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicySnapshot,
+        SourceScale,
+    };
+
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_millis(50))
+        .ok_or(Failure::Deadline)?;
+    let (config, source, mut authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(16))?;
+    let original: SourceConfigurationSnapshot = source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
+    let expect_denial: bool = kind != ProtectedControlKind::Rate && !replace_configuration;
+    let denial_scope: Option<InitialDenialScope> = expect_denial
+        .then(|| InitialDenialScope::capture(&authority, remote))
+        .transpose()?;
+    let (observe_retired, retired_rx): (
+        Option<super::LoopbackBeforeCommit>,
+        Receiver<SourcePolicySnapshot>,
+    ) = initial_retirement_observer(&source, remote, expect_denial);
+    let before: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let expected: SourceConfigurationSnapshot = original.clone();
+    let observed: Result<ReceivedInvocation, RunFailed> =
+        run_joined_with(config, slot, None, |slot, prepared| {
+            slot.try_reserve(prepared)?
+                .submit_bounded_successor_fixture(
+                    admission,
+                    component_provider,
+                    move |config, provider, control, writer| {
+                        let mut producer: ScriptProducer<'_> = ScriptProducer::new(
+                            config,
+                            provider,
+                            vec![Ok(())],
+                            ExchangeCase::Healthy,
+                        );
+                        producer.managed_initial_control = Some(kind);
+                        if replace_configuration {
+                            producer.before_initial_control_commit = Some(Box::new(move || {
+                                let replacement: SourceConfigurationSnapshot = authority
+                                    .replace_source_scale(&expected, SourceScale::UnsmearedUtc)
+                                    .map_err(Failure::SourcePolicy)?;
+                                assert!(!replacement.same_configuration(&expected));
+                                Ok(())
+                            }));
+                        } else {
+                            producer.before_initial_control_commit = observe_retired;
+                        }
+                        let outcome: Operation = drive_successor_fixture(
+                            config,
+                            provider,
+                            control,
+                            &mut producer,
+                            writer,
+                        );
+                        assert_eq!((producer.establish_calls, producer.exchange_calls), (1, 1));
+                        outcome
+                    },
+                    Hooks::none(),
+                )
+        });
+    let report: ManagedProtectedReport =
+        ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
+            result: observed,
+            cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
+        }))
+        .map_err(|_| Failure::Control)?;
+    let after: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    assert_initial_restriction_policy(
+        &report,
+        &before,
+        &after,
+        &original,
+        remote,
+        kind,
+        replace_configuration,
+    )?;
+    if let Some(denial_scope) = denial_scope {
+        let retired: SourcePolicySnapshot = retired_rx.try_recv().map_err(|_| Failure::Control)?;
+        denial_scope.verify(remote, &retired, &after)?;
+    }
+    assert_eq!(config_lifetime.strong_count(), 0);
+    assert_eq!(
+        slot.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
+    Ok(())
+}
+
+/// Capture one retired send before a selected denial reaches the policy owner.
+#[cfg(any(windows, target_os = "linux"))]
+fn initial_retirement_observer(
+    source: &crate::SourceHandle,
+    remote: std::net::SocketAddr,
+    observe: bool,
+) -> (
+    Option<super::LoopbackBeforeCommit>,
+    Receiver<crate::SourcePolicySnapshot>,
+) {
+    use crate::{SourceHandle, SourcePolicySnapshot};
+
+    let (tx, rx): (
+        SyncSender<SourcePolicySnapshot>,
+        Receiver<SourcePolicySnapshot>,
+    ) = sync_channel(1);
+    let source: SourceHandle = source.clone();
+    let publish: super::LoopbackBeforeCommit = Box::new(move || {
+        let retired: SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        tx.try_send(retired).map_err(|_| Failure::Control)
+    });
+    (observe.then_some(publish), rx)
+}
+
+/// Compare the real policy records and original joined decision.
+/// # Errors
+/// Preserve an unexpected result path or an unrepresentable observed floor.
+/// # Panics
+/// Fail if the joined history, receive debits or live restriction differ.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_initial_restriction_policy(
+    report: &ManagedProtectedReport,
+    before: &crate::SourcePolicySnapshot,
+    after: &crate::SourcePolicySnapshot,
+    original: &crate::SourceConfigurationSnapshot,
+    remote: std::net::SocketAddr,
+    kind: ProtectedControlKind,
+    replaced: bool,
+) -> Result<(), Failure> {
+    use crate::ManagedProtectedTerminal;
+
+    assert!(report.first().is_none());
+    assert!(report.first_nak_at().is_none());
+    assert_eq!(
+        (report.attempted_sends(), report.fully_submitted_sends()),
+        (1, 1)
+    );
+    assert_eq!(
+        report.remaining_association_work(),
+        Some((31, 28, 131_072 - 84 - 84 - 124 - 124))
+    );
+    match (replaced, report.terminal()) {
+        (true, ManagedProtectedTerminal::Refused(failure)) => {
+            assert_eq!(
+                failure.source_policy_error(),
+                Some(crate::SourcePolicyError::ConfigurationChanged)
+            );
+            assert_eq!(after.source().interval(), Duration::from_millis(4));
+            assert_eq!(after.endpoint().interval(), Duration::from_millis(8));
+        }
+        (false, ManagedProtectedTerminal::Restriction(control)) => {
+            let expected_code: &str = match kind {
+                ProtectedControlKind::Rate => "RATE",
+                ProtectedControlKind::Deny => "DENY",
+                ProtectedControlKind::Restrict => "RSTR",
+            };
+            assert_eq!(control.code(), expected_code);
+            assert!(control.authenticated());
+            assert_eq!((control.remote(), control.serial()), (remote, 1));
+            assert!(control.configuration().same_configuration(original));
+            if kind == ProtectedControlKind::Rate {
+                let source_interval: Duration = Duration::from_millis(8);
+                let endpoint_interval: Duration = Duration::from_millis(16);
+                assert_eq!(after.source().interval(), source_interval);
+                assert_eq!(after.endpoint().interval(), endpoint_interval);
+                assert_eq!(
+                    after.source().floor(),
+                    control.decided_at().checked_add(source_interval)
+                );
+                assert_eq!(
+                    after.endpoint().floor(),
+                    control.decided_at().checked_add(endpoint_interval)
+                );
+            } else {
+                assert_eq!(after.source().interval(), Duration::from_millis(4));
+                assert_eq!(after.endpoint().interval(), Duration::from_millis(8));
+            }
+        }
+        _ => return Err(Failure::Control),
+    }
+    let expected_revision_change: u64 = if replaced { 1 } else { 2 };
+    for (before, after) in [
+        (before.source(), after.source()),
+        (before.endpoint(), after.endpoint()),
+    ] {
+        assert_eq!(
+            after.refused(),
+            !replaced && kind != ProtectedControlKind::Rate
+        );
+        assert!(!after.unavailable());
+        assert!(after.floor() > before.floor());
+        assert_eq!(
+            after.revision().checked_sub(before.revision()),
+            Some(expected_revision_change)
+        );
+    }
+    Ok(())
+}
+
+/// Retain the records that must survive the original send and initial denial.
+#[cfg(any(windows, target_os = "linux"))]
+struct InitialDenialScope {
+    /// Actual second source of the same policy owner.
+    alias: crate::SourceHandle,
+    /// Already-bound endpoint on the same IP with a different port.
+    other_remote: std::net::SocketAddr,
+    /// Alias source record before worker entry.
+    alias_source: crate::SourceRestrictionSnapshot,
+    /// Distinct endpoint record before worker entry.
+    other_endpoint: crate::SourceRestrictionSnapshot,
+}
+
+#[cfg(any(windows, target_os = "linux"))]
+impl InitialDenialScope {
+    /// Bind the untouched neighbor and capture both original records.
+    /// # Errors
+    /// Preserve genuine binding and snapshot failure.
+    fn capture(
+        authority: &crate::SourcePolicyAuthority,
+        remote: std::net::SocketAddr,
+    ) -> Result<Self, Failure> {
+        use crate::{SourceHandle, SourcePolicySnapshot};
+
+        let other_remote: std::net::SocketAddr = std::net::SocketAddr::new(remote.ip(), 124);
+        let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+        let _other_binding: crate::source_policy::SourceBinding =
+            alias.bind(other_remote).map_err(Failure::SourcePolicy)?;
+        let shared: SourcePolicySnapshot = alias
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        let other: SourcePolicySnapshot = alias
+            .policy_snapshot(other_remote)
+            .map_err(Failure::SourcePolicy)?;
+        Ok(Self {
+            alias,
+            other_remote,
+            alias_source: *shared.source(),
+            other_endpoint: *other.endpoint(),
+        })
+    }
+
+    /// Compare retired send floors and exact shared and untouched records.
+    /// # Errors
+    /// Preserve readback refusal from the original policy cell.
+    /// # Panics
+    /// Fail if a denial changes either floor or spreads beyond direct records.
+    fn verify(
+        &self,
+        remote: std::net::SocketAddr,
+        retired: &crate::SourcePolicySnapshot,
+        applied: &crate::SourcePolicySnapshot,
+    ) -> Result<(), Failure> {
+        use crate::SourcePolicySnapshot;
+
+        assert!(!retired.source().refused() && !retired.source().unavailable());
+        assert!(!retired.endpoint().refused() && !retired.endpoint().unavailable());
+        assert_eq!(applied.source().floor(), retired.source().floor());
+        assert_eq!(applied.endpoint().floor(), retired.endpoint().floor());
+        let shared: SourcePolicySnapshot = self
+            .alias
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        let other: SourcePolicySnapshot = self
+            .alias
+            .policy_snapshot(self.other_remote)
+            .map_err(Failure::SourcePolicy)?;
+        assert_same_initial_record(shared.source(), &self.alias_source);
+        assert_same_initial_record(shared.endpoint(), applied.endpoint());
+        assert_same_initial_record(other.endpoint(), &self.other_endpoint);
+        Ok(())
+    }
+}
+
+/// Compare stored facts independently of the time of each readback.
+/// # Panics
+/// Fail if any stable restriction property differs.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_same_initial_record(
+    actual: &crate::SourceRestrictionSnapshot,
+    expected: &crate::SourceRestrictionSnapshot,
+) {
+    assert_eq!(actual.refused(), expected.refused());
+    assert_eq!(actual.unavailable(), expected.unavailable());
+    assert_eq!(actual.interval(), expected.interval());
+    assert_eq!(actual.maximum_interval(), expected.maximum_interval());
+    assert_eq!(actual.floor(), expected.floor());
+    assert_eq!(actual.revision(), expected.revision());
+}
+
+/// Correlated-only and invalid controls spend receive work before initial authenticated RATE.
+/// # Errors
+/// Preserve actual fixture, operation or joined outcome refusal.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn joined_initial_authenticated_rate_commits_without_successor() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_initial_restriction(&SLOT, &ADMISSION, ProtectedControlKind::Rate, false)
+}
+
+/// Apply an initial authenticated DENY to the exact source and endpoint.
+/// # Errors
+/// Preserve actual fixture, operation or joined outcome refusal.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn joined_initial_authenticated_deny_commits_without_successor() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_initial_restriction(&SLOT, &ADMISSION, ProtectedControlKind::Deny, false)
+}
+
+/// Apply an initial authenticated RSTR to the exact source and endpoint.
+/// # Errors
+/// Preserve actual fixture, operation or joined outcome refusal.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn joined_initial_authenticated_restrict_commits_without_successor() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_initial_restriction(&SLOT, &ADMISSION, ProtectedControlKind::Restrict, false)
+}
+
+/// A genuine first control cannot apply after its original policy revision is replaced.
+/// # Errors
+/// Preserve actual fixture, operation or joined outcome refusal.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn joined_initial_authenticated_rate_refuses_replaced_definition() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_initial_restriction(&SLOT, &ADMISSION, ProtectedControlKind::Rate, true)
+}
+
 /// Terminal actions at the retired second reply's final policy boundary.
 #[cfg(any(windows, target_os = "linux"))]
 #[derive(Clone, Copy)]

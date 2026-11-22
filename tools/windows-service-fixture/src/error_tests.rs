@@ -14,7 +14,7 @@ const MAX_CATEGORY_BYTES: usize = 64;
 /// Exact native failure boundaries, including zero after a reported API failure.
 const RAW_CODES: [u32; 3] = [0, 1, u32::MAX];
 /// Complete currently selected native-effect classes.
-const OPERATIONS: [NativeOperation; 8] = [
+const OPERATIONS: [NativeOperation; 11] = [
     NativeOperation::Dispatch,
     NativeOperation::Register,
     NativeOperation::Status,
@@ -23,6 +23,9 @@ const OPERATIONS: [NativeOperation; 8] = [
     NativeOperation::PrivilegeLookup,
     NativeOperation::PrivilegeQuery,
     NativeOperation::TokenClose,
+    NativeOperation::BrokerEndpointDescriptor,
+    NativeOperation::BrokerEndpointCreate,
+    NativeOperation::BrokerEndpointClose,
 ];
 
 /// Observe only ordinary Display output, leaving typed causes separately accessible.
@@ -62,6 +65,9 @@ fn native_categories_are_code_independent_and_operation_specific() {
             NativeOperation::PrivilegeLookup => "privilege lookup",
             NativeOperation::PrivilegeQuery => "privilege capture",
             NativeOperation::TokenClose => "handle close",
+            NativeOperation::BrokerEndpointDescriptor => "broker descriptor",
+            NativeOperation::BrokerEndpointCreate => "endpoint creation",
+            NativeOperation::BrokerEndpointClose => "endpoint close",
         };
         assert!(baseline.contains(semantic_token));
         for code in RAW_CODES {

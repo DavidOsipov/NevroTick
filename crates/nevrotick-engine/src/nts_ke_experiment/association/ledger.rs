@@ -22,7 +22,8 @@ use super::super::datagram::{
 use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
 use super::super::response::{
-    ControlProtection, ProtectedControlKind, StagedSuccessorResponse, stage_successor_response,
+    ControlProtection, ProtectedControlKind, StagedSuccessorResponse, stage_initial_response,
+    stage_successor_response,
 };
 use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
@@ -466,7 +467,16 @@ struct ChargedReply {
     matches_submission: bool,
 }
 
-/// One charged control from the exact still-outstanding successor.
+/// Actual invocation leg used to select protected receive admission.
+#[derive(Clone, Copy)]
+pub(in super::super) enum ProtectedControlLeg {
+    /// The first request can apply exclusively S2C-authenticated control.
+    Initial,
+    /// The successor additionally binds the prior authenticated request.
+    Successor,
+}
+
+/// One charged control from the exact still-outstanding request.
 /// The transfer itself cannot change policy or consume the Pending slot.
 #[must_use = "retain the exact control ticket through backend retirement"]
 pub(in super::super) struct StagedProtectedControl<'control> {
@@ -475,14 +485,16 @@ pub(in super::super) struct StagedProtectedControl<'control> {
     /// The protection actually established for the control itself.
     protection: ControlProtection,
     /// Outstanding submission bound to the charged read.
-    correlation: SuccessorCorrelation<'control>,
+    correlation: ProtectedControlCorrelation<'control>,
 }
 
-/// Exact successor correlation shared by restriction and NTSN admission.
-struct SuccessorCorrelation<'control> {
+/// Exact correlation shared by restriction and NTSN admission.
+struct ProtectedControlCorrelation<'control> {
+    /// Admission selected before reading the actual request's datagram.
+    leg: ProtectedControlLeg,
     /// Actual original invocation the packet reached.
     control: &'control Control,
-    /// Exact successor reservation ordinal.
+    /// Exact reservation ordinal.
     serial: usize,
     /// Original outstanding Unique Identifier archive position.
     uid_index: usize,
@@ -520,9 +532,9 @@ pub(in super::super) struct AppliedProtectedControl {
     protection: ControlProtection,
     /// Original fully admitted managed definition, detached before the effect.
     configuration: Box<crate::SourceConfigurationSnapshot>,
-    /// Exact negotiated wire destination of the consumed successor.
+    /// Exact negotiated wire destination of the consumed request.
     remote: SocketAddr,
-    /// Exact successor ordinal consumed by the effect.
+    /// Exact ordinal consumed by the effect.
     serial: usize,
     /// Original currentness observation used for the committed decision.
     decided_at: Instant,
@@ -560,12 +572,39 @@ impl AppliedProtectedControl {
     }
 }
 
-/// The actual distinct historical and outstanding protected send proofs.
-struct ControlSubmissions<'a> {
-    /// Send evidence retained by the previously authenticated request.
-    prior: (&'a ProtectedSendStamp, &'a Arc<()>),
-    /// Exact current outstanding successor submission.
-    pending: (&'a ProtectedSendStamp, &'a Arc<()>),
+/// One exact protected send and its original request allocation.
+pub(crate) type ControlSubmission<'a> = (&'a ProtectedSendStamp, &'a Arc<()>);
+
+/// The common parser signature for either managed protected request.
+type ProtectedResponseParser = fn(
+    &DirectionalKeys,
+    &[u8],
+    &[u8; 32],
+    u64,
+    usize,
+) -> Result<StagedSuccessorResponse, ReplyError>;
+
+/// The required send evidence for the selected control leg.
+enum ControlSubmissions<'a> {
+    /// A first control authenticated by the established S2C key.
+    InitialAuthenticated(ControlSubmission<'a>),
+    /// A successor with the distinct prior authenticated and current pending sends.
+    Successor {
+        /// Original authenticated request.
+        prior: ControlSubmission<'a>,
+        /// Original pending successor request.
+        pending: ControlSubmission<'a>,
+    },
+}
+
+impl<'a> ControlSubmissions<'a> {
+    /// Observe the applicable historical send and mandatory current pending send.
+    const fn pair(&self) -> (Option<ControlSubmission<'a>>, ControlSubmission<'a>) {
+        match *self {
+            Self::InitialAuthenticated(pending) => (None, pending),
+            Self::Successor { prior, pending } => (Some(prior), pending),
+        }
+    }
 }
 
 /// One ledger-verified retired control for its original authority transaction.
@@ -575,7 +614,7 @@ pub(crate) struct VerifiedRetiredControl<'a> {
     kind: ProtectedControlKind,
     /// Original invocation matched when the retired ticket was consumed.
     control: &'a Control,
-    /// Both exact send proofs from the same association.
+    /// Exact send proofs required for this control's operation.
     submissions: ControlSubmissions<'a>,
     /// Original monotonic decision observation checked against receive time.
     decided_at: Instant,
@@ -597,9 +636,9 @@ impl<'a> VerifiedRetiredControl<'a> {
         self.decided_at
     }
 
-    /// Consume the authorization and expose the original prior and Pending stamps.
-    pub(crate) fn into_submissions(self) -> [(&'a ProtectedSendStamp, &'a Arc<()>); 2] {
-        [self.submissions.prior, self.submissions.pending]
+    /// Consume the authorization and expose the proved prior and Pending stamps.
+    pub(crate) fn into_submissions(self) -> (Option<ControlSubmission<'a>>, ControlSubmission<'a>) {
+        self.submissions.pair()
     }
 }
 
@@ -1597,44 +1636,57 @@ impl<'a> AssociationOwner<'a> {
             return Err(Failure::Control);
         }
         let charged: ChargedReply = self.charge_reply(raw.len(), Some(backend))?;
-        self.stage_charged_successor(&charged, control, raw, remote, read, backend)
+        self.stage_charged_protected_response(
+            &charged,
+            control,
+            (raw, backend),
+            remote,
+            read,
+            ProtectedControlLeg::Successor,
+        )
     }
 
-    /// Debit the successor's actual read before considering either packet disposition.
+    /// Debit the selected operation's actual read before considering a response.
     /// # Errors
     /// Preserve exact submission, budget, current Control and packet refusal.
-    pub(in super::super) fn stage_concrete_successor<'control>(
+    pub(in super::super) fn stage_concrete_protected_response<'control>(
         &mut self,
         control: &'control Control,
         consumed: ConsumedDatagram<'_>,
         remote: SocketAddr,
         read: &SoftwareClock,
+        leg: ProtectedControlLeg,
     ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
         }
         let (charged, raw, backend): (ChargedReply, &[u8], &Arc<()>) =
             self.charge_concrete_datagram(consumed)?;
-        self.stage_charged_successor(&charged, control, raw, remote, read, backend)
+        self.stage_charged_protected_response(&charged, control, (raw, backend), remote, read, leg)
     }
 
-    /// Ordinary admission consumes the request; control staging preserves it for the next owner.
+    /// Ordinary admission consumes the request; control staging preserves it for retirement.
     /// # Errors
     /// Preserve backend, peer, UID, S2C, time and source-policy refusal.
-    fn stage_charged_successor<'control>(
+    fn stage_charged_protected_response<'control>(
         &mut self,
         charged: &ChargedReply,
         control: &'control Control,
-        raw: &[u8],
+        packet: (&[u8], &Arc<()>),
         remote: SocketAddr,
         read: &SoftwareClock,
-        backend: &Arc<()>,
+        leg: ProtectedControlLeg,
     ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
+        let (raw, backend): (&[u8], &Arc<()>) = packet;
         let span: ReceiveSpan = ReceiveSpan::from_read(read);
         let response: StagedSuccessorResponse = (|| {
             self.check_charged_datagram(charged, raw.len(), remote)?;
             let uid: &[u8; 32] = self.issued_uid(charged.uid_index)?;
-            stage_successor_response(
+            let parse: ProtectedResponseParser = match leg {
+                ProtectedControlLeg::Initial => stage_initial_response,
+                ProtectedControlLeg::Successor => stage_successor_response,
+            };
+            parse(
                 &self.material.keys,
                 raw,
                 uid,
@@ -1676,16 +1728,16 @@ impl<'a> AssociationOwner<'a> {
                 let candidate: StagedProtectedControl<'control> = StagedProtectedControl {
                     kind,
                     protection,
-                    correlation: Self::successor_correlation(charged, control, backend, span),
+                    correlation: Self::control_correlation(charged, control, backend, span, leg),
                 };
                 self.check_protected_control_current(&candidate)
                     .inspect_err(|_| self.retire_exhausted())?;
                 Ok(StagedProtectedSuccessor::Control(candidate))
             }
             StagedSuccessorResponse::NtsNak => {
-                let correlation: SuccessorCorrelation<'control> =
-                    Self::successor_correlation(charged, control, backend, span);
-                self.check_successor_receive(&correlation, |now: Instant| {
+                let correlation: ProtectedControlCorrelation<'control> =
+                    Self::control_correlation(charged, control, backend, span, leg);
+                self.check_control_receive(&correlation, |now: Instant| {
                     span.check(charged.sent_at, now, control.expiry)
                 })
                 .inspect_err(|_| self.retire_exhausted())?;
@@ -1699,14 +1751,16 @@ impl<'a> AssociationOwner<'a> {
         }
     }
 
-    /// Retain the exact coordinates of the charged successor observation.
-    fn successor_correlation<'control>(
+    /// Retain the exact coordinates of the charged observation.
+    fn control_correlation<'control>(
         charged: &ChargedReply,
         control: &'control Control,
         backend: &Arc<()>,
         span: ReceiveSpan,
-    ) -> SuccessorCorrelation<'control> {
-        SuccessorCorrelation {
+        leg: ProtectedControlLeg,
+    ) -> ProtectedControlCorrelation<'control> {
+        ProtectedControlCorrelation {
+            leg,
             control,
             serial: charged.serial,
             uid_index: charged.uid_index,
@@ -1724,18 +1778,18 @@ impl<'a> AssociationOwner<'a> {
         &self,
         candidate: &StagedProtectedControl<'_>,
     ) -> Result<(), Failure> {
-        let correlation: &SuccessorCorrelation<'_> = &candidate.correlation;
-        self.check_successor_receive(correlation, |now: Instant| {
+        let correlation: &ProtectedControlCorrelation<'_> = &candidate.correlation;
+        self.check_control_receive(correlation, |now: Instant| {
             check_receive_times(correlation.sent_at, correlation.span.leading, now)
         })
     }
 
-    /// Check both original managed sends and the current invocation before observation.
+    /// Check the original managed sends required by the leg and the current invocation.
     /// # Errors
     /// Preserve authority, correlation and original receive-time refusals.
-    fn check_successor_receive(
+    fn check_control_receive(
         &self,
-        candidate: &SuccessorCorrelation<'_>,
+        candidate: &ProtectedControlCorrelation<'_>,
         check_time: impl FnOnce(Instant) -> Result<(), Failure>,
     ) -> Result<(), Failure> {
         if !std::ptr::eq(candidate.control, self.material.control) {
@@ -1745,34 +1799,30 @@ impl<'a> AssociationOwner<'a> {
         let guard: DatagramAuthorityGuard<'_> =
             DatagramAuthorityGuard::lock(candidate.control, Some(lease))?;
         let submissions: ControlSubmissions<'_> = self.control_submissions(candidate)?;
-        guard.receiving(Some(submissions.prior))?;
-        guard.receiving(Some(submissions.pending))?;
+        let (prior, pending): (Option<ControlSubmission<'_>>, ControlSubmission<'_>) =
+            submissions.pair();
+        if let Some(prior) = prior {
+            guard.receiving(Some(prior))?;
+        }
+        guard.receiving(Some(pending))?;
         let now: Instant = Instant::now();
         guard.control.published(now)?;
         check_time(now)
     }
 
-    /// Match the exact prior receipt and active successor under the original locks.
+    /// Match the exact pending send and any required prior receipt under the original locks.
     /// # Errors
     /// Refuse missing or replaced request history, submission or managed stamps.
     fn control_submissions(
         &self,
-        candidate: &SuccessorCorrelation<'_>,
+        candidate: &ProtectedControlCorrelation<'_>,
     ) -> Result<ControlSubmissions<'_>, Failure> {
-        let prior: &PriorAuthentication = self
-            .ledger
-            .prior_authentication
-            .as_ref()
-            .ok_or(Failure::Control)?;
         let active: &Active<'_> = self
             .ledger
             .active
             .as_ref()
             .ok_or(refused(LedgerError::Phase))?;
-        if prior.attempts.is_some()
-            || self.ledger.last.as_ref() != Some(&prior.receipt)
-            || prior.receipt.serial.checked_add(1) != Some(candidate.serial)
-            || active.phase != RequestPhase::Pending
+        if active.phase != RequestPhase::Pending
             || active.serial != candidate.serial
             || active.uid != Some(candidate.uid_index)
             || active.observed_wire != Some(candidate.wire)
@@ -1787,13 +1837,38 @@ impl<'a> AssociationOwner<'a> {
         if !submission.matches(Some(&candidate.backend)) {
             return Err(refused(LedgerError::Ticket));
         }
-        Ok(ControlSubmissions {
-            prior: prior
-                .submission
-                .policy_provenance()
-                .ok_or(Failure::Control)?,
-            pending: submission.policy_provenance().ok_or(Failure::Control)?,
-        })
+        let pending: ControlSubmission<'_> =
+            submission.policy_provenance().ok_or(Failure::Control)?;
+        match candidate.leg {
+            ProtectedControlLeg::Initial => {
+                if candidate.control.datagram_work.is_none()
+                    || candidate.serial != 1
+                    || self.ledger.last.is_some()
+                    || self.ledger.prior_authentication.is_some()
+                {
+                    return Err(refused(LedgerError::Ticket));
+                }
+                Ok(ControlSubmissions::InitialAuthenticated(pending))
+            }
+            ProtectedControlLeg::Successor => {
+                let prior: &PriorAuthentication = self
+                    .ledger
+                    .prior_authentication
+                    .as_ref()
+                    .ok_or(Failure::Control)?;
+                if prior.attempts.is_some()
+                    || self.ledger.last.as_ref() != Some(&prior.receipt)
+                    || prior.receipt.serial.checked_add(1) != Some(candidate.serial)
+                {
+                    return Err(refused(LedgerError::Ticket));
+                }
+                let prior: ControlSubmission<'_> = prior
+                    .submission
+                    .policy_provenance()
+                    .ok_or(Failure::Control)?;
+                Ok(ControlSubmissions::Successor { prior, pending })
+            }
+        }
     }
 
     /// Consume one actually retired request under the original Control and policy.
@@ -1808,8 +1883,11 @@ impl<'a> AssociationOwner<'a> {
         retired: RetiredProtectedControl<'_>,
     ) -> Result<AppliedProtectedControl, Failure> {
         let candidate: StagedProtectedControl<'_> = retired.into_staged();
-        let correlation: &SuccessorCorrelation<'_> = &candidate.correlation;
-        if !std::ptr::eq(correlation.control, self.material.control) {
+        let correlation: &ProtectedControlCorrelation<'_> = &candidate.correlation;
+        if !std::ptr::eq(correlation.control, self.material.control)
+            || (matches!(correlation.leg, ProtectedControlLeg::Initial)
+                && candidate.protection != ControlProtection::Authenticated)
+        {
             return Err(Failure::Control);
         }
         let lease: ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?.clone();

@@ -81,6 +81,13 @@ impl ActiveRequestRead<'_> {
         self.read.write_from_client(bytes)
     }
 
+    /// Observe the original operation's event without retrieving its completion.
+    /// # Errors
+    /// Preserves an idle slot, timeout or native wait failure.
+    pub(super) fn wait_for_read_signal(&self) -> std::io::Result<()> {
+        self.read.wait_for_read_signal()
+    }
+
     /// Whether the original operation still owns its native storage.
     pub(super) const fn is_pending(&self) -> bool {
         self.read.is_pending()

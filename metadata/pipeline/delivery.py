@@ -138,6 +138,15 @@ def delivery_contract(model: Metadata) -> dict[str, object]:
     add("policy:OD-05.7.9", "authoring/msix-inputs.json", "/distribution_route")
     add("fields:catalogue.B.6.*", "authoring/msix-inputs.json", "/fields",
         representation="exact-owned-prefix-selection")
+    add("component.ui.role", "authoring/msix-inputs.json", "/ui_activation/role", "ui")
+    add("component.ui.binary_name", "authoring/msix-inputs.json", "/ui_activation/executable",
+        "ui", "append-.exe-if-absent")
+    for field in ("runtime_behavior", "trust_level", "application_id"):
+        add("policy:windows-msix-store.7.1", "authoring/msix-inputs.json",
+            "/ui_activation/" + field, "ui")
+    for name in ("Square44x44Logo", "Square150x150Logo"):
+        add("catalogue.B.6.5.uap:VisualElements/@" + name, "authoring/msix-inputs.json",
+            "/ui_activation/visual_elements/" + name, "ui")
     add("fields:catalogue.A.*,component.engine.scm.*,component.broker.scm.*",
         "authoring/service-inputs.json", "/fields", representation="exact-owned-prefix-selection")
     add("fields:catalogue.C.*", "authoring/event-inputs.json", "/fields",
@@ -208,6 +217,9 @@ def _expected_json(model: Metadata) -> dict[str, object]:
     rows = _rows(model)
     current = [row for row in rows if not retained_store_field(row["key"])]
     pending = [_record(item) for item in model.pending]
+    ui = next(item for item in model.components if item.id == "ui")
+    assert ui.binary_name is not None
+    ui_executable = ui.binary_name if ui.binary_name.endswith(".exe") else ui.binary_name + ".exe"
     coverage = {"schema_version": 2, "scope": "declared-source-field-register",
                 "complete_declared_field_set": True, "field_count": len(model.fields),
                 "unresolved_field_count": sum(row["status"] == "pending" or
@@ -233,10 +245,18 @@ def _expected_json(model: Metadata) -> dict[str, object]:
         "field-coverage.json": coverage,
         "authoring/project-inputs.json": {"schema_version": 1, "kind": "internal-project-authoring-inputs",
                                            "fields": _rows(model, ("project.",))},
-        "authoring/msix-inputs.json": {"schema_version": 2, "kind": "partial-msix-authoring-inputs",
+        "authoring/msix-inputs.json": {"schema_version": 3, "kind": "partial-msix-authoring-inputs",
             "distribution_route": "direct-msix", "complete_manifest": False, "display_name": model.product.name,
             "publisher_display_name": model.product.publisher, "description": model.product.description,
             "identity": None, "target": model.target, "cpu_floor": model.cpu_floor,
+            "ui_activation": {
+                "role": "ui", "executable": ui_executable, "application_id": None,
+                "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
+                "visual_elements": {
+                    "Square44x44Logo": values["catalogue.B.6.5.uap:VisualElements/@Square44x44Logo"],
+                    "Square150x150Logo": values["catalogue.B.6.5.uap:VisualElements/@Square150x150Logo"],
+                },
+            },
             "pending": pending, "fields": _rows(model, ("catalogue.B.6.",))},
         "authoring/service-inputs.json": {"schema_version": 1, "kind": "partial-service-authoring-inputs",
             "services": [{"role": item.role, "state": item.state, "display_name": item.display_name,

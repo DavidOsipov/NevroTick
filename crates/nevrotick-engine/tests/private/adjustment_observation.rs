@@ -325,6 +325,7 @@ fn assert_composed_attempt(
             reads.set(reads.get() + 1);
             Ok(state(21, 7, true))
         }),
+        None::<fn() -> super::leap_presentation::Observation>,
     );
     drop(entered_guard);
     assert!(closed.get());

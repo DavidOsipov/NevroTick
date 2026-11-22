@@ -19,7 +19,9 @@ use super::{
 use crate::nts_ke_experiment::association::ledger::{Receipt, RequestPhase, Status};
 use crate::nts_ke_experiment::datagram::ProtectedCompletion;
 #[cfg(any(windows, target_os = "linux"))]
-use crate::nts_ke_experiment::datagram::{ObservedRetiredSuccessor, SuccessorFailure};
+use crate::nts_ke_experiment::datagram::{
+    ObservedRetiredSuccessor, RetiredProtectedResponse, SuccessorFailure,
+};
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::recovery::LoopbackBeforeCommit;
 use crate::nts_ke_experiment::recovery::{
@@ -894,6 +896,12 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     /// Optional closed fixture transition after the second adapter actually retires.
     #[cfg(any(windows, target_os = "linux"))]
     before_loopback_commit: Option<LoopbackBeforeCommit>,
+    /// Select the fixed independent authenticated restriction for the first request.
+    #[cfg(any(windows, target_os = "linux"))]
+    managed_initial_control: Option<super::ProtectedControlKind>,
+    /// Retire the genuine first control before changing live source ownership.
+    #[cfg(any(windows, target_os = "linux"))]
+    before_initial_control_commit: Option<LoopbackBeforeCommit>,
     /// Select a checked two-cookie initial fixture before the first establishment.
     spare_initial_cookie: bool,
     establish_calls: usize,
@@ -954,6 +962,10 @@ impl<'fixture> ScriptProducer<'fixture> {
             managed_loopback: None,
             #[cfg(any(windows, target_os = "linux"))]
             before_loopback_commit: None,
+            #[cfg(any(windows, target_os = "linux"))]
+            managed_initial_control: None,
+            #[cfg(any(windows, target_os = "linux"))]
+            before_initial_control_commit: None,
             spare_initial_cookie: false,
             establish_calls: 0,
             exchange_calls: 0,
@@ -1044,6 +1056,29 @@ fn script_reads(
 }
 
 impl Producer for ScriptProducer<'_> {
+    #[cfg(any(windows, target_os = "linux"))]
+    fn exchange_initial<'tx>(
+        &mut self,
+        association: &mut AssociationOwner<'tx>,
+        control: &'tx Control,
+    ) -> Result<RetiredProtectedResponse<'tx>, Failure> {
+        self.exchange_calls += 1;
+        if let Some(kind) = self.managed_initial_control {
+            super::scripted_managed_initial_control(association, control, kind)
+        } else if self.managed_loopback.is_some() {
+            super::loopback_managed_initial(association, control)
+        } else {
+            Err(Failure::Control)
+        }
+    }
+
+    #[cfg(any(windows, target_os = "linux"))]
+    fn before_initial_control_commit(&mut self) -> Result<(), Failure> {
+        self.before_initial_control_commit
+            .take()
+            .map_or(Ok(()), |observe| observe())
+    }
+
     #[cfg(any(windows, target_os = "linux"))]
     fn exchange_successor<'tx>(
         &mut self,

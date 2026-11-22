@@ -5,30 +5,35 @@ decoded values with its independently reviewed metadata expectations.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import struct
 from typing import NamedTuple, TypedDict
+from xml.etree import ElementTree as ET
 
 
 _MAX_REPORT_CHARS = 32 * 1024
+_MAX_UI_REPORT_CHARS = 64 * 1024
 _MAX_IMPORT_REPORT_BYTES = 64 * 1024
 _MAX_RESOURCE_BYTES = 4096
-_RESOURCE = re.compile(
-    r"  Total Number of Resources: 1\n"
+_RESOURCE_HEADER = re.compile(
+    r"  Total Number of Resources: (?P<count>[12])\n"
     r"  Base Table Address: 0x[0-9A-F]{1,8}\n"
     r" *\n"
     r"  Number of String Entries: 0\n"
-    r"  Number of ID Entries: 1\n"
-    r"  Type: VERSIONINFO \(ID 16\) \[\n"
-    r"    Table Offset: 0x[0-9A-F]{1,8}\n"
+    r"  Number of ID Entries: (?P=count)\n"
+)
+_RESOURCE_LEAF = re.compile(
+    r"  Type: (?P<type>VERSIONINFO \(ID 16\)|MANIFEST \(ID 24\)) \[\n"
+    r"    Table Offset: 0x(?P<type_offset>[0-9A-F]{1,8})\n"
     r"    Number of String Entries: 0\n"
     r"    Number of ID Entries: 1\n"
     r"    Name: \(ID 1\) \[\n"
-    r"      Table Offset: 0x[0-9A-F]{1,8}\n"
+    r"      Table Offset: 0x(?P<name_offset>[0-9A-F]{1,8})\n"
     r"      Number of String Entries: 0\n"
     r"      Number of ID Entries: 1\n"
     r"      Language: \(ID 1033\) \[\n"
-    r"        Entry Offset: 0x[0-9A-F]{1,8}\n"
+    r"        Entry Offset: 0x(?P<data_entry_offset>[0-9A-F]{1,8})\n"
     r"        Time/Date Stamp: [^\n]{1,80}\n"
     r"        Major Version: [0-9]{1,5}\n"
     r"        Minor Version: [0-9]{1,5}\n"
@@ -45,10 +50,14 @@ _RESOURCE = re.compile(
     r"      \]\n"
     r"    \]\n"
     r"  \]\n"
-    r"\]"
 )
 _DUMP_ROW = re.compile(r" {12}([0-9A-F]{4}): ([0-9A-F ]{2,37})\|([ -~]{1,16})\|")
 _TRANSLATION = (1033, 1200)
+_GUI = "IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)"
+_SUBSYSTEMS = {"ui": _GUI, "observe": "IMAGE_SUBSYSTEM_WINDOWS_CUI (0x3)"}
+_MANIFEST_DECLARATION = b'<?xml version="1.0" standalone="yes"?>'
+_ASSEMBLY = "{urn:schemas-microsoft-com:asm.v1}"
+_TRUST = "{urn:schemas-microsoft-com:asm.v3}"
 _IMPORT_MODULE = r"(?P<name>[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,125}[A-Za-z0-9])?)"
 _IMPORT_RVA = r"0x[0-9A-F]{1,8}"
 _IMPORT_SYMBOL = r"[ -~]{0,512} \([0-9]{1,5}\)"
@@ -75,6 +84,14 @@ class VersionInfo(TypedDict):
     fixed: tuple[int, ...]
     strings: dict[str, str]
     translation: tuple[int, int]
+
+
+class UiExecutionManifest(TypedDict):
+    """Execution settings and digest of the selected UI manifest resource."""
+
+    level: str
+    ui_access: bool
+    sha256: str
 
 
 class _Block(NamedTuple):
@@ -130,16 +147,19 @@ def decode_imports(report: str, *, image: str) -> dict[str, list[str]]:
     return {"direct": sorted(direct), "delay": sorted(delay)}
 
 
-def _resource_payload(report: str, subsystem: str) -> bytes:
-    """Validate the image and resource selectors before reading bounded hex."""
-    header, marker, resources = report.partition("\nResources [\n")
+def _resource_payloads(report: str, subsystem: str, *, ui_manifest: bool = False) -> tuple[bytes, ...]:
+    """Read only the selected role's resource tree and disjoint payloads."""
+    header, marker, resources = report.strip("\n").partition("\nResources [\n")
     if not marker or resources.strip() in {"]", "Total Number of Resources: 0\n]"}:
         raise ValueError("VERSIONINFO resource absent")
+    image = _field(header, "File")
     if (_field(header, "Format") != "COFF-x86-64"
             or _field(header, "Arch") != "x86_64"
             or _field(header, "AddressSize") != "64bit"
-            or not _field(header, "File").lower().endswith(".exe")):
+            or not image.lower().endswith(".exe")):
         raise ValueError("readback is outside the selected AMD64 PE executable profile")
+    if ui_manifest and image.replace("\\", "/").rsplit("/", 1)[-1] != "nevrotick-ui.exe":
+        raise ValueError("resource report identifies a different UI executable")
     file_header = _header(header, "ImageFileHeader")
     optional = _header(header, "ImageOptionalHeader")
     flags = re.findall(r"(?m)^  Characteristics \[ \(0x([0-9A-F]{1,4})\)$", file_header)
@@ -148,30 +168,68 @@ def _resource_payload(report: str, subsystem: str) -> bytes:
             or _field(optional, "  Magic") != "0x20B"
             or _field(optional, "  Subsystem") != subsystem):
         raise ValueError("readback is outside the selected AMD64 PE32+ subsystem profile")
-    selection = _RESOURCE.fullmatch(resources)
-    if selection is None:
-        raise ValueError("unexpected, duplicate or incomplete VERSIONINFO resource tree")
-    size = int(selection["size"])
+    types = ("VERSIONINFO (ID 16)", "MANIFEST (ID 24)") if ui_manifest else ("VERSIONINFO (ID 16)",)
+    tree = _RESOURCE_HEADER.match(resources)
+    tree_error = "unexpected, duplicate or incomplete PE resource tree"
+    if tree is None or int(tree["count"]) != len(types):
+        raise ValueError(tree_error)
     table_values = [_field(optional, "    ResourceTable" + name) for name in ("RVA", "Size")]
     if any(re.fullmatch(r"0x[0-9A-F]{1,8}", value) is None for value in table_values):
         raise ValueError("invalid PE resource directory bounds")
     table_rva, table_size = (int(value, 16) for value in table_values)
-    rva = int(selection["rva"], 16)
-    if (size > _MAX_RESOURCE_BYTES or table_rva == 0 or rva < table_rva
-            or rva + size > table_rva + table_size or table_rva + table_size > 1 << 32):
-        raise ValueError("VERSIONINFO payload exceeds its admitted bounds")
+    table_end = table_rva + table_size
+    if table_rva == 0 or table_end > 1 << 32:
+        raise ValueError("invalid PE resource directory bounds")
+    cursor = tree.end()
+    previous_end = table_rva
+    payloads = []
+    # The selected dual-resource root has a 16-byte header and two 8-byte entries.
+    ui_spans = [(0, 32)]
+    for resource_type in types:
+        selection = _RESOURCE_LEAF.match(resources, cursor)
+        if selection is None or selection["type"] != resource_type:
+            raise ValueError(tree_error)
+        start = int(selection["rva"], 16)
+        end = start + int(selection["size"])
+        if start < previous_end or end > table_end:
+            raise ValueError("PE resource payload overlaps or exceeds its admitted bounds")
+        if ui_manifest:
+            # Type and name tables hold one directory entry each. The leaf
+            # itself holds a 16-byte data entry, separate from its payload.
+            for field, width in (("type_offset", 24), ("name_offset", 24), ("data_entry_offset", 16)):
+                offset = int(selection[field], 16)
+                ui_spans.append((offset, offset + width))
+            ui_spans.append((start - table_rva, end - table_rva))
+        payloads.append(_dump_payload(selection))
+        previous_end = end
+        cursor = selection.end()
+    if resources[cursor:] != "]":
+        raise ValueError(tree_error)
+    if ui_manifest:
+        previous_offset_end = 0
+        for offset, offset_end in sorted(ui_spans):
+            if offset < previous_offset_end or offset_end > table_size:
+                raise ValueError("overlapping or out-of-bounds UI resource directory spans")
+            previous_offset_end = offset_end
+    return tuple(payloads)
 
+
+def _dump_payload(selection: re.Match[str]) -> bytes:
+    """Decode a bounded selected payload from contiguous hexadecimal rows."""
+    size = int(selection["size"])
+    if size > _MAX_RESOURCE_BYTES:
+        raise ValueError("PE resource payload exceeds its admitted bounds")
     payload = bytearray()
     for row in selection["dump"].splitlines():
         match = _DUMP_ROW.fullmatch(row)
         if match is None or int(match[1], 16) != len(payload):
-            raise ValueError("invalid or noncontiguous VERSIONINFO hex row")
+            raise ValueError("invalid or noncontiguous PE resource hex row")
         chunk = bytes.fromhex(match[2])
         if len(chunk) != min(16, size - len(payload)) or len(match[3]) != len(chunk):
-            raise ValueError("VERSIONINFO hex row has the wrong length")
+            raise ValueError("PE resource hex row has the wrong length")
         payload.extend(chunk)
     if len(payload) != size:
-        raise ValueError("truncated VERSIONINFO payload")
+        raise ValueError("truncated PE resource payload")
     return bytes(payload)
 
 
@@ -220,10 +278,55 @@ def decode(report: str, *, role: str = "ui") -> VersionInfo:
     """
     if not isinstance(report, str) or len(report) > _MAX_REPORT_CHARS:
         raise ValueError("invalid or oversized llvm-readobj report")
-    subsystems = {"ui": "IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)", "observe": "IMAGE_SUBSYSTEM_WINDOWS_CUI (0x3)"}
-    if role not in subsystems:
+    if role not in _SUBSYSTEMS:
         raise ValueError("unsupported VERSIONINFO role")
-    data = _resource_payload(report.strip("\n"), subsystems[role])
+    data, = _resource_payloads(report, _SUBSYSTEMS[role])
+    return _decode_versioninfo(data)
+
+
+def decode_ui_resources(report: str) -> tuple[VersionInfo, UiExecutionManifest]:
+    """Require the UI's version and execution manifest leaves on one AMD64 PE.
+
+    Raise ValueError for an invalid resource tree or unapproved execution
+    settings. The caller binds the report to the actual linked image.
+    """
+    if not isinstance(report, str) or len(report) > _MAX_UI_REPORT_CHARS:
+        raise ValueError("invalid or oversized llvm-readobj UI resource report")
+    version_data, manifest_data = _resource_payloads(report, _GUI, ui_manifest=True)
+    return _decode_versioninfo(version_data), _decode_ui_execution_manifest(manifest_data)
+
+
+def _decode_ui_execution_manifest(data: bytes) -> UiExecutionManifest:
+    """Parse the selected linker's minimal manifest from the observed bytes."""
+    declaration, newline, body = data.partition(b"\n")
+    if (not data.isascii() or b"\0" in data or not newline
+            or declaration.rstrip(b"\r") != _MANIFEST_DECLARATION
+            or any(mark in body for mark in (b"<!", b"<?", b"&"))):
+        raise ValueError("invalid UI execution manifest encoding or XML declaration")
+    try:
+        element = ET.fromstring(data)
+    except ET.ParseError as error:
+        raise ValueError("malformed UI execution manifest XML") from error
+    manifest = (
+        (_ASSEMBLY + "assembly", {"manifestVersion": "1.0"}),
+        (_TRUST + "trustInfo", {}),
+        (_TRUST + "security", {}),
+        (_TRUST + "requestedPrivileges", {}),
+        (_TRUST + "requestedExecutionLevel", {"level": "asInvoker", "uiAccess": "false"}),
+    )
+    for index, (tag, attributes) in enumerate(manifest):
+        children = int(index < len(manifest) - 1)
+        if (element.tag != tag or element.attrib != attributes or len(element) != children
+                or (element.text or "").strip() or (element.tail or "").strip()):
+            raise ValueError("wrong UI execution manifest structure or settings")
+        if children:
+            element = element[0]
+    return {"level": element.attrib["level"], "ui_access": element.attrib["uiAccess"] == "true",
+            "sha256": hashlib.sha256(data).hexdigest()}
+
+
+def _decode_versioninfo(data: bytes) -> VersionInfo:
+    """Decode the version bytes independently of the containing resource tree."""
     name, root, end = _block(data, 0, len(data))
     if (name != "VS_VERSION_INFO" or root.kind != 0 or end != len(data)
             or len(root.value) != 52 or set(root.children) != {"StringFileInfo", "VarFileInfo"}):

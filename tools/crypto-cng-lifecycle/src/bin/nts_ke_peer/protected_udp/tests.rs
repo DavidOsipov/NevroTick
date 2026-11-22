@@ -425,6 +425,67 @@ fn protected_udp_successor_uses_issued_cookie_from_another_client_port() -> Test
     Ok(())
 }
 
+/// One protected request earns one authenticated cookie-free DENY before client exit.
+///
+/// # Errors
+/// Preserve local socket setup, exchange or response-opening failures.
+/// # Panics
+/// Fail on changed correlation, response count, observation or key retirement.
+#[test]
+fn protected_udp_initial_deny_replies_once_and_observes_client_exit() -> TestResult {
+    let budget: Budget = Budget::new(Instant::now()).map_err(|_| "fixture-budget")?;
+    let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "server-bind")?;
+    let endpoint: SocketAddrV4 = SocketAddrV4::new(Ipv4Addr::LOCALHOST, server.port().get());
+    let client: UdpSocket = client()?;
+    let mut c2s: Zeroizing<[u8; 32]> = Zeroizing::new(C2S);
+    let mut s2c: Zeroizing<[u8; 32]> = Zeroizing::new(S2C);
+    let mut marker_reads: u8 = 0;
+    send(&client, &request()?, endpoint)?;
+    server
+        .exchange_initial_deny_observe_exit(
+            &budget,
+            &mut c2s,
+            &mut s2c,
+            |nonce: &mut [u8; 16]| {
+                *nonce = SERVER_NONCE;
+                Ok(())
+            },
+            || {
+                marker_reads += 1;
+                if marker_reads == 1 {
+                    Ok(None)
+                } else {
+                    ClientExit::admit(b"client-exited=1\n").map(Some)
+                }
+            },
+        )
+        .map_err(|_| "initial-deny-exchange")?;
+    assert_eq!(marker_reads, 2);
+    assert_eq!(*c2s, [0; 32]);
+    assert_eq!(*s2c, [0; 32]);
+
+    let reply: [u8; 124] = receive_reply(&client, endpoint)?;
+    assert_eq!(&reply[..2], &[0x24, 0]);
+    assert_eq!(&reply[12..16], b"DENY");
+    assert_eq!(&reply[24..32], &TRANSMIT);
+    assert_eq!(&reply[48..52], &[1, 4, 0, 36]);
+    assert_eq!(&reply[52..84], &UID);
+    assert_eq!(&reply[84..92], &[4, 4, 0, 40, 0, 16, 0, 16]);
+    assert_eq!(&reply[92..108], &SERVER_NONCE);
+    let tag: &[u8; 16] = reply[108..124].try_into().map_err(|_| "deny-tag")?;
+    Aes128Siv::new((&S2C).into())
+        .decrypt_inout_detached(
+            [&reply[..84], &reply[92..108]],
+            (&mut [][..]).into(),
+            tag.into(),
+        )
+        .map_err(|_| "deny-authentication")?;
+    assert_no_reply(&client);
+    let recovered: UdpSocket = UdpSocket::bind(endpoint).map_err(|_| "socket-still-held")?;
+    drop(recovered);
+    Ok(())
+}
+
 /// Both new sequences use the actual first cookie and listen until acknowledgement.
 ///
 /// # Errors

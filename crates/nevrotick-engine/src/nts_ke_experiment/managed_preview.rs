@@ -8,6 +8,8 @@ use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
 use ntp_wire::{NtpTimestamp, RawHeader};
+#[cfg(windows)]
+use windows_platform_native::{ClockCoordinates, ClockReadError};
 
 use super::{
     Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
@@ -422,6 +424,22 @@ pub enum ManagedProtectedPlan {
     OneAuthenticatedSuccessor,
 }
 
+/// The native clock-read outcome retained at an original adapter boundary.
+///
+/// Recorded coordinates identify the original local QPC and FILETIME reading.
+/// They convey no clock continuity, UTC accuracy, or eligibility.
+#[cfg(windows)]
+#[must_use = "preserve the original native read disposition"]
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum ProtectedNativeClockObservation {
+    /// The exact raw read also supplied this point's software wall value.
+    Recorded(ClockCoordinates),
+    /// The original clock adapter refused; transport used its fallback wall read.
+    ReadRefused(ClockReadError),
+    /// The exact raw read was retained but cannot supply a checked software wall value.
+    UnrepresentableWall(ClockCoordinates),
+}
+
 /// A historical ordinary authenticated reply committed under the original source.
 ///
 /// The receipt records the original packet operation and process-local monotonic
@@ -444,6 +462,9 @@ pub struct ManagedProtectedReceipt {
     received_at: Instant,
     /// Original pre-send, send-return and selected receive-return brackets.
     application_clock_captures: [SoftwareClock; 3],
+    /// Original native disposition for each corresponding software observation.
+    #[cfg(windows)]
+    application_native_clock_captures: [Option<ProtectedNativeClockObservation>; 3],
     /// Inclusive elapsed bounds from the original pre-send and receive-return reads.
     application_wall_elapsed_bounds: Option<[Duration; 2]>,
 }
@@ -464,6 +485,8 @@ impl ManagedProtectedReceipt {
             committed_at: history.committed_at(),
             received_at: history.received_at(),
             application_clock_captures: history.captures(),
+            #[cfg(windows)]
+            application_native_clock_captures: history.native_captures(),
             application_wall_elapsed_bounds: history.application_wall_elapsed_bounds(),
         }
     }
@@ -524,6 +547,18 @@ impl ManagedProtectedReceipt {
         self.application_clock_captures
     }
 
+    /// Return the original native outcomes in the same order as the software brackets.
+    ///
+    /// Absence identifies an alternate backend that made no native read at
+    /// this point. None of the outcomes confers measurement or current authority.
+    #[cfg(windows)]
+    #[must_use]
+    pub const fn application_native_clock_captures(
+        &self,
+    ) -> [Option<ProtectedNativeClockObservation>; 3] {
+        self.application_native_clock_captures
+    }
+
     /// Return the inclusive minimum and maximum monotonic intervals between
     /// this exchange's original pre-send and receive-return wall reads.
     /// The minimum pairs the leading receive reading with the trailing pre-send
@@ -547,7 +582,7 @@ impl fmt::Debug for ManagedProtectedReceipt {
     }
 }
 
-/// A historical successor restriction already applied to the original source and peer.
+/// A historical restriction already applied to the original managed source and peer.
 ///
 /// This carries a restriction decision and how its packet was admitted.
 #[must_use = "retain the original applied protected restriction"]
@@ -579,13 +614,13 @@ impl ManagedProtectedRestriction {
         self.applied.configuration()
     }
 
-    /// Return the exact negotiated endpoint of the consumed successor request.
+    /// Return the exact negotiated endpoint of the consumed protected request.
     #[must_use]
     pub const fn remote(&self) -> SocketAddr {
         self.applied.remote()
     }
 
-    /// Return the original ordinal of the consumed successor request.
+    /// Return the original ordinal of the consumed protected request.
     #[must_use]
     pub const fn serial(&self) -> usize {
         self.applied.serial()
@@ -618,7 +653,7 @@ impl fmt::Debug for ManagedProtectedRestriction {
 pub enum ManagedProtectedTerminal {
     /// The successor produced a committed ordinary authenticated receipt.
     Ordinary(ManagedProtectedReceipt),
-    /// The successor produced an applied restriction.
+    /// Either protected request produced an applied restriction.
     Restriction(ManagedProtectedRestriction),
     /// The selected packet operation refused and its original cause was retained.
     Refused(SourceProtectedProbeFailure),

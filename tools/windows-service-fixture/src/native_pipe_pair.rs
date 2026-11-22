@@ -565,13 +565,14 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
+    use windows_platform_native::{PeerProcess, PeerProcessError};
     use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 
     use super::{
         LabPipeError, LabPipeName, OwnedHandle, ServerMode, create_server, open_client, open_pair,
         server_process_id,
     };
-    use crate::native_peer_process::{PeerProcess, PeerProcessError};
+    use crate::native_peer_process::same_kernel_object;
     use crate::native_pipe_identity::RetainedPrimaryToken;
 
     /// Exact selector for the supervised fixture server.
@@ -588,6 +589,15 @@ mod tests {
     const REAP_WAIT: Duration = Duration::from_secs(2);
     /// Upper bound on the interval between immediate observations.
     const POLL_INTERVAL: Duration = Duration::from_millis(10);
+    /// `AppModel`'s direct result for a process with no installed package identity.
+    const NO_PACKAGE: i32 = 15_700;
+
+    #[link(name = "kernel32")]
+    #[expect(unsafe_code, reason = "independent exact-child AppModel query")]
+    unsafe extern "system" {
+        /// Read the package name for the calling fixture process.
+        fn GetCurrentPackageFullName(length: *mut u32, name: *mut u16) -> i32;
+    }
 
     /// Failures retain their source, or both observation and cleanup outcomes.
     type Check<T> = Result<T, Box<dyn std::error::Error>>;
@@ -603,7 +613,7 @@ mod tests {
     }
 
     impl RetainedFixturePeer {
-        /// Revalidate the original pipe and token against the live retained process.
+        /// Reobserve identity through the original pipe and retained process and token.
         /// # Errors
         /// Preserve exit, native failures, mismatch or cutoff without reacquiring a process.
         fn check_current(&self, started: Instant) -> Check<()> {
@@ -616,6 +626,11 @@ mod tests {
                 RetainedPrimaryToken::open(self.process.as_handle())?;
             if !self.token.refers_to(&current) {
                 return Err("fixture primary token object changed".into());
+            }
+            if self.process.package_full_name()?.is_some() {
+                return Err(
+                    "the copied-out fixture process has unexpected package identity".into(),
+                );
             }
             self.process.check_live()?;
             if started.elapsed() >= PROBE_WAIT {
@@ -665,7 +680,7 @@ mod tests {
                     return Err("child reap at the exact cutoff was accepted".into());
                 }
                 println!(
-                    "peer-observation process=matched token=matched foreign-process=refused foreign-pipe=refused exited=refused cutoff=refused"
+                    "peer-observation process=matched token=matched foreign-process=refused foreign-pipe=refused exited=refused cutoff=refused package=absent"
                 );
                 Ok(())
             }
@@ -697,6 +712,18 @@ mod tests {
         if std::env::var_os(PID_PROBE_CHILD).as_deref() != Some(OsStr::new("1")) {
             return Ok(());
         }
+        let mut length: u32 = 0;
+        #[expect(
+            unsafe_code,
+            reason = "independently check the exact copied-out child identity"
+        )]
+        // SAFETY: This documented sizing query takes a writable length and a
+        // null buffer. An unpackaged process returns its direct absence code.
+        let observed: i32 =
+            unsafe { GetCurrentPackageFullName(&raw mut length, core::ptr::null_mut()) };
+        if observed != NO_PACKAGE {
+            return Err(format!("child did not observe package absence ({observed})").into());
+        }
         let name: LabPipeName = LabPipeName::for_process(process::id(), PID_PROBE_CASE);
         let _server: OwnedHandle = create_server(&name, ServerMode::Overlapped)?;
         let count: usize = io::stdin().lock().read(&mut [0_u8; 1])?;
@@ -720,11 +747,11 @@ mod tests {
             return Err("PID probe requires a distinct child process".into());
         }
         let process: PeerProcess = PeerProcess::open(expected)?;
-        if !process.refers_to(child.as_handle()) {
+        if !same_kernel_object(process.as_handle(), child.as_handle()) {
             return Err("opened process differs from independent spawn handle".into());
         }
         let parent: PeerProcess = PeerProcess::open(parent_pid)?;
-        if process.refers_to(parent.as_handle()) {
+        if same_kernel_object(process.as_handle(), parent.as_handle()) {
             return Err("process object comparison accepted the live parent as the child".into());
         }
         let name: LabPipeName = LabPipeName::for_process(expected.get(), PID_PROBE_CASE);

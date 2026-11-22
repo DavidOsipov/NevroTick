@@ -153,7 +153,7 @@ next_action = "Complete the existing native and package qualification gates."
 "project.assets.source_attribution" = { value = "crates/nevrotick-ui/ui/assets/BRAND-LICENSE.txt", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
 "project.assets.fixture_image" = { value = "crates/nevrotick-ui/ui/assets/head.png", status = "populated", source = "crates/nevrotick-ui/ui/assets/README.md", reason = "Reviewed existing project fact." }
 "project.assets.icon_source" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
-"project.assets.package_logo" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.package_logo" = { value = "Assets/PackageLogo.png", status = "populated", source = "tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026", reason = "Reviewed 100%-scale package logo candidate. Final package and native resource qualification remain pending." }
 "project.assets.store_logo" = { value = "", status = "not-applicable", source = "", reason = "Store-only field retained under OD-05 section 7.9." }
 "project.assets.screenshots" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
 "project.assets.trailer" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
@@ -628,8 +628,8 @@ next_action = "Complete the existing native and package qualification gates."
 "catalogue.B.6.5.uap:VisualElements/@DisplayName" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
 "catalogue.B.6.5.uap:VisualElements/@Description" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
 "catalogue.B.6.5.uap:VisualElements/@BackgroundColor" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
-"catalogue.B.6.5.uap:VisualElements/@Square150x150Logo" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
-"catalogue.B.6.5.uap:VisualElements/@Square44x44Logo" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@Square150x150Logo" = { value = "Assets/Square150x150Logo.png", status = "populated", source = "tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026", reason = "Reviewed 100%-scale large square logo candidate. Final package and native resource qualification remain pending." }
+"catalogue.B.6.5.uap:VisualElements/@Square44x44Logo" = { value = "Assets/Square44x44Logo.png", status = "populated", source = "tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026", reason = "Reviewed 100%-scale small square logo candidate. Final package and native resource qualification remain pending." }
 "catalogue.B.6.5.uap:VisualElements/@AppListEntry" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
 "catalogue.B.6.5.uap:VisualElements/uap:DefaultTile" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
 "catalogue.B.6.5.uap:VisualElements/uap:LockScreen" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }

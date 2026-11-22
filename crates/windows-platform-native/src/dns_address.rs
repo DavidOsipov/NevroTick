@@ -6,6 +6,10 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{error::Error, fmt, net::IpAddr};
+use std::{
+    sync::mpsc::{Receiver, RecvTimeoutError, TryRecvError},
+    time::Duration,
+};
 
 /// Maximum ASCII presentation length, including the final root separator.
 const MAX_ABSOLUTE_NAME_BYTES: usize = 254;
@@ -227,6 +231,60 @@ impl fmt::Display for DnsAddressError {
 
 impl Error for DnsAddressError {}
 
+/// Result of asking the system DNS Client to cancel a pending lookup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "retain cancellation separately from the actual DNS completion"]
+pub enum DnsCancellationRequest {
+    /// Completion won, or no pending query admitted a cancellation.
+    Skipped,
+    /// The native request returned success; completion is still independent.
+    Requested,
+    /// The native request returned a nonzero DNS status.
+    Rejected(i32),
+}
+
+/// Delay between retirement observations on the admitted blocking worker.
+const RETIREMENT_CHECK: Duration = Duration::from_millis(10);
+
+/// Wait for the provider's actual result. Retirement permits one request, then
+/// the worker waits solely for completion with no further timer wakeups.
+pub(super) fn wait_for_dns_result(
+    receiver: &Receiver<Result<DnsAddresses, DnsAddressError>>,
+    mut retired: impl FnMut() -> bool,
+    request: impl FnOnce() -> DnsCancellationRequest,
+) -> (
+    Result<DnsAddresses, DnsAddressError>,
+    DnsCancellationRequest,
+) {
+    loop {
+        if retired() {
+            return match receiver.try_recv() {
+                Ok(outcome) => (outcome, DnsCancellationRequest::Skipped),
+                Err(TryRecvError::Disconnected) => (
+                    Err(DnsAddressError::Malformed),
+                    DnsCancellationRequest::Skipped,
+                ),
+                Err(TryRecvError::Empty) => {
+                    let cancellation: DnsCancellationRequest = request();
+                    let result: Result<DnsAddresses, DnsAddressError> =
+                        receiver.recv().unwrap_or(Err(DnsAddressError::Malformed));
+                    (result, cancellation)
+                }
+            };
+        }
+        match receiver.recv_timeout(RETIREMENT_CHECK) {
+            Ok(outcome) => return (outcome, DnsCancellationRequest::Skipped),
+            Err(RecvTimeoutError::Disconnected) => {
+                return (
+                    Err(DnsAddressError::Malformed),
+                    DnsCancellationRequest::Skipped,
+                );
+            }
+            Err(RecvTimeoutError::Timeout) => {}
+        }
+    }
+}
+
 /// One native-operation permit. Keep it with the provider storage until completion.
 pub(super) struct DnsQueryPermit<'a> {
     /// Actual process admission cell.
@@ -280,7 +338,97 @@ fn receiver_retirement_does_not_release_provider_permit() -> Result<(), DnsAddre
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::{Ipv4Addr, Ipv6Addr};
+    use std::{
+        net::{Ipv4Addr, Ipv6Addr},
+        sync::mpsc::{SyncSender, TrySendError, sync_channel},
+    };
+
+    /// Provider channel message retains the original result independently of cancellation.
+    type Outcome = Result<DnsAddresses, DnsAddressError>;
+
+    /// Both observations returned by the blocking waiter.
+    type Waited = (Outcome, DnsCancellationRequest);
+
+    /// A ready provider result wins even when the caller has already retired.
+    /// # Errors
+    /// Return a failed fixture channel send.
+    /// # Panics
+    /// Reject a spurious request or replacement of the provider result.
+    #[test]
+    fn completed_dns_outcome_never_requests_cancellation() -> Result<(), Box<dyn Error>> {
+        let called: std::cell::Cell<bool> = std::cell::Cell::new(false);
+        let (completion, receiver): (SyncSender<Outcome>, Receiver<Outcome>) = sync_channel(1);
+        completion.send(Err(DnsAddressError::Native(9_003)))?;
+        let (outcome, cancellation): Waited = wait_for_dns_result(
+            &receiver,
+            || true,
+            || {
+                called.set(true);
+                DnsCancellationRequest::Requested
+            },
+        );
+        assert!(!called.get());
+        assert!(matches!(outcome, Err(DnsAddressError::Native(9_003))));
+        assert_eq!(cancellation, DnsCancellationRequest::Skipped);
+        Ok(())
+    }
+
+    /// Both successful and refused requests preserve the original provider result.
+    /// # Errors
+    /// Return a bounded channel or unexpected worker failure.
+    /// # Panics
+    /// Detect early worker return or any change to the separation of outcomes.
+    #[test]
+    fn cancellation_request_waits_for_provider_completion() -> Result<(), Box<dyn Error>> {
+        use std::{
+            io,
+            sync::Arc,
+            thread::{self, JoinHandle},
+        };
+
+        for expected in [
+            DnsCancellationRequest::Requested,
+            DnsCancellationRequest::Rejected(87),
+        ] {
+            let (completion, receiver): (SyncSender<Outcome>, Receiver<Outcome>) = sync_channel(1);
+            let (requested, observed): (
+                SyncSender<DnsCancellationRequest>,
+                Receiver<DnsCancellationRequest>,
+            ) = sync_channel(1);
+            let (waiting, observed_waiting): (SyncSender<bool>, Receiver<bool>) = sync_channel(1);
+            let retired: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+            let retirement: Arc<AtomicBool> = Arc::clone(&retired);
+            let worker: JoinHandle<Waited> = thread::Builder::new().spawn(move || {
+                let mut initial: Option<SyncSender<bool>> = Some(waiting);
+                wait_for_dns_result(
+                    &receiver,
+                    || {
+                        let current: bool = retirement.load(Ordering::Acquire);
+                        if let Some(waiting) = initial.take() {
+                            let _notice: Result<(), TrySendError<bool>> = waiting.try_send(current);
+                        }
+                        current
+                    },
+                    || {
+                        let _notice: Result<(), TrySendError<DnsCancellationRequest>> =
+                            requested.try_send(expected);
+                        expected
+                    },
+                )
+            })?;
+            assert!(!observed_waiting.recv_timeout(Duration::from_secs(5))?);
+            retired.store(true, Ordering::Release);
+            assert_eq!(observed.recv_timeout(Duration::from_secs(5))?, expected);
+            assert!(!worker.is_finished());
+            completion.send(Err(DnsAddressError::Native(9_503)))?;
+            let (outcome, cancellation): Waited = worker
+                .join()
+                .map_err(|_| io::Error::other("DNS wait control panicked"))?;
+            assert!(matches!(outcome, Err(DnsAddressError::Native(9_503))));
+            assert_eq!(cancellation, expected);
+        }
+        Ok(())
+    }
 
     /// Reject ambiguous or unsupported names beside admitted absolute hostnames.
     /// # Panics

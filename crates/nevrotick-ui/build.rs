@@ -7,7 +7,7 @@ use std::env::{self, VarError};
 use std::fs::{self, Metadata};
 use std::io::{self, ErrorKind};
 
-/// Link the runner's fixed resource into the selected Windows UI binary.
+/// Link the normal UI manifest and the runner's optional version resource.
 ///
 /// The runner binds the selection digest to the resource bytes and keeps the
 /// resource immutable through linking. Cargo tracks both inputs across builds.
@@ -15,7 +15,7 @@ use std::io::{self, ErrorKind};
 /// # Errors
 /// Rejects an unavailable Cargo target, a malformed selection, or a selected
 /// resource that is inaccessible, nonregular, empty, or larger than 4096 bytes.
-fn link_versioninfo() -> io::Result<()> {
+fn link_windows_resources() -> io::Result<()> {
     const SELECTION: &str = "NEVROTICK_UI_VERSIONINFO_SHA256";
     const RESOURCE: &str = "/work/metadata/ui.res";
 
@@ -25,6 +25,12 @@ fn link_versioninfo() -> io::Result<()> {
     if target != "x86_64-pc-windows-msvc" {
         return Ok(());
     }
+
+    // Link the approved ordinary UI execution level and UIAccess declaration.
+    println!("cargo::rustc-link-arg-bin=nevrotick-ui=/MANIFEST:EMBED,ID=1");
+    println!(
+        "cargo::rustc-link-arg-bin=nevrotick-ui=/MANIFESTUAC:level='asInvoker' uiAccess='false'"
+    );
 
     println!("cargo::rerun-if-env-changed={SELECTION}");
     let digest: String = match env::var(SELECTION) {
@@ -67,7 +73,7 @@ fn link_versioninfo() -> io::Result<()> {
 /// A failed build publishes no product artifact.
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=ui");
-    link_versioninfo()?;
+    link_windows_resources()?;
     let configuration: slint_build::CompilerConfiguration =
         slint_build::CompilerConfiguration::new()
             .with_style("fluent".into())

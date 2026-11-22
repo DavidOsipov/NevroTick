@@ -308,13 +308,36 @@ pub(super) fn stage_successor_response(
     .map(StagedSuccessorResponse::Ordinary)
 }
 
+/// Admit an initial-leg restriction only when the established S2C key authenticated it.
+/// # Errors
+/// Preserve ordinary and control parsing errors. A correlation-only control
+/// or NTSN cannot consume the first Pending request.
+pub(super) fn stage_initial_response(
+    keys: &DirectionalKeys,
+    raw: &[u8],
+    expected_uid: &[u8; 32],
+    wire_transmit: u64,
+    maximum_cookies: usize,
+) -> Result<StagedSuccessorResponse, ReplyError> {
+    let staged: StagedSuccessorResponse =
+        stage_successor_response(keys, raw, expected_uid, wire_transmit, maximum_cookies)?;
+    match staged {
+        StagedSuccessorResponse::Control(RestrictionControl {
+            protection: ControlProtection::CorrelatedOnly,
+            ..
+        })
+        | StagedSuccessorResponse::NtsNak => Err(ReplyError::Header),
+        staged => Ok(staged),
+    }
+}
+
 /// Recognize a bounded successor control using the outstanding UID and origin.
 ///
 /// An authenticator selects the existing UID-then-authenticator S2C path with
 /// empty protected plaintext. Without one, only correlation is established.
 /// NTSN permits no authenticator, cookie or placeholder. Server time and poll
-/// fields are ignored. The ledger still requires a prior
-/// authenticated reply and current send proofs before making any policy change.
+/// fields are ignored. The ledger requires the selected leg's live send proof
+/// and rechecks current policy before making any change.
 /// # Errors
 /// Refuse an unsupported code, wrong request coordinates, forbidden fields or
 /// failure on the selected S2C path. That failure cannot select correlation.

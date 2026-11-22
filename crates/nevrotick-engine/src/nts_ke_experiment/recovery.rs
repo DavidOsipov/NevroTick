@@ -17,7 +17,7 @@ use super::association::ledger::retirement::{PastRequests, RetiredContext};
 use super::association::{AssociationOwner, CheckedPopulation};
 use super::datagram::{
     CommittedFirstProtected, CommittedProtected, ObservedRetiredSuccessor, ProtectedCompletion,
-    RetiredProtectedSuccessor, SuccessorFailure,
+    RetiredProtectedResponse, SuccessorFailure,
 };
 use super::job::FirstReceiptWriter;
 use super::process::ProviderScope;
@@ -1026,6 +1026,25 @@ pub(super) trait Producer {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure>;
 
+    /// Retire the bounded first request with its ordinary or authenticated control candidate.
+    /// # Errors
+    /// Preserve the original operation refusal. An unsupported producer issues no request.
+    fn exchange_initial<'tx>(
+        &mut self,
+        _association: &mut AssociationOwner<'tx>,
+        _control: &'tx Control,
+    ) -> Result<RetiredProtectedResponse<'tx>, Failure> {
+        Err(Failure::Control)
+    }
+
+    /// Observe the deposit of a retired initial control before its final policy guard.
+    /// # Errors
+    /// Preserve the selected fixture transition's own failure.
+    #[cfg(test)]
+    fn before_initial_control_commit(&mut self) -> Result<(), Failure> {
+        Ok(())
+    }
+
     /// Drive the single earned continuation through this actual adapter.
     /// Absence refuses this explicit selection without falling back.
     fn exchange_successor<'tx>(
@@ -1143,7 +1162,22 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
 
     /// Commit and retain the original history before allowing a second operation.
     /// # Errors
+    /// Preserve first-leg commit refusal and exact worker binding.
+    fn record_first(
+        first: ProtectedCompletion<'control>,
+        association: &mut AssociationOwner<'control>,
+        receiving: &BoundProtectedReceiver<'_, '_, '_, '_>,
+        writer: FirstReceiptWriter<'scope>,
+    ) -> Result<(), Failure> {
+        let committed: CommittedFirstProtected<'control> =
+            first.commit_first_for_successor(association)?;
+        writer.record(committed.into_first_history(receiving)?)
+    }
+
+    /// Preserve the existing first-leg selection of the private component fixture.
+    /// # Errors
     /// Preserve first-leg admission or commit refusal and exact worker binding.
+    #[cfg(test)]
     fn retain_first<P: Producer>(
         &mut self,
         association: &mut AssociationOwner<'control>,
@@ -1154,9 +1188,7 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
         let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
-        let committed: CommittedFirstProtected<'control> =
-            first.commit_first_for_successor(association)?;
-        writer.record(committed.into_first_history(&receiving)?)
+        Self::record_first(first, association, &receiving, writer)
     }
 
     /// Use exactly one previously authenticated continuation and preserve the NAK
@@ -1174,12 +1206,25 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
             .first_receipt
             .take()
             .ok_or(Failure::Control)?;
-        self.retain_first(association, producer, writer)?;
-
         let control: &'control Control = self.control;
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
-        let (retired, observed): (RetiredProtectedSuccessor<'_>, Option<Instant>) = match producer
+        match producer.exchange_initial(association, control)? {
+            RetiredProtectedResponse::Ordinary(first) => {
+                Self::record_first(first, association, &receiving, writer)?;
+            }
+            RetiredProtectedResponse::Control(retired) => {
+                #[cfg(test)]
+                producer.before_initial_control_commit()?;
+                return association
+                    .commit_retired_protected_control(retired)
+                    .map(ManagedSuccessorEffect::Restriction);
+            }
+        }
+
+        let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
+            self.bind_association(association)?;
+        let (retired, observed): (RetiredProtectedResponse<'_>, Option<Instant>) = match producer
             .exchange_successor(association, control)
             .ok_or(Failure::Control)?
         {
@@ -1193,7 +1238,7 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         #[cfg(test)]
         producer.before_successor_commit()?;
         match retired {
-            RetiredProtectedSuccessor::Ordinary(completion) => {
+            RetiredProtectedResponse::Ordinary(completion) => {
                 match receiving.accept(completion.commit(association)?)? {
                     InvocationCompletion::ManagedProtected(history) => {
                         Ok(ManagedSuccessorEffect::Ordinary(history))
@@ -1201,7 +1246,7 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
                     _ => Err(Failure::Control),
                 }
             }
-            RetiredProtectedSuccessor::Control(retired) => association
+            RetiredProtectedResponse::Control(retired) => association
                 .commit_retired_protected_control(retired)
                 .map(ManagedSuccessorEffect::Restriction),
         }
@@ -1235,13 +1280,13 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
             self.bind_association(association)?;
         #[cfg(windows)]
         let native_fixture: bool = matches!(&fixture, ManagedSuccessorFixture::NativeLoopback);
-        let retired: RetiredProtectedSuccessor<'_> = match fixture {
+        let retired: RetiredProtectedResponse<'_> = match fixture {
             ManagedSuccessorFixture::Scripted(kind) => {
                 tests::scripted_managed_successor(association, control, kind)?
             }
             #[cfg(any(windows, target_os = "linux"))]
             ManagedSuccessorFixture::Loopback(before_commit) => {
-                let retired: RetiredProtectedSuccessor<'_> =
+                let retired: RetiredProtectedResponse<'_> =
                     tests::loopback_managed_successor(association, control)?;
                 if let Some(before_commit) = before_commit {
                     before_commit()?;
@@ -1256,10 +1301,10 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
             )?,
         };
         match retired {
-            RetiredProtectedSuccessor::Ordinary(completion) => {
+            RetiredProtectedResponse::Ordinary(completion) => {
                 receiving.accept(completion.commit(association)?)
             }
-            RetiredProtectedSuccessor::Control(retired) => {
+            RetiredProtectedResponse::Control(retired) => {
                 let applied: super::association::ledger::AppliedProtectedControl =
                     association.commit_retired_protected_control(retired)?;
                 #[cfg(windows)]
@@ -1666,6 +1711,14 @@ impl Producer for Native {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure> {
         super::datagram::exchange(association, control, fill_native_request_entropy)
+    }
+
+    fn exchange_initial<'tx>(
+        &mut self,
+        association: &mut AssociationOwner<'tx>,
+        control: &'tx Control,
+    ) -> Result<RetiredProtectedResponse<'tx>, Failure> {
+        super::datagram::exchange_initial(association, control, fill_native_request_entropy)
     }
 
     fn exchange_successor<'tx>(

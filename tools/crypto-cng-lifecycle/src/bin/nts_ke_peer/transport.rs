@@ -462,20 +462,23 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
         .port();
     let udp: Option<ProtectedUdp> = match mode {
         Mode::Ke => None,
-        Mode::Protected | Mode::ProtectedSuccessorDeny | Mode::ProtectedSuccessorObserveExit(_) => {
-            Some(ProtectedUdp::bind(&budget)?)
-        }
+        Mode::Protected
+        | Mode::ProtectedInitialDenyObserveExit
+        | Mode::ProtectedSuccessorDeny
+        | Mode::ProtectedSuccessorObserveExit(_) => Some(ProtectedUdp::bind(&budget)?),
     };
     budget.poll(Instant::now())?;
-    let successor_port: Option<NonZeroU16> = if matches!(
+    let ready_udp_port: Option<NonZeroU16> = if matches!(
         mode,
-        Mode::ProtectedSuccessorDeny | Mode::ProtectedSuccessorObserveExit(_)
+        Mode::ProtectedInitialDenyObserveExit
+            | Mode::ProtectedSuccessorDeny
+            | Mode::ProtectedSuccessorObserveExit(_)
     ) {
         Some(udp.as_ref().ok_or(Failure::Arguments)?.port())
     } else {
         None
     };
-    publish_ready(&ready, port, successor_port)?;
+    publish_ready(&ready, port, ready_udp_port)?;
     let (socket, peer) = loop {
         let pause = budget.poll(Instant::now())?;
         match listener.accept() {
@@ -575,6 +578,15 @@ fn finish_exchange(
                     .map_err(|_| Failure::Entropy)
             };
             match (mode, acknowledgement) {
+                (Mode::ProtectedInitialDenyObserveExit, Some(path)) => {
+                    socket.exchange_initial_deny_observe_exit(
+                        &budget,
+                        &mut c2s,
+                        &mut s2c,
+                        fill,
+                        || read_exit_acknowledgement(path),
+                    )?;
+                }
                 (Mode::ProtectedSuccessorObserveExit(reply), Some(path)) => {
                     socket.exchange_successor_observe_exit(
                         &budget,

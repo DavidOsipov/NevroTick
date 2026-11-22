@@ -350,12 +350,22 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                     ("COMMENTS", _field_value(model, f"component.{component.id}.pe.Comments")),
                 ) if value)), component.file_version)
             outputs[f"rc/{component.id}.rc"] = _version_resource(model, component)
+    ui = next(component for component in model.components if component.role == "ui")
+    assert ui.binary_name is not None
     outputs["authoring/msix-inputs.json"] = _json({
-        "schema_version": 2, "kind": "partial-msix-authoring-inputs",
+        "schema_version": 3, "kind": "partial-msix-authoring-inputs",
         "distribution_route": "direct-msix", "complete_manifest": False,
         "display_name": model.product.name, "publisher_display_name": model.product.publisher,
         "description": model.product.description, "identity": None,
         "target": model.target, "cpu_floor": model.cpu_floor,
+        "ui_activation": {
+            "role": ui.role, "executable": _filename(ui.binary_name), "application_id": None,
+            "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
+            "visual_elements": {
+                name: _field_value(model, "catalogue.B.6.5.uap:VisualElements/@" + name)
+                for name in ("Square44x44Logo", "Square150x150Logo")
+            },
+        },
         "pending": [_record(item) for item in model.pending],
         "fields": _field_rows(model, ("catalogue.B.6.",))})
     outputs["authoring/service-inputs.json"] = _json({

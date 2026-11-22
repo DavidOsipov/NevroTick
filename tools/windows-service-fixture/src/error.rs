@@ -30,6 +30,12 @@ pub enum NativeOperation {
     PrivilegeQuery,
     /// Attempt explicit release of one owned token handle exactly once.
     TokenClose,
+    /// Construct the local fixture endpoint's protected descriptor.
+    BrokerEndpointDescriptor,
+    /// Acquire the fixed first instance under the explicit descriptor.
+    BrokerEndpointCreate,
+    /// Attempt explicit release of the original endpoint exactly once.
+    BrokerEndpointClose,
 }
 
 /// Original native failure captured before cleanup can overwrite thread error state.
@@ -73,6 +79,9 @@ impl fmt::Display for NativeError {
             NativeOperation::PrivilegeLookup => "laboratory privilege lookup failed",
             NativeOperation::PrivilegeQuery => "laboratory privilege capture failed",
             NativeOperation::TokenClose => "laboratory token handle close failed",
+            NativeOperation::BrokerEndpointDescriptor => "laboratory broker descriptor failed",
+            NativeOperation::BrokerEndpointCreate => "laboratory broker endpoint creation failed",
+            NativeOperation::BrokerEndpointClose => "laboratory broker endpoint close failed",
         })
     }
 }
@@ -167,6 +176,10 @@ pub enum WorkerError {
     Running,
     /// Cleanup failed. Physical completion has its own observation.
     Cleanup,
+    /// Descriptor or first-instance preparation failed before readiness.
+    EndpointPreparation(NativeError),
+    /// An explicit close left endpoint release unconfirmed.
+    EndpointClose(NativeError),
 }
 
 impl fmt::Display for WorkerError {
@@ -177,11 +190,21 @@ impl fmt::Display for WorkerError {
             Self::Activation => "laboratory worker activation failed",
             Self::Running => "laboratory worker operation failed",
             Self::Cleanup => "laboratory worker cleanup failed",
+            Self::EndpointPreparation(_) => "laboratory broker endpoint preparation failed",
+            Self::EndpointClose(_) => "laboratory broker endpoint release unconfirmed",
         })
     }
 }
 
-impl Error for WorkerError {}
+impl Error for WorkerError {
+    /// Retain the original typed endpoint cause separately from diagnostics.
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::EndpointPreparation(error) | Self::EndpointClose(error) => Some(error),
+            Self::Preparation | Self::Activation | Self::Running | Self::Cleanup => None,
+        }
+    }
+}
 
 /// One original cause and one fixed slot per later operation/cleanup/report kind.
 /// Private construction prevents recursive accumulation of wrapped failures.

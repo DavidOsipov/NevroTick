@@ -132,6 +132,8 @@ enum Mode {
     Ke,
     /// Use the same TLS session for a single protected loopback exchange.
     Protected,
+    /// Return an authenticated DENY on the initial request and observe client exit.
+    ProtectedInitialDenyObserveExit,
     /// Return a cookie on the first exchange and an authenticated DENY on its successor.
     ProtectedSuccessorDeny,
     /// Complete the selected successor reply sequence and observe client exit.
@@ -174,7 +176,7 @@ struct Config {
     key: PathBuf,
     /// New private-NTFS readiness record; never an existing record or mapped share.
     ready: PathBuf,
-    /// Derived exit marker, available only for the closed observed successor mode.
+    /// Derived exit marker, available only for modes that observe client exit.
     exit_acknowledgement: Option<PathBuf>,
     /// Explicitly selected operation.
     mode: Mode,
@@ -198,6 +200,12 @@ impl Config {
             None => Mode::Ke,
             Some(flag) if flag == "--protected-datagram" && arguments.next().is_none() => {
                 Mode::Protected
+            }
+            Some(flag)
+                if flag == "--protected-initial-deny-observe-exit"
+                    && arguments.next().is_none() =>
+            {
+                Mode::ProtectedInitialDenyObserveExit
             }
             Some(flag) if flag == "--protected-successor-deny" && arguments.next().is_none() => {
                 Mode::ProtectedSuccessorDeny
@@ -229,7 +237,9 @@ impl Config {
             return Err(Failure::Arguments);
         }
         let exit_acknowledgement: Option<PathBuf> = match mode {
-            Mode::ProtectedSuccessorObserveExit(_) => Some(client_exit_path(&ready)?),
+            Mode::ProtectedInitialDenyObserveExit | Mode::ProtectedSuccessorObserveExit(_) => {
+                Some(client_exit_path(&ready)?)
+            }
             Mode::Ke | Mode::Protected | Mode::ProtectedSuccessorDeny => None,
         };
         Ok(Self {
@@ -403,6 +413,9 @@ fn completion_line(mode: Mode) -> &'static str {
         }
         Mode::Protected => {
             "scope=laboratory-ke-peer-protected completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1"
+        }
+        Mode::ProtectedInitialDenyObserveExit => {
+            "scope=laboratory-ke-peer-protected-initial-deny-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1 client_exited=1 extra_udp_received=0"
         }
         Mode::ProtectedSuccessorDeny => {
             "scope=laboratory-ke-peer-protected-successor-deny completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2"

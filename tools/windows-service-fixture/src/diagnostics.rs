@@ -45,10 +45,12 @@ pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
             LifecycleError::FailureOutcomeRequired => PrimaryCause::LifecycleFailureOutcomeRequired,
         },
         FixtureError::Worker(error) => match error {
-            WorkerError::Preparation => PrimaryCause::WorkerPreparation,
+            WorkerError::Preparation | WorkerError::EndpointPreparation(_) => {
+                PrimaryCause::WorkerPreparation
+            }
             WorkerError::Activation => PrimaryCause::WorkerActivation,
             WorkerError::Running => PrimaryCause::WorkerRunning,
-            WorkerError::Cleanup => PrimaryCause::WorkerCleanup,
+            WorkerError::Cleanup | WorkerError::EndpointClose(_) => PrimaryCause::WorkerCleanup,
         },
         FixtureError::TokenObservation(_) => PrimaryCause::TokenObservation,
         FixtureError::PrivilegeAdmission(_) => PrimaryCause::PrivilegeAdmission,
@@ -77,10 +79,10 @@ pub(super) const fn lifecycle_cause(error: &LifecycleError<NativeError>) -> Life
 /// Keep preparation, activation, running and cleanup causes distinct.
 pub(super) const fn worker_cause(error: WorkerError) -> WorkerCause {
     match error {
-        WorkerError::Preparation => WorkerCause::Preparation,
+        WorkerError::Preparation | WorkerError::EndpointPreparation(_) => WorkerCause::Preparation,
         WorkerError::Activation => WorkerCause::Activation,
         WorkerError::Running => WorkerCause::Running,
-        WorkerError::Cleanup => WorkerCause::Cleanup,
+        WorkerError::Cleanup | WorkerError::EndpointClose(_) => WorkerCause::Cleanup,
     }
 }
 

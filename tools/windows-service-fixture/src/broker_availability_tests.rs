@@ -13,6 +13,9 @@ use windows_platform::{
     service::{LifecycleError, ServiceState},
 };
 
+#[cfg(windows)]
+use windows_platform_native::{LeapPresentation, LeapPresentationError};
+
 use super::{
     BrokerClockChanges, BrokerClockRead, HealthyTokenObserver, HostReceipt, LabRole,
     NativeBrokerReader, Reporting, deliver,
@@ -34,8 +37,7 @@ static FAIL_SAMPLE: AtomicBool = AtomicBool::new(false);
 
 /// Successful and failed samples from the real native getter.
 #[cfg(windows)]
-type Sample =
-    Result<windows_platform_native::ClockCoordinates, windows_platform_native::ClockReadError>;
+type Sample = Result<crate::BrokerClockSample, crate::BrokerClockSampleError>;
 /// Successful and failed samples from the independent portable script.
 #[cfg(not(windows))]
 type Sample = Result<u64, u32>;
@@ -43,20 +45,36 @@ type Sample = Result<u64, u32>;
 /// Return a monotone sample or the explicitly selected failure.
 /// # Errors
 /// Return the fixture's original failure code zero.
+/// # Panics
+/// On Windows, panics if the selected adjustment failure is not reached and preserved.
 fn read() -> Sample {
     let earlier: u32 = GETTERS.fetch_add(1, SeqCst);
     sample(earlier, FAIL_SAMPLE.swap(false, SeqCst))
 }
 
+/// Return a real clock sample with the selected presentation refusal.
+/// # Errors
+/// Preserves an original coordinate or adjustment failure.
+#[cfg(windows)]
+fn read_with_presentation_failure(failure: LeapPresentationError) -> Sample {
+    let _earlier: u32 = GETTERS.fetch_add(1, SeqCst);
+    crate::BrokerClockSample::read_with_presentation_failure(failure)
+}
+
 /// Return a real read on the healthy native path and inject the staged failure.
 /// # Errors
 /// Returns the selected refusal or the original Windows getter failure.
+/// # Panics
+/// Panics if the coordinate getter fails before the scripted adjustment refusal
+/// or the combined getter does not preserve its failure stage and code.
 #[cfg(windows)]
 fn sample(_earlier: u32, fail: bool) -> Sample {
     if fail {
-        return Err(windows_platform_native::ClockReadError::Frequency(0));
+        let result: Sample = crate::BrokerClockSample::read_with_adjustment(|| Err(0));
+        assert_eq!(result, Err(crate::BrokerClockSampleError::Adjustment(0)));
+        return result;
     }
-    windows_platform_native::read_clock_coordinates()
+    crate::BrokerClockSample::read()
 }
 
 /// Return the independent portable positive and refused getter results.
@@ -106,6 +124,23 @@ enum Scenario {
     StopAtDecision,
     /// Exact cutoff refusal beside its still-admitted predecessor.
     Deadline,
+}
+
+/// Select where the host sees a typed presentation failure on Windows.
+#[cfg(windows)]
+fn presentation_getter(scenario: Scenario) -> fn() -> Sample {
+    match scenario {
+        Scenario::TimeChangeAtDecision => {
+            || read_with_presentation_failure(LeapPresentationError::QueryFailed(0))
+        }
+        Scenario::StopAtDecision => || {
+            read_with_presentation_failure(LeapPresentationError::InvalidReply {
+                flags: 2,
+                reserved: 19,
+            })
+        },
+        _ => read,
+    }
 }
 
 /// Fixed observations from follow-up actions before service retirement.
@@ -232,8 +267,12 @@ fn check_scenario(
         early_notice: None,
         reads: &GETTERS,
     };
+    #[cfg(windows)]
+    let getter: fn() -> Sample = presentation_getter(scenario);
+    #[cfg(not(windows))]
+    let getter: fn() -> Sample = read;
     let reader: NativeBrokerReader =
-        NativeBrokerReader::new(mailbox, read).with_sampling(|_, _| None);
+        NativeBrokerReader::new(mailbox, getter).with_sampling(|_, _| None);
     let mut owner: ServiceInvocation<Reporting<'_>, InertWorker> = start_broker_invocation(
         0,
         &mut reporter,
@@ -292,19 +331,60 @@ fn check_scenario(
             assert_eq!(initial, Available);
             assert_eq!(crossed, Unavailable);
             assert_eq!(decision_getters, 1);
-            assert!(
-                matches!(receipt.broker_clock_read(), Some(BrokerClockRead::Completed {
-                    revision, result: Ok(_), ..
-                }) if revision.get() == 1)
-            );
-            if scenario == Scenario::Deadline {
-                assert_eq!(renewal[0], Available);
-                assert_eq!(receipt.result(), &Err(FixtureError::RunLimitElapsed));
-            } else {
-                assert!(clock.delivered_wake);
-                assert_eq!(receipt.result(), &Ok(()));
-            }
+            check_terminal_receipt(scenario, &receipt, renewal[0], clock.delivered_wake);
         }
     }
     Ok(())
+}
+
+/// Check the completed sample and the original termination outcome.
+/// # Panics
+/// Fails if raw read history, live cutoff behavior or termination attribution differs.
+fn check_terminal_receipt(
+    scenario: Scenario,
+    receipt: &HostReceipt,
+    before_cutoff: BrokerAvailability,
+    delivered_wake: bool,
+) {
+    let read: Option<crate::NativeBrokerClockRead> = receipt.broker_clock_read();
+    assert!(matches!(read, Some(BrokerClockRead::Completed {
+            revision, result: Ok(_), ..
+        }) if revision.get() == 1));
+    if scenario == Scenario::Deadline {
+        assert_eq!(before_cutoff, BrokerAvailability::Available);
+        assert_eq!(receipt.result(), &Err(FixtureError::RunLimitElapsed));
+    } else {
+        assert!(delivered_wake);
+        assert_eq!(receipt.result(), &Ok(()));
+    }
+    #[cfg(windows)]
+    if let Some(BrokerClockRead::Completed {
+        result: Ok(sample), ..
+    }) = read
+    {
+        check_leap_presentation(scenario, sample.leap_presentation());
+    }
+}
+
+/// Check the original presentation observation from the finished broker invocation.
+/// # Panics
+/// Fails if the native default mode or exact scripted refusal is lost or changed.
+#[cfg(windows)]
+fn check_leap_presentation(
+    scenario: Scenario,
+    observed: Result<LeapPresentation, LeapPresentationError>,
+) {
+    let expected: Result<LeapPresentation, LeapPresentationError> = match scenario {
+        Scenario::TimeChangeAtDecision => Err(LeapPresentationError::QueryFailed(0)),
+        Scenario::StopAtDecision => Err(LeapPresentationError::InvalidReply {
+            flags: 2,
+            reserved: 19,
+        }),
+        Scenario::Deadline => {
+            println!("broker_leap_presentation={observed:?}");
+            Ok(LeapPresentation::Compatibility)
+        }
+        Scenario::RunningRefused | Scenario::Renewal => return,
+    };
+    assert_eq!(observed, expected);
 }

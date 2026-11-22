@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! System DNS address query with one native-owned allocation through completion.
 //!
-//! Callers can abandon the result receiver. Only immediate return or the actual
-//! DNS callback returns the native permit. This adapter uses Windows DNS Client
-//! policy and exposes no custom server, fallback, cache or interface control.
+//! Callers can abandon the result receiver. The permit survives submission,
+//! callback and any admitted cancellation call. This adapter uses Windows DNS
+//! Client policy and exposes no custom server, fallback, cache or interface control.
 
 use std::{
     cell::UnsafeCell,
@@ -13,15 +13,17 @@ use std::{
     os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle},
     ptr::null_mut,
     sync::{
-        Arc,
-        atomic::AtomicBool,
+        Arc, Weak,
+        atomic::{AtomicBool, Ordering},
         mpsc::{Receiver, SyncSender, TryRecvError, sync_channel},
     },
     thread::JoinHandle,
 };
 
-use crate::dns_address::DnsQueryPermit;
-use crate::{DnsAddressError, DnsAddressFamily, DnsAddresses, DnsQueryName};
+use crate::dns_address::{DnsQueryPermit, wait_for_dns_result};
+use crate::{
+    DnsAddressError, DnsAddressFamily, DnsAddresses, DnsCancellationRequest, DnsQueryName,
+};
 
 /// `DNS_REQUEST_PENDING` is the only result that transfers the callback reference.
 const REQUEST_PENDING: i32 = 9_506;
@@ -103,6 +105,13 @@ struct QueryResult {
     reserved: *mut c_void,
 }
 
+/// Exact opaque `DNS_QUERY_CANCEL` SDK storage.
+#[repr(C)]
+struct QueryCancel {
+    /// Written and interpreted only by `WinDNS`.
+    reserved: [i8; 32],
+}
+
 /// Fixed x64 prefix of a `WinDNS` wide record, before its variable data union.
 #[repr(C)]
 struct RecordHeader {
@@ -124,6 +133,8 @@ struct RecordHeader {
 
 const _: [(); 64] = [(); size_of::<QueryRequest>()];
 const _: [(); 32] = [(); size_of::<QueryResult>()];
+const _: [(); 32] = [(); size_of::<QueryCancel>()];
+const _: [(); 1] = [(); align_of::<QueryCancel>()];
 const _: [(); 32] = [(); size_of::<RecordHeader>()];
 const _: [(); 48] = [(); std::mem::offset_of!(QueryRequest, callback)];
 const _: [(); 56] = [(); std::mem::offset_of!(QueryRequest, context)];
@@ -140,8 +151,9 @@ unsafe extern "system" {
     fn DnsQueryEx(
         request: *const QueryRequest,
         result: *mut QueryResult,
-        cancel: *mut c_void,
+        cancel: *mut QueryCancel,
     ) -> i32;
+    fn DnsCancelQuery(cancel: *const QueryCancel) -> i32;
     fn DnsFree(pointer: *mut c_void, free_type: i32);
 }
 
@@ -157,6 +169,10 @@ struct NativeQuery {
     request: UnsafeCell<MaybeUninit<QueryRequest>>,
     /// `WinDNS` writes the initialized v1 result until immediate return or callback.
     result: UnsafeCell<QueryResult>,
+    /// Retained native cancellation token at its original address.
+    cancel: UnsafeCell<QueryCancel>,
+    /// Callback entry or cancellation admission has claimed the pending request.
+    completion_or_cancel: AtomicBool,
     /// One bounded publication. Dropping the receiver abandons delivery only.
     completion: SyncSender<Result<DnsAddresses, DnsAddressError>>,
 }
@@ -167,7 +183,8 @@ struct NativeQuery {
 )]
 // SAFETY: the name, family and once-initialized request are immutable during
 // submission. Only the selected completion path reads the native result and
-// no published value retains a record pointer.
+// no published value retains a record pointer. WinDNS alone accesses the
+// cancellation bytes, with a single caller after pending submission returns.
 unsafe impl Sync for NativeQuery {}
 
 #[expect(
@@ -313,6 +330,7 @@ extern "system" fn on_complete(context: *mut c_void, result: *mut QueryResult) {
     // SAFETY: only DnsQueryEx receives this context. The SDK invokes this
     // callback once for a pending request and never for immediate return.
     let query: Arc<NativeQuery> = unsafe { Arc::from_raw(context.cast::<NativeQuery>()) };
+    query.completion_or_cancel.store(true, Ordering::Release);
     complete(&query, result, None);
 }
 
@@ -324,6 +342,8 @@ extern "system" fn on_complete(context: *mut c_void, result: *mut QueryResult) {
 pub struct DnsAddressQuery {
     /// Taken once when the result is delivered or the channel closes.
     receiver: Option<Receiver<Result<DnsAddresses, DnsAddressError>>>,
+    /// Upgrade only to attempt cancellation. An unread result cannot retain the permit.
+    pending: Option<Weak<NativeQuery>>,
 }
 
 impl DnsAddressQuery {
@@ -353,6 +373,8 @@ impl DnsAddressQuery {
                 records: null_mut(),
                 reserved: null_mut(),
             }),
+            cancel: UnsafeCell::new(QueryCancel { reserved: [0; 32] }),
+            completion_or_cancel: AtomicBool::new(false),
             completion,
         });
         let context: *const NativeQuery = Arc::into_raw(Arc::clone(&query));
@@ -371,17 +393,21 @@ impl DnsAddressQuery {
         // passing any of its pointers to WinDNS. Nothing writes it afterward.
         unsafe { pinned_request.write(request) };
         let output: *mut QueryResult = query.result.get();
-        // SAFETY: the request is fully initialized, its pointers use stable
-        // retained allocations and the optional cancellation pointer is null.
-        let status: i32 = unsafe { DnsQueryEx(pinned_request, output, null_mut()) };
-        if status != REQUEST_PENDING {
+        // SAFETY: the request is initialized, and all three structures retain
+        // their original addresses through the selected native completion path.
+        let status: i32 = unsafe { DnsQueryEx(pinned_request, output, query.cancel.get()) };
+        let pending: Option<Weak<NativeQuery>> = if status == REQUEST_PENDING {
+            Some(Arc::downgrade(&query))
+        } else {
             // SAFETY: the documented immediate path never invokes a callback.
             // The submission relinquishes its extra raw reference here.
             let immediate: Arc<NativeQuery> = unsafe { Arc::from_raw(context) };
             complete(&immediate, output, Some(status));
-        }
+            None
+        };
         Ok(Self {
             receiver: Some(receiver),
+            pending,
         })
     }
 
@@ -397,6 +423,7 @@ impl DnsAddressQuery {
                 Err(TryRecvError::Disconnected) => Err(DnsAddressError::Malformed),
             };
         self.receiver = None;
+        self.pending = None;
         Some(outcome)
     }
 
@@ -410,6 +437,56 @@ impl DnsAddressQuery {
         let receiver: Receiver<Result<DnsAddresses, DnsAddressError>> =
             self.receiver.take().ok_or(DnsAddressError::Malformed)?;
         receiver.recv().map_err(|_| DnsAddressError::Malformed)?
+    }
+
+    /// Wait for actual completion on the admitted blocking worker. On retirement,
+    /// ask Windows to cancel once when pending. The observation must be nonblocking.
+    /// A missing callback can retain the worker indefinitely.
+    pub fn wait_with_retirement(
+        mut self,
+        retired: impl FnMut() -> bool,
+    ) -> (
+        Result<DnsAddresses, DnsAddressError>,
+        DnsCancellationRequest,
+    ) {
+        let Some(receiver): Option<Receiver<Result<DnsAddresses, DnsAddressError>>> =
+            self.receiver.take()
+        else {
+            return (
+                Err(DnsAddressError::Malformed),
+                DnsCancellationRequest::Skipped,
+            );
+        };
+        wait_for_dns_result(&receiver, retired, || self.request_cancellation())
+    }
+
+    /// Claim the one cancellation admission for this exact pending query.
+    #[expect(
+        unsafe_code,
+        reason = "Submit cancellation using the original WinDNS-owned token"
+    )]
+    fn request_cancellation(&mut self) -> DnsCancellationRequest {
+        let Some(query): Option<Arc<NativeQuery>> = self
+            .pending
+            .take()
+            .and_then(|pending: Weak<NativeQuery>| pending.upgrade())
+        else {
+            return DnsCancellationRequest::Skipped;
+        };
+        if query.completion_or_cancel.swap(true, Ordering::AcqRel) {
+            return DnsCancellationRequest::Skipped;
+        }
+        // SAFETY: a pending DnsQueryEx returned the token at this address.
+        // Like the SDK DNSAsyncQuery sample, the worker claims cancellation
+        // before invoking it and retains the allocation if the callback wins
+        // the race to actual completion. The callback independently owns its
+        // Arc through cleanup. No Rust code reads or copies the token bytes.
+        let status: i32 = unsafe { DnsCancelQuery(query.cancel.get().cast_const()) };
+        if status == 0 {
+            DnsCancellationRequest::Requested
+        } else {
+            DnsCancellationRequest::Rejected(status)
+        }
     }
 }
 

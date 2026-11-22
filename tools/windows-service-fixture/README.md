@@ -40,6 +40,24 @@ failed. Read back its contents before attempting another output.
 The [S0.6 task](../../tasks/windows11-integration.md#publish-the-disabled-service-pack-inputs-as-one-tree--22-november-2026)
 records the pinned inputs, independent archive controls and Windows gates.
 
+Run the payload publication and unsigned package reader regressions with
+`python3 -I -B -m unittest discover -s tools/windows-service-fixture/msix`.
+The reader tests build inert archives and check the CLI's digest, payload, ZIP,
+block-map and XML decisions without installing a package.
+
+For the held §7.5 pre-start probe, the
+[installed identity companion](msix/installed_identity.psm1) uses the same
+two fixed laboratory roles. Run it in a fresh 64-bit Windows PowerShell
+process under the admitted deployment user. The supervisor supplies
+`RunId`, `ExpectedUserSid`, `PackageFullName`, `SignedPackageSha256`
+and each role's `Bytes` and `Sha256` values using the `Engine` and
+`Broker` parameter prefixes. Derive them from independent inspection
+of the exact final signed lab artifact. The companion emits one readback
+record after both role and registration checks. Join it to the existing
+SCM selector in the same supervised run. Retain native errors privately.
+The [fixture task](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
+records the companion's path and file controls and the held setup.
+
 ## Fixture contracts and execution
 
 Both roles use the explicit laboratory card limits: pending wait hint 1,000 ms,

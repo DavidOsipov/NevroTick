@@ -46,18 +46,17 @@ const ADVANCE: Duration = Duration::from_millis(23);
 
 /// Raw result from the selected Windows reader.
 #[cfg(windows)]
-type ReadResult =
-    Result<windows_platform_native::ClockCoordinates, windows_platform_native::ClockReadError>;
+type ReadResult = Result<crate::BrokerClockSample, crate::BrokerClockSampleError>;
 /// Portable positive and zero-error test inputs to the same receiver.
 #[cfg(not(windows))]
 type ReadResult = Result<u64, u32>;
 
-/// Read actual native coordinates at the selected invocation's read edge.
+/// Read the actual native sample at the selected invocation's read edge.
 /// # Errors
 /// Return the original staged native refusal.
 #[cfg(windows)]
 fn sample(_fail: bool) -> ReadResult {
-    windows_platform_native::read_clock_coordinates()
+    crate::BrokerClockSample::read()
 }
 
 /// Script either a useful sample or original native error zero.
@@ -492,7 +491,7 @@ fn selected_broker_power_resumes_across_repeated_callbacks() -> Result<(), Box<d
             #[cfg(not(windows))]
             let native_failure: Option<u32> = Some(0);
             #[cfg(windows)]
-            let native_failure: Option<windows_platform_native::ClockReadError> = None;
+            let native_failure: Option<crate::BrokerClockSampleError> = None;
             assert_eq!(
                 read,
                 BrokerClockRead::Retired {
@@ -538,11 +537,12 @@ fn observe_native(
     let lower: u64 = lower.ok_or("lower wall reference unavailable")?;
     let upper: u64 = reference_filetime().ok_or("upper wall reference unavailable")?;
     let BrokerClockRead::Completed {
-        result: Ok(raw), ..
+        result: Ok(sample), ..
     } = read
     else {
-        return Err("native coordinate observation unavailable".into());
+        return Err("native clock sample unavailable".into());
     };
+    let raw: &windows_platform_native::ClockCoordinates = sample.coordinates();
     assert!((lower..=upper).contains(&raw.filetime_100ns()));
     println!(
         "broker renewal observed: hz={} qpc_before={} qpc_after={} filetime_lower={} filetime={} filetime_upper={}",

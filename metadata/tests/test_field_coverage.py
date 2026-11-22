@@ -8,6 +8,7 @@ import hashlib
 import importlib
 import json
 import re
+import runpy
 import sys
 import unittest
 
@@ -243,8 +244,8 @@ class ExpandedFieldTests(SourceFixture):
         self.assertEqual(coverage["schema_version"], 2)
         pending = {row["key"] for row in coverage["pending"]}
         unobserved = {row["key"] for row in coverage["unobserved_derived"]}
-        self.assertIn("project.assets.package_logo", pending)
-        self.assertIn("catalogue.B.6.2.Package/Properties/Logo", unobserved)
+        self.assertNotIn("project.assets.package_logo", pending)
+        self.assertNotIn("catalogue.B.6.2.Package/Properties/Logo", unobserved)
         self.assertNotIn("project.store.product_name", pending)
         self.assertNotIn("catalogue.B.9.1.StoreListing[locale].Product name", unobserved)
         self.assertEqual(reply["unresolved_field_count"], len(pending) + len(unobserved))
@@ -344,7 +345,7 @@ class ExpandedModelTests(SourceFixture):
         self.assertEqual(len(rows), 731)
         self.assertTrue(all(len(row) == 8 and all(type(value) is str for value in row) for row in rows))
         canonical = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "50ac89bb2a7eb3fe92aaf9319754cdb840f2aa44c3be89c5951a14ed9bf68724")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "4382c850c018560874520b756e8378a56ca2846f833a908a4a5eb6e0b41ce1fb")
         indexed = self.registry.FIELD_BY_KEY
         self.assertEqual(set(indexed), {row[0] for row in rows})
         catalogue = {spec.key for spec in self.registry.FIELD_SPECS if spec.key.startswith("catalogue.")}
@@ -357,6 +358,20 @@ class ExpandedModelTests(SourceFixture):
             indexed[rows[0][0]] = indexed[rows[0][0]]
         with self.assertRaises(TypeError):
             del indexed[rows[0][0]]
+
+    def test_registry_rejects_duplicate_keys_at_import(self) -> None:
+        """A second row with the same key must prevent publication of the index."""
+        self.assertEqual(len(self.registry.FIELD_BY_KEY), 731)
+        source = (REPOSITORY / "metadata/pipeline/fields.py").read_text(encoding="utf-8")
+        construction = "\nFIELD_SPECS = "
+        self.assertEqual(source.count(construction), 1)
+        duplicate = self.base / "duplicate_registry.py"
+        duplicate.write_text(
+            source.replace(construction, "\n_FIELD_ROWS += (_FIELD_ROWS[0],)" + construction, 1),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(RuntimeError, "^Duplicate code-owned metadata field contract$"):
+            runpy.run_path(str(duplicate))
 
     def test_public_field_counts_reject_forged_models(self) -> None:
         model = self.contract.load_metadata(self.root)

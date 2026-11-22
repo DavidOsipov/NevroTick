@@ -25,6 +25,10 @@ use windows_platform_native::{ClockAdjustment, ResumeWatch, read_clock_adjustmen
 #[path = "nevrotick_observe/adjustment_observation.rs"]
 mod adjustment_observation;
 
+#[cfg(any(windows, test))]
+#[path = "nevrotick_observe/leap_presentation.rs"]
+mod leap_presentation;
+
 /// Finite command syntax or runtime failures; no rejected input is retained.
 #[derive(Debug)]
 enum CliError {
@@ -39,6 +43,9 @@ enum CliError {
     /// The requested raw adjustment read needs the native Windows adapter.
     #[cfg(not(windows))]
     AdjustmentUnavailable,
+    /// The requested process presentation read needs the native Windows adapter.
+    #[cfg(not(windows))]
+    LeapPresentationUnavailable,
     /// Windows could not establish resume notification before acquisition.
     #[cfg(windows)]
     ResumeRegistration,
@@ -59,6 +66,8 @@ impl CliError {
             Self::Pilot(error) => error.as_str(),
             #[cfg(not(windows))]
             Self::AdjustmentUnavailable => "clock_adjustment_unavailable",
+            #[cfg(not(windows))]
+            Self::LeapPresentationUnavailable => "leap_presentation_unavailable",
             #[cfg(windows)]
             Self::ResumeRegistration => "resume_registration_failed",
             Self::ResumeUnregistration { primary } => {
@@ -82,18 +91,20 @@ struct Arguments {
     experimental_profile: Option<ExperimentalProfile>,
     /// Request two read-only Windows adjustment observations.
     observe_adjustment: bool,
+    /// Request one read-only observation of this Windows process's leap presentation.
+    observe_leap_presentation: bool,
 }
 
-/// Private allowance for at most seven option/value pairs in this one CLI parse.
+/// Private allowance for at most eight option/value pairs in this one CLI parse.
 struct ArgumentBudget {
     /// Unconsumed complete-pair allowance; exhaustion can never wrap or reset.
     remaining_pairs: u8,
 }
 
 impl ArgumentBudget {
-    /// Establish the CLI's fixed fourteen-atom allowance without reading input.
+    /// Establish the CLI's fixed sixteen-atom allowance without reading input.
     fn for_cli() -> Self {
-        Self { remaining_pairs: 7 }
+        Self { remaining_pairs: 8 }
     }
 
     /// Charge one raw option before decoding it or fetching its paired value.
@@ -135,7 +146,7 @@ fn argument_text(value: &OsStr, kind: ArgumentTextKind) -> Result<&str, CliError
     value.to_str().ok_or(CliError::Arguments)
 }
 
-/// Parse at most fourteen bounded arguments without retaining raw caller strings.
+/// Parse at most sixteen bounded arguments without retaining raw caller strings.
 ///
 /// No network, file or clock mutation occurs. Endpoint meaning and timeout bounds
 /// are admitted later through Config, which direct library callers also require.
@@ -150,6 +161,7 @@ fn arguments(mut raw: impl Iterator<Item = OsString>) -> Result<Arguments, CliEr
     let mut invalidate_after = None;
     let mut experimental_profile = None;
     let mut observe_adjustment: bool = false;
+    let mut observe_leap_presentation: bool = false;
     let mut budget = ArgumentBudget::for_cli();
     while let Some(option) = raw.next() {
         budget.charge_pair()?;
@@ -175,6 +187,9 @@ fn arguments(mut raw: impl Iterator<Item = OsString>) -> Result<Arguments, CliEr
             "--clock-adjustment" if value == "raw" && !observe_adjustment => {
                 observe_adjustment = true;
             }
+            "--leap-presentation" if value == "raw" && !observe_leap_presentation => {
+                observe_leap_presentation = true;
+            }
             _ => return Err(CliError::Arguments),
         }
     }
@@ -185,6 +200,7 @@ fn arguments(mut raw: impl Iterator<Item = OsString>) -> Result<Arguments, CliEr
         invalidate_after,
         experimental_profile,
         observe_adjustment,
+        observe_leap_presentation,
     })
 }
 
@@ -271,8 +287,13 @@ fn write_report(report: &PilotReport, output: &mut impl Write) -> Result<(), Cli
 fn run() -> Result<(), CliError> {
     let args: Arguments = arguments(std::env::args_os().skip(1))?;
     #[cfg(not(windows))]
-    if args.observe_adjustment {
-        return Err(CliError::AdjustmentUnavailable);
+    {
+        if args.observe_adjustment {
+            return Err(CliError::AdjustmentUnavailable);
+        }
+        if args.observe_leap_presentation {
+            return Err(CliError::LeapPresentationUnavailable);
+        }
     }
     let config = Config::new(args.peers, args.timeout).map_err(CliError::Pilot)?;
     let config = match args.experimental_profile {
@@ -300,6 +321,12 @@ fn run() -> Result<(), CliError> {
     let read = args.observe_adjustment.then_some(read_adjustment);
     #[cfg(all(not(windows), test))]
     let read: Option<fn() -> Result<adjustment_observation::AdjustmentState, u32>> = None;
+    #[cfg(windows)]
+    let read_presentation: Option<fn() -> leap_presentation::Observation> = args
+        .observe_leap_presentation
+        .then_some(leap_presentation::read);
+    #[cfg(all(not(windows), test))]
+    let read_presentation: Option<fn() -> leap_presentation::Observation> = None;
     observe(
         pilot,
         schedule,
@@ -308,6 +335,8 @@ fn run() -> Result<(), CliError> {
         || io::stdout().lock(),
         #[cfg(any(windows, test))]
         read,
+        #[cfg(any(windows, test))]
+        read_presentation,
     )
 }
 
@@ -338,10 +367,10 @@ fn write_bound(pilot: &PreparedPilot, output: &mut impl Write) -> Result<(), Cli
 
 /// Execute under the invocation's control, close it, then attempt observed output.
 ///
-/// Only admitted execution is bracketed. Opt-in historical reads survive an
-/// execution or teardown error. A refused sink prevents later output and cannot
-/// replace an earlier error. Execution or close failure prevents normal result
-/// and completion records.
+/// Read process presentation after successful publication, immediately before
+/// execution. The opt-in historical observations survive an execution or teardown
+/// error. Stop on a refused sink and preserve any earlier error. Execution or
+/// close failure prevents normal result and completion records.
 ///
 /// # Errors
 /// Preserve binding, Engine, unregistration and output error precedence.
@@ -354,9 +383,20 @@ fn observe<W: Write>(
     #[cfg(any(windows, test))] read: Option<
         impl FnMut() -> Result<adjustment_observation::AdjustmentState, u32>,
     >,
+    #[cfg(any(windows, test))] read_presentation: Option<
+        impl FnOnce() -> leap_presentation::Observation,
+    >,
 ) -> Result<(), CliError> {
     let bound: Result<(), CliError> = publish(&pilot);
-    let operation = || execute(pilot, schedule).map_err(CliError::Pilot);
+    #[cfg(any(windows, test))]
+    let mut presentation: Option<leap_presentation::Observation> = None;
+    let operation = || {
+        #[cfg(any(windows, test))]
+        {
+            presentation = read_presentation.map(|read| read());
+        }
+        execute(pilot, schedule).map_err(CliError::Pilot)
+    };
     #[cfg(any(windows, test))]
     let (result, adjustment): (
         Result<PilotReport, CliError>,
@@ -380,16 +420,35 @@ fn observe<W: Write>(
     };
 
     #[cfg(any(windows, test))]
-    if let Some(adjustment) = adjustment {
+    if adjustment.is_some() || presentation.is_some() {
         let mut output: W = output();
         let written: Result<(), CliError> =
-            adjustment.write(&mut output).map_err(|_| CliError::Output);
+            write_observations(&mut output, adjustment, presentation);
         let report: PilotReport = completed?;
         written?;
         return write_report(&report, &mut output);
     }
     let report: PilotReport = completed?;
     write_report(&report, &mut output())
+}
+
+/// Write the requested historical observations in a fixed order.
+///
+/// # Errors
+/// Stop on the first output refusal before any later observation or normal report.
+#[cfg(any(windows, test))]
+fn write_observations(
+    output: &mut impl Write,
+    adjustment: Option<adjustment_observation::AdjustmentObservation>,
+    presentation: Option<leap_presentation::Observation>,
+) -> Result<(), CliError> {
+    if let Some(adjustment) = adjustment {
+        adjustment.write(output).map_err(|_| CliError::Output)?;
+    }
+    if let Some(presentation) = presentation {
+        presentation.write(output).map_err(|_| CliError::Output)?;
+    }
+    Ok(())
 }
 
 /// Return through Rust's normal process teardown; never change host clock state.
@@ -416,3 +475,7 @@ mod argument_guard_tests;
 #[cfg(test)]
 #[path = "../../tests/private/adjustment_observation.rs"]
 mod adjustment_observation_tests;
+
+#[cfg(test)]
+#[path = "../../tests/private/leap_presentation.rs"]
+mod leap_presentation_tests;

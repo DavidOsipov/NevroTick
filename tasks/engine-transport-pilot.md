@@ -26950,6 +26950,51 @@ advances the existing acquisition owner.
 | `check-05/nevrotick-observe.exe` | `6de5beb94dff71962bd8363cfab6629920ed9978dfe6a07ffba19416ce9c236b` |
 | `native-loopback-01/verification.json` | `e31e2f879a147b680c775d5b5d3d691ef5b9539d2979df35c193b9d4b91d2630` |
 
+###### Observe the Engine's own Windows leap presentation
+
+W11-W02/LP-C16 and CHECK-10/11/25/27. The Engine diagnostic
+`--leap-presentation raw` reads its own process mode once after endpoint
+publication and immediately before execution. With raw adjustment also
+selected, the mode query occurs inside the adjustment observations.
+It retains the exact native mode, error code or unsupported flag words
+through cleanup. The diagnostic reports `mapping=unavailable`. The
+default output, operation and cleanup error precedence, packet authority
+and Core admission remain governed by their existing owners.
+
+GNU rejects the opt-in before socket preparation. The argument contract
+admits at most eight option/value pairs and refuses duplicate or
+unsupported choices. Focused tests preserve the literal default
+transcript, the output order and first refusal, and exact query error
+and invalid reply fields. On the final 640-input development subject
+`0c84e3515659a75fe7142d629c190ef94b6ad7cd73c5380a19aa230ca9f2788a`,
+Rust 1.100.0 passed 13 CLI unit and two real-process tests, plus
+formatting and all-target GNU and MSVC Engine Clippy. The broad Windows
+predecessor found three assertion-style lints that the targeted binary
+command missed. The final lint selection covers the binary test target.
+An earlier receipt-directory preflight refusal remains in the records.
+
+The configured Windows export passed all 35 lanes on the 654-input
+subject `2ff485518ccc8ddb384b8ddc74606922fafd55a97a664edf0c3948c732a39cc7`. Its
+exact linked Observe image `9fd9ff63fe500534c2c05005cd957b0943ad58e25fea06e10bb8925a34297b41`
+ran two fresh processes in the admitted offline Sandbox, build 26100.
+Both default and opt-in cases sent exactly one 48-byte request to each
+of two held private loopback peers. Both slots timed out with one send,
+zero receives and zero rejections, and retained ineligibility. The
+default transcript omitted the process record. The raw case emitted
+exactly one `mode=compatibility flags=0 reserved=0 mapping=unavailable`
+record before the two results. Both children returned zero and were
+reaped. Independent PE/PDB and transcript readback matched the frozen
+source and original output. The guest and its empty attached directories
+were preserved, and the staged files and guest-private scratch were
+removed.
+
+The final development receipt, exact archive locations, and source patch
+are under `~/.local/share/nevrotick/broker-read-completion-20261122.O1IZvx5G/`.
+The cross-link and export receipt is `c0d7b7fcdac1ac6636ea9a2355236481cb0ade902e84094e69811ff9579ad9ee`.
+The native verdict is `1a6113afa1031d652fd12f555a375b6fbd86ceff52f247a3e4d3fedbb7a4ba00`.
+Other Windows families, current mapping admission, calibrated physical
+uncertainty and per-file qualification retain their existing exits.
+
 ###### Combined adjustment development checks
 
 W11-W01/TQ-07/08 and CHECK-6/11/21/25/27. The 618-input `bfc89aa8…`
@@ -30276,9 +30321,9 @@ retired scratch after matching restored current source, tools, vendor and
 index. Raw evidence is in
 `~/.local/share/nevrotick/engine-address-membership-receive-final-20261122.rk8xilAD`.
 Prior Windows-target EP1 and optimized group results retain their stated
-test selections and exact source scope. Protected KE membership refusal
-remains source-reviewed. Changed-file coverage and generated mutation
-qualification stay open.
+test selections and exact source scope. The [protected KE continuation](#protected-ke-membership-at-issuance-and-effects)
+records separate worker and issuance evidence. Changed-file coverage and
+generated mutation qualification stay open.
 
 ##### Joined laboratory refresh and precredited successor
 
@@ -30330,6 +30375,38 @@ tool, vendor and index bookends, and retired private scratch. Raw records
 are under
 `~/.local/share/nevrotick/engine-joined-refresh-final-20261122.rj8hpLfG/`.
 
+##### Source-visible test types for membership and refresh
+
+CHECK-25. The Engine address-round tests now name their prepared
+rounds, source snapshots, reports, attempt slices, receive values and
+policy counters. The RATE and ordinary neighbors use the same typed
+test helper to drive the round, join its peer and check the query.
+The assertions and production execution path are preserved.
+
+Rust 1.100.0 passed the 48 selected GNU address-round cases, format,
+GNU Clippy and Windows-target EP1 Clippy on Git base `4ebab33b`
+with 636-input subject
+`08bf10a47bb045e248dbb4560d55bbc89ac791b0e24f50759a2f0ad55a543032`.
+Source, tool, vendor and index bookends matched and scratch was retired.
+The earlier Clippy length refusal remains recorded. The passing
+receipt is in `~/.local/share/nevrotick/engine-address-explicit-types-final-20261122.2RutNOCC/`.
+The protected KE membership behavior and the coverage and mutation
+qualification retain their separate exits.
+
+For the combined publication checkpoint, the frozen 636-input Engine
+subject `a7f476897395c0386a0f86009cb918e8e4b164f5cc97ad21c00cbb01c37df1c1`
+passed 264 default and 598 optional KE library cases under GNU.
+Independent review also found unnamed DNS values in the new retirement
+owner and its controls. The added annotations name the original provider
+result, cancellation disposition and worker channels. Final subject
+`221c84c48a445c6a4fcfed955ab4928cd79820396d1e810ab0792d505eb92635`
+passed the affected 48 address-round and 37 portable native-leaf cases,
+workspace formatting, GNU Engine and MSVC Engine/native-leaf lint.
+Rust 1.100.0 source, vendor and tool bookends matched in both runs, and
+private build scratch was retired. Receipts are under
+`~/.local/share/nevrotick/checkpoint-review-20261122.zY0YitlM/`.
+Native DNS cancellation and per-file qualification remain open.
+
 ##### Windows system DNS through the joined address round
 
 REQ-8/BND-1, THR-26, W11-W03 DNS-3 and CHECK-21/25/27. The
@@ -30377,5 +30454,392 @@ index bookends and retired its scratch. Raw evidence is in
 `~/.local/share/nevrotick/engine-windows-dns-final-20261122.0Seqotjw/`.
 Earlier log-reader, lint and disk-reserve refusals retain their results.
 Windows DNS execution, cancellation, local path and routing observation,
-authenticated delegation, changed-file coverage and generated mutation remain
-open. This slice admits no production acquisition or Core sample.
+authenticated delegation, changed-file coverage and generated mutation remained
+open at that checkpoint. This slice admits no production acquisition or Core sample.
+
+##### Request cancellation from the retired Windows DNS worker
+
+W11-W03 DNS-3, THR-26 and CHECK-25/27. Explicit retirement and Drop now reach
+the same dispatch's atomic state. A retirement that wins before dispatch
+prevents submission. After dispatch, the worker observes retirement while
+waiting for the provider. It can request cancellation once for the original
+pending query, then waits for completion without further polling. Callback
+cleanup and any in-flight cancellation retain the provider allocation and
+permit. The Engine slot still requires actual Windows thread exit and join.
+
+WinDNS writes the opaque 32-byte cancel token at its original address.
+The worker upgrades a weak reference only to attempt cancellation. A
+completed but unread result therefore leaves no extra native permit owner.
+An available result or callback entry can suppress cancellation. An admitted
+cancellation can still race callback invocation. Microsoft’s sample uses
+that overlap while retaining the shared context, then waits for the callback.
+The result and cancellation status remain separate. Neither cancellation
+status changes the retired round’s report or allows a second query.
+[DnsCancelQuery](https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnscancelquery),
+[DNS_QUERY_CANCEL](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_cancel),
+and [Microsoft asynchronous query sample](https://github.com/microsoft/Windows-classic-samples/blob/main/Samples/DNSAsyncQuery/cpp/DnsQueryEx.cpp).
+
+The Rust contract and lifecycle review checked the worker, provider, callback
+and join paths. The exact worker tests cover explicit and Drop retirement,
+busy custody until return and separately clean admission. Platform controls
+cover ready completion, a retirement observed while waiting, and provider
+completion after a successful or refused cancellation request.
+
+The configured Rust 1.100.0 runner passed 48 address-round tests in each
+GNU test mode and 37 portable platform tests. Format, GNU all-target Clippy,
+Windows MSVC all-target Clippy with Engine EP1, and boundary isolation passed.
+The 636-input subject
+`7e750d098b7176ba7253ef4a4c336cc178e78fbfe1682c7db40b1ef4878e8983`
+on Git base `4ebab33b661c82ada1bf0816367d194629f960d8` matched the source,
+tool, vendor and index bookends. The runner removed its scratch. Retained
+results are in `~/.local/share/nevrotick/engine-dns-retirement-verified-20261122.awRCErjM/`.
+The earlier lint failures and disk-reserve stop retain their results.
+
+Native qualification still needs actual immediate and pending calls, an in-flight
+cancel/callback overlap, routing observations and cleanup/resource checks
+under the existing Windows task. Follow the 90% line and 95% critical-file
+mutation requirements at their owners.
+
+The next certificate-free Windows case is the existing
+`windows_dns::tests::thread_exit_poll_waits_for_thread_local_teardown`.
+It holds Rust thread-local destruction until the actual Windows wait
+reports an unsignaled thread object, then releases it and requires a
+signaled handle and successful join. The case makes no DNS query.
+The [environment preflight](../.agents/skills/testing/qa-environment-preflight/SKILL.md)
+and [lifecycle test selection](../.agents/skills/testing/qa-state-concurrency-lifecycle/SKILL.md)
+bound the ordinary MSVC leaf image to frozen tree
+`acb9ea4d4ab66fcc1fc5d7272c08e40879266753`, 642 product inputs and 17
+helper hashes. The established leaf-link recipe refused the current
+filesystem below its 4 GiB durable reserve before running the compiler.
+
+Targeted retirement of old expanded evidence restored that reserve.
+The same recipe linked the ordinary x64-v3 test image
+`3a5b9259d7d0a693a238a8909ebf1fc9c193fe404b87387cab3345e382263171`
+with Rust 1.100.0 and both input bookends. The native parser and CPU
+preflight passed. On offline Sandbox build 26100, the exact libtest
+listing discovered one case and the exact execution passed it, with 47
+other cases filtered. The two processes exited zero, were reaped and
+closed their streams. Both stderr captures were empty. The separate
+offline, input and cleanup controls passed and both mappings emptied.
+This qualifies the real Windows thread-object wait and join boundary.
+The immediate and pending provider calls, cancellation/callback
+overlap, native routing and per-file metrics retain their own exits.
+The complete frozen inputs, first refusal, link and native observations
+are under `~/.local/share/nevrotick/dns-thread-native-20261122.yakH1dR0/`.
+The native verifier hashes to
+`20d9b92b60865fbb174bcce64521b3b702594ca7fc0b1ee2d8d4b39ee2222506`.
+
+##### Offline WinDNS immediate return record shape — 22 November 2026
+
+W11-W03 DNS-3 and CHECK-25/27. Under the same offline Sandbox, two
+consecutive requests for the checked guest-local IPv4 name returned
+immediately even while the first result remained unread. The original
+native libtest exited 101 when the first copied result was `Empty`.
+It never reached the second value or repeat-consumption assertion.
+
+A private native diagnostic compared the same v1 name, family and query
+options with the callback and context omitted. The actual machine name and
+`localhost.` each returned immediate status 0, v1 result status 0, and one
+four-byte A record marked section 0. Neither result contained an A record
+marked Answer. The original adapter admits only Answer records. The
+diagnostic observed valid execution and cleanup, with no positive address
+oracle and no change to accepted records. Microsoft documents immediate
+completion for local address queries and for a missing callback.
+[WinDNS contract](https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnsqueryex#remarks)
+
+The configured Rust 1.100.0 ordinary MSVC libtest on private tree
+`cc8b4fa1ed2cd0a4b78f2975cf5e3fec2deef557` passed cross-link and Clippy
+after splitting four rejected unsafe blocks into one checked field read
+each. The offline diagnostic discovered and executed one case. Both
+exact children exited zero, were reaped, closed their output and left
+empty mappings. The earlier native `Empty` and Clippy failures stay in
+their original receipts. The diagnostic receipt `8fb55a12…019a0` and the
+link receipt `dc68ac67…4279b` are under
+`~/.local/share/nevrotick/dns-record-shape-20261122.Cv05JhF6/`.
+Native qualification still needs an independently controlled actual
+Answer, pending callback and cancellation, routing and the per-file metrics.
+
+##### Protected KE membership at issuance and effects
+
+REQ-8/BND-1 and CHECK-6/21/25/27. Three Engine regressions isolate membership
+selection while keeping the installed definition revision and endpoint the
+same. The real KE issuance guard refuses the selected snapshot before taking
+an endpoint slot. Replacing the definition permits current issuance and
+fences the superseded revision. The managed protected worker refuses a
+prepared send before debiting either polling floor or charging receive work.
+At reply publication it refuses with joined `ConfigurationChanged` after
+receiving the scripted authenticated reply. Both floors and the original
+140-byte receive charge survive, and no protected history is published.
+The unchanged-membership neighbor publishes its joined report.
+
+Independent contract and lifecycle review traced the issuance, guarded send,
+joined reply and healthy paths. An isolated omission of the shared membership
+comparison made both managed cases exit 101 at their intended assertions:
+the send case observed a spent floor and the reply case missed the required
+joined refusal. Both passed after restoration. This targeted control adds
+zero credit to the generated mutation denominator or numerator.
+
+The configured Rust 1.100.0 runner passed 29 GNU EP1 managed-worker and
+15 GNU EP1 source-configuration cases, format, GNU and Windows MSVC EP1
+Clippy, and the isolation control. The first issuance selector selected zero
+cases and was corrected. The passing 636-input subject
+`a4dac91cc9f23c0f707def7f0c7646d0a180d0e5bccb33b5f64459f99c154632`
+over Git base `4ebab33b661c82ada1bf0816367d194629f960d8` matched its
+source, index, tool and vendor bookends and retired private scratch.
+The raw results are in `~/.local/share/nevrotick/engine-ke-membership-final-20261122.VGQi6fBu/`.
+The tests exercise the controlled backend and actual receiving owner.
+Native KE execution, changed-file line coverage and generated mutation
+qualification retain their existing exits.
+
+##### Apply an authenticated restriction to the initial managed request
+
+S2.2, REQ-8/BND-2 and CHECK-6/8/9/17/21/25/27. The bounded managed protected
+invocation now admits an initial RATE, DENY or RSTR only with successful S2C
+authentication of the exact outstanding request. The read spends its frame
+and byte allowance before packet admission. A correlation-only control,
+failed authentication or initial NTSN leaves the request pending. The selected
+restriction reaches the shared policy transaction only after actual adapter
+and runtime retirement. Final admission checks the original send and receive
+coordinates, current Control and source/endpoint policy. Initial admission
+requires serial 1 and no prior receipt. The successor still needs its
+distinct prior authenticated and pending send proofs. Only an ordinary
+authenticated first reply earns a second request. A first restriction is
+terminal and publishes no ordinary measurement or received cookies.
+
+`implement-rust-contracts` and `security-protocol-inputs` traced the first
+request through the charged parser, retired ticket, actual joined report and
+original policy owner. Independent review checked the shared successor and
+NTSN boundaries. Two joined RATE controls check one send, original receive
+debits, distinct source and endpoint intervals and floors, and stale-definition
+refusal. Existing loopback neighbors exercise normal and abnormal second-leg
+completion. A private legacy-receive derivative compiled and failed the
+initial RATE control with `Error: Control`; an ordinary-first successor
+passed under the same derivative. Both restored groups passed. This supplies
+zero generated mutation credit.
+
+The first optimized compiler hit the bootstrap CPU limit before any test.
+The continuation kept the 420-second cumulative allowance and used the
+previously reviewed 240-second optimized compiler CPU limit. Both GNU EP1
+groups passed in `verify-release` (two initial and four successor cases) on
+`44a63c8335e19c855394d58f5d76dfac899fd5735de5e0f9c2a6b88b203eaae6`.
+MSVC EP1 Clippy then refused the nested tuple annotation. A separate source
+repair reused the existing submission alias and spelled out the parser pointer
+type. Independent comparison confirmed the original type, parser choice and
+guarded effects. The final Rust 1.100.0 636-input subject
+`c0ac3b864298df925cf9c11a5279f99fa2362334f073a591617c18fb7be4b51d`
+over `4ebab33b661c82ada1bf0816367d194629f960d8` passed format, all six
+selected ordinary tests, GNU and Windows-target MSVC EP1 Clippy and the
+isolation check. Final source, tool, vendor and index bookends matched.
+All owned build scratch and the writer checkout retired. The original
+receipts and candidate patches remain under
+`~/.local/share/nevrotick/engine-initial-protected-20261122.0dkkMwZZ/`,
+`~/.local/share/nevrotick/engine-initial-protected-resume-20261122.VzXzANS2/`
+and `~/.local/share/nevrotick/engine-initial-protected-typed-20261122.7vP8VPha/`.
+
+The dedicated first-leg DENY and RSTR controls use independent authenticated
+vectors and the actual worker join. They observe one send, the exact original
+receive charges, a terminal restriction and no ordinary or NTSN receipt.
+The source and exact endpoint are refused. The tests capture both floors
+after the send and scripted adapter retirement, then require those exact
+floors after commit. A separate source sees the shared endpoint restriction
+while its own record and the same-IP other-port endpoint remain unchanged.
+Independent review reproduced the fixture tags and checked the nonblocking
+capture and joined receiver. Only the three test owners changed in this step.
+
+On the frozen 636-input subject
+`922f0ba7769cda2ee44fd32f1c5b4a2dd11d0ffd99097b169d6cc4bb3eccf1c5`,
+Rust 1.100.0 passed eight selected EP1 cases in each GNU mode, format,
+both GNU/MSVC target Clippy checks and isolation. The original optimized
+initial group physically ran all four tests successfully. Its controller
+overwrote the expected exit-code variable with the admitted command wrapper
+and retained an incomplete outer status. The retry corrected that variable,
+re-admitted the same subject and ran the four missing optimized successor
+cases. It matched source, index, vendor and tool bookends. The original and
+resumed attempts used 363.05 of the original 410 seconds. Owned compile
+scratch and writer checkout retired. The exact inputs, patch and receipts are
+under `~/.local/share/nevrotick/engine-initial-denials-20261122.HYpRZQd3/` and
+`~/.local/share/nevrotick/engine-initial-denial-resume-20261122.CqUDQFfY/`.
+The 636-input readback after integrating the separate artifact exporter
+change differs only in `scripts/verify.py`. The exporter changes neither
+the selected Engine commands nor the tested Rust inputs. Native
+qualification and current line and generated mutation gates remain open.
+No new generated mutation credit follows from these cases.
+
+###### Accept a first-request terminal restriction in the Windows facade
+
+S2.2, REQ-8/BND-2, CHECK-6/8/9/17/21/25/27. The closed external
+consumer used to require an ordinary first receipt and serial 2 for
+every restriction. The joined Engine report can legitimately carry a
+serial-1 restriction after its first and only request. The facade now
+checks authentication, original configuration and exactly one attempted
+and fully submitted send for that case. The shared order check rejects
+a NAK without an ordinary first receipt. Both restriction ordinals
+still pass the original remote endpoint and source/alias policy checks
+before the witness is written. A first-request restriction preserves
+`first=none configuration=original receipt_order=none`.
+
+An isolated source-linked Rust 1.100.0 control using typed report inputs
+reproduced three refusals for authenticated first-request RATE, DENY and
+RSTR. Eighteen healthy and negative controls passed beside the refusals.
+All 21 controls passed with the corrected consumer. Independent review
+traced the real joined report, order and policy checks and the actual
+witness caller. The host control substitutes policy state and supplies
+zero generated mutation credit.
+
+The exact combined `verify-engine-native.py --lane build --facade-consumer
+--jobs 2` run passed all 20 checks. It hashed 642 product and 17 helper
+inputs, bound the unchanged selected SDK and Rust toolchain, and checked
+the actual Engine and Tokio libraries, facade format and Clippy, the
+x64-v3 link and the matched PE/PDB. Both build bookends passed. The
+combined product is
+`5b40bdfb732f01ea41b12f318bc761d7ae6548d84e7e63cdbd30110ad578c8c1`
+and the facade image is
+`64a2370ab26aa2f25f1d793b9c33ec2e5e03d6d5354d54d8a8110490ef156ab0`.
+An earlier output-path refusal and the separate passing build retain
+their own scope. Both builds used less than the original 280 seconds.
+Raw build and host controls are indexed under
+`~/.local/share/nevrotick/peer-package-20261122.RjT1CT7w/`.
+An exact first-request native peer exchange and current per-file
+qualification remain open.
+
+###### Prepare the authenticated first-request DENY peer
+
+S2.2, REQ-8/BND-2, CHECK-6/8/9/17/21/25/26/27. The standalone lab peer
+now selects `--protected-initial-deny-observe-exit` as a closed
+one-request mode. It advertises the original owned loopback socket at KE,
+preserves the original session and completes TLS close before the
+protected exchange. The real receiver admits the initial request with
+the KE cookie and C2S key, then seals and sends one cookie-free DENY with
+the corresponding S2C key. It erases both exporters and keeps the
+original socket through the supervisor exit marker and the final queue
+check under the unchanged deadline. Independent review traced this
+path to the facade's authenticated serial-1 result, original policy
+records and exact one-send witness.
+
+The scoped Rust development run passed formatting, isolation, all 31
+ordinary and all 31 optimized GNU peer tests, and MSVC Clippy. The
+actual socket control checks exact correlation, empty protected reply
+contents, original peer and one reply beside the existing successor,
+ordinary and exit-marker controls. The first runner compared a file
+digest with a digest of its decoded map and stopped before Cargo.
+The second passed the development lanes and failed linking because
+it had omitted the bundled-linker selection. The targeted retry
+re-admitted the identical candidate, vendor and SDK and linked with
+the configured bundled LLD. The lockfile is unchanged, source/tool
+bookends passed and the matching PE/PDB is retained.
+
+The exact peer image
+`5bf2cc78fc5acfcb5c18de252f65151f002719217545172b99afc3a7138fb901`
+loaded in the owned offline build-26100 Sandbox. The no-argument
+control observed exit 2, an empty stdout and the exact typed refusal
+before starting transport. The outcome retains zero default routes
+at both samples, input recheck and owned scratch cleanup. Raw
+verification, the loader result and linked symbols are indexed under
+`~/.local/share/nevrotick/installed-image-20261122.qsWtlrfd/`.
+
+The first-request native pair still needs the exact TLS trust fixture
+and a controller bound to the new one-request mode. Reuse the existing
+verified physical reap and capture machinery. Require the joined
+authenticated DENY with `first=none`, original configuration, one
+attempted and one fully submitted send, and the three remaining
+association allowances 31 checkouts, 31 frames and 130948 bytes.
+Check the peer's one-reply witness through the original exit marker and
+post-marker probe. The historical two-request controller has different
+expectations. The authenticated native pair, current per-file metrics
+and production authority remain open.
+
+###### First-request DENY pair certificate-free Windows preflight
+
+S2.2, REQ-8/BND-2, CHECK-6/8/9/17/21/25/26/27. The Engine and peer
+images above match the linked inputs on detached tree
+`524d1483593a657d85c49a56af505f986f413fc4`. Readback matched all 642
+Engine product hashes and 17 helper hashes. All 2,222 standalone peer
+inputs match their recorded hashes after accounting for five reviewed
+post-link documentation edits. The case-specific controller keeps the
+existing certificate-store baseline, capture, child-reap and cleanup
+logic. The independent host reader now requires the first-request
+witness, all eleven progress records and all four completed streams.
+Oracle controls accept each of the 62 legal remaining driver credits and
+refuse the previous two-request shape and incorrect debits or outcomes.
+
+The configured read-only input admission and separately writable output
+control passed on the owner-prepared offline Windows Sandbox, build
+26100, CLI 0.8.114.0. Both live inventory and offline checks passed.
+Host headroom measured 5,617 and 5,563 MiB. The guest PowerShell parser
+accepted the bound controller and the CPU probe reported
+`cpu-os-v3=accepted`. The exact peer refused an unknown argument with
+exit 2. The exact Engine facade returned 126 for an unknown mode, 126 for
+an extra argument in the selected mode and 124 when that mode lacked the
+required endpoints. Every dispatch returned its actual guest exit.
+Input bytes were rechecked and both mappings were emptied.
+
+The [Sandbox operation](../.agents/skills/environment/manage-windows-sandbox/SKILL.md)
+and [black-box acceptance](../.agents/skills/testing/qa-black-box-acceptance/SKILL.md)
+procedures reached the selected preflight stage. The next bounded action is the
+paired run with the existing exact temporary laboratory PKI and normal
+Windows confirmation, followed by certificate-store restoration readback.
+This preflight used no certificates and launched no acquisition.
+The native authenticated result, current metrics and production acquisition
+authority remain open. The retained preflight receipt hashes to
+`039d9a7cd2c6dc1f2a093d1b53b8081659fac8d62886041bb35c8bc856728fc0`.
+The scripts, admission, oracle and receipts are under
+`~/.local/share/nevrotick/first-deny-pair-20261122.j5rV6jBQ/certfree/`.
+
+###### Retain Windows clock coordinates through the protected receipt
+
+W11-W01/S2.1 and CHECK-6/7/11/21/24/25/27. The protected socket path
+retains the QPC/FILETIME/QPC observation at its original pre-send,
+send-return and selected receive-return boundaries. A representable
+FILETIME supplies the compatibility wall reading from those same
+ticks. A refused read or unrepresentable wall retains its original
+cause and permits one compatibility reading inside the scheduling
+bracket. Alternate backends retain explicit absence. Send limits and
+control remain guarded at the completed pre-send bracket. A consumed
+datagram remains debited when capture order or currentness refuses it.
+The original observations pass through the retired operation and
+actual worker join to the managed historical receipt.
+
+The Rust contract review traced custody and error behavior through
+the real transport and receiving owner. It caught missing panic
+documentation and identified where the first scripted test attached
+its refusal after wall selection. Windows scripted refusals now reach
+the same wall-selection function as production. The first GNU Clippy attempt
+refused the test's duration unit. The first optimized compile returned
+101 with compiler SIGKILL under the 90-second bootstrap CPU limit.
+The final optimized lane reused the reviewed 240-second compiler CPU
+allowance and the existing 4 GiB address-space bound, with two Cargo
+jobs. Those earlier attempts remain incomplete.
+
+On tree `f025d6f70116dac2f79d88328ff39762bdf33f35`, all 645 product
+inputs match
+`22262134171ce2b681c55fa725a677b73cd994d216daf695f0eb4cd431f94a47`.
+The isolated Rust 1.100.0 lanes passed 600 GNU EP1 library cases in
+each mode, 91 doctests, format, all-target GNU and MSVC EP1 Clippy
+and five combined SCM controls. The earlier ordinary default lane
+passed 264 cases before the EP1-only revision. The critical-file
+inventory adds the capture leaf at the existing 90%/95% gates.
+Independent review matched the 645 inputs, both ordinary and
+optimized rosters, policy delta and the retained 512-byte terminal
+limit. Native socket capture timing, rejection at the direct
+unrepresentable-wall selection branch, and renewed coverage and
+mutation evidence remain open.
+
+The exact MSVC x64-v3 library test image
+`4230e9f4943867b05609b6842cb20e3ec44fe75c700d9ae3430e8fcc800b5060`
+passed the linked PE readback. The CPU/OS diagnostic, exact test
+selection and all four selected cases exited zero on the ordinary
+Windows host, build 26300. The live read-only case compared original
+raw ticks to the emitted software wall with an independent epoch
+oracle. The signed FILETIME maximum and next tick control, joined
+typed-refusal history and late-membership refusal also passed.
+Hashes matched before and after execution, the children were reaped,
+and the test stages retired. This evidence reaches the native
+getter, arithmetic and scripted join. Calibration, date and
+invalidation authority, authenticated native socket-to-report timing,
+guard-hold and Stop latency, and positive Core admission remain open.
+
+Compact development and Windows receipts are in
+`~/.local/share/nevrotick/protected-clock-ready-20261122.sN4zzvXC` and
+`~/.local/share/nevrotick/protected-clock-windows-20261122.qVRqLdAU`.
+The native transcript SHA-256 is
+`802a9b3ee2063ad46c78ac26412c03722c9b3f25721ea2fe1124bd8da0f1c5fd`.

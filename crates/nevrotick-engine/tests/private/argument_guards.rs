@@ -13,19 +13,19 @@ fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
     result
 }
 
-/// The owner admits exactly seven pairs and preserves exhausted state on every failure.
+/// The owner admits exactly eight pairs and preserves exhausted state on every failure.
 /// These calls exercise the resource contract independently of the option grammar.
 ///
 /// # Errors
-/// Preserve an unexpected rejection within the legal seven-pair allowance.
+/// Preserve an unexpected rejection within the legal eight-pair allowance.
 ///
 /// # Panics
-/// Fail if charging skips, wraps, resets, or admits an eighth raw pair.
+/// Fail if charging skips, wraps, resets, or admits a ninth raw pair.
 #[test]
-fn pair_budget_admits_seven_and_preserves_exhausted_failure() -> Result<(), CliError> {
+fn pair_budget_admits_eight_and_preserves_exhausted_failure() -> Result<(), CliError> {
     let mut budget = ArgumentBudget::for_cli();
-    assert_eq!(budget.remaining_pairs, 7);
-    for remaining in [6, 5, 4, 3, 2, 1, 0] {
+    assert_eq!(budget.remaining_pairs, 8);
+    for remaining in [7, 6, 5, 4, 3, 2, 1, 0] {
         budget.charge_pair()?;
         assert_eq!(budget.remaining_pairs, remaining);
     }
@@ -36,7 +36,7 @@ fn pair_budget_admits_seven_and_preserves_exhausted_failure() -> Result<(), CliE
     Ok(())
 }
 
-/// Preserve every original option when the caller requests the seventh pair.
+/// Both optional observations coexist with every original option.
 ///
 /// # Errors
 /// Preserve an unexpected refusal of either complete, valid argument set.
@@ -44,7 +44,7 @@ fn pair_budget_admits_seven_and_preserves_exhausted_failure() -> Result<(), CliE
 /// # Panics
 /// Fail if the new option is implicit, displaces an original option or accepts a duplicate.
 #[test]
-fn adjustment_option_coexists_with_every_original_pair() -> Result<(), CliError> {
+fn observation_options_coexist_with_every_original_pair() -> Result<(), CliError> {
     let original: [&str; 12] = [
         "--peer",
         "127.0.0.1:2001",
@@ -60,14 +60,15 @@ fn adjustment_option_coexists_with_every_original_pair() -> Result<(), CliError>
         "2272060800:6311433599:0",
     ];
     let implicit: Arguments = arguments(original.into_iter().map(OsString::from))?;
-    assert!(!implicit.observe_adjustment);
+    assert!(!implicit.observe_adjustment && !implicit.observe_leap_presentation);
     let explicit: Arguments = arguments(
         original
             .into_iter()
-            .chain(["--clock-adjustment", "raw"])
+            .chain(["--clock-adjustment", "raw", "--leap-presentation", "raw"])
             .map(OsString::from),
     )?;
-    assert!(explicit.observe_adjustment && explicit.experimental_profile.is_some());
+    assert!(explicit.observe_adjustment && explicit.observe_leap_presentation);
+    assert!(explicit.experimental_profile.is_some());
     assert_eq!(explicit.peers, implicit.peers);
     assert_eq!(explicit.timeout, implicit.timeout);
     assert_eq!(explicit.stop_after, implicit.stop_after);

@@ -344,6 +344,40 @@ fn completion_keeps_default_exact_and_protected_distinct() {
     );
 }
 
+/// The initial DENY mode admits one exact invocation and publishes only its own witness.
+///
+/// # Errors
+/// Preserve refusal of the valid fixture invocation.
+/// # Panics
+/// Fail if the exact mode, derived marker, completion or refusal differs.
+#[test]
+fn observed_initial_deny_requires_exact_arguments_and_witness() -> Result<(), Failure> {
+    let mut exact: Vec<OsString> = arguments();
+    exact.push(OsString::from("--protected-initial-deny-observe-exit"));
+    let selected: Config = Config::parse(exact.clone().into_iter())?;
+    assert_eq!(selected.mode, Mode::ProtectedInitialDenyObserveExit);
+    assert_eq!(
+        selected.exit_acknowledgement,
+        Some(selected.ready.with_file_name("peer.client-exited"))
+    );
+    assert_eq!(
+        completion_line(selected.mode),
+        "scope=laboratory-ke-peer-protected-initial-deny-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1 client_exited=1 extra_udp_received=0"
+    );
+    let mut aliased: Vec<OsString> = exact.clone();
+    aliased[3] = selected.ready.with_file_name("peer.READY").into_os_string();
+    assert!(matches!(
+        Config::parse(aliased.into_iter()),
+        Err(Failure::Arguments)
+    ));
+    exact.push(OsString::from("other-marker"));
+    assert!(matches!(
+        Config::parse(exact.into_iter()),
+        Err(Failure::Arguments)
+    ));
+    Ok(())
+}
+
 /// Both new modes keep the same closed invocation and exact completion grammar.
 ///
 /// # Errors
