@@ -14,6 +14,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-failure-triage](qa-failure-triage/SKILL.md) | Classify a NevroTick failed check causally before changing production behavior, assertions, fixtures or environment. |
 | [qa-system-stabilization](qa-system-stabilization/SKILL.md) | Resolve NevroTick multi-stage or uncertain-coupling failures through finite obligation mapping, causal repair and integrated acceptance. |
 | [qa-independent-review](qa-independent-review/SKILL.md) | Independently review NevroTick verification claims, tests and candidate changes against requirements and actual evidence. |
+| [qa-independent-commit-audit](qa-independent-commit-audit/SKILL.md) | Audit a commit/range with parallel logic, security and QA specialists plus a fresh judge; reconcile all applicable testing strategies and repository standards. |
 | [qa-subagent-dispatch](qa-subagent-dispatch/SKILL.md) | Dispatch independent NevroTick test/review tasks with clear boundary ownership, evidence identity and bounded shared resource use. |
 | [qa-context-checkpoint](qa-context-checkpoint/SKILL.md) | Checkpoint or resume substantial NevroTick verification with current scope, evidence, owners, live effects and consumed budgets intact. |
 | [qa-black-box-acceptance](qa-black-box-acceptance/SKILL.md) | Independently assess a frozen NevroTick candidate against known input and output facts after system stabilization or when input-to-output acceptance is requested. |

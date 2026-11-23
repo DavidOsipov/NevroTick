@@ -2376,3 +2376,118 @@ checker behavior changes. All applicable product obligations remain in their
 existing task/phase records. The unchanged checker contracts need no new checker
 regression suite. A planning exercise cannot establish implementation quality,
 native behavior, general workflow reliability or a measured efficiency uplift.
+
+## Independent commit-audit skill — 23 November 2026
+
+David requested a reusable repository skill for independent commit audits with
+parallel reviewers and one judge, explicitly emphasizing logical bugs,
+vulnerabilities and the full testing-strategy surface. Reviewed base:
+`f78f4a5218ee0e2aa4e6bc124c78921f1debd427`. The new locally authored
+[qa-independent-commit-audit](../skills/testing/qa-independent-commit-audit/SKILL.md)
+freezes the committed range and authority, requires at least three fresh
+specialists, and obtains a separate fresh judge's source assessment before
+disclosing specialist conclusions. Bounded waves retain every role when capacity
+is limited. Actual returns, counterevidence and final adjudication are required;
+missing delegation or a missing role remains incomplete.
+
+The lanes cover logic/contracts/integration, security/resources/effects, and
+QA/evidence/repository standards. The [QA strategy map](../skills/testing/qa-independent-commit-audit/references/qa-strategies.md)
+links all 39 pre-existing QA leaves and requires enumeration of the live inventory,
+including new owners. Applicability accounting does not require every campaign;
+full triggered skills govern selected work. The skill preserves task-specific
+execution holds, accepted deferrals and the distinction between source reasoning,
+attributed receipts, executed checks and native/release qualification. Ordinary
+editing and pre-commit checks retain their narrower owners. An audit defaults to
+read-only and supplies no repair/publication authorization or new acceptance gate.
+
+Registration adds one original workflow and its UI metadata: **67 total skills**,
+including **40 testing leaves** and **11 original workflows**. The root and testing
+indexes route to it. No upstream/adaptation inventory, product source, checker,
+dependency, runner setting or root `AGENTS.md` changes. The latter remains
+32,647 UTF-8 bytes, below its 32,768-byte ceiling.
+
+### Fresh instruction review
+
+`audit_skill_qa_map` read all 39 existing QA leaves and applicable references;
+`audit_skill_integration` checked discovery, inventories and existing workflow
+owners. Separate reviewer `audit_skill_judge` used `fork_turns: "none"` and
+completed a fresh semantic review of the six instruction/integration files.
+Its two comprehension paragraphs are retained verbatim:
+
+> The proposed skill defines a bounded audit of a frozen commit, range or PR. A coordinator establishes the change and authoritative requirements, assigns at least three specialists to logic/integration, security/resources, and QA/repository standards, then uses a separate judge. The judge first assesses the source independently and only then receives the specialist findings and evidence. The result distinguishes current defects, historical or pre-existing issues, missing tests, uncertain hypotheses and accepted deferrals; completing the review does not establish product, native Windows or release acceptance.
+
+> The repository already supplies the underlying methods through its testing contract, independent-review and subagent-dispatch skills, fresh-review procedure, and specialized QA owners. Those instructions require bounded work, independent expectations, actual source/evidence identities, honest incomplete statuses, and preserved execution holds. The new skill coordinates those owners without replacing their requirements. This review assessed instruction semantics and integration against the current uncommitted candidate at base `f78f4a5218ee0e2aa4e6bc124c78921f1debd427`; it did not invoke the proposed audit workflow or execute target code.
+
+Verdict: **ready for instruction review; no required change**. The reviewed new
+skill files have the following SHA-256 identities, separate from this later
+verification bookkeeping:
+
+| File within `testing/qa-independent-commit-audit/` | SHA-256 |
+| --- | --- |
+| `SKILL.md` | `4ed63828c887147b055170a5bde089576a0a83572e6f93696ba7cedc9e0c77c0` |
+| `agents/openai.yaml` | `8be61b549f2d8c1ae8f98a3484cfd36f6d715d6a43375714998d23d2e892cec5` |
+| `references/qa-strategies.md` | `47c7a2261a09c89528e2da183f4eb5629d7f8123bd0d9892c9a4ffbd2f35d796` |
+
+### Blind instruction-use exercise
+
+Fresh coordinator `audit_skill_trial` received a neutral request to apply the
+candidate skill to the latest two commits of an original five-file Rust fixture,
+with source reads and delegation permitted but execution and edits prohibited.
+Fixture `AGENTS.md` and `REQUIREMENTS.md` supplied acceptance authority; external
+NevroTick skills supplied methods only. No grader answers, author verdict or prior
+discussion was supplied. The selected linear history was:
+
+- Base `4629673651e19a2d6fd13358612622ac2e27f1e3`.
+- `11504715fe8919466af84a3085dba871eced5070` — threshold-selection change.
+- Head `6af303861825930db2fc0eb81f65e2649827e611` — administrative decision/effect.
+
+The hidden rubric required detection of a `max`-to-`min` threshold error, an
+untrusted administrative-claim authorization bypass, a reversed test assertion,
+and missing discriminating cases. Healthy controls included admitted values
+meeting both thresholds, legitimate administrative effects and refusal preserving
+state. Explicitly future native features and absent named frameworks were not
+defects. Required method observations were three distinct specialists, actual
+parallel work where capacity permitted, a separate fresh judge's initial source
+assessment before disclosure, completed returns and truthful source-only claims.
+
+Observed result: **the bounded exercise passed these criteria**. Logic and security
+specialists ran concurrently; QA and the separate judge's initial pass then ran in
+the next bounded wave. All contexts disabled conversation inheritance. The judge
+completed its own source assessment before receiving every specialist candidate,
+counterevidence and the QA applicability map, then returned final adjudication.
+No recursive audit swarm or self-judging substitution occurred.
+
+The reviewers found both behavior defects: `(configured=5, minimum=2, agreeing=2)`
+and `(5,4,3)` incorrectly admit under the weaker threshold; `Reader` with an
+untrusted true claim obtains `Apply` and increments the inert counter. They also
+identified the reversed majority assertion and missing crossed role/claim tests.
+The judge distinguished these from pre-existing boundary-test omissions and
+rejected unsupported claims about public role construction, arithmetic overflow,
+native privilege escalation and accepted future integration. It retained healthy
+neighbors and the full 40-owner applicability map. An interim inventory count of
+41 was corrected to 40 before final adjudication.
+
+All examples are source-derived: no fixture build, target test, mutation campaign,
+measured coverage or native execution occurred. The final fixture remained clean
+at the stated head/tree `7916f58048f9a1b58d9d95a304c84e89be5fb183`, with no remote.
+The supplied skill files were working-tree additions, identified by their hashes
+above; the external checkout's base SHA was not falsely used to bind those bytes.
+This one bounded case demonstrates observed method use, not an old/new comparison,
+general review reliability, complete bug detection or product qualification.
+
+### Verification and integration
+
+| Stage / owner | Concrete application and observed result |
+| --- | --- |
+| Planning / `plan-code-change`, `qa-subagent-dispatch` | Reused this existing record; separated QA inventory, integration, fresh semantic review and blind instruction-use roles. |
+| Review / `qa-independent-review`, shared fresh-review procedure | Completed instruction review above, with preserved comprehension paragraphs and no required change. |
+| Instruction use / `qa-skill-evaluations` | Completed the fresh exercise and withheld-rubric assessment above; no product or runtime evidence inferred. |
+| Structural validation / testing contract, skill-creator validator | Executed repository package checker: **67 skills pass** metadata, UI prompts, local links and inventories. The skill-creator validator reports **Skill is valid!** Whitespace and complete pre-existing QA-owner link checks pass. |
+| Execution isolation / workstation rules | Validators ran with an isolated network namespace, read-only repository/tools, non-root UID/GID, dropped capabilities, empty allowlisted environment and bounded process/CPU/memory/file/time resources; only private temporary storage was writable. |
+| Commit custody / `qa-pre-commit` | Executed complete 2,253-entry staged-candidate materialization with exact bytes/executable modes; both skill validators, the two new record links and staged whitespace checks pass. The six reviewed instruction/integration hashes are unchanged. Preserve only the seven intended paths and bind final publication to the checked index, reconciling any remote advance. |
+
+Product/Rust/native/fuzz/formal execution is inapplicable to this skill and
+metadata-only change. The unchanged checker contracts need no new checker
+regression suite. The root documentation checksum manifest is absent. Existing
+product acceptance gates, task-specific holds and post-V1 formal deferral remain
+with their current owners.

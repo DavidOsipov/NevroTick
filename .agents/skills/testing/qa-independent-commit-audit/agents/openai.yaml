@@ -1,0 +1,4 @@
+interface:
+  display_name: "Independent commit audit"
+  short_description: "Audit commits with specialists and a fresh judge"
+  default_prompt: "Use $qa-independent-commit-audit to audit the requested commits with parallel logic, security and QA reviewers plus a fresh judge; assess bugs, all applicable testing strategies and repository-skill compliance."
