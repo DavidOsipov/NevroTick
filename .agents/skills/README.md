@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and ten original NevroTick workflows for the Windows time client in
+and eleven original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -45,6 +45,7 @@ and evidence, with shared decisions and integration reconciled centrally.
 | Evaluate new or materially revised skills, or demonstrated agent failures; wording-only edits need no campaign | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |
 | Investigate native heap/handle faults or retained resources | [Windows memory diagnostics](testing/references/windows-memory.md), then [resource QA](testing/qa-performance-resources/SKILL.md) for retention |
 | Audit logical data/state chains or trace Rust inputs and secrets to effects | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
+| Independently audit commits/ranges with parallel logic, security and QA specialists plus a fresh judge | [qa-independent-commit-audit](testing/qa-independent-commit-audit/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |
 | Analyze WSL storage or clean authorized caches, artifacts and unused Docker data | [wsl-cleanup](environment/wsl-cleanup/SKILL.md) |
 | Configure or manage an owned Windows Sandbox from Windows/WSL and collect disposable-lab evidence | [manage-windows-sandbox](environment/manage-windows-sandbox/SKILL.md), with selective operations, configuration, resource, winapp, evidence and troubleshooting references |
@@ -132,7 +133,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 66 grouped skills without aliases;
+for precise selection. The pack registers 67 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack
