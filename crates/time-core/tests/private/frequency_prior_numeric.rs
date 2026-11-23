@@ -1187,6 +1187,101 @@ fn active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries() -> TestR
     Ok(())
 }
 
+/// Stored coefficient bits define the closed, exact admission interval.
+/// # Errors
+/// Preserve legitimate duration and coefficient admission failures.
+/// # Panics
+/// Reject a span accepted only after rounding or widening either endpoint.
+#[test]
+fn active_ratio_span_refuses_neighbors_outside_the_declared_bounds() -> TestResult {
+    let integer_limit: u64 = 1_u64 << 53;
+    let cases: [(u64, u64, f64, f64); 5] = [
+        (1, 1, 1.0_f64.next_down(), 0.0),
+        (1, 1, 1.0_f64.next_up(), -0.0),
+        (integer_limit, integer_limit - 1, 1.0, 0.0),
+        (
+            0,
+            1,
+            f64::from_bits(0x0010_0000_0000_0002),
+            f64::MIN_POSITIVE,
+        ),
+        (1, 1, 1.0_f64.next_down(), f64::MIN_POSITIVE),
+    ];
+    for (active, mono, ratio, error) in cases {
+        assert_eq!(
+            check_active_ratio_span(active_elapsed(active)?, elapsed(mono)?, ratio, error),
+            Err(FixtureFrequencyNumericError::ActiveRatioMismatch),
+            "active={active} mono={mono} ratio={ratio:e} error={error:e}"
+        );
+    }
+    product_ok(check_active_ratio_span(
+        active_elapsed(integer_limit)?,
+        elapsed(integer_limit)?,
+        1.0,
+        f64::MIN_POSITIVE,
+    ))?;
+    Ok(())
+}
+
+/// Scaling both integer spans preserves exact closed endpoints.
+/// # Errors
+/// Preserve healthy endpoint and large aligned-significand admission.
+/// # Panics
+/// Detect a rounded endpoint or a false refusal at the checked integer limit.
+#[test]
+fn active_ratio_span_checks_exact_endpoints_across_binary_scales() -> TestResult {
+    for scale in 1..=53_u32 {
+        let mono: u64 = 1_u64 << scale;
+        let smaller_error: f64 = 0.25_f64.next_down();
+        for active in [mono / 2, mono] {
+            // (3/4) ± (1/4) gives exactly 1/2 and 1. Reducing the error
+            // moves both endpoints inward, even if the float sum rounds to 1.
+            product_ok(check_active_ratio_span(
+                active_elapsed(active)?,
+                elapsed(mono)?,
+                0.75,
+                0.25,
+            ))?;
+            assert_eq!(
+                check_active_ratio_span(
+                    active_elapsed(active)?,
+                    elapsed(mono)?,
+                    0.75,
+                    smaller_error
+                ),
+                Err(FixtureFrequencyNumericError::ActiveRatioMismatch),
+                "endpoint={active}/{mono}"
+            );
+        }
+    }
+    // At M = 2^53 the exact lower endpoint moves by 2 ns when 1.5 moves
+    // down by one binary64 step. The next smaller A must still be refused.
+    let mono: u64 = 1_u64 << 53;
+    let lower: u64 = 3_u64 << 51;
+    product_ok(check_active_ratio_span(
+        active_elapsed(lower)?,
+        elapsed(mono)?,
+        1.5,
+        0.75,
+    ))?;
+    product_ok(check_active_ratio_span(
+        active_elapsed(lower - 2)?,
+        elapsed(mono)?,
+        1.5_f64.next_down(),
+        0.75,
+    ))?;
+    assert_eq!(
+        check_active_ratio_span(
+            active_elapsed(lower - 3)?,
+            elapsed(mono)?,
+            1.5_f64.next_down(),
+            0.75,
+        ),
+        Err(FixtureFrequencyNumericError::ActiveRatioMismatch)
+    );
+    Ok(())
+}
+
 /// Domain and exact signed-time support remain active at the new affine consumers.
 /// # Errors
 /// Preserve independently supported fixture construction.

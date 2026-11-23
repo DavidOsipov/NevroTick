@@ -752,10 +752,10 @@ fn correlated_control_ends_the_round_without_address_evasion() -> Check<()> {
     Ok(())
 }
 
-/// Compare both restriction records across a membership change with no traffic.
+/// Compare both recorded restrictions without interpreting historical wait.
 /// # Panics
-/// Reject any change to the actual retained intervals, floors or revisions.
-fn assert_membership_preserved_restrictions(
+/// Reject any change to the actual retained policy records.
+fn assert_preserved_restrictions(
     before: &crate::SourcePolicySnapshot,
     after: &crate::SourcePolicySnapshot,
 ) {
@@ -770,6 +770,8 @@ fn assert_membership_preserved_restrictions(
         assert_eq!(current.interval(), original.interval());
         assert_eq!(current.floor(), original.floor());
         assert_eq!(current.revision(), original.revision());
+        assert_eq!(current.refused(), original.refused());
+        assert_eq!(current.unavailable(), original.unavailable());
     }
 }
 
@@ -1102,7 +1104,7 @@ fn selected_round_membership_fences_old_plans_and_preserves_udp_progress() -> Ch
         "an earlier numeric plan became effective without the selected membership: {old_queries:?}"
     );
     assert_eq!(old_queries, (0, 0));
-    assert_membership_preserved_restrictions(&before, &source.policy_snapshot(c)?);
+    assert_preserved_restrictions(&before, &source.policy_snapshot(c)?);
 
     let (previous_scale, _): (PreparedAddressRound, ControlHandle) =
         source.prepare_address_round(checked_config(&[a, b])?)?;
@@ -1443,13 +1445,78 @@ fn membership_selected_after_socket_setup_fences_the_actual_final_send() -> Chec
     Ok(())
 }
 
-/// Run a correlated native query/reply through staging and the actual final guard.
+/// Send, receive, charge and stage a genuine correlated loopback reply.
 /// # Errors
-/// Preserve fixture, runtime, peer join, bounded wait and real policy failures.
+/// Preserve actual socket, runtime, peer join, bounded wait and staging failures.
 /// # Panics
-/// Require independent query bytes and one charged datagram at the commit seam.
+/// Require independent query bytes and one charged datagram before publication.
+fn stage_actual_round_reply(
+    plan: &CandidateSetup,
+    control: &mut watch::Receiver<Control>,
+    runtime: &tokio::runtime::Runtime,
+    peer_socket: UdpSocket,
+    kind: ReplyKind,
+) -> Check<(LiveSlot, crate::StagedReply)> {
+    let entered: tokio::runtime::EnterGuard<'_> = runtime.enter();
+    let SetupOutcome::Ready(slot): SetupOutcome = setup_address_request_bound(
+        plan.peer,
+        plan.packet,
+        Arc::clone(&plan.context),
+        control,
+        plan.request_end,
+        plan.round_end,
+        plan.mode.clone(),
+    )?
+    else {
+        return Err(io::Error::other("original request did not acquire its socket").into());
+    };
+    let mut slot: LiveSlot = *slot;
+    drop(entered);
+    let responder: ReplyPeer = ReplyPeer::spawn(peer_socket, kind)?;
+    let mut buffer: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+    let received: Check<(usize, SocketAddr, crate::SoftwareClock)> = runtime.block_on(async {
+        let cutoff: TokioInstant = TokioInstant::from_std(plan.request_end);
+        tokio::time::timeout_at(cutoff, slot.socket.writable()).await??;
+        let _checkpoint: Control = attempt_send(&mut slot, plan.request_end, control);
+        let (length, sender): (usize, SocketAddr) =
+            tokio::time::timeout_at(cutoff, slot.socket.recv_from(&mut buffer)).await??;
+        Ok((length, sender, crate::SoftwareClock::capture()))
+    });
+    let joined: io::Result<Option<SeenQuery>> = responder.finish();
+    let (length, sender, capture): (usize, SocketAddr, crate::SoftwareClock) = received?;
+    check_query(&require_query(joined?)?);
+    assert_eq!(length, PACKET_BYTES);
+    if capture.mono_after >= plan.request_end {
+        return Err(
+            io::Error::new(io::ErrorKind::TimedOut, "reply capture reached the cutoff").into(),
+        );
+    }
+    assert!(crate::charge_selected_datagram(
+        &mut slot,
+        &crate::NativeReadOutcome::Datagram {
+            length,
+            source: sender
+        },
+    ));
+    assert_eq!((slot.received, slot.rejected), (1, 0));
+    let staged: Result<crate::StagedReply, crate::Rejection> = crate::stage_reply(
+        &slot,
+        &buffer[..length],
+        sender,
+        crate::ApplicationClockCapture::software_only(capture),
+        FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
+    );
+    assert!(staged.is_ok(), "the real reply must reach the final guard");
+    Ok((slot, staged.map_err(|_| PilotError::InternalState)?))
+}
+
+/// Change membership (or keep it current) after staging and before the final guard.
+/// # Errors
+/// Preserve fixture, staging and real policy failures.
+/// # Panics
+/// Require the final receive boundary to exercise the selected membership action.
 fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
-    use crate::{SoftwareClock, SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
+    use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
 
     let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
         SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?,
@@ -1462,63 +1529,31 @@ fn membership_at_final_receive(change_membership: bool) -> Check<SlotReport> {
         authority.install_source_configuration(&source, members.clone())?;
     let (mut prepared, _): (PreparedAddressRound, ControlHandle) =
         source.prepare_address_round(checked_config(&[peer])?)?;
-    let mode: SourceMode = candidate_mode(prepared.source_policy.as_ref(), peer)?;
     let runtime: tokio::runtime::Runtime = runtime()?;
     let origin: Instant = Instant::now();
     let deadline: Instant = origin
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
-    let entered: tokio::runtime::EnterGuard<'_> = runtime.enter();
-    let SetupOutcome::Ready(mut slot): SetupOutcome = setup_address_request_bound(
+    let plan: CandidateSetup = CandidateSetup {
         peer,
-        prepared.packets[0],
-        Arc::new(RunClockContext { origin }),
-        &mut prepared.control,
-        deadline,
-        deadline,
-        mode,
-    )?
-    else {
-        return Err(io::Error::other("original request did not acquire its socket").into());
+        packet: prepared.packets[0],
+        context: Arc::new(RunClockContext { origin }),
+        mode: candidate_mode(prepared.source_policy.as_ref(), peer)?,
+        request_end: deadline,
+        round_end: deadline,
     };
-    drop(entered);
-    let responder: ReplyPeer = ReplyPeer::spawn(peer_socket, ReplyKind::Ordinary)?;
-    let mut buffer: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
-    let received: Check<(usize, SocketAddr, SoftwareClock)> = runtime.block_on(async {
-        let cutoff: TokioInstant = TokioInstant::from_std(deadline);
-        tokio::time::timeout_at(cutoff, slot.socket.writable()).await??;
-        let _checkpoint: Control = attempt_send(&mut slot, deadline, &prepared.control);
-        let (length, sender): (usize, SocketAddr) =
-            tokio::time::timeout_at(cutoff, slot.socket.recv_from(&mut buffer)).await??;
-        Ok((length, sender, SoftwareClock::capture()))
-    });
-    let joined: io::Result<Option<SeenQuery>> = responder.finish();
-    let (length, sender, capture): (usize, SocketAddr, SoftwareClock) = received?;
-    check_query(&require_query(joined?)?);
-    assert_eq!(length, PACKET_BYTES);
-    assert!(crate::charge_selected_datagram(
-        &mut slot,
-        &crate::NativeReadOutcome::Datagram {
-            length,
-            source: sender
-        },
-    ));
-    let staged: Result<crate::StagedReply, crate::Rejection> = crate::stage_reply(
-        &slot,
-        &buffer[..length],
-        sender,
-        crate::ApplicationClockCapture::software_only(capture),
-        FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
-    );
-    assert!(
-        staged.is_ok(),
-        "the real reply must reach the late membership boundary"
-    );
+    let (mut slot, staged): (LiveSlot, crate::StagedReply) = stage_actual_round_reply(
+        &plan,
+        &mut prepared.control,
+        &runtime,
+        peer_socket,
+        ReplyKind::Ordinary,
+    )?;
     let mut selection: Option<Result<(), SourcePolicyError>> = None;
     let _checkpoint: Control = super::super::publish_series_reply_observing(
         &mut slot,
         &mut prepared.control,
-        staged,
+        Ok(staged),
         deadline,
         || {
             selection = Some(if change_membership {
@@ -1553,6 +1588,138 @@ fn membership_selected_after_staging_fences_the_actual_final_receive() -> Check<
     assert!(valid.sent() && valid.facts().is_some());
     assert_eq!((valid.received(), valid.rejected()), (1, 0));
     Ok(())
+}
+
+/// A real staged RATE can publish only while the original configured cutoff is live.
+/// # Errors
+/// Preserve preparation, real datagram, cutoff observation and transfer failures.
+/// # Panics
+/// Require one charge, the actual timeout/control history and matching policy effects.
+#[test]
+fn configured_round_original_cutoff_fences_the_actual_final_rate() -> Check<()> {
+    use crate::{SourceAddressSet, SourcePolicyLimits, SourcePolicySnapshot};
+
+    for delay_commit in [false, true] {
+        let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+            SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?,
+        )?;
+        let live: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+        let peer: SocketAddr = live.local_addr()?;
+        let source: crate::SourceHandle = authority.source(0)?;
+        let current: crate::SourceConfigurationSnapshot =
+            authority.install_source_configuration(&source, SourceAddressSet::new(&[peer])?)?;
+        let config: AddressRoundConfig =
+            AddressRoundConfig::new(&[peer], Duration::from_secs(3), Duration::from_secs(6))?;
+        let bound: ConfiguredAddressRound =
+            source.address_round_for_configuration(&current, config)?;
+        let runtime: tokio::runtime::Runtime = runtime()?;
+        let cutoff: Instant = Instant::now()
+            .checked_add(Duration::from_secs(1))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let (mut prepared, _): (PreparedAddressRound, ControlHandle) = bound
+            .prepare_before_with_entropy(cutoff, |entropy| {
+                fixed_entropy(entropy);
+                Ok(())
+            })?
+            .ok_or(PilotError::InternalState)?;
+        assert_eq!(prepared.original_cutoff, Some(cutoff));
+        let deadline: Instant = prepared.original_cutoff.ok_or(PilotError::InternalState)?;
+        let context: Arc<RunClockContext> = Arc::new(RunClockContext {
+            origin: Instant::now(),
+        });
+        let mut progress: Progress<'_> = Progress::new(&prepared.config, deadline);
+        let claim: progress::Claim<'_, '_> = progress
+            .claim_next(Instant::now())?
+            .ok_or(PilotError::InternalState)?;
+        let plan: CandidateSetup = checked_candidate_setup(&prepared, &claim, &context, deadline)?;
+        assert_eq!((plan.request_end, plan.round_end), (cutoff, cutoff));
+        let (mut slot, staged): (LiveSlot, crate::StagedReply) = stage_actual_round_reply(
+            &plan,
+            &mut prepared.control,
+            &runtime,
+            live,
+            ReplyKind::Control,
+        )?;
+        let before: SourcePolicySnapshot = source.policy_snapshot(peer)?;
+        for record in [before.source(), before.endpoint()] {
+            assert_eq!(record.interval(), Duration::from_millis(1));
+            assert!(
+                record.floor().is_some(),
+                "the actual send did not debit policy"
+            );
+        }
+
+        let mut observation: Option<Result<(), PilotError>> = None;
+        let _checkpoint: Control = super::super::publish_series_reply_observing(
+            &mut slot,
+            &mut prepared.control,
+            Ok(staged),
+            plan.request_end,
+            || {
+                observation = Some(if delay_commit {
+                    crate::processing_guard_tests::observe_final_reply_cutoff(cutoff)
+                } else {
+                    Ok(())
+                });
+            },
+            || {},
+        );
+        observation.ok_or("staged RATE did not reach its final receive guard")??;
+        let mut round: AddressRoundReport = AddressRoundReport::empty();
+        let end: Option<AddressRoundEnd> = transfer_candidate_report(
+            slot,
+            claim,
+            &mut round,
+            &mut prepared.control,
+            &plan,
+            &mut |_, _| {},
+        )?;
+        assert_eq!(round.attempts().len(), 1);
+        let attempt: &AddressAttempt = &round.attempts()[0];
+        assert_eq!(attempt.peer(), peer);
+        assert_final_rate_policy(
+            &before,
+            &source.policy_snapshot(peer)?,
+            attempt.report(),
+            end,
+            delay_commit,
+        );
+    }
+    Ok(())
+}
+
+/// Check terminal accounting and both actual managed RATE records.
+/// # Panics
+/// Reject an uncharged late reply, a late RATE effect or a lost healthy effect.
+fn assert_final_rate_policy(
+    before: &crate::SourcePolicySnapshot,
+    after: &crate::SourcePolicySnapshot,
+    report: &SlotReport,
+    end: Option<AddressRoundEnd>,
+    delay_commit: bool,
+) {
+    assert!(report.sent() && report.facts().is_none());
+    assert_eq!(report.received(), 1);
+    if delay_commit {
+        assert_eq!(end, Some(AddressRoundEnd::Deadline));
+        assert_eq!(report.status(), Status::Timeout);
+        assert_eq!(report.rejected(), 1);
+        assert_eq!(report.control_code(), None);
+        assert_preserved_restrictions(before, after);
+    } else {
+        assert_eq!(end, Some(AddressRoundEnd::Control));
+        assert_eq!(report.status(), Status::Control);
+        assert_eq!(report.rejected(), 0);
+        assert_eq!(report.control_code(), Some(u32::from_be_bytes(*b"RATE")));
+        for (prior, current) in [
+            (before.source(), after.source()),
+            (before.endpoint(), after.endpoint()),
+        ] {
+            assert_eq!(current.interval(), Duration::from_millis(2));
+            assert!(current.floor() > prior.floor());
+            assert_eq!(current.revision(), prior.revision() + 1);
+        }
+    }
 }
 
 /// Rejected packets leave the actual first request available to its valid neighbor.

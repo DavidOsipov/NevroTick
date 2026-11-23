@@ -287,8 +287,9 @@ coverage/mutation, graph and actual native/package evidence remain separate.
 
 `qualification.py privilege-checkpoint` batches the existing twelve format,
 Clippy, debug/release test, doctest and rustdoc checks under one admission. The
-fixture metric consumer separately requires a current single-command
-`fixture-test` receipt. `metrics.py coverage` selects host, error, diagnostics,
+fixture metric consumer accepts a current single-command `fixture-test`
+receipt or the ordinary fixture test result from the full checked
+`privilege-checkpoint`. `metrics.py coverage` selects host, error, diagnostics,
 the private Engine worker and the portable threaded writer. The writer's unit
 controls live in a separate source file so they have no writer line credit.
 `enumerate`/`mutation` retain the existing

@@ -199,6 +199,154 @@ class FixtureMetricControls(unittest.TestCase):
     """Challenge false passes without installing or invoking any analysis tool."""
 
     @staticmethod
+    def _ordinary_receipt(lane):
+        """Model the independent recorded processes, packages, target roles and modes."""
+        cargo = ["/toolchain/bin/cargo"]
+        fixture = ["--manifest-path", "/work/source/tools/windows-service-fixture/Cargo.toml"]
+        platform = ["-p", "windows-platform"]
+        frozen = ["--frozen", "--offline"]
+        all_targets = ["--all-targets"]
+        deny = ["--", "-D", "warnings"]
+        serial = ["--", "--test-threads=1"]
+        ordinary = [*cargo, "test", *fixture, *frozen, *all_targets, *serial]
+        batch = [
+            [*cargo, "fmt", "--package", "windows-platform", "--", "--check"],
+            [*cargo, "fmt", *fixture, "--all", "--", "--check"],
+            [*cargo, "clippy", *platform, *frozen, *all_targets, *deny],
+            [*cargo, "clippy", *fixture, *frozen, *all_targets, *deny],
+            [*cargo, "clippy", *fixture, *frozen, *all_targets, "--target", "x86_64-pc-windows-msvc", *deny],
+            [*cargo, "test", *platform, *frozen, *all_targets, *serial],
+            ordinary,
+            [*cargo, "test", *platform, *frozen, "--release", *all_targets, *serial],
+            [*cargo, "test", *fixture, *frozen, "--release", *all_targets, *serial],
+            [*cargo, "test", *platform, *frozen, "--doc", *serial],
+            [*cargo, "test", *fixture, *frozen, "--doc", *serial],
+            [*cargo, "doc", *fixture, *frozen, "--no-deps", "--document-private-items"],
+        ]
+        work = "/private/fixture-run"
+        tools = {"helpers": {name: {"path": "/usr/bin/" + name} for name in ("bwrap", "prlimit")}}
+        binding = {"candidate_sha256": "a" * 64, "tools": tools}
+        epoch = {"path": "/private/index", "sha256": "b" * 64}
+        digest = "12345678abcdef00"
+
+        def output_for(argv):
+            if argv[1] != "test":
+                return ""
+            fixture_owner = "--manifest-path" in argv
+            if "--doc" in argv:
+                package = "nevrotick_windows_service_fixture" if fixture_owner else "windows_platform"
+                return f"   Doc-tests {package}\n" + execution(() if fixture_owner else ("doc_cohort",))
+            package = "nevrotick-windows-service-fixture" if fixture_owner else "windows-platform"
+            mode = "release" if "--release" in argv else "debug"
+            target = f"/work/target/{mode}/build/{package}/{digest}/out/"
+            roles = [("unittests src/lib.rs", package.replace("-", "_"),
+                      ("healthy_owner",) if fixture_owner else ("platform_cohort",))]
+            if fixture_owner:
+                roles.extend([
+                    ("unittests src/bin/broker.rs", "nevrotick_lab_s02_broker", ()),
+                    ("unittests src/bin/engine.rs", "nevrotick_lab_s02_engine", ()),
+                    ("tests/entrypoints.rs", "entrypoints", ("failed_cleanup",)),
+                ])
+            return "\n".join(
+                f"     Running {source} ({target}{name}-{digest})\n" + execution(tests)
+                for source, name, tests in roles)
+
+        return {**binding, "schema_version": 1, "scope": "source-only inert service fixture",
+                "native_execution": False, "source_sha256": {"owner": "c" * 64},
+                "work": work, "lane": lane, "graph_binding": binding, "status": "passed",
+                "received_graph_path": "/private/graph.json", "received_graph_sha256": "d" * 64,
+                "bookends_passed": True, "index_bytes_unchanged": True,
+                "index_before": epoch, "index_after": epoch.copy(),
+                "commands": [
+                    {"argv": argv.copy(), "namespace_argv": argv.copy(), "exit_code": 0, "failure": None,
+                     "command": [
+                         "/usr/bin/bwrap", "--ro-bind", work + "/source", "/work/source",
+                         "--chdir", "/work/source", "--", "/usr/bin/prlimit", "--as=8589934592",
+                         "--cpu=180", "--nproc=128", "--nofile=256", "--fsize=268435456", "--", *argv,
+                     ],
+                     "output": output_for(argv)}
+                    for argv in ([ordinary] if lane == "fixture-test" else batch)
+                ]}
+
+    @staticmethod
+    def _receive_ordinary(original, **changes):
+        return M.ordinary_fixture_tests({**original, **changes}, original["graph_binding"],
+                                        original["source_sha256"], original["received_graph_path"],
+                                        original["received_graph_sha256"])
+
+    def test_ordinary_receipt_selects_exact_debug_roster_in_both_lanes(self):
+        for lane in ("fixture-test", "privilege-checkpoint"):
+            receipt = self._ordinary_receipt(lane)
+            with self.subTest(lane=lane):
+                self.assertEqual(self._receive_ordinary(receipt), ["failed_cleanup", "healthy_owner"])
+
+    def test_ordinary_receipt_refuses_changed_commands_and_custody(self):
+        for lane in ("fixture-test", "privilege-checkpoint"):
+            original = self._ordinary_receipt(lane)
+            first = original["commands"][0]
+            remainder = original["commands"][1:]
+            wrapper = first["command"]
+            cwd = wrapper.index("--chdir") + 1
+            for case, changes in (
+                ("namespace", {"commands": [{**first, "namespace_argv": ["/foreign/cargo"]}, *remainder]}),
+                ("missing", {"commands": remainder}),
+                ("wrong", {"commands": [{**first, "argv": ["/foreign/cargo"]}, *remainder]}),
+                ("missing wrapper", {"commands": [{k: v for k, v in first.items() if k != "command"}, *remainder]}),
+                ("wrong cwd", {"commands": [{**first,
+                    "command": [*wrapper[:cwd], "/work/foreign", *wrapper[cwd + 1:]]}, *remainder]}),
+                ("wrong invocation", {"commands": [{**first,
+                    "command": [*wrapper[:-1], "--test-threads=2"]}, *remainder]}),
+                ("failed exit", {"commands": [{**first, "exit_code": 1}, *remainder]}),
+                ("interrupted", {"commands": [{**first, "failure": "resource stop"}, *remainder]}),
+                ("not passed", {"status": "incomplete"}),
+                ("custody error", {"custody_error": "source changed"}),
+                ("bad bookends", {"bookends_passed": False}),
+                ("index changed", {"index_bytes_unchanged": False}),
+                ("false index bookends", {"index_after": {**original["index_after"], "sha256": "f" * 64}}),
+                ("wrong source scope", {"scope": "native", "native_execution": True}),
+                ("different source", {"source_sha256": {"foreign owner": "e" * 64}}),
+                ("different graph path", {"received_graph_path": "/private/foreign.json"}),
+                ("different graph bytes", {"received_graph_sha256": "e" * 64}),
+                ("stale binding", {"graph_binding": {"candidate_sha256": "b" * 64}}),
+            ):
+                with self.subTest(lane=lane, case=case), self.assertRaises(M.Incomplete):
+                    self._receive_ordinary(original, **changes)
+        original = self._ordinary_receipt("privilege-checkpoint")
+        commands = original["commands"]
+        omitted = {"commands": [*commands[:6], commands[8], *commands[7:]]}
+        with self.assertRaises(M.Incomplete):
+            self._receive_ordinary(original, **omitted)
+
+    def test_ordinary_batch_refuses_crossed_test_output(self):
+        original = self._ordinary_receipt("privilege-checkpoint")
+        rows = original["commands"]
+        for index, output in (
+            (6, rows[8]["output"]),
+            (6, rows[5]["output"]),
+            (6, rows[6]["output"].split("     Running unittests src/bin/broker.rs")[0]),
+            (8, rows[8]["output"].replace("healthy_owner", "other_test")),
+            (9, rows[9]["output"].replace("windows_platform", "other_package")),
+            (8, rows[8]["output"].replace("test result: ok.", "test result: FAILED.")),
+        ):
+            commands = [*rows[:index], {**rows[index], "output": output}, *rows[index + 1:]]
+            with self.subTest(index=index, output=output[:80]), self.assertRaises(M.Incomplete):
+                self._receive_ordinary(original, commands=commands)
+
+    def test_ordinary_batch_refuses_results_detached_from_their_launch(self):
+        original = self._ordinary_receipt("privilege-checkpoint")
+        rows = original["commands"]
+        fixture_launch, fixture_results = rows[6]["output"].split("\n", 1)
+        lib_results, other_launches = fixture_results.split("     Running", 1)
+        doctest_launch, doctest_results = rows[9]["output"].split("\n", 1)
+        for index, output in (
+            (6, lib_results + fixture_launch + "\n" + execution(()) + "\n     Running" + other_launches),
+            (9, doctest_results + "\n" + doctest_launch + "\n" + execution(())),
+        ):
+            commands = [*rows[:index], {**rows[index], "output": output}, *rows[index + 1:]]
+            with self.subTest(index=index), self.assertRaisesRegex(M.Incomplete, "precede their launch"):
+                self._receive_ordinary(original, commands=commands)
+
+    @staticmethod
     def _direct_owner_specimen(leaf):
         """Independent full descriptor with one exact rendered source change."""
         source = b"fn guard() -> bool {\n    true\n}\n"
@@ -461,6 +609,38 @@ class FixtureMetricControls(unittest.TestCase):
                 M.replay_outcome({**refused, "output": json.dumps(diagnostic) + "\n"}, None, ["healthy_owner"])
         with self.assertRaises(M.Incomplete):
             M.replay_outcome({**refused, "output": "error[E0001] arbitrary refusal"}, None, ["healthy_owner"])
+
+    def test_worker_replay_pairs_round_test_names_with_their_actual_assertion_file(self):
+        prefix = "engine_worker::tests::address_round::"
+        round_names = [prefix + name for name in (
+            "managed_round_fallback_retains_source_and_join_with_stale_and_stopped_neighbors",
+            "managed_round_expired_service_cutoff_refuses_without_entropy_or_traffic",
+            "round_health_keeps_bounded_dispositions_separate_from_operation_failures",
+        )]
+        wrong_name = prefix + "unrelated_round_test"
+        source = "src/engine_worker_round_tests.rs"
+        expected = [*round_names, wrong_name, "healthy_owner"]
+        build = {"exit_code": 0, "failure": None, "output": direct_build()}
+
+        def observed(test_name, test_source):
+            text = f"thread '{test_name}' panicked at {test_source}:12:5:\nassertion failed\n"
+            return {"exit_code": 101, "failure": None, "output": fixture_test_output(text)}
+
+        for name, path in zip(round_names, (source, "tools/windows-service-fixture/" + source,
+                                           "/work/source/tools/windows-service-fixture/" + source), strict=True):
+            with self.subTest(name=name, path=path):
+                result = M.replay_outcome(build, observed(name, path), expected)
+                self.assertEqual((result["kind"], result["kill_credit"]), ("killed", 1))
+                self.assertEqual(result["cause"]["causes"][0]["source"], path)
+                self.assertEqual(result["cause"]["causes"][0]["test"], name)
+        for name, path in (
+            (wrong_name, source), ("healthy_owner", source), (round_names[0], "src/engine_worker_tests.rs"),
+            (round_names[0], "../" + source), (round_names[0], "/foreign/" + source),
+        ):
+            with self.subTest(name=name, path=path), self.assertRaises(M.Incomplete):
+                M.replay_outcome(build, observed(name, path), expected)
+        with self.assertRaises(M.Incomplete):
+            M.replay_outcome(build, observed(round_names[0], source), ["healthy_owner"])
 
     def test_replay_and_native_score_only_runs_from_the_matching_test_artifacts(self):
         assertion = "thread 'healthy_owner' panicked at src/engine_worker_tests.rs:12:5:\nassertion failed"

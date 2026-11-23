@@ -382,13 +382,13 @@ mod configuration {
             if !std::ptr::eq(guard.cell, source.cell.as_ref()) {
                 return Err(SourcePolicyError::Foreign);
             }
-            let state = guard.state()?;
+            let state: &super::PolicyState = guard.state()?;
             state.record(RecordKey::Source(source.index))?;
-            let configuration = state
+            let configuration: &ConfigState = state
                 .configurations
                 .get(source.index)
                 .ok_or(SourcePolicyError::UnknownSource)?;
-            let identity = source.identity();
+            let identity: SourceIdentity = source.identity();
             if !configuration.source.same_source(&identity) {
                 return Err(SourcePolicyError::Foreign);
             }

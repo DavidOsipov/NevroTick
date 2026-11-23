@@ -11,20 +11,21 @@ use std::{error::Error, fmt, io, num::NonZeroU64};
 use time_core::{
     ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FixtureAdaptiveHistory,
     FixtureAffineChart, FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
-    FixtureBaselineRetirement, FixtureBaselineSettlement, FixtureChartBatch, FixtureChartDomain,
-    FixtureChartFrames, FixtureChartInterval, FixtureChartOutcome, FixtureCombinationParameters,
-    FixtureCombinationState, FixtureContext, FixtureControllerClockMap,
-    FixtureControllerClockMapInput, FixtureFrequencyAdmission, FixtureFrequencyClockAssociation,
-    FixtureFrequencyError, FixtureFrequencyHistory, FixtureFrequencyNumericError,
-    FixtureFrequencyNumericField, FixtureFrequencyNumericIssue, FixtureFrequencyNumericStep,
-    FixtureFrequencyProfile, FixtureMinimum, FixtureObservation, FixturePhaseBaseline,
-    FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile,
-    FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
-    FixturePhaseRetirementReason, FixturePhaseSettlement, FixturePrincipalParameters,
-    FixturePrincipalStratum, FixtureProjectedBatch, FixtureProjectionTerms, FixtureRateClock,
-    FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateSettlement,
-    FixtureRateSettlementCursor, FixtureRateSpan, FixtureReferenceInputError,
-    FixtureSettledRateInterval, enclose_fixture_chart_projection, enclose_fixture_projection,
+    FixtureBaselineProposal, FixtureBaselineRetirement, FixtureBaselineSettlement,
+    FixtureChartBatch, FixtureChartDomain, FixtureChartFrames, FixtureChartInterval,
+    FixtureChartOutcome, FixtureCombinationParameters, FixtureCombinationState, FixtureContext,
+    FixtureControllerClockMap, FixtureControllerClockMapInput, FixtureFrequencyAdmission,
+    FixtureFrequencyClockAssociation, FixtureFrequencyError, FixtureFrequencyHistory,
+    FixtureFrequencyNumericError, FixtureFrequencyNumericField, FixtureFrequencyNumericIssue,
+    FixtureFrequencyNumericStep, FixtureFrequencyProfile, FixtureMinimum, FixtureObservation,
+    FixturePhaseBaseline, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
+    FixturePhaseProfile, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,
+    FixturePhaseRetirement, FixturePhaseRetirementReason, FixturePhaseSettlement,
+    FixturePrincipalParameters, FixturePrincipalStratum, FixtureProjectedBatch,
+    FixtureProjectionTerms, FixtureRateClock, FixtureRateClockContext, FixtureRateCursorStatus,
+    FixtureRateSettlement, FixtureRateSettlementCursor, FixtureRateSpan,
+    FixtureReferenceInputError, FixtureSettledRateInterval, enclose_fixture_chart_projection,
+    enclose_fixture_projection,
 };
 use time_domain::{ActiveAwakeNs, MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
 
@@ -2052,6 +2053,166 @@ fn actual_frequency_producer_converts_zero_fast_slow_and_clipped_requests() -> T
             Err(FixturePhaseError::OutstandingOperation)
         ));
     }
+    Ok(())
+}
+
+/// Reject an inconsistent first span before reserving this emission or ordinal.
+/// # Errors
+/// Preserve genuine setup failures and a refusal of the exact-ratio neighbor.
+/// # Panics
+/// Reject the wrong boundary verdict, partial publication or loss of unused credit.
+#[test]
+fn base_issue_checks_exact_ratio_before_reserving_credit() -> TestResult {
+    let mut trace: BaseTrace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 1.0_f64.next_down(),
+        cap: 1.0 / 8.0,
+    };
+    let chart: FixtureAffineChart = base_chart(trace.chart_rate)?;
+    let source: Source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer: FixtureCombinationState = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner: FixturePhasePlanOwner<'_, '_> = base_owner(&mut producer, &chart, &trace)?;
+    let reference: FixturePhaseNow = at(2, 4)?;
+    let admitted: FixturePhaseReferenceAdmission =
+        receive(&mut owner, &source, 4, 1.0 / 32.0, reference)?;
+    accepted(&owner, &admitted, 1);
+    let before: HistorySnapshot = snapshot(&history(&owner)?);
+    let now: FixturePhaseNow = FixturePhaseNow::new(
+        clocks()?,
+        ActiveAwakeNs::new(2 * SECOND + 1),
+        MonotonicNs::new(4 * SECOND + 1),
+    );
+
+    // Exact 1/1 differs from the declared ratio 1 - 2^-53 with zero error.
+    let map: FixtureControllerClockMap = base_map(&chart, &trace, reference)?;
+    assert!(matches!(
+        owner.issue_baseline(map, now),
+        Err(FixtureBaselineError::Numeric {
+            source: FixtureFrequencyNumericError::ActiveRatioMismatch
+        })
+    ));
+    assert!(owner.baseline_proposal().is_none());
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+    assert_eq!(owner.current_time().active(), reference.active());
+    assert_eq!(owner.current_time().monotonic(), reference.monotonic());
+    assert_eq!(snapshot(&history(&owner)?), before);
+
+    trace.ratio = 1.0;
+    let map: FixtureControllerClockMap = base_map(&chart, &trace, reference)?;
+    let proposal: FixtureBaselineProposal<'_> = product_ok(owner.issue_baseline(map, now))?;
+    assert_eq!(proposal.emitted_round(), label(1)?);
+    assert_eq!(proposal.ordinal(), label(1)?);
+    Ok(())
+}
+
+/// Refuse an out-of-range first receipt span without discarding a pending request.
+/// # Errors
+/// Preserve original fixture setup and unexpected settlement failures.
+/// # Panics
+/// Reject incorrect ratio admission, lost pending custody or replay consumption.
+#[test]
+fn base_no_effect_checks_exact_ratio_before_consuming_credit() -> TestResult {
+    let trace: BaseTrace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 0.75,
+        cap: 1.0 / 8.0,
+    };
+    let chart: FixtureAffineChart = base_chart(trace.chart_rate)?;
+    let source: Source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer: FixtureCombinationState = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner: FixturePhasePlanOwner<'_, '_> = base_owner(&mut producer, &chart, &trace)?;
+    let reference: FixturePhaseNow = at(2, 4)?;
+    let admitted: FixturePhaseReferenceAdmission =
+        receive(&mut owner, &source, 4, 1.0 / 32.0, reference)?;
+    accepted(&owner, &admitted, 1);
+    let before: HistorySnapshot = snapshot(&history(&owner)?);
+    let map: FixtureControllerClockMap = product_ok(FixtureControllerClockMap::new(
+        &chart,
+        product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+        FixtureControllerClockMapInput {
+            reference,
+            valid_until: MonotonicNs::new(32 * SECOND),
+            active_ratio: trace.ratio,
+            active_ratio_error: 0.25_f64.next_down(),
+            actual_phase: 0.0,
+            actual_phase_error: 0.0,
+            actual_rate: trace.actual_rate,
+            actual_rate_error: 0.0,
+        },
+    ))?;
+    let proposal: FixtureBaselineProposal<'_> = product_ok(owner.issue_baseline(map, reference))?;
+    assert_eq!(proposal.ordinal(), label(1)?);
+    let event: FixtureBaselineFeedback = FixtureBaselineFeedback::ProvenNoEffect {
+        context: clocks()?,
+        ordinal: label(1)?,
+    };
+
+    // The upper ratio is 1 - 2^-55. The receipt supplies exact 1/1.
+    let outside: FixturePhaseNow = FixturePhaseNow::new(
+        clocks()?,
+        ActiveAwakeNs::new(2 * SECOND + 1),
+        MonotonicNs::new(4 * SECOND + 1),
+    );
+    let FixtureBaselineSettlement::OuterRejected { mut owner, error } =
+        owner.settle_baseline(event, outside)
+    else {
+        return Err(io::Error::other("out-of-bounds ratio consumed the original request").into());
+    };
+    assert!(matches!(
+        error,
+        FixtureBaselineError::Numeric {
+            source: FixtureFrequencyNumericError::ActiveRatioMismatch
+        }
+    ));
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+    assert_eq!(
+        owner.baseline_proposal().map(|proposal| proposal.ordinal()),
+        Some(label(1)?)
+    );
+    assert!(matches!(
+        owner.issue_baseline(map, reference),
+        Err(FixtureBaselineError::Phase {
+            source: FixturePhaseError::OutstandingOperation
+        })
+    ));
+    assert_eq!(owner.current_time().active(), reference.active());
+    assert_eq!(owner.current_time().monotonic(), reference.monotonic());
+    assert_eq!(snapshot(&history(&owner)?), before);
+
+    // A later 3/4 span fits the same map and completes the original ordinal.
+    let inside: FixturePhaseNow = FixturePhaseNow::new(
+        clocks()?,
+        ActiveAwakeNs::new(2 * SECOND + 3),
+        MonotonicNs::new(4 * SECOND + 4),
+    );
+    let FixtureBaselineSettlement::ProvenNoEffect(mut owner) = owner.settle_baseline(event, inside)
+    else {
+        return Err(
+            io::Error::other("corrected ratio did not complete the pending request").into(),
+        );
+    };
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(2)?));
+    assert!(owner.baseline_proposal().is_none());
+    assert_eq!(snapshot(&history(&owner)?), before);
+    assert!(matches!(
+        owner.issue_baseline(map, inside),
+        Err(FixtureBaselineError::ReusedEmission)
+    ));
+    assert!(matches!(
+        owner.settle_baseline(event, inside),
+        FixtureBaselineSettlement::OuterRejected {
+            error: FixtureBaselineError::Phase {
+                source: FixturePhaseError::NoOutstandingOperation
+            },
+            ..
+        }
+    ));
     Ok(())
 }
 

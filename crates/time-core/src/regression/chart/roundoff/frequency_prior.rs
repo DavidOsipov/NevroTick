@@ -36,7 +36,7 @@
 //! exposed error bounds widen positive subnormals to `MIN_POSITIVE`. All scratch
 //! and work are fixed-size scalars, without heap retention, I/O or ambient reads.
 
-use std::fmt;
+use std::{cmp::Ordering, fmt};
 
 use garde::Validate;
 use time_domain::{ActiveAwakeDurationNs, MonotonicDurationNs, MonotonicNs};
@@ -2126,7 +2126,99 @@ impl FrequencyAnchor {
     }
 }
 
-/// Check exact same-segment integer spans against a declared positive ratio.
+/// An exact nonnegative term in the clock-span comparison.
+#[derive(Clone, Copy)]
+struct ClockSpanTerm {
+    /// Integer coefficient before scaling by a power of two.
+    significand: u128,
+    /// Power-of-two exponent of the least significant bit.
+    exponent: i64,
+}
+
+impl ClockSpanTerm {
+    /// Multiply an admitted normal-or-zero coefficient by an exact span.
+    /// # Errors
+    /// Refuse integer overflow. An admitted span yields at most 106 bits.
+    fn scaled(coefficient: f64, span: u64) -> Result<Self, FixtureFrequencyNumericError> {
+        let bits: u64 = coefficient.to_bits();
+        let field: u16 = u16::try_from((bits >> 52) & 0x7ff)
+            .map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        let significand: u64 = if coefficient == 0.0 {
+            0
+        } else {
+            (1_u64 << 52) | (bits & ((1_u64 << 52) - 1))
+        };
+        let product: u128 = u128::from(significand)
+            .checked_mul(u128::from(span))
+            .ok_or(FixtureFrequencyNumericError::ValidationInvariant)?;
+        Ok(Self {
+            significand: product,
+            exponent: i64::from(field) - 1075,
+        })
+    }
+
+    /// Order by the leading bit position, then by the full normalized bits.
+    fn compare(self, other: Self) -> Ordering {
+        if self.significand == 0 || other.significand == 0 {
+            return self.significand.cmp(&other.significand);
+        }
+        let left_shift: u32 = self.significand.leading_zeros();
+        let right_shift: u32 = other.significand.leading_zeros();
+        let left_position: i64 = self.exponent - i64::from(left_shift);
+        let right_position: i64 = other.exponent - i64::from(right_shift);
+        left_position
+            .cmp(&right_position)
+            .then_with(|| (self.significand << left_shift).cmp(&(other.significand << right_shift)))
+    }
+
+    /// Express a nearby term at the lower of two exponents.
+    /// # Errors
+    /// Refuse disagreement with the bounded exact alignment.
+    fn align(self, exponent: i64) -> Result<u128, FixtureFrequencyNumericError> {
+        let shift: u32 = u32::try_from(self.exponent - exponent)
+            .map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        let scale: u128 = 1_u128
+            .checked_shl(shift)
+            .ok_or(FixtureFrequencyNumericError::ValidationInvariant)?;
+        self.significand
+            .checked_mul(scale)
+            .ok_or(FixtureFrequencyNumericError::ValidationInvariant)
+    }
+
+    /// Test whether the two addends sum to at least the target.
+    /// # Errors
+    /// Refuse disagreement with the checked alignment or subtraction bound.
+    fn sum_reaches(self, other: Self, target: Self) -> Result<bool, FixtureFrequencyNumericError> {
+        let (larger, smaller): (Self, Self) = if self.compare(other).is_lt() {
+            (other, self)
+        } else {
+            (self, other)
+        };
+        if !target.compare(larger).is_gt() {
+            return Ok(true);
+        }
+        let twice_larger: Self = Self {
+            exponent: larger.exponent + 1,
+            ..larger
+        };
+        if target.compare(twice_larger).is_gt() {
+            return Ok(false);
+        }
+        // Between one and two times the larger addend, the leading bits
+        // differ by at most one. Alignment therefore needs at most 107 bits.
+        let exponent: i64 = target.exponent.min(larger.exponent);
+        let difference: Self = Self {
+            significand: target
+                .align(exponent)?
+                .checked_sub(larger.align(exponent)?)
+                .ok_or(FixtureFrequencyNumericError::ValidationInvariant)?,
+            exponent,
+        };
+        Ok(!difference.compare(smaller).is_gt())
+    }
+}
+
+/// Check exact same-segment integer spans against the declared closed ratio interval.
 /// Zero/zero is consistency only; this never calibrates a map from timestamps.
 /// # Errors
 /// Reject raw ratio/error, integer envelope or a contradictory span relation.
@@ -2142,14 +2234,29 @@ pub(crate) fn check_active_ratio_span(
     let validated = raw.validate();
     ratio_rule(&raw.value)?;
     validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
-    let (ratio, error) = raw.value;
-    let active = integer_to_f64(active.nanoseconds(), NormalizationComponent::Time)
+    let (ratio, error): (f64, f64) = raw.value;
+    let active_ns: u64 = active.nanoseconds();
+    let mono_ns: u64 = monotonic.nanoseconds();
+    let active: f64 = integer_to_f64(active_ns, NormalizationComponent::Time)
         .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
-    let mono = integer_to_f64(monotonic.nanoseconds(), NormalizationComponent::Time)
+    let mono: f64 = integer_to_f64(mono_ns, NormalizationComponent::Time)
         .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
-    let step = FixtureFrequencyNumericStep::ActiveRatioSpan;
-    let range = Interval::around(ratio, error, step)?.multiply(Interval::point(mono), step)?;
+    // Preserve the existing representability check and cheap outer refusal.
+    let step: FixtureFrequencyNumericStep = FixtureFrequencyNumericStep::ActiveRatioSpan;
+    let range: Interval =
+        Interval::around(ratio, error, step)?.multiply(Interval::point(mono), step)?;
     if active < range.low || active > range.high {
+        return Err(FixtureFrequencyNumericError::ActiveRatioMismatch);
+    }
+    // Test both exact endpoints without rounding a quotient or aligning
+    // terms that can be more than a thousand binary places apart.
+    let observed: ClockSpanTerm = ClockSpanTerm {
+        significand: u128::from(active_ns),
+        exponent: 0,
+    };
+    let center: ClockSpanTerm = ClockSpanTerm::scaled(ratio, mono_ns)?;
+    let radius: ClockSpanTerm = ClockSpanTerm::scaled(error, mono_ns)?;
+    if !observed.sum_reaches(radius, center)? || !center.sum_reaches(radius, observed)? {
         return Err(FixtureFrequencyNumericError::ActiveRatioMismatch);
     }
     Ok(())

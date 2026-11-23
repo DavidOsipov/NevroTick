@@ -1279,8 +1279,11 @@ The [managed service address round](../../tasks/windows11-integration.md#run-a-m
 now reaches real ordered loopback fallback through that fixture worker. It
 binds the exact source revision at startup, retains the original service
 cutoff in the Engine plan and keeps the original Stop and join owner. The
-current configured development and four focused Engine cases passed. Continue
-affected-file metrics and the existing native and installed acceptance work.
+[final-cutoff and Windows fixture checks](../../tasks/windows11-integration.md#verify-the-managed-rounds-final-cutoff-and-windows-fixture--23-november-2026)
+passed six focused Engine cases and all three selected Windows fixtures.
+GNU line instrumentation reached 268/283 worker lines. Continue current
+durable coverage and generated worker replay when storage admits the
+configured stage. Installed acceptance stays with the existing owner.
 
 **Qualified portable product checkpoint — 21 November 2026.** The
 [W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026)

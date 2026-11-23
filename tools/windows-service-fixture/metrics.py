@@ -81,6 +81,14 @@ WRITER_DIRECT = DirectOwner("writer", "diagnostics_thread", "fixture-writer-dire
 DIRECT_LANES = {f"{owner.prefix}-{suffix}": owner for owner in (WORKER_DIRECT, WRITER_DIRECT)
                 for suffix in ("enumerate", "replay-pilot", "replay")}
 METRIC_LANES = ("coverage", "enumerate", "mutation", *DIRECT_LANES)
+WORKER_ROUND_ASSERTIONS = {
+    "engine_worker::tests::address_round::" + name: "src/engine_worker_round_tests.rs"
+    for name in (
+        "managed_round_fallback_retains_source_and_join_with_stale_and_stopped_neighbors",
+        "managed_round_expired_service_cutoff_refuses_without_entropy_or_traffic",
+        "round_health_keeps_bounded_dispositions_separate_from_operation_failures",
+    )
+}
 WRITER_ASSERTIONS = {
     "diagnostics::threaded::queue_control::one_queued_original_obeys_the_drain_cutoff":
         "src/diagnostics_thread_tests.rs",
@@ -169,6 +177,116 @@ def successful(result, *, mutation=False):
             and result["exit_code"] in ((0, 2) if mutation else (0,))
             and result.get("failure", "missing") is None and type(result.get("output")) is str,
             "The selected bounded command did not complete successfully.")
+
+
+def require_source_receipt(receipt, binding, source):
+    """Check the producer's unchanged source and index without reusing its live index."""
+    require(type(receipt) is dict and type(receipt.get("schema_version")) is int
+            and receipt["schema_version"] == 1 and receipt.get("scope") == "source-only inert service fixture"
+            and receipt.get("native_execution") is False and receipt.get("status") == "passed"
+            and receipt.get("bookends_passed") is True and receipt.get("index_bytes_unchanged") is True
+            and not receipt.get("custody_error"), "Source receipt lacks successful producer custody.")
+    require(receipt.get("source_sha256") == source and receipt.get("graph_binding") == binding
+            and {key: receipt.get(key) for key in binding} == binding,
+            "Source receipt differs from the admitted source or graph binding.")
+    epoch = receipt.get("index_before")
+    require(type(epoch) is dict and set(epoch) == {"path", "sha256"}
+            and type(epoch["path"]) is str and PurePosixPath(epoch["path"]).is_absolute()
+            and type(epoch["sha256"]) is str and re.fullmatch(r"[0-9a-f]{64}", epoch["sha256"])
+            and receipt.get("index_after") == epoch, "Source receipt lacks unchanged producer index custody.")
+
+
+def source_command_custody(row, argv, receipt, binding):
+    """Check the recorded sandbox's admitted Cargo suffix and source working directory."""
+    require(type(row) is dict and row.get("argv") == row.get("namespace_argv") == argv,
+            "Ordinary fixture test receipt command or namespace differs.")
+    successful(row)
+    wrapper = row.get("command")
+    require(type(wrapper) is list and wrapper and all(type(part) is str for part in wrapper)
+            and "--" in wrapper, "Source receipt omits its actual process command.")
+    split = wrapper.index("--")
+    options = wrapper[:split]
+    helpers = binding["tools"]["helpers"]
+    limiter = ["--", helpers["prlimit"]["path"], "--as=8589934592", f"--cpu={Q.SECONDS}",
+               "--nproc=128", "--nofile=256", "--fsize=268435456", "--", *argv]
+    work = receipt.get("work")
+    require(type(work) is str and PurePosixPath(work).is_absolute()
+            and wrapper[0] == helpers["bwrap"]["path"] and wrapper[split:] == limiter
+            and options.count("--chdir") == 1
+            and options[options.index("--chdir") + 1:][:1] == ["/work/source"]
+            and options.count("/work/source") == 2
+            and any(options[i:i + 3] == ["--ro-bind", work + "/source", "/work/source"]
+                    for i in range(len(options))),
+            "Source receipt process differs from the admitted Cargo cwd, source or command.")
+
+
+def source_test_roster(output, argv):
+    """Read selected package/profile launches and each ordinary executable result."""
+    def require_launch_before_results(launch):
+        require(not any(line.startswith("test ") for line in output[:launch.start()].splitlines()),
+                "Source test results precede their launch.")
+
+    if "--doc" in argv:
+        package = LIBRARY if "--manifest-path" in argv else "windows_platform"
+        launches = list(re.finditer(r"^   Doc-tests (\S+)$", output, re.M))
+        require(len(launches) == 1 and launches[0][1] == package,
+                "Source doctest output differs from the selected package.")
+        require_launch_before_results(launches[0])
+        return executed_tests(output, allow_empty=package == LIBRARY)
+    profile = "release" if "--release" in argv else "debug"
+    fixture = "--manifest-path" in argv
+    package = PACKAGE if fixture else "windows-platform"
+    runs = list(re.finditer(r"^     Running (.+)$", output, re.M))
+    roles = []
+    for run in runs:
+        match = re.fullmatch(
+            r"(unittests src/|tests/)([a-z0-9_/]+)\.rs \(/work/target/" + profile + r"/build/"
+            + package + r"/([0-9a-f]{16})/out/([a-z0-9_]+)-\3\)", run[1])
+        require(match is not None, "Source test launch differs from the selected package or profile.")
+        category, source, _, executable = match.groups()
+        path = ("src/" if category.startswith("unittests") else category) + source + ".rs"
+        name = package.replace("-", "_") if path == "src/lib.rs" else source.rsplit("/", 1)[-1]
+        if fixture and source in ("bin/broker", "bin/engine"):
+            name = "nevrotick_lab_s02_" + name
+        require(executable == name, "Source test launch names a different target executable.")
+        roles.append(path)
+    require(roles and roles[0] == "src/lib.rs" and len(roles) == len(set(roles))
+            and (not fixture or set(roles) == {source for _, source in FIXTURE_TARGETS.values()}),
+            "Source test output lacks the selected executable roles.")
+    require_launch_before_results(runs[0])
+    for current, end in zip(runs, [run.start() for run in runs[1:]] + [len(output)], strict=True):
+        block = output[current.end():end]
+        require(sum(line.startswith("test result:") for line in block.splitlines()) == 1,
+                "Source test executable lacks its own result.")
+        executed_tests(block, allow_empty=True)
+    return executed_tests(output)
+
+
+def ordinary_fixture_tests(receipt, binding, source, graph_path, graph_digest):
+    """Receive one ordinary fixture roster from a complete current source lane."""
+    require_source_receipt(receipt, binding, source)
+    lane = receipt.get("lane")
+    require(lane in ("fixture-test", "privilege-checkpoint")
+            and receipt.get("received_graph_path") == graph_path
+            and receipt.get("received_graph_sha256") == graph_digest,
+            "Metrics require an ordinary fixture test receipt bound to the selected graph.")
+    cargo = "/toolchain/bin/cargo"
+    expected = Q.lane_commands(lane, cargo)
+    ordinary, = Q.lane_commands("fixture-test", cargo)
+    require(type(receipt.get("commands")) is list and len(receipt["commands"]) == len(expected),
+            "Ordinary fixture test receipt has incomplete commands.")
+    rosters = {}
+    for row, command in zip(receipt["commands"], expected, strict=True):
+        source_command_custody(row, command, receipt, binding)
+        if command[1] == "test":
+            rosters[tuple(command)] = source_test_roster(row["output"], command)
+    if lane == "privilege-checkpoint":
+        for package in ("platform", "fixture"):
+            debug, = Q.lane_commands(package + "-test", cargo)
+            optimized, = Q.lane_commands(package + "-optimized", cargo)
+            require(rosters[tuple(debug)] == rosters[tuple(optimized)],
+                    "Source debug and optimized ordinary test rosters differ.")
+    return rosters[tuple(ordinary)]
 
 
 def metric_coverage(report):
@@ -445,7 +563,8 @@ def reject_infrastructure_failure(text: str) -> None:
 
 def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = False,
                    required_source: str | None = None, native_subject: str | None = None,
-                   assertion_files: dict[str, str] | None = None) -> dict:
+                   assertion_files: dict[str, str] | None = None,
+                   allow_legacy_assertions: bool = False) -> dict:
     """Attribute actual failures; shared by native results and tagged direct replay."""
     reject_infrastructure_failure(text)
     diagnostics = []
@@ -516,9 +635,12 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
     def admitted_assertion(name, path):
         if name not in expected_tests:
             return False
-        if assertion_files is None:
-            return selected_span(path)
-        return name in assertion_files and selected_span(path, files=(assertion_files[name],))
+        if assertion_files is not None:
+            if name in assertion_files:
+                return selected_span(path, files=(assertion_files[name],))
+            if not allow_legacy_assertions:
+                return False
+        return selected_span(path)
 
     assertions = []
     for match in re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text, re.M | re.S):
@@ -787,8 +909,9 @@ def replay_outcome(build: dict, test: dict | None, expected: list[str], *,
     runtime = fixture_test_runtime(test["output"], root, artifacts, complete=test["exit_code"] == 0, verbose=False)
     if test["exit_code"] == 0:
         return {"kind": "survived", "tests": executed_tests(runtime, expected), "kill_credit": 0}
-    assertions = WRITER_ASSERTIONS if owner == WRITER_DIRECT else None
-    return {"kind": "killed", "cause": classify_cause(runtime, expected, assertion_files=assertions),
+    assertions = WRITER_ASSERTIONS if owner == WRITER_DIRECT else WORKER_ROUND_ASSERTIONS
+    return {"kind": "killed", "cause": classify_cause(runtime, expected, assertion_files=assertions,
+                                                    allow_legacy_assertions=owner == WORKER_DIRECT),
             "kill_credit": 1}
 
 
@@ -1159,21 +1282,11 @@ class Session:
                                                     "feature_delta", "vendor", "tools")}
         record["graph_binding"] = self.binding
         graph = self.receipt(args.graph_receipt)
+        require_source_receipt(graph, self.binding, self.identity)
         Q.receive_graph(graph, self.binding, self.policy, "/toolchain/bin/cargo")
-        tests = self.receipt(args.test_receipt)
-        require(tests.get("status") == "passed" and tests.get("lane") == "fixture-test"
-                and tests.get("bookends_passed") is True and tests.get("index_bytes_unchanged") is True
-                and tests.get("graph_binding") == self.binding and not tests.get("custody_error"),
-                "Metrics require current ordinary fixture tests first.")
-        expected = Q.lane_commands("fixture-test", "/toolchain/bin/cargo")
-        require(type(tests.get("commands")) is list and len(tests["commands"]) == len(expected),
-                "Ordinary fixture test receipt has incomplete commands.")
-        names = []
-        for row, command in zip(tests["commands"], expected, strict=True):
-            require(row.get("argv") == command, "Ordinary fixture test command differs.")
-            successful(row)
-            names.extend(executed_tests(row["output"]))
-        self.tests = sorted(names)
+        graph_path = str(args.graph_receipt)
+        self.tests = ordinary_fixture_tests(self.receipt(args.test_receipt), self.binding, self.identity,
+                                            graph_path, self.receipts[graph_path])
         record["ordinary_tests"] = self.tests
         self.check()
 

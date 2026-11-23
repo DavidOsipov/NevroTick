@@ -15987,3 +15987,101 @@ The exact current source matched the receipt input inventory after integration.
 The service binary remains outside this fixture composition. Native service
 execution, DNS refresh, calibrated measurement and affected-file
 coverage/mutation retain their existing owners and exits.
+
+### Verify the managed round's final cutoff and Windows fixture — 23 November 2026
+
+W11-W05/S3.1, REQ-8, BND-1 and CHECK-6/25/27. The focused Engine test
+charges and stages a correlated loopback RATE reply under the original
+configured service cutoff. While the cutoff is live, the real publication
+and report transfer retain a control result and double both restriction
+intervals. When the same fixture crosses cutoff before publication, the
+round retains one received and rejected datagram, a deadline end, no reply
+facts or control code, and both original send debits. The existing stale and
+matching membership cases still reach the same final publication seam. This
+test exercises the private round transfer. The existing public executor
+cases cover clamping before setup and during a live request. Both final
+deadline guards can refuse the late RATE, so this case does not isolate
+either guard's mutation sensitivity.
+
+The regression, lifecycle and independent QA reviews worked from
+`80e1f3794908f02158de8dfe1723d7a597feca94`. On source
+`db84b233e9cf1dcb1ab41ea5aba3b8ebcc0f83b03796c1dff2d118678266da36`
+all six configured graph checks, both GNU modes with 189 fixture and 70
+platform tests each, 28 platform doctests, GNU and Windows-target Clippy,
+and the remaining commands in the twelve-command checkpoint passed.
+All six selected Engine tests passed, including the earlier membership
+neighbor. The first selection was refused by Cargo before compilation.
+The restored invocation passed its exact selectors to libtest. The graph,
+development and Engine receipts in
+`~/.local/share/nevrotick/service-round-qualification-20261123.Cs4s6K2f/`
+hash to
+`b6386a55eb66eac0cebfa525eacfd53f13e0723e6ae2aa0096bf3e47c1939183`,
+`42e34423f0fab59d4643b8fd5c696109e68840cd1237f8ad469a2f80fc4f2dfc`
+and `01478edd6b1655132a6d3aba1a680dc447928c01691e371d6de36c0acdc52cb7`.
+
+The cross-link roster accepts exactly three additional fixture cases. Both
+actual 189-name GNU runs return the prior 186-name digest when those exact
+three names are removed. The configured MSVC release libtest link and
+independent PE/PDB readback passed. Its receipt hashes to
+`003d3e046caeafa0f65bbcccc3e13878a5659069e274f8c9624faed0289036a3`.
+The first Windows dispatch stopped at 2,016 MiB before guest launch.
+After retiring completed compiler scratch, the equivalent preflight
+observed 2,054 MiB against the 2,048 MiB floor. All three exact selectors
+passed in the owned offline build-26100 Windows Sandbox. They covered the
+expired cutoff, actual fallback with stale and stopped neighbors, and worker
+health. Each native process returned and was reaped. The guest remained
+offline and the owned share files were removed. The native verdict hashes to
+`18f1a8781878d529ba075e0c5c873fe824e1813c41617a69a07969a039840ae5`.
+This is controlled fixture evidence; installed service activation remains open.
+
+The metrics receiver now accepts the original single-command receipt or the
+complete configured checkpoint. It binds the reported process, working
+directory, source, graph and unchanged producer index. It associates each
+named result with its own package/profile launch or doctest banner and
+attributes the three new worker assertions to their exact test file.
+Independent faulty receipts exercised wrong cwd, substituted release
+output, detached test results and inconsistent source or custody. The final
+tree `cb3fc8c2cce531d8b8ac9b06a3f5e71dec87792f` differs from the executed
+Rust tree only in the metrics reader and its Python controls. On that tree
+52 metric, 38 shared reader and 23 cross-link controls passed. The revised
+reader accepts the real 189-case receipt under its original identity and
+refuses it as evidence under the changed reader's new input map.
+
+The pinned GNU line instrumentation executed the same 189 fixture cases.
+All five selected files exceeded 90% executable lines. The worker reached
+268/283, or 94.70%. The retained readback receipt hashes to
+`bbad3b5d16eb7749a51a71151101a137f978de271008ca90d7ae1ac03055b808`.
+This retained the exact raw line report and the command, source and custody
+bookends. Full durable metric export and current generated worker replay
+remain open. The ext4 volume had about 4.04 GiB free against the 6 GiB
+durable launch requirement. Preserve the per-file 95% mutation threshold
+and the original configuration when that campaign resumes.
+
+### Bind the pre-start identity subject before child creation — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-26/27. Source review found that the
+fixed identity launcher verified the retained caller and later verified
+the original suspended child. The admitted deployment SID was checked
+inside the running identity child. A wrong SID therefore reached child
+creation before the existing check refused it.
+
+The independently reviewed three-file patch in the same external
+checkpoint directory compares the admitted SID with the original token's
+user after file admission and a fresh actor observation. It refuses before
+native job or child creation and preserves the existing failure path.
+The child retains its own SID check. The new control requires the exact
+launch refusal, no process-created marker or PID, and exclusive reopens
+of the original staged files. A bad helper digest retains first-failure
+precedence, and the matching actor still reaches the original child.
+
+The patch hashes to
+`56cedbde9254c0a5c5a7601678f7c95e5f7c9d5a64ecd3089a2d9b7ab1af5bf1`.
+It remains outside the integrated source pending the native comparison.
+The predecessor attempt stopped at 960 MiB against the 2,048 MiB host
+floor before staging or dispatch. Its receipt hashes to
+`1108d380db6f526d17aa068a1f1de0b16efe763845d03daf9ae955b04885509d`.
+After retiring the completed qualification worktrees, the host had
+1,472 MiB available. Resume the predecessor and corrected harness cases
+when the admitted Windows guest has sufficient host headroom. The
+installed signed package and independently admitted actors retain their
+existing owners.
