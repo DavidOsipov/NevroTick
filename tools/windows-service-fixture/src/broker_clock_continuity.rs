@@ -129,11 +129,13 @@ pub enum SampledClockDiscontinuity {
     FiletimeReversed,
     /// At least one raw adjustment word or the reported mode differs.
     AdjustmentChanged,
+    /// The two successful process presentation observations report different modes.
+    LeapPresentationChanged,
 }
 
 /// The raw components needed to compare two completed observations.
 #[cfg_attr(test, derive(Clone, Copy))]
-struct ClockSample<Adjustment> {
+struct ClockSample<Adjustment, Presentation> {
     /// Positive QPC frequency in ticks per second.
     frequency_hz: NonZeroU64,
     /// Signed QPC tick observed before FILETIME.
@@ -144,11 +146,14 @@ struct ClockSample<Adjustment> {
     filetime_100ns: u64,
     /// Original complete adjustment state observed after this bracket.
     adjustment: Adjustment,
+    /// Known process mode for comparison; the original query result stays in the raw sample.
+    presentation: Option<Presentation>,
 }
 
 #[cfg(windows)]
-impl ClockSample<ClockAdjustment> {
-    /// Project only the checked coordinates and adjustment for continuity comparison.
+impl ClockSample<ClockAdjustment, LeapPresentation> {
+    /// Project the checked coordinates, adjustment and any known presentation mode.
+    /// The immutable native sample retains the original presentation query error.
     fn from_native(sample: &BrokerClockSample) -> Self {
         let coordinates: &ClockCoordinates = sample.coordinates();
         Self {
@@ -157,6 +162,7 @@ impl ClockSample<ClockAdjustment> {
             qpc_after: coordinates.qpc_after(),
             filetime_100ns: coordinates.filetime_100ns(),
             adjustment: *sample.adjustment(),
+            presentation: sample.leap_presentation().ok(),
         }
     }
 }
@@ -176,12 +182,14 @@ pub(super) fn compare_native(
     )
 }
 
-/// Return the first conflict in frequency, counter order, wall order and adjustment.
-/// Equal endpoints and wall readings satisfy their ordering checks. Adjustment words
-/// and mode use exact equality without converting units or inferring a rate.
-fn compare<Adjustment: Eq>(
-    previous: &ClockSample<Adjustment>,
-    candidate: &ClockSample<Adjustment>,
+/// Return the first conflict in frequency, counter order, wall order, adjustment
+/// and observed leap presentation. Equal endpoints and wall readings satisfy their
+/// ordering checks. Raw adjustment comparison uses exact equality. Presentation
+/// comparison requires two successful observations, leaving a refused query's
+/// original error in the raw sample. No result establishes a UTC mapping.
+fn compare<Adjustment: Eq, Presentation: Eq>(
+    previous: &ClockSample<Adjustment, Presentation>,
+    candidate: &ClockSample<Adjustment, Presentation>,
 ) -> Option<SampledClockDiscontinuity> {
     if candidate.frequency_hz != previous.frequency_hz {
         return Some(SampledClockDiscontinuity::FrequencyChanged);
@@ -194,6 +202,14 @@ fn compare<Adjustment: Eq>(
     }
     if candidate.adjustment != previous.adjustment {
         return Some(SampledClockDiscontinuity::AdjustmentChanged);
+    }
+    if previous
+        .presentation
+        .as_ref()
+        .zip(candidate.presentation.as_ref())
+        .is_some_and(|(before, after): (&Presentation, &Presentation)| before != after)
+    {
+        return Some(SampledClockDiscontinuity::LeapPresentationChanged);
     }
     None
 }
@@ -209,7 +225,7 @@ mod tests {
     use super::{
         super::{
             BrokerClockChanges, BrokerClockRead, BrokerClockReader, ClockReadRetirement,
-            SampledClockBreak,
+            ClockRevision, SampledClockBreak,
         },
         ClockSample, SampledClockDiscontinuity, compare,
     };
@@ -225,8 +241,20 @@ mod tests {
         periodic_adjustment_disabled: bool,
     }
 
+    /// Independently named process modes for portable comparator controls.
+    #[derive(Clone, Copy, Eq, PartialEq)]
+    enum Presentation {
+        /// Ordinary compatibility presentation.
+        Compatibility,
+        /// Opt-in sixtieth-second presentation.
+        SixtySecond,
+    }
+
+    /// One scripted observation through the same comparator and reader as the broker.
+    type ScriptedSample = ClockSample<Adjustment, Presentation>;
+
     /// A valid earlier capture ending exactly at signed tick zero.
-    const PREVIOUS: ClockSample<Adjustment> = ClockSample {
+    const PREVIOUS: ScriptedSample = ClockSample {
         frequency_hz: NonZeroU64::MIN,
         qpc_before: -2,
         qpc_after: 0,
@@ -236,10 +264,11 @@ mod tests {
             increment: 29,
             periodic_adjustment_disabled: false,
         },
+        presentation: Some(Presentation::Compatibility),
     };
 
     /// The same exact adjustment after the original bracket remains observationally compatible.
-    const NEXT: ClockSample<Adjustment> = ClockSample {
+    const NEXT: ScriptedSample = ClockSample {
         qpc_before: 0,
         qpc_after: 1,
         filetime_100ns: 81,
@@ -253,7 +282,7 @@ mod tests {
     #[test]
     fn changed_frequency_precedes_other_conflicts() {
         let changed_frequency_hz: NonZeroU64 = NonZeroU64::MIN.saturating_add(1);
-        let mut candidate: ClockSample<Adjustment> = ClockSample {
+        let mut candidate: ScriptedSample = ClockSample {
             frequency_hz: changed_frequency_hz,
             qpc_before: 0,
             qpc_after: 1,
@@ -280,7 +309,7 @@ mod tests {
     /// a wall reversal takes precedence over a counter reversal.
     #[test]
     fn counter_order_uses_the_two_inner_edges() {
-        let mut candidate: ClockSample<Adjustment> = ClockSample {
+        let mut candidate: ScriptedSample = ClockSample {
             qpc_before: -1,
             qpc_after: 2,
             filetime_100ns: 79,
@@ -314,7 +343,7 @@ mod tests {
             (80, None),
             (81, None),
         ] {
-            let candidate: ClockSample<Adjustment> = ClockSample {
+            let candidate: ScriptedSample = ClockSample {
                 qpc_before: 1,
                 qpc_after: 2,
                 filetime_100ns,
@@ -330,13 +359,13 @@ mod tests {
     /// Panics if extremes are reordered, ignored, or refused on the healthy pair.
     #[test]
     fn signed_tick_and_unsigned_wall_extremes_remain_exact() {
-        let low: ClockSample<Adjustment> = ClockSample {
+        let low: ScriptedSample = ClockSample {
             qpc_before: i64::MIN,
             qpc_after: i64::MIN,
             filetime_100ns: 0,
             ..PREVIOUS
         };
-        let high: ClockSample<Adjustment> = ClockSample {
+        let high: ScriptedSample = ClockSample {
             qpc_before: i64::MAX,
             qpc_after: i64::MAX,
             filetime_100ns: u64::MAX,
@@ -347,7 +376,7 @@ mod tests {
             compare(&high, &low),
             Some(SampledClockDiscontinuity::QpcReversed)
         );
-        let wall_reversed: ClockSample<Adjustment> = ClockSample {
+        let wall_reversed: ScriptedSample = ClockSample {
             filetime_100ns: 0,
             ..high
         };
@@ -364,7 +393,7 @@ mod tests {
     /// evidence of a violation based on forward wall movement alone.
     #[test]
     fn compares_each_adjustment_field_exactly() {
-        let changed: [ClockSample<Adjustment>; 3] = [
+        let changed: [ScriptedSample; 3] = [
             ClockSample {
                 adjustment: Adjustment {
                     update_word: 18,
@@ -394,11 +423,144 @@ mod tests {
             );
         }
         assert_eq!(compare(&PREVIOUS, &NEXT), None);
-        let large_forward_jump: ClockSample<Adjustment> = ClockSample {
+        let large_forward_jump: ScriptedSample = ClockSample {
             filetime_100ns: u64::MAX,
             ..NEXT
         };
         assert_eq!(compare(&PREVIOUS, &large_forward_jump), None);
+    }
+
+    /// Compare all known and unavailable mode pairs after the existing clock checks.
+    ///
+    /// # Panics
+    /// Panics if a confirmed mode change is missed, an unknown or matching pair
+    /// withdraws the revision, or presentation replaces an earlier adjustment cause.
+    #[test]
+    fn compares_only_known_presentation_changes_after_adjustment() {
+        let modes: [Option<Presentation>; 3] = [
+            Some(Presentation::Compatibility),
+            Some(Presentation::SixtySecond),
+            None,
+        ];
+        let changed: Option<SampledClockDiscontinuity> =
+            Some(SampledClockDiscontinuity::LeapPresentationChanged);
+        let expected: [[Option<SampledClockDiscontinuity>; 3]; 3] =
+            [[None, changed, None], [changed, None, None], [None; 3]];
+        for (before, row) in modes.into_iter().zip(expected) {
+            let previous: ScriptedSample = ClockSample {
+                presentation: before,
+                ..PREVIOUS
+            };
+            for (after, outcome) in modes.into_iter().zip(row) {
+                let candidate: ScriptedSample = ClockSample {
+                    presentation: after,
+                    ..NEXT
+                };
+                assert_eq!(compare(&previous, &candidate), outcome);
+            }
+        }
+        let both_changed: ScriptedSample = ClockSample {
+            adjustment: Adjustment {
+                update_word: 18,
+                ..NEXT.adjustment
+            },
+            presentation: Some(Presentation::SixtySecond),
+            ..NEXT
+        };
+        assert_eq!(
+            compare(&PREVIOUS, &both_changed),
+            Some(SampledClockDiscontinuity::AdjustmentChanged)
+        );
+    }
+
+    /// Separate mailbox for the process-presentation transition.
+    static PRESENTATION_CHANGES: BrokerClockChanges = BrokerClockChanges::new();
+    /// Number of samples charged by that reader.
+    static PRESENTATION_READS: AtomicU32 = AtomicU32::new(0);
+
+    /// Supply a known change with otherwise compatible observations and a fresh successor.
+    ///
+    /// # Errors
+    /// Returns the unexpected-read marker if the sampler exceeds three calls.
+    fn read_presentation_sequence() -> Result<ScriptedSample, u32> {
+        match PRESENTATION_READS.fetch_add(1, SeqCst) {
+            0 => Ok(PREVIOUS),
+            1 => Ok(ClockSample {
+                presentation: Some(Presentation::SixtySecond),
+                ..NEXT
+            }),
+            2 => Ok(ClockSample {
+                qpc_before: 1,
+                qpc_after: 2,
+                filetime_100ns: 82,
+                presentation: Some(Presentation::SixtySecond),
+                ..NEXT
+            }),
+            _ => Err(42),
+        }
+    }
+
+    /// A sampled mode transition retires the old revision before the next due read.
+    ///
+    /// # Panics
+    /// Panics if the old revision still admits work, recovery occurs early, or
+    /// a fresh observation loses the historical break.
+    #[test]
+    fn presentation_change_retires_the_original_observation() {
+        assert!(PRESENTATION_CHANGES.arm());
+        let initial: Instant = Instant::now();
+        let changed: Instant = initial + Duration::from_secs(1);
+        let fresh: Instant = changed + Duration::from_secs(1);
+        let mut reader: BrokerClockReader<ScriptedSample, u32> =
+            BrokerClockReader::new(&PRESENTATION_CHANGES, read_presentation_sequence)
+                .with_sampling(compare);
+
+        reader.poll(initial, || Ok(initial));
+        let original: Option<ClockRevision<'static>> = reader.observed_awake_revision();
+        assert_eq!(
+            original.as_ref().map(ClockRevision::number),
+            Some(NonZeroU64::MIN)
+        );
+
+        reader.poll(changed, || Ok(changed));
+        assert!(original.is_some_and(|revision: ClockRevision<'static>| !revision.admits()));
+        assert!(reader.observed_awake_revision().is_none());
+        assert!(matches!(
+            reader.history(),
+            Some(BrokerClockRead::Retired {
+                revision: NonZeroU64::MIN,
+                reason: ClockReadRetirement::Discontinuity(
+                    SampledClockDiscontinuity::LeapPresentationChanged
+                ),
+                native_failure: None
+            })
+        ));
+        let retained: Option<SampledClockBreak> = Some(SampledClockBreak {
+            revision: NonZeroU64::MIN,
+            observed_at: changed,
+            reason: SampledClockDiscontinuity::LeapPresentationChanged,
+        });
+        assert_eq!(reader.last_discontinuity(), retained);
+
+        let early: Instant = changed + Duration::from_nanos(999_999_999);
+        reader.poll(early, || Ok(early));
+        assert_eq!(PRESENTATION_READS.load(SeqCst), 2);
+        assert!(reader.observed_awake_revision().is_none());
+
+        reader.poll(fresh, || Ok(fresh));
+        assert_eq!(
+            reader
+                .observed_awake_revision()
+                .map(|revision: ClockRevision<'static>| revision.number()),
+            NonZeroU64::new(2)
+        );
+        assert!(matches!(
+            reader.history(),
+            Some(BrokerClockRead::Completed { result: Ok(sample), .. })
+                if sample.presentation == Some(Presentation::SixtySecond)
+        ));
+        assert_eq!(reader.last_discontinuity(), retained);
+        assert_eq!(PRESENTATION_READS.load(SeqCst), 3);
     }
 
     /// Independent process-local sampling context for the adjustment transition.
@@ -410,7 +572,7 @@ mod tests {
     ///
     /// # Errors
     /// Returns the literal unexpected-read marker if the sampler exceeds three calls.
-    fn read_adjustment_sequence() -> Result<ClockSample<Adjustment>, u32> {
+    fn read_adjustment_sequence() -> Result<ScriptedSample, u32> {
         match READS.fetch_add(1, SeqCst) {
             0 => Ok(PREVIOUS),
             1 => Ok(ClockSample {
@@ -445,7 +607,7 @@ mod tests {
         let initial: Instant = Instant::now();
         let changed: Instant = initial + Duration::from_secs(1);
         let fresh: Instant = changed + Duration::from_secs(1);
-        let mut reader: BrokerClockReader<ClockSample<Adjustment>, u32> =
+        let mut reader: BrokerClockReader<ScriptedSample, u32> =
             BrokerClockReader::new(&CHANGES, read_adjustment_sequence).with_sampling(compare);
 
         reader.poll(initial, || Ok(initial));

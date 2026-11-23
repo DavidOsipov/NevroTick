@@ -45,6 +45,22 @@ function Assert-ChildRefusal {
     Assert-InputsReleased $Request.InputDirectory
 }
 
+function Assert-LaunchRefusal {
+    param([hashtable]$Request, [string]$Reason)
+    $cause = $null
+    try { $null = Invoke-Control $Request } catch { $cause = $_.Exception }
+    while ($null -ne $cause -and $cause.Message -cne $Reason) {
+        $cause = $cause.InnerException
+    }
+    if ($null -eq $cause -or $cause.Data['PrestartObserverProcessCreated'] -ne $false -or
+        $cause.Data.Contains('PrestartObserverProcessId') -or
+        $cause.Data['PrestartObserverRetired'] -ne $true -or
+        $cause.Data['PrestartObserverReleased'] -ne $true) {
+        throw "Identity launch did not refuse before process creation: expected=$Reason"
+    }
+    Assert-InputsReleased $Request.InputDirectory
+}
+
 try {
     $testUser = [Security.Principal.WindowsIdentity]::GetCurrent()
     try { [string]$sid = $testUser.User.Value } finally { $testUser.Dispose() }
@@ -90,7 +106,11 @@ try {
     's06-owned-identity absent-registration=observed'
 
     $request.ExpectedUserSid = 'S-1-0-0'
-    Assert-ChildRefusal $request 'Current user differs from the admitted deployment subject'
+    $approvedHelper = $request.HelperSha256
+    $request.HelperSha256 = ('0' * 64)
+    Assert-LaunchRefusal $request 'prestart-observer:image-digest'
+    $request.HelperSha256 = $approvedHelper
+    Assert-LaunchRefusal $request 'prestart-observer:identity-subject-actor'
     $request.ExpectedUserSid = $sid
     's06-owned-identity wrong-subject=refused'
 
@@ -99,20 +119,8 @@ try {
     foreach ($key in @('PowerShellSha256', 'EntrySha256', 'ModuleSha256', 'HelperSha256')) {
         $approved = $request[$key]
         $request[$key] = ('0' * 64)
-        $refusal = $null
-        try { $null = Invoke-Control $request } catch { $refusal = $_.Exception }
+        Assert-LaunchRefusal $request 'prestart-observer:image-digest'
         $request[$key] = $approved
-        $cause = $refusal
-        while ($null -ne $cause -and $cause.Message -cne 'prestart-observer:image-digest') {
-            $cause = $cause.InnerException
-        }
-        if ($null -eq $cause -or $cause.Data['PrestartObserverProcessCreated'] -ne $false -or
-            $cause.Data.Contains('PrestartObserverProcessId') -or
-            $cause.Data['PrestartObserverRetired'] -ne $true -or
-            $cause.Data['PrestartObserverReleased'] -ne $true) {
-            throw "Identity file substitution did not reach hash refusal for $key"
-        }
-        Assert-InputsReleased $root
         "s06-owned-identity wrong-$key=refused"
     }
     Assert-ChildRefusal $request 'Expected exactly one S0.6 registration in the current user profile'

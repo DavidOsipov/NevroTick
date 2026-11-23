@@ -52,10 +52,10 @@ SOURCE_CONFIG_SHA256 = hashlib.sha256(
 ).hexdigest()
 METRICS_READER = Q.TOOL + "/metrics.py"
 METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
-# The fixture roster includes the broker, SCM access and managed address-round controls.
+# The fixture roster includes the broker clock, SCM access and managed address-round controls.
 # Platform and fixture doctest scopes retain their independently reviewed roster.
 SOURCE_TEST_ROSTERS = {
-    "fixture-test": "8263cac8c761e54069509dd4cf6fadf7718d1fb02b8da30152b3098dc7e3d48b",
+    "fixture-test": "99b2152fb8e76498f2e05dc9ee77c0c4dfe69e7b544fdc37775133d9ac38f25b",
     "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
     "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
     "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",

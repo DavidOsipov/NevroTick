@@ -1252,11 +1252,17 @@ The [installed identity receipt](../../tasks/windows11-integration.md#emit-the-i
 now reaches the pre-start reader in the controlled native fixture. The
 [fixed identity launcher](../../tasks/windows11-integration.md#capture-the-fixed-identity-child-under-the-original-token--23-november-2026)
 uses the original deployment token and deadline and holds the interpreter,
-entry, module and precompiled helper through retirement. The unsigned archive
-passed readback and the SDK signer images passed the read-only native
-signature check. The installed sequence still requires independently
-admitted actor contexts, the signed package, and the common native window
-owner that supplies the first receipt and the three SCM observations.
+entry, module and precompiled helper through retirement. The
+[subject binding](../../tasks/windows11-integration.md#bind-the-pre-start-identity-subject-before-child-creation--23-november-2026)
+now refuses a mismatched deployment SID before child creation. The exact
+predecessor and corrected controls ran in the owned Windows Sandbox.
+The unsigned archive passed readback and the SDK signer images passed the
+read-only native signature check. The installed sequence still requires
+independently admitted actor contexts, the signed package, and the common
+native window owner that supplies the first receipt and the three SCM
+observations. The [broker's sampled continuity check](../../tasks/windows11-integration.md#withdraw-a-sampled-broker-revision-after-a-known-leap-presentation-change--23-november-2026)
+now withdraws the sampled revision after two different known presentation
+modes. Actual Windows transition and mapping evidence remain open.
 
 
 **Coordinator selection after the receipt checkpoint — 20 November 2026.**

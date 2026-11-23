@@ -76,7 +76,7 @@ namespace NevroTick
                 throw new Win32Exception(error, "prestart-observer:query-thread-token");
         }
 
-        internal void VerifyCurrent(Stopwatch clock, int timeoutMilliseconds)
+        internal void VerifyCurrent(Stopwatch clock, int timeoutMilliseconds, string requiredSubjectSid = null)
         {
             if (token.IsClosed)
                 throw new ObjectDisposedException("PrestartActor");
@@ -91,6 +91,8 @@ namespace NevroTick
             CheckDeadline(clock, timeoutMilliseconds);
             RequireProcessActor();
             CheckDeadline(clock, timeoutMilliseconds);
+            if (requiredSubjectSid != null && !snapshot.User.HasExactIdentity(requiredSubjectSid))
+                throw new InvalidOperationException("prestart-observer:identity-subject-actor");
         }
 
         internal ChildToken VerifyChild(SafeHandle process, Stopwatch clock, int timeoutMilliseconds)
@@ -433,6 +435,11 @@ namespace NevroTick
             {
                 this.sid = sid;
                 this.attributes = attributes;
+            }
+
+            internal bool HasExactIdentity(string expected)
+            {
+                return string.Equals(sid.Value, expected, StringComparison.Ordinal);
             }
 
             public int CompareTo(SidEntry other)

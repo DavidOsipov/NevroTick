@@ -182,11 +182,12 @@ namespace NevroTick
                 new HeldFile(helperPath, helperBytes, helperSha256)
             };
             return StartFixed(new HeldFile(powershellPath, expectedBytes, expectedSha256, resolveSystemSpelling: true), inputs,
-                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds);
+                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds, subjectSid);
         }
 
         private static PrestartObserverChild StartFixed(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
-            string arguments, string environmentBlock, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+            string arguments, string environmentBlock, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds,
+            string identitySubjectSid = null)
         {
             if (actor == null)
                 throw new ArgumentNullException("actor");
@@ -198,6 +199,10 @@ namespace NevroTick
                 image.Admit(clock, timeoutMilliseconds);
                 foreach (HeldFile input in inputs)
                     input.Admit(clock, timeoutMilliseconds);
+                // Preserve input admission failures before checking the deployment subject.
+                // A mismatched actor must never reach native job or process creation.
+                if (identitySubjectSid != null)
+                    actor.VerifyCurrent(clock, timeoutMilliseconds, identitySubjectSid);
                 child.CreateChild(arguments, environmentBlock);
                 return child;
             }

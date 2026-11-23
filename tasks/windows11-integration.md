@@ -16070,18 +16070,76 @@ checkpoint directory compares the admitted SID with the original token's
 user after file admission and a fresh actor observation. It refuses before
 native job or child creation and preserves the existing failure path.
 The child retains its own SID check. The new control requires the exact
-launch refusal, no process-created marker or PID, and exclusive reopens
-of the original staged files. A bad helper digest retains first-failure
+launch refusal, a false process-created marker, no PID, and exclusive
+reopens of the original staged files. A bad helper digest retains first-failure
 precedence, and the matching actor still reaches the original child.
 
 The patch hashes to
 `56cedbde9254c0a5c5a7601678f7c95e5f7c9d5a64ecd3089a2d9b7ab1af5bf1`.
-It remains outside the integrated source pending the native comparison.
-The predecessor attempt stopped at 960 MiB against the 2,048 MiB host
-floor before staging or dispatch. Its receipt hashes to
+The first predecessor attempt stopped at 960 MiB against the 2,048 MiB
+host floor before staging or dispatch. Its receipt hashes to
 `1108d380db6f526d17aa068a1f1de0b16efe763845d03daf9ae955b04885509d`.
-After retiring the completed qualification worktrees, the host had
-1,472 MiB available. Resume the predecessor and corrected harness cases
-when the admitted Windows guest has sufficient host headroom. The
-installed signed package and independently admitted actors retain their
-existing owners.
+
+After host headroom recovered, the new harness ran against the original
+launcher on the owned offline Windows build-26100 Sandbox. The genuine
+matching-subject child reached its expected absent-registration result.
+With the wrong subject, the predecessor then missed the new pre-launch
+refusal and the control exited 1. PowerShell wrapped the exact diagnostic
+in the captured text. Independent readback checked both the error record
+and the expected preceding case before retiring the owned share files.
+The original controller result remains incomplete. Its raw receipt and the
+separate behavioral readback hash to
+`414a8d982777222aa79c76023028561d81ef841da7d633c93b03e447e60eaecc` and
+`7e7b3d0f2d8c06bdaba3a1de31da9eae64b166c57ab29df5843f5025ab689c2b`.
+
+The corrected launcher on isolated tree
+`e5d39d7021546627baa8c0fad1730a846227d365` over
+`1c61e0167ef4f4b0bb7c8855384cac9c6cb9bdf3` passed all 32 selected
+native controls and 36 portable MSIX tests. The wrong actor refused before
+job or child creation. The wrong helper digest retained first-failure
+precedence, and the valid original subject reached the same child.
+Native input checks, offline observations and owned share cleanup passed.
+The native receipt hashes to
+`a7cd52fc8d0f2ec869eb28572848d3a2d6317c350c7f8f08f62094e7a481eb26`
+in `~/.local/share/nevrotick/s06-subject-native-20261123.0mH8YePe/`.
+The installed signed package, independent actor admission and live SCM
+window retain their existing owners.
+
+### Withdraw a sampled broker revision after a known leap presentation change — 23 November 2026
+
+W11-W02/S0.4/P4, LP-C16 and CHECK-11/25/27. The broker's sampled
+continuity comparator now treats two different successful process
+presentation observations as a typed discontinuity. The existing
+reader withdraws the original observation and retains the break when
+a later due read publishes a fresh revision. The earlier frequency,
+counter, wall and adjustment checks keep their precedence. An unavailable
+presentation is inconclusive in the comparator and the native sample
+retains the exact query error. The reader's sampled revision grants no
+physical UTC mapping.
+
+Rust contract, boundary and lifecycle controls cover all nine mode
+pairs, adjustment precedence, withdrawal and recovery at the next due
+read. A directed stale-comparand fault failed both new cases and passed
+six neighboring cases. The first full attempt exposed an inherited
+core-dump configuration refusal. The bounded retry applied the fixture
+guard, retained both test-suite passes and exposed a test-only time
+subtraction lint. The subsequent checked subtraction also exposed the
+fixture's panic lint. The final test selects the preceding instant from
+the original sample instead.
+
+The final Rust 1.100.0 fixture receipt binds 731 inputs to
+`34d63b6b1cfa464afa31eff47fbecad3358f95ce2f9e5194b45e66720000cd0b`
+on isolated tree `e510967b001470bb66a7859bc5df756d0c89e1ad`.
+Format, GNU and Windows MSVC all-target Clippy and 191 GNU cases per
+ordinary and optimized mode passed. The cross-link reader's fixture
+roster now binds those exact 191 names. Removing the two new names
+reproduces the previous pin in both modes. All 23 cross-link reader
+controls passed on the updated pin. The directed and final fixture
+receipts hash to
+`859ced578dbbd683e73931cbc5e68c5df8f6520f48005b77957a8e2c41594dd6` and
+`bab2a29c79f563f04f4e8a82090962468ca28c7b68211a915fe96944cddc15e2`.
+The raw reports and roster comparison are in
+`~/.local/share/nevrotick/broker-leap-presentation-20261123.TeXxS9ue/`.
+Independent review matched the retained reader, fault and roster
+evidence. Actual Windows mode transitions, installed use, mapping
+qualification and affected-file coverage and mutation gates remain open.
