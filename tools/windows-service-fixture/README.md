@@ -75,6 +75,24 @@ to the caught exception. The control script exercises this component with
 fixed inert children in 64-bit Windows PowerShell. It performs no package
 installation or service operation. [Native controls](msix/test_prestart_child.ps1)
 
+The collector also supplies `Invoke-PrestartObserver` for the three fixed
+SCM observers. Use a dedicated 64-bit Windows PowerShell process with
+serialized child launches and an exclusively owned local input directory.
+Use `Open-PrestartObserverActor` to retain the launcher primary token and
+pass that actor as `-Actor`. Dispose the actor when its owner finishes
+observing that context. Role eligibility remains a separate input to the
+installed window.
+Supply the approved `nevrotick-prestart-observer.exe`, its exact length and
+SHA-256, the selector, and the original running Stopwatch and deadline.
+The launcher retains the executable and observes the original suspended
+process in its one-child job before resuming it. It compares the observed
+primary-token attributes at that boundary and keeps the query-only child
+token through capture. Its result contains raw
+streams and the original PID and exit code after verified retirement and
+input readback. A failed capture can carry the still-owned child for
+recovery. This is the same-actor launch primitive for the future installed
+window owner. [Native controls](msix/test_prestart_observer.ps1)
+
 For readback of already owned captures, use `join_prestart` in
 [the receipt reader](msix/prestart_receipts.py). Both paths apply the same
 joined checks and preserve the raw service-type observations.

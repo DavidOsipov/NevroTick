@@ -1240,8 +1240,16 @@ early refusal and a final window check. The concrete Windows window
 owner and exact signed lab inputs remain required for the installed run.
 The [Windows child collector](../../tasks/windows11-integration.md#collect-raw-windows-child-results-for-the-s06-pre-start-probe--23-november-2026)
 passed seven native capture and retirement controls with fixed inert children.
-Continue with the owned launch and input/token observations before admitting
-these captures to the installed window.
+The [installed image readback](../../tasks/windows11-integration.md#retain-both-role-image-handles-through-pre-start-readback--23-november-2026)
+now retains both original image handles through the final service and
+registration observations. The offline guest confirmed conflicting writes
+were refused during readback and possible again after release.
+The [owned observer launcher](../../tasks/windows11-integration.md#launch-the-fixed-pre-start-observer-with-owned-native-custody--23-november-2026)
+passed the inert same-actor job, deadline, and retirement controls. The
+[primary-token handoff](../../tasks/windows11-integration.md#bind-the-pre-start-observer-to-its-held-primary-token--23-november-2026)
+now checks the original suspended child against its retained launcher actor.
+The unsigned fixture archive passed readback again. Admit the distinct actor
+contexts and signed package window before running the installed sequence.
 
 
 **Coordinator selection after the receipt checkpoint — 20 November 2026.**

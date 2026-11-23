@@ -1,28 +1,29 @@
 # SPDX-License-Identifier: GPL-2.0-only
 Set-StrictMode -Version Latest
 
-# The launch owner supplies the original, exclusively held Process without
-# exit callbacks or other readers. The clock includes launch time and must
-# run without reset through collection. On failure the owner keeps containment,
-# settles outstanding reads and independently confirms retirement.
-function Receive-PrestartChild {
-    param(
-        [Parameter(Mandatory = $true)][Diagnostics.Process]$Process,
-        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
-        [Parameter(Mandatory = $true)][ValidateRange(1, 2147483647)][int]$TimeoutMilliseconds
-    )
+function Assert-PrestartDeadline {
+    param([Diagnostics.Stopwatch]$Clock, [int]$TimeoutMilliseconds, [string]$Stage)
 
     if (-not $Clock.IsRunning) {
         throw [ArgumentException]::new('prestart-child:clock-not-running')
     }
     if ($Clock.ElapsedMilliseconds -ge $TimeoutMilliseconds) {
-        throw [TimeoutException]::new('prestart-child:collection-deadline')
+        throw [TimeoutException]::new($Stage)
     }
+}
+
+# Keep both existing Process callers and the native launcher on the same
+# bounded raw stream reader. Only the owner can confirm original process exit.
+function Receive-PrestartStreams {
+    param(
+        [int]$ProcessId, [IO.Stream]$StdoutStream, [IO.Stream]$StderrStream,
+        [scriptblock]$ObserveExit, [Diagnostics.Stopwatch]$Clock, [int]$TimeoutMilliseconds
+    )
+
     $limit = 8192
-    $processId = $Process.Id
-    $stdout = [pscustomobject]@{ Name = 'stdout'; Stream = $Process.StandardOutput.BaseStream;
+    $stdout = [pscustomobject]@{ Name = 'stdout'; Stream = $StdoutStream;
         Bytes = [byte[]]::new($limit); Used = 0; Eof = $false; Pending = $null }
-    $stderr = [pscustomobject]@{ Name = 'stderr'; Stream = $Process.StandardError.BaseStream;
+    $stderr = [pscustomobject]@{ Name = 'stderr'; Stream = $StderrStream;
         Bytes = [byte[]]::new($limit); Used = 0; Eof = $false; Pending = $null }
     $channels = @($stdout, $stderr)
 
@@ -46,6 +47,7 @@ function Receive-PrestartChild {
                     }
                     $channel.Used += $count
                 }
+                Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
                 if ($channel.Used -eq $limit) {
                     # Probe EOF in place. A returned byte refuses the entire capture.
                     $channel.Pending = $channel.Stream.ReadAsync($channel.Bytes, 0, 1)
@@ -54,14 +56,15 @@ function Receive-PrestartChild {
                         $channel.Bytes, $channel.Used, $limit - $channel.Used)
                 }
             }
-            if ($stdout.Eof -and $stderr.Eof -and $Process.WaitForExit(0)) {
+            $exitCode = $null
+            if ($stdout.Eof -and $stderr.Eof) { $exitCode = & $ObserveExit }
+            if ($null -ne $exitCode) {
                 foreach ($channel in $channels) {
                     if ($channel.Used -eq $limit) { continue }
                     $bytes = [byte[]]::new($channel.Used)
                     [Array]::Copy($channel.Bytes, $bytes, $channel.Used)
                     $channel.Bytes = $bytes
                 }
-                $exitCode = $Process.ExitCode
                 if ($Clock.ElapsedMilliseconds -ge $TimeoutMilliseconds) {
                     throw [TimeoutException]::new('prestart-child:collection-deadline')
                 }
@@ -82,4 +85,139 @@ function Receive-PrestartChild {
     }
 }
 
-Export-ModuleMember -Function Receive-PrestartChild
+# The caller lends the original Process and is responsible for retirement on
+# refusal, including any pending read tasks attached by the stream collector.
+function Receive-PrestartChild {
+    param(
+        [Parameter(Mandatory = $true)][Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 2147483647)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+    Receive-PrestartStreams $Process.Id $Process.StandardOutput.BaseStream $Process.StandardError.BaseStream {
+        if ($Process.WaitForExit(0)) { $Process.ExitCode }
+    } $Clock $TimeoutMilliseconds
+}
+
+# Preserve the original failure with its pending reads. On uncertainty the
+# caller still owns the child through the exception, and receives no capture.
+function Wait-PrestartObserverRetirement {
+    param([object]$Child, [Management.Automation.ErrorRecord]$Failure)
+
+    $pending = @()
+    $retirementClock = [Diagnostics.Stopwatch]::StartNew()
+    if ($null -ne $Failure) {
+        if ($Failure.Exception.Data.Contains('PrestartChildPendingReads')) {
+            $pending = @($Failure.Exception.Data['PrestartChildPendingReads'])
+        }
+        if (-not $Child.HasExited -or -not $Child.IsJobEmpty) { $Child.Terminate() }
+    }
+    while (-not $Child.HasExited -or -not $Child.IsJobEmpty -or
+        @($pending | Where-Object { -not $_.IsCompleted }).Count -ne 0) {
+        if ($retirementClock.ElapsedMilliseconds -ge 5000) {
+            throw [TimeoutException]::new('prestart-observer:retirement-deadline')
+        }
+        Start-Sleep -Milliseconds 5
+    }
+}
+
+$script:PrestartObserverType = $null
+$script:PrestartActorType = $null
+function Initialize-PrestartObserverTypes {
+    if ($null -ne $script:PrestartObserverType) { return }
+    $sources = @((Join-Path $PSScriptRoot 'prestart_actor_token.cs'),
+        (Join-Path $PSScriptRoot 'prestart_observer_child.cs'))
+    $types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') `
+        -PassThru -ErrorAction Stop)
+    $launchers = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartObserverChild' })
+    $actors = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartActor' })
+    if ($launchers.Count -ne 1 -or $actors.Count -ne 1) { throw 'prestart-observer:launcher-type' }
+    $script:PrestartActorType = $actors[0]
+    $script:PrestartObserverType = $launchers[0]
+}
+
+# Observe the actual current primary token. The caller owns the query-only
+# reference and must separately establish the actor's eligibility for its role.
+function Open-PrestartObserverActor {
+    param(
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
+    Initialize-PrestartObserverTypes
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
+    $actorType = $script:PrestartActorType
+    return $actorType::CaptureCurrent($Clock, $TimeoutMilliseconds)
+}
+
+# Same-actor observation in a dedicated launcher process. The caller lends
+# the live actor, admitted image and unreset deadline. Child launches are
+# serialized to keep the transient inheritable handles private.
+function Invoke-PrestartObserver {
+    param(
+        [Parameter(Mandatory = $true)][string]$ImagePath,
+        [Parameter(Mandatory = $true)][long]$ExpectedBytes,
+        [Parameter(Mandatory = $true)][string]$ExpectedSha256,
+        [Parameter(Mandatory = $true)][string]$Selector,
+        [Parameter(Mandatory = $true)][object]$Actor,
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
+    if ($null -eq $script:PrestartActorType -or -not $script:PrestartActorType.IsInstanceOfType($Actor)) {
+        throw [ArgumentException]::new('prestart-observer:caller-actor')
+    }
+    $launcher = $script:PrestartObserverType
+    $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock, $TimeoutMilliseconds)
+    $childId = $child.ProcessId
+    $failure = $null
+    try {
+        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        $capture = Receive-PrestartStreams $childId $child.Stdout $child.Stderr {
+            if ($child.HasExited) { $child.ExitCode }
+        } $Clock $TimeoutMilliseconds
+        while (-not $child.IsJobEmpty) {
+            Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+            Start-Sleep -Milliseconds 5
+        }
+        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        $child.ConfirmImage()
+    } catch {
+        $failure = $_
+    } finally {
+        $retired = $false
+        try {
+            Wait-PrestartObserverRetirement $child $failure
+            $retired = $true
+            $child.Dispose()
+        } catch {
+            if ($null -eq $failure) { $failure = $_ }
+            else { $failure.Exception.Data['PrestartObserverCleanupFailure'] = $_ }
+            $failure.Exception.Data['PrestartObserverProcessId'] = $childId
+            $failure.Exception.Data['PrestartObserverRetired'] = $retired
+            $failure.Exception.Data['PrestartObserverReleased'] = $false
+            if (-not $retired) { $failure.Exception.Data['PrestartObserverChild'] = $child }
+            throw $failure
+        }
+    }
+    if ($null -ne $failure) {
+        $failure.Exception.Data['PrestartObserverProcessId'] = $childId
+        $failure.Exception.Data['PrestartObserverRetired'] = $true
+        $failure.Exception.Data['PrestartObserverReleased'] = $true
+        throw $failure
+    }
+    try {
+        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+    } catch {
+        $_.Exception.Data['PrestartObserverProcessId'] = $childId
+        $_.Exception.Data['PrestartObserverRetired'] = $true
+        $_.Exception.Data['PrestartObserverReleased'] = $true
+        throw
+    }
+    return $capture
+}
+
+Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver

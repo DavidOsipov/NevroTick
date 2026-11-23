@@ -15633,3 +15633,170 @@ this documentation scope. This session limitation is separate from product
 qualification; it supplies neither a checker pass nor a new release requirement.
 The final receipt delta receives the same bounded parent static checks before
 publication; its final commit identity is separate from the reviewed diff hash.
+
+### Retain both role image handles through pre-start readback — 23 November 2026
+
+W11-W05/W11-W10, S0.6 step 2 and CHECK-1/18/26/27. The installed identity
+companion keeps both original read-only handles through the two SCM
+rechecks and the final registration observation. Each file is hashed and
+its final path is checked through its own handle. It rechecks those paths
+on the same handles and disposes both before emitting the existing schema
+2 record. A later refusal still releases both files. Any managed disposal
+exceptions are attached to an earlier failure or reported as a refusal
+before publication.
+
+`plan-code-change` selected this prerequisite to the owned launcher. The
+Windows specification and `qa-state-concurrency-lifecycle` traced the
+read-only sharing lifetime through the actual companion. The
+`qa-integration-tests` and `qa-fault-recovery` controls substituted only
+SCM and package observations. The original companion received both
+requests and operated on two real temporary files. At the first SCM
+recheck and the final registration recheck, both attempted writes hit
+Windows sharing violation 32. The unchanged positive record and the
+wrong-Broker-digest and changed-registration refusals all left both files
+writable again. The early-close fault reached the first SCM recheck,
+opened the Engine file for write and exited 1 at the designated assertion.
+Restoring the handle lifetime returned the expected control marker and
+exit 0. Independent review checked the role and resource lifetimes,
+refusal paths, fixture oracle and the unchanged output/actor boundary.
+
+The Windows Sandbox skill bound the inert cases to the existing offline
+build-26100 guest with 64-bit Windows PowerShell 5.1 and `wsb` 0.8.114.0.
+Input hashes and the offline checks matched at both bookends. Both lab
+shares were emptied and the tests retired their own temporary files.
+The base was `9e65a75bc5d4430016e0d4a08a79162d6ef34a28`. The repair and test
+SHA-256 values were
+`2eeb6a2578ad53cc9405f54bba1e5acb9afe337b55720bc38840be09bdee0598`
+and `8fbbfde20a83f39715a78c68ff61c882918310f966a94879621bc8af322972cd`.
+The healthy receipt under `~/.local/share/nevrotick/s06-image-hold-native-7uh16b16/`
+hashes to `4669e5e5af85d93b3ce1f0501df5aa21d33ee715f0943d29b5b6c40c2eaf4483`.
+The fault receipt under `~/.local/share/nevrotick/s06-image-hold-native-8y7wmmrx/`
+hashes to `8ec94c5059527540af8a31cafc115a7ac84b7a33ad387a7ebee3a02269264e3c`.
+The combined checkout also passed 36 portable MSIX fixture tests in a
+network-isolated read-only namespace. The transcript under
+`~/.local/share/nevrotick/s06-prestart-image-hold-20261123-r6jy3p3i/` hashes to
+`f280657055f5605c1d472232b224beb6d515194b809144fbc95726c8223410a5`.
+
+The reopened writers establish ordinary release on this guest. The run
+leaves native close failures, continuous registration and SCM custody,
+signed installation, actor-token observation and owned child launch
+under the existing S0.6 window and package gates. There is no generated
+mutation credit for the directed control.
+
+### Launch the fixed pre-start observer with owned native custody — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-26/27. The same-actor observer launcher
+accepts the three fixed SCM selectors and their eight fixed libtest arguments.
+The dedicated Windows PowerShell host serializes child creation. The caller
+owns the private staging namespace and adjacent loader inputs. The launcher
+checks the exact held executable against the independently supplied length
+and SHA-256 under a 16 MiB read ceiling. It launches with an empty environment
+and an explicit list of the three standard handles, and refuses a thread token.
+Before resuming it verifies the loaded image path and job membership on the
+original suspended process. The unnamed job is limited to one active process
+and configured to terminate its processes when the last handle closes.
+[Windows process creation API](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw)
+and [process attributes](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
+
+`plan-code-change` and the implementation lifecycle review selected the fixed
+observer prerequisite instead of changing the SCM actors. The launcher uses
+the existing bounded stream collector. It requires both EOFs, the original
+process exit, an empty job, retained-file and final-path checks, and the
+original deadline before publication. An expired or failed operation can
+still retire its owned job and settle the pending reads. Unknown retirement
+withholds the capture and retains the original owner and cause. Startup
+recovery can terminate the still-suspended original through its held handle
+when job membership was never confirmed. That recovery branch is source
+reviewed. The selected native runs did not encounter it.
+
+`qa-integration-tests`, `qa-state-concurrency-lifecycle` and `qa-fault-recovery`
+ran the restored source in the existing offline build-26100 Windows Sandbox
+with Windows PowerShell 5.1 and `wsb` 0.8.114.0. The seven retained collector
+cases and twelve new launcher cases passed. The new controls include the three
+fixed argv rows, exact binary stdout and stderr, nonzero exit, environment
+isolation, three pre-launch refusals, output ceilings, held-pipe timeout,
+and both EOFs with a still-live process under a pre-aged deadline. After
+refusal the timeout control observed both original reads completed. Exclusive
+image reopens and process observations checked release before fixture teardown.
+The direct self-spawn succeeded. The one-child job refused the same attempted
+spawn with Windows code 1816. A directed two-child derivative passed the first
+eleven controls and failed on the contained observer's expected exit. The
+restored source passed that control. This supplies zero generated mutation
+credit. The first fixture compilation attempt stopped before the first case.
+The succeeding runs compiled the inert executable with the guest's 64-bit
+.NET Framework C# compiler and used the fixed PowerShell module for capture.
+
+The source candidate was `c3a38ac45d3934f5958145aa13619a3ae7a53924`
+on `9e65a75bc5d4430016e0d4a08a79162d6ef34a28`. Independent review checked
+the exact final hashes, fixed selector admission, retained handle identities,
+original deadline, and the retired/released split. The restored receipt under
+`~/.local/share/nevrotick/s06-observer-launch-native-m4iq4n_j/` hashes to
+`3998e2e46b51dfb92f6a9e0528d50fadcc10a48fb4c8b49b44f2165a5ef25c04`.
+The fault receipt under `~/.local/share/nevrotick/s06-observer-launch-native-lpj66gwr/`
+hashes to `373cb2ae3603389bd62eef68775e622df65e91c5eb40f83e6b691ba7c1cfddcb`.
+Exact inputs matched before and after each run. Both shares were emptied and
+the tests retired their temporary images and processes. The 36 portable MSIX
+fixture tests also passed in the read-only network-isolated namespace. Their
+log under `~/.local/share/nevrotick/s06-observer-launch-20261123-jg8m88m8/` hashes
+to `b081130269882e78eaca4d1a288ae16c4a5e812cb834d8f7e20154eb5bf502bf`.
+
+The result advances the observer launch dependency for the signed pre-start
+window. The window still needs independent admission of the signed package,
+the real linked observer, and each effective actor token before sending a
+capture to the existing reader. Installed SCM access, service provisioning,
+and final MSIX acceptance remain open.
+
+### Bind the pre-start observer to its held primary token — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-1/26/27. The dedicated launcher takes a live
+actor reference created by a bounded query of its actual primary token. It
+checks that object and generation before launch and resume. The original
+suspended child's observed user, logon, session, integrity, elevation, filter
+history, group and privilege attributes must match the observed launcher
+context. The child primary token is reopened through the original suspended
+process to check its generation before resume. Capture retains the query-only
+child token, checks its generation after actual exit and releases it with the
+child. Actor fields remain private. Role admission and proof of the child's
+live token association after resume belong to the installed window owner.
+[Windows token statistics](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-token_statistics).
+
+The privilege and lifecycle reviews checked exact `TOKEN_QUERY` ownership,
+bounded native layouts and the existing actor, deadline and retirement guards.
+The first guest attempt stopped in token readback before any case. A bounded
+native diagnostic identified `TokenHasRestrictions` returning one byte for a
+four-byte buffer on build 26100. The reader accepts that observed extent and
+the documented DWORD for that field, and reads the returned width. Other
+queries retain their original extent checks. The filter-history value remains
+separate from the list of restricting SIDs.
+[Token information classes](https://learn.microsoft.com/windows/win32/api/winnt/ne-winnt-token_information_class).
+
+The final source tree was `2f92094bac7259a9b46b4785a7f4d1717f5ad1ae`.
+Integration and fault-recovery QA ran seven collector cases and thirteen
+observer cases in the existing offline build-26100 guest. The disposed actor
+was refused before process creation. A directed control varied the child's
+observed logon LUID only for the actor comparison, then restored the original
+value for subsequent checks. It reached the actor refusal on the original
+suspended process with a positive PID, confirmed retirement and release, and
+no child entry marker or published capture. The restored source passed all
+20 native controls. Independent review matched the native-width fix and
+retained actor/child lifecycle to the final hashes. The 36 portable MSIX
+fixture tests also passed in a read-only network-isolated namespace.
+
+The native restored receipt under `~/.local/share/nevrotick/s06-actor-check-native-qb4vviwl/`
+hashes to `ada94d3ad71f3d96871aa8866c76634e655c6bdfa038b2d03bb8c55caf609cab`.
+The directed receipt under `~/.local/share/nevrotick/s06-actor-check-native-lzwdaqjw/`
+hashes to `81db72eb3b6c0cb436d86d7e4bf585f3a0f84323a75e4973b6edf487ff3201fe`.
+Input and offline bookends matched and share files were retired. The
+portable log under `~/.local/share/nevrotick/s06-actor-window-20261123-uwxMMxdr/`
+hashes to `66b913bdaf66250895d9207d27c267720148d25bd7ff975cde0bd522e9e4cf55`.
+The directed actor case carries zero generated mutation credit.
+
+The existing unsigned archive again passed actual reader admission at
+`1bf4a79fca6ac8e8ef0465584a0fa8ce9d03581bf4418de145c6f2d2ae04a31d`.
+The retained observer at `ef0817ccd1be583c62e862c152d69ce72be364849b5c34ee4206cb18d2bb8ba4`
+contains all three selectors and remains a candidate for the bounded installed
+fixture after loader and input readback in its admitted environment. The
+current guest run exercises one actual launcher context. A signed lab package,
+independently admitted distinct effective actor profiles, and the supported
+pre-start installation window remain required before observing installed SCM
+access.

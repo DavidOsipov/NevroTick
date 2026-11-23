@@ -100,28 +100,28 @@ public static string Read(Microsoft.Win32.SafeHandles.SafeFileHandle handle)
     return [NevroTick.S06ImagePath]::Read($Handle)
 }
 
+function Confirm-S06ImagePath {
+    param([IO.FileStream]$File, [string]$Path)
+
+    if (![string]::Equals((Read-S06ImageFinalPath $File.SafeFileHandle), ('\\?\' + $Path), [StringComparison]::Ordinal)) {
+        throw 'Opened image does not resolve to the registered package member'
+    }
+}
+
 function Confirm-S06Image {
-    param([string]$Path, [long]$Bytes, [string]$Digest)
+    param([IO.FileStream]$File, [string]$Path, [long]$Bytes, [string]$Digest)
 
     if ($Bytes -le 0 -or $Bytes -gt 2097152) {
         throw 'Expected image length exceeds its read bound'
     }
-    # The open handle excludes writes/deletion and supplies both path and contents.
-    $file = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
-    try {
-        if (![string]::Equals((Read-S06ImageFinalPath $file.SafeFileHandle), ('\\?\' + $Path), [StringComparison]::Ordinal)) {
-            throw 'Opened image does not resolve to the registered package member'
-        }
-        if ($file.Length -ne $Bytes) {
-            throw 'Installed image extent differs from the approved member'
-        }
-        $actual = (Microsoft.PowerShell.Utility\Get-FileHash -InputStream $file -Algorithm SHA256).Hash
-        if ($file.Position -ne $Bytes -or $file.Length -ne $Bytes -or
-            ![string]::Equals($actual, $Digest, [StringComparison]::OrdinalIgnoreCase)) {
-            throw 'Installed image bytes differ from the approved member'
-        }
-    } finally {
-        $file.Dispose()
+    Confirm-S06ImagePath $File $Path
+    if ($File.Length -ne $Bytes) {
+        throw 'Installed image extent differs from the approved member'
+    }
+    $actual = (Microsoft.PowerShell.Utility\Get-FileHash -InputStream $File -Algorithm SHA256).Hash
+    if ($File.Position -ne $Bytes -or $File.Length -ne $Bytes -or
+        ![string]::Equals($actual, $Digest, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Installed image bytes differ from the approved member'
     }
 }
 
@@ -157,15 +157,50 @@ function Read-S06InstalledIdentity {
         @{ key = 'NevroTick-Lab-S02-Engine'; member = 'nevrotick-lab-s02-engine.exe'; bytes = $EngineBytes; sha256 = $EngineSha256 },
         @{ key = 'NevroTick-Lab-S02-Broker'; member = 'nevrotick-lab-s02-broker.exe'; bytes = $BrokerBytes; sha256 = $BrokerSha256 }
     )
-    foreach ($role in $roles) {
-        $path = Read-S06StoppedService $role.key $root $role.member
-        Confirm-S06Image $path $role.bytes $role.sha256
-    }
-    foreach ($role in $roles) {
-        $null = Read-S06StoppedService $role.key $root $role.member
-    }
-    if (![string]::Equals((Read-S06Registration $PackageFullName), $root, [StringComparison]::Ordinal)) {
-        throw 'Installed registration root changed during readback'
+    $paths = [string[]]::new($roles.Count)
+    $files = [IO.FileStream[]]::new($roles.Count)
+    $failure = $null
+    $releaseFailures = [Collections.Generic.List[Management.Automation.ErrorRecord]]::new()
+    try {
+        for ($index = 0; $index -lt $roles.Count; $index++) {
+            $role = $roles[$index]
+            $paths[$index] = Read-S06StoppedService $role.key $root $role.member
+            # Exclude writes and deletion through both service and registration rechecks.
+            $files[$index] = [IO.File]::Open($paths[$index], [IO.FileMode]::Open,
+                [IO.FileAccess]::Read, [IO.FileShare]::Read)
+            Confirm-S06Image $files[$index] $paths[$index] $role.bytes $role.sha256
+        }
+        foreach ($role in $roles) {
+            $null = Read-S06StoppedService $role.key $root $role.member
+        }
+        if (![string]::Equals((Read-S06Registration $PackageFullName), $root, [StringComparison]::Ordinal)) {
+            throw 'Installed registration root changed during readback'
+        }
+        for ($index = 0; $index -lt $roles.Count; $index++) {
+            Confirm-S06ImagePath $files[$index] $paths[$index]
+        }
+    } catch {
+        $failure = $_
+        throw
+    } finally {
+        foreach ($file in $files) {
+            if ($null -eq $file) { continue }
+            try {
+                $file.Dispose()
+            } catch {
+                $releaseFailures.Add($_)
+            }
+        }
+        if ($releaseFailures.Count -gt 0) {
+            if ($null -ne $failure) {
+                $failure.Exception.Data['S06ImageReleaseFailures'] = $releaseFailures.ToArray()
+            } else {
+                if ($releaseFailures.Count -gt 1) {
+                    $releaseFailures[0].Exception.Data['S06ImageReleaseFailures'] = @($releaseFailures[1])
+                }
+                throw $releaseFailures[0]
+            }
+        }
     }
 
     # The trusted supervisor binds these expected hashes to the signed input.
