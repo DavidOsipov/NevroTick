@@ -2733,6 +2733,45 @@ class ExecutionAccountingTests(unittest.TestCase):
         receipt.write_bytes(original)
         self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
 
+    def test_msix_handoff_requires_unique_generation_receipt_authoring_paths(self):
+        output = self.complete_msix_handoff_fixture()
+        handoff_receipt = output / "verification.json"
+        generation_receipt = output / "msix-authoring/receipt.json"
+        original_handoff = handoff_receipt.read_bytes()
+        original_generation = generation_receipt.read_bytes()
+        original_pin = digest(original_handoff)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+
+        for duplicate_hash in (None, digest(b"different synthetic authoring bytes")):
+            with self.subTest(conflicting=duplicate_hash is not None):
+                generation = json.loads(original_generation)
+                selected_file = next(row for row in generation["files"]
+                                     if row["path"] == "authoring/msix-inputs.json")
+                duplicate = selected_file.copy()
+                if duplicate_hash is not None:
+                    duplicate["sha256"] = duplicate_hash
+                generation["files"].insert(0, duplicate)
+                generation_bytes = json.dumps(generation).encode()
+                generation_receipt.write_bytes(generation_bytes)
+                generation_pin = digest(generation_bytes)
+                handoff = json.loads(original_handoff)
+                inspection = handoff["msix_assembly_inputs"]
+                inspection["generation_receipt_sha256"] = generation_pin
+                inspection["authoring_export"]["files"]["receipt.json"] = {
+                    "bytes": len(generation_bytes), "sha256": generation_pin,
+                }
+                for role in ("ui", "observe"):
+                    handoff[role + "_versioninfo"]["generation_sha256"] = generation_pin
+                handoff_bytes = json.dumps(handoff).encode()
+                handoff_receipt.write_bytes(handoff_bytes)
+                result, stdout, stderr = self.run_msix_handoff(output, digest(handoff_bytes))
+                self.assertEqual((result, stdout), (1, ""))
+                self.assertIn("Duplicate Windows MSIX generation receipt authoring path", stderr)
+
+        generation_receipt.write_bytes(original_generation)
+        handoff_receipt.write_bytes(original_handoff)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+
     def run_windows_publication(self, release, output, report):
         """Run the unchanged verification coordinator with only build effects simulated."""
         project = self.work / "windows-projection"

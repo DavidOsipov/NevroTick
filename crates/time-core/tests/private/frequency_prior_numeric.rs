@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Independent exact-real and numerical-bound controls for conditional frequency.
 
-use std::{error::Error, num::NonZeroU64};
+use std::{cmp::Ordering, error::Error, num::NonZeroU64};
 
 use crate::{FixtureAffineChart, FixtureChartDomain, FixtureChartFrames};
 use garde::Validate;
@@ -11,7 +11,7 @@ use time_domain::{
 
 use super::{
     AffineEffectCoefficients, BaselineChange, BaselineMapNumbers, BaselineOperands,
-    BaselineRequest, FixtureFrequencyNumericError, FixtureFrequencyNumericField,
+    BaselineRequest, ClockSpanTerm, FixtureFrequencyNumericError, FixtureFrequencyNumericField,
     FixtureFrequencyNumericIssue, FixtureFrequencyNumericStep, FrequencyAnchor,
     FrequencyPrediction, FrequencyPrior, Interval, RawAffineEffect, RawAnchor, RawBaselineChange,
     RawBaselineMap, RawBaselineOperands, RawBaselineRequest, RawPrediction, RawPrior, RawRatio,
@@ -1154,7 +1154,7 @@ fn active_ratio_span_signature_preserves_distinct_clock_duration_types() -> Test
 /// # Errors
 /// Preserve supported ratio/span refusal in the healthy neighboring rows.
 /// # Panics
-/// Reject omitted ratio, impossible spans and one-over exact-integer conversion.
+/// Reject impossible spans, one-over conversion, or a misordered exact zero.
 #[test]
 fn active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries() -> TestResult {
     for (active, mono) in [(1, 2), (0, 0), (1_u64 << 52, 1_u64 << 53)] {
@@ -1184,6 +1184,18 @@ fn active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries() -> TestR
             ..
         })
     ));
+
+    // The zero term keeps the coefficient's exponent. A comparison based
+    // only on leading positions would put it above a tiny positive term.
+    let zero: ClockSpanTerm = product_ok(ClockSpanTerm::scaled(1.0, 0))?;
+    let tiny: ClockSpanTerm = product_ok(ClockSpanTerm::scaled(f64::MIN_POSITIVE, 1))?;
+    assert_eq!(
+        zero.compare(tiny),
+        Ordering::Less,
+        "zero precedes the smallest normal"
+    );
+    assert_eq!(tiny.compare(zero), Ordering::Greater);
+    assert_eq!(tiny.compare(tiny), Ordering::Equal);
     Ok(())
 }
 
@@ -1194,6 +1206,21 @@ fn active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries() -> TestR
 /// Reject a span accepted only after rounding or widening either endpoint.
 #[test]
 fn active_ratio_span_refuses_neighbors_outside_the_declared_bounds() -> TestResult {
+    // One tick exceeds twice the larger addend even though the twice-rounded
+    // outward upper bound reaches it. The adjacent valid ratio sums to one.
+    let just_below_half: f64 = 0.5_f64.next_down();
+    let error: f64 = just_below_half.next_down();
+    assert_eq!(
+        check_active_ratio_span(active_elapsed(1)?, elapsed(1)?, just_below_half, error),
+        Err(FixtureFrequencyNumericError::ActiveRatioMismatch)
+    );
+    product_ok(check_active_ratio_span(
+        active_elapsed(1)?,
+        elapsed(1)?,
+        0.5_f64.next_up(),
+        error,
+    ))?;
+
     let integer_limit: u64 = 1_u64 << 53;
     let cases: [(u64, u64, f64, f64); 5] = [
         (1, 1, 1.0_f64.next_down(), 0.0),
@@ -1279,6 +1306,36 @@ fn active_ratio_span_checks_exact_endpoints_across_binary_scales() -> TestResult
         ),
         Err(FixtureFrequencyNumericError::ActiveRatioMismatch)
     );
+    // Let N = 2^53, M = N - gap, R = 1 - 1/N, A = M + 1.
+    // The error needed for the upper endpoint is 1/N + 1/M.
+    // At E = 2/N each next binary64 value adds 4/N². For the chosen gaps,
+    // E + floor(gap/4) ULPs is below the threshold and the next value is
+    // above. At gap=1 the exact subtraction aligns to 107 bits.
+    let span_limit: u64 = 1_u64 << 53;
+    let ratio: f64 = 1.0_f64.next_down();
+    let base_error: f64 = f64::EPSILON;
+    for gap in 1_u64..=16 {
+        let monotonic: u64 = span_limit - gap;
+        let active: u64 = monotonic + 1;
+        let below: f64 = f64::from_bits(base_error.to_bits() + gap / 4);
+        product_ok(check_active_ratio_span(
+            active_elapsed(monotonic)?,
+            elapsed(monotonic)?,
+            ratio,
+            below,
+        ))?;
+        assert_eq!(
+            check_active_ratio_span(active_elapsed(active)?, elapsed(monotonic)?, ratio, below),
+            Err(FixtureFrequencyNumericError::ActiveRatioMismatch),
+            "upper endpoint at gap={gap}"
+        );
+        product_ok(check_active_ratio_span(
+            active_elapsed(active)?,
+            elapsed(monotonic)?,
+            ratio,
+            below.next_up(),
+        ))?;
+    }
     Ok(())
 }
 

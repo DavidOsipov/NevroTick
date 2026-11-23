@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 RECEIPTS = ROOT / "artifacts/windows-services/recovery-20261107-v1"
 BINS = ("nevrotick-lab-s02-engine", "nevrotick-lab-s02-broker")
+EVENT_RESOURCE_FILE = "nevrotick-test-events.dll"
+EVENT_RESOURCE_MAX = 64 * 1024  # Both files in the selected MD-P4 build output.
 # The six files from the previously admitted offline MakeAppx fixture run.
 SDK_SHA256 = {
     "Microsoft.Windows.Build.Appx.AppxPackaging.dll.manifest":
@@ -30,9 +32,13 @@ SDK_SHA256 = {
 }
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
+from metadata.event_resource_events import verify_event_resources
+from metadata.event_resource_pe import read_resource_dll
+from metadata.pipeline.delivery import _equal, _json
 from metadata.pipeline.generate import (
     PublicationUncertainError, _new_staging_directory, _open_directory,
-    _outside_source, _parent_unchanged, _remove_staging, _write_payload,
+    _outside_source, _parent_unchanged, _read_checked_generation, _read_regular,
+    _remove_staging, _write_payload,
 )
 from windows_pe import read_export_pair
 
@@ -97,6 +103,54 @@ def role_images(receipt, receipt_hash):
     require(len({digest(payload) for payload in images.values()}) == len(BINS),
             "Each service requires a distinct image.")
     return images
+
+
+def event_resource_image(
+    build: Path, receipt_hash: str, generation: Path, root: Path, source: Path | None,
+) -> bytes:
+    """Read and independently verify the fixed lab DLL before any staging writes.
+
+    The externally supplied receipt digest pins input bytes for this fixture.
+    Artifact authenticity and installed provider policy have separate owners.
+    """
+    model, generated = _read_checked_generation(root, generation, source, stage="source")
+    provider = model.event_provider
+    require(provider is not None and provider.package_resource_file == EVENT_RESOURCE_FILE,
+            "The checked generation must select the fixed lab event resource.")
+
+    directory = _open_directory(build)
+    try:
+        before = file_version(os.fstat(directory))
+        missing = {"receipt.json", EVENT_RESOURCE_FILE}
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                require(entry.name in missing, "Unexpected event resource build inventory.")
+                missing.remove(entry.name)
+        require(not missing, "Incomplete event resource build inventory.")
+        raw_receipt = _read_regular(directory, "receipt.json", EVENT_RESOURCE_MAX)
+        require(digest(raw_receipt) == receipt_hash, "Event resource receipt SHA-256 differs.")
+        image = _read_regular(directory, EVENT_RESOURCE_FILE, EVENT_RESOURCE_MAX)
+        require(file_version(os.fstat(directory)) == before, "Event resource build directory changed.")
+        _parent_unchanged(build, directory)
+    finally:
+        os.close(directory)
+
+    try:
+        receipt = _json(raw_receipt)
+    except RecursionError as error:
+        raise ValueError("Event resource receipt nesting exceeds parser limits.") from error
+    require(type(receipt) is dict and type(receipt.get("schema_version")) is int
+            and receipt["schema_version"] == 1 and receipt.get("status") == "linked-and-read-back"
+            and receipt.get("target") == "x86_64-pc-windows-msvc"
+            and receipt.get("file") == EVENT_RESOURCE_FILE, "Unexpected event resource receipt profile.")
+    require(receipt.get("manifest_sha256") == digest(generated["authoring/service-events.man"])
+            and receipt.get("generation_receipt_sha256") == digest(generated["receipt.json"]),
+            "Event resource receipt does not match the checked generation.")
+    require(type(receipt.get("bytes")) is int and 0 < len(image) == receipt["bytes"]
+            and receipt.get("sha256") == digest(image), "Event resource DLL size or digest differs.")
+    observed = verify_event_resources(provider, read_resource_dll(image))
+    require(_equal(receipt.get("readback"), observed), "Event resource receipt readback differs from the DLL.")
+    return image
 
 
 def png_logo(size):
@@ -210,14 +264,35 @@ def main():
     parser.add_argument("--inert-sha256", required=True)
     parser.add_argument("--sdk-source", type=Path,
                         help="stage the six pinned MakeAppx inputs beside payload/ and input-set.json")
+    parser.add_argument("--event-resource-build", type=Path,
+                        help="directory containing the linked lab DLL and its build receipt")
+    parser.add_argument("--event-resource-receipt-sha256",
+                        help="independently supplied SHA-256 of the event resource build receipt")
+    parser.add_argument("--event-resource-generation", type=Path,
+                        help="source generation used to build the event resource")
+    parser.add_argument("--event-resource-source-root", type=Path,
+                        help="metadata source root used for the generation")
+    parser.add_argument("--event-resource-source", type=Path,
+                        help="optional metadata source file within that root")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    event_inputs = (args.event_resource_build, args.event_resource_receipt_sha256,
+                    args.event_resource_generation, args.event_resource_source_root)
+    selected = any(item is not None for item in (*event_inputs, args.event_resource_source))
+    if selected and any(item is None for item in event_inputs):
+        parser.error("event resource options require --event-resource-build, --event-resource-receipt-sha256, "
+                     "--event-resource-generation, and --event-resource-source-root together")
     try:
         payload = role_images(args.receipt.absolute(), args.receipt_sha256)
         payload["AppxManifest.xml"] = (HERE / "AppxManifest.xml").read_bytes()
         payload["Inert.exe"] = read_bound(args.inert.absolute(), 64 * 1024, args.inert_sha256)
         for name, size in (("PackageLogo", 50), ("Square44x44Logo", 44), ("Square150x150Logo", 150)):
             payload[f"Assets/{name}.png"] = png_logo(size)
+        if selected:
+            for protected in (args.event_resource_build, args.event_resource_generation,
+                              args.event_resource_source_root):
+                _outside_source(protected, args.output)
+            payload[EVENT_RESOURCE_FILE] = event_resource_image(*event_inputs, args.event_resource_source)
         sdk_source = args.sdk_source.absolute() if args.sdk_source is not None else None
         report = stage_payload(args.output, payload, sdk_source)
     except PublicationUncertainError:

@@ -2101,9 +2101,15 @@ def check_msix_inspection(inspection: dict, receipt: dict, generation_sha256: st
     with (source / "metadata/product.toml").open("rb") as product:
         pending = [{key: item[key] for key in ("path", "owner", "required_stage")}
                    for item in tomllib.load(product)["pending"]]
+    authoring = {}
     try:
-        authoring = {row["path"]: row["sha256"] for row in receipt["files"]
-                     if row["path"] in MSIX_ALLOWED_AUTHORING}
+        for row in receipt["files"]:
+            path = row["path"]
+            if path not in MSIX_ALLOWED_AUTHORING:
+                continue
+            if path in authoring:
+                raise ENV.Incomplete("Duplicate Windows MSIX generation receipt authoring path.")
+            authoring[path] = row["sha256"]
     except (KeyError, TypeError) as error:
         raise ENV.Incomplete("Invalid Windows MSIX generation receipt file inventory.") from error
     if not MSIX_REQUIRED_AUTHORING <= authoring.keys() or inspection["authoring_inputs"] != authoring:

@@ -24,6 +24,11 @@ MANIFEST = "AppxManifest.xml"
 BLOCK_MAP = "AppxBlockMap.xml"
 CONTENT_TYPES = "[Content_Types].xml"
 INERT = "Inert.exe"
+EVENT_RESOURCE = "nevrotick-test-events.dll"
+EVENT_DEFAULT_TYPE = b'  <Default Extension="dll" ContentType="application/x-msdownload"/>\n'
+EVENT_OVERRIDE_TYPE = (
+    b'  <Override PartName="/nevrotick-test-events.dll" ContentType="application/octet-stream"/>\n'
+)
 LOGO = "Assets/PackageLogo.png"
 BLOCK_BYTES = 65536
 XML_BYTES_LIMIT = 64 * 1024
@@ -65,8 +70,8 @@ def block_map(payload, compressed_sizes, *, stored_size=False):
         })
         for index, block in enumerate(payload_blocks(data)):
             attrs = {"Hash": b64encode(sha256(block).digest()).decode("ascii")}
-            if name == INERT and compressed_sizes is not None:
-                size = compressed_sizes[index]
+            if name in compressed_sizes:
+                size = compressed_sizes[name][index]
                 if size is not None:
                     attrs["Size"] = str(size)
             if name == LOGO and stored_size:
@@ -75,14 +80,13 @@ def block_map(payload, compressed_sizes, *, stored_size=False):
     return ET.tostring(root, encoding="utf-8")
 
 
-def content_types():
+def content_types(extra_declaration=b""):
     return b"""<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="exe" ContentType="application/octet-stream"/>
   <Default Extension="png" ContentType="image/png"/>
   <Override PartName="/AppxManifest.xml" ContentType="application/vnd.ms-appx.manifest+xml"/>
   <Override PartName="/AppxBlockMap.xml" ContentType="application/vnd.ms-appx.blockmap+xml"/>
-</Types>
-"""
+""" + extra_declaration + b"</Types>\n"
 
 
 def make_zip(members, deflated):
@@ -145,33 +149,38 @@ class PackageReaderTests(unittest.TestCase):
             path = self.payload_dir / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
+        self.write_input_set(self.payload)
+
+    def write_input_set(self, payload):
         inputs = json.dumps({
-            "payload": {name: sha256(data).hexdigest() for name, data in self.payload.items()},
+            "payload": {name: sha256(data).hexdigest() for name, data in payload.items()},
             "sdk": {name: sha256(name.encode("ascii")).hexdigest() for name in SDK_NAMES},
         }).encode("utf-8")
         self.input_set.write_bytes(inputs)
         self.input_set_digest = sha256(inputs).hexdigest()
 
-    def write_package(self, *, payload=None, compressed=False, size_case=None, xml_prefix=None):
+    def write_package(self, *, payload=None, compressed_member=None, size_case=None,
+                      xml_prefix=None, types_xml=None):
         if payload is None:
             payload = self.payload
-        sizes = None
+        sizes = {}
         compressed_members = {}
-        if compressed:
-            spans, footer = deflate_blocks(payload[INERT])
-            compressed_members[INERT] = b"".join(spans) + footer
-            sizes = [len(span) for span in spans]
+        if compressed_member is not None:
+            spans, footer = deflate_blocks(payload[compressed_member])
+            compressed_members[compressed_member] = b"".join(spans) + footer
+            block_sizes = [len(span) for span in spans]
             if size_case == "missing":
-                sizes[0] = None
+                block_sizes[0] = None
             elif size_case == "shifted":
                 # The whole stream and total declared length stay equal, but
                 # the first declared span loses one byte to the second.
-                sizes[0] -= 1
-                sizes[1] += 1
+                block_sizes[0] -= 1
+                block_sizes[1] += 1
+            sizes[compressed_member] = block_sizes
         members = {
             **payload,
             BLOCK_MAP: block_map(payload, sizes, stored_size=size_case == "stored"),
-            CONTENT_TYPES: content_types(),
+            CONTENT_TYPES: content_types() if types_xml is None else types_xml,
         }
         if xml_prefix is not None:
             name, prefix = xml_prefix
@@ -179,21 +188,26 @@ class PackageReaderTests(unittest.TestCase):
         self.package.write_bytes(make_zip(members, compressed_members))
         return members
 
-    def run_reader(self, *, expected_package_digest=None):
+    def run_reader(self, *, expected_package_digest=None, include_event_resource=False):
         if expected_package_digest is None:
             expected_package_digest = sha256(self.package.read_bytes()).hexdigest()
+        command = [
+            sys.executable, "-I", "-B", str(HERE / "check_package.py"),
+            "--payload", str(self.payload_dir), "--package", str(self.package),
+            "--input-set", str(self.input_set), "--input-set-sha256", self.input_set_digest,
+            "--package-sha256", expected_package_digest,
+        ]
+        if include_event_resource:
+            command.append("--include-event-resource")
         return subprocess.run(
-            [sys.executable, "-I", "-B", str(HERE / "check_package.py"),
-             "--payload", str(self.payload_dir), "--package", str(self.package),
-             "--input-set", str(self.input_set), "--input-set-sha256", self.input_set_digest,
-             "--package-sha256", expected_package_digest],
+            command,
             capture_output=True, text=True, check=False, timeout=10,
         )
 
-    def assert_accepted(self, members):
+    def assert_accepted(self, members, *, include_event_resource=False):
         with ZipFile(self.package) as archive:
             self.assertEqual({name: archive.read(name) for name in archive.namelist()}, members)
-        result = self.run_reader()
+        result = self.run_reader(include_event_resource=include_event_resource)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
         package_bytes = self.package.read_bytes()
@@ -214,8 +228,9 @@ class PackageReaderTests(unittest.TestCase):
             },
         })
 
-    def assert_refused(self, reason, *, expected_package_digest=None):
-        result = self.run_reader(expected_package_digest=expected_package_digest)
+    def assert_refused(self, reason, *, expected_package_digest=None, include_event_resource=False):
+        result = self.run_reader(expected_package_digest=expected_package_digest,
+                                 include_event_resource=include_event_resource)
         self.assertEqual(result.returncode, 1, result.stderr or "reader accepted the fixture")
         self.assertEqual(result.stdout, "")
         self.assertTrue(result.stderr.startswith("Fixture package refused: "), result.stderr)
@@ -226,7 +241,107 @@ class PackageReaderTests(unittest.TestCase):
         self.assert_accepted(self.write_package())
 
     def test_admits_streamed_deflate_with_two_blocks(self):
-        self.assert_accepted(self.write_package(compressed=True))
+        self.assert_accepted(self.write_package(compressed_member=INERT))
+
+    def add_event_resource(self):
+        data = b"R" * BLOCK_BYTES + b"event resource marker"
+        self.payload[EVENT_RESOURCE] = data
+        resource = self.payload_dir / EVENT_RESOURCE
+        resource.write_bytes(data)
+        self.write_input_set(self.payload)
+        return resource
+
+    def test_requires_explicit_matching_event_resource_profile(self):
+        self.assert_accepted(self.write_package())
+        self.assert_refused("frozen input set payload inventory",
+                            include_event_resource=True)
+        self.add_event_resource()
+        types = content_types(EVENT_DEFAULT_TYPE)
+        members = self.write_package(compressed_member=EVENT_RESOURCE, types_xml=types)
+        self.assert_refused("frozen input set payload inventory")
+        self.assert_accepted(members, include_event_resource=True)
+        self.write_package(compressed_member=EVENT_RESOURCE, size_case="shifted", types_xml=types)
+        self.assert_refused(f"{EVENT_RESOURCE} compressed block bytes do not match at expanded offset 0",
+                            include_event_resource=True)
+
+    def test_binds_event_resource_to_frozen_input_and_authored_bytes(self):
+        resource = self.add_event_resource()
+        types = content_types(EVENT_OVERRIDE_TYPE)
+        members = self.write_package(types_xml=types)
+        self.assert_accepted(members, include_event_resource=True)
+        changed = b"different event resource"
+        self.write_package(payload={**self.payload, EVENT_RESOURCE: changed}, types_xml=types)
+        self.assert_refused(f"emitted package member differs: {EVENT_RESOURCE}",
+                            include_event_resource=True)
+        resource.write_bytes(changed)
+        self.assert_refused(f"authored payload member differs from the frozen input set: {EVENT_RESOURCE}",
+                            include_event_resource=True)
+        resource.write_bytes(self.payload[EVENT_RESOURCE])
+        self.assert_accepted(self.write_package(types_xml=types), include_event_resource=True)
+
+    def test_requires_exact_event_resource_rosters(self):
+        resource = self.add_event_resource()
+        alias = EVENT_RESOURCE.upper()
+        types = content_types(EVENT_DEFAULT_TYPE)
+        members = self.write_package(types_xml=types)
+        self.assert_accepted(members, include_event_resource=True)
+        base = {name: data for name, data in self.payload.items() if name != EVENT_RESOURCE}
+        aliased = {**base, alias: self.payload[EVENT_RESOURCE]}
+        extra = {**self.payload, alias: self.payload[EVENT_RESOURCE]}
+
+        cases = (
+            ("missing", base, "ZIP entry counts differ"),
+            ("case alias", aliased, "package inventory differs"),
+            ("extra", extra, "ZIP entry counts differ"),
+        )
+        for case, payload, _ in cases:
+            with self.subTest(input_set=case):
+                self.write_input_set(payload)
+                self.assert_refused("frozen input set payload inventory or digests differ",
+                                    include_event_resource=True)
+        self.write_input_set(self.payload)
+
+        resource.unlink()
+        self.assert_refused("authored payload root inventory differs",
+                            include_event_resource=True)
+        (self.payload_dir / alias).write_bytes(self.payload[EVENT_RESOURCE])
+        self.assert_refused("authored payload root inventory differs",
+                            include_event_resource=True)
+        resource.write_bytes(self.payload[EVENT_RESOURCE])
+        self.assert_refused("authored payload root inventory differs",
+                            include_event_resource=True)
+        (self.payload_dir / alias).unlink()
+
+        for case, payload, reason in cases:
+            with self.subTest(archive=case):
+                self.write_package(payload=payload, types_xml=types)
+                self.assert_refused(reason, include_event_resource=True)
+        self.assert_accepted(self.write_package(types_xml=types), include_event_resource=True)
+
+    def test_checks_event_resource_block_map_and_content_type(self):
+        self.add_event_resource()
+        types = content_types(EVENT_DEFAULT_TYPE)
+        members = self.write_package(types_xml=types)
+        self.assert_accepted(members, include_event_resource=True)
+        block_map_data = members[BLOCK_MAP]
+        base_payload = {name: data for name, data in self.payload.items() if name != EVENT_RESOURCE}
+        resource_hash = b64encode(sha256(self.payload[EVENT_RESOURCE][:BLOCK_BYTES]).digest())
+        wrong_override = EVENT_OVERRIDE_TYPE.replace(b"application/octet-stream", b"image/png")
+        cases = (
+            (BLOCK_MAP, block_map(base_payload, {}), "block-map file count differs"),
+            (BLOCK_MAP, block_map_data.replace(EVENT_RESOURCE.encode(), EVENT_RESOURCE.upper().encode()),
+             "block-map file inventory differs"),
+            (BLOCK_MAP, block_map_data.replace(resource_hash, b64encode(bytes(32))),
+             f"block-map hash differs for {EVENT_RESOURCE}"),
+            (CONTENT_TYPES, content_types(), f"content type differs or is missing for {EVENT_RESOURCE}"),
+            (CONTENT_TYPES, content_types(EVENT_DEFAULT_TYPE + wrong_override),
+             f"content type differs or is missing for {EVENT_RESOURCE}"),
+        )
+        for name, data, reason in cases:
+            with self.subTest(reason=reason):
+                self.package.write_bytes(make_zip({**members, name: data}, {}))
+                self.assert_refused(reason, include_event_resource=True)
+        self.assert_accepted(self.write_package(types_xml=types), include_event_resource=True)
 
     def test_rejects_inconsistent_classic_zip_end_record(self):
         members = self.write_package()
@@ -250,7 +365,7 @@ class PackageReaderTests(unittest.TestCase):
         self.assert_accepted(members)
 
     def test_rejects_inconsistent_zip64_end_records(self):
-        members = self.write_package(compressed=True)
+        members = self.write_package(compressed_member=INERT)
         original = with_zip64_end_records(self.package.read_bytes())
         self.package.write_bytes(original)
         self.assert_accepted(members)
@@ -313,7 +428,7 @@ class PackageReaderTests(unittest.TestCase):
 
     def test_rejects_contradictory_local_header_fields(self):
         for compressed in (False, True):
-            self.write_package(compressed=compressed)
+            self.write_package(compressed_member=INERT if compressed else None)
             original = self.package.read_bytes()
             with ZipFile(self.package) as archive:
                 local_header = archive.getinfo(INERT).header_offset
@@ -331,7 +446,7 @@ class PackageReaderTests(unittest.TestCase):
             ("stored", f"{LOGO} has a Size on a stored block"),
         ):
             with self.subTest(size_case=size_case):
-                self.write_package(compressed=True, size_case=size_case)
+                self.write_package(compressed_member=INERT, size_case=size_case)
                 self.assert_refused(reason)
 
     def test_admits_utf8_xml_declarations_with_optional_bom(self):

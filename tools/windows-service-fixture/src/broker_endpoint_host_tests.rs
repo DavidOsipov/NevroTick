@@ -2082,7 +2082,7 @@ fn check_reply_history(
     let expected_confirmation: bool =
         matches!(history, ReplyHistory::LiveInline | ReplyHistory::LiveQueued);
     assert_eq!(write_confirmed, expected_confirmation);
-    stop_after_scripted_reply(&mut invocation, &mut clock, &stop, history, cutoff);
+    stop_after_scripted_reply(&mut invocation, &mut clock, &stop, history, cutoff)?;
     #[cfg(windows)]
     assert_eq!(
         invocation.native_status.reply_written,
@@ -2232,17 +2232,20 @@ fn check_peer_reply_observations(history: ReplyHistory, trace: &EndpointTrace) {
     }
 }
 
-/// Retire either the idle endpoint or its original queued operation through Stop.
+/// Retire the original reply work and verify its sealed diagnostic records.
+///
+/// # Errors
+/// Returns an absent terminal receipt.
 ///
 /// # Panics
-/// Panics if cancellation is mistaken for terminal completion or loses its cause.
+/// Panics if cancellation is mistaken for completion or a diagnostic loses its cause.
 fn stop_after_scripted_reply(
     invocation: &mut ServiceInvocation<Reporter, impl Worker>,
     clock: &mut TestClock,
     stop: &StopNotification,
     history: ReplyHistory,
     cutoff: Instant,
-) {
+) -> Result<(), FixtureError> {
     if history == ReplyHistory::QueuedExpiry {
         clock.0.borrow_mut().current = cutoff;
         assert_eq!(
@@ -2282,11 +2285,6 @@ fn stop_after_scripted_reply(
     assert_eq!(invocation.outstanding_work(), 0);
     if history == ReplyHistory::StopDuringPeerCheck {
         assert_eq!(invocation.state(), Some(ServiceState::Stopped));
-        assert!(
-            invocation
-                .take_receipt()
-                .is_some_and(|receipt: HostReceipt| receipt.result().is_ok())
-        );
     }
     assert_eq!(
         invocation.failure(),
@@ -2299,6 +2297,27 @@ fn stop_after_scripted_reply(
         }
         .as_ref()
     );
+    let receipt: HostReceipt = invocation
+        .take_receipt()
+        .ok_or(FixtureError::OutcomeUnavailable)?;
+    if history == ReplyHistory::StopDuringPeerCheck {
+        assert!(receipt.result().is_ok());
+    }
+    let records: super::DiagnosticRouteView =
+        super::DiagnosticRouteView::from_route(receipt.diagnostics().required());
+    let observed: Vec<(u8, u8)> = records
+        .records()
+        .iter()
+        .filter(|record| matches!(record[2], 4 | 5 | 9 | 10))
+        .map(|record: &[u8; 9]| (record[2], record[4]))
+        .collect();
+    let expected: &[(u8, u8)] = match history {
+        ReplyHistory::InvalidInlineCount => &[(4, 22), (9, 22)],
+        ReplyHistory::QueuedCancelFailure => &[(4, 23)],
+        _ => &[],
+    };
+    assert_eq!(observed, expected, "{history:?}");
+    Ok(())
 }
 
 /// Compare the exact accepted read and retirement calls on one reservation.

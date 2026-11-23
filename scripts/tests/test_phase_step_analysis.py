@@ -22,6 +22,8 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 ROLE = MODULE._phase_step_role()
 OWNERS = MODULE.PHASE_STEP_SUBJECTS
+HISTORICAL_PARENT_RESULT_SOURCE = Path(__file__).resolve().parent / "fixtures/phase-step/phase_plan.rs.txt"
+HISTORICAL_PARENT_RESULT_SHA256 = "7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a"
 
 
 # Exact retained-producer diagnostic literals. Current-source decoder controls
@@ -2015,7 +2017,11 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
         policy = campaign_policy()
         policy["mutation_jobs"] = 8
         admitted = {"inventories": {"stable": "c" * 64}, "policy_sha256": "d" * 64}
-        identity = {name: "b" * 64 for name in ("Cargo.toml", ROLE.scope.policy, *ROLE.bound_inputs)}
+        manifest = "tools/standalone/Cargo.toml"
+        proof = "tasks/owned-equivalence.md"
+        dependency_policy = {"cooldown_admission": {"resolution": {"manifests_sha256": {
+            "Cargo.toml": "b" * 64, manifest: "b" * 64}}}}
+        identity = {name: "b" * 64 for name in ("Cargo.toml", ROLE.scope.policy, *ROLE.bound_inputs, manifest, proof)}
         result, baseline = {"gate_passed": True}, {"tests_executed": 710}
         payloads = {owner: {"name": owner + "_fault", "file": filename, "package": "time-core", "diff": "synthetic"}
                     for owner, filename in OWNERS.items()}
@@ -2050,7 +2056,9 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
                 return {"synthetic": args[3]}
             for target, name, options in (
                 (MODULE, "read_phase_step_policy", {"return_value": policy}),
-                (MODULE.PRODUCT, "admit_product", {"return_value": ({}, {"Cargo.toml": "b" * 64})}),
+                (MODULE.PRODUCT, "admit_product", {"return_value": (dependency_policy, {"Cargo.toml": "b" * 64})}),
+                (MODULE.COMMON, "admit_mutation_equivalences", {"return_value": [{
+                    "mutant": {"file": OWNERS["step"]}, "proof": {"path": proof}}]}),
                 (MODULE.PRODUCT, "sha256", {"return_value": "b" * 64}),
                 (MODULE.COMMON.ANALYSIS, "admit", {"return_value": admitted}),
                 (MODULE.COMMON, "read_analysis_json", {"side_effect": read}),
@@ -2076,6 +2084,13 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
             for receipts in (paths[:-1], [*paths[:-1], paths[0]]):
                 with self.subTest(receipts=receipts), self.assertRaises(MODULE.Incomplete):
                     MODULE.frequency_cohort_union(arguments("cohort-union", cohort_receipt=receipts, output_dir=root / "missing"), {}, policy, ROLE)
+            first = documents[str(paths[0])]
+            for missing in (manifest, proof):
+                first["source_sha256"] = {name: digest for name, digest in identity.items() if name != missing}
+                with self.subTest(missing=missing), self.assertRaisesRegex(MODULE.Incomplete, "owner custody"):
+                    MODULE.frequency_cohort_union(arguments("cohort-union", cohort_receipt=paths,
+                        output_dir=root / "missing-capture"), {}, policy, ROLE)
+            first["source_sha256"] = identity
             documents[str(paths[0])]["candidate_sha256"] = "0" * 64
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.frequency_cohort_union(arguments("cohort-union", cohort_receipt=paths, output_dir=root / "stale"), {}, policy, ROLE)
@@ -2250,6 +2265,17 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes((ROOT / name).read_bytes())
             identity[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        return root, identity
+
+    def historical_parent_result_fixture(self, directory):
+        """Bind the literal Result and diff rows to their original 9cbdc249 owner."""
+        root, identity = self.causal_fixture(directory)
+        source = MODULE.COMMON.read_analysis_bytes(
+            HISTORICAL_PARENT_RESULT_SOURCE, maximum=256 * 1024)
+        self.assertEqual(hashlib.sha256(source).hexdigest(), HISTORICAL_PARENT_RESULT_SHA256)
+        owner = OWNERS["phase_plan"]
+        (root / owner).write_bytes(source)
+        identity[owner] = HISTORICAL_PARENT_RESULT_SHA256
         return root, identity
 
     def result_sections(self):
@@ -2628,7 +2654,7 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
 
     def test_actual_five_parent_result_rows_remain_zero_credit_with_exact_targets(self):
         with tempfile.TemporaryDirectory() as directory:
-            root, identity = self.causal_fixture(directory)
+            root, identity = self.historical_parent_result_fixture(directory)
             observed = sections = 0
             for key, case in _PHASE_STEP_PARENT_CAUSAL_SPECIMENS.items():
                 if "result_sections" not in case:
@@ -2717,7 +2743,7 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
             case = _PHASE_STEP_PARENT_CAUSAL_SPECIMENS[key]
             for variant in ("body", "infrastructure", "sibling", "duplicate", "source", "foreign_role"):
                 with self.subTest(key=key, variant=variant), tempfile.TemporaryDirectory() as directory:
-                    root, identity = self.causal_fixture(directory)
+                    root, identity = self.historical_parent_result_fixture(directory)
                     sections, role = copy.deepcopy(case["result_sections"]), ROLE
                     if variant == "body":
                         sections[0]["body"] += " changed"
@@ -2751,7 +2777,7 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
             text += f"\ntest result: FAILED. 0 passed; {len(names)} failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n"
             text += "error: test failed, to rerun pass `-p time-core --lib`\n"
             with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
-                root, identity = self.causal_fixture(directory)
+                root, identity = self.historical_parent_result_fixture(directory)
                 with self.assertRaisesRegex(MODULE.Incomplete, "no separate owned semantic assertion"):
                     MODULE._frequency_caught_text(text, root, identity, {"test_inventories": {"baseline": names}},
                         mutant=case["mutant"], mutant_diff=case["diff"], role=ROLE, uncredited=[])

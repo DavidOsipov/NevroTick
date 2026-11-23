@@ -3586,7 +3586,7 @@ fn future_successor_preserves_live_phase_and_step_obligation() -> TestResult {
     );
     assert!(owner.proposal().is_none() && owner.step_proposal().is_none());
 
-    let mut owner =
+    let mut owner: FixturePhasePlanOwner<'_, '_> =
         settle_original_step_after_early_reference(owner, early, a.context, original_error)?;
     let exact: FixturePhaseNow = now(SECOND, 8 * SECOND)?;
     assert!(matches!(

@@ -16143,3 +16143,157 @@ The raw reports and roster comparison are in
 Independent review matched the retained reader, fault and roster
 evidence. Actual Windows mode transitions, installed use, mapping
 qualification and affected-file coverage and mutation gates remain open.
+
+### Preserve broker reply operation and cleanup diagnostics — 23 November 2026
+
+W11-W05/S3.1 and CHECK-17/25. The Rust contract review confirmed that
+the worker retained a running reply failure while both projections
+assigned the cleanup cause. The regression reads the sealed required
+consumer of the actual invocation. An invalid inline count now gives
+primary and operation records `(4, 22)` and `(9, 22)`. A queued
+cancellation failure retains primary cleanup `(4, 23)`, and the
+successful and guard-refused histories emit no failure records.
+The original errors, waits, work charge and retirement observations
+are unchanged.
+
+On base `c347bd08`, the final regression against the uncorrected
+projection exited 101 with `[(4, 23), (9, 23)]`. Earlier attempts
+exposed a pending diagnostic in the unsealed observation and a
+test-function length lint. The final test reads the sealed receipt
+in the existing retirement helper. Both ordinary and optimized GNU
+fixture rosters passed all 191 cases, format and GNU and Windows MSVC
+all-target Clippy passed, and the roster hash remains unchanged.
+The Core annotation also passed its exact Phase/Step test and test
+Clippy. The final isolated tree is
+`5dfe0120b397edf62512a96d348d1825d265df42`, with 731 inputs bound to
+`ef775b85e05e1d0fd326f9bb900d64032892382e5fad9bd508071d86b6d6b467`.
+The predecessor and final receipt hashes are
+`901df88e6ec87ccc186045de6910b9290a83cc0c320f1dd2cadb02b15fc7e01d`
+and `d92dff5ff83055239bacd3b6529ae46c590d66fd2d6fbbe85bf361759c4af187`
+under `~/.local/share/nevrotick/reply-diagnostic-projection-20261123.dwSdP2Lt/`.
+Independent review traced the real worker and both consumers.
+Affected metrics, relink and installed Windows qualification retain
+their separate candidate and evidence requirements.
+
+### Require unique MSIX handoff authoring paths — 23 November 2026
+
+W11-W10/MD-P4 and CHECK-18/26. The shared source-inspection receiver
+now refuses repeated selected authoring paths before using their
+digest map. The predecessor's relocated handoff CLI accepted both
+identical and conflicting duplicates in hash-bound synthetic receipts.
+The corrected CLI refuses both and accepts the restored receipt.
+The producer, receipt format, PE/PDB bindings and current activation
+and artwork checks retain their existing contracts.
+
+The combined tree `f7e8aa164354ae2fcc76b24e0dc960e619270a81` passed
+all 186 verifier tests in a read-only network-isolated namespace.
+The corrected CLI also verified the exact retained 61-file handoff
+using its independently recorded receipt hash. Its readback bytes
+matched the prior `abd51f37…b34b5e` result, including incomplete
+assembly and all four unadmitted production roles. Independent review
+checked the duplicate cases through the real reader. The raw predecessor
+and accepted logs are under
+`~/.local/share/nevrotick/phase-ratio-line-gate-20261123.NNuqBNhW/`.
+Final identity, signed payload, supported activation and installed
+lifecycle remain with the existing direct-MSIX owners.
+
+### Pack and read back a checked event resource — 23 November 2026
+
+W11-W08/W11-W10, MD-P4 and CHECK-18/23/26. The explicit lab
+selection in `msix/prepare_payload.py` binds the complete checked
+metadata generation, the independently pinned link receipt and the
+fixed `nevrotick-test-events.dll` leaf. It reads the actual PE resource
+tree against the admitted provider before staging the immutable bytes.
+The existing atomic publisher adds the DLL alone to the authored payload
+and packer inventory. `msix/check_package.py --include-event-resource`
+requires that leaf, matching bytes, block-map evidence and an admitted
+content type throughout the actual archive. The default staged payload
+and the prior archive's readback report matched the retained outputs
+byte for byte.
+
+The first refreshed source generation accepted the checked historical
+record and then raised `KeyError` on its legitimately pending logo fields.
+The independent source output checker now uses the complete admitted
+MSIX field rows, including empty pending values. The predecessor failed
+with either or both logos pending. The corrected tests execute source
+generation and readback for those three cases and retain the populated
+neighbor. Actual product source still reports incomplete assembly and
+refuses release validation.
+
+The refreshed baseline and changed provider generations preserve the
+exact compiled manifest bytes. Reusing each matching MC/RC receipt, the
+maintained link command produced both original DLL byte sequences and new
+generation-bound receipts. Both live lab CLI selections passed. A crossed
+receipt failed generation binding. A same-size crossed DLL failed its
+digest check. The same DLL with a matching new digest still failed the
+independent provider GUID check. All three failures left the output absent.
+
+The owned offline build-26100 guest used MakeAppx 10.0.28000.2705.
+Packing exited zero. The missing-logo control exited one at `0x80080204`.
+Both children were reaped, both default-route inventories stayed empty,
+and the owned guest work and share files were retired after export. The
+192,998-byte unsigned archive has SHA-256
+`05160113bdd2b9439c1ed76d7f45ae0b5e09350204061809dc31ee53058eda6d`.
+The independent reader checked all ten entries. All seven original payload
+members matched the base archive, and the resource leaf matched the exact
+2,560-byte DLL as `application/x-msdownload`. The physical ZIP blocks
+matched the block map. The reader refused the crossed provider input set
+and refused both mismatched profile selections. The two fixture services
+remain Disabled and the lab manifest declares no provider registration.
+
+The six-file source overlay over `c347bd081c6456f5b1ae9514cb76e4b168d4f65a`
+hashes to `2a02d7d6889d20027c9ca0ef279f4b66e741814f9393dd61f64dd70721f1043e`.
+The isolated combined candidate passed 263 metadata source tests, four
+resource-build tests, 46 portable MSIX tests and 31 downstream source,
+artwork and handoff cases. The downstream suite first stopped before
+collection because the sandbox lacked an isolated `HOME`. The strict
+typing lane passed eight source modules, one legal consumer and five
+intended refusals.
+The fresh-context reviewer checked the integrated source, both exact input
+and DLL chains, and raw archive readback. Evidence and the archive are in
+`~/.local/share/nevrotick/msix-event-resource-20261123.NRYnrfUR/`.
+The readback receipt hashes to
+`6d8950c3cca40523b789aaac48507b18917fbb172bd054e5fda04b591eaaa1d5`.
+Durable retention preserves the overlay, raw results and unique inputs.
+The three matched temporary writer checkouts were retired.
+
+The first metadata line-coverage run reached its 420-second outer limit
+and produced no gate result. Its partial records are preserved in
+`first-line-attempt.tar.gz`, SHA-256
+`ea25400beb224d066ff8c87cf24ee5e34f8b9c576a0bb9a26f8c023ea7ff4bc2`.
+The single retry retains the same instrumentation and test selection,
+with a 900-second outer limit based on the earlier measured complete
+execution and reconciliation time.
+
+The retry passed all 263 instrumented tests and recorded 344 subprocesses.
+Report readback then raised `MemoryError` on the 593 MiB JSON, with
+no gate result. The existing compact reconciliation was adapted to
+admit that exact failure receipt. Its first setup stopped on an analyzer
+path layout error. With the original collector evidence held read-only,
+the corrected analysis rechecked all 36 source, test and tool-input
+hashes, exact test outcomes, and all raw process files. No tests were
+replayed. All five metadata security-module line gates passed, including
+294/315 executable lines for `delivery.py` (93.33%). Its 160/180 branch
+count remains separate. The read-only line result hashes to
+`45a62e7540982730ea23b90045b9cc3e06d00aa69054bdba58cbe62ef64da662`.
+The two collector attempts retain their original exits. Generated
+per-file mutation qualification remains open.
+
+The maintained reporter now keeps each line's test contexts once per
+file. It uses the pinned coverage tool's original line and branch
+statistics. The maintained regression fails on the expanded predecessor
+and runs before collection through the exact admitted interpreter.
+The configured control lane passed its healthy child attribution and
+refused intentional omission of three child observations. Replaying the
+same normalized database under the original 1 GiB address-space limit
+reduced the report from 621,469,323 to 19,738,093 bytes and used 66,196 KiB
+peak RSS. Independent comparison matched eight file records, every
+ordered missing-branch pair and all 211,324 line-context memberships.
+The complete measurement was reused for that readback. Collector failures,
+raw process data, line results, source binding and maintained-control
+receipts are retained in the same evidence chain.
+
+The installed event slice still needs the actual product provider identity,
+approved machine-scope capability, package paths, writer and reader token
+admission, and native event delivery and rendering. Package signing and
+installed service qualification retain their existing W11-W05/W11-W10 exits.

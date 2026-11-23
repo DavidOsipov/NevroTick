@@ -891,6 +891,17 @@ def require_current_candidate(root: Path, identity: dict[str, str]) -> None:
         raise Incomplete("The complete candidate input set changed during analysis.")
 
 
+def equivalence_source_inputs(dependency_policy: dict, equivalences: list[dict]) -> tuple[str, ...]:
+    """Capture prerequisites for re-admitting reviewed equivalences from a copy."""
+    if not equivalences:
+        return ()
+    resolution = dependency_policy.get("cooldown_admission", {}).get("resolution")
+    # Product admission reads the complete approved manifest context, including
+    # standalone manifests outside the product source identity.
+    manifests = resolution["manifests_sha256"] if resolution is not None else ()
+    return (*manifests, *(entry["proof"]["path"] for entry in equivalences))
+
+
 def coverage_counts(scope: Scope, report: dict, expected_file: str) -> dict:
     """Require nonempty actual parser line data; a repository average cannot pass."""
     filename = scope.selected_file(expected_file)
@@ -2540,8 +2551,8 @@ def require_baseline_feedback_role(scope, policy):
 
 PHASE_STEP_EQUIVALENCE_PROOF = 'tasks/s1.3-source-selection-readiness.md'
 PHASE_STEP_EQUIVALENCE_REQUIREMENT = 'REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19'
-PHASE_STEP_EQUIVALENCE_REVIEWERS = '/root; /root/next_product_core'
-PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+PHASE_STEP_EQUIVALENCE_REVIEWERS = '/root/numeric_survivor_review'
+PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source_sha256': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
                                         'descriptor_sha256': 'd7e777452cd768d189f2e1895111408e9d23b95540dd179d9b1a57ea423c9552',
                                         'diff_sha256': '781048460708376801627f75368594b99f2bfe8add27ac0eac57f423a695fd14',
                                         'rationale': 'Normality excludes signed zeros, subnormals, '
@@ -2551,9 +2562,9 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                      'are unchanged. This ordinary current-source review '
                                                      'grants zero additional kills.',
                                         'dependencies': {}},
- 'PHASE-STEP-DURATION-MIN-EQUALITY': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
-                                      'descriptor_sha256': '4c0ac0f3862d4fa7ab1bd34ebdb381a1763f6c9e64c63e554e3c84686ea47c1e',
-                                      'diff_sha256': '52144c072c55f196d21e61fc474f0648f9aff0f67299eeb5a80e8f411c183b7e',
+ 'PHASE-STEP-DURATION-MIN-EQUALITY': {'source_sha256': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
+                                      'descriptor_sha256': '1c6ddb0d7f89b9e230a2b3f93e17b8fa5459c2291a8aef1be060c4e5603af8a9',
+                                      'diff_sha256': '59623d8227afe964a12d111b0b95a60fd7ff77baf6d261087f381524ee135e4e',
                                       'rationale': 'Only equal nanosecond counts choose different branches. '
                                                    'ActiveAwakeDurationNs is Copy with one private u64 '
                                                    'field, so either branch returns the identical value; '
@@ -2561,9 +2572,9 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                    'The separate rate denominator is unchanged. Zero '
                                                    'additional kills.',
                                       'dependencies': {'crates/time-domain/src/clock.rs': 'beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51'}},
- 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
-                                    'descriptor_sha256': 'a1ad9f41b00eb2e23257158b34509f2ff5d327adf4a0d2f258d5090627b4d364',
-                                    'diff_sha256': 'b37c235f1fcda25050f71731d6a0010f14568f65fa873cd72645ffa4a005542b',
+ 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'source_sha256': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
+                                    'descriptor_sha256': 'dde3bee3392d5b0b7f869e60bdd7e620990bf9d0e6027a3c5ba4647460453be2',
+                                    'diff_sha256': '243776972858f8bd245e965dab8e92efe2deb68211dae87bfba693804d022a49',
                                     'rationale': 'Context disagreement and both-backwards clocks still '
                                                  'reject immediately. One backwards clock instead rejects '
                                                  'through checked duration_since with the same Map error '
@@ -2573,7 +2584,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                  'bounded; no timing equality or additional kill is claimed.',
                                     'dependencies': {'crates/time-domain/src/clock.rs': 'beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51'},
                                     'product_dependencies': {'crates/time-domain/src/lib.rs': 'd1314aa80fc705d410e747de555d79d0a8a63d16b2ff5877e1012ce60ef039ab'}},
- 'PHASE-STEP-ANCHOR-ABS-SIGN': {'source_sha256': 'c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9',
+ 'PHASE-STEP-ANCHOR-ABS-SIGN': {'source_sha256': '1e4579916b4cf5ced8f19567d734194533f1eac1eba589a2c6138f7d48ba531b',
                                 'descriptor_sha256': '634b2295f78ea61d46e336309fd366e8c04bd3bf2e2ecf0f16a5683798ab153e',
                                 'diff_sha256': 'f9da51f1b88bf9967da7d8564972a0791053760d75382a80b56477d11a26d8c5',
                                 'rationale': "Only the coefficient-bound operand's unary sign changes. The "
@@ -2582,7 +2593,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                              'outputs. Actual phase subtraction and earlier admissions are '
                                              'unchanged. Zero additional kills.',
                                 'dependencies': {'crates/time-core/src/regression/chart/roundoff.rs': '38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e'}},
- 'PHASE-STEP-INTERVAL-ZERO-PRODUCT': {'source_sha256': 'c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9',
+ 'PHASE-STEP-INTERVAL-ZERO-PRODUCT': {'source_sha256': '1e4579916b4cf5ced8f19567d734194533f1eac1eba589a2c6138f7d48ba531b',
                                       'descriptor_sha256': '6106e65c018c06850ad7b2e57d45ccb4caab74f15a792e8d0020e57b2bd5120a',
                                       'diff_sha256': '90f0a559dc37f069799729ce3c413645631dd0dcf5590fa498dd6912489cf270',
                                       'rationale': 'Both-whole-zero and neither paths agree. With exactly '
@@ -2610,7 +2621,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                        'fabrication is outside this admitted helper '
                                                        'boundary. This ordinary current-source review grants '
                                                        'zero additional kills.',
-                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
                                                            'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
                                                            'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
  'PHASE-STEP-ISSUED-NEGATIVE-DIRECTION': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
@@ -2629,7 +2640,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                        'fabrication is outside this admitted helper '
                                                        'boundary. This ordinary current-source review grants '
                                                        'zero additional kills.',
-                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
                                                            'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
                                                            'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
  'PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
@@ -2648,7 +2659,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                        'fabrication is outside this admitted helper '
                                                        'boundary. This ordinary current-source review grants '
                                                        'zero additional kills.',
-                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
                                                            'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
                                                            'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
  'PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
@@ -2667,7 +2678,7 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                        'fabrication is outside this admitted helper '
                                                        'boundary. This ordinary current-source review grants '
                                                        'zero additional kills.',
-                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '35a6f9cabe55c524b05ae214fb4cadcbb3ff2906e05b8259d1655fa013e23226',
                                                            'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
                                                            'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
  'PHASE-STEP-ADAPTIVE-NORMAL-POSITIVE': {'source_sha256': 'e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0',
@@ -2754,7 +2765,29 @@ PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source
                                                      'excluded by positive normal cap admission; later '
                                                      'aggregate and error calculations, branch order and '
                                                      'effects agree. Zero additional kills.',
-                                        'dependencies': {}}}
+                                        'dependencies': {}},
+ 'PHASE-STEP-RATIO-DISJOINT-MANTISSA': {'source_sha256': '1e4579916b4cf5ced8f19567d734194533f1eac1eba589a2c6138f7d48ba531b',
+                                        'descriptor_sha256': '94565590a1ff410a18c0e917ad32f861429b66c7602a611adc8071e177d6cb1b',
+                                        'diff_sha256': '6d3c90fb6ada3185885ae5f8db8fc0a82e5c5e8b2f8905bf62941b41d239aebb',
+                                        'rationale': 'The implicit bit is at position 52 and the mask keeps only '
+                                                     'bits 0 through 51. OR and XOR yield identical significands. '
+                                                     'The signed-zero branch, exponent extraction, checked product '
+                                                     'and all outputs and errors agree. Zero additional kills.',
+                                        'dependencies': {}},
+ 'PHASE-STEP-RATIO-OUTWARD-REFUSAL': {'source_sha256': '1e4579916b4cf5ced8f19567d734194533f1eac1eba589a2c6138f7d48ba531b',
+                                     'descriptor_sha256': '97418856b4bbae17418fdf2d612f950e3b5f28c25b7dee5c012f25b0ec6b3d89',
+                                     'diff_sha256': '66fe60a764e5a5687f599d55d7d08d65467095b7f4bbdfa656b5df1009ca6b91',
+                                     'rationale': 'Ratio admission, exact integer conversion and outward '
+                                                  'representability still run in the same order. An observation '
+                                                  'outside the outward enclosure is outside the closed exact '
+                                                  'interval and fails the unchanged exact check with the same '
+                                                  'ActiveRatioMismatch. Admitted terms have at most 106 bits. '
+                                                  'Alignment of nearby nonzero terms uses at most 107 bits, '
+                                                  'so skipping the early check introduces no extra error. '
+                                                  'The computation has no effects. Zero additional kills.',
+                                     'dependencies': {'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7',
+                                                      'crates/time-domain/src/clock.rs': 'beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51'},
+                                     'product_dependencies': {'crates/time-core/src/regression/normalization.rs': 'c1d23a6add923bb588bd6b9949f8151d3e7bd22b6c15f3c2123cb5056327ecc3'}}}
 
 
 PHASE_STEP_EQUIVALENCE_IDS = frozenset(PHASE_STEP_EQUIVALENCE_REVIEWS)
@@ -3375,10 +3408,10 @@ class Session:
             raise Incomplete("Contract-role product input count differs from its admitted role.")
         self.identity = dict(self.product_identity)
         equivalences = admit_mutation_equivalences(self.root, scope, policy)
-        proof_inputs = tuple(entry["proof"]["path"] for entry in equivalences)
+        equivalence_inputs = equivalence_source_inputs(self.dependency_policy, equivalences)
         names = (scope.policy, "scripts/portable-analysis.py",
                  "scripts/prepare-product.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
-                 "policy/analysis-tools.json", "policy/verification-manifest.toml", *extra_inputs, *proof_inputs)
+                 "policy/analysis-tools.json", "policy/verification-manifest.toml", *extra_inputs, *equivalence_inputs)
         self.identity.update({name: PRODUCT.sha256(self.root / name) for name in names})
         self.admitted = (ANALYSIS.admit(self.root, profile="stable-core")
                          if self.admission_profile == "stable-core" else ANALYSIS.admit(self.root))

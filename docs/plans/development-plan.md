@@ -1183,6 +1183,34 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+The [Phase/Step line checkpoint](../../tasks/s1.3-source-selection-readiness.md#exercise-the-full-clock-span-alignment-width--23-november-2026)
+passed all seven 90% gates after the exact-ratio repair. Its 107-bit
+boundary sensitivity retains its exact scope.
+The [current inventory and development lanes](../../tasks/s1.3-source-selection-readiness.md#freeze-the-current-seven-owner-mutation-inventory--23-november-2026)
+bind all 1,285 variants, the passing baseline and the compiler contracts to
+the same candidate. The [Frequency Numeric cohort](../../tasks/s1.3-source-selection-readiness.md#run-the-current-frequency-numeric-cohort--23-november-2026)
+executed all 316 variants. Five survivors kept that attempt open. The exact
+private comparator replay verified the added assertion for the
+non-equivalent survivor. The integrated test input passed the full
+configured baseline and all seven line gates. The
+[current equivalence review](../../tasks/s1.3-source-selection-readiness.md#current-phasestep-equivalence-review--23-november-2026)
+and fresh enumeration bind the 18 exact records. The first E18 attempt reached a
+[copied-source admission gap](../../tasks/s1.3-source-selection-readiness.md#preserve-cooldown-context-in-equivalence-captures--23-november-2026)
+before native work. The repaired session and union bind the complete
+manifest context. Their focused controls and fresh complete enumeration
+passed. The [repaired Frequency Numeric cohort](../../tasks/s1.3-source-selection-readiness.md#pass-the-repaired-frequency-numeric-cohort--23-november-2026)
+passed its complete file gate. The [current Phase Plan cohort](../../tasks/s1.3-source-selection-readiness.md#pass-the-current-phase-plan-cohort--23-november-2026)
+also passed its complete file gate. The [Reference Input cohort](../../tasks/s1.3-source-selection-readiness.md#pass-the-current-reference-input-cohort--23-november-2026)
+passed after correcting the shared launcher and retention paths. Rate
+Delivery, Phase Numeric, Adaptive Horizon and Step also passed.
+The [complete seven-owner union](../../tasks/s1.3-source-selection-readiness.md#complete-the-current-seven-owner-phasestep-union--23-november-2026)
+passed the unchanged per-file mutation gates, with 852 caught, 415
+compiler-unviable and 18 reviewed equivalents across all 1,285 variants.
+The separate line and contract receipts retain their exact scopes.
+Continue S2.1/W11-W01 with the protected timing publication build and the
+genuine mapping, validity and uncertainty inputs needed for Engine-to-Core
+admission. The public mutation campaign remains closed.
+
 **Protected capture and retained SCM process — 22 November 2026.** The
 [W11-W01 capture checkpoint](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-the-protected-receipt)
 keeps original native clock observations through the actual protected
@@ -1373,9 +1401,11 @@ now consumes a checked generation and admitted compiler export, links in the
 existing offline WSL namespace and checks the final resource bytes before
 publication. It reproduced the previously observed DLL, refused stale
 compiler inputs and independently read back a freshly compiled provider GUID
-change. Continue from the compiled resource at the actual package and
-installed publisher boundary. Provider paths, writer delivery and
-intended-token observations remain under W11-W08 and W11-W10.
+change. The [event-resource pack checkpoint](../../tasks/windows11-integration.md#pack-and-read-back-a-checked-event-resource--23-november-2026)
+passed actual unsigned fixture assembly and independent archive readback,
+including refusal of a crossed provider candidate. Continue the product
+provider identity, package paths, capability and intended-token delivery
+under W11-W08 and W11-W10.
 
 The [portable submission layout](../../tasks/windows11-integration.md#portable-submission-of-the-compiled-event-layout--21-november-2026)
 now passes the two exact compiled descriptors and five ordered fields into
@@ -1746,9 +1776,10 @@ completed all 497 variants with a 99.06% raw viable score and no timeouts.
 The [separate report-only adjudication](../../tasks/s1.3-source-selection-readiness.md#phase-file-report-only-adjudication--22-november-2026)
 admits the three exact equivalents and closes this file's GNU fixture gate at
 317/317. The original wrapper failure and all raw results remain available.
-The six other owners' execution evidence retains its predecessor scope, and
-the current seven-owner union remains open. Production Engine-to-Core admission
-still needs the mapping and uncertainty trial.
+The six other owners' predecessor evidence retains its scope. The later
+[seven-owner union](../../tasks/s1.3-source-selection-readiness.md#complete-the-current-seven-owner-phasestep-union--23-november-2026)
+qualifies the current GNU fixture mutation scope. Production Engine-to-Core
+admission still needs the mapping and uncertainty trial.
 
 The [fixed-window actuator feedback trajectory](../../tasks/s1.3-source-selection-readiness.md#fixed-window-actuator-feedback-trajectory--22-november-2026)
 drives an independent quantized actuator with the actual Core controller output.

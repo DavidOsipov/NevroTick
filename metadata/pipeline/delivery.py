@@ -215,6 +215,9 @@ def _expected_json(model: Metadata) -> dict[str, object]:
     """Independent semantic expectations, not serialized production output."""
     values = _values(model)
     rows = _rows(model)
+    msix_rows = _rows(model, ("catalogue.B.6.",))
+    # Partial MSIX authoring preserves the admitted empty value of a pending logo.
+    msix_values = {row["key"]: row["value"] for row in msix_rows}
     current = [row for row in rows if not retained_store_field(row["key"])]
     pending = [_record(item) for item in model.pending]
     ui = next(item for item in model.components if item.id == "ui")
@@ -253,11 +256,11 @@ def _expected_json(model: Metadata) -> dict[str, object]:
                 "role": "ui", "executable": ui_executable, "application_id": None,
                 "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
                 "visual_elements": {
-                    "Square44x44Logo": values["catalogue.B.6.5.uap:VisualElements/@Square44x44Logo"],
-                    "Square150x150Logo": values["catalogue.B.6.5.uap:VisualElements/@Square150x150Logo"],
+                    "Square44x44Logo": msix_values["catalogue.B.6.5.uap:VisualElements/@Square44x44Logo"],
+                    "Square150x150Logo": msix_values["catalogue.B.6.5.uap:VisualElements/@Square150x150Logo"],
                 },
             },
-            "pending": pending, "fields": _rows(model, ("catalogue.B.6.",))},
+            "pending": pending, "fields": msix_rows},
         "authoring/service-inputs.json": {"schema_version": 1, "kind": "partial-service-authoring-inputs",
             "services": [{"role": item.role, "state": item.state, "display_name": item.display_name,
                           "description": item.description,

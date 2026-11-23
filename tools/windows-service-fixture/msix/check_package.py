@@ -40,11 +40,12 @@ DISPLAY_NAME = "NevroTick S0.6 SCM Fixture"
 MANIFEST = "AppxManifest.xml"
 BLOCK_MAP_FILE = "AppxBlockMap.xml"
 CONTENT_TYPES_FILE = "[Content_Types].xml"
+EVENT_RESOURCE = "nevrotick-test-events.dll"
 LOGO = "Assets/PackageLogo.png"
 SMALL_LOGO = "Assets/Square44x44Logo.png"
 LARGE_LOGO = "Assets/Square150x150Logo.png"
 ASSETS = {LOGO, SMALL_LOGO, LARGE_LOGO}
-PAYLOAD = {MANIFEST, "Inert.exe", *SERVICES, *ASSETS}
+BASE_PAYLOAD = {MANIFEST, "Inert.exe", *SERVICES, *ASSETS}
 SDK_FILES = {
     "makeappx.exe",
     "appxpackaging.dll",
@@ -53,7 +54,6 @@ SDK_FILES = {
     "Microsoft.Windows.Build.Appx.OpcServices.dll.manifest",
     "en-US/AppxPackaging.dll.mui",
 }
-ARCHIVE = PAYLOAD | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
 MAX_ARCHIVE = 8 * 1024 * 1024
 MAX_EXPANDED = 8 * 1024 * 1024
 MAX_FILE = 2 * 1024 * 1024
@@ -103,12 +103,12 @@ def read_regular(path: str | Path, limit: int, label: str, parent: int | None = 
     return data
 
 
-def read_payload(path: Path) -> dict[str, bytes]:
+def read_payload(path: Path, payload_names: set[str]) -> dict[str, bytes]:
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
     directory = os.open(path, flags)
     try:
         before = os.fstat(directory)
-        root_files = PAYLOAD - ASSETS
+        root_files = payload_names - ASSETS
         require(set(os.listdir(directory)) == root_files | {"Assets"},
                 "authored payload root inventory differs")
         data = {name: read_regular(name, MAX_XML if name == MANIFEST else MAX_FILE,
@@ -143,14 +143,14 @@ def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return fields
 
 
-def read_input_set(path: Path, expected_sha256: str) -> dict[str, str]:
+def read_input_set(path: Path, expected_sha256: str, payload_names: set[str]) -> dict[str, str]:
     """Bind the original packer's input inventory before using its payload digests."""
     data = read_regular(path, MAX_INPUT_SET, "frozen input set")
     require(sha256(data).hexdigest() == expected_sha256, "frozen input set SHA-256 differs")
     fields = json.loads(data.decode("utf-8"), object_pairs_hook=unique_object)
     require(type(fields) is dict and set(fields) == {"sdk", "payload"},
             "frozen input set fields differ")
-    for group, names in (("sdk", SDK_FILES), ("payload", PAYLOAD)):
+    for group, names in (("sdk", SDK_FILES), ("payload", payload_names)):
         digests = fields[group]
         require(type(digests) is dict and set(digests) == names
                 and all(is_sha256(digest) for digest in digests.values()),
@@ -334,7 +334,7 @@ def read_local_member(data: bytes, item: zipfile.ZipInfo, end: int) -> PackageMe
     return PackageMember(body, header_size, deflated)
 
 
-def check_zip_directory(data: bytes) -> int:
+def check_zip_directory(data: bytes, member_count: int) -> int:
     """Check the physical single-disk directory and return its declared offset."""
     end_offset = len(data) - ZIP_END.size
     reason = "unexpected ZIP comment, trailer or end record"
@@ -361,7 +361,7 @@ def check_zip_directory(data: bytes) -> int:
 
     disk, directory_disk, disk_entries, total_entries, directory_size, directory_start = fields
     require(disk == directory_disk == 0, "ZIP disk fields differ")
-    require(disk_entries == total_entries == len(ARCHIVE), "ZIP entry counts differ")
+    require(disk_entries == total_entries == member_count, "ZIP entry counts differ")
     reason = "ZIP central directory extent differs"
     require(0 < directory_start < directory_end and directory_start + directory_size == directory_end,
             reason)
@@ -375,11 +375,12 @@ def check_zip_directory(data: bytes) -> int:
     return directory_start
 
 
-def read_archive(data: bytes) -> dict[str, PackageMember]:
-    directory_start = check_zip_directory(data)
+def read_archive(data: bytes, archive_names: set[str]) -> dict[str, PackageMember]:
+    directory_start = check_zip_directory(data, len(archive_names))
     with zipfile.ZipFile(BytesIO(data)) as package:
         members = package.infolist()
-        require(len(members) == len(ARCHIVE) and {item.orig_filename for item in members} == ARCHIVE,
+        require(len(members) == len(archive_names)
+                and {item.orig_filename for item in members} == archive_names,
                 "package inventory differs or contains duplicate, unsafe or signed members")
         require(sum(item.file_size for item in members) <= MAX_EXPANDED,
                 "expanded package exceeds the input bound")
@@ -403,18 +404,18 @@ def read_archive(data: bytes) -> dict[str, PackageMember]:
         return members_by_name
 
 
-def check_block_map(members: dict[str, PackageMember]) -> None:
+def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) -> None:
     data = members[BLOCK_MAP_FILE].data
     block_map = parse_xml(data, BLOCK_MAP_FILE)
     hash_method = "http://www.w3.org/2001/04/xmlenc#sha256"
     require(block_map.tag == BLOCK_MAP + "BlockMap" and block_map.get("HashMethod") == hash_method
             and set(block_map.attrib) <= {"HashMethod", "IgnorableNamespaces"},
             "expected a SHA-256 AppxBlockMap")
-    require(len(block_map) == len(PAYLOAD), "block-map file count differs")
+    require(len(block_map) == len(payload_names), "block-map file count differs")
     seen = set()
     for record in block_map:
         name = attribute_path(record.get("Name", ""))
-        require(record.tag == BLOCK_MAP + "File" and name in PAYLOAD and name not in seen,
+        require(record.tag == BLOCK_MAP + "File" and name in payload_names and name not in seen,
                 "block-map file inventory differs or contains aliases")
         seen.add(name)
         member = members[name]
@@ -457,12 +458,13 @@ def check_block_map(members: dict[str, PackageMember]) -> None:
                     f"{name} compressed block map does not leave the expected DEFLATE terminator")
 
 
-def check_content_types(data: bytes) -> None:
+def check_content_types(data: bytes, archive_names: set[str]) -> None:
     types = parse_xml(data, CONTENT_TYPES_FILE)
     require(types.tag == CONTENT_TYPES + "Types" and not types.attrib, "content-types root differs")
     defaults = {}
     overrides = {}
-    extensions = {name.rsplit(".", 1)[1] for name in ARCHIVE - {CONTENT_TYPES_FILE}}
+    part_names = archive_names - {CONTENT_TYPES_FILE}
+    extensions = {name.rsplit(".", 1)[1] for name in part_names}
     for declaration in types:
         require(len(declaration) == 0 and not (declaration.text or "").strip(),
                 "content-type declaration contains unexpected content")
@@ -478,7 +480,7 @@ def check_content_types(data: bytes) -> None:
             part = declaration.get("PartName", "")
             require(declaration.tag == CONTENT_TYPES + "Override"
                     and set(declaration.attrib) == {"PartName", "ContentType"}
-                    and part.startswith("/") and part[1:] in ARCHIVE - {CONTENT_TYPES_FILE}
+                    and part.startswith("/") and part[1:] in part_names
                     and part[1:] not in overrides, "content-type override differs")
             overrides[part[1:]] = value
 
@@ -486,7 +488,10 @@ def check_content_types(data: bytes) -> None:
                  BLOCK_MAP_FILE: {"application/vnd.ms-appx.blockmap+xml"}}
     for name in ASSETS:
         permitted[name] = {"image/png", "application/octet-stream"}
-    for name in {"Inert.exe", *SERVICES}:
+    binary_names = {"Inert.exe", *SERVICES}
+    if EVENT_RESOURCE in archive_names:
+        binary_names.add(EVENT_RESOURCE)
+    for name in binary_names:
         permitted[name] = {"application/x-msdownload", "application/octet-stream"}
     for name, allowed in permitted.items():
         kind = overrides.get(name, defaults.get(name.rsplit(".", 1)[1]))
@@ -500,23 +505,28 @@ def main() -> int:
     cli.add_argument("--input-set", required=True, type=Path)
     cli.add_argument("--input-set-sha256", required=True, help="digest from the admitted pack inputs")
     cli.add_argument("--package-sha256", required=True, help="digest from the packer's retained output record")
+    cli.add_argument("--include-event-resource", action="store_true",
+                     help=f"require the laboratory payload with {EVENT_RESOURCE}")
     args = cli.parse_args()
+    # The caller selects a fixed profile before any package inputs are read.
+    payload_names = BASE_PAYLOAD | {EVENT_RESOURCE} if args.include_event_resource else BASE_PAYLOAD
+    archive_names = payload_names | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
     try:
         require(is_sha256(args.input_set_sha256) and is_sha256(args.package_sha256),
                 "expected lowercase SHA-256 digests for the frozen input set and package")
-        expected = read_input_set(args.input_set, args.input_set_sha256)
-        payload = read_payload(args.payload)
+        expected = read_input_set(args.input_set, args.input_set_sha256, payload_names)
+        payload = read_payload(args.payload, payload_names)
         package = read_regular(args.package, MAX_ARCHIVE, "package")
         package_sha256 = sha256(package).hexdigest()
         require(package_sha256 == args.package_sha256, "package SHA-256 differs from the pack output record")
-        members = read_archive(package)
-        for name in sorted(PAYLOAD):
+        members = read_archive(package, archive_names)
+        for name in sorted(payload_names):
             require(sha256(payload[name]).hexdigest() == expected[name],
                     f"authored payload member differs from the frozen input set: {name}")
             require(members[name].data == payload[name], f"emitted package member differs: {name}")
         check_manifest(members[MANIFEST].data)
-        check_block_map(members)
-        check_content_types(members[CONTENT_TYPES_FILE].data)
+        check_block_map(members, payload_names)
+        check_content_types(members[CONTENT_TYPES_FILE].data, archive_names)
     except Refused as error:
         cli.exit(1, f"Fixture package refused: {error}\n")
     except (OSError, zipfile.BadZipFile, zlib.error, EOFError, ValueError, RecursionError) as error:

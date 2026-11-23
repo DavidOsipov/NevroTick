@@ -10916,7 +10916,9 @@ def frequency_cohort_union(args, report, policy, role):
         raise Incomplete("Frequency-prior union duplicates an owned receipt path.")
     dependency_policy, product = PRODUCT.admit_product(ROOT)
     identity = dict(product)
-    identity.update({name: PRODUCT.sha256(ROOT / name) for name in (role.scope.policy, *role.bound_inputs)})
+    equivalence_inputs = COMMON.equivalence_source_inputs(dependency_policy, equivalences)
+    identity.update({name: PRODUCT.sha256(ROOT / name)
+                     for name in (role.scope.policy, *role.bound_inputs, *equivalence_inputs)})
     admitted = COMMON.ANALYSIS.admit(ROOT, profile="stable-core")
     reviewed = {}; leaves = {}
     for path, receipt in zip(canonical, documents, strict=True):

@@ -2964,6 +2964,51 @@ class EvidenceTests(unittest.TestCase):
                 config.write_text("fixed"); (dependency / "lib.rlib").write_text("changed")
                 with self.assertRaises(MODULE.Incomplete): session.check()
 
+    def test_equivalence_session_copies_complete_resolution_context(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root, vendor = base / "checkout", base / "vendor"
+            vendor.mkdir()
+            proof = "tasks/review.md"
+            contexts = ("tools/peer/Cargo.toml", "tools/service/Cargo.toml")
+            manifests = ("Cargo.toml", *contexts)
+            for name in (*manifests, proof, SCOPE.policy, "scripts/portable-analysis.py",
+                         "scripts/prepare-product.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+                         "policy/analysis-tools.json", "policy/verification-manifest.toml", ".cargo/mutants.toml"):
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('additional_cargo_args = ["--frozen"]\ncap_lints = false\n'
+                                if name == ".cargo/mutants.toml" else f"# {name}\n")
+            product = {name: MODULE.PRODUCT.sha256(root / name) for name in ("Cargo.toml", ".cargo/mutants.toml")}
+            dependencies = {"cooldown_admission": {"resolution": {"manifests_sha256": {
+                name: MODULE.PRODUCT.sha256(root / name) for name in manifests}}}}
+            for entries in ([], [{"proof": {"path": proof}}]):
+                with (
+                    self.subTest(equivalences=bool(entries)),
+                    patch.object(MODULE, "admit_mutation_equivalences", return_value=entries),
+                    patch.object(MODULE.PRODUCT, "admit_product", return_value=(dependencies, product)),
+                    patch.object(MODULE.PRODUCT, "admit_vendor", return_value={}),
+                    patch.object(MODULE.ANALYSIS, "admit", return_value={
+                        "base": base, "stable": base, "inventories": {}, "policy_sha256": "a" * 64}),
+                ):
+                    args = SimpleNamespace(lane="contracts", output_dir=base / str(bool(entries)), vendor_dir=vendor)
+                    report = {}
+                    session = MODULE.Session(root, args, report, SCOPE, {}, ())
+                    self.assertEqual(session.product_identity, product)
+                    for relative in (*contexts, proof):
+                        copied = session.source / relative
+                        if entries:
+                            self.assertEqual(copied.read_bytes(), (root / relative).read_bytes())
+                            self.assertEqual(report["source_sha256"][relative], MODULE.PRODUCT.sha256(copied))
+                        else:
+                            self.assertFalse(copied.exists())
+                            self.assertNotIn(relative, report["source_sha256"])
+                    session.check()
+                    if entries:
+                        (session.source / contexts[1]).write_text("# Changed copied manifest\n")
+                        with self.assertRaisesRegex(MODULE.Incomplete, "Copied source inventory changed"):
+                            session.check()
+
     def test_shared_lane_orchestration_retains_five_separate_denominators(self):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp); tools = work / "tools"; tools.mkdir()
@@ -4077,7 +4122,7 @@ _PHASE_STEP_REVIEWED_MUTANTS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'name': '
                                                  'end': {'line': 228, 'column': 43}},
                                         'replacement': '>=',
                                         'genre': 'BinaryOperator'},
- 'PHASE-STEP-DURATION-MIN-EQUALITY': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:1378:49: '
+ 'PHASE-STEP-DURATION-MIN-EQUALITY': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:1386:49: '
                                               "replace < with <= in FixturePhasePlanOwner<'producer, "
                                               "'chart>::issue",
                                       'package': 'time-core',
@@ -4086,22 +4131,22 @@ _PHASE_STEP_REVIEWED_MUTANTS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'name': '
                                                                     "'chart>::issue",
                                                    'return_type': "-> Result<FixturePhaseProposal<'_>, "
                                                                   'FixturePhaseError>',
-                                                   'span': {'start': {'line': 1335, 'column': 5},
-                                                            'end': {'line': 1409, 'column': 6}}},
-                                      'span': {'start': {'line': 1378, 'column': 49},
-                                               'end': {'line': 1378, 'column': 50}},
+                                                   'span': {'start': {'line': 1343, 'column': 5},
+                                                            'end': {'line': 1417, 'column': 6}}},
+                                      'span': {'start': {'line': 1386, 'column': 49},
+                                               'end': {'line': 1386, 'column': 50}},
                                       'replacement': '<=',
                                       'genre': 'BinaryOperator'},
- 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:2220:13: '
+ 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:2228:13: '
                                             'replace || with && in ControllerClockRelation::observe',
                                     'package': 'time-core',
                                     'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs',
                                     'function': {'function_name': 'ControllerClockRelation::observe',
                                                  'return_type': '-> Result<Self, FixtureBaselineError>',
-                                                 'span': {'start': {'line': 2209, 'column': 5},
-                                                          'end': {'line': 2245, 'column': 6}}},
-                                    'span': {'start': {'line': 2220, 'column': 13},
-                                             'end': {'line': 2220, 'column': 15}},
+                                                 'span': {'start': {'line': 2217, 'column': 5},
+                                                          'end': {'line': 2253, 'column': 6}}},
+                                    'span': {'start': {'line': 2228, 'column': 13},
+                                             'end': {'line': 2228, 'column': 15}},
                                     'replacement': '&&',
                                     'genre': 'BinaryOperator'},
  'PHASE-STEP-ANCHOR-ABS-SIGN': {'name': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:980:64: '
@@ -4264,7 +4309,31 @@ _PHASE_STEP_REVIEWED_MUTANTS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'name': '
                                         'span': {'start': {'line': 540, 'column': 28},
                                                  'end': {'line': 540, 'column': 29}},
                                         'replacement': '<=',
-                                        'genre': 'BinaryOperator'}}
+                                        'genre': 'BinaryOperator'},
+ 'PHASE-STEP-RATIO-DISJOINT-MANTISSA': {'name': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:2149:27: '
+                                              'replace | with ^ in ClockSpanTerm::scaled',
+                                      'package': 'time-core',
+                                      'file': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs',
+                                      'function': {'function_name': 'ClockSpanTerm::scaled',
+                                                   'return_type': '-> Result<Self, FixtureFrequencyNumericError>',
+                                                   'span': {'start': {'line': 2139, 'column': 5},
+                                                            'end': {'line': 2158, 'column': 6}}},
+                                      'span': {'start': {'line': 2149, 'column': 27},
+                                               'end': {'line': 2149, 'column': 28}},
+                                      'replacement': '^',
+                                      'genre': 'BinaryOperator'},
+ 'PHASE-STEP-RATIO-OUTWARD-REFUSAL': {'name': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:2248:27: '
+                                            'replace || with && in check_active_ratio_span',
+                                    'package': 'time-core',
+                                    'file': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs',
+                                    'function': {'function_name': 'check_active_ratio_span',
+                                                 'return_type': '-> Result<(), FixtureFrequencyNumericError>',
+                                                 'span': {'start': {'line': 2221, 'column': 1},
+                                                          'end': {'line': 2263, 'column': 2}}},
+                                    'span': {'start': {'line': 2248, 'column': 27},
+                                             'end': {'line': 2248, 'column': 29}},
+                                    'replacement': '&&',
+                                    'genre': 'BinaryOperator'}}
 
 
 
@@ -4448,6 +4517,27 @@ class PhaseStepEquivalenceAdmissionTests(unittest.TestCase):
                 self.assertFalse(MODULE.phase_step_equivalences_valid(policy))
                 with self.assertRaises(MODULE.Incomplete):
                     self.admit(policy)
+
+    def test_current_span_reviews_match_the_actual_operators(self):
+        rows = (
+            ("PHASE-STEP-DURATION-MIN-EQUALITY", "<", "<=",
+             "if correction_horizon.nanoseconds() < remaining.nanoseconds() {"),
+            ("PHASE-STEP-CLOCK-ORDER-RECHECK", "||", "&&", "|| now.monotonic < self.reference.monotonic"),
+            ("PHASE-STEP-RATIO-DISJOINT-MANTISSA", "|", "^",
+             "(1_u64 << 52) | (bits & ((1_u64 << 52) - 1))"),
+            ("PHASE-STEP-RATIO-OUTWARD-REFUSAL", "||", "&&", "if active < range.low || active > range.high {"),
+        )
+        for identifier, original, replacement, expected_line in rows:
+            with self.subTest(review=identifier):
+                mutant = _PHASE_STEP_REVIEWED_MUTANTS[identifier]
+                first, last = mutant["span"]["start"], mutant["span"]["end"]
+                self.assertEqual(first["line"], last["line"])
+                line = (self.root / mutant["file"]).read_text().splitlines()[first["line"] - 1]
+                self.assertEqual(line.strip(), expected_line)
+                self.assertEqual(line[first["column"] - 1:last["column"] - 1], original)
+                self.assertEqual(mutant["replacement"], replacement)
+                self.assertEqual(hashlib.sha256(self.rendered_diff(mutant).encode()).hexdigest(),
+                                 MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS[identifier]["diff_sha256"])
 
     def test_reviewed_dependencies_must_match_pins_and_actual_product_bytes(self):
         dependencies = set()

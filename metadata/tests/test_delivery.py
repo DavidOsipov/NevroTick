@@ -59,6 +59,31 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.assertEqual(legacy.read_text(), "field,value,status\n")
         self.require_rejection(self.cli("validate", "--stage", "release"))
 
+    def test_direct_msix_source_generation_and_check_with_pending_logos(self) -> None:
+        logos = ("Square44x44Logo", "Square150x150Logo")
+        for pending in ((logos[0],), (logos[1],), logos):
+            with self.subTest(pending=pending):
+                self.write_record(self.original_record)
+                for logo in pending:
+                    key = f'"catalogue.B.6.5.uap:VisualElements/@{logo}"'
+                    self.replace_once(
+                        next(line for line in self.original_record.splitlines() if line.startswith(key + " = ")),
+                        key + ' = { value = "", status = "pending", source = "catalogue:B.6.5", '
+                        'reason = "Await reviewed artwork." }',
+                    )
+                report = self.require_success(self.cli("validate", "--stage", "source"))
+                self.assertEqual(report["status"], "valid-source")
+                output = self.base / "-".join(pending)
+                self.require_success(self.cli("generate", output=output))
+                self.require_success(self.cli("check", output=output))
+                record = json_data(output / "authoring/msix-inputs.json")
+                expected = {logo: "" if logo in pending else f"Assets/{logo}.png" for logo in logos}
+                self.assertEqual(record["ui_activation"]["visual_elements"], expected)
+                fields = {row["key"]: (row["value"], row["status"]) for row in record["fields"]}
+                for logo, value in expected.items():
+                    self.assertEqual(fields["catalogue.B.6.5.uap:VisualElements/@" + logo],
+                                     (value, "pending" if logo in pending else "populated"))
+
     def test_direct_msix_artwork_refuses_unsafe_relative_paths(self) -> None:
         for path in ("PackageLogo.png", "Square44x44Logo.png", "Square150x150Logo.png"):
             with self.subTest(path=path):
