@@ -1040,3 +1040,36 @@ This covers late local loading in the selected fixture. Individual complete
 child tokens and a post-denial module list were outside its observations.
 Normal Slint startup, remote images, System32 preference, early loader behavior,
 per-file metrics and signed package activation retain their separate exits.
+
+### Observe guarded Slint startup and caption Close — 23 November 2026
+
+W11-W10, WIN-3/WIN-4 and CHECK-16/26. Preflight and package-artifact
+checks used the current default x64 MSVC release link, with the admitted
+v3 flags, vendor graph, SDK libraries and generated version resource.
+The source tree `e440a58277c1b4e608441c29bac24b27cf99feda`
+binds 664 inputs and preserves the verified pending Core and service
+changes. The selected UI graph matches the earlier Windows admission.
+Link and PE/PDB readback passed. The exact image hashes to
+`1cc87bb6643e85aecab0ab97ba84a70baa0c49699ce9d37f973e3f89ba24ceba`.
+Its matching PDB hashes to
+`855858edafbafe50582e74a8828664ca1532c38a8d6583c654759b34d66ebef1`.
+
+The Sandbox and Windows evidence workflows exercised the real fixture
+entrypoint on offline build 26100 through `wsb` 0.8.114.0. The live
+child displayed the visible `NevroTick — sample preview` window under
+its original PID. The read-only process observation confirmed effective
+image-load flags `0x07`. Caption Close reached exit 0 and EOF on both
+streams without forced termination. The input and offline bookends
+passed and the owned share files were retired. The guest launcher and
+child both reported elevated tokens. This is unpackaged startup and
+normal close in the elevated guest context. The non-elevated desktop
+case, native lifecycle diagnostics, other loader cases, per-file gates
+and installed MSIX activation remain open.
+
+The current build and native receipts hash to
+`97ba92160512dfe47df4fb0f35bcea6c18f7e6a17337beec211536c2b06b12b5`
+and `a29c7ec47efc302abe66c3326ef9ed2317358ba941b73865f96eeb4f263fec3d`.
+The exact inputs, raw observations and unshared binary archive pointer
+are in `~/.local/share/nevrotick/slint-ordinary-startup-20261123.z6jp4ztp/`.
+The retained image supports the next admitted desktop-token check
+without another link while its source, tool and graph inputs match.

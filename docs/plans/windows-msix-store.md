@@ -1288,15 +1288,13 @@ same supervised observation window. The [step-3
 access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
 prepares the separate required-right acquisition/close observations
 and the step-4 standard-user status-access/configuration-denial control.
-The [current WSL link](../../tasks/windows11-integration.md#link-the-current-pre-start-probe-and-inert-service-roles--22-november-2026)
-supplies the exact test PE/PDB and both current inert service roles.
-The [prepared pack input set](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
-now binds the current roles and retained packer inputs in WSL. The
-[current unsigned lab MSIX](../../tasks/windows11-integration.md#pack-the-current-disabled-service-input-set-in-the-offline-lab)
-was packed in the admitted offline Sandbox and checked against the
-matching inventory. The historical archive retains its original payload
-identity. The selectors remain unexecuted pending the admitted installed
-fixture and independently bound actor contexts.
+The [22 November link and input set](../../tasks/windows11-integration.md#link-the-current-pre-start-probe-and-inert-service-roles--22-november-2026)
+retain their exact PE/PDB and packer identities. The
+[23 November relink and unsigned lab MSIX](../../tasks/windows11-integration.md#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
+now supply the matched observer, both inert roles and current checked archive.
+Follow the [service-provisioning order](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026).
+The selectors remain unexecuted pending the exact admitted signed lab fixture,
+independently bound actor contexts and common quiescent observation window.
 
 1. Use initially disabled inert functional-service fixtures. Observe whether
    deployment registers them without UI launch; keep absent registration separate

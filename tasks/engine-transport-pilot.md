@@ -31020,6 +31020,224 @@ producer run emits all six rows and the paired peer/control reader validates
 the same legs, custody and independent containment. The current production
 timing and calibrated reference obligations still apply.
 
+###### Preflight the matching protected timing peer — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/25/27. The private peer
+preparation binds 2,235 candidate files, 112 standalone peer inputs and
+the 31 existing test identities. Its eight exact source postimages
+retain the existing locked registry set. The sole lockfile delta is a
+direct Windows target edge to the already-resolved local
+`windows-platform-native` adapter. The GNU resolved graph omits that
+edge. Fourteen static controls passed, including wrong cfg, registry,
+feature and PDB age cases.
+
+The first preflight refused comparison with the retired facade output path.
+The corrected reader binds the exact original export location, pinned copy
+receipt, copied bytes and original PE/CodeView PDB identities. The build
+runner, preflight and controls are in
+`~/.local/share/nevrotick/protected-timing-peer-20261123.dHrDFmXm/`.
+The private build retains its 7 GiB scratch launch floor and the frozen
+GNU/MSVC graph, compile and PE/PDB checks. Bind the controller's timing
+scenario to the actual peer and facade result identities after build.
+The healthy native two-leg control and independent uncertainty
+supplier for production admission remain open.
+
+The first build attempt retired its owned scratch and exited before Cargo.
+The root cooldown receiver detected that its complete resolution context
+still binds the predecessor standalone manifest. The failed receipt and
+its 3.269-second charge remain in the preparation directory.
+
+`dependency-updates` used the existing guarded root workspace resolver
+with Cargo 1.100.0, the accepted predecessor and the unchanged 14-day
+policy. The metadata-only invocation exited zero in a private 512 MiB,
+16,384-inode quota. The new receipt binds all 21 manifests. Only the
+standalone peer manifest changes in that context. All 599 lock rows and
+585 registry records are unchanged. The generated lock matches the
+accepted bytes, SHA-256
+`26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db`.
+The resolver added or removed zero registry entries, downloaded no crate
+source and used no policy exception.
+
+The quota retired with the owning unit. The resolver receipt was re-read
+through the existing admission owner. It is in the private directory at
+`root-cooldown/resolution/cooldown-resolution.json`, SHA-256
+`732f59ee992dd792c0f56058537416d53b43a69f87759854e3714cccefe22979`.
+Independent review confirmed the command, quota retirement, complete lock
+and single-manifest delta. The three exact private policy and pin files
+passed product admission. The stale policy and foreign-lock controls
+refused. The resulting combined candidate has 2,235 input files, including
+648 product files with SHA-256
+`51877f1fc1258bdb6c97e1d47cba57846ba56fe068b19a8b0aa9317a8f022c1a`.
+
+The configured MSVC timing facade passed all 20 cross-link lanes in
+83.54 seconds on that combined map. The first wrapper attempt stopped
+before dispatch at a wrong module name for the checksum helper. The
+corrected wrapper checked the canonical digest independently. All four
+EXE/PDB pairs were copied and rehashed before the owned output retired.
+The refreshed facade image hashes to
+`3032d3d8d7e855d423f26961263cfc4a63d4bbf6d56d993d074285b82147cbd2`
+and its PDB to
+`a19a636d8738a6d811ec47d3e14578c0cba424c2206eba0919218e8dc471fa6e`.
+The retained `root-cooldown/facade-refresh/verification.json` SHA-256 is
+`a472f8b5161ea3f04f7c855feeb563989b89a39ec149706d6c7f98d4c6797369`.
+The matching standalone lock reproduced byte for byte through the
+fixed offline resolver with the 512 MiB, 16,384-inode quota. Its 122
+package records retain all 114 registry packages and add one Windows-only
+edge to the existing native adapter. The first invocation passed its
+boundary and Cargo commands, then refused the quota directory's expected
+timestamp change at cleanup. The corrected check admits the empty
+directory with the original device, inode, owner, permissions and
+capacity. Its controls refuse a remaining child, a foreign descriptor
+and widened permissions. The exact retry passed both commands, matched
+the complete proposed lock and retired the quota and scratch. The
+5.238-second retry retains the earlier 5.175-second attempt and the
+historical 4.438-second charge.
+
+The generated lock SHA-256 is
+`9969ca7781fb872cfcf824435ebf349a084186267ca4ae8de96896ae066a97a3`.
+The receipt is
+`~/.local/share/nevrotick/protected-timing-standalone-retry-20261123.XMolDdpX/result.json`,
+SHA-256 `a0524a4f78f31da77905e1314525369f4f7326f5d2211570a2bf86ab198ecd35`.
+Fresh applicable dependency evidence, frozen peer graph and build,
+controller pair admission and healthy native timing remain open.
+
+The first advisory refresh refused before network acquisition. Git's
+mapped observer rewrote UID/GID stat-cache fields in 2,225 Main index
+entries. The staged objects, flags and worktree content remained the
+same. A disposable replay reproduced the exact transient index hash.
+The corrected observer mounts both Main and a private index read-only.
+Two mapped controls preserved the Git observations and index bytes.
+A substituted private index refused before Git execution.
+
+The corrected refresh bound the exact standalone lock and returned
+1,725 metadata files without crate sources. Registry index and RustSec
+fetch both exited zero. Independent readback matched all 114 locked
+registry records, the configured reader admitted the exact receipt,
+and the private quota retired. The successful execution charged 13.682
+seconds. The initial 3.740-second refusal remains charged separately.
+The receipt is `advisory-receipt.json` in
+`~/.local/share/nevrotick/protected-timing-peer-build-20261123.ksjfuGoo/advisory-acquisition-retry.3mIDl3W6/`,
+SHA-256 `57202693d0e4545d81cd41830b9b165a54019e94e310a412f49c84f8e67e5d73`.
+The frozen Rust 1.100.0 peer passed all 12 lanes. Both GNU and MSVC
+dependency-policy rows and metadata graphs passed before compilation.
+Format and both Clippy configurations passed. The same 31 selected GNU
+cases passed in ordinary and optimized modes. The `x86_64-pc-windows-msvc`
+x64-v3 release image linked and passed static PE/PDB readback. The terminal
+unit exited zero, took 198.222 seconds and retired its scratch. Known
+charged preparation and build execution totaled 319.868 of 540 seconds.
+
+All 12 raw result hashes and both exported artifacts matched on readback.
+The same-basename facade PDB was refused for GUID/age, and restoration of
+the matching peer symbols passed. `build/verification.json` hashes to
+`34ed61a37f354e3a02a7d3eb86a0f151b7315faef2bb569a71ae9dfc0d61c34c`
+under `~/.local/share/nevrotick/protected-timing-peer-build-20261123.ksjfuGoo/`.
+The exact peer EXE is `93ba9ca2…33ba0`, and its PDB is `3c35092f…61d0`.
+The existing timing controller now admits the exact peer and facade
+images and symbols through its host reader. The first check refused the
+older 29-case peer roster. The corrected check uses the exact later
+31-case ordinary predecessor, which matches both current GNU modes.
+The unchanged PowerShell controller and timing oracle retained their
+identities. Four crossed artifact and receipt inputs refused before
+guest contact. `host-admission.json` in
+`~/.local/share/nevrotick/protected-timing-native-admission-20261123.WCHucFTs/`
+hashes to `9709a6bc6b5be0a9ff92917497355a7cafd9d30c613e07f5677426b009680dd1`.
+Current inventory selected the owner-prepared guest `20dc0fe0…0335`.
+The re-bound controller accepts its recorded offline and cleanup custody
+and refuses the historical guest identity. Fresh certificate-free readiness
+passed the actual guest account, build, network, runtime, date and loopback
+checks. The exact peer and facade then passed the native v3, loader and
+argument controls with guest exits 0, 2, 126, 126 and 124 as selected.
+The final Windows memory sample was 1,882 MiB, below the 2,048 MiB
+floor. The controller refused before sharing PKI and cleared the mapped
+leaves. The exact preflight receipt `kepre_a87a25473cf8/verification.json`
+in the admission directory hashes to
+`489e25e17be69d8032711c21405080fca21b6c8186da18c2db6a4158d752d958`.
+The healthy two-leg exchange needs live memory admission and the existing
+temporary guest-root confirmations. Production calibration remains open.
+
+###### Verify the paired protected timing exchange in Windows Sandbox — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/24/25/27. The current exact
+facade and peer passed live preflight with 4,458 MiB before starting and
+4,747 MiB before copying the PKI inputs. David confirmed installation
+and removal of the temporary lab root in the owned offline guest.
+The peer received exactly two protected requests, sent two replies and
+observed no extra datagram. The facade observed two fully submitted
+sends and an authenticated ordinary successor. Each child exited and
+all four streams reached EOF. The original physical Root/CA rows were
+restored, guest scratch retired and the host stage leaves were cleared.
+
+The facade emitted all six original capture brackets and the peer
+emitted all four independent brackets. The reader checked the same
+10 MHz guest QPC and at least two ticks of separation at each boundary.
+The first leg's request and reply gaps were 22,897 and 2,088 ticks.
+The successor leg's were 2,509 and 545 ticks. The first peer receive
+preceded the client's send return, which is compatible with actual
+send-return placement and does not change request containment.
+The witness establishes relative application-event order. Its result
+remains `mapping-unavailable eligible=0 fresh_sync=0`.
+
+The exact run is
+`~/.local/share/nevrotick/protected-timing-native-admission-20261123.WCHucFTs/kefac_9738b2f7dee3/`.
+`verification.json` SHA-256 is
+`36ac2adfaa449fe241257e7919de2a9407d79039ae3f2e1ec14930c76d23c5bc`.
+Native guest, host controller and reader returned 0. Carry the qualified
+laboratory source into the matching canonical fixture and dependency
+inputs with exact scope checks. Independent physical error, calibrated
+mapping/validity, authoritative invalidation and production admission
+retain their existing exits.
+
+###### Current Engine-to-Core admission handoff — 23 November 2026
+
+S2.1/S2.2, W11-W01, S1.2/S1.4 and CHECK-6/7/8/9/11/14/21/24/25/27.
+Main `c3f6eef` retains the checked Engine observation and the separate
+`ntp-exchange` test-to-Core composition. The actual protected receiver
+still gets no production measurement declaration. Core history in the test
+composition uses fixture timing and a fixed divisor. The seven-owner Core
+result qualifies its selected fixture scope.
+
+1. **Canonical laboratory pair.** The completed private pair retains the
+   exact images in the preceding receipt. The separate publication candidate
+   was prepared on `c347bd0` plus twelve paths and its recorded scratch-space
+   preflight refused dispatch. Compare and rebind the full current candidate,
+   including changed verifier helpers, graph, tools and resource/advisory
+   admission. Check the current facade, then admit the matching peer using
+   that facade's exact result. Bind scoped build and actual pair/reader evidence
+   to the same artifacts before integrating the fixture.
+2. **Reference and issuer, independent of the build.** Reuse the
+   [W11-W01 reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026).
+   The Windows reference owner must admit traceable UTC and independently
+   bounded event pairing, calibration, drift and uncertainty. The actual
+   clock-effect and invalidation owner supplies a checked revision and
+   withdraws stale authority on discontinuity or ambiguity. Domain/bootstrap
+   and S1.4 supply independent date, era, scale and leap evidence. Prepare
+   this read-side seam without enabling a product clock effect.
+3. **Current production receiver.** After those inputs exist, bind an
+   authenticated ordinary NTS receipt to its original source, policy,
+   association, continuity and mapping revisions. Cover the full possible
+   exchange interval. Retain raw capture facts, signed arithmetic, original
+   age and native work charges. The existing
+   [statistical handoff](#next-source-checkpoint-observation-to-core-admission)
+   owns reference-time selection, propagation of uncertainty and checked
+   quality/weighting through the actual S1.2 history and estimator. Freeze
+   the enforcing types and final serialized, consume-once guard before
+   construction or insertion.
+
+**Acceptance planned:** one healthy current exchange enters history once and
+a fresh one works after qualified reissue. At the real final guard and
+history consumer, challenge absent or expired evidence, wrong source/trust/
+scale, span crossing, excess uncertainty, replacement just before commit,
+duplicate or late return and revision exhaustion. Refusal preserves the
+original age, debit and retirement evidence with zero new current rows or
+freshness. Check insufficient history/agreement independently before
+selection can report Tracking. Map each reached guard to generated faults or
+discriminating healthy/refused consumer observations for ungenerated guards.
+Maintain the per-owner 90% executable-line and 95% viable-mutation gates.
+Later Core proposal, broker effect and acknowledged settlement stay P3/P4.
+Reference admission, positive history integration and their exact-candidate
+results remain open. The plan update schedules no builds, native execution
+or formal work.
+
 ###### Pair protected capture brackets on Windows loopback — 23 November 2026
 
 W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/25/27. The Engine test fixture

@@ -758,8 +758,9 @@ checked mapping/era/arithmetic to an experimental measurement with
 `authentication=none eligible=0`; later, justified uncertainty/reference-time
 admission and the actual history/estimator consumer. Existing fixture composition
 and its divisor `1.0` do not close the runtime bridge. Both exits retain the
-existing mathematical proof, KoD, DNS, resource and native owners; the first
-measurement alone completes neither S2.1 nor P2.
+existing numerical, KoD, DNS, resource and native owners. The first measurement
+alone completes neither S2.1 nor P2. [OD-10 §14.1](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+routes formal work after V1.
 
 The [ordinary S2.2 composition card](../../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
 prepares fresh, normally verified KE → complete current association → protected
@@ -788,8 +789,8 @@ policy. Under [OD-11](../nevrotick-owner-decisions.md#15-od-11--socks5-scope-and
 first Windows delivery uses Direct; the proposed SOCKS5 TCP/UDP route and all
 proxy-specific controls/checks move to [SOCKS-0](../../ROADMAP.md#socks-0--optional-socks5-time-acquisition),
 beyond P0–P7. Freeze direct/shared cache, cooldown, hysteresis and policy before
-dependent S2.1/S2.2 work; proxy qualification is not their prerequisite. Preserve
-current proof and provider gates. Route native binding/service behavior through the
+dependent S2.1/S2.2 work. Proxy qualification stays with the later SOCKS-0
+owner. Preserve current provider and nonformal verification gates. Route native binding/service behavior through the
 existing
 [Windows task](../../tasks/windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026),
 and full-product controls through [feature §3.3.1](../windows-time-features.md#331-time-network-settings--5-november-2026)
@@ -800,8 +801,8 @@ record the completed source review, its context limits and three native review
 dispatches that remained NOT RUN. Dependent implementation qualification remains
 outstanding; the later [SOCKS5 disposition](../../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
 records the reduced future subset and its unexecuted proxy/native checks. This
-does not replace §7's current public-constructor proof continuation or expand the
-first fixed-peer measurement.
+keeps the first fixed-peer measurement bounded. Follow [§7](#7-next-executable-task-for-a-development-agent)
+for the current acquisition order.
 
 The [storage reconciliation](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
 reuses DATA-06 policy, DATA-08/09 context, DATA-10 outcomes and DATA-17 scheduler
@@ -818,14 +819,16 @@ Their checks remain planned; native/storage holds and current product priority s
 The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)
 owns the RFC 8915 alignment checklist and completed
 [KoD source-to-scheduler review](../../tasks/s0.1-protocol-comparison.md#kod-source-to-scheduler-review).
-Reuse that pinned evidence; freeze the remaining control/scheduler contract before
-implementation. The current fixture consumes every correlated stratum-zero
-completion, so any selected ignore-while-pending behavior must classify before
-that commit. Enforce RATE backoff, DENY/RSTR cessation and trusted re-enable/reset
-at the actual next-send guard, with independent send-time/healthy-neighbor cases;
-an interval field alone is insufficient. Source findings select no production
-poll constants. S1.1's opaque completion remains a seam. S2.1 owns plain-NTP KoD
-integration; S2.2 adds
+Reuse that pinned evidence and the [accepted KoD lifecycle](../nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026).
+S1.1's opaque control remains a fixture seam. At the actual Engine owner,
+classify before destructive commit. Unhandled codes preserve the pending
+request and its original deadline with no receive-work refund. Qualify
+saturating RATE backoff and continued probes
+at the checked cap, plus DENY/RSTR cessation and revision-bound re-enable.
+Use the stable source and exact UDP endpoint records, without transitive
+propagation or shortening an admitted send floor. Observe actual send decisions
+beside healthy neighbors. Production poll constants remain unselected.
+S2.1 owns plain-NTP KoD integration. S2.2 adds
 NTS control semantics and the [AES-preferred TLS policy](../windows-time-architecture.md#1871-license-gate-and-finite-provider-choice).
 S2.3/S2.4 exercise cache recovery, retry and resource failure paths. The
 [protected-storage workstream](#84-protected-optional-storage-design-and-qualification)
@@ -841,6 +844,7 @@ not production NTS replay qualification; retain OPEN-5/6's unresolved bounds.
 | NTP transport and KoD | Controlled IPv4/IPv6 peers exercise correlation, endpoints, eras and generations. Test reviewed RATE backoff, DENY/RSTR cessation, unknown codes, forged/stale/replayed controls and extreme poll claims. Observe sends and source state; KoD never enters time arithmetic/history or lowers agreement policy. A healthy neighboring source remains usable. | CHECK-6/8/27 |
 | Local usability and alternative-address progress — S2.1/S2.2 | Conclusively disabled/no-local-path candidates emit no attempt and incur no peer-failure charge; unknown/stale inspection preserves bounded recovery. A usable LAN/VPN path survives another interface's disabled family or negative Internet hint. Blackholed first-family and KE-success/UDP-failure cases reach a permitted alternative within the frozen bounds; reordering/refresh cannot restart the failed candidate indefinitely or refill budgets. Preserve negotiated identity, one logical vote and native completion custody. | [Engine task card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026); CHECK-6/8/9/21/27, CHECK-25 for reached construction guards |
 | Leap claims and source scale | Preserve authenticated bytes and raw LI through staged admission. All-LI=0 unsmeared UTC peers remain candidates; contradictory observations and smeared/unknown-scale sources cannot acquire discipline authority. Recheck whole exchange span, age and policy/mapping generations after delayed completion; preserve healthy identities. | [S1.4/P2 handoff](../../tasks/s1.4-leap-policy.md), CHECK-6/7/8/11/14/25 |
+| Application timing to Core admission | Admit the actual W11-W01 reference and complete original capture brackets, current mapping/date/scale and finite uncertainty. Observe one current healthy admission and one after qualified reissue. Old, duplicate, crossing-span and excessive-error completions leave history and freshness unchanged and retain actual work accounting. | [Reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026), TQ-01/07/08/09, CHECK-7/11/14/21/24/25/27 |
 | NTS-KE | TLS 1.3 baseline, `ntske/1`, verified identity, complete request flush, bounded framing/cardinality/end rules and offered protocol/AEAD negotiation. Wrong identity, unknown critical records, truncation and unoffered algorithms fail without a usable association. | CHECK-6/9/26 |
 | RFC 8915 and cipher preference | Close the linked checklist with actual entry-point cases for KE errors/warnings/closure, exporter/nonce/AD, cookies, trailing fields, NTS KoD/NAK and retry reset. Observe AES-GCM offer order and negotiated suites; qualify provider acceleration/fallback without raising the CPU floor or admitting a new graph. | CHECK-6/9/17/26 |
 | NTS packets | Independent exporter/AEAD known-answer and peer tests cover direction, UID, origin, replay, corrupt tag and wrong key. Fresh request UID has at least 32 CSPRNG octets; use the required AES-SIV-CMAC-256 profile through an admitted maintained library, not new cryptographic primitives. | CHECK-6/20/26 |
@@ -853,14 +857,18 @@ not production NTS replay qualification; retain OPEN-5/6's unresolved bounds.
 
 Normal NTS communication is a separately reportable milestone while exceptional
 recovery remains open. Full P2 exit requires CHECK-6/8/9/17, NTS CHECK-26 and engine
-CHECK-27. No global clock writes are needed. Keep plain NTP explicitly selected
+CHECK-27, plus the applicable timing, admission and diagnostic checks in the
+table. No global clock writes are needed. Keep plain NTP explicitly selected
 and labelled unauthenticated; no mixed votes or silent fallback from NTS failure.
 
 ### P3 — Windows services, secure IPC and protected state
 
-Implement two own-process services using qualified narrow SCM adapters, then
-bounded versioned handlers, current authorization, protected persistence and
-coherent status. Start proposal integration with a simulated clock backend.
+Implement two own-process services using qualified narrow SCM adapters. Bring
+minimum authenticated management admission up with S3.1 and creation-time
+protection. Admit the actual process generation before functional IPC or
+acquisition. Then integrate the full S3.2 handlers, protected S3.3 mandatory
+state and coherent S3.4 status. Start proposal integration with a simulated
+clock backend.
 
 The [8 November source handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
 provides portable lifecycle/SCM/privilege code and two inert laboratory hosts for
@@ -913,6 +921,14 @@ Only after relevant S0.2–S0.4/S0.7 and P3 evidence, connect the real backend i
 owned disposable Windows environment. Qualify read/rate/step sign, units,
 quantization, achieved correction, cancellation and acknowledgement loss using an
 independent reference. Reconcile ambiguous effects; never repeat a step blindly.
+
+S4.1 read-only backend work and simulated accounting can proceed independently
+of the first product-backed write. Before that write, join the minimum S4.2
+durable reservation and cumulative limits with S4.4 current ownership and
+recoverable cleanup. Recheck the owner, policy, revision and budget at the
+serialized effect. Record known results before success acknowledgement and
+retain the charged unknown on lost acknowledgement. The separate S0.4
+raw-API lab measurements retain their own temporary bounds and restoration.
 
 The [clock-limit preparation card](../../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
 routes OPEN-5/7/13 through S0.4/S0.7 and W11-W02/04/05: native evidence →
@@ -1039,7 +1055,7 @@ implement source admission, deterministic projection/check and focused CI now
 stages remain MD-P4–MD-P5 under these same owners. The single authored source is
 `metadata/product.toml`; versions/licenses/repository retain existing authorities.
 Pending identities and prototype scope cannot be removed by data to authorize a
-release. This work adds no prerequisite to §7's current Core/N3 task.
+release. Independent package authoring can proceed alongside §7's acquisition work.
 The [complete-register amendment](windows-package-metadata.md#134-complete-field-register-and-source-text-policy--7-november-2026)
 extends this same implementation with exact field dispositions across the reviewed
 SCM/artifact/diagnostic and shared project scopes. Unanswered values remain empty;
@@ -1207,9 +1223,26 @@ The [complete seven-owner union](../../tasks/s1.3-source-selection-readiness.md#
 passed the unchanged per-file mutation gates, with 852 caught, 415
 compiler-unviable and 18 reviewed equivalents across all 1,285 variants.
 The separate line and contract receipts retain their exact scopes.
-Continue S2.1/W11-W01 with the protected timing publication build and the
-genuine mapping, validity and uncertainty inputs needed for Engine-to-Core
-admission. The public mutation campaign remains closed.
+The public mutation campaign remains closed.
+
+### Resume in dependency order — 23 November 2026
+
+Use this sequence for current activation. The dated checkpoints below retain
+their original candidates. The table routes existing requirements and does not
+schedule execution while a hold applies.
+
+| Order and owner | Entry and allowed parallel work | Discriminating exit |
+| --- | --- | --- |
+| **Next development child — S2.1/W11-W01, Engine and Windows platform** | Compare the private timing pair and prepared publication projection with current Main. Admit the canonical laboratory source, exact graph, fixture, SDK, runner and resource envelope. Check the facade first, then the matching peer and the paired consumer. In parallel, read-only reference preparation can identify the qualified physical reference, mapping/invalidation issuer, date/era/scale evidence and independent error budgets. A product clock write or complete installed service is unnecessary for that preparation. | Current-image build and consumer checks bind any reused or new pair evidence to its exact inputs. Reference preparation exits separately when calibration, validity, event pairing and bounded uncertainty are justified. The private TLS pair establishes relative application-event order. |
+| **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |
+| **Secured service status — P3 and S-2** | Independent source preparation can proceed with the admitted service adapters and W11-W05/W11-W10 fixture. Bind exact roles and create protections before exposure. Qualify minimum authenticated management admission before functional IPC, then full handlers, mandatory state and simulated integration. Restore D2 freshness, connection and generation rules before connecting live status, including read-only. | Intended peers complete ready/stop and read status. Foreign identity, stale generations, failed state commit and retained native work cannot produce a false success. S-2 joins real admitted acquisition, secured status and ordinary-user read-only UI. |
+| **Real clock control — P4** | Require the reached P3/S0 evidence, independent reference and finite owned-lab card. Join current ownership, durable reservation, checked budgets and recoverable handover before the first product-backed write. Keep measurement admission independent of actuation. | Observe actual delivered correction and cleanup with current authorization. Crash, lost acknowledgement, competing ownership or invalidation cannot repeat a step, restore spent authority or publish a current synthetic effect. |
+| **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
+| **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
+
+Keep the [S0.6/W11 service and direct-package handoff](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
+independent of later production signer selection. Optional storage and packet
+adapters, later SOCKS and post-V1 formal work retain their separate dispositions.
 
 **Protected capture and retained SCM process — 22 November 2026.** The
 [W11-W01 capture checkpoint](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-the-protected-receipt)
@@ -1224,8 +1257,21 @@ now confirms relative ordering for both ordinary protected legs and
 exact joined capture transfer. Continue with independent mapping and
 uncertainty and affected-file qualification before positive Core
 admission. The [private two-leg timing export](../../tasks/engine-transport-pilot.md#prepare-the-two-leg-protected-timing-export--23-november-2026)
-passed build and native input refusal. Complete the peer handoff and the
-healthy producer and reader case before staging that lab source. The
+passed build and native input refusal. The
+[matching peer preflight](../../tasks/engine-transport-pilot.md#preflight-the-matching-protected-timing-peer--23-november-2026)
+binds the private candidate inputs and exact local Windows graph delta.
+The first build stopped before Cargo at the root cooldown manifest binding.
+The guarded resolver reproduced the unchanged root lock with the current
+complete manifest context. The reviewed private pin passed admission, and
+the refreshed timing facade passed all 20 cross-link lanes. The offline
+standalone lock reproduced exactly. The matching peer passed both frozen
+dependency rows and all 12 development lanes, including the release image
+and symbol readback. The [paired timing exchange](../../tasks/engine-transport-pilot.md#verify-the-paired-protected-timing-exchange-in-windows-sandbox--23-november-2026)
+then passed on both exact images in the owned offline Windows guest.
+The readback verified all ten brackets, both protected legs and the
+restored trust baseline. Integrate the laboratory fixture with its exact
+dependency checks. The production mapping and calibration exits stay open.
+The
 [protected capture facade witness](../../tasks/engine-transport-pilot.md#check-the-original-protected-capture-triplet-in-the-facade-fixture)
 checks the original recorded triplet on the joined receipt. The
 [matching peer and controller](../../tasks/engine-transport-pilot.md#build-the-matching-protected-capture-peer--22-november-2026)
@@ -1284,11 +1330,15 @@ entry, module and precompiled helper through retirement. The
 [subject binding](../../tasks/windows11-integration.md#bind-the-pre-start-identity-subject-before-child-creation--23-november-2026)
 now refuses a mismatched deployment SID before child creation. The exact
 predecessor and corrected controls ran in the owned Windows Sandbox.
-The unsigned archive passed readback and the SDK signer images passed the
-read-only native signature check. The installed sequence still requires
-independently admitted actor contexts, the signed package, and the common
-native window owner that supplies the first receipt and the three SCM
-observations. The [broker's sampled continuity check](../../tasks/windows11-integration.md#withdraw-a-sampled-broker-revision-after-a-known-leap-presentation-change--23-november-2026)
+The [current unsigned fixture](../../tasks/windows11-integration.md#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
+now binds both relinked roles to a freshly packed and checked archive.
+The matching Windows pre-start observer also linked. The SDK signer
+images passed the read-only native signature check, and the exact SDK
+SignTool accepted the timestamped signed PE and refused the altered PE
+and unsigned fixture package in the owned guest. The installed sequence
+still requires independently admitted actor contexts, the signed package,
+and the common native window owner that supplies the first receipt and the
+three SCM observations. The [broker's sampled continuity check](../../tasks/windows11-integration.md#withdraw-a-sampled-broker-revision-after-a-known-leap-presentation-change--23-november-2026)
 now withdraws the sampled revision after two different known presentation
 modes. Actual Windows transition and mapping evidence remain open.
 
@@ -1333,7 +1383,7 @@ evidence carry forward through the reviewed source and caller scopes.
 The repaired schema 7 reader accepted all 398 existing raw classifications
 on readback and refuses stale Build artifacts. The public campaign stays closed.
 
-The [current source metadata checkpoint](../../metadata/qualification/CHECKPOINT.md#direct-msix-activation-authoring--22-november-2026)
+The [22 November source metadata checkpoint](../../metadata/qualification/CHECKPOINT.md#direct-msix-activation-authoring--22-november-2026)
 passes activation authoring CLI readback, strict typing and all five
 declared executable-line gates on the current 262-test candidate, with
 335 subprocesses and a current test-to-line context map. Its complete
@@ -1346,8 +1396,11 @@ now verifies all three required flags before the real Slint backend starts.
 The release UI cross-link, import readback and selected inert Windows policy
 case passed. The [local Low-integrity DLL control](../../tasks/slint-gui-handoff.md#observe-the-low-integrity-image-boundary--23-november-2026)
 verified denial with only the Low-label bit added and a byte-identical Medium
-DLL still loading. Continue normal UI and remaining loader behavior, startup
-diagnostics and packaged activation under CHECK-16 and the direct MSIX profile.
+DLL still loading. The [guarded native startup and close](../../tasks/slint-gui-handoff.md#observe-guarded-slint-startup-and-caption-close--23-november-2026)
+ran the linked Slint fixture in the elevated offline guest and retains the
+exact image for the separately admitted non-elevated desktop case.
+Continue the remaining loader behavior, startup diagnostics and packaged
+activation under CHECK-16 and the direct MSIX profile.
 
 Continue the existing delivery and retention stage under W11-W08, with
 W11-W10 and the installed service owners. Freeze the provider and channel
@@ -1702,11 +1755,11 @@ inputs. The [maintained WSL stage](../../tasks/windows11-integration.md#publish-
 now publishes those inputs and the inventory together. A real file-size
 failure leaves the final slot absent and permits a retry. The historical
 archive correctly refuses the new payload identity. The
-[current unsigned lab package](../../tasks/windows11-integration.md#pack-the-current-disabled-service-input-set-in-the-offline-lab)
+[earlier unsigned lab package](../../tasks/windows11-integration.md#pack-the-current-disabled-service-input-set-in-the-offline-lab)
 passed native MakeAppx and independent archive readback, including the
 missing-logo and crossed-payload controls. The
-[pack from the current service links](../../tasks/windows11-integration.md#pack-the-current-same-pipe-checkpoint-service-images--23-november-2026)
-binds both latest role images and independently refuses crossed artifacts.
+[23 November relink and pack](../../tasks/windows11-integration.md#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
+binds both current role images and the matching observer.
 Test signing, installation and actor-bound native observations remain held
 under §7.5.
 The [direct-MSIX branding candidates](../../tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026)
@@ -4975,11 +5028,12 @@ service enablement, temporary bootstrap, restricted-child and surviving recovery
 task alternatives remain unselected. Source preparation does not adopt a topology.
 
 Once Windows execution is explicitly permitted and the experiment's own gates
-are ready, the first lifecycle discriminator is the bounded inert-journal removal
+are ready, the removal branch starts with the bounded inert-journal removal
 pair with the service running versus already stopped/crashed and the same durable
 obligation pending at removal. Require actual independent activation and keep
 clean STOP/successor controls distinct. Only a credible recovery result justifies
-the larger Reset/update/reboot/multiuser matrix. The
+the larger Reset/update/reboot/multiuser matrix. This branch precedes takeover
+and can proceed independently of the handle-only access observation. The
 separate provisioning discriminator uses initially disabled services, refused
 premature starts, interrupted configuration, fresh effective-token evidence and
 one update/repair; an external administrative harness is not the production
@@ -5282,6 +5336,27 @@ tests, dependency installation or native qualification. Verdict: **ready for
 S0.1/R-01 and S1.1 preparation under the subsequent task instruction**; later
 graph, policy, Windows, UI, package and release gates remain open. Revalidate the
 affected review conclusions if their source, contract, skill or phase scope changes.
+
+#### Dependency and guard review — 23 November 2026
+
+`plan-code-change`, `plan-architecture`, `plan-threat-model` and
+`qa-test-planning` reconciled the P0–P7 sequencing and consumer guards on
+`c3f6eef` with its four existing documentation deltas. The independent
+acquisition, Windows service/clock and delivery reviewers completed
+read-only checks in fresh context. The fresh combined reviewer
+`ordered_plan_final_review` rechecked authority, current source, retained
+timing and unsigned package identities, and the revised handoffs through
+P7. Its verdict was **ready for documentation resumption order** after
+aligning P2 acceptance, putting D2 before live status and making failed
+identity reversion fatal as soon as impersonation is reached.
+
+The core sequence keeps authenticated transport, physical measurement
+admission and subsequent clock authority separate. Installed service work
+has distinct rights, provisioning, recovery and delivered-profile exits.
+OD-05 §7.9 and OD-10 §14.1 resolve the stale Store and proof-first entries.
+The selected order and open inputs are in [§7](#resume-in-dependency-order--23-november-2026).
+This review supplies planning evidence. All execution holds, accepted
+deferrals, exact-candidate gates and release approval remain in force.
 
 ### Windows component reuse integration — 5 November 2026
 

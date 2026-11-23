@@ -112,18 +112,18 @@ and admitted profiles remain the execution authority.
 
 ## 2. Next source-only assignment
 
-Continue **one W11-W01 timestamp supplier implementation card** from the
-[partial preparation in §4.26](#426-s21-timestamp-provenance-preparation--5-november-2026)
-when the relevant acquisition owner is assigned. Its engine handoff preserves
-real acquisition facts and separates experimental measurement from later Core
-admission. The [finite supplier/receiver contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026)
-was settled on 8 November; the actual mapping issuer, justified finite physical
-profile, selected SDK/backend and native evidence remain open. Apply the
+Use the [current Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
+for S2.1/W11-W01. The application capture now has scoped implementation and
+relative Windows timing evidence on the private artifacts. The canonical
+publication pair has a separate outstanding candidate/build check. The
+[finite supplier/receiver contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026)
+was settled on 8 November. Its production supplier starts with the
+[read-only reference admission](#w11-w01-application-timing-reference-trial--20-november-2026),
+actual mapping/invalidation issuer and justified physical bounds. This
+preparation can proceed independently of the publication build. Apply the
 [18 November qualification matrix](#timestamp-qualification-matrix--18-november-2026)
-to the reached supplier or optional adapter; do not reopen the settled contract.
-This source/documentation action does not replace development §7's ordinary
-queue or the engine's separately held native qualification.
-Reuse the completed research; do not restart a general Windows API survey.
+to the reached supplier or optional adapter. Development §7 owns execution
+order and the existing native admission still governs.
 
 The card identifies the proposed producer → metadata → conversion → sample
 consumer path, actual source owners where they exist, private invariants,
@@ -139,15 +139,16 @@ and control-buffer admission, and actual completion ownership if a direct
 overlapped adapter is proposed. Record the documented signature/layout conflicts
 as unresolved selected-SDK/binding questions; an MCP result is not an ABI test.
 
-**Exit:** a reviewer can trace the card's timestamp identities, uncertainty,
-invalidation and unsupported outcomes to the existing CHECK owners. It neither
-selects hardware timing nor claims an implemented adapter. Stop at that card;
-source-only uncertainty does not justify a native probe. The remaining work
-items enter only when their corresponding product slice is ready.
+**Source-preparation exit:** a reviewer can trace the selected supplier's
+timestamp identities, uncertainty, invalidation and unavailable outcomes to
+the existing CHECK owners. Record any missing physical reference or authority
+input before dependent implementation. Hardware timing stays conditional.
+The remaining work items enter when their corresponding product slice is ready.
 
 ## 3. Bounded work assignments
 
-All implementation/qualification actions below are planned and unexecuted.
+The assignments below describe required actions. The dated checkpoints carry
+their executed results and exact scopes.
 Expand only the next ready authorized item into exact writable files, candidate
 identity, admitted graph/runner, case/time/resource limits and cleanup. Retain
 healthy neighbors and inspect the actual enforcing consumer; a mock or Windows
@@ -156,15 +157,16 @@ become prerequisites for the next time-client slice.
 
 ### W11-W01 Preserve packet timestamp provenance
 
-**Owner/stage:** engine/platform; source card first, optional adapter in S2.1/P2.
+**Owner/stage:** engine/platform; baseline application mapping in S2.1/P2,
+with optional packet-adapter qualification at its own trigger.
 **Prerequisites:** existing exchange, units, generation and admission contracts;
 [timestamp research](../docs/plans/windows11-integration.md#1-measure-packets-closer-to-the-network-stack).
 
 **Current source disposition:** [§4.26](#426-s21-timestamp-provenance-preparation--5-november-2026)
-records partial implementation preparation through the existing engine card.
-The finite supplier/receiver contract is settled; actual mapping/capability
-issuers, their qualified physical profile and selected optional adapters/native
-evidence remain open. The matrix below refines this existing assignment.
+records the finite supplier/receiver contract and its capture continuation.
+Production mapping capability, the actual invalidation issuer, physical error
+bounds and the claimed native scope remain open. The matrix below refines this
+existing assignment.
 
 **Work:** distinguish application, software-QPC and NIC timestamps. Bind metadata
 to the exchange, socket generation, actual interface and current conversion
@@ -4263,9 +4265,9 @@ needs no proxy secret purpose; no new secret backend or path.
 **Disposition:** source-backed planning only. CHECK-2/6/8/9/12/14/17/21/25/27 and
 AC-21/22 retain their existing evidence owners; the engine card supplies paired
 controls. Native binding, controlled proxy compatibility, resolver/verifier egress,
-service credentials and independent plan review remain unexecuted. Preserve the
-current development §7 proof continuation, first fixed-peer measurement, provider,
-storage and Windows execution gates and UI-M0 deferrals.
+service credentials and independent plan review remain unexecuted. Follow the
+current development §7 acquisition order, the provider, storage and Windows
+execution gates and the UI-M0 deferrals. Formal work follows V1 under OD-10.
 
 ### 4.29 Windows component reuse routing — 5 November 2026
 
@@ -14427,6 +14429,57 @@ code, metadata values, SDK agreement, signer, package build, Windows operation,
 release or Store operation is adopted or executed by this change. Unrelated
 execution holds and current Core/Engine work remain with their existing owners.
 
+#### Service provisioning and direct MSIX order — 23 November 2026
+
+W11-W05/W11-W10 and S0.3/S0.6/S3.1–S3.4/S6.1–S6.4. Use the
+[current unsigned disabled-service fixture](#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
+for the latest authored mechanics. The linked observer and read-only
+signature controls retain their own inputs. Installed rights and supported
+provisioning remain open.
+
+1. **Handle-only before setters.** Prepare the concrete common native window
+   owner under the existing [pre-start experiment](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026).
+   Before the admitted lab run, bind the exact test-signed fixture, independent
+   deployment/provisioner and ordinary-user contexts, and retained observation
+   receipts. Observe installation with both original roles Disabled/Stopped
+   and no UI launch, then exact image/configuration/descriptor and narrow
+   handle rights. Pair successful query and authorized handle acquisition
+   with ordinary-user mutation denial. Keep the installation quiescent and
+   the probes handle-only. Lab trust remains scoped to the owned guest.
+2. **Provision before functional start.** Independently establish the
+   supported no-UI invocation and servicing reentry before enabling any
+   setters. Verify fixed identities, state/object rights and creation-time
+   protection. Admit a fresh generation through the minimum authenticated
+   management path alongside S3.1. Observe status and a protected inert
+   operation with valid peer, fake/foreign peer, restart and stale-generation
+   controls. Functional IPC/networking and full S3.2 handlers follow admission.
+   Failed identity reversion is fatal as soon as any reached path can
+   impersonate, including management admission. Stop request execution
+   immediately under §5.4.2. Qualify retained-rate and ownership recovery
+   for that failure before production actuation.
+3. **Prove removal and recovery independently.** W11-W05/W11-W10 can pursue
+   the stopped/crashed-owner inert recovery and unattended removal branch
+   independently of handle-only rights. Establish supported recovery before
+   any W32Time takeover. Before a product-backed correction, require current
+   ownership, durable reservation/accounting, bounded authority, and a
+   recoverable transaction with independent restoration and valid/refused
+   controls. Loss of acknowledgement retains the original charge.
+4. **Bind the final delivered package.** Author and qualify applicable lab
+   mechanics while signer selection is deferred. After David selects the
+   direct signer, trust and controlled-delivery profile, freeze the payload
+   and verify required inner signatures before package assembly and outer
+   signing. Read back the actual downloaded and installed bytes, including
+   per-role mitigations, supported service lifecycle and recovery on each
+   supported Windows family. Apply the [v3 activation matrix](../docs/plans/windows-msix-store.md#v3-admission-at-activation)
+   before imports, CRT or TLS callbacks can execute a v3 instruction. Cover
+   every startup path with feature/vector-state refusal and supported neighbors.
+   Reconcile WGT-C01 and independent CHECK-24 before David's approval.
+   WGT-C02 availability follows authorized publication.
+
+The handle-only, controlled activation, removal/recovery and final public-trust
+exits require their own permitted observations. No current execution hold
+changes through this review.
+
 #### Direct MSIX source projection checkpoint — 22 November 2026
 
 W11-W10/MD-P4–MD-P5 and CHECK-18/20/23/26/27. The source CLI now delivers
@@ -15859,6 +15912,23 @@ hashes to `1d98d0c4e0c7e5cee5e348b904416f0b0b43ba4d930007bfc9837f0ad5f9eeb6`.
 Loader compatibility, test signing, installed role admission and lifecycle
 qualification remain open under §7.5.
 
+The later read-only SignTool run used the exact SDK x64 assembly in the
+owned offline guest `20dc0fe0…0335`. `verify /?` exited 0. Verification of
+the genuine PE exited 0 with a timestamped embedded Microsoft signature.
+The byte-altered PE exited 1 with `WinVerifyTrust` error `0x80096010`.
+The retained unsigned MSIX exited 1 with `No signature found`. The altered
+PE and the MSIX were input files to the verifier. All four child results
+and streams retired. The guest rechecked its inputs, removed its scratch
+and passed both offline observations. The host read back all 13 output
+records and cleared the mapped leaves.
+
+The receipt in
+`~/.local/share/nevrotick/s06-signtool-readonly-20261123.porc3ll8/run-z56f9qwy/`
+hashes to `2b2494d6a7d16cf782881d68226a06f906651a35d2e8f0b775462d52aa52d9c9`.
+The scope is the selected SDK verifier, embedded PE verification and
+unsigned-package refusal on this guest. Signed MSIX trust, the signing
+operation, installed role admission and lifecycle remain open under §7.5.
+
 ### Capture the fixed identity child under the original token — 23 November 2026
 
 W11-W05/W11-W10, S0.6 and CHECK-1/26/27. The
@@ -16144,6 +16214,29 @@ Independent review matched the retained reader, fault and roster
 evidence. Actual Windows mode transitions, installed use, mapping
 qualification and affected-file coverage and mutation gates remain open.
 
+### Exercise sampled withdrawal during a fragmented broker status request — 23 November 2026
+
+CHECK-11/25/27. The detached GNU fixture drives the actual sampler,
+shared comparator, split request receiver and correlated reply consumer.
+The `3 → 2 → 1` wall observations withdraw the crossing request's
+availability and admit a fresh request under revision 2, with the
+original `FiletimeReversed` break retained. The equal middle observation
+in `3 → 3 → 4` keeps revision 1 available. Both cases check three reads
+and the remaining request allowance.
+
+The first fresh graph passed. Its ordinary compile refused a redundant
+type qualification and an unsupported `SessionFault` conversion in the
+new test. The repaired fixture preserved the production interface and
+ran the exact new histories. The fresh graph and all 193 ordinary GNU
+cases passed on the 731-input candidate `c9bc1c60…1448`. The first
+compile refusal and retry consumed 141.487 seconds of the bounded
+160-second replay allowance. The read-only namespace controls retain the
+source-path refusal and corrected private bind. The ordinary receipt
+SHA-256 is `31def0e43c584f45fe32dbbf697b28c24717a6a2f111d5e2f62f4e121ec17a47`
+under `~/.local/share/nevrotick/broker-ordinary-replay-20261123.90itoeZY/receipts/`.
+Optimized GNU, both Clippy targets and exact-scope integration remain
+pending. This is sampled fixture availability evidence.
+
 ### Preserve broker reply operation and cleanup diagnostics — 23 November 2026
 
 W11-W05/S3.1 and CHECK-17/25. The Rust contract review confirmed that
@@ -16196,6 +16289,56 @@ and accepted logs are under
 `~/.local/share/nevrotick/phase-ratio-line-gate-20261123.NNuqBNhW/`.
 Final identity, signed payload, supported activation and installed
 lifecycle remain with the existing direct-MSIX owners.
+
+### Relink and pack the current disabled-service fixture — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-16/18/26/27. The WSL preflight
+archived two completed derivative checkouts with their exact files,
+staged patch, and index. Archive readback matched source bytes and
+modes. Retiring the duplicate checkouts recovered 199,831,552
+available ext4 bytes. The main checkout and retained receipts stayed
+intact. The archive locations and hashes are in
+`~/.local/share/nevrotick/closed-snapshots-retirement-20261123.json`.
+
+The configured six-command graph and twelve-command privilege
+checkpoint passed on source digest
+`b5be9754fbcba69011042160dd952bc0ada193e4b1589838cf8efb273f37074e`.
+All 731 inputs and the original index matched at both bookends.
+Both GNU modes ran 191 fixture and 70 platform cases. The platform
+also ran 28 doctests. The matching MSVC role and libtest links passed
+three and two commands respectively, with matching PE/PDB pairs.
+The libtest binary contains the three installed pre-start selectors.
+Those selectors remain pending execution. The canonical raw receipts
+are `s06-current-2311-graph.json`, `s06-current-2311-dev.json`,
+`cross-s06-current-2311-link.json` and
+`cross-s06-current-2311-libtest.json`. The last two hash to
+`8cb1f325d2c73ede2128697ea6947ed1f1097d9da55a17ee47efdc8287187ccb`
+and `b3e0bda9e273a7c82dcae1a5def7fed91da6b4fd0cbf6c29032497ea2e626bbc`.
+The owned build scratch was retired after artifact readback.
+
+The payload preparer consumed the new role receipt. Only its two
+role executables changed relative to the last packed payload.
+The fixed manifest, artwork, inert launcher and six MakeAppx
+inputs matched. The new pack input digest is
+`321fc6f6bb34463309a28363381aa3c25188a0506633d9ae57b3efe7e10f5e32`.
+MakeAppx 10.0.28000.2705 produced an unsigned 191,828-byte archive
+in the owned offline build-26100 guest. The missing-logo control
+refused with `0x80080204`. The SDK signature checks, both child
+exits, input bookends, zero default routes, guest scratch and mapped
+file retirement all passed. The mapped directories and guest were
+preserved.
+
+The maintained package reader accepted both exact input/archive
+pairs and refused either crossed pair at the broker member. The
+reader confirmed all nine archive members and both Disabled service
+declarations. All 36 portable package checks passed. The new archive
+hashes to
+`c0f85f3eaddf7556698e1892b0213c332e9f340d7c5bdd27b3a5e725a586ac21`.
+Raw receipts, readback and the exact source overlay are retained in
+`~/.local/share/nevrotick/s06-current-role-relink-20261123.oM5wRfbl/`.
+Independent review tied the archive to the source and byte-matched
+roles. The signed lab fixture, distinct deployment and access actors,
+and live installed pre-start window retain their existing owners.
 
 ### Pack and read back a checked event resource — 23 November 2026
 

@@ -12,6 +12,16 @@ the [development plan](../docs/plans/development-plan.md). Architecture §21 own
 P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
+**Current dependency order — 23 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+puts the [canonical timing pair and independent reference preparation](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
+ahead of the first real Engine-to-Core history admission. The
+[seven-owner Core union](s1.3-source-selection-readiness.md#complete-the-current-seven-owner-phasestep-union--23-november-2026)
+retains its selected GNU scope. The
+[service and direct-MSIX handoff](windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
+orders handle-only rights, pre-exposure admission, independent recovery and
+final delivered-artifact qualification. Later source preparation can overlap
+where its own prerequisites are satisfied.
+
 **Service source checkpoint — 9 November 2026:** portable lifecycle/SCM/privilege
 owners and two fixed-role laboratory SCM host compositions are implemented.
 The [selected portable privilege exit](windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026)

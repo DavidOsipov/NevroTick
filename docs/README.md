@@ -9,6 +9,12 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Current implementation order — 23 November 2026:** use
+[development §7](plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+for the next executable child, its independent prerequisites and the guarded
+phase joins through P7. The [task map](../tasks/README.md) points to the owning
+records and exact-candidate evidence. Dated reports retain their original scope.
+
 **Direct MSIX distribution — 21 November 2026:** [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 rejects Microsoft Store publication because David rejects its broad publisher
 indemnity requirements. One complete MSIX will be distributed directly. Signing

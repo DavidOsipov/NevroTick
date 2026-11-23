@@ -4866,7 +4866,7 @@ The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0):
 
 | Stage | Question and finite experiment | Exit / stop condition |
 | --- | --- | --- |
-| S0.1 | Review exact chrony-derived files, the section 18 candidate graph and prospective UI/tool licenses; run the finite CNG-provider/source/license feasibility investigation and establish publisher/signing path | CHECK-26 scope and compatible source/license decision; AWS-LC/ring remain blocked unless authoritatively resolved. CNG qualification first, Schannel as the bounded second route; incompatible choices stop without changing DEC-1 silently |
+| S0.1 | Review exact chrony-derived files, the section 18 candidate graph and prospective UI/tool licences. Run the finite CNG-provider/source/licence feasibility investigation. S0.6 owns isolated lab signing, and P6 owns the later production signer/trust decision under OD-05 §7.9. | CHECK-26 scope and compatible source/licence decision. AWS-LC/ring remain blocked unless authoritatively resolved. CNG qualification first, Schannel as the bounded second route. Incompatible choices stop without changing DEC-1 silently. |
 | S0.2 | Two minimal own-process services under intended accounts; inspect tokens, wrapper status/callback lifetimes and denied/successful clock/handle operations | CHECK-1 and CHECK-27 lifecycle subset pass in a disposable VM; otherwise change the narrow adapter/account topology without broadening to LocalSystem by default |
 | S0.3 | One real status method and one protected method over named pipes, including fake-server and PID-reuse/restart scenarios | CHECK-2 proves bidirectional identity and per-operation authorization; switch to local RPC if the pipe design cannot be proven |
 | S0.4 | Measure read/rate sign, quantization, step, cancel, kill/restart and power behavior with controlled reference time | CHECK-10/11/12 produce actual backend limits; no unsupported finite-expiry guarantee |
@@ -4896,11 +4896,21 @@ S2.1 implements bounded UDP/DNS lifecycle, NTP-only observation and KoD handling
 
 Exit requires CHECK-6/8/9/17, the NTS graph subset of CHECK-26 and engine native-work subset of CHECK-27 using controlled endpoints and at least two independent interoperable NTS implementations where practical. Public endpoint testing obeys published rate policies and does not substitute for adversarial local fixtures. No privileged clock actuation is needed to prove this phase.
 
+The [W11-W01 reference trial](../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+and [S2.1/S2.2 admission handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
+bind calibrated mapping, validity and uncertainty to the actual Core history
+consumer. Complete reached CHECK-7/11/14/21/24/25 under their recorded timing,
+admission and status scopes. P4 actuation remains separate.
+
 ### P3 - Deliver the secure service boundary
 
 **Outcome:** production-shaped broker/engine services and a small diagnostic client operate with final token/ACL and IPC contracts.
 
 S3.1 implements the qualified SCM adapter, service identities and CHECK-27 status/callback/stop lifetimes. S3.2 integrates section 6's selected bounded decoder and domain conversion at authenticated endpoints, followed by current per-operation rights. S3.3 adds strict policy/state revisions, migration and protected persistence. S3.4 integrates engine proposals with a simulated backend and coherent status snapshots. CHECK-25 now exercises real service handlers and all invalid-input no-effect guarantees; actual clock effects remain P4/CHECK-10.
+
+Use minimum authenticated management admission alongside controlled S3.1
+startup. Creation-time protection and fresh service-generation admission
+precede functional IPC and network exposure under §19.4.
 
 Exit requires CHECK-1/2/3/14/15/17, the service-adapter subset of CHECK-27 and the real-handler subset of CHECK-25; its actual Windows clock-effect subset is completed in P4. Untrusted local clients cannot obtain privileged effects; normal permitted requests and reconnects work. The diagnostic client is an engineering acceptance tool, not a substitute for the accessible UI.
 
@@ -4909,6 +4919,12 @@ Exit requires CHECK-1/2/3/14/15/17, the service-adapter subset of CHECK-27 and t
 **Outcome:** the service disciplines Windows within measured limits and recovers correctly from source loss, sleep, external steps and crashes.
 
 S4.1 integrates the measured backend with acknowledgement/accounting. S4.2 implements finite slew, initial/exceptional step policy and durable boot budget. S4.3 integrates power/network/time-change generations. S4.4 implements ownership monitoring and transaction recovery. S4.5 performs soak and fault experiments against a controlled reference.
+
+Begin S4.1 with read-only backend and simulated accounting. Before the first
+product-backed write, join the minimum S4.2 durable reservation and authority
+limits with S4.4 current ownership and recoverable handover under §§10.1, 10.2.1
+and 11. The independent S0.4 raw-API experiment has its own temporary authority
+and bounds.
 
 Exit requires CHECK-5/10/11/12/13/15/21, declared convergence/error/recovery envelopes and explicit unresolved platform limitations. No “synchronized” status may survive an expired quality budget merely because the process is healthy.
 
@@ -4924,7 +4940,19 @@ Exit requires CHECK-14/17/21/22 on actual Windows. Manual Narrator/keyboard evid
 
 **Outcome:** a supported clean machine can install, upgrade, repair and remove the complete direct MSIX with correct clock ownership, qualified package/publisher trust and the complete per-file signature inventory under section 19.7. Resolve the deferred signing/trust solution before claiming that outcome. Source/package preparation continues meanwhile. A later selected MSI needs its own format/native evidence; the unsigned-MSI/OpenPGP exception remains superseded.
 
-S6.1 finalizes per-binary mitigations and DLL load policy for the complete direct MSIX, including requalification of former Store-signer assumptions. S6.2 qualifies provisioning, lifecycle and fault recovery. S6.3 verifies one-product behavior, unelevated launch, old in-memory component rejection, repair/Reset/downgrade policy and complete removal before or without UI launch. S6.4 prepares the direct-release artifact, applies the later resolved signing/trust arrangement and verifies the exact downloadable/installed package, SBOM and provenance. No Store submission, certification, refusal, MSI prerequisite or UI-only package is required.
+S6.1 prepares per-binary mitigations and DLL load policy for the complete direct
+MSIX. S6.2 prepares provisioning, lifecycle and fault recovery. S6.3 prepares
+one-product behavior, unelevated launch, old in-memory component rejection,
+repair/Reset/downgrade policy and complete removal before or without UI launch.
+S6.1/S6.3 cover the pre-v3 CPU/OS decision on every activation path under §19.4.
+Qualify those local mechanics as admitted while signing is deferred. When the
+direct signer, trust and controlled delivery are selected, S6.4 freezes the
+payload and required inner signatures before outer assembly/signing. Reconcile
+exact downloaded and installed identity, SBOM and provenance, and complete the
+dependent S6.1–S6.3 mitigation, activation and lifecycle observations on that
+profile. Former Store-signer assumptions require requalification. Store
+submission, certification, refusal, a separate MSI and a UI-only package are
+outside the selected route.
 
 Exit requires CHECK-13/16/18/20/23/26 for the declared direct MSIX profile, with applicable authority, dependency and recovery evidence. Signing is deferred, not declared implemented or waived; existing public-trust and exact-candidate gates remain for release. A concrete direct-package incompatibility returns to David, without automatic MSI fallback. A lab certificate, local schema pass or detached signature does not establish public publisher trust or native qualification.
 
