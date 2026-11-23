@@ -344,11 +344,12 @@ full extension inventory.
 `PreviewInput` declaration, its direct Garde derive and its field rules. It
 reports `allow_unvalidated` and inner overrides of selected outcome-handling
 diagnostics in the four UI source files, including overrides nested in
-`cfg_attr`. CR-03
-reports token changes to `SourcePreview::parse`, the selected-slot commit body
-and the rest of the model surface. CR-01 reports changed contracts and
-implementation at ten named seams, including the checked source-draft
-baseline, Add and Edit. The report
+`cfg_attr`. The scanner recognizes the selected diagnostic names, the
+groups that contain them and their still-effective deprecated spellings on
+Rust 1.100. CR-03 reports token changes to `SourcePreview::parse`, the
+selected-slot commit body and the rest of the model surface. CR-01 reports
+changed contracts and implementation at ten named seams, including the
+checked source-draft baseline, Add and Edit. The report
 includes source hashes, the occurrence and its reviewed and observed token
 digests. It exits nonzero on open findings, stale expectations or incomplete
 selection. The Rust workflow runs this report and its focused Python controls
@@ -379,6 +380,11 @@ bounded scanner compares source tokens and docs. Unsupported literal syntax
 or missing selections are incomplete. Actual validation, refusal propagation
 and commit behavior require Rust controls, including the relevant generated
 Slint path.
+
+The regular portable `nevrotick-ui` Nextest lane includes
+[`slint_calendar.rs`](crates/nevrotick-ui/tests/slint_calendar.rs). These
+integration tests call the patched Slint Core through its generated-code
+exports and cover civil-date calculation, inputs and formats.
 
 **Pure-role API enforcement, 31 October 2026:** the three package-local Clippy
 policies participate in strict admission and product source snapshots. Clippy

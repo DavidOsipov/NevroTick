@@ -353,6 +353,15 @@ class PreviewContractTests(unittest.TestCase):
         original = carrier.read_text(encoding="utf-8")
         for attribute, expected in (
             ("#![allow(unused_must_use, reason = \"synthetic control\")]", "unused_must_use"),
+            ("#![allow(clippy::default, reason = \"synthetic control\")]", "clippy::default"),
+            ("#![allow(clippy::suspicious, reason = \"synthetic control\")]", "clippy::suspicious"),
+            ("#![allow(let_underscore, reason = \"synthetic control\")]", "let_underscore"),
+            ("#![cfg_attr(test, cfg_attr(unix, allow(clippy::default)))]", "clippy::default"),
+            ("#![cfg_attr(test, cfg_attr(unix, allow(clippy::suspicious)))]", "clippy::suspicious"),
+            ("#![cfg_attr(test, cfg_attr(unix, allow(let_underscore)))]", "let_underscore"),
+            ("#![allow(renamed_and_removed_lints, clippy_all)]", "clippy_all"),
+            ("#![allow(renamed_and_removed_lints, clippy_suspicious)]", "clippy_suspicious"),
+            ("#![allow(renamed_and_removed_lints, clippy_restriction)]", "clippy_restriction"),
             ("#![cfg_attr(test, cfg_attr(unix, expect(\n"
              "    r#unused, clippy /* nested /* comment */ */ :: unused_result_ok,\n"
              '    reason = "synthetic control, with punctuation"\n)))]', "clippy::unused_result_ok, unused"),

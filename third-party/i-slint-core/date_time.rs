@@ -76,7 +76,7 @@ fn parse_picker_date(text: &str) -> Option<Date> {
         digits.parse().ok()
     }
 
-    let mut parts = text.split('/');
+    let mut parts: core::str::Split<'_, char> = text.split('/');
     let month: u32 = component(parts.next()?, 2)?;
     let day: u32 = component(parts.next()?, 2)?;
     let raw_year: &str = parts.next()?.trim_start();
@@ -131,7 +131,8 @@ pub fn parse_date(date: &str, format: &str) -> Option<[i32; 3]> {
     if format == "%m/%d/%Y" {
         return parse_picker_date(date).map(date_parts);
     }
-    let description = parse_strftime_borrowed(format).ok()?;
+    let description: alloc::vec::Vec<BorrowedFormatItem<'_>> =
+        parse_strftime_borrowed(format).ok()?;
     let mut seen: u8 = 0;
     if !gregorian_fields(&description, &mut seen) || seen != 7 {
         return None;
@@ -145,52 +146,6 @@ pub fn parse_date(date: &str, format: &str) -> Option<[i32; 3]> {
 #[cfg(feature = "std")]
 pub fn date_now() -> [i32; 3] {
     time::OffsetDateTime::now_local().map_or([-1, -1, -1], |now| date_parts(now.date()))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn widget_calendar_and_default_formats() {
-        assert_eq!(month_day_count(2, 2000), Some(29));
-        assert_eq!(month_day_count(2, 1900), Some(28));
-        assert_eq!(month_day_count(12, 2024), Some(31));
-        assert_eq!(month_offset(9, 2024), 0);
-        assert_eq!(month_offset(7, 2024), 1);
-        assert_eq!(format_date("%B %Y", 29, 2, 2024).as_str(), "February 2024");
-        assert_eq!(
-            format_date("%a, %b %d", 29, 2, 2024).as_str(),
-            "Thu, Feb 29"
-        );
-        assert_eq!(parse_date("02/29/2024", "%m/%d/%Y"), Some([29, 2, 2024]));
-        assert_eq!(parse_date("2/9/2024", "%m/%d/%Y"), Some([9, 2, 2024]));
-        assert_eq!(parse_date(" 2/ 9/2024", "%m/%d/%Y"), Some([9, 2, 2024]));
-        assert_eq!(parse_date("02/09/24", "%m/%d/%Y"), Some([9, 2, 24]));
-        assert_eq!(
-            parse_date("02/09/+00010000", "%m/%d/%Y"),
-            Some([9, 2, 10_000])
-        );
-        assert_eq!(parse_date("02/09/+ 10000", "%m/%d/%Y"), None);
-        assert_eq!(parse_date("02/09/2024\n", "%m/%d/%Y"), None);
-        assert_eq!(parse_date("2024-02-29", "%F"), Some([29, 2, 2024]));
-        assert_eq!(parse_date("2024-02-29 Friday", "%F %A"), None);
-        assert_eq!(parse_date("2024-02-29 03", "%F %m"), None);
-        assert_eq!(parse_date("02/29/1900", "%m/%d/%Y"), None);
-        assert_eq!(parse_date("02/29/2024x", "%m/%d/%Y"), None);
-    }
-
-    #[test]
-    fn refuses_unsupported_or_invalid_input_without_panicking() {
-        assert_eq!(month_day_count(12, i32::MAX), None);
-        assert_eq!(month_day_count(u32::MAX, 2024), None);
-        assert_eq!(month_day_count(1, MIN_YEAR), Some(31));
-        assert_eq!(month_day_count(12, MAX_YEAR), None);
-        assert_eq!(format_date("%", 29, 2, 2024).as_str(), "");
-        assert_eq!(format_date("%Y", 29, 2, 1900).as_str(), "");
-        assert_eq!(parse_date("2024", "%"), None);
-        assert_eq!(parse_date(&"0".repeat(MAX_DATE_TEXT_BYTES + 1), "%Y"), None);
-    }
 }
 
 #[cfg(feature = "ffi")]

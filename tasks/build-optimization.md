@@ -2672,3 +2672,63 @@ The exact tracked and untracked working-tree input inventory is
 `handoff-final-worktree.sha256` in that directory. The handoff retains
 H10 at the next native notification-boundary edit and the separate
 GUI, hosted, native, metrics and post-V1 gates at their named owners.
+
+### Repair the audit finding on inner lint groups
+
+The audit of `4f3a1baeddcddb4b24fa59407852606f52ef0164` found that the
+H14 source report missed inner overrides of `clippy::suspicious` and
+`let_underscore`. Rust and Clippy 1.100.0 confirmed those groups can
+suppress the selected future and drop diagnostics. The compiler probes
+also found that `clippy::default` is the group behind `clippy::all`.
+The deprecated bare spellings `clippy_all`, `clippy_suspicious` and
+`clippy_restriction` still take effect when the renamed-lint diagnostic
+is waived. The report now recognizes all six spellings.
+
+The fixture adds attributes to a copy of the real `presentation.rs`
+without changing a method. The new direct and nested `cfg_attr` cases
+require a nonzero result and the exact
+`preview-inner-outcome-suppression` finding. Restoring only the
+published scanner roster reproduced nine failed expectations. The
+repaired source passed all 76 focused Python tests and eight workflow
+routing controls, and the repository preview report returned zero
+findings. Healthy unrelated suppressions still pass. Raw logs are in
+`~/.local/share/nevrotick/url-20261124.FRJBoTOA/audit-followup/`.
+The scanner SHA-256 is
+`279ba6599c395acacb3c4a709c1fad16e41adfd06f248909e1310ee215c35e96`.
+
+The startup annotations on the audited commit and its parent establish
+that `local_only` refused the same pinned external actions before any
+job ran. The [owner decision](../docs/nevrotick-owner-decisions.md#64-hosted-actions-trust-policy--14-november-2026)
+records the exact proposed allowlist and pending authorization. GitHub
+CodeQL default setup reported its separate Rust success. The current
+dependency graph checkpoint is needed before the next dependency
+resolution under OD-19.
+
+### Run calendar controls with the UI integration tests
+
+The two Slint calendar controls previously lived in the excluded dependency
+crate. The workspace UI now owns them in
+[`slint_calendar.rs`](../crates/nevrotick-ui/tests/slint_calendar.rs),
+reachable through the existing `nevrotick-ui` Nextest `--lib --tests`
+selection without a new workflow or Cargo dependency. They call the real
+patched adapter through Slint 1.18.1's generated-code exports. The cases cover
+month lengths, leap centuries, weekdays, year limits, default formats, and
+refusal of invalid and conflicting fields. The third test pairs
+otherwise valid 1,024-byte input and format cases with 1,025-byte refusals.
+
+The adapter now spells the split iterator and format description types
+explicitly. The Slint inventory, the calendar file pin and the canonical
+policy pin were refreshed. Independent comparison found only the two
+expected hash changes in the policy JSON. The three dependency admission
+suites passed all 92 controls after the canonical policy pin was updated.
+
+The scoped GNU replay passed all 20 selected lanes under Rust 1.100.0,
+including format, frozen graph admission and targeted Clippy with warnings
+denied. The ordinary UI Nextest command ran all 205 tests. Independent
+readback matched the 202 prior cases plus the three calendar cases and all
+754 frozen inputs. The replay used default GNU features. Native date
+behavior retains its separate Windows execution requirement.
+The receipt is
+`~/.local/share/nevrotick/calendar-audit-followup.8mg5JKHD/result.json`
+with SHA-256
+`84fe032236c21e3edbd0d4bede475aa71b54e9857e9f0a25a4836040aab0fa2a`.

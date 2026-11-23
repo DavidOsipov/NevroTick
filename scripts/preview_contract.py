@@ -35,10 +35,11 @@ EXPECTATION = re.compile(
 )
 SYMBOL = re.compile(r"[A-Za-z_]\w*(?:::[A-Za-z_]\w*)+")
 OUTCOME_LINTS = {
-    "warnings", "unused", "unused_must_use", "let_underscore_drop",
-    "clippy::all", "clippy::unused_result_ok", "clippy::let_underscore_must_use",
-    "clippy::let_underscore_future",
-    "clippy::restriction",
+    "warnings", "unused", "unused_must_use", "let_underscore", "let_underscore_drop",
+    "clippy::all", "clippy::default", "clippy::suspicious", "clippy::restriction",
+    "clippy::unused_result_ok", "clippy::let_underscore_must_use", "clippy::let_underscore_future",
+    # Rust 1.100 still applies these levels when the renamed-lint diagnostic is allowed.
+    "clippy_all", "clippy_suspicious", "clippy_restriction",
 }
 
 

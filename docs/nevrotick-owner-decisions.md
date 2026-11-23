@@ -437,6 +437,20 @@ open until that exact candidate is published and actually executes. Revisit on
 changed pins/policy or a concrete startup annotation; do not retry an unchanged
 failure. The existing build task owns raw observations and follow-through.
 
+**Audit follow-up for `4f3a1ba`.** GitHub startup annotations on that commit
+and its parent identified the same pinned `actions/checkout` refusal in Rust
+and the same checkout and CodeQL action refusals in Security. Each run
+recorded zero jobs. The repository API still reported `local_only` with
+mandatory SHA pinning. The proposed two-pattern exception above remains
+pending. [Rust startup](https://github.com/DavidOsipov/NevroTick/actions/runs/45275725447) ·
+[Security startup](https://github.com/DavidOsipov/NevroTick/actions/runs/45275727052) ·
+[Parent Rust startup](https://github.com/DavidOsipov/NevroTick/actions/runs/45247944834) ·
+[Parent Security startup](https://github.com/DavidOsipov/NevroTick/actions/runs/45247942367)
+
+GitHub CodeQL default setup ran separately and passed its Rust job. The
+repository workflows and their strict-fixtures step still require execution
+on the intended candidate. [Default setup run](https://github.com/DavidOsipov/NevroTick/actions/runs/45275725088)
+
 ### 6.5 KoD source lifecycle — 15 November 2026
 
 **Decision:** NV-DEC-001 §6.5 / S2.1–S2.2, REQ-8/BND-2,
