@@ -80,6 +80,36 @@ with the first failure, compact raw archive and independent readback.
 The five remaining 95% mutation file gates and native/package qualification
 remain in this task chain.
 
+## Coverage report refusal controls — 23 November 2026
+
+W11-W10, MD-P3 and CHECK-25. Review of
+`c3f6eefdeeabfbad1bf3beb627d2bfea68cf6fae` confirmed that the compact
+reporter's existing guards lacked direct refusal controls. The maintained
+[report-control suite](coverage_report_control.py) now exercises six refusals
+through the reporter entry point. Wrong counts, same-count missing or duplicate
+report keys, conflicting measured aliases and an unexpected analysis filename
+each require the intended diagnostic. Every refusal preserves the previous
+report bytes and removes the staged output. The retained positive runs the
+reporter CLI with real Coverage data.
+
+The source review also confirmed the missing explicit types in the changed
+[MSIX payload preparer](../../tools/windows-service-fixture/msix/prepare_payload.py).
+The associated package reader and coverage reporting code now declare their
+changed bindings. The independent reviewer rechecked the event option, provider
+and receipt guards against the original refusal order and diagnostics.
+
+The five-file source diff from that HEAD hashes to
+`7a207bb35d122a51c0338771a236cafb4e27307a7ed9e43fb3b052b0b2647820`
+as a Git binary diff with the five affected source files selected. On Linux,
+CPython 3.12.3 and the admitted Coverage.py 7.17.2 wheel passed five reporter,
+eleven payload-preparer and nineteen package-reader tests under `-I -X dev
+-Werror -B`. Bubblewrap kept checkout and tool inputs read-only and provided a
+private temporary filesystem and network namespace. Six deliberate temporary
+faults each exited 1 at the expected observation. The restored reporter passed
+again. These controls establish refusal and publication sensitivity, with no
+new coverage or generated mutation result. Native and installed package
+qualification remain open.
+
 ## Completed finite repair — 8 November 2026
 
 David explicitly requested fixing the seven-quote metadata defect. The finite

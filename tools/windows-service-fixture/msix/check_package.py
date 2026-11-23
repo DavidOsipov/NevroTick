@@ -40,12 +40,12 @@ DISPLAY_NAME = "NevroTick S0.6 SCM Fixture"
 MANIFEST = "AppxManifest.xml"
 BLOCK_MAP_FILE = "AppxBlockMap.xml"
 CONTENT_TYPES_FILE = "[Content_Types].xml"
-EVENT_RESOURCE = "nevrotick-test-events.dll"
+EVENT_RESOURCE: str = "nevrotick-test-events.dll"
 LOGO = "Assets/PackageLogo.png"
 SMALL_LOGO = "Assets/Square44x44Logo.png"
 LARGE_LOGO = "Assets/Square150x150Logo.png"
 ASSETS = {LOGO, SMALL_LOGO, LARGE_LOGO}
-BASE_PAYLOAD = {MANIFEST, "Inert.exe", *SERVICES, *ASSETS}
+BASE_PAYLOAD: set[str] = {MANIFEST, "Inert.exe", *SERVICES, *ASSETS}
 SDK_FILES = {
     "makeappx.exe",
     "appxpackaging.dll",
@@ -108,7 +108,7 @@ def read_payload(path: Path, payload_names: set[str]) -> dict[str, bytes]:
     directory = os.open(path, flags)
     try:
         before = os.fstat(directory)
-        root_files = payload_names - ASSETS
+        root_files: set[str] = payload_names - ASSETS
         require(set(os.listdir(directory)) == root_files | {"Assets"},
                 "authored payload root inventory differs")
         data = {name: read_regular(name, MAX_XML if name == MANIFEST else MAX_FILE,
@@ -376,7 +376,7 @@ def check_zip_directory(data: bytes, member_count: int) -> int:
 
 
 def read_archive(data: bytes, archive_names: set[str]) -> dict[str, PackageMember]:
-    directory_start = check_zip_directory(data, len(archive_names))
+    directory_start: int = check_zip_directory(data, len(archive_names))
     with zipfile.ZipFile(BytesIO(data)) as package:
         members = package.infolist()
         require(len(members) == len(archive_names)
@@ -463,8 +463,8 @@ def check_content_types(data: bytes, archive_names: set[str]) -> None:
     require(types.tag == CONTENT_TYPES + "Types" and not types.attrib, "content-types root differs")
     defaults = {}
     overrides = {}
-    part_names = archive_names - {CONTENT_TYPES_FILE}
-    extensions = {name.rsplit(".", 1)[1] for name in part_names}
+    part_names: set[str] = archive_names - {CONTENT_TYPES_FILE}
+    extensions: set[str] = {name.rsplit(".", 1)[1] for name in part_names}
     for declaration in types:
         require(len(declaration) == 0 and not (declaration.text or "").strip(),
                 "content-type declaration contains unexpected content")
@@ -488,7 +488,7 @@ def check_content_types(data: bytes, archive_names: set[str]) -> None:
                  BLOCK_MAP_FILE: {"application/vnd.ms-appx.blockmap+xml"}}
     for name in ASSETS:
         permitted[name] = {"image/png", "application/octet-stream"}
-    binary_names = {"Inert.exe", *SERVICES}
+    binary_names: set[str] = {"Inert.exe", *SERVICES}
     if EVENT_RESOURCE in archive_names:
         binary_names.add(EVENT_RESOURCE)
     for name in binary_names:
@@ -509,17 +509,17 @@ def main() -> int:
                      help=f"require the laboratory payload with {EVENT_RESOURCE}")
     args = cli.parse_args()
     # The caller selects a fixed profile before any package inputs are read.
-    payload_names = BASE_PAYLOAD | {EVENT_RESOURCE} if args.include_event_resource else BASE_PAYLOAD
-    archive_names = payload_names | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
+    payload_names: set[str] = BASE_PAYLOAD | {EVENT_RESOURCE} if args.include_event_resource else BASE_PAYLOAD
+    archive_names: set[str] = payload_names | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
     try:
         require(is_sha256(args.input_set_sha256) and is_sha256(args.package_sha256),
                 "expected lowercase SHA-256 digests for the frozen input set and package")
-        expected = read_input_set(args.input_set, args.input_set_sha256, payload_names)
-        payload = read_payload(args.payload, payload_names)
+        expected: dict[str, str] = read_input_set(args.input_set, args.input_set_sha256, payload_names)
+        payload: dict[str, bytes] = read_payload(args.payload, payload_names)
         package = read_regular(args.package, MAX_ARCHIVE, "package")
         package_sha256 = sha256(package).hexdigest()
         require(package_sha256 == args.package_sha256, "package SHA-256 differs from the pack output record")
-        members = read_archive(package, archive_names)
+        members: dict[str, PackageMember] = read_archive(package, archive_names)
         for name in sorted(payload_names):
             require(sha256(payload[name]).hexdigest() == expected[name],
                     f"authored payload member differs from the frozen input set: {name}")

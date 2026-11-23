@@ -163,9 +163,12 @@ def main() -> int:
     write_json(output / "tool-identity.json", tool)
     health = json.loads(subprocess.check_output([str(args.python), "-I", "-B", str(ROOT / "metadata/qualification/coverage_tests.py"), "--controls"], text=True))
     write_json(output / "test-runner-controls.json", health)
-    report_command = [str(args.python), "-I", "-B",
-                      str(ROOT / "metadata/qualification/coverage_report_control.py"), "-q"]
-    report_control = subprocess.run(report_command, capture_output=True, text=True, timeout=30)
+    report_command: list[str] = [
+        str(args.python), "-I", "-B", str(ROOT / "metadata/qualification/coverage_report_control.py"), "-q",
+    ]
+    report_control: subprocess.CompletedProcess[str] = subprocess.run(
+        report_command, capture_output=True, text=True, timeout=30,
+    )
     write_json(output / "report-control.json", {"command": report_command, "exit_code": report_control.returncode,
                "stdout": report_control.stdout, "stderr": report_control.stderr})
     report_control.check_returncode()
