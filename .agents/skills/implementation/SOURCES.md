@@ -151,6 +151,39 @@ results used `master`, and versioned hosted Reference pages were unavailable.
 The immutable submodule/source fallback supplies version evidence, not executed
 compiler controls or measured agent improvement.
 
+## Rust 1.100 stabilized API reconciliation — 23 November 2026
+
+Three independent source reviews covered all **47 supplied entries** against
+NevroTick `a0b461de628a690d9c8b32ebb79677ed5276ceff` and Rust
+`0ef1bc386059596dada8fb65b50425aab2ea637a` (1.100.0): 23 allocator entries,
+13 value/convenience entries and 11 ownership/native entries. A separate editor
+reconciled the findings with the existing guidance. The
+[supporting review](../../../docs/supporting-reviews/rust-1.100-upgrade-review.md#stabilized-api-reconciliation--23-november-2026)
+accounts for every entry, including conditional use and absence of current
+benefit; the [feature reference](implement-rust/references/rust-1.100-contracts.md)
+owns reusable instructions. The 11/13 November research and adoption records
+retain their original source identities and evidence scope.
+
+Primary contracts were checked in the pinned Rust source:
+
+| Source group | Refinement accepted into the existing reference |
+| --- | --- |
+| [Allocator](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/alloc/mod.rs), [Global](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/alloc.rs), [System](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/alloc.rs), Box/Vec/Rc/Arc below | Stable subset versus `allocator_ext`; wrapped-allocator forwarding, raw-tuple custody, reported failure versus abort, global-observer scope and matching native deallocation. `System` itself is older than 1.100. |
+| [Vec equality](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/vec/partial_eq.rs), [Once](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/sync/once.rs), [conversion traits](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/convert/mod.rs), [bool](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/bool.rs), [str](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/str/mod.rs), [slice](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/slice/mod.rs), [Path](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/path.rs), [Vec construction](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/vec/mod.rs) | Content equality versus domain/allocation identity; fresh `Once` versus process root; never-type compatibility; one optional edge versus mandatory rejection, path components and const/stability limits. |
+| [Box](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/boxed.rs), [Rc](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/rc.rs), [Arc](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/alloc/src/sync.rs), [DropGuard](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/mem/drop_guard.rs), [UnsafeCell](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/cell.rs), [conjure_zst](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/mem/mod.rs) | Conditional reuse without alias retargeting; separately owned extracted values; cleanup versus physical completion; method-specific aliasing and initialization obligations. |
+| [Windows process API](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/os/windows/process.rs), [implementation](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/sys/process/windows.rs), Microsoft [STARTUPINFOW](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfow) | Borrowed thread handle and startup visibility only; the Windows startup field excludes `SW_SHOWDEFAULT`. |
+
+Current source examples retain NTS zeroizing/fallible preparation, session and
+editor identity, static policy-root ownership, service `WorkPermit` completion,
+WinDNS callback custody/`DnsFree`, and global allocation observation. Optional
+DNS-root matching supplies a healthy contrast to required-root admission.
+No new leaf, imported code, dependency, allocator selection or product change is
+introduced. Source review establishes no current defect, performance gain,
+executed Rust/native check or completed qualification. The
+[existing skill-quality record](../../plans/2026-10-30-skill-quality.md#rust-1100-stabilized-api-reconciliation--23-november-2026)
+owns independent review and documentation verification; existing QA owners and
+native/formal/fuzz/storage gates remain unchanged.
+
 ## Modern Rust release review — 9 November 2026
 
 The [modern stable Rust reference](implement-rust/references/modern-rust.md)

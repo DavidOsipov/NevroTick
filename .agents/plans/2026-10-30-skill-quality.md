@@ -2491,3 +2491,167 @@ metadata-only change. The unchanged checker contracts need no new checker
 regression suite. The root documentation checksum manifest is absent. Existing
 product acceptance gates, task-specific holds and post-V1 formal deferral remain
 with their current owners.
+
+## Rust 1.100 stabilized API reconciliation — 23 November 2026
+
+David requested parallel analysis of 47 listed stabilized APIs, followed by a
+different agent updating the existing skills and documentation where beneficial.
+Reviewed repository base: `a0b461de628a690d9c8b32ebb79677ed5276ceff`;
+Rust source: `0ef1bc386059596dada8fb65b50425aab2ea637a` (1.100.0).
+The task changes guidance, its existing source register and supporting review;
+it does not authorize product modernization, additional dependencies or new
+execution/acceptance policy. Earlier direct-main publication authorization applies
+to the completed, reviewed documentation candidate.
+
+Three fresh reviewers used `fork_turns: "none"` concurrently and returned completed
+source-only assessments: `rust1100_allocator_review` covered 23 allocation entries,
+`rust1100_value_review` covered 13 comparison/construction/trim/helper entries,
+and `rust1100_ownership_review` covered 11 ownership/unsafe/Windows entries.
+Each inspected the existing reference, pinned upstream declarations, actual
+relevant callers and neighboring test expectations. No Rust, native, fuzz or
+formal execution occurred. Scoped textual searches do not establish absence
+from all generated or dependency source. The tag/source mapping was retrieved;
+no cryptographic tag-signature verification is claimed.
+
+Reconciliation retains the 13 November guidance and the supporting review's
+11/13 November history. New material concerns allocator forwarding versus still
+unstable constructors/const use, allocator equivalence and raw-parts custody,
+observer scope, weak aliases, initialization, optional versus required trimming,
+content versus domain equality, per-instance initialization and actual native
+completion. No current product defect or performance improvement is inferred
+from an API's availability. The root coordinator independently checked material
+pinned-source contracts and the current DNS, completion-permit, allocation and
+observer examples. Separate editor `rust1100_guidance_editor` owns the three
+guidance/source/review files; the coordinator owns this record and integration.
+
+Verification budget: one fresh semantic review, one bounded source-only
+instruction-use exercise with healthy and faulty proposals, and the existing
+package/link/staged-candidate checks. Reuse unaffected evidence after any narrowly
+required correction. Product checks and unchanged checker regression campaigns
+are outside this documentation milestone.
+
+### Fresh semantic review
+
+Separate reviewer `rust1100_guidance_judge` used `fork_turns: "none"` and completed
+the three-file comparison against the base, pinned API contracts, actual cited
+source paths, predecessor obligations and QA owners. It did not receive author
+verdicts, research-agent reports, the new coordinator section or exercise/grading
+materials. Its comprehension paragraphs are retained verbatim:
+
+> The candidate extends the existing Rust 1.100 guidance with an explicit disposition for all 47 supplied entries. It recommends a few small substitutions at matching call sites, adds allocator and ownership cautions, and routes future behavioral changes through existing QA owners. The operative rules remain in the existing feature reference; the source register and dated supporting review record provenance and applicability. It does not select a custom allocator, change product code, repeat compiler adoption, or claim performance gains.
+
+> The current checkout already pins Rust 1.100.0 in both `rust-toolchain.toml` and the workspace minimum version. Its source contains the concrete contracts discussed by the candidate: fallible and zeroizing NTS allocation, session allocation identity, a process-wide policy root, service permits that require explicit completion, and WinDNS storage that retains its permit through native completion. The suggested conveniences therefore apply to existing code, while native execution and product qualification remain separate obligations.
+
+Initial verdict: ready for source review, with one low-priority refinement,
+**R1100-J1**. Moving the allocator paragraph had dropped the predecessor's explicit
+qualification of preservation after failed growth. The reviewer supported restoring
+that conditional requirement; it established no product defect. The coordinator
+also requested precise reference-to-referent allocator equivalence wording and the
+user's `core::mem` names in the exact-entry ledger. Final amendment verification
+is recorded below after the changes are applied and inspected.
+
+The reviewer independently inspected the supplied three instruction files and
+material source contracts. Earlier reviewers' and editor's completion statements
+remained attributed process evidence for that reviewer; the coordinator received
+and inspected all four actual returns. No missing worker return is counted as
+completed, and reviewer agreement is not runtime or statistical evidence.
+
+Initial reviewed instruction identities, excluding this later bookkeeping:
+
+| File | SHA-256 |
+| --- | --- |
+| `implementation/implement-rust/references/rust-1.100-contracts.md` | `cf41d4715b447680f05811790c3c68d06d63366b972a5ee6e0d60041de00a469` |
+| `implementation/SOURCES.md` | `e5837fe16d6b86a53ffe868da862666ef4bde83f3ce244c8983d0940d20c863b` |
+| `docs/supporting-reviews/rust-1.100-upgrade-review.md` | `6244e2e1f8e652f75cddc31f694f0999483daa796d0c1b46e80a99a749e16384` |
+
+### Bounded instruction-use exercise
+
+Fresh worker `rust1100_guidance_use` used `fork_turns: "none"` for one read-only
+exercise with six groups and **23 labeled proposals**. Its independent hypothetical
+requirements included a reviewed retained allocator, distinct arenas on ordinary
+Clone, typed reservation refusal, an exact later allocation growth, optional and
+required text edges, separate semantic identity, weak observers, uninitialized
+storage, native completion custody and per-instance/process initialization.
+Healthy proposals and plausible invalid substitutions were mixed. The worker
+received the task and candidate methods, not the prewritten grader, author
+conclusions, research returns or this record. Shared filesystem access was not a
+physical isolation boundary; the worker reported no excluded-material exposure.
+
+- Task SHA-256: `7f80bedab540139c9ba7e49e7d9711e7852d76b6ebae445dc3483c79c7d63825`.
+- Withheld rubric SHA-256: `5f46aa50501a44fdb35b2311df15c57aa7482d88312a14b470aded5d9624b993`.
+- Exercised feature-reference SHA-256: `cf41d4715b447680f05811790c3c68d06d63366b972a5ee6e0d60041de00a469`, unchanged throughout the run.
+
+The coordinator graded semantic decisions and concrete discriminating cases
+against the rubric frozen before dispatch, not exact wording or rejection count.
+**All 23 proposals met the bounded criteria: 9 accepted, 12 rejected and 2 split
+decisions.** This is an instruction-use result, not 23 executed software tests.
+
+| Group | Observed decisions and independent expectation |
+| --- | --- |
+| A — allocator selection | A1 accepted the retained `Arc` allocator with bounded fallible reservation; A2 rejected loss of typed refusal; A3 rejected unstable `Arc::new_in` and const `Vec::new_in`, retaining ordinary stable neighbors. No blanket custom-allocator ban or universal exhaustion recovery claim. |
+| B — ownership/observation | B1 accepted a genuine `(pointer, 7, 12, allocator)` tuple; B2 rejected fresh-arena Clone and capacity 7 after a growth requesting/returning 12 `u64`s; B3 retained the native API's matching releaser; B4 rejected carrying global-observer coverage over to direct System allocation. The worker correctly distinguished fitting layouts from an unconditional exact-capacity rule. |
+| C — trimming/equality | C1 accepted one optional prefix trim; C2 retained required delimiter/root failure and independent confinement policy; C3 accepted desired Cow element comparison; C4 rejected replacing a different normalized tenant/key identity relation. |
+| D — maps/storage | D1 rejected weak-observer retargeting and replacement of exact Arc identity; D2 accepted an owned numeric Box transform without allocation promises; D3 accepted separately owned T plus safe Box::write; D4 rejected automatic erasure/free/initialized-read claims after Box::take. |
+| E — native custody | E1 rejected waiter-scope completion-on-drop; E2 rejected references during possible native writes; E3 accepted actual synchronized completion followed by guard-bounded access; E4 accepted safe exclusive get_mut plus mem::replace. No invalid-reference example was executed as a negative test. |
+| F — helpers | F1 accepted genuine per-instance Once Default; F2 rejected fresh-per-call process initialization and unstable const Default; F3 accepted selector inversion while retaining sticky shutdown assignment; F4 accepted uninhabited generic compatibility while rejecting fabricated values/references and erased native errors. |
+
+The worker read the complete task, candidate, root instructions, implement-rust,
+implementation/testing contracts, modern Rust, anti-pattern, API-evidence and
+Rust/Windows references, plus relevant contract-enforcement sections. It resolved
+material contracts from the pinned upstream source. Initial web GitHub access
+returned DisabledError; the available GitHub file reader supplied the exact
+sources. Both task and candidate hashes matched at start and closeout.
+
+Every proposed compile, allocation, lifecycle or native check remained unexecuted.
+No edits, installs, extra workers, product/native execution or publication occurred
+in the exercise. Hypothetical allocator review and OS release requirements were
+supplied premises, not audited implementations. This single case supports neither
+old/new improvement, unseen-task generalization, performance, overall reliability
+nor measured defect reduction. The subsequent narrow review amendment restores
+the baseline failed-growth obligation and clarifies equivalence/API spelling;
+affected-delta review, rather than a repeated unaffected exercise, binds it below.
+
+### Amendment verification
+
+The same separate editor restored the explicit conditional failed-growth
+qualification and clarified allocator reference equivalence and the exact
+`core::mem` entry names. `rust1100_guidance_judge` then completed an affected-delta
+recheck of the actual bytes and pinned contracts: **R1100-J1 closed as verified;
+no new or open findings**. Reference-to-referent equivalence is guaranteed,
+unlike ordinary Clone of an unrelated allocator instance. The `std::mem` spelling
+in operative examples is the core module's re-export, not another API. The
+47-entry accounting and existing acceptance obligations are unchanged.
+
+Final normative identities, separate from verification bookkeeping:
+
+| File | SHA-256 |
+| --- | --- |
+| `implementation/implement-rust/references/rust-1.100-contracts.md` | `50619be5e54b4721675deecae21756cb8a2ff1238ff766ecd3833c496da72997` |
+| `implementation/SOURCES.md` | `e5837fe16d6b86a53ffe868da862666ef4bde83f3ce244c8983d0940d20c863b` |
+| `docs/supporting-reviews/rust-1.100-upgrade-review.md` | `cdae49a6b445f5eb2b1e35f1e12bb770abe44241f98ca16faa6ccce3ec5d1627` |
+
+### Verification and publication custody
+
+| Stage / owner | Completed scope and result |
+| --- | --- |
+| Planning / plan-code-change, qa-subagent-dispatch | Three complementary source reviews, a distinct editor, a separate fresh judge and one fresh instruction-use worker completed their assigned scope. No fixed model change or new workflow leaf. |
+| Semantic review / qa-independent-review | Initial three-file review plus the affected-delta recheck above; R1100-J1 corrected and verified, no open review findings. |
+| Instruction use / qa-skill-evaluations | One completed six-group source exercise; all 23 decisions and their discriminating cases met the frozen rubric. Initial and final method identities remain separate; no compiler or improvement claim. |
+| Package and links / testing contract | The materialized candidate passes `.agents/skills/scripts/check_skills.py`: **67 skills**, metadata, UI prompts, skill links and inventories. The two new non-pack sections additionally pass **15 local links and 2 anchors**. Staged whitespace checks pass. |
+| Isolation / workstation rules | Validators used a private network namespace, read-only candidate/tools, non-root UID/GID, dropped capabilities, cleared allowlisted environment and bounded CPU/process/memory/file/time resources; only private temporary storage was writable. |
+| Candidate custody / qa-pre-commit | Complete **2,253-entry** index exported and checked against Git blob bytes and executable modes: 2,250 regular files and 3 executables. No active hook, Git attributes/filter transform or submodule was present. Only the four intended documentation paths differ from the base. |
+
+The completed capture/check tree before this last result-table addition is
+`5fca53fc8274186c93fcd610824962143c4be19e`. The normative hashes above bind the
+reviewed final instructions. Before publication, rebind the complete index,
+including this bookkeeping, to the materialized candidate and repeat applicable
+package/link/whitespace checks; preserve concurrent main changes through an
+expected-head update. The final commit/tree supplies that publication identity.
+
+Root `AGENTS.md` remains 32,647 bytes; all 67 skills, 40 QA leaves and 11 original
+workflows are retained. No leaf metadata, installed imported-file hashes, checker,
+product Rust, dependency, toolchain or execution/acceptance policy changes. The
+root documentation checksum manifest is absent. Product/Rust/native/fuzz/formal
+execution and unchanged-checker regression campaigns are inapplicable to this
+documentation milestone. Existing product QA and post-V1 obligations remain with
+their current owners.
