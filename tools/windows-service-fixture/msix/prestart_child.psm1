@@ -172,8 +172,55 @@ function Invoke-PrestartObserver {
     }
     $launcher = $script:PrestartObserverType
     $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock, $TimeoutMilliseconds)
+    Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
+}
+
+# Keep the identity launch closed over the same held actor and original deadline
+# as the observer. The independently admitted package facts are only arguments.
+function Invoke-PrestartIdentity {
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [Parameter(Mandatory = $true)][string]$PowerShellPath,
+        [Parameter(Mandatory = $true)][long]$PowerShellBytes,
+        [Parameter(Mandatory = $true)][string]$PowerShellSha256,
+        [Parameter(Mandatory = $true)][string]$InputDirectory,
+        [Parameter(Mandatory = $true)][long]$EntryBytes,
+        [Parameter(Mandatory = $true)][string]$EntrySha256,
+        [Parameter(Mandatory = $true)][long]$ModuleBytes,
+        [Parameter(Mandatory = $true)][string]$ModuleSha256,
+        [Parameter(Mandatory = $true)][long]$HelperBytes,
+        [Parameter(Mandatory = $true)][string]$HelperSha256,
+        [Parameter(Mandatory = $true)][guid]$RunId,
+        [Parameter(Mandatory = $true)][string]$PackageFullName,
+        [Parameter(Mandatory = $true)][string]$ExpectedUserSid,
+        [Parameter(Mandatory = $true)][string]$SignedPackageSha256,
+        [Parameter(Mandatory = $true)][long]$EngineBytes,
+        [Parameter(Mandatory = $true)][string]$EngineSha256,
+        [Parameter(Mandatory = $true)][long]$BrokerBytes,
+        [Parameter(Mandatory = $true)][string]$BrokerSha256,
+        [Parameter(Mandatory = $true)][object]$Actor,
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
+    if ($null -eq $script:PrestartActorType -or -not $script:PrestartActorType.IsInstanceOfType($Actor)) {
+        throw [ArgumentException]::new('prestart-observer:caller-actor')
+    }
+    $launcher = $script:PrestartObserverType
+    $child = $launcher::StartIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
+        $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
+        $RunId, $PackageFullName, $ExpectedUserSid, $SignedPackageSha256,
+        $EngineBytes, $EngineSha256, $BrokerBytes, $BrokerSha256, $Actor, $Clock, $TimeoutMilliseconds)
+    Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
+}
+
+function Receive-OwnedPrestartChild {
+    param([object]$Child, [Diagnostics.Stopwatch]$Clock, [int]$TimeoutMilliseconds)
+
     $childId = $child.ProcessId
     $failure = $null
+    $inputDigests = $null
     try {
         Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
         $capture = Receive-PrestartStreams $childId $child.Stdout $child.Stderr {
@@ -184,7 +231,7 @@ function Invoke-PrestartObserver {
             Start-Sleep -Milliseconds 5
         }
         Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
-        $child.ConfirmImage()
+        $inputDigests = $child.ConfirmImage()
     } catch {
         $failure = $_
     } finally {
@@ -217,7 +264,11 @@ function Invoke-PrestartObserver {
         $_.Exception.Data['PrestartObserverReleased'] = $true
         throw
     }
-    return $capture
+    return [pscustomobject]@{
+        ProcessId = $capture.ProcessId; ExitCode = $capture.ExitCode;
+        Stdout = $capture.Stdout; Stderr = $capture.Stderr;
+        InputSha256Before = $inputDigests.Before; InputSha256After = $inputDigests.After
+    }
 }
 
-Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver
+Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver, Invoke-PrestartIdentity

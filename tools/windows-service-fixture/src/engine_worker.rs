@@ -19,9 +19,10 @@ use std::{
 };
 
 use nevrotick_engine::{
-    AcquisitionError, AcquisitionReport, AcquisitionSession, BoundedAcquisitionError,
-    ControlHandle, ControlSchedule, PilotError, PreparedAcquisition, SeriesConfig, SeriesEnd,
-    SourceConfigurationSnapshot, SourceHandle,
+    AcquisitionError, AcquisitionReport, AcquisitionSession, AddressRoundConfig, AddressRoundEnd,
+    AddressRoundReport, BoundedAcquisitionError, ConfiguredAddressRound, ControlHandle,
+    ControlSchedule, PilotError, PreparedAcquisition, PreparedAddressRound, SeriesConfig,
+    SeriesEnd, SourceConfigurationSnapshot, SourceHandle, execute_address_round,
 };
 
 use crate::{
@@ -31,6 +32,26 @@ use crate::{
 
 /// An original Engine result, retained without reconstructing its errors or report.
 type AcquisitionResult = Result<AcquisitionReport, BoundedAcquisitionError>;
+
+/// One original address-round result, including failures before a report exists.
+type AddressRoundResult = Result<AddressRoundReport, BoundedAcquisitionError>;
+
+/// Exactly one producer can publish the invocation's retained result.
+#[must_use]
+enum WorkerResult {
+    /// The unchanged fixed-peer series path.
+    Series(AcquisitionResult),
+    /// The configured, original-cutoff address-round path.
+    AddressRound(AddressRoundResult),
+}
+
+/// Move one prepared owner into the common acquisition thread exactly once.
+enum PreparedWork {
+    /// Existing fixed-peer session, still dormant until Engine preparation.
+    Series(Box<AcquisitionSession>),
+    /// Checked source/revision plan, without entropy, runtime or socket work.
+    AddressRound(Box<ConfiguredAddressRound>),
+}
 
 /// The exclusive start and join authorizations belong to this worker instance.
 enum State {
@@ -45,8 +66,19 @@ enum State {
         /// Existing one-shot control schedule.
         schedule: ControlSchedule,
     },
-    /// Actual session initialization completed; the host has not activated it.
-    Prepared(AcquisitionSession, ControlSchedule, WorkerWake),
+    /// Checked address-round inputs, before source binding or Engine work.
+    DormantRound {
+        /// Original source and selected installed revision.
+        source: SourceHandle,
+        /// No same-address replacement can silently change this startup selection.
+        configuration: SourceConfigurationSnapshot,
+        /// Ordered candidates and the existing finite request/round limits.
+        config: AddressRoundConfig,
+        /// Existing one-shot control schedule, without automatic retries.
+        schedule: ControlSchedule,
+    },
+    /// The selected session or round plan is ready; the host has not activated it.
+    Prepared(PreparedWork, ControlSchedule, WorkerWake),
     /// The only owned acquisition thread. Its return marker alone is insufficient.
     Active(JoinHandle<()>),
     /// This invocation has no remaining preparation, acquisition or join work.
@@ -68,7 +100,7 @@ struct Shared {
     /// Serializes the Stop decision and publication of the exact original handle.
     gate: Mutex<ControlGate>,
     /// The original preparation or acquisition result, assigned once if reached.
-    result: OnceLock<AcquisitionResult>,
+    result: OnceLock<WorkerResult>,
     /// Failure at a host-side boundary before the acquisition thread owns work.
     inactive_failure: OnceLock<WorkerError>,
     /// A result cannot be replaced; even a refused publication must wake the host.
@@ -131,8 +163,34 @@ impl Shared {
 
     /// Keep exactly the original result; an impossible second publication is a worker failure.
     fn publish_result(&self, result: AcquisitionResult) {
+        self.publish(WorkerResult::Series(result));
+    }
+
+    /// Preserve the actual address-round result in the same sole publication slot.
+    fn publish_round_result(&self, result: AddressRoundResult) {
+        self.publish(WorkerResult::AddressRound(result));
+    }
+
+    /// A duplicate producer cannot overwrite either retained result kind.
+    fn publish(&self, result: WorkerResult) {
         if self.result.set(result).is_err() {
             self.publication_failed.store(true, Ordering::Release);
+        }
+    }
+
+    /// Borrow only the original fixed-peer result; never reinterpret a round report.
+    fn series_result(&self) -> Option<&AcquisitionResult> {
+        match self.result.get()? {
+            WorkerResult::Series(result) => Some(result),
+            WorkerResult::AddressRound(_) => None,
+        }
+    }
+
+    /// Borrow only the original configured-round result after actual publication.
+    fn round_result(&self) -> Option<&AddressRoundResult> {
+        match self.result.get()? {
+            WorkerResult::AddressRound(result) => Some(result),
+            WorkerResult::Series(_) => None,
         }
     }
 
@@ -145,22 +203,26 @@ impl Shared {
 
     /// Project fixed health/cleanup facts while retaining the complete original result.
     fn completion(&self) -> WorkerCompletion {
-        let result: Option<&AcquisitionResult> = self.result.get();
-        let cleanup_failed: bool = result.is_some_and(|result| {
-            result.as_ref().is_ok_and(|report| {
-                let stop_failed: bool = report.series().stop_cleanup_failure().is_some();
-                let invalidate_failed: bool =
-                    report.series().invalidate_cleanup_failure().is_some();
-                any_cleanup_failure(stop_failed, invalidate_failed)
-            })
-        });
-        let operation_failed: bool = result.is_some_and(|result| match result {
-            Err(_) => true,
-            Ok(report) => {
-                let series: &nevrotick_engine::SeriesReport = report.series();
-                series_operation_failed(series.collection_end())
+        let (operation_failed, cleanup_failed): (bool, bool) = match self.result.get() {
+            None => (false, false),
+            Some(WorkerResult::Series(Err(_)) | WorkerResult::AddressRound(Err(_))) => {
+                (true, false)
             }
-        });
+            Some(WorkerResult::Series(Ok(report))) => {
+                let series: &nevrotick_engine::SeriesReport = report.series();
+                (
+                    series_operation_failed(series.collection_end()),
+                    any_cleanup_failure(
+                        series.stop_cleanup_failure().is_some(),
+                        series.invalidate_cleanup_failure().is_some(),
+                    ),
+                )
+            }
+            Some(WorkerResult::AddressRound(Ok(report))) => (
+                round_operation_failed(report.round_end()),
+                report.cleanup_errors().iter().any(Option::is_some),
+            ),
+        };
         WorkerCompletion {
             operation_failure: self.inactive_failure.get().copied().or_else(|| {
                 (operation_failed
@@ -185,6 +247,12 @@ fn any_cleanup_failure(stop_failed: bool, invalidate_failed: bool) -> bool {
 /// It does not establish either actual Engine cleanup producer or report transfer.
 fn series_operation_failed(end: SeriesEnd) -> bool {
     matches!(end, SeriesEnd::Stale | SeriesEnd::Failure)
+}
+
+/// Keep a valid round's ordinary bounded dispositions separate from actual failures.
+/// Timer cleanup is classified independently from the original acquisition decision.
+fn round_operation_failed(end: AddressRoundEnd) -> bool {
+    matches!(end, AddressRoundEnd::Stale | AddressRoundEnd::Failure)
 }
 
 /// The test composition can pause at these boundaries without replacing an Engine result.
@@ -229,6 +297,28 @@ impl EngineWorker {
             hooks: TestHooks::default(),
         })
     }
+
+    /// Retain one ordered managed round without source binding, entropy or I/O.
+    /// Startup binds the exact selected revision before admitting Running.
+    /// # Errors
+    /// Preserve refusal by the existing checked control schedule constructor.
+    pub(super) fn new_address_round(
+        source: SourceHandle,
+        configuration: SourceConfigurationSnapshot,
+        config: AddressRoundConfig,
+    ) -> Result<Self, PilotError> {
+        let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+        Ok(Self {
+            state: State::DormantRound {
+                source,
+                configuration,
+                config,
+                schedule,
+            },
+            shared: Arc::new(Shared::default()),
+            hooks: TestHooks::default(),
+        })
+    }
 }
 
 impl Worker for EngineWorker {
@@ -243,13 +333,40 @@ impl Worker for EngineWorker {
                 schedule,
             } => match source.session_for_configuration(&configuration, config) {
                 Ok(session) => {
-                    self.state = State::Prepared(session, schedule, wake.clone());
+                    self.state = State::Prepared(
+                        PreparedWork::Series(Box::new(session)),
+                        schedule,
+                        wake.clone(),
+                    );
                     Poll::Ready(Ok(()))
                 }
                 Err(error) => {
                     self.shared.refuse_inactive(WorkerError::Preparation);
                     self.shared
                         .publish_result(Err(BoundedAcquisitionError::Acquisition(
+                            AcquisitionError::SourcePolicy(error),
+                        )));
+                    Poll::Ready(Err(WorkerError::Preparation))
+                }
+            },
+            State::DormantRound {
+                source,
+                configuration,
+                config,
+                schedule,
+            } => match source.address_round_for_configuration(&configuration, config) {
+                Ok(plan) => {
+                    self.state = State::Prepared(
+                        PreparedWork::AddressRound(Box::new(plan)),
+                        schedule,
+                        wake.clone(),
+                    );
+                    Poll::Ready(Ok(()))
+                }
+                Err(error) => {
+                    self.shared.refuse_inactive(WorkerError::Preparation);
+                    self.shared
+                        .publish_round_result(Err(BoundedAcquisitionError::Acquisition(
                             AcquisitionError::SourcePolicy(error),
                         )));
                     Poll::Ready(Err(WorkerError::Preparation))
@@ -272,14 +389,13 @@ impl Worker for EngineWorker {
     /// Refuse an absent, cancelled or poisoned preparation, or a failed thread spawn.
     fn activate(&mut self, cutoff: Instant) -> Result<(), WorkerError> {
         let prior: State = mem::replace(&mut self.state, State::Retired);
-        let (session, schedule, wake): (AcquisitionSession, ControlSchedule, WorkerWake) =
-            match prior {
-                State::Prepared(session, schedule, wake) => (session, schedule, wake),
-                other => {
-                    self.state = other;
-                    return Err(WorkerError::Activation);
-                }
-            };
+        let (work, schedule, wake): (PreparedWork, ControlSchedule, WorkerWake) = match prior {
+            State::Prepared(work, schedule, wake) => (work, schedule, wake),
+            other => {
+                self.state = other;
+                return Err(WorkerError::Activation);
+            }
+        };
         if !self.shared.gate.lock().is_ok_and(|gate| !gate.cancelled) {
             self.shared.refuse_inactive(WorkerError::Activation);
             return Err(WorkerError::Activation);
@@ -288,7 +404,7 @@ impl Worker for EngineWorker {
         let shared: Arc<Shared> = Arc::clone(&self.shared);
         let hooks: TestHooks = mem::take(&mut self.hooks);
         if let Ok(thread) = Builder::new()
-            .spawn(move || guarded_acquisition(session, schedule, cutoff, &shared, &wake, hooks))
+            .spawn(move || guarded_acquisition(work, schedule, cutoff, &shared, &wake, hooks))
         {
             self.state = State::Active(thread);
             Ok(())
@@ -347,7 +463,7 @@ impl Worker for EngineWorker {
 /// Run the owned thread and always publish return readiness on ordinary paths.
 /// The guard aborts on unexpected unwind before a Finished acknowledgement is possible.
 fn guarded_acquisition(
-    session: AcquisitionSession,
+    work: PreparedWork,
     schedule: ControlSchedule,
     cutoff: Instant,
     shared: &Shared,
@@ -360,7 +476,14 @@ fn guarded_acquisition(
             before_control,
             after_return,
         } = hooks;
-        run_acquisition(session, &schedule, cutoff, shared, before_control);
+        match work {
+            PreparedWork::Series(session) => {
+                run_acquisition(*session, &schedule, cutoff, shared, before_control);
+            }
+            PreparedWork::AddressRound(plan) => {
+                run_address_round(*plan, &schedule, cutoff, shared, before_control);
+            }
+        }
         shared.returned.store(true, Ordering::Release);
         wake.notify();
         if let Some(pause) = after_return {
@@ -395,6 +518,37 @@ fn run_acquisition(
         Err(error) => Err(error),
     };
     shared.publish_result(result);
+}
+
+/// Consume the configured round using the original acknowledged service cutoff.
+/// Publish no successful report for expired preparation or a typed Engine failure.
+fn run_address_round(
+    plan: ConfiguredAddressRound,
+    schedule: &ControlSchedule,
+    cutoff: Instant,
+    shared: &Shared,
+    before_control: Option<Box<dyn FnOnce() + Send>>,
+) {
+    let prepared: Result<Option<(PreparedAddressRound, ControlHandle)>, PilotError> =
+        plan.prepare_before(cutoff);
+    let result: AddressRoundResult = match prepared {
+        Ok(Some((prepared, control))) => {
+            if let Some(pause) = before_control {
+                pause();
+            }
+            if !shared.publish_control(control) {
+                return;
+            }
+            execute_address_round(prepared, schedule).map_err(|error| {
+                BoundedAcquisitionError::Acquisition(AcquisitionError::Driver(error))
+            })
+        }
+        Ok(None) => Err(BoundedAcquisitionError::OwnerDeadlineElapsed),
+        Err(error) => Err(BoundedAcquisitionError::Acquisition(
+            AcquisitionError::Driver(error),
+        )),
+    };
+    shared.publish_round_result(result);
 }
 
 #[cfg(test)]

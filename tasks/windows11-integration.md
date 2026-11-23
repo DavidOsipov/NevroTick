@@ -15800,3 +15800,190 @@ current guest run exercises one actual launcher context. A signed lab package,
 independently admitted distinct effective actor profiles, and the supported
 pre-start installation window remain required before observing installed SCM
 access.
+
+### Emit the installed identity receipt to the pre-start reader — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-1/26/27. The fixed
+[PowerShell entry](../tools/windows-service-fixture/msix/observe_installed_identity.ps1)
+supplies typed inputs to the companion and writes one bounded UTF-8 line
+through the raw stdout stream. The writer waits for the original role and
+registration checks and both image releases before encoding schema 2. A
+consumer still needs the original process exit and retirement, empty stderr,
+and independently bound actor and input identity before accepting any bytes.
+
+`plan-code-change` selected the first producer-to-reader boundary because the
+existing reader used synthetic transcripts. Integration and fault-recovery
+QA used the exact source tree `7325569636ecea805a3cdad9ec038b6a1a084d82`
+over `cc4bd4c5618bef7500b3327d2b8da3d52f017a41`. In the offline build-26100
+guest with Windows PowerShell 5.1, the native control checked the emitted
+bytes while substituting SCM and registration observations around real
+files and handles. A wrong subject, changed Broker digest and registration
+root replacement each left zero success bytes. Conflicting writers were
+refused while both handles were held and reopened after their release. The
+actual fresh `-File` child separately returned exit 1, empty stdout and the
+expected wrong-subject diagnostic. The first runner reached the expected
+diagnostic but lost the process exit code in its wrapper. The repeat retained
+the guest child status and streams with unchanged source. Both input and
+offline bookends matched. The owned share files were cleared after export.
+
+The emitted 604 bytes passed the real Python reader and reached the first
+observer request under independently supplied inert process and actor
+metadata. Eleven receiver refusals covered foreign context, changed input,
+unreaped or failed child, unexpected stderr, invalid encoding, wrong package
+or member, and duplicate JSON keys. Each stopped before the observer. The
+healthy replay and all 36 portable fixture tests passed in a read-only,
+network-isolated namespace. Independent review used the three changed files
+with the current published collector and traced the writer to the receiver.
+The native success here uses substituted SCM and registration observations.
+The installed positive control still requires the signed package and live
+window.
+
+The final native receipt in
+`~/.local/share/nevrotick/s06-identity-wire-native-eb020ux6/` hashes to
+`609d9e802d2c3499dc94dd5e62d9c3090a93bc42166d58cded263c5e69f34566`.
+The receiver controls and portable logs are in
+`~/.local/share/nevrotick/s06-identity-receipt-20261123.sNIE4QBv/`.
+The next native owner must bind the actual entry, module and interpreter
+with the original actor and child. Windows PowerShell 5.1 can cold-compile
+the path helper and discover Appx and CIM modules. Establish those exact
+inputs under the fixed launch profile before applying the one-child job.
+
+For CHECK-18/26 package preparation, the same offline guest checked the
+six PE images from the retained SDK BuildTools 10.0.28000.2705 archive. Each
+reported a valid timestamped embedded Microsoft signature. A changed copy
+of SignTool reported `HashMismatch` and the exact unsigned fixture reported
+`NotSigned`. The [Windows signature reader](https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-authenticodesignature)
+observed these files without invoking SignTool or changing trust. The receipt
+in `~/.local/share/nevrotick/s06-sdk-signer-readback-20261123.q9xgHbko/`
+hashes to `1d98d0c4e0c7e5cee5e348b904416f0b0b43ba4d930007bfc9837f0ad5f9eeb6`.
+Loader compatibility, test signing, installed role admission and lifecycle
+qualification remain open under §7.5.
+
+### Capture the fixed identity child under the original token — 23 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-1/26/27. The
+[identity capture](../tools/windows-service-fixture/msix/prestart_child.psm1)
+starts the original Windows PowerShell interpreter with the fixed entry and
+typed identity arguments. The existing native owner opens and checks the
+exact interpreter, entry, module and helper before creation and retains all
+four read leases through capture and retirement. It checks the original
+suspended process, AMD64 machine and held actor token before resume in the
+one-child job. Both native launch paths use the same bounded stream collector
+and keep the original deadline and failure custody.
+
+`plan-architecture` and the privilege review selected a precompiled DLL to
+keep the final-path read inside the one-child job. The fixed entry clears
+inherited module discovery and imports three modules by absolute paths from
+the interpreter's Windows module directory. The first native attempt refused
+the interpreter path before launch. A diagnostic observed `system32` from
+the OS directory API and `System32` from the open handle. Initial interpreter
+lookup now admits that spelling difference only for the fixed OS path, then
+uses the handle-resolved spelling for launch and rechecks. A second attempt
+returned exit 0 without the expected PowerShell diagnostic. The identity
+child uses `CREATE_NO_WINDOW` and reached the expected refusal. The existing
+SCM observer retains its original launch mode.
+[Windows process flags](https://learn.microsoft.com/windows/win32/procthread/process-creation-flags).
+
+Integration and lifecycle QA ran tree `2ec57b0bbf3388873c6d4cdf117bbc0aae845c93`
+over `cc4bd4c5618bef7500b3327d2b8da3d52f017a41` in the offline build-26100
+guest with Windows PowerShell 5.1. The real entry reached the absent fixture
+registration through Appx, then refused a wrong subject in a separate run.
+Four wrong digests each failed before process creation and retained confirmed
+release. The healthy capture used an inert companion to test argument
+transfer and raw bytes after actual local CIM readback, conflicting-write
+refusals for each staged input and a successful in-child final-path call.
+All three files reopened exclusively after the child settled. The companion
+suite, eight identity cases and 20 existing collector and observer cases
+passed. All 36 portable tests and the two healthy and eleven refused
+receiver histories passed for the combined candidate; the receiver histories
+use the real emitted fixture bytes with separately constructed inert process
+metadata. Independent source review covered the combined runtime and the
+discriminating controls.
+
+The passing native receipt in
+`~/.local/share/nevrotick/s06-owned-identity-native-2btw3c31/` hashes to
+`739c3c9b03ba80a3dd82333851fa7102676fafc9dc7dbc84f0976a380e266968`.
+An isolated derivative changed only the helper's read sharing to admit an
+inert writer. The native control reached that open and failed the intended
+assertion before publishing its success marker. That receipt in
+`~/.local/share/nevrotick/s06-owned-identity-native-ys9kr22l/` hashes to
+`329683f2e1048bcfc44af5c0adf3c1b6296feb4a71b5ebec8620460d90b16643`.
+The directed control supplies zero generated mutation credit.
+The retained logs and failed environment observations are indexed under
+`~/.local/share/nevrotick/s06-owned-identity-20261123.VyqYkj8M/`.
+Input and offline bookends matched and exported staging files were cleared.
+The common window owner still needs independent signed-artifact and actor
+admission and the actual SCM observations. The in-child healthy control
+queries the existing RPC service and does not establish stopped-role
+observations on an installed S0.6 package.
+
+The owned capture now transfers the two native SHA-256 observations needed
+by the receipt reader. The identity launch uses the held companion module
+and each SCM launch uses the held observer executable. Both observations
+come from the original read lease and pass the existing file-identity
+checks. The PowerShell owner publishes the digests with the original
+process result after retirement, release and the final deadline check.
+Actor and run admission remain the window owner's responsibility.
+
+Integration QA tested tree `939f2a7e5e266f05f8f3d754a7fca6ccadc692f6` against
+the same offline Windows build. The eight identity controls and the prior
+companion, collector and observer controls all passed. The native tests now
+compare both reported digests with the expected companion or executable.
+The receipt in `~/.local/share/nevrotick/s06-owned-identity-native-6by67bt7/`
+hashes to `79c59aecbe2304eda13de8340529bea3fa92be564db239e7fb9ab3abb2bcff49`.
+The input and offline checks passed, and the owned share files were cleared.
+
+### Run a managed address round under the service cutoff — 23 November 2026
+
+W11-W05/S3.1, REQ-8, BND-1 and CHECK-6/8/21/25/27. The fixture worker now
+admits a checked address round as an explicit alternative to one fixed-peer
+series. The Engine binds the original source, exact installed revision and
+checked address order under the same guard as endpoint-slot publication.
+Preparation rechecks that binding and the original cutoff before admitting
+entropy. The prepared round retains the cutoff through the original executor.
+The earlier deadline governs setup and the existing per-request effects.
+
+The same fixture worker owns activation, Stop publication and actual thread
+join for either acquisition. One typed result preserves the original report or
+bounded error. A completed round retains its decision separately from both
+timer-cleanup causes. The current fixture schedules neither timer. The review
+traced the round cleanup projection to the host; independent cleanup faults
+through this new route remain unexercised.
+
+The ordinary and optimized fixture cases reached the real loopback
+addresses. The first request timed out, the second produced a correlated
+header for the original source revision, and Stop after that result preserved
+it through the delayed physical join. An equal-address replacement refused
+the old startup revision. Stop at Running and Stop during active preparation
+both produced zero packets. Active Stop reached the original pending control
+and yielded an empty stopped round. The expired original cutoff retained its
+typed failure and join charge. Four focused Engine tests also checked the
+actual pre-entropy and cutoff branches, including a cutoff during a live
+request and preserved control state when setup was already too late.
+
+`plan-architecture` and the Rust contract review selected the existing
+source-policy and joined-worker owners. Integration, lifecycle and independent
+QA reviewed the two seams and added the round-specific active Stop control.
+The first admission found a missing default vendor directory. The explicit
+retained vendor passed current admission. Earlier candidates preserve the
+compiler refusals for import scope and the prepared-state layout. The final
+candidate moved the imports to their actual use sites and boxes each prepared
+fixture plan once, preserving one owner across startup and join.
+
+Rust 1.100.0 ran all six graph checks and twelve configured development
+commands on the same 731-input candidate
+`889d65000a1c7843be97d3e030e3d9028b671486d34e4cc79cb47429b61f839c`.
+Both GNU modes passed 189 fixture cases, including the three new round
+controls, and 70 platform cases. The GNU and Windows-target Clippy checks
+passed. Four focused Engine cases passed with the same input and graph
+identity. The combined Git review tree is
+`b0249c7db0df17ef3e312db07a804ce6c0a5097a`. Graph, development and focused
+receipts reside in
+`~/.local/share/nevrotick/service-address-round-20261123.6mNmQQva/` and hash to
+`3591133633daca005d0626b17987f1d88afdb5677a7a628aedf405b2d430d408`,
+`b76fc12f2274626ac73bdcdda32317c0686fd5dcd72412a6c31082e49efa1ce8` and
+`98d140da16e97beb516f14e12eb1a8a08a99deeb5a002f4db954c12c0a59922d`.
+The exact current source matched the receipt input inventory after integration.
+The service binary remains outside this fixture composition. Native service
+execution, DNS refresh, calibrated measurement and affected-file
+coverage/mutation retain their existing owners and exits.

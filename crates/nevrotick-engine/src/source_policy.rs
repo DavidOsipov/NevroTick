@@ -310,7 +310,10 @@ mod configuration {
         /// Bind one numeric endpoint at exactly the selected installed revision.
         ConfiguredNumeric(EndpointKey, &'a SourceConfigurationSnapshot),
         /// Bind the entire caller plan in its checked order.
-        Round(&'a [Option<EndpointKey>; 3]),
+        Round(
+            &'a [Option<EndpointKey>; 3],
+            Option<&'a SourceConfigurationSnapshot>,
+        ),
     }
 
     /// One sealed source plus optional actually installed configuration context.
@@ -390,13 +393,13 @@ mod configuration {
                 return Err(SourcePolicyError::Foreign);
             }
             let expected: Option<&SourceConfigurationSnapshot> = match &selection {
-                Selection::ConfiguredNumeric(_, expected) => {
+                Selection::ConfiguredNumeric(_, expected) | Selection::Round(_, Some(expected)) => {
                     if !identity.same_source(expected.source_identity()) {
                         return Err(SourcePolicyError::Foreign);
                     }
                     Some(*expected)
                 }
-                Selection::History | Selection::Numeric(_) | Selection::Round(_) => None,
+                Selection::History | Selection::Numeric(_) | Selection::Round(_, None) => None,
             };
             let snapshot: Option<SourceConfigurationSnapshot> = configuration.snapshot()?;
             if expected.is_some_and(|expected| {
@@ -408,8 +411,8 @@ mod configuration {
             }
             let admitted: bool = match (selection, configuration.membership.as_ref()) {
                 (Selection::History, _) => true,
-                (Selection::Round(keys), Some(members)) => members.keys == *keys,
-                (Selection::Round(keys), None) => snapshot.as_ref().is_none_or(|value| {
+                (Selection::Round(keys, _), Some(members)) => members.keys == *keys,
+                (Selection::Round(keys, _), None) => snapshot.as_ref().is_none_or(|value| {
                     keys.iter()
                         .flatten()
                         .all(|key| value.addresses.contains(*key))
@@ -2395,6 +2398,18 @@ impl SourceHandle {
         self.bind_round_selected(peers, RoundSelection::Fixed)
     }
 
+    /// Bind an entire round only at the exact installed revision.
+    /// # Errors
+    /// Refuse a foreign or stale snapshot and any fixed-round admission failure
+    /// before publishing endpoint slots.
+    pub(super) fn bind_round_for_configuration(
+        &self,
+        expected: &SourceConfigurationSnapshot,
+        peers: &[SocketAddr],
+    ) -> Result<RoundBindings, SourcePolicyError> {
+        self.bind_round_selected(peers, RoundSelection::Configured(expected))
+    }
+
     /// Bind an entire initial round only when its ordered membership is selected.
     /// # Errors
     /// Refuse a missing selection or any fixed-round admission failure before
@@ -2406,13 +2421,13 @@ impl SourceHandle {
         self.bind_round_selected(peers, RoundSelection::RequireMembership)
     }
 
-    /// Share the fixed and refresh paths' original validation and slot planning.
+    /// Share the fixed, configured and refresh paths' validation and slot planning.
     /// # Errors
     /// All shape, selection and capacity failures precede slot publication.
     fn bind_round_selected(
         &self,
         peers: &[SocketAddr],
-        selection: RoundSelection,
+        selection: RoundSelection<'_>,
     ) -> Result<RoundBindings, SourcePolicyError> {
         if peers.is_empty() || peers.len() > 3 {
             return Err(SourcePolicyError::InvalidSelection);
@@ -2422,8 +2437,15 @@ impl SourceHandle {
             *key = Some(EndpointKey::new(*peer)?);
         }
         let mut guard: PolicyGuard<'_> = self.cell.lock()?;
-        let context: SourceContext =
-            SourceContext::capture(self, &guard, configuration::Selection::Round(&keys))?;
+        let expected: Option<&SourceConfigurationSnapshot> = match selection {
+            RoundSelection::Configured(expected) => Some(expected),
+            RoundSelection::Fixed | RoundSelection::RequireMembership => None,
+        };
+        let context: SourceContext = SourceContext::capture(
+            self,
+            &guard,
+            configuration::Selection::Round(&keys, expected),
+        )?;
         if matches!(selection, RoundSelection::RequireMembership) && !context.has_membership() {
             return Err(SourcePolicyError::ConfigurationChanged);
         }
@@ -2521,9 +2543,11 @@ impl SourceHandle {
 
 /// Select the admission contract for a complete numeric address round.
 #[derive(Clone, Copy)]
-enum RoundSelection {
+enum RoundSelection<'a> {
     /// Respect any installed selection, retaining the legacy numeric path.
     Fixed,
+    /// Require an exact installed configuration and respect its existing selection.
+    Configured(&'a SourceConfigurationSnapshot),
     /// Require selected membership for a round that owns one refresh.
     RequireMembership,
 }
@@ -2623,6 +2647,24 @@ pub(super) struct RoundBindings {
 }
 
 impl RoundBindings {
+    /// Recheck the exact issued configuration, membership and endpoint positions
+    /// in the common policy cell before preparation. The actual setup, send and
+    /// receive owners independently check current authority.
+    /// # Errors
+    /// Preserve unavailable custody, changed context or a foreign endpoint slot.
+    pub(super) fn check_current(&self) -> Result<(), SourcePolicyError> {
+        let mut bindings = self.bindings.iter().flatten();
+        let original: &SourceBinding =
+            bindings.next().ok_or(SourcePolicyError::InvalidSelection)?;
+        let guard: PolicyGuard<'_> = original.source.cell.lock()?;
+        let state: &PolicyState = guard.state()?;
+        state.binding(original)?;
+        for binding in bindings {
+            state.binding(binding)?;
+        }
+        Ok(())
+    }
+
     /// Report whether the issued round retained selected membership.
     pub(super) fn has_membership(&self) -> bool {
         self.bindings

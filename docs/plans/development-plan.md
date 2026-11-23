@@ -1248,8 +1248,15 @@ The [owned observer launcher](../../tasks/windows11-integration.md#launch-the-fi
 passed the inert same-actor job, deadline, and retirement controls. The
 [primary-token handoff](../../tasks/windows11-integration.md#bind-the-pre-start-observer-to-its-held-primary-token--23-november-2026)
 now checks the original suspended child against its retained launcher actor.
-The unsigned fixture archive passed readback again. Admit the distinct actor
-contexts and signed package window before running the installed sequence.
+The [installed identity receipt](../../tasks/windows11-integration.md#emit-the-installed-identity-receipt-to-the-pre-start-reader--23-november-2026)
+now reaches the pre-start reader in the controlled native fixture. The
+[fixed identity launcher](../../tasks/windows11-integration.md#capture-the-fixed-identity-child-under-the-original-token--23-november-2026)
+uses the original deployment token and deadline and holds the interpreter,
+entry, module and precompiled helper through retirement. The unsigned archive
+passed readback and the SDK signer images passed the read-only native
+signature check. The installed sequence still requires independently
+admitted actor contexts, the signed package, and the common native window
+owner that supplies the first receipt and the three SCM observations.
 
 
 **Coordinator selection after the receipt checkpoint — 20 November 2026.**
@@ -1267,6 +1274,13 @@ explicit unchanged-owner reuse for the three native-tool cohorts. Signed commit
 general worker cleanup transfer and parent P3 remain separate. This narrowly
 supersedes the temporary Core/Engine-only scheduling restriction for the selected
 P3 source child, while retaining Core/Engine priority and every actual hold.
+
+The [managed service address round](../../tasks/windows11-integration.md#run-a-managed-address-round-under-the-service-cutoff--23-november-2026)
+now reaches real ordered loopback fallback through that fixture worker. It
+binds the exact source revision at startup, retains the original service
+cutoff in the Engine plan and keeps the original Stop and join owner. The
+current configured development and four focused Engine cases passed. Continue
+affected-file metrics and the existing native and installed acceptance work.
 
 **Qualified portable product checkpoint — 21 November 2026.** The
 [W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026)

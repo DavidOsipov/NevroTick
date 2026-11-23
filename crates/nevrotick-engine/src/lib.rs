@@ -85,7 +85,7 @@ pub use relative::{
 pub use series::address_round::{
     AddressAttempt, AddressPolicyRefusal, AddressPolicyRefusalScope, AddressRoundConfig,
     AddressRoundConfigError, AddressRoundEnd, AddressRoundRefreshOutcome, AddressRoundReport,
-    PreparedAddressRound, execute_address_round, prepare_address_round,
+    ConfiguredAddressRound, PreparedAddressRound, execute_address_round, prepare_address_round,
 };
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,

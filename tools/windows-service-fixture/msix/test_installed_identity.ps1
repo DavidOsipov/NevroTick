@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Local path and read-only file controls. No AppX, SCM or installation operations.
+# Build and stage prestart_image_path.dll beside the module before running.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $module = Import-Module (Join-Path $PSScriptRoot 'installed_identity.psm1') -Force -PassThru
 try {
     & $module {
+        param([string]$ModulePath)
+
         function Assert-Refused([scriptblock]$Action, [string]$Expected) {
             $output = [Collections.Generic.List[object]]::new()
             try {
@@ -23,6 +26,16 @@ try {
                 Confirm-S06Image $image $Path $Bytes $Digest
             } finally {
                 $image.Dispose()
+            }
+        }
+
+        function Assert-S06WriteRefused([hashtable]$Inputs, [string]$Expected) {
+            [IO.MemoryStream]$stream = [IO.MemoryStream]::new()
+            try {
+                Assert-Refused { Write-S06InstalledIdentity -Inputs $Inputs -OutputStream $stream } $Expected
+                if ($stream.Length -ne 0) { throw 'Refused installed identity wrote output bytes' }
+            } finally {
+                $stream.Dispose()
             }
         }
 
@@ -88,6 +101,13 @@ try {
         $private = Join-Path ([IO.Path]::GetTempPath()) ('NevroTick-s06-image-control-' + [guid]::NewGuid().ToString('N'))
         $null = [IO.Directory]::CreateDirectory($private)
         try {
+            # The helper is already loaded in this process. A separate module
+            # directory must still contain its own fixed sibling to import.
+            [string]$withoutHelper = [IO.Path]::Combine($private, 'missing_identity_helper.psm1')
+            [IO.File]::Copy($ModulePath, $withoutHelper)
+            Assert-Refused { Import-Module -Name $withoutHelper -ErrorAction Stop -PassThru } `
+                'Installed identity requires the fixed precompiled path helper'
+
             $path = Join-Path $private 'exact.bin'
             $digest = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
             [IO.File]::WriteAllBytes($path, [byte[]](97,98,99))
@@ -178,8 +198,56 @@ try {
             [IO.File]::WriteAllBytes($broker, [byte[]](100,101,102))
 
             $reads.Clear()
+            [IO.MemoryStream]$output = [IO.MemoryStream]::new()
+            try {
+                Write-S06InstalledIdentity -Inputs $inputs -OutputStream $output
+                [byte[]]$receiptBytes = $output.ToArray()
+            } finally {
+                $output.Dispose()
+            }
+            if (($reads -join ',') -cne "registration,$engineKey,$brokerKey,$engineKey,$brokerKey,registration" -or
+                $receiptBytes.Length -lt 2 -or $receiptBytes.Length -gt 8192 -or
+                $receiptBytes[0] -ne 123 -or $receiptBytes[-1] -ne 10) {
+                throw 'Installed identity did not publish a bounded BOM-free JSON line after both rechecks'
+            }
+            [Text.UTF8Encoding]$encoding = [Text.UTF8Encoding]::new($false, $true)
+            [string]$recordText = $encoding.GetString($receiptBytes)
+            if ($recordText.IndexOf("`n") -ne ($recordText.Length - 1) -or $recordText.IndexOf("`r") -ge 0) {
+                throw 'Installed identity did not publish exactly one LF-terminated line'
+            }
+            $record = ConvertFrom-Json -InputObject $recordText
+            if ((($record.PSObject.Properties.Name | Sort-Object) -join ',') -cne
+                'outcome,package_full_name,roles,run_id,schema_version,signed_package_sha256' -or
+                $record.schema_version -ne 2 -or $record.outcome -cne 'observed-installed-images' -or
+                $record.run_id -cne '8381e9c5-0c17-4a99-8b47-d50bdf18d205' -or
+                $record.package_full_name -cne $name -or $record.signed_package_sha256 -cne ('1' * 64) -or
+                $record.roles -isnot [array] -or $record.roles.Count -ne 2) {
+                throw 'Installed identity did not publish the expected schema-2 record'
+            }
+            foreach ($role in $record.roles) {
+                if ((($role.PSObject.Properties.Name | Sort-Object) -join ',') -cne 'bytes,key,member,sha256' -or
+                    $role.bytes -ne 3) {
+                    throw 'Installed identity role omitted or added a field or changed its expected extent'
+                }
+            }
+            if ($record.roles[0].key -cne $engineKey -or $record.roles[0].member -cne $member -or
+                $record.roles[0].sha256 -cne $digest -or $record.roles[1].key -cne $brokerKey -or
+                $record.roles[1].member -cne 'nevrotick-lab-s02-broker.exe' -or
+                $record.roles[1].sha256 -cne $brokerDigest) {
+                throw 'Installed identity did not publish the expected Engine and Broker facts in order'
+            }
+            [IO.File]::WriteAllBytes($engine, [byte[]](97,98,99))
+            [IO.File]::WriteAllBytes($broker, [byte[]](100,101,102))
+
+            $reads.Clear()
+            $inputs.ExpectedUserSid = 'S-1-0-0'
+            Assert-S06WriteRefused $inputs 'Current user differs from the admitted deployment subject'
+            if ($reads.Count -ne 0) { throw 'Wrong deployment subject reached Appx or SCM' }
+            $inputs.ExpectedUserSid = $deploymentSid
+
+            $reads.Clear()
             $inputs.BrokerSha256 = ('0' * 64)
-            Assert-Refused { Read-S06InstalledIdentity @inputs } 'Installed image bytes differ from the approved member'
+            Assert-S06WriteRefused $inputs 'Installed image bytes differ from the approved member'
             if (($reads -join ',') -cne "registration,$engineKey,$brokerKey") {
                 throw 'Bad broker image did not stop before either recheck'
             }
@@ -189,14 +257,16 @@ try {
             $reads.Clear()
             $inputs.BrokerSha256 = $brokerDigest
             $script:s06ImageControl.ChangeRoot = $true
-            Assert-Refused { Read-S06InstalledIdentity @inputs } 'Installed registration root changed during readback'
+            Assert-S06WriteRefused $inputs 'Installed registration root changed during readback'
             [IO.File]::WriteAllBytes($engine, [byte[]](97,98,99))
             [IO.File]::WriteAllBytes($broker, [byte[]](100,101,102))
+            # Fixture-only export for strict offline reader verification.
+            's06-installed-identity receipt-base64=' + [Convert]::ToBase64String($receiptBytes)
         } finally {
             [IO.Directory]::Delete($private, $true)
         }
         's06-installed-identity controls=passed'
-    }
+    } $module.Path
 } finally {
     Remove-Module $module
 }

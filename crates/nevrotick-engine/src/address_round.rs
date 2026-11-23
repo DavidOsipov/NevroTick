@@ -191,6 +191,61 @@ impl fmt::Debug for AddressRoundConfig {
     }
 }
 
+/// A dormant fixed round bound to one exact installed source configuration.
+#[must_use]
+pub struct ConfiguredAddressRound {
+    /// Original checked destinations and durations.
+    config: AddressRoundConfig,
+    /// Genuine catalogue custody for every original destination.
+    bindings: RoundBindings,
+}
+
+impl fmt::Debug for ConfiguredAddressRound {
+    /// Keep configuration and bindings private in diagnostics.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("ConfiguredAddressRound { .. }")
+    }
+}
+
+impl ConfiguredAddressRound {
+    /// Consume this binding to prepare one round before the caller's original
+    /// absolute monotonic cutoff. Preparation owns one entropy fill and creates
+    /// no socket or runtime. The prepared round retains this cutoff.
+    /// # Errors
+    /// Return `Ok(None)` if the cutoff has elapsed before entropy admission.
+    /// Otherwise preserve changed binding, unavailable policy custody, entered
+    /// runtime and entropy/token refusals.
+    pub fn prepare_before(
+        self,
+        cutoff: Instant,
+    ) -> Result<Option<(PreparedAddressRound, ControlHandle)>, PilotError> {
+        self.prepare_before_with_entropy(cutoff, |entropy| {
+            getrandom::fill(entropy).map_err(|_| PilotError::Entropy)
+        })
+    }
+
+    /// Recheck the bound context and sample fresh time before the sole fill.
+    /// # Errors
+    /// Preserve the same typed refusals as the public preparation entry.
+    fn prepare_before_with_entropy(
+        self,
+        cutoff: Instant,
+        fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
+    ) -> Result<Option<(PreparedAddressRound, ControlHandle)>, PilotError> {
+        if Instant::now() >= cutoff {
+            return Ok(None);
+        }
+        self.bindings
+            .check_current()
+            .map_err(PilotError::SourcePolicy)?;
+        require_unentered_runtime()?;
+        if Instant::now() >= cutoff {
+            return Ok(None);
+        }
+        prepare_in_context(self.config, Some(self.bindings), Some(cutoff), fill).map(Some)
+    }
+}
+
 /// Consume-once entropy and control ownership, without prepared sockets.
 /// ```compile_fail,E0382
 /// use nevrotick_engine::{PreparedAddressRound, ControlSchedule, execute_address_round};
@@ -204,6 +259,8 @@ pub struct PreparedAddressRound {
     source_policy: Option<RoundBindings>,
     /// Original checked input order and budgets, moved from its constructor.
     config: AddressRoundConfig,
+    /// Original absolute monotonic cutoff of the configured fixed round, when supplied.
+    original_cutoff: Option<Instant>,
     /// Exactly three independently validated opaque tokens; unused positions stay inert.
     packets: [[u8; PACKET_BYTES]; CAPACITY],
     /// One coalesced control stream for the whole round.
@@ -233,6 +290,22 @@ pub fn prepare_address_round(
 }
 
 impl crate::SourceHandle {
+    /// Bind one dormant fixed round to an exact installed source configuration.
+    /// The snapshot and the checked order are admitted under the same guard as
+    /// permanent catalogue slot publication. There is no entropy or I/O.
+    /// # Errors
+    /// Refuse a foreign owner, an obsolete revision, a plan outside the installed
+    /// definition or selected order, unavailable custody or exhausted capacity.
+    /// Refusal does not reserve endpoint slots.
+    pub fn address_round_for_configuration(
+        &self,
+        expected: &crate::SourceConfigurationSnapshot,
+        config: AddressRoundConfig,
+    ) -> Result<ConfiguredAddressRound, crate::SourcePolicyError> {
+        let bindings: RoundBindings = self.bind_round_for_configuration(expected, &config.peers)?;
+        Ok(ConfiguredAddressRound { config, bindings })
+    }
+
     /// Prepare one fixed round under this original stable logical source.
     /// Bindings are permanent after successful atomic catalogue admission, even
     /// if later entropy/preparation fails. No socket or send starts here.
@@ -277,10 +350,30 @@ fn prepare_with_policy(
     source_policy: Option<RoundBindings>,
     fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
 ) -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
+    require_unentered_runtime()?;
+    prepare_in_context(config, source_policy, None, fill)
+}
+
+/// Refuse nested execution or preparation without creating a runtime.
+/// # Errors
+/// Preserve the original entered-context refusal.
+fn require_unentered_runtime() -> Result<(), PilotError> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(PilotError::EnteredRuntime);
     }
-    let mut entropy = [0; 24];
+    Ok(())
+}
+
+/// Construct the one prepared owner after the caller's admission checks.
+/// # Errors
+/// Preserve entropy or token formation errors without retry.
+fn prepare_in_context(
+    config: AddressRoundConfig,
+    source_policy: Option<RoundBindings>,
+    original_cutoff: Option<Instant>,
+    fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
+) -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
+    let mut entropy: [u8; 24] = [0; 24];
     fill(&mut entropy)?;
     let packets = series_packets(&entropy)?;
     let (sender, control) = watch::channel(Control {
@@ -292,6 +385,7 @@ fn prepare_with_policy(
         PreparedAddressRound {
             source_policy,
             config,
+            original_cutoff,
             packets,
             control,
             handle: handle.clone(),
@@ -499,6 +593,19 @@ fn current_end(
     let end = end_at(*state, Instant::now(), deadline);
     drop(state);
     end
+}
+
+/// Retire a bounded round before starting driver work when control or time
+/// already prevents it. No runtime, timer or attempt is needed for this report.
+fn before_driver(
+    prepared: &mut PreparedAddressRound,
+    deadline: Instant,
+) -> Option<AddressRoundReport> {
+    prepared.original_cutoff?;
+    let end: AddressRoundEnd = current_end(&mut prepared.control, deadline)?;
+    let mut report: AddressRoundReport = AddressRoundReport::empty();
+    report.round_end = end;
+    Some(report)
 }
 
 /// Pure control/time classification shared by summary and the actual setup guard.
@@ -1005,12 +1112,15 @@ fn reconcile_cleanup(
 
 /// Own at most two control timers and reap both on every setup/operation exit.
 async fn run_owned(
-    prepared: PreparedAddressRound,
+    mut prepared: PreparedAddressRound,
     origin: Instant,
     deadline: Instant,
     stop_when: Option<Instant>,
     invalidate_when: Option<Instant>,
 ) -> AddressRoundReport {
+    if let Some(report) = before_driver(&mut prepared, deadline) {
+        return report;
+    }
     let permit: Option<tokio::sync::OwnedSemaphorePermit> = match prepared
         .source_policy
         .as_ref()
@@ -1042,22 +1152,30 @@ async fn run_owned(
 /// absolute deadline. At most one request socket, two sleep tasks and one
 /// resolver are owned. A retired Windows resolver can retain its process
 /// slot after return. The next native start may reap it after actual exit.
+/// A configured round also uses its original absolute cutoff. A round already
+/// stopped, stale or expired before driver admission returns an empty report.
 /// Historical results survive later cancellation. No native AFD completion,
 /// production backoff reset or sample admission follows.
 /// # Errors
 /// Reject entered context or deadline/runtime setup before driving acquisition.
 /// Later setup/invariant and cleanup failures are retained in the returned report.
 pub fn execute_address_round(
-    prepared: PreparedAddressRound,
+    mut prepared: PreparedAddressRound,
     schedule: &ControlSchedule,
 ) -> Result<AddressRoundReport, PilotError> {
-    if tokio::runtime::Handle::try_current().is_ok() {
-        return Err(PilotError::EnteredRuntime);
+    require_unentered_runtime()?;
+    if let Some(cutoff) = prepared.original_cutoff
+        && let Some(report) = before_driver(&mut prepared, cutoff)
+    {
+        return Ok(report);
     }
-    let origin = Instant::now();
-    let deadline = origin
+    let origin: Instant = Instant::now();
+    let round_end: Instant = origin
         .checked_add(prepared.config.round_timeout)
         .ok_or(PilotError::DeadlineOverflow)?;
+    let deadline: Instant = prepared
+        .original_cutoff
+        .map_or(round_end, |cutoff: Instant| cutoff.min(round_end));
     let stop_when = schedule
         .stop_after
         .map(|after| {
@@ -1074,6 +1192,9 @@ pub fn execute_address_round(
                 .ok_or(PilotError::DeadlineOverflow)
         })
         .transpose()?;
+    if let Some(report) = before_driver(&mut prepared, deadline) {
+        return Ok(report);
+    }
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()

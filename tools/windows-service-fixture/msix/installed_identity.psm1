@@ -3,6 +3,38 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# The supervisor owns and holds the verified sibling through child retirement.
+[type]$script:s06ImagePathType = & {
+    [string]$path = [IO.Path]::Combine($PSScriptRoot, 'prestart_image_path.dll')
+    [IO.FileInfo]$file = [IO.FileInfo]::new($path)
+    if (!$file.Exists -or $file.Length -lt 1 -or $file.Length -gt 65536) {
+        throw 'Installed identity requires the fixed precompiled path helper'
+    }
+
+    # Load this file without reusing a same-name assembly from another path.
+    [Reflection.Assembly]$assembly = [Reflection.Assembly]::LoadFile($path)
+    if ($assembly.GetName().Name -cne 'prestart_image_path' -or
+        ![string]::Equals($assembly.Location, $path, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Installed identity loaded an unexpected path helper assembly'
+    }
+    [type]$reader = $assembly.GetType('NevroTick.S06ImagePath', $false, $false)
+    if ($null -eq $reader -or ![object]::ReferenceEquals($reader.Assembly, $assembly) -or
+        !$reader.IsPublic -or !$reader.IsAbstract -or !$reader.IsSealed) {
+        throw 'Installed identity path helper has an unexpected type'
+    }
+
+    [Reflection.BindingFlags]$flags = 'Public, Static, DeclaredOnly'
+    [Reflection.MethodInfo]$read = $reader.GetMethod('Read', $flags)
+    if ($null -eq $read -or $read.IsGenericMethod -or $read.ReturnType -ne [string]) {
+        throw 'Installed identity path helper has an unexpected Read method'
+    }
+    [Reflection.ParameterInfo[]]$parameters = $read.GetParameters()
+    if ($parameters.Length -ne 1 -or $parameters[0].ParameterType -ne [Microsoft.Win32.SafeHandles.SafeFileHandle]) {
+        throw 'Installed identity path helper has an unexpected Read method'
+    }
+    return $reader
+}
+
 function Resolve-S06ImagePath {
     param([string]$Root, [string]$Member, [string]$StoredPath)
 
@@ -75,29 +107,8 @@ function Read-S06StoppedService {
 function Read-S06ImageFinalPath {
     param([Microsoft.Win32.SafeHandles.SafeFileHandle]$Handle)
 
-    if ($null -eq ('NevroTick.S06ImagePath' -as [type])) {
-        Add-Type -Namespace NevroTick -Name S06ImagePath -MemberDefinition @'
-[System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
-private static extern uint GetFinalPathNameByHandleW(
-    Microsoft.Win32.SafeHandles.SafeFileHandle handle,
-    System.Text.StringBuilder path, uint capacity, uint flags);
-
-public static string Read(Microsoft.Win32.SafeHandles.SafeFileHandle handle)
-{
-    var path = new System.Text.StringBuilder(1024);
-    uint count = GetFinalPathNameByHandleW(handle, path, (uint)path.Capacity, 0);
-    if (count == 0)
-    {
-        int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-        throw new System.ComponentModel.Win32Exception(error);
-    }
-    if (count >= path.Capacity || count != path.Length)
-        throw new System.IO.InvalidDataException("Final image path exceeds its output bound");
-    return path.ToString();
-}
-'@
-    }
-    return [NevroTick.S06ImagePath]::Read($Handle)
+    [type]$reader = $script:s06ImagePathType
+    return $reader::Read($Handle)
 }
 
 function Confirm-S06ImagePath {
@@ -214,4 +225,57 @@ function Read-S06InstalledIdentity {
     }
 }
 
-Export-ModuleMember -Function Read-S06InstalledIdentity
+# Bind one identity read to a raw stream owned by the caller. Finish the
+# readback and encode the entire record before writing any success bytes.
+function Write-S06InstalledIdentity {
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [Parameter(Mandatory)][hashtable]$Inputs,
+        [Parameter(Mandatory)][IO.Stream]$OutputStream
+    )
+
+    [string[]]$fields = @('RunId', 'PackageFullName', 'ExpectedUserSid', 'SignedPackageSha256',
+        'EngineBytes', 'EngineSha256', 'BrokerBytes', 'BrokerSha256')
+    if ($Inputs.Count -ne $fields.Count -or !$OutputStream.CanWrite) {
+        throw 'Installed identity requires an exact request and a writable output stream'
+    }
+    foreach ($field in $fields) {
+        if (!$Inputs.ContainsKey($field)) {
+            throw 'Installed identity requires an exact request'
+        }
+    }
+
+    [object[]]$records = @(Read-S06InstalledIdentity @Inputs)
+    if ($records.Count -ne 1 -or $records[0] -isnot [pscustomobject]) {
+        throw 'Installed identity did not return one record'
+    }
+    $record = $records[0]
+    if (@($record.PSObject.Properties).Count -ne 6 -or $record.schema_version -isnot [int] -or
+        $record.schema_version -ne 2 -or $record.outcome -cne 'observed-installed-images' -or
+        $record.run_id -cne ([guid]$Inputs.RunId).ToString('D') -or
+        $record.signed_package_sha256 -cne $Inputs.SignedPackageSha256 -or
+        $record.package_full_name -cne $Inputs.PackageFullName -or
+        $record.roles -isnot [array] -or $record.roles.Count -ne 2) {
+        throw 'Installed identity did not return a complete schema-2 record'
+    }
+    foreach ($role in $record.roles) {
+        if ($role -isnot [hashtable] -or $role.Count -ne 4 -or
+            [string]::IsNullOrEmpty($role.key) -or [string]::IsNullOrEmpty($role.member) -or
+            $role.bytes -isnot [long] -or $role.bytes -lt 1 -or $role.bytes -gt 2097152 -or
+            $role.sha256 -cnotmatch '\A[a-f0-9]{64}\z') {
+            throw 'Installed identity did not return a complete schema-2 role'
+        }
+    }
+
+    [Text.UTF8Encoding]$encoding = [Text.UTF8Encoding]::new($false, $true)
+    [string]$json = Microsoft.PowerShell.Utility\ConvertTo-Json -InputObject $record -Depth 4 -Compress -ErrorAction Stop -WarningAction Stop
+    [string]$line = $json + "`n"
+    if ($encoding.GetByteCount($line) -gt 8192) {
+        throw 'Installed identity record exceeds the output bound'
+    }
+    [byte[]]$bytes = $encoding.GetBytes($line)
+    $OutputStream.Write($bytes, 0, $bytes.Length)
+    $OutputStream.Flush()
+}
+
+Export-ModuleMember -Function Read-S06InstalledIdentity, Write-S06InstalledIdentity

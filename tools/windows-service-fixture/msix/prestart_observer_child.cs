@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -14,13 +15,32 @@ using Microsoft.Win32.SafeHandles;
 namespace NevroTick
 {
     // The caller owns an exclusive, private staging directory and the capture deadline.
-    // The read lease pins the file, and the bookends check path identity. The directory
-    // namespace and adjacent loader inputs remain the caller's responsibility.
+    // Read leases pin the admitted files, and the bookends check path identity. The
+    // directory namespace and other loader inputs remain the caller's responsibility.
     // Use this owner on one calling thread.
     public sealed class PrestartObserverChild : IDisposable
     {
+        public sealed class ReceiptInputDigests
+        {
+            public string Before { get; private set; }
+            public string After { get; private set; }
+
+            internal ReceiptInputDigests(string before, string after)
+            {
+                Before = before;
+                After = after;
+            }
+        }
+
         private const string ImageName = "nevrotick-prestart-observer.exe";
         private const long MaxImageBytes = 16 * 1024 * 1024;
+        private const long MaxIdentityFileBytes = 2 * 1024 * 1024;
+        private const long MaxIdentityHelperBytes = 64 * 1024;
+        private const string PowerShellName = "powershell.exe";
+        private const string IdentityEntryName = "observe_installed_identity.ps1";
+        private const string IdentityModuleName = "installed_identity.psm1";
+        private const string IdentityHelperName = "prestart_image_path.dll";
+        private const string IdentityPackagePrefix = "NevroTick.S06.ScmFixture_1.0.0.0_x64__";
         private const int MaxImagePath = 512;
         private const int MaxTimeoutMilliseconds = 120000;
         private const int StartupRetirementMilliseconds = 1000;
@@ -46,20 +66,19 @@ namespace NevroTick
         private const uint DetachedProcess = 0x00000008;
         private const uint CreateUnicodeEnvironment = 0x00000400;
         private const uint ExtendedStartupInfoPresent = 0x00080000;
+        private const uint CreateNoWindow = 0x08000000;
         private const uint WaitObject0 = 0;
         private const uint WaitTimeout = 258;
         private const uint WaitFailed = 0xffffffff;
 
-        private readonly string imagePath;
-        private readonly long expectedBytes;
-        private readonly string expectedSha256;
+        private readonly HeldFile image;
+        private readonly HeldFile[] inputs;
+        private readonly HeldFile receiptInput;
         private readonly PrestartActor actor;
         private readonly Stopwatch clock;
         private readonly int timeoutMilliseconds;
         private readonly KernelHandle process = new KernelHandle();
         private KernelHandle job;
-        private FileStream image;
-        private FileIdentity imageIdentity;
         private PrestartActor.ChildToken childToken;
         private Stream stdout;
         private Stream stderr;
@@ -68,12 +87,12 @@ namespace NevroTick
         private bool jobMembershipConfirmed;
         private bool disposed;
 
-        private PrestartObserverChild(string path, long bytes, string digest, PrestartActor actor,
-            Stopwatch clock, int timeoutMilliseconds)
+        private PrestartObserverChild(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
+            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
         {
-            imagePath = path;
-            expectedBytes = bytes;
-            expectedSha256 = digest;
+            this.image = image;
+            this.inputs = inputs;
+            this.receiptInput = receiptInput;
             this.actor = actor;
             this.clock = clock;
             this.timeoutMilliseconds = timeoutMilliseconds;
@@ -94,25 +113,92 @@ namespace NevroTick
             }
 
             CheckDeadline(clock, timeoutMilliseconds, "launch");
-            if (expectedBytes <= 0 || expectedBytes > MaxImageBytes)
-                throw new ArgumentException("prestart-observer:image-length");
-            if (expectedSha256 == null || expectedSha256.Length != 64 ||
-                !Regex.IsMatch(expectedSha256, @"\A[0-9a-f]{64}\z"))
-                throw new ArgumentException("prestart-observer:image-sha256");
+            CheckFileExpectation(expectedBytes, expectedSha256, MaxImageBytes, "image");
             RequireWindowsX64();
-            CheckImagePath(imagePath);
+            CheckLocalPath(imagePath, ImageName);
+
+            var image = new HeldFile(imagePath, expectedBytes, expectedSha256);
+            return StartFixed(image, new HeldFile[0], image,
+                " " + selector + ObserverFlags, "\0", actor, clock, timeoutMilliseconds);
+        }
+
+        public static PrestartObserverChild StartIdentity(
+            string powershellPath, long expectedBytes, string expectedSha256, string inputDirectory,
+            long entryBytes, string entrySha256, long moduleBytes, string moduleSha256,
+            long helperBytes, string helperSha256, Guid runId, string packageFullName, string subjectSid,
+            string signedPackageSha256, long engineBytes, string engineSha256,
+            long brokerBytes, string brokerSha256, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+        {
+            CheckDeadline(clock, timeoutMilliseconds, "launch");
+            CheckFileExpectation(expectedBytes, expectedSha256, MaxIdentityFileBytes, "image");
+            CheckFileExpectation(entryBytes, entrySha256, MaxIdentityFileBytes, "identity-entry");
+            CheckFileExpectation(moduleBytes, moduleSha256, MaxIdentityFileBytes, "identity-module");
+            CheckFileExpectation(helperBytes, helperSha256, MaxIdentityHelperBytes, "identity-helper");
+            CheckFileExpectation(engineBytes, engineSha256, MaxIdentityFileBytes, "identity-engine");
+            CheckFileExpectation(brokerBytes, brokerSha256, MaxIdentityFileBytes, "identity-broker");
+            if (!IsDigest(signedPackageSha256))
+                throw new ArgumentException("prestart-observer:identity-package-sha256");
+            if (runId == Guid.Empty)
+                throw new ArgumentException("prestart-observer:identity-run");
+            if (packageFullName == null || packageFullName.Length != IdentityPackagePrefix.Length + 13 ||
+                !Regex.IsMatch(packageFullName, @"\ANevroTick\.S06\.ScmFixture_1\.0\.0\.0_x64__[0-9a-z]{13}\z"))
+                throw new ArgumentException("prestart-observer:identity-package-name");
+            if (subjectSid == null || subjectSid.Length > 168 ||
+                !Regex.IsMatch(subjectSid, @"\AS-1-[0-9]{1,10}(?:-[0-9]{1,10}){1,14}\z"))
+                throw new ArgumentException("prestart-observer:identity-subject-sid");
+
+            RequireWindowsX64();
+            string systemDirectory = Environment.SystemDirectory;
+            string powershellDirectory = systemDirectory + @"\WindowsPowerShell\v1.0";
+            string systemPowerShell = powershellDirectory + "\\" + PowerShellName;
+            if (!string.Equals(powershellPath, systemPowerShell, StringComparison.Ordinal))
+                throw new ArgumentException("prestart-observer:identity-powershell-path");
+            CheckLocalPath(powershellPath, PowerShellName);
+            CheckLocalPath(inputDirectory, null);
+
+            string entryPath = inputDirectory + "\\" + IdentityEntryName;
+            string modulePath = inputDirectory + "\\" + IdentityModuleName;
+            string helperPath = inputDirectory + "\\" + IdentityHelperName;
+            CheckLocalPath(entryPath, IdentityEntryName);
+            CheckLocalPath(modulePath, IdentityModuleName);
+            CheckLocalPath(helperPath, IdentityHelperName);
+
+            string arguments = " -NoLogo -NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File \"" +
+                entryPath + "\" -RunId " + runId.ToString("D") + " -PackageFullName " + packageFullName +
+                " -ExpectedUserSid " + subjectSid + " -SignedPackageSha256 " + signedPackageSha256 +
+                " -EngineBytes " + engineBytes.ToString(CultureInfo.InvariantCulture) +
+                " -EngineSha256 " + engineSha256 +
+                " -BrokerBytes " + brokerBytes.ToString(CultureInfo.InvariantCulture) +
+                " -BrokerSha256 " + brokerSha256;
+            string windowsDirectory = Path.GetDirectoryName(systemDirectory);
+            string environmentBlock = "PSModuleAnalysisCachePath=NUL\0PSModulePath=" +
+                powershellDirectory + "\\Modules\0" +
+                "SystemRoot=" + windowsDirectory + "\0windir=" + windowsDirectory + "\0";
+            var module = new HeldFile(modulePath, moduleBytes, moduleSha256);
+            HeldFile[] inputs =
+            {
+                new HeldFile(entryPath, entryBytes, entrySha256),
+                module,
+                new HeldFile(helperPath, helperBytes, helperSha256)
+            };
+            return StartFixed(new HeldFile(powershellPath, expectedBytes, expectedSha256, resolveSystemSpelling: true), inputs,
+                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds);
+        }
+
+        private static PrestartObserverChild StartFixed(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
+            string arguments, string environmentBlock, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+        {
             if (actor == null)
                 throw new ArgumentNullException("actor");
             actor.VerifyCurrent(clock, timeoutMilliseconds);
 
-            var child = new PrestartObserverChild(imagePath, expectedBytes, expectedSha256, actor,
-                clock, timeoutMilliseconds);
+            var child = new PrestartObserverChild(image, inputs, receiptInput, actor, clock, timeoutMilliseconds);
             try
             {
-                child.image = OpenImage(imagePath);
-                child.imageIdentity = ReadImageIdentity(child.image.SafeFileHandle, imagePath);
-                child.CheckImageBytes("launch");
-                child.CreateChild(selector);
+                image.Admit(clock, timeoutMilliseconds);
+                foreach (HeldFile input in inputs)
+                    input.Admit(clock, timeoutMilliseconds);
+                child.CreateChild(arguments, environmentBlock);
                 return child;
             }
             catch (Exception primary)
@@ -204,7 +290,7 @@ namespace NevroTick
                 throw processFailure;
         }
 
-        public void ConfirmImage()
+        public ReceiptInputDigests ConfirmImage()
         {
             CheckDeadline(clock, timeoutMilliseconds, "collection");
             if (!HasExited || !IsJobEmpty)
@@ -219,15 +305,11 @@ namespace NevroTick
             {
                 throw new TimeoutException("prestart-child:collection-deadline", failure);
             }
-            CheckImageBytes("collection");
-            using (FileStream current = OpenImage(imagePath))
-            {
-                FileIdentity currentIdentity = ReadImageIdentity(current.SafeFileHandle, imagePath);
-                FileIdentity heldIdentity = ReadImageIdentity(image.SafeFileHandle, imagePath);
-                if (!imageIdentity.Matches(currentIdentity) || !imageIdentity.Matches(heldIdentity))
-                    throw new InvalidDataException("prestart-observer:image-identity");
-            }
+            image.Confirm(clock, timeoutMilliseconds);
+            foreach (HeldFile input in inputs)
+                input.Confirm(clock, timeoutMilliseconds);
             CheckDeadline(clock, timeoutMilliseconds, "collection");
+            return new ReceiptInputDigests(receiptInput.AdmittedSha256, receiptInput.ConfirmedSha256);
         }
 
         private void RetireFailedLaunch(Exception primary)
@@ -282,7 +364,9 @@ namespace NevroTick
             // The job is the fail-safe if the caller arrives here without normal retirement.
             // Still release every owned resource if a managed disposal throws.
             List<Exception> failures = null;
-            foreach (IDisposable owner in new IDisposable[] { job, stdout, stderr, childToken, process, image })
+            var owners = new List<IDisposable> { job, stdout, stderr, childToken, process, image };
+            owners.AddRange(inputs);
+            foreach (IDisposable owner in owners)
             {
                 if (owner == null)
                     continue;
@@ -326,14 +410,27 @@ namespace NevroTick
                 throw new PlatformNotSupportedException("prestart-observer:windows-x64");
         }
 
-        private static void CheckImagePath(string path)
+        private static bool IsDigest(string digest)
+        {
+            return digest != null && digest.Length == 64 && Regex.IsMatch(digest, @"\A[0-9a-f]{64}\z");
+        }
+
+        private static void CheckFileExpectation(long bytes, string digest, long maximum, string input)
+        {
+            if (bytes <= 0 || bytes > maximum)
+                throw new ArgumentException("prestart-observer:" + input + "-length");
+            if (!IsDigest(digest))
+                throw new ArgumentException("prestart-observer:" + input + "-sha256");
+        }
+
+        private static void CheckLocalPath(string path, string fileName)
         {
             if (path == null || path.Length > MaxImagePath ||
                 !Regex.IsMatch(path, @"\A[A-Za-z]:\\[^\x00-\x1f""*/?<>|:]+\z"))
                 throw new ArgumentException("prestart-observer:image-path");
 
             string[] components = path.Substring(3).Split('\\');
-            if (components.Length < 2 || components[components.Length - 1] != ImageName)
+            if (fileName != null && (components.Length < 2 || components[components.Length - 1] != fileName))
                 throw new ArgumentException("prestart-observer:image-path");
             foreach (string component in components)
             {
@@ -362,54 +459,122 @@ namespace NevroTick
 
         private static FileIdentity ReadImageIdentity(SafeFileHandle handle, string path)
         {
+            string normalizedPath;
+            return ReadImageIdentity(handle, path, StringComparison.Ordinal, out normalizedPath);
+        }
+
+        private static FileIdentity ReadImageIdentity(SafeFileHandle handle, string path,
+            StringComparison comparison, out string normalizedPath)
+        {
             var observed = new StringBuilder(MaxImagePath + 5);
             uint count = GetFinalPathNameByHandleW(handle, observed, (uint)observed.Capacity, 0);
             if (count == 0)
                 throw NativeError("resolve-image-path");
+            string finalPath = observed.ToString();
             if (count >= observed.Capacity || count != observed.Length ||
-                !string.Equals(observed.ToString(), @"\\?\" + path, StringComparison.Ordinal))
+                !string.Equals(finalPath, @"\\?\" + path, comparison))
                 throw new InvalidDataException("prestart-observer:image-final-path");
 
             FileIdentity identity;
             if (!GetFileInformationByHandleEx(handle, FileIdInfo, out identity,
                 (uint)Marshal.SizeOf(typeof(FileIdentity))))
                 throw NativeError("query-image-identity");
+            normalizedPath = finalPath.Substring(4);
             return identity;
         }
 
-        private void CheckImageBytes(string phase)
+        private sealed class HeldFile : IDisposable
         {
-            CheckDeadline(clock, timeoutMilliseconds, phase);
-            if (image.Length != expectedBytes)
-                throw new InvalidDataException("prestart-observer:image-length");
+            internal string Path { get; private set; }
+            internal string AdmittedSha256 { get; private set; }
+            internal string ConfirmedSha256 { get; private set; }
+            private readonly long expectedBytes;
+            private readonly string expectedSha256;
+            private readonly bool resolveSystemSpelling;
+            private FileStream stream;
+            private FileIdentity admittedIdentity;
 
-            // Read at most the admitted extent and one EOF probe even if the file changes.
-            image.Position = 0;
-            byte[] buffer = new byte[64 * 1024];
-            using (SHA256 hash = new SHA256CryptoServiceProvider())
+            internal HeldFile(string path, long bytes, string digest, bool resolveSystemSpelling = false)
             {
-                long remaining = expectedBytes;
-                while (remaining > 0)
+                Path = path;
+                expectedBytes = bytes;
+                expectedSha256 = digest;
+                this.resolveSystemSpelling = resolveSystemSpelling;
+            }
+
+            internal void Admit(Stopwatch clock, int timeoutMilliseconds)
+            {
+                CheckDeadline(clock, timeoutMilliseconds, "launch");
+                stream = OpenImage(Path);
+                // SystemDirectory can spell "system32" differently from the
+                // held OS file. Only the fixed interpreter gets this conversion.
+                string normalizedPath;
+                StringComparison comparison = resolveSystemSpelling ?
+                    StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                admittedIdentity = ReadImageIdentity(stream.SafeFileHandle, Path, comparison, out normalizedPath);
+                Path = normalizedPath;
+                AdmittedSha256 = CheckBytes(clock, timeoutMilliseconds, "launch");
+            }
+
+            internal void ConfirmPath()
+            {
+                using (FileStream current = OpenImage(Path))
                 {
-                    CheckDeadline(clock, timeoutMilliseconds, phase);
-                    int count = image.Read(buffer, 0, (int)Math.Min(remaining, buffer.Length));
-                    if (count == 0)
-                        throw new InvalidDataException("prestart-observer:image-length");
-                    hash.TransformBlock(buffer, 0, count, buffer, 0);
-                    remaining -= count;
+                    FileIdentity currentIdentity = ReadImageIdentity(current.SafeFileHandle, Path);
+                    FileIdentity heldIdentity = ReadImageIdentity(stream.SafeFileHandle, Path);
+                    if (!admittedIdentity.Matches(currentIdentity) || !admittedIdentity.Matches(heldIdentity))
+                        throw new InvalidDataException("prestart-observer:image-identity");
                 }
+            }
+
+            internal void Confirm(Stopwatch clock, int timeoutMilliseconds)
+            {
+                string digest = CheckBytes(clock, timeoutMilliseconds, "collection");
+                ConfirmPath();
+                ConfirmedSha256 = digest;
+            }
+
+            public void Dispose()
+            {
+                if (stream != null)
+                    stream.Dispose();
+            }
+
+            private string CheckBytes(Stopwatch clock, int timeoutMilliseconds, string phase)
+            {
                 CheckDeadline(clock, timeoutMilliseconds, phase);
-                if (image.ReadByte() != -1 || image.Length != expectedBytes)
+                if (stream.Length != expectedBytes)
                     throw new InvalidDataException("prestart-observer:image-length");
-                hash.TransformFinalBlock(buffer, 0, 0);
-                CheckDeadline(clock, timeoutMilliseconds, phase);
-                string digest = BitConverter.ToString(hash.Hash).Replace("-", "").ToLowerInvariant();
-                if (!string.Equals(digest, expectedSha256, StringComparison.Ordinal))
-                    throw new InvalidDataException("prestart-observer:image-digest");
+
+                // Read at most the admitted extent and one EOF probe even if the file changes.
+                stream.Position = 0;
+                byte[] buffer = new byte[64 * 1024];
+                using (SHA256 hash = new SHA256CryptoServiceProvider())
+                {
+                    long remaining = expectedBytes;
+                    while (remaining > 0)
+                    {
+                        CheckDeadline(clock, timeoutMilliseconds, phase);
+                        int count = stream.Read(buffer, 0, (int)Math.Min(remaining, buffer.Length));
+                        if (count == 0)
+                            throw new InvalidDataException("prestart-observer:image-length");
+                        hash.TransformBlock(buffer, 0, count, buffer, 0);
+                        remaining -= count;
+                    }
+                    CheckDeadline(clock, timeoutMilliseconds, phase);
+                    if (stream.ReadByte() != -1 || stream.Length != expectedBytes)
+                        throw new InvalidDataException("prestart-observer:image-length");
+                    hash.TransformFinalBlock(buffer, 0, 0);
+                    CheckDeadline(clock, timeoutMilliseconds, phase);
+                    string digest = BitConverter.ToString(hash.Hash).Replace("-", "").ToLowerInvariant();
+                    if (!string.Equals(digest, expectedSha256, StringComparison.Ordinal))
+                        throw new InvalidDataException("prestart-observer:image-digest");
+                    return digest;
+                }
             }
         }
 
-        private void CreateChild(string selector)
+        private void CreateChild(string arguments, string environmentBlock)
         {
             job = CreateJobObjectW(IntPtr.Zero, null);
             if (job.IsInvalid)
@@ -433,12 +598,31 @@ namespace NevroTick
                 stdout = output.TakeReader();
                 stderr = error.TakeReader();
 
-                Launch(input.Read, output.Write, error.Write, thread, selector);
+                Launch(input.Read, output.Write, error.Write, thread, arguments, environmentBlock);
                 input.Read.Dispose();
                 output.Write.Dispose();
                 error.Write.Dispose();
 
                 ConfirmSuspendedProcess();
+                // Keep the PowerShell image and its three named inputs at their admitted paths
+                // when the suspended child becomes runnable.
+                if (inputs.Length != 0)
+                {
+                    CheckDeadline(clock, timeoutMilliseconds, "launch");
+                    ushort processMachine;
+                    ushort nativeMachine;
+                    if (!IsWow64Process2(process, out processMachine, out nativeMachine))
+                        throw NativeError("query-child-machine");
+                    if (processMachine != 0 || nativeMachine != ImageFileMachineAmd64)
+                        throw new InvalidDataException("prestart-observer:child-machine");
+                    CheckDeadline(clock, timeoutMilliseconds, "launch");
+                    image.ConfirmPath();
+                    foreach (HeldFile admittedInput in inputs)
+                    {
+                        CheckDeadline(clock, timeoutMilliseconds, "launch");
+                        admittedInput.ConfirmPath();
+                    }
+                }
                 childToken = actor.VerifyChild(process, clock, timeoutMilliseconds);
                 actor.VerifyCurrent(clock, timeoutMilliseconds);
                 CheckDeadline(clock, timeoutMilliseconds, "launch");
@@ -464,7 +648,7 @@ namespace NevroTick
             if (!QueryFullProcessImageNameW(process, 0, observed, ref count))
                 throw NativeError("query-process-image");
             if (count != observed.Length ||
-                !string.Equals(observed.ToString(), imagePath, StringComparison.Ordinal))
+                !string.Equals(observed.ToString(), image.Path, StringComparison.Ordinal))
                 throw new InvalidDataException("prestart-observer:process-image");
         }
 
@@ -475,7 +659,7 @@ namespace NevroTick
         }
 
         private void Launch(SafeFileHandle input, SafeFileHandle output, SafeFileHandle error,
-            KernelHandle thread, string selector)
+            KernelHandle thread, string arguments, string environmentBlock)
         {
             UIntPtr listBytes = UIntPtr.Zero;
             bool sized = InitializeProcThreadAttributeList(IntPtr.Zero, 2, 0, ref listBytes);
@@ -493,9 +677,8 @@ namespace NevroTick
             {
                 attributeList = Marshal.AllocHGlobal((int)listBytes.ToUInt64());
                 handleValues = Marshal.AllocHGlobal(IntPtr.Size * 4);
-                environment = Marshal.AllocHGlobal(sizeof(int));
-                // Empty Unicode environment: two UTF-16 NULs.
-                Marshal.WriteInt32(environment, 0);
+                // Each fixed block ends in NUL. The marshaler adds the final UTF-16 NUL.
+                environment = Marshal.StringToHGlobalUni(environmentBlock);
                 if (!InitializeProcThreadAttributeList(attributeList, 2, 0, ref listBytes))
                     throw NativeError("initialize-attributes");
                 initialized = true;
@@ -516,13 +699,14 @@ namespace NevroTick
                 SetAttribute(attributeList, ProcThreadAttributeHandleList, handleValues, IntPtr.Size * 3);
                 SetAttribute(attributeList, ProcThreadAttributeJobList, jobValue, IntPtr.Size);
 
-                var commandLine = new StringBuilder("\"" + imagePath + "\" " + selector + ObserverFlags);
-                string directory = imagePath.Substring(0, imagePath.LastIndexOf('\\'));
-                const uint flags = ExtendedStartupInfoPresent | CreateUnicodeEnvironment | DetachedProcess | CreateSuspended;
+                var commandLine = new StringBuilder("\"" + image.Path + "\"" + arguments);
+                string directory = image.Path.Substring(0, image.Path.LastIndexOf('\\'));
+                uint consoleMode = inputs.Length == 0 ? DetachedProcess : CreateNoWindow;
+                uint flags = ExtendedStartupInfoPresent | CreateUnicodeEnvironment | consoleMode | CreateSuspended;
                 ProcessInformation created;
                 actor.VerifyCurrent(clock, timeoutMilliseconds);
                 CheckDeadline(clock, timeoutMilliseconds, "launch");
-                bool launched = CreateProcessW(imagePath, commandLine, IntPtr.Zero, IntPtr.Zero, true,
+                bool launched = CreateProcessW(image.Path, commandLine, IntPtr.Zero, IntPtr.Zero, true,
                     flags, environment, directory, ref startup, out created);
                 if (!launched)
                     throw NativeError("create-process");
@@ -720,6 +904,9 @@ namespace NevroTick
 
         [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
         private static extern bool IsWow64Process2(IntPtr process, out ushort processMachine, out ushort nativeMachine);
+
+        [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
+        private static extern bool IsWow64Process2(KernelHandle process, out ushort processMachine, out ushort nativeMachine);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern uint GetDriveTypeW(string rootPath);

@@ -788,6 +788,260 @@ fn execute_round_with_reply(
     Ok(report)
 }
 
+/// Equal addresses do not replace revision or source identity. Only the genuine
+/// current binding may reserve slots, send a request and report that provenance.
+/// # Errors
+/// Preserve actual fixture, policy, preparation and exchange failures.
+/// # Panics
+/// Reject effects from a stale, foreign or numerically inadmissible plan.
+#[test]
+fn configured_round_binds_exact_revision_before_endpoint_publication() -> Check<()> {
+    use crate::{
+        SourceAddressSet, SourceConfigurationSnapshot, SourcePolicyError, SourcePolicyLimits,
+    };
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(2, 3, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let other: crate::SourceHandle = authority.source(1)?;
+    let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 2] = [first.local_addr()?, second.local_addr()?];
+    let definition: SourceAddressSet = SourceAddressSet::new(&peers)?;
+    let previous: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, definition.clone())?;
+    let current: SourceConfigurationSnapshot =
+        authority.replace_source_configuration(&previous, definition.clone())?;
+    let foreign: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&other, definition)?;
+    assert!(!current.same_configuration(&previous));
+    for peer in peers {
+        assert!(previous.addresses().allows(peer) && current.addresses().allows(peer));
+    }
+    assert!(matches!(
+        source.address_round_for_configuration(&previous, checked_config(&peers)?),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    assert!(matches!(
+        source.address_round_for_configuration(&foreign, checked_config(&peers)?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    let outside: SocketAddr = declared_peer(if peers.contains(&declared_peer(1)) {
+        2
+    } else {
+        1
+    });
+    assert!(matches!(
+        source.address_round_for_configuration(&current, checked_config(&[peers[0], outside])?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    for peer in [peers[0], peers[1], outside] {
+        assert!(matches!(
+            source.policy_snapshot(peer),
+            Err(SourcePolicyError::UnknownEndpoint)
+        ));
+    }
+    assert_eq!(observe_queries(&first)?.0, 0);
+    assert_eq!(observe_queries(&second)?.0, 0);
+
+    let cutoff: Instant = Instant::now()
+        .checked_add(Duration::from_secs(10))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let bound: ConfiguredAddressRound =
+        source.address_round_for_configuration(&current, checked_config(&[peers[1]])?)?;
+    let (prepared, _): (PreparedAddressRound, ControlHandle) = bound
+        .prepare_before(cutoff)?
+        .ok_or(PilotError::InternalState)?;
+    let report: AddressRoundReport = execute_round_with_reply(
+        prepared,
+        &ControlSchedule::new(None, None)?,
+        ReplyPeer::spawn(second, ReplyKind::Ordinary)?,
+    )?;
+    assert_eq!(report.round_end(), AddressRoundEnd::Reply);
+    assert_eq!(report.attempts().len(), 1);
+    assert_eq!(report.attempts()[0].peer(), peers[1]);
+    let facts: &crate::TransportFacts = report.attempts()[0]
+        .report()
+        .facts()
+        .ok_or(PilotError::InternalState)?;
+    assert!(facts
+        .source_configuration()
+        .is_some_and(|actual: &SourceConfigurationSnapshot| actual.same_configuration(&current)));
+    assert_eq!(observe_queries(&first)?.0, 0);
+    Ok(())
+}
+
+/// Installing an ordered membership fences an earlier numeric binding even
+/// though its exact configuration revision remains current.
+/// # Errors
+/// Preserve policy and fixture failures.
+/// # Panics
+/// Reject changed bindings, wrong order or elapsed cutoffs reaching entropy.
+#[test]
+fn configured_round_preparation_rechecks_membership_and_cutoff_before_entropy() -> Check<()> {
+    use crate::{
+        SourceAddressSet, SourceConfigurationSnapshot, SourcePolicyError, SourcePolicyLimits,
+    };
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 3, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let peers: [SocketAddr; 2] = [declared_peer(41001), declared_peer(41002)];
+    let current: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&peers)?)?;
+    let prior: ConfiguredAddressRound =
+        source.address_round_for_configuration(&current, checked_config(&peers)?)?;
+    authority.select_initial_round_membership(&current, SourceAddressSet::new(&peers)?)?;
+    assert!(
+        source
+            .configuration_snapshot()?
+            .is_some_and(|actual: SourceConfigurationSnapshot| actual.same_configuration(&current))
+    );
+    let reverse: [SocketAddr; 2] = [peers[1], peers[0]];
+    assert!(matches!(
+        source.address_round_for_configuration(&current, checked_config(&reverse)?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    let live: Instant = Instant::now()
+        .checked_add(Duration::from_secs(10))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let fills: Cell<u8> = Cell::new(0);
+    let fill = |entropy: &mut [u8; 24]| {
+        fills.set(fills.get() + 1);
+        fixed_entropy(entropy);
+        Ok(())
+    };
+    assert!(matches!(
+        prior.prepare_before_with_entropy(live, fill),
+        Err(PilotError::SourcePolicy(
+            SourcePolicyError::ConfigurationChanged
+        ))
+    ));
+    assert_eq!(fills.get(), 0);
+    let expired: ConfiguredAddressRound =
+        source.address_round_for_configuration(&current, checked_config(&peers)?)?;
+    assert!(
+        expired
+            .prepare_before_with_entropy(Instant::now(), fill)?
+            .is_none()
+    );
+    assert_eq!(fills.get(), 0);
+    let admitted: ConfiguredAddressRound =
+        source.address_round_for_configuration(&current, checked_config(&peers)?)?;
+    assert!(admitted.prepare_before_with_entropy(live, fill)?.is_some());
+    assert_eq!(fills.get(), 1);
+    Ok(())
+}
+
+/// The existing executor consumes the exact cutoff and classifies an already
+/// expired round before private driver creation or any candidate effect.
+/// # Errors
+/// Preserve genuine setup, time, preparation and runtime failures.
+/// # Panics
+/// Reject an elapsed plan that enters runtime setup or reports an attempt.
+#[test]
+fn configured_round_late_execution_retires_before_driver_admission() -> Check<()> {
+    use crate::{SourceAddressSet, SourceConfigurationSnapshot, SourcePolicyLimits};
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let socket: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 1] = [socket.local_addr()?];
+    let current: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&peers)?)?;
+    let cutoff: Instant = Instant::now()
+        .checked_add(Duration::from_millis(300))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let mut rounds: Vec<(PreparedAddressRound, ControlHandle, AddressRoundEnd)> =
+        Vec::with_capacity(3);
+    for end in [
+        AddressRoundEnd::Deadline,
+        AddressRoundEnd::Stale,
+        AddressRoundEnd::Stopped,
+    ] {
+        let bound: ConfiguredAddressRound =
+            source.address_round_for_configuration(&current, checked_config(&peers)?)?;
+        let (prepared, control): (PreparedAddressRound, ControlHandle) = bound
+            .prepare_before_with_entropy(cutoff, |entropy| {
+                fixed_entropy(entropy);
+                Ok(())
+            })?
+            .ok_or(PilotError::InternalState)?;
+        rounds.push((prepared, control, end));
+    }
+    while Instant::now() < cutoff {
+        thread::sleep(cutoff.saturating_duration_since(Instant::now()));
+    }
+    let schedule: ControlSchedule =
+        ControlSchedule::new(Some(Duration::ZERO), Some(Duration::ZERO))?;
+    for (prepared, control, end) in rounds {
+        if end != AddressRoundEnd::Deadline {
+            control.invalidate()?;
+        }
+        if end == AddressRoundEnd::Stopped {
+            control.stop();
+        }
+        let original: Control = *control.sender.borrow();
+        let report: AddressRoundReport = execute_address_round(prepared, &schedule)?;
+        let retired: Control = *control.sender.borrow();
+        assert_eq!(report.round_end(), end);
+        assert_eq!(
+            (retired.stop, retired.epoch),
+            (original.stop, original.epoch)
+        );
+        assert!(report.attempts().is_empty());
+        assert!(report.policy_refusals().is_empty());
+        assert!(report.primary_error().is_none());
+        assert!(report.cleanup_errors().iter().all(Option::is_none));
+    }
+    assert_eq!(observe_queries(&socket)?.0, 0);
+    Ok(())
+}
+
+/// An admitted first request may use only the remaining original time. The
+/// next address and later scheduled controls cannot extend that time.
+/// # Errors
+/// Preserve real fixture, preparation or execution failures.
+/// # Panics
+/// Reject early fixture expiry, a reset cutoff or a successor send.
+#[test]
+fn configured_round_original_cutoff_clamps_a_running_request() -> Check<()> {
+    use crate::{SourceAddressSet, SourceConfigurationSnapshot, SourcePolicyLimits};
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 2] = [first.local_addr()?, second.local_addr()?];
+    let current: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&peers)?)?;
+    let config: AddressRoundConfig =
+        AddressRoundConfig::new(&peers, Duration::from_secs(3), Duration::from_secs(6))?;
+    let bound: ConfiguredAddressRound = source.address_round_for_configuration(&current, config)?;
+    let cutoff: Instant = Instant::now()
+        .checked_add(Duration::from_secs(1))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let (prepared, _): (PreparedAddressRound, ControlHandle) = bound
+        .prepare_before(cutoff)?
+        .ok_or(PilotError::InternalState)?;
+    let schedule: ControlSchedule =
+        ControlSchedule::new(Some(Duration::from_secs(2)), Some(Duration::from_secs(2)))?;
+    let report: AddressRoundReport = execute_address_round(prepared, &schedule)?;
+    assert_eq!(observe_queries(&first)?.0, 1);
+    assert_eq!(observe_queries(&second)?.0, 0);
+    assert_eq!(report.round_end(), AddressRoundEnd::Deadline);
+    assert_eq!(report.attempts().len(), 1);
+    assert_eq!(report.attempts()[0].peer(), peers[0]);
+    assert!(report.cleanup_errors().iter().all(Option::is_none));
+    Ok(())
+}
+
 /// First membership preserves the installed revision and real RATE floor while
 /// fencing earlier plans and admitting only the selected order through real UDP.
 /// # Errors

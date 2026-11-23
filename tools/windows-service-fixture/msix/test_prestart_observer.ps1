@@ -310,6 +310,9 @@ function Invoke-ObserverControl {
             $result.ExitCode -isnot [int] -or $result.ExitCode -ne $ExitCode) {
             throw "$Label did not return the entered process ID and expected exit code"
         }
+        if ($result.InputSha256Before -cne $imageDigest -or $result.InputSha256After -cne $imageDigest) {
+            throw "$Label did not return the admitted observer digest at both bookends"
+        }
         Assert-Bytes $result.Stdout $Stdout "$Label stdout"
         Assert-Bytes $result.Stderr $Stderr "$Label stderr"
         if ($RefuseDescendant -and [IO.File]::Exists($descendantMarker)) { throw 'The contained descendant entered its fixture' }

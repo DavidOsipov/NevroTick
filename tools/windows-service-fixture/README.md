@@ -46,15 +46,30 @@ The reader tests build inert archives and check the CLI's digest, payload, ZIP,
 block-map and XML decisions without installing a package.
 
 For the held §7.5 pre-start probe, the
-[installed identity companion](msix/installed_identity.psm1) uses the same
-two fixed laboratory roles. Run it in a fresh 64-bit Windows PowerShell
-process under the admitted deployment user. The supervisor supplies
+[installed identity entry](msix/observe_installed_identity.ps1) uses the
+[companion module](msix/installed_identity.psm1) for the two fixed laboratory
+roles. The window owner must hold the 64-bit Windows PowerShell interpreter,
+entry script and companion module under the admitted deployment user. It supplies
 `RunId`, `ExpectedUserSid`, `PackageFullName`, `SignedPackageSha256`
 and each role's `Bytes` and `Sha256` values using the `Engine` and
 `Broker` parameter prefixes. Derive them from independent inspection
-of the exact final signed lab artifact. The companion emits one readback
-record after both role and registration checks. Schema 2 includes the matched
-package full name. Retain native errors privately.
+of the exact final signed lab artifact. The entry writes one bounded
+BOM-free UTF-8 schema-2 line to raw stdout after both role and registration
+checks and both image handles have been released. Retain native errors
+privately. [Identity controls](msix/test_installed_identity.ps1)
+
+For owned capture, `Invoke-PrestartIdentity` in
+[the child module](msix/prestart_child.psm1) uses the same suspended process,
+token, deadline, job, and retirement checks as the fixed observers. Precompile
+[`prestart_image_path.cs`](msix/prestart_image_path.cs) as the x64 .NET
+Framework library `prestart_image_path.dll` before launching the identity
+child. Supply the approved original System32 PowerShell path and the lengths
+and hashes for the interpreter and all three files in the owned staging
+directory. The entry imports the required cmdlets from the interpreter's
+Windows module directory. Capture preserves both raw streams, original PID,
+and observed exit code. Owned identity and observer captures also report the
+two SHA-256 observations of the held companion module or observer executable,
+respectively. They leave actor and run admission to the window owner.
 
 The [pre-start coordinator](msix/prestart_supervisor.py) supplies the fixed
 observation sequence through `supervise_prestart`. Its Windows window owner

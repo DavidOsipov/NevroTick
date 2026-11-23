@@ -259,6 +259,7 @@ fn prepare_successor(
     Ok(bindings.map(|source_policy| PreparedAddressRound {
         source_policy: Some(source_policy),
         config: answer.config,
+        original_cutoff: None,
         packets: answer.packets,
         control,
         handle,

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Observe the real Engine thread, service owner and held permit through loopback.
 
+#[path = "engine_worker_round_tests.rs"]
+mod address_round;
+
 use std::{
     cell::RefCell,
     error::Error,
@@ -64,8 +67,8 @@ const PEER_TRANSMIT: u64 = 0xd001_0203_5566_7788;
 const RUNNING_ERROR: NativeError = NativeError::new(NativeOperation::Status, 711);
 /// Keep actual process-wide policy transactions separate under parallel libtest too.
 static CASE: Mutex<()> = Mutex::new(());
-/// Each of the fifteen parent scenarios installs one source configuration.
-const SOURCE_COUNT: usize = 15;
+/// Fifteen original scenarios and two address-round scenarios each own a source.
+const SOURCE_COUNT: usize = 17;
 /// Each subprocess starts with its own unclaimed catalogue.
 static SOURCES: OnceLock<Result<Mutex<FixtureSources>, SourcePolicyError>> = OnceLock::new();
 
@@ -223,7 +226,7 @@ fn fixture_sources() -> Check<MutexGuard<'static, FixtureSources>> {
         .get_or_init(|| {
             let limits: SourcePolicyLimits = SourcePolicyLimits::new(
                 SOURCE_COUNT,
-                16,
+                20,
                 Duration::from_millis(1),
                 Duration::from_secs(1),
             )?;
@@ -420,7 +423,8 @@ impl Rig {
     /// # Errors
     /// Preserve absent or failed Engine result as a fixture error.
     fn report(&self) -> Check<&AcquisitionReport> {
-        let result: &AcquisitionResult = self.worker.result.get().ok_or("missing Engine result")?;
+        let result: &AcquisitionResult =
+            self.worker.series_result().ok_or("missing Engine result")?;
         result
             .as_ref()
             .map_err(|_| "unexpected original Engine error".into())
@@ -642,7 +646,7 @@ fn assert_obsolete_startup_refused(worker: EngineWorker, peer: &Rc<UdpSocket>) -
     assert!(obsolete.invocation.admission_closed());
     assert_eq!(obsolete.invocation.outstanding_work(), 0);
     assert!(matches!(
-        obsolete.worker.result.get(),
+        obsolete.worker.series_result(),
         Some(Err(BoundedAcquisitionError::Acquisition(
             AcquisitionError::SourcePolicy(SourcePolicyError::ConfigurationChanged)
         )))
@@ -805,7 +809,7 @@ fn assert_expired_owner_cutoff_refused(
         "expired worker sent a datagram"
     );
     assert!(matches!(
-        rig.worker.result.get(),
+        rig.worker.series_result(),
         Some(Err(BoundedAcquisitionError::OwnerDeadlineElapsed))
     ));
     assert!(
@@ -1075,7 +1079,7 @@ fn real_managed_preparation_refusal_preserves_the_source_policy_error() -> Check
     assert!(!rig.states().contains(&ServiceState::Running));
     assert!(!rig.worker.returned.load(Ordering::Acquire));
     assert!(matches!(
-        rig.worker.result.get(),
+        rig.worker.series_result(),
         Some(Err(BoundedAcquisitionError::Acquisition(
             AcquisitionError::SourcePolicy(SourcePolicyError::Foreign)
         )))
