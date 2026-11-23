@@ -53,6 +53,9 @@ mod service_configuration;
 mod service_peer;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
+mod service_role_sid;
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
 mod service_security;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]
@@ -92,7 +95,15 @@ pub use process_image_name::{ProcessImageNameError, ReportedProcessImageName};
 #[cfg(any(windows, test))]
 pub use service_configuration::ConfigurationStringError;
 #[cfg(windows)]
-pub use service_peer::{ObservedServiceProcess, ServiceProcessObservationError};
+pub use service_peer::{
+    ObservedServicePeer, ObservedServiceProcess, ServicePeerObservationError,
+    ServiceProcessObservationError,
+};
+#[cfg(any(windows, test))]
+pub use service_role_sid::{
+    InvalidServiceRoleSid, ServiceRoleSid, ServiceRoleSidGroup, ServiceRoleSidObservation,
+    ServiceRoleSidObservationError, ServiceRoleSidRestriction,
+};
 #[cfg(any(windows, test))]
 pub use service_security::{ReportedDacl, ReportedServiceSecurity, ServiceSecurityError};
 #[cfg(any(windows, test))]
@@ -108,7 +119,10 @@ pub use windows_dns::{DnsAddressQuery, dns_worker_thread_exited};
 #[cfg(windows)]
 pub use windows_leap_presentation::read_leap_presentation;
 #[cfg(windows)]
-pub use windows_peer_process::{PeerProcess, PeerProcessError};
+pub use windows_peer_process::{
+    PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess, PeerProcessError, PipeServerPidError,
+    read_connected_pipe_server_pid,
+};
 #[cfg(windows)]
 pub use windows_resume::{ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch};
 #[cfg(windows)]

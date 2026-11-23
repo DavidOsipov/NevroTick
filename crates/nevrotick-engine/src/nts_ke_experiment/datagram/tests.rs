@@ -3047,24 +3047,36 @@ pub(in crate::nts_ke_experiment) fn loopback_native_managed_successor<'control>(
     Ok(retired)
 }
 
+/// Read-only observations owned by the peer at the boundaries of one exchange.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+pub(in crate::nts_ke_experiment) struct LoopbackPeerLeg<T> {
+    /// Peer observation immediately after the successful request receive.
+    pub(in crate::nts_ke_experiment) received: T,
+    /// Peer observation immediately before the selected response send.
+    pub(in crate::nts_ke_experiment) sending: T,
+}
+
 /// Receive and check an actual protected client packet against fixed wire facts.
 /// The peer owns its configured read timeout and accepts only its loopback client.
 /// # Errors
-/// Preserve the actual receive error or refuse a mismatched fixed request.
+/// Preserve the actual receive or observation error, or refuse a mismatched fixed request.
 /// # Panics
 /// Fail if an actual request is incomplete, plain or has the wrong correlation.
 #[cfg(any(windows, target_os = "linux"))]
-fn loopback_request(
+fn loopback_request<T>(
     peer: &std::net::UdpSocket,
     wire: u64,
     uid: &[u8],
     cookie: &[u8; 12],
     placeholder_count: usize,
-) -> Result<SocketAddr, Failure> {
+    observe: impl FnOnce() -> Result<T, Failure>,
+) -> Result<(SocketAddr, T), Failure> {
     let mut packet: [u8; 253] = [0; 253];
     let (length, client): (usize, SocketAddr) = peer
         .recv_from(&mut packet)
         .map_err(|error: io::Error| Failure::Datagram(DatagramError::Receive(error.kind())))?;
+    let received: T = observe()?;
     assert!(client.ip().is_loopback());
     assert_ne!(client.port(), 0);
     let authentication_offset: usize = 100 + 16 * placeholder_count;
@@ -3086,57 +3098,76 @@ fn loopback_request(
         packet.get(authentication_offset..authentication_offset + 4),
         Some([4, 4, 0, 40].as_slice())
     );
-    Ok(client)
+    Ok((client, received))
 }
 
 /// Send an independently sealed public vector on the admitted peer socket.
 /// # Errors
-/// Preserve the actual send error or refuse a short send.
+/// Preserve the actual observation or send error.
 /// # Panics
 /// Fail if an actual send completes only part of the fixed vector.
 #[cfg(any(windows, target_os = "linux"))]
-fn send_loopback_reply(
+fn send_loopback_reply<T>(
     peer: &std::net::UdpSocket,
     client: SocketAddr,
     response: &[u8],
-) -> Result<(), Failure> {
+    observe: impl FnOnce() -> Result<T, Failure>,
+) -> Result<T, Failure> {
+    let sending: T = observe()?;
     let sent: usize = peer
         .send_to(response, client)
         .map_err(|error: io::Error| Failure::Ledger(LedgerError::Send(error.kind())))?;
     assert_eq!(sent, response.len());
-    Ok(())
+    Ok(sending)
 }
 
 /// Run the independent peer for exactly two requests under finite socket timeouts.
+/// Return the peer's observations for the two selected authenticated replies.
 /// # Errors
-/// Preserve either leg's peer I/O failure.
+/// Preserve either leg's peer I/O or observation failure.
 #[cfg(any(windows, target_os = "linux"))]
-pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
+pub(in crate::nts_ke_experiment) fn serve_managed_loopback<T>(
     peer: &std::net::UdpSocket,
     first_reply: &'static [u8],
     ordinary_successor: bool,
-) -> Result<(), Failure> {
-    let first: SocketAddr = loopback_request(peer, 0x1122_3344_5566_7788, &C2S, &[0x11; 12], 7)?;
-    send_loopback_reply(peer, first, first_reply)?;
+    sends_nak: bool,
+    mut observe: impl FnMut() -> Result<T, Failure>,
+) -> Result<[LoopbackPeerLeg<T>; 2], Failure> {
+    let (first, first_received): (SocketAddr, T) =
+        loopback_request(peer, WIRE, &C2S, &[0x11; 12], 7, &mut observe)?;
+    let first_sending: T = send_loopback_reply(peer, first, first_reply, &mut observe)?;
     let second_uid: &[u8] = PROTECTED_DENY.get(52..84).ok_or(Failure::Control)?;
     let replacement: [u8; 12] = [
         0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
     ];
     let second_placeholders: usize = if ordinary_successor { 6 } else { 7 };
-    let second: SocketAddr = loopback_request(
+    let (second, second_received): (SocketAddr, T) = loopback_request(
         peer,
         0x8899_aabb_ccdd_eeff,
         second_uid,
         &replacement,
         second_placeholders,
+        &mut observe,
     )?;
-    send_loopback_reply(peer, second, &CORRELATED_NTSN)?;
+    if sends_nak {
+        send_loopback_reply(peer, second, &CORRELATED_NTSN, || Ok(()))?;
+    }
     let terminal: &[u8] = if ordinary_successor {
         fixtures::SUCCESSOR_OLD_S2C
     } else {
         &PROTECTED_DENY
     };
-    send_loopback_reply(peer, second, terminal)
+    let second_sending: T = send_loopback_reply(peer, second, terminal, observe)?;
+    Ok([
+        LoopbackPeerLeg {
+            received: first_received,
+            sending: first_sending,
+        },
+        LoopbackPeerLeg {
+            received: second_received,
+            sending: second_sending,
+        },
+    ])
 }
 
 /// Compare the retained first operation with its observations before commit.

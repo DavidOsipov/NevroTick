@@ -5,6 +5,7 @@
 
 use std::{
     cell::Cell,
+    convert::Infallible,
     num::NonZeroUsize,
     rc::Rc,
     time::{Duration, Instant},
@@ -16,11 +17,15 @@ use super::{
 };
 use crate::{
     LabRole, NativeError,
+    diagnostics::EventWriter,
     private_clock_wire::{
         AssemblyProgress, Frame, FrameAssembly, FrameError, ReplyWrite, RequestId, decode_reply,
         decode_request, encode_reply, encode_request,
     },
 };
+
+#[cfg(windows)]
+use crate::native_pipe_read::{AttributedStatusRead, IdentifiedReadError};
 
 /// Finite lifetime of the selected in-memory fixture connection.
 const SESSION_SPAN: Duration = Duration::from_secs(5);
@@ -29,7 +34,7 @@ const FRAME_BUDGET: u8 = 4;
 
 /// Local connection refusal without raw wire, endpoint or clock details.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SessionFault {
+pub(super) enum SessionFault {
     /// No live connection exists at this admission point.
     Closed,
     /// The fixture principal is outside the private Engine role.
@@ -82,9 +87,14 @@ impl EngineStatusClient {
     /// # Errors
     /// Refuses foreign or expired custody before delivery and rechecks the
     /// original owner after reply correlation, before making the result visible.
-    fn read_availability<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>(
+    fn read_availability<
+        R: StatusReporter<Error = NativeError>,
+        C: Clock,
+        P: Worker,
+        W: EventWriter,
+    >(
         &mut self,
-        receiver: &mut BrokerStatusSession<'_, R, C, P>,
+        receiver: &mut BrokerStatusSession<'_, R, C, P, W>,
     ) -> Result<BrokerAvailability, SessionFault> {
         receiver.check_client_edge(&self.connection)?;
         let pending: PendingStatus<'_> = self.request()?;
@@ -166,11 +176,12 @@ struct BrokerStatusSession<
     R: StatusReporter<Error = NativeError>,
     C: Clock,
     P: Worker = InertWorker,
+    W: EventWriter = Infallible,
 > {
     /// Independent identity of this in-memory transport.
     connection: Connection,
     /// Real acknowledged and serialized broker owner.
-    owner: &'a mut ServiceInvocation<R, P>,
+    owner: &'a mut ServiceInvocation<R, P, W>,
     /// The same monotonic observation provider the invocation uses.
     clock: &'a mut C,
     /// The original fixture notification bound at the composition boundary.
@@ -183,15 +194,15 @@ struct BrokerStatusSession<
     remaining: u8,
 }
 
-impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
-    BrokerStatusSession<'a, R, C, P>
+impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter>
+    BrokerStatusSession<'a, R, C, P, W>
 {
     /// Compose one Engine sender and one real broker receiver under this exact owner.
     /// The in-memory fixture role is selected by trusted test composition.
     /// # Errors
     /// Refuses wrong role, reused ownership, unavailable owner or unrepresentable cutoff.
     fn open(
-        owner: &'a mut ServiceInvocation<R, P>,
+        owner: &'a mut ServiceInvocation<R, P, W>,
         clock: &'a mut C,
         stop: &'a StopNotification,
         peer: LabRole,
@@ -206,31 +217,38 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
             .broker_status_edge(clock, stop, None)
             .map_err(Self::owner_fault)?;
         let cutoff: Instant = now.checked_add(SESSION_SPAN).ok_or(SessionFault::Expired)?;
-        let connection: Connection = Rc::new(Cell::new(true));
+        let session: Self = Self::issue(owner, clock, stop, cutoff);
         let client: EngineStatusClient = EngineStatusClient {
-            connection: Rc::clone(&connection),
+            connection: Rc::clone(&session.connection),
             next: Some(1),
         };
+        Ok((session, client))
+    }
+
+    /// Install one session after the owner checked admission and selected its cutoff.
+    fn issue(
+        owner: &'a mut ServiceInvocation<R, P, W>,
+        clock: &'a mut C,
+        stop: &'a StopNotification,
+        cutoff: Instant,
+    ) -> Self {
         owner.private_status_issue = PrivateStatusIssue::Issued;
-        Ok((
-            Self {
-                connection,
-                owner,
-                clock,
-                stop,
-                cutoff,
-                last: None,
-                remaining: FRAME_BUDGET,
-            },
-            client,
-        ))
+        Self {
+            connection: Rc::new(Cell::new(true)),
+            owner,
+            clock,
+            stop,
+            cutoff,
+            last: None,
+            remaining: FRAME_BUDGET,
+        }
     }
 
     /// Deliver one complete record through the same owner as fragmented transfers.
     /// # Errors
     /// Refuses wrong owner, malformed input, replay, closed admission or expired cutoff.
     fn receive(&mut self, delivery: Delivery<'_>) -> Result<Reply, SessionFault> {
-        let mut inbound: InboundStatus<'_, 'a, R, C, P> =
+        let mut inbound: InboundStatus<'_, 'a, R, C, P, W> =
             self.begin_receive(delivery.connection)?;
         inbound
             .complete_fragment(delivery.bytes)?
@@ -244,7 +262,7 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
     fn begin_receive(
         &mut self,
         connection: &Connection,
-    ) -> Result<InboundStatus<'_, 'a, R, C, P>, SessionFault> {
+    ) -> Result<InboundStatus<'_, 'a, R, C, P, W>, SessionFault> {
         if !self.connection.get() {
             return Err(SessionFault::Closed);
         }
@@ -295,7 +313,7 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker>
     fn begin_reply(
         &mut self,
         reply: Reply,
-    ) -> Result<OutboundStatus<'_, 'a, R, C, P>, SessionFault> {
+    ) -> Result<OutboundStatus<'_, 'a, R, C, P, W>, SessionFault> {
         if !self.connection.get() {
             return Err(SessionFault::Closed);
         }
@@ -359,16 +377,19 @@ struct OutboundStatus<
     R: StatusReporter<Error = NativeError>,
     C: Clock,
     P: Worker = InertWorker,
+    W: EventWriter = Infallible,
 > {
     /// Owns the original clock, closure, cutoff and serialization.
-    receiver: &'session mut BrokerStatusSession<'owner, R, C, P>,
+    receiver: &'session mut BrokerStatusSession<'owner, R, C, P, W>,
     /// Original connection independently retained through reply correlation.
     connection: Connection,
     /// Exact reply and the one active fragment's progress.
     write: ReplyWrite,
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus<'_, '_, R, C, P> {
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter>
+    OutboundStatus<'_, '_, R, C, P, W>
+{
     /// Offer a nonempty prefix of the remaining response. The caller submits
     /// the exact bytes once and reports only its actual terminal write count.
     /// # Errors
@@ -446,8 +467,8 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> OutboundStatus
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
-    for OutboundStatus<'_, '_, R, C, P>
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter> Drop
+    for OutboundStatus<'_, '_, R, C, P, W>
 {
     /// Uncertain delivery retires the stream. A partial reply cannot be restarted.
     fn drop(&mut self) {
@@ -465,19 +486,22 @@ struct InboundStatus<
     R: StatusReporter<Error = NativeError>,
     C: Clock,
     P: Worker = InertWorker,
+    W: EventWriter = Infallible,
 > {
     /// The exact receiving session remains exclusively reserved during assembly.
-    receiver: &'session mut BrokerStatusSession<'owner, R, C, P>,
+    receiver: &'session mut BrokerStatusSession<'owner, R, C, P, W>,
     /// Incomplete frame storage. Its absence marks a resolved receive.
     assembly: Option<FrameAssembly>,
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> InboundStatus<'_, '_, R, C, P> {
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter>
+    InboundStatus<'_, '_, R, C, P, W>
+{
     /// Drive one service step while this receive retains exclusive custody.
     /// A live connection can shorten a Running wait. Closure retires just the
     /// local input and preserves the service's own progress or cleanup result.
     fn poll_broker(&mut self) -> InvocationPoll {
-        let receiver: &mut BrokerStatusSession<'_, R, C, P> = self.receiver;
+        let receiver: &mut BrokerStatusSession<'_, R, C, P, W> = self.receiver;
         let poll: InvocationPoll = receiver.owner.poll(receiver.clock, receiver.stop);
         if receiver.connection.get()
             && let InvocationPoll::Pending(wait) = poll
@@ -515,8 +539,8 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> InboundStatus<
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
-    for InboundStatus<'_, '_, R, C, P>
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter> Drop
+    for InboundStatus<'_, '_, R, C, P, W>
 {
     /// Retire undecided boundaries rather than restarting a partial request.
     fn drop(&mut self) {
@@ -526,12 +550,113 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
     }
 }
 
-impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker> Drop
-    for BrokerStatusSession<'_, R, C, P>
+impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter> Drop
+    for BrokerStatusSession<'_, R, C, P, W>
 {
     /// Loss of the local receiver also retires the shared transport binding.
     fn drop(&mut self) {
         self.close();
+    }
+}
+
+/// Historical evidence from the test-only native first-read invocation.
+#[cfg(windows)]
+#[derive(Default)]
+pub(super) struct NativeStatusObservation {
+    /// Synchronous same-handle attribution returned, even if currentness later closed.
+    pub(super) capture_observed: bool,
+    /// The actual full write count was collected on the same admitted connection.
+    pub(super) reply_written: bool,
+    /// The eligible receiver outcome, if an attributed or refused read was forwarded.
+    pub(super) outcome: Option<NativeStatusOutcome>,
+}
+
+/// Outcome of the actual first-read fixture, retained before any reply write.
+#[cfg(windows)]
+pub(super) enum NativeStatusOutcome {
+    /// The correlated encoded reply produced by the bounded availability receiver.
+    Reply(Frame),
+    /// The original caller could not be matched after the native read settled.
+    Identity(IdentifiedReadError),
+    /// The original session or frame failed bounded receiver admission.
+    Receive(SessionFault),
+}
+
+/// The guarded receiver's one native reply under its original accept cutoff.
+#[cfg(windows)]
+pub(crate) struct NativeStatusReply {
+    /// Exact encoded availability for the attributed request.
+    frame: Frame,
+    /// Original connection cutoff, even if Stop or local expiry arrives next.
+    cutoff: Instant,
+}
+
+#[cfg(windows)]
+impl NativeStatusReply {
+    /// The immutable encoded bytes of this successful receiver result.
+    pub(crate) const fn frame(&self) -> &Frame {
+        &self.frame
+    }
+
+    /// The absolute cutoff selected once at the original accept.
+    pub(crate) const fn cutoff(&self) -> Instant {
+        self.cutoff
+    }
+}
+
+#[cfg(windows)]
+impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceInvocation<R, P, W> {
+    /// Consume a single attributed result from this invocation's Running poll.
+    /// Partial frames retire this receiver without issuing another native read.
+    pub(super) fn receive_native_status(
+        &mut self,
+        clock: &mut impl Clock,
+        stop: &StopNotification,
+        read: Result<AttributedStatusRead, IdentifiedReadError>,
+    ) -> Option<NativeStatusReply> {
+        let outcome: NativeStatusOutcome = match read {
+            Ok(read) => match self.dispatch_native_status(clock, stop, &read) {
+                Ok(reply) => return Some(reply),
+                Err(fault) => NativeStatusOutcome::Receive(fault),
+            },
+            Err(error) => NativeStatusOutcome::Identity(error),
+        };
+        self.native_status.outcome = Some(outcome);
+        None
+    }
+
+    /// Preserve the exact decision as history after submitting or fencing its write.
+    pub(super) fn record_native_status_reply(&mut self, reply: NativeStatusReply) {
+        self.native_status.outcome = Some(NativeStatusOutcome::Reply(reply.frame));
+    }
+
+    /// Apply the original accept cutoff to the common bounded status receiver.
+    ///
+    /// # Errors
+    /// Refuses absent, used or expired custody and incomplete or invalid frames.
+    fn dispatch_native_status<C: Clock>(
+        &mut self,
+        clock: &mut C,
+        stop: &StopNotification,
+        read: &AttributedStatusRead,
+    ) -> Result<NativeStatusReply, SessionFault> {
+        if self.private_status_issue == PrivateStatusIssue::Issued {
+            return Err(SessionFault::Closed);
+        }
+        let cutoff: Instant = self.connection_cutoff.ok_or(SessionFault::Closed)?;
+        self.broker_status_edge(clock, stop, Some(cutoff))
+            .map_err(BrokerStatusSession::<R, C, P, W>::owner_fault)?;
+        let mut session: BrokerStatusSession<'_, R, C, P, W> =
+            BrokerStatusSession::issue(self, clock, stop, cutoff);
+        let connection: Connection = Rc::clone(&session.connection);
+        let reply: Reply = session.receive(Delivery {
+            connection: &connection,
+            bytes: read.as_bytes(),
+        })?;
+        Ok(NativeStatusReply {
+            frame: reply.frame,
+            cutoff,
+        })
     }
 }
 

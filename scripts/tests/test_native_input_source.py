@@ -93,6 +93,19 @@ class NativeInputSourceControls(unittest.TestCase):
         self.change(files, n.HOST, '    let host = create()?;', '    let host = create()?;\n' + selector)
         self.assertTrue(n.check(files))
 
+    def test_required_image_policy_precedes_backend_and_propagates_refusal(self):
+        guard = '    startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;'
+        for replacement in ('', '    let _ = startup_image_policy::enforce();',
+                            '    if false {\n' + guard + '\n    }'):
+            files = copy.deepcopy(self.files)
+            self.change(files, n.HOST, guard, replacement)
+            with self.subTest(replacement=replacement):
+                self.assertEqual(n.check(files), ['native input closed create_native body'])
+        files = copy.deepcopy(self.files)
+        self.change(files, n.HOST, guard, '')
+        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
+        self.assertEqual(n.check(files), ['native input closed create_native body'])
+
     def test_hook_must_install_on_same_host_before_observers_and_show(self):
         hook = '    native_input::install(host.window.window());'
         observer = '    native_workflow::install(&host.window, &host.state).map_err(HostError::Native)?;'
@@ -114,6 +127,7 @@ class NativeInputSourceControls(unittest.TestCase):
     def test_fixture_constructor_installs_no_native_hook_or_observer(self):
         anchor = '    let sources = SourceDrafts::fixture().map_err(HostError::Fixture)?;'
         for call in ('native_input::install(window.window());', 'native_workflow::install(&window, &state)?;',
+                     'startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;',
                      'slint::BackendSelector::new().select()?;', 'window.show()?;'):
             with self.subTest(call=call):
                 self.rejected(n.HOST, anchor, '    ' + call + '\n' + anchor)

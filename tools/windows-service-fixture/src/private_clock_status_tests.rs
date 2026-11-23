@@ -37,6 +37,7 @@ use crate::{
 use super::InboundStatus;
 #[cfg(windows)]
 use crate::{
+    native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
     native_pipe_identity::{
         PipeIdentity, PipeIdentityError, ensure_unimpersonated, own_process_identity,
     },
@@ -57,6 +58,9 @@ use crate::{
 };
 
 /// Stable slots include the existing native pipe histories and the Stop neighbor.
+#[cfg(windows)]
+const BROKER_CASES: usize = 38;
+#[cfg(not(windows))]
 const BROKER_CASES: usize = 30;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
@@ -2054,4 +2058,341 @@ fn private_status_client_rechecks_cutoff_after_broker_reply() -> Result<(), Box<
         ))
     );
     Ok(())
+}
+
+/// Drive the original accepted pipe into the real availability receiver.
+/// # Errors
+/// Returns native setup, wake, lifecycle or reversion observation failure.
+/// # Panics
+/// Panics if a selected exact history changes availability or cleanup.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-read fixture supervisor"]
+fn native_first_read_requires_attribution_and_original_cutoff() -> Result<(), Box<dyn Error>> {
+    use super::NativeStatusOutcome;
+    use crate::private_clock_wire::{RequestId, decode_reply};
+
+    let id: RequestId = native_fixture_result(RequestId::new(42))?;
+    let outcome: Option<NativeStatusOutcome> =
+        observed_first_status::<30>(LabClientContext::Identification, FirstStatusCase::Full)?;
+    let Some(NativeStatusOutcome::Reply(frame)) = outcome else {
+        return Err("identified current first read did not produce its status reply".into());
+    };
+    assert_eq!(decode_reply(frame.as_bytes(), id), Ok(true));
+    assert!(matches!(
+        observed_first_status::<31>(LabClientContext::Anonymous, FirstStatusCase::Full)?,
+        Some(NativeStatusOutcome::Identity(
+            IdentifiedReadError::Identity {
+                cause: PipeIdentityError::Native {
+                    operation: "OpenThreadToken",
+                    code: ERROR_CANT_OPEN_ANONYMOUS,
+                } | PipeIdentityError::AnonymousUser,
+                received: 18,
+            }
+        ))
+    ));
+    assert!(matches!(
+        observed_first_status::<32>(LabClientContext::Identification, FirstStatusCase::Partial)?,
+        Some(NativeStatusOutcome::Receive(SessionFault::Frame(
+            FrameError::Length
+        )))
+    ));
+    assert!(
+        observed_first_status::<33>(LabClientContext::Identification, FirstStatusCase::Cutoff,)?
+            .is_none()
+    );
+    assert!(
+        observed_first_status::<34>(LabClientContext::Identification, FirstStatusCase::Stopped,)?
+            .is_none()
+    );
+    assert!(
+        observed_first_status::<35>(
+            LabClientContext::Identification,
+            FirstStatusCase::CutoffAfterAttribution,
+        )?
+        .is_none()
+    );
+    assert!(
+        observed_first_status::<36>(
+            LabClientContext::Identification,
+            FirstStatusCase::StoppedAfterAttribution,
+        )?
+        .is_none()
+    );
+    Ok(())
+}
+
+/// Independent fixture input or control change at completion.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum FirstStatusCase {
+    /// Complete request and a live context just before the original cutoff.
+    Full,
+    /// Original valid envelope missing its final byte.
+    Partial,
+    /// The original cutoff is reached as native collection finishes.
+    Cutoff,
+    /// Stop becomes visible as native collection finishes.
+    Stopped,
+    /// The same cutoff is reached after the capture and reversion return.
+    CutoffAfterAttribution,
+    /// Stop becomes visible after the capture and reversion return.
+    StoppedAfterAttribution,
+}
+
+/// Submit a manual request into the actual Running worker on its original pipe.
+/// # Errors
+/// Returns the original native or service failure after bounded cleanup.
+/// # Panics
+/// Panics if a wake does not belong to an outstanding operation or the scripted
+/// time change was never consumed.
+#[cfg(windows)]
+fn observed_first_status<const N: usize>(
+    context: LabClientContext,
+    scenario: FirstStatusCase,
+) -> Result<Option<super::NativeStatusOutcome>, Box<dyn Error>> {
+    use crate::{
+        broker_endpoint::BrokerEndpointWorker,
+        native_broker_endpoint::NativeBrokerEndpoint,
+        native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
+        native_pipe_pair::{open_first_read_writer, prepare_first_read_fixture},
+    };
+
+    const REQUEST: [u8; 18] = [1, 0, 1, 0, 2, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, b'{', b'}'];
+    let case: u32 = u32::try_from(N)?;
+    let expected: PipeIdentity = own_process_identity()?;
+    let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+        prepare_first_read_fixture(case, Some(expected))
+    };
+    let outcome: Result<Option<super::NativeStatusOutcome>, Box<dyn Error>> =
+        with_broker_worker_reads::<N, 1, _, _>(
+            BrokerEndpointWorker::new(acquire),
+            |owner, clock, stop| {
+                let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+                let writer: LabPipeWriter =
+                    native_fixture_result(open_first_read_writer(case, context))?;
+                let control: BrokerControlWake = BrokerControlWake::new()?;
+                let mut waiter: BrokerWait = BrokerWait::new();
+                assert_eq!(
+                    waiter.observe(
+                        &control,
+                        Duration::from_secs(2),
+                        owner.worker.completion_wake()
+                    )?,
+                    WakeSource::Completion
+                );
+                let _: InvocationPoll = owner.poll(clock, stop);
+                let request: &[u8] = if matches!(scenario, FirstStatusCase::Partial) {
+                    &REQUEST[..17]
+                } else {
+                    &REQUEST
+                };
+                native_fixture_result(writer.write(request))?;
+                assert_eq!(
+                    waiter.observe(
+                        &control,
+                        Duration::from_secs(2),
+                        owner.worker.completion_wake()
+                    )?,
+                    WakeSource::Completion
+                );
+                // Keep the original time for the Running sampler's due decision.
+                // The worker's before-read edge comes next, then its post-collection
+                // and post-attribution checks. Sampling takes no extra observation.
+                clock.final_action = Some(match scenario {
+                    FirstStatusCase::Cutoff => (2, DecisionAction::Advance(cutoff)),
+                    FirstStatusCase::Stopped => (2, DecisionAction::Deliver(1)),
+                    FirstStatusCase::CutoffAfterAttribution => (3, DecisionAction::Advance(cutoff)),
+                    FirstStatusCase::StoppedAfterAttribution => (3, DecisionAction::Deliver(1)),
+                    FirstStatusCase::Full | FirstStatusCase::Partial => (
+                        1,
+                        DecisionAction::Advance(
+                            cutoff
+                                .checked_sub(Duration::from_nanos(1))
+                                .ok_or("first-read cutoff underflow")?,
+                        ),
+                    ),
+                });
+                let expects_stop: bool = matches!(
+                    scenario,
+                    FirstStatusCase::Stopped | FirstStatusCase::StoppedAfterAttribution
+                );
+                let _: InvocationPoll = owner.poll(clock, stop);
+                assert!(clock.reached);
+                assert_eq!(
+                    owner.native_status.capture_observed,
+                    !matches!(scenario, FirstStatusCase::Cutoff | FirstStatusCase::Stopped)
+                );
+                assert_eq!(owner.connection_cutoff, Some(cutoff));
+                assert_eq!(owner.outstanding_work(), u32::from(!expects_stop));
+                native_fixture_result(ensure_unimpersonated())?;
+                Ok(owner.native_status.outcome.take())
+            },
+        )?;
+    outcome
+}
+
+/// Receive the broker's actual first reply on the client that sent the request.
+/// # Errors
+/// Returns a setup, native progress, byte comparison or cleanup failure.
+/// # Panics
+/// Fails if the broker helper observes a startup, sampling or terminal mismatch.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Box<dyn Error>> {
+    use std::num::NonZeroU32;
+    use windows_platform_native::PeerProcess;
+
+    use crate::{
+        broker_endpoint::BrokerEndpointWorker,
+        native_broker_endpoint::NativeBrokerEndpoint,
+        native_pipe_identity::RetainedFixtureClient,
+        native_pipe_pair::{
+            LabRequestWriter, open_first_exchange_client, prepare_first_exchange_fixture,
+        },
+    };
+
+    const CASE: u32 = 37;
+    const WAIT: Duration = Duration::from_secs(2);
+    const REQUEST: &[u8] = b"\x01\x00\x01\x00\x02\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00{}";
+    const REPLY: &[u8] = b"\x01\x00\x02\x00\x12\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
+                           {\"available\":true}";
+    let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
+    let peer: RetainedFixtureClient = RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
+    let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+        prepare_first_exchange_fixture(CASE, peer)
+    };
+    with_broker_worker_reads::<37, 1, _, _>(
+        BrokerEndpointWorker::new(acquire),
+        |owner, clock, stop| {
+            let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+            let (client_read, mut client_write): (LabPipeReader, LabRequestWriter) =
+                native_fixture_result(open_first_exchange_client(CASE))?;
+            let mut reader: NativePipeRead =
+                native_fixture_result(NativePipeRead::new(client_read))?;
+            let control: BrokerControlWake = BrokerControlWake::new()?;
+            let mut waiter: BrokerWait = BrokerWait::new();
+            if waiter.observe(&control, WAIT, owner.worker.completion_wake())?
+                != WakeSource::Completion
+                || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+                || owner.outstanding_work() != 1
+                || owner.native_status.reply_written
+            {
+                return Err("the original accept did not advance to its owned first read".into());
+            }
+            let observed: Result<(), Box<dyn Error>> = (|| {
+                if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                    return Err("the broker replied before its client sent the request".into());
+                }
+                native_fixture_result(client_write.write(REQUEST))?;
+                if waiter.observe(&control, WAIT, owner.worker.completion_wake())?
+                    != WakeSource::Completion
+                {
+                    return Err("the original broker request read did not wake".into());
+                }
+
+                wait_for_first_reply_write(owner, clock, stop, &control, &mut waiter, WAIT)?;
+                observe_first_reply_bytes(&mut reader, REPLY)?;
+                native_fixture_result(ensure_unimpersonated())?;
+                if !owner.native_status.capture_observed
+                    || owner.connection_cutoff != Some(cutoff)
+                    || clock.now >= cutoff
+                    || owner.outstanding_work() != 1
+                    || owner.worker.completion_wake().is_some()
+                {
+                    return Err("the completed reply lost its original Running custody".into());
+                }
+                if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued
+                    || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+                    || !matches!(
+                        native_fixture_result(reader.poll())?,
+                        NativeReadPoll::Pending
+                    )
+                    || owner.worker.completion_wake().is_some()
+                {
+                    return Err("the settled exchange produced a second reply or operation".into());
+                }
+                let _stop_disposition = deliver(Some(clock.mailbox), stop, 1, 0);
+                if owner.poll(clock, stop) != InvocationPoll::Finished
+                    || owner.outstanding_work() != 0
+                {
+                    return Err("Stop did not retire the settled broker connection".into());
+                }
+                if !matches!(
+                    wait_for_native_read(&mut reader)?,
+                    NativeReadPoll::Disconnected
+                ) {
+                    return Err(
+                        "the original client saw extra bytes or no disconnect on Stop".into(),
+                    );
+                }
+                Ok(())
+            })();
+            if observed.is_err() {
+                retire_pending_peer_read(&mut reader);
+            }
+            observed
+        },
+    )?
+}
+
+/// Give the original broker owner bounded turns to collect its native write.
+/// # Errors
+/// Refuses premature service retirement, a wrong wake or unconfirmed completion.
+#[cfg(windows)]
+fn wait_for_first_reply_write<P: Worker>(
+    owner: &mut ServiceInvocation<Reporter, P>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+    control: &BrokerControlWake,
+    waiter: &mut BrokerWait,
+    budget: Duration,
+) -> Result<(), Box<dyn Error>> {
+    let began: Instant = Instant::now();
+    loop {
+        if !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_)) {
+            return Err("the broker stopped before confirming the reply".into());
+        }
+        if owner.native_status.reply_written {
+            return Ok(());
+        }
+        let remaining: Duration = budget
+            .checked_sub(began.elapsed())
+            .filter(|left: &Duration| !left.is_zero())
+            .ok_or("the broker never confirmed the original reply write")?;
+        if let Some(wake) = owner.worker.completion_wake() {
+            if waiter.observe(control, remaining, Some(wake))? != WakeSource::Completion {
+                return Err("the original broker reply completion did not wake".into());
+            }
+        } else {
+            std::thread::sleep(Duration::from_millis(1).min(remaining));
+        }
+    }
+}
+
+/// Compare bounded native read completions to the exact wire bytes.
+/// # Errors
+/// Refuses a missing, empty, mismatched or excess reply prefix.
+#[cfg(windows)]
+fn observe_first_reply_bytes(
+    reader: &mut NativePipeRead,
+    mut remaining: &[u8],
+) -> Result<(), Box<dyn Error>> {
+    loop {
+        let NativeReadPoll::Data(completed) = wait_for_native_read(reader)? else {
+            return Err("the original client did not receive reply bytes".into());
+        };
+        let bytes: &[u8] = completed.as_bytes();
+        if bytes.is_empty() {
+            return Err("the original client received an empty reply fragment".into());
+        }
+        remaining = remaining
+            .strip_prefix(bytes)
+            .ok_or("the original client received unexpected reply bytes")?;
+        if remaining.is_empty() {
+            return Ok(());
+        }
+        let _: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
+    }
 }

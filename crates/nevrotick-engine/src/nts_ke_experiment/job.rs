@@ -45,22 +45,53 @@ pub(super) struct PreparedInvocation {
 }
 
 impl PreparedInvocation {
-    /// Capture the origin once and derive the actual stop endpoint before submission.
+    /// Test the ordinary preparation route without an owner cutoff.
     /// # Errors
-    /// Refuse deadline arithmetic without creating a submitted job.
+    /// Preserve the original checked preparation refusal.
+    #[cfg(test)]
     pub(super) fn prepare(config: Config) -> Result<(Self, StopHandle), Failed> {
-        let control: Control = Control::new(Instant::now()).map_err(Failed::from)?;
-        {
-            let guard: super::ConfigurationGuard<'_> =
-                config.guard(&control, None).map_err(Failed::from)?;
-            guard
-                .remaining(IoPhase::Handshake, Instant::now())
-                .map_err(Failed::from)?;
+        let prepared: Self = Self::prepare_with_cutoff(config, None)?;
+        let stop: StopHandle = prepared.stop_handle();
+        Ok((prepared, stop))
+    }
+
+    /// Capture the original origin and Stop scope with the earlier owner cutoff.
+    /// # Errors
+    /// Refuse an elapsed cutoff, deadline arithmetic or current authority before submission.
+    pub(super) fn prepare_with_cutoff(
+        config: Config,
+        owner_cutoff: Option<Instant>,
+    ) -> Result<Self, Failed> {
+        let start: Instant = Instant::now();
+        let control: Control = match owner_cutoff {
+            Some(cutoff) => Control::clamped(start, cutoff),
+            None => Control::new(start),
         }
-        let stop: StopHandle = StopHandle {
-            scope: Arc::clone(&control.stop_scope),
-        };
-        Ok((Self { config, control }, stop))
+        .map_err(Failed::from)?;
+        let prepared: Self = Self { config, control };
+        prepared.check_startup()?;
+        Ok(prepared)
+    }
+
+    /// Check the original source and deadline immediately before a startup edge.
+    /// # Errors
+    /// Preserve configuration, Stop and elapsed handshake refusals.
+    fn check_startup(&self) -> Result<(), Failed> {
+        let guard: super::ConfigurationGuard<'_> = self
+            .config
+            .guard(&self.control, None)
+            .map_err(Failed::from)?;
+        guard
+            .remaining(IoPhase::Handshake, Instant::now())
+            .map(|_| ())
+            .map_err(Failed::from)
+    }
+
+    /// Retain the Stop endpoint of this exact prepared invocation.
+    fn stop_handle(&self) -> StopHandle {
+        StopHandle {
+            scope: Arc::clone(&self.control.stop_scope),
+        }
     }
 
     /// Retain a genuinely checked expired Control for the actual startup refusal probe.
@@ -651,6 +682,19 @@ pub(super) struct SubmissionReservation {
 }
 
 impl SubmissionReservation {
+    /// Check the original input before registering its observer and return the
+    /// same worker slot and Stop endpoint. No lock remains held for registration.
+    /// # Errors
+    /// Preserve original startup refusal while leaving the reservation unspent.
+    pub(super) fn observer_entry(&self) -> Result<(&'static WorkerSlot, StopHandle), Failed> {
+        let prepared: &PreparedInvocation = self
+            .prepared
+            .as_ref()
+            .ok_or(Failed::from(Failure::Control))?;
+        prepared.check_startup()?;
+        Ok((self.slot, prepared.stop_handle()))
+    }
+
     /// Submit exactly one real Native invocation; no entered Tokio context is inherited.
     /// # Errors
     /// Preserve unavailable custody or typed spawn refusal without creating a job.

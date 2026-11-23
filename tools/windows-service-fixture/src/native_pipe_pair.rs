@@ -11,8 +11,10 @@ use std::task::Poll;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use windows_platform_native::{PipeServerPidError, read_connected_pipe_server_pid};
 use windows_sys::Win32::Foundation::{
-    ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE, INVALID_HANDLE_VALUE, LocalFree,
+    ERROR_INVALID_DATA, ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE,
+    INVALID_HANDLE_VALUE, LocalFree,
 };
 use windows_sys::Win32::Security::Authorization::{
     ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1,
@@ -24,16 +26,16 @@ use windows_sys::Win32::Storage::FileSystem::{
     SECURITY_ANONYMOUS, SECURITY_IDENTIFICATION, SECURITY_SQOS_PRESENT, SYNCHRONIZE, WriteFile,
 };
 use windows_sys::Win32::System::Pipes::{
-    ConnectNamedPipe, CreateNamedPipeW, GetNamedPipeClientProcessId, GetNamedPipeServerProcessId,
-    PIPE_REJECT_REMOTE_CLIENTS,
+    ConnectNamedPipe, CreateNamedPipeW, GetNamedPipeClientProcessId, PIPE_REJECT_REMOTE_CLIENTS,
 };
 use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 
 use crate::{
-    NativeError,
+    NativeError, NativeOperation,
     broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
     native_broker_endpoint::{FixtureConnectionError, NativeBrokerEndpoint},
     native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
+    native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
     native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll},
 };
 
@@ -121,6 +123,17 @@ enum RequestWriter {
     Synchronous(LabPipeWriter),
     /// The duplex client shares its overlapped endpoint with the reply reader.
     Overlapped(NativePipeWrite),
+    /// The worker owns the other half of the original first exchange.
+    FirstExchange(NativePipeWrite<LabFirstExchangeWriter>),
+}
+
+/// The first exchange's client, shared only with the original reply reader.
+pub(super) struct LabFirstExchangeWriter(Rc<OwnedHandle>);
+
+impl AsHandle for LabFirstExchangeWriter {
+    fn as_handle(&self) -> BorrowedHandle<'_> {
+        self.0.as_handle()
+    }
 }
 
 impl LabRequestWriter {
@@ -131,6 +144,7 @@ impl LabRequestWriter {
         match &mut self.0 {
             RequestWriter::Synchronous(writer) => writer.write(bytes),
             RequestWriter::Overlapped(writer) => writer.write_fixture_fragment(bytes),
+            RequestWriter::FirstExchange(writer) => writer.write_fixture_fragment(bytes),
         }
     }
 }
@@ -408,6 +422,87 @@ pub(super) fn open_lab_identification_pipe(
     })
 }
 
+/// Prepare the unconnected, sealed server to be used by the real broker worker.
+///
+/// # Errors
+/// Preserve server creation or operation preparation refusal without submitting an accept.
+pub(super) fn prepare_first_read_fixture(
+    case: u32,
+    status_client: Option<PipeIdentity>,
+) -> Result<NativeBrokerEndpoint, NativeError> {
+    NativeBrokerEndpoint::for_first_read_fixture(first_exchange_server(case)?, status_client)
+}
+
+/// Prepare one read and one guarded reply on the same fixture server.
+/// # Errors
+/// Preserve the creation or preparation refusal with no submitted operation.
+pub(super) fn prepare_first_exchange_fixture(
+    case: u32,
+    peer: RetainedFixtureClient,
+) -> Result<NativeBrokerEndpoint, NativeError> {
+    NativeBrokerEndpoint::for_first_exchange_fixture(first_exchange_server(case)?, peer)
+}
+
+/// Create the sealed original server shared by both fixture modes.
+/// # Errors
+/// Preserve a native descriptor or creation failure.
+fn first_exchange_server(case: u32) -> Result<LabUnconnectedDuplexPipe, NativeError> {
+    let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
+    create_server(&name, ServerMode::Duplex)
+        .map(LabUnconnectedDuplexPipe)
+        .map_err(|error| {
+            let (operation, code): (NativeOperation, u32) = match error {
+                LabPipeError::Native {
+                    operation: "ConvertStringSecurityDescriptorToSecurityDescriptorW" | "LocalFree",
+                    code,
+                } => (NativeOperation::BrokerEndpointDescriptor, code),
+                LabPipeError::Native { code, .. } => (NativeOperation::BrokerEndpointCreate, code),
+                LabPipeError::SecurityAttributesSize
+                | LabPipeError::MissingResource(
+                    "ConvertStringSecurityDescriptorToSecurityDescriptorW",
+                ) => (
+                    NativeOperation::BrokerEndpointDescriptor,
+                    ERROR_INVALID_DATA,
+                ),
+                _ => (NativeOperation::BrokerEndpointCreate, ERROR_INVALID_DATA),
+            };
+            NativeError::new(operation, code)
+        })
+}
+
+/// Open the matching identification-level, write-only client after the owner queues its accept.
+///
+/// # Errors
+/// Preserve a native open refusal without submitting a server operation.
+pub(super) fn open_first_read_writer(
+    case: u32,
+    context: LabClientContext,
+) -> Result<LabPipeWriter, LabPipeError> {
+    let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
+    open_client(&name, ServerMode::ReadIdentity(context)).map(LabPipeWriter)
+}
+
+/// Share the one fixture client between its read and write slots.
+/// # Errors
+/// Preserve the exact client open and write-event setup failures.
+pub(super) fn open_first_exchange_client(
+    case: u32,
+) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
+    let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
+    let handle: Rc<OwnedHandle> = Rc::new(open_client(&name, ServerMode::Duplex)?);
+    let reader: LabPipeReader = LabPipeReader {
+        handle: Rc::clone(&handle),
+        reply_pair: None,
+    };
+    let writer: NativePipeWrite<LabFirstExchangeWriter> =
+        NativePipeWrite::for_first_exchange_client(LabFirstExchangeWriter(handle))
+            .map_err(LabPipeError::OverlappedWrite)?;
+    Ok((
+        reader,
+        LabRequestWriter(RequestWriter::FirstExchange(writer)),
+    ))
+}
+
 /// Open one test-only, per-process duplex pipe with a fixed identification client.
 /// # Errors
 /// Refuse native setup, peer, or client write-slot setup failure before exposing the pair.
@@ -611,6 +706,7 @@ pub(super) fn check_request_peers(
             check_peers(&reader.handle, &writer.0, std::process::id())
         }
         RequestWriter::Overlapped(writer) => writer.check_pipe_reader(reader),
+        RequestWriter::FirstExchange(_) => Err(LabPipeError::ForeignReplyPair),
     }
 }
 
@@ -806,6 +902,21 @@ fn check_peers(
     client: &OwnedHandle,
     process: u32,
 ) -> Result<(), LabPipeError> {
+    let peer_client: u32 = read_connected_pipe_client_pid(server.as_handle())?;
+    let peer_server: u32 = server_process_id(client)?;
+    if peer_client != process || peer_server != process {
+        return Err(LabPipeError::ForeignPeer);
+    }
+    Ok(())
+}
+
+/// Read the client PID from the original connected fixture server.
+///
+/// # Errors
+/// Preserve the native failure before using any output.
+pub(super) fn read_connected_pipe_client_pid(
+    server: BorrowedHandle<'_>,
+) -> Result<u32, LabPipeError> {
     let mut peer_client: u32 = 0;
     #[expect(
         unsafe_code,
@@ -817,30 +928,22 @@ fn check_peers(
     if found == 0 {
         return Err(last_error("GetNamedPipeClientProcessId"));
     }
-    let peer_server: u32 = server_process_id(client)?;
-    if peer_client != process || peer_server != process {
-        return Err(LabPipeError::ForeignPeer);
-    }
-    Ok(())
+    Ok(peer_client)
 }
 
 /// Query the server PID reported for a connected client handle.
 ///
 /// # Errors
-/// Retain the native query failure. A returned PID carries no service authority.
+/// Retain the native query failure or reject an unusable server PID.
 fn server_process_id(client: &OwnedHandle) -> Result<u32, LabPipeError> {
-    let mut peer_server: u32 = 0;
-    #[expect(
-        unsafe_code,
-        reason = "observe the server attached to the owned client pipe"
-    )]
-    // SAFETY: The owned client handle stays open and peer_server is writable.
-    let found: i32 =
-        unsafe { GetNamedPipeServerProcessId(client.as_raw_handle(), &raw mut peer_server) };
-    if found == 0 {
-        return Err(last_error("GetNamedPipeServerProcessId"));
+    match read_connected_pipe_server_pid(client.as_handle()) {
+        Ok(pid) => Ok(pid.get()),
+        Err(PipeServerPidError::Native(code)) => Err(LabPipeError::Native {
+            operation: "GetNamedPipeServerProcessId",
+            code,
+        }),
+        Err(PipeServerPidError::ZeroPid) => Err(LabPipeError::ForeignPeer),
     }
-    Ok(peer_server)
 }
 
 /// Own the result of a fixture handle-creation call using `INVALID_HANDLE_VALUE`.
@@ -892,7 +995,10 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
-    use windows_platform_native::{PeerProcess, PeerProcessError, ReportedProcessImageName};
+    use windows_platform_native::{
+        PeerPrimaryToken, PeerProcess, PeerProcessError, PipeServerPidError,
+        ReportedProcessImageName, read_connected_pipe_server_pid,
+    };
     use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 
     use super::{
@@ -936,7 +1042,7 @@ mod tests {
         /// The same separately opened process object used for all observations.
         process: PeerProcess,
         /// Query-only handle to the primary token captured while the process was live.
-        token: RetainedPrimaryToken,
+        token: PeerPrimaryToken,
         /// Literal image name obtained from the original supervised launch input.
         expected_image: Vec<u16>,
     }
@@ -953,7 +1059,7 @@ mod tests {
             check_connected_process(&self.client, &self.process)?;
             let current: RetainedPrimaryToken =
                 RetainedPrimaryToken::open(self.process.as_handle())?;
-            if !self.token.refers_to(&current) {
+            if !current.matches_observation(&self.token) {
                 return Err("fixture primary token object changed".into());
             }
             self.check_image(&self.expected_image)?;
@@ -1030,6 +1136,7 @@ mod tests {
                 println!(
                     "peer-observation process=matched token=matched image=matched wrong-image=refused foreign-process=refused foreign-pipe=refused exited=refused cutoff=refused package=absent"
                 );
+                println!("pipe-server-observation non-pipe-handle=refused");
                 Ok(())
             }
             Ok(status) => Err(format!(
@@ -1121,6 +1228,12 @@ mod tests {
                 Err(error) => return Err(error.into()),
             };
             check_connected_process(&client, &process)?;
+            if !matches!(
+                read_connected_pipe_server_pid(child.as_handle()),
+                Err(PipeServerPidError::Native(_))
+            ) {
+                return Err("pipe server query did not refuse the live process handle".into());
+            }
             let (_foreign_server, foreign_client): (OwnedHandle, OwnedHandle) =
                 open_pair(FOREIGN_PID_CASE, ServerMode::Overlapped)?;
             if !matches!(
@@ -1131,12 +1244,19 @@ mod tests {
                     "the same-account foreign pipe did not reach the process mismatch".into(),
                 );
             }
-            let token: RetainedPrimaryToken = RetainedPrimaryToken::open(process.as_handle())?;
+            let token: PeerPrimaryToken = process.retain_primary_token()?;
+            // The independently held spawn handle supplies the primary-token
+            // statistics and user-SID check for the identical retained object.
             let expected_token: RetainedPrimaryToken =
                 RetainedPrimaryToken::open(child.as_handle())?;
-            if !token.refers_to(&expected_token) {
+            if !expected_token.matches_observation(&token) {
                 return Err(
                     "opened token differs from query through independent spawn handle".into(),
+                );
+            }
+            if token.refers_to(child.as_handle()) {
+                return Err(
+                    "token comparison accepted the independently held process handle".into(),
                 );
             }
             let mut peer: RetainedFixturePeer = RetainedFixturePeer {

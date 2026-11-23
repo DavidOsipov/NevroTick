@@ -4,12 +4,16 @@
 use core::num::NonZeroU32;
 use std::{cell::RefCell, collections::VecDeque};
 
-use super::{check_process, observe_process};
+use super::{check_process, observe_between_pipe_samples, observe_process, observe_service_peer};
 use crate::{ReportedServiceStatus, RunningServiceRefusal};
 
 /// Observed calls, including the PID supplied to the open and liveness operations.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Call {
+    /// Observe the original pipe.
+    Pipe,
+    /// Observe the primary token.
+    Token,
     /// Read the retained service.
     Status,
     /// Open the reported PID.
@@ -21,6 +25,12 @@ enum Call {
 /// Distinct source faults and refusals for deterministic controls.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Fault {
+    /// The original pipe query returned this native refusal.
+    PipeQuery(u32),
+    /// Pipe server and service process disagreement.
+    WrongPipe,
+    /// The fresh primary token differed from the original object.
+    ChangedToken,
     /// Status query refusal.
     Status,
     /// Native process open refusal.
@@ -102,6 +112,7 @@ impl Probe {
             || self.status(),
             |pid: NonZeroU32| self.open(pid),
             |pid: &NonZeroU32| self.live(*pid),
+            None,
             Fault::Changed,
         )
     }
@@ -122,12 +133,215 @@ impl Probe {
 
 /// The first valid nonzero process identifier.
 const FIRST: NonZeroU32 = NonZeroU32::MIN;
+/// A separate process identifier observed on the wrong pipe.
+const SECOND: NonZeroU32 = FIRST.saturating_add(1);
 /// Literal Windows own-process Running status for the first candidate.
 const RUNNING: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 4, FIRST.get());
 /// A stopped report that still mentions that PID.
 const STOPPED: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 1, FIRST.get());
 /// A Running report for a different eligible PID.
 const REPLACED: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 4, 2);
+
+/// Refuse a wrong initial pipe PID before any candidate process open.
+/// # Panics
+/// Fail if the open guard accepts a mismatch or prevents the matching control.
+#[test]
+fn pipe_pid_is_checked_before_process_open() {
+    for (pipe, expected) in [(SECOND, Err(Fault::WrongPipe)), (FIRST, Ok((FIRST, 7_u32)))] {
+        let probe: Probe = Probe::new([Ok(RUNNING); 3], Ok(()), [Ok(()); 4]);
+        let mut pipe_pids: std::array::IntoIter<NonZeroU32, 3> = [pipe, FIRST, FIRST].into_iter();
+        let observed: Result<(NonZeroU32, u32), Fault> = observe_service_peer(
+            || {
+                probe.calls.borrow_mut().push(Call::Pipe);
+                pipe_pids.next().ok_or(Fault::Unexpected)
+            },
+            |original: NonZeroU32| {
+                observe_process(
+                    || probe.status(),
+                    |reported: NonZeroU32| probe.open(reported),
+                    |pid: &NonZeroU32| probe.live(*pid),
+                    Some((original, Fault::WrongPipe)),
+                    Fault::Changed,
+                )
+            },
+            |_pid: &NonZeroU32| {
+                probe.calls.borrow_mut().push(Call::Token);
+                Ok(7_u32)
+            },
+            |pid: &NonZeroU32| probe.reobserve(*pid),
+            Fault::WrongPipe,
+        );
+        assert_eq!(observed, expected);
+        if expected.is_err() {
+            assert_eq!(probe.calls.borrow().as_slice(), [Call::Pipe, Call::Status]);
+        } else {
+            assert_eq!(
+                probe.calls.borrow().as_slice(),
+                [
+                    Call::Pipe,
+                    Call::Status,
+                    Call::Open(FIRST),
+                    Call::Live(FIRST),
+                    Call::Status,
+                    Call::Live(FIRST),
+                    Call::Pipe,
+                    Call::Token,
+                    Call::Live(FIRST),
+                    Call::Status,
+                    Call::Live(FIRST),
+                    Call::Pipe,
+                ]
+            );
+        }
+    }
+}
+
+/// Keep raw pipe-query failure distinct from a successful but mismatched PID.
+/// # Panics
+/// Fail if the first query error or the observed call prefix changes.
+#[test]
+fn native_pipe_query_refusal_stops_at_its_original_stage() {
+    let healthy: [Call; 12] = [
+        Call::Pipe,
+        Call::Status,
+        Call::Open(FIRST),
+        Call::Live(FIRST),
+        Call::Status,
+        Call::Live(FIRST),
+        Call::Pipe,
+        Call::Token,
+        Call::Live(FIRST),
+        Call::Status,
+        Call::Live(FIRST),
+        Call::Pipe,
+    ];
+    for (samples, expected, calls) in [
+        (
+            [Err(Fault::PipeQuery(6)), Ok(FIRST), Ok(FIRST)],
+            Err(Fault::PipeQuery(6)),
+            1,
+        ),
+        (
+            [Ok(FIRST), Err(Fault::PipeQuery(5)), Ok(FIRST)],
+            Err(Fault::PipeQuery(5)),
+            7,
+        ),
+        (
+            [Ok(FIRST), Ok(FIRST), Err(Fault::PipeQuery(109))],
+            Err(Fault::PipeQuery(109)),
+            12,
+        ),
+        ([Ok(FIRST); 3], Ok((FIRST, 7)), 12),
+    ] {
+        let probe: Probe = Probe::new([Ok(RUNNING); 3], Ok(()), [Ok(()); 4]);
+        let mut samples: std::array::IntoIter<Result<NonZeroU32, Fault>, 3> = samples.into_iter();
+        let actual: Result<(NonZeroU32, u32), Fault> = observe_service_peer(
+            || {
+                probe.calls.borrow_mut().push(Call::Pipe);
+                samples.next().ok_or(Fault::Unexpected)?
+            },
+            |original: NonZeroU32| {
+                observe_process(
+                    || probe.status(),
+                    |reported: NonZeroU32| probe.open(reported),
+                    |pid: &NonZeroU32| probe.live(*pid),
+                    Some((original, Fault::WrongPipe)),
+                    Fault::Changed,
+                )
+            },
+            |_pid: &NonZeroU32| {
+                probe.calls.borrow_mut().push(Call::Token);
+                Ok(7)
+            },
+            |pid: &NonZeroU32| probe.reobserve(*pid),
+            Fault::WrongPipe,
+        );
+        assert_eq!(actual, expected);
+        assert_eq!(probe.calls.borrow().as_slice(), &healthy[..calls]);
+    }
+}
+
+/// Exercise the actual sequencing around the original pipe without native effects.
+/// # Errors
+/// Preserve the scripted pipe, token or service refusal.
+fn sample_pipe_and_token(
+    probe: &Probe,
+    pipe_pids: [NonZeroU32; 2],
+    token: Result<u32, Fault>,
+) -> Result<u32, Fault> {
+    let mut pids: std::array::IntoIter<NonZeroU32, 2> = pipe_pids.into_iter();
+    observe_between_pipe_samples(
+        FIRST,
+        || {
+            probe.calls.borrow_mut().push(Call::Pipe);
+            pids.next().ok_or(Fault::Unexpected)
+        },
+        || {
+            probe.calls.borrow_mut().push(Call::Token);
+            token
+        },
+        || probe.reobserve(FIRST),
+        Fault::WrongPipe,
+    )
+}
+
+/// Only the original pipe may bracket the token and SCM observations.
+/// # Panics
+/// Fail on hidden work after an early refusal or publication after a late mismatch.
+#[test]
+fn peer_observation_brackets_current_process_with_original_pipe() {
+    let healthy: Probe = Probe::new([Ok(RUNNING)], Ok(()), [Ok(()); 2]);
+    assert_eq!(sample_pipe_and_token(&healthy, [FIRST; 2], Ok(7)), Ok(7));
+    let checked: [Call; 6] = [
+        Call::Pipe,
+        Call::Token,
+        Call::Live(FIRST),
+        Call::Status,
+        Call::Live(FIRST),
+        Call::Pipe,
+    ];
+    assert_eq!(healthy.calls.borrow().as_slice(), checked);
+
+    let early: Probe = Probe::new([], Err(Fault::Open), []);
+    assert_eq!(
+        sample_pipe_and_token(&early, [SECOND, FIRST], Ok(7)),
+        Err(Fault::WrongPipe)
+    );
+    assert_eq!(early.calls.borrow().as_slice(), [Call::Pipe]);
+
+    let late: Probe = Probe::new([Ok(RUNNING)], Err(Fault::Open), [Ok(()); 2]);
+    assert_eq!(
+        sample_pipe_and_token(&late, [FIRST, SECOND], Ok(7)),
+        Err(Fault::WrongPipe)
+    );
+    assert_eq!(late.calls.borrow().as_slice(), checked);
+}
+
+/// Preserve the first token or service turnover instead of yielding an observation.
+/// # Panics
+/// Fail on a substituted refusal or an observation after either turnover.
+#[test]
+fn token_and_service_turnover_prevent_peer_observation() {
+    let token_changed: Probe = Probe::new([], Err(Fault::Open), []);
+    assert_eq!(
+        sample_pipe_and_token(&token_changed, [FIRST; 2], Err(Fault::ChangedToken)),
+        Err(Fault::ChangedToken)
+    );
+    assert_eq!(
+        token_changed.calls.borrow().as_slice(),
+        [Call::Pipe, Call::Token]
+    );
+
+    let replaced: Probe = Probe::new([Ok(REPLACED)], Err(Fault::Open), [Ok(())]);
+    assert_eq!(
+        sample_pipe_and_token(&replaced, [FIRST; 2], Ok(7)),
+        Err(Fault::Changed)
+    );
+    assert_eq!(
+        replaced.calls.borrow().as_slice(),
+        [Call::Pipe, Call::Token, Call::Live(FIRST), Call::Status]
+    );
+}
 
 /// Retain one open process through initial and later checks.
 /// # Panics

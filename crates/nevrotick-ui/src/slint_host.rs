@@ -50,8 +50,13 @@ mod raw_workflow;
 mod recovery_workflow;
 /// Guarded UI exit and shared Settings destinations; native ports stay unavailable.
 mod shell_workflow;
+/// Fixed early-runtime policy for images loaded by the Windows UI process.
+#[cfg(any(windows, test))]
+mod startup_image_policy;
 #[cfg(windows)]
 pub use native_workflow::NativeHostError;
+#[cfg(any(windows, test))]
+pub use startup_image_policy::ImageLoadPolicyError;
 /// Source/editor projection and callbacks; no backend effect paths.
 mod source_workflow;
 /// Explicit disconnected status input and guarded contextual navigation.
@@ -127,6 +132,9 @@ pub enum HostError {
     /// The Windows production observer host could not be safely installed.
     #[cfg(windows)]
     Native(NativeHostError),
+    /// The Windows process could not establish its required image-load policy.
+    #[cfg(windows)]
+    ImageLoadPolicy(ImageLoadPolicyError),
 }
 
 impl fmt::Display for HostError {
@@ -138,6 +146,8 @@ impl fmt::Display for HostError {
             Self::Drafts => formatter.write_str("Cannot initialize checked input drafts."),
             #[cfg(windows)]
             Self::Native(error) => fmt::Display::fmt(error, formatter),
+            #[cfg(windows)]
+            Self::ImageLoadPolicy(error) => fmt::Display::fmt(error, formatter),
         }
     }
 }
@@ -151,6 +161,8 @@ impl std::error::Error for HostError {
             Self::Drafts => None,
             #[cfg(windows)]
             Self::Native(error) => Some(error),
+            #[cfg(windows)]
+            Self::ImageLoadPolicy(error) => Some(error),
         }
     }
 }
@@ -540,10 +552,12 @@ pub fn create() -> Result<SlintHost, HostError> {
 /// Ordinary `create()` remains free of workers, timers and native ports.
 ///
 /// # Errors
-/// Returns checked fixture, explicit backend selection, toolkit or native-host
-/// installation failure. No observer is installed after a failed selection.
+/// Returns an image-policy, checked fixture, backend selection, toolkit or
+/// native-host installation failure. The process policy must pass before
+/// backend selection and installation of observers.
 #[cfg(windows)]
 pub fn create_native() -> Result<SlintHost, HostError> {
+    startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
     slint::BackendSelector::new()
         .backend_name("winit".into())
         .renderer_name("software".into())

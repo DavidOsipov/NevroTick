@@ -955,11 +955,44 @@ impl crate::SourcePolicyAuthority {
         expected: &SourceConfigurationSnapshot,
         plan: ManagedProtectedPlan,
     ) -> Result<ManagedProtectedReport, SourceProtectedProbeFailure> {
+        self.invoke_nts_protected_with_cutoff(expected, plan, None)
+    }
+
+    /// Run the selected protected loopback plan before an owner's absolute cutoff.
+    ///
+    /// The original cutoff can only shorten the handshake and exchange windows.
+    /// It also bounds the successor and the final receive and commit guards.
+    /// Actual worker retirement and observer closure retain their original
+    /// custody. An elapsed cutoff does not imply that synchronous collection
+    /// has finished.
+    ///
+    /// # Errors
+    /// Preserve the original failure stages of [`Self::invoke_nts_protected`].
+    /// An already elapsed cutoff refuses preparation before observer registration.
+    /// A later deadline refusal preserves the actual joined operation outcome.
+    pub fn invoke_nts_protected_before(
+        &self,
+        expected: &SourceConfigurationSnapshot,
+        plan: ManagedProtectedPlan,
+        cutoff: Instant,
+    ) -> Result<ManagedProtectedReport, SourceProtectedProbeFailure> {
+        self.invoke_nts_protected_with_cutoff(expected, plan, Some(cutoff))
+    }
+
+    /// Bind the exact installed definition before preparing either invocation window.
+    /// # Errors
+    /// Preserve source, preparation, observer and worker failures at their existing owners.
+    fn invoke_nts_protected_with_cutoff(
+        &self,
+        expected: &SourceConfigurationSnapshot,
+        plan: ManagedProtectedPlan,
+        owner_cutoff: Option<Instant>,
+    ) -> Result<ManagedProtectedReport, SourceProtectedProbeFailure> {
         let config: super::Config = self.protected_config(expected)?;
         match plan {
             ManagedProtectedPlan::OneAuthenticatedSuccessor => {
                 ManagedProtectedReport::from_observed(
-                    super::run_managed_successor_with_power_observer(config),
+                    super::run_managed_successor_with_power_observer(config, owner_cutoff),
                 )
             }
         }

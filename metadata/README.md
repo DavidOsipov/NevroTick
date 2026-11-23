@@ -82,7 +82,11 @@ The [Windows artifact verifier](../TOOLING.md#starting-implementation) can
 attach the three base branding PNGs or the complete pinned 51-file
 selection to this checked assembly handoff. It accepts an explicit
 `--msix-branding-dir` in the Windows cross-build lane with an artifact
-output directory. The manifest references retain their base names.
+output directory. The manifest references retain their base names. With
+`--export-msix-authoring` as well, the verifier emits the checked package
+`Properties` XML fragment with display metadata, the pinned package logo,
+package integrity `on` and Trusted Launch `true`. Regenerate earlier
+Properties fragments for this profile.
 The source record and its pending production inputs remain authoritative.
 
 `--root PATH` selects an explicit source checkout; `--source PATH` selects a

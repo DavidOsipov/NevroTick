@@ -1,15 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read-only checks against the SCM in the owned offline Windows guest.
 
-use std::{error::Error, fmt, num::NonZeroU32, os::windows::ffi::OsStrExt};
-
-use windows_platform_native::{
-    ReportedDacl, ReportedServiceConfiguration, ReportedServiceSecurity, ReportedServiceStatus,
-    RunningServiceRefusal, ServiceConfigurationQuery, ServiceKey, ServiceQueryError,
-    ServiceSecurityQuery, ServiceStatusQuery,
+use std::{
+    error::Error,
+    fmt,
+    num::NonZeroU32,
+    os::windows::{ffi::OsStrExt, io::AsHandle},
 };
 
-use crate::LabRole;
+use windows_platform_native::{
+    ObservedServicePeer, ReportedDacl, ReportedServiceConfiguration, ReportedServiceSecurity,
+    ReportedServiceStatus, RunningServiceRefusal, ServiceConfigurationQuery, ServiceKey,
+    ServicePeerObservationError, ServiceProcessObservationError, ServiceQueryError,
+    ServiceSecurityQuery, ServiceStatusQuery, read_connected_pipe_server_pid,
+};
+
+use crate::{
+    LabRole,
+    native_pipe_pair::{
+        LabIdentificationPipe, LabOverlappedWriter, LabPipeReader, open_lab_duplex_pipe,
+    },
+};
 
 /// Two fixed, existing services in the otherwise unmodified offline guest.
 const CONFIGURATION_REFERENCES: [(&str, &[u8], u32); 2] = [
@@ -51,6 +62,31 @@ impl fmt::Display for PrestartQueryFailure {
 
 impl Error for PrestartQueryFailure {}
 
+/// An observation refused before the retained status handle also failed to close.
+#[derive(Debug)]
+struct PrestartStatusCloseFailure {
+    /// The original refusal, including any separate configuration or security close failure.
+    primary: Box<dyn Error>,
+    /// Raw failure from explicitly closing the retained status handle.
+    status_close: ServiceQueryError,
+}
+
+impl fmt::Display for PrestartStatusCloseFailure {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "{} (additional status close failure: {})",
+            self.primary, self.status_close,
+        )
+    }
+}
+
+impl Error for PrestartStatusCloseFailure {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(self.primary.as_ref())
+    }
+}
+
 /// Attribute an observer open or manager-close failure to its fixed lane.
 fn prestart_open_failure(
     role: LabRole,
@@ -87,6 +123,26 @@ fn finish_prestart_query<T>(
     }
 }
 
+/// Publish a staged observation only after its retained status handle closes.
+///
+/// # Errors
+/// Return the first refusal and keep any independent status close error.
+fn finish_prestart_status<T>(
+    role: LabRole,
+    result: Result<T, Box<dyn Error>>,
+    closed: Result<(), ServiceQueryError>,
+) -> Result<T, Box<dyn Error>> {
+    match (result, closed) {
+        (result, Ok(())) => result,
+        (Ok(_), Err(error)) => Err(prestart_open_failure(role, "status close", error).into()),
+        (Err(primary), Err(status_close)) => Err(PrestartStatusCloseFailure {
+            primary,
+            status_close,
+        }
+        .into()),
+    }
+}
+
 /// Verify that a closed observation can publish its value and failed closure cannot.
 ///
 /// # Errors
@@ -120,6 +176,45 @@ fn prestart_retains_primary_query_and_close_results() -> Result<(), Box<dyn Erro
         {
             return Err("pre-start observation lost its attributed failure".into());
         }
+    }
+
+    let status_close: ServiceQueryError = ServiceQueryError::CloseService(7);
+    let value: u32 = finish_prestart_status(role, Ok(4_u32), Ok(()))?;
+    if value != 4 {
+        return Err("closed status observation lost its value".into());
+    }
+    let Err(failure) = finish_prestart_status(role, Ok(4_u32), Err(status_close)) else {
+        return Err("failed status close published an observation".into());
+    };
+    let attributed: &PrestartQueryFailure = failure
+        .downcast_ref()
+        .ok_or("status close did not retain a typed failure")?;
+    if (attributed.role, attributed.stage, attributed.primary)
+        != (role, "status close", status_close)
+    {
+        return Err("status close did not retain its stage and code".into());
+    }
+    let read: Result<u32, Box<dyn Error>> =
+        finish_prestart_query(role, stage, Err(query), Err(close)).map_err(Into::into);
+    let Err(failure) = finish_prestart_status(role, read, Err(status_close)) else {
+        return Err("two failed closes published an observation".into());
+    };
+    let combined: &PrestartStatusCloseFailure = failure
+        .downcast_ref()
+        .ok_or("missing independent status close failure")?;
+    let first: &PrestartQueryFailure = combined
+        .source()
+        .and_then(<dyn Error>::downcast_ref)
+        .ok_or("lost the first failing query")?;
+    if (
+        first.role,
+        first.stage,
+        first.primary,
+        first.close_failure,
+        combined.status_close,
+    ) != (role, stage, query, Some(close), status_close)
+    {
+        return Err("pre-start observation lost a query or close failure".into());
     }
     Ok(())
 }
@@ -192,20 +287,68 @@ fn read_prestart_security(
     finish_prestart_query(role, "security read/close", result, closed)
 }
 
-/// Capture and close one status endpoint in the fixed two-role observer.
+/// Complete readback for one role, ready to publish after explicit closure.
+struct PrestartObservation {
+    /// First status sampled on the retained status handle.
+    before: ReportedServiceStatus,
+    /// Configured fields read through a separate configuration-only handle.
+    configuration: PrestartConfiguration,
+    /// Security fields read through a separate read-control handle.
+    security: ReportedServiceSecurity,
+    /// Last status sampled on the original status handle.
+    after: ReportedServiceStatus,
+}
+
+/// Bracket narrow configuration and security reads with the same status handle.
+///
+/// The retained status handle prevents deletion and replacement of the SCM
+/// record during the separate opens, per the Windows `DeleteService` contract.
+/// Both stopped observations are samples and do not establish inactivity between them.
 ///
 /// # Errors
-/// Preserve the phase and first native failure and any additional close failure.
-fn read_prestart_status(
+/// Refuse a non-Stopped sample or observation failure and preserve a separate
+/// status close failure before a caller can publish a row.
+fn read_prestart_observation(
     role: LabRole,
     key: ServiceKey<'_>,
-    stage: &'static str,
-) -> Result<ReportedServiceStatus, PrestartQueryFailure> {
-    let handle: ServiceStatusQuery = ServiceStatusQuery::open_local(key)
-        .map_err(|error| prestart_open_failure(role, stage, error))?;
-    let result: Result<ReportedServiceStatus, ServiceQueryError> = handle.query();
-    let closed: Result<(), ServiceQueryError> = handle.close();
-    finish_prestart_query(role, stage, result, closed)
+) -> Result<PrestartObservation, Box<dyn Error>> {
+    let status: ServiceStatusQuery = ServiceStatusQuery::open_local(key)
+        .map_err(|error| prestart_open_failure(role, "status before", error))?;
+    let result: Result<PrestartObservation, Box<dyn Error>> = (|| {
+        let before: ReportedServiceStatus = status
+            .query()
+            .map_err(|error| prestart_open_failure(role, "status before", error))?;
+        if before.state() != SERVICE_STOPPED {
+            return Err(format!(
+                "pre-start role {} reported type={} state={} before configuration",
+                role.name(),
+                before.service_type(),
+                before.state(),
+            )
+            .into());
+        }
+        let configuration: PrestartConfiguration = read_prestart_configuration(role, key)?;
+        let security: ReportedServiceSecurity = read_prestart_security(role, key)?;
+        let after: ReportedServiceStatus = status
+            .query()
+            .map_err(|error| prestart_open_failure(role, "status after", error))?;
+        if after.state() != SERVICE_STOPPED {
+            return Err(format!(
+                "pre-start role {} reported type={} state={} after security readback",
+                role.name(),
+                after.service_type(),
+                after.state(),
+            )
+            .into());
+        }
+        Ok(PrestartObservation {
+            before,
+            configuration,
+            security,
+            after,
+        })
+    })();
+    finish_prestart_status(role, result, status.close())
 }
 
 /// Observe both untouched installed fixture roles for §7.5 step 2.
@@ -223,19 +366,12 @@ pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dy
     for role in [LabRole::Engine, LabRole::ClockBroker] {
         let key: ServiceKey<'_> =
             ServiceKey::new(role.wide_name()).map_err(|_| "invalid fixed lab role key")?;
-        let before: ReportedServiceStatus = read_prestart_status(role, key, "status before")?;
-        if before.state() != SERVICE_STOPPED {
-            return Err(format!(
-                "pre-start role {} reported type={} state={} before configuration",
-                role.name(),
-                before.service_type(),
-                before.state(),
-            )
-            .into());
-        }
-        let configuration: PrestartConfiguration = read_prestart_configuration(role, key)?;
-        let security: ReportedServiceSecurity = read_prestart_security(role, key)?;
-        let after: ReportedServiceStatus = read_prestart_status(role, key, "status after")?;
+        let PrestartObservation {
+            before,
+            configuration,
+            security,
+            after,
+        } = read_prestart_observation(role, key)?;
         let (dacl_kind, dacl_bytes): (&str, usize) = match security.dacl() {
             ReportedDacl::Absent => ("absent", 0),
             ReportedDacl::Null => ("null", 0),
@@ -265,15 +401,6 @@ pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dy
             dacl_kind,
             dacl_bytes,
         );
-        if after.state() != SERVICE_STOPPED {
-            return Err(format!(
-                "pre-start role {} reported type={} state={} after security readback",
-                role.name(),
-                after.service_type(),
-                after.state(),
-            )
-            .into());
-        }
     }
     println!("scm-prestart observed-rows=2");
     Ok(())
@@ -305,13 +432,9 @@ fn native_status_only_query_matches_scm() -> Result<(), Box<dyn Error>> {
     let service: ServiceStatusQuery = ServiceStatusQuery::open_local(key)?;
     let first: ReportedServiceStatus = service.query()?;
     let second: ReportedServiceStatus = service.query()?;
-    service.close()?;
-
-    assert_eq!((first.service_type(), first.state()), (0x10, 4));
-    assert_eq!(first, second);
-    let pid: NonZeroU32 = first
-        .reported_running_process()
-        .map_err(|_| "reference service did not report a running own process")?;
+    let observed: Result<NonZeroU32, Box<dyn Error>> =
+        check_live_service_pipe_mismatch(&service, first, second);
+    let pid: NonZeroU32 = finish_prestart_status(LabRole::ClockBroker, observed, service.close())?;
 
     let wide: [u16; 8] = (*b"Spooler\0").map(u16::from);
     let key: ServiceKey<'_> = ServiceKey::new(&wide).map_err(|_| "invalid fixed mixed-type key")?;
@@ -324,7 +447,41 @@ fn native_status_only_query_matches_scm() -> Result<(), Box<dyn Error>> {
         Err(RunningServiceRefusal::NotOwnProcess)
     );
     println!("scm-observation missing=1060 running-pid={pid} mixed-type=110-refused");
+    println!("scm-pipe-observation live-foreign-server=refused");
     Ok(())
+}
+
+/// Refuse a live fixture-owned pipe whose server differs from the SCM report.
+///
+/// Both pipe directions stay owned through observation. No bytes are exchanged
+/// and the reference service is used only for status queries.
+/// # Errors
+/// Retain query failures, or reject an unexpected fixture identity or result.
+fn check_live_service_pipe_mismatch(
+    service: &ServiceStatusQuery,
+    first: ReportedServiceStatus,
+    second: ReportedServiceStatus,
+) -> Result<NonZeroU32, Box<dyn Error>> {
+    if first != second || (first.service_type(), first.state()) != (0x10, 4) {
+        return Err("reference service did not report stable own-process Running status".into());
+    }
+    let reported: NonZeroU32 = first
+        .reported_running_process()
+        .map_err(ServiceProcessObservationError::IneligibleStatus)?;
+    let (_request, reply_reader, _reply_writer): (
+        LabIdentificationPipe,
+        LabPipeReader,
+        LabOverlappedWriter,
+    ) = open_lab_duplex_pipe(53)?.into_transport();
+    let pipe_pid: NonZeroU32 = read_connected_pipe_server_pid(reply_reader.as_handle())?;
+    if pipe_pid.get() != std::process::id() || pipe_pid == reported {
+        return Err("fixture pipe did not report the expected different live process".into());
+    }
+    match ObservedServicePeer::observe(service, reply_reader.as_handle()) {
+        Err(ServicePeerObservationError::PipeProcessMismatch) => Ok(reported),
+        Err(error) => Err(error.into()),
+        Ok(_) => Err("live fixture pipe was incorrectly bound to the reference service".into()),
+    }
 }
 
 /// Exercise the configuration part of the §7.5 probe against fixed guest keys.

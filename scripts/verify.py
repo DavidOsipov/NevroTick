@@ -136,6 +136,13 @@ MSIX_REQUIRED_AUTHORING = frozenset({MSIX_AUTHORING_INPUT, "authoring/service-in
                                      "authoring/event-inputs.json"})
 MSIX_ALLOWED_AUTHORING = MSIX_REQUIRED_AUTHORING | {"authoring/service-events.man"}
 MSIX_AUTHORING_MAX_BYTES = 1024 * 1024
+MSIX_HANDOFF_RECEIPT_MAX_BYTES = 4 * 1024 * 1024
+MSIX_PROPERTIES_FRAGMENT = "authoring/msix-properties.xml"
+MSIX_FOUNDATION_NAMESPACE = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+MSIX_UAP10_NAMESPACE = "http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+MSIX_TRUSTED_LAUNCH_NAMESPACE = "http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"
+MSIX_PACKAGE_LOGO = r"Assets\PackageLogo.png"
+MSIX_XML_DECLARATION = b'<?xml version="1.0" encoding="utf-8"?>'
 MSIX_ARTWORK_FIELDS = {
     "Properties/Logo": ("catalogue.B.6.2.Package/Properties/Logo", "derived"),
     "VisualElements/@Square44x44Logo": (
@@ -1589,7 +1596,8 @@ def export_windows_build(work: Path, output: Path, *, source: Path, report: dict
                         base_artwork, stage, staging_descriptor=staging_descriptor)
                 if authoring is not None:
                     inspection["authoring_export"] = export_msix_authoring(
-                        authoring, stage, inspection=inspection, staging_descriptor=staging_descriptor)
+                        authoring, stage, inspection=inspection, staging_descriptor=staging_descriptor,
+                        properties_source=source if base_artwork is not None else None)
                 completed["msix_assembly_inputs"] = inspection
             receipt = stage / "verification.json"
             receipt_data = (json.dumps(completed, indent=2) + "\n").encode("utf-8")
@@ -2065,6 +2073,16 @@ def inspect_windows_msix(metadata_dir: Path, generation_sha256: str, run, *, sou
         raise ENV.Incomplete("Invalid Windows MSIX source inspection output.") from error
     if hashlib.sha256(receipt_bytes).hexdigest() != generation_sha256:
         raise ENV.Incomplete("Windows MSIX generation receipt changed during inspection.")
+    check_msix_inspection(inspection, receipt, generation_sha256, source=source)
+    path = generation / "tree" / MSIX_AUTHORING_INPUT
+    document = decode_msix_authoring(read_bound_msix_leaf(path, inspection["authoring_inputs"][MSIX_AUTHORING_INPUT]))
+    activation = check_msix_ui_activation(document, linked_ui, generation_sha256,
+                                          require_base_artwork=require_base_artwork)
+    return {**inspection, "ui_activation": activation}
+
+
+def check_msix_inspection(inspection: dict, receipt: dict, generation_sha256: str, *, source: Path) -> None:
+    """Reconcile the source-only report with its generation and owned pending roles."""
     if (type(inspection) is not dict or set(inspection) != {
             "schema_version", "status", "distribution_route", "package_identity", "assembly_ready",
             "generation_receipt_sha256", "authoring_inputs", "roles", "pending"}
@@ -2092,8 +2110,11 @@ def inspect_windows_msix(metadata_dir: Path, generation_sha256: str, run, *, sou
         raise ENV.Incomplete("Windows MSIX source inspection differs from the checked authoring inputs.")
     if inspection["pending"] != sorted(pending, key=lambda item: item["path"]):
         raise ENV.Incomplete("Windows MSIX source inspection differs from the pending release inputs.")
-    path = generation / "tree" / MSIX_AUTHORING_INPUT
-    document = decode_msix_authoring(read_bound_msix_leaf(path, authoring[MSIX_AUTHORING_INPUT]))
+
+
+def check_msix_ui_activation(document: dict, linked_ui: dict, generation_sha256: str, *,
+                             require_base_artwork: bool) -> dict:
+    """Bind checked partial UI authoring to the version and execution resource report."""
     expected_activation = {
         "role": "ui", "executable": f"{PACKAGE}.exe", "application_id": None,
         "runtime_behavior": "packagedClassicApp", "trust_level": "mediumIL",
@@ -2113,7 +2134,7 @@ def inspect_windows_msix(metadata_dir: Path, generation_sha256: str, run, *, sou
         raise ENV.Incomplete("Windows MSIX UI activation differs from the linked UI role or generation.")
     if require_base_artwork:
         require_msix_base_artwork_paths(document)
-    return {**inspection, "ui_activation": expected_activation}
+    return expected_activation
 
 
 def _artwork_identity(info: os.stat_result) -> tuple[int, ...]:
@@ -2134,7 +2155,8 @@ def _matches_msix_export_path(path: Path, resolved: Path, staging_descriptor: in
 
 
 def read_bound_msix_leaf(path: Path, expected_sha256: str, *,
-                         staging_descriptor: int | None = None) -> bytes:
+                         staging_descriptor: int | None = None,
+                         maximum: int = MSIX_AUTHORING_MAX_BYTES) -> bytes:
     """Hold one bounded single-link leaf and confirm its original path and bytes."""
     custody_error = "Windows MSIX authoring differs from the checked generation."
     flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
@@ -2147,9 +2169,9 @@ def read_bound_msix_leaf(path: Path, expected_sha256: str, *,
         with os.fdopen(os.open(path, flags), "rb") as stream:
             before = os.fstat(stream.fileno())
             if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
-                    or not 0 < before.st_size <= MSIX_AUTHORING_MAX_BYTES):
+                    or not 0 < before.st_size <= maximum):
                 raise ENV.Incomplete(custody_error)
-            raw = stream.read(MSIX_AUTHORING_MAX_BYTES + 1)
+            raw = stream.read(maximum + 1)
             identity = _artwork_identity(before)
             if (len(raw) != before.st_size or hashlib.sha256(raw).hexdigest() != expected_sha256
                     or _artwork_identity(os.fstat(stream.fileno())) != identity
@@ -2160,22 +2182,24 @@ def read_bound_msix_leaf(path: Path, expected_sha256: str, *,
     return raw
 
 
+def unique_msix_json_fields(pairs):
+    """Retain only one decoded member for each JSON object key."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate MSIX authoring field.")
+        result[key] = value
+    return result
+
+
 def decode_msix_authoring(raw: bytes) -> dict:
     """Read the held authoring leaf without narrowing its admitted descriptive text."""
-
-    def unique_fields(pairs):
-        result = {}
-        for key, value in pairs:
-            if key in result:
-                raise ValueError("Duplicate MSIX authoring field.")
-            result[key] = value
-        return result
 
     def invalid_number(_value):
         raise ValueError("Unselected MSIX authoring number.")
 
     try:
-        document = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields,
+        document = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_msix_json_fields,
                               parse_float=invalid_number, parse_constant=invalid_number)
     except (RecursionError, ValueError) as error:
         raise ENV.Incomplete("Invalid Windows MSIX UI activation authoring.") from error
@@ -2184,7 +2208,7 @@ def decode_msix_authoring(raw: bytes) -> dict:
     return document
 
 
-def require_msix_base_artwork_paths(document: dict) -> None:
+def require_msix_base_artwork_paths(document: dict) -> str:
     """Match the three export roles to the exact already checked authoring leaf."""
     custody_error = "Windows MSIX base artwork authoring differs from the checked generation."
     rows = document.get("fields")
@@ -2194,7 +2218,7 @@ def require_msix_base_artwork_paths(document: dict) -> None:
         expected[key] = ("Assets/" + name, status)
     if type(rows) is not list:
         raise ENV.Incomplete(custody_error)
-    found = set()
+    found = {}
     for row in rows:
         if type(row) is not dict or type(row.get("key")) is not str:
             raise ENV.Incomplete(custody_error)
@@ -2202,9 +2226,95 @@ def require_msix_base_artwork_paths(document: dict) -> None:
         if key in expected:
             if key in found or (row.get("value"), row.get("status")) != expected[key]:
                 raise ENV.Incomplete("Windows MSIX base artwork role or package path differs.")
-            found.add(key)
-    if found != expected.keys():
+            found[key] = row["value"]
+    if found.keys() != expected.keys():
         raise ENV.Incomplete("Windows MSIX base artwork authoring rows are incomplete.")
+    return found[MSIX_ARTWORK_FIELDS["Properties/Logo"][0]]
+
+
+def render_msix_properties(document: dict) -> bytes:
+    """Encode checked display data, package integrity and Trusted Launch authoring."""
+    logo = require_msix_base_artwork_paths(document)
+    properties = ET.Element("Properties", {
+        "xmlns": MSIX_FOUNDATION_NAMESPACE, "xmlns:uap10": MSIX_UAP10_NAMESPACE,
+        "xmlns:trustedlaunch": MSIX_TRUSTED_LAUNCH_NAMESPACE,
+    })
+    for name, value in (
+        ("DisplayName", document.get("display_name")),
+        ("PublisherDisplayName", document.get("publisher_display_name")),
+        ("Description", document.get("description")),
+    ):
+        if type(value) is not str:
+            raise ENV.Incomplete(f"Windows MSIX Properties {name} requires literal text.")
+        ET.SubElement(properties, name).text = value
+    ET.SubElement(properties, "Logo").text = logo.replace("/", "\\")
+    integrity = ET.SubElement(properties, "uap10:PackageIntegrity")
+    ET.SubElement(integrity, "uap10:Content", {"Enforcement": "on"})
+    ET.SubElement(properties, "trustedlaunch:TrustedLaunch").text = "true"
+    ET.indent(properties, space="  ")
+    return MSIX_XML_DECLARATION + b"\n" + ET.tostring(properties, encoding="utf-8") + b"\n"
+
+
+def verify_msix_properties(raw: bytes, *, source: Path, generation_receipt: bytes) -> None:
+    """Read the current direct-MSIX fragment against checked source and required protections."""
+    product_path = "metadata/product.toml"
+    inputs = decode_msix_authoring(generation_receipt).get("inputs")
+    if type(inputs) is not list:
+        raise ENV.Incomplete("Windows MSIX Properties lacks its checked product source.")
+    product_digests = [row.get("sha256") for row in inputs
+                       if type(row) is dict and row.get("path") == product_path]
+    if len(product_digests) != 1:
+        raise ENV.Incomplete("Windows MSIX Properties lacks its unique checked product source.")
+    product_bytes = read_bound_msix_leaf(source / product_path, product_digests[0])
+    try:
+        product = tomllib.loads(product_bytes.decode("utf-8"))["product"]
+        expected = {"DisplayName": product["name"], "PublisherDisplayName": product["publisher"],
+                    "Description": product["description"], "Logo": MSIX_PACKAGE_LOGO}
+    except (KeyError, TypeError, ValueError) as error:
+        raise ENV.Incomplete("Windows MSIX Properties lacks its checked product fields.") from error
+
+    refused = "Windows MSIX Properties differs from the checked display, package integrity or Trusted Launch contract."
+    declaration, _, body = raw.partition(b"\n")
+    if (not 0 < len(raw) <= MSIX_AUTHORING_MAX_BYTES or declaration != MSIX_XML_DECLARATION
+            or b"<!" in body or b"<?" in body):
+        raise ENV.Incomplete(refused)
+    try:
+        raw.decode("utf-8")
+        properties = ET.fromstring(raw)
+    except (ET.ParseError, ValueError) as error:
+        raise ENV.Incomplete(refused) from error
+    foundation = "{" + MSIX_FOUNDATION_NAMESPACE + "}"
+    uap10 = "{" + MSIX_UAP10_NAMESPACE + "}"
+    leaves = {foundation + name: value for name, value in expected.items()}
+    # This current profile requires regeneration of fragments that predate Trusted Launch.
+    leaves["{" + MSIX_TRUSTED_LAUNCH_NAMESPACE + "}TrustedLaunch"] = "true"
+    required = leaves.keys() | {uap10 + "PackageIntegrity"}
+    children = {child.tag: child for child in properties}
+    if (properties.tag != foundation + "Properties" or properties.attrib
+            or (properties.text or "").strip(" \t\r\n")
+            or len(properties) != len(required) or children.keys() != required
+            or any((child.tail or "").strip(" \t\r\n") for child in properties)):
+        raise ENV.Incomplete(refused)
+    for name, value in leaves.items():
+        leaf = children[name]
+        if leaf.attrib or len(leaf) or leaf.text != value:
+            raise ENV.Incomplete(refused)
+    # The foundation schema uses ST_DisplayName for both names and
+    # ST_Description for the description. This fragment uses literal text.
+    for name, limit in (("DisplayName", 256), ("PublisherDisplayName", 256), ("Description", 2048)):
+        value = expected[name]
+        if (type(value) is not str or value != value.strip(" \t\r\n")
+                or re.search(r"[\x00-\x1f]", value)
+                or not 1 <= len(value) <= limit
+                or value.lower().startswith("ms-resource:")):
+            raise ENV.Incomplete(f"Windows MSIX Properties {name} requires bounded literal text.")
+    integrity = children[uap10 + "PackageIntegrity"]
+    if integrity.attrib or (integrity.text or "").strip(" \t\r\n") or len(integrity) != 1:
+        raise ENV.Incomplete(refused)
+    content = integrity[0]
+    if (content.tag != uap10 + "Content" or content.attrib != {"Enforcement": "on"}
+            or content.text or len(content) or (content.tail or "").strip(" \t\r\n")):
+        raise ENV.Incomplete(refused)
 
 
 def msix_authoring_digests(inspection: dict) -> dict[str, str]:
@@ -2222,7 +2332,8 @@ def read_msix_authoring_snapshot(tree: Path, inspection: dict) -> dict[str, byte
 
 
 def export_msix_authoring(frozen: dict[str, bytes], output: Path, *, inspection: dict,
-                          staging_descriptor: int | None = None) -> dict:
+                          staging_descriptor: int | None = None,
+                          properties_source: Path | None = None) -> dict:
     """Write held assembly source into the private build export and verify readback."""
     expected = msix_authoring_digests(inspection)
     if frozen.keys() != expected.keys():
@@ -2238,6 +2349,11 @@ def export_msix_authoring(frozen: dict[str, bytes], output: Path, *, inspection:
         matches = output == Path(f"/proc/self/fd/{staging_descriptor}")
     if not matches or not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
         raise ENV.Incomplete("Windows MSIX authoring requires an owner-private export directory.")
+    payload = frozen
+    if properties_source is not None:
+        fragment = render_msix_properties(decode_msix_authoring(frozen[MSIX_AUTHORING_INPUT]))
+        payload = {**frozen, MSIX_PROPERTIES_FRAGMENT: fragment}
+        expected[MSIX_PROPERTIES_FRAGMENT] = hashlib.sha256(fragment).hexdigest()
     export = output / "msix-authoring"
     files = {}
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -2245,13 +2361,17 @@ def export_msix_authoring(frozen: dict[str, bytes], output: Path, *, inspection:
         stage = Path(temporary) / export.name
         stage.mkdir(mode=0o700)
         (stage / "authoring").mkdir(mode=0o700)
-        for name, data in frozen.items():
+        for name, data in payload.items():
             path = stage / name
             with os.fdopen(os.open(path, flags, mode=0o600), "wb") as stream:
                 stream.write(data)
             digest = expected[name]
-            if read_bound_msix_leaf(path, digest, staging_descriptor=staging_descriptor) != data:
+            observed = read_bound_msix_leaf(path, digest, staging_descriptor=staging_descriptor)
+            if observed != data:
                 raise ENV.Incomplete("Windows MSIX authoring changed during export.")
+            if name == MSIX_PROPERTIES_FRAGMENT:
+                assert properties_source is not None
+                verify_msix_properties(observed, source=properties_source, generation_receipt=frozen["receipt.json"])
             files[name] = {"bytes": len(data), "sha256": digest}
         if export.exists() or export.is_symlink():
             raise ENV.Incomplete("Windows MSIX authoring export already exists.")
@@ -2329,10 +2449,185 @@ def export_msix_artwork(frozen: dict[str, bytes], output: Path, *,
             stream.write(data)
     if read_msix_artwork(assets, staging_descriptor=staging_descriptor) != frozen:
         raise ENV.Incomplete("Windows MSIX artwork changed during export.")
+    return msix_artwork_export_record(scope, selected)
+
+
+def msix_artwork_export_record(scope: str, selected: dict) -> dict:
+    """Describe verified artwork using the exact selected pin and role for each name."""
     return {"scope": scope, "export_root": "msix-inputs",
             "files": {"Assets/" + name: {"manifest_field": field, "width": dimension,
                                          "height": dimension, "bytes": length, "sha256": digest}
                       for name, (field, dimension, length, digest) in selected.items()}}
+
+
+def _msix_handoff_inventory(descriptor: int, leaves: set[str]) -> dict[str, tuple[int, ...]]:
+    """Read only the expected flat and nested names and hold their file identities."""
+    directories = {".": set()}
+    for name in leaves:
+        relative = Path(name)
+        for parent, child in zip(reversed(relative.parents), relative.parts):
+            directories.setdefault(parent.as_posix(), set()).add(child)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    observed = {}
+    refused = "Unexpected Windows MSIX handoff file or directory inventory."
+    for relative, expected in sorted(directories.items()):
+        child = os.open(relative, flags, dir_fd=descriptor)
+        try:
+            observed[relative] = _artwork_identity(os.fstat(child))
+            with os.scandir(child) as entries:
+                missing = set(expected)
+                for entry in entries:
+                    name = (Path(relative) / entry.name).as_posix()
+                    info = entry.stat(follow_symlinks=False)
+                    if entry.name not in missing:
+                        raise ENV.Incomplete(refused)
+                    missing.remove(entry.name)
+                    if name in leaves:
+                        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                            raise ENV.Incomplete(refused)
+                        observed[name] = _artwork_identity(info)
+                    elif not stat.S_ISDIR(info.st_mode):
+                        raise ENV.Incomplete(refused)
+                if missing:
+                    raise ENV.Incomplete(refused)
+        finally:
+            os.close(child)
+    return observed
+
+
+def _msix_handoff_image(artifact: dict, versioninfo: dict, role: str, state: str,
+                        name: str, generation: str) -> tuple[str, str]:
+    """Select one fixed linked image and its private symbol leaf from the pinned receipt."""
+    if (artifact["component_role"] != role or artifact["source_state"] != state
+            or artifact["profile"] != "release" or artifact["target"] != ENV.WINDOWS_TARGET
+            or artifact["sha256"] != versioninfo["image_sha256"]
+            or versioninfo["generation_sha256"] != generation
+            or versioninfo["strings"]["OriginalFilename"] != name + ".exe"
+            or Path(artifact["path"]).name != name + ".exe"):
+        raise ENV.Incomplete("Windows MSIX handoff image role or generation differs.")
+    symbol = Path(artifact["symbols"]["path"]).name
+    if symbol not in {name + ".pdb", name.replace("-", "_") + ".pdb"}:
+        raise ENV.Incomplete("Windows MSIX handoff symbol role differs.")
+    return name + ".exe", symbol
+
+
+def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, receipt_sha256: str) -> dict:
+    """Inspect one retained handoff without promoting any leaf to shipping payload."""
+    anchor = Path(f"/proc/self/fd/{descriptor}")
+    receipt_bytes = read_bound_msix_leaf(anchor / "verification.json", receipt_sha256,
+                                          staging_descriptor=descriptor, maximum=MSIX_HANDOFF_RECEIPT_MAX_BYTES)
+    report = json.loads(receipt_bytes.decode("utf-8"), object_pairs_hook=unique_msix_json_fields)
+    if report["status"] != "passed" or report["native_windows_execution"] != "not performed":
+        raise ENV.Incomplete("Windows MSIX handoff does not identify a successful cross-build export.")
+    inspection = report["msix_assembly_inputs"]
+    if type(inspection) is not dict:
+        raise ENV.Incomplete("Windows MSIX handoff assembly inputs must be an object.")
+    inspection = inspection.copy()
+    claimed_activation = inspection.pop("ui_activation")
+    claimed_artwork = inspection.pop("base_artwork")
+    claimed_authoring = inspection.pop("authoring_export")
+    generation = inspection["generation_receipt_sha256"]
+    authoring_names = {*msix_authoring_digests(inspection), MSIX_PROPERTIES_FRAGMENT}
+    if (claimed_authoring["scope"] != "private-assembly-source"
+            or claimed_authoring["export_root"] != "msix-authoring"
+            or claimed_authoring["files"].keys() != authoring_names):
+        raise ENV.Incomplete("Windows MSIX handoff private authoring inventory differs.")
+
+    artwork_names = {Path(name).name for name in claimed_artwork["files"]}
+    artwork_scope, artwork_pins = _msix_artwork_selection(artwork_names)
+    if (claimed_artwork != msix_artwork_export_record(artwork_scope, artwork_pins)
+            or any(type(row[key]) is not int for row in claimed_artwork["files"].values()
+                   for key in ("width", "height", "bytes"))):
+        raise ENV.Incomplete("Windows MSIX handoff artwork differs from its pinned roster.")
+    artwork_paths = {"msix-inputs/" + name for name in claimed_artwork["files"]}
+    authoring_paths = {"msix-authoring/" + name for name in authoring_names}
+
+    images = report["artifact"]
+    ui, ui_symbols = _msix_handoff_image(images, report["ui_versioninfo"],
+                                         "ui", "fixture", PACKAGE, generation)
+    observer, observer_symbols = _msix_handoff_image(images["engine"], report["observe_versioninfo"],
+                                                     "observer", "experiment", "nevrotick-observe", generation)
+    artifacts = {"verification.json": "private-receipt", ui: "unadmitted-ui-image",
+                 observer: "excluded-observe-image", ui_symbols: "private-symbols",
+                 observer_symbols: "private-symbols",
+                 **dict.fromkeys(authoring_paths, "private-authoring"),
+                 **dict.fromkeys(artwork_paths, "unadmitted-artwork")}
+    initial = _msix_handoff_inventory(descriptor, set(artifacts))
+    # The roster bookends include all files. Rebind the receipt to the first bookend
+    # as it supplied the selection read before the roster could be established.
+    if read_bound_msix_leaf(anchor / "verification.json", receipt_sha256, staging_descriptor=descriptor,
+                            maximum=MSIX_HANDOFF_RECEIPT_MAX_BYTES) != receipt_bytes:
+        raise ENV.Incomplete("Windows MSIX handoff receipt changed during inspection.")
+
+    verified_digests = {"verification.json": receipt_sha256}
+    pe = windows_pe_reader(source)
+    for image, symbol, subsystem, claimed in (
+        (ui, ui_symbols, "gui", images), (observer, observer_symbols, "console", images["engine"])
+    ):
+        image_record, _, symbols_record = pe.read_export_pair(anchor / image, anchor / symbol, subsystem=subsystem)
+        claimed_symbols = {key: claimed["symbols"][key] for key in ("sha256", "guid", "age")}
+        if (image_record[1] != claimed["sha256"] or type(claimed_symbols["age"]) is not int
+                or symbols_record != claimed_symbols):
+            raise ENV.Incomplete("Windows MSIX handoff PE or PDB differs from its pinned receipt.")
+        verified_digests[image] = image_record[1]
+        verified_digests[symbol] = symbols_record["sha256"]
+
+    authoring = {}
+    for name, field in claimed_authoring["files"].items():
+        content = read_bound_msix_leaf(anchor / "msix-authoring" / name, field["sha256"],
+                                        staging_descriptor=descriptor)
+        if type(field["bytes"]) is not int or field != {"bytes": len(content), "sha256": field["sha256"]}:
+            raise ENV.Incomplete("Windows MSIX handoff private authoring sizes differ.")
+        authoring[name] = content
+        verified_digests["msix-authoring/" + name] = field["sha256"]
+    for name, digest in msix_authoring_digests(inspection).items():
+        if claimed_authoring["files"][name]["sha256"] != digest:
+            raise ENV.Incomplete("Windows MSIX handoff private authoring generation differs.")
+    source_receipt = authoring["receipt.json"]
+    check_msix_inspection(inspection, decode_msix_authoring(source_receipt), generation, source=source)
+    document = decode_msix_authoring(authoring[MSIX_AUTHORING_INPUT])
+    activation = check_msix_ui_activation(document, report["ui_versioninfo"], generation,
+                                          require_base_artwork=True)
+    if (activation != claimed_activation or document["identity"] is not None
+            or document["complete_manifest"] is not False or document["distribution_route"] != "direct-msix"):
+        raise ENV.Incomplete("Windows MSIX handoff activation or assembly status differs.")
+    verify_msix_properties(authoring[MSIX_PROPERTIES_FRAGMENT], source=source, generation_receipt=source_receipt)
+    read_msix_artwork(anchor / "msix-inputs/Assets", staging_descriptor=descriptor)
+    verified_digests.update({"msix-inputs/" + name: field["sha256"]
+                             for name, field in claimed_artwork["files"].items()})
+    if (initial != _msix_handoff_inventory(descriptor, set(artifacts))
+            or initial["."] != _artwork_identity(directory.stat(follow_symlinks=False))):
+        raise ENV.Incomplete("Windows MSIX handoff tree changed during inspection.")
+    return {
+        "schema_version": 1, "status": "handoff-verified", "assembly_ready": False,
+        "distribution_route": "direct-msix", "handoff_receipt_sha256": receipt_sha256,
+        "generation_receipt_sha256": generation, "package_identity": None,
+        "roles": inspection["roles"], "pending": inspection["pending"],
+        "ui_application_id": activation["application_id"],
+        "product_dependency_and_resource_closure": "not-admitted",
+        "product_platform_and_activation_profile": "not-admitted",
+        "files": {name: {"disposition": value, "bytes": initial[name][4],
+                         "sha256": verified_digests[name]}
+                  for name, value in sorted(artifacts.items())},
+    }
+
+
+def inspect_msix_handoff(source: Path, directory: Path, receipt_sha256: str) -> dict:
+    """Read only a held, private Windows export selected by an independent receipt pin."""
+    if not re.fullmatch(r"[0-9a-f]{64}", receipt_sha256):
+        raise ENV.Incomplete("Windows MSIX handoff requires the pinned lowercase receipt SHA-256.")
+    directory = directory.absolute()
+    if directory.resolve(strict=True) != directory:
+        raise ENV.Incomplete("Windows MSIX handoff path must name its original directory.")
+    descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        info = os.fstat(descriptor)
+        if (info.st_uid != os.geteuid() or info.st_mode & 0o077
+                or not os.path.samestat(info, directory.stat(follow_symlinks=False))):
+            raise ENV.Incomplete("Windows MSIX handoff requires an owner-private export directory.")
+        return _read_msix_handoff_export(source, directory, descriptor, receipt_sha256)
+    finally:
+        os.close(descriptor)
 
 
 def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) -> tuple[Path, dict, dict]:
@@ -2719,12 +3014,33 @@ def main(argv=None) -> int:
     parser.add_argument("--lane", choices=("portable", "windows", "dependencies"), default="portable")
     parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE), default="default")
     parser.add_argument("--capture-slint", action="store_true")
+    parser.add_argument("--inspect-msix-handoff", type=Path,
+                        help="read a retained private Windows artifact export without building")
+    parser.add_argument("--handoff-receipt-sha256",
+                        help="independently retained SHA-256 for the export's verification.json")
     parser.add_argument("--export-msix-authoring", action="store_true",
                         help="retain private checked assembly source in a Windows artifact output")
-    for name in ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
-                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc", "msix-branding-dir"):
+    build_paths = ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
+                   "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc", "msix-branding-dir")
+    for name in build_paths:
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
+    if args.inspect_msix_handoff is not None or args.handoff_receipt_sha256 is not None:
+        if (not args.handoff_receipt_sha256 or args.inspect_msix_handoff is None
+                or args.capture_slint or args.export_msix_authoring
+                or args.lane != "portable" or args.profile != "default"
+                or any(getattr(args, name.replace("-", "_")) is not None for name in build_paths)):
+            parser.error("MSIX handoff inspection requires both handoff options without build options.")
+        try:
+            handoff = inspect_msix_handoff(ROOT, args.inspect_msix_handoff, args.handoff_receipt_sha256)
+        except ENV.Incomplete as error:
+            print(f"INCOMPLETE: {error}", file=sys.stderr)
+            return 1
+        except (RuntimeError, OSError, ValueError, KeyError, TypeError, AttributeError):
+            print("INCOMPLETE: Invalid or changed Windows MSIX handoff.", file=sys.stderr)
+            return 1
+        print(json.dumps(handoff, indent=2))
+        return 0
     report = {"scope": f"UI-M0, wire, domain, exchange, synthetic regression and controlled-loopback engine pilot {args.lane} verification", "status": "incomplete",
               "native_windows_execution": "not performed", "advisory_freshness": "not checked by this row"}
     receipt = None

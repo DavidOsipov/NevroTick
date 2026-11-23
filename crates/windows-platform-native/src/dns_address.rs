@@ -402,6 +402,56 @@ mod tests {
         Ok(())
     }
 
+    /// A ready address result reaches a live caller without requesting cancellation.
+    /// # Errors
+    /// Return an unexpected address insertion, fixture send, or receive failure.
+    /// # Panics
+    /// Reject a changed address result or a cancellation request.
+    #[test]
+    fn live_caller_receives_ready_dns_addresses() -> Result<(), Box<dyn Error>> {
+        let address: IpAddr = IpAddr::V4(Ipv4Addr::new(192, 0, 2, 42));
+        let mut addresses: DnsAddresses = DnsAddresses::empty();
+        addresses.push(address)?;
+        let called: std::cell::Cell<bool> = std::cell::Cell::new(false);
+        let (completion, receiver): (SyncSender<Outcome>, Receiver<Outcome>) = sync_channel(1);
+        completion.send(Ok(addresses))?;
+        let (outcome, cancellation): Waited = wait_for_dns_result(
+            &receiver,
+            || false,
+            || {
+                called.set(true);
+                DnsCancellationRequest::Requested
+            },
+        );
+        assert!(outcome?.iter().eq([address]));
+        assert!(!called.get());
+        assert_eq!(cancellation, DnsCancellationRequest::Skipped);
+        Ok(())
+    }
+
+    /// A disconnected provider returns malformed evidence regardless of retirement.
+    /// # Panics
+    /// Reject a fabricated result or a cancellation request for the closed channel.
+    #[test]
+    fn disconnected_dns_provider_does_not_request_cancellation() {
+        for retired in [false, true] {
+            let called: std::cell::Cell<bool> = std::cell::Cell::new(false);
+            let (completion, receiver): (SyncSender<Outcome>, Receiver<Outcome>) = sync_channel(1);
+            drop(completion);
+            let (outcome, cancellation): Waited = wait_for_dns_result(
+                &receiver,
+                || retired,
+                || {
+                    called.set(true);
+                    DnsCancellationRequest::Requested
+                },
+            );
+            assert!(matches!(outcome, Err(DnsAddressError::Malformed)));
+            assert!(!called.get());
+            assert_eq!(cancellation, DnsCancellationRequest::Skipped);
+        }
+    }
+
     /// Both successful and refused requests preserve the original provider result.
     /// # Errors
     /// Return a bounded channel or unexpected worker failure.
@@ -525,6 +575,66 @@ mod tests {
             ("::1.", DnsNameError::InvalidLabel),
         ] {
             assert_eq!(DnsQueryName::new(input).err(), Some(error), "{input}");
+        }
+    }
+
+    /// The rejected names retain their typed reason and display only its fixed category.
+    /// # Panics
+    /// Fail if a rejection loses its reason or includes input text in its message.
+    #[test]
+    fn dns_name_errors_display_only_the_rejection_category() {
+        let oversized: String = format!("{}.example.", "private-label".repeat(20));
+        for (input, expected, message) in [
+            (
+                oversized.as_str(),
+                DnsNameError::NameTooLong,
+                "DNS query name exceeds the length limit",
+            ),
+            (
+                "private-label.example",
+                DnsNameError::MissingRoot,
+                "DNS query name requires a final root separator",
+            ),
+            (
+                "private_label.example.",
+                DnsNameError::InvalidLabel,
+                "DNS query name has an invalid label",
+            ),
+            (
+                "192.0.2.42.",
+                DnsNameError::AddressLiteral,
+                "DNS query name resembles an address literal",
+            ),
+        ] {
+            let observed: Option<(DnsNameError, String)> = DnsQueryName::new(input)
+                .err()
+                .map(|error: DnsNameError| (error, error.to_string()));
+            assert_eq!(observed, Some((expected, message.to_owned())));
+        }
+    }
+
+    /// DNS query failures are displayable without exposing the retained native status.
+    /// # Panics
+    /// Fail if display changes categories or includes the native status.
+    #[test]
+    fn dns_address_errors_display_only_the_failure_category() {
+        for (error, message) in [
+            (DnsAddressError::Native(9_003), "native DNS query failed"),
+            (
+                DnsAddressError::Malformed,
+                "native DNS record did not match the expected layout",
+            ),
+            (
+                DnsAddressError::Capacity,
+                "native DNS result exceeded the capacity limit",
+            ),
+            (
+                DnsAddressError::Empty,
+                "native DNS result contained no usable address",
+            ),
+            (DnsAddressError::Busy, "native DNS query capacity is busy"),
+        ] {
+            assert_eq!(error.to_string(), message);
         }
     }
 

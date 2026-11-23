@@ -161,6 +161,39 @@ mod tests {
         Ok(())
     }
 
+    /// Both image-query failure classes exclude the partially observed path.
+    ///
+    /// # Panics
+    /// Fail if a failure loses its diagnosis or includes the supplied path.
+    #[test]
+    fn process_image_name_errors_redact_the_reported_path() {
+        let path: Vec<u16> = r"C:\Private\image.exe".encode_utf16().collect();
+        for (native_result, expected, message) in [
+            (
+                Err(5),
+                ProcessImageNameError::Native(5),
+                "QueryFullProcessImageNameW failed (5)",
+            ),
+            (
+                Ok(()),
+                ProcessImageNameError::Malformed,
+                "invalid reported process image name",
+            ),
+        ] {
+            let refusal: Option<(ProcessImageNameError, String)> = read_process_image_name(
+                |units: &mut [u16; PROCESS_IMAGE_NAME_BUFFER], count: &mut u32| {
+                    units[..path.len()].copy_from_slice(&path);
+                    // A successful query needs a NUL after the reported path.
+                    *count = 20;
+                    native_result
+                },
+            )
+            .err()
+            .map(|error: ProcessImageNameError| (error, error.to_string()));
+            assert_eq!(refusal, Some((expected, message.to_owned())));
+        }
+    }
+
     /// A native failure retains its code regardless of the returned count.
     ///
     /// # Panics

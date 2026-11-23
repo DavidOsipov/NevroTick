@@ -5,12 +5,15 @@ use std::{
     error::Error,
     fmt::Debug,
     io::{self, Write},
-    os::windows::io::OwnedHandle,
+    num::NonZeroU32,
+    os::windows::io::{AsHandle, BorrowedHandle, OwnedHandle},
     rc::{Rc, Weak},
     task::Poll,
     thread,
     time::{Duration, Instant},
 };
+
+use windows_platform_native::{PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess};
 
 use super::{
     LabDuplexPipe, LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader,
@@ -20,7 +23,10 @@ use crate::{
     NativeError,
     broker_endpoint::{AcceptCompletion, Reservation},
     native_broker_endpoint::{FixtureConnectionError, NativeBrokerEndpoint},
-    native_pipe_identity::{ensure_unimpersonated, own_process_identity},
+    native_pipe_identity::{
+        RetainedPrimaryToken, ensure_unimpersonated, observe_peer_token_during_identification,
+        own_process_identity,
+    },
     native_pipe_read::{
         IdentifiedRequestRead, NativeCancel, NativePipeRead, NativeReadBytes, NativeReadError,
         NativeReadPoll, NativeReadStart, RetiredRead,
@@ -64,6 +70,7 @@ fn identified_request_and_reply_share_one_duplex_pipe() -> Check<()> {
     {
         return Err("the two directions do not share both original endpoint owners".into());
     }
+    let witness_server: Rc<OwnedHandle> = Rc::clone(&pair.request.reader.handle);
     let (request, reply_reader, reply_writer): (
         LabIdentificationPipe,
         LabPipeReader,
@@ -86,6 +93,9 @@ fn identified_request_and_reply_share_one_duplex_pipe() -> Check<()> {
     {
         return Err("the duplex request lost its bytes or directional identity".into());
     }
+    request.check_peers()?;
+    check_peer_token_refusal_and_reversion(witness_server.as_handle())?;
+    drop(witness_server);
     let received_reply: NativeReadBytes =
         transfer_reply(&mut reply_reader, &mut reply_writer, REPLY)?;
     reply_writer.check_reply_completion(&received_reply)?;
@@ -108,6 +118,37 @@ fn identified_request_and_reply_share_one_duplex_pipe() -> Check<()> {
     ) {
         return Err("the new connection accepted a completion from its predecessor".into());
     }
+    Ok(())
+}
+
+/// Check the actual ambient-token refusal and then query the same retained process.
+///
+/// The server is the identified duplex pair's original endpoint and its latest
+/// message has completed. The current process is the checked client of that pair.
+///
+/// # Errors
+/// Preserve a setup or native query failure, or refuse the wrong ambient-token
+/// outcome or a changed process token after reversion.
+fn check_peer_token_refusal_and_reversion(server: BorrowedHandle<'_>) -> Check<()> {
+    let pid: NonZeroU32 =
+        NonZeroU32::new(std::process::id()).ok_or("fixture process has no PID")?;
+    let peer: PeerProcess = PeerProcess::open(pid)?;
+    peer.check_live()?;
+    let expected: RetainedPrimaryToken = RetainedPrimaryToken::open(peer.as_handle())?;
+    let observed: Result<PeerPrimaryToken, PeerPrimaryTokenError> =
+        observe_peer_token_during_identification(server, &peer)?;
+    ensure_unimpersonated()?;
+    match observed {
+        Err(PeerPrimaryTokenError::AmbientThreadToken) => {}
+        Err(error) => return Err(error.into()),
+        Ok(_) => return Err("peer token query accepted ambient impersonation".into()),
+    }
+    let recovered: PeerPrimaryToken = peer.retain_primary_token()?;
+    if !expected.matches_observation(&recovered) {
+        return Err("peer token changed across the ambient refusal and reversion".into());
+    }
+    peer.check_live()?;
+    println!("peer-primary-token ambient=refused post-reversion=matched");
     Ok(())
 }
 

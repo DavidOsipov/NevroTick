@@ -42,6 +42,22 @@ pub enum NativeOperation {
     BrokerEndpointAcceptCancel,
     /// Observe the exact connection attempt without waiting or releasing custody.
     BrokerEndpointAcceptCompletion,
+    /// Prepare the private event for the armed first read.
+    BrokerEndpointReadEvent,
+    /// Submit the only read on the original accepted fixture pipe.
+    BrokerEndpointReadSubmit,
+    /// Target cancellation at the original read record.
+    BrokerEndpointReadCancel,
+    /// Collect native completion of the original read record.
+    BrokerEndpointReadCompletion,
+    /// Create the fixture's private reply event.
+    BrokerEndpointReplyEvent,
+    /// Submit one reply on the original accepted connection.
+    BrokerEndpointReplySubmit,
+    /// Cancel the exact outstanding reply write.
+    BrokerEndpointReplyCancel,
+    /// Collect the original reply's native result.
+    BrokerEndpointReplyCompletion,
     /// Prepare the broker's process-lifetime control signal before registration.
     BrokerWakePrepare,
     /// Signal the broker owner after publishing a control notice.
@@ -108,6 +124,24 @@ impl fmt::Display for NativeError {
             NativeOperation::BrokerWakePrepare => "laboratory broker wake preparation failed",
             NativeOperation::BrokerWakeSignal => "laboratory broker wake signal failed",
             NativeOperation::BrokerWakeWait => "laboratory broker wake wait failed",
+            NativeOperation::BrokerEndpointReadEvent => "laboratory broker read event failed",
+            NativeOperation::BrokerEndpointReadSubmit => "laboratory broker read submission failed",
+            NativeOperation::BrokerEndpointReadCancel => {
+                "laboratory broker read cancellation failed"
+            }
+            NativeOperation::BrokerEndpointReadCompletion => {
+                "laboratory broker read completion failed"
+            }
+            NativeOperation::BrokerEndpointReplyEvent => "laboratory broker reply event failed",
+            NativeOperation::BrokerEndpointReplySubmit => {
+                "laboratory broker reply submission failed"
+            }
+            NativeOperation::BrokerEndpointReplyCancel => {
+                "laboratory broker reply cancellation failed"
+            }
+            NativeOperation::BrokerEndpointReplyCompletion => {
+                "laboratory broker reply completion failed"
+            }
             NativeOperation::BrokerEndpointClose => "laboratory broker endpoint close failed",
         })
     }
@@ -207,6 +241,14 @@ pub enum WorkerError {
     EndpointPreparation(NativeError),
     /// Native accept submission or a Running observation failed.
     EndpointAccept(NativeError),
+    /// Native submission or Running observation of the armed first read failed.
+    EndpointRead(NativeError),
+    /// Cancelling or collecting the original read after fencing failed.
+    EndpointReadCleanup(NativeError),
+    /// Native submission or observation of the armed reply failed.
+    EndpointReply(NativeError),
+    /// Cancelling or collecting the original reply after fencing failed.
+    EndpointReplyCleanup(NativeError),
     /// The empty-DACL reservation observed a terminal result before the Stop fence.
     EndpointUnexpectedCompletion,
     /// Cancelling or collecting the original accept after the Stop fence failed.
@@ -225,6 +267,10 @@ impl fmt::Display for WorkerError {
             Self::Cleanup => "laboratory worker cleanup failed",
             Self::EndpointPreparation(_) => "laboratory broker endpoint preparation failed",
             Self::EndpointAccept(_) => "laboratory broker accept failed",
+            Self::EndpointRead(_) => "laboratory broker first read failed",
+            Self::EndpointReadCleanup(_) => "laboratory broker first read retirement failed",
+            Self::EndpointReply(_) => "laboratory broker reply failed",
+            Self::EndpointReplyCleanup(_) => "laboratory broker reply retirement failed",
             Self::EndpointUnexpectedCompletion => "laboratory broker accept completed unexpectedly",
             Self::EndpointAcceptCleanup(_) => "laboratory broker accept retirement failed",
             Self::EndpointClose(_) => "laboratory broker endpoint release unconfirmed",
@@ -238,6 +284,10 @@ impl Error for WorkerError {
         match self {
             Self::EndpointPreparation(error)
             | Self::EndpointAccept(error)
+            | Self::EndpointRead(error)
+            | Self::EndpointReadCleanup(error)
+            | Self::EndpointReply(error)
+            | Self::EndpointReplyCleanup(error)
             | Self::EndpointAcceptCleanup(error)
             | Self::EndpointClose(error) => Some(error),
             Self::Preparation

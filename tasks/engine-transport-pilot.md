@@ -30947,6 +30947,127 @@ The native transcript SHA-256 is
 `802a9b3ee2063ad46c78ac26412c03722c9b3f25721ea2fe1124bd8da0f1c5fd`.
 
 
+###### Capture the protected UDP adapter return before bookkeeping — 23 November 2026
+
+W11-W01/S2.1, TQ-01 and CHECK-7/11/25. The actual guarded protected
+sender records the clock at the Tokio `try_send_to` return, before
+classifying the result or incrementing the full-submission counter. It
+keeps the original result, source/Control guards, archived cookie, final
+authority check and scripted capture and cancellation order. An adapter
+return can describe readiness refusal without a socket send. The receipt
+establishes application placement and retained observations.
+
+Tree `4d3f06132db974a31c97896f6596a818d4d3cb39` passed 607 GNU EP1
+library cases in each mode, 91 doctests, GNU and MSVC EP1 Clippy, format
+and the isolation control. Both test modes reached the real two-leg
+loopback NAK/ordinary successor and the exact error and send-floor
+neighbors. Independent review matched the 647 inputs and the real send
+and ledger consumers. Source inspection establishes the relative capture
+placement. The supported typed clock outcomes retain ordinary send
+accounting. An unwind inside the clock getter can interrupt the
+full-submission observation before the worker's abnormal join.
+
+The summary at `~/.local/share/nevrotick/protected-send-return-20261123.Hg3NavED/summary.json`
+hashes to `b3399d21953a954657dad3043f5e4ce270cad51377090fbe4aa4dc1f897c7f42`.
+The isolated checks took 201.30 seconds, matched before/after inputs and
+retired scratch.
+
+The follow-up built the exact staged tree
+`2429decc84b3c140f779230e3f513a202fd23118` for Windows MSVC x64-v3 with
+EP1. The 648 admitted inputs matched both bookends. The link and PE/PDB
+readback passed and compiler scratch retired. The ordinary Windows
+build-26300 supervisor ran all five exact selectors after its CPU and
+roster checks. Both authenticated loopback successors passed through
+native UDP to the joined reports. The three neighboring controls passed
+for capture chronology and deadline retention, spent receive accounting,
+and typed send failures with both source floors. The test exited zero with
+614 filtered cases. All children reaped and Windows staging retired.
+The link receipt hashes to
+`f017e86fe9050c327df7172d046d2f33d46ca38e0567c09995854391e8df80ab`.
+The native summary hashes to
+`21e32cdfa273bde54f86cbecd731c50062e1904d5b4d060cb5a84effaa606a85`.
+Both are under `~/.local/share/nevrotick/protected-return-native-20261123.7BgN67lI/`.
+Independent placement bounds, control latency, affected-file coverage and
+mutation, calibrated mapping and positive Core admission remain open.
+
+###### Prepare the two-leg protected timing export — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/25/27. A private lab-facade
+candidate adds `managed-protected-successor-timing` for the checked ordinary
+two-leg history. It reads the original pre-send, send-return and
+receive-return QPC/FILETIME brackets from both joined receipts. It requires
+two complete submissions, an ordinary successor, complete recorded clocks
+at a common frequency and ordered legs. Its bounded output is six labeled
+rows. The legacy stderr summary retains `mapping-unavailable eligible=0
+fresh_sync=0`.
+
+Private tree `10e0e11bb3490faecc6db6e4342cdca123d9ae2d` passed all 20
+configured Windows facade build lanes, including format, Clippy, link and
+PE/PDB readback. The linked image ran three exact input-refusal controls
+under an ordinary account on Windows build 26300. The legacy and timing
+selectors without admitted peer inputs both returned their peer refusal.
+An extra argument refused at argument admission. Each produced empty stdout,
+retained its typed exit and was reaped. Scratch and Windows staging retired.
+
+The private patch, prospective peer oracle and receipts are under
+`~/.local/share/nevrotick/protected-timing-facade-build-20261123.Lm0mhs9D/`.
+The facade build receipt hashes to
+`746e6717cc8661243fe52cdee3d459d423bff50c0393f77356003225d43efa7c`.
+The native output SHA-256 is
+`44032fd8b4258b2366768cfbf766c79e7ccf0dc2a4b2ed4bf35cacccd8dd3878`.
+The experimental source stays in the private candidate until a healthy
+producer run emits all six rows and the paired peer/control reader validates
+the same legs, custody and independent containment. The current production
+timing and calibrated reference obligations still apply.
+
+###### Pair protected capture brackets on Windows loopback — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/25/27. The Engine test fixture
+now observes both ordinary protected legs through actual Windows loopback
+UDP. The peer reads QPC at successful receive return and before its reply
+send. The joined Engine report must carry the original capture triplets.
+Both replies pass the Engine's S2C authentication and request correlation.
+The four existing scenarios use a separate sequence check for both peer
+pairs and exclude the optional NAK from the observations. The relative
+timing case requires at least two ticks across threads and checks the
+nearest bracket endpoints. Source review establishes exact read placement.
+
+The exact tested tree `b5e3b7e715a5317322dfba772cb76436fc901798` retained 648
+product inputs, SHA-256 `438e62692f28902f30acdb96d7513d41366dc684bb09739b87ce20a500a0a5a7`.
+Rust 1.100.0 passed formatting, GNU and MSVC EP1 Clippy, and four GNU
+cases in each ordinary and optimized mode. The MSVC x64-v3 debug Engine
+test image linked and passed PE/PDB readback. Its six selected ordinary
+Windows build-26300 cases exited zero. The first Clippy refusal found
+new imports shadowing older qualified paths. The prior GNU compile
+refusal found unread portable observation fields. The final fixture
+uses narrow type paths and asserts all four sequence tags on both targets.
+
+The independent reader checked all ten native rows. At 10 MHz, the
+nearest request/reply gaps were 2130/746 ticks for the first
+leg and 2705/905 for the successor. It refused a moved
+successor reply observation and a first request gap of one tick. The
+independent source reviewer checked the final patch and retained join,
+peer and request custody. These observations establish relative
+application timing with a shared clock. Establishment and keys for
+this loopback fixture are scripted.
+
+The raw receipts are under
+`~/.local/share/nevrotick/protected-two-end-timing-20261123.jr9p51Ib/combined/`.
+The build summary hashes to
+`f0f9bc1395d1280ef351c4fd98896b02586bbc6b19874ab8d236f492aaafa841`,
+the Windows summary to
+`9b510abad92670d9f8a942bbad71151f385184b9bc00943fa6b40aa841e46b22` and
+the timing readback to
+`817abd967c1c66593628725cb89b6b8808063c5dcf9e27f26855f04e99fd954e`.
+Compiler and Windows scratch retired. Separate private host admission
+for the future TLS timing pair passed 34 controls, including stale or
+missing reader bytes and retention of the admitted callable before
+dispatch. The peer still needs standalone graph admission and a matching
+build. The healthy TLS pair, physical event pairing and UTC error
+calibration, qualifying mapping issuer and current Core admission
+remain open. Existing coverage and mutation obligations retain their
+recorded scopes.
+
 ###### Check the original protected capture triplet in the facade fixture
 
 W11-W01/S2.1 and CHECK-6/7/11/14/21/24/25/27. The external Windows
@@ -31106,3 +31227,136 @@ configured memory floor through supervisor startup.
 Affected-file metrics and the calibrated reference, issuer/revision,
 invalidation and date/scale inputs remain open. Property, fuzz and
 native metric campaigns have no new execution credit from these tests.
+
+###### Preserve the Windows provider input through the exact capture child — 23 November 2026
+
+W11-W01/S2.1 and CHECK-6/11/14/21/25/27. A third owned Sandbox replay
+stopped before any child started at 2,032,176 KiB available under the
+existing 2,097,152 KiB floor. The supervisor and cleanup receipts in
+`~/.local/share/nevrotick/plain-capture-native-prep-20261123.XNVokmbf/native-03/` retain that refusal. The ordinary Windows host
+passed the CPU probe and listed all eight integration tests. Its nested
+IPv4 case then entered and failed with Winsock 10106 before capture.
+The raw child stderr in `~/.local/share/nevrotick/plain-capture-native-prep-20261123.XNVokmbf/main-host-02/` retains the actual
+error. Both incomplete runs retired their owned scratch.
+
+Failure triage traced `SystemRoot` from the supervisor through the
+launcher to the nested Rust test's `env_clear()`. On the unchanged
+MSVC test image from `cross-02`, the exact IPv4 and IPv6 child bodies
+both failed with 10106 when the variable was absent, passed with only
+`SystemRoot` added, and failed again after removing it. The six-child
+receipt SHA-256 is
+`8b75792321658aae31862f4f4a12405b800a0dde0e0cf6d45f0ef6dd7e00a973`
+in `~/.local/share/nevrotick/plain-capture-native-prep-20261123.XNVokmbf/child-environment.sug93hh2/`. The earlier probe with a
+case-sensitive Windows path comparison stopped at setup and executed
+no child. Microsoft documents Windows Sockets expansion of environment
+variables in provider DLL paths. [Windows Sockets provider documentation](https://learn.microsoft.com/en-us/windows/win32/api/ws2spi/nf-ws2spi-wscinstallproviderandchains64_32)
+
+The private Windows fixture now forwards the runner's absolute
+`SystemRoot` after clearing the rest of the environment. The exact
+role, admitted coverage exception, directory custody and output limits
+remain. The change affects the test launcher. The Windows-target links
+on tree `f444bd442c0a135edba055b86b8f9ac080304ffe` passed all ten lanes,
+including PE and PDB readback. The same candidate then passed both
+normal nested capture cases on ordinary Windows build 26300. These
+selectors reached the original capture consumers. Each Windows job
+retained its named process roster, had zero active processes after cleanup
+and retired its temporary files. Cross-build and native receipt SHA-256
+values are `3ae92b503120d4d02118f26dcd1df8ef67230fdd0db3c73cc86d0a45fe330cc5`
+and `c60d35b78945b5c60ab5a604ae2aee357a90e3ba2586868f8d96f6f3c61c3c02`
+under `~/.local/share/nevrotick/plain-capture-native-prep-20261123.XNVokmbf/cross-03/` and `~/.local/share/nevrotick/plain-capture-native-prep-20261123.XNVokmbf/main-host-03/`.
+
+The evidence reaches the two ordinary loopback capture cases. Physical
+capture placement, calibrated UTC mapping, date/scale, invalidation,
+positive Core admission and the affected-file metrics retain their exits.
+
+###### Preserve the original cutoff through managed protected acquisition — 23 November 2026
+
+S2.2, W11-W05/S3.1 and CHECK-6/25/27. The Windows EP1
+`SourcePolicyAuthority::invoke_nts_protected_before` receives the calling
+owner's absolute monotonic cutoff alongside its exact source revision.
+The original Control clamps the handshake and exchange windows without
+replacing its Stop scope. The existing checks carry that window through
+worker admission, KE, the authenticated datagram operations and final
+commit. Preparation still refuses stale configuration. An elapsed cutoff
+before registration consumes no worker slot. A late refusal inside a
+normally joined successor remains a terminal refusal in its report.
+Observer cleanup, previously committed history and real worker retirement
+retain their original owners. Synchronous return can outlast the cutoff.
+
+The two new focused histories exercise the real reservation, submitted
+worker, receiving and closure path. The expired pre-registration case
+calls neither the observer nor submission. Holding the actual worker
+through expiry leaves both source policy revisions unchanged, spends no
+driver work and retains the observer close cause after the actual joined
+take. The admitted neighbor applies an authenticated restriction to the
+source and endpoint. An isolated omitted-cutoff derivative reaches
+observer registration and fails the independent assertion. The first
+runner selected zero tests before the discovery repair. The next run
+exposed an incorrect outer-error expectation, which was corrected to use
+the actual joined terminal report. All first failures were retained.
+
+The integrated tree `3b7265a9b74815e83b5d9fc8cef5c06e1d7faae0`
+passed six configured graph lanes, both causal fault controls, three
+ordinary tests and two optimized tests. GNU and MSVC all-target Clippy
+passed for EP1 and the service fixture, and the EP1 doctest lane
+executed 91 cases. The Rust 1.100.0 run matched all 717 inputs at its
+bookends and retired its scratch after 311.74 seconds. Independent
+review checked the real receiving paths, source map and raw controls.
+The development receipt SHA-256 is
+`efa55a151e44e21859e1cf7e68e3b0411c07892be056584859d8465c813e2092`
+under `~/.local/share/nevrotick/managed-owner-cutoff-20261123.zy89P8Fz/integrated.3sfxo270/`.
+
+The maintained external Windows facade calls the new API first with an
+elapsed deadline and then with the original owning peer's live deadline.
+The accepted call reaches real ClientHello/EOF, checks its joined
+terminal failure and confirms zero UDP sends and no association/history.
+The earlier stale-definition refusal remains in the case. The actual
+MSVC x64-v3 build passed 20 lanes with exact PE/PDB readback. The first
+build invocation refused its native-only selector before any job ran.
+After separating the flags, all nine ordinary Windows build-26300
+supervisor cases passed their expected outcomes, including the owned EOF
+peer and independent guard, timeout and cleanup controls. All processes
+retired. The test removed the Windows transfers and 543,182,848 bytes of
+allocated Linux linker scratch. The build and native receipt SHA-256
+values are `62950538842b19b69ec090958cf8ae3a4bece87264a6ba97587a71b66bfd7efb`
+and `f573c6a0dfd8181cae1eb489d599ce64945f70dc278484c24c5b41bc2f75a77c`
+under `facade-build/` and `facade-native/` in the same bundle.
+
+The installed service source supplier, native suspend/stop delivery,
+healthy protected exchange under the new outer cutoff, calibrated UTC
+mapping and the affected-file 90% line and 95% mutation gates remain open.
+
+###### Recheck the managed cutoff after worker reservation — 23 November 2026
+
+S2.2, W11-W05/S3.1 and CHECK-6/25/27. The observed acquisition path
+now checks the original source revision, Stop scope and clamped handshake
+deadline again on the reserved worker immediately before admitting power
+observer registration. A cutoff already elapsed at that sample returns the
+original preparation failure and releases the unspent reservation. The
+observer and submission callbacks are untouched on this refusal. The same
+reservation supplies the worker slot and the original Stop endpoint. The
+observer callback runs after the guard is released. The worker still
+checks currentness and remaining time before provider or transport work.
+
+`implement-rust-contracts`, `qa-fault-recovery` and
+`qa-regression-selection` exercised a genuinely checked expired Control
+at the production reservation handoff. The controlled omission of the
+handoff check exited 101 after it called the registration function. The
+restored selection refused before registration or submission and reused
+that same slot to join, take and close a fixture acquisition that applied
+an authenticated restriction. Three ordinary cutoff cases and the exact
+optimized regression passed. Independent review checked the production
+caller, refusal/drop ownership and the test's registration witness.
+
+The selected Rust 1.100.0 development run bound tree `4b966b9807d057d8f74060b8e1a74a06f8bb3f1a`
+and 724 inputs under digest
+`d37d2dc8be97ab219e045fbdd0ac86a189b4e0bf129ebb298885760cd917b037`. Six locked graph commands and EP1 all-target Clippy on GNU and
+MSVC passed. The original run stopped at the disk reserve during MSVC
+Clippy. The unchanged candidate reused completed results and finished the
+remaining static checks in private RAM-backed scratch with the same reserve.
+The original control results remain under
+`~/.local/share/nevrotick/engine-core-selected-20261123-w40t94no/`. The final selected
+receipt SHA-256 is `561f5b428ca9f3cdfede023c159ab70c69cb305974ee65d2c3878c55ef5c4ca6` under
+`~/.local/share/nevrotick/engine-core-selected-20261123-n_h2d3te/`. Build scratch
+was retired. Windows registration execution on these changed bytes and
+the affected-file 90% line and 95% mutation gates remain open.

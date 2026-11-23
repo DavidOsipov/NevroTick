@@ -3529,6 +3529,145 @@ fn reference_projection_cannot_be_admitted_early() -> TestResult {
     Ok(())
 }
 
+/// A future successor preserves the live obligation and its real producer credit.
+/// # Errors
+/// Preserve genuine history, batch, issuance and exact-boundary admission errors.
+/// # Panics
+/// Reject any loss of the old obligation or the legal successor's observation.
+#[test]
+fn future_successor_preserves_live_phase_and_step_obligation() -> TestResult {
+    let a: Source = Source::new(11, 0, ORIGINAL_PHASE_Q32)?;
+    let b: Source = Source::new(22, 0, ORIGINAL_PHASE_Q32)?;
+    let next_a: Source = Source::new(11, 4, 1 << 26)?;
+    let next_b: Source = Source::new(22, 4, 1 << 26)?;
+    let chart: FixtureAffineChart = initial_chart()?;
+    let strata: [FixturePrincipalStratum; 2] = strata()?;
+    let entries: [FixtureChartInterval<'_>; 2] = [a.entry(&chart, 4)?, b.entry(&chart, 4)?];
+    let initial: FixtureChartBatch<'_, '_> = product_ok(FixtureChartBatch::new(
+        &chart,
+        MonotonicNs::new(4 * SECOND),
+        &entries,
+    ))?;
+    let mut producer: FixtureCombinationState = seed(&entries, &strata, 4)?;
+    let mut owner: FixturePhasePlanOwner<'_, '_> =
+        start(&mut producer, &chart, &initial, &strata, 1.0 / 1024.0)?;
+    let original_error: Option<u64> = owner.remaining_phase_error_seconds().map(f64::to_bits);
+    let cursor: CursorSnapshot = cursor_snapshot(owner.cursor());
+
+    // The nonprincipal updates first so the same batch can enter as a real
+    // pending observation at equality, then the principal can emit round two.
+    let pending_entries: [FixtureChartInterval<'_>; 2] =
+        [a.entry(&chart, 8)?, next_b.entry(&chart, 8)?];
+    let projection: MonotonicNs = MonotonicNs::new(8 * SECOND);
+    let pending: FixtureChartBatch<'_, '_> =
+        product_ok(FixtureChartBatch::new(&chart, projection, &pending_entries))?;
+    let early: FixturePhaseNow = now(SECOND, 8 * SECOND - 1)?;
+    assert!(
+        matches!(
+            owner.receive_reference(&pending, &strata, early),
+            Err(FixturePhaseError::ReferenceInFuture)
+        ),
+        "a future successor must not displace the live reference"
+    );
+    assert_eq!(cursor_snapshot(owner.cursor()), cursor);
+    assert_eq!(owner.current_time().active(), ActiveAwakeNs::new(0));
+    assert_eq!(
+        owner.current_time().monotonic(),
+        MonotonicNs::new(4 * SECOND)
+    );
+    check_debt(
+        owner.remaining_phase_seconds(),
+        owner.remaining_phase_error_seconds(),
+        1.0 / 32.0,
+    );
+    assert_eq!(
+        owner.remaining_phase_error_seconds().map(f64::to_bits),
+        original_error
+    );
+    assert!(owner.proposal().is_none() && owner.step_proposal().is_none());
+
+    let mut owner =
+        settle_original_step_after_early_reference(owner, early, a.context, original_error)?;
+    let exact: FixturePhaseNow = now(SECOND, 8 * SECOND)?;
+    assert!(matches!(
+        product_ok(owner.receive_reference(&pending, &strata, exact))?,
+        FixturePhaseReferenceAdmission::AdmittedNoPlan {
+            emitted_round: None,
+            reason: FixturePhaseError::Reference {
+                source: FixtureReferenceInputError::NotReady
+            }
+        }
+    ));
+    let next_entries: [FixtureChartInterval<'_>; 2] =
+        [next_a.entry(&chart, 8)?, next_b.entry(&chart, 8)?];
+    let next: FixtureChartBatch<'_, '_> =
+        product_ok(FixtureChartBatch::new(&chart, projection, &next_entries))?;
+    assert!(
+        matches!(product_ok(owner.receive_reference(&next, &strata, exact))?,
+            FixturePhaseReferenceAdmission::Accepted { emitted_round } if emitted_round == label(2)?
+        )
+    );
+    check_debt(
+        owner.remaining_phase_seconds(),
+        owner.remaining_phase_error_seconds(),
+        1.0 / 64.0,
+    );
+    let proposal: FixturePhaseProposal<'_> =
+        product_ok(owner.issue(exact, FixturePhaseResidualPermission::Allow))?;
+    assert_eq!(proposal.ordinal(), label(2)?);
+    assert_eq!(proposal.transient_rate(), 1.0 / 512.0);
+    assert_eq!(proposal.aggregate_rate(), 3.0 / 1024.0);
+    assert_eq!(proposal.active_deadline(), ActiveAwakeNs::new(9 * SECOND));
+    assert_eq!(proposal.monotonic_deadline(), MonotonicNs::new(24 * SECOND));
+    Ok(())
+}
+
+/// Issue the original step and release its slot with a matched no-effect receipt.
+/// # Errors
+/// Preserve actual step issue and settlement failures.
+/// # Panics
+/// Reject replacement of the original obligation or fabricated delivery endpoints.
+fn settle_original_step_after_early_reference<'producer, 'chart>(
+    mut owner: FixturePhasePlanOwner<'producer, 'chart>,
+    early: FixturePhaseNow,
+    source: FixtureContext,
+    original_error: Option<u64>,
+) -> TestResult<FixturePhasePlanOwner<'producer, 'chart>> {
+    let step: FixtureStepProposal<'_> = product_ok(owner.issue_step(
+        early,
+        FixturePhaseResidualPermission::Allow,
+        step_limits(FixtureStepDirections::Positive)?,
+    ))?;
+    assert_eq!(step.ordinal(), label(1)?);
+    assert_eq!(step.requested_phase_seconds(), 1.0 / 32.0);
+    assert_eq!(
+        Some(step.requested_phase_error_seconds().to_bits()),
+        original_error
+    );
+    assert_eq!(step.active_deadline(), ActiveAwakeNs::new(8 * SECOND));
+    assert_eq!(step.monotonic_deadline(), MonotonicNs::new(20 * SECOND));
+    assert_eq!(step.provenance().emitted_round(), label(1)?);
+    assert_eq!(step.provenance().source_context(), source);
+    assert_eq!(
+        step.provenance().latest_observed_at(),
+        MonotonicNs::new(2 * SECOND)
+    );
+    assert_eq!(
+        step.provenance().projected_at(),
+        MonotonicNs::new(4 * SECOND)
+    );
+    let no_effect: FixtureStepFeedback = FixtureStepFeedback::ProvenNoEffect {
+        context: clocks()?,
+        ordinal: label(1)?,
+    };
+    let FixtureStepSettlement::ProvenNoEffect(owner) = owner.settle_step(no_effect, early) else {
+        return Err(io::Error::other("the original step must settle with proven no effect").into());
+    };
+    assert_eq!(owner.cursor().last_active_end(), None);
+    assert_eq!(owner.cursor().last_monotonic_end(), None);
+    Ok(owner)
+}
+
 /// A phase-envelope refusal commits its real emission but grants no useful plan.
 /// # Errors
 /// Preserve genuine fixture, construction, producer and fresh-neighbor failures.

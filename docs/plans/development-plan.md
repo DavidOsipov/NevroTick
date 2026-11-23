@@ -1187,9 +1187,18 @@ explicit residual populations.
 [W11-W01 capture checkpoint](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-the-protected-receipt)
 keeps original native clock observations through the actual protected
 receipt. The selected GNU EP1 development and four Windows host cases
-passed. Continue with native socket placement, independent mapping and
-uncertainty, and affected-file qualification before positive Core
-admission. The [protected capture facade witness](../../tasks/engine-transport-pilot.md#check-the-original-protected-capture-triplet-in-the-facade-fixture)
+passed. The [adjacent protected send-return capture](../../tasks/engine-transport-pilot.md#capture-the-protected-udp-adapter-return-before-bookkeeping--23-november-2026)
+now samples before return classification and send accounting. GNU EP1
+development passed in both modes. The current Windows EP1 image passed
+both native loopback successors and three neighboring controls. The
+[paired Windows loopback timing case](../../tasks/engine-transport-pilot.md#pair-protected-capture-brackets-on-windows-loopback--23-november-2026)
+now confirms relative ordering for both ordinary protected legs and
+exact joined capture transfer. Continue with independent mapping and
+uncertainty and affected-file qualification before positive Core
+admission. The [private two-leg timing export](../../tasks/engine-transport-pilot.md#prepare-the-two-leg-protected-timing-export--23-november-2026)
+passed build and native input refusal. Complete the peer handoff and the
+healthy producer and reader case before staging that lab source. The
+[protected capture facade witness](../../tasks/engine-transport-pilot.md#check-the-original-protected-capture-triplet-in-the-facade-fixture)
 checks the original recorded triplet on the joined receipt. The
 [matching peer and controller](../../tasks/engine-transport-pilot.md#build-the-matching-protected-capture-peer--22-november-2026)
 pass frozen build and host-side admission. The [ordinary protected Windows exchange](../../tasks/engine-transport-pilot.md#observe-the-ordinary-protected-capture-in-windows-sandbox--23-november-2026)
@@ -1197,13 +1206,42 @@ passed on those exact images with two authenticated requests, checked
 original capture order and restored the fixture's root and CRL store
 rows. The [shared plain capture](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-plain-acquisition--23-november-2026)
 now carries the same three raw clock dispositions through the actual
-plain transport receipt. Development checks passed. The calibrated
-reference and broker-owned issuer remain prerequisites for production
-mapping, validity, uncertainty and admission. The
+plain transport receipt. The repaired
+[Windows capture fixture](../../tasks/engine-transport-pilot.md#preserve-the-windows-provider-input-through-the-exact-capture-child--23-november-2026)
+passed both normal nested IPv4 and IPv6 runs on ordinary Windows. The
+calibrated reference and broker-owned issuer remain prerequisites for
+production mapping, validity, uncertainty and admission. The
 [retained SCM process](../../tasks/windows11-integration.md#retain-the-running-scm-process--22-november-2026)
-passes its portable custody cases. Its next dependency is a fixed
-SCM-hosted broker listener and the restricted Engine's access and
-identity proof, with the existing installed provisioning gates.
+passes its portable custody cases. The native peer fixture retains a
+query-only primary token, refuses an ambient thread token and matches
+the original token after reversion.
+[Retained peer qualification](../../tasks/windows11-integration.md#share-the-retained-windows-process-owner-with-the-broker-fixture)
+
+The connected-pipe observation now rejects a differing SCM PID before
+opening a process or token. The native fixture refused a live mismatched
+pipe, and the shared ordered controls observed zero handle opens.
+Continue the installed broker listener and restricted Engine identity
+proof with the existing provisioning gates.
+[Pipe and SCM checkpoint](../../tasks/windows11-integration.md#relate-the-original-connected-pipe-to-the-scm-process--23-november-2026)
+The [retained-token service SID observer](../../tasks/windows11-integration.md#observe-the-expected-service-sid-on-the-retained-peer-token--23-november-2026)
+reads both group lists through the original query-only token. The ordinary
+Windows control found the foreign role SID absent. The
+[token generation check](../../tasks/windows11-integration.md#bind-both-sid-list-observations-to-one-token-generation--23-november-2026)
+now refuses a change between the two observations. The stable native
+read, scripted failure controls and selected GNU line command passed.
+The [retained fixture client](../../tasks/windows11-integration.md#retain-the-fixture-client-through-the-first-broker-reply--23-november-2026)
+now binds the original read and reply to its retained process and token
+and passes the protected same-pipe Windows cases. Continue with the
+supported pre-start bridge, installed-role identity and effective
+Engine grants before enabling installed send or reply admission. The
+[pre-start observation coordinator](../../tasks/windows11-integration.md#supervise-the-fixed-pre-start-observation-sequence--23-november-2026)
+now connects the four fixed observations to the receipt reader with
+early refusal and a final window check. The concrete Windows window
+owner and exact signed lab inputs remain required for the installed run.
+The [Windows child collector](../../tasks/windows11-integration.md#collect-raw-windows-child-results-for-the-s06-pre-start-probe--23-november-2026)
+passed seven native capture and retirement controls with fixed inert children.
+Continue with the owned launch and input/token observations before admitting
+these captures to the installed window.
 
 
 **Coordinator selection after the receipt checkpoint — 20 November 2026.**
@@ -1243,6 +1281,14 @@ declared executable-line gates on the current 262-test candidate, with
 mutation inventory has 9,244 variants. Full per-file qualification is
 still open. Assembly depends on the actual admitted product roles and
 release metadata pending under W11-W10.
+
+The [desktop image-load guard](../../tasks/slint-gui-handoff.md#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026)
+now verifies all three required flags before the real Slint backend starts.
+The release UI cross-link, import readback and selected inert Windows policy
+case passed. The [local Low-integrity DLL control](../../tasks/slint-gui-handoff.md#observe-the-low-integrity-image-boundary--23-november-2026)
+verified denial with only the Low-label bit added and a byte-identical Medium
+DLL still loading. Continue normal UI and remaining loader behavior, startup
+diagnostics and packaged activation under CHECK-16 and the direct MSIX profile.
 
 Continue the existing delivery and retention stage under W11-W08, with
 W11-W10 and the installed service owners. Freeze the provider and channel
@@ -1504,9 +1550,32 @@ broker fixture permit. Four offline Windows cases passed, with the
 fixed deny and cancellation neighbors. The
 [fixed broker accept cutoff](../../tasks/windows11-integration.md#bound-the-fixed-broker-accept-with-the-service-owners-cutoff)
 now shares the service owner's time and Stop checks. The four host
-controls and one real Windows accept cancellation case passed. Carry the
-guard into the admitted exchange when the installed peer guards and
-fixed-role grants are qualified.
+controls and one real Windows accept cancellation case passed. The
+[owned first-read handoff](../../tasks/windows11-integration.md#carry-the-broker-connection-into-its-first-owned-read--23-november-2026)
+extends the same permit and cutoff through native read retirement. Both role
+links and seven offline Windows fixture cases passed. The
+[first-read attribution child](../../tasks/windows11-integration.md#attribute-the-first-broker-read-before-availability-dispatch--23-november-2026)
+now carries the exact attributed bytes into the guarded availability receiver
+under the original cutoff. Three offline Windows selectors passed, including
+the seven new attribution and dispatch histories. The
+[same-pipe reply child](../../tasks/windows11-integration.md#return-the-guarded-broker-reply-on-the-original-pipe--23-november-2026)
+sends the exact guarded reply back to the original fixture client. Linux
+and Windows controls passed through write count, cancellation and retirement.
+Continue from the installed-peer and pre-start requirements to qualify
+effective restricted-Engine rights and installed request/reply admission.
+The [selected-revision worker startup](../../tasks/windows11-integration.md#keep-a-dormant-acquisition-bound-to-its-selected-source-revision--23-november-2026)
+refuses a same-address successor before admitting the original dormant
+selection. Both focused fault controls and the restored loopback passed.
+Combined development passed in both GNU modes with MSVC Clippy. The
+[original service cutoff](../../tasks/windows11-integration.md#carry-the-original-service-owner-cutoff-through-ordinary-acquisition--23-november-2026)
+now bounds the actual fixture worker's ordinary sends and reply
+admission. Both causal faults and their restored controls ran. The
+[protected cutoff entry](../../tasks/engine-transport-pilot.md#preserve-the-original-cutoff-through-managed-protected-acquisition--23-november-2026)
+now preserves one owner deadline in the Windows EP1 worker. The native
+facade passed expired refusal and the timely real loopback EOF neighbor.
+The [startup observation guard](../../tasks/windows11-integration.md#observe-stop-before-starting-the-service-token-query--23-november-2026)
+fences the token query when the startup clock read observes Stop. Continue
+the existing protected supplier and installed worker handoff.
 The [pending cleanup diagnostic](../../tasks/windows11-integration.md#report-a-failed-cleanup-while-broker-custody-remains-pending--22-november-2026)
 preserves the earlier status failure and reports the unresolved close
 in the live required memory route. Both GNU modes passed. External
@@ -1563,7 +1632,10 @@ actor's access decisions remain open. The
 [pre-start access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
 prepares separate handle-acquisition observations for the required rights
 and a standard-user denied configuration neighbor. The
-[current pack-input stage](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
+[status-handle custody child](../../tasks/windows11-integration.md#hold-one-scm-status-handle-through-each-pre-start-observation--23-november-2026)
+keeps the same SCM object across each pre-start row. Two offline Windows
+controls passed. Installed role and actor observations still follow §7.5.
+The [current pack-input stage](../../tasks/windows11-integration.md#stage-the-current-disabled-service-pack-inputs-in-wsl--22-november-2026)
 binds the new roles, the seven payload files and the six retained SDK
 inputs. The [maintained WSL stage](../../tasks/windows11-integration.md#publish-the-disabled-service-pack-inputs-as-one-tree--22-november-2026)
 now publishes those inputs and the inventory together. A real file-size
@@ -1571,8 +1643,11 @@ failure leaves the final slot absent and permits a retry. The historical
 archive correctly refuses the new payload identity. The
 [current unsigned lab package](../../tasks/windows11-integration.md#pack-the-current-disabled-service-input-set-in-the-offline-lab)
 passed native MakeAppx and independent archive readback, including the
-missing-logo and crossed-payload controls. Test signing, installation and
-actor-bound native observations remain open.
+missing-logo and crossed-payload controls. The
+[pack from the current service links](../../tasks/windows11-integration.md#pack-the-current-same-pipe-checkpoint-service-images--23-november-2026)
+binds both latest role images and independently refuses crossed artifacts.
+Test signing, installation and actor-bound native observations remain held
+under §7.5.
 The [direct-MSIX branding candidates](../../tasks/windows11-integration.md#prepare-direct-msix-branding-pngs--22-november-2026)
 provide three exact base PNGs from the approved artwork for the separate
 product package. The [Windows build handoff](../../tasks/windows11-integration.md#bind-base-artwork-to-the-windows-build-handoff--22-november-2026)
@@ -1583,10 +1658,37 @@ now bind each selected base PNG to its exact manifest field before export.
 The [scale and target-size artwork export](../../tasks/windows11-integration.md#export-scale-and-target-size-msix-artwork--23-november-2026)
 passed the configured Windows cross-build and independently matched all 51
 exported files to their pinned bytes, dimensions and manifest roles.
+The [executable icon resource probe](../../tasks/windows11-integration.md#probe-the-executable-icon-resource-before-gui-linkage--23-november-2026)
+linked five neutral sizes in a resource-only PE and independently refused
+missing or substituted image leaves. The same five sizes now link into
+the actual GUI in a private Windows-target build. The checked image
+preserves the ordinary version, manifest and imports, and removing the
+resource restores the original executable bytes. The final product
+profile and native shell selection retain their own admission.
+[Provisional GUI link](../../tasks/windows11-integration.md#link-the-provisional-icon-into-the-actual-gui--23-november-2026)
+The [offline MakePri run](../../tasks/windows11-integration.md#index-the-51-msix-artwork-variants-in-the-offline-lab--23-november-2026)
+indexed all 51 files in one lab PRI. Independent readback checked the three
+logo resource families and refused the native dump with one missing variant.
+The [checked Properties and unsigned assembly fixture](../../tasks/windows11-integration.md#bind-package-properties-and-the-artwork-pri-in-an-unsigned-assembly-fixture)
+exports the canonical metadata, package logo and explicit integrity setting.
+The final Windows cross-build emitted the same fragment as the native pack input.
+MakeAppx accepted the exact fragment with the artwork and PRI in an unsigned
+inert fixture, and refused the wrong-case enforcement value. Native
+installation, final identity and the production closure retain their exits.
+The checked Properties fragment now also requires Trusted Launch
+`true`. MakeAppx accepted the exact unsigned fixture and refused a
+malformed Boolean in the same namespace. Signed-catalog and installed
+enforcement remain separate.
+[Trusted Launch authoring](../../tasks/windows11-integration.md#require-trusted-launch-in-the-checked-properties-fragment--23-november-2026)
 The [private authoring export](../../tasks/windows11-integration.md#retain-checked-msix-authoring-alongside-the-linked-images)
 retains the original checked inputs and generation receipt next to both
 linked images. It passed the full Windows cross-build and the exact export
-readback. The [UI execution manifest](../../tasks/windows11-integration.md#embed-and-verify-the-ordinary-ui-execution-manifest)
+readback. The [relocated handoff readback](../../tasks/windows11-integration.md#verify-the-relocated-direct-msix-build-handoff--23-november-2026)
+checks all 61 real exported files and keeps all production roles unadmitted.
+The [ArtworkLab input readback](../../tasks/windows11-integration.md#stage-the-exact-artworklab-inputs-from-the-retained-handoff)
+uses that exact handoff to stage 54 lab payload files. All matched the
+retained MakeAppx archive, including the authored manifest and native PRI.
+The [UI execution manifest](../../tasks/windows11-integration.md#embed-and-verify-the-ordinary-ui-execution-manifest)
 now reads back `asInvoker` and `uiAccess=false` from the linked image.
 The [Windows handoff publication](../../tasks/windows11-integration.md#publish-the-checked-windows-build-handoff-as-a-single-tree)
 publishes both image pairs, selected authored inputs and the receipt as
@@ -1594,7 +1696,11 @@ one tree. Fault controls distinguish an absent, retryable slot from a
 completed rename with unconfirmed path or durability.
 Complete assembly still needs the product roles and approved identity and
 activation inputs. Verify the effective UI token after installed activation.
-Native PRI and appearance qualification and complete assembly remain open.
+Final package PRI binding, native resource selection and appearance, and
+complete assembly remain open. Observe resource choice through the installed
+application and shell. The documented inbox unpackaged resource path supplies
+string lookup without the required scale context, and the standalone MRT Core
+path requires the Windows App SDK runtime.
 Actual SCM delivery, the calibrated forward-step envelope and correction
 acknowledgement have their own exits. Qualify finite error,
 drift and full-exchange validity before Engine admission. Production recovery

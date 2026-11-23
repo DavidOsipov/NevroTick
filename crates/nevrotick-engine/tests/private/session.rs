@@ -184,6 +184,19 @@ fn entered_runtime_refusals_preserve_prepare_rollback_and_retire_consumed_execut
             owner.prepare(),
             Err(AcquisitionError::Driver(PilotError::EnteredRuntime))
         ));
+        assert!(matches!(
+            owner.prepare_before(Instant::now()),
+            Err(BoundedAcquisitionError::OwnerDeadlineElapsed)
+        ));
+        let cutoff: Instant = Instant::now()
+            .checked_add(Duration::from_secs(1))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        assert!(matches!(
+            owner.prepare_before(cutoff),
+            Err(BoundedAcquisitionError::Acquisition(
+                AcquisitionError::Driver(PilotError::EnteredRuntime)
+            ))
+        ));
     }
     assert_eq!(owner.state, SessionState::Idle);
     let (plan, control) = idle_plan(&mut owner)?;
@@ -198,6 +211,236 @@ fn entered_runtime_refusals_preserve_prepare_rollback_and_retire_consumed_execut
     assert_eq!(control.sender.receiver_count(), 0);
     assert_eq!(owner.state, SessionState::Retired);
     assert!(matches!(owner.prepare(), Err(AcquisitionError::Retired)));
+    Ok(())
+}
+
+/// Verify known expiry, guard precedence and a healthy fresh preparation.
+/// # Errors
+/// Preserve checked fixture and genuine preparation errors.
+/// # Panics
+/// Refuse expiry that changes state, masks Busy/Retired or affects later work.
+#[test]
+fn owner_cutoff_preparation_preserves_lifecycle() -> Check<()> {
+    let mut owner: AcquisitionSession = AcquisitionSession::new(config()?);
+    let expired: Instant = Instant::now();
+    assert!(matches!(
+        owner.prepare_before(expired),
+        Err(BoundedAcquisitionError::OwnerDeadlineElapsed)
+    ));
+    assert_eq!(owner.state, SessionState::Idle);
+    let cutoff: Instant = Instant::now()
+        .checked_add(Duration::from_secs(1))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let (plan, control): (PreparedAcquisition<'_>, ControlHandle) = owner.prepare_before(cutoff)?;
+    assert_eq!(plan.owner_cutoff, Some(cutoff));
+    drop(plan);
+    assert_eq!(control.sender.receiver_count(), 0);
+    for (state, expected_busy) in [
+        (SessionState::Prepared, true),
+        (SessionState::Executing, true),
+        (SessionState::Retired, false),
+    ] {
+        owner.state = state;
+        let refused: Result<(PreparedAcquisition<'_>, ControlHandle), BoundedAcquisitionError> =
+            owner.prepare_before(expired);
+        assert!(if expected_busy {
+            matches!(
+                refused,
+                Err(BoundedAcquisitionError::Acquisition(AcquisitionError::Busy))
+            )
+        } else {
+            matches!(
+                refused,
+                Err(BoundedAcquisitionError::Acquisition(
+                    AcquisitionError::Retired
+                ))
+            )
+        });
+    }
+    Ok(())
+}
+
+/// A prepared plan can reach its owner cutoff before runtime activation.
+/// # Errors
+/// Preserve actual preparation and loopback socket failures.
+/// # Panics
+/// Require the genuine unstarted report and terminal precedence.
+#[test]
+fn owner_cutoff_expired_plan_keeps_original_no_start_disposition() -> Check<()> {
+    use crate::SeriesNotStartedCause;
+    let peer: std::net::UdpSocket =
+        std::net::UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
+    peer.set_nonblocking(true)?;
+    let schedule: ControlSchedule =
+        ControlSchedule::new(Some(Duration::ZERO), Some(Duration::ZERO))?;
+    for (stop, stale, end, cause, state) in [
+        (
+            false,
+            false,
+            SeriesEnd::SeriesDeadline,
+            SeriesNotStartedCause::SeriesDeadline,
+            SessionState::Idle,
+        ),
+        (
+            false,
+            true,
+            SeriesEnd::Stale,
+            SeriesNotStartedCause::Stale,
+            SessionState::Retired,
+        ),
+        (
+            true,
+            true,
+            SeriesEnd::Stopped,
+            SeriesNotStartedCause::Stopped,
+            SessionState::Idle,
+        ),
+    ] {
+        let config: SeriesConfig = SeriesConfig::new(
+            peer.local_addr()?,
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+        )?;
+        let mut owner: AcquisitionSession = AcquisitionSession::new(config);
+        let cutoff: Instant = Instant::now()
+            .checked_add(Duration::from_millis(100))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let (plan, control): (PreparedAcquisition<'_>, ControlHandle) =
+            owner.prepare_before(cutoff)?;
+        if stale {
+            control.invalidate()?;
+        }
+        if stop {
+            control.stop();
+        }
+        crate::processing_guard_tests::observe_final_reply_cutoff(cutoff)?;
+        let report: AcquisitionReport = plan.execute(&schedule)?;
+        assert_eq!(report.series().end(), end);
+        assert!(
+            report
+                .series()
+                .attempts()
+                .iter()
+                .all(|attempt: &SeriesAttempt| attempt.report().is_none()
+                    && attempt.not_started_cause() == Some(cause))
+        );
+        assert_eq!(owner.state, state);
+        assert_eq!(control.sender.receiver_count(), 0);
+        let mut bytes: [u8; crate::RECEIVE_BYTES] = [0_u8; crate::RECEIVE_BYTES];
+        assert!(matches!(
+            peer.recv_from(&mut bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+        ));
+    }
+    Ok(())
+}
+
+/// Exercise the independent owner cutoff at a real final datagram commit.
+/// # Errors
+/// Preserve actual loopback, preparation, peer and driver failures.
+/// # Panics
+/// Require a timely healthy neighbor, and a late reply charged once with no facts.
+#[test]
+fn owner_cutoff_caps_actual_final_reply_commit() -> Check<()> {
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()?;
+    crate::processing_guard_tests::require_retirement_contract(&runtime)?;
+    drop(runtime);
+    for delay_commit in [false, true] {
+        let peer: std::net::UdpSocket =
+            std::net::UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
+        peer.set_read_timeout(Some(Duration::from_secs(2)))?;
+        peer.set_write_timeout(Some(Duration::from_secs(2)))?;
+        let config: SeriesConfig = SeriesConfig::new(
+            peer.local_addr()?,
+            Duration::from_secs(2),
+            Duration::from_secs(3),
+        )?;
+        let mut owner: AcquisitionSession = AcquisitionSession::new(config);
+        let cutoff: Instant = Instant::now()
+            .checked_add(Duration::from_millis(500))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let (mut plan, control): (PreparedAcquisition<'_>, ControlHandle) =
+            owner.prepare_before(cutoff)?;
+        crate::series::set_test_final_guard_observer(
+            plan.prepared.as_mut().ok_or(PilotError::InternalState)?,
+            move |event, handle| {
+                use crate::series::TestFinalGuardEvent;
+                if delay_commit && matches!(event, TestFinalGuardEvent::ReplyBefore) {
+                    assert!(
+                        crate::processing_guard_tests::observe_final_reply_cutoff(cutoff).is_ok()
+                    );
+                }
+                if !delay_commit && matches!(event, TestFinalGuardEvent::ReplyAfter) {
+                    handle.stop();
+                }
+            },
+        );
+        let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+        let (report, peer): (AcquisitionReport, std::net::UdpSocket) =
+            std::thread::scope(|scope| -> Check<_> {
+                let server = std::thread::Builder::new()
+                    .name("owner-cutoff-reply".into())
+                    .spawn_scoped(scope, move || serve_public_session_checkpoint(peer))?;
+                let execution: Result<AcquisitionReport, AcquisitionError> =
+                    plan.execute(&schedule);
+                let joined: std::net::UdpSocket = server
+                    .join()
+                    .map_err(|_| std::io::Error::other("owner-cutoff peer panicked"))??;
+                Ok((execution?, joined))
+            })?;
+        assert_owner_cutoff_reply(&report, &peer, delay_commit)?;
+        assert_eq!(control.sender.receiver_count(), 0);
+        assert_eq!(owner.state, SessionState::Idle);
+    }
+    Ok(())
+}
+
+/// Check observed receipt accounting and the absence of a successor datagram.
+/// # Errors
+/// Preserve absence of the original request record or socket observation failure.
+/// # Panics
+/// Reject lost charges or facts, wrong terminal classification, or an extra send.
+fn assert_owner_cutoff_reply(
+    report: &AcquisitionReport,
+    peer: &std::net::UdpSocket,
+    delay_commit: bool,
+) -> Check<()> {
+    use crate::{SeriesNotStartedCause, Status};
+    let (end, status, cause): (SeriesEnd, Status, SeriesNotStartedCause) = if delay_commit {
+        (
+            SeriesEnd::SeriesDeadline,
+            Status::Timeout,
+            SeriesNotStartedCause::SeriesDeadline,
+        )
+    } else {
+        (
+            SeriesEnd::Stopped,
+            Status::Header,
+            SeriesNotStartedCause::Stopped,
+        )
+    };
+    let [first, later @ ..]: &[SeriesAttempt; 3] = report.series().attempts();
+    let record: &SlotReport = first.report().ok_or(PilotError::InternalState)?;
+    assert_eq!(record.status(), status);
+    assert_eq!(report.series().end(), end);
+    assert!(record.sent());
+    assert_eq!(record.received(), 1);
+    assert_eq!(record.rejected(), u16::from(delay_commit));
+    assert_eq!(record.facts().is_some(), !delay_commit);
+    assert!(
+        later
+            .iter()
+            .all(|attempt: &SeriesAttempt| attempt.not_started_cause() == Some(cause))
+    );
+    peer.set_nonblocking(true)?;
+    let mut bytes: [u8; crate::RECEIVE_BYTES] = [0_u8; crate::RECEIVE_BYTES];
+    assert!(matches!(
+        peer.recv_from(&mut bytes),
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+    ));
     Ok(())
 }
 
@@ -902,6 +1145,30 @@ fn session_debug_and_driver_error_sources_are_fixed_and_typed() -> Check<()> {
         }
     }
     Ok(())
+}
+
+/// Preserve the original typed error while the new wrapper projects fixed text.
+/// # Panics
+/// Require distinct elapsed and wrapped diagnostics without formatting either cause.
+#[test]
+fn owner_cutoff_error_redacts_diagnostics_and_preserves_source() {
+    let elapsed: BoundedAcquisitionError = BoundedAcquisitionError::OwnerDeadlineElapsed;
+    let wrapped: BoundedAcquisitionError =
+        BoundedAcquisitionError::Acquisition(AcquisitionError::Retired);
+    assert_eq!(format!("{elapsed:?}"), "BoundedAcquisitionError { .. }");
+    assert_eq!(format!("{wrapped:?}"), "BoundedAcquisitionError { .. }");
+    assert_eq!(elapsed.to_string(), "acquisition owner deadline elapsed");
+    assert_eq!(
+        wrapped.to_string(),
+        "bounded acquisition preparation failed"
+    );
+    assert!(elapsed.source().is_none());
+    assert!(matches!(
+        wrapped
+            .source()
+            .and_then(|source| source.downcast_ref::<AcquisitionError>()),
+        Some(AcquisitionError::Retired)
+    ));
 }
 
 /// Diagnostic projection never formats a retained view, capture or original cause.

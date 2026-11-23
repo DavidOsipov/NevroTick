@@ -50,6 +50,8 @@ use crate::{
 use crate::broker_clock_change::ClockRevision;
 #[cfg(test)]
 use crate::diagnostics::{UnconfirmedWriter, WriterClose};
+#[cfg(all(windows, test))]
+use crate::native_pipe_read::{AttributedStatusRead, IdentifiedReadError};
 #[cfg(any(windows, test))]
 use crate::{ClockReadRetirement, SampledClockBreak};
 #[cfg(any(windows, test))]
@@ -64,6 +66,8 @@ use broker_observation::{BrokerObservation, BrokerProbe};
 #[cfg(test)]
 #[path = "private_clock_status.rs"]
 mod private_clock_status;
+#[cfg(all(windows, test))]
+pub(super) use private_clock_status::NativeStatusReply;
 
 /// Wake the existing owner thread with one coalesced, retained unpark token.
 /// A worker retains at most one clone and publishes state before notification.
@@ -138,10 +142,11 @@ pub(super) trait Worker {
     fn poll_prepare(&mut self, wake: &WorkerWake) -> Poll<Result<(), WorkerError>>;
 
     /// Activate only after acknowledged Running and a separately admitted permit.
+    /// Pass the original Running cutoff to work that executes away from the host.
     ///
     /// # Errors
     /// A refusal starts owned cancellation and does not acknowledge completion.
-    fn activate(&mut self) -> Result<(), WorkerError>;
+    fn activate(&mut self, cutoff: Instant) -> Result<(), WorkerError>;
 
     /// Observe operational health without acknowledging completed work or cleanup.
     /// Future health changes publish state before waking the owner.
@@ -163,6 +168,19 @@ pub(super) trait Worker {
         _connection: &mut RunningConnection<'_, C>,
     ) -> Result<ConnectionWait, WorkerFailure> {
         self.poll_running(wake).map(|()| ConnectionWait::Service)
+    }
+
+    /// Submit the receiver's one guarded reply in the same Running poll.
+    ///
+    /// # Errors
+    /// Retain native issuance or observation failure with the original permit.
+    #[cfg(all(windows, test))]
+    fn submit_status_reply<C: Clock>(
+        &mut self,
+        _connection: &mut RunningConnection<'_, C>,
+        _reply: &NativeStatusReply,
+    ) -> Result<ConnectionWait, WorkerFailure> {
+        Ok(ConnectionWait::Service)
     }
 
     /// Request cancellation once after admission is permanently fenced.
@@ -203,7 +221,7 @@ impl Worker for InertWorker {
     }
 
     /// Activation performs no product or native effect.
-    fn activate(&mut self) -> Result<(), WorkerError> {
+    fn activate(&mut self, _cutoff: Instant) -> Result<(), WorkerError> {
         Ok(())
     }
 
@@ -320,10 +338,61 @@ pub(super) struct RunningConnection<'a, C> {
     closed: bool,
     /// Keep the first service failure for the lifecycle owner.
     failure: Option<FixtureError>,
+    /// The one original read's identity outcome, scoped to this Running poll.
+    #[cfg(all(windows, test))]
+    status_read: Option<Result<AttributedStatusRead, IdentifiedReadError>>,
+    /// Native attribution actually returned before this poll's next authority edge.
+    #[cfg(all(windows, test))]
+    status_capture_observed: bool,
+    /// The native reply also depends on the original live status source.
+    #[cfg(test)]
+    status_source: Option<&'a NativeBrokerReader>,
+    /// The actual complete write count was confirmed while admission was open.
+    #[cfg(test)]
+    reply_written: bool,
 }
 
 impl<C: Clock> RunningConnection<'_, C> {
-    /// Observe current owner time and Stop before or after one native accept call.
+    /// Retain the attribution result and report whether the current handoff accepted it.
+    #[cfg(all(windows, test))]
+    pub(super) fn record_status_read(
+        &mut self,
+        read: Result<AttributedStatusRead, IdentifiedReadError>,
+    ) -> bool {
+        self.status_capture_observed = true;
+        if !matches!(self.edge(), ConnectionEdge::Open(_)) {
+            return false;
+        }
+        self.status_read = Some(read);
+        true
+    }
+
+    /// Check the exact original cutoff and live status source before or after a write.
+    /// A closed mailbox retires this connection without independently closing the service.
+    #[cfg(test)]
+    pub(super) fn reply_edge(&mut self, cutoff: Instant) -> ConnectionEdge {
+        if *self.cutoff != Some(cutoff) {
+            return ConnectionEdge::Expired;
+        }
+        match self.edge() {
+            ConnectionEdge::Open(_)
+                if self
+                    .status_source
+                    .is_none_or(|reader: &NativeBrokerReader| !reader.status_source_open()) =>
+            {
+                ConnectionEdge::Expired
+            }
+            edge => edge,
+        }
+    }
+
+    /// Remember the exact complete write count observed under a fresh reply edge.
+    #[cfg(test)]
+    pub(super) const fn record_reply_written(&mut self) {
+        self.reply_written = true;
+    }
+
+    /// Observe current owner time and Stop before or after one native connection call.
     /// An expired connection alone does not close the service or return its permit.
     pub(super) fn edge(&mut self) -> ConnectionEdge {
         if self.closed {
@@ -711,6 +780,9 @@ pub(super) struct ServiceInvocation<
     /// This fixture selects at most one connection for the entire invocation.
     #[cfg(test)]
     private_status_issue: PrivateStatusIssue,
+    /// Retained local receiver outcome for the sealed native first-read fixture.
+    #[cfg(all(windows, test))]
+    native_status: private_clock_status::NativeStatusObservation,
     /// Only the explicit broker fixture can select one read before preparation.
     #[cfg(test)]
     broker_probe: Option<BrokerProbe>,
@@ -970,7 +1042,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
                 }
             }
             self.custody = WorkerCustody::Active;
-            if let Err(error) = self.worker.activate() {
+            if let Err(error) = self.worker.activate(deadline) {
                 self.worker_failed(WorkerFailure::Operation(error));
                 return ConnectionWait::Service;
             }
@@ -1011,13 +1083,59 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         self.poll_running_worker(clock, notification, deadline)
     }
 
-    /// Apply the worker's current accept edges to the original Running owner.
-    /// An earlier connection cutoff can shorten the wait but cannot stop service life.
+    /// Drive one bounded worker poll, including any reply derived from its exact read.
+    /// Reply admission and completion use the same invocation and cutoff.
     fn poll_running_worker<C: Clock>(
         &mut self,
         clock: &mut C,
         notification: &StopNotification,
         deadline: Instant,
+    ) -> ConnectionWait {
+        #[cfg(all(windows, test))]
+        let mut status_read: Option<Result<AttributedStatusRead, IdentifiedReadError>> = None;
+        let wait: ConnectionWait = self.drive_running_connection(
+            clock,
+            notification,
+            deadline,
+            |worker, wake, connection| {
+                let wait: Result<ConnectionWait, WorkerFailure> =
+                    worker.poll_running_with_connection(wake, connection);
+                #[cfg(all(windows, test))]
+                {
+                    status_read = connection.status_read.take();
+                }
+                wait
+            },
+        );
+        #[cfg(all(windows, test))]
+        if !self.admission_closed
+            && let Some(read) = status_read
+            && let Some(reply) = self.receive_native_status(clock, notification, read)
+        {
+            let reply_wait: ConnectionWait = self.drive_running_connection(
+                clock,
+                notification,
+                deadline,
+                |worker, _wake, connection| worker.submit_status_reply(connection, &reply),
+            );
+            self.record_native_status_reply(reply);
+            return reply_wait;
+        }
+        wait
+    }
+
+    /// Apply one native worker transition through the original Running owner.
+    /// The connection cutoff can shorten its wait but does not stop service life.
+    fn drive_running_connection<C: Clock>(
+        &mut self,
+        clock: &mut C,
+        notification: &StopNotification,
+        deadline: Instant,
+        drive: impl FnOnce(
+            &mut P,
+            &WorkerWake,
+            &mut RunningConnection<'_, C>,
+        ) -> Result<ConnectionWait, WorkerFailure>,
     ) -> ConnectionWait {
         let mut connection: RunningConnection<'_, C> = RunningConnection {
             observed: &mut self.observed,
@@ -1027,17 +1145,35 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
             cutoff: &mut self.connection_cutoff,
             closed: false,
             failure: None,
+            #[cfg(all(windows, test))]
+            status_read: None,
+            #[cfg(all(windows, test))]
+            status_capture_observed: false,
+            #[cfg(test)]
+            status_source: self.broker_clock_reader.as_ref(),
+            #[cfg(test)]
+            reply_written: false,
         };
-        let wait: Result<ConnectionWait, WorkerFailure> = self
-            .worker
-            .poll_running_with_connection(&self.wake, &mut connection);
+        let wait: Result<ConnectionWait, WorkerFailure> =
+            drive(&mut self.worker, &self.wake, &mut connection);
         let RunningConnection {
-            closed, failure, ..
+            closed,
+            failure,
+            #[cfg(all(windows, test))]
+            status_capture_observed,
+            #[cfg(all(windows, test))]
+            reply_written,
+            ..
         } = connection;
         if let Err(error) = wait {
             self.worker_failed(error);
         }
         self.admission_closed |= closed;
+        #[cfg(all(windows, test))]
+        {
+            self.native_status.capture_observed |= status_capture_observed;
+            self.native_status.reply_written |= reply_written;
+        }
         if let Some(error) = failure {
             if self.observed.reversed {
                 self.phase_deadline = None;
@@ -1693,19 +1829,17 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
         failure = Some(FixtureError::UnsupportedArguments);
     }
     if failure.is_none() && !notification.stop_requested() {
-        let capture = observed.observe(clock).and_then(|now| {
-            let permit = owner.begin_work(now).map_err(FixtureError::Lifecycle)?;
-            let result = token_observer.observe();
-            // This synchronous return includes actual capture and explicit cleanup.
-            permit.complete();
-            result.map_err(FixtureError::TokenObservation)
-        });
+        let capture: Result<Option<PrivilegeSnapshot>, FixtureError> =
+            observed.observe(clock).and_then(|now: Instant| {
+                capture_startup_privileges(&mut owner, notification, token_observer, now)
+            });
         match capture {
-            Ok(snapshot) => {
+            Ok(Some(snapshot)) => {
                 if let Err(error) = snapshot.require_role(role.service_role()) {
                     failure = Some(FixtureError::PrivilegeAdmission(error));
                 }
             }
+            Ok(None) => {}
             Err(error) => failure = Some(error),
         }
     }
@@ -1727,6 +1861,8 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
         broker_clock_reader: None,
         #[cfg(test)]
         private_status_issue: PrivateStatusIssue::Unissued,
+        #[cfg(all(windows, test))]
+        native_status: private_clock_status::NativeStatusObservation::default(),
         #[cfg(test)]
         broker_probe: None,
         observed,
@@ -1751,6 +1887,30 @@ fn start_invocation_with_writer<A: StatusFactory, C: Clock, P: Worker, W: EventW
     invocation.emit(Event::StartObserved);
     invocation.publish_failures();
     Ok(invocation)
+}
+
+/// Begin self-token observation only while startup admission is open.
+/// # Errors
+/// Preserve the original deadline, permit or token observation failure.
+fn capture_startup_privileges<R: StatusReporter<Error = NativeError>>(
+    owner: &mut ServiceLifecycle<R>,
+    notification: &StopNotification,
+    token_observer: &mut impl TokenObserver,
+    now: Instant,
+) -> Result<Option<PrivilegeSnapshot>, FixtureError> {
+    // Stop published during the clock read closes admission. Keep any
+    // startup deadline failure from that observation before shutdown.
+    if notification.stop_requested() {
+        return owner
+            .check_deadline(now)
+            .map(|()| None)
+            .map_err(FixtureError::Lifecycle);
+    }
+    let permit: WorkPermit = owner.begin_work(now).map_err(FixtureError::Lifecycle)?;
+    let result: Result<PrivilegeSnapshot, TokenObservationFailure> = token_observer.observe();
+    // This synchronous return includes actual capture and explicit cleanup.
+    permit.complete();
+    result.map(Some).map_err(FixtureError::TokenObservation)
 }
 
 /// Construct the existing control-only laboratory invocation.

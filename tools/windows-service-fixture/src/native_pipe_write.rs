@@ -4,9 +4,10 @@
 use std::{
     cell::{Cell, UnsafeCell},
     marker::PhantomPinned,
-    os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, OwnedHandle},
+    os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle},
     pin::Pin,
     ptr::null,
+    task::Poll,
     time::{Duration, Instant},
 };
 
@@ -23,8 +24,12 @@ use windows_sys::Win32::{
 };
 
 use crate::{
-    native_pipe_pair::{LabOverlappedWriter, LabPipeError, LabPipeReader},
-    native_pipe_read::{NativeCancel, NativePipeRead, NativeReadBytes},
+    native_broker_wait::{CompletionWakeState, PendingCompletionWake},
+    native_pipe_pair::{LabFirstExchangeWriter, LabOverlappedWriter, LabPipeError, LabPipeReader},
+    native_pipe_read::{
+        CompletedFirstRead, NativeCancel, NativePipeRead, NativeReadBytes, NativeReadError,
+        NativeReadStart,
+    },
     private_clock_wire::MAX_FRAME_LEN,
 };
 
@@ -32,7 +37,7 @@ use crate::{
 const FIXTURE_WRITE_WAIT: Duration = Duration::from_secs(2);
 
 /// Local custody or native call refusal, retaining the original Win32 code.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum NativeWriteError {
     /// The private completion event could not be acquired.
     Event(u32),
@@ -80,36 +85,33 @@ pub(super) enum NativeWritePoll {
 struct WriteStorage {
     /// Kernel-written operation record.
     overlapped: UnsafeCell<OVERLAPPED>,
-    /// Only inspected when `WriteFile` reports inline success.
-    inline_count: Cell<u32>,
     /// Fixed input buffer. Only an idle slot may replace its contents.
     bytes: Cell<[u8; MAX_FRAME_LEN]>,
     /// Keep the address stable even if the owner itself moves.
     _pin: PhantomPinned,
 }
 
-/// The occupied slot's uncollected result or queued physical extent.
-#[derive(Clone, Copy)]
-enum OutstandingWrite {
-    /// `WriteFile` succeeded inline and supplied the transfer count.
-    Inline { span: u32, actual: u32 },
-    /// `WriteFile` returned `ERROR_IO_PENDING` for this extent.
-    Queued { span: u32 },
+/// The pinned record and its charge are fenced before handle destruction.
+struct WriteRecord {
+    /// Pinned allocation reused only after a terminal result.
+    storage: Pin<Box<WriteStorage>>,
+    /// Submitted byte count with uncollected completion.
+    outstanding: Option<u32>,
+    /// One scheduling hint for this same submission through cancellation.
+    wake: CompletionWakeState,
 }
 
 /// One laboratory write slot owning the pipe, completion event and storage.
 ///
 /// An unresolved drop terminates the supervised test process before Rust
 /// can release memory still accessible to Windows.
-pub(super) struct NativePipeWrite {
-    /// The privately connected overlapped writer endpoint.
-    writer: LabOverlappedWriter,
+pub(super) struct NativePipeWrite<W = LabOverlappedWriter> {
+    /// The charge is checked before either native handle can be released.
+    record: WriteRecord,
+    /// The writer never changes while the slot owns a submission.
+    writer: W,
     /// Noninherited manual-reset event bound to this slot only.
     event: OwnedHandle,
-    /// Pinned allocation reused only after a terminal result.
-    storage: Pin<Box<WriteStorage>>,
-    /// Submitted write with uncollected completion.
-    outstanding: Option<OutstandingWrite>,
 }
 
 impl NativePipeWrite {
@@ -137,14 +139,104 @@ impl NativePipeWrite {
         self.writer.require_reply_pair(read.reply_pair())
     }
 
-    /// Create an initially idle slot for the exact owned pipe.
+    /// Create an idle slot for the original paired fixture writer.
+    /// # Errors
+    /// Returns the event creation error and drops the unused endpoint.
+    pub(super) fn new(writer: LabOverlappedWriter) -> Result<Self, NativeWriteError> {
+        Self::prepare(writer)
+    }
+}
+
+impl NativePipeWrite<LabFirstExchangeWriter> {
+    /// Create the write slot for the first exchange's original fixture client.
+    /// # Errors
+    /// Returns event creation failure without submitting native work.
+    pub(super) fn for_first_exchange_client(
+        client: LabFirstExchangeWriter,
+    ) -> Result<Self, NativeWriteError> {
+        Self::prepare(client)
+    }
+}
+
+impl NativePipeWrite<NativePipeRead> {
+    /// Keep the original server in its read owner throughout the first exchange.
+    /// # Errors
+    /// Returns the event creation error and drops the idle read owner.
+    pub(super) fn for_first_reply(reader: NativePipeRead) -> Result<Self, NativeWriteError> {
+        Self::prepare(reader)
+    }
+
+    /// Borrow the original server handle through its single owner.
+    pub(super) fn pipe(&self) -> BorrowedHandle<'_> {
+        self.writer.pipe()
+    }
+
+    /// Submit a read on the original server before a reply occupies the slot.
+    /// # Errors
+    /// Preserve the read refusal or refuse an outstanding write.
+    pub(super) fn begin_first_read(
+        &mut self,
+        extent: usize,
+    ) -> Result<NativeReadStart, NativeReadError> {
+        self.idle_reader()?.begin(extent)
+    }
+
+    /// Collect and lend the first read without transferring its pipe owner.
+    /// # Errors
+    /// Preserve the read refusal or refuse an outstanding write.
+    pub(super) fn collect_first_read(
+        &mut self,
+        data: impl FnOnce(CompletedFirstRead<'_>),
+    ) -> Result<Poll<()>, NativeReadError> {
+        self.idle_reader()?.collect_first_read(data)
+    }
+
+    /// Target the first read's original operation on the retained server.
+    /// # Errors
+    /// Preserve the cancellation refusal or refuse an outstanding write.
+    pub(super) fn request_first_read_cancel(&mut self) -> Result<NativeCancel, NativeReadError> {
+        self.idle_reader()?.request_cancel()
+    }
+
+    /// Borrow the read slot privately so a caller cannot replace its original pipe.
+    /// # Errors
+    /// Refuses mutable access while this write still owns its native record.
+    fn idle_reader(&mut self) -> Result<&mut NativePipeRead, NativeReadError> {
+        if self.is_pending() {
+            return Err(NativeReadError::Busy);
+        }
+        Ok(&mut self.writer)
+    }
+
+    /// Lend only the charged operation's original completion hint.
+    pub(super) fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        if self.record.outstanding.is_some() {
+            return Some(self.record.wake.lend(self.event.as_handle()));
+        }
+        self.writer.completion_wake()
+    }
+
+    /// Verify the write charge before returning the original read owner and write event.
+    pub(super) fn into_first_reply_parts(self) -> (NativePipeRead, OwnedHandle) {
+        let Self {
+            record,
+            writer,
+            event,
+        } = self;
+        drop(record);
+        (writer, event)
+    }
+}
+
+impl<W: AsHandle> NativePipeWrite<W> {
+    /// Create an initially idle slot around a privately selected pipe owner.
     /// # Errors
     /// Returns the event creation error and drops the unused endpoint.
     #[expect(
         unsafe_code,
         reason = "Create and own a private Win32 completion event"
     )]
-    pub(super) fn new(writer: LabOverlappedWriter) -> Result<Self, NativeWriteError> {
+    fn prepare(writer: W) -> Result<Self, NativeWriteError> {
         // SAFETY: NULL security attributes and name select a noninheritable,
         // unnamed event. The other arguments select manual reset and unsignaled.
         let handle: HANDLE = unsafe { CreateEventW(null(), 1, 0, null()) };
@@ -154,15 +246,17 @@ impl NativePipeWrite {
         // SAFETY: CreateEventW returned one unaliased, caller-owned handle.
         let event: OwnedHandle = unsafe { OwnedHandle::from_raw_handle(handle) };
         Ok(Self {
+            record: WriteRecord {
+                storage: Box::pin(WriteStorage {
+                    overlapped: UnsafeCell::new(OVERLAPPED::default()),
+                    bytes: Cell::new([0; MAX_FRAME_LEN]),
+                    _pin: PhantomPinned,
+                }),
+                outstanding: None,
+                wake: CompletionWakeState::new(),
+            },
             writer,
             event,
-            storage: Box::pin(WriteStorage {
-                overlapped: UnsafeCell::new(OVERLAPPED::default()),
-                inline_count: Cell::new(0),
-                bytes: Cell::new([0; MAX_FRAME_LEN]),
-                _pin: PhantomPinned,
-            }),
-            outstanding: None,
         })
     }
 
@@ -175,7 +269,7 @@ impl NativePipeWrite {
         reason = "Submit a bounded write with stable owned input, record and event"
     )]
     pub(super) fn begin(&mut self, bytes: &[u8]) -> Result<NativeWriteStart, NativeWriteError> {
-        if self.outstanding.is_some() {
+        if self.record.outstanding.is_some() {
             return Err(NativeWriteError::Busy);
         }
         if !(1..=MAX_FRAME_LEN).contains(&bytes.len()) {
@@ -184,9 +278,8 @@ impl NativePipeWrite {
         let span: u32 = u32::try_from(bytes.len()).map_err(|_| NativeWriteError::Size)?;
         let mut owned_bytes: [u8; MAX_FRAME_LEN] = [0; MAX_FRAME_LEN];
         owned_bytes[..bytes.len()].copy_from_slice(bytes);
-        let slot: &WriteStorage = self.storage.as_ref().get_ref();
+        let slot: &WriteStorage = self.record.storage.as_ref().get_ref();
         slot.bytes.set(owned_bytes);
-        slot.inline_count.set(0);
         // SAFETY: The prior operation has completed or the slot is unused.
         // This record is uniquely writable and the event outlives submission.
         unsafe {
@@ -195,33 +288,28 @@ impl NativePipeWrite {
                 ..OVERLAPPED::default()
             });
         };
-        self.outstanding = Some(OutstandingWrite::Queued { span });
-        // SAFETY: The private writer uses FILE_FLAG_OVERLAPPED. The slot pins
-        // its initialized input, count output and operation record, and retains
-        // the exact event and handle. begin cannot replace occupied storage.
+        self.record.wake = CompletionWakeState::new();
+        self.record.outstanding = Some(span);
+        // SAFETY: The private constructors own an overlapped pipe. The slot
+        // pins its initialized input and operation record and holds the exact
+        // event and pipe owner. begin cannot replace occupied storage.
         let result: i32 = unsafe {
             WriteFile(
                 self.writer.as_handle().as_raw_handle(),
                 slot.bytes.as_ptr().cast_const().cast(),
                 span,
-                slot.inline_count.as_ptr(),
+                std::ptr::null_mut(),
                 slot.overlapped.get(),
             )
         };
         if result != 0 {
-            // The named-pipe API supplies this count on inline success. A queued
-            // write instead obtains its count from GetOverlappedResult.
-            self.outstanding = Some(OutstandingWrite::Inline {
-                span,
-                actual: slot.inline_count.get(),
-            });
             return Ok(NativeWriteStart::Immediate);
         }
         let code: u32 = last_error();
         if code == ERROR_IO_PENDING {
             return Ok(NativeWriteStart::Queued);
         }
-        self.outstanding = None;
+        self.record.outstanding = None;
         Err(NativeWriteError::Submit(code))
     }
 
@@ -233,11 +321,8 @@ impl NativePipeWrite {
         reason = "Observe exact Win32 write completion and physical byte count"
     )]
     pub(super) fn poll(&mut self) -> Result<NativeWritePoll, NativeWriteError> {
-        let span: u32 = match self.outstanding.ok_or(NativeWriteError::Idle)? {
-            OutstandingWrite::Inline { span, actual } => return self.finish_count(span, actual),
-            OutstandingWrite::Queued { span } => span,
-        };
-        let slot: &WriteStorage = self.storage.as_ref().get_ref();
+        let span: u32 = self.record.outstanding.ok_or(NativeWriteError::Idle)?;
+        let slot: &WriteStorage = self.record.storage.as_ref().get_ref();
         let mut actual: u32 = 0;
         // SAFETY: The occupied slot retains the exact pipe, record and event
         // from WriteFile. The count output is an exclusive local. FALSE is nonwaiting.
@@ -255,11 +340,11 @@ impl NativePipeWrite {
         match last_error() {
             ERROR_IO_INCOMPLETE => Ok(NativeWritePoll::Pending),
             ERROR_OPERATION_ABORTED => {
-                self.outstanding = None;
+                self.record.outstanding = None;
                 Ok(NativeWritePoll::Cancelled)
             }
             ERROR_BROKEN_PIPE | ERROR_NO_DATA | ERROR_PIPE_NOT_CONNECTED => {
-                self.outstanding = None;
+                self.record.outstanding = None;
                 Ok(NativeWritePoll::Disconnected)
             }
             code => Err(NativeWriteError::Completion(code)),
@@ -274,7 +359,7 @@ impl NativePipeWrite {
         span: u32,
         actual: u32,
     ) -> Result<NativeWritePoll, NativeWriteError> {
-        self.outstanding = None;
+        self.record.outstanding = None;
         if !(1..=span).contains(&actual) {
             return Err(NativeWriteError::Count);
         }
@@ -290,10 +375,10 @@ impl NativePipeWrite {
         reason = "Target cancellation at the exact still-occupied overlapped record"
     )]
     pub(super) fn request_cancel(&mut self) -> Result<NativeCancel, NativeWriteError> {
-        if self.outstanding.is_none() {
+        if self.record.outstanding.is_none() {
             return Err(NativeWriteError::Idle);
         }
-        let slot: &WriteStorage = self.storage.as_ref().get_ref();
+        let slot: &WriteStorage = self.record.storage.as_ref().get_ref();
         // SAFETY: This is the exact record submitted on the still-owned pipe.
         // Cancellation preserves ownership of every associated resource.
         let accepted: i32 = unsafe {
@@ -313,10 +398,10 @@ impl NativePipeWrite {
 
     /// Whether terminal completion still needs to be collected.
     pub(super) const fn is_pending(&self) -> bool {
-        self.outstanding.is_some()
+        self.record.outstanding.is_some()
     }
 
-    /// Satisfy one test sender's bounded write while the paired read is queued.
+    /// Satisfy one test sender's bounded write while its peer reads.
     /// # Errors
     /// Return the original failure after collecting the terminal result. An
     /// unresolved drain aborts the isolated fixture while it still owns the slot.
@@ -373,10 +458,10 @@ impl NativePipeWrite {
     }
 }
 
-impl Drop for NativePipeWrite {
+impl Drop for WriteRecord {
     /// Protect pending pointers even when a laboratory check fails or unwinds.
     fn drop(&mut self) {
-        if self.is_pending() {
+        if self.outstanding.is_some() {
             std::process::abort();
         }
     }

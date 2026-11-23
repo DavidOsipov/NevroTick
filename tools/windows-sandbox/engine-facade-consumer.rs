@@ -75,7 +75,7 @@ use nevrotick_engine::{
     ManagedProtectedRestriction, ManagedProtectedTerminal, ProtectedNativeClockObservation,
     SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
     SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
-    SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    SourceProtectedProbeFailure,
 };
 
 /// Fixed program atom consumed by the Engine's actual CLI entrypoint.
@@ -117,6 +117,8 @@ enum SetupFailure {
     ManagedPolicy,
     /// An obsolete definition did not refuse before spending the invocation.
     ManagedStale,
+    /// The original elapsed cutoff did not refuse as preparation.
+    ManagedDeadline,
     /// The actual managed failure or independent cleanup differed from EOF.
     ManagedOutcome,
     /// A protected or fallback UDP datagram reached the owned endpoint.
@@ -155,6 +157,7 @@ impl SetupFailure {
             Self::PeerWitness => ("peer-witness", 124),
             Self::ManagedPolicy => ("managed-policy", 124),
             Self::ManagedStale => ("managed-stale", 124),
+            Self::ManagedDeadline => ("managed-deadline", 124),
             Self::ManagedOutcome => ("managed-outcome", 124),
             Self::ManagedDatagram => ("managed-datagram", 124),
             Self::ManagedSuccessorPeers => ("managed-successor-peers", 124),
@@ -329,10 +332,22 @@ fn loopback_eof() -> Result<ExitCode, SetupFailure> {
 /// # Errors
 /// Refuse success, another primary cause, retained history or failed observer close.
 fn managed_eof_failure(
-    result: Result<SourceProtectedProbeReport, SourceProtectedProbeFailure>,
+    result: Result<ManagedProtectedReport, SourceProtectedProbeFailure>,
 ) -> Result<&'static str, SetupFailure> {
-    let failure: SourceProtectedProbeFailure = result.err().ok_or(SetupFailure::ManagedOutcome)?;
-    if failure.labels() != ("handshake", "unexpected-eof")
+    let report: ManagedProtectedReport = result.map_err(|_| SetupFailure::ManagedOutcome)?;
+    let ManagedProtectedTerminal::Refused(failure) = report.terminal() else {
+        return Err(SetupFailure::ManagedOutcome);
+    };
+    if report.first().is_some()
+        || report.first_nak_at().is_some()
+        || report.remaining_association_work().is_some()
+        || report.power_unregistration_error().is_some()
+        || (
+            report.attempted_sends(),
+            report.fully_submitted_sends(),
+            report.remaining_driver_work(),
+        ) != (0, 0, 64)
+        || failure.labels() != ("handshake", "unexpected-eof")
         || failure.primary_labels() != Some(("handshake", "unexpected-eof"))
         || failure.admission_cleanup_labels().is_some()
         || failure.source_policy_error().is_some()
@@ -423,7 +438,36 @@ fn managed_definition(
     Ok((authority, current))
 }
 
-/// Reach one current managed EOF after the exact stale-definition refusal.
+/// Check the real bounded public API before the following managed EOF neighbor.
+/// # Errors
+/// Reject a result other than the typed, pre-registration deadline refusal.
+fn reject_elapsed_managed_cutoff(
+    authority: &SourcePolicyAuthority,
+    expected: &SourceConfigurationSnapshot,
+) -> Result<(), SetupFailure> {
+    let cutoff: Instant = Instant::now();
+    let failure: SourceProtectedProbeFailure = authority
+        .invoke_nts_protected_before(
+            expected,
+            ManagedProtectedPlan::OneAuthenticatedSuccessor,
+            cutoff,
+        )
+        .err()
+        .ok_or(SetupFailure::ManagedDeadline)?;
+    if failure.labels() != ("currentness", "deadline")
+        || failure.primary_labels() != Some(("currentness", "deadline"))
+        || failure.cleanup_labels().is_some()
+        || failure.admission_cleanup_labels().is_some()
+        || failure.power_stop_failed()
+        || failure.power_unregistration_error().is_some()
+        || failure.retained_configuration().is_some()
+    {
+        return Err(SetupFailure::ManagedDeadline);
+    }
+    Ok(())
+}
+
+/// Reach one current managed EOF after the stale-definition and deadline refusals.
 /// The same fresh process owns one policy root, observer and worker invocation.
 /// # Errors
 /// Preserve source setup, peer retirement, managed EOF and UDP-observation failures.
@@ -441,6 +485,7 @@ fn managed_protected_eof() -> Result<ExitCode, SetupFailure> {
     let udp_address: SocketAddr = udp.local_addr().map_err(|_| SetupFailure::ManagedPolicy)?;
     let (authority, current): (SourcePolicyAuthority, SourceConfigurationSnapshot) =
         managed_definition(address, udp_address)?;
+    reject_elapsed_managed_cutoff(&authority, &current)?;
     if !matches!(listener.accept(), Err(error) if error.kind() == io::ErrorKind::WouldBlock) {
         return Err(SetupFailure::ManagedStale);
     }
@@ -450,8 +495,12 @@ fn managed_protected_eof() -> Result<ExitCode, SetupFailure> {
     let peer: thread::JoinHandle<Result<(), PeerFailure>> = thread::Builder::new()
         .spawn(move || observe_peer(listener, deadline))
         .map_err(|_| SetupFailure::PeerStart)?;
-    let result: Result<SourceProtectedProbeReport, SourceProtectedProbeFailure> =
-        authority.probe_nts_protected(&current);
+    let result: Result<ManagedProtectedReport, SourceProtectedProbeFailure> = authority
+        .invoke_nts_protected_before(
+            &current,
+            ManagedProtectedPlan::OneAuthenticatedSuccessor,
+            deadline,
+        );
     peer.join()
         .map_err(|_| SetupFailure::PeerPanic)?
         .map_err(SetupFailure::Peer)?;

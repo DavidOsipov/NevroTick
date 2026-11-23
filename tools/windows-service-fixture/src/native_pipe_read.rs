@@ -4,7 +4,7 @@
 use std::{
     cell::UnsafeCell,
     marker::PhantomPinned,
-    os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, OwnedHandle},
+    os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle},
     pin::Pin,
     ptr::{null, null_mut},
     task::Poll,
@@ -24,10 +24,11 @@ use windows_sys::Win32::{
 };
 
 use crate::{
-    native_pipe_identity::{PipeIdentity, PipeIdentityError, capture},
+    native_broker_wait::{CompletionWakeState, PendingCompletionWake},
+    native_pipe_identity::{PipeIdentity, PipeIdentityError, RetainedFixtureClient, capture},
     native_pipe_pair::{
         LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader, LabRequestWriter,
-        ReplyPipePair, check_request_peers,
+        LabUnconnectedDuplexPipe, ReplyPipePair, check_request_peers,
     },
     private_clock_wire::MAX_FRAME_LEN,
 };
@@ -81,6 +82,56 @@ impl NativeReadBytes {
     /// Return the pair of the actual source, when this was a native reply.
     pub(super) const fn reply_pair(&self) -> Option<&ReplyPipePair> {
         self.reply_pair.as_ref()
+    }
+}
+
+/// A first read kept together with the server that actually produced it.
+pub(super) struct CompletedFirstRead<'a> {
+    /// No next read or disconnect can replace this read's attribution context.
+    origin: &'a NativePipeRead,
+    /// Exact completed prefix, before checking the fixture identity.
+    bytes: NativeReadBytes,
+}
+
+impl CompletedFirstRead<'_> {
+    /// Consume the exact read after the caller checks its current cutoff.
+    ///
+    /// # Errors
+    /// Refuses empty completion or a different or unavailable native client identity.
+    pub(super) fn attribute(
+        self,
+        expected: &PipeIdentity,
+    ) -> Result<AttributedStatusRead, IdentifiedReadError> {
+        self.origin.require_client(&self.bytes, expected)?;
+        Ok(AttributedStatusRead(self.bytes))
+    }
+
+    /// Match the read to the independently retained fixture client's original token.
+    ///
+    /// # Errors
+    /// Refuse unsuitable read attribution or a no-longer-current process or token.
+    pub(super) fn attribute_peer(
+        self,
+        peer: &mut RetainedFixtureClient,
+    ) -> Result<AttributedStatusRead, IdentifiedReadError> {
+        if !peer.observe_pipe(self.origin.pipe()) {
+            return Err(IdentifiedReadError::Unattributed);
+        }
+        self.origin.require_client(&self.bytes, peer.identity())?;
+        if !peer.observe(self.origin.pipe()) {
+            return Err(IdentifiedReadError::Unattributed);
+        }
+        Ok(AttributedStatusRead(self.bytes))
+    }
+}
+
+/// The exact completed prefix after matching native identity and successful reversion.
+pub(super) struct AttributedStatusRead(NativeReadBytes);
+
+impl AttributedStatusRead {
+    /// Borrow only the bytes delivered and attributed by the original read.
+    pub(super) fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
     }
 }
 
@@ -191,13 +242,16 @@ impl IdentifiedRequestRead {
     /// # Errors
     /// Refuses unavailable or foreign same-process peer observations.
     pub(super) fn check_peers(&self) -> Result<(), LabPipeError> {
-        check_request_peers(&self.read.reader, &self.writer)
+        let ReadPipe::Paired(reader) = &self.read.reader else {
+            return Err(LabPipeError::ForeignPeer);
+        };
+        check_request_peers(reader, &self.writer)
     }
 
     /// Return the extent that may still accept one paired client write.
     pub(super) const fn client_write_span(&self) -> Option<u32> {
         if self.client_write_available {
-            self.read.outstanding
+            self.read.record.outstanding
         } else {
             None
         }
@@ -245,19 +299,7 @@ impl IdentifiedRequestRead {
             NativeReadPoll::Data(ref completed) => {
                 // Retire by default until this exact fragment's identity is established.
                 self.retired = true;
-                if completed.as_bytes().is_empty() {
-                    return Err(IdentifiedReadError::Unattributed);
-                }
-                let actual: PipeIdentity =
-                    capture(self.read.reader.as_handle()).map_err(|cause: PipeIdentityError| {
-                        IdentifiedReadError::Identity {
-                            cause,
-                            received: completed.as_bytes().len(),
-                        }
-                    })?;
-                if actual != self.expected {
-                    return Err(IdentifiedReadError::Unattributed);
-                }
+                self.read.require_client(completed, &self.expected)?;
                 self.retired = false;
                 Ok(completion)
             }
@@ -334,19 +376,49 @@ struct ReadStorage {
     _pin: PhantomPinned,
 }
 
-/// One laboratory read slot owning the pipe, completion event and storage.
-///
-/// An unresolved drop terminates the supervised test process before Rust
-/// can release memory still accessible to Windows.
-pub(super) struct NativePipeRead {
-    /// The privately connected, read-only overlapped endpoint.
-    reader: LabPipeReader,
-    /// Noninherited manual-reset event bound to this slot only.
-    event: OwnedHandle,
+/// Exact handle owner selected at construction and kept through completion.
+enum ReadPipe {
+    /// The existing request or reply fixture, with optional paired identity.
+    Paired(LabPipeReader),
+    /// The broker worker's original accepted server after fixture-only arming.
+    FirstRead(OwnedHandle),
+}
+
+impl AsHandle for ReadPipe {
+    /// Borrow the same handle at every call while the slot is occupied.
+    fn as_handle(&self) -> BorrowedHandle<'_> {
+        match self {
+            Self::Paired(pipe) => pipe.as_handle(),
+            Self::FirstRead(pipe) => pipe.as_handle(),
+        }
+    }
+}
+
+/// State and memory whose destructor must run before the pipe and event.
+struct ReadRecord {
     /// Pinned allocation reused only after a terminal result.
     storage: Pin<Box<ReadStorage>>,
     /// Requested extent of the operation with uncollected completion.
     outstanding: Option<u32>,
+    /// Scheduling hint attached to this exact submission.
+    wake: CompletionWakeState,
+}
+
+/// One laboratory read slot owning the pipe, completion event and storage.
+pub(super) struct NativePipeRead {
+    /// Outstanding pointers must be fenced before field destruction releases handles.
+    record: ReadRecord,
+    /// The privately selected overlapped endpoint.
+    reader: ReadPipe,
+    /// Noninherited manual-reset event bound to this slot only.
+    event: OwnedHandle,
+}
+
+impl AsHandle for NativePipeRead {
+    /// Borrow the original handle without changing its read or write custody.
+    fn as_handle(&self) -> BorrowedHandle<'_> {
+        self.pipe()
+    }
 }
 
 impl NativePipeRead {
@@ -357,7 +429,98 @@ impl NativePipeRead {
         &self,
         writer: &LabOverlappedWriter,
     ) -> Result<(), LabPipeError> {
-        writer.check_reply_reader(&self.reader)
+        match &self.reader {
+            ReadPipe::Paired(reader) => writer.check_reply_reader(reader),
+            ReadPipe::FirstRead(_) => Err(LabPipeError::ForeignReplyPair),
+        }
+    }
+
+    /// Retain the exact connected paired-fixture reader.
+    ///
+    /// # Errors
+    /// Returns event creation failure and drops the idle endpoint.
+    pub(super) fn new(reader: LabPipeReader) -> Result<Self, NativeReadError> {
+        Self::prepare(ReadPipe::Paired(reader))
+    }
+
+    /// Keep the fixture's only server handle in the prepared read slot through accept.
+    ///
+    /// # Errors
+    /// Returns event creation failure and drops the unsubmitted endpoint.
+    pub(super) fn for_first_read(pipe: LabUnconnectedDuplexPipe) -> Result<Self, NativeReadError> {
+        Self::prepare(ReadPipe::FirstRead(pipe.into_handle()))
+    }
+
+    /// Collect the original read and lend the successful prefix with its origin.
+    ///
+    /// # Errors
+    /// An unconfirmed result retains the native operation. An invalid terminal
+    /// count retires that operation without lending any bytes.
+    pub(super) fn collect_first_read(
+        &mut self,
+        data: impl FnOnce(CompletedFirstRead<'_>),
+    ) -> Result<Poll<()>, NativeReadError> {
+        match self.poll()? {
+            NativeReadPoll::Pending => Ok(Poll::Pending),
+            NativeReadPoll::Data(bytes) => {
+                data(CompletedFirstRead {
+                    origin: self,
+                    bytes,
+                });
+                Ok(Poll::Ready(()))
+            }
+            NativeReadPoll::Cancelled | NativeReadPoll::Disconnected => Ok(Poll::Ready(())),
+        }
+    }
+
+    /// Compare the client from this exact nonempty read after successful reversion.
+    ///
+    /// # Errors
+    /// Retains the first native identity refusal and the actual received count.
+    fn require_client(
+        &self,
+        completed: &NativeReadBytes,
+        expected: &PipeIdentity,
+    ) -> Result<(), IdentifiedReadError> {
+        let received: usize = completed.as_bytes().len();
+        if received == 0 {
+            return Err(IdentifiedReadError::Unattributed);
+        }
+        let actual: PipeIdentity =
+            capture(self.reader.as_handle()).map_err(|cause: PipeIdentityError| {
+                IdentifiedReadError::Identity { cause, received }
+            })?;
+        if &actual != expected {
+            return Err(IdentifiedReadError::Unattributed);
+        }
+        Ok(())
+    }
+
+    /// Borrow the original handle for the accept and eventual read.
+    pub(super) fn pipe(&self) -> BorrowedHandle<'_> {
+        self.reader.as_handle()
+    }
+
+    /// Consume settled, armed resources for explicit fallible endpoint release.
+    ///
+    /// A charged record aborts before either handle can be released.
+    pub(super) fn into_first_read_handles(self) -> Option<(OwnedHandle, OwnedHandle)> {
+        let Self {
+            record,
+            reader,
+            event,
+        } = self;
+        drop(record);
+        match reader {
+            ReadPipe::FirstRead(pipe) => Some((pipe, event)),
+            ReadPipe::Paired(_) => None,
+        }
+    }
+
+    /// Lend this operation's exact event, preserving its one-shot hint through cancellation.
+    pub(super) fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        self.record.outstanding?;
+        Some(self.record.wake.lend(self.event.as_handle()))
     }
 
     /// Create an initially idle slot for the exact owned pipe.
@@ -367,7 +530,7 @@ impl NativePipeRead {
         unsafe_code,
         reason = "Create and own a private Win32 completion event"
     )]
-    pub(super) fn new(reader: LabPipeReader) -> Result<Self, NativeReadError> {
+    fn prepare(reader: ReadPipe) -> Result<Self, NativeReadError> {
         // SAFETY: NULL security attributes and name select a noninheritable,
         // unnamed event. The other arguments select manual reset and unsignaled.
         let handle: HANDLE = unsafe { CreateEventW(null(), 1, 0, null()) };
@@ -379,12 +542,15 @@ impl NativePipeRead {
         Ok(Self {
             reader,
             event,
-            storage: Box::pin(ReadStorage {
-                overlapped: UnsafeCell::new(OVERLAPPED::default()),
-                bytes: UnsafeCell::new([0; MAX_FRAME_LEN]),
-                _pin: PhantomPinned,
-            }),
-            outstanding: None,
+            record: ReadRecord {
+                storage: Box::pin(ReadStorage {
+                    overlapped: UnsafeCell::new(OVERLAPPED::default()),
+                    bytes: UnsafeCell::new([0; MAX_FRAME_LEN]),
+                    _pin: PhantomPinned,
+                }),
+                outstanding: None,
+                wake: CompletionWakeState::new(),
+            },
         })
     }
 
@@ -396,14 +562,14 @@ impl NativePipeRead {
         reason = "Submit a bounded read with stable owned buffers and event"
     )]
     pub(super) fn begin(&mut self, span: usize) -> Result<NativeReadStart, NativeReadError> {
-        if self.outstanding.is_some() {
+        if self.record.outstanding.is_some() {
             return Err(NativeReadError::Busy);
         }
         if !(1..=MAX_FRAME_LEN).contains(&span) {
             return Err(NativeReadError::Size);
         }
         let span: u32 = u32::try_from(span).map_err(|_| NativeReadError::Size)?;
-        let slot: &ReadStorage = self.storage.as_ref().get_ref();
+        let slot: &ReadStorage = self.record.storage.as_ref().get_ref();
         // SAFETY: The prior operation has completed or the slot is unused.
         // This record is uniquely writable and the event outlives submission.
         unsafe {
@@ -412,7 +578,8 @@ impl NativePipeRead {
                 ..OVERLAPPED::default()
             });
         };
-        self.outstanding = Some(span);
+        self.record.wake = CompletionWakeState::new();
+        self.record.outstanding = Some(span);
         // SAFETY: The private reader uses FILE_FLAG_OVERLAPPED. The
         // kernel-written pointers remain live and pinned. The fixed buffer
         // holds span writable bytes and the count output is collected by poll.
@@ -433,7 +600,7 @@ impl NativePipeRead {
             return Ok(NativeReadStart::Queued);
         }
         // Byte-mode submission has no partial-message failure result.
-        self.outstanding = None;
+        self.record.outstanding = None;
         Err(NativeReadError::Submit(code))
     }
 
@@ -445,8 +612,8 @@ impl NativePipeRead {
         reason = "Observe exact Win32 read completion before accessing its output"
     )]
     pub(super) fn poll(&mut self) -> Result<NativeReadPoll, NativeReadError> {
-        let span: u32 = self.outstanding.ok_or(NativeReadError::Idle)?;
-        let slot: &ReadStorage = self.storage.as_ref().get_ref();
+        let span: u32 = self.record.outstanding.ok_or(NativeReadError::Idle)?;
+        let slot: &ReadStorage = self.record.storage.as_ref().get_ref();
         let mut actual: u32 = 0;
         // SAFETY: The occupied slot retains the exact pipe, record and event
         // from ReadFile. The count output is an exclusive local. FALSE is nonwaiting.
@@ -459,7 +626,7 @@ impl NativePipeRead {
             )
         };
         if complete != 0 {
-            self.outstanding = None;
+            self.record.outstanding = None;
             if actual > span {
                 return Err(NativeReadError::Count);
             }
@@ -470,17 +637,20 @@ impl NativePipeRead {
             return Ok(NativeReadPoll::Data(NativeReadBytes {
                 bytes,
                 len,
-                reply_pair: self.reader.reply_pair().cloned(),
+                reply_pair: match &self.reader {
+                    ReadPipe::Paired(reader) => reader.reply_pair().cloned(),
+                    ReadPipe::FirstRead(_) => None,
+                },
             }));
         }
         match last_error() {
             ERROR_IO_INCOMPLETE => Ok(NativeReadPoll::Pending),
             ERROR_OPERATION_ABORTED => {
-                self.outstanding = None;
+                self.record.outstanding = None;
                 Ok(NativeReadPoll::Cancelled)
             }
             ERROR_BROKEN_PIPE => {
-                self.outstanding = None;
+                self.record.outstanding = None;
                 Ok(NativeReadPoll::Disconnected)
             }
             code => Err(NativeReadError::Completion(code)),
@@ -495,10 +665,10 @@ impl NativePipeRead {
         reason = "Target cancellation at the exact still-occupied overlapped record"
     )]
     pub(super) fn request_cancel(&mut self) -> Result<NativeCancel, NativeReadError> {
-        if self.outstanding.is_none() {
+        if self.record.outstanding.is_none() {
             return Err(NativeReadError::Idle);
         }
-        let slot: &ReadStorage = self.storage.as_ref().get_ref();
+        let slot: &ReadStorage = self.record.storage.as_ref().get_ref();
         // SAFETY: This is the exact record submitted on the still-owned pipe.
         // Cancellation preserves ownership of every associated resource.
         let accepted: i32 = unsafe {
@@ -518,14 +688,14 @@ impl NativePipeRead {
 
     /// Whether terminal completion still needs to be collected.
     pub(super) const fn is_pending(&self) -> bool {
-        self.outstanding.is_some()
+        self.record.outstanding.is_some()
     }
 }
 
-impl Drop for NativePipeRead {
+impl Drop for ReadRecord {
     /// Protect pending pointers even when a laboratory check fails or unwinds.
     fn drop(&mut self) {
-        if self.is_pending() {
+        if self.outstanding.is_some() {
             std::process::abort();
         }
     }

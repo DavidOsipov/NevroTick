@@ -170,3 +170,37 @@ class PrestartReceiptTests(unittest.TestCase):
                 self.join(observation=replace(self.observation, stdout=observation),
                           access=replace(self.access, stdout=access))
         self.join()
+
+    def join_with_engine_extent(self, before, after):
+        row = self.role_rows[0].replace(before, after)
+        observation = libtest(READ, [row, *self.role_rows[1:]])
+        access = libtest(ACCESS, [row, *self.access_rows[1:]])
+        return self.join(observation=replace(self.observation, stdout=observation),
+                         access=replace(self.access, stdout=access))
+
+    def test_agreeing_impossible_configuration_extents_refuse(self):
+        for before, after in (
+            ("path-units=Some(135)", "path-units=Some(4064)"),
+            ("account-units=Some(24)", "account-units=Some(4064)"),
+            ("privilege-units=None", "privilege-units=Some(0)"),
+            ("privilege-units=None", "privilege-units=Some(2)"),
+            ("privilege-units=None", "privilege-units=Some(4093)"),
+        ):
+            with self.subTest(field=after), self.assertRaisesRegex(ReceiptRefused, "invalid SCM"):
+                self.join_with_engine_extent(before, after)
+
+    def test_configuration_extent_edges_and_empty_forms_join(self):
+        for before, after in (
+            ("path-units=Some(135)", "path-units=None"),
+            ("path-units=Some(135)", "path-units=Some(4062)"),
+            ("path-units=Some(135)", "path-units=Some(4063)"),
+            ("account-units=Some(24)", "account-units=Some(0)"),
+            ("account-units=Some(24)", "account-units=Some(4063)"),
+            ("privilege-units=None", "privilege-units=Some(1)"),
+            ("privilege-units=None", "privilege-units=Some(3)"),
+            ("privilege-units=None", "privilege-units=Some(4091)"),
+            ("privilege-units=None", "privilege-units=Some(4092)"),
+        ):
+            with self.subTest(field=after):
+                self.assertEqual(self.join_with_engine_extent(before, after).service_types,
+                                 ((528, 528, 528), (528, 16, 16)))

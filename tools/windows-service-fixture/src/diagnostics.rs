@@ -51,9 +51,13 @@ pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
             WorkerError::Activation => PrimaryCause::WorkerActivation,
             WorkerError::Running
             | WorkerError::EndpointAccept(_)
+            | WorkerError::EndpointRead(_)
             | WorkerError::EndpointUnexpectedCompletion => PrimaryCause::WorkerRunning,
             WorkerError::Cleanup
             | WorkerError::EndpointAcceptCleanup(_)
+            | WorkerError::EndpointReadCleanup(_)
+            | WorkerError::EndpointReply(_)
+            | WorkerError::EndpointReplyCleanup(_)
             | WorkerError::EndpointClose(_) => PrimaryCause::WorkerCleanup,
         },
         FixtureError::TokenObservation(_) => PrimaryCause::TokenObservation,
@@ -87,9 +91,13 @@ pub(super) const fn worker_cause(error: WorkerError) -> WorkerCause {
         WorkerError::Activation => WorkerCause::Activation,
         WorkerError::Running
         | WorkerError::EndpointAccept(_)
+        | WorkerError::EndpointRead(_)
         | WorkerError::EndpointUnexpectedCompletion => WorkerCause::Running,
         WorkerError::Cleanup
         | WorkerError::EndpointAcceptCleanup(_)
+        | WorkerError::EndpointReadCleanup(_)
+        | WorkerError::EndpointReply(_)
+        | WorkerError::EndpointReplyCleanup(_)
         | WorkerError::EndpointClose(_) => WorkerCause::Cleanup,
     }
 }

@@ -11,6 +11,8 @@ trusted inputs.
 from dataclasses import dataclass
 import json
 import re
+from collections.abc import Callable
+from enum import Enum
 from uuid import UUID
 
 from check_package import MAX_FILE, SERVICES, unique_object
@@ -25,14 +27,27 @@ SHA256 = re.compile(r"[0-9a-f]{64}")
 MAX_OUTPUT = 8192
 DWORD = r"(?:0|[1-9][0-9]{0,9})"
 NONZERO_DWORD = r"[1-9][0-9]{0,9}"
-MAYBE_EXTENT = rf"(?:None|Some\({DWORD}\))"
+# Both native x64 configuration queries use 8192-byte buffers. Reported string
+# extents exclude the terminator. The privilege-list extent includes it.
+MAX_CONFIGURATION_STRING_UNITS = (8192 - 64) // 2 - 1
+MAX_PRIVILEGE_LIST_UNITS = (8192 - 8) // 2
 ROLE_ROW = re.compile(
     rf"scm-prestart (?P<role>\S+) configured-type=(?P<kind>{DWORD}) start=4 error=(?P<error>{DWORD}) "
     rf"before-type=(?P<before>{DWORD}) before-state=1 after-type=(?P<after>{DWORD}) after-state=1 "
-    rf"sid-type=(?P<sid_type>{DWORD}) path-units={MAYBE_EXTENT} account-units={MAYBE_EXTENT} "
-    rf"privilege-units={MAYBE_EXTENT} security-control=(?P<security>{DWORD}) "
+    rf"sid-type=(?P<sid_type>{DWORD}) path-units=(?:None|Some\((?P<path>{DWORD})\)) "
+    rf"account-units=(?:None|Some\((?P<account>{DWORD})\)) "
+    rf"privilege-units=(?:None|Some\((?P<privileges>{DWORD})\)) security-control=(?P<security>{DWORD}) "
     rf"owner-bytes=(?P<owner>{NONZERO_DWORD}) dacl=(?P<dacl>absent|null|present) dacl-bytes=(?P<acl_bytes>{DWORD})"
 )
+
+
+class PrestartProbe(Enum):
+    """Closed selection for one identity and three fixed SCM observations."""
+
+    IDENTITY = "installed-identity"
+    OBSERVATION = OBSERVATION
+    ACCESS = ACCESS
+    STANDARD = STANDARD
 
 
 class ReceiptRefused(ValueError):
@@ -186,11 +201,18 @@ def read_role_rows(lines: list[str]) -> tuple[tuple[int, int, int], ...]:
         row = ROLE_ROW.fullmatch(line)
         if row is None or row["role"] != role:
             raise ReceiptRefused("wrong role or non-Disabled/non-Stopped observation")
+        path, account, privileges = (
+            int(row[name]) if row[name] is not None else None
+            for name in ("path", "account", "privileges")
+        )
+        # An empty MULTI_SZ contains one zero. A nonempty one has a name and two zeros.
+        require(all(extent is None or extent <= MAX_CONFIGURATION_STRING_UNITS for extent in (path, account))
+                and (privileges is None or privileges == 1 or 3 <= privileges <= MAX_PRIVILEGE_LIST_UNITS),
+                "invalid SCM configuration extent")
         control, owner, acl = (int(row[name]) for name in ("security", "owner", "acl_bytes"))
         # Check the facts this projection retains from service_security.rs.
         # The actual owner SID and DACL entries still require protected readback.
         require(all(is_dword(int(row[name])) for name in ("kind", "before", "after", "error", "sid_type"))
-                and all(is_dword(int(extent)) for extent in re.findall(r"Some\(([0-9]+)\)", line))
                 and control <= 0xFFFF and control & 0x8000
                 and bool(control & 4) == (row["dacl"] != "absent")
                 and 8 <= owner <= 68 and owner % 4 == 0
@@ -201,19 +223,15 @@ def read_role_rows(lines: list[str]) -> tuple[tuple[int, int, int], ...]:
     return tuple(types)
 
 
-def join_prestart(run: Run, identity: Capture, observation: Capture, access: Capture,
-                  standard: Capture) -> PrestartObservation:
-    """Receive one identity, two-role observation, and paired access controls.
-
-    The identity and read-only observation use the deployment context. The
-    access controls use their separately admitted actor contexts. Exact ordered
-    rows include the producers' explicit handle-close acknowledgements.
-    """
+def read_prestart(run: Run, collect: Callable[[PrestartProbe], Capture]) -> PrestartObservation:
+    """Validate each phase before asking the supervisor for another capture."""
     require_run(run)
-    read_installed_identity(identity, run)
+    read_installed_identity(collect(PrestartProbe.IDENTITY), run)
+    observation = collect(PrestartProbe.OBSERVATION)
     observation_output = read_capture(observation, run, run.deployment_actor, run.observer_sha256)
     observation_rows = read_test(observation_output, OBSERVATION, 3)
     service_types = read_role_rows(observation_rows)
+    access = collect(PrestartProbe.ACCESS)
     access_output = read_capture(access, run, run.provisioning_actor, run.observer_sha256)
     access_rows = read_test(access_output, ACCESS, 17)
     expected_access = [
@@ -224,6 +242,7 @@ def join_prestart(run: Run, identity: Capture, observation: Capture, access: Cap
         "scm-prestart-access observed-rows=12",
     ]
     require(access_rows == expected_access, "provisioning access rows differ from the original observation")
+    standard = collect(PrestartProbe.STANDARD)
     standard_output = read_capture(standard, run, run.standard_actor, run.observer_sha256)
     standard_rows = read_test(standard_output, STANDARD, 4)
     expected_standard = [
@@ -234,3 +253,14 @@ def join_prestart(run: Run, identity: Capture, observation: Capture, access: Cap
     ]
     require(standard_rows == expected_standard, "standard-user access or denial rows differ")
     return PrestartObservation(run.id, run.signed_package_sha256, service_types)
+
+def join_prestart(run: Run, identity: Capture, observation: Capture, access: Capture,
+                  standard: Capture) -> PrestartObservation:
+    """Join retained captures with the same checks used during supervision."""
+    captures = {
+        PrestartProbe.IDENTITY: identity,
+        PrestartProbe.OBSERVATION: observation,
+        PrestartProbe.ACCESS: access,
+        PrestartProbe.STANDARD: standard,
+    }
+    return read_prestart(run, captures.__getitem__)

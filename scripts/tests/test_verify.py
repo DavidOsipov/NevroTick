@@ -9,10 +9,13 @@ import os
 from pathlib import Path
 import resource
 import shutil
+import subprocess
+import sys
 import tempfile
 import tomllib
 import unittest
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("product_verify", ROOT / "scripts/verify.py")
@@ -1838,6 +1841,119 @@ class DirectMsixSourceInspectionTests(unittest.TestCase):
         self.assertEqual(set(self.metadata.iterdir()), {self.generation, destination})
         self.assertEqual((destination / "receipt.json").read_bytes(), held["receipt.json"])
 
+    def properties_source_generation(self, directory, description):
+        source = directory / "checkout"
+        for name in ("metadata/product.toml", "Cargo.toml", "crates/nevrotick-ui/Cargo.toml",
+                     "crates/nevrotick-engine/Cargo.toml"):
+            path = source / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            data = (ROOT / name).read_bytes()
+            if name == "metadata/product.toml":
+                data = data.replace(
+                    b'description = "A Windows time synchronization client under development."',
+                    ("description = " + json.dumps(description, ensure_ascii=False)).encode(), 1)
+            path.write_bytes(data)
+        generation = directory / "checked-generation"
+        command = [sys.executable, "-I", "-B", str(ROOT / "metadata/pipeline/__main__.py")]
+        for operation in ("generate", "check", "inspect-msix"):
+            completed = subprocess.run(
+                [*command, operation, "--root", str(source), "--output", str(generation)],
+                capture_output=True, check=False, timeout=10)
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+        inspection = json.loads(completed.stdout)
+        held = VERIFY.read_msix_authoring_snapshot(generation, inspection)
+        return source, inspection, held
+
+    def test_msix_properties_reads_original_namespaces_and_unicode_from_actual_export(self):
+        description = 'Horloge « UTC » & <étalonnage> "clair"'
+        source, inspection, held = self.properties_source_generation(self.metadata, description)
+        exported = VERIFY.export_msix_authoring(
+            held, self.metadata, inspection=inspection, properties_source=source)
+        fragment_path = "authoring/msix-properties.xml"
+        fragment = (self.metadata / "msix-authoring" / fragment_path).read_bytes()
+        foundation = "{http://schemas.microsoft.com/appx/manifest/foundation/windows10}"
+        integrity = "{http://schemas.microsoft.com/appx/manifest/uap/windows10/10}"
+        parsed = ET.fromstring(fragment)
+        self.assertEqual(parsed.tag, foundation + "Properties")
+        self.assertEqual(parsed.findtext(foundation + "Description"), description)
+        self.assertEqual(parsed.findtext(foundation + "Logo"), r"Assets\PackageLogo.png")
+        self.assertEqual(parsed.find(f"{integrity}PackageIntegrity/{integrity}Content").attrib,
+                         {"Enforcement": "on"})
+        trusted_launch = "{http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10}TrustedLaunch"
+        launch = parsed.find(trusted_launch)
+        self.assertIsNotNone(launch)
+        self.assertEqual((launch.text, launch.attrib, len(launch)), ("true", {}, 0))
+        self.assertIn(b"&amp; &lt;", fragment)
+        self.assertEqual(exported["files"][fragment_path], {"bytes": len(fragment), "sha256": digest(fragment)})
+        self.assertEqual(exported["files"]["receipt.json"]["sha256"], inspection["generation_receipt_sha256"])
+        self.assertFalse(inspection["assembly_ready"])
+        self.assertIsNone(inspection["package_identity"])
+
+        another = self.metadata / "repeat"
+        another.mkdir(mode=0o700)
+        self.assertEqual(VERIFY.export_msix_authoring(
+            held, another, inspection=inspection, properties_source=source), exported)
+        self.assertEqual((another / "msix-authoring" / fragment_path).read_bytes(), fragment)
+
+        trusted_launch_leaf = b"<trustedlaunch:TrustedLaunch>true</trustedlaunch:TrustedLaunch>"
+        for label, changed in {
+            "wrong PackageIntegrity namespace": fragment.replace(b"windows10/10", b"windows10/11"),
+            "pre-Trusted Launch fragment": fragment.replace(trusted_launch_leaf, b"").replace(
+                b' xmlns:trustedlaunch="http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"', b""),
+            "wrong Trusted Launch namespace": fragment.replace(b"/trustedlaunch/windows10", b"/other/windows10"),
+            "disabled Trusted Launch": fragment.replace(b">true</trustedlaunch:", b">false</trustedlaunch:"),
+            "invalid Trusted Launch Boolean": fragment.replace(
+                b">true</trustedlaunch:", b">not-a-boolean</trustedlaunch:"),
+            "duplicate Trusted Launch": fragment.replace(trusted_launch_leaf, trusted_launch_leaf * 2),
+            "nested Trusted Launch content": fragment.replace(
+                b">true</trustedlaunch:", b">true<uap10:Content /></trustedlaunch:"),
+            "extra Trusted Launch attribute": fragment.replace(
+                b"<trustedlaunch:TrustedLaunch>", b'<trustedlaunch:TrustedLaunch Enforcement="on">'),
+            "lowercase Content": fragment.replace(b"uap10:Content", b"uap10:content"),
+            "non-XML whitespace in element-only content": fragment.replace(
+                b"</DisplayName>", "</DisplayName>\u00a0".encode("utf-8")),
+            "non-XML whitespace after Content": fragment.replace(
+                b'Enforcement="on" />', 'Enforcement="on" />\u00a0'.encode("utf-8")),
+            "declared encoding differs": fragment.replace(b'encoding="utf-8"', b'encoding="UTF-16"'),
+            "other valid description": fragment.replace(b"Horloge", b"Calendrier"),
+            "missing Content": fragment.replace(b'<uap10:Content Enforcement="on" />', b""),
+            "default integrity": fragment.replace(b'Enforcement="on"', b'Enforcement="default"'),
+            "disabled integrity": fragment.replace(b'Enforcement="on"', b'Enforcement="off"'),
+            "swapped logo": fragment.replace(b"PackageLogo.png", b"Square44x44Logo.png"),
+            "duplicate name": fragment.replace(b"</DisplayName>", b"</DisplayName><DisplayName>NevroTick</DisplayName>"),
+            "extra property": fragment.replace(b"</Properties>",
+                                                b"<uap10:AllowExternalContent>true</uap10:AllowExternalContent></Properties>"),
+        }.items():
+            self.assertNotEqual(fragment, changed, label)
+            with self.subTest(label=label), tempfile.TemporaryDirectory(dir=self.metadata) as trial:
+                output = Path(trial)
+                with patch.object(VERIFY, "render_msix_properties", return_value=changed):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete,
+                                                "checked display, package integrity or Trusted Launch contract"):
+                        VERIFY.export_msix_authoring(held, output, inspection=inspection, properties_source=source)
+                self.assertEqual(list(output.iterdir()), [])
+
+    def test_msix_properties_requires_the_exact_source_and_rejects_generic_text_outside_schema(self):
+        for description, allowed in (
+            ("é" * 2048, True), ("é" * 2049, False), ("First line\nSecond line", False),
+            ("ms-resource:NotYetAdmitted", False),
+        ):
+            with self.subTest(length=len(description), allowed=allowed), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                source, inspection, held = self.properties_source_generation(output, description)
+                if not allowed:
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Description requires bounded literal text"):
+                        VERIFY.export_msix_authoring(held, output, inspection=inspection, properties_source=source)
+                    self.assertFalse((output / "msix-authoring").exists())
+                    continue
+                VERIFY.export_msix_authoring(held, output, inspection=inspection, properties_source=source)
+                shutil.rmtree(output / "msix-authoring")
+                product = source / "metadata/product.toml"
+                product.write_bytes(product.read_bytes() + b"\n")
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "checked generation"):
+                    VERIFY.export_msix_authoring(held, output, inspection=inspection, properties_source=source)
+                self.assertFalse((output / "msix-authoring").exists())
+
     def test_authoring_export_requires_an_exporting_schema_3_windows_lane(self):
         for lane, schema, output in (("portable", 3, self.metadata), ("windows", 2, self.metadata),
                                      ("windows", 3, None)):
@@ -2447,6 +2563,176 @@ class ExecutionAccountingTests(unittest.TestCase):
             (release / name).write_bytes(payload)
         return release, output, artifacts
 
+    def complete_msix_handoff_fixture(self):
+        """Publish the maintained export with checked metadata and controlled PE and PNG bytes."""
+        _, output, _ = self.windows_release_fixture()
+        output.rmdir()
+        generated = self.work / "generated"
+        command = [sys.executable, "-I", "-B", str(ROOT / "metadata/pipeline/__main__.py")]
+        subprocess.run([*command, "generate", "--output", str(generated)], cwd=ROOT,
+                       check=True, capture_output=True, timeout=10)
+        inspection = json.loads(subprocess.run(
+            [*command, "inspect-msix", "--output", str(generated)], cwd=ROOT,
+            check=True, capture_output=True, timeout=10).stdout)
+        authoring = VERIFY.read_msix_authoring_snapshot(generated, inspection)
+        inspection["ui_activation"] = json.loads(authoring["authoring/msix-inputs.json"])["ui_activation"]
+        artwork = {name: name.encode() for name in VERIFY.MSIX_BASE_ARTWORK | VERIFY.MSIX_VARIANT_ARTWORK}
+
+        def controlled_pins(pins):
+            return {name: (role, size, len(artwork[name]), digest(artwork[name]))
+                    for name, (role, size, _, _) in pins.items()}
+
+        self.enterContext(patch.object(VERIFY, "MSIX_BASE_ARTWORK", controlled_pins(VERIFY.MSIX_BASE_ARTWORK)))
+        self.enterContext(patch.object(
+            VERIFY, "MSIX_VARIANT_ARTWORK", controlled_pins(VERIFY.MSIX_VARIANT_ARTWORK)))
+        release = self.work / "target/x86_64-pc-windows-msvc/release"
+        records = {}
+        for role, name in (("ui", "nevrotick-ui.exe"), ("observe", "nevrotick-observe.exe")):
+            records[role + "_versioninfo"] = {
+                "image_sha256": digest((release / name).read_bytes()),
+                "generation_sha256": inspection["generation_receipt_sha256"],
+                "strings": {"OriginalFilename": name},
+            }
+        records["ui_versioninfo"]["execution_manifest"] = {"level": "asInvoker", "ui_access": False}
+        VERIFY.export_windows_build(
+            self.work, output, source=ROOT,
+            report={"msix_assembly_inputs": inspection, "native_windows_execution": "not performed", **records},
+            base_artwork=artwork, authoring=authoring)
+        return output
+
+    def run_msix_handoff(self, output, pin):
+        """Exercise the independent receipt pin through the maintained CLI readback mode."""
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with (patch.object(VERIFY, "execute", side_effect=AssertionError("Handoff reader entered build")),
+              redirect_stdout(stdout), redirect_stderr(stderr)):
+            result = VERIFY.main(["--inspect-msix-handoff", str(output), "--handoff-receipt-sha256", pin])
+        return result, stdout.getvalue(), stderr.getvalue()
+
+    def test_msix_handoff_marks_every_observed_leaf_and_leaves_all_production_slots_open(self):
+        output = self.complete_msix_handoff_fixture()
+        pin = digest((output / "verification.json").read_bytes())
+        result, stdout, stderr = self.run_msix_handoff(output, pin)
+        self.assertEqual((result, stderr), (0, ""))
+        observed = json.loads(stdout)
+        self.assertEqual(observed["status"], "handoff-verified")
+        self.assertFalse(observed["assembly_ready"])
+        self.assertIsNone(observed["package_identity"])
+        self.assertIsNone(observed["ui_application_id"])
+        self.assertEqual(observed["product_dependency_and_resource_closure"], "not-admitted")
+        self.assertEqual({role: row["artifact_status"] for role, row in observed["roles"].items()},
+                         dict.fromkeys(("ui", "engine", "broker", "helper"), "not-admitted"))
+        expected = {
+            "verification.json": "private-receipt",
+            "nevrotick-ui.exe": "unadmitted-ui-image",
+            "nevrotick-observe.exe": "excluded-observe-image",
+            "nevrotick_ui.pdb": "private-symbols",
+            "nevrotick_observe.pdb": "private-symbols",
+            "msix-authoring/receipt.json": "private-authoring",
+        }
+        self.assertEqual({name: observed["files"][name]["disposition"] for name in expected}, expected)
+        self.assertEqual(sum(row["disposition"] == "unadmitted-artwork" for row in observed["files"].values()), 51)
+        self.assertEqual(set(observed["files"]), {file.relative_to(output).as_posix()
+                                                 for file in output.rglob("*") if file.is_file()})
+        for name, row in observed["files"].items():
+            content = (output / name).read_bytes()
+            self.assertEqual((row["bytes"], row["sha256"]), (len(content), digest(content)))
+
+    def test_msix_handoff_refuses_wrong_pin_swapped_bytes_private_leaks_and_role_substitution(self):
+        output = self.complete_msix_handoff_fixture()
+        receipt = output / "verification.json"
+        original_receipt = receipt.read_bytes()
+        pin = digest(original_receipt)
+        rc, stdout, stderr = self.run_msix_handoff(output, "0" * 64)
+        self.assertEqual((rc, stdout), (1, ""))
+        self.assertIn("INCOMPLETE", stderr)
+        def refused():
+            rc, stdout, stderr = self.run_msix_handoff(output, pin)
+            self.assertEqual((rc, stdout), (1, ""))
+            self.assertIn("INCOMPLETE", stderr)
+        for target, other in (("nevrotick-ui.exe", "nevrotick-observe.exe"),
+                              ("nevrotick_ui.pdb", "nevrotick_observe.pdb"),
+                              ("msix-authoring/authoring/msix-inputs.json",
+                               "msix-authoring/authoring/service-inputs.json")):
+            with self.subTest(target=target):
+                leaf = output / target
+                original = leaf.read_bytes()
+                leaf.write_bytes((output / other).read_bytes())
+                refused()
+                leaf.write_bytes(original)
+        for extra in ("NEVROTICK-UI.EXE", "msix-authoring/private-sentinel",
+                      "nevrotick-lab-s02-engine.exe"):
+            with self.subTest(extra=extra):
+                leaf = output / extra
+                leaf.write_bytes(b"inert")
+                refused()
+                leaf.unlink()
+        changed_report = json.loads(original_receipt)
+        changed_report["artifact"]["engine"]["component_role"] = "engine"
+        receipt.write_text(json.dumps(changed_report))
+        rc, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+        self.assertEqual((rc, stdout), (1, ""))
+        self.assertIn("role or generation differs", stderr)
+        receipt.write_bytes(original_receipt)
+
+        # A complete historical fragment still needs regeneration for this profile,
+        # even when a private handoff's pins match the older bytes.
+        relative = "authoring/msix-properties.xml"
+        fragment = output / "msix-authoring" / relative
+        current = fragment.read_bytes()
+        earlier = current.replace(b"<trustedlaunch:TrustedLaunch>true</trustedlaunch:TrustedLaunch>", b"").replace(
+            b' xmlns:trustedlaunch="http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"', b"")
+        self.assertNotEqual(earlier, current)
+        fragment.write_bytes(earlier)
+        old_report = json.loads(original_receipt)
+        old_report["msix_assembly_inputs"]["authoring_export"]["files"][relative] = {
+            "bytes": len(earlier), "sha256": digest(earlier),
+        }
+        receipt.write_text(json.dumps(old_report))
+        rc, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+        self.assertEqual((rc, stdout), (1, ""))
+        self.assertIn("checked display, package integrity or Trusted Launch contract", stderr)
+        fragment.write_bytes(current)
+        receipt.write_bytes(original_receipt)
+        self.assertEqual(self.run_msix_handoff(output, pin)[0], 0)
+
+    def test_msix_handoff_requires_object_and_exact_integer_receipt_fields(self):
+        output = self.complete_msix_handoff_fixture()
+        receipt = output / "verification.json"
+        original = receipt.read_bytes()
+        original_pin = digest(original)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+
+        def assert_refused(document):
+            raw = json.dumps(document).encode()
+            receipt.write_bytes(raw)
+            result, stdout, stderr = self.run_msix_handoff(output, digest(raw))
+            self.assertEqual((result, stdout), (1, ""))
+            self.assertIn("INCOMPLETE", stderr)
+
+        report = json.loads(original)
+        inspection = report["msix_assembly_inputs"]
+        report["msix_assembly_inputs"] = [["status", "assembly-ready"], *inspection.items()]
+        with self.subTest(receipt_shape="array of pairs with conflicting status"):
+            assert_refused(report)
+        for label, parents, field, replacement in (
+            ("PDB age boolean", ("artifact", "symbols"), "age", bool),
+            ("PDB age float", ("artifact", "symbols"), "age", float),
+            ("authoring length float",
+             ("msix_assembly_inputs", "authoring_export", "files", "receipt.json"), "bytes", float),
+            *(("artwork " + field + " float",
+               ("msix_assembly_inputs", "base_artwork", "files", "Assets/PackageLogo.png"), field, float)
+              for field in ("width", "height", "bytes")),
+        ):
+            with self.subTest(field=label):
+                report = json.loads(original)
+                item = report
+                for parent in parents:
+                    item = item[parent]
+                item[field] = replacement(item[field])
+                assert_refused(report)
+        receipt.write_bytes(original)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+
     def run_windows_publication(self, release, output, report):
         """Run the unchanged verification coordinator with only build effects simulated."""
         project = self.work / "windows-projection"
@@ -2588,14 +2874,33 @@ class ExecutionAccountingTests(unittest.TestCase):
         output.rmdir()
         original_sync = os.fsync
         external = self.work / "external.json"
-        receipt = b'{"exact": "generation"}'
-        leaf = b'{"exact": "checked authoring"}'
-        authoring = {"receipt.json": receipt, **{path: leaf for path in VERIFY.MSIX_REQUIRED_AUTHORING}}
+        receipt = json.dumps({"inputs": [{
+            "path": "metadata/product.toml",
+            "sha256": digest((ROOT / "metadata/product.toml").read_bytes()),
+        }]}).encode()
+        authoring = {
+            "authoring/service-inputs.json": b"{}",
+            "authoring/event-inputs.json": b"{}",
+            "authoring/msix-inputs.json": json.dumps({
+                "display_name": "NevroTick",
+                "publisher_display_name": "David Osipov",
+                "description": "A Windows time synchronization client under development.",
+                "fields": [
+                    {"key": "catalogue.B.6.2.Package/Properties/Logo",
+                     "value": "Assets/PackageLogo.png", "status": "derived"},
+                    {"key": "catalogue.B.6.5.uap:VisualElements/@Square44x44Logo",
+                     "value": "Assets/Square44x44Logo.png", "status": "populated"},
+                    {"key": "catalogue.B.6.5.uap:VisualElements/@Square150x150Logo",
+                     "value": "Assets/Square150x150Logo.png", "status": "populated"},
+                ],
+            }).encode(),
+        }
         inspection = {
             "generation_receipt_sha256": digest(receipt),
-            "authoring_inputs": {path: digest(leaf) for path in VERIFY.MSIX_REQUIRED_AUTHORING},
+            "authoring_inputs": {path: digest(data) for path, data in authoring.items()},
             "assembly_ready": False,
         }
+        authoring["receipt.json"] = receipt
         images = {name: f"held-{name}".encode() for name in VERIFY.MSIX_BASE_ARTWORK}
         pins = {name: (field, size, len(images[name]), digest(images[name]))
                 for name, (field, size, _, _) in VERIFY.MSIX_BASE_ARTWORK.items()}
@@ -2622,8 +2927,28 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertEqual(external_report["msix_assembly_inputs"], inspection)
         visible = json.loads((output / "verification.json").read_bytes())
         self.assertEqual(visible["status"], "passed")
-        self.assertFalse(visible["msix_assembly_inputs"]["assembly_ready"])
+        visible_msix = visible["msix_assembly_inputs"]
+        self.assertFalse(visible_msix["assembly_ready"])
+        relative = "authoring/msix-properties.xml"
+        fragment = (output / "msix-authoring" / relative).read_bytes()
+        self.assertEqual(visible_msix["authoring_export"]["files"][relative],
+                         {"bytes": len(fragment), "sha256": digest(fragment)})
+        self.assertEqual(visible_msix["generation_receipt_sha256"], digest(receipt))
+        foundation = "{http://schemas.microsoft.com/appx/manifest/foundation/windows10}"
+        uap10 = "{http://schemas.microsoft.com/appx/manifest/uap/windows10/10}"
+        properties = ET.fromstring(fragment)
+        self.assertEqual(properties.tag, foundation + "Properties")
+        self.assertEqual({item.tag: item.text for item in properties if not len(item)}, {
+            foundation + "DisplayName": "NevroTick",
+            foundation + "PublisherDisplayName": "David Osipov",
+            foundation + "Description": "A Windows time synchronization client under development.",
+            foundation + "Logo": r"Assets\PackageLogo.png",
+            "{http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10}TrustedLaunch": "true",
+        })
+        self.assertEqual(properties.find(f"{uap10}PackageIntegrity/{uap10}Content").attrib,
+                         {"Enforcement": "on"})
         expected = {**artifacts, **{"msix-authoring/" + name: data for name, data in authoring.items()},
+                    "msix-authoring/" + relative: fragment,
                     **{"msix-inputs/Assets/" + name: data for name, data in images.items()}}
         self.assertEqual({p.relative_to(output).as_posix(): p.read_bytes()
                           for p in output.rglob("*") if p.is_file() and p.name != "verification.json"},

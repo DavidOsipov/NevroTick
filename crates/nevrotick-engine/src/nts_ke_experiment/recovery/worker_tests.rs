@@ -2,9 +2,14 @@
 //! Whole-call controls reuse the actual Script producer, receiving path and static slot.
 
 use std::cell::{Cell, RefCell};
+#[cfg(any(windows, target_os = "linux"))]
+use std::net::Ipv4Addr;
 use std::num::NonZeroU32;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
+
+#[cfg(windows)]
+use windows_platform_native::{ClockCoordinates, ClockReadError, read_clock_coordinates};
 
 /// Actual joined protected-history adaptation, with independent numerical expectations.
 #[path = "numerics_tests.rs"]
@@ -15,7 +20,11 @@ use super::{
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
     StopHandle, SyncSender, Weak, failed, runtime, sync_channel,
 };
+#[cfg(windows)]
+use crate::ProtectedNativeClockObservation;
 use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
+#[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::datagram::tests::{LoopbackPeerLeg, serve_managed_loopback};
 use crate::nts_ke_experiment::datagram::{
     ReceivedInvocation, receive_joined, tests::managed_attempt_config,
 };
@@ -27,7 +36,8 @@ use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
     InvocationCompletion, ObservedInvocation, ObserverStartError, ProtectedControlKind, RunFailed,
     Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
-    run_observing, run_synchronously_with, write_observed_run,
+    run_observing, run_observing_with_cutoff, run_reserved_observing, run_synchronously_with,
+    write_observed_run,
 };
 use crate::{
     ManagedProtectedReport, SoftwareClock, SourceProtectedProbeFailure, SourceProtectedProbeReport,
@@ -1199,6 +1209,329 @@ fn assert_managed_registration_refusal(
     Ok(())
 }
 
+/// An already elapsed owner cutoff refuses before the slot or observer is used.
+/// # Errors
+/// Preserve checked setup and a missing refusal at the actual report boundary.
+/// # Panics
+/// Fail if an expired plan reaches reservation, registration or submission.
+#[test]
+fn observed_managed_cutoff_refuses_preparation_before_reservation() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    let now: Instant = Instant::now();
+    let earlier: Instant = now
+        .checked_sub(Duration::from_millis(50))
+        .ok_or(Failure::Deadline)?;
+    let (config, _source, _authority): (Config, crate::SourceHandle, crate::SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(8))?;
+    let lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let registered: Cell<bool> = Cell::new(false);
+    let submitted: Cell<bool> = Cell::new(false);
+    let observed: Result<ObservedInvocation, ObserverStartError> = run_observing_with_cutoff(
+        config,
+        Some(now),
+        &SLOT,
+        |_: StopHandle| {
+            registered.set(true);
+            Ok(|| Ok(()))
+        },
+        |_: SubmissionReservation| {
+            submitted.set(true);
+            Err(SubmitError::Control)
+        },
+    );
+    assert!(
+        !registered.get() && !submitted.get(),
+        "expired owner entered the observer path"
+    );
+    assert!(matches!(
+        &observed,
+        Err(ObserverStartError::Preparation(RunFailed::Preparation(actual)))
+            if *actual == failed(Failure::Deadline)
+    ));
+    let Err(failure) = ManagedProtectedReport::from_observed(observed) else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("currentness", "deadline"));
+    assert_eq!(failure.power_unregistration_error(), None);
+    assert!(!failure.power_stop_failed());
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Unused
+    );
+    assert_eq!(lifetime.strong_count(), 0);
+    Ok(())
+}
+
+/// Refuse a once-valid plan that reaches registration after its original cutoff.
+/// # Errors
+/// Preserve fixture admission and unexpected report failures.
+/// # Panics
+/// Fail if expired work registers or submits, or its reservation blocks a healthy invocation.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn observed_managed_cutoff_refuses_expired_reservation_before_registration() -> Result<(), Failure>
+{
+    use crate::ManagedProtectedTerminal;
+    use crate::nts_ke_experiment::IoPhase;
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let cutoff: Instant = Instant::now();
+    let origin: Instant = cutoff.checked_sub(WAIT).ok_or(Failure::Deadline)?;
+    let (config, _, _) =
+        managed_attempt_config(origin, Duration::from_millis(4), Duration::from_millis(8))?;
+    let control: Control = Control::clamped(origin, cutoff)?;
+    assert!(
+        control
+            .guard()?
+            .remaining(IoPhase::Handshake, origin)
+            .is_ok()
+    );
+    let prepared: PreparedInvocation = PreparedInvocation::checked_fixture(config, control);
+    let reservation: SubmissionReservation =
+        SLOT.try_reserve(prepared).map_err(|_| Failure::Control)?;
+    assert_eq!(SLOT.collect(), Err(CollectError::Busy));
+
+    let registrations: Cell<usize> = Cell::new(0);
+    let submissions: Cell<usize> = Cell::new(0);
+    let observed: Result<ObservedInvocation, ObserverStartError> = run_reserved_observing(
+        reservation,
+        |_: StopHandle| {
+            registrations.set(registrations.get() + 1);
+            Ok(|| Ok(()))
+        },
+        |_: SubmissionReservation| {
+            submissions.set(submissions.get() + 1);
+            Err(SubmitError::Control)
+        },
+    );
+    assert_eq!(
+        registrations.get(),
+        0,
+        "expired reservation registered its observer"
+    );
+    assert_eq!(submissions.get(), 0, "expired reservation submitted work");
+    assert!(matches!(
+        observed,
+        Err(ObserverStartError::Preparation(RunFailed::Preparation(actual)))
+            if actual == failed(Failure::Deadline)
+    ));
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Unused
+    );
+
+    let (config, _, _) =
+        managed_attempt_config(origin, Duration::from_millis(4), Duration::from_millis(8))?;
+    let cutoff: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let closes: Cell<usize> = Cell::new(0);
+    let entries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let observed: ObservedInvocation = run_observing_with_cutoff(
+        config,
+        Some(cutoff),
+        &SLOT,
+        |_: StopHandle| {
+            registrations.set(registrations.get() + 1);
+            Ok(|| {
+                closes.set(closes.get() + 1);
+                Ok(())
+            })
+        },
+        |reservation: SubmissionReservation| {
+            submissions.set(submissions.get() + 1);
+            submit_managed_cutoff_worker(&SLOT, reservation, &ADMISSION, Arc::clone(&entries), None)
+        },
+    )
+    .map_err(|_| Failure::Control)?;
+    let report: ManagedProtectedReport =
+        ManagedProtectedReport::from_observed(Ok(observed)).map_err(|_| Failure::Control)?;
+    assert!(
+        matches!(report.terminal(), ManagedProtectedTerminal::Restriction(restriction)
+        if restriction.code() == "DENY" && restriction.authenticated())
+    );
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
+    assert_eq!(registrations.get(), 1);
+    assert_eq!(submissions.get(), 1);
+    assert_eq!(entries.load(Ordering::Acquire), 1);
+    assert_eq!(closes.get(), 1);
+    Ok(())
+}
+
+/// Carry the cutoff through submission, actual startup and the observer close.
+/// The timely neighbor applies a genuine managed restriction in the same worker route.
+/// # Errors
+/// Preserve setup, submission and unexpected joined-result failures.
+/// # Panics
+/// Fail if delayed startup admits a producer, loses its join or reports a policy effect.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn observed_managed_cutoff_survives_worker_start_and_join() -> Result<(), Failure> {
+    use crate::{
+        ManagedProtectedTerminal, SourceHandle, SourcePolicyAuthority, SourcePolicySnapshot,
+    };
+    use std::net::SocketAddr;
+
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    for ((slot, admission), delayed) in SLOTS.iter().zip(&ADMISSIONS).zip([true, false]) {
+        let earlier: Instant = Instant::now()
+            .checked_sub(Duration::from_millis(50))
+            .ok_or(Failure::Deadline)?;
+        let (config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
+            managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(8))?;
+        let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
+        let before: SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        let lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+        let producer_entries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        let entries: Arc<AtomicUsize> = Arc::clone(&producer_entries);
+        let closes: Cell<usize> = Cell::new(0);
+        let window: Duration = if delayed {
+            Duration::from_millis(500)
+        } else {
+            WAIT
+        };
+        let cutoff: Instant = Instant::now()
+            .checked_add(window)
+            .ok_or(Failure::Deadline)?;
+        let observed: Result<ObservedInvocation, ObserverStartError> = run_observing_with_cutoff(
+            config,
+            Some(cutoff),
+            slot,
+            |_: StopHandle| {
+                Ok(|| {
+                    assert_eq!(
+                        slot.observer().poll_until(Instant::now() + WAIT),
+                        Observation::Taken
+                    );
+                    closes.set(closes.get() + 1);
+                    Err(NonZeroU32::MIN)
+                })
+            },
+            |reservation: SubmissionReservation| {
+                submit_managed_cutoff_worker(
+                    slot,
+                    reservation,
+                    admission,
+                    entries,
+                    delayed.then_some(cutoff),
+                )
+            },
+        );
+        let state: Observation = slot.observer().poll_until(Instant::now() + WAIT);
+        drain_facade_observation(slot, state)?;
+        assert_eq!(state, Observation::Taken);
+        assert_eq!(closes.get(), 1);
+        assert_eq!(lifetime.strong_count(), 0);
+        assert_eq!(
+            producer_entries.load(Ordering::Acquire),
+            usize::from(!delayed)
+        );
+        let after: SourcePolicySnapshot = source
+            .policy_snapshot(remote)
+            .map_err(Failure::SourcePolicy)?;
+        let report: ManagedProtectedReport =
+            ManagedProtectedReport::from_observed(observed).map_err(|_| Failure::Control)?;
+        if delayed {
+            confirm_unstarted_deadline(&report)?;
+            assert_eq!(after.source().revision(), before.source().revision());
+            assert_eq!(after.endpoint().revision(), before.endpoint().revision());
+            assert!(admission.claim().is_ok());
+        } else {
+            assert!(
+                matches!(report.terminal(), ManagedProtectedTerminal::Restriction(restriction)
+                if restriction.code() == "DENY" && restriction.authenticated())
+            );
+            assert_eq!(report.power_unregistration_error(), Some(NonZeroU32::MIN));
+            assert!(after.source().refused() && after.endpoint().refused());
+            assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
+        }
+    }
+    Ok(())
+}
+
+/// Confirm the refused terminal report of the actual joined, unstarted worker.
+/// # Errors
+/// Refuse a result that does not carry the original deadline disposition.
+/// # Panics
+/// Fail if expiry loses observer cleanup or invents protected work or history.
+#[cfg(any(windows, target_os = "linux"))]
+fn confirm_unstarted_deadline(report: &ManagedProtectedReport) -> Result<(), Failure> {
+    let crate::ManagedProtectedTerminal::Refused(failure) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("currentness", "deadline"));
+    assert_eq!(failure.primary_labels(), Some(("currentness", "deadline")));
+    assert_eq!(failure.cleanup_labels(), None);
+    assert_eq!(failure.admission_cleanup_labels(), None);
+    assert!(!failure.power_stop_failed());
+    assert_eq!(failure.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert_eq!(report.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert!(report.first().is_none() && report.first_nak_at().is_none());
+    assert_eq!(report.remaining_association_work(), None);
+    assert_eq!(
+        (
+            report.attempted_sends(),
+            report.fully_submitted_sends(),
+            report.remaining_driver_work()
+        ),
+        (0, 0, 64)
+    );
+    Ok(())
+}
+
+/// Spawn the actual managed worker, optionally holding its startup through expiry.
+/// # Errors
+/// Preserve submission refusal. Report a missing worker entry or lost release as fixture failure.
+/// # Panics
+/// Fail if the held worker exposes a joined result before release.
+#[cfg(any(windows, target_os = "linux"))]
+fn submit_managed_cutoff_worker(
+    slot: &'static WorkerSlot,
+    reservation: SubmissionReservation,
+    admission: &'static ProcessAdmission,
+    entries: Arc<AtomicUsize>,
+    hold_until: Option<Instant>,
+) -> Result<(), SubmitError> {
+    let mut hooks: Hooks = Hooks::none();
+    let hold: Option<(Instant, Gate)> = hold_until.map(|cutoff: Instant| {
+        let (pause, gate): (Box<dyn FnOnce() + Send>, Gate) = owner_gate();
+        hooks.before_start = Some(pause);
+        (cutoff, gate)
+    });
+    reservation.submit_bounded_successor_fixture(
+        admission,
+        component_provider,
+        move |config, provider, control, writer| {
+            entries.fetch_add(1, Ordering::AcqRel);
+            let mut producer: ScriptProducer<'_> =
+                ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
+            producer.managed_initial_control = Some(ProtectedControlKind::Deny);
+            drive_successor_fixture(config, provider, control, &mut producer, writer)
+        },
+        hooks,
+    )?;
+    if let Some((cutoff, gate)) = hold {
+        gate.wait(slot).map_err(|_| SubmitError::Control)?;
+        assert!(matches!(
+            slot.take_for_receiving(),
+            Err(CollectError::NotReady)
+        ));
+        std::thread::sleep(cutoff.saturating_duration_since(Instant::now()));
+        assert!(Instant::now() >= cutoff);
+        assert_eq!(
+            slot.observer().poll_until(Instant::now() + WAIT),
+            Observation::Running(false)
+        );
+        gate.release().map_err(|_| SubmitError::Control)?;
+    }
+    Ok(())
+}
+
 /// Deliver an event during subscription through the real facade's stop endpoint.
 /// # Errors
 /// Preserve checked setup and an unexpected facade failure.
@@ -1884,23 +2217,70 @@ fn run_managed_loopback_control(
     admission: &'static ProcessAdmission,
     successor: LoopbackSuccessor,
 ) -> Result<(), Failure> {
-    use std::io;
-    use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
+    let mut point: u8 = 0;
+    run_managed_loopback_observing(
+        slot,
+        admission,
+        successor,
+        true,
+        move || {
+            point = point.checked_add(1).ok_or(Failure::Control)?;
+            Ok(point)
+        },
+        |_, [first, successor]: [LoopbackPeerLeg<u8>; 2]| {
+            assert_eq!(
+                [
+                    first.received,
+                    first.sending,
+                    successor.received,
+                    successor.sending
+                ],
+                [1, 2, 3, 4]
+            );
+            Ok(())
+        },
+    )
+}
 
-    use crate::nts_ke_experiment::datagram::{DatagramError, tests::serve_managed_loopback};
+/// Bind the fixture to an ephemeral IPv4 loopback port with finite I/O deadlines.
+/// # Errors
+/// Preserve bind refusal and refuse a missing timeout or local address.
+#[cfg(any(windows, target_os = "linux"))]
+fn bind_managed_loopback_peer() -> Result<(std::net::UdpSocket, std::net::SocketAddr), Failure> {
+    use crate::nts_ke_experiment::datagram::DatagramError;
+
+    let peer: std::net::UdpSocket = std::net::UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))
+        .map_err(|error: std::io::Error| Failure::Datagram(DatagramError::Bind(error.kind())))?;
+    peer.set_read_timeout(Some(WAIT))
+        .map_err(|_| Failure::Control)?;
+    peer.set_write_timeout(Some(WAIT))
+        .map_err(|_| Failure::Control)?;
+    let remote: std::net::SocketAddr = peer.local_addr().map_err(|_| Failure::Endpoint)?;
+    Ok((peer, remote))
+}
+
+/// Run the bounded worker while a separate peer owns its socket observations.
+/// Pass actual peer and Engine observations to the verifier after both joins.
+/// # Errors
+/// Preserve fixture setup, worker, peer and verifier failures.
+/// # Panics
+/// Fail if the actual worker or policy state differs from the selected scenario.
+#[cfg(any(windows, target_os = "linux"))]
+fn run_managed_loopback_observing<T: Send>(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    successor: LoopbackSuccessor,
+    sends_nak: bool,
+    peer_clock: impl FnMut() -> Result<T, Failure> + Send,
+    verify: impl FnOnce(Option<&ManagedProtectedReport>, [LoopbackPeerLeg<T>; 2]) -> Result<(), Failure>,
+) -> Result<(), Failure> {
     use crate::nts_ke_experiment::receive_submitted;
     use crate::{
         KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
         SourcePolicyAuthority, SourcePolicyLimits,
     };
 
-    let peer: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))
-        .map_err(|error: io::Error| Failure::Datagram(DatagramError::Bind(error.kind())))?;
-    peer.set_read_timeout(Some(WAIT))
-        .map_err(|_| Failure::Control)?;
-    peer.set_write_timeout(Some(WAIT))
-        .map_err(|_| Failure::Control)?;
-    let remote: SocketAddr = peer.local_addr().map_err(|_| Failure::Endpoint)?;
+    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
     let limits: SourcePolicyLimits =
         SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))
             .map_err(Failure::SourcePolicy)?;
@@ -1909,7 +2289,7 @@ fn run_managed_loopback_control(
     let source: SourceHandle = authority.source(0).map_err(Failure::SourcePolicy)?;
     let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
     let target: KePreviewTarget = KePreviewTarget::new(
-        SocketAddr::from((Ipv4Addr::LOCALHOST, 4460)),
+        std::net::SocketAddr::from((Ipv4Addr::LOCALHOST, 4460)),
         "Time.Example",
     )
     .map_err(|_| Failure::Arguments)?;
@@ -1930,16 +2310,21 @@ fn run_managed_loopback_control(
     let prepared: PreparedInvocation = prepare_managed_loopback(config)?;
     let original_origin: Instant = prepared.original_times().0;
     std::thread::scope(|scope| {
-        let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
-            std::thread::Builder::new()
-                .spawn_scoped(scope, || {
-                    serve_managed_loopback(
-                        &peer,
-                        successor.first_reply(),
-                        matches!(successor, LoopbackSuccessor::ApplyOrdinary),
-                    )
-                })
-                .map_err(|_| Failure::Control)?;
+        let peer_socket: &std::net::UdpSocket = &peer;
+        let peer_worker: std::thread::ScopedJoinHandle<
+            '_,
+            Result<[LoopbackPeerLeg<T>; 2], Failure>,
+        > = std::thread::Builder::new()
+            .spawn_scoped(scope, move || {
+                serve_managed_loopback(
+                    peer_socket,
+                    successor.first_reply(),
+                    matches!(successor, LoopbackSuccessor::ApplyOrdinary),
+                    sends_nak,
+                    peer_clock,
+                )
+            })
+            .map_err(|_| Failure::Control)?;
         slot.try_reserve(prepared)
             .and_then(|reservation: SubmissionReservation| {
                 reservation.submit_bounded_successor_fixture(
@@ -1973,15 +2358,17 @@ fn run_managed_loopback_control(
             Err(CollectError::NotReady)
         ));
         let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, None);
-        let peer_result: Result<(), Failure> = peer_worker.join().unwrap_or(Err(Failure::Control));
-        assert_joined_loopback_successor(
+        let peer_result: Result<[LoopbackPeerLeg<T>; 2], Failure> =
+            peer_worker.join().unwrap_or(Err(Failure::Control));
+        let report: Option<ManagedProtectedReport> = assert_joined_loopback_successor(
             result,
             successor,
+            sends_nak,
             remote,
             &expected,
             &(original_origin..=before_successor_commit),
         )?;
-        peer_result
+        verify(report.as_ref(), peer_result?)
     })?;
     let deny_applied: bool = matches!(successor, LoopbackSuccessor::ApplyDeny);
     assert_loopback_policy(&source, &alias, remote, deny_applied)?;
@@ -2080,10 +2467,11 @@ fn assert_peer_timestamps(receipt: &crate::ManagedProtectedReceipt, expected: [u
 fn assert_joined_loopback_successor(
     result: Result<ReceivedInvocation, RunFailed>,
     successor: LoopbackSuccessor,
+    sends_nak: bool,
     remote: std::net::SocketAddr,
     expected: &crate::SourceConfigurationSnapshot,
     first_commit_window: &std::ops::RangeInclusive<Instant>,
-) -> Result<(), Failure> {
+) -> Result<Option<ManagedProtectedReport>, Failure> {
     match (successor, result) {
         (
             LoopbackSuccessor::ApplyOrdinary
@@ -2098,7 +2486,7 @@ fn assert_joined_loopback_successor(
             let ordinary: bool = matches!(successor, LoopbackSuccessor::ApplyOrdinary);
             assert_loopback_first_receipt(first, remote, expected, first_commit_window, ordinary);
             let committed_at: Instant = first.history().committed_at();
-            let (first_captures, first_bounds): ReceiptTiming = original_receipt_timing(first)?;
+            let first_timing: ReceiptTiming = original_receipt_timing(first)?;
             let terminal_timing: Option<ReceiptTiming> = joined
                 .terminal_history()
                 .map(original_receipt_timing)
@@ -2110,35 +2498,19 @@ fn assert_joined_loopback_successor(
                 }))
                 .map_err(|_| Failure::Control)?;
             let projected = report.first().ok_or(Failure::Control)?;
-            let nak: Instant = report.first_nak_at().ok_or(Failure::Control)?;
+            let nak: Option<Instant> = report.first_nak_at();
+            assert_eq!(nak.is_some(), sends_nak);
             assert_eq!(projected.committed_at(), committed_at);
             assert_eq!(projected.packet_bytes(), 252);
             assert_eq!(projected.initial_cookie_population(), (1, 12));
             assert_peer_timestamps(projected, FIRST_PEER_TIMESTAMPS);
-            assert_eq!(
-                capture_coordinates(projected.application_clock_captures()),
-                first_captures
-            );
-            assert_eq!(
-                projected.application_wall_elapsed_bounds(),
-                Some(first_bounds)
-            );
+            first_timing.assert_projection(projected);
             assert!(projected.configuration().same_configuration(expected));
             assert!(projected.received_at() <= committed_at);
-            assert!(committed_at <= nak && first_commit_window.contains(&nak));
-            assert_eq!(
-                (report.attempted_sends(), report.fully_submitted_sends()),
-                (2, 2)
-            );
-            // Each leg needs write and read readiness. Each of the three
-            // datagrams needs a separate receive attempt, even if already ready.
-            assert!(report.remaining_driver_work() <= 57);
-            let (first_bytes, last_bytes): (usize, usize) =
-                if ordinary { (156, 140) } else { (140, 124) };
-            assert_eq!(
-                report.remaining_association_work(),
-                Some((30, 29, 131_072 - first_bytes - 84 - last_bytes)),
-            );
+            if let Some(nak) = nak {
+                assert!(committed_at <= nak && first_commit_window.contains(&nak));
+            }
+            assert_loopback_work(&report, ordinary, sends_nak);
             assert_eq!(
                 report.recovery_unavailable(),
                 matches!(successor, LoopbackSuccessor::ReplaceConfiguration),
@@ -2148,7 +2520,12 @@ fn assert_joined_loopback_successor(
                 (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
                     assert_eq!(projected.leap_indicator(), 0);
                     let timing: ReceiptTiming = terminal_timing.ok_or(Failure::Control)?;
-                    assert_ordinary_loopback_receipt(receipt, expected, nak, timing);
+                    assert_ordinary_loopback_receipt(
+                        receipt,
+                        expected,
+                        nak.unwrap_or(committed_at),
+                        &timing,
+                    );
                 }
                 (LoopbackSuccessor::ApplyDeny, ManagedProtectedTerminal::Restriction(history)) => {
                     assert_eq!(projected.leap_indicator(), 1);
@@ -2172,14 +2549,38 @@ fn assert_joined_loopback_successor(
                 }
                 _ => return Err(Failure::Control),
             }
+            Ok(Some(report))
         }
         (LoopbackSuccessor::Unwind, Err(RunFailed::Abnormal(joined))) => {
             assert_abnormal_loopback_successor(joined, remote, expected, first_commit_window)?;
+            Ok(None)
         }
-        (_, Err(RunFailed::Operation(failure))) => return Err(failure.primary),
-        _ => return Err(Failure::Control),
+        (_, Err(RunFailed::Operation(failure))) => Err(failure.primary),
+        _ => Err(Failure::Control),
     }
-    Ok(())
+}
+
+/// Debit exactly two real requests and each prescribed peer reply.
+/// # Panics
+/// Fail on a missing full send or a refunded receive frame, byte or readiness debit.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_loopback_work(report: &ManagedProtectedReport, ordinary: bool, sends_nak: bool) {
+    assert_eq!(
+        (report.attempted_sends(), report.fully_submitted_sends()),
+        (2, 2)
+    );
+    // Each leg needs write and read readiness. Each datagram needs a receive attempt.
+    let nak_count: usize = usize::from(sends_nak);
+    assert!(report.remaining_driver_work() <= 58 - nak_count);
+    let (first_bytes, last_bytes): (usize, usize) = if ordinary { (156, 140) } else { (140, 124) };
+    assert_eq!(
+        report.remaining_association_work(),
+        Some((
+            30,
+            30 - nak_count,
+            131_072 - first_bytes - last_bytes - 84 * nak_count
+        )),
+    );
 }
 
 /// Coordinates of each original application wall-read bracket.
@@ -2188,7 +2589,34 @@ type CaptureCoordinates = [(Instant, std::time::SystemTime, Instant); 3];
 
 /// Original coordinates and independently derived elapsed bounds.
 #[cfg(any(windows, target_os = "linux"))]
-type ReceiptTiming = (CaptureCoordinates, [Duration; 2]);
+struct ReceiptTiming {
+    /// Local monotonic and wall coordinates from the original history.
+    captures: CaptureCoordinates,
+    /// Independently paired bounds from the original local brackets.
+    bounds: [Duration; 2],
+    /// Exact original native dispositions, retained before projecting the receipt.
+    #[cfg(windows)]
+    native: [Option<ProtectedNativeClockObservation>; 3],
+}
+
+#[cfg(any(windows, target_os = "linux"))]
+impl ReceiptTiming {
+    /// Require public receipt accessors to preserve the original timing facts.
+    /// # Panics
+    /// Fail if the projection changes or discards an original timing value.
+    fn assert_projection(&self, receipt: &crate::ManagedProtectedReceipt) {
+        assert_eq!(
+            capture_coordinates(receipt.application_clock_captures()),
+            self.captures
+        );
+        assert_eq!(receipt.application_wall_elapsed_bounds(), Some(self.bounds));
+        #[cfg(windows)]
+        assert!(
+            receipt.application_native_clock_captures() == self.native,
+            "joined receipt changed the original native clock observations"
+        );
+    }
+}
 
 /// Keep the leading monotonic read, wall value and trailing monotonic read.
 #[cfg(any(windows, target_os = "linux"))]
@@ -2227,7 +2655,12 @@ fn original_receipt_timing(
         .monotonic_after()
         .checked_duration_since(before.monotonic())
         .ok_or(Failure::Control)?;
-    Ok((capture_coordinates(captures), [minimum, maximum]))
+    Ok(ReceiptTiming {
+        captures: capture_coordinates(captures),
+        bounds: [minimum, maximum],
+        #[cfg(windows)]
+        native: original.history().native_captures(),
+    })
 }
 
 /// Compare the ordinary terminal receipt with its own original history.
@@ -2237,21 +2670,17 @@ fn original_receipt_timing(
 fn assert_ordinary_loopback_receipt(
     receipt: &crate::ManagedProtectedReceipt,
     expected: &crate::SourceConfigurationSnapshot,
-    nak: Instant,
-    (captures, bounds): ReceiptTiming,
+    earliest_arrival: Instant,
+    timing: &ReceiptTiming,
 ) {
     assert!(receipt.configuration().same_configuration(expected));
-    assert!(nak <= receipt.received_at());
+    assert!(earliest_arrival <= receipt.received_at());
     assert!(receipt.received_at() <= receipt.committed_at());
     assert_eq!(receipt.packet_bytes(), 236);
     assert_eq!(receipt.initial_cookie_population(), (2, 24));
     assert_eq!(receipt.leap_indicator(), 0);
     assert_peer_timestamps(receipt, [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc]);
-    assert_eq!(
-        capture_coordinates(receipt.application_clock_captures()),
-        captures
-    );
-    assert_eq!(receipt.application_wall_elapsed_bounds(), Some(bounds));
+    timing.assert_projection(receipt);
 }
 
 /// Compare joined DENY diagnostics with the permitted summary fields.
@@ -2295,7 +2724,7 @@ fn assert_abnormal_loopback_successor(
         joined.first_receipt().ok_or(Failure::Control)?;
     assert_loopback_first_receipt(first, remote, expected, first_commit_window, false);
     let committed_at: Instant = first.history().committed_at();
-    let (first_captures, first_bounds): ReceiptTiming = original_receipt_timing(first)?;
+    let first_timing: ReceiptTiming = original_receipt_timing(first)?;
     let Err(failure): Result<ManagedProtectedReport, SourceProtectedProbeFailure> =
         ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
             result: Err(RunFailed::Abnormal(joined)),
@@ -2317,14 +2746,7 @@ fn assert_abnormal_loopback_successor(
     assert_eq!(retained.packet_bytes(), 252);
     assert_eq!(retained.leap_indicator(), 2);
     assert_peer_timestamps(&retained, FIRST_PEER_TIMESTAMPS);
-    assert_eq!(
-        capture_coordinates(retained.application_clock_captures()),
-        first_captures
-    );
-    assert_eq!(
-        retained.application_wall_elapsed_bounds(),
-        Some(first_bounds)
-    );
+    first_timing.assert_projection(&retained);
     assert!(committed_at <= nak_at && first_commit_window.contains(&nak_at));
     Ok(())
 }
@@ -2482,6 +2904,151 @@ fn managed_loopback_successor_preserves_nak_and_ordinary_reply_after_join() -> R
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyOrdinary)
+}
+
+/// Pair the genuine joined application captures with an independently timed peer.
+/// Both authenticated replies cross the real Windows UDP adapter.
+/// # Errors
+/// Preserve the fixture and actual worker failures or refuse absent clocks.
+#[cfg(windows)]
+#[test]
+fn managed_loopback_ordinary_legs_preserve_native_capture_placement() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_loopback_observing(
+        &SLOT,
+        &ADMISSION,
+        LoopbackSuccessor::ApplyOrdinary,
+        false,
+        || {
+            read_clock_coordinates().map_err(|error: ClockReadError| {
+                eprintln!("native loopback peer clock read failed: {error:?}");
+                Failure::Control
+            })
+        },
+        verify_native_loopback_timing,
+    )
+}
+
+/// Require both ordinary receipts from the actual join and pair each with its peer leg.
+/// # Errors
+/// Refuse absent first/ordinary terminal history or a missing native observation.
+/// # Panics
+/// Fail if either leg lacks independent placement evidence, or the legs overlap.
+#[cfg(windows)]
+fn verify_native_loopback_timing(
+    report: Option<&ManagedProtectedReport>,
+    [peer_first, peer_second]: [LoopbackPeerLeg<ClockCoordinates>; 2],
+) -> Result<(), Failure> {
+    let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
+    let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    let crate::ManagedProtectedTerminal::Ordinary(second) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    let first_points: [ClockCoordinates; 3] =
+        verify_native_loopback_leg("first", first, peer_first)?;
+    let second_points: [ClockCoordinates; 3] =
+        verify_native_loopback_leg("successor", second, peer_second)?;
+    assert_eq!(
+        first_points[2].frequency_hz(),
+        second_points[0].frequency_hz()
+    );
+    assert!(
+        first_points[2].qpc_after() <= second_points[0].qpc_before(),
+        "first receive-return must complete before the worker's successor pre-send"
+    );
+    Ok(())
+}
+
+/// Compare one leg's original Engine readings with observations on the actual peer.
+/// # Errors
+/// Refuse absent, refused or unrepresentable native history at any Engine point.
+/// # Panics
+/// Fail on different frequencies, reversed same-thread intervals, or an ambiguous
+/// or reversed comparison between the two threads.
+#[cfg(windows)]
+fn verify_native_loopback_leg(
+    leg: &str,
+    receipt: &crate::ManagedProtectedReceipt,
+    peer: LoopbackPeerLeg<ClockCoordinates>,
+) -> Result<[ClockCoordinates; 3], Failure> {
+    use crate::ProtectedNativeClockObservation::Recorded;
+
+    let [
+        Some(Recorded(pre_send)),
+        Some(Recorded(send_return)),
+        Some(Recorded(receive_return)),
+    ] = receipt.application_native_clock_captures()
+    else {
+        return Err(Failure::Control);
+    };
+    let points: [(&str, ClockCoordinates); 5] = [
+        ("engine-pre-send", pre_send),
+        ("engine-send-return", send_return),
+        ("peer-receive-return", peer.received),
+        ("peer-pre-send", peer.sending),
+        ("engine-receive-return", receive_return),
+    ];
+    for (point, coordinates) in points {
+        assert_eq!(
+            coordinates.frequency_hz(),
+            pre_send.frequency_hz(),
+            "{leg} {point}: different QPC frequency"
+        );
+        assert!(
+            coordinates.qpc_before() <= coordinates.qpc_after(),
+            "{leg} {point}: reversed same-thread bracket"
+        );
+    }
+
+    assert!(pre_send.qpc_after() <= send_return.qpc_before(), "{leg}");
+    assert!(
+        send_return.qpc_after() <= receive_return.qpc_before(),
+        "{leg}"
+    );
+    assert!(
+        peer.received.qpc_after() <= peer.sending.qpc_before(),
+        "{leg}"
+    );
+    assert_cross_thread_qpc_order(
+        leg,
+        "Engine pre-send to peer receive-return",
+        pre_send.qpc_after(),
+        peer.received.qpc_before(),
+    );
+    assert_cross_thread_qpc_order(
+        leg,
+        "peer pre-send to Engine receive-return",
+        peer.sending.qpc_after(),
+        receive_return.qpc_before(),
+    );
+
+    for (point, coordinates) in points {
+        println!(
+            "loopback-native leg={leg} point={point} frequency_hz={} qpc_before={} qpc_after={} filetime_100ns={}",
+            coordinates.frequency_hz(),
+            coordinates.qpc_before(),
+            coordinates.qpc_after(),
+            coordinates.filetime_100ns()
+        );
+    }
+    Ok([pre_send, send_return, receive_return])
+}
+
+/// Require an observed cross-thread QPC separation larger than one tick.
+/// # Panics
+/// Fail separately on ambiguous or demonstrably reversed readings.
+#[cfg(windows)]
+fn assert_cross_thread_qpc_order(leg: &str, interval: &str, earlier: i64, later: i64) {
+    let ticks: i128 = i128::from(later) - i128::from(earlier);
+    assert!(
+        !(-1..=1).contains(&ticks),
+        "{leg} {interval}: ambiguous cross-thread QPC order ({ticks} ticks)"
+    );
+    assert!(
+        ticks >= 2,
+        "{leg} {interval}: reversed cross-thread QPC order ({ticks} ticks)"
+    );
 }
 
 /// Equal-value replacement after real retirement refuses the exact staged control.

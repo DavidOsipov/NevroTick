@@ -775,13 +775,6 @@ impl Control {
     /// # Errors
     /// Refuse deadline overflow and an empty or reversed window before effects.
     #[cfg(any(windows, test))]
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "standalone component controls retain their independent checked clamp constructor"
-        )
-    )]
     fn clamped(start: Instant, cutoff: Instant) -> Result<Self, Failure> {
         Self::clamped_in(start, cutoff, Arc::new(StopScope::new()))
     }
@@ -1256,9 +1249,11 @@ fn run_with_power_observer(config: Config) -> Result<ObservedInvocation, Observe
 #[cfg(windows)]
 fn run_managed_successor_with_power_observer(
     config: Config,
+    owner_cutoff: Option<Instant>,
 ) -> Result<ObservedInvocation, ObserverStartError> {
-    run_observing(
+    run_observing_with_cutoff(
         config,
+        owner_cutoff,
         &PROCESS_WORKER,
         subscribe_power_observer,
         job::SubmissionReservation::try_submit_successor,
@@ -1321,13 +1316,43 @@ fn run_observing<Close: FnOnce() -> Result<(), NonZeroU32>>(
     subscribe: impl FnOnce(StopHandle) -> Result<Close, ()>,
     submit: impl FnOnce(job::SubmissionReservation) -> Result<(), job::SubmitError>,
 ) -> Result<ObservedInvocation, ObserverStartError> {
-    let (prepared, stop): (job::PreparedInvocation, StopHandle) =
-        prepare_synchronous(config).map_err(ObserverStartError::Preparation)?;
+    run_observing_with_cutoff(config, None, slot, subscribe, submit)
+}
+
+/// Keep any caller cutoff in the original Control through observer registration and join.
+/// # Errors
+/// Preserve caller, preparation, reservation and registration refusals without renewal.
+#[cfg(any(windows, test))]
+fn run_observing_with_cutoff<Close: FnOnce() -> Result<(), NonZeroU32>>(
+    config: Config,
+    owner_cutoff: Option<Instant>,
+    slot: &'static job::WorkerSlot,
+    subscribe: impl FnOnce(StopHandle) -> Result<Close, ()>,
+    submit: impl FnOnce(job::SubmissionReservation) -> Result<(), job::SubmitError>,
+) -> Result<ObservedInvocation, ObserverStartError> {
+    let prepared: job::PreparedInvocation =
+        prepare_synchronous(config, owner_cutoff).map_err(ObserverStartError::Preparation)?;
     let reservation: job::SubmissionReservation =
         slot.try_reserve(prepared)
             .map_err(|error: job::SubmitError| {
                 ObserverStartError::Preparation(RunFailed::Submission(error))
             })?;
+    run_reserved_observing(reservation, subscribe, submit)
+}
+
+/// Recheck the original startup authority at the reserved registration edge.
+/// # Errors
+/// Release the unspent reservation on currentness or registration refusal.
+#[cfg(any(windows, test))]
+fn run_reserved_observing<Close: FnOnce() -> Result<(), NonZeroU32>>(
+    reservation: job::SubmissionReservation,
+    subscribe: impl FnOnce(StopHandle) -> Result<Close, ()>,
+    submit: impl FnOnce(job::SubmissionReservation) -> Result<(), job::SubmitError>,
+) -> Result<ObservedInvocation, ObserverStartError> {
+    let (slot, stop): (&'static job::WorkerSlot, StopHandle) =
+        reservation.observer_entry().map_err(|failure: Failed| {
+            ObserverStartError::Preparation(RunFailed::Preparation(failure))
+        })?;
     let close: Close = subscribe(stop.clone()).map_err(|()| ObserverStartError::Registration)?;
     let result: Result<datagram::ReceivedInvocation, RunFailed> = submit(reservation)
         .map_err(RunFailed::Submission)
@@ -1399,7 +1424,7 @@ fn run_joined_with(
         job::PreparedInvocation,
     ) -> Result<(), job::SubmitError>,
 ) -> Result<datagram::ReceivedInvocation, RunFailed> {
-    let (prepared, _stop): (job::PreparedInvocation, StopHandle) = prepare_synchronous(config)?;
+    let prepared: job::PreparedInvocation = prepare_synchronous(config, None)?;
     collect_prepared(prepared, slot, profile, submit)
 }
 
@@ -1407,11 +1432,15 @@ fn run_joined_with(
 /// # Errors
 /// Refuse an entered runtime or the original preparation failure.
 #[cfg(any(windows, test))]
-fn prepare_synchronous(config: Config) -> Result<(job::PreparedInvocation, StopHandle), RunFailed> {
+fn prepare_synchronous(
+    config: Config,
+    owner_cutoff: Option<Instant>,
+) -> Result<job::PreparedInvocation, RunFailed> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(RunFailed::CallerContext);
     }
-    job::PreparedInvocation::prepare(config).map_err(RunFailed::Preparation)
+    job::PreparedInvocation::prepare_with_cutoff(config, owner_cutoff)
+        .map_err(RunFailed::Preparation)
 }
 
 /// Submit and consume only after the existing worker confirms actual join.

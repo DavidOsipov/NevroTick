@@ -15,8 +15,8 @@ use super::{
     ControlHandle, ControlSchedule, ExperimentalMeasurement, ExperimentalProfile,
     ExperimentalReferenceNs, MeasurementRefusal, PilotError, PreparedSeries,
     RelativeMeasurementRefusal, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesReport, SlotReport,
-    SourcePolicySnapshot, TransportFacts, execute_series, measurement::series_coherence_residuals,
-    relative::reference_from_instants,
+    SourcePolicySnapshot, TransportFacts, measurement::series_coherence_residuals,
+    relative::reference_from_instants, series::execute_series_with_cutoff,
 };
 
 /// Exclusive issuer lifecycle; private transitions own capacity and retirement.
@@ -81,6 +81,41 @@ impl Error for AcquisitionError {
             Self::SourcePolicy(cause) => Some(cause),
             Self::Driver(cause) => Some(cause),
             Self::Busy | Self::Retired | Self::Invariant => None,
+        }
+    }
+}
+
+/// Failure preparing an acquisition with a caller's absolute cutoff.
+pub enum BoundedAcquisitionError {
+    /// Current time reached the owner cutoff before source admission or entropy.
+    OwnerDeadlineElapsed,
+    /// The original acquisition preparation failure.
+    Acquisition(AcquisitionError),
+}
+
+impl fmt::Debug for BoundedAcquisitionError {
+    /// Redact the variant and any retained cause with fixed text.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("BoundedAcquisitionError { .. }")
+    }
+}
+
+impl fmt::Display for BoundedAcquisitionError {
+    /// Describe the failure without formatting the original cause or cutoff.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::OwnerDeadlineElapsed => "acquisition owner deadline elapsed",
+            Self::Acquisition(_) => "bounded acquisition preparation failed",
+        })
+    }
+}
+
+impl Error for BoundedAcquisitionError {
+    /// Borrow the original bounded acquisition error when one was returned.
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::OwnerDeadlineElapsed => None,
+            Self::Acquisition(cause) => Some(cause),
         }
     }
 }
@@ -205,6 +240,37 @@ impl AcquisitionSession {
     pub fn prepare(
         &mut self,
     ) -> Result<(PreparedAcquisition<'_>, ControlHandle), AcquisitionError> {
+        self.prepare_with_cutoff(None)?
+            .ok_or(AcquisitionError::Invariant)
+    }
+
+    /// Prepare one plan bounded by the caller's original absolute monotonic cutoff.
+    ///
+    /// Eligibility for preparation requires current time strictly before the
+    /// cutoff. The consuming plan retains the same cutoff, including time spent
+    /// between preparation and execution. Preparation creates no socket or runtime.
+    ///
+    /// # Errors
+    /// Refuse Busy or Retired first. Check the cutoff before source admission and
+    /// after successful source admission, before entropy. Refusal leaves Idle
+    /// unchanged and preserves any earlier source-policy or driver failure.
+    pub fn prepare_before(
+        &mut self,
+        cutoff: Instant,
+    ) -> Result<(PreparedAcquisition<'_>, ControlHandle), BoundedAcquisitionError> {
+        self.prepare_with_cutoff(Some(cutoff))
+            .map_err(BoundedAcquisitionError::Acquisition)?
+            .ok_or(BoundedAcquisitionError::OwnerDeadlineElapsed)
+    }
+
+    /// Use one preparation path with or without an owner cutoff.
+    /// Return an empty result only when a supplied cutoff has elapsed.
+    /// # Errors
+    /// Preserve the current lifecycle, source-policy and driver refusals.
+    fn prepare_with_cutoff(
+        &mut self,
+        owner_cutoff: Option<Instant>,
+    ) -> Result<Option<(PreparedAcquisition<'_>, ControlHandle)>, AcquisitionError> {
         match self.state {
             SessionState::Idle => {}
             SessionState::Prepared | SessionState::Executing => {
@@ -212,22 +278,29 @@ impl AcquisitionSession {
             }
             SessionState::Retired => return Err(AcquisitionError::Retired),
         }
+        if owner_cutoff.is_some_and(|cutoff: Instant| Instant::now() >= cutoff) {
+            return Ok(None);
+        }
         self.source_policy
             .admit()
             .map_err(AcquisitionError::SourcePolicy)?;
-        let chart = Arc::clone(&self.chart);
-        let (prepared, control) =
+        if owner_cutoff.is_some_and(|cutoff: Instant| Instant::now() >= cutoff) {
+            return Ok(None);
+        }
+        let chart: Arc<SessionChart> = Arc::clone(&self.chart);
+        let (prepared, control): (PreparedSeries, ControlHandle) =
             super::series::prepare_series_for_source(&self.config, self.source_policy.clone())
                 .map_err(AcquisitionError::Driver)?;
         self.state = SessionState::Prepared;
-        Ok((
+        Ok(Some((
             PreparedAcquisition {
                 session: self,
                 prepared: Some(prepared),
                 chart,
+                owner_cutoff,
             },
             control,
-        ))
+        )))
     }
 
     /// Idempotently and terminally retire this quiescent owner.
@@ -288,6 +361,8 @@ pub struct PreparedAcquisition<'owner> {
     prepared: Option<PreparedSeries>,
     /// Immutable chart captured before this plan's acquisition.
     chart: Arc<SessionChart>,
+    /// Original optional deadline supplied by the calling owner at preparation.
+    owner_cutoff: Option<Instant>,
 }
 
 impl PreparedAcquisition<'_> {
@@ -312,7 +387,8 @@ impl PreparedAcquisition<'_> {
     /// Consume the actual plan and wrap only its genuine returned report inline.
     ///
     /// Preserve all three attempts, original run/request identities, capture ages,
-    /// deadlines and control/cleanup cutoffs. Clean Completed/Stopped/deadline
+    /// deadlines and control/cleanup cutoffs. A retained owner cutoff can only
+    /// shorten the series deadline. Clean Completed/Stopped/deadline
     /// outcomes permit another explicitly requested series unless genuine retained
     /// captures contradict that run's declared coherence or cannot be checked.
     /// No automatic retry or report queue is introduced. Other returned outcomes
@@ -325,8 +401,10 @@ impl PreparedAcquisition<'_> {
         mut self,
         schedule: &ControlSchedule,
     ) -> Result<AcquisitionReport, AcquisitionError> {
-        let prepared = self.begin_execution()?;
-        let series = execute_series(prepared, schedule).map_err(AcquisitionError::Driver)?;
+        let prepared: PreparedSeries = self.begin_execution()?;
+        let series: SeriesReport =
+            execute_series_with_cutoff(prepared, schedule, self.owner_cutoff)
+                .map_err(AcquisitionError::Driver)?;
         let coherence = series_coherence(self.session.config.experimental_profile(), &series);
         self.session.state = completion_state(
             series.end(),

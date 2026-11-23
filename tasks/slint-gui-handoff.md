@@ -130,9 +130,10 @@ receipts retain the old graph and cannot qualify this current candidate.
    clipboard, COM/proxies, menu timing, tray/toast callbacks, UIA/Narrator, DPI,
    focus, shutdown and retained heap/handle/GDI/USER/task resources. Windows-target
    checking on Linux is not native qualification.
-3. **Process/package hardening:** desktop-role mitigation startup/readback,
-   required-protection refusal, actual loader/activation paths and complete
-   hardened MSIX/Store-delivered qualification remain with their existing
+3. **Process/package hardening:** the desktop image-load guard has
+   [cross-build and selected native policy evidence](#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026).
+   Full startup/readback, required-protection refusal, actual loader/activation
+   paths and complete hardened direct MSIX qualification remain with their existing
    process/UI/package/release owners and applicable P0–P7 gates. OD-05's
    6 November clarification makes every applicable protection mandatory at the
    strongest supported compatible setting; unimplemented/untested is open work.
@@ -956,3 +957,86 @@ comparison consumers and compiles after an explicit field decision. The current
 terminal classifier preserves operation/cleanup distinctions and sticky outcomes;
 its exact native producer and Slint consumer compile for Windows. No Windows
 execution, AppVerifier/PageHeap, UIA, cleanup or release acceptance is inferred.
+
+## Require the Windows desktop image-load policy before Slint — 23 November 2026
+
+W11-W10, S0.6/P6, WIN-3/WIN-4 and CHECK-16/18/20/23/26. The actual
+Windows `main` reaches the image-load guard through `run_native` and
+`create_native` before native backend selection. It reads the current policy,
+adds the three required enforcement bits when needed, and checks the effective
+result. Already enforced settings require only a query. The guard preserves
+inherited recognized bits and refuses a native error, unknown flags, or missing
+effective settings. Refusal reaches the native entry point without initializing
+Slint. The portable fixture constructor does not apply a process policy.
+
+The Rust implementation, contracts, Windows-UI security and QA checks
+reviewed the fixed policy and the actual startup caller. The private Windows
+adapter keeps the existing GUI dependency graph and GPL-3.0-only boundary.
+The Kernel32 declarations use the pinned binding/SDK ABI and fixed current
+process and DWORD layout. The source controls distinguish omitted, deferred,
+and ignored startup checks. All 15 source controls and seven portable guard
+tests passed. The directed incomplete-mask control failed at the intended
+missing-bit assertion while the healthy neighbor passed. It carries zero
+generated mutation credit.
+
+The exact source-linked x64-v3 fixture exercised one native setter and
+readback in a fresh inert process in offline Windows Sandbox build 26100.
+Its baseline lacked at least one required enforcement bit. The process
+observed all three enforcement bits and its inherited flags after the call.
+The child, both streams and the mapped input hashes were checked before
+export and retirement. Receipt SHA-256
+`32143bcfa1fcf91d44f4d1da181fcc1de98f3f5b43e922f80a28777484a61dd8`
+is retained in `~/.local/share/nevrotick/ui-image-policy-native-fh7gxyj6/`.
+
+The configured Windows `default` row on tree
+`738d097b3eeaeb84d2de3f2db35e2e50eed03ef9` passed all 35 lanes, including
+the pinned graph, MSVC compiler, all-target Clippy, release UI link and
+MSIX inspection. Independent PE readback found the setter and getter in the
+actual release UI imports. The build receipt SHA-256 is
+`11a7754ad9e745f7e2d513eb033abba09c3e566240fd305ea433f1e38a79b452` under
+`~/.local/share/nevrotick/ui-process-policy-windows-pzaj1r4j/`. The first
+cross-build was cancelled before a receipt when the initial local lint check
+reported missing contract sections. The final build used the remaining
+allowance and retired its scratch. Independent source review checked the
+startup, inherited/error paths, ABI and exact fault oracles.
+
+The registered adapter retains its 90% executable-line and 95% critical-file
+mutation obligations. Actual Slint startup/compatibility, effective behavior
+for remote images and System32 search, early static loads, structured failure
+delivery, and packaged activation remain open. The selected local Low-label
+case is recorded below. The other process profiles, signing and release retain
+their existing owners.
+
+### Observe the Low-integrity image boundary — 23 November 2026
+
+W11-W10, WIN-3/WIN-4 and CHECK-16/26. The security-boundary, integration and
+Sandbox checks exercised the exact staged desktop policy adapter through
+`LoadLibraryExW` in three fresh source-linked x64-v3 processes in the owned
+offline Windows Sandbox (build 26100, `wsb` 0.8.114.0). Each process observed
+initial policy `0x00` and applied the common `0x05` settings. The actual guard
+added only bit `0x02` in the two guarded cases. Both positive cases verified the
+loaded module path, executed the fixed canary export and released the module.
+
+| Case | Effective policy | Native result |
+| --- | --- | --- |
+| Baseline Low | `0x05` | Loaded the exact local DLL and returned `0x4e564c42` |
+| Guarded Low, same file | `0x07` | Null module handle and immediate Win32 `5` (`ERROR_ACCESS_DENIED`) |
+| Guarded Medium, identical bytes | `0x07` | Loaded the intended local DLL and returned `0x4e564c42` |
+
+Independent label readback confirmed explicit `S-1-16-4096` and
+`S-1-16-8192` single-ACE labels with the same mask. The two DLLs had equal
+bytes, owners and discretionary ACLs at both bookends. The same offline
+guest launcher supplied the inherited context. Native child exits were
+`0`, `10` (the observed failed loader call), and `0`. Guest scratch and
+the mapped file contents were removed after completion and export.
+
+The independent review matched native streams, selector outcomes, inputs,
+PE imports and canary export. The exact staged tree was
+`58203d2108abe3a933f38d7dacc2c0299b3e14fc`. The retained build, observer
+sources and raw native receipt are under
+`~/.local/share/nevrotick/ui-low-image-load-native-z1f3prz8/`. The receipt
+SHA-256 is `5b10ff906d43b01dac4dcee2fb0191020f68c6b73aae41fbc5404db23d93dbde`.
+This covers late local loading in the selected fixture. Individual complete
+child tokens and a post-denial module list were outside its observations.
+Normal Slint startup, remote images, System32 preference, early loader behavior,
+per-file metrics and signed package activation retain their separate exits.

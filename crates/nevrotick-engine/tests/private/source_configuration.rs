@@ -4,7 +4,9 @@
 //! Source-owned KE Preview controls: S2.2; CHECK-6/9/21/25/27.
 
 use super::*;
-use crate::{PilotError, SourceAddressSet, SourceConfigurationSnapshot, SourceScale};
+use crate::{
+    AcquisitionSession, PilotError, SourceAddressSet, SourceConfigurationSnapshot, SourceScale,
+};
 
 /// Preserve the explicit operation inputs independently of installed peer membership.
 /// # Errors
@@ -147,6 +149,80 @@ fn source_configuration_install_and_expected_snapshot_replacement_are_atomic() -
         format!("{:?}", first.addresses()),
         "SourceAddressSet { .. }"
     );
+    Ok(())
+}
+
+/// Require the selected source and current revision before reserving endpoint custody.
+/// # Errors
+/// Preserve the genuine issuer, checked input and healthy session failures.
+/// # Panics
+/// Reject a rebound revision, admitted foreign source, or endpoint publication on refusal.
+#[test]
+fn source_configuration_selected_session_requires_current_issued_revision() -> Check<()> {
+    let mut authority: SourcePolicyAuthority = isolated_authority(limits(2, 1)?)?;
+    let source: SourceHandle = authority.source(0)?;
+    let neighbor: SourceHandle = authority.source(1)?;
+    let peer: SocketAddr = endpoint(43251);
+    let alternative: SocketAddr = endpoint(43252);
+    let addresses: SourceAddressSet = SourceAddressSet::new(&[peer])?;
+    let original: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, addresses.clone())?;
+    let same_peer_neighbor: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&neighbor, addresses.clone())?;
+    let mut other_authority: SourcePolicyAuthority = isolated_authority(limits(1, 1)?)?;
+    let other_source: SourceHandle = other_authority.source(0)?;
+    let same_peer_other_root: SourceConfigurationSnapshot =
+        other_authority.install_source_configuration(&other_source, addresses.clone())?;
+    let successor: SourceConfigurationSnapshot =
+        authority.replace_source_configuration(&original, addresses)?;
+
+    for (expected, error) in [
+        (&original, SourcePolicyError::ConfigurationChanged),
+        (&same_peer_neighbor, SourcePolicyError::Foreign),
+        (&same_peer_other_root, SourcePolicyError::Foreign),
+    ] {
+        assert_eq!(
+            source
+                .session_for_configuration(expected, series_config(peer, 100)?)
+                .err(),
+            Some(error)
+        );
+        assert!(matches!(
+            authority.endpoint_target(peer),
+            Err(SourcePolicyError::UnknownEndpoint)
+        ));
+    }
+    assert!(successor.same_configuration(&installed(&source)?));
+
+    let latest: SourceConfigurationSnapshot = authority
+        .replace_source_configuration(&successor, SourceAddressSet::new(&[alternative])?)?;
+    assert!(matches!(
+        source.session_for_configuration(&successor, series_config(peer, 100)?),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    assert!(matches!(
+        source.session_for_configuration(&latest, series_config(peer, 100)?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    assert!(matches!(
+        authority.endpoint_target(peer),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+
+    let mut session: AcquisitionSession =
+        source.session_for_configuration(&latest, series_config(alternative, 100)?)?;
+    assert!(authority.endpoint_target(alternative).is_ok());
+    let (prepared, control): (crate::PreparedAcquisition<'_>, crate::ControlHandle) =
+        session.prepare()?;
+    drop((prepared, control));
+    let _replacement: SourceConfigurationSnapshot =
+        authority.replace_source_configuration(&latest, SourceAddressSet::new(&[alternative])?)?;
+    assert!(matches!(
+        session.prepare(),
+        Err(crate::AcquisitionError::SourcePolicy(
+            SourcePolicyError::ConfigurationChanged
+        ))
+    ));
     Ok(())
 }
 

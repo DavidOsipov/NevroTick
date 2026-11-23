@@ -2615,9 +2615,27 @@ Use `--export-msix-authoring` with the same schema-3 Windows lane and an
 explicit `--output-dir` to retain the inspected package, service and event
 authoring inputs and their upstream generation receipt under `msix-authoring/`.
 The verifier confirms each output's size and SHA-256 in
-`msix_assembly_inputs.authoring_export`. This private assembly input directory
-contains a subset of the original generation. Keep it outside the package
+`msix_assembly_inputs.authoring_export`. Selecting both authoring and branding
+also emits `authoring/msix-properties.xml` there. The verifier checks the
+original XML bytes against the checked product source, the selected package
+logo, package integrity `on` and Trusted Launch `true`. Regenerate earlier
+Properties fragments when moving them into this current profile. Keep this private
+assembly input directory outside the package
 payload and use the other required assembly and role inputs before packing.
+
+To read back a completed handoff, pass the owner-private export directory
+and a receipt digest obtained independently from the original Windows build:
+
+```sh
+python3 -I -B scripts/verify.py --inspect-msix-handoff /path/to/export \
+  --handoff-receipt-sha256 EXPECTED_SHA256
+```
+
+Use a build that selected both `--export-msix-authoring` and
+`--msix-branding-dir`. A byte-exact relocated export may be read in place. The
+report binds both PE/PDB pairs, checked authoring and artwork to the receipt
+and classifies the output without publishing a payload. Keep
+`assembly_ready=false` and the role dispositions in downstream decisions.
 
 The Windows lane publishes a fresh `--output-dir` as one directory with both
 PE/PDB pairs, selected MSIX inputs and `verification.json`. Use a local Linux

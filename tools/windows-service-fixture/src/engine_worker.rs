@@ -15,11 +15,13 @@ use std::{
     },
     task::Poll,
     thread::{Builder, JoinHandle},
+    time::Instant,
 };
 
 use nevrotick_engine::{
-    AcquisitionError, AcquisitionReport, AcquisitionSession, ControlHandle, ControlSchedule,
-    PilotError, PreparedAcquisition, SeriesConfig, SeriesEnd, SourceHandle,
+    AcquisitionError, AcquisitionReport, AcquisitionSession, BoundedAcquisitionError,
+    ControlHandle, ControlSchedule, PilotError, PreparedAcquisition, SeriesConfig, SeriesEnd,
+    SourceConfigurationSnapshot, SourceHandle,
 };
 
 use crate::{
@@ -28,12 +30,21 @@ use crate::{
 };
 
 /// An original Engine result, retained without reconstructing its errors or report.
-type AcquisitionResult = Result<AcquisitionReport, AcquisitionError>;
+type AcquisitionResult = Result<AcquisitionReport, BoundedAcquisitionError>;
 
 /// The exclusive start and join authorizations belong to this worker instance.
 enum State {
-    /// Checked source and series plan, with no thread or operation started.
-    Dormant(SourceHandle, SeriesConfig, ControlSchedule),
+    /// Checked inputs for one acquisition, before any session or thread starts.
+    Dormant {
+        /// The original logical source, with live policy custody.
+        source: SourceHandle,
+        /// Its selected installed revision, retained through startup.
+        configuration: SourceConfigurationSnapshot,
+        /// Checked peer and series limits.
+        config: SeriesConfig,
+        /// Existing one-shot control schedule.
+        schedule: ControlSchedule,
+    },
     /// Actual session initialization completed; the host has not activated it.
     Prepared(AcquisitionSession, ControlSchedule, WorkerWake),
     /// The only owned acquisition thread. Its return marker alone is insufficient.
@@ -196,14 +207,24 @@ pub(super) struct EngineWorker {
 }
 
 impl EngineWorker {
-    /// Retain admitted, effect-free inputs for one dormant worker.
+    /// Retain one selected revision and its checked inputs for dormant startup.
+    /// The startup poll checks that the same revision is still current.
     ///
     /// # Errors
     /// Preserve refusal by the Engine's checked control schedule constructor.
-    pub(super) fn new(source: SourceHandle, config: SeriesConfig) -> Result<Self, PilotError> {
+    pub(super) fn new(
+        source: SourceHandle,
+        configuration: SourceConfigurationSnapshot,
+        config: SeriesConfig,
+    ) -> Result<Self, PilotError> {
         let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
         Ok(Self {
-            state: State::Dormant(source, config, schedule),
+            state: State::Dormant {
+                source,
+                configuration,
+                config,
+                schedule,
+            },
             shared: Arc::new(Shared::default()),
             hooks: TestHooks::default(),
         })
@@ -215,7 +236,12 @@ impl Worker for EngineWorker {
     fn poll_prepare(&mut self, wake: &WorkerWake) -> Poll<Result<(), WorkerError>> {
         let prior: State = mem::replace(&mut self.state, State::Retired);
         match prior {
-            State::Dormant(source, config, schedule) => match source.session(config) {
+            State::Dormant {
+                source,
+                configuration,
+                config,
+                schedule,
+            } => match source.session_for_configuration(&configuration, config) {
                 Ok(session) => {
                     self.state = State::Prepared(session, schedule, wake.clone());
                     Poll::Ready(Ok(()))
@@ -223,7 +249,9 @@ impl Worker for EngineWorker {
                 Err(error) => {
                     self.shared.refuse_inactive(WorkerError::Preparation);
                     self.shared
-                        .publish_result(Err(AcquisitionError::SourcePolicy(error)));
+                        .publish_result(Err(BoundedAcquisitionError::Acquisition(
+                            AcquisitionError::SourcePolicy(error),
+                        )));
                     Poll::Ready(Err(WorkerError::Preparation))
                 }
             },
@@ -238,11 +266,11 @@ impl Worker for EngineWorker {
         }
     }
 
-    /// Move the same prepared session once to its original Engine acquisition thread.
+    /// Move the same session and acknowledged cutoff to its sole acquisition thread.
     ///
     /// # Errors
     /// Refuse an absent, cancelled or poisoned preparation, or a failed thread spawn.
-    fn activate(&mut self) -> Result<(), WorkerError> {
+    fn activate(&mut self, cutoff: Instant) -> Result<(), WorkerError> {
         let prior: State = mem::replace(&mut self.state, State::Retired);
         let (session, schedule, wake): (AcquisitionSession, ControlSchedule, WorkerWake) =
             match prior {
@@ -260,7 +288,7 @@ impl Worker for EngineWorker {
         let shared: Arc<Shared> = Arc::clone(&self.shared);
         let hooks: TestHooks = mem::take(&mut self.hooks);
         if let Ok(thread) = Builder::new()
-            .spawn(move || guarded_acquisition(session, schedule, &shared, &wake, hooks))
+            .spawn(move || guarded_acquisition(session, schedule, cutoff, &shared, &wake, hooks))
         {
             self.state = State::Active(thread);
             Ok(())
@@ -321,6 +349,7 @@ impl Worker for EngineWorker {
 fn guarded_acquisition(
     session: AcquisitionSession,
     schedule: ControlSchedule,
+    cutoff: Instant,
     shared: &Shared,
     wake: &WorkerWake,
     hooks: TestHooks,
@@ -331,7 +360,7 @@ fn guarded_acquisition(
             before_control,
             after_return,
         } = hooks;
-        run_acquisition(session, &schedule, shared, before_control);
+        run_acquisition(session, &schedule, cutoff, shared, before_control);
         shared.returned.store(true, Ordering::Release);
         wake.notify();
         if let Some(pause) = after_return {
@@ -340,16 +369,17 @@ fn guarded_acquisition(
     }));
 }
 
-/// Execute at most one prepared operation and retain its exact typed result.
-/// A poisoned control publication independently refuses execution.
+/// Execute at most one acquisition under the original Running cutoff.
+/// Retain the typed result. A poisoned control publication refuses execution.
 fn run_acquisition(
     mut session: AcquisitionSession,
     schedule: &ControlSchedule,
+    cutoff: Instant,
     shared: &Shared,
     before_control: Option<Box<dyn FnOnce() + Send>>,
 ) {
-    let prepared: Result<(PreparedAcquisition<'_>, ControlHandle), AcquisitionError> =
-        session.prepare();
+    let prepared: Result<(PreparedAcquisition<'_>, ControlHandle), BoundedAcquisitionError> =
+        session.prepare_before(cutoff);
     let result: AcquisitionResult = match prepared {
         Ok((prepared, control)) => {
             if let Some(pause) = before_control {
@@ -358,7 +388,9 @@ fn run_acquisition(
             if !shared.publish_control(control) {
                 return;
             }
-            prepared.execute(schedule)
+            prepared
+                .execute(schedule)
+                .map_err(BoundedAcquisitionError::Acquisition)
         }
         Err(error) => Err(error),
     };

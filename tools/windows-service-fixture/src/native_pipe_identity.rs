@@ -2,11 +2,14 @@
 //! Query-only caller and primary-token identity evidence for the native pipe fixture.
 
 use std::fmt;
+use std::marker::PhantomData;
 use std::mem::{align_of, offset_of, size_of};
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
 use std::process;
 use std::ptr;
+use std::rc::Rc;
 
+use windows_platform_native::{PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess};
 use windows_sys::Win32::Foundation::{
     ERROR_NO_TOKEN, GetLastError, HANDLE, INVALID_HANDLE_VALUE, TRUE,
 };
@@ -19,8 +22,6 @@ use windows_sys::Win32::System::Pipes::ImpersonateNamedPipeClient;
 use windows_sys::Win32::System::Threading::{
     GetCurrentProcess, GetCurrentThread, OpenProcessToken, OpenThreadToken,
 };
-
-use crate::native_peer_process::same_kernel_object;
 
 /// Maximum binary SID size from the Win32 SDK's `SECURITY_MAX_SID_SIZE`.
 const MAX_SID_BYTES: usize = 68;
@@ -105,30 +106,69 @@ impl std::error::Error for PipeIdentityError {}
 /// A failed reversion aborts the supervised fixture process immediately.
 pub(super) fn capture(pipe: BorrowedHandle<'_>) -> Result<PipeIdentity, PipeIdentityError> {
     let thread: HANDLE = current_thread();
-    ensure_unimpersonated()?;
-    let pipe_handle: HANDLE = pipe.as_raw_handle();
-
-    #[expect(
-        unsafe_code,
-        reason = "begin pipe caller capture on the current thread"
-    )]
-    // SAFETY: The pipe borrow keeps the handle live for this synchronous call.
-    // Windows rejects a handle that does not support server impersonation.
-    let impersonated: i32 = unsafe { ImpersonateNamedPipeClient(pipe_handle) };
-    if impersonated == 0 {
-        return Err(last_error("ImpersonateNamedPipeClient"));
-    }
-
+    let identification: PipeIdentification = PipeIdentification::begin(pipe)?;
     let opened_token: Result<HANDLE, PipeIdentityError> = open_thread_token(thread);
-    #[expect(unsafe_code, reason = "end pipe impersonation on its original thread")]
-    // SAFETY: The call runs on the same thread immediately after its token query.
-    let reverted: i32 = unsafe { RevertToSelf() };
-    if reverted == 0 {
-        process::abort();
-    }
+    drop(identification);
 
     let token: OwnedHandle = take_opened_token(opened_token?)?;
     query_identity(token.as_handle(), TokenImpersonation)
+}
+
+/// Revert an established pipe identification on its originating thread.
+#[must_use = "retain the guard until the fixed identity observation has finished"]
+struct PipeIdentification(PhantomData<Rc<()>>);
+
+impl PipeIdentification {
+    /// Enter only the identity context attributed to the server's latest completed read.
+    ///
+    /// # Errors
+    /// Refuse an ambient thread token or a native impersonation failure.
+    fn begin(pipe: BorrowedHandle<'_>) -> Result<Self, PipeIdentityError> {
+        ensure_unimpersonated()?;
+        #[expect(
+            unsafe_code,
+            reason = "begin pipe caller capture on the current thread"
+        )]
+        // SAFETY: The pipe borrow keeps the handle live for this synchronous call.
+        // Windows rejects a handle that does not support server impersonation.
+        let impersonated: i32 = unsafe { ImpersonateNamedPipeClient(pipe.as_raw_handle()) };
+        if impersonated == 0 {
+            return Err(last_error("ImpersonateNamedPipeClient"));
+        }
+        Ok(Self(PhantomData))
+    }
+}
+
+impl Drop for PipeIdentification {
+    /// Revert before returning any observation, including on unwinding.
+    fn drop(&mut self) {
+        #[expect(unsafe_code, reason = "end pipe impersonation on its original thread")]
+        // SAFETY: Only successful impersonation constructs the guard. Its
+        // thread-bound marker keeps reversion on the originating thread.
+        let reverted: i32 = unsafe { RevertToSelf() };
+        if reverted == 0 {
+            process::abort();
+        }
+    }
+}
+
+/// Exercise the native process adapter during a controlled pipe identity scope.
+///
+/// The caller retains the connected server after its nonempty read and
+/// excludes intervening reads or disconnects. Only the fixed observation
+/// runs in that scope. Both outcomes reach the caller after reversion.
+///
+/// # Errors
+/// Preserve failure to enter the identity scope and the adapter's own result
+/// separately. A failed reversion aborts the fixture.
+pub(super) fn observe_peer_token_during_identification(
+    pipe: BorrowedHandle<'_>,
+    peer: &PeerProcess,
+) -> Result<Result<PeerPrimaryToken, PeerPrimaryTokenError>, PipeIdentityError> {
+    let identification: PipeIdentification = PipeIdentification::begin(pipe)?;
+    let observed: Result<PeerPrimaryToken, PeerPrimaryTokenError> = peer.retain_primary_token();
+    drop(identification);
+    Ok(observed)
 }
 
 /// Confirm that the current fixture thread has no impersonation token.
@@ -171,7 +211,12 @@ pub(super) fn own_process_identity() -> Result<PipeIdentity, PipeIdentityError> 
 }
 
 /// A query-only primary token retained for object comparison in the fixture.
-pub(super) struct RetainedPrimaryToken(OwnedHandle);
+pub(super) struct RetainedPrimaryToken {
+    /// Noninherited handle to the original token object.
+    handle: OwnedHandle,
+    /// Identity read from this same token before admission.
+    identity: PipeIdentity,
+}
 
 impl RetainedPrimaryToken {
     /// Observe a primary token through an already retained process object.
@@ -180,14 +225,75 @@ impl RetainedPrimaryToken {
     pub(super) fn open(process: BorrowedHandle<'_>) -> Result<Self, PipeIdentityError> {
         ensure_unimpersonated()?;
         let token: OwnedHandle = open_primary_token(process.as_raw_handle())?;
-        let _identity: PipeIdentity = query_identity(token.as_handle(), TokenPrimary)?;
-        Ok(Self(token))
+        let identity: PipeIdentity = query_identity(token.as_handle(), TokenPrimary)?;
+        Ok(Self {
+            handle: token,
+            identity,
+        })
     }
 
-    /// Check that two live query handles refer to the same native token object.
-    /// Object equality is independent of shared user and logon-session identity.
-    pub(super) fn refers_to(&self, other: &Self) -> bool {
-        same_kernel_object(self.0.as_handle(), other.0.as_handle())
+    /// Compare this checked identity token with the maintained process observation.
+    pub(super) fn matches_observation(&self, observed: &PeerPrimaryToken) -> bool {
+        observed.refers_to(self.handle.as_handle())
+    }
+}
+
+/// Own the independently selected fixture process and its original token.
+/// The first exchange retains this owner through actual native write settlement.
+pub(super) struct RetainedFixtureClient {
+    /// Original noninherited process owner supplied by the fixture.
+    process: PeerProcess,
+    /// Query-only handle to that process's original primary token.
+    token: RetainedPrimaryToken,
+    /// One-way gate after process, pipe or token observation is refused.
+    current: bool,
+}
+
+impl RetainedFixtureClient {
+    /// Bind the fixture actor before accepting a pipe connection.
+    ///
+    /// # Errors
+    /// Preserve the query-only primary-token acquisition refusal.
+    pub(super) fn new(process: PeerProcess) -> Result<Self, PipeIdentityError> {
+        let token: RetainedPrimaryToken = RetainedPrimaryToken::open(process.as_handle())?;
+        Ok(Self {
+            process,
+            token,
+            current: true,
+        })
+    }
+
+    /// Borrow the identity from the exact primary token retained for this peer.
+    pub(super) const fn identity(&self) -> &PipeIdentity {
+        &self.token.identity
+    }
+
+    /// Require the original live process on this pipe before any identification.
+    pub(super) fn observe_pipe(&mut self, server: BorrowedHandle<'_>) -> bool {
+        self.current = self.current
+            && self.process.check_live().is_ok()
+            && crate::native_pipe_pair::read_connected_pipe_client_pid(server)
+                .is_ok_and(|pid: u32| pid == self.process.pid().get());
+        self.current
+    }
+
+    /// Observe the original process and token through the same connected server.
+    ///
+    /// Any refusal irreversibly closes this fixture's reply authority. The
+    /// process and token handles remain owned while an earlier write is charged.
+    pub(super) fn observe(&mut self, server: BorrowedHandle<'_>) -> bool {
+        self.current = self.observe_pipe(server)
+            && RetainedPrimaryToken::open(self.process.as_handle()).is_ok_and(
+                |current: RetainedPrimaryToken| {
+                    current.identity == self.token.identity
+                        && crate::native_peer_process::same_kernel_object(
+                            self.token.handle.as_handle(),
+                            current.handle.as_handle(),
+                        )
+                },
+            )
+            && self.process.check_live().is_ok();
+        self.current
     }
 }
 

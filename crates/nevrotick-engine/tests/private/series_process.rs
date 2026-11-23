@@ -117,8 +117,14 @@ struct OwnedCase {
 impl OwnedCase {
     /// Spawn only the current test executable and one exact closed test identity.
     /// # Errors
-    /// Preserve exclusive capture, executable, coverage admission or spawn failure.
+    /// Preserve host environment, capture, executable, coverage or spawn failure.
     fn spawn(name: &'static str, index: usize) -> io::Result<Self> {
+        // Winsock may expand %SystemRoot% when loading its provider DLL.
+        #[cfg(windows)]
+        let system_root: std::ffi::OsString = std::env::var_os("SystemRoot")
+            .filter(|root: &std::ffi::OsString| std::path::Path::new(root).is_absolute())
+            .ok_or_else(|| io::Error::other("N3 Windows child requires an absolute SystemRoot"))?;
+
         let executable = std::env::current_exe()
             .map_err(|error| native_error("executable lookup failed", &error))?;
         let profile = std::env::var_os("LLVM_PROFILE_FILE");
@@ -175,6 +181,8 @@ impl OwnedCase {
             .stdin(Stdio::null())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr));
+        #[cfg(windows)]
+        command.env("SystemRoot", system_root);
         if let Some(profile) = profile {
             command.env("LLVM_PROFILE_FILE", profile);
         }

@@ -20,10 +20,10 @@ use std::{
 };
 
 use nevrotick_engine::{
-    AcquisitionError, AcquisitionReport, ControlHandle, MeasurementRefusal, SeriesConfig,
-    SeriesEnd, SeriesNotStartedCause, SlotReport, SourceAddressSet, SourceConfigurationSnapshot,
-    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, Status,
-    TransportFacts,
+    AcquisitionError, AcquisitionReport, BoundedAcquisitionError, ControlHandle,
+    MeasurementRefusal, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SlotReport,
+    SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
+    SourcePolicyError, SourcePolicyLimits, Status, TransportFacts,
 };
 use windows_platform::{
     diagnostics::{ConsumerState, DiagnosticSnapshot, MemoryConsumer},
@@ -254,7 +254,10 @@ fn worker_for(
         .install_source_configuration(&source, addresses)?;
     let config: SeriesConfig =
         SeriesConfig::new(selected, Duration::from_secs(3), Duration::from_secs(12))?;
-    Ok((EngineWorker::new(source, config)?, snapshot))
+    Ok((
+        EngineWorker::new(source, snapshot.clone(), config)?,
+        snapshot,
+    ))
 }
 
 /// Independent choice of status observation for a test-only process.
@@ -306,6 +309,7 @@ impl Rig {
             admission,
             peer,
             terminal_trace,
+            OwnerClock(Instant::now()),
             Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
         )
     }
@@ -319,6 +323,7 @@ impl Rig {
         admission: Admission,
         peer: &Rc<UdpSocket>,
         terminal_trace: TerminalTrace,
+        mut clock: OwnerClock,
         sinks: Sinks,
     ) -> Check<Self> {
         let proof: Arc<Shared> = Arc::clone(&worker.shared);
@@ -332,7 +337,6 @@ impl Rig {
             peer: Rc::clone(peer),
             terminal_trace,
         }));
-        let mut clock: OwnerClock = OwnerClock(Instant::now());
         let mut token: Token = observed_token(admission)?;
         let invocation: Invocation = start_invocation_with_diagnostics(
             LabRole::Engine,
@@ -576,14 +580,17 @@ fn dormant_preparation_and_cancelled_activation_preserve_the_first_inactive_fail
     let (mut worker, _snapshot): (EngineWorker, SourceConfigurationSnapshot) =
         worker_for(source, remote, remote)?;
     let wake: WorkerWake = WorkerWake::current();
+    let cutoff: Instant = Instant::now()
+        .checked_add(WAIT)
+        .ok_or("fixture cutoff overflow")?;
 
-    assert_eq!(worker.activate(), Err(WorkerError::Activation));
+    assert_eq!(worker.activate(cutoff), Err(WorkerError::Activation));
     assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
     assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
     assert!(peer_has_no_datagram(&peer)?);
 
     worker.shared.stop();
-    assert_eq!(worker.activate(), Err(WorkerError::Activation));
+    assert_eq!(worker.activate(cutoff), Err(WorkerError::Activation));
     assert_eq!(
         worker.poll_prepare(&wake),
         Poll::Ready(Err(WorkerError::Preparation))
@@ -619,19 +626,64 @@ fn dormant_preparation_and_cancelled_activation_preserve_the_first_inactive_fail
     Ok(())
 }
 
-/// Actual Running admits one series and preserves all its observations after join.
+/// Observe stale startup through the real invocation, before any Running or Engine work.
+/// # Errors
+/// Preserve fixture startup, retirement and peer observation failures.
+/// # Panics
+/// Fail on premature admission, false completion or lost typed refusal.
+fn assert_obsolete_startup_refused(worker: EngineWorker, peer: &Rc<UdpSocket>) -> Check {
+    let mut obsolete: Rig = Rig::start(worker, Admission::Accept, peer)?;
+    let observed: InvocationPoll = obsolete.step();
+    assert!(
+        !obsolete.states().contains(&ServiceState::Running),
+        "obsolete selected configuration admitted Running"
+    );
+    obsolete.finish_from(observed)?;
+    assert!(obsolete.invocation.admission_closed());
+    assert_eq!(obsolete.invocation.outstanding_work(), 0);
+    assert!(matches!(
+        obsolete.worker.result.get(),
+        Some(Err(BoundedAcquisitionError::Acquisition(
+            AcquisitionError::SourcePolicy(SourcePolicyError::ConfigurationChanged)
+        )))
+    ));
+    assert!(!obsolete.worker.returned.load(Ordering::Acquire));
+    assert!(peer_has_no_datagram(peer)?);
+    assert_eq!(
+        obsolete
+            .invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Err(FixtureError::Worker(WorkerError::Preparation)))
+    );
+    Ok(())
+}
+
+/// An obsolete startup selection cannot admit a same-peer successor's work.
+/// The current selection refuses an expired Running cutoff and admits a healthy series.
 ///
 /// # Errors
 /// Preserve construction, real peer traffic and shutdown failures.
 /// # Panics
-/// Fail for early admission or join, incorrect report, extra work or sample admission.
+/// Fail for stale or expired admission, early join, incorrect report or sample admission.
 #[test]
 fn managed_service_acquisition_retains_real_report_without_admitting_time() -> Check {
     let _case: MutexGuard<'_, ()> = exclusive_case();
     let (source, peer): (SourceHandle, Rc<UdpSocket>) = source_and_peer()?;
     let remote: SocketAddr = peer.local_addr()?;
-    let (mut worker, expected): (EngineWorker, SourceConfigurationSnapshot) =
-        worker_for(source, remote, remote)?;
+    let (obsolete_worker, original): (EngineWorker, SourceConfigurationSnapshot) =
+        worker_for(source.clone(), remote, remote)?;
+    let expected: SourceConfigurationSnapshot = fixture_sources()?
+        .authority
+        .replace_source_configuration(&original, SourceAddressSet::new(&[remote])?)?;
+    assert!(!expected.same_configuration(&original));
+
+    assert_obsolete_startup_refused(obsolete_worker, &peer)?;
+    assert_expired_owner_cutoff_refused(source.clone(), expected.clone(), &peer)?;
+
+    let config: SeriesConfig =
+        SeriesConfig::new(remote, Duration::from_secs(3), Duration::from_secs(12))?;
+    let mut worker: EngineWorker = EngineWorker::new(source, expected.clone(), config)?;
     let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
     worker.hooks.after_return = Some(hook);
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
@@ -709,6 +761,78 @@ fn managed_service_acquisition_retains_real_report_without_admitting_time() -> C
             ServiceState::Stopped
         ]
     );
+    Ok(())
+}
+
+/// Acknowledged Running passes its original cutoff to the actual Engine preparation.
+/// Delayed host observation must leave the old deadline in place, including during join.
+/// # Errors
+/// Preserve fixture construction, peer observation, original return and join failures.
+/// # Panics
+/// Fail for renewed allowance, traffic, a lost typed refusal or premature permit release.
+fn assert_expired_owner_cutoff_refused(
+    source: SourceHandle,
+    selected: SourceConfigurationSnapshot,
+    peer: &Rc<UdpSocket>,
+) -> Check {
+    let endpoint: SocketAddr = peer.local_addr()?;
+    let config: SeriesConfig =
+        SeriesConfig::new(endpoint, Duration::from_millis(100), Duration::from_secs(1))?;
+    let mut worker: EngineWorker = EngineWorker::new(source, selected, config)?;
+    let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
+    worker.hooks.after_return = Some(hook);
+    // Simulate a host that last observed time more than its one-minute Running
+    // budget ago. This clock stays monotonic and does not replace Engine time.
+    let observed: Instant = Instant::now()
+        .checked_sub(Duration::from_secs(90))
+        .ok_or("fixture clock cannot represent the earlier observation")?;
+    let mut rig: Rig = Rig::start_observing_with_sinks(
+        worker,
+        Admission::Accept,
+        peer,
+        TerminalTrace::Silent,
+        OwnerClock(observed),
+        Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+    )?;
+    let step: InvocationPoll = rig.step();
+    assert_ne!(step, InvocationPoll::Finished);
+    assert!(rig.states().contains(&ServiceState::Running));
+    assert_eq!(rig.invocation.outstanding_work(), 1);
+
+    tail.wait()?;
+    assert!(
+        peer_has_no_datagram(peer)?,
+        "expired worker sent a datagram"
+    );
+    assert!(matches!(
+        rig.worker.result.get(),
+        Some(Err(BoundedAcquisitionError::OwnerDeadlineElapsed))
+    ));
+    assert!(
+        rig.worker
+            .gate
+            .lock()
+            .is_ok_and(|gate| gate.control.is_none())
+    );
+    assert_eq!(
+        rig.step(),
+        InvocationPoll::JoinTail(Duration::from_millis(20))
+    );
+    assert_eq!(rig.invocation.outstanding_work(), 1);
+    assert!(!rig.states().contains(&ServiceState::Stopped));
+    assert!(rig.invocation.take_receipt().is_none());
+    tail.release()?;
+    rig.finish()?;
+
+    assert_eq!(rig.invocation.outstanding_work(), 0);
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Err(FixtureError::Worker(WorkerError::Running)))
+    );
+    assert!(rig.states().contains(&ServiceState::Stopped));
+    assert!(peer_has_no_datagram(peer)?);
     Ok(())
 }
 
@@ -797,6 +921,7 @@ fn real_engine_join_and_series_survive_each_diagnostic_consumer_condition() -> C
             Admission::Accept,
             &peer,
             TerminalTrace::Silent,
+            OwnerClock(Instant::now()),
             Sinks::new(
                 MemoryConsumer::new(state),
                 Some(MemoryConsumer::new(ConsumerState::Available)),
@@ -951,8 +1076,8 @@ fn real_managed_preparation_refusal_preserves_the_source_policy_error() -> Check
     assert!(!rig.worker.returned.load(Ordering::Acquire));
     assert!(matches!(
         rig.worker.result.get(),
-        Some(Err(AcquisitionError::SourcePolicy(
-            SourcePolicyError::Foreign
+        Some(Err(BoundedAcquisitionError::Acquisition(
+            AcquisitionError::SourcePolicy(SourcePolicyError::Foreign)
         )))
     ));
     assert_eq!(

@@ -93,7 +93,8 @@ pub use series::{
 };
 pub use session::{
     AcquisitionError, AcquisitionReference, AcquisitionReferenceRefusal, AcquisitionReport,
-    AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
+    AcquisitionSession, BoundedAcquisitionError, CoherenceUnavailable, PreparedAcquisition,
+    SeriesCoherence,
 };
 pub use source_policy::{
     SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourceIdentity,

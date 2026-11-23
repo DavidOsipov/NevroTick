@@ -16,12 +16,15 @@ use super::{
 use crate::{
     FixtureError, LabRole, NativeError, NativeOperation,
     broker_clock_change::{BrokerClockChanges, NativeBrokerReader},
-    broker_endpoint::{AcceptCompletion, AcceptStart, BrokerEndpointWorker, Reservation},
+    broker_endpoint::{
+        AcceptCompletion, AcceptStart, BrokerEndpointWorker, FirstReadCompletion, FirstReadStart,
+        FirstReplyCompletion, FirstReplyStart, Reservation,
+    },
     error::WorkerError,
     host::{
         ConnectionWait, HostReceipt, InvocationPoll, ObservedClock, RunningConnection,
         ServiceInvocation, Worker, WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake,
-        run_broker_service_with_worker, start_invocation,
+        run_broker_service_with_worker, start_broker_worker, start_invocation,
     },
 };
 use std::time::{Duration, Instant};
@@ -39,6 +42,18 @@ enum EndpointCall {
     Cancel(Option<u32>),
     /// Collect completion of the retained accept.
     Poll(Option<u32>),
+    /// Submit the only read on the observed, connected endpoint.
+    BeginRead(Option<u32>),
+    /// Observe physical completion on that read.
+    PollRead(Option<u32>),
+    /// Request cancellation of the original read.
+    CancelRead(Option<u32>),
+    /// Submit the reply once on the original endpoint.
+    BeginReply(Option<u32>),
+    /// Observe the exact submitted reply.
+    PollReply(Option<u32>),
+    /// Request cancellation of the submitted reply.
+    CancelReply(Option<u32>),
     /// Release the original endpoint.
     Close(Option<u32>),
 }
@@ -50,6 +65,10 @@ struct EndpointTrace {
     acquired_after: Option<u32>,
     /// Ordered calls on the original endpoint.
     calls: Vec<EndpointCall>,
+    /// The physical write results returned by the original endpoint, including drain.
+    reply_results: Vec<Result<Poll<FirstReplyCompletion>, NativeError>>,
+    /// Currentness observed on the original scripted peer at each reached guard.
+    reply_peer_checks: Vec<bool>,
 }
 
 /// Fixed scripted observations, independent of the worker's decisions.
@@ -584,6 +603,12 @@ fn test_connection<'a>(
         cutoff,
         closed: false,
         failure: None,
+        status_source: None,
+        #[cfg(windows)]
+        status_read: None,
+        #[cfg(windows)]
+        status_capture_observed: false,
+        reply_written: false,
     }
 }
 
@@ -1029,7 +1054,7 @@ fn broker_worker_fences_running_accept_refusal_and_unexpected_completion() {
         );
         let empty: [EndpointCall; 0] = [];
         assert_eq!(trace.borrow().calls, empty);
-        assert_eq!(worker.activate(), Ok(()));
+        assert_eq!(worker.activate(Instant::now()), Ok(()));
         if start == Ok(AcceptStart::Queued) {
             assert!(matches!(
                 worker.poll_running_with_connection(&wake, &mut connection),
@@ -1117,7 +1142,7 @@ fn broker_worker_preserves_accept_custody_and_first_cleanup_failure() {
         let mut worker: BrokerEndpointWorker<_, TestEndpoint<'_>> =
             BrokerEndpointWorker::new(acquire);
         assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
-        assert_eq!(worker.activate(), Ok(()));
+        assert_eq!(worker.activate(Instant::now()), Ok(()));
         assert!(matches!(
             worker.poll_running_with_connection(&wake, &mut connection),
             Ok(ConnectionWait::Cutoff(_))
@@ -1304,7 +1329,7 @@ fn broker_worker_retains_unconfirmed_endpoint_release_without_retry() {
     let mut worker: BrokerEndpointWorker<_, TestEndpoint<'_>> = BrokerEndpointWorker::new(acquire);
     assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
-    assert_eq!(worker.activate(), Ok(()));
+    assert_eq!(worker.activate(Instant::now()), Ok(()));
     worker.request_cancel(&wake);
     for _ in 0..2 {
         assert_eq!(
@@ -1317,4 +1342,1202 @@ fn broker_worker_retains_unconfirmed_endpoint_release_without_retry() {
     }
     assert_eq!(calls.get(), 1);
     assert_eq!(trace.borrow().calls, [EndpointCall::Close(None)]);
+}
+
+/// Independent operation outcomes for a fixture endpoint with a read slot.
+struct ArmedEndpoint<'a> {
+    /// The existing reservation owns the accept, status observations and release.
+    endpoint: TestEndpoint<'a>,
+    /// Scripted result from the same submitted read.
+    read_start: FirstReadStart,
+    /// A deterministic control or clock change during submission.
+    on_read_begin: Option<&'a dyn Fn()>,
+    /// Independent result of cancelling the original read.
+    read_cancel: Result<(), NativeError>,
+    /// Exact successive read observations, with surplus polls remaining charged.
+    reads: &'a [Result<Poll<FirstReadCompletion>, NativeError>],
+    /// Number of read observations already collected.
+    read_polls: usize,
+    /// Optional reply observations on this exact reservation.
+    reply: Option<ReplyScript<'a>>,
+}
+
+/// Independent reply submission, cancellation and completion observations.
+struct ReplyScript<'a> {
+    /// Whether the write queues or reports inline completion.
+    immediate: bool,
+    /// Control delivered synchronously during submission.
+    stop_on_submit: Option<&'a StopNotification>,
+    /// Control delivered once after the peer observation samples current authority.
+    stop_on_peer_check: Option<&'a StopNotification>,
+    /// Authority of the original peer, independent of the mailbox, cutoff and pipe.
+    peer_current: &'a Cell<bool>,
+    /// Withdraw during the physical terminal observation, before publication.
+    withdraw_on_completion: bool,
+    /// Cancellation result, independent of physical completion.
+    cancel: Result<(), NativeError>,
+    /// Separate terminal observations for the original operation.
+    polls: std::array::IntoIter<Result<Poll<FirstReplyCompletion>, NativeError>, 3>,
+}
+
+/// The portable worker receives bytes already admitted by the host seam.
+const SCRIPTED_REPLY: &[u8] = b"admitted fixture reply";
+
+impl<'a> ArmedEndpoint<'a> {
+    /// Script a queued accept that connects before the independent read history.
+    fn new(
+        observations: &'a Rc<RefCell<Observations>>,
+        trace: &'a RefCell<EndpointTrace>,
+        read_start: FirstReadStart,
+        read_cancel: Result<(), NativeError>,
+        reads: &'a [Result<Poll<FirstReadCompletion>, NativeError>],
+    ) -> Self {
+        Self {
+            endpoint: TestEndpoint {
+                observations,
+                endpoints: trace,
+                failure: None,
+                accept: AcceptScript {
+                    polls: &[Ok(Poll::Ready(AcceptCompletion::Connected))],
+                    ..CANCELLABLE_ACCEPT
+                },
+                polls: 0,
+                #[cfg(windows)]
+                hint: None,
+            },
+            read_start,
+            on_read_begin: None,
+            read_cancel,
+            reads,
+            read_polls: 0,
+            reply: None,
+        }
+    }
+}
+
+impl Reservation for ArmedEndpoint<'_> {
+    /// Submit the original accept under the acknowledged Running permit.
+    fn begin_accept(&mut self) -> Result<AcceptStart, NativeError> {
+        self.endpoint.begin_accept()
+    }
+
+    /// Target cancellation at the accept.
+    fn request_accept_cancel(&mut self) -> Result<(), NativeError> {
+        self.endpoint.request_accept_cancel()
+    }
+
+    /// Retain the separately scripted accept result.
+    fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError> {
+        self.endpoint.poll_accept()
+    }
+
+    /// Record the call under the actual current SCM state.
+    fn begin_first_read(&mut self) -> Result<FirstReadStart, NativeError> {
+        self.endpoint.record(EndpointCall::BeginRead);
+        if let Some(action) = self.on_read_begin {
+            action();
+        }
+        Ok(self.read_start)
+    }
+
+    /// Record collection without reporting progress or advancing time.
+    fn poll_first_read(&mut self) -> Result<Poll<FirstReadCompletion>, NativeError> {
+        self.endpoint.record(EndpointCall::PollRead);
+        let result: Result<Poll<FirstReadCompletion>, NativeError> = self
+            .reads
+            .get(self.read_polls)
+            .copied()
+            .unwrap_or(Ok(Poll::Pending));
+        self.read_polls += 1;
+        result
+    }
+
+    /// Keep cancellation and completion observable as separate events.
+    fn request_first_read_cancel(&mut self) -> Result<(), NativeError> {
+        self.endpoint.record(EndpointCall::CancelRead);
+        self.read_cancel
+    }
+
+    /// Sample the same peer's authority independently of any pipe or service state.
+    /// # Panics
+    /// Fails if the selected Stop control is not recognized.
+    fn reply_peer_current(&mut self) -> bool {
+        let current: bool = self
+            .reply
+            .as_ref()
+            .is_some_and(|reply: &ReplyScript<'_>| reply.peer_current.get());
+        if let Some(stop) = self
+            .reply
+            .as_mut()
+            .and_then(|reply: &mut ReplyScript<'_>| reply.stop_on_peer_check.take())
+        {
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        }
+        self.endpoint
+            .endpoints
+            .borrow_mut()
+            .reply_peer_checks
+            .push(current);
+        current
+    }
+
+    /// Record the write on the same endpoint and check its exact admitted bytes.
+    ///
+    /// # Panics
+    /// Panics if the worker substitutes different reply bytes.
+    fn begin_first_reply(&mut self, bytes: &[u8]) -> Result<FirstReplyStart, NativeError> {
+        self.endpoint.record(EndpointCall::BeginReply);
+        assert_eq!(bytes, SCRIPTED_REPLY);
+        let Some(reply) = &self.reply else {
+            return Ok(FirstReplyStart::Unarmed);
+        };
+        if let Some(stop) = reply.stop_on_submit {
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        }
+        Ok(if reply.immediate {
+            FirstReplyStart::Immediate
+        } else {
+            FirstReplyStart::Queued
+        })
+    }
+
+    /// Observe the one write without committing its result in the fixture.
+    fn poll_first_reply(&mut self) -> Result<Poll<FirstReplyCompletion>, NativeError> {
+        self.endpoint.record(EndpointCall::PollReply);
+        let Some(reply) = &mut self.reply else {
+            return Err(REPLY_OBSERVATION_REFUSED);
+        };
+        let result: Result<Poll<FirstReplyCompletion>, NativeError> =
+            reply.polls.next().unwrap_or(Ok(Poll::Pending));
+        if reply.withdraw_on_completion && matches!(result, Ok(Poll::Ready(_))) {
+            reply.peer_current.set(false);
+        }
+        self.endpoint
+            .endpoints
+            .borrow_mut()
+            .reply_results
+            .push(result);
+        result
+    }
+
+    /// Record cancellation without treating its acknowledgement as completion.
+    fn request_first_reply_cancel(&mut self) -> Result<(), NativeError> {
+        self.endpoint.record(EndpointCall::CancelReply);
+        self.reply
+            .as_ref()
+            .map_or(Err(REPLY_CANCEL_REFUSED), |reply: &ReplyScript<'_>| {
+                reply.cancel
+            })
+    }
+
+    /// Release the original reservation after the worker settles.
+    fn close(self) -> Result<(), NativeError> {
+        self.endpoint.close()
+    }
+}
+
+/// Observe the real host through both asynchronous and inline read submission.
+///
+/// # Errors
+/// Returns the original startup refusal.
+///
+/// # Panics
+/// Panics if accept and read do not each complete once under the same Running permit.
+#[test]
+fn broker_first_read_uses_the_original_running_permit() -> Result<(), FixtureError> {
+    for start in [FirstReadStart::Queued, FirstReadStart::Immediate] {
+        let observations: Rc<RefCell<Observations>> = Rc::default();
+        let trace: RefCell<EndpointTrace> = RefCell::default();
+        let stop: StopNotification = StopNotification::new();
+        let mut clock: TestClock = fixed_accept_clock();
+        let mut factory: Factory = Factory {
+            observations: Rc::clone(&observations),
+            failure: None,
+        };
+        let acquire = || -> Result<ArmedEndpoint<'_>, NativeError> {
+            Ok(ArmedEndpoint::new(
+                &observations,
+                &trace,
+                start,
+                Ok(()),
+                &[Ok(Poll::Ready(FirstReadCompletion::Settled))],
+            ))
+        };
+        let mut invocation: ServiceInvocation<
+            Reporter,
+            BrokerEndpointWorker<_, ArmedEndpoint<'_>>,
+        > = start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+        let no_calls: [EndpointCall; 0] = [];
+        assert_eq!(trace.borrow().calls, no_calls);
+        assert_eq!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(Duration::from_secs(5))
+        );
+        clock.0.borrow_mut().current += Duration::from_secs(1);
+        let accepted: InvocationPoll = invocation.poll(&mut clock, &stop);
+        if start == FirstReadStart::Queued {
+            assert_eq!(accepted, InvocationPoll::Pending(Duration::from_secs(4)));
+            assert_eq!(trace.borrow().calls.len(), 3);
+            assert_eq!(
+                invocation.poll(&mut clock, &stop),
+                InvocationPoll::Pending(Duration::from_secs(59))
+            );
+        } else {
+            assert_eq!(accepted, InvocationPoll::Pending(Duration::from_secs(59)));
+        }
+        assert_eq!(invocation.outstanding_work(), 1);
+        assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        assert_eq!(invocation.poll(&mut clock, &stop), InvocationPoll::Finished);
+        assert!(invocation.failure().is_none());
+        assert_eq!(invocation.outstanding_work(), 0);
+        assert_eq!(
+            trace.borrow().calls,
+            [
+                EndpointCall::Begin(Some(4)),
+                EndpointCall::Poll(Some(4)),
+                EndpointCall::BeginRead(Some(4)),
+                EndpointCall::PollRead(Some(4)),
+                EndpointCall::Close(Some(3)),
+            ]
+        );
+    }
+    Ok(())
+}
+
+/// Initiate cancellation at the original cutoff and keep the charge through Stop.
+///
+/// # Errors
+/// Returns the original startup refusal.
+///
+/// # Panics
+/// Panics if Stop retries cancellation, loses a failure or closes before read settlement.
+#[test]
+fn broker_first_read_cutoff_and_stop_retain_the_original_operation() -> Result<(), FixtureError> {
+    let cancel_error: NativeError = NativeError::new(NativeOperation::BrokerEndpointReadCancel, 5);
+    let poll_error: NativeError =
+        NativeError::new(NativeOperation::BrokerEndpointReadCompletion, 6);
+    for cancel in [Ok(()), Err(cancel_error)] {
+        let observations: Rc<RefCell<Observations>> = Rc::default();
+        let trace: RefCell<EndpointTrace> = RefCell::default();
+        let stop: StopNotification = StopNotification::new();
+        let mut clock: TestClock = fixed_accept_clock();
+        let mut factory: Factory = Factory {
+            observations: Rc::clone(&observations),
+            failure: None,
+        };
+        let reads: [Result<Poll<FirstReadCompletion>, NativeError>; 2] = if cancel.is_ok() {
+            [
+                Ok(Poll::Pending),
+                Ok(Poll::Ready(FirstReadCompletion::Settled)),
+            ]
+        } else {
+            [
+                Err(poll_error),
+                Ok(Poll::Ready(FirstReadCompletion::Invalid(poll_error))),
+            ]
+        };
+        let acquire = || -> Result<ArmedEndpoint<'_>, NativeError> {
+            Ok(ArmedEndpoint::new(
+                &observations,
+                &trace,
+                FirstReadStart::Queued,
+                cancel,
+                &reads,
+            ))
+        };
+        let mut invocation: ServiceInvocation<
+            Reporter,
+            BrokerEndpointWorker<_, ArmedEndpoint<'_>>,
+        > = start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+        assert_eq!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(Duration::from_secs(5))
+        );
+        assert_eq!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(Duration::from_secs(5))
+        );
+        clock.0.borrow_mut().current += Duration::from_secs(5);
+        let at_cutoff: InvocationPoll = invocation.poll(&mut clock, &stop);
+        let drain: InvocationPoll = InvocationPoll::NativeDrain(Duration::from_millis(20));
+        if cancel.is_ok() {
+            assert_eq!(
+                at_cutoff,
+                InvocationPoll::Pending(Duration::from_millis(20))
+            );
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+            assert_eq!(invocation.poll(&mut clock, &stop), drain);
+        } else {
+            assert_eq!(at_cutoff, drain);
+        }
+        assert_eq!(invocation.state(), Some(ServiceState::StopPending));
+        assert_eq!(invocation.outstanding_work(), 1);
+        let expected: Option<WorkerError> = cancel.err().map(WorkerError::EndpointReadCleanup);
+        assert_eq!(invocation.pending_cleanup_failure, expected);
+        assert_eq!(invocation.poll(&mut clock, &stop), InvocationPoll::Finished);
+        assert_eq!(invocation.outstanding_work(), 0);
+        assert_eq!(
+            invocation.failure(),
+            expected.map(FixtureError::Worker).as_ref()
+        );
+        assert_eq!(
+            trace.borrow().calls,
+            [
+                EndpointCall::Begin(Some(4)),
+                EndpointCall::Poll(Some(4)),
+                EndpointCall::BeginRead(Some(4)),
+                EndpointCall::CancelRead(Some(4)),
+                EndpointCall::PollRead(Some(3)),
+                EndpointCall::PollRead(Some(3)),
+                EndpointCall::Close(Some(3)),
+            ]
+        );
+    }
+    Ok(())
+}
+
+/// Inline success is collected once even if Stop or equality closes admission.
+///
+/// # Errors
+/// Returns the original startup refusal.
+///
+/// # Panics
+/// Panics if a completed read receives cancellation or early release.
+#[test]
+fn broker_inline_first_read_collects_after_stop_or_cutoff_without_cancelling()
+-> Result<(), FixtureError> {
+    inline_read_history(false, false)?;
+    inline_read_history(true, false)?;
+    inline_read_history(true, true)
+}
+
+/// Exercise the selected inline completion result at the original cutoff or during Stop.
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+/// # Panics
+/// Panics if completion is cancelled or custody releases early.
+fn inline_read_history(stop_during_read: bool, ambiguous: bool) -> Result<(), FixtureError> {
+    let reads: &[Result<Poll<FirstReadCompletion>, NativeError>] =
+        inline_read_observations(ambiguous);
+    let observations: Rc<RefCell<Observations>> = Rc::default();
+    let trace: RefCell<EndpointTrace> = RefCell::default();
+    let stop: StopNotification = StopNotification::new();
+    let mut clock: TestClock = fixed_accept_clock();
+    let time: Rc<RefCell<Time>> = Rc::clone(&clock.0);
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observations),
+        failure: None,
+    };
+    let during_read = || {
+        if stop_during_read {
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        } else {
+            time.borrow_mut().current += Duration::from_secs(5);
+        }
+    };
+    let acquire = || -> Result<ArmedEndpoint<'_>, NativeError> {
+        Ok(ArmedEndpoint {
+            on_read_begin: Some(&during_read),
+            ..ArmedEndpoint::new(
+                &observations,
+                &trace,
+                FirstReadStart::Immediate,
+                Err(NativeError::new(
+                    NativeOperation::BrokerEndpointReadCancel,
+                    5,
+                )),
+                reads,
+            )
+        })
+    };
+    let mut invocation: ServiceInvocation<Reporter, BrokerEndpointWorker<_, ArmedEndpoint<'_>>> =
+        start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+    assert_eq!(
+        invocation.poll(&mut clock, &stop),
+        InvocationPoll::Pending(Duration::from_secs(5))
+    );
+    let settled: InvocationPoll = invocation.poll(&mut clock, &stop);
+    let mut calls: Vec<EndpointCall> = vec![
+        EndpointCall::Begin(Some(4)),
+        EndpointCall::Poll(Some(4)),
+        EndpointCall::BeginRead(Some(4)),
+        EndpointCall::PollRead(Some(4)),
+    ];
+    let expected: Option<FixtureError> = if ambiguous {
+        assert_eq!(
+            settled,
+            InvocationPoll::NativeDrain(Duration::from_millis(20))
+        );
+        assert_eq!(invocation.state(), Some(ServiceState::StopPending));
+        assert_eq!(invocation.outstanding_work(), 1);
+        let first_error: FixtureError =
+            FixtureError::Worker(WorkerError::EndpointRead(INLINE_READ_FIRST_ERROR));
+        assert_eq!(invocation.failure(), Some(&first_error));
+        assert_eq!(
+            invocation.pending_cleanup_failure,
+            Some(WorkerError::EndpointReadCleanup(INLINE_READ_LATER_ERROR))
+        );
+        calls.push(EndpointCall::PollRead(Some(3)));
+        assert_eq!(trace.borrow().calls, calls);
+        assert_eq!(invocation.poll(&mut clock, &stop), InvocationPoll::Finished);
+        calls.push(EndpointCall::PollRead(Some(3)));
+        Some(first_error)
+    } else {
+        if stop_during_read {
+            assert_eq!(settled, InvocationPoll::Finished);
+        } else {
+            assert_eq!(settled, InvocationPoll::Pending(Duration::from_secs(55)));
+            assert_eq!(invocation.state(), Some(ServiceState::Running));
+            assert_eq!(invocation.outstanding_work(), 1);
+            assert_eq!(trace.borrow().calls, calls);
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+            assert_eq!(invocation.poll(&mut clock, &stop), InvocationPoll::Finished);
+        }
+        None
+    };
+    assert_eq!(invocation.outstanding_work(), 0);
+    assert_eq!(invocation.failure(), expected.as_ref());
+    calls.push(EndpointCall::Close(Some(3)));
+    assert_eq!(trace.borrow().calls, calls);
+    Ok(())
+}
+
+/// The first ambiguous result is observed while Running.
+const INLINE_READ_FIRST_ERROR: NativeError =
+    NativeError::new(NativeOperation::BrokerEndpointReadCompletion, 6);
+
+/// A distinct later refusal is observed during physical retirement.
+const INLINE_READ_LATER_ERROR: NativeError =
+    NativeError::new(NativeOperation::BrokerEndpointReadCompletion, 13);
+
+/// Supply known terminal output or two independently specified refusals before it.
+fn inline_read_observations(
+    ambiguous: bool,
+) -> &'static [Result<Poll<FirstReadCompletion>, NativeError>] {
+    if ambiguous {
+        &[
+            Err(INLINE_READ_FIRST_ERROR),
+            Err(INLINE_READ_LATER_ERROR),
+            Ok(Poll::Ready(FirstReadCompletion::Settled)),
+        ]
+    } else {
+        &[Ok(Poll::Ready(FirstReadCompletion::Settled))]
+    }
+}
+
+/// An independent refusal from requesting cancellation of the original write.
+const REPLY_CANCEL_REFUSED: NativeError =
+    NativeError::new(NativeOperation::BrokerEndpointReplyCancel, 5);
+
+/// A distinct write observation failure that does not confirm completion.
+const REPLY_OBSERVATION_REFUSED: NativeError =
+    NativeError::new(NativeOperation::BrokerEndpointReplyCompletion, 6);
+
+/// A fabricated terminal short count, distinct from unconfirmed completion.
+const REPLY_INVALID_COUNT: NativeError =
+    NativeError::new(NativeOperation::BrokerEndpointReplyCompletion, 87);
+
+/// Boundary and native return histories selected before exercising the worker.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ReplyHistory {
+    /// Equality at the original cutoff fences submission.
+    ExpiredBeforeSubmit,
+    /// The original broker mailbox is retired before the write.
+    MailboxClosedBeforeSubmit,
+    /// Only the original peer withdraws before the already decided reply is submitted.
+    PeerWithdrawnBeforeSubmit,
+    /// The native write settled with an invalid complete count.
+    InvalidInlineCount,
+    /// A healthy inline result spends the one submission.
+    LiveInline,
+    /// A current peer lets the queued reply complete through the original Running owner.
+    LiveQueued,
+    /// A Stop delivered during inline submission still permits collection.
+    InlineStop,
+    /// The peer returns current after delivering Stop, before any write is submitted.
+    StopDuringPeerCheck,
+    /// Stop cancels a queued write without freeing the permit.
+    QueuedStop,
+    /// Windows confirms cancellation of the original write after Stop.
+    QueuedCancellation,
+    /// The original cutoff cancels once before Stop retires the write.
+    QueuedExpiry,
+    /// A cancellation refusal precedes an ambiguous completion observation.
+    QueuedCancelFailure,
+    /// Withdrawal while queued leads to a late physical write without confirmation.
+    PeerWithdrawnQueued,
+    /// The exact write completes but the peer has withdrawn before publication.
+    PeerWithdrawnOnCompletion,
+}
+
+impl ReplyHistory {
+    /// Supply physical outcomes independently of the worker's state.
+    fn script<'a>(
+        self,
+        stop: &'a StopNotification,
+        peer_current: &'a Cell<bool>,
+    ) -> ReplyScript<'a> {
+        let immediate: bool = matches!(
+            self,
+            Self::ExpiredBeforeSubmit
+                | Self::MailboxClosedBeforeSubmit
+                | Self::InvalidInlineCount
+                | Self::LiveInline
+                | Self::InlineStop
+                | Self::StopDuringPeerCheck
+        );
+        let first: Result<Poll<FirstReplyCompletion>, NativeError> = match self {
+            Self::QueuedCancelFailure => Err(REPLY_OBSERVATION_REFUSED),
+            Self::InvalidInlineCount => Ok(Poll::Ready(FirstReplyCompletion::Invalid(
+                REPLY_INVALID_COUNT,
+            ))),
+            _ if immediate => Ok(Poll::Ready(FirstReplyCompletion::Written)),
+            _ => Ok(Poll::Pending),
+        };
+        let terminal: FirstReplyCompletion = if self == Self::QueuedCancellation {
+            FirstReplyCompletion::Abandoned
+        } else {
+            FirstReplyCompletion::Written
+        };
+        ReplyScript {
+            immediate,
+            stop_on_submit: (self == Self::InlineStop).then_some(stop),
+            stop_on_peer_check: (self == Self::StopDuringPeerCheck).then_some(stop),
+            peer_current,
+            withdraw_on_completion: self == Self::PeerWithdrawnOnCompletion,
+            cancel: if self == Self::QueuedCancelFailure {
+                Err(REPLY_CANCEL_REFUSED)
+            } else {
+                Ok(())
+            },
+            polls: if self == Self::PeerWithdrawnQueued {
+                [first, Ok(Poll::Pending), Ok(Poll::Ready(terminal))]
+            } else {
+                [first, Ok(Poll::Ready(terminal)), Ok(Poll::Pending)]
+            }
+            .into_iter(),
+        }
+    }
+}
+
+/// Submit and drain on the actual worker under the original host's Running permit.
+///
+/// # Errors
+/// Returns a startup refusal or an absent original deadline.
+///
+/// # Panics
+/// Panics if the scripted histories reveal a repeated effect or premature release.
+#[test]
+fn broker_reply_keeps_the_original_cutoff_and_drains_exactly_one_write() -> Result<(), FixtureError>
+{
+    static CHANGES: [BrokerClockChanges; 14] = [const { BrokerClockChanges::new() }; 14];
+    let histories: [ReplyHistory; 14] = [
+        ReplyHistory::ExpiredBeforeSubmit,
+        ReplyHistory::MailboxClosedBeforeSubmit,
+        ReplyHistory::InvalidInlineCount,
+        ReplyHistory::LiveInline,
+        ReplyHistory::InlineStop,
+        ReplyHistory::QueuedStop,
+        ReplyHistory::QueuedCancellation,
+        ReplyHistory::QueuedExpiry,
+        ReplyHistory::QueuedCancelFailure,
+        ReplyHistory::LiveQueued,
+        ReplyHistory::PeerWithdrawnBeforeSubmit,
+        ReplyHistory::PeerWithdrawnQueued,
+        ReplyHistory::PeerWithdrawnOnCompletion,
+        ReplyHistory::StopDuringPeerCheck,
+    ];
+    for (history, changes) in histories.into_iter().zip(CHANGES.iter()) {
+        check_reply_history(history, changes)?;
+    }
+    Ok(())
+}
+
+/// Start one invocation and present the handoff in the read's terminal poll.
+///
+/// # Errors
+/// Returns a startup refusal or an absent original deadline.
+///
+/// # Panics
+/// Panics if accepted reply work escapes its original ownership or guard.
+fn check_reply_history(
+    history: ReplyHistory,
+    changes: &'static BrokerClockChanges,
+) -> Result<(), FixtureError> {
+    let observations: Rc<RefCell<Observations>> = Rc::default();
+    let trace: RefCell<EndpointTrace> = RefCell::default();
+    let peer_current: Cell<bool> = Cell::new(true);
+    let stop: StopNotification = StopNotification::new();
+    let mut clock: TestClock = fixed_accept_clock();
+    let anchor: Instant = clock.0.borrow().current;
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observations),
+        failure: None,
+    };
+    let acquire = || {
+        Ok(ArmedEndpoint {
+            reply: Some(history.script(&stop, &peer_current)),
+            ..ArmedEndpoint::new(
+                &observations,
+                &trace,
+                FirstReadStart::Immediate,
+                Ok(()),
+                &[Ok(Poll::Ready(FirstReadCompletion::Settled))],
+            )
+        })
+    };
+    assert!(changes.arm());
+    #[cfg(windows)]
+    let reader: NativeBrokerReader = NativeBrokerReader::new(changes, || {
+        Err(crate::broker_clock_change::BrokerClockSampleError::Adjustment(0))
+    });
+    #[cfg(not(windows))]
+    let reader: NativeBrokerReader = NativeBrokerReader::new(changes, || Err(0));
+    let mut invocation: ServiceInvocation<Reporter, BrokerEndpointWorker<_, ArmedEndpoint<'_>>> =
+        start_broker_worker(
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            reader,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+    assert!(matches!(
+        invocation.poll(&mut clock, &stop),
+        InvocationPoll::Pending(_)
+    ));
+    assert!(matches!(
+        invocation.poll(&mut clock, &stop),
+        InvocationPoll::Pending(_)
+    ));
+    let cutoff: Instant = invocation
+        .connection_cutoff
+        .ok_or(FixtureError::OutcomeUnavailable)?;
+    assert_eq!(cutoff, anchor + Duration::from_secs(5));
+    if history == ReplyHistory::ExpiredBeforeSubmit {
+        clock.0.borrow_mut().current = cutoff;
+    }
+    if history == ReplyHistory::MailboxClosedBeforeSubmit {
+        changes.close();
+    }
+    if history == ReplyHistory::PeerWithdrawnBeforeSubmit {
+        peer_current.set(false);
+    }
+    let deadline: Instant = invocation
+        .run_deadline
+        .ok_or(FixtureError::OutcomeUnavailable)?;
+    let mut write_confirmed: bool = submit_scripted_reply(
+        &mut invocation,
+        &mut clock,
+        &stop,
+        deadline,
+        cutoff,
+        history,
+    );
+    if matches!(
+        history,
+        ReplyHistory::LiveQueued
+            | ReplyHistory::PeerWithdrawnQueued
+            | ReplyHistory::PeerWithdrawnOnCompletion
+    ) {
+        write_confirmed |= collect_scripted_reply(
+            &mut invocation,
+            &mut clock,
+            &stop,
+            deadline,
+            cutoff,
+            history,
+            &peer_current,
+        );
+    }
+    let expected_confirmation: bool =
+        matches!(history, ReplyHistory::LiveInline | ReplyHistory::LiveQueued);
+    assert_eq!(write_confirmed, expected_confirmation);
+    stop_after_scripted_reply(&mut invocation, &mut clock, &stop, history, cutoff);
+    #[cfg(windows)]
+    assert_eq!(
+        invocation.native_status.reply_written,
+        expected_confirmation
+    );
+    assert_eq!(invocation.connection_cutoff, Some(cutoff));
+    check_reply_trace(history, &trace.borrow());
+    Ok(())
+}
+
+/// Check the original endpoint calls and returned dispositions.
+/// # Panics
+/// Fails if the operation trace differs from the selected history.
+fn check_reply_trace(history: ReplyHistory, trace: &EndpointTrace) {
+    assert!(
+        match_reply_calls(history, &trace.calls),
+        "{history:?}: {:?}",
+        trace.calls
+    );
+    check_peer_reply_observations(history, trace);
+}
+
+/// Pass the same bytes twice through the host seam to observe the one-write bound.
+/// # Panics
+/// Fails if the original admission yields an unexpected wait.
+fn submit_scripted_reply<'a, A: FnOnce() -> Result<ArmedEndpoint<'a>, NativeError>>(
+    invocation: &mut ServiceInvocation<Reporter, BrokerEndpointWorker<A, ArmedEndpoint<'a>>>,
+    clock: &mut TestClock,
+    stop: &StopNotification,
+    deadline: Instant,
+    cutoff: Instant,
+    history: ReplyHistory,
+) -> bool {
+    let expected: ConnectionWait = match history {
+        ReplyHistory::ExpiredBeforeSubmit
+        | ReplyHistory::MailboxClosedBeforeSubmit
+        | ReplyHistory::PeerWithdrawnBeforeSubmit
+        | ReplyHistory::InvalidInlineCount
+        | ReplyHistory::LiveInline
+        | ReplyHistory::InlineStop
+        | ReplyHistory::StopDuringPeerCheck => ConnectionWait::Service,
+        _ => ConnectionWait::Cutoff(cutoff),
+    };
+    let mut write_confirmed: bool = false;
+    for wait in [expected, ConnectionWait::Service] {
+        assert_eq!(
+            invocation.drive_running_connection(clock, stop, deadline, |worker, _, connection| {
+                let result: Result<ConnectionWait, WorkerFailure> =
+                    worker.begin_reply(connection, SCRIPTED_REPLY, cutoff);
+                write_confirmed |= connection.reply_written;
+                result
+            }),
+            wait
+        );
+    }
+    write_confirmed
+}
+
+/// Drive queued progress and withdrawal through the actual Running owner.
+/// # Panics
+/// Fails if withdrawal renews authority, or if retirement releases the charge early.
+fn collect_scripted_reply<P: Worker>(
+    invocation: &mut ServiceInvocation<Reporter, P>,
+    clock: &mut TestClock,
+    stop: &StopNotification,
+    deadline: Instant,
+    cutoff: Instant,
+    history: ReplyHistory,
+    peer_current: &Cell<bool>,
+) -> bool {
+    let collect = |invocation: &mut ServiceInvocation<Reporter, P>, clock: &mut TestClock| {
+        let mut confirmed: bool = false;
+        let wait: ConnectionWait =
+            invocation.drive_running_connection(clock, stop, deadline, |worker, wake, edge| {
+                let result: Result<ConnectionWait, WorkerFailure> =
+                    worker.poll_running_with_connection(wake, edge);
+                confirmed = edge.reply_written;
+                result
+            });
+        (wait, confirmed)
+    };
+    assert_eq!(
+        collect(invocation, clock),
+        (ConnectionWait::Cutoff(cutoff), false)
+    );
+    if history == ReplyHistory::PeerWithdrawnQueued {
+        peer_current.set(false);
+        for _ in 0..2 {
+            assert_eq!(
+                invocation.poll(clock, stop),
+                InvocationPoll::Pending(Duration::from_millis(20))
+            );
+            assert_eq!(invocation.state(), Some(ServiceState::Running));
+            assert_eq!(invocation.outstanding_work(), 1);
+            assert!(invocation.take_receipt().is_none());
+        }
+    }
+    let (wait, confirmed): (ConnectionWait, bool) = collect(invocation, clock);
+    assert_eq!(wait, ConnectionWait::Service);
+    assert_eq!(invocation.state(), Some(ServiceState::Running));
+    assert_eq!(invocation.outstanding_work(), 1);
+    assert!(invocation.take_receipt().is_none());
+    assert!(invocation.failure().is_none());
+    assert!(!stop.stop_requested());
+    assert!(clock.0.borrow().current < cutoff);
+    assert!(
+        invocation
+            .broker_clock_reader
+            .as_ref()
+            .is_some_and(NativeBrokerReader::status_source_open)
+    );
+    confirmed
+}
+
+/// Check the original backend's physical dispositions independently of publication.
+/// # Panics
+/// Fails if a guard did not reach the selected authority state or misobserved a write.
+fn check_peer_reply_observations(history: ReplyHistory, trace: &EndpointTrace) {
+    let pending: Result<Poll<FirstReplyCompletion>, NativeError> = Ok(Poll::Pending);
+    let written: Result<Poll<FirstReplyCompletion>, NativeError> =
+        Ok(Poll::Ready(FirstReplyCompletion::Written));
+    match history {
+        ReplyHistory::LiveQueued => {
+            assert_eq!(trace.reply_peer_checks, [true; 6]);
+            assert_eq!(trace.reply_results, [pending, written]);
+        }
+        ReplyHistory::PeerWithdrawnBeforeSubmit | ReplyHistory::StopDuringPeerCheck => {
+            assert_eq!(
+                trace.reply_peer_checks,
+                [history == ReplyHistory::StopDuringPeerCheck]
+            );
+            let none: [Result<Poll<FirstReplyCompletion>, NativeError>; 0] = [];
+            assert_eq!(trace.reply_results, none);
+        }
+        ReplyHistory::PeerWithdrawnQueued => {
+            assert_eq!(trace.reply_peer_checks, [true, true, true, true, false]);
+            assert_eq!(trace.reply_results, [pending, pending, written]);
+        }
+        ReplyHistory::PeerWithdrawnOnCompletion => {
+            assert_eq!(
+                trace.reply_peer_checks,
+                [true, true, true, true, true, false]
+            );
+            assert_eq!(trace.reply_results, [pending, written]);
+        }
+        _ => {}
+    }
+}
+
+/// Retire either the idle endpoint or its original queued operation through Stop.
+///
+/// # Panics
+/// Panics if cancellation is mistaken for terminal completion or loses its cause.
+fn stop_after_scripted_reply(
+    invocation: &mut ServiceInvocation<Reporter, impl Worker>,
+    clock: &mut TestClock,
+    stop: &StopNotification,
+    history: ReplyHistory,
+    cutoff: Instant,
+) {
+    if history == ReplyHistory::QueuedExpiry {
+        clock.0.borrow_mut().current = cutoff;
+        assert_eq!(
+            invocation.poll(clock, stop),
+            InvocationPoll::Pending(Duration::from_millis(20))
+        );
+        assert_eq!(invocation.state(), Some(ServiceState::Running));
+    }
+    assert_eq!(invocation.outstanding_work(), 1);
+    if matches!(
+        history,
+        ReplyHistory::InlineStop | ReplyHistory::StopDuringPeerCheck
+    ) {
+        assert!(stop.stop_requested());
+    } else {
+        assert_eq!(stop.handle_control(1), ScmControl::Stop);
+    }
+    let expected: Option<WorkerError> = (history == ReplyHistory::QueuedCancelFailure)
+        .then_some(WorkerError::EndpointReplyCleanup(REPLY_CANCEL_REFUSED));
+    if matches!(
+        history,
+        ReplyHistory::QueuedStop
+            | ReplyHistory::QueuedCancellation
+            | ReplyHistory::QueuedExpiry
+            | ReplyHistory::QueuedCancelFailure
+    ) {
+        assert_eq!(
+            invocation.poll(clock, stop),
+            InvocationPoll::NativeDrain(Duration::from_millis(20))
+        );
+        assert_eq!(invocation.state(), Some(ServiceState::StopPending));
+        assert_eq!(invocation.outstanding_work(), 1);
+        assert!(invocation.take_receipt().is_none());
+        assert_eq!(invocation.pending_cleanup_failure, expected);
+    }
+    assert_eq!(invocation.poll(clock, stop), InvocationPoll::Finished);
+    assert_eq!(invocation.outstanding_work(), 0);
+    if history == ReplyHistory::StopDuringPeerCheck {
+        assert_eq!(invocation.state(), Some(ServiceState::Stopped));
+        assert!(
+            invocation
+                .take_receipt()
+                .is_some_and(|receipt: HostReceipt| receipt.result().is_ok())
+        );
+    }
+    assert_eq!(
+        invocation.failure(),
+        if history == ReplyHistory::InvalidInlineCount {
+            Some(FixtureError::Worker(WorkerError::EndpointReply(
+                REPLY_INVALID_COUNT,
+            )))
+        } else {
+            expected.map(FixtureError::Worker)
+        }
+        .as_ref()
+    );
+}
+
+/// Compare the exact accepted read and retirement calls on one reservation.
+fn match_reply_calls(history: ReplyHistory, calls: &[EndpointCall]) -> bool {
+    let [
+        EndpointCall::Begin(Some(4)),
+        EndpointCall::Poll(Some(4)),
+        EndpointCall::BeginRead(Some(4)),
+        EndpointCall::PollRead(Some(4)),
+        reply @ ..,
+        EndpointCall::Close(Some(3)),
+    ] = calls
+    else {
+        return false;
+    };
+    match history {
+        ReplyHistory::ExpiredBeforeSubmit
+        | ReplyHistory::MailboxClosedBeforeSubmit
+        | ReplyHistory::PeerWithdrawnBeforeSubmit
+        | ReplyHistory::StopDuringPeerCheck => reply.is_empty(),
+        ReplyHistory::LiveInline | ReplyHistory::InvalidInlineCount => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+            ]
+        ),
+        ReplyHistory::InlineStop => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::PollReply(Some(3 | 4)),
+            ]
+        ),
+        ReplyHistory::QueuedExpiry => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::CancelReply(Some(4)),
+                EndpointCall::PollReply(Some(3)),
+                EndpointCall::PollReply(Some(3)),
+            ]
+        ),
+        ReplyHistory::QueuedStop
+        | ReplyHistory::QueuedCancellation
+        | ReplyHistory::QueuedCancelFailure => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::CancelReply(Some(3)),
+                EndpointCall::PollReply(Some(3)),
+                EndpointCall::PollReply(Some(3)),
+            ]
+        ),
+        ReplyHistory::LiveQueued | ReplyHistory::PeerWithdrawnOnCompletion => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+            ]
+        ),
+        ReplyHistory::PeerWithdrawnQueued => matches!(
+            reply,
+            [
+                EndpointCall::BeginReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+                EndpointCall::CancelReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+                EndpointCall::PollReply(Some(4)),
+            ]
+        ),
+    }
+}
+
+/// Run the actual broker worker on the original native accept and read events.
+///
+/// # Errors
+/// Returns a fixture native or lifecycle refusal.
+///
+/// # Panics
+/// Panics if a completion event is borrowed for the wrong operation or survives retirement.
+#[cfg(windows)]
+#[test]
+fn native_broker_first_read_wakes_and_drains_on_the_original_event()
+-> Result<(), Box<dyn std::error::Error>> {
+    use crate::{
+        native_broker_endpoint::NativeBrokerEndpoint,
+        native_broker_wait::{BrokerWait, WakeSource},
+        native_pipe_pair::{
+            LabClientContext, LabPipeWriter, open_first_read_writer, prepare_first_read_fixture,
+        },
+    };
+
+    for (case, stop_with_stalled_client) in [(0x4652_4544_u32, false), (0x4652_4545_u32, true)] {
+        let mut factory: Factory = Factory {
+            observations: Rc::default(),
+            failure: None,
+        };
+        let mut clock: TestClock = fixed_accept_clock();
+        let stop: StopNotification = StopNotification::new();
+        let control: BrokerControlWake = BrokerControlWake::new()?;
+        let mut wait: BrokerWait = BrokerWait::new();
+        let acquire = || -> Result<NativeBrokerEndpoint, NativeError> {
+            prepare_first_read_fixture(case, None)
+        };
+        let mut invocation: ServiceInvocation<
+            Reporter,
+            BrokerEndpointWorker<_, NativeBrokerEndpoint>,
+        > = start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+        assert_eq!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(Duration::from_secs(5))
+        );
+        check_broker_read_wake(
+            &mut wait,
+            &control,
+            &mut invocation.worker,
+            Duration::ZERO,
+            WakeSource::Timeout,
+        )?;
+        let writer: LabPipeWriter = open_first_read_writer(case, LabClientContext::Identification)?;
+        check_broker_read_wake(
+            &mut wait,
+            &control,
+            &mut invocation.worker,
+            Duration::from_secs(2),
+            WakeSource::Completion,
+        )?;
+        assert_eq!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(Duration::from_secs(5))
+        );
+        assert!(invocation.worker.completion_wake().is_some());
+        check_broker_read_wake(
+            &mut wait,
+            &control,
+            &mut invocation.worker,
+            Duration::ZERO,
+            WakeSource::Timeout,
+        )?;
+        if !stop_with_stalled_client {
+            writer.write(b"first broker read")?;
+            check_broker_read_wake(
+                &mut wait,
+                &control,
+                &mut invocation.worker,
+                Duration::from_secs(2),
+                WakeSource::Completion,
+            )?;
+            check_broker_read_wake(
+                &mut wait,
+                &control,
+                &mut invocation.worker,
+                Duration::ZERO,
+                WakeSource::Timeout,
+            )?;
+            assert_eq!(
+                invocation.poll(&mut clock, &stop),
+                InvocationPoll::Pending(Duration::from_secs(60))
+            );
+            assert!(invocation.worker.completion_wake().is_none());
+        }
+        retire_native_first_read(
+            &mut invocation,
+            &mut clock,
+            &stop,
+            &mut wait,
+            &control,
+            stop_with_stalled_client,
+        )?;
+    }
+    Ok(())
+}
+
+/// Enter Stop and require physical retirement before giving up the work permit.
+/// # Errors
+/// Returns a refused native wait.
+/// # Panics
+/// Panics if the original read is not settled or a clean Stop leaves work charged.
+#[cfg(windows)]
+fn retire_native_first_read(
+    invocation: &mut ServiceInvocation<Reporter, impl Worker>,
+    clock: &mut TestClock,
+    stop: &StopNotification,
+    wait: &mut crate::native_broker_wait::BrokerWait,
+    control: &BrokerControlWake,
+    stop_with_stalled_client: bool,
+) -> Result<(), NativeError> {
+    use crate::native_broker_wait::WakeSource;
+    assert_eq!(invocation.outstanding_work(), 1);
+    assert_eq!(stop.handle_control(1), ScmControl::Stop);
+    let result: InvocationPoll = invocation.poll(clock, stop);
+    if matches!(result, InvocationPoll::NativeDrain(_)) {
+        assert!(stop_with_stalled_client);
+        assert_eq!(invocation.state(), Some(ServiceState::StopPending));
+        assert_eq!(invocation.outstanding_work(), 1);
+        check_broker_read_wake(
+            wait,
+            control,
+            &mut invocation.worker,
+            Duration::from_secs(2),
+            WakeSource::Completion,
+        )?;
+        assert_eq!(invocation.poll(clock, stop), InvocationPoll::Finished);
+    } else {
+        assert_eq!(result, InvocationPoll::Finished);
+    }
+    assert!(invocation.worker.completion_wake().is_none());
+    assert!(invocation.failure().is_none());
+    assert_eq!(invocation.outstanding_work(), 0);
+    Ok(())
+}
+
+/// Check the actual wait and the event currently lent by the worker.
+/// # Errors
+/// Returns the original native wait failure.
+/// # Panics
+/// Panics if the wait observes another wake source.
+#[cfg(windows)]
+fn check_broker_read_wake(
+    wait: &mut crate::native_broker_wait::BrokerWait,
+    control: &BrokerControlWake,
+    worker: &mut impl Worker,
+    timeout: Duration,
+    expected: crate::native_broker_wait::WakeSource,
+) -> Result<(), NativeError> {
+    assert_eq!(
+        wait.observe(control, timeout, worker.completion_wake())?,
+        expected
+    );
+    Ok(())
 }

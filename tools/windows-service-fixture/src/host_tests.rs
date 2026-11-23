@@ -202,7 +202,7 @@ fn a_inert_worker_keeps_readiness_and_completion_separate() {
     assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     assert_eq!(worker.poll_prepare(&wake), Poll::Ready(Ok(())));
     assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
-    assert_eq!(worker.activate(), Ok(()));
+    assert_eq!(worker.activate(Instant::now()), Ok(()));
     assert_eq!(worker.poll_running(&wake), Ok(()));
     assert_eq!(worker.poll_finished(&wake), WorkerFinish::Pending);
     worker.request_cancel(&wake);
@@ -2209,6 +2209,8 @@ fn service_main_panic_guard_aborts_without_resuming_or_dropping_payload()
 enum CaptureAction {
     /// No concurrent state change during the synchronous observation.
     None,
+    /// Publish Stop during the clock read immediately before token admission.
+    StopDuringClock(Duration),
     /// Deliver genuine sticky Stop while observation owns the lifecycle permit.
     Stop,
     /// Advance the owner clock by an explicit test interval.
@@ -2238,7 +2240,7 @@ impl TokenObserver for ControlledTokenObserver<'_> {
     fn observe(&mut self) -> Result<PrivilegeSnapshot, TokenObservationFailure> {
         self.calls += 1;
         match self.action {
-            CaptureAction::None => {}
+            CaptureAction::None | CaptureAction::StopDuringClock(_) => {}
             CaptureAction::Stop => {
                 assert_eq!(self.notification.handle_control(1), ScmControl::Stop);
             }
@@ -2252,6 +2254,34 @@ impl TokenObserver for ControlledTokenObserver<'_> {
                 TokenCleanupOutcome::NotOpened,
                 TokenCleanupOutcome::NotOpened,
             )))
+    }
+}
+
+/// Publish Stop on the second raw read, after the startup origin has been sampled.
+struct CaptureClock<'a> {
+    /// The same independent time source used by capture and shutdown.
+    clock: TestClock,
+    /// Optional time advance on the read preceding token admission.
+    stop_after: Option<Duration>,
+    /// The actual notification used by the startup owner.
+    notification: &'a StopNotification,
+    /// Whether the origin read has already returned.
+    origin_observed: bool,
+}
+
+impl Clock for CaptureClock<'_> {
+    /// Advance the scripted time and deliver Stop only on the selected read.
+    ///
+    /// # Panics
+    /// Fails if the fixture cannot deliver a genuine Stop.
+    fn now(&mut self) -> Instant {
+        if std::mem::replace(&mut self.origin_observed, true)
+            && let Some(elapsed) = self.stop_after.take()
+        {
+            self.clock.0.borrow_mut().current += elapsed;
+            assert_eq!(self.notification.handle_control(1), ScmControl::Stop);
+        }
+        self.clock.now()
     }
 }
 
@@ -2281,7 +2311,15 @@ fn execute_observation(
         observations: Rc::clone(observation),
         failure: None,
     };
-    let mut clock = TestClock(Rc::clone(&time));
+    let mut clock: CaptureClock<'_> = CaptureClock {
+        clock: TestClock(Rc::clone(&time)),
+        stop_after: match action {
+            CaptureAction::StopDuringClock(elapsed) => Some(elapsed),
+            _ => None,
+        },
+        notification,
+        origin_observed: false,
+    };
     let mut wait = TestWait {
         time,
         observations: Rc::clone(observation),
@@ -2585,12 +2623,65 @@ fn real_host_rechecks_stop_and_time_after_capture() -> Result<(), Box<dyn Error>
                     ))
                 ),
                 CaptureAction::Reverse => assert_eq!(result, Err(FixtureError::ClockReversed)),
-                CaptureAction::None => return Err("unselected test action".into()),
+                CaptureAction::None | CaptureAction::StopDuringClock(_) => {
+                    return Err("unselected test action".into());
+                }
             }
             assert!(!statuses(&observation).iter().any(|status| status[1] == 4));
         }
     }
     Ok(())
+}
+
+/// Stop on the token-admission clock fences capture without discarding the deadline.
+///
+/// # Panics
+/// Fails on any extra capture, altered first failure, or incorrect terminal status.
+#[test]
+fn stop_during_token_admission_clock_prevents_capture() {
+    for role in [LabRole::Engine, LabRole::ClockBroker] {
+        for (action, expected_calls, expected_states, expected_result) in [
+            (CaptureAction::None, 1, &[2, 4, 3, 1][..], Ok(())),
+            (CaptureAction::Stop, 1, &[2, 3, 1][..], Ok(())),
+            (
+                CaptureAction::StopDuringClock(Duration::ZERO),
+                0,
+                &[2, 3, 1][..],
+                Ok(()),
+            ),
+            (
+                CaptureAction::StopDuringClock(Duration::from_secs(10)),
+                0,
+                &[2, 3, 1][..],
+                Err(FixtureError::Lifecycle(
+                    windows_platform::service::LifecycleError::DeadlineElapsed,
+                )),
+            ),
+        ] {
+            let observation: Rc<RefCell<Observations>> =
+                Rc::new(RefCell::new(Observations::default()));
+            let notification: StopNotification = StopNotification::new();
+            let (result, calls): (Result<(), FixtureError>, usize) = execute_observation(
+                role,
+                0,
+                &notification,
+                healthy_snapshot(role),
+                action,
+                &observation,
+            );
+            assert_eq!(calls, expected_calls);
+            let actual: Vec<[u32; 7]> = statuses(&observation);
+            let states: Vec<u32> = actual.iter().map(|status: &[u32; 7]| status[1]).collect();
+            assert_eq!(states.as_slice(), expected_states);
+            assert_eq!(result, expected_result);
+            let terminal: [u32; 7] = if expected_result.is_err() {
+                [16, 1, 0, 1066, 1, 0, 0]
+            } else {
+                [16, 1, 0, 0, 0, 0, 0]
+            };
+            assert_eq!(actual.last(), Some(&terminal));
+        }
+    }
 }
 
 /// Invalid startup and an already delivered Stop admit no observation job at all.
@@ -3198,7 +3289,7 @@ mod worker_tests {
         }
 
         /// Record the only operational entry and return the chosen activation result.
-        fn activate(&mut self) -> Result<(), WorkerError> {
+        fn activate(&mut self, _cutoff: Instant) -> Result<(), WorkerError> {
             self.trace.borrow_mut().events.push(Event::Activate);
             let mut trace = self.trace.borrow_mut();
             if trace.stop_on_clock_after_activation {
@@ -5941,9 +6032,13 @@ mod worker_tests {
                     }
                     WorkerError::Running
                     | WorkerError::EndpointAccept(_)
+                    | WorkerError::EndpointRead(_)
                     | WorkerError::EndpointUnexpectedCompletion
                     | WorkerError::Cleanup
                     | WorkerError::EndpointAcceptCleanup(_)
+                    | WorkerError::EndpointReadCleanup(_)
+                    | WorkerError::EndpointReply(_)
+                    | WorkerError::EndpointReplyCleanup(_)
                     | WorkerError::EndpointClose(_) => {
                         script.preparation = Poll::Ready(Ok(()));
                         script.running = Err(failure);

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Fixed laboratory broker reservation and one accept with retained native completion.
+//! Fixed broker reservation and sealed fixture exchange with retained native completion.
 
 use std::{
     cell::UnsafeCell,
     marker::PhantomPinned,
-    os::windows::io::{AsHandle, AsRawHandle, FromRawHandle, IntoRawHandle, OwnedHandle},
+    os::windows::io::{
+        AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, IntoRawHandle, OwnedHandle,
+    },
     pin::Pin,
     ptr,
     task::Poll,
@@ -41,7 +43,18 @@ use crate::{
 };
 
 #[cfg(test)]
-use crate::native_pipe_pair::LabUnconnectedDuplexPipe;
+use crate::{
+    broker_endpoint::{FirstReadCompletion, FirstReadStart, FirstReplyCompletion, FirstReplyStart},
+    host::{Clock, ConnectionEdge, RunningConnection},
+    native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
+    native_pipe_pair::LabUnconnectedDuplexPipe,
+    native_pipe_read::{
+        AttributedStatusRead, CompletedFirstRead, IdentifiedReadError, NativePipeRead,
+        NativeReadError, NativeReadStart,
+    },
+    native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll, NativeWriteStart},
+    private_clock_wire::MAX_FRAME_LEN,
+};
 
 /// UTF-16 projection of `\\.\pipe\NevroTick-Lab-S02-Broker-Reservation` and its terminator.
 const RESERVATION_NAME: [u16; 46] = [
@@ -116,6 +129,73 @@ impl Drop for AcceptRecord {
     }
 }
 
+/// One reply right, issued by attribution and spent before any native submission.
+#[cfg(test)]
+enum FirstReplyState {
+    /// The exact first read has yet to produce a matched, reverted identity.
+    WaitingForAttribution,
+    /// The worker may submit its admitted reply once.
+    Ready,
+    /// The exact submitted byte count requires one terminal observation.
+    Pending(usize),
+    /// No further write is authorized on this connection.
+    Retired,
+}
+
+/// The write and read records are bound to the same original server owner.
+#[cfg(test)]
+struct FirstExchange {
+    write: NativePipeWrite<NativePipeRead>,
+    reply: FirstReplyState,
+    /// Retain the original client identity through the read and the one write.
+    peer: RetainedFixtureClient,
+}
+
+/// The original pipe has exactly one native handle owner through its operations.
+enum EndpointPipe {
+    /// Fixed reservation and existing unarmed fixtures.
+    Reservation(OwnedHandle),
+    /// Sealed fixture server plus the already prepared read record and event.
+    #[cfg(test)]
+    FirstRead(NativePipeRead),
+    /// Sealed fixture prepared for one guarded reply on its original server.
+    #[cfg(test)]
+    FirstExchange(Box<FirstExchange>),
+}
+
+impl EndpointPipe {
+    /// Borrow the live pipe without transferring its native ownership.
+    fn pipe(&self) -> BorrowedHandle<'_> {
+        match self {
+            Self::Reservation(handle) => handle.as_handle(),
+            #[cfg(test)]
+            Self::FirstRead(read) => read.pipe(),
+            #[cfg(test)]
+            Self::FirstExchange(exchange) => exchange.write.pipe(),
+        }
+    }
+
+    /// Consume the pipe and its owned events after physical completion.
+    ///
+    /// # Errors
+    /// Preserve the first explicit native release failure.
+    fn close(self) -> Result<(), NativeError> {
+        match self {
+            Self::Reservation(handle) => close_handle(handle),
+            #[cfg(test)]
+            Self::FirstRead(read) => close_first_read(read),
+            #[cfg(test)]
+            Self::FirstExchange(exchange) => {
+                let (read, write_event): (NativePipeRead, OwnedHandle) =
+                    exchange.write.into_first_reply_parts();
+                let read_result: Result<(), NativeError> = close_first_read(read);
+                let write_event_result: Result<(), NativeError> = close_handle(write_event);
+                read_result.and(write_event_result)
+            }
+        }
+    }
+}
+
 /// Unique custody of the pipe and its sole accept record and event.
 #[must_use = "retain the original reservation and any queued accept through explicit release"]
 pub(super) struct NativeBrokerEndpoint {
@@ -124,10 +204,13 @@ pub(super) struct NativeBrokerEndpoint {
     /// The noninherited manual-reset completion event belongs to this accept.
     event: OwnedHandle,
     /// The creation result, with best-effort release if explicit close is bypassed.
-    handle: OwnedHandle,
+    pipe: EndpointPipe,
     /// Only the sealed test pipe can hand its connection to the fixture transport.
     #[cfg(test)]
     fixture_pipe: bool,
+    /// Expected identity of the one fixture client, selected before acquisition.
+    #[cfg(test)]
+    status_client: Option<Box<PipeIdentity>>,
 }
 
 /// Refusal to hand the original server handle to the duplex fixture.
@@ -228,9 +311,11 @@ impl NativeBrokerEndpoint {
         Ok(Self {
             accept,
             event,
-            handle,
+            pipe: EndpointPipe::Reservation(handle),
             #[cfg(test)]
             fixture_pipe: false,
+            #[cfg(test)]
+            status_client: None,
         })
     }
 
@@ -247,8 +332,56 @@ impl NativeBrokerEndpoint {
         Ok(Self {
             accept,
             event,
-            handle: server.into_handle(),
+            pipe: EndpointPipe::Reservation(server.into_handle()),
             fixture_pipe: true,
+            status_client: None,
+        })
+    }
+
+    /// Prepare one read on the original sealed fixture server before readiness.
+    ///
+    /// # Errors
+    /// Preserves preparation failure with no submitted native storage.
+    #[cfg(test)]
+    pub(super) fn for_first_read_fixture(
+        server: LabUnconnectedDuplexPipe,
+        status_client: Option<PipeIdentity>,
+    ) -> Result<Self, NativeError> {
+        let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
+        let read: NativePipeRead = NativePipeRead::for_first_read(server)
+            .map_err(|error| read_error(NativeOperation::BrokerEndpointReadEvent, error))?;
+        Ok(Self {
+            accept,
+            event,
+            pipe: EndpointPipe::FirstRead(read),
+            fixture_pipe: false,
+            status_client: status_client.map(Box::new),
+        })
+    }
+
+    /// Prepare separate read and write records while retaining one original server.
+    /// # Errors
+    /// Preserve preparation failure without submitting any native operation.
+    #[cfg(test)]
+    pub(super) fn for_first_exchange_fixture(
+        server: LabUnconnectedDuplexPipe,
+        peer: RetainedFixtureClient,
+    ) -> Result<Self, NativeError> {
+        let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
+        let read: NativePipeRead = NativePipeRead::for_first_read(server)
+            .map_err(|error| read_error(NativeOperation::BrokerEndpointReadEvent, error))?;
+        let write: NativePipeWrite<NativePipeRead> = NativePipeWrite::for_first_reply(read)
+            .map_err(|error| write_error(NativeOperation::BrokerEndpointReplyEvent, error))?;
+        Ok(Self {
+            accept,
+            event,
+            pipe: EndpointPipe::FirstExchange(Box::new(FirstExchange {
+                write,
+                reply: FirstReplyState::WaitingForAttribution,
+                peer,
+            })),
+            fixture_pipe: false,
+            status_client: None,
         })
     }
 
@@ -266,9 +399,13 @@ impl NativeBrokerEndpoint {
         let Self {
             accept,
             event,
-            handle,
+            pipe: EndpointPipe::Reservation(handle),
             fixture_pipe: _,
-        } = self;
+            status_client: _,
+        } = self
+        else {
+            return Err(FixtureConnectionError::Ineligible(self));
+        };
         drop(accept);
         if let Err(error) = close_handle(event) {
             let _pipe_result: Result<(), NativeError> = close_handle(handle);
@@ -277,7 +414,7 @@ impl NativeBrokerEndpoint {
         Ok(handle)
     }
 
-    /// Release both original handles once, with no outstanding native I/O.
+    /// Release the original pipe and owned events once, with no outstanding native I/O.
     ///
     /// # Errors
     /// Preserve the first close failure with release unconfirmed. Consuming the
@@ -286,12 +423,14 @@ impl NativeBrokerEndpoint {
         let Self {
             accept,
             event,
-            handle,
+            pipe,
             #[cfg(test)]
                 fixture_pipe: _,
+            #[cfg(test)]
+                status_client: _,
         } = self;
         drop(accept);
-        let pipe_result: Result<(), NativeError> = close_handle(handle);
+        let pipe_result: Result<(), NativeError> = pipe.close();
         let event_result: Result<(), NativeError> = close_handle(event);
         pipe_result.and(event_result)
     }
@@ -319,7 +458,7 @@ impl Reservation for NativeBrokerEndpoint {
         // exclusively reserved for this operation and retains its manual-reset
         // event with the original pipe until observed completion.
         let connected: BOOL =
-            unsafe { ConnectNamedPipe(self.handle.as_raw_handle(), self.accept.pointer()) };
+            unsafe { ConnectNamedPipe(self.pipe.pipe().as_raw_handle(), self.accept.pointer()) };
         if connected != 0 {
             self.accept.state = AcceptState::Connected;
             return Ok(AcceptStart::Connected);
@@ -360,7 +499,7 @@ impl Reservation for NativeBrokerEndpoint {
         // SAFETY: This original pipe and nonnull record remain owned and pinned.
         // Cancellation requests no other operation and does not acknowledge release.
         let requested: BOOL =
-            unsafe { CancelIoEx(self.handle.as_raw_handle(), self.accept.pointer()) };
+            unsafe { CancelIoEx(self.pipe.pipe().as_raw_handle(), self.accept.pointer()) };
         if requested != 0 {
             return Ok(());
         }
@@ -393,7 +532,7 @@ impl Reservation for NativeBrokerEndpoint {
         // held. The scratch count is writable for this synchronous observation.
         let complete: BOOL = unsafe {
             GetOverlappedResult(
-                self.handle.as_raw_handle(),
+                self.pipe.pipe().as_raw_handle(),
                 self.accept.pointer(),
                 &raw mut ignored,
                 0,
@@ -418,18 +557,278 @@ impl Reservation for NativeBrokerEndpoint {
         }
     }
 
-    /// Lend the event and the same wake state until native completion retires it.
-    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
-        let AcceptState::Pending { wake, .. } = &mut self.accept.state else {
-            return None;
+    /// Arm data transport only on the exact completed, uncancelled fixture server.
+    ///
+    /// # Errors
+    /// A refused submission leaves no read charged.
+    #[cfg(test)]
+    fn begin_first_read(&mut self) -> Result<FirstReadStart, NativeError> {
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReadSubmit;
+        let start: Result<NativeReadStart, NativeReadError> = match &mut self.pipe {
+            EndpointPipe::Reservation(_) => return Ok(FirstReadStart::Unarmed),
+            _ if !matches!(self.accept.state, AcceptState::Connected) => {
+                return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+            }
+            EndpointPipe::FirstRead(read) => {
+                self.accept.state = AcceptState::Retired;
+                read.begin(MAX_FRAME_LEN)
+            }
+            EndpointPipe::FirstExchange(exchange) => {
+                self.accept.state = AcceptState::Retired;
+                exchange.write.begin_first_read(MAX_FRAME_LEN)
+            }
         };
-        Some(wake.lend(self.event.as_handle()))
+        start
+            .map(|start| match start {
+                NativeReadStart::Queued => FirstReadStart::Queued,
+                NativeReadStart::Immediate => FirstReadStart::Immediate,
+            })
+            .map_err(|error| read_error(operation, error))
+    }
+
+    /// Observe the charged read, suppressing both fresh and late bytes.
+    ///
+    /// # Errors
+    /// An unconfirmed native result retains its exact read resources.
+    #[cfg(test)]
+    fn poll_first_read(&mut self) -> Result<Poll<FirstReadCompletion>, NativeError> {
+        self.observe_first_read(|_expected, _peer, _completed| {})
+    }
+
+    /// Only an eligible Running result can capture client identity. Retirement
+    /// uses the collection-only path even when actual data won cancellation.
+    ///
+    /// # Errors
+    /// Preserves the original native observation failure and its custody.
+    #[cfg(test)]
+    fn poll_running_first_read<C: Clock>(
+        &mut self,
+        connection: &mut RunningConnection<'_, C>,
+    ) -> Result<Poll<FirstReadCompletion>, NativeError> {
+        let mut staged_match: bool = false;
+        let result: Result<Poll<FirstReadCompletion>, NativeError> =
+            self.observe_first_read(|expected, peer, completed| {
+                if (expected.is_none() && peer.is_none())
+                    || !matches!(connection.edge(), ConnectionEdge::Open(_))
+                {
+                    return;
+                }
+                let attributed: Result<AttributedStatusRead, IdentifiedReadError> =
+                    match (peer, expected) {
+                        (Some(peer), _) => completed.attribute_peer(peer),
+                        (None, Some(expected)) => completed.attribute(expected),
+                        (None, None) => return,
+                    };
+                let matched: bool = attributed.is_ok();
+                staged_match = connection.record_status_read(attributed) && matched;
+            });
+        if staged_match && let EndpointPipe::FirstExchange(exchange) = &mut self.pipe {
+            exchange.reply = FirstReplyState::Ready;
+        }
+        result
+    }
+
+    /// Target the original outstanding read record. Neither outcome releases it.
+    ///
+    /// # Errors
+    /// Preserve the native cancellation refusal while its read remains charged.
+    #[cfg(test)]
+    fn request_first_read_cancel(&mut self) -> Result<(), NativeError> {
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReadCancel;
+        match &mut self.pipe {
+            EndpointPipe::Reservation(_) => {
+                return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+            }
+            EndpointPipe::FirstRead(read) => read.request_cancel(),
+            EndpointPipe::FirstExchange(exchange) => exchange.write.request_first_read_cancel(),
+        }
+        .map(|_| ())
+        .map_err(|error| read_error(operation, error))
+    }
+
+    /// Check the original peer while preserving all queued native ownership.
+    #[cfg(test)]
+    fn reply_peer_current(&mut self) -> bool {
+        let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
+            return false;
+        };
+        exchange.peer.observe(exchange.write.pipe())
+    }
+
+    /// Spend the attributed pipe's one reply right before submitting its encoded bytes.
+    /// # Errors
+    /// Refuse a repeated submission or preserve the native submission failure.
+    #[cfg(test)]
+    fn begin_first_reply(&mut self, bytes: &[u8]) -> Result<FirstReplyStart, NativeError> {
+        let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
+            return Ok(FirstReplyStart::Unarmed);
+        };
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReplySubmit;
+        if !matches!(exchange.reply, FirstReplyState::Ready) {
+            return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+        }
+        exchange.reply = FirstReplyState::Retired;
+        let start: NativeWriteStart = exchange
+            .write
+            .begin(bytes)
+            .map_err(|error| write_error(operation, error))?;
+        exchange.reply = FirstReplyState::Pending(bytes.len());
+        Ok(match start {
+            NativeWriteStart::Queued => FirstReplyStart::Queued,
+            NativeWriteStart::Immediate => FirstReplyStart::Immediate,
+        })
+    }
+
+    /// Collect the original reply's result on the exact accepted server.
+    /// # Errors
+    /// Preserve unconfirmed completion and distinguish terminal count refusal.
+    #[cfg(test)]
+    fn poll_first_reply(&mut self) -> Result<Poll<FirstReplyCompletion>, NativeError> {
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReplyCompletion;
+        let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
+            return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+        };
+        let FirstReplyState::Pending(expected) = exchange.reply else {
+            return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+        };
+        let completion: FirstReplyCompletion = match exchange.write.poll() {
+            Ok(NativeWritePoll::Pending) => return Ok(Poll::Pending),
+            Ok(NativeWritePoll::Written(written)) if written == expected => {
+                FirstReplyCompletion::Written
+            }
+            Ok(NativeWritePoll::Cancelled | NativeWritePoll::Disconnected) => {
+                FirstReplyCompletion::Abandoned
+            }
+            Ok(NativeWritePoll::Written(_)) | Err(NativeWriteError::Count) => {
+                FirstReplyCompletion::Invalid(write_error(operation, NativeWriteError::Count))
+            }
+            Err(error) => return Err(write_error(operation, error)),
+        };
+        exchange.reply = FirstReplyState::Retired;
+        Ok(Poll::Ready(completion))
+    }
+
+    /// Target the one charged write record without releasing any resources.
+    /// # Errors
+    /// Preserve the cancellation refusal while actual completion remains owed.
+    #[cfg(test)]
+    fn request_first_reply_cancel(&mut self) -> Result<(), NativeError> {
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReplyCancel;
+        let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
+            return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+        };
+        exchange
+            .write
+            .request_cancel()
+            .map(|_| ())
+            .map_err(|error| write_error(operation, error))
+    }
+
+    /// Lend only the current native submission’s event and one-shot wake state.
+    fn completion_wake(&mut self) -> Option<PendingCompletionWake<'_>> {
+        if let AcceptState::Pending { wake, .. } = &mut self.accept.state {
+            return Some(wake.lend(self.event.as_handle()));
+        }
+        #[cfg(test)]
+        match &mut self.pipe {
+            EndpointPipe::Reservation(_) => {}
+            EndpointPipe::FirstRead(read) => return read.completion_wake(),
+            EndpointPipe::FirstExchange(exchange) => return exchange.write.completion_wake(),
+        }
+        None
     }
 
     /// Preserve the actual release result under the serialized host.
     fn close(self) -> Result<(), NativeError> {
         Self::close(self)
     }
+}
+
+#[cfg(test)]
+impl NativeBrokerEndpoint {
+    /// Collect the original read and lend its exact successful prefix once.
+    ///
+    /// # Errors
+    /// Keep an unconfirmed native result distinct from an invalid terminal count.
+    fn observe_first_read(
+        &mut self,
+        data: impl FnOnce(
+            Option<&PipeIdentity>,
+            Option<&mut RetainedFixtureClient>,
+            CompletedFirstRead<'_>,
+        ),
+    ) -> Result<Poll<FirstReadCompletion>, NativeError> {
+        let operation: NativeOperation = NativeOperation::BrokerEndpointReadCompletion;
+        let expected: Option<&PipeIdentity> = self.status_client.as_deref();
+        let collected: Result<Poll<()>, NativeReadError> = match &mut self.pipe {
+            EndpointPipe::Reservation(_) => {
+                return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
+            }
+            EndpointPipe::FirstRead(read) => {
+                read.collect_first_read(|completed| data(expected, None, completed))
+            }
+            EndpointPipe::FirstExchange(exchange) => {
+                let peer: &mut RetainedFixtureClient = &mut exchange.peer;
+                exchange
+                    .write
+                    .collect_first_read(|completed| data(expected, Some(peer), completed))
+            }
+        };
+        match collected {
+            Ok(poll) => Ok(poll.map(|()| FirstReadCompletion::Settled)),
+            Err(error @ NativeReadError::Count) => Ok(Poll::Ready(FirstReadCompletion::Invalid(
+                read_error(operation, error),
+            ))),
+            Err(error) => Err(read_error(operation, error)),
+        }
+    }
+}
+
+/// Preserve the native read code or mark a local representation refusal.
+#[cfg(test)]
+const fn read_error(operation: NativeOperation, error: NativeReadError) -> NativeError {
+    let code: u32 = match error {
+        NativeReadError::Event(code)
+        | NativeReadError::Submit(code)
+        | NativeReadError::Completion(code)
+        | NativeReadError::Cancel(code) => code,
+        NativeReadError::Busy
+        | NativeReadError::Size
+        | NativeReadError::Idle
+        | NativeReadError::Count => ERROR_INVALID_PARAMETER,
+    };
+    NativeError::new(operation, code)
+}
+
+/// Preserve the native write code or mark a local representation refusal.
+#[cfg(test)]
+const fn write_error(operation: NativeOperation, error: NativeWriteError) -> NativeError {
+    let code: u32 = match error {
+        NativeWriteError::Event(code)
+        | NativeWriteError::Submit(code)
+        | NativeWriteError::Completion(code)
+        | NativeWriteError::Cancel(code) => code,
+        NativeWriteError::Busy
+        | NativeWriteError::Size
+        | NativeWriteError::Idle
+        | NativeWriteError::Count => ERROR_INVALID_PARAMETER,
+    };
+    NativeError::new(operation, code)
+}
+
+/// Close the exact accepted server and read event after its charge has retired.
+/// # Errors
+/// Refuses a foreign pipe role and preserves the first explicit close failure.
+#[cfg(test)]
+fn close_first_read(read: NativePipeRead) -> Result<(), NativeError> {
+    let (handle, event): (OwnedHandle, OwnedHandle) =
+        read.into_first_read_handles().ok_or(NativeError::new(
+            NativeOperation::BrokerEndpointClose,
+            ERROR_INVALID_PARAMETER,
+        ))?;
+    let pipe_result: Result<(), NativeError> = close_handle(handle);
+    let read_event_result: Result<(), NativeError> = close_handle(event);
+    pipe_result.and(read_event_result)
 }
 
 /// Prepare the single pinned accept record and its original completion event.

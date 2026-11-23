@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Windows library-test worker for native requests and replies on owned pipes.
 
-use std::task::Poll;
+use std::{task::Poll, time::Instant};
 
 use crate::{
     error::WorkerError,
@@ -415,7 +415,7 @@ impl Worker for NativePipeWorker {
     /// Enable submission after the host acknowledges Running and admits its permit.
     /// # Errors
     /// Refuses an unprepared, already-active or cancelled worker.
-    fn activate(&mut self) -> Result<(), WorkerError> {
+    fn activate(&mut self, _cutoff: Instant) -> Result<(), WorkerError> {
         if self.phase != Phase::Prepared {
             return Err(WorkerError::Activation);
         }

@@ -115,6 +115,7 @@ def check(files: dict[str, str]) -> list[str]:
         exact(MAIN, "main", "nevrotick_ui::slint_host::run_native()", windows=True)
         exact(HOST, "run_native", "create_native()?.run().map_err(HostError::Platform)", windows=True)
         exact(HOST, "create_native", '''
+            startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
             slint::BackendSelector::new()
                 .backend_name("winit".into())
                 .renderer_name("software".into())
@@ -130,7 +131,7 @@ def check(files: dict[str, str]) -> list[str]:
                 != ["#[cfg(any(windows,test))]"]):
             errors.append("native input private platform module")
         fixture = source.inert_source(function(HOST, "create"))
-        if re.search(r'\b(?:native_input|native_workflow|BackendSelector|on_winit_window_event)\b|\.\s*(?:show|run)\s*\(', fixture):
+        if re.search(r'\b(?:native_input|native_workflow|startup_image_policy|BackendSelector|on_winit_window_event)\b|\.\s*(?:show|run)\s*\(', fixture):
             errors.append("native input fixture initialization")
         registrations = [(path, hit.start()) for path, text in clean.items()
                          for hit in re.finditer(r'\bon_winit_window_event\b', text)]

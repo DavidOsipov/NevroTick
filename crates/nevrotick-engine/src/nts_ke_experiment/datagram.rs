@@ -397,24 +397,36 @@ mod reached {
                 // The initial operation and single earned continuation bound this addition.
                 let _previous: usize = work.attempted_sends.fetch_add(1, Ordering::Relaxed);
             }
-            let (outcome, cancel_after): (SendOutcome, bool) = match &mut backend.io {
+            let (outcome, cancel_after, native_after): (
+                SendOutcome,
+                bool,
+                Option<ProtectedClockCapture>,
+            ) = match &mut backend.io {
                 #[cfg(any(windows, all(test, target_os = "linux")))]
-                Io::Native(socket) => (
-                    match socket.try_send_to(packet, remote) {
+                Io::Native(socket) => {
+                    let result: io::Result<usize> = socket.try_send_to(packet, remote);
+                    let after: ProtectedClockCapture = ProtectedClockCapture::capture();
+                    let outcome: SendOutcome = match result {
                         Ok(length) => SendOutcome::Completed(length),
                         Err(error) => SendOutcome::Failed(error.kind()),
-                    },
-                    false,
-                ),
+                    };
+                    (outcome, false, Some(after))
+                }
                 #[cfg(test)]
-                Io::Script(script) => script.send(packet, guard.control.control),
+                Io::Script(script) => {
+                    let (outcome, cancel_after): (SendOutcome, bool) =
+                        script.send(packet, guard.control.control);
+                    (outcome, cancel_after, None)
+                }
             };
             if let Some(work) = work
                 && matches!(outcome, SendOutcome::Completed(length) if length == packet.len())
             {
                 let _previous: usize = work.fully_submitted_sends.fetch_add(1, Ordering::Relaxed);
             }
-            let after: ProtectedClockCapture = backend.capture_send_clock();
+            // The scripted backend keeps its original capture after send accounting.
+            let after: ProtectedClockCapture =
+                native_after.unwrap_or_else(|| backend.capture_send_clock());
             let control: &Control = guard.control.control;
             drop(guard);
             backend.send = Some((before, after, packet.len()));

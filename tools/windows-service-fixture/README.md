@@ -56,17 +56,28 @@ of the exact final signed lab artifact. The companion emits one readback
 record after both role and registration checks. Schema 2 includes the matched
 package full name. Retain native errors privately.
 
-Use `join_prestart` in [the receipt reader](msix/prestart_receipts.py) from the
-admitted supervisor. Supply its independently verified signed package and role
-members, then the companion and three exact selector captures from the same
-untouched deployment window. Run each selector separately with `--exact
---ignored --nocapture --test-threads=1 --format pretty --color never`. Bind each
-capture to the retained child
-process and its observed effective-token context before handing over stdout.
-The deployment context supplies identity and the two-role observation. The
-proposed provisioning actor and standard user supply their own access captures.
-Keep the original capture and signed-artifact inputs in supervisor custody. The
-reader performs no Windows operation and returns only the joined observations.
+The [pre-start coordinator](msix/prestart_supervisor.py) supplies the fixed
+observation sequence through `supervise_prestart`. Its Windows window owner
+must admit the independent signed package and role members, keep the original
+deployment window current and bind each capture to the retained child process
+and its independently observed effective token. The deployment context
+supplies identity and the two-role observation. The proposed provisioning
+actor and standard user supply their own access captures. The coordinator
+validates each receipt before the next selector can start. An invalid child
+receipt retains precedence over a later window refusal. The native window
+owner must still be wired before the installed probe can execute.
+
+The [Windows child collector](msix/prestart_child.psm1) reads bounded raw
+stdout and stderr from the launch owner's original `Process`. It requires
+both EOFs and observed exit under the supplied monotonic deadline. The owner
+retains process containment and must settle any outstanding reads attached
+to the caught exception. The control script exercises this component with
+fixed inert children in 64-bit Windows PowerShell. It performs no package
+installation or service operation. [Native controls](msix/test_prestart_child.ps1)
+
+For readback of already owned captures, use `join_prestart` in
+[the receipt reader](msix/prestart_receipts.py). Both paths apply the same
+joined checks and preserve the raw service-type observations.
 The [fixture task](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 records the companion's path and file controls and the held setup.
 

@@ -14,7 +14,7 @@ const MAX_CATEGORY_BYTES: usize = 64;
 /// Exact native failure boundaries, including zero after a reported API failure.
 const RAW_CODES: [u32; 3] = [0, 1, u32::MAX];
 /// Complete currently selected native-effect classes.
-const OPERATIONS: [NativeOperation; 18] = [
+const OPERATIONS: [NativeOperation; 26] = [
     NativeOperation::Dispatch,
     NativeOperation::Register,
     NativeOperation::Status,
@@ -29,6 +29,14 @@ const OPERATIONS: [NativeOperation; 18] = [
     NativeOperation::BrokerEndpointAcceptSubmit,
     NativeOperation::BrokerEndpointAcceptCancel,
     NativeOperation::BrokerEndpointAcceptCompletion,
+    NativeOperation::BrokerEndpointReadEvent,
+    NativeOperation::BrokerEndpointReadSubmit,
+    NativeOperation::BrokerEndpointReadCancel,
+    NativeOperation::BrokerEndpointReadCompletion,
+    NativeOperation::BrokerEndpointReplyEvent,
+    NativeOperation::BrokerEndpointReplySubmit,
+    NativeOperation::BrokerEndpointReplyCancel,
+    NativeOperation::BrokerEndpointReplyCompletion,
     NativeOperation::BrokerWakePrepare,
     NativeOperation::BrokerWakeSignal,
     NativeOperation::BrokerWakeWait,
@@ -78,6 +86,14 @@ fn native_categories_are_code_independent_and_operation_specific() {
             NativeOperation::BrokerEndpointAcceptSubmit => "accept submission",
             NativeOperation::BrokerEndpointAcceptCancel => "accept cancellation",
             NativeOperation::BrokerEndpointAcceptCompletion => "accept completion",
+            NativeOperation::BrokerEndpointReadEvent => "read event",
+            NativeOperation::BrokerEndpointReadSubmit => "read submission",
+            NativeOperation::BrokerEndpointReadCancel => "read cancellation",
+            NativeOperation::BrokerEndpointReadCompletion => "read completion",
+            NativeOperation::BrokerEndpointReplyEvent => "reply event",
+            NativeOperation::BrokerEndpointReplySubmit => "reply submission",
+            NativeOperation::BrokerEndpointReplyCancel => "reply cancellation",
+            NativeOperation::BrokerEndpointReplyCompletion => "reply completion",
             NativeOperation::BrokerWakePrepare => "wake preparation",
             NativeOperation::BrokerWakeSignal => "wake signal",
             NativeOperation::BrokerWakeWait => "wake wait",

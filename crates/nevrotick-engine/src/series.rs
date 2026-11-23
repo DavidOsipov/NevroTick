@@ -249,8 +249,12 @@ pub struct PreparedSeries {
     control_handle: ControlHandle,
     /// Invocation-local notification selected by private causal controls only.
     #[cfg(test)]
-    test_final_guard_observer: Option<fn(TestFinalGuardEvent, &ControlHandle)>,
+    test_final_guard_observer: Option<Arc<FinalGuardCallback>>,
 }
+
+/// Invocation-local observation, without mutable access to the plan or driver.
+#[cfg(test)]
+type FinalGuardCallback = dyn Fn(TestFinalGuardEvent, &ControlHandle) + Send + Sync;
 
 /// Notification points outside the final watch guard of an actual request.
 #[cfg(test)]
@@ -270,8 +274,8 @@ pub(super) enum TestFinalGuardEvent {
 #[cfg(test)]
 #[derive(Clone)]
 pub(super) struct TestFinalGuardObserver {
-    /// No captured/global state or substitute control handle can be installed.
-    callback: fn(TestFinalGuardEvent, &ControlHandle),
+    /// The callback may retain an independent test input, such as the caller's cutoff.
+    callback: Arc<FinalGuardCallback>,
     /// The exact sender owned by this prepared series, never a caller label.
     handle: ControlHandle,
 }
@@ -280,10 +284,13 @@ pub(super) struct TestFinalGuardObserver {
 impl TestFinalGuardObserver {
     /// Bind the test notification to the exact plan's existing control owner.
     fn from_prepared(prepared: &PreparedSeries) -> Option<Self> {
-        prepared.test_final_guard_observer.map(|callback| Self {
-            callback,
-            handle: prepared.control_handle.clone(),
-        })
+        prepared
+            .test_final_guard_observer
+            .as_ref()
+            .map(|callback| Self {
+                callback: Arc::clone(callback),
+                handle: prepared.control_handle.clone(),
+            })
     }
 
     /// Notify a private causal control only after releasing protected custody.
@@ -296,9 +303,9 @@ impl TestFinalGuardObserver {
 #[cfg(test)]
 pub(super) fn set_test_final_guard_observer(
     prepared: &mut PreparedSeries,
-    observer: fn(TestFinalGuardEvent, &ControlHandle),
+    observer: impl Fn(TestFinalGuardEvent, &ControlHandle) + Send + Sync + 'static,
 ) {
-    prepared.test_final_guard_observer = Some(observer);
+    prepared.test_final_guard_observer = Some(Arc::new(observer));
 }
 
 impl fmt::Debug for PreparedSeries {
@@ -1240,6 +1247,9 @@ where
                 super::source_policy::SourceMode::Managed(_)
             ) && Instant::now() >= request_end
             {
+                if let Some(end) = current_series_end(&mut prepared.control, deadline) {
+                    return receiver.finish(end, None);
+                }
                 return receiver.finish(
                     SeriesEnd::Failure,
                     Some(PilotError::PolicyAdmissionDeadline),
@@ -1385,13 +1395,34 @@ pub fn execute_series(
     prepared: PreparedSeries,
     schedule: &ControlSchedule,
 ) -> Result<SeriesReport, PilotError> {
+    execute_series_with_cutoff(prepared, schedule, None)
+}
+
+/// Execute the same series under an optional original owner cutoff.
+///
+/// The earlier of the owner cutoff and the series deadline governs every request
+/// and final guard. When the owner cutoff has already elapsed, observe the
+/// original control before returning the classified report without starting the
+/// runtime or scheduled control jobs.
+///
+/// # Errors
+/// Preserve the original entered-runtime, deadline-arithmetic and runtime-build
+/// refusals before active work. Retain later failures in the original report.
+pub(super) fn execute_series_with_cutoff(
+    mut prepared: PreparedSeries,
+    schedule: &ControlSchedule,
+    owner_cutoff: Option<Instant>,
+) -> Result<SeriesReport, PilotError> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(PilotError::EnteredRuntime);
     }
-    let origin = Instant::now();
-    let deadline = origin
+    let origin: Instant = Instant::now();
+    let series_deadline: Instant = origin
         .checked_add(prepared.series_timeout)
         .ok_or(PilotError::DeadlineOverflow)?;
+    let deadline: Instant = owner_cutoff.map_or(series_deadline, |cutoff: Instant| {
+        cutoff.min(series_deadline)
+    });
     let stop_when = schedule
         .stop_after
         .map(|after| {
@@ -1408,20 +1439,35 @@ pub fn execute_series(
                 .ok_or(PilotError::DeadlineOverflow)
         })
         .transpose()?;
-    let runtime = tokio::runtime::Builder::new_current_thread()
+    let early_end: Option<SeriesEnd> =
+        if owner_cutoff.is_some_and(|cutoff: Instant| Instant::now() >= cutoff) {
+            current_series_end(&mut prepared.control, deadline)
+        } else {
+            None
+        };
+    let new_receiver = || -> SeriesReceiver {
+        let context: Arc<RunClockContext> = Arc::new(RunClockContext { origin });
+        SeriesReceiver::new(
+            context,
+            prepared.peer,
+            prepared.profile,
+            &prepared.source_policy,
+        )
+    };
+    if let Some(end) = early_end {
+        let mut report: SeriesReport = new_receiver().finish(end, None);
+        drop(prepared);
+        report.done_elapsed_ns = Instant::now().duration_since(origin).as_nanos();
+        return Ok(report);
+    }
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
         .max_blocking_threads(2)
         .build()
         .map_err(|error| PilotError::RuntimeBuild(IoCause::capture(&error)))?;
-    let context = Arc::new(RunClockContext { origin });
-    let receiver = SeriesReceiver::new(
-        context,
-        prepared.peer,
-        prepared.profile,
-        &prepared.source_policy,
-    );
-    let mut report = runtime.block_on(run_series_owned(
+    let receiver: SeriesReceiver = new_receiver();
+    let mut report: SeriesReport = runtime.block_on(run_series_owned(
         prepared,
         receiver,
         deadline,

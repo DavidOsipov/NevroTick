@@ -307,6 +307,8 @@ mod configuration {
         History,
         /// Bind one numeric endpoint without a resolved-round owner.
         Numeric(EndpointKey),
+        /// Bind one numeric endpoint at exactly the selected installed revision.
+        ConfiguredNumeric(EndpointKey, &'a SourceConfigurationSnapshot),
         /// Bind the entire caller plan in its checked order.
         Round(&'a [Option<EndpointKey>; 3]),
     }
@@ -367,8 +369,8 @@ mod configuration {
 
         /// Derive context from the actual source and its same-cell mutex custody.
         /// # Errors
-        /// Refuse foreign custody, exhausted configuration or any selected key
-        /// outside the installed definition before endpoint publication.
+        /// Refuse foreign custody, an obsolete selected revision, exhausted
+        /// configuration or an outside key before endpoint publication.
         pub(super) fn capture(
             source: &SourceHandle,
             guard: &PolicyGuard<'_>,
@@ -387,19 +389,37 @@ mod configuration {
             if !configuration.source.same_source(&identity) {
                 return Err(SourcePolicyError::Foreign);
             }
-            let snapshot = configuration.snapshot()?;
+            let expected: Option<&SourceConfigurationSnapshot> = match &selection {
+                Selection::ConfiguredNumeric(_, expected) => {
+                    if !identity.same_source(expected.source_identity()) {
+                        return Err(SourcePolicyError::Foreign);
+                    }
+                    Some(*expected)
+                }
+                Selection::History | Selection::Numeric(_) | Selection::Round(_) => None,
+            };
+            let snapshot: Option<SourceConfigurationSnapshot> = configuration.snapshot()?;
+            if expected.is_some_and(|expected| {
+                snapshot
+                    .as_ref()
+                    .is_none_or(|current| !current.same_configuration(expected))
+            }) {
+                return Err(SourcePolicyError::ConfigurationChanged);
+            }
             let admitted: bool = match (selection, configuration.membership.as_ref()) {
                 (Selection::History, _) => true,
                 (Selection::Round(keys), Some(members)) => members.keys == *keys,
-                (Selection::Numeric(_), Some(_)) => false,
                 (Selection::Round(keys), None) => snapshot.as_ref().is_none_or(|value| {
                     keys.iter()
                         .flatten()
                         .all(|key| value.addresses.contains(*key))
                 }),
-                (Selection::Numeric(key), None) => snapshot
-                    .as_ref()
-                    .is_none_or(|value| value.addresses.contains(key)),
+                (Selection::Numeric(key) | Selection::ConfiguredNumeric(key, _), membership) => {
+                    membership.is_none()
+                        && snapshot
+                            .as_ref()
+                            .is_none_or(|value| value.addresses.contains(key))
+                }
             };
             if !admitted {
                 return Err(SourcePolicyError::Foreign);
@@ -2418,11 +2438,28 @@ impl SourceHandle {
         Ok(plan.publish(&mut state.endpoints))
     }
 
-    /// Create a managed session from the original checked one-peer configuration.
+    /// Create a managed session using the current definition, if installed.
+    /// For work selected at an exact revision, use [`Self::session_for_configuration`].
     /// # Errors
     /// Preserve endpoint/capacity/custody refusal before preparation or socket work.
     pub fn session(&self, config: SeriesConfig) -> Result<AcquisitionSession, SourcePolicyError> {
         let binding = self.bind(config.peer())?;
+        Ok(AcquisitionSession::new_managed(config, binding))
+    }
+
+    /// Bind one dormant managed session to the exact installed revision selected
+    /// by the caller. The binding check and endpoint reservation share one lock.
+    /// Preparation and subsequent effects still require current source policy.
+    /// # Errors
+    /// Refuse a foreign snapshot, an obsolete revision, an endpoint outside the
+    /// installed definition, exhausted endpoint capacity or unavailable custody.
+    /// Refusal does not reserve an endpoint or start entropy, socket or runtime work.
+    pub fn session_for_configuration(
+        &self,
+        expected: &SourceConfigurationSnapshot,
+        config: SeriesConfig,
+    ) -> Result<AcquisitionSession, SourcePolicyError> {
+        let binding: SourceBinding = self.bind_numeric(config.peer(), Some(expected))?;
         Ok(AcquisitionSession::new_managed(config, binding))
     }
 
@@ -2431,9 +2468,24 @@ impl SourceHandle {
     /// Refuse an invalid numeric endpoint, unavailable policy custody, unknown
     /// source or exhausted permanent endpoint capacity.
     pub(super) fn bind(&self, peer: SocketAddr) -> Result<SourceBinding, SourcePolicyError> {
-        let key = EndpointKey::new(peer)?;
-        let mut guard = self.cell.lock()?;
-        let context = SourceContext::capture(self, &guard, configuration::Selection::Numeric(key))?;
+        self.bind_numeric(peer, None)
+    }
+
+    /// Capture the selected context before publishing a permanent endpoint slot.
+    /// # Errors
+    /// Preserve selection, capacity and policy custody failures.
+    fn bind_numeric(
+        &self,
+        peer: SocketAddr,
+        expected: Option<&SourceConfigurationSnapshot>,
+    ) -> Result<SourceBinding, SourcePolicyError> {
+        let key: EndpointKey = EndpointKey::new(peer)?;
+        let selection: configuration::Selection<'_> = match expected {
+            Some(expected) => configuration::Selection::ConfiguredNumeric(key, expected),
+            None => configuration::Selection::Numeric(key),
+        };
+        let mut guard: PolicyGuard<'_> = self.cell.lock()?;
+        let context: SourceContext = SourceContext::capture(self, &guard, selection)?;
         let state = guard.state_mut()?;
         let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
         let endpoint = if let Some(index) = state

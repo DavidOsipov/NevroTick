@@ -194,19 +194,18 @@ fn payload_offset(offset: u32, length: usize) -> Option<usize> {
 fn owner_region(bytes: &[u8], offset: u32) -> Result<Range<usize>, ServiceSecurityError> {
     let start: usize =
         payload_offset(offset, bytes.len()).ok_or(ServiceSecurityError::InvalidOwnerOffset)?;
-    let sid: &[u8] = &bytes[start..];
-    let header: &[u8; SID_HEADER_BYTES] = sid
-        .first_chunk::<SID_HEADER_BYTES>()
-        .ok_or(ServiceSecurityError::InvalidOwnerSid)?;
+    let sid: &[u8] = sid_prefix(&bytes[start..]).ok_or(ServiceSecurityError::InvalidOwnerSid)?;
+    Ok(start..start + sid.len())
+}
+
+/// Borrow one structurally valid revision-one SID from the start of a slice.
+pub(super) fn sid_prefix(bytes: &[u8]) -> Option<&[u8]> {
+    let header: &[u8; SID_HEADER_BYTES] = bytes.first_chunk()?;
     let count: u8 = header[1];
     if header[0] != 1 || count > SID_MAX_SUBAUTHORITIES {
-        return Err(ServiceSecurityError::InvalidOwnerSid);
+        return None;
     }
-    let length: usize = SID_HEADER_BYTES + usize::from(count) * 4;
-    match start.checked_add(length) {
-        Some(end) if end <= bytes.len() => Ok(start..end),
-        _ => Err(ServiceSecurityError::InvalidOwnerSid),
-    }
+    bytes.get(..SID_HEADER_BYTES + usize::from(count) * 4)
 }
 
 /// Admit an aligned ACL envelope using the size declared in its fixed header.
