@@ -4,6 +4,7 @@
 The default checks configuration and tool admission only. --fixtures proves the
 configured guards on fixed fixtures; it does not qualify application code.
 --workspace checks adoption by real workspace members without executing builds.
+--preview-contract checks the selected UI preview admission source without Cargo.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ SPEC = importlib.util.spec_from_file_location(
 ENV = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ENV)
 ROOT = Path(__file__).resolve().parents[1]
+PREVIEW_MODEL = "crates/nevrotick-ui/src/model.rs"
 PURE_CLIPPY_FILES = (
     "crates/time-domain/clippy.toml",
     "crates/ntp-exchange/clippy.toml",
@@ -968,6 +970,60 @@ fn main() {
     evidence["scope"] = "fixed std-only controls; no application, dependency graph or Windows runtime qualification"
 
 
+def preview_contract(root: Path) -> dict:
+    """Report structural changes at the selected preview admission boundary."""
+    from check_ui_text_coverage import inert_source
+    from ui_source_io import read_regular
+
+    raw = read_regular(root / PREVIEW_MODEL, 32768)
+    text = raw.decode("utf-8")
+    clean = inert_source(text)
+    # The shared scanner understands ordinary strings and nested comments.
+    # Refuse forms it cannot reliably mask in this selected file.
+    unsupported = r'\b(?:br|cr|r)\#*"|\'(?:\\)?["{}]\''
+    if any(clean[hit.start()] == text[hit.start()] for hit in re.finditer(unsupported, text)):
+        raise ValueError("Unsupported literal syntax in selected preview source.")
+
+    findings = []
+
+    def report(rule: str, start: int, requirement: str) -> None:
+        findings.append({"rule": rule, "path": PREVIEW_MODEL,
+                         "line": clean.count("\n", 0, start) + 1,
+                         "guarantee": requirement, "basis": "selected source syntax"})
+
+    for attribute in re.finditer(r'\bgarde\s*\([^\]]*\ballow_unvalidated\b[^\]]*\)', clean):
+        report("preview-no-allow-unvalidated", attribute.start(),
+               "Use explicit field validation or an independently justified field exemption.")
+
+    declarations = list(re.finditer(r'\bstruct\s+PreviewInput\b', clean))
+    if len(declarations) != 1:
+        raise ValueError("Expected one selected PreviewInput declaration.")
+    start = declarations[0].start()
+    prefix = clean[:start].rstrip()
+    derive = re.search(r'#\[\s*derive\s*\(\s*Validate\s*\)\s*\]$', prefix)
+    if (derive is None or prefix.count("{") != prefix.count("}")
+            or prefix[:derive.start()].rstrip().endswith("]")
+            or not re.match(r"struct\s+PreviewInput\s*<\s*'a\s*>\s*\{", clean[start:])):
+        report("preview-input-admission", start,
+               "Keep PreviewInput private at file scope with a direct Validate derive.")
+
+    body = re.match(r"[^{}]*\{([^{}]*)\}", clean[start:])
+    if body is None:
+        raise ValueError("Unsupported PreviewInput field declaration.")
+    field_rules = "".join(
+        rf"#\s*\[\s*garde\s*\(\s*custom\s*\(\s*{field}_rule\s*\)\s*\)\s*\]"
+        rf"\s*{field}\s*:\s*&\s*'a\s+str\s*,\s*"
+        for field in ("label", "host", "port")
+    )
+    if re.fullmatch(r"\s*" + field_rules, body[1]) is None:
+        report("preview-input-field-rules", start,
+               "Keep a private borrowed field with its custom rule for label, host, and port.")
+    if read_regular(root / PREVIEW_MODEL, 32768) != raw:
+        raise ValueError("Selected preview source changed during inspection.")
+    return {"scope": "PreviewInput source policy", "sha256": hashlib.sha256(raw).hexdigest(),
+            "findings": findings, "status": "findings" if findings else "passed"}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", action="store_true", help="exercise strict policy in isolated temporary workspaces")
@@ -975,7 +1031,18 @@ def main(argv=None) -> int:
     parser.add_argument("--pure-api-fixtures", action="store_true",
                         help="exercise only pure-role API restrictions and adapter controls")
     parser.add_argument("--json", type=Path, help="write exact command results to an external evidence path")
+    parser.add_argument("--preview-contract", action="store_true",
+                        help="check the selected PreviewInput admission source policy only")
     args = parser.parse_args(argv)
+    if args.preview_contract:
+        if args.fixtures or args.workspace or args.pure_api_fixtures or args.json:
+            parser.error("--preview-contract selects a separate source-only JSON report")
+        try:
+            report = preview_contract(ROOT)
+        except (OSError, ValueError) as error:
+            report = {"scope": "PreviewInput source policy", "status": "incomplete", "error": str(error)}
+        print(json.dumps(report, indent=2))
+        return int(report["status"] != "passed")
     report = {"scope": "NevroTick strict development policy", "status": "incomplete"}
     receipt = None
     try:

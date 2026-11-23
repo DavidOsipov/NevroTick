@@ -1946,3 +1946,36 @@ independent PE/PDB readback SHA-256
 `1f39e02a3e8308a6b2c6f55dece3df872abeeed0c8f0f4312437f16663eba212`.
 Native Engine and service qualification and each existing metric gate retain
 their separate evidence.
+
+### Preview admission source checks — 23 November 2026
+
+The strict checker has a dedicated source-only lane for the private
+`PreviewInput` declaration in the UI model. It requires the direct
+Garde derive and the three current private field-rule associations, and
+reports the prohibited `allow_unvalidated` option. The selected rules
+return an occurrence location and a structural finding. Changes to the
+reviewed declaration require a corresponding checker and control review.
+
+The ordinary Rust workflow executes the lane and the focused Python
+controls, alongside both existing strict-policy Python suites. Local controls
+use actual model-source copies and the real CLI dispatch. They distinguish
+healthy syntax and comment/string decoys from removed or weakened rules,
+conditional derives, widened visibility, missing owners and unsupported
+syntax. The workflow shell control checks exact routing and propagates an
+injected lint failure. Hosted execution remains open.
+
+On HEAD `8066540e0c2649178b096fbaa6fbb5ba47da00f9`, tree
+`c34d5877c1f94b42cb20460b563085fc778631ba`, the checker overlay
+passed the 62 strict and preview controls, seven workflow routing controls,
+189 shared-verifier controls and the skill-pack check. The selected source
+SHA-256 is `e433cba003ba7dff0c20e3259f5815ea6962182f85b999ef09739622aa63a49f`.
+Independent review caught a literal scanner false positive and a workflow
+selection that could succeed with a missing suite. An ordinary string ending
+in `r` now passes, and CI names each suite directly.
+
+This is the declaration portion of CR-03. CR-01, constructor call and order,
+the fixture and actual Slint commit chains, and occurrence-specific closure
+for advisory findings retain their separate design and acceptance work.
+The selected rules do not infer effective cfg, Garde expansion, effect ordering or runtime
+behavior from source spelling. The Stage A Engine receipt retains its
+original source and tooling identity.

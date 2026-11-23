@@ -446,6 +446,9 @@ garde-derived type. Prohibit `#[garde(allow_unvalidated)]`. A `#[garde(skip)]`
 needs an adjacent reason identifying actual invariant owner and enforcement,
 plus independent review; it must not be an agent's shortcut to make derive compile.
 Metadata-only annotations establish no validating rule even if derive accepts them.
+The selected UI `PreviewInput` source gate checks the declaration and existing
+field-rule associations. A changed association requires review of its constructor
+and consumers with source-policy controls for the revised declaration.
 Review actual rule execution and challenge it with invalid input.
 Distinguish optional presence from validation of a supplied value. A declared
 range does not prove correct units, finite floating values or related fields.

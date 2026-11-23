@@ -329,6 +329,14 @@ profiles and nextest. The unittest command also exercises actual cargo-deny,
 audit, nextest and mutation enumeration with local fixtures in the cleared-env,
 network-isolated sandbox. Neither command builds application code.
 
+`python3 -B scripts/check-strict.py --preview-contract` checks the selected
+private `PreviewInput` declaration, its direct Garde derive and its
+field-to-rule associations. It reports Garde `allow_unvalidated` in this
+model and returns nonzero for findings or incomplete selection. The active
+Rust workflow runs the JSON report, its focused controls and the existing
+strict-policy Python suites before product commands. Constructor invocation,
+rule behavior and the fixture and Slint commit paths need separate evidence.
+
 **Pure-role API enforcement, 31 October 2026:** the three package-local Clippy
 policies participate in strict admission and product source snapshots. Clippy
 uses the closest configuration rather than merging parent settings; the checker

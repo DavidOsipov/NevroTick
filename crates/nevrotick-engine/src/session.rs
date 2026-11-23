@@ -470,18 +470,18 @@ fn completion_state(
 ) -> SessionState {
     match end {
         SeriesEnd::Completed | SeriesEnd::Stopped | SeriesEnd::SeriesDeadline => {
-            if primary_failed
-                || stop_cleanup_failed
-                || invalidate_cleanup_failed
-                || matches!(
-                    coherence,
-                    SeriesCoherence::ObservedInconsistent
-                        | SeriesCoherence::Unavailable(CoherenceUnavailable::Capture(_))
-                )
-            {
-                SessionState::Retired
-            } else {
-                SessionState::Idle
+            if primary_failed || stop_cleanup_failed || invalidate_cleanup_failed {
+                return SessionState::Retired;
+            }
+            match coherence {
+                SeriesCoherence::ObservedCompatible => SessionState::Idle,
+                SeriesCoherence::ObservedInconsistent => SessionState::Retired,
+                SeriesCoherence::Unavailable(reason) => match reason {
+                    CoherenceUnavailable::NoProfile | CoherenceUnavailable::NoFacts => {
+                        SessionState::Idle
+                    }
+                    CoherenceUnavailable::Capture(_) => SessionState::Retired,
+                },
             }
         }
         SeriesEnd::Stale | SeriesEnd::Failure => SessionState::Retired,

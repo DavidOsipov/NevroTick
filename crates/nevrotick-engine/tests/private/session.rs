@@ -18,7 +18,7 @@ fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
 }
 
 /// Independent reuse expectations; synthetic causes do not claim native observations.
-const COHERENCE_REUSE_CASES: [(SeriesCoherence, bool); 13] = [
+const COHERENCE_REUSE_CASES: [(SeriesCoherence, bool); 14] = [
     (SeriesCoherence::ObservedCompatible, true),
     (SeriesCoherence::ObservedInconsistent, false),
     (
@@ -55,6 +55,12 @@ const COHERENCE_REUSE_CASES: [(SeriesCoherence, bool); 13] = [
     ),
     (
         SeriesCoherence::Unavailable(CoherenceUnavailable::Capture(MeasurementRefusal::DateScope)),
+        false,
+    ),
+    (
+        SeriesCoherence::Unavailable(CoherenceUnavailable::Capture(
+            MeasurementRefusal::SourceScaleConflict,
+        )),
         false,
     ),
     (
@@ -953,7 +959,7 @@ fn public_session_receiving_checkpoint_races_keep_reuse_and_retirement() -> Chec
     Ok(())
 }
 
-/// Enumerate all labels, eight cause masks and thirteen independent coherence cases.
+/// Enumerate all labels, eight cause masks and fourteen independent coherence cases.
 /// These are pure outcome-classifier cases, not injected or observed native errors.
 /// # Panics
 /// Only clean normal labels without a coherence veto may return Idle.
@@ -1062,7 +1068,7 @@ fn mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled() ->
 /// Require the exact bounded Debug projection for every classifier control.
 #[test]
 fn series_coherence_debug_contains_only_fixed_scalar_causes() {
-    for ((coherence, _permits_reuse), expected) in COHERENCE_REUSE_CASES.into_iter().zip([
+    let expected_debug: [&str; COHERENCE_REUSE_CASES.len()] = [
         "ObservedCompatible",
         "ObservedInconsistent",
         "Unavailable(NoProfile)",
@@ -1072,11 +1078,15 @@ fn series_coherence_debug_contains_only_fixed_scalar_causes() {
         "Unavailable(Capture(CaptureOrder))",
         "Unavailable(Capture(MappingDiscontinuity))",
         "Unavailable(Capture(DateScope))",
+        "Unavailable(Capture(SourceScaleConflict))",
         "Unavailable(Capture(EraNoCandidate))",
         "Unavailable(Capture(EraAmbiguous))",
         "Unavailable(Capture(Arithmetic))",
         "Unavailable(Capture(Protocol))",
-    ]) {
+    ];
+    for ((coherence, _permits_reuse), expected) in
+        COHERENCE_REUSE_CASES.into_iter().zip(expected_debug)
+    {
         let debug_fixed = format!("{coherence:?}") == expected;
         assert!(
             debug_fixed,

@@ -58,6 +58,8 @@ jobs:
       - name: Challenge product admission and result accounting
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v
+          python3 -X dev -Werror -B -m unittest -v scripts.tests.test_strict_policy scripts.tests.test_strict_analysis_config scripts.tests.test_preview_contract
+          python3 -X dev -Werror -B scripts/check-strict.py --preview-contract
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_coverage.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_codegen.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_native.py -v

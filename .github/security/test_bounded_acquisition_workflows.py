@@ -138,19 +138,33 @@ class WorkflowAcquisitionControls(unittest.TestCase):
             probe = base / "python3"
             probe.write_text("#!/usr/bin/python3\nimport json,os,sys\n"
                              "with open(os.environ['PROBE_LOG'],'a') as output:\n"
-                             " json.dump(sys.argv[1:],output);output.write('\\n')\n")
+                             " json.dump(sys.argv[1:],output);output.write('\\n')\n"
+                             "if '--preview-contract' in sys.argv and 'REJECT_PREVIEW' in os.environ:\n"
+                             " sys.exit(29)\n")
             probe.chmod(0o700)
-            run = subprocess.run(["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
-                                  acquisition_step(".github/workflows/rust.yml",
-                                                   "Challenge product admission and result accounting")],
-                                 cwd=base, env={"PATH": str(base) + ":/usr/bin:/bin",
-                                                "PROBE_LOG": str(base / "calls.jsonl")},
+            argv = ["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
+                    acquisition_step(".github/workflows/rust.yml", "Challenge product admission and result accounting")]
+            environment = {"PATH": str(base) + ":/usr/bin:/bin",
+                           "PROBE_LOG": str(base / "calls.jsonl")}
+            run = subprocess.run(argv, cwd=base, env=environment,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
             self.assertEqual(run.returncode, 0, run.stderr.decode())
             calls = [json.loads(line) for line in (base / "calls.jsonl").read_text().splitlines()]
-            expected = ["-X", "dev", "-Werror", "-B", "-m", "unittest", "discover", "-s", "scripts/tests",
-                        "-p", "test_engine_ke_dependency_profile.py", "-v"]
-            self.assertEqual(calls.count(expected), 1)
+            strict = ["-X", "dev", "-Werror", "-B", "-m", "unittest", "-v",
+                      "scripts.tests.test_strict_policy", "scripts.tests.test_strict_analysis_config",
+                      "scripts.tests.test_preview_contract"]
+            ke = ["-X", "dev", "-Werror", "-B", "-m", "unittest", "discover",
+                  "-s", "scripts/tests", "-p", "test_engine_ke_dependency_profile.py", "-v"]
+            self.assertEqual(calls.count(strict), 1)
+            self.assertEqual(calls.count(ke), 1)
+            preview = ["-X", "dev", "-Werror", "-B", "scripts/check-strict.py", "--preview-contract"]
+            self.assertEqual(calls.count(preview), 1)
+            (base / "calls.jsonl").unlink()
+            refused = subprocess.run(argv, cwd=base, env={**environment, "REJECT_PREVIEW": "1"},
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(refused.returncode, 29, refused.stderr.decode())
+            failed_calls = [json.loads(line) for line in (base / "calls.jsonl").read_text().splitlines()]
+            self.assertEqual(failed_calls, calls[:calls.index(preview) + 1])
         workflow = (ROOT / ".github/workflows/rust.yml").read_text()
         self.assertIn("    name: UI-M0 portable model\n    runs-on: ubuntu-24.04\n    timeout-minutes: 35\n"
                       "    permissions:\n      contents: read\n", workflow)

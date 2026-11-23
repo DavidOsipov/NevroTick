@@ -45,6 +45,9 @@ their behavioral checks and applicable mathematical proof obligations.
 
 For garde-backed types, verify omitted-rule rejection on the admitted derive
 version; reject `allow_unvalidated` and independently review `skip` ownership.
+For the selected UI `PreviewInput` declaration, run the source-only
+`scripts/check-strict.py --preview-contract` lane and its focused controls.
+Use actual constructor controls for invocation and behavior.
 Check actual rule/`dive` coverage separately: metadata-only annotations do not
 establish validation, even if the derive compiles.
 Compile real external consumer bypasses for private construction/mutation alongside

@@ -32220,3 +32220,48 @@ the exact controller, actual process outcomes and trust restoration.
 The raw process observations establish no continuity or calibrated bound.
 The independent reference, production history, physical power and
 affected 90%/95% gates remain open.
+
+### Require an explicit session coherence decision — 23 November 2026
+
+S2.1, CHECK-25 and the session lifecycle subset of CHECK-27. The session
+owner now matches both `SeriesCoherence` and `CoherenceUnavailable`
+exhaustively before allowing reuse. The five terminal labels and three
+independent failure vetoes retain their original decisions. Every
+`Capture` payload retires the session. The existing classifier table adds
+the omitted `SourceScaleConflict` payload and covers 560 combinations,
+including nine that permit reuse. Its fixed Debug expectations now have
+the same array length as the classifier table.
+
+Main and local HEAD were `8066540e0c2649178b096fbaa6fbb5ba47da00f9`,
+tree `c34d5877c1f94b42cb20460b563085fc778631ba`. The tested working-tree
+overlay changes the classifier and private test file only. Their SHA-256
+values are `a375b61e26874db46f8af2dd9f4b9878338f2ab67cecdb0b18c598645e991658`
+and `53cecc19493b61a20383483c11a1e559ece27439098c35a602823333189f6c95`.
+The 651-input product map hashes to
+`e3b3b7522193ff8a653244c707446542ffd21388042846ab3affae37d4bc2d41`.
+The receipt binds the frozen Cargo graph, reviewed vendor bytes and Rust
+1.100.0 tools. The test driver used the existing sealed Cargo helper with
+a private tmpfs under the original resource floors.
+
+Workspace format, GNU Engine production-library checking and Engine
+all-targets Clippy on GNU and MSVC target passed in the default and explicit
+KE profiles where applicable. Each GNU profile passed 20 private session
+tests and all five tests in the public session binary. The pre-change
+classifier compiled with either added enum variant in the default profile.
+In both profiles each isolated addition failed with the single intended
+`E0004` at its respective production match. Explicitly choosing retirement
+for each probe restored compilation. The real candidate contains neither
+probe. The first test attempt exposed a missing Debug expectation for
+the new table row. The corrected candidate passed that test as well.
+Raw receipts, including setup and format stops, are in
+`/tmp/nevrotick-coherence-audit.d8gdZcGz/`. The final
+`verification-final.json` SHA-256 is
+`567a1b1b5ce3586618486badfe67c43d92011a70b0f29b1c9e87f570518f58b1`.
+
+Independent review covered the original returned report, timer cleanup
+outcomes, execution-guard Drop, and next preparation. The five receiving
+race scenarios exercise actual reuse or retirement through that path.
+CHECK-19's candidate-bound session coverage and mutation, Windows runtime
+and release evidence retain their existing exits. H10 remains with the GUI
+notification owner. Return to the matched Windows peer and paired reader
+in [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
