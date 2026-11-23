@@ -132,6 +132,37 @@ class WorkflowAcquisitionControls(unittest.TestCase):
                 self.assertEqual(run.returncode, 29, run.stderr.decode())
                 self.assertEqual(len(calls), 1)
 
+    def test_strict_fixtures_use_pinned_runner_paths_and_propagate_failure(self):
+        title = "Exercise strict compiler and runner rejection controls"
+        workflow = (ROOT / ".github/workflows/rust.yml").read_text()
+        self.assertLess(workflow.index("Acquire pinned test and dependency tools"), workflow.index(title))
+        self.assertLess(workflow.index(title), workflow.index("Acquire current advisory"))
+        with tempfile.TemporaryDirectory(prefix="strict-fixtures-shell-") as name:
+            base = Path(name)
+            stub = base / "env"
+            stub.write_text("#!/usr/bin/python3\nimport json, os, sys\n"
+                            "print(json.dumps(sys.argv[1:]))\n"
+                            "sys.exit(int(os.environ['CONTROL_STATUS']))\n")
+            stub.chmod(0o700)
+            argv = ["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
+                    acquisition_step(".github/workflows/rust.yml", title)]
+            for status in (0, 29):
+                with self.subTest(status=status):
+                    run = subprocess.run(
+                        argv, cwd=base, env={"PATH": str(base) + ":/usr/bin:/bin",
+                                             "RUNNER_TEMP": str(base), "RUSTUP_HOME": str(base / "rustup"),
+                                             "CONTROL_STATUS": str(status), "RUSTUP_TOOLCHAIN": "1.100.0"},
+                        capture_output=True, timeout=10,
+                    )
+                    self.assertEqual(run.returncode, status, run.stderr.decode())
+                    self.assertEqual(json.loads(run.stdout), [
+                        "-u", "RUSTUP_TOOLCHAIN", "PATH=/usr/bin:/bin", "python3",
+                        "-X", "dev", "-Werror", "-B", "scripts/check-strict.py", "--fixtures",
+                        "--fixture-toolchain-dir", str(base / "rustup/toolchains/1.100.0-x86_64-unknown-linux-gnu"),
+                        "--fixture-nextest", str(base / "nextest-tool/cargo-nextest"),
+                        "--json", str(base / "strict-fixtures.json"),
+                    ])
+
     def test_profile_admission_controls_run_without_expanding_hosted_authority(self):
         with tempfile.TemporaryDirectory(prefix="profile-admission-shell-") as name:
             base = Path(name)

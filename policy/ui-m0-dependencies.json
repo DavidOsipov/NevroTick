@@ -1,9 +1,9 @@
 {
   "schema_version": 3,
   "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows. The 7 November shared windows-platform owner adds only a local Garde-backed portable service lifecycle; existing registry packages, external target/host features, patches, grants and all native holds remain unchanged. The 9 November subclass lifetime repair adds only the existing windows dependency owner-thread feature, process-owned callback registration and a std-only inert facade control; it grants no Linux AccessKit backend, native execution or broader accessibility qualification. EP1 adds an explicit default-off Engine KE-association prototype; source/graph admission does not establish native TLS/provider or production acquisition qualification. The Windows observe CLI links the dependency-free native platform resume adapter. The Engine edge is Windows-only. Native callback delivery and timing qualification remain open.",
-  "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+  "lockfile_sha256": "d0cbe60cb93954940854e14cbf0b27f6d4edececcb06b79dd09377fbd5378515",
   "manifests_sha256": {
-    "Cargo.toml": "ad2c79c05563db00c49161671353999f8399ed67813285cd2acaa6a14c527828",
+    "Cargo.toml": "deaf459f11b77d774bb6328598344db92b9e67a343c41964a42ce8fdbf543a62",
     "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
@@ -306,18 +306,6 @@
       "upstream_revision": "e069ce61e00fee423ac1dbe6a897f228f1774716"
     },
     {
-      "name": "chrono",
-      "version": "0.4.45",
-      "checksum": "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327",
-      "license": "MIT OR Apache-2.0",
-      "files_sha256": "d659fc81d161bbcd05799a31188c87112d5960c1a11a90509a2a2ec579fec67a",
-      "selected_license": "MIT",
-      "build_script": false,
-      "proc_macro": false,
-      "links": null,
-      "upstream_revision": "170338250e836976a211e64728ec956e45e78a39"
-    },
-    {
       "name": "cipher",
       "version": "0.5.2",
       "checksum": "e8cf2a2c93cd704877c0858356ed03480ff301ee950b43f1cbe4573b088bfa6c",
@@ -618,6 +606,18 @@
       "links": null
     },
     {
+      "name": "deranged",
+      "version": "0.5.9",
+      "checksum": "9e9de72ce2ad1f90dc62fa25f0f430ef85eb4b0d8fa0be4f30373bc40a21d28e",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "aeb03a4be17fe287d5fdd509e9ae134d4b9999fc",
+      "files_sha256": "b34c50fce735128f95e9f815a1441d13744a5c91edd97f92a73e44e682559547",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
+    },
+    {
       "name": "derive_more-impl",
       "version": "2.1.1",
       "checksum": "799a97264921d8623a957f6c3b9011f3b5492f557bbb7a5a19b7fa6d06ba8dcb",
@@ -847,15 +847,15 @@
     },
     {
       "name": "form_urlencoded",
-      "version": "1.2.2",
-      "checksum": "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf",
+      "version": "1.2.3",
+      "checksum": "afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "ea8a3db13561a0900a4e59f0a70156d32ac017ceccd8e22b8a636ef6fe7c71f1",
+      "files_sha256": "da6a46269af792158449fd82487906df51dab4532655d0f5bb3ead6d002ed029",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "upstream_revision": "91377f48bf35011d042aa5abef9e7f2a0a625aaa"
+      "upstream_revision": "ad1c66cbff6e318393d872641e30589ff9687b9c"
     },
     {
       "name": "garde",
@@ -1062,18 +1062,6 @@
       "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734"
     },
     {
-      "name": "i-slint-core",
-      "version": "1.18.1",
-      "checksum": "ed2ea15059d70bc31b1a8b1eb4c34f2c5df04cb7e53f36179b43c0261231d646",
-      "license": "GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0",
-      "files_sha256": "08e4188eecfd2720e5482440e0a22c16864016c15aa391cdd533edf398616abd",
-      "selected_license": "GPL-3.0-only",
-      "build_script": false,
-      "proc_macro": false,
-      "links": null,
-      "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734"
-    },
-    {
       "name": "i-slint-renderer-software",
       "version": "1.18.1",
       "checksum": "2f8c641e138a2cc96537cac4481f5c7c8bb8dcc66d09acaed269329c8738628a",
@@ -1084,18 +1072,6 @@
       "proc_macro": false,
       "links": null,
       "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734"
-    },
-    {
-      "name": "iana-time-zone",
-      "version": "0.1.65",
-      "checksum": "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470",
-      "license": "MIT OR Apache-2.0",
-      "files_sha256": "31c824466f0cf0fa474c0d1d2ed827d6e83ad7d02140acabefc56564eaac6505",
-      "selected_license": "MIT",
-      "build_script": false,
-      "proc_macro": false,
-      "links": null,
-      "upstream_revision": "3726968181ae67d95c8de2f750a95b9c703ae4c8"
     },
     {
       "name": "icu_collections",
@@ -1638,6 +1614,18 @@
       "upstream_revision": null
     },
     {
+      "name": "num-conv",
+      "version": "0.2.2",
+      "checksum": "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "b022fe87ac3ad5b0d7606ea7465549eaa92efe97",
+      "files_sha256": "0700dd3586a233589193c9d46d8b3947c159626efd34be0fb1fdbc9710431126",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
+    },
+    {
       "name": "num-traits",
       "version": "0.2.19",
       "checksum": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
@@ -1672,6 +1660,18 @@
       "proc_macro": true,
       "links": null,
       "upstream_revision": "f11d81c6cb644489f8a0fc24f9eea9a53d66f92e"
+    },
+    {
+      "name": "num_threads",
+      "version": "0.1.8",
+      "checksum": "cabcc654086861f9e1bc5115258de62ef92c79b20f4615a1b0cc57c4e82027d4",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "c19f00d55bebac0247f09755dc48f33914623048",
+      "files_sha256": "5d21710a49312f6af2822d0a244201a7d32644c6188d1c00e85c20a62e994398",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
     },
     {
       "name": "once_cell",
@@ -1876,6 +1876,18 @@
       "proc_macro": false,
       "links": null,
       "upstream_revision": "a14f2dad852be26bad277ae704abf27a15cbfed1"
+    },
+    {
+      "name": "powerfmt",
+      "version": "0.2.1",
+      "checksum": "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "3dd45162a7e64d6b354675e4282d0550dce8bfc8",
+      "files_sha256": "ca41d3d0e0df6c807ace6df74c4ded39b41e3db67a810047b675461241352cc1",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
     },
     {
       "name": "proc-macro-crate",
@@ -2622,6 +2634,30 @@
       "upstream_revision": "b1827ee06f81a7d7f954e676771e19a97f9f8e3b"
     },
     {
+      "name": "time-core",
+      "version": "0.1.9",
+      "checksum": "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "5d8737c39b9170c36c99cfc1f9f49cf0c059c63a",
+      "files_sha256": "96760482e5c7a814c1a17cf8ae84d09738671f68f99798bbe2be9f53e6067336",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
+    },
+    {
+      "name": "time",
+      "version": "0.3.55",
+      "checksum": "cdb87b95ec50ddfa440816d227a17b2ccbdda963a316a727fda0fc4334f7d134",
+      "license": "MIT OR Apache-2.0",
+      "upstream_revision": "857d9c404c5b6f6cb64d1bfa604c695be3369e12",
+      "files_sha256": "90f0ddb71fba79e8e3270fac2a0fa56a4c9dec9bfe5fd25fab3a3e77e8a92b03",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "selected_license": "MIT"
+    },
+    {
       "name": "tiny-skia-path",
       "version": "0.12.0",
       "checksum": "edca365c3faccca67d06593c5980fa6c57687de727a03131735bb85f01fdeeb9",
@@ -2911,15 +2947,15 @@
     },
     {
       "name": "url",
-      "version": "2.5.8",
-      "checksum": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+      "version": "2.5.9",
+      "checksum": "f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "a34b23bd262aca2406055ed7fef6253a9c7b657e412b7ab2d55c33482de27c67",
+      "files_sha256": "8350fb3af92a665fa95468afaba01b52157dce3add2f6ce921a95cb1ad093cbf",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "upstream_revision": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce"
+      "upstream_revision": "ad1c66cbff6e318393d872641e30589ff9687b9c"
     },
     {
       "name": "usvg",
@@ -4408,14 +4444,6 @@
       "role": "metadata-only"
     },
     {
-      "name": "iana-time-zone-haiku",
-      "version": "0.1.2",
-      "checksum": "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f",
-      "license": "MIT OR Apache-2.0",
-      "files_sha256": "56adc73aaeefa6bbf4721f8e33820b74bbb454f394832b16bd02286b95dc76ae",
-      "role": "metadata-only"
-    },
-    {
       "name": "icu_plurals",
       "version": "2.4.0",
       "checksum": "2ef046647b445acf95ce0f8083fa292467d3df649959fa9a20f3f8abfd957c5d",
@@ -5320,6 +5348,14 @@
       "role": "metadata-only"
     },
     {
+      "name": "time-macros",
+      "version": "0.2.32",
+      "checksum": "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85",
+      "license": "MIT OR Apache-2.0",
+      "files_sha256": "cb8acff9016e086c097125bc8fec8a668d4691863525b8ff97bdb4f89d2e3a47",
+      "role": "metadata-only"
+    },
+    {
       "name": "tiny-skia-path",
       "version": "0.11.4",
       "checksum": "9c9e7fc0c2e86a30b117d0462aa261b72b7a99b7ebd7deb3a14ceda95c5bdc93",
@@ -5941,6 +5977,25 @@
       }
     },
     {
+      "name": "i-slint-core",
+      "version": "1.18.1",
+      "path": "third-party/i-slint-core",
+      "license": "GPL-3.0-only",
+      "selected_license": "GPL-3.0-only",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "upstream_checksum": "ed2ea15059d70bc31b1a8b1eb4c34f2c5df04cb7e53f36179b43c0261231d646",
+      "upstream_files_sha256": "08e4188eecfd2720e5482440e0a22c16864016c15aa391cdd533edf398616abd",
+      "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734",
+      "files_sha256": "4fa68c2e786efe51a8b8d0f05b76d0d7be291542ba3246fddeab4d88d0692f8e",
+      "modified_files_sha256": {
+        "Cargo.toml": "6ff63cb3d67f7ab1cddac7b89d4fb04c67ee79036f55f172464cafb9c6961cf9",
+        "NEVROTICK-PATCH.md": "7aad7ef5f48b08b69ef4f477d737664482edf9eabb3219377898d8a8adba86c1",
+        "date_time.rs": "1099e71d220fa94f2ce06d52ab51feb365b8ac412088b7c91c87602d592d3552"
+      }
+    },
+    {
       "build_script": false,
       "files_sha256": "b94e7378291655f8544a7ddc41ab9ac4f316fdd0a68f6936fdea5e846b1bec31",
       "license": "MIT",
@@ -6280,22 +6335,6 @@
             []
           ]
         },
-        "chrono@0.4.45": {
-          "target": [
-            [
-              "alloc",
-              "clock",
-              "iana-time-zone",
-              "js-sys",
-              "now",
-              "std",
-              "wasm-bindgen",
-              "wasmbind",
-              "winapi",
-              "windows-link"
-            ]
-          ]
-        },
         "clru@0.6.3": {
           "target": [
             []
@@ -6357,6 +6396,13 @@
               "alloc",
               "default",
               "std"
+            ]
+          ]
+        },
+        "deranged@0.5.9": {
+          "target": [
+            [
+              "default"
             ]
           ]
         },
@@ -6511,7 +6557,7 @@
             ]
           ]
         },
-        "form_urlencoded@1.2.2": {
+        "form_urlencoded@1.2.3": {
           "host": [
             [
               "alloc",
@@ -6669,13 +6715,6 @@
               "path",
               "std",
               "systemfonts"
-            ]
-          ]
-        },
-        "iana-time-zone@0.1.65": {
-          "target": [
-            [
-              "fallback"
             ]
           ]
         },
@@ -7086,6 +7125,11 @@
             []
           ]
         },
+        "num-conv@0.2.2": {
+          "target": [
+            []
+          ]
+        },
         "num-traits@0.2.19": {
           "host": [
             [
@@ -7115,6 +7159,11 @@
               "proc-macro-crate",
               "std"
             ]
+          ]
+        },
+        "num_threads@0.1.8": {
+          "target": [
+            []
           ]
         },
         "once_cell@1.21.4": {
@@ -7229,6 +7278,11 @@
               "writeable",
               "zerovec"
             ]
+          ]
+        },
+        "powerfmt@0.2.1": {
+          "target": [
+            []
           ]
         },
         "proc-macro-crate@3.5.0": {
@@ -7650,6 +7704,25 @@
             []
           ]
         },
+        "time-core@0.1.9": {
+          "target": [
+            [
+              "large-dates"
+            ]
+          ]
+        },
+        "time@0.3.55": {
+          "target": [
+            [
+              "alloc",
+              "formatting",
+              "large-dates",
+              "local-offset",
+              "parsing",
+              "std"
+            ]
+          ]
+        },
         "tiny-skia-path@0.12.0": {
           "target": [
             [
@@ -7815,7 +7888,7 @@
             ]
           ]
         },
-        "url@2.5.8": {
+        "url@2.5.9": {
           "host": [
             [
               "default",
@@ -8064,12 +8137,12 @@
             []
           ]
         },
-        "windows-platform@0.0.0": {
+        "windows-platform-native@0.0.0": {
           "target": [
             []
           ]
         },
-        "windows-platform-native@0.0.0": {
+        "windows-platform@0.0.0": {
           "target": [
             []
           ]
@@ -8158,6 +8231,9 @@
         ],
         "async-trait@0.1.92": [],
         "atomic-waker@1.1.2": [],
+        "atspi@0.29.0": [
+          "proxies"
+        ],
         "atspi-common@0.13.0": [
           "default",
           "wrappers",
@@ -8166,9 +8242,6 @@
         "atspi-proxies@0.13.0": [
           "default",
           "wrappers"
-        ],
-        "atspi@0.29.0": [
-          "proxies"
         ],
         "autocfg@1.5.1": [],
         "base64@0.23.1": [
@@ -8215,9 +8288,9 @@
           "default",
           "std"
         ],
-        "calloop-wayland-source@0.3.0": [],
         "calloop@0.13.0": [],
         "calloop@0.14.5": [],
+        "calloop-wayland-source@0.3.0": [],
         "castaway@0.2.4": [
           "alloc"
         ],
@@ -8227,18 +8300,6 @@
         "cexpr@0.6.0": [],
         "cfg-if@1.0.5": [],
         "cfg_aliases@0.2.2": [],
-        "chrono@0.4.45": [
-          "alloc",
-          "clock",
-          "iana-time-zone",
-          "js-sys",
-          "now",
-          "std",
-          "wasm-bindgen",
-          "wasmbind",
-          "winapi",
-          "windows-link"
-        ],
         "clang-sys@1.9.1": [
           "clang_10_0",
           "clang_11_0",
@@ -8264,8 +8325,8 @@
           "default",
           "std"
         ],
-        "const-field-offset-macro@0.2.1": [],
         "const-field-offset@0.2.1": [],
+        "const-field-offset-macro@0.2.1": [],
         "convert_case@0.10.0": [],
         "countme@3.0.1": [],
         "crc32fast@1.5.4": [
@@ -8289,18 +8350,8 @@
           "default",
           "std"
         ],
-        "derive_more-impl@2.1.1": [
-          "add",
-          "add_assign",
-          "default",
-          "deref",
-          "deref_mut",
-          "display",
-          "error",
-          "from",
-          "into",
-          "mul",
-          "not"
+        "deranged@0.5.9": [
+          "default"
         ],
         "derive_more@2.1.1": [
           "add",
@@ -8315,6 +8366,19 @@
           "not",
           "std"
         ],
+        "derive_more-impl@2.1.1": [
+          "add",
+          "add_assign",
+          "default",
+          "deref",
+          "deref_mut",
+          "display",
+          "error",
+          "from",
+          "into",
+          "mul",
+          "not"
+        ],
         "displaydoc@0.2.7": [],
         "dlib@0.5.3": [],
         "document-features@0.2.12": [
@@ -8328,6 +8392,7 @@
           "default",
           "std"
         ],
+        "drm@0.14.1": [],
         "drm-ffi@0.9.1": [],
         "drm-fourcc@2.2.0": [
           "default",
@@ -8336,7 +8401,6 @@
         "drm-sys@0.8.1": [
           "default"
         ],
-        "drm@0.14.1": [],
         "dtor@0.8.1": [
           "std"
         ],
@@ -8361,13 +8425,13 @@
           "libm",
           "std"
         ],
-        "event-listener-strategy@0.5.4": [
-          "default",
-          "std"
-        ],
         "event-listener@5.4.2": [
           "default",
           "parking",
+          "std"
+        ],
+        "event-listener-strategy@0.5.4": [
+          "default",
           "std"
         ],
         "fastrand@2.5.0": [
@@ -8403,8 +8467,16 @@
           "std",
           "system"
         ],
-        "form_urlencoded@1.2.2": [
+        "form_urlencoded@1.2.3": [
           "alloc",
+          "std"
+        ],
+        "futures@0.3.34": [
+          "alloc",
+          "async-await",
+          "default",
+          "executor",
+          "futures-executor",
           "std"
         ],
         "futures-channel@0.3.34": [
@@ -8459,14 +8531,6 @@
           "slab",
           "std"
         ],
-        "futures@0.3.34": [
-          "alloc",
-          "async-await",
-          "default",
-          "executor",
-          "futures-executor",
-          "std"
-        ],
         "garde@0.23.0": [
           "derive"
         ],
@@ -8485,13 +8549,6 @@
         "gl_generator@0.14.0": [],
         "glob@0.3.4": [],
         "glow@0.18.0": [],
-        "glutin-winit@0.5.0": [
-          "egl",
-          "glx",
-          "wayland",
-          "wgl",
-          "x11"
-        ],
         "glutin@0.32.3": [
           "egl",
           "glutin_egl_sys",
@@ -8505,6 +8562,13 @@
           "windows-sys",
           "x11",
           "x11-dl"
+        ],
+        "glutin-winit@0.5.0": [
+          "egl",
+          "glx",
+          "wayland",
+          "wgl",
+          "x11"
         ],
         "glutin_egl_sys@0.7.1": [],
         "glutin_glx_sys@0.6.1": [],
@@ -8596,9 +8660,6 @@
           "quote",
           "rust"
         ],
-        "i-slint-core-macros@1.18.1": [
-          "default"
-        ],
         "i-slint-core@1.18.1": [
           "accessibility-text",
           "box-shadow-cache",
@@ -8615,6 +8676,9 @@
           "unicode-script",
           "wgpu-30"
         ],
+        "i-slint-core-macros@1.18.1": [
+          "default"
+        ],
         "i-slint-renderer-skia@1.18.1": [
           "default",
           "softbuffer",
@@ -8626,9 +8690,6 @@
           "path",
           "std",
           "systemfonts"
-        ],
-        "iana-time-zone@0.1.65": [
-          "fallback"
         ],
         "icu_collections@2.4.0": [],
         "icu_decimal@2.4.0": [
@@ -8673,11 +8734,11 @@
         "idna_adapter@1.2.2": [
           "compiled_data"
         ],
-        "image-webp@0.2.4": [],
         "image@0.25.10": [
           "jpeg",
           "png"
         ],
+        "image-webp@0.2.4": [],
         "imagesize@0.15.0": [
           "aesprite",
           "astc",
@@ -8741,6 +8802,19 @@
           "default"
         ],
         "linebender_resource_handle@0.1.1": [],
+        "linux-raw-sys@0.4.15": [
+          "elf",
+          "errno",
+          "general",
+          "ioctl",
+          "no_std",
+          "prctl",
+          "system"
+        ],
+        "linux-raw-sys@0.9.4": [
+          "general",
+          "no_std"
+        ],
         "linux-raw-sys@0.12.1": [
           "auxvec",
           "elf",
@@ -8754,19 +8828,6 @@
           "prctl",
           "system",
           "xdp"
-        ],
-        "linux-raw-sys@0.4.15": [
-          "elf",
-          "errno",
-          "general",
-          "ioctl",
-          "no_std",
-          "prctl",
-          "system"
-        ],
-        "linux-raw-sys@0.9.4": [
-          "general",
-          "no_std"
         ],
         "litemap@0.8.3": [
           "alloc"
@@ -8836,7 +8897,6 @@
           "sse_shaper_fixed_point_paths",
           "sse_shaper_paths"
         ],
-        "naga-types@30.0.1": [],
         "naga@30.0.1": [
           "default",
           "hlsl-out",
@@ -8844,6 +8904,7 @@
           "spv-out",
           "wgsl-in"
         ],
+        "naga-types@30.0.1": [],
         "natord@1.0.9": [],
         "nix@0.31.3": [
           "default",
@@ -8859,6 +8920,7 @@
           "default",
           "std"
         ],
+        "num-conv@0.2.2": [],
         "num-traits@0.2.19": [
           "default",
           "libm",
@@ -8872,6 +8934,7 @@
           "proc-macro-crate",
           "std"
         ],
+        "num_threads@0.1.8": [],
         "once_cell@1.21.4": [
           "alloc",
           "critical-section",
@@ -8933,9 +8996,9 @@
           "default",
           "eq-separator"
         ],
+        "pin-project@1.1.13": [],
         "pin-project-internal@1.1.13": [],
         "pin-project-lite@0.2.17": [],
-        "pin-project@1.1.13": [],
         "pin-weak@1.1.0": [
           "default",
           "sync"
@@ -8962,6 +9025,7 @@
           "writeable",
           "zerovec"
         ],
+        "powerfmt@0.2.1": [],
         "presser@0.3.1": [],
         "prettyplease@0.2.37": [
           "verbatim"
@@ -8991,6 +9055,25 @@
           "experimental_font_api",
           "std"
         ],
+        "regex@1.13.1": [
+          "default",
+          "perf",
+          "perf-backtrack",
+          "perf-cache",
+          "perf-dfa",
+          "perf-inline",
+          "perf-literal",
+          "perf-onepass",
+          "std",
+          "unicode",
+          "unicode-age",
+          "unicode-bool",
+          "unicode-case",
+          "unicode-gencat",
+          "unicode-perl",
+          "unicode-script",
+          "unicode-segment"
+        ],
         "regex-automata@0.4.18": [
           "alloc",
           "dfa-onepass",
@@ -9017,25 +9100,6 @@
         ],
         "regex-syntax@0.8.11": [
           "default",
-          "std",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
-        "regex@1.13.1": [
-          "default",
-          "perf",
-          "perf-backtrack",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "perf-onepass",
           "std",
           "unicode",
           "unicode-age",
@@ -9108,8 +9172,8 @@
         ],
         "rustversion@1.0.23": [],
         "ryu@1.0.23": [],
-        "scoped-tls-hkt@0.1.5": [],
         "scoped-tls@1.0.1": [],
+        "scoped-tls-hkt@0.1.5": [],
         "scopeguard@1.2.0": [],
         "sctk-adwaita@0.10.1": [
           "ab_glyph",
@@ -9201,10 +9265,6 @@
           "default",
           "std"
         ],
-        "slint-build@1.18.1": [
-          "compat-1-18"
-        ],
-        "slint-macros@1.18.1": [],
         "slint@1.18.1": [
           "accessibility",
           "backend-winit",
@@ -9213,6 +9273,10 @@
           "std",
           "unstable-winit-030"
         ],
+        "slint-build@1.18.1": [
+          "compat-1-18"
+        ],
+        "slint-macros@1.18.1": [],
         "slotmap@1.1.1": [
           "default",
           "std"
@@ -9234,15 +9298,15 @@
           "default",
           "std"
         ],
-        "snafu-derive@0.8.9": [
-          "rust_1_61"
-        ],
         "snafu@0.8.9": [
           "alloc",
           "default",
           "rust_1_61",
           "rust_1_65",
           "std"
+        ],
+        "snafu-derive@0.8.9": [
+          "rust_1_61"
         ],
         "socket2@0.6.5": [
           "all"
@@ -9334,19 +9398,28 @@
           "xattr"
         ],
         "text-size@1.1.1": [],
-        "thiserror-impl@1.0.69": [],
-        "thiserror-impl@2.0.21": [],
         "thiserror@1.0.69": [],
         "thiserror@2.0.21": [
           "default",
           "std"
         ],
-        "tiny-skia-path@0.11.4": [
+        "thiserror-impl@1.0.69": [],
+        "thiserror-impl@2.0.21": [],
+        "time@0.3.55": [
+          "alloc",
+          "formatting",
+          "large-dates",
+          "local-offset",
+          "parsing",
           "std"
         ],
-        "tiny-skia-path@0.12.0": [
-          "default",
-          "std"
+        "time-core@0.1.9": [
+          "large-dates"
+        ],
+        "time-macros@0.2.32": [
+          "formatting",
+          "large-dates",
+          "parsing"
         ],
         "tiny-skia@0.11.4": [
           "simd",
@@ -9356,6 +9429,13 @@
           "default",
           "png-format",
           "simd",
+          "std"
+        ],
+        "tiny-skia-path@0.11.4": [
+          "std"
+        ],
+        "tiny-skia-path@0.12.0": [
+          "default",
           "std"
         ],
         "tiny-xlib@0.2.5": [
@@ -9372,7 +9452,6 @@
           "alloc",
           "default"
         ],
-        "tokio-macros@2.7.2": [],
         "tokio@1.54.1": [
           "libc",
           "macros",
@@ -9385,6 +9464,7 @@
           "tokio-macros",
           "windows-sys"
         ],
+        "tokio-macros@2.7.2": [],
         "toml@1.2.1+spec-1.1.0": [
           "default",
           "display",
@@ -9413,17 +9493,17 @@
           "default",
           "std"
         ],
-        "tracing-attributes@0.1.31": [],
-        "tracing-core@0.1.36": [
-          "once_cell",
-          "std"
-        ],
         "tracing@0.1.44": [
           "attributes",
           "default",
           "log",
           "std",
           "tracing-attributes"
+        ],
+        "tracing-attributes@0.1.31": [],
+        "tracing-core@0.1.36": [
+          "once_cell",
+          "std"
         ],
         "tree_magic_mini@3.2.2": [],
         "ttf-parser@0.25.1": [
@@ -9458,7 +9538,7 @@
           "default"
         ],
         "unty@0.0.4": [],
-        "url@2.5.8": [
+        "url@2.5.9": [
           "default",
           "std"
         ],
@@ -9484,26 +9564,26 @@
           "std"
         ],
         "version_check@0.9.5": [],
-        "vtable-macro@0.5.0": [],
         "vtable@0.5.0": [],
+        "vtable-macro@0.5.0": [],
         "wayland-backend@0.3.17": [
           "client_system"
         ],
         "wayland-client@0.31.15": [],
         "wayland-csd-frame@0.3.0": [],
         "wayland-cursor@0.31.14": [],
+        "wayland-protocols@0.32.13": [
+          "client",
+          "staging",
+          "unstable",
+          "wayland-client"
+        ],
         "wayland-protocols-plasma@0.3.12": [
           "client",
           "wayland-client"
         ],
         "wayland-protocols-wlr@0.3.12": [
           "client",
-          "wayland-client"
-        ],
-        "wayland-protocols@0.32.13": [
-          "client",
-          "staging",
-          "unstable",
           "wayland-client"
         ],
         "wayland-scanner@0.31.11": [],
@@ -9519,9 +9599,9 @@
           "default",
           "std"
         ],
-        "wgpu-core-deps-windows-linux-android@30.0.1": [
+        "wgpu@30.0.1": [
           "dx12",
-          "renderdoc",
+          "metal",
           "vulkan"
         ],
         "wgpu-core@30.0.1": [
@@ -9536,6 +9616,11 @@
           "wgpu-core-deps-windows-linux-android",
           "wgsl"
         ],
+        "wgpu-core-deps-windows-linux-android@30.0.1": [
+          "dx12",
+          "renderdoc",
+          "vulkan"
+        ],
         "wgpu-hal@30.0.1": [
           "dx12",
           "metal",
@@ -9545,34 +9630,6 @@
         ],
         "wgpu-naga-bridge@30.0.1": [],
         "wgpu-types@30.0.1": [],
-        "wgpu@30.0.1": [
-          "dx12",
-          "metal",
-          "vulkan"
-        ],
-        "windows-collections@0.3.2": [
-          "std"
-        ],
-        "windows-core@0.62.2": [
-          "default",
-          "std"
-        ],
-        "windows-future@0.3.2": [
-          "std"
-        ],
-        "windows-implement@0.60.2": [],
-        "windows-interface@0.59.3": [],
-        "windows-link@0.2.1": [],
-        "windows-numerics@0.3.1": [
-          "std"
-        ],
-        "windows-result@0.4.1": [
-          "std"
-        ],
-        "windows-strings@0.5.1": [
-          "std"
-        ],
-        "windows-threading@0.2.1": [],
         "windows@0.62.2": [
           "ApplicationModel",
           "Data",
@@ -9620,6 +9677,29 @@
           "default",
           "std"
         ],
+        "windows-collections@0.3.2": [
+          "std"
+        ],
+        "windows-core@0.62.2": [
+          "default",
+          "std"
+        ],
+        "windows-future@0.3.2": [
+          "std"
+        ],
+        "windows-implement@0.60.2": [],
+        "windows-interface@0.59.3": [],
+        "windows-link@0.2.1": [],
+        "windows-numerics@0.3.1": [
+          "std"
+        ],
+        "windows-result@0.4.1": [
+          "std"
+        ],
+        "windows-strings@0.5.1": [
+          "std"
+        ],
+        "windows-threading@0.2.1": [],
         "winit@0.30.13": [
           "ahash",
           "bytemuck",
@@ -9651,17 +9731,6 @@
           "alloc"
         ],
         "x11-dl@2.21.0": [],
-        "x11rb-protocol@0.13.2": [
-          "randr",
-          "render",
-          "resource_manager",
-          "shape",
-          "shm",
-          "std",
-          "xfixes",
-          "xinput",
-          "xkb"
-        ],
         "x11rb@0.13.2": [
           "allow-unsafe-code",
           "as-raw-xcb-connection",
@@ -9674,6 +9743,17 @@
           "resource_manager",
           "shape",
           "shm",
+          "xfixes",
+          "xinput",
+          "xkb"
+        ],
+        "x11rb-protocol@0.13.2": [
+          "randr",
+          "render",
+          "resource_manager",
+          "shape",
+          "shm",
+          "std",
           "xfixes",
           "xinput",
           "xkb"
@@ -9693,14 +9773,12 @@
           "std"
         ],
         "yeslogic-fontconfig-sys@6.0.1": [],
-        "yoke-derive@0.8.4": [],
         "yoke@0.8.4": [
           "alloc",
           "derive",
           "zerofrom"
         ],
-        "zbus-lockstep-macros@0.5.2": [],
-        "zbus-lockstep@0.5.2": [],
+        "yoke-derive@0.8.4": [],
         "zbus@5.19.0": [
           "async-executor",
           "async-fs",
@@ -9710,6 +9788,8 @@
           "async-task",
           "blocking"
         ],
+        "zbus-lockstep@0.5.2": [],
+        "zbus-lockstep-macros@0.5.2": [],
         "zbus_macros@5.19.0": [
           "default"
         ],
@@ -9723,28 +9803,28 @@
           "eval",
           "std"
         ],
-        "zerocopy-derive@0.8.63": [],
         "zerocopy@0.8.63": [
           "derive",
           "simd",
           "zerocopy-derive"
         ],
-        "zerofrom-derive@0.1.8": [],
+        "zerocopy-derive@0.8.63": [],
         "zerofrom@0.1.8": [
           "alloc",
           "derive"
         ],
+        "zerofrom-derive@0.1.8": [],
         "zerotrie@0.2.5": [
           "alloc",
           "yoke",
           "zerofrom"
         ],
-        "zerovec-derive@0.11.7": [],
         "zerovec@0.11.9": [
           "alloc",
           "derive",
           "yoke"
         ],
+        "zerovec-derive@0.11.7": [],
         "zlib-rs@0.6.8": [
           "rust-allocator",
           "std"
@@ -9827,7 +9907,9 @@
         "miniz_oxide@0.8.9",
         "miniz_oxide@0.9.1",
         "syn@2.0.119",
-        "syn@3.0.9"
+        "syn@3.0.9",
+        "time-core@0.0.0",
+        "time-core@0.1.9"
       ],
       "package_scopes": {
         "nevrotick-ui": {
@@ -9943,22 +10025,6 @@
                 []
               ]
             },
-            "chrono@0.4.45": {
-              "target": [
-                [
-                  "alloc",
-                  "clock",
-                  "iana-time-zone",
-                  "js-sys",
-                  "now",
-                  "std",
-                  "wasm-bindgen",
-                  "wasmbind",
-                  "winapi",
-                  "windows-link"
-                ]
-              ]
-            },
             "clru@0.6.3": {
               "target": [
                 []
@@ -10020,6 +10086,13 @@
                   "alloc",
                   "default",
                   "std"
+                ]
+              ]
+            },
+            "deranged@0.5.9": {
+              "target": [
+                [
+                  "default"
                 ]
               ]
             },
@@ -10174,7 +10247,7 @@
                 ]
               ]
             },
-            "form_urlencoded@1.2.2": {
+            "form_urlencoded@1.2.3": {
               "host": [
                 [
                   "alloc",
@@ -10327,13 +10400,6 @@
                   "path",
                   "std",
                   "systemfonts"
-                ]
-              ]
-            },
-            "iana-time-zone@0.1.65": {
-              "target": [
-                [
-                  "fallback"
                 ]
               ]
             },
@@ -10735,6 +10801,11 @@
                 []
               ]
             },
+            "num-conv@0.2.2": {
+              "target": [
+                []
+              ]
+            },
             "num-traits@0.2.19": {
               "host": [
                 [
@@ -10764,6 +10835,11 @@
                   "proc-macro-crate",
                   "std"
                 ]
+              ]
+            },
+            "num_threads@0.1.8": {
+              "target": [
+                []
               ]
             },
             "once_cell@1.21.4": {
@@ -10873,6 +10949,11 @@
                   "writeable",
                   "zerovec"
                 ]
+              ]
+            },
+            "powerfmt@0.2.1": {
+              "target": [
+                []
               ]
             },
             "proc-macro-crate@3.5.0": {
@@ -11287,6 +11368,25 @@
                 []
               ]
             },
+            "time-core@0.1.9": {
+              "target": [
+                [
+                  "large-dates"
+                ]
+              ]
+            },
+            "time@0.3.55": {
+              "target": [
+                [
+                  "alloc",
+                  "formatting",
+                  "large-dates",
+                  "local-offset",
+                  "parsing",
+                  "std"
+                ]
+              ]
+            },
             "tiny-skia-path@0.12.0": {
               "target": [
                 [
@@ -11432,7 +11532,7 @@
                 ]
               ]
             },
-            "url@2.5.8": {
+            "url@2.5.9": {
               "host": [
                 [
                   "default",
@@ -12260,16 +12360,6 @@
             }
           }
         },
-        "spin_on": {
-          "features": {
-            "spin_on@0.1.1": {
-              "target": [
-                []
-              ]
-            }
-          },
-          "local_features": {}
-        },
         "windows-platform-native": {
           "features": {},
           "local_features": {
@@ -12279,6 +12369,16 @@
               ]
             }
           }
+        },
+        "spin_on": {
+          "features": {
+            "spin_on@0.1.1": {
+              "target": [
+                []
+              ]
+            }
+          },
+          "local_features": {}
         }
       }
     },
@@ -12430,22 +12530,6 @@
             []
           ]
         },
-        "chrono@0.4.45": {
-          "target": [
-            [
-              "alloc",
-              "clock",
-              "iana-time-zone",
-              "js-sys",
-              "now",
-              "std",
-              "wasm-bindgen",
-              "wasmbind",
-              "winapi",
-              "windows-link"
-            ]
-          ]
-        },
         "clipboard-win@5.4.3": {
           "target": [
             [
@@ -12538,6 +12622,13 @@
               "alloc",
               "default",
               "std"
+            ]
+          ]
+        },
+        "deranged@0.5.9": {
+          "target": [
+            [
+              "default"
             ]
           ]
         },
@@ -12702,7 +12793,7 @@
             ]
           ]
         },
-        "form_urlencoded@1.2.2": {
+        "form_urlencoded@1.2.3": {
           "host": [
             [
               "alloc",
@@ -13321,6 +13412,11 @@
             []
           ]
         },
+        "num-conv@0.2.2": {
+          "target": [
+            []
+          ]
+        },
         "num-traits@0.2.19": {
           "host": [
             [
@@ -13469,6 +13565,11 @@
               "writeable",
               "zerovec"
             ]
+          ]
+        },
+        "powerfmt@0.2.1": {
+          "target": [
+            []
           ]
         },
         "proc-macro-crate@3.5.0": {
@@ -13947,6 +14048,25 @@
             ]
           ]
         },
+        "time-core@0.1.9": {
+          "target": [
+            [
+              "large-dates"
+            ]
+          ]
+        },
+        "time@0.3.55": {
+          "target": [
+            [
+              "alloc",
+              "formatting",
+              "large-dates",
+              "local-offset",
+              "parsing",
+              "std"
+            ]
+          ]
+        },
         "tiny-skia-path@0.12.0": {
           "target": [
             [
@@ -14126,7 +14246,7 @@
             ]
           ]
         },
-        "url@2.5.8": {
+        "url@2.5.9": {
           "host": [
             [
               "default",
@@ -14595,12 +14715,12 @@
             []
           ]
         },
-        "windows-platform@0.0.0": {
+        "windows-platform-native@0.0.0": {
           "target": [
             []
           ]
         },
-        "windows-platform-native@0.0.0": {
+        "windows-platform@0.0.0": {
           "target": [
             []
           ]
@@ -14698,18 +14818,6 @@
         "cexpr@0.6.0": [],
         "cfg-if@1.0.5": [],
         "cfg_aliases@0.2.2": [],
-        "chrono@0.4.45": [
-          "alloc",
-          "clock",
-          "iana-time-zone",
-          "js-sys",
-          "now",
-          "std",
-          "wasm-bindgen",
-          "wasmbind",
-          "winapi",
-          "windows-link"
-        ],
         "clang-sys@1.9.1": [
           "clang_10_0",
           "clang_11_0",
@@ -14734,8 +14842,8 @@
         "codespan-reporting@0.13.1": [],
         "color_quant@1.1.0": [],
         "compact_str@0.9.1": [],
-        "const-field-offset-macro@0.2.1": [],
         "const-field-offset@0.2.1": [],
+        "const-field-offset-macro@0.2.1": [],
         "convert_case@0.10.0": [],
         "countme@3.0.1": [],
         "crc32fast@1.5.4": [
@@ -14760,18 +14868,8 @@
           "default",
           "std"
         ],
-        "derive_more-impl@2.1.1": [
-          "add",
-          "add_assign",
-          "default",
-          "deref",
-          "deref_mut",
-          "display",
-          "error",
-          "from",
-          "into",
-          "mul",
-          "not"
+        "deranged@0.5.9": [
+          "default"
         ],
         "derive_more@2.1.1": [
           "add",
@@ -14785,6 +14883,19 @@
           "mul",
           "not",
           "std"
+        ],
+        "derive_more-impl@2.1.1": [
+          "add",
+          "add_assign",
+          "default",
+          "deref",
+          "deref_mut",
+          "display",
+          "error",
+          "from",
+          "into",
+          "mul",
+          "not"
         ],
         "displaydoc@0.2.7": [],
         "document-features@0.2.12": [
@@ -14832,7 +14943,7 @@
           "std",
           "system"
         ],
-        "form_urlencoded@1.2.2": [
+        "form_urlencoded@1.2.3": [
           "alloc",
           "std"
         ],
@@ -14852,13 +14963,6 @@
         "gl_generator@0.14.0": [],
         "glob@0.3.4": [],
         "glow@0.18.0": [],
-        "glutin-winit@0.5.0": [
-          "egl",
-          "glx",
-          "wayland",
-          "wgl",
-          "x11"
-        ],
         "glutin@0.32.3": [
           "egl",
           "glutin_egl_sys",
@@ -14872,6 +14976,13 @@
           "windows-sys",
           "x11",
           "x11-dl"
+        ],
+        "glutin-winit@0.5.0": [
+          "egl",
+          "glx",
+          "wayland",
+          "wgl",
+          "x11"
         ],
         "glutin_egl_sys@0.7.1": [],
         "glutin_wgl_sys@0.6.1": [],
@@ -14948,9 +15059,6 @@
           "quote",
           "rust"
         ],
-        "i-slint-core-macros@1.18.1": [
-          "default"
-        ],
         "i-slint-core@1.18.1": [
           "accessibility-text",
           "box-shadow-cache",
@@ -14966,6 +15074,9 @@
           "unicode-linebreak",
           "unicode-script",
           "wgpu-30"
+        ],
+        "i-slint-core-macros@1.18.1": [
+          "default"
         ],
         "i-slint-renderer-skia@1.18.1": [
           "default",
@@ -15022,11 +15133,11 @@
         "idna_adapter@1.2.2": [
           "compiled_data"
         ],
-        "image-webp@0.2.4": [],
         "image@0.25.10": [
           "jpeg",
           "png"
         ],
+        "image-webp@0.2.4": [],
         "imagesize@0.15.0": [
           "aesprite",
           "astc",
@@ -15165,7 +15276,6 @@
           "sse_shaper_paths"
         ],
         "muda@0.19.3": [],
-        "naga-types@30.0.1": [],
         "naga@30.0.1": [
           "default",
           "hlsl-out",
@@ -15173,11 +15283,13 @@
           "spv-out",
           "wgsl-in"
         ],
+        "naga-types@30.0.1": [],
         "natord@1.0.9": [],
         "nom@7.1.3": [
           "alloc",
           "std"
         ],
+        "num-conv@0.2.2": [],
         "num-traits@0.2.19": [
           "default",
           "libm",
@@ -15226,9 +15338,9 @@
           "default",
           "eq-separator"
         ],
+        "pin-project@1.1.13": [],
         "pin-project-internal@1.1.13": [],
         "pin-project-lite@0.2.17": [],
-        "pin-project@1.1.13": [],
         "pin-weak@1.1.0": [
           "default",
           "sync"
@@ -15249,6 +15361,7 @@
           "writeable",
           "zerovec"
         ],
+        "powerfmt@0.2.1": [],
         "presser@0.3.1": [],
         "prettyplease@0.2.37": [
           "verbatim"
@@ -15276,6 +15389,25 @@
           "experimental_font_api",
           "std"
         ],
+        "regex@1.13.1": [
+          "default",
+          "perf",
+          "perf-backtrack",
+          "perf-cache",
+          "perf-dfa",
+          "perf-inline",
+          "perf-literal",
+          "perf-onepass",
+          "std",
+          "unicode",
+          "unicode-age",
+          "unicode-bool",
+          "unicode-case",
+          "unicode-gencat",
+          "unicode-perl",
+          "unicode-script",
+          "unicode-segment"
+        ],
         "regex-automata@0.4.18": [
           "alloc",
           "dfa-onepass",
@@ -15302,25 +15434,6 @@
         ],
         "regex-syntax@0.8.11": [
           "default",
-          "std",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
-        "regex@1.13.1": [
-          "default",
-          "perf",
-          "perf-backtrack",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "perf-onepass",
           "std",
           "unicode",
           "unicode-age",
@@ -15450,10 +15563,6 @@
           "default",
           "std"
         ],
-        "slint-build@1.18.1": [
-          "compat-1-18"
-        ],
-        "slint-macros@1.18.1": [],
         "slint@1.18.1": [
           "accessibility",
           "backend-winit",
@@ -15462,6 +15571,10 @@
           "std",
           "unstable-winit-030"
         ],
+        "slint-build@1.18.1": [
+          "compat-1-18"
+        ],
+        "slint-macros@1.18.1": [],
         "slotmap@1.1.1": [
           "default",
           "std"
@@ -15479,15 +15592,15 @@
           "default",
           "std"
         ],
-        "snafu-derive@0.8.9": [
-          "rust_1_61"
-        ],
         "snafu@0.8.9": [
           "alloc",
           "default",
           "rust_1_61",
           "rust_1_65",
           "std"
+        ],
+        "snafu-derive@0.8.9": [
+          "rust_1_61"
         ],
         "socket2@0.6.5": [
           "all"
@@ -15579,19 +15692,35 @@
           "xattr"
         ],
         "text-size@1.1.1": [],
-        "thiserror-impl@2.0.21": [],
         "thiserror@2.0.21": [
           "default",
           "std"
         ],
-        "tiny-skia-path@0.12.0": [
-          "default",
+        "thiserror-impl@2.0.21": [],
+        "time@0.3.55": [
+          "alloc",
+          "formatting",
+          "large-dates",
+          "local-offset",
+          "parsing",
           "std"
+        ],
+        "time-core@0.1.9": [
+          "large-dates"
+        ],
+        "time-macros@0.2.32": [
+          "formatting",
+          "large-dates",
+          "parsing"
         ],
         "tiny-skia@0.12.0": [
           "default",
           "png-format",
           "simd",
+          "std"
+        ],
+        "tiny-skia-path@0.12.0": [
+          "default",
           "std"
         ],
         "tinystr@0.8.5": [
@@ -15602,7 +15731,6 @@
           "alloc",
           "default"
         ],
-        "tokio-macros@2.7.2": [],
         "tokio@1.54.1": [
           "libc",
           "macros",
@@ -15615,6 +15743,7 @@
           "tokio-macros",
           "windows-sys"
         ],
+        "tokio-macros@2.7.2": [],
         "toml@1.2.1+spec-1.1.0": [
           "default",
           "display",
@@ -15643,17 +15772,17 @@
           "default",
           "std"
         ],
-        "tracing-attributes@0.1.31": [],
-        "tracing-core@0.1.36": [
-          "once_cell",
-          "std"
-        ],
         "tracing@0.1.44": [
           "attributes",
           "default",
           "log",
           "std",
           "tracing-attributes"
+        ],
+        "tracing-attributes@0.1.31": [],
+        "tracing-core@0.1.36": [
+          "once_cell",
+          "std"
         ],
         "typed-index-collections@3.5.0": [
           "alloc",
@@ -15679,7 +15808,7 @@
           "default"
         ],
         "unty@0.0.4": [],
-        "url@2.5.8": [
+        "url@2.5.9": [
           "default",
           "std"
         ],
@@ -15705,17 +15834,17 @@
           "std"
         ],
         "version_check@0.9.5": [],
-        "vtable-macro@0.5.0": [],
         "vtable@0.5.0": [],
+        "vtable-macro@0.5.0": [],
         "webbrowser@1.2.6": [],
         "weezl@0.1.12": [
           "alloc",
           "default",
           "std"
         ],
-        "wgpu-core-deps-windows-linux-android@30.0.1": [
+        "wgpu@30.0.1": [
           "dx12",
-          "renderdoc",
+          "metal",
           "vulkan"
         ],
         "wgpu-core@30.0.1": [
@@ -15730,6 +15859,11 @@
           "wgpu-core-deps-windows-linux-android",
           "wgsl"
         ],
+        "wgpu-core-deps-windows-linux-android@30.0.1": [
+          "dx12",
+          "renderdoc",
+          "vulkan"
+        ],
         "wgpu-hal@30.0.1": [
           "dx12",
           "metal",
@@ -15739,10 +15873,52 @@
         ],
         "wgpu-naga-bridge@30.0.1": [],
         "wgpu-types@30.0.1": [],
-        "wgpu@30.0.1": [
-          "dx12",
-          "metal",
-          "vulkan"
+        "windows@0.62.2": [
+          "ApplicationModel",
+          "Data",
+          "Data_Xml",
+          "Data_Xml_Dom",
+          "Foundation",
+          "UI",
+          "UI_Notifications",
+          "Win32",
+          "Win32_Devices",
+          "Win32_Devices_DeviceAndDriverInstallation",
+          "Win32_Devices_Display",
+          "Win32_Foundation",
+          "Win32_Globalization",
+          "Win32_Graphics",
+          "Win32_Graphics_Direct3D",
+          "Win32_Graphics_Direct3D12",
+          "Win32_Graphics_Direct3D_Dxc",
+          "Win32_Graphics_Direct3D_Fxc",
+          "Win32_Graphics_DirectComposition",
+          "Win32_Graphics_DirectWrite",
+          "Win32_Graphics_Dwm",
+          "Win32_Graphics_Dxgi",
+          "Win32_Graphics_Dxgi_Common",
+          "Win32_Graphics_Gdi",
+          "Win32_Security",
+          "Win32_System",
+          "Win32_System_Com",
+          "Win32_System_Diagnostics",
+          "Win32_System_Diagnostics_Debug",
+          "Win32_System_Kernel",
+          "Win32_System_LibraryLoader",
+          "Win32_System_Ole",
+          "Win32_System_Performance",
+          "Win32_System_Threading",
+          "Win32_System_Variant",
+          "Win32_System_WinRT",
+          "Win32_UI",
+          "Win32_UI_Accessibility",
+          "Win32_UI_HiDpi",
+          "Win32_UI_Input",
+          "Win32_UI_Input_KeyboardAndMouse",
+          "Win32_UI_Shell",
+          "Win32_UI_WindowsAndMessaging",
+          "default",
+          "std"
         ],
         "windows-collections@0.3.2": [
           "std"
@@ -15847,53 +16023,6 @@
         ],
         "windows-targets@0.52.6": [],
         "windows-threading@0.2.1": [],
-        "windows@0.62.2": [
-          "ApplicationModel",
-          "Data",
-          "Data_Xml",
-          "Data_Xml_Dom",
-          "Foundation",
-          "UI",
-          "UI_Notifications",
-          "Win32",
-          "Win32_Devices",
-          "Win32_Devices_DeviceAndDriverInstallation",
-          "Win32_Devices_Display",
-          "Win32_Foundation",
-          "Win32_Globalization",
-          "Win32_Graphics",
-          "Win32_Graphics_Direct3D",
-          "Win32_Graphics_Direct3D12",
-          "Win32_Graphics_Direct3D_Dxc",
-          "Win32_Graphics_Direct3D_Fxc",
-          "Win32_Graphics_DirectComposition",
-          "Win32_Graphics_DirectWrite",
-          "Win32_Graphics_Dwm",
-          "Win32_Graphics_Dxgi",
-          "Win32_Graphics_Dxgi_Common",
-          "Win32_Graphics_Gdi",
-          "Win32_Security",
-          "Win32_System",
-          "Win32_System_Com",
-          "Win32_System_Diagnostics",
-          "Win32_System_Diagnostics_Debug",
-          "Win32_System_Kernel",
-          "Win32_System_LibraryLoader",
-          "Win32_System_Ole",
-          "Win32_System_Performance",
-          "Win32_System_Threading",
-          "Win32_System_Variant",
-          "Win32_System_WinRT",
-          "Win32_UI",
-          "Win32_UI_Accessibility",
-          "Win32_UI_HiDpi",
-          "Win32_UI_Input",
-          "Win32_UI_Input_KeyboardAndMouse",
-          "Win32_UI_Shell",
-          "Win32_UI_WindowsAndMessaging",
-          "default",
-          "std"
-        ],
         "windows_x86_64_msvc@0.52.6": [],
         "winit@0.30.13": [
           "ahash",
@@ -15929,38 +16058,38 @@
         "yazi@0.2.2": [
           "std"
         ],
-        "yoke-derive@0.8.4": [],
         "yoke@0.8.4": [
           "alloc",
           "derive",
           "zerofrom"
         ],
+        "yoke-derive@0.8.4": [],
         "zeno@0.3.3": [
           "eval",
           "std"
         ],
-        "zerocopy-derive@0.8.63": [],
         "zerocopy@0.8.63": [
           "derive",
           "simd",
           "zerocopy-derive"
         ],
-        "zerofrom-derive@0.1.8": [],
+        "zerocopy-derive@0.8.63": [],
         "zerofrom@0.1.8": [
           "alloc",
           "derive"
         ],
+        "zerofrom-derive@0.1.8": [],
         "zerotrie@0.2.5": [
           "alloc",
           "yoke",
           "zerofrom"
         ],
-        "zerovec-derive@0.11.7": [],
         "zerovec@0.11.9": [
           "alloc",
           "derive",
           "yoke"
         ],
+        "zerovec-derive@0.11.7": [],
         "zlib-rs@0.6.8": [
           "rust-allocator",
           "std"
@@ -16041,6 +16170,8 @@
         "smol_str@0.3.7",
         "syn@2.0.119",
         "syn@3.0.9",
+        "time-core@0.0.0",
+        "time-core@0.1.9",
         "windows-sys@0.52.0",
         "windows-sys@0.61.2"
       ],
@@ -16193,22 +16324,6 @@
                 []
               ]
             },
-            "chrono@0.4.45": {
-              "target": [
-                [
-                  "alloc",
-                  "clock",
-                  "iana-time-zone",
-                  "js-sys",
-                  "now",
-                  "std",
-                  "wasm-bindgen",
-                  "wasmbind",
-                  "winapi",
-                  "windows-link"
-                ]
-              ]
-            },
             "clipboard-win@5.4.3": {
               "target": [
                 [
@@ -16301,6 +16416,13 @@
                   "alloc",
                   "default",
                   "std"
+                ]
+              ]
+            },
+            "deranged@0.5.9": {
+              "target": [
+                [
+                  "default"
                 ]
               ]
             },
@@ -16465,7 +16587,7 @@
                 ]
               ]
             },
-            "form_urlencoded@1.2.2": {
+            "form_urlencoded@1.2.3": {
               "host": [
                 [
                   "alloc",
@@ -17070,6 +17192,11 @@
                 []
               ]
             },
+            "num-conv@0.2.2": {
+              "target": [
+                []
+              ]
+            },
             "num-traits@0.2.19": {
               "host": [
                 [
@@ -17218,6 +17345,11 @@
                   "writeable",
                   "zerovec"
                 ]
+              ]
+            },
+            "powerfmt@0.2.1": {
+              "target": [
+                []
               ]
             },
             "proc-macro-crate@3.5.0": {
@@ -17689,6 +17821,25 @@
                 ]
               ]
             },
+            "time-core@0.1.9": {
+              "target": [
+                [
+                  "large-dates"
+                ]
+              ]
+            },
+            "time@0.3.55": {
+              "target": [
+                [
+                  "alloc",
+                  "formatting",
+                  "large-dates",
+                  "local-offset",
+                  "parsing",
+                  "std"
+                ]
+              ]
+            },
             "tiny-skia-path@0.12.0": {
               "target": [
                 [
@@ -17847,7 +17998,7 @@
                 ]
               ]
             },
-            "url@2.5.8": {
+            "url@2.5.9": {
               "host": [
                 [
                   "default",
@@ -18911,16 +19062,6 @@
             }
           }
         },
-        "spin_on": {
-          "features": {
-            "spin_on@0.1.1": {
-              "target": [
-                []
-              ]
-            }
-          },
-          "local_features": {}
-        },
         "windows-platform-native": {
           "features": {},
           "local_features": {
@@ -18930,6 +19071,16 @@
               ]
             }
           }
+        },
+        "spin_on": {
+          "features": {
+            "spin_on@0.1.1": {
+              "target": [
+                []
+              ]
+            }
+          },
+          "local_features": {}
         }
       }
     }
@@ -19078,22 +19229,6 @@
               []
             ]
           },
-          "chrono@0.4.45": {
-            "target": [
-              [
-                "alloc",
-                "clock",
-                "iana-time-zone",
-                "js-sys",
-                "now",
-                "std",
-                "wasm-bindgen",
-                "wasmbind",
-                "winapi",
-                "windows-link"
-              ]
-            ]
-          },
           "cipher@0.5.2": {
             "target": [
               [
@@ -19210,6 +19345,13 @@
           "dbl@0.5.0": {
             "target": [
               []
+            ]
+          },
+          "deranged@0.5.9": {
+            "target": [
+              [
+                "default"
+              ]
             ]
           },
           "derive_more-impl@2.1.1": {
@@ -19373,7 +19515,7 @@
               ]
             ]
           },
-          "form_urlencoded@1.2.2": {
+          "form_urlencoded@1.2.3": {
             "host": [
               [
                 "alloc",
@@ -19538,13 +19680,6 @@
                 "path",
                 "std",
                 "systemfonts"
-              ]
-            ]
-          },
-          "iana-time-zone@0.1.65": {
-            "target": [
-              [
-                "fallback"
               ]
             ]
           },
@@ -19960,6 +20095,11 @@
               []
             ]
           },
+          "num-conv@0.2.2": {
+            "target": [
+              []
+            ]
+          },
           "num-traits@0.2.19": {
             "host": [
               [
@@ -19989,6 +20129,11 @@
                 "proc-macro-crate",
                 "std"
               ]
+            ]
+          },
+          "num_threads@0.1.8": {
+            "target": [
+              []
             ]
           },
           "once_cell@1.21.4": {
@@ -20103,6 +20248,11 @@
                 "writeable",
                 "zerovec"
               ]
+            ]
+          },
+          "powerfmt@0.2.1": {
+            "target": [
+              []
             ]
           },
           "proc-macro-crate@3.5.0": {
@@ -20537,6 +20687,25 @@
               []
             ]
           },
+          "time-core@0.1.9": {
+            "target": [
+              [
+                "large-dates"
+              ]
+            ]
+          },
+          "time@0.3.55": {
+            "target": [
+              [
+                "alloc",
+                "formatting",
+                "large-dates",
+                "local-offset",
+                "parsing",
+                "std"
+              ]
+            ]
+          },
           "tiny-skia-path@0.12.0": {
             "target": [
               [
@@ -20709,7 +20878,7 @@
               ]
             ]
           },
-          "url@2.5.8": {
+          "url@2.5.9": {
             "host": [
               [
                 "default",
@@ -20973,12 +21142,12 @@
               []
             ]
           },
-          "windows-platform@0.0.0": {
+          "windows-platform-native@0.0.0": {
             "target": [
               []
             ]
           },
-          "windows-platform-native@0.0.0": {
+          "windows-platform@0.0.0": {
             "target": [
               []
             ]
@@ -21011,10 +21180,10 @@
             "default",
             "rand_core"
           ],
-          "aes-siv@0.8.0": [
+          "aes@0.9.3": [
             "zeroize"
           ],
-          "aes@0.9.3": [
+          "aes-siv@0.8.0": [
             "zeroize"
           ],
           "ahash@0.8.12": [
@@ -21077,6 +21246,9 @@
           ],
           "async-trait@0.1.92": [],
           "atomic-waker@1.1.2": [],
+          "atspi@0.29.0": [
+            "proxies"
+          ],
           "atspi-common@0.13.0": [
             "default",
             "wrappers",
@@ -21085,9 +21257,6 @@
           "atspi-proxies@0.13.0": [
             "default",
             "wrappers"
-          ],
-          "atspi@0.29.0": [
-            "proxies"
           ],
           "autocfg@1.5.1": [],
           "base64@0.23.1": [
@@ -21137,9 +21306,9 @@
             "default",
             "std"
           ],
-          "calloop-wayland-source@0.3.0": [],
           "calloop@0.13.0": [],
           "calloop@0.14.5": [],
+          "calloop-wayland-source@0.3.0": [],
           "castaway@0.2.4": [
             "alloc"
           ],
@@ -21149,18 +21318,6 @@
           "cexpr@0.6.0": [],
           "cfg-if@1.0.5": [],
           "cfg_aliases@0.2.2": [],
-          "chrono@0.4.45": [
-            "alloc",
-            "clock",
-            "iana-time-zone",
-            "js-sys",
-            "now",
-            "std",
-            "wasm-bindgen",
-            "wasmbind",
-            "winapi",
-            "windows-link"
-          ],
           "cipher@0.5.2": [
             "block-buffer",
             "stream-wrapper",
@@ -21195,8 +21352,8 @@
             "default",
             "std"
           ],
-          "const-field-offset-macro@0.2.1": [],
           "const-field-offset@0.2.1": [],
+          "const-field-offset-macro@0.2.1": [],
           "convert_case@0.10.0": [],
           "countme@3.0.1": [],
           "cpubits@0.1.1": [],
@@ -21229,18 +21386,8 @@
             "std"
           ],
           "dbl@0.5.0": [],
-          "derive_more-impl@2.1.1": [
-            "add",
-            "add_assign",
-            "default",
-            "deref",
-            "deref_mut",
-            "display",
-            "error",
-            "from",
-            "into",
-            "mul",
-            "not"
+          "deranged@0.5.9": [
+            "default"
           ],
           "derive_more@2.1.1": [
             "add",
@@ -21254,6 +21401,19 @@
             "mul",
             "not",
             "std"
+          ],
+          "derive_more-impl@2.1.1": [
+            "add",
+            "add_assign",
+            "default",
+            "deref",
+            "deref_mut",
+            "display",
+            "error",
+            "from",
+            "into",
+            "mul",
+            "not"
           ],
           "digest@0.11.3": [
             "block-api",
@@ -21274,6 +21434,7 @@
             "default",
             "std"
           ],
+          "drm@0.14.1": [],
           "drm-ffi@0.9.1": [],
           "drm-fourcc@2.2.0": [
             "default",
@@ -21282,7 +21443,6 @@
           "drm-sys@0.8.1": [
             "default"
           ],
-          "drm@0.14.1": [],
           "dtor@0.8.1": [
             "std"
           ],
@@ -21307,13 +21467,13 @@
             "libm",
             "std"
           ],
-          "event-listener-strategy@0.5.4": [
-            "default",
-            "std"
-          ],
           "event-listener@5.4.2": [
             "default",
             "parking",
+            "std"
+          ],
+          "event-listener-strategy@0.5.4": [
+            "default",
             "std"
           ],
           "fastrand@2.5.0": [
@@ -21349,8 +21509,16 @@
             "std",
             "system"
           ],
-          "form_urlencoded@1.2.2": [
+          "form_urlencoded@1.2.3": [
             "alloc",
+            "std"
+          ],
+          "futures@0.3.34": [
+            "alloc",
+            "async-await",
+            "default",
+            "executor",
+            "futures-executor",
             "std"
           ],
           "futures-channel@0.3.34": [
@@ -21405,14 +21573,6 @@
             "slab",
             "std"
           ],
-          "futures@0.3.34": [
-            "alloc",
-            "async-await",
-            "default",
-            "executor",
-            "futures-executor",
-            "std"
-          ],
           "garde@0.23.0": [
             "derive"
           ],
@@ -21431,13 +21591,6 @@
           "gl_generator@0.14.0": [],
           "glob@0.3.4": [],
           "glow@0.18.0": [],
-          "glutin-winit@0.5.0": [
-            "egl",
-            "glx",
-            "wayland",
-            "wgl",
-            "x11"
-          ],
           "glutin@0.32.3": [
             "egl",
             "glutin_egl_sys",
@@ -21451,6 +21604,13 @@
             "windows-sys",
             "x11",
             "x11-dl"
+          ],
+          "glutin-winit@0.5.0": [
+            "egl",
+            "glx",
+            "wayland",
+            "wgl",
+            "x11"
           ],
           "glutin_egl_sys@0.7.1": [],
           "glutin_glx_sys@0.6.1": [],
@@ -21545,9 +21705,6 @@
             "quote",
             "rust"
           ],
-          "i-slint-core-macros@1.18.1": [
-            "default"
-          ],
           "i-slint-core@1.18.1": [
             "accessibility-text",
             "box-shadow-cache",
@@ -21564,6 +21721,9 @@
             "unicode-script",
             "wgpu-30"
           ],
+          "i-slint-core-macros@1.18.1": [
+            "default"
+          ],
           "i-slint-renderer-skia@1.18.1": [
             "default",
             "softbuffer",
@@ -21575,9 +21735,6 @@
             "path",
             "std",
             "systemfonts"
-          ],
-          "iana-time-zone@0.1.65": [
-            "fallback"
           ],
           "icu_collections@2.4.0": [],
           "icu_decimal@2.4.0": [
@@ -21622,11 +21779,11 @@
           "idna_adapter@1.2.2": [
             "compiled_data"
           ],
-          "image-webp@0.2.4": [],
           "image@0.25.10": [
             "jpeg",
             "png"
           ],
+          "image-webp@0.2.4": [],
           "imagesize@0.15.0": [
             "aesprite",
             "astc",
@@ -21691,6 +21848,19 @@
             "default"
           ],
           "linebender_resource_handle@0.1.1": [],
+          "linux-raw-sys@0.4.15": [
+            "elf",
+            "errno",
+            "general",
+            "ioctl",
+            "no_std",
+            "prctl",
+            "system"
+          ],
+          "linux-raw-sys@0.9.4": [
+            "general",
+            "no_std"
+          ],
           "linux-raw-sys@0.12.1": [
             "auxvec",
             "elf",
@@ -21704,19 +21874,6 @@
             "prctl",
             "system",
             "xdp"
-          ],
-          "linux-raw-sys@0.4.15": [
-            "elf",
-            "errno",
-            "general",
-            "ioctl",
-            "no_std",
-            "prctl",
-            "system"
-          ],
-          "linux-raw-sys@0.9.4": [
-            "general",
-            "no_std"
           ],
           "litemap@0.8.3": [
             "alloc"
@@ -21786,7 +21943,6 @@
             "sse_shaper_fixed_point_paths",
             "sse_shaper_paths"
           ],
-          "naga-types@30.0.1": [],
           "naga@30.0.1": [
             "default",
             "hlsl-out",
@@ -21794,6 +21950,7 @@
             "spv-out",
             "wgsl-in"
           ],
+          "naga-types@30.0.1": [],
           "natord@1.0.9": [],
           "nix@0.31.3": [
             "default",
@@ -21809,6 +21966,7 @@
             "default",
             "std"
           ],
+          "num-conv@0.2.2": [],
           "num-traits@0.2.19": [
             "default",
             "libm",
@@ -21822,6 +21980,7 @@
             "proc-macro-crate",
             "std"
           ],
+          "num_threads@0.1.8": [],
           "once_cell@1.21.4": [
             "alloc",
             "critical-section",
@@ -21883,9 +22042,9 @@
             "default",
             "eq-separator"
           ],
+          "pin-project@1.1.13": [],
           "pin-project-internal@1.1.13": [],
           "pin-project-lite@0.2.17": [],
-          "pin-project@1.1.13": [],
           "pin-weak@1.1.0": [
             "default",
             "sync"
@@ -21912,6 +22071,7 @@
             "writeable",
             "zerovec"
           ],
+          "powerfmt@0.2.1": [],
           "presser@0.3.1": [],
           "prettyplease@0.2.37": [
             "verbatim"
@@ -21942,6 +22102,25 @@
             "experimental_font_api",
             "std"
           ],
+          "regex@1.13.1": [
+            "default",
+            "perf",
+            "perf-backtrack",
+            "perf-cache",
+            "perf-dfa",
+            "perf-inline",
+            "perf-literal",
+            "perf-onepass",
+            "std",
+            "unicode",
+            "unicode-age",
+            "unicode-bool",
+            "unicode-case",
+            "unicode-gencat",
+            "unicode-perl",
+            "unicode-script",
+            "unicode-segment"
+          ],
           "regex-automata@0.4.18": [
             "alloc",
             "dfa-onepass",
@@ -21968,25 +22147,6 @@
           ],
           "regex-syntax@0.8.11": [
             "default",
-            "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
-            "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
-          ],
-          "regex@1.13.1": [
-            "default",
-            "perf",
-            "perf-backtrack",
-            "perf-cache",
-            "perf-dfa",
-            "perf-inline",
-            "perf-literal",
-            "perf-onepass",
             "std",
             "unicode",
             "unicode-age",
@@ -22064,8 +22224,8 @@
           ],
           "rustversion@1.0.23": [],
           "ryu@1.0.23": [],
-          "scoped-tls-hkt@0.1.5": [],
           "scoped-tls@1.0.1": [],
+          "scoped-tls-hkt@0.1.5": [],
           "scopeguard@1.2.0": [],
           "sctk-adwaita@0.10.1": [
             "ab_glyph",
@@ -22157,10 +22317,6 @@
             "default",
             "std"
           ],
-          "slint-build@1.18.1": [
-            "compat-1-18"
-          ],
-          "slint-macros@1.18.1": [],
           "slint@1.18.1": [
             "accessibility",
             "backend-winit",
@@ -22169,6 +22325,10 @@
             "std",
             "unstable-winit-030"
           ],
+          "slint-build@1.18.1": [
+            "compat-1-18"
+          ],
+          "slint-macros@1.18.1": [],
           "slotmap@1.1.1": [
             "default",
             "std"
@@ -22190,15 +22350,15 @@
             "default",
             "std"
           ],
-          "snafu-derive@0.8.9": [
-            "rust_1_61"
-          ],
           "snafu@0.8.9": [
             "alloc",
             "default",
             "rust_1_61",
             "rust_1_65",
             "std"
+          ],
+          "snafu-derive@0.8.9": [
+            "rust_1_61"
           ],
           "socket2@0.6.5": [
             "all"
@@ -22290,19 +22450,28 @@
             "xattr"
           ],
           "text-size@1.1.1": [],
-          "thiserror-impl@1.0.69": [],
-          "thiserror-impl@2.0.21": [],
           "thiserror@1.0.69": [],
           "thiserror@2.0.21": [
             "default",
             "std"
           ],
-          "tiny-skia-path@0.11.4": [
+          "thiserror-impl@1.0.69": [],
+          "thiserror-impl@2.0.21": [],
+          "time@0.3.55": [
+            "alloc",
+            "formatting",
+            "large-dates",
+            "local-offset",
+            "parsing",
             "std"
           ],
-          "tiny-skia-path@0.12.0": [
-            "default",
-            "std"
+          "time-core@0.1.9": [
+            "large-dates"
+          ],
+          "time-macros@0.2.32": [
+            "formatting",
+            "large-dates",
+            "parsing"
           ],
           "tiny-skia@0.11.4": [
             "simd",
@@ -22312,6 +22481,13 @@
             "default",
             "png-format",
             "simd",
+            "std"
+          ],
+          "tiny-skia-path@0.11.4": [
+            "std"
+          ],
+          "tiny-skia-path@0.12.0": [
+            "default",
             "std"
           ],
           "tiny-xlib@0.2.5": [
@@ -22328,7 +22504,6 @@
             "alloc",
             "default"
           ],
-          "tokio-macros@2.7.2": [],
           "tokio@1.54.1": [
             "libc",
             "macros",
@@ -22341,6 +22516,7 @@
             "tokio-macros",
             "windows-sys"
           ],
+          "tokio-macros@2.7.2": [],
           "toml@1.2.1+spec-1.1.0": [
             "default",
             "display",
@@ -22369,17 +22545,17 @@
             "default",
             "std"
           ],
-          "tracing-attributes@0.1.31": [],
-          "tracing-core@0.1.36": [
-            "once_cell",
-            "std"
-          ],
           "tracing@0.1.44": [
             "attributes",
             "default",
             "log",
             "std",
             "tracing-attributes"
+          ],
+          "tracing-attributes@0.1.31": [],
+          "tracing-core@0.1.36": [
+            "once_cell",
+            "std"
           ],
           "tree_magic_mini@3.2.2": [],
           "ttf-parser@0.25.1": [
@@ -22417,7 +22593,7 @@
             "default"
           ],
           "unty@0.0.4": [],
-          "url@2.5.8": [
+          "url@2.5.9": [
             "default",
             "std"
           ],
@@ -22443,26 +22619,26 @@
             "std"
           ],
           "version_check@0.9.5": [],
-          "vtable-macro@0.5.0": [],
           "vtable@0.5.0": [],
+          "vtable-macro@0.5.0": [],
           "wayland-backend@0.3.17": [
             "client_system"
           ],
           "wayland-client@0.31.15": [],
           "wayland-csd-frame@0.3.0": [],
           "wayland-cursor@0.31.14": [],
+          "wayland-protocols@0.32.13": [
+            "client",
+            "staging",
+            "unstable",
+            "wayland-client"
+          ],
           "wayland-protocols-plasma@0.3.12": [
             "client",
             "wayland-client"
           ],
           "wayland-protocols-wlr@0.3.12": [
             "client",
-            "wayland-client"
-          ],
-          "wayland-protocols@0.32.13": [
-            "client",
-            "staging",
-            "unstable",
             "wayland-client"
           ],
           "wayland-scanner@0.31.11": [],
@@ -22478,9 +22654,9 @@
             "default",
             "std"
           ],
-          "wgpu-core-deps-windows-linux-android@30.0.1": [
+          "wgpu@30.0.1": [
             "dx12",
-            "renderdoc",
+            "metal",
             "vulkan"
           ],
           "wgpu-core@30.0.1": [
@@ -22495,6 +22671,11 @@
             "wgpu-core-deps-windows-linux-android",
             "wgsl"
           ],
+          "wgpu-core-deps-windows-linux-android@30.0.1": [
+            "dx12",
+            "renderdoc",
+            "vulkan"
+          ],
           "wgpu-hal@30.0.1": [
             "dx12",
             "metal",
@@ -22504,34 +22685,6 @@
           ],
           "wgpu-naga-bridge@30.0.1": [],
           "wgpu-types@30.0.1": [],
-          "wgpu@30.0.1": [
-            "dx12",
-            "metal",
-            "vulkan"
-          ],
-          "windows-collections@0.3.2": [
-            "std"
-          ],
-          "windows-core@0.62.2": [
-            "default",
-            "std"
-          ],
-          "windows-future@0.3.2": [
-            "std"
-          ],
-          "windows-implement@0.60.2": [],
-          "windows-interface@0.59.3": [],
-          "windows-link@0.2.1": [],
-          "windows-numerics@0.3.1": [
-            "std"
-          ],
-          "windows-result@0.4.1": [
-            "std"
-          ],
-          "windows-strings@0.5.1": [
-            "std"
-          ],
-          "windows-threading@0.2.1": [],
           "windows@0.62.2": [
             "ApplicationModel",
             "Data",
@@ -22579,6 +22732,29 @@
             "default",
             "std"
           ],
+          "windows-collections@0.3.2": [
+            "std"
+          ],
+          "windows-core@0.62.2": [
+            "default",
+            "std"
+          ],
+          "windows-future@0.3.2": [
+            "std"
+          ],
+          "windows-implement@0.60.2": [],
+          "windows-interface@0.59.3": [],
+          "windows-link@0.2.1": [],
+          "windows-numerics@0.3.1": [
+            "std"
+          ],
+          "windows-result@0.4.1": [
+            "std"
+          ],
+          "windows-strings@0.5.1": [
+            "std"
+          ],
+          "windows-threading@0.2.1": [],
           "winit@0.30.13": [
             "ahash",
             "bytemuck",
@@ -22610,17 +22786,6 @@
             "alloc"
           ],
           "x11-dl@2.21.0": [],
-          "x11rb-protocol@0.13.2": [
-            "randr",
-            "render",
-            "resource_manager",
-            "shape",
-            "shm",
-            "std",
-            "xfixes",
-            "xinput",
-            "xkb"
-          ],
           "x11rb@0.13.2": [
             "allow-unsafe-code",
             "as-raw-xcb-connection",
@@ -22633,6 +22798,17 @@
             "resource_manager",
             "shape",
             "shm",
+            "xfixes",
+            "xinput",
+            "xkb"
+          ],
+          "x11rb-protocol@0.13.2": [
+            "randr",
+            "render",
+            "resource_manager",
+            "shape",
+            "shm",
+            "std",
             "xfixes",
             "xinput",
             "xkb"
@@ -22652,14 +22828,12 @@
             "std"
           ],
           "yeslogic-fontconfig-sys@6.0.1": [],
-          "yoke-derive@0.8.4": [],
           "yoke@0.8.4": [
             "alloc",
             "derive",
             "zerofrom"
           ],
-          "zbus-lockstep-macros@0.5.2": [],
-          "zbus-lockstep@0.5.2": [],
+          "yoke-derive@0.8.4": [],
           "zbus@5.19.0": [
             "async-executor",
             "async-fs",
@@ -22669,6 +22843,8 @@
             "async-task",
             "blocking"
           ],
+          "zbus-lockstep@0.5.2": [],
+          "zbus-lockstep-macros@0.5.2": [],
           "zbus_macros@5.19.0": [
             "default"
           ],
@@ -22682,17 +22858,17 @@
             "eval",
             "std"
           ],
-          "zerocopy-derive@0.8.63": [],
           "zerocopy@0.8.63": [
             "derive",
             "simd",
             "zerocopy-derive"
           ],
-          "zerofrom-derive@0.1.8": [],
+          "zerocopy-derive@0.8.63": [],
           "zerofrom@0.1.8": [
             "alloc",
             "derive"
           ],
+          "zerofrom-derive@0.1.8": [],
           "zeroize@1.9.1": [
             "alloc",
             "default"
@@ -22702,12 +22878,12 @@
             "yoke",
             "zerofrom"
           ],
-          "zerovec-derive@0.11.7": [],
           "zerovec@0.11.9": [
             "alloc",
             "derive",
             "yoke"
           ],
+          "zerovec-derive@0.11.7": [],
           "zlib-rs@0.6.8": [
             "rust-allocator",
             "std"
@@ -22790,7 +22966,9 @@
           "miniz_oxide@0.8.9",
           "miniz_oxide@0.9.1",
           "syn@2.0.119",
-          "syn@3.0.9"
+          "syn@3.0.9",
+          "time-core@0.0.0",
+          "time-core@0.1.9"
         ],
         "package_scopes": {
           "nevrotick-ui": {
@@ -22906,22 +23084,6 @@
                   []
                 ]
               },
-              "chrono@0.4.45": {
-                "target": [
-                  [
-                    "alloc",
-                    "clock",
-                    "iana-time-zone",
-                    "js-sys",
-                    "now",
-                    "std",
-                    "wasm-bindgen",
-                    "wasmbind",
-                    "winapi",
-                    "windows-link"
-                  ]
-                ]
-              },
               "clru@0.6.3": {
                 "target": [
                   []
@@ -22983,6 +23145,13 @@
                     "alloc",
                     "default",
                     "std"
+                  ]
+                ]
+              },
+              "deranged@0.5.9": {
+                "target": [
+                  [
+                    "default"
                   ]
                 ]
               },
@@ -23137,7 +23306,7 @@
                   ]
                 ]
               },
-              "form_urlencoded@1.2.2": {
+              "form_urlencoded@1.2.3": {
                 "host": [
                   [
                     "alloc",
@@ -23290,13 +23459,6 @@
                     "path",
                     "std",
                     "systemfonts"
-                  ]
-                ]
-              },
-              "iana-time-zone@0.1.65": {
-                "target": [
-                  [
-                    "fallback"
                   ]
                 ]
               },
@@ -23698,6 +23860,11 @@
                   []
                 ]
               },
+              "num-conv@0.2.2": {
+                "target": [
+                  []
+                ]
+              },
               "num-traits@0.2.19": {
                 "host": [
                   [
@@ -23727,6 +23894,11 @@
                     "proc-macro-crate",
                     "std"
                   ]
+                ]
+              },
+              "num_threads@0.1.8": {
+                "target": [
+                  []
                 ]
               },
               "once_cell@1.21.4": {
@@ -23836,6 +24008,11 @@
                     "writeable",
                     "zerovec"
                   ]
+                ]
+              },
+              "powerfmt@0.2.1": {
+                "target": [
+                  []
                 ]
               },
               "proc-macro-crate@3.5.0": {
@@ -24250,6 +24427,25 @@
                   []
                 ]
               },
+              "time-core@0.1.9": {
+                "target": [
+                  [
+                    "large-dates"
+                  ]
+                ]
+              },
+              "time@0.3.55": {
+                "target": [
+                  [
+                    "alloc",
+                    "formatting",
+                    "large-dates",
+                    "local-offset",
+                    "parsing",
+                    "std"
+                  ]
+                ]
+              },
               "tiny-skia-path@0.12.0": {
                 "target": [
                   [
@@ -24395,7 +24591,7 @@
                   ]
                 ]
               },
-              "url@2.5.8": {
+              "url@2.5.9": {
                 "host": [
                   [
                     "default",
@@ -25363,16 +25559,6 @@
               }
             }
           },
-          "spin_on": {
-            "features": {
-              "spin_on@0.1.1": {
-                "target": [
-                  []
-                ]
-              }
-            },
-            "local_features": {}
-          },
           "windows-platform-native": {
             "features": {},
             "local_features": {
@@ -25382,6 +25568,16 @@
                 ]
               }
             }
+          },
+          "spin_on": {
+            "features": {
+              "spin_on@0.1.1": {
+                "target": [
+                  []
+                ]
+              }
+            },
+            "local_features": {}
           }
         }
       },
@@ -25567,22 +25763,6 @@
               []
             ]
           },
-          "chrono@0.4.45": {
-            "target": [
-              [
-                "alloc",
-                "clock",
-                "iana-time-zone",
-                "js-sys",
-                "now",
-                "std",
-                "wasm-bindgen",
-                "wasmbind",
-                "winapi",
-                "windows-link"
-              ]
-            ]
-          },
           "cipher@0.5.2": {
             "target": [
               [
@@ -25744,6 +25924,13 @@
                 "oid",
                 "std",
                 "zeroize"
+              ]
+            ]
+          },
+          "deranged@0.5.9": {
+            "target": [
+              [
+                "default"
               ]
             ]
           },
@@ -25918,7 +26105,7 @@
               ]
             ]
           },
-          "form_urlencoded@1.2.2": {
+          "form_urlencoded@1.2.3": {
             "host": [
               [
                 "alloc",
@@ -26554,6 +26741,11 @@
               []
             ]
           },
+          "num-conv@0.2.2": {
+            "target": [
+              []
+            ]
+          },
           "num-traits@0.2.19": {
             "host": [
               [
@@ -26716,6 +26908,11 @@
                 "writeable",
                 "zerovec"
               ]
+            ]
+          },
+          "powerfmt@0.2.1": {
+            "target": [
+              []
             ]
           },
           "proc-macro-crate@3.5.0": {
@@ -27253,6 +27450,25 @@
               ]
             ]
           },
+          "time-core@0.1.9": {
+            "target": [
+              [
+                "large-dates"
+              ]
+            ]
+          },
+          "time@0.3.55": {
+            "target": [
+              [
+                "alloc",
+                "formatting",
+                "large-dates",
+                "local-offset",
+                "parsing",
+                "std"
+              ]
+            ]
+          },
           "tiny-skia-path@0.12.0": {
             "target": [
               [
@@ -27444,7 +27660,7 @@
               []
             ]
           },
-          "url@2.5.8": {
+          "url@2.5.9": {
             "host": [
               [
                 "default",
@@ -27989,12 +28205,12 @@
               []
             ]
           },
-          "windows-platform@0.0.0": {
+          "windows-platform-native@0.0.0": {
             "target": [
               []
             ]
           },
-          "windows-platform-native@0.0.0": {
+          "windows-platform@0.0.0": {
             "target": [
               []
             ]
@@ -28014,10 +28230,10 @@
             "default",
             "rand_core"
           ],
-          "aes-siv@0.8.0": [
+          "aes@0.9.3": [
             "zeroize"
           ],
-          "aes@0.9.3": [
+          "aes-siv@0.8.0": [
             "zeroize"
           ],
           "aho-corasick@1.1.5": [
@@ -28109,18 +28325,6 @@
           "cexpr@0.6.0": [],
           "cfg-if@1.0.5": [],
           "cfg_aliases@0.2.2": [],
-          "chrono@0.4.45": [
-            "alloc",
-            "clock",
-            "iana-time-zone",
-            "js-sys",
-            "now",
-            "std",
-            "wasm-bindgen",
-            "wasmbind",
-            "winapi",
-            "windows-link"
-          ],
           "cipher@0.5.2": [
             "block-buffer",
             "stream-wrapper",
@@ -28154,8 +28358,8 @@
           "codespan-reporting@0.13.1": [],
           "color_quant@1.1.0": [],
           "compact_str@0.9.1": [],
-          "const-field-offset-macro@0.2.1": [],
           "const-field-offset@0.2.1": [],
+          "const-field-offset-macro@0.2.1": [],
           "const-oid@0.9.6": [],
           "convert_case@0.10.0": [],
           "countme@3.0.1": [],
@@ -28196,18 +28400,8 @@
             "std",
             "zeroize"
           ],
-          "derive_more-impl@2.1.1": [
-            "add",
-            "add_assign",
-            "default",
-            "deref",
-            "deref_mut",
-            "display",
-            "error",
-            "from",
-            "into",
-            "mul",
-            "not"
+          "deranged@0.5.9": [
+            "default"
           ],
           "derive_more@2.1.1": [
             "add",
@@ -28221,6 +28415,19 @@
             "mul",
             "not",
             "std"
+          ],
+          "derive_more-impl@2.1.1": [
+            "add",
+            "add_assign",
+            "default",
+            "deref",
+            "deref_mut",
+            "display",
+            "error",
+            "from",
+            "into",
+            "mul",
+            "not"
           ],
           "digest@0.11.3": [
             "block-api",
@@ -28274,7 +28481,7 @@
             "std",
             "system"
           ],
-          "form_urlencoded@1.2.2": [
+          "form_urlencoded@1.2.3": [
             "alloc",
             "std"
           ],
@@ -28296,13 +28503,6 @@
           "gl_generator@0.14.0": [],
           "glob@0.3.4": [],
           "glow@0.18.0": [],
-          "glutin-winit@0.5.0": [
-            "egl",
-            "glx",
-            "wayland",
-            "wgl",
-            "x11"
-          ],
           "glutin@0.32.3": [
             "egl",
             "glutin_egl_sys",
@@ -28316,6 +28516,13 @@
             "windows-sys",
             "x11",
             "x11-dl"
+          ],
+          "glutin-winit@0.5.0": [
+            "egl",
+            "glx",
+            "wayland",
+            "wgl",
+            "x11"
           ],
           "glutin_egl_sys@0.7.1": [],
           "glutin_wgl_sys@0.6.1": [],
@@ -28395,9 +28602,6 @@
             "quote",
             "rust"
           ],
-          "i-slint-core-macros@1.18.1": [
-            "default"
-          ],
           "i-slint-core@1.18.1": [
             "accessibility-text",
             "box-shadow-cache",
@@ -28413,6 +28617,9 @@
             "unicode-linebreak",
             "unicode-script",
             "wgpu-30"
+          ],
+          "i-slint-core-macros@1.18.1": [
+            "default"
           ],
           "i-slint-renderer-skia@1.18.1": [
             "default",
@@ -28469,11 +28676,11 @@
           "idna_adapter@1.2.2": [
             "compiled_data"
           ],
-          "image-webp@0.2.4": [],
           "image@0.25.10": [
             "jpeg",
             "png"
           ],
+          "image-webp@0.2.4": [],
           "imagesize@0.15.0": [
             "aesprite",
             "astc",
@@ -28613,7 +28820,6 @@
             "sse_shaper_paths"
           ],
           "muda@0.19.3": [],
-          "naga-types@30.0.1": [],
           "naga@30.0.1": [
             "default",
             "hlsl-out",
@@ -28621,11 +28827,13 @@
             "spv-out",
             "wgsl-in"
           ],
+          "naga-types@30.0.1": [],
           "natord@1.0.9": [],
           "nom@7.1.3": [
             "alloc",
             "std"
           ],
+          "num-conv@0.2.2": [],
           "num-traits@0.2.19": [
             "default",
             "libm",
@@ -28674,9 +28882,9 @@
             "default",
             "eq-separator"
           ],
+          "pin-project@1.1.13": [],
           "pin-project-internal@1.1.13": [],
           "pin-project-lite@0.2.17": [],
-          "pin-project@1.1.13": [],
           "pin-weak@1.1.0": [
             "default",
             "sync"
@@ -28705,6 +28913,7 @@
             "writeable",
             "zerovec"
           ],
+          "powerfmt@0.2.1": [],
           "presser@0.3.1": [],
           "prettyplease@0.2.37": [
             "verbatim"
@@ -28733,6 +28942,25 @@
             "experimental_font_api",
             "std"
           ],
+          "regex@1.13.1": [
+            "default",
+            "perf",
+            "perf-backtrack",
+            "perf-cache",
+            "perf-dfa",
+            "perf-inline",
+            "perf-literal",
+            "perf-onepass",
+            "std",
+            "unicode",
+            "unicode-age",
+            "unicode-bool",
+            "unicode-case",
+            "unicode-gencat",
+            "unicode-perl",
+            "unicode-script",
+            "unicode-segment"
+          ],
           "regex-automata@0.4.18": [
             "alloc",
             "dfa-onepass",
@@ -28759,25 +28987,6 @@
           ],
           "regex-syntax@0.8.11": [
             "default",
-            "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
-            "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
-          ],
-          "regex@1.13.1": [
-            "default",
-            "perf",
-            "perf-backtrack",
-            "perf-cache",
-            "perf-dfa",
-            "perf-inline",
-            "perf-literal",
-            "perf-onepass",
             "std",
             "unicode",
             "unicode-age",
@@ -28822,6 +29031,9 @@
             "std"
           ],
           "rustc_version@0.4.1": [],
+          "rustls@0.23.46": [
+            "std"
+          ],
           "rustls-cng-crypto@0.1.2": [],
           "rustls-pki-types@1.15.1": [
             "alloc",
@@ -28831,9 +29043,6 @@
           "rustls-platform-verifier@0.7.1": [],
           "rustls-webpki@0.103.16": [
             "alloc",
-            "std"
-          ],
-          "rustls@0.23.46": [
             "std"
           ],
           "rustversion@1.0.23": [],
@@ -28930,10 +29139,6 @@
             "default",
             "std"
           ],
-          "slint-build@1.18.1": [
-            "compat-1-18"
-          ],
-          "slint-macros@1.18.1": [],
           "slint@1.18.1": [
             "accessibility",
             "backend-winit",
@@ -28942,6 +29147,10 @@
             "std",
             "unstable-winit-030"
           ],
+          "slint-build@1.18.1": [
+            "compat-1-18"
+          ],
+          "slint-macros@1.18.1": [],
           "slotmap@1.1.1": [
             "default",
             "std"
@@ -28959,15 +29168,15 @@
             "default",
             "std"
           ],
-          "snafu-derive@0.8.9": [
-            "rust_1_61"
-          ],
           "snafu@0.8.9": [
             "alloc",
             "default",
             "rust_1_61",
             "rust_1_65",
             "std"
+          ],
+          "snafu-derive@0.8.9": [
+            "rust_1_61"
           ],
           "socket2@0.6.5": [
             "all"
@@ -29063,19 +29272,35 @@
             "xattr"
           ],
           "text-size@1.1.1": [],
-          "thiserror-impl@2.0.21": [],
           "thiserror@2.0.21": [
             "default",
             "std"
           ],
-          "tiny-skia-path@0.12.0": [
-            "default",
+          "thiserror-impl@2.0.21": [],
+          "time@0.3.55": [
+            "alloc",
+            "formatting",
+            "large-dates",
+            "local-offset",
+            "parsing",
             "std"
+          ],
+          "time-core@0.1.9": [
+            "large-dates"
+          ],
+          "time-macros@0.2.32": [
+            "formatting",
+            "large-dates",
+            "parsing"
           ],
           "tiny-skia@0.12.0": [
             "default",
             "png-format",
             "simd",
+            "std"
+          ],
+          "tiny-skia-path@0.12.0": [
+            "default",
             "std"
           ],
           "tinystr@0.8.5": [
@@ -29086,7 +29311,6 @@
             "alloc",
             "default"
           ],
-          "tokio-macros@2.7.2": [],
           "tokio@1.54.1": [
             "libc",
             "macros",
@@ -29099,6 +29323,7 @@
             "tokio-macros",
             "windows-sys"
           ],
+          "tokio-macros@2.7.2": [],
           "toml@1.2.1+spec-1.1.0": [
             "default",
             "display",
@@ -29127,17 +29352,17 @@
             "default",
             "std"
           ],
-          "tracing-attributes@0.1.31": [],
-          "tracing-core@0.1.36": [
-            "once_cell",
-            "std"
-          ],
           "tracing@0.1.44": [
             "attributes",
             "default",
             "log",
             "std",
             "tracing-attributes"
+          ],
+          "tracing-attributes@0.1.31": [],
+          "tracing-core@0.1.36": [
+            "once_cell",
+            "std"
           ],
           "typed-index-collections@3.5.0": [
             "alloc",
@@ -29167,7 +29392,7 @@
           ],
           "untrusted@0.9.0": [],
           "unty@0.0.4": [],
-          "url@2.5.8": [
+          "url@2.5.9": [
             "default",
             "std"
           ],
@@ -29193,17 +29418,17 @@
             "std"
           ],
           "version_check@0.9.5": [],
-          "vtable-macro@0.5.0": [],
           "vtable@0.5.0": [],
+          "vtable-macro@0.5.0": [],
           "webbrowser@1.2.6": [],
           "weezl@0.1.12": [
             "alloc",
             "default",
             "std"
           ],
-          "wgpu-core-deps-windows-linux-android@30.0.1": [
+          "wgpu@30.0.1": [
             "dx12",
-            "renderdoc",
+            "metal",
             "vulkan"
           ],
           "wgpu-core@30.0.1": [
@@ -29218,6 +29443,11 @@
             "wgpu-core-deps-windows-linux-android",
             "wgsl"
           ],
+          "wgpu-core-deps-windows-linux-android@30.0.1": [
+            "dx12",
+            "renderdoc",
+            "vulkan"
+          ],
           "wgpu-hal@30.0.1": [
             "dx12",
             "metal",
@@ -29227,10 +29457,62 @@
           ],
           "wgpu-naga-bridge@30.0.1": [],
           "wgpu-types@30.0.1": [],
-          "wgpu@30.0.1": [
-            "dx12",
-            "metal",
-            "vulkan"
+          "windows@0.61.3": [
+            "Win32",
+            "Win32_Foundation",
+            "Win32_Security",
+            "Win32_Security_Cryptography",
+            "Win32_System",
+            "Win32_System_WinRT",
+            "default",
+            "std"
+          ],
+          "windows@0.62.2": [
+            "ApplicationModel",
+            "Data",
+            "Data_Xml",
+            "Data_Xml_Dom",
+            "Foundation",
+            "UI",
+            "UI_Notifications",
+            "Win32",
+            "Win32_Devices",
+            "Win32_Devices_DeviceAndDriverInstallation",
+            "Win32_Devices_Display",
+            "Win32_Foundation",
+            "Win32_Globalization",
+            "Win32_Graphics",
+            "Win32_Graphics_Direct3D",
+            "Win32_Graphics_Direct3D12",
+            "Win32_Graphics_Direct3D_Dxc",
+            "Win32_Graphics_Direct3D_Fxc",
+            "Win32_Graphics_DirectComposition",
+            "Win32_Graphics_DirectWrite",
+            "Win32_Graphics_Dwm",
+            "Win32_Graphics_Dxgi",
+            "Win32_Graphics_Dxgi_Common",
+            "Win32_Graphics_Gdi",
+            "Win32_Security",
+            "Win32_System",
+            "Win32_System_Com",
+            "Win32_System_Diagnostics",
+            "Win32_System_Diagnostics_Debug",
+            "Win32_System_Kernel",
+            "Win32_System_LibraryLoader",
+            "Win32_System_Ole",
+            "Win32_System_Performance",
+            "Win32_System_Threading",
+            "Win32_System_Variant",
+            "Win32_System_WinRT",
+            "Win32_UI",
+            "Win32_UI_Accessibility",
+            "Win32_UI_HiDpi",
+            "Win32_UI_Input",
+            "Win32_UI_Input_KeyboardAndMouse",
+            "Win32_UI_Shell",
+            "Win32_UI_WindowsAndMessaging",
+            "default",
+            "std"
           ],
           "windows-collections@0.2.0": [],
           "windows-collections@0.3.2": [
@@ -29353,63 +29635,6 @@
           "windows-targets@0.52.6": [],
           "windows-threading@0.1.0": [],
           "windows-threading@0.2.1": [],
-          "windows@0.61.3": [
-            "Win32",
-            "Win32_Foundation",
-            "Win32_Security",
-            "Win32_Security_Cryptography",
-            "Win32_System",
-            "Win32_System_WinRT",
-            "default",
-            "std"
-          ],
-          "windows@0.62.2": [
-            "ApplicationModel",
-            "Data",
-            "Data_Xml",
-            "Data_Xml_Dom",
-            "Foundation",
-            "UI",
-            "UI_Notifications",
-            "Win32",
-            "Win32_Devices",
-            "Win32_Devices_DeviceAndDriverInstallation",
-            "Win32_Devices_Display",
-            "Win32_Foundation",
-            "Win32_Globalization",
-            "Win32_Graphics",
-            "Win32_Graphics_Direct3D",
-            "Win32_Graphics_Direct3D12",
-            "Win32_Graphics_Direct3D_Dxc",
-            "Win32_Graphics_Direct3D_Fxc",
-            "Win32_Graphics_DirectComposition",
-            "Win32_Graphics_DirectWrite",
-            "Win32_Graphics_Dwm",
-            "Win32_Graphics_Dxgi",
-            "Win32_Graphics_Dxgi_Common",
-            "Win32_Graphics_Gdi",
-            "Win32_Security",
-            "Win32_System",
-            "Win32_System_Com",
-            "Win32_System_Diagnostics",
-            "Win32_System_Diagnostics_Debug",
-            "Win32_System_Kernel",
-            "Win32_System_LibraryLoader",
-            "Win32_System_Ole",
-            "Win32_System_Performance",
-            "Win32_System_Threading",
-            "Win32_System_Variant",
-            "Win32_System_WinRT",
-            "Win32_UI",
-            "Win32_UI_Accessibility",
-            "Win32_UI_HiDpi",
-            "Win32_UI_Input",
-            "Win32_UI_Input_KeyboardAndMouse",
-            "Win32_UI_Shell",
-            "Win32_UI_WindowsAndMessaging",
-            "default",
-            "std"
-          ],
           "windows_x86_64_msvc@0.52.6": [],
           "winit@0.30.13": [
             "ahash",
@@ -29445,27 +29670,27 @@
           "yazi@0.2.2": [
             "std"
           ],
-          "yoke-derive@0.8.4": [],
           "yoke@0.8.4": [
             "alloc",
             "derive",
             "zerofrom"
           ],
+          "yoke-derive@0.8.4": [],
           "zeno@0.3.3": [
             "eval",
             "std"
           ],
-          "zerocopy-derive@0.8.63": [],
           "zerocopy@0.8.63": [
             "derive",
             "simd",
             "zerocopy-derive"
           ],
-          "zerofrom-derive@0.1.8": [],
+          "zerocopy-derive@0.8.63": [],
           "zerofrom@0.1.8": [
             "alloc",
             "derive"
           ],
+          "zerofrom-derive@0.1.8": [],
           "zeroize@1.9.1": [
             "alloc",
             "default"
@@ -29475,12 +29700,12 @@
             "yoke",
             "zerofrom"
           ],
-          "zerovec-derive@0.11.7": [],
           "zerovec@0.11.9": [
             "alloc",
             "derive",
             "yoke"
           ],
+          "zerovec-derive@0.11.7": [],
           "zlib-rs@0.6.8": [
             "rust-allocator",
             "std"
@@ -29563,6 +29788,8 @@
           "smol_str@0.3.7",
           "syn@2.0.119",
           "syn@3.0.9",
+          "time-core@0.0.0",
+          "time-core@0.1.9",
           "windows-collections@0.2.0",
           "windows-collections@0.3.2",
           "windows-core@0.61.2",
@@ -29733,22 +29960,6 @@
                   []
                 ]
               },
-              "chrono@0.4.45": {
-                "target": [
-                  [
-                    "alloc",
-                    "clock",
-                    "iana-time-zone",
-                    "js-sys",
-                    "now",
-                    "std",
-                    "wasm-bindgen",
-                    "wasmbind",
-                    "winapi",
-                    "windows-link"
-                  ]
-                ]
-              },
               "clipboard-win@5.4.3": {
                 "target": [
                   [
@@ -29841,6 +30052,13 @@
                     "alloc",
                     "default",
                     "std"
+                  ]
+                ]
+              },
+              "deranged@0.5.9": {
+                "target": [
+                  [
+                    "default"
                   ]
                 ]
               },
@@ -30005,7 +30223,7 @@
                   ]
                 ]
               },
-              "form_urlencoded@1.2.2": {
+              "form_urlencoded@1.2.3": {
                 "host": [
                   [
                     "alloc",
@@ -30610,6 +30828,11 @@
                   []
                 ]
               },
+              "num-conv@0.2.2": {
+                "target": [
+                  []
+                ]
+              },
               "num-traits@0.2.19": {
                 "host": [
                   [
@@ -30758,6 +30981,11 @@
                     "writeable",
                     "zerovec"
                   ]
+                ]
+              },
+              "powerfmt@0.2.1": {
+                "target": [
+                  []
                 ]
               },
               "proc-macro-crate@3.5.0": {
@@ -31229,6 +31457,25 @@
                   ]
                 ]
               },
+              "time-core@0.1.9": {
+                "target": [
+                  [
+                    "large-dates"
+                  ]
+                ]
+              },
+              "time@0.3.55": {
+                "target": [
+                  [
+                    "alloc",
+                    "formatting",
+                    "large-dates",
+                    "local-offset",
+                    "parsing",
+                    "std"
+                  ]
+                ]
+              },
               "tiny-skia-path@0.12.0": {
                 "target": [
                   [
@@ -31387,7 +31634,7 @@
                   ]
                 ]
               },
-              "url@2.5.8": {
+              "url@2.5.9": {
                 "host": [
                   [
                     "default",
@@ -32772,16 +33019,6 @@
               }
             }
           },
-          "spin_on": {
-            "features": {
-              "spin_on@0.1.1": {
-                "target": [
-                  []
-                ]
-              }
-            },
-            "local_features": {}
-          },
           "windows-platform-native": {
             "features": {},
             "local_features": {
@@ -32791,6 +33028,16 @@
                 ]
               }
             }
+          },
+          "spin_on": {
+            "features": {
+              "spin_on@0.1.1": {
+                "target": [
+                  []
+                ]
+              }
+            },
+            "local_features": {}
           }
         }
       }
@@ -32804,8 +33051,8 @@
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "files_sha256": "f766170eff8008d5ec1b837791311ff42942bdb7b814d33b8f2a589510cf249c",
-      "manifest_sha256": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a"
+      "files_sha256": "5fbfc58b262c844d68e35ae8cab305f1918c0062b0ab24cf5fa274a476d0b325",
+      "manifest_sha256": "7e3a49f479c9b39d459f33cc9066f1f0e473cfbf754289ad1a0737882ef2bd14"
     }
   },
   "cooldown_admission": {
@@ -32815,32 +33062,32 @@
       "incompatible_publish_age": "deny"
     },
     "status": "resolved",
-    "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-    "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
+    "baseline_lockfile_sha256": "044f4a7e97a97da0400299a9990c5395bfc2ec8290e0d2ba25baa175f1c61d52",
+    "baseline_registry_sha256": "274b0f0bf48cd012de23f8f9caae9e7ac1e1cd3a801474fefeec26f8f10ebe98",
     "resolution": {
       "scope": "product",
-      "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-      "baseline_admission_sha256": "4ccec832343d1dfdf64136fd1e5510e4b64a7020d03934354c73996bc0c0d832",
+      "baseline_lockfile_sha256": "044f4a7e97a97da0400299a9990c5395bfc2ec8290e0d2ba25baa175f1c61d52",
+      "baseline_admission_sha256": "b4239fe2c90d8c7b9d17e2f76f0aaba87cf7f1a94e47f5617a906d21041a60c8",
       "retained_exception_decisions": [],
       "acquisition_filesystem": {
         "bytes": 536870912,
         "inodes": 16384,
-        "device": 93
+        "device": 138
       },
-      "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
-      "candidate_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-      "candidate_graph_sha256": "32a024ba1a3d1d3d8ff42cfe7511ef050856d8bfcfb95b4df0a947c63669003d",
-      "candidate_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
-      "operation": "workspace",
-      "package": null,
-      "version": null,
-      "started_utc": "2026-11-23T10:08:51Z",
-      "finished_utc": "2026-11-23T10:08:58Z",
-      "cutoff_utc": "2026-11-09T10:08:51Z",
+      "baseline_registry_sha256": "274b0f0bf48cd012de23f8f9caae9e7ac1e1cd3a801474fefeec26f8f10ebe98",
+      "candidate_lockfile_sha256": "d0cbe60cb93954940854e14cbf0b27f6d4edececcb06b79dd09377fbd5378515",
+      "candidate_graph_sha256": "bd053e37dc6d894a5383e0de9de731f856ba10fd0f056e43422bd8a9645a302a",
+      "candidate_registry_sha256": "0cc517dee573f19743dcfcfdfcd3e7f133e42eca50235bbffd2f8280bab801d0",
+      "operation": "precise",
+      "package": "url@2.5.8",
+      "version": "2.5.9",
+      "started_utc": "2026-11-23T20:53:54Z",
+      "finished_utc": "2026-11-23T20:54:02Z",
+      "cutoff_utc": "2026-11-09T20:53:54Z",
       "cargo_sha256": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
       "configuration_sha256": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
       "manifests_sha256": {
-        "Cargo.toml": "ad2c79c05563db00c49161671353999f8399ed67813285cd2acaa6a14c527828",
+        "Cargo.toml": "deaf459f11b77d774bb6328598344db92b9e67a343c41964a42ce8fdbf543a62",
         "crates/nevrotick-engine/Cargo.toml": "aa764db36ca0cdc8af511b11ae3a17f3663a37434c20900afd0828916ac0755d",
         "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
         "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
@@ -32851,10 +33098,11 @@
         "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066",
         "third-party/accesskit_consumer/Cargo.toml": "4b6bec8f0be554ffc859b58584a5a51d328ec0ebede23493ea8f7ac849c91318",
         "third-party/accesskit_windows/Cargo.toml": "61fc6b3f480198d28b9292e3aacf098d135b4eb862bdc59eed034800b827d900",
+        "third-party/i-slint-core/Cargo.toml": "6ff63cb3d67f7ab1cddac7b89d4fb04c67ee79036f55f172464cafb9c6961cf9",
         "third-party/spin_on/Cargo.toml": "ebb6b87bd5f5425ecee070e57ab06933813d538488bbe176317a80638690f32b",
-        "tools/crypto-aes-siv-witness/Cargo.toml": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a",
+        "tools/crypto-aes-siv-witness/Cargo.toml": "7e3a49f479c9b39d459f33cc9066f1f0e473cfbf754289ad1a0737882ef2bd14",
         "tools/crypto-aes-siv-witness/fuzz/Cargo.toml": "7166f8ccadec5d550990523cdddc8660c74eb7a3fbc843570851fa63cbac6753",
-        "tools/crypto-cng-lifecycle/Cargo.toml": "39067931a3b221a4bc3675e1b6a82c14333dfe7d58795d487a1656d8a1d40dc0",
+        "tools/crypto-cng-lifecycle/Cargo.toml": "e2eb4dfa6a2417dbf06d626a3dd9ec69a52e3e92154b0cc200b35d46d51a8f15",
         "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/Cargo.toml": "705b266c89c485ed562621a114fcc24f1638f32a4b728fac9157655bce7d5cac",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/upstream/Cargo.toml": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2",
@@ -32865,18 +33113,344 @@
       "command": [
         "/toolchain/bin/cargo",
         "update",
-        "--workspace"
+        "--package",
+        "url@2.5.8",
+        "--precise",
+        "2.5.9"
       ],
       "exit_code": 0,
       "failure": null,
-      "added": [],
-      "removed": [],
-      "publication": [],
-      "exception": null,
-      "metadata_inventory_sha256": "244a6e7ba2618aa78a71aa9efc4902d2be0e5a51dd0534adfb4a31c8cf9e1b29",
-      "result_sha256": "26de096f84b693c13ea1207f368cbaaa7a1f3b3e85a0434aa1f36b1c9926ccea",
-      "generated_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-      "proposed_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db"
+      "added": [
+        {
+          "name": "form_urlencoded",
+          "version": "1.2.3",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "checksum": "afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e"
+        },
+        {
+          "name": "url",
+          "version": "2.5.9",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "checksum": "f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a"
+        }
+      ],
+      "removed": [
+        {
+          "name": "form_urlencoded",
+          "version": "1.2.2",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "checksum": "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
+        },
+        {
+          "name": "url",
+          "version": "2.5.8",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "checksum": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed"
+        }
+      ],
+      "publication": [
+        {
+          "package": {
+            "name": "form_urlencoded",
+            "version": "1.2.3",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "checksum": "afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e"
+          },
+          "published_utc": "2026-11-20T23:02:49Z",
+          "source_url": "https://index.crates.io/fo/rm/form_urlencoded",
+          "index_record_sha256": "33672fc7b8f1073359772457096fb7e54e61499e155f3ca6ae4c14f8f3691258",
+          "index_record": {
+            "name": "form_urlencoded",
+            "vers": "1.2.3",
+            "deps": [
+              {
+                "name": "percent-encoding",
+                "req": "^2.3.2",
+                "features": [],
+                "optional": false,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              }
+            ],
+            "cksum": "afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e",
+            "features": {
+              "alloc": [
+                "percent-encoding/alloc"
+              ],
+              "default": [
+                "std"
+              ],
+              "std": [
+                "alloc",
+                "percent-encoding/std"
+              ]
+            },
+            "yanked": false,
+            "rust_version": "1.51",
+            "pubtime": "2026-11-20T23:02:49Z"
+          }
+        },
+        {
+          "package": {
+            "name": "url",
+            "version": "2.5.9",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "checksum": "f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a"
+          },
+          "published_utc": "2026-11-20T23:03:07Z",
+          "source_url": "https://index.crates.io/3/u/url",
+          "index_record_sha256": "45241f6285062a0748ab92499560039cc27157718764895818ff4508e1c37642",
+          "index_record": {
+            "name": "url",
+            "vers": "2.5.9",
+            "deps": [
+              {
+                "name": "bencher",
+                "req": "^0.1",
+                "features": [],
+                "optional": false,
+                "default_features": true,
+                "target": null,
+                "kind": "dev"
+              },
+              {
+                "name": "form_urlencoded",
+                "req": "^1.2.3",
+                "features": [
+                  "alloc"
+                ],
+                "optional": false,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              },
+              {
+                "name": "idna",
+                "req": "^1.1.0",
+                "features": [
+                  "alloc",
+                  "compiled_data"
+                ],
+                "optional": false,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              },
+              {
+                "name": "percent-encoding",
+                "req": "^2.3.2",
+                "features": [
+                  "alloc"
+                ],
+                "optional": false,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              },
+              {
+                "name": "serde",
+                "req": "^1.0",
+                "features": [],
+                "optional": true,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              },
+              {
+                "name": "serde",
+                "req": "^1.0",
+                "features": [],
+                "optional": false,
+                "default_features": true,
+                "target": null,
+                "kind": "dev"
+              },
+              {
+                "name": "serde_derive",
+                "req": "^1.0",
+                "features": [],
+                "optional": true,
+                "default_features": false,
+                "target": null,
+                "kind": "normal"
+              },
+              {
+                "name": "serde_derive",
+                "req": "^1.0",
+                "features": [],
+                "optional": false,
+                "default_features": true,
+                "target": null,
+                "kind": "dev"
+              },
+              {
+                "name": "serde_json",
+                "req": "^1.0",
+                "features": [],
+                "optional": false,
+                "default_features": true,
+                "target": null,
+                "kind": "dev"
+              },
+              {
+                "name": "wasm-bindgen-test",
+                "req": "^0.3",
+                "features": [],
+                "optional": false,
+                "default_features": true,
+                "target": "cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))",
+                "kind": "dev"
+              }
+            ],
+            "cksum": "f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a",
+            "features": {
+              "debugger_visualizer": [],
+              "expose_internals": []
+            },
+            "features2": {
+              "default": [
+                "std"
+              ],
+              "serde": [
+                "dep:serde",
+                "dep:serde_derive"
+              ],
+              "std": [
+                "idna/std",
+                "percent-encoding/std",
+                "form_urlencoded/std",
+                "serde?/std"
+              ]
+            },
+            "yanked": false,
+            "rust_version": "1.63",
+            "pubtime": "2026-11-20T23:03:07Z",
+            "v": 2
+          }
+        }
+      ],
+      "exception": {
+        "decision_id": "OD-04-URL-20261124",
+        "decision_ref": "docs/nevrotick-owner-decisions.md#url-dependency-cooldown-exception--24-november-2026",
+        "decision_sha256": "85302cc036ad7dbea60b3d727f433c6b286122cf5228885fa55c0e67c34282e6",
+        "requested_package": "url@2.5.8",
+        "requested_version": "2.5.9",
+        "reason": "Clear the verified RustSec finding in the approved Slint tool graph with one exact resolver child.",
+        "primary_fix_evidence": [
+          "https://rustsec.org/advisories/RUSTSEC-2026-0592.html",
+          "https://github.com/servo/rust-url/releases/tag/v2.5.9"
+        ],
+        "targets": [
+          "x86_64-unknown-linux-gnu",
+          "x86_64-pc-windows-msvc"
+        ],
+        "features": {
+          "default": {
+            "x86_64-unknown-linux-gnu": {
+              "form_urlencoded@1.2.3": {
+                "host": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ]
+              },
+              "url@2.5.9": {
+                "host": [
+                  [
+                    "default",
+                    "std"
+                  ]
+                ]
+              }
+            },
+            "x86_64-pc-windows-msvc": {
+              "form_urlencoded@1.2.3": {
+                "host": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ],
+                "target": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ]
+              },
+              "url@2.5.9": {
+                "host": [
+                  [
+                    "default",
+                    "std"
+                  ]
+                ],
+                "target": [
+                  [
+                    "std"
+                  ]
+                ]
+              }
+            }
+          },
+          "engine-ke-association": {
+            "x86_64-unknown-linux-gnu": {
+              "form_urlencoded@1.2.3": {
+                "host": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ]
+              },
+              "url@2.5.9": {
+                "host": [
+                  [
+                    "default",
+                    "std"
+                  ]
+                ]
+              }
+            },
+            "x86_64-pc-windows-msvc": {
+              "form_urlencoded@1.2.3": {
+                "host": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ],
+                "target": [
+                  [
+                    "alloc",
+                    "std"
+                  ]
+                ]
+              },
+              "url@2.5.9": {
+                "host": [
+                  [
+                    "default",
+                    "std"
+                  ]
+                ],
+                "target": [
+                  [
+                    "std"
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "delta_sha256": "08e97d1ffe5735830de3f30bd0f3094aa48c767441403686ea8324e31987d762"
+      },
+      "metadata_inventory_sha256": "e76694333289b889037f58ad4455a2472f87783155b5bf7a14fd5fb31e7bfe79",
+      "result_sha256": "89b650d077f191fba4e27d6ae6d06a67a0935124abcf03ea6e0f7806a8f916a1",
+      "generated_lockfile_sha256": "d0cbe60cb93954940854e14cbf0b27f6d4edececcb06b79dd09377fbd5378515",
+      "proposed_lockfile_sha256": null
     }
   }
 }

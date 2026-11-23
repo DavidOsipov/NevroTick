@@ -399,11 +399,19 @@ class EngineKeAdmissionControls(unittest.TestCase):
 
 
 class EngineKeSourceControls(unittest.TestCase):
+    def test_standalone_crypto_lints_match_workspace_with_unsafe_forbidden(self):
+        import tomllib
+        expected = tomllib.loads((FIXTURE.ROOT / "policy/rust-workspace.toml").read_text())["workspace"]["lints"]
+        expected["rust"]["unsafe_code"] = "forbid"
+        for package in ("crypto-aes-siv-witness", "crypto-cng-lifecycle"):
+            with self.subTest(package=package):
+                manifest = tomllib.loads((FIXTURE.ROOT / "tools" / package / "Cargo.toml").read_text())
+                self.assertEqual(manifest["lints"], expected)
+
     def test_exact_nonmember_source_is_bound_and_cannot_change_after_admission(self):
-        import hashlib
-        import json
         import shutil
-        import tempfile
+        import tomllib
+        workspace_lints = tomllib.loads((FIXTURE.ROOT / "policy/rust-workspace.toml").read_text())["workspace"]["lints"]
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             directory = root / "tools/crypto-aes-siv-witness"
@@ -412,14 +420,32 @@ class EngineKeSourceControls(unittest.TestCase):
             for name in ("Cargo.toml", "lib.rs", "sealing.rs", "staged.rs"):
                 shutil.copyfile(original / name, directory / name)
             record = prototype_policy()["engine_ke_association"]["first_party_dependency"]
-            files = VERIFY.inventory(directory)
-            record["files_sha256"] = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-            record["manifest_sha256"] = files["Cargo.toml"]
-            accepted = VERIFY.admit_first_party_dependency(root, record)
+
+            def refresh_inventory(record):
+                files = VERIFY.inventory(directory)
+                record["files_sha256"] = hashlib.sha256(
+                    json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
+                ).hexdigest()
+                record["manifest_sha256"] = files["Cargo.toml"]
+
+            refresh_inventory(record)
+            accepted = VERIFY.admit_first_party_dependency(root, record, workspace_lints)
             self.assertIn("tools/crypto-aes-siv-witness/lib.rs", accepted)
+            manifest = directory / "Cargo.toml"
+            reviewed = manifest.read_text()
+            for before, after in (("unused_must_use = \"deny\"\n", ""),
+                                  ('unsafe_code = "forbid"', 'unsafe_code = "deny"')):
+                with self.subTest(change=before):
+                    self.assertEqual(reviewed.count(before), 1)
+                    manifest.write_text(reviewed.replace(before, after, 1))
+                    rebound = dict(record)
+                    refresh_inventory(rebound)
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "strict lint tables"):
+                        VERIFY.admit_first_party_dependency(root, rebound, workspace_lints)
+            manifest.write_text(reviewed)
             (directory / "sealing.rs").write_text("changed source")
             with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "nonmember source"):
-                VERIFY.admit_first_party_dependency(root, record)
+                VERIFY.admit_first_party_dependency(root, record, workspace_lints)
 
     def test_prototype_deny_view_preserves_default_and_adds_exact_selected_grants(self):
         import tomllib

@@ -5,15 +5,19 @@ owned copies of the policy and parse actual member manifests; only Cargo's
 metadata subprocess is replaced with a declared fixture response.
 """
 
+from contextlib import redirect_stderr, redirect_stdout
 import importlib.util
+import io
 import json
 from pathlib import Path
 import re
 import shutil
+import sys
 import tempfile
 import tomllib
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -359,6 +363,46 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.replace("clippy.toml", "allow-unwrap-in-tests = false", "allow-unwrap-in-tests = true")
         self.assertEqual(STRICT.read_configuration(self.root, snapshot), expected)
         self.assert_refused("configuration keys or values: clippy")
+
+
+class ExplicitFixtureAdmissionTests(unittest.TestCase):
+    def test_runner_delivers_product_admission_error_as_incomplete_receipt(self):
+        class ProductIncomplete(RuntimeError):
+            pass
+
+        def refuse(root, toolchain, nextest, lane):
+            self.assertEqual((root, toolchain, nextest, lane), (ROOT, owned, executable, "portable"))
+            raise ProductIncomplete("pinned executable differs")
+
+        with tempfile.TemporaryDirectory() as directory:
+            owned = Path(directory).resolve()
+            executable = owned / "nextest"
+            executable.touch()
+            receipt = owned / "receipt.json"
+            product = SimpleNamespace(admit_tools=refuse, ENV=SimpleNamespace(Incomplete=ProductIncomplete))
+            with (patch.dict(sys.modules, {"verify": product}),
+                  patch.object(STRICT.ENV, "require_cargo_context", return_value={}),
+                  patch.object(STRICT.ENV, "smoke") as smoke,
+                  redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO())):
+                status = STRICT.main(["--fixtures", "--fixture-toolchain-dir", str(owned),
+                                      "--fixture-nextest", str(executable), "--json", str(receipt)])
+            smoke.assert_not_called()
+            self.assertEqual(status, 1)
+            report = json.loads(receipt.read_text())
+            self.assertEqual(report["status"], "incomplete")
+            self.assertEqual(report["error"], "pinned executable differs")
+            self.assertNotIn("fixtures", report)
+
+    def test_runner_requires_both_paths_and_the_fixture_lane(self):
+        for args in (
+            ["--fixtures", "--fixture-toolchain-dir", "runner"],
+            ["--fixture-toolchain-dir", "runner", "--fixture-nextest", "nextest"],
+            ["--fixtures", "--workspace", "--fixture-toolchain-dir", "runner", "--fixture-nextest", "nextest"],
+        ):
+            with self.subTest(args=args), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    STRICT.main(args)
+                self.assertEqual(error.exception.code, 2)
 
 
 class FixtureProfileConstructionTests(unittest.TestCase):

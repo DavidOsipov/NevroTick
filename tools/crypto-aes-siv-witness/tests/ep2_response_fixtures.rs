@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Bounded public fixture generator; execution requires the admitted fixture lane.
 //! Run as an integration test of the existing AES witness, using its current
-//! aes_siv dependency. Output is public literal fixtures, never TLS evidence.
+//! `aes_siv` dependency. Output is public literal fixtures, never TLS evidence.
 
 #[path = "common/ep2_response_builder.rs"]
 mod builder;
@@ -62,6 +62,10 @@ fn packet_with_nonce(
 /// # Errors
 /// Fail generation rather than inventing tags or emitting a partially valid row.
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep the explicit ordered corpus together so reviewers can compare each packet variation with the same healthy control and verify the emitted roster."
+)]
 fn generate_ep2_response_fixtures() -> FixtureResult {
     let mut header = [0_u8; 48];
     header[0] = 0x24;

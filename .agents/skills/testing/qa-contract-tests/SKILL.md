@@ -22,6 +22,13 @@ interior mutability, migration and FFI conversion. Standalone
 `allow_unvalidated`; examine each `skip` against its independently reviewed owner.
 Check actual rule/`dive` coverage: metadata-only attributes may compile without
 checking invariants; challenge field's semantic rule through its consumer.
+For the [selected UI preview seams](../../../../TOOLING.md#ui-preview-source-report),
+pair `" bad"` within the constructor's size bounds with a valid label and
+valid host and port. Check the original, a reachable validation sentinel and
+an otherwise compiling omission specimen. Observe typed refusal and retained
+accepted state at the affected consumers. For a changed source-draft baseline
+contract, check both fixture startup and recovery callers, including capacity
+and duplicate refusal before publishing the baseline.
 Use existing compiler-contract registry for field-omission, visibility and capability
 claims. Require intended diagnostic plus compiling legitimate consumer under same
 compiler/target/features. Test restricted scope: external rejection at an outer

@@ -28,7 +28,9 @@ compat-1-18 for portable model/binding tests, without a desktop backend.
 The optional patched_packages field admits dependency-free spin_on 0.1.1 at
 third-party/spin_on, optionally followed by the exact Windows-only
 accesskit_windows 0.34.0 derivative at third-party/accesskit_windows, then the
-accesskit_consumer 0.38.0 derivative at third-party/accesskit_consumer. Original
+accesskit_consumer 0.38.0 derivative at third-party/accesskit_consumer. The
+calendar replacement adds the exact i-slint-core 1.18.1 GUI derivative at
+third-party/i-slint-core. Original
 archive/file-map/revision and actual derivative/file-change pins are distinct;
 no registry checksum is assigned to modified bytes. Spin product contexts remain
 host-only, with its standalone target test scope. AccessKit has only the existing
@@ -62,7 +64,7 @@ _COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "f1fbb915fffdbc96d2662122ff5a95a127da7e8fd9aa39e1ba8adbbd967ad77f"
+REVIEWED_POLICY_SHA256: str | None = "a8d58e96982e726f1bc65aaee8548689e6344b9a0cf7dd6ebb05a12bdbe8dd10"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -153,9 +155,27 @@ CONSUMER_PRESERVED_FILES = {
     "src/node.rs": "99e7ebd71e596c68b822eaab9443f93d533092f7953d79e859149ae5260ad841",
     "src/tree.rs": "11bd99118f37469144807416d4430893de938b1533f36d067c04e36235367f9a",
 }
+SLINT_CORE_NAME = "i-slint-core"
+SLINT_CORE_ID = "i-slint-core@1.18.1"
+SLINT_CORE_PATH = "third-party/i-slint-core"
+SLINT_CORE_UPSTREAM = {
+    "name": SLINT_CORE_NAME, "version": "1.18.1", "path": SLINT_CORE_PATH,
+    "license": "GPL-3.0-only", "selected_license": "GPL-3.0-only",
+    "build_script": False, "proc_macro": False, "links": None,
+    "upstream_checksum": "ed2ea15059d70bc31b1a8b1eb4c34f2c5df04cb7e53f36179b43c0261231d646",
+    "upstream_files_sha256": "08e4188eecfd2720e5482440e0a22c16864016c15aa391cdd533edf398616abd",
+    "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734",
+}
+SLINT_CORE_MODIFIED_FILES = {"Cargo.toml", "date_time.rs", "NEVROTICK-PATCH.md"}
+SLINT_CORE_ORIGINAL_DATE = "f98a961f20fdcb29400bc947d6d3370c104465c134a17e538da1ad9911b106b4"
+SLINT_CORE_DEBUGGER_FILE = "gdb_pretty_printers.py"
+SLINT_CORE_DEBUGGER_SHA256 = "872fb31d7edf896d90d14c6714cb30950aac3a389480bc70d2f9b63359d8ab15"
+SLINT_CORE_TIME_ID = "time@0.3.55"
+SLINT_CORE_DUPLICATE_IDS = {"time-core@0.0.0", "time-core@0.1.9"}
 WINDOWS_PATCHES = ((ACCESSKIT_NAME, ACCESSKIT_ID), (CONSUMER_NAME, CONSUMER_ID))
 PATCH_NAME_SETS = ((), (PATCH_NAME,), (PATCH_NAME, ACCESSKIT_NAME),
-                   (PATCH_NAME, ACCESSKIT_NAME, CONSUMER_NAME))
+                   (PATCH_NAME, ACCESSKIT_NAME, CONSUMER_NAME),
+                   (PATCH_NAME, ACCESSKIT_NAME, CONSUMER_NAME, SLINT_CORE_NAME))
 EP1_PROFILE = "engine-ke-association"
 EP1_FIELD = "engine_ke_association"
 EP1_FEATURE = "ke-association-prototype"
@@ -349,7 +369,7 @@ def profile_locals(profile: str, *, scope: str = "workspace", target: str = HOST
 
 
 def validate_path_patch(patch: dict) -> None:
-    """Bind each of the three exact derivatives to separate immutable provenance."""
+    """Bind each exact derivative to separate immutable provenance."""
     if type(patch) is not dict:
         raise Incomplete("Path patch provenance or exact modified-file inventory changed.")
     if patch.get("name") == PATCH_NAME:
@@ -358,6 +378,8 @@ def validate_path_patch(patch: dict) -> None:
         upstream, modified = ACCESSKIT_UPSTREAM, ACCESSKIT_MODIFIED_FILES
     elif patch.get("name") == CONSUMER_NAME:
         upstream, modified = CONSUMER_UPSTREAM, CONSUMER_MODIFIED_FILES
+    elif patch.get("name") == SLINT_CORE_NAME:
+        upstream, modified = SLINT_CORE_UPSTREAM, SLINT_CORE_MODIFIED_FILES
     elif patch.get("name") in EP1_PATCH_UPSTREAM:
         upstream = EP1_PATCH_UPSTREAM[patch["name"]]
         modified = EP1_MODIFIED_FILES[patch["name"]]
@@ -372,6 +394,12 @@ def validate_path_patch(patch: dict) -> None:
             or set(patch["modified_files_sha256"]) != modified
             or not all(_hash(value) for value in patch["modified_files_sha256"].values())):
         raise Incomplete("Path patch provenance or exact modified-file inventory changed.")
+
+
+def slint_core_debugger_bypass(bypass: dict) -> bool:
+    """Recognize the one previously reviewed file retained by the local core patch."""
+    return (bypass["package"], bypass["path"], bypass["sha256"]) == (
+        SLINT_CORE_ID, SLINT_CORE_DEBUGGER_FILE, SLINT_CORE_DEBUGGER_SHA256)
 
 
 def validate_policy_shape(policy: dict) -> None:
@@ -454,6 +482,8 @@ def validate_policy_shape(policy: dict) -> None:
         selected[key] = patch
     if PATCH_NAME in names and any(key.split("@", 1)[0] == "pin-utils" for key in selected):
         raise Incomplete("The dependency-free Spin patch cannot restore pin-utils.")
+    if SLINT_CORE_NAME in names and any(key.split("@", 1)[0] == "chrono" for key in selected.keys() | inert.keys()):
+        raise Incomplete("The Slint calendar patch cannot retain a Chrono source role.")
     bypasses = policy.get("archive_file_bypasses", [])
     if type(bypasses) is not list or len(bypasses) > 64:
         raise Incomplete("Archive-file bypass inventory exceeds its bound.")
@@ -461,7 +491,8 @@ def validate_policy_shape(policy: dict) -> None:
     for bypass in bypasses:
         if (type(bypass) is not dict or set(bypass) != {"package", "path", "sha256", "reason"}
                 or type(bypass["package"]) is not str or bypass["package"] not in selected
-                or bypass["package"] in patched_ids or type(bypass["path"]) is not str
+                or bypass["package"] in patched_ids and not slint_core_debugger_bypass(bypass)
+                or type(bypass["path"]) is not str
                 or not 0 < len(bypass["path"]) <= 256
                 or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", bypass["path"])
                 or any(part in {".", ".."} for part in bypass["path"].split("/"))
@@ -472,6 +503,8 @@ def validate_policy_shape(policy: dict) -> None:
         if key in seen_bypasses:
             raise Incomplete("Duplicate exact archive-file bypass.")
         seen_bypasses.add(key)
+    if SLINT_CORE_NAME in names and (SLINT_CORE_ID, SLINT_CORE_DEBUGGER_FILE) not in seen_bypasses:
+        raise Incomplete("The local Slint patch must bind its retained debugger source.")
     row_sets = [("default", policy["rows"])]
     if dependency:
         row_sets.append((EP1_PROFILE, policy[EP1_FIELD]["rows"]))
@@ -499,10 +532,18 @@ def validate_policy_shape(policy: dict) -> None:
         if (features.get("slint@1.18.1") != {"target": [runtime]}
                 or features.get("slint-build@1.18.1") != {"host": [["compat-1-18"]]}):
             raise Incomplete("Slint runtime/build features differ from the reviewed software profile.")
+        duplicates = duplicate_identities(features)
+        if SLINT_CORE_NAME in names:
+            if (set(features.get(SLINT_CORE_ID, {})) != {"target"}
+                    or set(features.get(SLINT_CORE_TIME_ID, {})) != {"target"}
+                    or {key for key in features if key.startswith("time-core@")} != {"time-core@0.1.9"}
+                    or "time-core@0.0.0" not in locals_):
+                raise Incomplete("The Slint calendar patch and its time libraries must remain exact GUI target dependencies.")
+            duplicates = sorted(set(duplicates) | SLINT_CORE_DUPLICATE_IDS)
         scripts = sorted([key for key in features if selected[key]["build_script"]] + ["nevrotick-ui@0.0.0"])
         macros = sorted(key for key in features if selected[key]["proc_macro"])
         if (row["allowed_build_scripts"] != scripts or row["allowed_proc_macros"] != macros
-                or row["duplicate_exceptions"] != duplicate_identities(features)
+                or row["duplicate_exceptions"] != duplicates
                 or any(set(features[key]) != {"host"} for key in macros)):
             raise Incomplete("Build/proc-macro/duplicate roles differ from the selected graph.")
         scopes = row["package_scopes"]
@@ -561,11 +602,15 @@ def validate_policy_shape(policy: dict) -> None:
                 if (scope["features"].get("slint@1.18.1") != {"target": [runtime]}
                         or scope["features"].get("slint-build@1.18.1") != {"host": [["compat-1-18"]]}):
                     raise Incomplete("GUI package scope lacks its exact runtime/build profile.")
+                if SLINT_CORE_NAME in names and not {SLINT_CORE_ID, SLINT_CORE_TIME_ID} <= set(scope["features"]):
+                    raise Incomplete("The GUI scope lacks the local calendar and its exact time dependency.")
                 for patch_name, patch_id in WINDOWS_PATCHES:
                     if patch_name in names and target == WINDOWS_TARGET and scope["features"].get(patch_id) != {"target": [[]]}:
                         raise Incomplete("Windows GUI scope lacks its exact AccessKit target dependency.")
             elif any(key.split("@", 1)[0].startswith(("slint", "i-slint-")) for key in scope["features"]):
                 raise Incomplete("Slint dependencies must remain isolated from pure/engine package selections.")
+            elif SLINT_CORE_NAME in names and SLINT_CORE_TIME_ID in scope["features"]:
+                raise Incomplete("The local calendar dependency cannot leak into another product package scope.")
             elif (patched_ids & set(scope["features"])) - (EP1_PATCH_IDS if profile == EP1_PROFILE and name == "nevrotick-engine" else set()):
                 raise Incomplete("Path patches belong only to their exact GUI or prototype Engine roles.")
             if profile == EP1_PROFILE and name != "nevrotick-engine" and set(scope["features"]) & prototype_sources:
@@ -795,6 +840,12 @@ def validate_tree(target: str, output: str, policy: dict, *, scope: str = "works
         role = "host" if macro or depth and (stack[depth - 1]["role"] == "host" or kind == "build") else "target"
         if key in {patch_id for _, patch_id in WINDOWS_PATCHES} and key in patches and (role != "target" or kind != "normal" or not depth):
             raise Incomplete("The patched Windows AccessKit occurrence must retain its normal target edge.")
+        if SLINT_CORE_ID in patches:
+            if key == SLINT_CORE_ID and (role != "target" or kind != "normal" or not depth):
+                raise Incomplete("The patched Slint core must retain its normal target edge.")
+            if key == SLINT_CORE_TIME_ID and (role != "target" or kind != "normal" or not depth
+                                               or stack[depth - 1]["context"][0] != SLINT_CORE_ID):
+                raise Incomplete("Time must remain a normal target dependency of the local Slint core.")
         context = (key, tuple(features), role)
         occurrence = {"context": context, "role": role, "children": [], "duplicate": bool(duplicate), "sections": set()}
         if depth:

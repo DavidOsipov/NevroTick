@@ -594,6 +594,7 @@ fn check_untrusted_source_inputs(window: &AppWindow, before: &[SourceRow]) {
             ModelError::InvalidLabel,
             false,
         ),
+        (" bad", "192.0.2.25", "1234", ModelError::InvalidLabel, true),
         (
             "Accepted edit",
             "https://private.invalid",

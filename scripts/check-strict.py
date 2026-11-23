@@ -5,6 +5,7 @@ The default checks configuration and tool admission only. --fixtures proves the
 configured guards on fixed fixtures; it does not qualify application code.
 --workspace checks adoption by real workspace members without executing builds.
 --preview-contract checks the selected UI preview admission source without Cargo.
+--fixtures with both explicit tool paths uses the hosted product tool admission.
 """
 
 from __future__ import annotations
@@ -28,7 +29,6 @@ SPEC = importlib.util.spec_from_file_location(
 ENV = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ENV)
 ROOT = Path(__file__).resolve().parents[1]
-PREVIEW_MODEL = "crates/nevrotick-ui/src/model.rs"
 PURE_CLIPPY_FILES = (
     "crates/time-domain/clippy.toml",
     "crates/ntp-exchange/clippy.toml",
@@ -970,60 +970,6 @@ fn main() {
     evidence["scope"] = "fixed std-only controls; no application, dependency graph or Windows runtime qualification"
 
 
-def preview_contract(root: Path) -> dict:
-    """Report structural changes at the selected preview admission boundary."""
-    from check_ui_text_coverage import inert_source
-    from ui_source_io import read_regular
-
-    raw = read_regular(root / PREVIEW_MODEL, 32768)
-    text = raw.decode("utf-8")
-    clean = inert_source(text)
-    # The shared scanner understands ordinary strings and nested comments.
-    # Refuse forms it cannot reliably mask in this selected file.
-    unsupported = r'\b(?:br|cr|r)\#*"|\'(?:\\)?["{}]\''
-    if any(clean[hit.start()] == text[hit.start()] for hit in re.finditer(unsupported, text)):
-        raise ValueError("Unsupported literal syntax in selected preview source.")
-
-    findings = []
-
-    def report(rule: str, start: int, requirement: str) -> None:
-        findings.append({"rule": rule, "path": PREVIEW_MODEL,
-                         "line": clean.count("\n", 0, start) + 1,
-                         "guarantee": requirement, "basis": "selected source syntax"})
-
-    for attribute in re.finditer(r'\bgarde\s*\([^\]]*\ballow_unvalidated\b[^\]]*\)', clean):
-        report("preview-no-allow-unvalidated", attribute.start(),
-               "Use explicit field validation or an independently justified field exemption.")
-
-    declarations = list(re.finditer(r'\bstruct\s+PreviewInput\b', clean))
-    if len(declarations) != 1:
-        raise ValueError("Expected one selected PreviewInput declaration.")
-    start = declarations[0].start()
-    prefix = clean[:start].rstrip()
-    derive = re.search(r'#\[\s*derive\s*\(\s*Validate\s*\)\s*\]$', prefix)
-    if (derive is None or prefix.count("{") != prefix.count("}")
-            or prefix[:derive.start()].rstrip().endswith("]")
-            or not re.match(r"struct\s+PreviewInput\s*<\s*'a\s*>\s*\{", clean[start:])):
-        report("preview-input-admission", start,
-               "Keep PreviewInput private at file scope with a direct Validate derive.")
-
-    body = re.match(r"[^{}]*\{([^{}]*)\}", clean[start:])
-    if body is None:
-        raise ValueError("Unsupported PreviewInput field declaration.")
-    field_rules = "".join(
-        rf"#\s*\[\s*garde\s*\(\s*custom\s*\(\s*{field}_rule\s*\)\s*\)\s*\]"
-        rf"\s*{field}\s*:\s*&\s*'a\s+str\s*,\s*"
-        for field in ("label", "host", "port")
-    )
-    if re.fullmatch(r"\s*" + field_rules, body[1]) is None:
-        report("preview-input-field-rules", start,
-               "Keep a private borrowed field with its custom rule for label, host, and port.")
-    if read_regular(root / PREVIEW_MODEL, 32768) != raw:
-        raise ValueError("Selected preview source changed during inspection.")
-    return {"scope": "PreviewInput source policy", "sha256": hashlib.sha256(raw).hexdigest(),
-            "findings": findings, "status": "findings" if findings else "passed"}
-
-
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", action="store_true", help="exercise strict policy in isolated temporary workspaces")
@@ -1032,15 +978,26 @@ def main(argv=None) -> int:
                         help="exercise only pure-role API restrictions and adapter controls")
     parser.add_argument("--json", type=Path, help="write exact command results to an external evidence path")
     parser.add_argument("--preview-contract", action="store_true",
-                        help="check the selected PreviewInput admission source policy only")
+                        help="check the selected UI preview admission and consumer seams")
+    parser.add_argument("--fixture-toolchain-dir", type=Path,
+                        help="use an explicitly admitted Linux runner toolchain for fixtures")
+    parser.add_argument("--fixture-nextest", type=Path,
+                        help="use the pinned nextest executable for explicit runner fixtures")
     args = parser.parse_args(argv)
+    explicit_fixtures = args.fixture_toolchain_dir is not None or args.fixture_nextest is not None
+    if explicit_fixtures and (not args.fixture_toolchain_dir or not args.fixture_nextest
+                              or not args.fixtures or args.workspace or args.pure_api_fixtures
+                              or args.preview_contract):
+        parser.error("Both explicit fixture tool paths require --fixtures alone.")
     if args.preview_contract:
         if args.fixtures or args.workspace or args.pure_api_fixtures or args.json:
             parser.error("--preview-contract selects a separate source-only JSON report")
         try:
-            report = preview_contract(ROOT)
-        except (OSError, ValueError) as error:
-            report = {"scope": "PreviewInput source policy", "status": "incomplete", "error": str(error)}
+            from preview_contract import report as preview_report
+
+            report = preview_report(ROOT)
+        except (ImportError, OSError, ValueError) as error:
+            report = {"scope": "UI preview source policy", "status": "incomplete", "error": str(error)}
         print(json.dumps(report, indent=2))
         return int(report["status"] != "passed")
     report = {"scope": "NevroTick strict development policy", "status": "incomplete"}
@@ -1050,10 +1007,32 @@ def main(argv=None) -> int:
             receipt = ENV.external_receipt(args.json, ROOT)
         inputs = (*CONFIG_FILES, ".cargo/config.toml", "rust-toolchain.toml",
                   "policy/tool-manifest.json", "scripts/check-strict.py", "scripts/check-environment.py")
+        if explicit_fixtures:
+            inputs += ("scripts/verify.py",)
         snapshot = {name: (ROOT / name).read_bytes() for name in inputs}
         config = read_configuration(ROOT, snapshot)
-        report["metadata"] = ENV.inspect(ROOT)
-        report["extensions"] = admit_extensions(ROOT) if args.fixtures or not args.pure_api_fixtures else {}
+        if explicit_fixtures:
+            import verify as product
+
+            context = ENV.require_cargo_context(ROOT)
+            toolchain = args.fixture_toolchain_dir.resolve(strict=True)
+            nextest = args.fixture_nextest.resolve(strict=True)
+
+            def runner_tools() -> dict:
+                try:
+                    return product.admit_tools(ROOT, toolchain, nextest, "portable")
+                except product.ENV.Incomplete as error:
+                    raise ENV.Incomplete(str(error)) from error
+
+            identities = runner_tools()
+            report["runner_tool_sha256"] = identities
+            report["metadata"] = {"tools": {"rustc": {"path": str(toolchain / "bin/rustc")}}}
+            report["extensions"] = {"cargo-nextest": {"path": str(nextest), "sha256": identities["cargo-nextest"]}}
+            report["runner_smoke"] = {"status": "incomplete", "lanes": []}
+            ENV.smoke(ROOT, report["metadata"], report["runner_smoke"])
+        else:
+            report["metadata"] = ENV.inspect(ROOT)
+            report["extensions"] = admit_extensions(ROOT) if args.fixtures or not args.pure_api_fixtures else {}
         report["configuration_sha256"] = {
             name: hashlib.sha256(data).hexdigest() for name, data in snapshot.items()
         }
@@ -1067,6 +1046,9 @@ def main(argv=None) -> int:
         if args.fixtures or args.pure_api_fixtures:
             report["pure_api_fixtures"] = {"status": "incomplete", "lanes": []}
             qualify_pure_api_fixtures(ROOT, report["metadata"], report["pure_api_fixtures"], snapshot)
+        if explicit_fixtures and (runner_tools() != identities
+                                  or ENV.require_cargo_context(ROOT) != context):
+            raise ENV.Incomplete("Explicit runner tooling or Cargo context changed during fixture execution.")
         require_clippy_locations(ROOT)
         if any((ROOT / name).read_bytes() != data for name, data in snapshot.items()):
             raise ENV.Incomplete("Policy/tooling inputs changed during the check; results are stale.")

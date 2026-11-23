@@ -19,6 +19,10 @@ type TestResult<T = ()> = Result<T, &'static str>;
 
 /// Construct the wire format independently of the adapter and its parser.
 /// The ciphertext format is the RFC 5297 SIV tag followed by encrypted bytes.
+///
+/// # Errors
+/// Refuses provider initialization or encryption failure and unrepresentable
+/// authenticator or ciphertext length.
 fn packet(plaintext: &[u8]) -> TestResult<Vec<u8>> {
     let mut aad = HEADER.to_vec();
     aad.extend_from_slice(&PREFIX);
@@ -42,10 +46,14 @@ fn packet(plaintext: &[u8]) -> TestResult<Vec<u8>> {
     Ok(output)
 }
 
+/// # Errors
+/// Returns a setup error if the decoder rejects the fixed outer budgets.
 fn outer_limits() -> TestResult<FrameLimits> {
     FrameLimits::new(4096, 64).map_err(|_| "outer-limits")
 }
 
+/// # Errors
+/// Returns a setup error if the plaintext decoder rejects the supplied budgets.
 fn inner_limits(bytes: usize, fields: usize) -> TestResult<NtsPlaintextLimits> {
     NtsPlaintextLimits::new(bytes, fields).map_err(|_| "inner-limits")
 }
@@ -58,6 +66,13 @@ use std::{
 };
 
 /// Authentication and full framing publish exactly the literal field sequence.
+///
+/// # Errors
+/// Returns a setup error if fixture encryption, framing, or budget admission fails.
+///
+/// # Panics
+/// Panics on unexpected associated data, nonce, field contents, callback result,
+/// publication count, or retained scratch bytes.
 #[test]
 fn authenticated_fields_reach_consumer_once_and_clear_all_scratch() -> TestResult {
     let wire = packet(&PLAIN)?;
@@ -88,6 +103,13 @@ fn authenticated_fields_reach_consumer_once_and_clear_all_scratch() -> TestResul
 }
 
 /// An empty authenticated sequence is valid and is consumed once.
+///
+/// # Errors
+/// Returns a setup error if the empty fixture cannot be encrypted or framed,
+/// or if its budgets are refused.
+///
+/// # Panics
+/// Panics if the callback sees fields, fails to complete once, or leaves scratch bytes.
 #[test]
 fn authenticated_empty_plaintext_is_valid() -> TestResult {
     let wire = packet(&[])?;
@@ -106,6 +128,14 @@ fn authenticated_empty_plaintext_is_valid() -> TestResult {
 }
 
 /// Every tamper remains outer-frameable but cannot reach the consumer.
+///
+/// # Errors
+/// Returns a setup error if the original fixture, tampered outer framing, or
+/// fixture budgets are refused before the authentication check.
+///
+/// # Panics
+/// Panics if a tampered packet or incorrect key reaches the callback, returns
+/// the wrong refusal, or leaves scratch bytes.
 #[test]
 fn modified_aad_nonce_tag_body_and_short_tag_never_publish() -> TestResult {
     let original = packet(&PLAIN)?;
@@ -158,6 +188,14 @@ fn modified_aad_nonce_tag_body_and_short_tag_never_publish() -> TestResult {
 }
 
 /// Authenticate malformed sequences before testing complete framing and budgets.
+///
+/// # Errors
+/// Returns a setup error if the selected fixture cannot be encrypted or outer-framed,
+/// or its declared budgets cannot be constructed.
+///
+/// # Panics
+/// Panics if malformed or over-budget plaintext reaches the callback, returns the
+/// wrong refusal, or leaves scratch bytes.
 #[test]
 fn authenticated_invalid_inner_fields_and_limits_never_publish() -> TestResult {
     let truncated = [0x12, 0x34, 0, 4, 0x02, 0x04, 0, 12, 0xde, 0xad, 0xbe, 0xef];
@@ -191,6 +229,13 @@ fn authenticated_invalid_inner_fields_and_limits_never_publish() -> TestResult {
 
 /// Existing outer admission makes adapter-capacity failure unconstructible.
 /// The largest reachable packet instead exercises the real bound without forging parts.
+///
+/// # Errors
+/// Returns a setup error if encryption, outer framing, or budget admission fails.
+///
+/// # Panics
+/// Panics on a wrong packet or field extent, field contents, callback result,
+/// publication count, or retained scratch bytes.
 #[test]
 fn maximum_outer_packet_authenticates_without_capacity_failure() -> TestResult {
     let plain = [0x12, 0x34, 0, 4].repeat(999);
@@ -222,6 +267,13 @@ fn maximum_outer_packet_authenticates_without_capacity_failure() -> TestResult {
 }
 
 /// A consumer panic still drops the scratch owner and clears its full extent.
+///
+/// # Errors
+/// Returns a setup error if fixture encryption, framing, or budget admission fails.
+///
+/// # Panics
+/// Panics if the callback does not unwind exactly once, or if the caught unwind
+/// leaves scratch bytes.
 #[test]
 #[expect(
     clippy::panic,

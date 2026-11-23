@@ -1037,5 +1037,88 @@ class NativePlatformProfileControls(unittest.TestCase):
                 PROFILE.validate_metadata(WINDOWS, json.dumps(data), self.policy)
 
 
+class SlintCalendarAdmissionControls(unittest.TestCase):
+    def setUp(self):
+        self.policy = VERIFY.read_dependency_policy(ROOT / "policy/ui-m0-dependencies.json")
+        self.record = next(record for record in self.policy["patched_packages"]
+                           if record["name"] == "i-slint-core")
+
+    def test_calendar_checks_preserved_and_changed_source_even_after_rehashing(self):
+        VERIFY.admit_patched_source(ROOT, self.record)
+        for path, before, after, diagnostic in (
+            ("Cargo.toml", '"large-dates"', '"serde"', "exact time dependency"),
+            ("gdb_pretty_printers.py", "", "\n# synthetic mutation\n", "permitted source changes"),
+        ):
+            with self.subTest(path=path), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                directory = root / self.record["path"]
+                shutil.copytree(ROOT / self.record["path"], directory)
+                edited = directory / path
+                original = edited.read_text()
+                if before:
+                    self.assertEqual(original.count(before), 1)
+                    edited.write_text(original.replace(before, after))
+                else:
+                    edited.write_text(original + after)
+                files = VERIFY.inventory(directory)
+                rebound = {**self.record, "files_sha256": hashlib.sha256(
+                    json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()}
+                rebound["modified_files_sha256"] = {
+                    name: files[name] for name in self.record["modified_files_sha256"]}
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, diagnostic):
+                    VERIFY.admit_patched_source(root, rebound)
+
+    def test_local_calendar_requires_the_old_exact_debugger_exception(self):
+        PROFILE.validate_policy_shape(self.policy)
+        bypass = next(row for row in self.policy["archive_file_bypasses"]
+                      if row["package"] == "i-slint-core@1.18.1")
+        with self.assertRaisesRegex(PROFILE.Incomplete, "retained debugger source"):
+            absent = copy.deepcopy(self.policy)
+            absent["archive_file_bypasses"].remove(bypass)
+            PROFILE.validate_policy_shape(absent)
+        for key, value in (("path", "date_time.rs"), ("sha256", "0" * 64)):
+            with self.subTest(field=key), self.assertRaisesRegex(
+                    PROFILE.Incomplete, "Unreviewed archive path"):
+                tampered = copy.deepcopy(self.policy)
+                next(row for row in tampered["archive_file_bypasses"]
+                     if row["package"] == "i-slint-core@1.18.1")[key] = value
+                PROFILE.validate_policy_shape(tampered)
+
+    def test_calendar_lock_rejects_restoring_chrono_edge(self):
+        packages = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
+        VERIFY.validate_patched_lock(packages, self.policy["patched_packages"])
+        calendar = next(package for package in packages if package["name"] == "i-slint-core")
+        edges = calendar["dependencies"]
+        self.assertIn("time", edges)
+        edges[edges.index("time")] = "chrono"
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unreviewed dependency edge"):
+            VERIFY.validate_patched_lock(packages, self.policy["patched_packages"])
+
+    def test_product_commands_select_first_party_core_by_version(self):
+        patches = tuple(record["name"] for record in self.policy["patched_packages"])
+        for profile in ("default", PROFILE.EP1_PROFILE):
+            rows = dict(VERIFY.commands("dependencies", schema_version=3, patched_packages=patches, profile=profile))
+            rows.update(VERIFY.commands("portable", schema_version=3, patched_packages=patches, profile=profile))
+            for label in ("dependency-tree-time-core-" + HOST, "dependency-tree-time-core-" + WINDOWS,
+                          "product-tests:time-core", "doctests:time-core", "optimized-tests:time-core"):
+                command = rows[label]
+                with self.subTest(profile=profile, label=label):
+                    self.assertEqual(command[command.index("--package") + 1], "time-core@0.0.0")
+
+    def test_calendar_binds_both_distinct_time_core_duplicate_identities(self):
+        baseline = (ROOT / "deny.toml").read_text()
+        for profile in ("default", PROFILE.EP1_PROFILE):
+            for target in (HOST, WINDOWS):
+                with self.subTest(profile=profile, target=target):
+                    generated = tomllib.loads(VERIFY.product_deny(baseline, self.policy, target, profile=profile))
+                    selected = {row["crate"] for row in generated["bans"]["skip"] if row["crate"].startswith("time-core")}
+                    self.assertEqual(selected, {"time-core@0.0.0", "time-core@0.1.9"})
+        tampered = copy.deepcopy(self.policy)
+        duplicate_ids = tampered["rows"][HOST]["duplicate_exceptions"]
+        duplicate_ids.remove("time-core@0.0.0")
+        with self.assertRaisesRegex(PROFILE.Incomplete, "duplicate roles"):
+            PROFILE.validate_policy_shape(tampered)
+
+
 if __name__ == "__main__":
     unittest.main()

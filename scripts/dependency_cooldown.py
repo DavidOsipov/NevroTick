@@ -29,11 +29,25 @@ BASELINE_REGISTRY = "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15
 POLICY = {"minimum_age": "14 days", "incompatible_publish_age": "deny"}
 # Only an individually accepted OD-04 decision may add its complete immutable
 # receipt hash here. No package exemptions or caller-provided approval map.
-APPROVED_EXCEPTIONS: dict[str, str] = {}
+APPROVED_EXCEPTIONS: dict[str, str] = {
+    "OD-04-URL-20261124": "826379ba95a5bcd0840aa399925d9216535164d34eecb5b3f24bad77b46a30b7",
+}
 # A graph owner accepting an update registers its three-hash checkpoint in the
 # same code review as the existing policy pin. This stores no duplicate graph.
 # Prior concrete exception IDs stay attached to that exact accepted checkpoint.
 APPROVED_BASELINES: dict[str, dict] = {
+    # Calendar derivative and exact maintained time closure before the URL fix.
+    "b4239fe2c90d8c7b9d17e2f76f0aaba87cf7f1a94e47f5617a906d21041a60c8": {
+        "lockfile_sha256": "044f4a7e97a97da0400299a9990c5395bfc2ec8290e0d2ba25baa175f1c61d52",
+        "registry_sha256": "274b0f0bf48cd012de23f8f9caae9e7ac1e1cd3a801474fefeec26f8f10ebe98",
+        "exception_decisions": [],
+    },
+    # Reproduce the unchanged lock with the standalone crypto lint policy.
+    "7e538b900c20f5bd16077e04d044ff901a5f7ac8ffad8633dd514a4ee587281a": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
     # Reproduce the unchanged root lock with the protected timing peer manifest.
     "4ccec832343d1dfdf64136fd1e5510e4b64a7020d03934354c73996bc0c0d832": {
         "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",

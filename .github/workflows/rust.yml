@@ -125,6 +125,12 @@ jobs:
           tar --extract --gzip --file deny.tar.gz --directory deny-tool --strip-components=1 \
             cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny
           echo 'b329e25933d01c36dd7c47d84ea5716694f9b7caf53a5003d45674703a8ed54a  deny-tool/cargo-deny' | sha256sum --check --strict
+      - name: Exercise strict compiler and runner rejection controls
+        run: |
+          env -u RUSTUP_TOOLCHAIN PATH=/usr/bin:/bin python3 -X dev -Werror -B scripts/check-strict.py --fixtures \
+            --fixture-toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
+            --fixture-nextest "${RUNNER_TEMP}/nextest-tool/cargo-nextest" \
+            --json "${RUNNER_TEMP}/strict-fixtures.json"
       - name: Acquire current advisory and registry metadata separately
         env:
           METADATA_HOME: ${{ runner.temp }}/ui-m0-metadata

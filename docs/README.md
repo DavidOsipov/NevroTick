@@ -9,6 +9,24 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**URL security update — 24 November 2026.**
+The guarded update selects `url 2.5.9` and `form_urlencoded 1.2.3`
+under the exact owner-approved cooldown exception. Both configured
+dependency profiles passed on GNU and MSVC. The ordinary 14-day
+rule remains in force.
+[Owner decision](nevrotick-owner-decisions.md#url-dependency-cooldown-exception--24-november-2026)
+[Verification](../tasks/build-optimization.md#clear-the-url-advisory-under-the-approved-cooldown-exception)
+
+**Slint calendar dependency — 24 November 2026.**
+The selected desktop graph replaces Chrono with `time 0.3.55` through
+the pinned Slint Core 1.18.1 patch. The owner record explains the Jiff
+comparison and compatibility choices. The build record carries the
+calendar tests and graph evidence. Native Windows qualification remains
+open. The URL security update above supersedes the calendar checkpoint's
+separate advisory refusal.
+[OD-13 calendar decision](nevrotick-owner-decisions.md#slint-calendar-dependency--24-november-2026)
+[Build evidence](../tasks/build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
+
 **Current implementation order — 23 November 2026:** use
 [development §7](plans/development-plan.md#resume-in-dependency-order--23-november-2026)
 for the next executable child, its independent prerequisites and the guarded

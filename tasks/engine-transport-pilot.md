@@ -32265,3 +32265,29 @@ CHECK-19's candidate-bound session coverage and mutation, Windows runtime
 and release evidence retain their existing exits. H10 remains with the GUI
 notification owner. Return to the matched Windows peer and paired reader
 in [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+### Recheck the conditional recovery and regression triggers
+
+Independent source review compared handoff base `2868a53` with
+`70586c24ba2ebad6d531db6be5e6fa669c72625d`. The new protected-worker pair
+was the plausible H15 trigger. Its actual receiving path constructs
+`Invocation::one_shot` with no backoff or private context lifetime.
+The second job requires new pair authorization after receipt of the first
+job's ordinary observations. That path never reaches the private retry
+boundary. The retry owner and its direct tests are byte-identical across
+these commits. H15 stays with the next substantive edit to the actual
+retry path.
+
+At that edit, check a private two-observation seam at the existing
+`retry_boundary` owner. Keep both real production clock samples on their
+current sides of the jitter callback. Choose a valid first sample and
+nonzero draw envelope, then supply a second sample just before, equal to
+and just after the cutoff. Observe successful delay or window refusal,
+one draw, the original typed failure and spent charges. Retain the existing
+real receiving and late-callback controls.
+
+The phase ledger and `FitPoint` source remain byte-identical between the
+reviewed commits. H07 remains with the next ledger change that exposes a
+concrete transition or custody hazard. H16 remains with substantive
+regression work and must preserve the public re-export and checked
+construction. This is a source disposition for the three triggers.

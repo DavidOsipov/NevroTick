@@ -329,13 +329,56 @@ profiles and nextest. The unittest command also exercises actual cargo-deny,
 audit, nextest and mutation enumeration with local fixtures in the cleared-env,
 network-isolated sandbox. Neither command builds application code.
 
-`python3 -B scripts/check-strict.py --preview-contract` checks the selected
-private `PreviewInput` declaration, its direct Garde derive and its
-field-to-rule associations. It reports Garde `allow_unvalidated` in this
-model and returns nonzero for findings or incomplete selection. The active
-Rust workflow runs the JSON report, its focused controls and the existing
-strict-policy Python suites before product commands. Constructor invocation,
-rule behavior and the fixture and Slint commit paths need separate evidence.
+The Rust workflow runs the same 59 strict and pure API fixture lanes after
+acquiring its pinned compiler and nextest. The explicit runner invocation
+supplies both `--fixture-toolchain-dir` and `--fixture-nextest` with
+`--fixtures`. It uses product binary admission, records the runner's system
+helper hashes, and runs the environment smoke controls before the fixture
+lanes. Its last admission checks that the tools and Cargo context still match.
+The ordinary local invocation retains its exact bootstrap helper hashes and
+full extension inventory.
+
+### UI preview source report
+
+`python3 -B scripts/check-strict.py --preview-contract` checks the private
+`PreviewInput` declaration, its direct Garde derive and its field rules. It
+reports `allow_unvalidated` and inner overrides of selected outcome-handling
+diagnostics in the four UI source files, including overrides nested in
+`cfg_attr`. CR-03
+reports token changes to `SourcePreview::parse`, the selected-slot commit body
+and the rest of the model surface. CR-01 reports changed contracts and
+implementation at ten named seams, including the checked source-draft
+baseline, Add and Edit. The report
+includes source hashes, the occurrence and its reviewed and observed token
+digests. It exits nonzero on open findings, stale expectations or incomplete
+selection. The Rust workflow runs this report and its focused Python controls
+alongside the existing strict-policy suites before product commands.
+
+Use the report and the actual old/new source diff to review each occurrence.
+Fix weakened checks or update the selected baseline with the reviewed contract
+change and discriminating controls. For a supported false positive, copy the
+rule, occurrence, context, binding and owner from the report. Name the actual
+related symbol from the finding's `review_with` entries. Place a CR-01 comment
+immediately before the selected declaration's docs or attributes. Place a
+CR-03 body comment on the first line after the opening brace of
+`SourcePreview::parse` or `PreviewModel::update_selected`.
+
+```text
+// preview-contract-expect <rule> <occurrence> <context> <binding> | rationale=<what preserves the guarantee> | owner=<qualified symbol> | consumer=<reviewed related symbol> | evidence=<reviewed source or control> | recheck=<invalidation condition>
+```
+
+The report retains the finding and rationale after closure. Declaration,
+Garde and inner lint policy findings and model-surface changes require
+resolution through the owning code or its reviewed baseline. The
+binding covers the selected model and consumer tokens in the relevant chain.
+Review unselected callers including `SourceDrafts::fixture` and
+`RecoveryPreview::parse` directly when the change affects their guarantees.
+Changes to imports, aliases, generated bodies or actual build cfg also
+require review when they affect the rationale. The
+bounded scanner compares source tokens and docs. Unsupported literal syntax
+or missing selections are incomplete. Actual validation, refusal propagation
+and commit behavior require Rust controls, including the relevant generated
+Slint path.
 
 **Pure-role API enforcement, 31 October 2026:** the three package-local Clippy
 policies participate in strict admission and product source snapshots. Clippy
@@ -1368,12 +1411,16 @@ The sixth member, [nevrotick-engine](crates/nevrotick-engine/Cargo.toml), owns t
 timeout. This experiment has no production profile, eligible samples,
 authentication, clock effects or UI integration. Tokio remains engine-only.
 
-The current Slint fixture integration uses schema3 in
-[the dependency policy](policy/ui-m0-dependencies.json), with534 retained registry
-identities (selected and inert) and separately pinned local Spin/AccessKit
-derivatives. Follow the [GUI handoff](tasks/slint-gui-handoff.md) and current
-[S0.5 evidence](tasks/s0.5-ui-comparison.md) for exact inputs and the optional
-portable SDK/capture row. Existing Windows, native, backend and release gates remain.
+The current Slint fixture integration uses schema 3 in the dependency
+policy. The local Slint Core 1.18.1 derivative uses `time 0.3.55` for
+desktop calendar operations. The product runner selects NevroTick's
+`time-core@0.0.0` explicitly where the registry `time-core@0.1.9`
+shares the package name. Use the GUI and build records for exact graph
+identities, the calendar compatibility evidence and the remaining
+advisory and native gates.
+[Dependency policy](policy/ui-m0-dependencies.json)
+[GUI handoff](tasks/slint-gui-handoff.md)
+[Calendar qualification](tasks/build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
 
 **Historical pre-Slint schema2 graph:** the exact [lockfile](Cargo.lock),
 manifest/feature identities, selected grants and source-file maps were recorded

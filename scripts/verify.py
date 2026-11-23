@@ -569,6 +569,9 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     if any(path.is_symlink() for path in (root / "third-party", directory)):
         raise ENV.Incomplete("Linked patched-source ancestors are not admitted.")
     files = inventory(directory)
+    if record["name"] == SLINT.SLINT_CORE_NAME:
+        verify_slint_calendar_patch(directory, files, record)
+        return {path + "/" + name: value for name, value in files.items()}
     preserved, modified = {
         SLINT.PATCH_NAME: (SLINT.PATCH_PRESERVED_FILES, SLINT.PATCH_MODIFIED_FILES),
         SLINT.ACCESSKIT_NAME: (SLINT.ACCESSKIT_PRESERVED_FILES, SLINT.ACCESSKIT_MODIFIED_FILES),
@@ -606,8 +609,39 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     return {path + "/" + name: value for name, value in files.items()}
 
 
-def admit_first_party_dependency(root: Path, record: dict) -> dict[str, str]:
-    """Freeze the exact existing AES library without promoting its workspace role."""
+def verify_slint_calendar_patch(directory: Path, files: dict[str, str], record: dict) -> None:
+    """Admit only the calendar and licence changes to the exact upstream archive."""
+    original = dict(files)
+    original_manifest = original.pop("Cargo.toml.upstream", None)
+    patch_note = original.pop("NEVROTICK-PATCH.md", None)
+    if original_manifest is None or patch_note is None or "date_time.rs" not in original:
+        raise ENV.Incomplete("The calendar derivative lacks its preserved manifest, source or provenance.")
+    original["Cargo.toml"] = original_manifest
+    original["date_time.rs"] = SLINT.SLINT_CORE_ORIGINAL_DATE
+    original_digest = hashlib.sha256(json.dumps(original, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if (original_digest != SLINT.SLINT_CORE_UPSTREAM["upstream_files_sha256"]
+            or digest != record["files_sha256"]
+            or files["date_time.rs"] == SLINT.SLINT_CORE_ORIGINAL_DATE
+            or files.get(SLINT.SLINT_CORE_DEBUGGER_FILE) != SLINT.SLINT_CORE_DEBUGGER_SHA256
+            or any(files.get(name) != value for name, value in record["modified_files_sha256"].items())):
+        raise ENV.Incomplete("The calendar derivative differs from its exact permitted source changes.")
+    expected = tomllib.loads((directory / "Cargo.toml.upstream").read_text())
+    expected["package"]["license"] = "GPL-3.0-only"
+    del expected["dependencies"]["chrono"]
+    expected["dependencies"]["time"] = {"version": "=0.3.55", "default-features": False,
+                                        "features": ["formatting", "large-dates", "parsing"]}
+    expected["features"]["std"] = [
+        "time/local-offset" if value == "chrono/std" else value for value in expected["features"]["std"]
+        if value not in {"chrono/wasmbind", "chrono/clock"}
+    ]
+    manifest = tomllib.loads((directory / "Cargo.toml").read_text())
+    if manifest != expected:
+        raise ENV.Incomplete("The Slint calendar may only replace Chrono with the exact time dependency and GPL grant.")
+
+
+def admit_first_party_dependency(root: Path, record: dict, workspace_lints: dict) -> dict[str, str]:
+    """Freeze the AES nonmember's reviewed graph and standalone lint policy."""
     directory = root / record["path"]
     if any(parent.is_symlink() for parent in (directory, *directory.parents) if parent != root.parent):
         raise ENV.Incomplete("Linked nonmember-source ancestors are not admitted.")
@@ -616,6 +650,9 @@ def admit_first_party_dependency(root: Path, record: dict) -> dict[str, str]:
     if digest != record["files_sha256"] or files.get("Cargo.toml") != record["manifest_sha256"]:
         raise ENV.Incomplete("The first-party nonmember source or manifest differs from admission.")
     manifest = tomllib.loads((directory / "Cargo.toml").read_text())
+    expected_lints = {**workspace_lints, "rust": {**workspace_lints["rust"], "unsafe_code": "forbid"}}
+    if manifest.get("lints") != expected_lints:
+        raise ENV.Incomplete("The AES nonmember requires the strict lint tables with unsafe code forbidden.")
     expected_dependencies = {
         "aes-siv": {"version": "=0.8.0", "default-features": False, "features": ["zeroize"]},
         "aes": {"version": "=0.9.3", "default-features": False, "features": ["zeroize"]},
@@ -623,7 +660,7 @@ def admit_first_party_dependency(root: Path, record: dict) -> dict[str, str]:
         "ntp-wire": {"version": "=0.0.0", "path": "../../crates/ntp-wire"},
         "zeroize": {"version": "=1.9.1", "default-features": False},
     }
-    if (set(manifest) != {"package", "workspace", "lib", "dependencies"}
+    if (set(manifest) != {"package", "workspace", "lib", "dependencies", "lints"}
             or manifest["package"] != {"name": SLINT.EP1_AES_NAME, "version": "0.0.0", "edition": "2024",
                 "rust-version": "1.99", "license": "GPL-2.0-only", "publish": False, "build": False}
             or manifest["workspace"] != {"resolver": "3"} or manifest["lib"] != {"path": "lib.rs"}
@@ -646,6 +683,20 @@ def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
                                      "static_assertions", "windows", "windows-core"]},
                 SLINT.CONSUMER_NAME: {"name": SLINT.CONSUMER_NAME, "version": "0.38.0",
                     "dependencies": ["accesskit", "hashbrown 0.16.1"]}}
+    if any(record["name"] == SLINT.SLINT_CORE_NAME for record in patches):
+        expected[SLINT.SLINT_CORE_NAME] = {
+            "name": SLINT.SLINT_CORE_NAME, "version": "1.18.1",
+            "dependencies": [
+                "accesskit", "bitflags 2.13.2", "cfg-if", "clru", "const-field-offset", "derive_more",
+                "euclid", "i-slint-common", "i-slint-core-macros", "icu_normalizer", "image", "js-sys",
+                "lyon_algorithms", "lyon_extra", "lyon_geom", "lyon_path", "num-traits", "objc2 0.6.5",
+                "objc2-app-kit 0.3.2", "objc2-foundation 0.3.2", "once_cell", "parley", "pin-project",
+                "pin-weak", "portable-atomic", "raw-window-handle", "resvg", "rgb", "scopeguard",
+                "skrifa", "slab", "strum", "swash", "sys-locale", "taffy", "time",
+                "unicode-linebreak", "unicode-script", "unicode-segmentation", "vtable", "wasm-bindgen",
+                "web-sys", "web-time", "wgpu", "windows 0.62.2",
+            ],
+        }
     if any(record["name"] in SLINT.EP1_PATCH_NAMES for record in patches):
         expected.update({
             "rustls-cng-crypto": {"name": "rustls-cng-crypto", "version": "0.1.2",
@@ -901,6 +952,8 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     # including versions inactive in this package's selected feature scope.
     engine_random = ("getrandom 0.4.3" if sum(p["name"] == "getrandom" for p in packages) > 1
                      else "getrandom")
+    exchange_core = ("time-core 0.0.0" if any(record["name"] == SLINT.SLINT_CORE_NAME for record in patches)
+                     else "time-core")
     engine_edges = ["garde", engine_random, "ntp-wire", "time-domain", "tokio"]
     if native_adapter:
         engine_edges.append(SLINT.NATIVE_PACKAGE)
@@ -916,7 +969,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or any(p.get("dependencies") != ["garde"] for p in local if p["name"] == "time-domain")
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
-            or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
+            or any(p.get("dependencies") != ["ntp-wire", exchange_core, "time-domain"] for p in local if p["name"] == "ntp-exchange")
             or any(p.get("dependencies") != engine_edges for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
@@ -932,7 +985,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     for record in patches:
         inputs.update(admit_patched_source(root, record))
     if dependency:
-        inputs.update(admit_first_party_dependency(root, dependency))
+        inputs.update(admit_first_party_dependency(root, dependency, fragment["workspace"]["lints"]))
     for member in product_packages.values():
         for name, digest in inventory(root / member).items():
             if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
@@ -967,8 +1020,12 @@ def product_deny(base: str, policy: dict, target: str, *, profile: str = "defaul
         exceptions = [{"crate": key, "allow": records[key]["selected_license"].split(" AND ")}
                       for key in sorted(row["features"])]
         exceptions.append({"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]})
-        duplicates = [{"crate": key, "reason": "Reviewed exact Slint software-profile duplicate; source identity pinned."}
-                      for key in row["duplicate_exceptions"]]
+        duplicates = [{
+            "crate": key,
+            "reason": ("Distinct NevroTick estimator and time calendar support crates with exact source identities."
+                       if key in SLINT.SLINT_CORE_DUPLICATE_IDS
+                       else "Reviewed exact Slint software-profile duplicate; source identity pinned."),
+        } for key in row["duplicate_exceptions"]]
         exception_text = "[" + ", ".join("{ crate = " + json.dumps(item["crate"]) + ", allow = "
                                            + json.dumps(item["allow"]) + " }" for item in exceptions) + "]"
         duplicate_text = "[" + ", ".join("{ crate = " + json.dumps(item["crate"]) + ", reason = "
@@ -1232,6 +1289,11 @@ def admit_vendor(directory: Path, policy: dict) -> dict[str, str]:
             raise ENV.Incomplete("Vendor checksum map differs from the reviewed archive extraction.")
     for bypass in policy.get("archive_file_bypasses", []):
         identity = bypass["package"]
+        if identity == SLINT.SLINT_CORE_ID and any(
+                record["name"] == SLINT.SLINT_CORE_NAME for record in policy.get("patched_packages", [])):
+            if not SLINT.slint_core_debugger_bypass(bypass):
+                raise ENV.Incomplete("The local calendar patch cannot broaden its preserved debugger file selection.")
+            continue  # The local source owner admits these read-only bytes.
         matched = next((record for record in policy["packages"]
                         if record["name"] + "@" + record["version"] == identity), None)
         relative = bypass["path"]
@@ -1337,6 +1399,13 @@ def commands(lane: str, *, schema_version: int = 2,
         raise ENV.Incomplete("Unknown or non-schema-3 prototype profile.")
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
+
+    def package_selection(package: str) -> str:
+        """Keep NevroTick's estimator distinct from time's registry crate."""
+        if package == "time-core" and SLINT.SLINT_CORE_NAME in patched_packages:
+            return "time-core@0.0.0"
+        return package
+
     base = ["--workspace", "--frozen", "--jobs", "12"]
     if schema_version == 3:
         targets = (HOST_TARGET, ENV.WINDOWS_TARGET) if lane == "dependencies" else (
@@ -1355,7 +1424,7 @@ def commands(lane: str, *, schema_version: int = 2,
             for package in (*PACKAGES, *((SLINT.PATCH_NAME,) if SLINT.PATCH_NAME in patched_packages else ())):
                 preflight.append(("dependency-tree-" + package + "-" + target,
                                   [*cargo, "tree", "--frozen", "--offline", "--target", target,
-                                   "--package", package, "--edges", "normal,build,dev", "--prefix", "indent",
+                                   "--package", package_selection(package), "--edges", "normal,build,dev", "--prefix", "indent",
                                    "--charset", "ascii", "--format", "{p}|{f}"]))
             if lane == "dependencies":
                 preflight.append(("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
@@ -1385,6 +1454,10 @@ def commands(lane: str, *, schema_version: int = 2,
                                           "--frozen", "--jobs", "6", "--doc"]),
                 ])
         ordinary = commands(lane)
+        for _, command in ordinary:
+            if "--package" in command:
+                index = command.index("--package") + 1
+                command[index] = package_selection(command[index])
         if lane == "portable":
             ordinary.extend([
                 ("product-tests:" + SLINT.NATIVE_PACKAGE,
@@ -2910,7 +2983,8 @@ def execute(root: Path, args, report: dict) -> None:
                 if target not in metadata_outputs:
                     raise ENV.Incomplete("Selected tree needs its preceding validated metadata row.")
                 try:
-                    scope = command[command.index("--package") + 1] if "--package" in command else "workspace"
+                    scope = (command[command.index("--package") + 1].partition("@")[0]
+                             if "--package" in command else "workspace")
                     record["dependency_tree"] = SLINT.validate_tree(target, output, policy, scope=scope, profile=profile)
                     tree_outputs[target][scope] = output
                     scopes = SLINT.package_scopes(policy)

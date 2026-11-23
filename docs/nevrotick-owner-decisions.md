@@ -71,7 +71,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-10 | Defer formal proof work until after the first released software version (V1); require useful product guarantees when it resumes | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; [proof purpose and completion](#142-proof-purpose-and-completion--6-november-2026) governs scope, stopping and honest accounting; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
-| OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
+| OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates. See the [24 November calendar dependency decision](#slint-calendar-dependency--24-november-2026). |
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 | OD-16 | Run mathematical estimation experiments first after actual V1 release, preserving multithreading before Khronos | **7 November direction amended 13 November; TRUST-0 inserted by OD-20 on 14 November 2026** | MATH-C01 precedes TRUST-C01, then MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
@@ -1407,6 +1407,41 @@ OD-10 §14.1. No framework reselection, Core relicensing,
 blanket dependency-policy relaxation, automatic Win32 fallback or new release
 permission follows. S0.5 retains candidate-specific graph/rights and remaining distribution checks.
 
+### Slint calendar dependency — 24 November 2026
+
+David requested a source, security, performance and compatibility comparison
+of Jiff and time, followed by replacement of unmaintained Chrono. He then
+asked to record the selected implementation. The desktop UI uses
+`time 0.3.55` through a pinned GPL-3.0-only derivative of Slint Core 1.18.1.
+The root graph has dropped Chrono and both `iana-time-zone` packages.
+OD-19 admitted the seven new registry identities without an exception.
+[Chrono maintenance advisory](https://rustsec.org/advisories/RUSTSEC-2026-0543.html)
+[Slint patch provenance](../third-party/i-slint-core/NEVROTICK-PATCH.md)
+
+`time` preserves the calendar year interval from −262,143 through 262,142
+and obtains the local offset using the active Windows timezone rules.
+Jiff 0.2.41 supports civil dates from −9999 through 9999 and uses an
+IANA mapping for the Windows system zone. The selected adapter keeps
+the default DatePicker input grammar and bounds text and format strings
+to 1,024 bytes. Other accepted input patterns describe one Gregorian
+year, month and day. Unsupported patterns and invalid dates return the
+adapter's existing failure values. An unavailable local offset returns
+the unavailable-date sentinel. This derivative requires desktop `std`.
+The existing GUI licence direction, Core/engine separation and clock
+authority boundaries continue to govern.
+
+The selected adapter passed 22,260 comparisons with the original
+module. In the qualified GNU microbenchmark, default parsing took
+26.8 ns with the new adapter, 59.2 ns with Jiff and 105.9 ns with Chrono.
+Jiff was fastest in the month-length and weekday case. These are
+isolated calendar measurements. The default and KE graph checks
+validated GNU and MSVC. Cargo-deny cleared the Chrono finding at the
+calendar checkpoint. The later URL update under OD-04 cleared the
+separate advisory in the dependency graph. Native Windows local-date
+behavior and package qualification remain open.
+[Calendar candidate, controls and receipts](../tasks/build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
+[URL security update and receipts](../tasks/build-optimization.md#clear-the-url-advisory-under-the-approved-cooldown-exception)
+
 
 ## 18. OD-14 — compact Windows platform scope
 
@@ -1753,6 +1788,25 @@ The [Cargo operations reference](../.agents/skills/environment/dependency-update
 owns the detailed procedure. Configuration, changed-graph integration, isolated
 fixture results and product/native qualification are separate evidence layers.
 This decision lifts no native/resource, fuzz, storage, UI or post-V1 proof hold.
+
+### URL dependency cooldown exception — 24 November 2026
+
+**Accepted by David under OD-04.** Decision ID `OD-04-URL-20261124`.
+David explicitly authorized the early dependency update to clear
+RUSTSEC-2026-0592 after reviewing the blocked product verification and
+the required dependency pair.
+
+The authorized selection is `url 2.5.8 → 2.5.9` and
+`form_urlencoded 1.2.2 → 1.2.3` in the selected Slint graph. It applies
+to the GNU and MSVC targets in both default and explicit KE dependency
+verification. The guarded precise update may relax publication age
+for that Cargo child only. Its complete resolved delta must match the
+two approved registry replacements. Ordinary acquisition retains
+14 days and `deny`. Product, hosted and native qualification remain
+separate verification obligations.
+[RustSec fix record](https://rustsec.org/advisories/RUSTSEC-2026-0592.html)
+[Fixed release manifest](https://raw.githubusercontent.com/servo/rust-url/v2.5.9/url/Cargo.toml)
+[Build owner evidence](../tasks/build-optimization.md#replay-the-integrated-dependency-graphs--24-november-2026)
 
 ## 24. OD-20 — supplementary certificate distrust after V1
 

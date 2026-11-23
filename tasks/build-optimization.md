@@ -1979,3 +1979,696 @@ for advisory findings retain their separate design and acceptance work.
 The selected rules do not infer effective cfg, Garde expansion, effect ordering or runtime
 behavior from source spelling. The Stage A Engine receipt retains its
 original source and tooling identity.
+
+### Review selected preview contracts and commit seams
+
+This continues the 23 November declaration check under CHECK-25. The local
+baseline and live Main were `70586c24ba2ebad6d531db6be5e6fa669c72625d`,
+tree `96ff3089ff1fc528278759894ec892838203bfd9`. The report inspects the
+unchanged handwritten model, fixture presentation, source-draft and Slint
+workflow source. It adds no Cargo dependency, generated input, toolchain
+selection or proposal to change hosted trust.
+
+CR-03 retains the declaration checks and reports token changes to the
+constructor and its checked commit body. The rest of the small model module
+is a separate surface check for new construction/mutation routes, changed
+bounds and changed validation rules. CR-01 screens nine named interfaces
+and the named receiving bodies for edits that may change error or commit
+behavior. An exact adjacent CR-01 expectation can close a supported
+advisory and retains its raw record, owner, consumer, evidence and recheck
+condition. The control with a well-formed but false forwarding rationale
+checks attachment only. Independent source review refuses that specimen
+because it swaps host and label. No production expectations were added.
+Use the [tool instructions](../TOOLING.md#ui-preview-source-report) for
+selection, syntax and review. Import and alias resolution, expanded macros,
+unselected callers and effective cfg are outside the selected syntax report.
+
+The candidate keeps the previous declaration refusal cases and adds controls
+for omitted validation, bounds moved after validation, a scoped output
+field, added unchecked construction and mutation routes, early state
+mutation, all named consumers, conditional impl scope, and missing rule or
+backend. Valid source and ordinary comments pass. Exception controls keep
+the finding attached and fail malformed, misplaced, duplicate or stale
+comments. A lexical control transplants the actual Core `RowCandidate`
+declaration into a copied consumer file. Its typed `NonZeroU64` skip is
+accepted and the prohibited-option companion is reported. This changes
+no Core source and adds no Core execution credit. Sources that use
+unsupported literals fail as incomplete. The
+unchanged Rust workflow runs the real command and names the focused suites.
+Its seven local shell-routing controls verify nonzero status propagation.
+
+Python 3.12.3 produced a passing source report with no findings.
+`scripts/preview_contract.py` SHA-256 is
+`6a6becae40202e441a578094f321b96c1e39ac322d7d5d0ad88b36d8b229d506`.
+The captured report records hashes for all four sources in
+`/tmp/nevrotick-preview-strict.M2mB2V9T/preview.json` with SHA-256
+`d2803866e52617597241a9c316136d0f3813ed6e5289535fc59781b14824abbf`.
+The local pinned Rust 1.100.0 strict run passed 47 compiler/tool controls and
+12 pure API controls. The final `fixtures.json` beside that report hashes
+to `8bde21f5876ba7f856641cf238805b048c9e60d42cf8db2a45c5cf32c8321692`.
+An earlier 59-lane attempt correctly returned incomplete when concurrent
+editing changed the checker input. Its receipt remains at
+`/tmp/nevrotick-stage-b-fixtures.RfPMArw4/result.json`.
+Independent review traced both UI consumer chains and challenged the report
+with its own source changes. The [UI owner record](slint-gui-handoff.md#preview-admission-contract-controls--23-november-2026)
+binds GNU validation, visibility, and callback checks to their exact scope.
+Hosted execution and native evidence remain open.
+
+The focused Python suites passed 70 tests. The first combined invocation
+of the separate verifier suite used module loading and seven cases could
+not import their sibling test helper. The configured discovery command
+passed all 189 tests.
+
+The Stage B standalone-policy comparison confirmed that CNG lacks
+`let_underscore_drop`, `unused_macro_rules`, `unused_lifetimes` and
+`string_slice`, and retains its stronger unsafe prohibition. The existing
+OD-19 resolution accepted 21 frozen manifests and the separate AES
+admission accepted its 43-file inventory. Either proposed lint-table edit
+alone failed complete manifest-context admission. Updating the AES manifest
+and inventory hashes in a control still failed the independent exact
+manifest-shape gate. Route these changes through a fresh OD-19 resolution,
+coordinated AES admission and affected GNU/MSVC checks if adopting them.
+The hosted Python suites and source-report route are active. Hosting the
+full compiler-fixture runner also requires its pinned bootstrap and
+extension setup, which the current workflow does not supply. These
+assessments made no standalone policy or hosted trust changes.
+
+### Route strict fixture controls through the Rust workflow
+
+The default Ubuntu product job now runs the 47 strict and 12 pure API
+fixture lanes after acquiring the exact Rust and cargo-nextest binaries and
+before product verification. The explicit tool paths select existing product
+tool admission. The workflow fixes system PATH, removes the inherited
+Rustup override and records the observed helper identities. An eight-lane
+environment smoke run qualifies the actual sandbox before the fixture rows.
+The normal local command retains exact bootstrap helper admission and its
+full extension inventory. Neither route changes any fixture oracle or product
+Clippy policy.
+
+On the working-tree overlay of `70586c24ba2ebad6d531db6be5e6fa669c72625d`,
+tree `96ff3089ff1fc528278759894ec892838203bfd9`, both invocations passed
+all 59 lanes under pinned Rust 1.100.0 and nextest 0.9.150. The nextest
+positive ran two tests. The empty selection refused with status 4. The
+explicit runner positively observed isolation and passed the additional
+eight smoke lanes. A wrong nextest executable refused before smoke or
+fixtures. The first mismatch returned a traceback because the product
+module loads its own exception type. The corrected entry point retains an
+incomplete JSON receipt with the intended digest diagnostic. The focused
+Python suites passed 72 tests, and the eight workflow controls passed,
+including exact shell routing and injected nonzero propagation.
+Independent H13 review compared both routes against the prior local
+receipt. All 59 lane commands, expected outcomes and observed outcomes
+matched in order. The additional smoke controls belong to the explicit
+runner path.
+
+Local receipts are in `/tmp/nevrotick-runner-final.HMUIr1rw/`. SHA-256 values
+are `da8e6ad3e451861c1ad1767f36fdac4424d0e40a02dd3937e87ada1370936039`
+for `explicit.json`,
+`fb3e6c02bb3d9e4563517b02571a271854d7b357b2399a5e62eb2e39b524fbf9`
+for `local.json` and
+`1e44dc8d16b2ac6a8603a73956cc428a716a5884b2aa729cca165d5a99fe496c`
+for `wrong-nextest.json`. The explicit command was executed on the local
+Linux host with the workflow's argument and environment selection. A
+GitHub-hosted run remains open under the existing trust decision.
+The explicit route passed again after integrating the standalone manifest
+and AES admission changes below. Its receipt is
+`/tmp/nevrotick-goal-integrated.5zNkWrp6/explicit.json`, SHA-256
+`4348d8e242b5979d1cff0407f721463b3b81ffca0939dd487bcc22f36b45b428`.
+
+The admitted local workflow analyzer passed actionlint, ShellCheck and
+pedantic offline zizmor on all three workflows, including two healthy
+and three rejection controls. The live Actions permissions readback still
+showed enabled Actions, `local_only`, and mandatory SHA pinning. The last
+Main Rust and security runs for this base both ended in startup failure
+with zero jobs.
+The local workflow change leaves that owner decision pending.
+[Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/45247944834)
+[Security run](https://github.com/DavidOsipov/NevroTick/actions/runs/45247942367)
+
+### Standalone crypto lint policy — 23 November 2026
+
+The standalone CNG lifecycle fixture now carries the four missing workspace
+rules. The standalone AES witness carries the canonical Rust, Clippy and
+rustdoc tables. Both use the stronger `unsafe_code = "forbid"`. Product
+admission still checks the AES nonmember graph and source inventory and now also
+requires the exact lint tables. A focused control recomputes both AES source
+pins after removing `unused_must_use` or weakening the unsafe rule. The real
+admission function refuses both changes and accepts the healthy manifest.
+
+The coordinated OD-19 decision on base `70586c24ba2ebad6d531db6be5e6fa669c72625d`,
+tree `96ff3089ff1fc528278759894ec892838203bfd9`, reproduced the unchanged
+root lock `26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db`
+in a private 512 MiB/16,384-inode acquisition filesystem. Only the two
+standalone lint tables changed in the 21-manifest context. The resolver
+recorded zero registry additions, zero removals and no exception. The first
+attempt refused the missing code-owned baseline checkpoint before Cargo.
+The retry registered the exact prior pinned and admitted lock, registry and
+admission identities through the existing checkpoint mechanism. It changed no
+registry selection. Both standalone lockfiles also matched their previous bytes.
+
+The independent strict configuration reports for Rust/Cargo 1.100.0 and Clippy
+0.1.100 used the root Clippy discovery context, pinned inputs, read-only
+vendored sources and bounded offline commands. CNG all-target Clippy passed
+with `init-probe` on GNU and MSVC. AES all-target Clippy and private-item
+documentation checks exposed genuine omissions in the test fixture contracts.
+The repair documents actual setup errors and assertion failures at those test
+owners. A fulfilled `clippy::too_many_lines` expectation on
+`generate_ep2_response_fixtures` keeps its complete ordered corpus visible beside
+the healthy case. Revisit the expectation if fixture ownership or corpus
+layout changes. The original and repaired generator each ran once through the
+existing result reader, producing the same 36 fixtures and 15,832 packet
+bytes. The emitted source hashes to
+`7c903e833aa2913a6e6239359a5d214c275f00208bd99d9fa45640087930b2b8`.
+
+The final AES lane passed formatting, all-target Clippy and rustdoc on both
+targets, 21 GNU unit/integration cases, and 11 GNU doctests. An earlier
+qualification wrapper expected one combined doctest total, while the admitted
+rustdoc emitted two successful groups of 2 and 9. The corrected wrapper
+requires both groups and retains the earlier output. Initial Python attempts
+on an incomplete archive omitted configuration, metadata and discovery
+inputs. Configured discovery on the integrated worktree passed 22 KE,
+36 Slint dependency, 189 product verifier and two cooldown tests. Actual
+product source admission passed with 651 inputs, including all 43 bound AES
+files. The dependency policy pin is
+`429f31495d870e6f7474bca58d621ce405177fad592cc17683bcfe5ad97f5113`.
+
+Raw results and the input inventories are retained in
+`~/.local/share/nevrotick/standalone-lints-20261123.TuOt7c9V/`.
+
+| Result | SHA-256 |
+| --- | --- |
+| `product/cooldown-resolution.json` | `fc66bac33cb262316ac86b0e79bc5ee9235eb36a1fb423387b495d29376f5210` |
+| `cng-with-config-compile-status.json` | `0ed5f0045f87073c216cf03ec0a300abf0f61d3ac1c25d94eb2a24ba61842b12` |
+| `aes-complete-compile-status.json` | `f7067788d21700c7b365d3283dcf05f3adb8d2253c68f724aa07d324f2ab4d3a` |
+| `aes-complete-generator-reconciliation.json` | `bea3278a1a2030f98fcea69fd0757a241b12e664229a5380659356f79640e8c7` |
+
+These results cover standalone policy, compiler selection and the actual AES
+host checks. The CNG Clippy receipt predates the final AES test-only
+documentation edits. Its dependency's production body, both manifests, lockfiles
+and CNG source are identical in the integrated candidate. Earlier CNG and
+Engine records retain their own source identities. Native Windows execution,
+hosted status and any product release remain with their existing owners.
+
+### Guard the preview files against inner outcome lint overrides
+
+H14 applies to a specific gap in the CR-01/CR-03 report. An inner
+attribute in a selected consumer file can weaken outcome-handling
+diagnostics while leaving all selected method tokens unchanged. The
+report now examines inner `allow`, `expect` and `warn` for the selected
+Rust and Clippy result, future and drop diagnostics and their broad
+groups. It follows attributes applied by nested `cfg_attr` without
+evaluating the predicates. Each finding points to the owning attribute
+span and names the matched lint. Exact item-level expectations,
+including the AES generator expectation, retain their own review.
+
+Actual fixture-source controls cover a direct inner waiver, a nested
+conditional group, multiline syntax, comments, raw identifiers, and
+lowering a deny to warn. Quoted lint names, commas in reason strings,
+comments, an unrelated lint and an inert nested attribute remain healthy.
+Independent review found the reason-string and inert-attribute
+counterexamples in the first implementation. The repaired scanner uses
+balanced token arguments and visits only applied conditional attributes.
+This is a structural check of the four selected source files. Effective
+compiler cfg, outer module attributes outside these files, and macro
+expansion retain their separate review.
+
+Python 3.12.3 passed all 73 selected strict, preview and analysis-policy
+tests. The real preview command passed with no current findings. The
+checker source SHA-256 is
+`20461815348c7eabfd6cbbdfe0eadc26a36a6e1468271bba65c107e71fa0e861`.
+The four selected source hashes are recorded in
+`/tmp/nevrotick-h14.HyNxyGqq/preview.json`. The skill pack and
+whitespace checks passed on the integrated overlay of `70586c24`.
+
+### Replay the integrated dependency graphs — 24 November 2026
+
+The affected default and explicit KE graph selections both validated frozen
+metadata and all ten workspace and package trees for GNU and MSVC. Rust/Cargo
+1.100.0 used the same 651-file source map,
+`a8f8ab4c1404d8b59ca36999f1cedf3c5cc593c97e3013afe6136d1e3101f834`,
+and the admitted read-only 585-package vendor. The fresh advisory receipt
+bound 2,156 files. The normal verifier stopped after GNU for each profile.
+The supplemental MSVC rows used the same sandbox, admitted tool/source/vendor
+and advisory inputs, graph validators and unchanged cargo-deny commands.
+Their source, vendor and tool bookends passed.
+
+All four cargo-deny 0.20.2 invocations returned status 1. Bans, licences
+and sources passed. The configured advisory gate reported unmaintained
+`chrono 0.4.45` through `i-slint-core` and a security vulnerability in
+`url 2.5.8` through the Slint compiler and through `webbrowser` in the
+MSVC UI graph. The former has no patched version. Independent review found
+both advisories in the selected UI scope and did not find calls to the
+affected URL functions in either admitted direct consumer. The graph
+findings remain open under the configured advisory criteria.
+[RUSTSEC-2026-0543](https://rustsec.org/advisories/RUSTSEC-2026-0543.html)
+[RUSTSEC-2026-0592](https://rustsec.org/advisories/RUSTSEC-2026-0592.html)
+
+The first fixed URL version, `2.5.9`, permits the current Slint compiler
+constraint and raises `form_urlencoded` from `^1.2.2` to `^1.2.3`.
+The current lock contains `1.2.2`. Registry publication times are
+23:03:07 UTC for `url 2.5.9` and 23:02:49 UTC for
+`form_urlencoded 1.2.3` on 20 November 2026. Their earliest joint ordinary
+OD-19 eligibility is 4 December at 23:03:07 UTC, or 5 December at
+03:03:07 in Tbilisi. This is a manifest-based lower bound on a future
+resolution, subject to review of the complete delta. An earlier
+acquisition would require an exact OD-04 exception. Slint 1.19.0 still
+declares `chrono ^0.4`; the maintenance gate needs removal or replacement
+in the selected graph, or its own owner-approved risk disposition.
+The lock, cooldown and advisory criteria remain in force.
+[URL registry record](https://index.crates.io/3/u/url)
+[Form encoder registry record](https://index.crates.io/fo/rm/form_urlencoded)
+[Slint Core registry record](https://index.crates.io/i-/sl/i-slint-core)
+
+For the next dependency decision, keep the two findings separate. The
+default and KE Engine package scopes contain neither dependency on either
+target. The affected URL API was absent from the admitted Slint compiler
+and browser backend call sites reviewed. The maintained UI browser action
+uses a fixed HTTPS repository link. This supports waiting for normal
+cooldown eligibility for the URL update unless further reachability or
+urgency evidence warrants an early OD-04 decision. The projected two-package
+change still requires exact graph resolution and qualification.
+
+Chrono is a direct, nonoptional dependency of Slint Core, even with
+the public Slint crate's defaults disabled. Slint 1.19.0 keeps that
+dependency and changes the Windows accessibility path to AccessKit
+`0.25` and `accesskit_winit 0.34`. That path would require review of
+the existing exact AccessKit patches and separate UI qualification.
+The ordinary repair is a reviewed Chrono-free upstream release or
+replacement in the selected Slint dependency. A temporary acceptance
+of the maintenance finding would need a separate owner decision that
+binds the exact Slint/Chrono graph, expiry and migration trigger. This
+handoff records the choice and retains the failing gate.
+[Slint 1.19 Core manifest](https://raw.githubusercontent.com/slint-ui/slint/v1.19.0/internal/core/Cargo.toml)
+[Slint 1.19 Windows backend manifest](https://raw.githubusercontent.com/slint-ui/slint/v1.19.0/internal/backends/winit/Cargo.toml)
+
+The exact root-lock compiler and Clippy follow-up remains open. The
+configured product commands select the entire workspace and require
+successful dependency admission first. The existing Engine-only
+`ke_association` analysis entry point requires the separately admitted
+620-input candidate and 7 GiB of scratch. The current 651-input
+candidate and both available Linux scratch stores failed those entry
+conditions. The earlier GNU and MSVC standalone CNG Clippy receipts
+include the real Engine and AES path dependencies, but resolve
+`ctutils 0.4.7` and `inout 0.2.5`, while the root lock resolves
+`0.4.8` and `0.2.6`. The follow-up launched no compiler.
+[Product instructions](../TOOLING.md#starting-implementation)
+[Engine analysis gate](../scripts/verify-engine-analysis.py)
+
+Raw receipts are in
+`~/.local/share/nevrotick/integrated-graphs-20261123.NxbuUknf/`.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `advisories.json` | `4ab31284672b539396aa1f2f73934652c2ae68ca1b1f139bc7dd0af2b30b70f3` |
+| `default.json` | `0d61f0f2a469b476f88c04b63f6457cdd3fb3a542f5a7228eb8b8a88fab07a82` |
+| `engine-ke-association.json` | `4843232a201a55761d4bbaaf544b7696b9f764326f17bf84a26f2f89c250c5a9` |
+| `default-msvc-supplement.json` | `bab94a0572348dc27875505d89436b427ec564654d3c3beebc6ff4cdd9743650` |
+| `engine-ke-association-msvc-supplement.json` | `baed3b9cebc3aeefff77a76f84a7148bfc80f464f435e943d932b847503e3a90` |
+
+### Replace Chrono in the selected Slint desktop graph
+
+The owner decision is recorded under
+[OD-13](../docs/nevrotick-owner-decisions.md#slint-calendar-dependency--24-november-2026).
+This replacement clears the Chrono finding in the preceding graph replay.
+That replay retains its original candidate and results.
+
+CHECK-19/20/26 and S0.5. The actual published Slint Core 1.18.1
+calendar module is the sole Chrono consumer in the accepted root graph.
+The calendar functions take civil Gregorian days, format or parse
+DatePicker input, and read a local date. The maintained NevroTick GUI
+contains no DatePicker or direct calendar call. The replacement still
+preserves the widget defaults and existing civil date bounds.
+
+The comparison used checksum-verified published archives of
+`jiff 0.2.41` (upstream revision
+`649fa73ffac9ed41023aa95ea0d81616b6978e3c`) and
+`time 0.3.55` (upstream revision
+`857d9c404c5b6f6cb64d1bfa604c695be3369e12`).
+Jiff provides checked allocation-only civil parsing and formatting.
+Its year limit is ±9999, and its Windows system-zone implementation
+uses cached CLDR/IANA rules even where the active Windows rules
+differ. The `time` candidate preserves the original year interval
+with `large-dates` and uses the system's Windows local-time conversion
+with an explicit error return. Its allocation-backed strftime
+description parser and output writer have different costs from
+Chrono's formatter. Whole-UI throughput, binary size, and Windows
+local-date timing require independent measurements for any claim.
+[Jiff Windows source](https://github.com/BurntSushi/jiff/blob/649fa73ffac9ed41023aa95ea0d81616b6978e3c/crates/jiff/src/tz/system/windows/mod.rs)
+[time Windows source](https://github.com/time-rs/time/blob/857d9c404c5b6f6cb64d1bfa604c695be3369e12/time/src/sys/local_offset_at/windows.rs)
+
+The RustSec Chrono finding is a maintenance notice. The known
+`time` stack-exhaustion advisory was patched before 0.3.55. The selected
+adapter bounds untrusted descriptions and input, uses a fallible
+calendar library, rejects extra Gregorian fields that the library
+might ignore, and propagates local-offset unavailability as the
+existing unavailable-date sentinel. The adapter does not mutate the
+environment or refresh time zones. On Unix the selected local-offset
+path calls `localtime_r`. On Windows it validates OS success before
+reading the output record and checks the returned offset. These are
+selected implementation findings, with native local midnight, changed
+timezone and DST behavior still needing native observations.
+[Chrono notice](https://rustsec.org/advisories/RUSTSEC-2026-0543.html)
+[time advisory](https://rustsec.org/advisories/RUSTSEC-2026-0009.html)
+
+The selected derivative is desktop std only. It retains the default
+DatePicker format and its one- or two-digit month and day plus
+variable-width signed and unsigned year rules within a 1,024-byte
+input cap. Other accepted input patterns must specify one Gregorian
+year, month and day; arbitrary Chrono-specific directives and
+alternate representations are outside this derivative's contract.
+The original Slint package, original manifest, license grant and
+unchanged GDB visualizer remain traceable to the archive.
+
+The guarded OD-19 resolver reproduced the prospective desktop candidate
+without an exception. It selected `time 0.3.55`, `deranged 0.5.9`,
+`num-conv 0.2.2`, `num_threads 0.1.8`, `powerfmt 0.2.1`,
+`time-core 0.1.9`, and `time-macros 0.2.32` in the lock. It removed
+Chrono and both IANA zone packages, and substituted the local
+Slint Core for the registry copy. Registry `time-core 0.1.9`
+and first-party `time-core 0.0.0` retain separate identities.
+The lock SHA-256 is
+`044f4a7e97a97da0400299a9990c5395bfc2ec8290e0d2ba25baa175f1c61d52`.
+
+The initial candidate failed against the real Chrono-backed module
+on variable-width widget input. Its generic date parser also accepted
+contradictory fields. The revised module
+(`1099e71d220fa94f2ce06d52ab51feb365b8ac412088b7c91c87602d592d3552`)
+passed five sandboxed GNU tests. The oracle compared 12,600 default
+parse inputs, 840 calendar inputs, and 8,820 default rendering
+inputs with the original module. Directed cases covered conflicting
+and duplicate fields and the 1,024-byte boundary. The focused
+harness substitutes `String` for Slint's `SharedString`. Its raw receipt
+is `~/.local/share/nevrotick/calendar-controls-20261124.SuCaqtiG/differential_after-result.json`,
+SHA-256 `1c49775f8835955e836ba78689ff241bc1a0247d8072e5a66d4522b98d899d55`.
+
+The published archive reconstruction independently matched all 100
+original file identities except the selected manifest and calendar
+module. The derivative retains the original normalized manifest and
+adds one patch notice. The existing GDB visualizer bytes match the
+reviewed hash.
+
+The bounded optimized GNU microbenchmark alternated the old and
+new module calls in one process with the same `String` shim. Median
+nanoseconds per call over seven 150,000-call batches were 132.9 → 29.0
+for default padded input, 128.8 → 28.0 for unpadded input, 114.1 →
+71.5 for a month header, 161.0 → 87.5 for the day summary, and 17.5 →
+9.6 for month length plus weekday layout. These are isolated numbers
+for the adapters and common widget patterns. GUI redraw timing, native
+Windows timing and artifact size remain unmeasured. Raw output is in
+`~/.local/share/nevrotick/calendar-controls-20261124.SuCaqtiG/calendar-benchmark-result.json`.
+
+A separate three-way GNU benchmark used version-pinned Chrono, the
+actual revised time adapter and a Jiff civil adapter with `std` only.
+The Jiff arm does not include system-zone features. Measurements are
+medians in nanoseconds per call over seven rotated 150,000-call samples.
+The harness requires matching results for the timed inputs first.
+
+| Calendar operation | Chrono 0.4.45 | time adapter | Jiff civil adapter |
+| --- | ---: | ---: | ---: |
+| Padded default input | 105.9 | 26.8 | 59.2 |
+| Month header | 115.8 | 71.0 | 71.9 |
+| Day caption | 160.2 | 88.0 | 93.6 |
+| Month length and weekday | 16.8 | 9.2 | 3.3 |
+
+The Jiff probe also verified its ±9999 bounds directly. The two
+adapters are comparable on these selected common cases. They have
+different parsing and local-date contracts. Raw output
+`~/.local/share/nevrotick/calendar-controls-20261124.SuCaqtiG/jiff-compare-result.json`
+hashes to
+`e69afdcb7fc5fc53a8920e0035fd88af1cdd7e7f665582ee1888696755777a86`.
+
+The calendar patch is integrated in
+`third-party/i-slint-core` and the root patch and lock. The full
+product source admission accepted 753 inputs. The source map
+SHA-256 is
+`18b7b0633cc67760f557610f6a867350929e044f32175fc831d521327f8c55f2`.
+The active root lock contains no Chrono package. The published
+Slint lock and manifests are retained as source provenance inside
+the derivative. They do not govern the patched product graph.
+
+Actual GNU and MSVC default and KE graph validation passed. The
+first advisory replay also identified that Cargo-deny treated the two
+unrelated `time-core` packages as duplicates. The reviewed projection
+records both exact versioned identities with the existing per-version
+mechanism. Active product package selectors explicitly address the
+first-party `time-core@0.0.0`. Other versions and widened matches
+retain rejection. Historical Core analysis receipts retain their own
+package selectors and exact source bindings.
+
+The 254 focused Python controls passed, including the exact-source
+derivative refusals and duplicate-name control. Final Cargo-deny
+0.20.2 on each of the four graph rows reported the existing URL
+advisory alone and passed bans, licences and sources. The Chrono
+advisory and the new duplicate-name refusal both cleared. The final
+receipt is
+`~/.local/share/nevrotick/jiff-graph-20261124.gTF6LF5c/calendar-final-cargo-deny-projections.json`,
+SHA-256 `287ed64ef1b9821e98b3b81a7dee5dc93b34459cf16a5df557ad32f9d59add24`.
+The same directory retains the frozen source bundle, official
+resolution and fresh 2,159-file advisory metadata receipt. The
+URL vulnerability gate remains open with its existing cooldown.
+Root-lock product compilation and native UI qualification remain
+open under their respective prerequisites.
+
+### Reconcile the state-and-error handoff after the calendar change
+
+The 23 November handoff reviewed `2868a53d97dd308015a0c5ff055bf815af06e439`.
+This checkpoint is the working-tree candidate based on
+`70586c24ba2ebad6d531db6be5e6fa669c72625d`, tree
+`96ff3089ff1fc528278759894ec892838203bfd9`. Reuse the earlier source
+and behavioral receipts within their original candidate scope.
+The calendar derivative changes the UI dependency graph. It leaves the
+selected Engine classifier, preview constructors, notification wrappers,
+retry boundary, ledger and regression owner source unchanged from the
+respective preceding handoff checks.
+
+The calendar candidate passed the explicit runner's 47 strict fixtures,
+12 pure API fixtures and eight environment smoke lanes under
+Rust 1.100.0. The preview CLI returned no findings and all eight shell
+routing tests passed. These replay the existing local CI controls on the
+changed verifier. They do not establish hosted execution. The live
+GitHub settings still report Actions enabled, `local_only`, and
+required SHA pinning.
+The receipts are in `/tmp/nevrotick-handoff-post-calendar.79iIYF9k/`.
+The explicit runner receipt SHA-256 is
+`377c89c44cb82714b6cfc498f65f987c340c3f8f09dffc25df3cc4f1e9c6f31c`.
+The preview report SHA-256 is
+`d2803866e52617597241a9c316136d0f3813ed6e5289535fc59781b14824abbf`.
+
+| Handoff item | Disposition and owner |
+| --- | --- |
+| H01–H06 and AUDIT-BINDING-01 | Retain the implemented source protections and the scoped reader closure under their [Engine record](engine-transport-pilot.md#focused-hardening-verification--14-november-2026). Preserve their current consumers. |
+| H07, H15, H16 | Keep the ledger, retry and regression triggers with the [Engine and Core owners](engine-transport-pilot.md#recheck-the-conditional-recovery-and-regression-triggers). The calendar change reaches none of those seams. |
+| H08–H09 | Hosted approval and exact-candidate execution remain open. Existing default and KE selection and the new strict runner routing are locally exercised. The [owner decision](../docs/nevrotick-owner-decisions.md#64-hosted-actions-trust-policy--14-november-2026) retains its scope. |
+| H10–H11 | H10 stays at the next notification-boundary edit. The [GUI record](slint-gui-handoff.md#private-apartment-trait-controls--h11-23-november-2026) has separate actual MSVC Send and Sync controls on its recorded candidate. Native notification cleanup retains its own exit. |
+| H12 | Retain the existing three-role elapsed-clock restrictions and their scoped compiler controls. |
+| H13–H14 | Independent acceptance comparison remains part of every affected admission edit. The [selected H14 structural check](#guard-the-preview-files-against-inner-outcome-lint-overrides) is verified. Wider suppression scope and semantic rationale remain with their reviewers. |
+
+| Rule | Implemented coverage and remaining owner |
+| --- | --- |
+| CR-01 and CR-03 | The [preview pilot](#review-selected-preview-contracts-and-commit-seams) covers the named declaration, constructor, commit and nine receiving seams. The source gate and focused Rust receipts have separate scopes. The occurrence-specific exception is a structural attachment, with meaning reviewed at the actual caller. |
+| CR-02 and CR-04 | Retain the Engine and numerical owners' existing typed inputs and checked outputs. The calendar change had its own conflicting-field and boundary controls. No resolved detector was selected for those rule families. |
+| CR-05 | The [session classifier](engine-transport-pilot.md#require-an-explicit-session-coherence-decision--23-november-2026) has two actual-source exhaustiveness controls and legal neighbors. H11 carries the separate capability controls. Additional equality, trait and variant decisions remain with the changed owner. |
+| CR-06 | GUI and static-policy owners retain H10's wrapper diagnostic obligation. A named-result detector needs its residual handling case after that compiler mechanism. |
+| CR-07 and CR-08 | The preview pilot has a selected early-write control. Wider failure custody and current-effect binding remain with the actual UI, Engine, service and Windows owners. No interprocedural backend was selected for those guarantees. |
+
+The standalone CNG and AES policies and the bounded preview pilot have
+local verification. The full root-lock compiler and Clippy rows still
+require dependency admission. The calendar replacement clears the
+Chrono finding, and the separate URL advisory remains the configured
+product refusal. There is no selected typed or interprocedural backend
+with qualified current extraction. Existing native and post-V1 holds
+retain their scope.
+
+### Clear the URL advisory under the approved cooldown exception
+
+David's exact OD-04 decision authorizes the two registry replacements
+required by RUSTSEC-2026-0592. The ordinary precise-resolution control
+refused `url 2.5.9` at three days old under the 14-day policy. The
+approved precise Cargo 1.100.0 child then replaced only
+`url 2.5.8 → 2.5.9` and `form_urlencoded 1.2.2 → 1.2.3`.
+Independent review compared all 603 lock records and their edges,
+the package archives and published checksums, and the accepted
+manifest context. Both replacement archives identify upstream release
+commit `ad1c66cbff6e318393d872641e30589ff9687b9c`. Both packages
+retain their existing license choices and selected feature roles.
+[Owner exception](../docs/nevrotick-owner-decisions.md#url-dependency-cooldown-exception--24-november-2026)
+[Upstream release](https://github.com/servo/rust-url/releases/tag/v2.5.9)
+
+The lock SHA-256 is
+`d0cbe60cb93954940854e14cbf0b27f6d4edececcb06b79dd09377fbd5378515`.
+The ordinary cooldown and deny settings retain their existing values.
+The exact exception is retained as resolution provenance. Frozen
+verification selected the exact admitted vendor and a fresh 2,159-file
+advisory/index snapshot. Both configured dependency runs passed
+all 30 lanes each, covering GNU/MSVC metadata, package trees, and
+cargo-deny. All four advisory, bans, licences and sources results
+passed. This clears the URL advisory and product dependency gate
+recorded in the preceding handoff. Product execution and hosted
+qualification retain their own evidence.
+
+Both dependency receipts match all 753 admitted working-tree inputs.
+Their canonical source map hashes to
+`41d83f55a856314eb37ad9399b36046fd64a3bc32388481f9e83e28b906dc4dc`.
+The 282 affected Python controls passed. The historical age tests
+now use the separately pinned original registry inventory. The
+current admission control verifies the live exception-backed graph
+and its exact predecessor. This preserves the original refusal
+controls after the calendar and URL graph changes. The graph-admission
+suite passed again with 29 tests after adding exact exception-delta
+and publication-age controls. Removing either tested guard in memory
+made its intended control fail.
+
+Raw receipts are in
+`~/.local/share/nevrotick/url-20261124.FRJBoTOA/`.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `resolution/cooldown-resolution.json` | `ff31c57183702b4b8ebca4ca14f6354de65b1b7d98c0820030ea0c2bcb3707bb` |
+| `advisories.json` | `801de52514db60f319419628ad6646f794f1bf9cec2c469479c98b42a791f8b7` |
+| `default.json` | `9ef6d7351ed84d6b4b164969418151c9f435cb44ee67dcb3be98124df8c0ba72` |
+| `engine-ke-association.json` | `363d67db90252bd553a5c6456cc634b60585cbb2c16f86c4c9c3b24e3c6c0ac0` |
+
+The default portable follow-up used the same admitted source map.
+Its first attempt stopped during the `rustversion` build-script link
+after the linker reported unavailable resources. A retry limited host
+CPU affinity to four CPUs with the same verifier and command limits.
+Workspace compilation, Clippy, the Engine build and rustdoc passed.
+The UI ran and passed 202 tests, including the generated Slint
+callback and fixed repository URL controls. Wire, time-domain and
+exchange package tests also passed. The later first-party
+`time-core@0.0.0` test build ran out of tmpfs space before completing.
+The full portable row remains incomplete with a separate storage
+limit. This does not change the passing dependency gate.
+
+The initial and retry receipts are `default-portable.json` and
+`default-portable-affinity.json` in the same directory. Their
+SHA-256 values are
+`3bf9961034c18a8d7957cb1e9f235f53b5836e9d69dd9050db5da0e39172905b`
+and `d103b650f9d71954436d8b031aead5f4c003d19bb46ae143f4b753342531b9e2`.
+
+The next default run used fresh owned scratch on the Windows data volume
+and retained the four-CPU affinity. All 45 configured GNU portable lanes
+passed with Rust and Cargo 1.100.0, Clippy 0.1.100 and nextest 0.9.150.
+The verifier accounted for 1,531 ordinary tests, 1,069 optimized tests and
+384 doctests. UI ran 202 tests and Engine ran 311 in each selected test
+profile. The previously stopped first-party `time-core@0.0.0` completed
+624 tests in each selected profile and 112 doctests. The receipt retains
+the same 753 source hashes as the passing dependency rows.
+`default-portable-drvfs.json` hashes to
+`1969ba999688581353c12981efc4344e18151756103e1d775251b8e9412d1eab`.
+
+The default MSVC cross-build passed all 35 configured lanes, including
+all-target compiler and Clippy checks, generated version-resource checks,
+release linking, and static import readback for the UI and Observe.
+It admitted the pinned MSVC toolchain, the 529-file CRT and SDK library
+inventory, and 767 source inputs. The 753 shared inputs match the
+portable and dependency receipts. The resource generation hashes to
+`4c91da3ab7d67d9f7ad45a1e67c89530f299a68705d3e917d6c07311c607d740`.
+The UI and Observe image hashes are
+`5690460e4b6d6dc6985f39dc6b20709939fefae1f1ea2695dc26279791985fb6`
+and `a60b8f9a575266c23cfbc7e533dd262162c79af211cb9f2f838c177c5cf7ac8f`.
+The MSIX source inspection ran and returned `assembly-inputs-incomplete`.
+The lane executed no Windows image. The `default-windows-drvfs.json`
+receipt hashes to
+`ea7bf0ade745c490fd589176a491b4b5fe62b84b051eae3349ef679bea11b5e1`.
+
+The configured GNU KE run passed 42 lanes before the optimized Engine
+unit-test build exited 101. The kernel journal recorded a hard CPU
+watchdog during ThinLTO. A scoped retry retained the 90-second process
+CPU limit, selected the same release command, and moved its scratch
+to tmpfs with two physical CPUs. That attempt reproduced the compiler
+SIGKILL and a second watchdog entry. Both stopped before optimized
+Engine tests ran.
+
+A separate scoped replay used the
+[reviewed Engine recovery allowance](engine-transport-pilot.md#original-receive-brackets-and-final-cutoff--w11-w01)
+of 240 CPU seconds for the exact optimized Engine command. It kept six
+build jobs, ordinary release settings, the 300-second wall deadline
+and the remaining sandbox limits. Independent review read the live
+Rustc process arguments and limits. The two remaining Linux
+`windows-platform-native` lanes used the original 90-second limit.
+The replay passed all three test lanes, including 660 optimized Engine
+cases, 69 adapter tests and four doctests. The Engine case names match
+the ordinary Engine run exactly. Independent comparison matched the
+753 input hashes, tools, effective configuration and selected argv.
+
+Together the two passing selections cover all 45 GNU KE obligations,
+with 1,880 ordinary tests, 1,418 optimized tests and 385 doctests.
+The standard 90-second GNU KE verifier remains incomplete on this host.
+The exact Engine behavior under the separate resource allowance belongs
+to the scoped receipt below. Shared verifier limits retain their
+existing owner.
+
+| Retained GNU KE receipt | SHA-256 |
+| --- | --- |
+| `ke-portable-drvfs.json` | `25245bbf3c88dec5e1cfebaafcffb1fc1597249620c5466ecf58804f39963fed` |
+| `ke-portable-tail.json` | `e6a84c8cf1b7f9e10e81d089905df38399ed900b7dfb2076e34ab961991a051a` |
+| `ke-portable-tail-engine240.json` | `aecdbf777237fa97c608956b78449b0b3a948c5e42718035fa5c26543285b8c1` |
+| `ke-portable-cpu-watchdog.log` | `cd5fafac3061ecce95c13f2605af68fe5b61a3bc657e559d3cf7f40c274eeaa9` |
+
+The explicit KE MSVC cross-build also passed all 35 lanes. It reused
+exactly the default MSVC source, tool, CRT/SDK and metadata generation
+identities with the KE graph selection. The linked UI and Observe image
+hashes are
+`1cd8584951260df7045f2c1931817c0a23df5b1c15960caa3ede5127f28c5925`
+and `e504214ea45e322392bac4f545df7de9b0bfade73c688a2805903e7001bd9995`.
+The MSIX inspection retains `assembly-inputs-incomplete`. The
+`ke-windows-drvfs.json` receipt hashes to
+`e53c4c091909f49bdbacb18d221a3a0de2e6a57c4eaf1c49bf0274eef84856b7`.
+
+### Bind preview exceptions to their reviewed seams
+
+CHECK-25, CR-01 and CR-03. Independent readback found that a structurally
+valid exception could name invented owner and consumer symbols. The
+selected source-draft baseline receiver also had no report coverage.
+Under the same HEAD and tree as the URL checkpoint, the preview report
+now binds rule, context, occurrence, owner and related selected tokens.
+Its exception requires the exact owner and a named related symbol from the
+finding. The two model method bodies have their own first-line exception
+slots. An interface exception attaches immediately before its own selected
+declaration. The report retains both raw findings when a change reaches both
+slots. Declaration, Garde, inner outcome lint and whole-model surface
+findings still need a code fix or a reviewed baseline update as applicable.
+
+The tenth seam, `SourceDrafts::from_baseline`, checks capacity before
+reserving storage and derives each candidate through `DraftSource::parse`.
+It rejects duplicate identities before retaining each entry. The Slint
+startup path reaches it through `SourceDrafts::fixture`.
+`RecoveryPreview::parse` forwards its refusal as `RecoveryError::Source`.
+The independent reviewer traced both real callers. The source report selects
+the common baseline constructor and the other nine existing seams. It names
+the two callers for review of guarantees beyond that selected token chain.
+
+Under Python 3.12.3, the old checker failed six new expectations on
+actual-owner copies. The repaired checker passed all 18 preview controls.
+The controls remove the actual baseline capacity guard, change the two
+model bodies, try invented or unrelated owner and consumer identities,
+and distinguish the two legal attachment slots. Stale, misplaced, duplicate
+and broad exceptions are refused. A structurally valid rationale for
+swapping host and label still passes attachment. The independent caller
+review rejects that rationale. No production exception is present.
+The first scratch run's two setup errors are retained separately.
+
+The integrated Rust workflow suite command passed 76 Python tests, its
+shell-routing tests passed all eight cases, and the source-only CLI
+returned no findings. Skill-pack admission and all 25 checker controls
+passed. Source report syntax, imports, effective cfg and unselected call
+coverage retain their documented limits. The independent reviewer confirmed
+that all 753 admitted input bytes still match both prior dependency receipts.
+The selected Rust behavior, compiler and graph receipts retain their
+individual source scopes.
+
+| Input or receipt | SHA-256 |
+| --- | --- |
+| `scripts/preview_contract.py` | `a5f0ae567b2bf44d237d0e93c4863ee2ef2079a2a3841a2f9e0cfebdefa98774` |
+| `scripts/tests/test_preview_contract.py` | `8546af66715cd44110d7b2e3bd9f570e1747d737611cf93b2e2dfe247da50a7d` |
+| `preview-exact-baseline-red.log` | `badcb2214e147babb95e1fbe88aa5d3f18fd0e7ea9cf00d488225996b6e54ee0` |
+| `preview-exact-integrated-tests.log` | `597341d1fdc7f16d43a5f9e77e5aa832813747591d93d8df2a996d55e8461b2f` |
+| `preview-exact-integrated-report.json` | `d2803866e52617597241a9c316136d0f3813ed6e5289535fc59781b14824abbf` |
+| `preview-exact-workflow-tests.log` | `cb9eff82ad433c153d837cbafbfb8dcdc1b4486e0e38347daa1cf39f5f6ba678` |
+
+Receipts are in `~/.local/share/nevrotick/url-20261124.FRJBoTOA/`.
+The exact tracked and untracked working-tree input inventory is
+`handoff-final-worktree.sha256` in that directory. The handoff retains
+H10 at the next native notification-boundary edit and the separate
+GUI, hosted, native, metrics and post-V1 gates at their named owners.

@@ -44,18 +44,27 @@ mod tests {
     // Fixed labels only: failure formatting never prints buffers, keys or errors.
     type WitnessResult<T> = Result<T, &'static str>;
 
+    /// # Errors
+    /// Returns the supplied fixed failure label if the observed condition is false.
     fn need(value: bool, failure: &'static str) -> WitnessResult<()> {
         if value { Ok(()) } else { Err(failure) }
     }
 
+    /// # Errors
+    /// Returns a fixture setup error if the cipher rejects the fixed key.
     fn new_cipher() -> WitnessResult<Aes128Siv> {
         Aes128Siv::new_from_slice(&KEY).map_err(|_| "fixture-key-shape")
     }
 
+    /// # Errors
+    /// Returns a fixture setup error if the provider rejects the tag shape.
     fn tag(bytes: &[u8; 16]) -> WitnessResult<Tag> {
         Tag::try_from(&bytes[..]).map_err(|_| "fixture-tag-shape")
     }
 
+    /// # Errors
+    /// Returns a cipher setup error. The Boolean in the returned observation
+    /// records whether the supplied headers and tag authenticated the buffer.
     fn in_place(headers: &[&[u8]], input: &[u8; 14], tag: &Tag) -> WitnessResult<(bool, [u8; 14])> {
         let mut body = *input;
         let mut cipher = new_cipher()?;
@@ -65,6 +74,9 @@ mod tests {
         Ok((ok, body))
     }
 
+    /// # Errors
+    /// Returns a fixture setup error if cipher construction or span admission fails.
+    /// An authentication refusal is recorded in the returned observation.
     fn disjoint(headers: &[&[u8]], input: &[u8; 14], tag: &Tag) -> WitnessResult<(bool, [u8; 14])> {
         let mut body = SENTINEL;
         let mut cipher = new_cipher()?;
@@ -84,6 +96,10 @@ mod tests {
     }
 
     /// Independent vector: actual detached encryption and both real decrypt forms.
+    ///
+    /// # Errors
+    /// Returns a fixed label if fixture setup or encryption fails, or if either
+    /// decrypt path, the ciphertext, or the tag differs from the public answer.
     #[test]
     fn rfc5297_a1_known_answer() -> WitnessResult<()> {
         let headers: [&[u8]; 1] = [&AAD];
@@ -107,6 +123,10 @@ mod tests {
     }
 
     /// Changed AAD: record the source-derived asymmetry after actual rejection.
+    ///
+    /// # Errors
+    /// Returns a fixed label if setup fails or the changed AAD is accepted or
+    /// leaves either observation buffer with unexpected bytes.
     #[test]
     fn changed_aad_failure_output() -> WitnessResult<()> {
         let mut changed = AAD;
@@ -133,6 +153,10 @@ mod tests {
     }
 
     /// A changed tag's masked CTR bit leaves the RFC candidate bytes unchanged.
+    ///
+    /// # Errors
+    /// Returns a fixed label if setup fails, the modified tag authenticates,
+    /// or either observation buffer differs from the predicted bytes.
     #[test]
     fn masked_tag_bit_failure_output() -> WitnessResult<()> {
         let headers: [&[u8]; 1] = [&AAD];
@@ -159,6 +183,10 @@ mod tests {
     }
 
     /// A non-masked tag mutation does not assume any specific candidate bytes.
+    ///
+    /// # Errors
+    /// Returns a fixed label if setup fails, the modified tag authenticates,
+    /// or the original ciphertext changes in the in-place path.
     #[test]
     fn unmasked_tag_bit_failure_output() -> WitnessResult<()> {
         let headers: [&[u8]; 1] = [&AAD];
@@ -181,6 +209,10 @@ mod tests {
     }
 
     /// 126 headers: independently observed mismatch and a same-code healthy neighbor.
+    ///
+    /// # Errors
+    /// Returns a fixed label for fixture setup failure, incorrect failure-buffer
+    /// observations, or failure to round-trip the 126-header positive case.
     #[test]
     fn header_limit_126() -> WitnessResult<()> {
         let headers: [&[u8]; 126] = [&AAD; 126];
@@ -217,6 +249,10 @@ mod tests {
     }
 
     /// 127 headers: early S2V rejection after the unchanged RFC-tag CTR transform.
+    ///
+    /// # Errors
+    /// Returns a fixed label if setup fails, either decrypt path accepts 127
+    /// headers, or either buffer differs from the predicted plaintext.
     #[test]
     fn header_limit_127_early_rejection() -> WitnessResult<()> {
         let headers: [&[u8]; 127] = [&AAD; 127];

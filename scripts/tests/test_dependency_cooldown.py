@@ -45,7 +45,7 @@ def cooldown_driver(host_network_namespace, group):
     assert AGE_ENV not in os.environ
     environment = load("isolated_cooldown_environment", Path("/probe/check-environment.py"))
     cooldown = load("isolated_cooldown_resolution_owner", Path("/probe/dependency_cooldown.py"))
-    assert cooldown.APPROVED_EXCEPTIONS == {}
+    production_approvals = dict(cooldown.APPROVED_EXCEPTIONS)
     started = datetime.now(timezone.utc)
     stamp = lambda age: (started - timedelta(days=age)).isoformat(timespec="seconds").replace("+00:00", "Z")
     old, young = stamp(15), stamp(13)
@@ -77,6 +77,8 @@ def cooldown_driver(host_network_namespace, group):
         "requested_package": UPSTREAM, "requested_version": "1.1.0", "reason": "Test-only urgent child boundary",
         "primary_fix_evidence": "https://fixture.invalid/verified-fix", "targets": ["x86_64-unknown-linux-gnu"],
         "features": [], "delta_sha256": cooldown.canonical(expected_delta)}
+    fixture_decision = urgent_exception["decision_id"]
+    assert fixture_decision not in production_approvals
 
     class Registry(http.server.BaseHTTPRequestHandler):
         def setup(self):
@@ -151,20 +153,21 @@ def cooldown_driver(host_network_namespace, group):
                     assert arguments in (["update", "--workspace", "--locked"],
                                          ["update", "--workspace", "--locked", "--offline"])
                     command = ["/toolchain/bin/cargo", *arguments]
-                assert cooldown.APPROVED_EXCEPTIONS == {}
+                assert cooldown.APPROVED_EXCEPTIONS == production_approvals
                 try:
                     if allow:
                         # This heap-only inert approval exercises the production
                         # constructor. No product decision/configuration is changed.
-                        cooldown.APPROVED_EXCEPTIONS[urgent_exception["decision_id"]] = cooldown.canonical(urgent_exception)
+                        cooldown.APPROVED_EXCEPTIONS[fixture_decision] = cooldown.canonical(urgent_exception)
                     selected = cooldown.resolution_environment("/toolchain", selected_home, "/tmp",
                         exception=urgent_exception if allow else None)
                     assert (AGE_ENV in selected) is allow and AGE_ENV not in os.environ
                     result = environment.run(command, cwd=directory,
                         environment=selected, timeout=25, max_output=128 * 1024)
                 finally:
-                    cooldown.APPROVED_EXCEPTIONS.clear()
-                assert cooldown.APPROVED_EXCEPTIONS == {}
+                    if allow:
+                        cooldown.APPROVED_EXCEPTIONS.pop(fixture_decision, None)
+                assert cooldown.APPROVED_EXCEPTIONS == production_approvals
                 assert result["failure"] is None, result
                 if refusal:
                     assert result["exit_code"] == 101, result
@@ -240,7 +243,7 @@ def cooldown_driver(host_network_namespace, group):
             finished = datetime.now(timezone.utc)
             assert timedelta(0) <= finished - started < timedelta(minutes=2)
             assert not server_errors and not any(path.endswith(".crate") for path in requests)
-            assert cooldown.APPROVED_EXCEPTIONS == {}
+            assert cooldown.APPROVED_EXCEPTIONS == production_approvals
             files = [path for path in Path("/work").rglob("*") if path.is_file()]
             assert not [path for path in files if path.suffix in {".rlib", ".rmeta", ".o", ".so", ".a", ".crate"}
                         or path.name.startswith(("build-script-", "build_script_build"))]

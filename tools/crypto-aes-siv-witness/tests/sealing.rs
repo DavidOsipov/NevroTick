@@ -36,16 +36,29 @@ const NONCE: [u8; 16] = [
 type TestResult<T = ()> = Result<T, &'static str>;
 
 /// Decode public raw bytes; only the later request owner enforces client mode.
+///
+/// # Errors
+/// Returns a setup error if the fixed header cannot be decoded.
 fn header(bytes: &[u8; 48]) -> TestResult<RawHeader> {
     decode_fixed_header(bytes).map_err(|_| "fixture-header")
 }
 
 /// Supply explicit packet budgets without a product default.
+///
+/// # Errors
+/// Returns a setup error if the wire reader rejects the supplied budgets.
 fn limits(bytes: usize, fields: usize) -> TestResult<FrameLimits> {
     FrameLimits::new(bytes, fields).map_err(|_| "fixture-limits")
 }
 
 /// Exact public byte answers distinguish complete-prefix and placeholder binding.
+///
+/// # Errors
+/// Returns a setup error if header or budget construction, preparation, or
+/// sealing fails.
+///
+/// # Panics
+/// Panics if sealing differs from the independent bytes or modifies the tail.
 #[test]
 fn complete_requests_match_independent_packet_answers() -> TestResult {
     let header = header(&HEADER)?;
@@ -73,6 +86,14 @@ fn complete_requests_match_independent_packet_answers() -> TestResult {
 }
 
 /// The real outer reader and staged consumer observe one empty protected frame.
+///
+/// # Errors
+/// Returns a setup error if the fixture cannot be prepared, sealed, or outer-framed,
+/// or if budget or header construction fails.
+///
+/// # Panics
+/// Panics on unexpected wire lengths, nonce, callback output or count, or
+/// retained scratch bytes.
 #[test]
 fn generated_requests_authenticate_and_clear_scratch() -> TestResult {
     let header = header(&HEADER)?;
@@ -115,6 +136,13 @@ fn generated_requests_authenticate_and_clear_scratch() -> TestResult {
 }
 
 /// Changed CMAC key, header/UID/cookie, nonce and tag never publish plaintext.
+///
+/// # Errors
+/// Returns a setup error if budgets or tampered outer framing are refused.
+///
+/// # Panics
+/// Panics if a changed key or packet authenticates, reaches the callback,
+/// returns the wrong refusal, or leaves scratch bytes.
 #[test]
 fn independently_answered_packet_tampering_never_reaches_consumer() -> TestResult {
     for changed in [None, Some(1), Some(52), Some(88), Some(108), Some(124)] {
@@ -145,6 +173,13 @@ fn independently_answered_packet_tampering_never_reaches_consumer() -> TestResul
 }
 
 /// A separate independent nonempty packet checks actual inner bytes and K2 use.
+///
+/// # Errors
+/// Returns a setup error if budgets or the fixed packet's outer framing are refused.
+///
+/// # Panics
+/// Panics on unexpected wire extents, plaintext fields, callback results or counts,
+/// authentication after the key change, or retained scratch bytes.
 #[test]
 fn independent_nonempty_packet_checks_fields_and_ctr_key_half() -> TestResult {
     let parts = read_nts_authenticator_parts(NONEMPTY_PACKET, limits(4096, 64)?)
@@ -183,6 +218,10 @@ fn independent_nonempty_packet_checks_fields_and_ctr_key_half() -> TestResult {
 }
 
 /// Invoke the actual preparer and inspect all original storage after refusal.
+///
+/// # Panics
+/// Panics if the supplied capacity exceeds the fixed storage, if the observed
+/// refusal differs from the expected cause, or if any byte was written.
 fn refused(
     header: &RawHeader,
     uid: &[u8],
@@ -200,6 +239,9 @@ fn refused(
 }
 
 /// Refuse just-short storage and packet/field budgets beside the exact controls.
+///
+/// # Errors
+/// Returns a setup error if header or budget construction fails.
 #[test]
 fn preflight_capacity_and_budget_neighbors_preserve_storage() -> TestResult {
     let header = header(&HEADER)?;
@@ -243,6 +285,9 @@ fn preflight_capacity_and_budget_neighbors_preserve_storage() -> TestResult {
 }
 
 /// Direct-call malformed shapes and non-client mode cannot bypass wire admission.
+///
+/// # Errors
+/// Returns a setup error if header or budget construction fails before preparation.
 #[test]
 fn preflight_shape_refusals_preserve_storage() -> TestResult {
     let good_header = header(&HEADER)?;
@@ -285,6 +330,14 @@ fn preflight_shape_refusals_preserve_storage() -> TestResult {
 }
 
 /// Abandonment leaves only the promised prepared AAD, without writing a tag.
+///
+/// # Errors
+/// Returns a setup error if header construction, budget construction, or
+/// request preparation fails.
+///
+/// # Panics
+/// Panics if abandoning the prepared request changes any byte beyond the AAD,
+/// or if the prepared AAD differs from the independent packet prefix.
 #[test]
 fn abandoning_preparation_preserves_the_unwritten_tail() -> TestResult {
     let header = header(&HEADER)?;

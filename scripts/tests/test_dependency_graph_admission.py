@@ -28,9 +28,17 @@ def policy():
     return json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
 
 
+def original_policy():
+    """Read the inert registry inventory from the original OD-19 admission."""
+    fixture = json.loads((ROOT / "scripts/tests/fixtures/dependency-age-original-registry.json").read_text())
+    return {"packages": fixture["registry_entries"], "metadata_only_packages": [],
+            "lockfile_sha256": fixture["lockfile_sha256"], "manifests_sha256": fixture["manifests_sha256"],
+            "cooldown_admission": AGE.baseline_admission()}
+
+
 def changed_policy():
     """Replace one registry identity beside every real unchanged transitive."""
-    value = policy()
+    value = original_policy()
     original = next(p for p in value["packages"] if p["name"] == "ryu")
     old = {key: original[key] for key in ("name", "version", "checksum")}
     old["source"] = AGE.REGISTRY
@@ -62,28 +70,29 @@ def changed_policy():
 
 class GraphAgeControls(unittest.TestCase):
     def test_original_accepted_baseline_remains_a_separate_age_decision(self):
-        value = policy()
-        value["lockfile_sha256"] = AGE.BASELINE_LOCK
-        value["cooldown_admission"] = AGE.baseline_admission()
+        value = original_policy()
+        self.assertEqual(len(value["packages"]), 585)
+        self.assertEqual(value["lockfile_sha256"], AGE.BASELINE_LOCK)
+        self.assertEqual(AGE.canonical(AGE.policy_records(value)), AGE.BASELINE_REGISTRY)
         AGE.validate_policy_admission(value)
         self.assertEqual(value["cooldown_admission"], AGE.baseline_admission())
 
-    def test_current_standalone_manifest_reuses_the_accepted_full_root_lock(self):
+    def test_current_resolution_binds_exact_lock_and_accepted_predecessor(self):
         value = policy()
         AGE.validate_root_admission(ROOT, value)
-        self.assertEqual(AGE.canonical(AGE.policy_records(value)),
-            "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7")
         lock = (ROOT / "Cargo.lock").read_bytes()
         self.assertNotEqual(sha(lock), AGE.BASELINE_LOCK)
+        registry = AGE.registry_records(lock)
+        self.assertEqual(AGE.policy_records(value), registry)
         record = value["cooldown_admission"]["resolution"]
         self.assertEqual(value["cooldown_admission"]["status"], "resolved")
-        self.assertEqual(record["baseline_lockfile_sha256"], sha(lock))
         prior = AGE.accepted_checkpoint(record["baseline_admission_sha256"])
         self.assertEqual(prior["lockfile_sha256"], record["baseline_lockfile_sha256"])
         self.assertEqual(prior["registry_sha256"], record["baseline_registry_sha256"])
         self.assertEqual(record["candidate_lockfile_sha256"], sha(lock))
+        self.assertEqual(record["candidate_registry_sha256"], AGE.canonical(registry))
         self.assertEqual(record["candidate_graph_sha256"], AGE.canonical(AGE.lock_document(lock)))
-        self.assertEqual((record["added"], record["removed"], record["publication"]), ([], [], []))
+        self.assertCountEqual([entry["package"] for entry in record["publication"]], record["added"])
         packages = tomllib.loads(lock.decode())["package"]
         self.assertEqual([p for p in packages if p["name"] == "windows-platform-native"],
                          [{"name": "windows-platform-native", "version": "0.0.0"}])
@@ -93,9 +102,20 @@ class GraphAgeControls(unittest.TestCase):
         with self.assertRaises(AGE.Incomplete):
             AGE.validate_policy_admission(forged)
 
+    def test_current_url_resolution_requires_its_exact_cooldown_exception(self):
+        value = policy()
+        AGE.validate_root_admission(ROOT, value)
+        record = value["cooldown_admission"]["resolution"]
+        self.assertEqual(record["exception"]["decision_id"], "OD-04-URL-20261124")
+        self.assertCountEqual([(item["name"], item["version"]) for item in record["added"]],
+                              [("url", "2.5.9"), ("form_urlencoded", "1.2.3")])
+        record["exception"] = None
+        with self.assertRaisesRegex(AGE.Incomplete, "insufficient publication age"):
+            AGE.validate_root_admission(ROOT, value)
+
     def test_relabelled_new_version_or_lock_is_not_grandfathered(self):
         for field in ("version", "checksum", "lock"):
-            value = policy()
+            value = original_policy()
             if field == "lock":
                 value["lockfile_sha256"] = "a" * 64
             else:
@@ -263,14 +283,24 @@ class ChildBoundaryControls(unittest.TestCase):
             "targets": ["x86_64-unknown-linux-gnu"], "features": [],
             "delta_sha256": AGE.canonical({"added": record["added"], "removed": record["removed"]})}
         record["exception"] = exception
+        original_approvals = dict(AGE.APPROVED_EXCEPTIONS)
         with patch.dict(AGE.APPROVED_EXCEPTIONS, {exception["decision_id"]: AGE.canonical(exception)}):
             AGE.validate_policy_admission(value)
             child = AGE.resolution_environment("/toolchain", "/work/cargo-home", "/work/tmp", exception)
             self.assertEqual(child["CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE"], "allow")
             self.assertNotIn("CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE", AGE.resolution_environment("/toolchain", "/work/next", "/work/tmp"))
-            record["added"][0] = dict(record["added"][0], checksum="e" * 64)
-            with self.assertRaises(AGE.Incomplete): AGE.validate_policy_admission(value)
-        self.assertEqual(AGE.APPROVED_EXCEPTIONS, {})
+            forged = copy.deepcopy(value)
+            forged_added = forged["cooldown_admission"]["resolution"]["added"]
+            forged_added[0] = dict(forged_added[0], checksum="e" * 64)
+            with self.assertRaisesRegex(AGE.Incomplete, "invents a baseline/transitive delta"):
+                AGE.validate_policy_admission(forged)
+        wrong_delta = dict(exception, delta_sha256="0" * 64)
+        self.assertNotEqual(wrong_delta["delta_sha256"], exception["delta_sha256"])
+        record["exception"] = wrong_delta
+        with patch.dict(AGE.APPROVED_EXCEPTIONS, {wrong_delta["decision_id"]: AGE.canonical(wrong_delta)}):
+            with self.assertRaisesRegex(AGE.Incomplete, "Urgent approval does not bind the complete actual resolution delta"):
+                AGE.validate_policy_admission(value)
+        self.assertEqual(AGE.APPROVED_EXCEPTIONS, original_approvals)
 
     def test_second_update_uses_current_accepted_checkpoint_without_rechecking_old_exception(self):
         first = changed_policy()

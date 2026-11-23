@@ -23,6 +23,14 @@ Consult the [v0.4 reference](../docs/nevrotick-design-v0.4/README.md),
 [text development guide](../docs/nevrotick-gui-text-development.md).
 Historical checkpoints retain their original failures, scope and holds.
 
+For the current calendar dependency, follow the OD-13 decision and the
+build evidence. The desktop Slint Core derivative uses `time 0.3.55`.
+Keep the default DatePicker grammar and bounded Gregorian representation
+when updating the patch. Native Windows local-date checks still own
+midnight, timezone changes and daylight-saving behavior.
+[OD-13 calendar decision](../docs/nevrotick-owner-decisions.md#slint-calendar-dependency--24-november-2026)
+[Build evidence](build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
+
 ## Branch and integration state
 
 **Merged continuation — 6 November 2026:** PR10 merged as
@@ -957,6 +965,170 @@ comparison consumers and compiles after an explicit field decision. The current
 terminal classifier preserves operation/cleanup distinctions and sticky outcomes;
 its exact native producer and Slint consumer compile for Windows. No Windows
 execution, AppVerifier/PageHeap, UIA, cleanup or release acceptance is inferred.
+
+### Preview admission contract controls — 23 November 2026
+
+CR-01 and CR-03 cover the selected preview seams under CHECK-25. The fixture
+`UiSession::update_preview` propagates the typed model error before returning
+a reset, and `PreviewModel::update_selected` publishes the selected row only
+after `SourcePreview::parse` succeeds. The checked constructor bounds each
+field before allocating a Garde report and copies the same validated borrowed
+label and host into private owned fields. In the Slint path, Submit binds the
+current raw draft to the current editor target, then calls `SourceDrafts::add`
+or `edit`. Both use `DraftSource::parse` and check current identity uniqueness
+before publishing an accepted change. The callback updates accepted projections
+and editor ownership on success. Refusal retains the accepted rows and presents the
+bounded error with the raw draft still available.
+
+Under the Rust 1.100.0 GNU sandbox, the exact model and draft source copies
+passed five preview tests, twelve draft tests, three doctests and Clippy with
+the reviewed Garde 0.23.0 derive-only dependency closure. A legal external
+consumer compiled and ran. Direct external construction received E0451 and
+mutation received E0616. Separate ordinary same-crate sibling controls received
+E0616 at the `SourcePreview` and `PreviewModel` private field writes, with a
+compiling checked sibling. These scopes cover callers outside the model owner.
+Descendant access and code within the defining module remain source-review
+obligations.
+
+Three runs called the actual constructor, fixture
+update and source-draft Edit. The original refused `" bad"` with
+`InvalidLabel` and admitted `"Sample"` and `"Sentinel"`. A Garde-only rule
+sentinel additionally refused `"Sentinel"` at the same consumers. Omitting
+the real validation call from that specimen compiled under denied warnings
+and made both previously rejected labels reach the committed state. Rejection
+preserved the accepted model and draft inventory. The focused generated Slint
+callback test stages `" bad"` successfully as raw text and verifies that Submit
+refuses it, preserves accepted rows and selection, and leaves the editor open
+with the same raw draft.
+
+The actual default GNU UI package passed package formatting, Clippy for its
+tests and 25 tests across preview, source drafts, fixture presentation and
+generated Slint bindings. The presentation suite includes seven tests with
+the actual `UiSession::update_preview` failure and success paths. The guarded
+run admitted the exact vendor inventory and selected GNU graph, then compiled
+and exercised the generated Slint callback with Slint 1.18.1 on its public
+software platform. An isolated run removed the leading-space rule from the
+actual constructor's label validator. The same generated callback test ran
+and failed its accepted-row equality assertion after publishing the bad label.
+The supervisor restored the original bytes and rechecked the complete source,
+tool and vendor identities. Windows-target and native UI behavior retain their
+own evidence requirements.
+
+The source control base is commit
+`70586c24ba2ebad6d531db6be5e6fa669c72625d`, tree
+`96ff3089ff1fc528278759894ec892838203bfd9`. The only product-package overlay
+is the callback test, SHA-256
+`3d092adc244bd975742d2995f8e04469be8e29d4641e943376400a788ab97970`.
+The 651-input UI snapshot digest is
+`f69e6d16abf1914f1840748a550f4684edfe7631c8f7c6039a37884d18f808db`.
+The test and Clippy-generated `app.rs` copies both hash to
+`d0d88a132e9e6405625dcea4dd22946ca745f9b7e40daf18516d66a80d15c038`.
+The `slint-controls.json` receipt, including setup attempts retained alongside
+it, is under `~/.local/share/nevrotick/preview-admission-20261123.GGlhxCrZ/`.
+Its SHA-256 is
+`f8f851731ba6700fa4147927fc1d87d9833da6a0b19ae4a056845eb2cf47a50f`.
+Mechanism and sibling privacy receipts in the same directory hash to
+`bc53c51277d01cd7e86c87b208d011ca667df9df79e1571725233bb20a27d5fe`
+and `2887695bed2ff3525a0dae9ebbcf00afafc6fb7ac768ba149cf682ce128b065c`.
+
+The follow-up source report includes `SourceDrafts::from_baseline`, which
+retains the checked path from fixture startup and recovery. Independent
+review traced both callers and confirmed the capacity, validation and
+publication order. The [build record](build-optimization.md#bind-preview-exceptions-to-their-reviewed-seams)
+retains the selected syntax controls and exact exception checks.
+
+H10 stays with the next native notification boundary edit. The
+`CloseOutcome` type still needs the type-level warning carried through the
+actual Windows wrappers at that trigger.
+
+### Private Apartment trait controls — H11, 23 November 2026
+
+S0.5 and CHECK-25. `WindowsToastPort::open` obtains the private `Apartment`
+on the UI thread. The port retains it as its last field so its own COM interfaces
+drop before the guard's matching `RoUninitialize`. The trait controls apply to
+[the actual Apartment definition](../crates/nevrotick-ui/src/native_notifications_windows.rs)
+within that production module. This makes the affinity marker decisive even when
+other fields of the containing port carry their own restrictions.
+
+For replay, freeze the product inputs and use the
+[product verifier](../scripts/verify.py) to admit tools, the vendor inventory
+and the default Windows target graph. Select the `dependency-metadata-*` and
+`dependency-tree-*` entries from `commands("windows", schema_version=3,
+patched_packages=tuple(p["name"] for p in policy["patched_packages"]))`.
+These commands use `cargo metadata --frozen --offline --format-version 1
+--filter-platform x86_64-pc-windows-msvc` and the admitted workspace and
+per-package `cargo tree` selectors. Apply the verifier's metadata, tree and
+selected-graph validation before compiling. In its network-isolated sandbox,
+preserve the target flags and check the actual Windows library with
+
+```sh
+cargo check -p nevrotick-ui --lib --target x86_64-pc-windows-msvc \
+  --frozen --offline --jobs 3 --message-format=json
+```
+
+Begin by appending the healthy case at the end of the notification module in
+the owned copy.
+
+```rust
+const _: fn() -> Result<(), NativeFailure> = || {
+    let on_owner_thread: Apartment = Apartment::open()?;
+    drop(on_owner_thread);
+    Ok(())
+};
+```
+
+Compile that copy first. Append each following block to a separate copy of the
+healthy specimen.
+
+```rust
+const _: () = {
+    /// Require exactly the selected capability from the actual Apartment.
+    fn require_apartment_send<T: Send>() {}
+    let _: fn() = require_apartment_send::<()>;
+    let _: fn() = require_apartment_send::<Apartment>;
+};
+```
+
+```rust
+const _: () = {
+    /// Require exactly the selected capability from the actual Apartment.
+    fn require_apartment_sync<T: Sync>() {}
+    let _: fn() = require_apartment_sync::<()>;
+    let _: fn() = require_apartment_sync::<Apartment>;
+};
+```
+
+Require E0277 at the `Apartment` bound in each copy, with `Rc<()>` named
+in the trait obligation. Then replace `PhantomData<Rc<()>>` with
+`PhantomData<()>` and remove the newly unused `rc::Rc` import within each
+negative specimen. Each must compile under the same lint policy. Restore the
+original bytes and verify the source, tool, target library and vendor identities
+against their inputs. These are type checks of the owner and its compilation
+configuration. Native COM calls and shutdown completion need native evidence.
+
+The Rust 1.100.0 default MSVC cross-check on commit
+`70586c24ba2ebad6d531db6be5e6fa669c72625d` and tree
+`96ff3089ff1fc528278759894ec892838203bfd9` passed all five controls. The
+legal case exited 0. Send and Sync each exited 101 with one E0277 at the
+intended owner-local bound. Each marker-erasure case then exited 0. The
+first Send erasure attempt failed on the unused `Rc` import, and the
+replay removed the import without changing warning levels.
+
+The 651-input product snapshot hashes to
+`1ab2565c690fd38903b6c4c3dafbc19562178627397067da74e30fdd46ba5905`.
+The actual notification module hashes to
+`10f73a7addcbbd5b3145ec2650eae30f014bd0571c754e9d273cdf5e44196efe`.
+The selected graph and 45-file MSVC target-library inventory hash to
+`48c0ab19e6d1033aa91f84936f72427b324bdae1d8fe806f2ad6c5e5a156da9a`
+and `30e5e4dfeea950fdaf44161aa53b3678a4b4b539e53df223326d06c9d8d4cddb`.
+The runnable `check-apartment.py`, both attempts and the final
+`h11-apartment.json` are in
+`~/.local/share/nevrotick/apartment-h11-20261123.UkUUtURf/`.
+From the checkout, pass the retained driver to `python3 -X dev -Werror -B`
+with two new private directories as arguments, first for receipts and then
+for scratch. The driver replays the frozen candidate above.
+The final receipt SHA-256 is
+`eafe9a6b0ee09733770ae67aec6ba490e64171882885b206c1e6f6f239a8b0a1`.
 
 ## Require the Windows desktop image-load policy before Slint — 23 November 2026
 
