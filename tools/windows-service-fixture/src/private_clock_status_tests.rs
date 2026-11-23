@@ -18,12 +18,14 @@ use windows_platform::service::{ServiceStatus, StatusReporter};
 
 use super::{
     BrokerAvailability, BrokerStatusSession, Clock, Connection, Delivery, EngineStatusClient,
-    InertWorker, LabRole, NativeError, OutboundStatus, PendingStatus, Reply, ServiceInvocation,
-    SessionFault, StopNotification, Worker,
+    InboundStatus, InertWorker, LabRole, NativeError, OutboundStatus, PendingStatus, Reply,
+    ServiceInvocation, SessionFault, StopNotification, Worker,
 };
 use crate::{
     BrokerClockRead, NativeOperation,
-    broker_clock_change::{BrokerClockChanges, NativeBrokerReader, deliver, report_status},
+    broker_clock_change::{
+        BrokerClockChanges, ControlDisposition, NativeBrokerReader, deliver, report_status,
+    },
     host::{
         HostReceipt, InvocationPoll, StatusFactory, start_broker_worker,
         tests::HealthyTokenObserver,
@@ -33,8 +35,6 @@ use crate::{
     },
 };
 
-#[cfg(windows)]
-use super::InboundStatus;
 #[cfg(windows)]
 use crate::{
     native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
@@ -57,11 +57,8 @@ use crate::{
     native_pipe_write::{NativeWritePoll, NativeWriteStart},
 };
 
-/// Stable slots include the existing native pipe histories and the Stop neighbor.
-#[cfg(windows)]
-const BROKER_CASES: usize = 38;
-#[cfg(not(windows))]
-const BROKER_CASES: usize = 30;
+/// Stable slots include the native pipe histories and the split power-cycle case.
+const BROKER_CASES: usize = 41;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -206,6 +203,29 @@ fn with_broker_worker_reads<const N: usize, const READS: u32, T, P: Worker>(
         &StopNotification,
     ) -> T,
 ) -> Result<T, Box<dyn Error>> {
+    let (result, receipt): (T, HostReceipt) = run_broker_case::<N, READS, T, P>(worker, exercise)?;
+    assert!(matches!(
+        receipt.broker_clock_read(),
+        Some(BrokerClockRead::Completed { revision, result: Ok(_), .. })
+            if revision.get() == 1
+    ));
+    assert_eq!(GETTERS[N].load(SeqCst), READS);
+    Ok(result)
+}
+
+/// Return the exercise result and terminal receipt after retiring the owner.
+/// # Errors
+/// Returns an unexpected startup or incomplete terminal observation.
+/// # Panics
+/// Fails if the original owner loses its startup or terminal result.
+fn run_broker_case<const N: usize, const READS: u32, T, P: Worker>(
+    worker: P,
+    exercise: impl FnOnce(
+        &mut ServiceInvocation<Reporter, P>,
+        &mut ScriptClock<'_>,
+        &StopNotification,
+    ) -> T,
+) -> Result<(T, HostReceipt), Box<dyn Error>> {
     let mailbox: &'static BrokerClockChanges = &MAILBOXES[N];
     let stop: StopNotification = StopNotification::new();
     let mut clock: ScriptClock<'_> = ScriptClock {
@@ -255,13 +275,7 @@ fn with_broker_worker_reads<const N: usize, const READS: u32, T, P: Worker>(
     assert_eq!(first, InvocationPoll::Pending(Duration::from_secs(1)));
     assert_eq!(last, InvocationPoll::Finished);
     assert_eq!(receipt.result(), &Ok(()));
-    assert!(matches!(
-        receipt.broker_clock_read(),
-        Some(BrokerClockRead::Completed { revision, result: Ok(_), .. })
-            if revision.get() == 1
-    ));
-    assert_eq!(GETTERS[N].load(SeqCst), READS);
-    Ok(result)
+    Ok((result, receipt))
 }
 
 /// Valid shape cannot substitute a role or connection, and all four actual
@@ -538,6 +552,159 @@ fn broker_poll_samples_during_a_partial_frame() -> Result<(), Box<dyn Error>> {
             true
         ))
     );
+    Ok(())
+}
+
+/// The delivered event and receiver observations kept through actual owner cleanup.
+struct SplitPowerObservation {
+    /// Trusted owner coordinate at original connection admission.
+    start: Instant,
+    /// Independently configured limits observed after the sample renews.
+    session_cutoff: Instant,
+    /// Original service lifetime through the fresh request.
+    run_cutoff: Option<Instant>,
+    /// Actual getter calls after the suspended poll, crossed reply and fresh poll.
+    reads: [u32; 3],
+    /// Actual admitted wait while suspended and after the fresh poll.
+    waits: [InvocationPoll; 2],
+    /// Correlated old, crossed and fresh replies.
+    replies: [bool; 3],
+    /// Remaining charge after each of the four original deliveries.
+    remaining: [u8; 4],
+    /// Original outstanding service work after the new clock sample.
+    work: u32,
+    /// Callback status and wake after suspend, resume, Stop and late resume.
+    controls: [(u32, bool); 4],
+    /// Exact rejection of the late body and the connection state it leaves.
+    stopped: (Option<SessionFault>, bool),
+}
+
+/// Drive one complete power cycle across a split request on the original session.
+/// # Errors
+/// Returns the actual startup, cleanup, receive or reply refusal when reached.
+fn split_status_across_power_cycle<const N: usize>(
+    owner: &mut ServiceInvocation<Reporter, InertWorker>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+) -> Result<SplitPowerObservation, SessionFault> {
+    let start: Instant = clock.now;
+    let (mut session, mut client): (
+        BrokerStatusSession<'_, Reporter, ScriptClock<'_>>,
+        EngineStatusClient,
+    ) = BrokerStatusSession::open(owner, clock, stop, LabRole::Engine)?;
+    let original: bool = client.read_availability(&mut session)? == BrokerAvailability::Available;
+    let after_original: u8 = session.remaining;
+
+    let pending: PendingStatus<'_> = client.request()?;
+    let delivery: Delivery<'_> = pending.delivery();
+    let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+    let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+        session.begin_receive(delivery.connection)?;
+    if request.complete_fragment(header)?.is_some() {
+        return Err(SessionFault::Frame(FrameError::Length));
+    }
+    let suspended: ControlDisposition = deliver(Some(&MAILBOXES[N]), stop, 13, 4);
+    request.receiver.clock.now += Duration::from_secs(1);
+    let suspend_wait: InvocationPoll = request.poll_broker();
+    let suspend_reads: u32 = GETTERS[N].load(SeqCst);
+
+    let resumed: ControlDisposition = deliver(Some(&MAILBOXES[N]), stop, 13, 18);
+    let crossing_reply: Reply = request
+        .complete_fragment(body)?
+        .ok_or(SessionFault::Frame(FrameError::Length))?;
+    let crossing: bool = pending.resolve(crossing_reply)?;
+    drop(request);
+    let crossing_reads: u32 = GETTERS[N].load(SeqCst);
+    let after_crossing: u8 = session.remaining;
+
+    let fresh_wait: InvocationPoll = session.owner.poll(session.clock, stop);
+    let fresh_reads: u32 = GETTERS[N].load(SeqCst);
+    let fresh: bool = client.read_availability(&mut session)? == BrokerAvailability::Available;
+    let after_fresh: u8 = session.remaining;
+    let session_cutoff: Instant = session.cutoff;
+    let run_cutoff: Option<Instant> = session.owner.run_deadline;
+    let work: u32 = session.owner.outstanding_work();
+
+    let pending: PendingStatus<'_> = client.request()?;
+    let delivery: Delivery<'_> = pending.delivery();
+    let (header, body): (&[u8], &[u8]) = delivery.bytes.split_at(16);
+    let mut request: InboundStatus<'_, '_, Reporter, ScriptClock<'_>> =
+        session.begin_receive(delivery.connection)?;
+    if request.complete_fragment(header)?.is_some() {
+        return Err(SessionFault::Frame(FrameError::Length));
+    }
+    let stopped: ControlDisposition = deliver(Some(&MAILBOXES[N]), stop, 1, 0);
+    let late_resume: ControlDisposition = deliver(Some(&MAILBOXES[N]), stop, 13, 18);
+    let refused_body: Option<SessionFault> = request.complete_fragment(body).err();
+    Ok(SplitPowerObservation {
+        start,
+        session_cutoff,
+        run_cutoff,
+        reads: [suspend_reads, crossing_reads, fresh_reads],
+        waits: [suspend_wait, fresh_wait],
+        replies: [original, crossing, fresh],
+        remaining: [
+            after_original,
+            after_crossing,
+            after_fresh,
+            request.receiver.remaining,
+        ],
+        work,
+        controls: [suspended, resumed, stopped, late_resume]
+            .map(|control: ControlDisposition| (control.status, control.wake)),
+        stopped: (refused_body, !request.receiver.connection.get()),
+    })
+}
+
+/// The crossed reply cannot report an old sample, and the fresh neighbor succeeds.
+/// # Errors
+/// Returns an unexpected broker startup, cleanup or receive failure.
+/// # Panics
+/// Fails on a stale reply, an extra getter call, renewed admission or lost Stop.
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "requires an explicitly admitted read-only Windows clock fixture"
+)]
+fn split_status_reports_fresh_sample_after_power_cycle() -> Result<(), Box<dyn Error>> {
+    const CASE: usize = 40;
+    let (actual, receipt): (Result<SplitPowerObservation, SessionFault>, HostReceipt) =
+        run_broker_case::<CASE, 2, _, InertWorker>(
+            InertWorker::new(),
+            split_status_across_power_cycle::<CASE>,
+        )?;
+    let observed: SplitPowerObservation = actual
+        .map_err(|fault: SessionFault| format!("split power-cycle request refused: {fault:?}"))?;
+    assert_eq!(
+        observed.controls,
+        [(0, true), (0, true), (0, true), (120, false)]
+    );
+    assert_eq!(observed.reads, [1, 1, 2]);
+    assert_eq!(
+        observed.waits,
+        [
+            InvocationPoll::Pending(Duration::from_secs(4)),
+            InvocationPoll::Pending(Duration::from_secs(1))
+        ]
+    );
+    assert_eq!(observed.replies, [true, false, true]);
+    assert_eq!(observed.remaining, [3, 2, 1, 0]);
+    assert_eq!(
+        observed.session_cutoff,
+        observed.start + Duration::from_secs(5)
+    );
+    assert_eq!(
+        observed.run_cutoff,
+        Some(observed.start + Duration::from_secs(60))
+    );
+    assert_eq!(observed.work, 1);
+    assert_eq!(observed.stopped, (Some(SessionFault::Closed), true));
+    assert_eq!(GETTERS[CASE].load(SeqCst), 2);
+    assert!(matches!(
+        receipt.broker_clock_read(),
+        Some(BrokerClockRead::Completed { revision, result: Ok(_), .. })
+            if revision.get() == 3
+    ));
     Ok(())
 }
 
@@ -1004,7 +1171,7 @@ fn connect_for_session(
     let ready: PreparedDuplex = native_fixture_result(PreparedDuplex::new(connected, peer))?;
     let expected: Option<SessionFault> = match exit {
         NativeIngressExit::StopBeforeAttach => {
-            let _notice: crate::broker_clock_change::ControlDisposition =
+            let _notice: ControlDisposition =
                 deliver(Some(session.clock.mailbox), session.stop, 1, 0);
             Some(SessionFault::Closed)
         }
@@ -2292,8 +2459,15 @@ fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Bo
                     return Err("the original broker request read did not wake".into());
                 }
 
-                wait_for_first_reply_write(owner, clock, stop, &control, &mut waiter, WAIT)?;
-                observe_first_reply_bytes(&mut reader, REPLY)?;
+                wait_for_first_reply_write(
+                    owner,
+                    clock,
+                    stop,
+                    &control,
+                    &mut waiter,
+                    Instant::now() + WAIT,
+                )?;
+                observe_first_reply_bytes(&mut reader, REPLY, wait_for_native_read)?;
                 native_fixture_result(ensure_unimpersonated())?;
                 if !owner.native_status.capture_observed
                     || owner.connection_cutoff != Some(cutoff)
@@ -2347,20 +2521,22 @@ fn wait_for_first_reply_write<P: Worker>(
     stop: &StopNotification,
     control: &BrokerControlWake,
     waiter: &mut BrokerWait,
-    budget: Duration,
+    deadline: Instant,
 ) -> Result<(), Box<dyn Error>> {
-    let began: Instant = Instant::now();
     loop {
+        if Instant::now() >= deadline {
+            return Err("the broker never confirmed the original reply write".into());
+        }
         if !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_)) {
             return Err("the broker stopped before confirming the reply".into());
         }
+        let remaining: Duration = deadline
+            .checked_duration_since(Instant::now())
+            .filter(|left: &Duration| !left.is_zero())
+            .ok_or("the broker never confirmed the original reply write")?;
         if owner.native_status.reply_written {
             return Ok(());
         }
-        let remaining: Duration = budget
-            .checked_sub(began.elapsed())
-            .filter(|left: &Duration| !left.is_zero())
-            .ok_or("the broker never confirmed the original reply write")?;
         if let Some(wake) = owner.worker.completion_wake() {
             if waiter.observe(control, remaining, Some(wake))? != WakeSource::Completion {
                 return Err("the original broker reply completion did not wake".into());
@@ -2378,9 +2554,10 @@ fn wait_for_first_reply_write<P: Worker>(
 fn observe_first_reply_bytes(
     reader: &mut NativePipeRead,
     mut remaining: &[u8],
+    mut observe: impl FnMut(&mut NativePipeRead) -> Result<NativeReadPoll, Box<dyn Error>>,
 ) -> Result<(), Box<dyn Error>> {
     loop {
-        let NativeReadPoll::Data(completed) = wait_for_native_read(reader)? else {
+        let NativeReadPoll::Data(completed) = observe(reader)? else {
             return Err("the original client did not receive reply bytes".into());
         };
         let bytes: &[u8] = completed.as_bytes();
@@ -2394,5 +2571,441 @@ fn observe_first_reply_bytes(
             return Ok(());
         }
         let _: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
+    }
+}
+
+#[cfg(windows)]
+mod distinct_peer {
+    //! Run one actual first exchange with the independently retained child.
+
+    use std::{
+        env,
+        ffi::OsString,
+        io::{self, Read as _, Write as _},
+        num::NonZeroU32,
+        os::windows::io::AsHandle,
+        path::PathBuf,
+        process::{self, Child, ChildStderr, Command, ExitStatus, Stdio},
+        sync::mpsc,
+        thread,
+    };
+
+    use windows_platform_native::PeerProcess;
+    use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
+
+    use super::{
+        Duration, Error, GETTERS, IdentifiedReadError, Instant, InvocationPoll, LabPipeError,
+        LabPipeReader, MAX_FRAME_LEN, NativePipeRead, NativeReadPoll, NativeReadStart, SeqCst,
+        Worker, deliver, ensure_unimpersonated, native_fixture_result, observe_first_reply_bytes,
+        retire_pending_peer_read, wait_for_first_reply_write, with_broker_worker_reads,
+    };
+    use crate::{
+        NativeError,
+        broker_endpoint::BrokerEndpointWorker,
+        host::{PrivateStatusIssue, private_clock_status::NativeStatusOutcome},
+        native_broker_endpoint::NativeBrokerEndpoint,
+        native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
+        native_peer_process::same_kernel_object,
+        native_pipe_identity::RetainedFixtureClient,
+        native_pipe_pair::{
+            LabRequestWriter, open_first_exchange_client, open_supervised_first_exchange_client,
+            peek_fixture_child_stderr, prepare_first_exchange_fixture,
+        },
+    };
+
+    /// The only exact libtest function the supervisor spawns.
+    const CHILD_TEST: &str =
+        "host::private_clock_status::tests::distinct_peer::run_broker_first_exchange_child";
+    /// Private process selector for the two fixed inert child roles.
+    const CHILD_ROLE: &str = "NEVROTICK_BROKER_LAB_CHILD";
+    /// Supervisor PID used to locate and check the fixed local pipe.
+    const PARENT_PID: &str = "NEVROTICK_BROKER_LAB_PARENT";
+    /// Unique pipe and broker clock slot for the selected child.
+    const CHILD_CASE: u32 = 38;
+    /// Unique pipe and broker clock slot for the refused connector.
+    const FOREIGN_CASE: u32 = 39;
+    /// Allowance before the idle child acknowledges its private hold.
+    const SETUP_WAIT: Duration = Duration::from_secs(5);
+    /// Limit on the isolated child exchange or private hold.
+    const CHILD_WAIT: Duration = Duration::from_secs(12);
+    /// Separate allowance to observe original resources retire.
+    const RETIRE_WAIT: Duration = Duration::from_secs(2);
+    /// Maximum pause between bounded process and pipe observations.
+    const POLL: Duration = Duration::from_millis(1);
+    /// The sole private marker on the retained child stderr pipe.
+    const READY: u8 = b'R';
+    /// Independent literal availability request with correlation value 42.
+    const REQUEST: &[u8] = b"\x01\x00\x01\x00\x02\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00{}";
+    /// Independent literal reply for the original available status and correlation.
+    const REPLY: &[u8] = b"\x01\x00\x02\x00\x12\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
+                           {\"available\":true}";
+
+    /// Preserve the original fixture failure without admitting a second attempt.
+    type Check<T> = Result<T, Box<dyn Error>>;
+
+    /// The original spawn handle owns recovery if a test exits early.
+    struct FixtureChild(Child);
+
+    impl FixtureChild {
+        /// Spawn only the exact ignored role in the current admitted test image.
+        /// # Errors
+        /// Preserve executable discovery or process creation failure.
+        fn spawn(role: &str) -> Check<Self> {
+            let executable: PathBuf = env::current_exe()?;
+            let child: Child = Command::new(executable)
+                .args([
+                    "--exact",
+                    CHILD_TEST,
+                    "--ignored",
+                    "--nocapture",
+                    "--test-threads=1",
+                ])
+                .env_clear()
+                .env(CHILD_ROLE, role)
+                .env(PARENT_PID, process::id().to_string())
+                .stdin(Stdio::piped())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()?;
+            Ok(Self(child))
+        }
+
+        /// Compare the limited process query to the independently held spawn object.
+        /// # Errors
+        /// Refuse a zero PID, the parent process or different native process object.
+        fn process(&self) -> Check<PeerProcess> {
+            let pid: NonZeroU32 =
+                NonZeroU32::new(self.0.id()).ok_or("fixture child PID was zero")?;
+            let peer: PeerProcess = PeerProcess::open(pid)?;
+            if pid.get() == process::id()
+                || !same_kernel_object(peer.as_handle(), self.0.as_handle())
+            {
+                return Err("fixture peer did not match the original child process".into());
+            }
+            peer.check_live()?;
+            Ok(peer)
+        }
+
+        /// Wait for the one private marker under the caller's existing deadline.
+        /// # Errors
+        /// Preserve an early child exit, unexpected marker or observation failure.
+        fn wait_ready(&mut self, deadline: Instant) -> Check<()> {
+            loop {
+                let wait: Duration = remaining(deadline)?;
+                let stderr: &ChildStderr =
+                    self.0.stderr.as_ref().ok_or("child marker pipe missing")?;
+                let marker: Option<u8> = peek_fixture_child_stderr(stderr)?;
+                if let Some(byte) = marker {
+                    return if byte == READY && self.0.try_wait()?.is_none() {
+                        let _time: Duration = remaining(deadline)?;
+                        Ok(())
+                    } else {
+                        Err("fixture child readiness was invalid or retired".into())
+                    };
+                }
+                if self.0.try_wait()?.is_some() {
+                    return Err("fixture child exited before readiness".into());
+                }
+                thread::sleep(wait.min(POLL));
+            }
+        }
+
+        /// Release the private hold and observe this exact child's normal exit.
+        /// # Errors
+        /// Return abnormal status or elapsed cleanup with the original child retained.
+        fn finish(&mut self) -> Check<()> {
+            drop(self.0.stdin.take());
+            let status: ExitStatus = self.reap(Instant::now() + RETIRE_WAIT)?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("fixture child exited with {status}").into())
+            }
+        }
+
+        /// Poll the original spawn handle until it reports actual exit.
+        /// # Errors
+        /// Preserve the wait failure or elapsed deadline.
+        fn reap(&mut self, deadline: Instant) -> Check<ExitStatus> {
+            loop {
+                if let Some(status) = self.0.try_wait()? {
+                    let _time: Duration = remaining(deadline)?;
+                    return Ok(status);
+                }
+                thread::sleep(remaining(deadline)?.min(POLL));
+            }
+        }
+    }
+
+    impl Drop for FixtureChild {
+        /// Contain only the original child on failure or unwind.
+        fn drop(&mut self) {
+            drop(self.0.stdin.take());
+            if matches!(self.0.try_wait(), Ok(Some(_))) {
+                return;
+            }
+            let killed: io::Result<()> = self.0.kill();
+            let reaped: Check<ExitStatus> = self.reap(Instant::now() + RETIRE_WAIT);
+            if reaped.is_err() {
+                let _diagnostic: io::Result<()> = writeln!(
+                    io::stderr().lock(),
+                    "fixture child cleanup failed: kill={killed:?}, reap={reaped:?}"
+                );
+            }
+        }
+    }
+
+    /// Reuse one absolute cutoff through polling and native wait calls.
+    /// # Errors
+    /// Refuse an elapsed original deadline.
+    fn remaining(deadline: Instant) -> Check<Duration> {
+        deadline
+            .checked_duration_since(Instant::now())
+            .filter(|time: &Duration| !time.is_zero())
+            .ok_or_else(|| "fixture deadline elapsed".into())
+    }
+
+    /// Collect the exact client read without starting a fresh observation allowance.
+    /// # Errors
+    /// Preserve native observation failure or elapsed deadline.
+    fn read_until(reader: &mut NativePipeRead, deadline: Instant) -> Check<NativeReadPoll> {
+        loop {
+            let wait: Duration = remaining(deadline)?;
+            let result: NativeReadPoll = native_fixture_result(reader.poll())?;
+            if !matches!(result, NativeReadPoll::Pending) {
+                let _time: Duration = remaining(deadline)?;
+                return Ok(result);
+            }
+            thread::sleep(wait.min(POLL));
+        }
+    }
+
+    /// Keep the intended foreign-case child alive until private stdin EOF.
+    /// # Errors
+    /// Refuse a release byte, read failure or an elapsed child watchdog.
+    fn hold_child() -> Check<()> {
+        let (send, receive): (
+            mpsc::SyncSender<io::Result<usize>>,
+            mpsc::Receiver<io::Result<usize>>,
+        ) = mpsc::sync_channel(1);
+        let reader: thread::JoinHandle<()> = thread::Builder::new().spawn(move || {
+            let _release: Result<(), mpsc::SendError<io::Result<usize>>> =
+                send.send(io::stdin().lock().read(&mut [0_u8; 1]));
+        })?;
+        io::stderr().lock().write_all(&[READY])?;
+        if receive.recv_timeout(CHILD_WAIT)?? != 0 {
+            return Err("fixture child release was not private stdin EOF".into());
+        }
+        reader
+            .join()
+            .map_err(|_cause| "fixture child release reader failed")?;
+        Ok(())
+    }
+
+    /// Send the fixed request and observe the exact reply on the original client.
+    /// # Errors
+    /// Preserve open, I/O, byte-oracle or Stop-disconnect failure.
+    fn exchange_as_child(parent: &PeerProcess) -> Check<()> {
+        let deadline: Instant = Instant::now() + CHILD_WAIT;
+        let (client, mut writer): (LabPipeReader, LabRequestWriter) = loop {
+            match open_supervised_first_exchange_client(CHILD_CASE, parent) {
+                Ok(pair) => break pair,
+                Err(LabPipeError::Native {
+                    operation: "CreateFileW",
+                    code: ERROR_FILE_NOT_FOUND,
+                }) => {
+                    thread::sleep(remaining(deadline)?.min(POLL));
+                }
+                Err(error) => return Err(error.into()),
+            }
+        };
+        let mut reader: NativePipeRead = native_fixture_result(NativePipeRead::new(client))?;
+        let observed: Check<()> = (|| {
+            if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                return Err("reply was available before the original request".into());
+            }
+            writer.write(REQUEST)?;
+            observe_first_reply_bytes(&mut reader, REPLY, |reader: &mut NativePipeRead| {
+                read_until(reader, deadline)
+            })?;
+            if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                return Err("the original client already received a second reply".into());
+            }
+            io::stderr().lock().write_all(&[READY])?;
+            if !matches!(
+                read_until(&mut reader, deadline)?,
+                NativeReadPoll::Disconnected
+            ) {
+                return Err("the original client did not disconnect without further data".into());
+            }
+            Ok(())
+        })();
+        if observed.is_err() {
+            retire_pending_peer_read(&mut reader);
+        }
+        observed
+    }
+
+    /// Dispatch only the two fixed fixture roles from the private supervisor.
+    /// # Errors
+    /// Preserve bad setup or an unsuccessful child observation.
+    #[test]
+    #[ignore = "selected by the admitted distinct-process broker fixture supervisor"]
+    fn run_broker_first_exchange_child() -> Check<()> {
+        let Some(role): Option<OsString> = env::var_os(CHILD_ROLE) else {
+            return Ok(());
+        };
+        match role.to_str() {
+            Some("hold") => hold_child(),
+            Some("exchange") => {
+                let pid: NonZeroU32 = env::var(PARENT_PID)?.parse()?;
+                let parent: PeerProcess = PeerProcess::open(pid)?;
+                exchange_as_child(&parent)
+            }
+            _ => Err("fixture child role was unsupported".into()),
+        }
+    }
+
+    /// Admit the real selected child through the original native endpoint worker.
+    /// # Errors
+    /// Preserve setup, attribution, reply, Stop or child cleanup failure.
+    #[test]
+    #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
+    fn native_first_exchange_accepts_retained_child() -> Check<()> {
+        let mut child: FixtureChild = FixtureChild::spawn("exchange")?;
+        let peer: RetainedFixtureClient = RetainedFixtureClient::new(child.process()?)?;
+        let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+            prepare_first_exchange_fixture(CHILD_CASE, peer)
+        };
+        let observed: Check<()> = with_broker_worker_reads::<38, 1, _, _>(
+            BrokerEndpointWorker::new(acquire),
+            |owner, clock, stop| {
+                let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+                let control: BrokerControlWake = BrokerControlWake::new()?;
+                let mut waiter: BrokerWait = BrokerWait::new();
+                // The sampler keeps its scripted time. The actual harness also
+                // refuses progress at the original cutoff on the real clock.
+                wait_for_first_reply_write(owner, clock, stop, &control, &mut waiter, cutoff)?;
+                child.wait_ready(cutoff)?;
+                if !matches!(&owner.native_status.outcome,
+                    Some(NativeStatusOutcome::Reply(frame)) if frame.as_bytes() == REPLY)
+                    || owner.private_status_issue != PrivateStatusIssue::Issued
+                    || owner.connection_cutoff != Some(cutoff)
+                    || owner.outstanding_work() != 1
+                    || owner.worker.completion_wake().is_some()
+                {
+                    return Err("the selected child lost its original reply or connection".into());
+                }
+                native_fixture_result(ensure_unimpersonated())?;
+                let _time: Duration = remaining(cutoff)?;
+                let _stop = deliver(Some(clock.mailbox), stop, 1, 0);
+                if owner.poll(clock, stop) != InvocationPoll::Finished
+                    || owner.outstanding_work() != 0
+                {
+                    return Err("Stop did not retire the selected child's connection".into());
+                }
+                Ok(())
+            },
+        )?;
+        observed?;
+        child.finish()
+    }
+
+    /// Refuse the same-actor parent on the one connection reserved for the live child.
+    /// # Errors
+    /// Preserve setup, native progress, refusal, zero-byte or cleanup failure.
+    #[test]
+    #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
+    fn native_first_exchange_refuses_foreign_same_actor() -> Check<()> {
+        let mut child: FixtureChild = FixtureChild::spawn("hold")?;
+        child.wait_ready(Instant::now() + SETUP_WAIT)?;
+        let peer: RetainedFixtureClient = RetainedFixtureClient::new(child.process()?)?;
+        if peer.identity() != &super::own_process_identity()? {
+            return Err("fixture foreign connector did not share the expected actor".into());
+        }
+        let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+            prepare_first_exchange_fixture(FOREIGN_CASE, peer)
+        };
+        let observed: Check<()> = with_broker_worker_reads::<39, 1, _, _>(
+            BrokerEndpointWorker::new(acquire),
+            |owner, clock, stop| {
+                let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+                let (client, mut writer): (LabPipeReader, LabRequestWriter) =
+                    open_first_exchange_client(FOREIGN_CASE)?;
+                let mut reader: NativePipeRead =
+                    native_fixture_result(NativePipeRead::new(client))?;
+                let control: BrokerControlWake = BrokerControlWake::new()?;
+                let mut waiter: BrokerWait = BrokerWait::new();
+                let observed: Check<()> = (|| {
+                    if waiter.observe(
+                        &control,
+                        remaining(cutoff)?,
+                        owner.worker.completion_wake(),
+                    )? != WakeSource::Completion
+                        || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+                        || native_fixture_result(reader.begin(MAX_FRAME_LEN))?
+                            != NativeReadStart::Queued
+                    {
+                        return Err(
+                            "foreign connector did not reach the original queued read".into()
+                        );
+                    }
+                    let getters: u32 = GETTERS[39].load(SeqCst);
+                    writer.write(REQUEST)?;
+                    if waiter.observe(
+                        &control,
+                        remaining(cutoff)?,
+                        owner.worker.completion_wake(),
+                    )? != WakeSource::Completion
+                        || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+                    {
+                        return Err(
+                            "foreign connector's valid frame did not reach attribution".into()
+                        );
+                    }
+                    let _remaining: Duration = remaining(cutoff)?;
+                    if !matches!(
+                        &owner.native_status.outcome,
+                        Some(NativeStatusOutcome::Identity(
+                            IdentifiedReadError::Unattributed
+                        ))
+                    ) || owner.private_status_issue != PrivateStatusIssue::Unissued
+                        || owner.native_status.reply_written
+                        || owner.connection_cutoff != Some(cutoff)
+                        || owner.outstanding_work() != 1
+                        || owner.worker.completion_wake().is_some()
+                        || GETTERS[39].load(SeqCst) != getters
+                        || !matches!(
+                            native_fixture_result(reader.poll())?,
+                            NativeReadPoll::Pending
+                        )
+                        || child.0.try_wait()?.is_some()
+                    {
+                        return Err("the valid foreign frame was not refused on the live child's connection".into());
+                    }
+                    native_fixture_result(ensure_unimpersonated())?;
+                    let _time: Duration = remaining(cutoff)?;
+                    let _stop = deliver(Some(clock.mailbox), stop, 1, 0);
+                    if owner.poll(clock, stop) != InvocationPoll::Finished
+                        || owner.outstanding_work() != 0
+                        || !matches!(
+                            read_until(&mut reader, Instant::now() + RETIRE_WAIT)?,
+                            NativeReadPoll::Disconnected
+                        )
+                    {
+                        return Err(
+                            "Stop did not retire the foreign connection without reply bytes".into(),
+                        );
+                    }
+                    Ok(())
+                })();
+                if observed.is_err() {
+                    retire_pending_peer_read(&mut reader);
+                }
+                observed
+            },
+        )?;
+        observed?;
+        child.finish()
     }
 }

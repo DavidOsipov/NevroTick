@@ -5942,15 +5942,15 @@
     },
     {
       "build_script": false,
-      "files_sha256": "c87abe8efa815354efe33d3c0b4e5270309929b51b7fd232195c662b9722b8ae",
+      "files_sha256": "b94e7378291655f8544a7ddc41ab9ac4f316fdd0a68f6936fdea5e846b1bec31",
       "license": "MIT",
       "links": null,
       "modified_files_sha256": {
         "Cargo.toml": "705b266c89c485ed562621a114fcc24f1638f32a4b728fac9157655bce7d5cac",
-        "NOTICE": "f7925939d0f6eb440cc7dfb1b2fa33451f183dabd27a9b3312524c9398332c2c",
-        "src/alg.rs": "f9e271863a0a5256e2df377f9b3910adc7cdef7c40bedd6f6d8630b9c981d90c",
+        "NOTICE": "d8a23c82917491a7c22f7f46f3847cc6d1625c7f1528c798af33262dab202267",
+        "src/alg.rs": "b3cb5ce07419607e3c87855c04b4ad8c42ad3475b35a97ce946c05b17313e1e5",
         "src/alg/probe.rs": "9ebb197b3a39e255bf2c0bcaa5cb4e971beb2e0d772a020f720beb2623133b34",
-        "src/kx.rs": "3f1d0c60aa648944cea63cf609807a8d8abf5da96667537ec150e6a94e86959f",
+        "src/kx.rs": "79a58339a63b3cfee460ba0cdd8762e65e84f6f6b445317cca7d8bf4566b1056",
         "src/lib.rs": "244a88fe96a98ce7112a8b3a681e6a3f3862f99edfa7717bd14fd8057e65f703",
         "src/tls12.rs": "268eebbe7e41f0ee58c5b4626d220ddf86831fbeb07ca5e24748be947efc70f3",
         "src/tls12/tests.rs": "5da51d0ddc1f13367f0e08384a381f24f8da3acf235bb5240b10d5a8ff6e3b3a"
@@ -32820,12 +32820,12 @@
     "resolution": {
       "scope": "product",
       "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
-      "baseline_admission_sha256": "a894496575978174be823de0ef8e0354a3fa219ffeee6e922cab0997e7d467ad",
+      "baseline_admission_sha256": "4ccec832343d1dfdf64136fd1e5510e4b64a7020d03934354c73996bc0c0d832",
       "retained_exception_decisions": [],
       "acquisition_filesystem": {
         "bytes": 536870912,
         "inodes": 16384,
-        "device": 118
+        "device": 93
       },
       "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
       "candidate_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
@@ -32834,9 +32834,9 @@
       "operation": "workspace",
       "package": null,
       "version": null,
-      "started_utc": "2026-11-22T17:03:11Z",
-      "finished_utc": "2026-11-22T17:03:16Z",
-      "cutoff_utc": "2026-11-08T17:03:11Z",
+      "started_utc": "2026-11-23T10:08:51Z",
+      "finished_utc": "2026-11-23T10:08:58Z",
+      "cutoff_utc": "2026-11-09T10:08:51Z",
       "cargo_sha256": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
       "configuration_sha256": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
       "manifests_sha256": {
@@ -32854,7 +32854,7 @@
         "third-party/spin_on/Cargo.toml": "ebb6b87bd5f5425ecee070e57ab06933813d538488bbe176317a80638690f32b",
         "tools/crypto-aes-siv-witness/Cargo.toml": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a",
         "tools/crypto-aes-siv-witness/fuzz/Cargo.toml": "7166f8ccadec5d550990523cdddc8660c74eb7a3fbc843570851fa63cbac6753",
-        "tools/crypto-cng-lifecycle/Cargo.toml": "a571ddbf4c22c0f88428da281c050aacaa13ac768f2adc2dab3faf7fd33f8c9e",
+        "tools/crypto-cng-lifecycle/Cargo.toml": "39067931a3b221a4bc3675e1b6a82c14333dfe7d58795d487a1656d8a1d40dc0",
         "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/Cargo.toml": "705b266c89c485ed562621a114fcc24f1638f32a4b728fac9157655bce7d5cac",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/upstream/Cargo.toml": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2",
@@ -32873,8 +32873,8 @@
       "removed": [],
       "publication": [],
       "exception": null,
-      "metadata_inventory_sha256": "63dfe8e739daaa557a2486e9a05485294d4a9ffe2136c572fd5e151340c4d94f",
-      "result_sha256": "4187d5105a514ff6b37c71a20c59dc71f72b86f214faef9a61fde2f1b8d47603",
+      "metadata_inventory_sha256": "244a6e7ba2618aa78a71aa9efc4902d2be0e5a51dd0534adfb4a31c8cf9e1b29",
+      "result_sha256": "26de096f84b693c13ea1207f368cbaaa7a1f3b3e85a0434aa1f36b1c9926ccea",
       "generated_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
       "proposed_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db"
     }

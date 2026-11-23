@@ -378,7 +378,7 @@ fn observed_initial_deny_requires_exact_arguments_and_witness() -> Result<(), Fa
     Ok(())
 }
 
-/// Both new modes keep the same closed invocation and exact completion grammar.
+/// Ordinary modes keep the same closed invocation and exact completion grammar.
 ///
 /// # Errors
 /// Preserve refusal of the supported arguments.
@@ -391,6 +391,11 @@ fn observed_ordinary_modes_require_exact_arguments_and_witnesses() -> Result<(),
             "--protected-successor-ordinary-observe-exit",
             SuccessorReply::Ordinary,
             "scope=laboratory-ke-peer-protected-successor-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0",
+        ),
+        (
+            "--protected-successor-ordinary-timing-observe-exit",
+            SuccessorReply::OrdinaryTiming,
+            "scope=laboratory-ke-peer-protected-successor-ordinary-timing-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0",
         ),
         (
             "--protected-successor-nak-ordinary-observe-exit",

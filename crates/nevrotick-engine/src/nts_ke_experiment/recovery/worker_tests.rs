@@ -9,7 +9,10 @@ use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
 
 #[cfg(windows)]
-use windows_platform_native::{ClockCoordinates, ClockReadError, read_clock_coordinates};
+use windows_platform_native::{
+    ClockCoordinates, ClockReadError, LeapPresentation, LeapPresentationError,
+    read_clock_coordinates,
+};
 
 /// Actual joined protected-history adaptation, with independent numerical expectations.
 #[path = "numerics_tests.rs"]
@@ -39,8 +42,11 @@ use crate::nts_ke_experiment::{
     run_observing, run_observing_with_cutoff, run_reserved_observing, run_synchronously_with,
     write_observed_run,
 };
+#[cfg(any(windows, target_os = "linux"))]
+use crate::{ExperimentalReferenceNs, RelativeMeasurementRefusal};
 use crate::{
-    ManagedProtectedReport, SoftwareClock, SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    ManagedProtectedReport, RunClockContext, SoftwareClock, SourceProtectedProbeFailure,
+    SourceProtectedProbeReport,
 };
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
@@ -1402,12 +1408,15 @@ fn observed_managed_cutoff_survives_worker_start_and_join() -> Result<(), Failur
             config,
             Some(cutoff),
             slot,
-            |_: StopHandle| {
-                Ok(|| {
+            |stop: StopHandle| {
+                let closes: &Cell<usize> = &closes;
+                Ok(move || {
                     assert_eq!(
                         slot.observer().poll_until(Instant::now() + WAIT),
                         Observation::Taken
                     );
+                    assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
+                    assert_eq!(stop.request_stop(), Ok(StopDisposition::AlreadyLatched));
                     closes.set(closes.get() + 1);
                     Err(NonZeroU32::MIN)
                 })
@@ -2141,9 +2150,9 @@ impl LoopbackSuccessor {
         use crate::nts_ke_experiment::response::fixtures;
 
         match self {
-            Self::ApplyOrdinary => fixtures::TWO_COOKIES,
+            Self::ApplyOrdinary => fixtures::LOOPBACK_FIRST_QUALITY_REPLY,
             Self::ApplyDeny => fixtures::LEAP_ANNOUNCED_REPLY,
-            Self::ReplaceConfiguration | Self::Unwind => fixtures::LEAP_DELETION_REPLY,
+            Self::ReplaceConfiguration | Self::Unwind => fixtures::LOOPBACK_DELETION_QUALITY_REPLY,
         }
     }
 }
@@ -2325,25 +2334,8 @@ fn run_managed_loopback_observing<T: Send>(
                 )
             })
             .map_err(|_| Failure::Control)?;
-        slot.try_reserve(prepared)
-            .and_then(|reservation: SubmissionReservation| {
-                reservation.submit_bounded_successor_fixture(
-                    admission,
-                    component_provider,
-                    move |config, provider, control, first_receipt| {
-                        loopback_control_operation(
-                            config,
-                            provider,
-                            control,
-                            first_receipt,
-                            remote,
-                            before_commit,
-                        )
-                    },
-                    Hooks::none(),
-                )
-            })
-            .map_err(|_| Failure::Control)?;
+        let provider_lifetime: Arc<OnceLock<Weak<()>>> =
+            submit_managed_loopback_worker(slot, admission, prepared, remote, before_commit)?;
         gate.wait(slot)?;
         let before_successor_commit: Instant = Instant::now();
         assert!(matches!(
@@ -2357,9 +2349,16 @@ fn run_managed_loopback_observing<T: Send>(
             slot.take_for_receiving(),
             Err(CollectError::NotReady)
         ));
+        let provider_before_join: Option<usize> = provider_lifetime.get().map(Weak::strong_count);
         let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, None);
         let peer_result: Result<[LoopbackPeerLeg<T>; 2], Failure> =
             peer_worker.join().unwrap_or(Err(Failure::Control));
+        assert_eq!(
+            provider_before_join,
+            Some(1),
+            "the actual collector must retain the managed provider until join"
+        );
+        assert_eq!(provider_lifetime.get().map(Weak::strong_count), Some(0));
         let report: Option<ManagedProtectedReport> = assert_joined_loopback_successor(
             result,
             successor,
@@ -2373,6 +2372,655 @@ fn run_managed_loopback_observing<T: Send>(
     let deny_applied: bool = matches!(successor, LoopbackSuccessor::ApplyDeny);
     assert_loopback_policy(&source, &alias, remote, deny_applied)?;
     assert_loopback_custody(slot, &peer, &config_lifetime, successor)
+}
+
+/// Submit the actual component worker and permit observation of its provider lifetime.
+/// # Errors
+/// Preserve reservation and submission refusal as a fixture control failure.
+#[cfg(any(windows, target_os = "linux"))]
+fn submit_managed_loopback_worker(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    prepared: PreparedInvocation,
+    remote: std::net::SocketAddr,
+    before_commit: super::LoopbackBeforeCommit,
+) -> Result<Arc<OnceLock<Weak<()>>>, Failure> {
+    let provider_lifetime: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
+    let worker_provider_lifetime: Arc<OnceLock<Weak<()>>> = Arc::clone(&provider_lifetime);
+    slot.try_reserve(prepared)
+        .and_then(|reservation: SubmissionReservation| {
+            reservation.submit_bounded_successor_fixture(
+                admission,
+                component_provider,
+                move |config, provider, control, first_receipt| {
+                    worker_provider_lifetime
+                        .set(provider.retirement_witness())
+                        .map_err(|_: Weak<()>| Failed::from(Failure::Control))?;
+                    loopback_control_operation(
+                        config,
+                        provider,
+                        control,
+                        first_receipt,
+                        remote,
+                        before_commit,
+                    )
+                },
+                Hooks::none(),
+            )
+        })
+        .map_err(|_: SubmitError| Failure::Control)?;
+    Ok(provider_lifetime)
+}
+
+#[cfg(any(windows, target_os = "linux"))]
+/// One installed source and its separately observed UDP endpoint.
+struct PairLoopbackPeer {
+    /// Exact source revision that must appear in both of the worker's receipts.
+    expected: crate::SourceConfigurationSnapshot,
+    /// Independent loopback peer, held through its actual scoped join.
+    socket: std::net::UdpSocket,
+    /// Bound destination used by the actual component transport.
+    remote: std::net::SocketAddr,
+}
+
+/// Install the private bounded policy root for the managed pair fixture.
+/// # Errors
+/// Preserve the actual policy-limit and root admission refusal.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_loopback_authority() -> Result<crate::SourcePolicyAuthority, Failure> {
+    let limits: crate::SourcePolicyLimits =
+        crate::SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))
+            .map_err(Failure::SourcePolicy)?;
+    crate::source_policy::isolated_authority(limits).map_err(Failure::SourcePolicy)
+}
+
+/// Capture the first installed source through the same issuer as the native facade.
+/// # Errors
+/// Preserve the actual source authority refusal.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_loopback_config(
+    authority: &crate::SourcePolicyAuthority,
+    expected: &crate::SourceConfigurationSnapshot,
+) -> Result<Config, Failure> {
+    authority
+        .authorize_protected_ke(expected)
+        .map(Config::from_managed_protected)
+        .map_err(Failure::SourcePolicy)
+}
+
+/// Install one of the pair's sources using the genuine policy owner.
+/// # Errors
+/// Preserve socket, source, address and target refusal.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_loopback_peer(
+    authority: &mut crate::SourcePolicyAuthority,
+    index: usize,
+) -> Result<PairLoopbackPeer, Failure> {
+    let (socket, remote): (std::net::UdpSocket, std::net::SocketAddr) =
+        bind_managed_loopback_peer()?;
+    let source: crate::SourceHandle = authority.source(index).map_err(Failure::SourcePolicy)?;
+    let target: crate::KePreviewTarget = crate::KePreviewTarget::new(
+        std::net::SocketAddr::from((Ipv4Addr::LOCALHOST, 4460)),
+        "Time.Example",
+    )
+    .map_err(|_| Failure::Arguments)?;
+    let addresses: crate::SourceAddressSet =
+        crate::SourceAddressSet::new(&[remote]).map_err(Failure::SourcePolicy)?;
+    let expected: crate::SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&source, addresses, target)
+        .map_err(Failure::SourcePolicy)?;
+    Ok(PairLoopbackPeer {
+        expected,
+        socket,
+        remote,
+    })
+}
+
+/// Observe one pair job's original first and terminal receipts.
+/// # Errors
+/// Refuse a missing receipt or a nonordinary terminal.
+/// # Panics
+/// Fail if source custody, worker identity, cutoff, or completed work differs.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_pair_loopback_report(
+    report: &ManagedProtectedReport,
+    expected: &crate::SourceConfigurationSnapshot,
+    cutoff: Instant,
+    peer: [LoopbackPeerLeg<Instant>; 2],
+) -> Result<(), Failure> {
+    let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    let crate::ManagedProtectedTerminal::Ordinary(terminal) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    assert!(first.same_invocation(terminal));
+    assert!(first.configuration().same_configuration(expected));
+    assert!(terminal.configuration().same_configuration(expected));
+    assert!(first.committed_at() <= terminal.committed_at());
+    assert!(terminal.committed_at() < cutoff);
+    for (leg, receipt) in peer.into_iter().zip([first, terminal]) {
+        assert!(leg.received <= leg.sending);
+        assert!(leg.sending <= receipt.received_at());
+    }
+    assert_loopback_work(report, true, false);
+    assert_eq!(report.power_unregistration_error(), None);
+    Ok(())
+}
+
+/// Submit the real bounded job and inspect its provider before the worker uses it.
+/// # Errors
+/// Preserve the actual reserved submission refusal.
+/// # Panics
+/// Fail if the worker substitutes its provider or renews the caller's cutoff.
+#[cfg(any(windows, target_os = "linux"))]
+fn submit_pair_loopback(
+    reservation: SubmissionReservation,
+    admission: &'static ProcessAdmission,
+    provider_witness: Arc<OnceLock<Weak<()>>>,
+    cutoff: Instant,
+    remote: std::net::SocketAddr,
+) -> Result<crate::nts_ke_experiment::job::SubmittedJob, SubmitError> {
+    reservation.submit_pair_successor_fixture(
+        admission,
+        component_provider,
+        move |config, provider, control, writer| {
+            let current: Weak<()> = provider.retirement_witness();
+            let first: &Weak<()> = provider_witness.get_or_init(|| Weak::clone(&current));
+            assert!(Weak::ptr_eq(first, &current));
+            assert_eq!(current.strong_count(), 1);
+            assert_eq!(control.expiry, cutoff);
+            loopback_control_operation(
+                config,
+                provider,
+                control,
+                writer,
+                remote,
+                Box::new(|| Ok(())),
+            )
+        },
+        Hooks::none(),
+    )
+}
+
+/// Actual synthetically authenticated UDP peer result for one managed job.
+#[cfg(any(windows, target_os = "linux"))]
+type PairPeerJoin<'scope> =
+    std::thread::ScopedJoinHandle<'scope, Result<[LoopbackPeerLeg<Instant>; 2], Failure>>;
+
+/// Start one independent two-leg peer within the test's scoped threads.
+/// # Errors
+/// Preserve the fixture thread submission refusal.
+#[cfg(any(windows, target_os = "linux"))]
+fn spawn_pair_loopback_peer<'scope, 'env>(
+    scope: &'scope std::thread::Scope<'scope, 'env>,
+    socket: &'env std::net::UdpSocket,
+    successor: LoopbackSuccessor,
+) -> Result<PairPeerJoin<'scope>, Failure> {
+    std::thread::Builder::new()
+        .spawn_scoped(scope, move || {
+            serve_managed_loopback(
+                socket,
+                successor.first_reply(),
+                matches!(successor, LoopbackSuccessor::ApplyOrdinary),
+                false,
+                || Ok(Instant::now()),
+            )
+        })
+        .map_err(|_| Failure::Control)
+}
+
+/// Observe the independently scripted mode around each actual worker take.
+/// # Errors
+/// This successful script uses the real native result type for production dispatch.
+/// # Panics
+/// Fail if a reading moves across the actual submission or joined take.
+#[cfg(windows)]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "The shared reader requires its exact fallible native query signature."
+)]
+fn pair_presentation_read(
+    reads: &Cell<usize>,
+    submissions: &Cell<usize>,
+    slot: &'static WorkerSlot,
+    cutoff: Instant,
+) -> crate::nts_ke_experiment::ProcessLeapPresentationRead {
+    let index: usize = reads.get();
+    reads.set(index + 1);
+    let job: usize = index / 2;
+    if index.is_multiple_of(2) {
+        assert_eq!(submissions.get(), job);
+    } else {
+        assert_eq!(submissions.get(), job + 1);
+        assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
+    }
+    if index == 3 {
+        Ok(LeapPresentation::SixtySecond)
+    } else {
+        Ok(LeapPresentation::Compatibility)
+    }
+}
+
+/// Check unmodified mode outcomes carried to their own job's report.
+/// # Panics
+/// Fail if the two jobs share readings or lose an observed mode change.
+#[cfg(windows)]
+fn assert_pair_presentation(
+    first: &ManagedProtectedReport,
+    second: &ManagedProtectedReport,
+    reads: usize,
+) {
+    assert_eq!(reads, 4);
+    assert_eq!(
+        first.process_leap_presentation(),
+        Some([Ok(LeapPresentation::Compatibility); 2])
+    );
+    assert_eq!(
+        second.process_leap_presentation(),
+        Some([
+            Ok(LeapPresentation::Compatibility),
+            Ok(LeapPresentation::SixtySecond),
+        ])
+    );
+}
+
+/// Compare the original first receipts across the two actual joined jobs.
+///
+/// # Errors
+/// Refuse if either job lost its first ordinary receipt.
+///
+/// # Panics
+/// Fail if the second job's receive precedes the first commit or they share a chart.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_pair_invocation_order(
+    first: &ManagedProtectedReport,
+    second: &ManagedProtectedReport,
+) -> Result<(), Failure> {
+    let first_receipt: &crate::ManagedProtectedReceipt = first.first().ok_or(Failure::Control)?;
+    let second_receipt: &crate::ManagedProtectedReceipt = second.first().ok_or(Failure::Control)?;
+    assert!(first_receipt.committed_at() <= second_receipt.received_at());
+    assert!(!first_receipt.same_invocation(second_receipt));
+    Ok(())
+}
+
+/// Retain one provider and observer across both actual joined loopback jobs.
+/// # Errors
+/// Preserve admission, worker result and independent peer refusal.
+/// # Panics
+/// Fail if the pair overlaps worker ownership, loses original history, resets
+/// its cutoff, duplicates a subscription, or closes before provider retirement.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), Failure> {
+    use crate::nts_ke_experiment::managed_preview::{
+        ManagedProtectedPairReport, run_managed_pair_with,
+    };
+    use crate::nts_ke_experiment::power_target::PowerTarget;
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+
+    let mut authority: crate::SourcePolicyAuthority = pair_loopback_authority()?;
+    let first: PairLoopbackPeer = pair_loopback_peer(&mut authority, 0)?;
+    let second: PairLoopbackPeer = pair_loopback_peer(&mut authority, 1)?;
+    let config: Config = pair_loopback_config(&authority, &first.expected)?;
+    let first_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let provider: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
+    let submissions: Cell<usize> = Cell::new(0);
+    let registrations: Cell<usize> = Cell::new(0);
+    let closes: Cell<usize> = Cell::new(0);
+    #[cfg(windows)]
+    let presentation_reads: Cell<usize> = Cell::new(0);
+
+    let pair: ManagedProtectedPairReport =
+        std::thread::scope(|scope: &std::thread::Scope<'_, '_>| {
+            let first_peer: PairPeerJoin<'_> =
+                spawn_pair_loopback_peer(scope, &first.socket, LoopbackSuccessor::ApplyOrdinary)?;
+            let second_peer: PairPeerJoin<'_> =
+                spawn_pair_loopback_peer(scope, &second.socket, LoopbackSuccessor::ApplyOrdinary)?;
+            let cutoff: Instant = Instant::now()
+                .checked_add(WAIT.checked_mul(2).ok_or(Failure::Deadline)?)
+                .ok_or(Failure::Deadline)?;
+            let pair: ManagedProtectedPairReport = run_managed_pair_with(
+                config,
+                || {
+                    assert_eq!(submissions.get(), 1);
+                    assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                    assert_eq!(first_lifetime.strong_count(), 0);
+                    assert_eq!(provider.get().map(Weak::strong_count), Some(1));
+                    authority
+                        .authorize_protected_ke(&second.expected)
+                        .map(Config::from_managed_protected)
+                        .map_err(|error: crate::SourcePolicyError| {
+                            SourceProtectedProbeFailure::from_run_failure(RunFailed::Preparation(
+                                Failed::from(Failure::SourcePolicy(error)),
+                            ))
+                        })
+                },
+                cutoff,
+                &SLOT,
+                |target: Arc<PowerTarget>| {
+                    registrations.set(registrations.get() + 1);
+                    let provider: &OnceLock<Weak<()>> = &provider;
+                    let closes: &Cell<usize> = &closes;
+                    Ok(move || {
+                        assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                        assert_eq!(provider.get().map(Weak::strong_count), Some(0));
+                        closes.set(closes.get() + 1);
+                        drop(target);
+                        Err(NonZeroU32::MIN)
+                    })
+                },
+                |reservation: SubmissionReservation| {
+                    let index: usize = submissions.get();
+                    let remote: std::net::SocketAddr = [first.remote, second.remote]
+                        .get(index)
+                        .copied()
+                        .ok_or(SubmitError::Control)?;
+                    submissions.set(index + 1);
+                    submit_pair_loopback(
+                        reservation,
+                        &ADMISSION,
+                        Arc::clone(&provider),
+                        cutoff,
+                        remote,
+                    )
+                },
+                #[cfg(windows)]
+                Some(&mut || {
+                    pair_presentation_read(&presentation_reads, &submissions, &SLOT, cutoff)
+                }),
+            )
+            .map_err(|_| Failure::Control)?;
+            let first_result: [LoopbackPeerLeg<Instant>; 2] =
+                first_peer.join().map_err(|_| Failure::Control)??;
+            let second_result: [LoopbackPeerLeg<Instant>; 2] =
+                second_peer.join().map_err(|_| Failure::Control)??;
+            assert_pair_loopback_report(pair.first(), &first.expected, cutoff, first_result)?;
+            let second_report: &ManagedProtectedReport = pair
+                .second()
+                .ok_or(Failure::Control)?
+                .map_err(|_| Failure::Control)?;
+            assert_pair_loopback_report(second_report, &second.expected, cutoff, second_result)?;
+            #[cfg(windows)]
+            assert_pair_presentation(pair.first(), second_report, presentation_reads.get());
+            assert_pair_invocation_order(pair.first(), second_report)?;
+            Ok::<ManagedProtectedPairReport, Failure>(pair)
+        })?;
+
+    assert_eq!(
+        (submissions.get(), registrations.get(), closes.get()),
+        (2, 1, 1)
+    );
+    assert_eq!(pair.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
+}
+
+/// Keep the actual first commit when the first job's successor authenticates DENY.
+/// # Errors
+/// Preserve fixture setup, worker, or independent peer failures.
+/// # Panics
+/// Fail if the genuine restriction still permits second source authorization or submission.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Failure> {
+    use crate::nts_ke_experiment::managed_preview::{
+        ManagedProtectedPairReport, run_managed_pair_with,
+    };
+    use crate::nts_ke_experiment::power_target::PowerTarget;
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let mut authority: crate::SourcePolicyAuthority = pair_loopback_authority()?;
+    let first: PairLoopbackPeer = pair_loopback_peer(&mut authority, 0)?;
+    let config: Config = pair_loopback_config(&authority, &first.expected)?;
+    let provider: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
+    let second_preparations: Cell<usize> = Cell::new(0);
+    let submissions: Cell<usize> = Cell::new(0);
+    let cutoff: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let report: ManagedProtectedPairReport = std::thread::scope(|scope| {
+        let peer: PairPeerJoin<'_> =
+            spawn_pair_loopback_peer(scope, &first.socket, LoopbackSuccessor::ApplyDeny)?;
+        let report: ManagedProtectedPairReport = run_managed_pair_with(
+            config,
+            || {
+                second_preparations.set(second_preparations.get() + 1);
+                Err(SourceProtectedProbeFailure::from_run_failure(
+                    RunFailed::Operation(Failed::from(Failure::Control)),
+                ))
+            },
+            cutoff,
+            &SLOT,
+            |target: Arc<PowerTarget>| {
+                Ok(move || {
+                    drop(target);
+                    Ok(())
+                })
+            },
+            |reservation: SubmissionReservation| {
+                submissions.set(submissions.get() + 1);
+                submit_pair_loopback(
+                    reservation,
+                    &ADMISSION,
+                    Arc::clone(&provider),
+                    cutoff,
+                    first.remote,
+                )
+            },
+            #[cfg(windows)]
+            Some(&mut || {
+                if submissions.get() == 0 {
+                    Err(LeapPresentationError::QueryFailed(5))
+                } else {
+                    Err(LeapPresentationError::InvalidReply {
+                        flags: 1,
+                        reserved: 4,
+                    })
+                }
+            }),
+        )
+        .map_err(|_| Failure::Control)?;
+        #[cfg(windows)]
+        assert_eq!(
+            report.first().process_leap_presentation(),
+            Some([
+                Err(LeapPresentationError::QueryFailed(5)),
+                Err(LeapPresentationError::InvalidReply {
+                    flags: 1,
+                    reserved: 4
+                }),
+            ])
+        );
+        let [ordinary, deny]: [LoopbackPeerLeg<Instant>; 2] =
+            peer.join().map_err(|_| Failure::Control)??;
+        let receipt: &crate::ManagedProtectedReceipt =
+            report.first().first().ok_or(Failure::Control)?;
+        let crate::ManagedProtectedTerminal::Restriction(restriction) = report.first().terminal()
+        else {
+            return Err(Failure::Control);
+        };
+        assert!(ordinary.sending <= receipt.received_at());
+        assert!(receipt.committed_at() <= deny.received);
+        assert!(deny.sending <= restriction.decided_at() && restriction.decided_at() < cutoff);
+        assert!(receipt.configuration().same_configuration(&first.expected));
+        assert!(
+            restriction
+                .configuration()
+                .same_configuration(&first.expected)
+        );
+        assert_eq!(restriction.code(), "DENY");
+        assert!(restriction.authenticated());
+        assert_eq!(restriction.remote(), first.remote);
+        assert_loopback_work(report.first(), false, false);
+        Ok::<ManagedProtectedPairReport, Failure>(report)
+    })?;
+
+    assert_eq!(submissions.get(), 1);
+    assert_eq!(
+        second_preparations.get(),
+        0,
+        "an authenticated terminal DENY must veto authorization even with a genuine first receipt"
+    );
+    assert!(report.second().is_none());
+    assert_eq!(report.power_unregistration_error(), None);
+    assert_eq!(provider.get().map(Weak::strong_count), Some(0));
+    Ok(())
+}
+
+/// Stop the original active binding during subscription and collect its refusal.
+/// # Errors
+/// Preserve preparation, collection, or an unexpected terminal disposition.
+/// # Panics
+/// Fail if the joined Stop refusal spends provider admission, reaches a producer
+/// or permits the second job, or if cleanup loses its exact nonzero status.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_pair_joined_stop_refusal_suppresses_second_job() -> Result<(), Failure> {
+    use crate::nts_ke_experiment::managed_preview::{
+        ManagedProtectedPairReport, run_managed_pair_with,
+    };
+    use crate::nts_ke_experiment::power_target::PowerTarget;
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let (config, _source, _authority): (Config, crate::SourceHandle, crate::SourcePolicyAuthority) =
+        managed_attempt_config(
+            Instant::now(),
+            Duration::from_millis(4),
+            Duration::from_millis(8),
+        )?;
+    let cutoff: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let submissions: Cell<usize> = Cell::new(0);
+    let second_preparations: Cell<usize> = Cell::new(0);
+    let closes: Cell<usize> = Cell::new(0);
+    let producer_entries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let report: ManagedProtectedPairReport = run_managed_pair_with(
+        config,
+        || {
+            second_preparations.set(second_preparations.get() + 1);
+            Err(SourceProtectedProbeFailure::from_run_failure(
+                RunFailed::Operation(Failed::from(Failure::Control)),
+            ))
+        },
+        cutoff,
+        &SLOT,
+        |target: Arc<PowerTarget>| {
+            target.deliver().map_err(|_| ())?;
+            let closes: &Cell<usize> = &closes;
+            Ok(move || {
+                assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                closes.set(closes.get() + 1);
+                drop(target);
+                Err(NonZeroU32::MIN)
+            })
+        },
+        |reservation: SubmissionReservation| {
+            submissions.set(submissions.get() + 1);
+            let entries: Arc<AtomicUsize> = Arc::clone(&producer_entries);
+            reservation.submit_pair_successor_fixture(
+                &ADMISSION,
+                component_provider,
+                move |_, _, _, _| {
+                    entries.fetch_add(1, Ordering::AcqRel);
+                    Err(Failed::from(Failure::Control))
+                },
+                Hooks::none(),
+            )
+        },
+        #[cfg(windows)]
+        None,
+    )
+    .map_err(|_| Failure::Control)?;
+
+    #[cfg(windows)]
+    assert_eq!(report.first().process_leap_presentation(), None);
+    let crate::ManagedProtectedTerminal::Refused(failure) = report.first().terminal() else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("currentness", "cancelled"));
+    assert!(report.first().first().is_none());
+    assert_eq!(
+        (
+            report.first().attempted_sends(),
+            report.first().fully_submitted_sends()
+        ),
+        (0, 0)
+    );
+    assert!(report.second().is_none());
+    assert_eq!(
+        (submissions.get(), second_preparations.get(), closes.get()),
+        (1, 0, 1)
+    );
+    assert_eq!(producer_entries.load(Ordering::Acquire), 0);
+    assert_eq!(report.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert!(ADMISSION.claim().is_ok());
+    Ok(())
+}
+
+/// Retain the genuine abnormal join without manufacturing a closing process read.
+/// # Errors
+/// Preserve preparation and reject an unexpectedly normal result.
+/// # Panics
+/// Fail if closing observations or second work follow abnormal retirement.
+#[cfg(windows)]
+#[test]
+fn managed_pair_abnormal_join_omits_closing_process_observation() -> Result<(), Failure> {
+    use crate::nts_ke_experiment::managed_preview::{
+        ManagedProtectedPairReport, run_managed_pair_with,
+    };
+    use crate::nts_ke_experiment::power_target::PowerTarget;
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let mut authority: crate::SourcePolicyAuthority = pair_loopback_authority()?;
+    let source: PairLoopbackPeer = pair_loopback_peer(&mut authority, 0)?;
+    let config: Config = pair_loopback_config(&authority, &source.expected)?;
+    let cutoff: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let reads: Cell<usize> = Cell::new(0);
+    let second_preparations: Cell<usize> = Cell::new(0);
+
+    let result: Result<ManagedProtectedPairReport, SourceProtectedProbeFailure> =
+        run_managed_pair_with(
+            config,
+            || {
+                second_preparations.set(second_preparations.get() + 1);
+                Err(SourceProtectedProbeFailure::from_run_failure(
+                    RunFailed::Operation(Failed::from(Failure::Control)),
+                ))
+            },
+            cutoff,
+            &SLOT,
+            |target: Arc<PowerTarget>| {
+                Ok(move || {
+                    assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                    drop(target);
+                    Ok(())
+                })
+            },
+            |reservation: SubmissionReservation| {
+                let mut hooks: Hooks = Hooks::none();
+                hooks.before_retire = Some(Box::new(|| {
+                    std::panic::resume_unwind(Box::new(()));
+                }));
+                reservation.submit_pair_successor_fixture(
+                    &ADMISSION,
+                    component_provider,
+                    |_, _, _, _| Err(Failed::from(Failure::Control)),
+                    hooks,
+                )
+            },
+            Some(&mut || {
+                reads.set(reads.get() + 1);
+                Ok(LeapPresentation::Compatibility)
+            }),
+        );
+    let Err(failure) = result else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("worker-termination", "panicked"));
+    assert_eq!(reads.get(), 1);
+    assert_eq!(second_preparations.get(), 0);
+    Ok(())
 }
 
 /// Inspect worker ownership and peer work before the fixture destroys its resources.
@@ -2458,6 +3106,26 @@ fn assert_peer_timestamps(receipt: &crate::ManagedProtectedReceipt, expected: [u
     );
 }
 
+/// Compare the four advertised peer values against the independently selected wire facts.
+/// # Panics
+/// Fail if the joined receipt changes, drops or swaps a peer quality field.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_peer_quality(receipt: &crate::ManagedProtectedReceipt, expected: (u8, i8, u32, u32)) {
+    assert_eq!(
+        (
+            receipt.peer_stratum(),
+            receipt.peer_precision_exponent(),
+            receipt.peer_root_delay_bits(),
+            receipt.peer_root_dispersion_bits(),
+        ),
+        expected
+    );
+}
+
+/// Expected independently sealed fields for the first receipt in the LI=2 histories.
+#[cfg(any(windows, target_os = "linux"))]
+const FIRST_DELETION_QUALITY: (u8, i8, u32, u32) = (6, -25, 0x9a12_3456, 0xe0b0_c0d0);
+
 /// Inspect the first genuine receipt beside the independently expected terminal facts.
 /// # Errors
 /// Preserve unexpected operation failures and refuse absent or mismatched custody.
@@ -2497,13 +3165,22 @@ fn assert_joined_loopback_successor(
                     cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
                 }))
                 .map_err(|_| Failure::Control)?;
-            let projected = report.first().ok_or(Failure::Control)?;
+            let projected: &crate::ManagedProtectedReceipt =
+                report.first().ok_or(Failure::Control)?;
             let nak: Option<Instant> = report.first_nak_at();
             assert_eq!(nak.is_some(), sends_nak);
             assert_eq!(projected.committed_at(), committed_at);
             assert_eq!(projected.packet_bytes(), 252);
             assert_eq!(projected.initial_cookie_population(), (1, 12));
             assert_peer_timestamps(projected, FIRST_PEER_TIMESTAMPS);
+            let first_quality: (u8, i8, u32, u32) = match successor {
+                LoopbackSuccessor::ApplyOrdinary => (5, -23, 0x8123_4567, 0xf102_0304),
+                LoopbackSuccessor::ApplyDeny => (2, 0, 0, 0),
+                LoopbackSuccessor::ReplaceConfiguration | LoopbackSuccessor::Unwind => {
+                    FIRST_DELETION_QUALITY
+                }
+            };
+            assert_peer_quality(projected, first_quality);
             first_timing.assert_projection(projected);
             assert!(projected.configuration().same_configuration(expected));
             assert!(projected.received_at() <= committed_at);
@@ -2520,6 +3197,7 @@ fn assert_joined_loopback_successor(
                 (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
                     assert_eq!(projected.leap_indicator(), 0);
                     let timing: ReceiptTiming = terminal_timing.ok_or(Failure::Control)?;
+                    assert!(projected.same_invocation(receipt));
                     assert_ordinary_loopback_receipt(
                         receipt,
                         expected,
@@ -2592,8 +3270,14 @@ type CaptureCoordinates = [(Instant, std::time::SystemTime, Instant); 3];
 struct ReceiptTiming {
     /// Local monotonic and wall coordinates from the original history.
     captures: CaptureCoordinates,
+    /// The allocation retained by the actual joined history.
+    run_context: Arc<RunClockContext>,
+    /// Exact midpoint in half nanoseconds from the original chart.
+    reference_half_ns: u128,
     /// Independently paired bounds from the original local brackets.
     bounds: [Duration; 2],
+    /// Original guard observation, distinct from the receive and midpoint references.
+    committed_at: Instant,
     /// Exact original native dispositions, retained before projecting the receipt.
     #[cfg(windows)]
     native: [Option<ProtectedNativeClockObservation>; 3],
@@ -2610,6 +3294,17 @@ impl ReceiptTiming {
             self.captures
         );
         assert_eq!(receipt.application_wall_elapsed_bounds(), Some(self.bounds));
+        assert_eq!(receipt.received_at(), self.captures[2].2);
+        assert_eq!(receipt.committed_at(), self.committed_at);
+        assert!(receipt.retains_run_context(&self.run_context));
+        let reference: Result<u128, RelativeMeasurementRefusal> =
+            receipt
+                .nominal_reference()
+                .map(|value: ExperimentalReferenceNs| {
+                    2 * u128::from(value.whole_nanoseconds())
+                        + u128::from(value.has_half_nanosecond())
+                });
+        assert_eq!(reference, Ok(self.reference_half_ns));
         #[cfg(windows)]
         assert!(
             receipt.application_native_clock_captures() == self.native,
@@ -2655,9 +3350,20 @@ fn original_receipt_timing(
         .monotonic_after()
         .checked_duration_since(before.monotonic())
         .ok_or(Failure::Control)?;
+    let run_context: &Arc<RunClockContext> = original.history().run_context();
+    let origin: Instant = run_context.origin;
+    assert!(origin <= before.monotonic());
+    let send_offset_ns: u128 = before.monotonic().duration_since(origin).as_nanos();
+    let read_offset_ns: u128 = read.monotonic().duration_since(origin).as_nanos();
+    let reference_half_ns: u128 = send_offset_ns
+        .checked_add(read_offset_ns)
+        .ok_or(Failure::Control)?;
     Ok(ReceiptTiming {
         captures: capture_coordinates(captures),
+        run_context: Arc::clone(run_context),
+        reference_half_ns,
         bounds: [minimum, maximum],
+        committed_at: original.history().committed_at(),
         #[cfg(windows)]
         native: original.history().native_captures(),
     })
@@ -2680,6 +3386,7 @@ fn assert_ordinary_loopback_receipt(
     assert_eq!(receipt.initial_cookie_population(), (2, 24));
     assert_eq!(receipt.leap_indicator(), 0);
     assert_peer_timestamps(receipt, [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc]);
+    assert_peer_quality(receipt, (7, -19, 0xcafe_4321, 0xa0b0_9080));
     timing.assert_projection(receipt);
 }
 
@@ -2746,6 +3453,7 @@ fn assert_abnormal_loopback_successor(
     assert_eq!(retained.packet_bytes(), 252);
     assert_eq!(retained.leap_indicator(), 2);
     assert_peer_timestamps(&retained, FIRST_PEER_TIMESTAMPS);
+    assert_peer_quality(&retained, FIRST_DELETION_QUALITY);
     first_timing.assert_projection(&retained);
     assert!(committed_at <= nak_at && first_commit_window.contains(&nak_at));
     Ok(())
@@ -3477,7 +4185,7 @@ fn managed_deny_worker_post_record_stop_preserves_only_once_joined_history() -> 
 fn assert_retained_history(
     history: &crate::nts_ke_experiment::datagram::ProtectedHistory,
     expected: &super::ProtectedWitness,
-    original_chart: &Weak<crate::RunClockContext>,
+    original_chart: &Weak<RunClockContext>,
     original_origin: Instant,
     peer_times: (u64, u64),
 ) {
@@ -3586,7 +4294,7 @@ fn check_joined_protected_history(
     let original_origin = prepared.original_times().0;
     let witness = Arc::new(OnceLock::<super::ProtectedWitness>::new());
     let observed = Arc::clone(&witness);
-    let chart = Arc::new(OnceLock::<Weak<crate::RunClockContext>>::new());
+    let chart: Arc<OnceLock<Weak<RunClockContext>>> = Arc::new(OnceLock::new());
     let observed_chart = Arc::clone(&chart);
     let resource = Arc::new(OnceLock::<Weak<()>>::new());
     let observed_resource = Arc::clone(&resource);

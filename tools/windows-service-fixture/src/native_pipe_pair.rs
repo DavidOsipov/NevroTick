@@ -5,13 +5,14 @@ use std::fmt;
 use std::io::{self, Write as _};
 use std::mem::size_of;
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
+use std::process::ChildStderr;
 use std::ptr;
 use std::rc::{Rc, Weak};
 use std::task::Poll;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use windows_platform_native::{PipeServerPidError, read_connected_pipe_server_pid};
+use windows_platform_native::{PeerProcess, PipeServerPidError, read_connected_pipe_server_pid};
 use windows_sys::Win32::Foundation::{
     ERROR_INVALID_DATA, ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE,
     INVALID_HANDLE_VALUE, LocalFree,
@@ -27,6 +28,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 };
 use windows_sys::Win32::System::Pipes::{
     ConnectNamedPipe, CreateNamedPipeW, GetNamedPipeClientProcessId, PIPE_REJECT_REMOTE_CLIENTS,
+    PeekNamedPipe,
 };
 use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 
@@ -489,7 +491,71 @@ pub(super) fn open_first_exchange_client(
     case: u32,
 ) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
     let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
-    let handle: Rc<OwnedHandle> = Rc::new(open_client(&name, ServerMode::Duplex)?);
+    first_exchange_client(open_client(&name, ServerMode::Duplex)?)
+}
+
+/// Open only the fixture case of the retained supervising process.
+/// # Errors
+/// Refuse an open or setup failure, an exited supervisor or a different server.
+pub(super) fn open_supervised_first_exchange_client(
+    case: u32,
+    parent: &PeerProcess,
+) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
+    if parent.check_live().is_err() {
+        return Err(LabPipeError::ForeignPeer);
+    }
+    let name: LabPipeName = LabPipeName::for_process(parent.pid().get(), case);
+    let client: OwnedHandle = open_client(&name, ServerMode::Duplex)?;
+    if server_process_id(&client)? != parent.pid().get() || parent.check_live().is_err() {
+        return Err(LabPipeError::ForeignPeer);
+    }
+    first_exchange_client(client)
+}
+
+/// Observe at most one byte from the original fixture child's piped stderr.
+/// The pinned Rust standard library opens the parent-side handle overlapped.
+///
+/// # Errors
+/// Preserve the native observation failure or an invalid returned byte count.
+pub(super) fn peek_fixture_child_stderr(stderr: &ChildStderr) -> io::Result<Option<u8>> {
+    let mut byte: u8 = 0;
+    let mut count: u32 = 0;
+    #[expect(
+        unsafe_code,
+        reason = "poll only the original fixture child's piped stderr"
+    )]
+    // SAFETY: The caller borrows a live std child pipe. The initialized buffer
+    // has one writable byte, and the count is valid for the entire native call.
+    let observed: i32 = unsafe {
+        PeekNamedPipe(
+            stderr.as_raw_handle(),
+            (&raw mut byte).cast(),
+            1,
+            &raw mut count,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        )
+    };
+    if observed == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    match count {
+        0 => Ok(None),
+        1 => Ok(Some(byte)),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "fixture marker size",
+        )),
+    }
+}
+
+/// Split only the original admitted handle into its read and write owners.
+/// # Errors
+/// Preserve the write-event setup failure.
+fn first_exchange_client(
+    client: OwnedHandle,
+) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
+    let handle: Rc<OwnedHandle> = Rc::new(client);
     let reader: LabPipeReader = LabPipeReader {
         handle: Rc::clone(&handle),
         reply_pair: None,

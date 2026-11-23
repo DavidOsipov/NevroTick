@@ -60,9 +60,65 @@ def _image(subsystem: int, *, pdb_path: str = "test_pilot.pdb",
     return image
 
 
-def _pdb(*, guid: bytes = _UI_GUID, age: int = 1) -> bytearray:
+def _ui_resource_image(version: bytes, manifest: bytes) -> bytearray:
+    """Write literal Type/ID/Language tables in a second, file-backed section."""
+    image: bytearray = _image(2, pdb_path=r"C:\build\nevrotick_ui.pdb")
+    raw: int = 0x600
+    rva: int = 0x2000
+    version_offset: int = 0xA0
+    manifest_offset: int = (version_offset + len(version) + 3) & ~3
+    resources_size: int = manifest_offset + len(manifest)
+    raw_size: int = (resources_size + 0x1FF) & ~0x1FF
+    image.extend(bytes(raw_size))
+    struct.pack_into("<H", image, 0x86, 2)
+    struct.pack_into("<II", image, _OPTIONAL + 32, 0x1000, 0x200)
+    struct.pack_into("<II", image, _OPTIONAL + 56, 0x3000, 0x200)
+    struct.pack_into("<II", image, _OPTIONAL + 112 + 2 * 8, rva, resources_size)
+    image[_SECTION:_SECTION + 8] = b".text\0\0\0"
+    second: int = _SECTION + 40
+    image[second:second + 8] = b".rsrc\0\0\0"
+    struct.pack_into("<IIII", image, second + 8, resources_size, rva, raw_size, raw)
+    struct.pack_into("<I", image, second + 36, 0x40000040)
+    struct.pack_into("<HHIIII", image, raw + 12, 0, 2, 16, 0x80000020, 24, 0x80000038)
+    struct.pack_into("<HHII", image, raw + 0x20 + 12, 0, 1, 1, 0x80000050)
+    struct.pack_into("<HHII", image, raw + 0x38 + 12, 0, 1, 1, 0x80000068)
+    struct.pack_into("<HHII", image, raw + 0x50 + 12, 0, 1, 1033, 0x80)
+    struct.pack_into("<HHII", image, raw + 0x68 + 12, 0, 1, 1033, 0x90)
+    struct.pack_into("<4I", image, raw + 0x80, rva + version_offset, len(version), 0, 0)
+    struct.pack_into("<4I", image, raw + 0x90, rva + manifest_offset, len(manifest), 0, 0)
+    image[raw + version_offset:raw + version_offset + len(version)] = version
+    image[raw + manifest_offset:raw + manifest_offset + len(manifest)] = manifest
+    return image
+
+
+def with_import_modules(image: bytearray, *, direct: tuple[str, ...] = (),
+                        delay: tuple[str, ...] = ()) -> bytearray:
+    """Put literal import-name rows in the shared fixtures' unused file span."""
+    result: bytearray = bytearray(image)
+    names: int = 0x4E0
+    for table, directory, width, name_field, modules in (
+        (0x400, _OPTIONAL + 120, 20, 12, direct),
+        (0x460, _OPTIONAL + 216, 32, 4, delay),
+    ):
+        if not modules:
+            continue
+        assert len(modules) <= 3
+        struct.pack_into("<II", result, directory, table + 0xE00, (len(modules) + 1) * width)
+        for index, module in enumerate(modules):
+            encoded: bytes = module.encode("ascii") + b"\0"
+            end: int = names + len(encoded)
+            assert end <= 0x5F6
+            row: int = table + index * width
+            if table == 0x460:
+                struct.pack_into("<I", result, row, 1)
+            struct.pack_into("<I", result, row + name_field, names + 0xE00)
+            result[names:end] = encoded
+            names = end
+    return result
+
+
+def _pdb(*, guid: bytes = _UI_GUID, age: int = 1, block: int = _MSF_BLOCK_SIZE) -> bytearray:
     """Encode an inert MSF 7 fixture with a VC70 PDB info stream."""
-    block = _MSF_BLOCK_SIZE
     data = bytearray(6 * block)
     data[:32] = b"Microsoft C/C++ MSF 7.00\r\n\x1aDS\0\0\0"
     # Blocks 1 and 2 are free-page maps, 3 lists directory block 4,
@@ -100,6 +156,37 @@ class WindowsPeTests(unittest.TestCase):
                 self.assertEqual(readback["codeview_guid"], "12345678-9abc-def0-1234-56789abcdef0")
                 self.assertEqual(readback["codeview_age"], 1)
 
+    def test_ui_resources_require_the_fixed_file_backed_tree(self) -> None:
+        version: bytes = b"version data"
+        manifest: bytes = b"manifest data"
+        image: bytearray = _ui_resource_image(version, manifest)
+        self.assertEqual(PE.ui_resource_payloads(bytes(image)), (version, manifest))
+
+        resource_table: int = _OPTIONAL + 112 + 2 * 8
+        controls: tuple[tuple[str, int, int, str], ...] = (
+            ("I", resource_table, 0, "invalid RVA extent"),
+            ("I", resource_table + 4, 0x201, "exceeds its file-backed section"),
+            ("I", _SECTION + 12, 0x2000, "no unique file-backed section"),
+            ("H", 0x600 + 12, 1, "entry counts"),
+            ("I", 0x600 + 0x18, 16, "identifier or link kind"),
+            ("I", 0x600 + 0x1C, 0x38, "identifier or link kind"),
+            ("I", 0x600 + 0x1C, 0x800001FF, "exceeds its directory bounds"),
+            ("I", 0x600 + 0x20 + 16, 2, "identifier or link kind"),
+            ("I", 0x600 + 0x68 + 16, 1041, "identifier or link kind"),
+            ("I", 0x600 + 0x68 + 20, 0x80, "Overlapping UI resource"),
+            ("I", 0x600 + 0x90, 0x2090, "Overlapping UI resource"),
+            ("I", 0x600 + 0x90, 0x1FFF, "exceeds its directory bounds"),
+            ("I", 0x600 + 0x90 + 4, 4097, "payload size"),
+            ("I", 0x600 + 0x90 + 8, 1200, "code page"),
+            ("I", 0x600 + 0x90 + 12, 1, "reserved field"),
+        )
+        for layout, offset, value, reason in controls:
+            with self.subTest(offset=offset, value=value), self.assertRaisesRegex(ValueError, reason):
+                wrong: bytearray = bytearray(image)
+                struct.pack_into("<" + layout, wrong, offset, value)
+                PE.ui_resource_payloads(bytes(wrong))
+        self.assertEqual(PE.ui_resource_payloads(bytes(image)), (version, manifest))
+
     def test_import_counts_require_real_terminators_and_file_backed_tables(self) -> None:
         empty = _image(2)
         self.path.write_bytes(empty)
@@ -131,6 +218,83 @@ class WindowsPeTests(unittest.TestCase):
                 struct.pack_into("<I", wrong, offset, word)
                 self.path.write_bytes(wrong)
                 PE.pe_readback(self.path, subsystem="gui", imports=True)
+
+    def test_import_names_are_sorted_and_preserve_one_entry_per_descriptor(self) -> None:
+        empty: bytearray = _image(3)
+        self.assertEqual(PE.static_import_modules(bytes(empty), subsystem="console"),
+                         {"direct": [], "delay": []})
+        longest: str = "A" * 123 + ".DLL"
+        image: bytearray = with_import_modules(
+            empty, direct=("Z.dll", "KERNEL32.dll", "kernel32.DLL"), delay=(longest, "X"))
+        self.assertEqual(PE.static_import_modules(bytes(image), subsystem="console"),
+                         {"direct": ["kernel32.dll", "kernel32.dll", "z.dll"],
+                          "delay": [longest.lower(), "x"]})
+
+    def test_static_import_descriptor_work_has_an_inclusive_limit(self) -> None:
+        # One name per row, all routed to the same independently placed module.
+        table_raw: int = 0x600
+        table_rva: int = 0x2000
+        name: bytes = b"kernel32.dll\0"
+        for count in (4096, 4097):
+            with self.subTest(count=count):
+                image: bytearray = _image(3)
+                table_size: int = (count + 1) * 20
+                name_rva: int = table_rva + table_size
+                rows: bytes = struct.pack("<5I", 0, 0, 0, name_rva, 0) * count
+                image.extend(rows + bytes(20) + name)
+                section_size: int = len(image) - table_raw
+                struct.pack_into("<H", image, 0x86, 2)
+                struct.pack_into("<IIII", image, _SECTION + 40 + 8,
+                                 section_size, table_rva, section_size, table_raw)
+                struct.pack_into("<II", image, _OPTIONAL + 120, table_rva, table_size)
+                if count == 4096:
+                    self.assertEqual(PE.static_import_modules(bytes(image), subsystem="console"),
+                                     {"direct": ["kernel32.dll"] * count, "delay": []})
+                else:
+                    with self.assertRaisesRegex(ValueError, "direct import directory has too many descriptors"):
+                        PE.static_import_modules(bytes(image), subsystem="console")
+
+    def test_import_names_refuse_unbacked_or_ambiguous_rva_extents(self) -> None:
+        image: bytearray = with_import_modules(
+            _ui_resource_image(b"version", b"manifest"), direct=("KERNEL32.dll",))
+        self.assertEqual(PE.static_import_modules(bytes(image), subsystem="gui"),
+                         {"direct": ["kernel32.dll"], "delay": []})
+        controls: tuple[tuple[int, int, str], ...] = (
+            (0x40C, 0x13FD, "direct import name has no bounded null terminator"),
+            (0x40C, 0x5000, "direct import name has no unique file-backed section"),
+            (_SECTION + 40 + 12, 0x12E3, "direct import name has no unique file-backed section"),
+        )
+        for offset, value, reason in controls:
+            with self.subTest(offset=offset, value=value), self.assertRaisesRegex(ValueError, reason):
+                wrong: bytearray = bytearray(image)
+                wrong[0x5FD:0x600] = b"ABC"
+                struct.pack_into("<I", wrong, offset, value)
+                PE.static_import_modules(bytes(wrong), subsystem="gui")
+
+    def test_import_names_refuse_unsupported_bytes_and_delay_attributes(self) -> None:
+        image: bytearray = with_import_modules(_image(2), delay=("KERNEL32.dll",))
+        for name, reason in (
+            (b"\0", "invalid module name"),
+            (b"/K.dll\0", "invalid module name"),
+            (b"K.DLL.\0", "invalid module name"),
+            (b"K\xff.dll\0", "invalid module name"),
+            (b"K" * 128 + b"\0", "no bounded null terminator"),
+        ):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, reason):
+                wrong: bytearray = bytearray(image)
+                wrong[0x4E0:0x4E0 + len(name)] = name
+                PE.static_import_modules(bytes(wrong), subsystem="gui")
+        for attributes in (0, 3):
+            with self.subTest(attributes=attributes):
+                wrong: bytearray = bytearray(image)
+                struct.pack_into("<I", wrong, 0x460, attributes)
+                self.path.write_bytes(wrong)
+                counted: dict = PE.pe_readback(self.path, subsystem="gui", imports=True)
+                self.assertEqual(counted["delay_import_descriptors"], 1)
+                with self.assertRaisesRegex(ValueError, "delay import directory has unsupported attributes"):
+                    PE.static_import_modules(bytes(wrong), subsystem="gui")
+        self.assertEqual(PE.static_import_modules(bytes(image), subsystem="gui"),
+                         {"direct": [], "delay": ["kernel32.dll"]})
 
     def test_wrong_subsystem_and_unselected_role(self) -> None:
         with self.assertRaisesRegex(ValueError, "subsystem"):
@@ -237,6 +401,49 @@ class WindowsPdbTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     self.readback(data)
         self.assertEqual(self.readback(_pdb())["guid"], "12345678-9abc-def0-1234-56789abcdef0")
+
+    def test_pair_layout_requires_the_exact_selected_page_size(self) -> None:
+        image: Path = self.path.with_suffix(".exe")
+        image.write_bytes(_image(3, pdb_path=self.path.name, guid=_OBSERVE_GUID))
+        for size, crossed in ((4096, 8192), (8192, 4096)):
+            with self.subTest(size=size):
+                expected: bytearray = _pdb(guid=_OBSERVE_GUID, block=size)
+                self.path.write_bytes(expected)
+                _, (symbols, digest), identity = PE.read_export_pair(
+                    image, self.path, subsystem="console", expected_pdb_page_size=size,
+                )
+                self.assertEqual(symbols, expected)
+                self.assertEqual(identity["sha256"], digest)
+                self.assertEqual(digest, hashlib.sha256(expected).hexdigest())
+                with self.assertRaisesRegex(ValueError, "unsupported block size"):
+                    PE.read_export_pair(image, self.path, subsystem="console", expected_pdb_page_size=crossed)
+                for invalid in (8192.0, 16384, True):
+                    with self.assertRaisesRegex(ValueError, "outside the supported profiles"):
+                        PE.read_export_pair(image, self.path, subsystem="console", expected_pdb_page_size=invalid)
+        with self.assertRaisesRegex(ValueError, "unsupported block size"):
+            PE.pdb_readback(self.path)
+
+    def test_large_layout_checks_repeating_reserved_pages_at_its_own_stride(self) -> None:
+        image: Path = self.path.with_suffix(".exe")
+        image.write_bytes(_image(3, pdb_path=self.path.name))
+        data: bytearray = _pdb(block=8192)
+        struct.pack_into("<I", data, 40, 8195)
+        data[4 * 8192 + 12:4 * 8192 + 16] = struct.pack("<I", 4097)
+        data_start: int = 4097 * 8192
+        with self.path.open("wb") as destination:
+            destination.write(data)
+            destination.seek(data_start)
+            destination.write(data[5 * 8192:5 * 8192 + 48])
+            destination.truncate(8195 * 8192)
+        # Page 4097 is regular data in this format, while pages 8193/8194 are reserved.
+        PE.read_export_pair(image, self.path, subsystem="console", expected_pdb_page_size=8192)
+        for reserved in (8193, 8194):
+            with self.subTest(reserved=reserved):
+                with self.path.open("r+b") as destination:
+                    destination.seek(4 * 8192 + 12)
+                    destination.write(struct.pack("<I", reserved))
+                with self.assertRaisesRegex(ValueError, "stream blocks are invalid or overlap"):
+                    PE.read_export_pair(image, self.path, subsystem="console", expected_pdb_page_size=8192)
 
     def test_pdb_rejects_link_fifo_and_oversized_file_before_parsing(self) -> None:
         self.path.symlink_to(self.path.parent / "absent")

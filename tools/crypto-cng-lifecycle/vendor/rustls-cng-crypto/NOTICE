@@ -20,7 +20,11 @@ primary failure and any close failure without retry. Gated wrappers observe the
 same native open/property/provider-close calls; ledger ambiguity never vetoes the
 provider close. src/lib.rs reexports the safe probe module; src/alg/probe.rs retains
 the saved snapshot, distinct fixture recovery and cleanup-gap regression outcome.
-No cached-initializer, ShutdownHandle, concurrency or provider-adoption fix is made.
+ShutdownHandle closes only providers already initialized in their existing
+X25519 and TLS 1.2 KDF caches. Operational accessors still initialize on demand.
+The X25519 initializer publishes only a successful provider and returns its
+original failure through the Rustls key-exchange entry. The conditional TLS 1.2
+KDF error path, concurrent retirement and provider adoption remain separate.
 The redundant parentheses around dyn ActiveKeyExchange in src/kx.rs are removed
 for a warning-clean local-path build; the trait object and operation are unchanged.
 Its imports also follow the caller's pinned formatter configuration.

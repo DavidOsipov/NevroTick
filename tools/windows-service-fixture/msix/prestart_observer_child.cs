@@ -32,6 +32,113 @@ namespace NevroTick
             }
         }
 
+        // The coordinator keeps this original lease through identity collection
+        // and retirement. Its facts describe the held bytes, pending independent
+        // signature and deployment-window admission.
+        public sealed class ArchiveLease : IDisposable
+        {
+            private readonly PrestartArchiveFacts facts;
+            private readonly Stopwatch clock;
+            private readonly int timeoutMilliseconds;
+            private readonly object gate = new object();
+            private HeldFile file;
+            private bool retired;
+            private bool borrowed;
+
+            private ArchiveLease(HeldFile file, PrestartArchiveFacts facts, Stopwatch clock, int timeoutMilliseconds)
+            {
+                this.file = file;
+                this.facts = facts;
+                this.clock = clock;
+                this.timeoutMilliseconds = timeoutMilliseconds;
+            }
+
+            internal static ArchiveLease Open(string path, long expectedBytes, string expectedSha256,
+                Stopwatch clock, int timeoutMilliseconds)
+            {
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
+                CheckFileExpectation(expectedBytes, expectedSha256, PrestartArchiveFacts.MaximumArchiveBytes, "archive");
+                RequireWindowsX64();
+                CheckLocalPath(path, null);
+                if (!path.EndsWith(".msix", StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException("prestart-observer:archive-path");
+
+                HeldFile file = new HeldFile(path, expectedBytes, expectedSha256);
+                try
+                {
+                    byte[] bytes = file.AdmitArchiveBytes(clock, timeoutMilliseconds);
+                    PrestartArchiveFacts facts = PrestartArchiveFacts.Inspect(bytes, expectedSha256);
+                    file.ConfirmPath();
+                    CheckDeadline(clock, timeoutMilliseconds, "archive");
+                    return new ArchiveLease(file, facts, clock, timeoutMilliseconds);
+                }
+                catch
+                {
+                    file.Dispose();
+                    throw;
+                }
+            }
+
+            internal PrestartArchiveFacts Confirm(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            {
+                lock (gate)
+                    return ConfirmHeld(observedClock, observedTimeoutMilliseconds);
+            }
+
+            private PrestartArchiveFacts ConfirmHeld(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            {
+                if (retired)
+                    throw new InvalidOperationException("prestart-observer:archive-retired");
+                if (!ReferenceEquals(clock, observedClock) || timeoutMilliseconds != observedTimeoutMilliseconds)
+                    throw new InvalidOperationException("prestart-observer:archive-scope");
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
+                file.ConfirmPath();
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
+                return facts;
+            }
+
+            internal void BorrowForChild(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            {
+                lock (gate)
+                {
+                    ConfirmHeld(observedClock, observedTimeoutMilliseconds);
+                    if (borrowed)
+                        throw new InvalidOperationException("prestart-observer:archive-busy");
+                    borrowed = true;
+                }
+            }
+
+            internal void ReturnFromChild()
+            {
+                lock (gate)
+                {
+                    borrowed = false;
+                    if (retired)
+                        Close();
+                }
+            }
+
+            // Withdraw future admission immediately, keeping the native file
+            // open for an existing child until its actual retirement.
+            public void Dispose()
+            {
+                lock (gate)
+                {
+                    retired = true;
+                    if (!borrowed)
+                        Close();
+                }
+            }
+
+            private void Close()
+            {
+                HeldFile owned = file;
+                file = null;
+                if (owned != null)
+                    owned.Dispose();
+            }
+        }
+
         private const string ImageName = "nevrotick-prestart-observer.exe";
         private const long MaxImageBytes = 16 * 1024 * 1024;
         private const long MaxIdentityFileBytes = 2 * 1024 * 1024;
@@ -40,7 +147,6 @@ namespace NevroTick
         private const string IdentityEntryName = "observe_installed_identity.ps1";
         private const string IdentityModuleName = "installed_identity.psm1";
         private const string IdentityHelperName = "prestart_image_path.dll";
-        private const string IdentityPackagePrefix = "NevroTick.S06.ScmFixture_1.0.0.0_x64__";
         private const int MaxImagePath = 512;
         private const int MaxTimeoutMilliseconds = 120000;
         private const int StartupRetirementMilliseconds = 1000;
@@ -74,6 +180,7 @@ namespace NevroTick
         private readonly HeldFile image;
         private readonly HeldFile[] inputs;
         private readonly HeldFile receiptInput;
+        private readonly ArchiveLease archive;
         private readonly PrestartActor actor;
         private readonly Stopwatch clock;
         private readonly int timeoutMilliseconds;
@@ -85,14 +192,16 @@ namespace NevroTick
         private int processId;
         private bool processCreated;
         private bool jobMembershipConfirmed;
+        private bool archiveBorrowed;
         private bool disposed;
 
         private PrestartObserverChild(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
-            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds, ArchiveLease archive)
         {
             this.image = image;
             this.inputs = inputs;
             this.receiptInput = receiptInput;
+            this.archive = archive;
             this.actor = actor;
             this.clock = clock;
             this.timeoutMilliseconds = timeoutMilliseconds;
@@ -100,13 +209,16 @@ namespace NevroTick
 
         public static PrestartObserverChild Start(
             string imagePath, long expectedBytes, string expectedSha256, string selector,
-            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds, string expectedStandardUserSid = null)
         {
+            bool requireStandardUser = false;
             switch (selector)
             {
                 case "scm_observation_tests::native_installed_roles_prestart_observation":
                 case "scm_access_probe::windows::native_installed_roles_prestart_access":
+                    break;
                 case "scm_access_probe::windows::native_standard_user_prestart_change_config_refused":
+                    requireStandardUser = true;
                     break;
                 default:
                     throw new ArgumentException("prestart-observer:selector");
@@ -117,32 +229,51 @@ namespace NevroTick
             RequireWindowsX64();
             CheckLocalPath(imagePath, ImageName);
 
-            var image = new HeldFile(imagePath, expectedBytes, expectedSha256);
+            HeldFile image = new HeldFile(imagePath, expectedBytes, expectedSha256);
             return StartFixed(image, new HeldFile[0], image,
-                " " + selector + ObserverFlags, "\0", actor, clock, timeoutMilliseconds);
+                " " + selector + ObserverFlags, "\0", actor, clock, timeoutMilliseconds,
+                requireStandardUser: requireStandardUser, expectedStandardUserSid: expectedStandardUserSid);
         }
 
+        public static ArchiveLease OpenArchive(string path, long expectedBytes, string expectedSha256,
+            Stopwatch clock, int timeoutMilliseconds)
+        {
+            return ArchiveLease.Open(path, expectedBytes, expectedSha256, clock, timeoutMilliseconds);
+        }
+
+        // The lease stays with the coordinator. The launcher confirms its original
+        // file before creating the child and before reporting the completed capture.
         public static PrestartObserverChild StartIdentity(
             string powershellPath, long expectedBytes, string expectedSha256, string inputDirectory,
             long entryBytes, string entrySha256, long moduleBytes, string moduleSha256,
-            long helperBytes, string helperSha256, Guid runId, string packageFullName, string subjectSid,
-            string signedPackageSha256, long engineBytes, string engineSha256,
-            long brokerBytes, string brokerSha256, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+            long helperBytes, string helperSha256, Guid runId, ArchiveLease archive, string subjectSid,
+            string expectedArchiveSha256, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
         {
             CheckDeadline(clock, timeoutMilliseconds, "launch");
             CheckFileExpectation(expectedBytes, expectedSha256, MaxIdentityFileBytes, "image");
             CheckFileExpectation(entryBytes, entrySha256, MaxIdentityFileBytes, "identity-entry");
             CheckFileExpectation(moduleBytes, moduleSha256, MaxIdentityFileBytes, "identity-module");
             CheckFileExpectation(helperBytes, helperSha256, MaxIdentityHelperBytes, "identity-helper");
-            CheckFileExpectation(engineBytes, engineSha256, MaxIdentityFileBytes, "identity-engine");
-            CheckFileExpectation(brokerBytes, brokerSha256, MaxIdentityFileBytes, "identity-broker");
-            if (!IsDigest(signedPackageSha256))
-                throw new ArgumentException("prestart-observer:identity-package-sha256");
+            PrestartArchiveFacts archiveFacts;
+            try
+            {
+                if (archive == null || !IsDigest(expectedArchiveSha256))
+                    throw new InvalidDataException("prestart-observer:identity-archive-digest");
+                archiveFacts = archive.Confirm(clock, timeoutMilliseconds);
+                if (!string.Equals(archiveFacts.ArchiveSha256, expectedArchiveSha256, StringComparison.Ordinal))
+                    throw new InvalidDataException("prestart-observer:identity-archive-digest");
+            }
+            catch (Exception failure)
+            {
+                // No launch input, job or process has been acquired here.
+                failure.Data["PrestartObserverJobCreated"] = false;
+                failure.Data["PrestartObserverProcessCreated"] = false;
+                failure.Data["PrestartObserverRetired"] = true;
+                failure.Data["PrestartObserverReleased"] = true;
+                throw;
+            }
             if (runId == Guid.Empty)
                 throw new ArgumentException("prestart-observer:identity-run");
-            if (packageFullName == null || packageFullName.Length != IdentityPackagePrefix.Length + 13 ||
-                !Regex.IsMatch(packageFullName, @"\ANevroTick\.S06\.ScmFixture_1\.0\.0\.0_x64__[0-9a-z]{13}\z"))
-                throw new ArgumentException("prestart-observer:identity-package-name");
             if (subjectSid == null || subjectSid.Length > 168 ||
                 !Regex.IsMatch(subjectSid, @"\AS-1-[0-9]{1,10}(?:-[0-9]{1,10}){1,14}\z"))
                 throw new ArgumentException("prestart-observer:identity-subject-sid");
@@ -164,17 +295,17 @@ namespace NevroTick
             CheckLocalPath(helperPath, IdentityHelperName);
 
             string arguments = " -NoLogo -NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File \"" +
-                entryPath + "\" -RunId " + runId.ToString("D") + " -PackageFullName " + packageFullName +
-                " -ExpectedUserSid " + subjectSid + " -SignedPackageSha256 " + signedPackageSha256 +
-                " -EngineBytes " + engineBytes.ToString(CultureInfo.InvariantCulture) +
-                " -EngineSha256 " + engineSha256 +
-                " -BrokerBytes " + brokerBytes.ToString(CultureInfo.InvariantCulture) +
-                " -BrokerSha256 " + brokerSha256;
+                entryPath + "\" -RunId " + runId.ToString("D") + " -PackageFullName " + archiveFacts.PackageFullName +
+                " -ExpectedUserSid " + subjectSid + " -SignedPackageSha256 " + archiveFacts.ArchiveSha256 +
+                " -EngineBytes " + archiveFacts.EngineBytes.ToString(CultureInfo.InvariantCulture) +
+                " -EngineSha256 " + archiveFacts.EngineSha256 +
+                " -BrokerBytes " + archiveFacts.BrokerBytes.ToString(CultureInfo.InvariantCulture) +
+                " -BrokerSha256 " + archiveFacts.BrokerSha256;
             string windowsDirectory = Path.GetDirectoryName(systemDirectory);
             string environmentBlock = "PSModuleAnalysisCachePath=NUL\0PSModulePath=" +
                 powershellDirectory + "\\Modules\0" +
                 "SystemRoot=" + windowsDirectory + "\0windir=" + windowsDirectory + "\0";
-            var module = new HeldFile(modulePath, moduleBytes, moduleSha256);
+            HeldFile module = new HeldFile(modulePath, moduleBytes, moduleSha256);
             HeldFile[] inputs =
             {
                 new HeldFile(entryPath, entryBytes, entrySha256),
@@ -182,18 +313,19 @@ namespace NevroTick
                 new HeldFile(helperPath, helperBytes, helperSha256)
             };
             return StartFixed(new HeldFile(powershellPath, expectedBytes, expectedSha256, resolveSystemSpelling: true), inputs,
-                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds, subjectSid);
+                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds, subjectSid, archive: archive);
         }
 
         private static PrestartObserverChild StartFixed(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
             string arguments, string environmentBlock, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds,
-            string identitySubjectSid = null)
+            string identitySubjectSid = null, bool requireStandardUser = false, string expectedStandardUserSid = null,
+            ArchiveLease archive = null)
         {
             if (actor == null)
                 throw new ArgumentNullException("actor");
             actor.VerifyCurrent(clock, timeoutMilliseconds);
 
-            var child = new PrestartObserverChild(image, inputs, receiptInput, actor, clock, timeoutMilliseconds);
+            var child = new PrestartObserverChild(image, inputs, receiptInput, actor, clock, timeoutMilliseconds, archive);
             try
             {
                 image.Admit(clock, timeoutMilliseconds);
@@ -203,6 +335,13 @@ namespace NevroTick
                 // A mismatched actor must never reach native job or process creation.
                 if (identitySubjectSid != null)
                     actor.VerifyCurrent(clock, timeoutMilliseconds, identitySubjectSid);
+                if (requireStandardUser)
+                    actor.VerifyStandardUser(clock, timeoutMilliseconds, expectedStandardUserSid);
+                if (archive != null)
+                {
+                    archive.BorrowForChild(clock, timeoutMilliseconds);
+                    child.archiveBorrowed = true;
+                }
                 child.CreateChild(arguments, environmentBlock);
                 return child;
             }
@@ -313,12 +452,15 @@ namespace NevroTick
             image.Confirm(clock, timeoutMilliseconds);
             foreach (HeldFile input in inputs)
                 input.Confirm(clock, timeoutMilliseconds);
+            if (archive != null)
+                archive.Confirm(clock, timeoutMilliseconds);
             CheckDeadline(clock, timeoutMilliseconds, "collection");
             return new ReceiptInputDigests(receiptInput.AdmittedSha256, receiptInput.ConfirmedSha256);
         }
 
         private void RetireFailedLaunch(Exception primary)
         {
+            primary.Data["PrestartObserverJobCreated"] = job != null && !job.IsInvalid;
             primary.Data["PrestartObserverProcessCreated"] = processCreated;
             if (processCreated)
             {
@@ -364,6 +506,8 @@ namespace NevroTick
         {
             if (disposed)
                 return;
+            if (archiveBorrowed && processCreated && (!HasExited || !IsJobEmpty))
+                throw new InvalidOperationException("prestart-observer:archive-child-running");
             disposed = true;
 
             // The job is the fail-safe if the caller arrives here without normal retirement.
@@ -376,6 +520,17 @@ namespace NevroTick
                 if (owner == null)
                     continue;
                 try { owner.Dispose(); }
+                catch (Exception failure)
+                {
+                    if (failures == null)
+                        failures = new List<Exception>();
+                    failures.Add(failure);
+                }
+            }
+            if (archiveBorrowed)
+            {
+                archiveBorrowed = false;
+                try { archive.ReturnFromChild(); }
                 catch (Exception failure)
                 {
                     if (failures == null)
@@ -399,8 +554,12 @@ namespace NevroTick
                 timeoutMilliseconds > MaxTimeoutMilliseconds)
                 throw new ArgumentException("prestart-observer:" + phase + "-clock");
             if (clock.ElapsedMilliseconds >= timeoutMilliseconds)
+            {
+                if (phase == "archive")
+                    throw new TimeoutException("prestart-observer:archive-deadline");
                 throw new TimeoutException(phase == "collection" ?
                     "prestart-child:collection-deadline" : "prestart-observer:launch-deadline");
+            }
         }
 
         private static void RequireWindowsX64()
@@ -509,7 +668,13 @@ namespace NevroTick
 
             internal void Admit(Stopwatch clock, int timeoutMilliseconds)
             {
-                CheckDeadline(clock, timeoutMilliseconds, "launch");
+                Open(clock, timeoutMilliseconds, "launch");
+                AdmittedSha256 = CheckBytes(clock, timeoutMilliseconds, "launch");
+            }
+
+            private void Open(Stopwatch clock, int timeoutMilliseconds, string phase)
+            {
+                CheckDeadline(clock, timeoutMilliseconds, phase);
                 stream = OpenImage(Path);
                 // SystemDirectory can spell "system32" differently from the
                 // held OS file. Only the fixed interpreter gets this conversion.
@@ -518,7 +683,27 @@ namespace NevroTick
                     StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
                 admittedIdentity = ReadImageIdentity(stream.SafeFileHandle, Path, comparison, out normalizedPath);
                 Path = normalizedPath;
-                AdmittedSha256 = CheckBytes(clock, timeoutMilliseconds, "launch");
+            }
+
+            internal byte[] AdmitArchiveBytes(Stopwatch clock, int timeoutMilliseconds)
+            {
+                Open(clock, timeoutMilliseconds, "archive");
+                if (stream.Length != expectedBytes)
+                    throw new InvalidDataException("prestart-archive:archive-size");
+                byte[] bytes = new byte[checked((int)expectedBytes)];
+                int offset = 0;
+                while (offset < bytes.Length)
+                {
+                    CheckDeadline(clock, timeoutMilliseconds, "archive");
+                    int count = stream.Read(bytes, offset, Math.Min(bytes.Length - offset, 64 * 1024));
+                    if (count == 0)
+                        throw new InvalidDataException("prestart-archive:archive-size");
+                    offset += count;
+                }
+                if (stream.ReadByte() != -1 || stream.Length != expectedBytes)
+                    throw new InvalidDataException("prestart-archive:archive-size");
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
+                return bytes;
             }
 
             internal void ConfirmPath()

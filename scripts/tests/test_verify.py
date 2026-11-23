@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+from typing import Any
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -2542,7 +2543,8 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertNotIn("run", rows["windows-link"])
         self.assertIn("--bin", rows["windows-link"])
 
-    def windows_release_fixture(self):
+    def windows_release_fixture(self, *, ui_resources: tuple[bytes, bytes] | None = None,
+                                static_imports: dict[str, dict[str, tuple[str, ...]]] | None = None):
         fixture_path = Path(__file__).with_name("test_windows_pe.py")
         spec = importlib.util.spec_from_file_location("windows_export_fixtures", fixture_path)
         fixtures = importlib.util.module_from_spec(spec)
@@ -2551,12 +2553,17 @@ class ExecutionAccountingTests(unittest.TestCase):
         release.mkdir(parents=True)
         output = self.work / "export"
         output.mkdir()
-        artifacts = {
-            "nevrotick-ui.exe": bytes(fixtures._image(
-                2, pdb_path=r"C:\build\nevrotick_ui.pdb", guid=fixtures._UI_GUID)),
+        ui_image: bytearray = (fixtures._image(2, pdb_path=r"C:\build\nevrotick_ui.pdb", guid=fixtures._UI_GUID)
+                               if ui_resources is None else fixtures._ui_resource_image(*ui_resources))
+        observer_image: bytearray = fixtures._image(
+            3, pdb_path="nevrotick_observe.pdb", guid=fixtures._OBSERVE_GUID)
+        if static_imports is not None:
+            ui_image = fixtures.with_import_modules(ui_image, **static_imports["ui"])
+            observer_image = fixtures.with_import_modules(observer_image, **static_imports["observe"])
+        artifacts: dict[str, bytes] = {
+            "nevrotick-ui.exe": bytes(ui_image),
             "nevrotick_ui.pdb": bytes(fixtures._pdb(guid=fixtures._UI_GUID)),
-            "nevrotick-observe.exe": bytes(fixtures._image(
-                3, pdb_path="nevrotick_observe.pdb", guid=fixtures._OBSERVE_GUID)),
+            "nevrotick-observe.exe": bytes(observer_image),
             "nevrotick_observe.pdb": bytes(fixtures._pdb(guid=fixtures._OBSERVE_GUID)),
         }
         for name, payload in artifacts.items():
@@ -2565,7 +2572,14 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def complete_msix_handoff_fixture(self):
         """Publish the maintained export with checked metadata and controlled PE and PNG bytes."""
-        _, output, _ = self.windows_release_fixture()
+        from test_windows_versioninfo import _MANIFEST, version_resource
+
+        modules: dict[str, dict[str, tuple[str, ...]]] = {
+            "ui": {"direct": ("KERNEL32.dll",), "delay": ("USER32.dll",)},
+            "observe": {"direct": ("WS2_32.dll",), "delay": ()},
+        }
+        _, output, _ = self.windows_release_fixture(
+            ui_resources=(version_resource(), _MANIFEST), static_imports=modules)
         output.rmdir()
         generated = self.work / "generated"
         command = [sys.executable, "-I", "-B", str(ROOT / "metadata/pipeline/__main__.py")]
@@ -2592,8 +2606,12 @@ class ExecutionAccountingTests(unittest.TestCase):
                 "image_sha256": digest((release / name).read_bytes()),
                 "generation_sha256": inspection["generation_receipt_sha256"],
                 "strings": {"OriginalFilename": name},
+                "static_imports": {kind: [name.lower() for name in names]
+                                   for kind, names in modules[role].items()},
             }
-        records["ui_versioninfo"]["execution_manifest"] = {"level": "asInvoker", "ui_access": False}
+        records["ui_versioninfo"]["execution_manifest"] = {
+            "level": "asInvoker", "ui_access": False, "sha256": digest(_MANIFEST),
+        }
         VERIFY.export_windows_build(
             self.work, output, source=ROOT,
             report={"msix_assembly_inputs": inspection, "native_windows_execution": "not performed", **records},
@@ -2636,6 +2654,88 @@ class ExecutionAccountingTests(unittest.TestCase):
         for name, row in observed["files"].items():
             content = (output / name).read_bytes()
             self.assertEqual((row["bytes"], row["sha256"]), (len(content), digest(content)))
+
+    def test_msix_handoff_binds_both_static_import_lists_to_the_image(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        original: bytes = receipt.read_bytes()
+        for role, replacement in (
+            ("ui", {"direct": ["user32.dll"], "delay": ["kernel32.dll"]}),
+            ("observe", {"direct": ["kernel32.dll"], "delay": []}),
+            ("observe", {"direct": ["ws2_32.dll"]}),
+            ("ui", None),
+        ):
+            with self.subTest(role=role, replacement=replacement):
+                changed: dict[str, Any] = json.loads(original)
+                changed[role + "_versioninfo"]["static_imports"] = replacement
+                receipt.write_text(json.dumps(changed))
+                result: int
+                stdout: str
+                stderr: str
+                result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+                self.assertEqual((result, stdout), (1, ""))
+                self.assertIn(f"{role} static imports differ from the pinned receipt", stderr)
+        receipt.write_bytes(original)
+        result, stdout, stderr = self.run_msix_handoff(output, digest(original))
+        self.assertEqual((result, stderr), (0, ""))
+        self.assertEqual(json.loads(stdout)["static_imports"], {
+            "ui": {"direct": ["kernel32.dll"], "delay": ["user32.dll"]},
+            "observe": {"direct": ["ws2_32.dll"], "delay": []},
+        })
+
+    def test_msix_handoff_checks_embedded_ui_activation_even_with_matching_image_pins(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        image: Path = output / "nevrotick-ui.exe"
+        original_receipt: bytes = receipt.read_bytes()
+        original_image: bytes = image.read_bytes()
+        good_pin: str = digest(original_receipt)
+        self.assertEqual(self.run_msix_handoff(output, good_pin)[0], 0)
+
+        changes: tuple[tuple[bytes, bytes, str], ...] = (
+            (b'uiAccess="false"', b'uiAccess="true" ', "wrong UI execution manifest structure or settings"),
+            ("nevrotick-ui.exe".encode("utf-16-le"), "nevrotick-xx.exe".encode("utf-16-le"),
+             "UI resources differ from the pinned receipt"),
+        )
+        for expected, replacement, reason in changes:
+            with self.subTest(expected=expected):
+                self.assertEqual(original_image.count(expected), 1)
+                changed_image: bytes = original_image.replace(expected, replacement)
+                self.assertEqual(len(changed_image), len(original_image))
+                image.write_bytes(changed_image)
+                report: dict[str, Any] = json.loads(original_receipt)
+                report["artifact"]["sha256"] = digest(changed_image)
+                report["ui_versioninfo"]["image_sha256"] = digest(changed_image)
+                receipt.write_text(json.dumps(report))
+                result: int
+                stdout: str
+                stderr: str
+                result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+                self.assertEqual((result, stdout), (1, ""))
+                self.assertIn(reason, stderr)
+        image.write_bytes(original_image)
+        receipt.write_bytes(original_receipt)
+        self.assertEqual(self.run_msix_handoff(output, good_pin)[0], 0)
+
+    def test_msix_handoff_reconciles_embedded_ui_manifest_with_the_full_claim(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        original: bytes = receipt.read_bytes()
+        for field, value in (("sha256", "0" * 64), ("ui_access", 0)):
+            with self.subTest(field=field):
+                report: dict[str, Any] = json.loads(original)
+                report["ui_versioninfo"]["execution_manifest"][field] = value
+                receipt.write_text(json.dumps(report))
+                result: int
+                stdout: str
+                stderr: str
+                result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+                self.assertEqual((result, stdout), (1, ""))
+                self.assertIn("UI resources differ from the pinned receipt", stderr)
+        self.assertEqual((output / "nevrotick-ui.exe").read_bytes(),
+                         (self.work / "target/x86_64-pc-windows-msvc/release/nevrotick-ui.exe").read_bytes())
+        receipt.write_bytes(original)
+        self.assertEqual(self.run_msix_handoff(output, digest(original))[0], 0)
 
     def test_msix_handoff_refuses_wrong_pin_swapped_bytes_private_leaks_and_role_substitution(self):
         output = self.complete_msix_handoff_fixture()

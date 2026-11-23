@@ -423,6 +423,7 @@ dependencies = [
  "rustls-cng-crypto",
  "rustls-pki-types",
  "rustls-platform-verifier",
+ "windows-platform-native",
  "zeroize",
 ]
 

@@ -1241,8 +1241,51 @@ schedule execution while a hold applies.
 | **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
 
 Keep the [S0.6/W11 service and direct-package handoff](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
-independent of later production signer selection. Optional storage and packet
-adapters, later SOCKS and post-V1 formal work retain their separate dispositions.
+independent of later production signer selection. The [pre-start ordinary-user
+selector](../../tasks/windows11-integration.md#bind-the-pre-start-ordinary-user-selector-to-its-actor--23-november-2026)
+now rejects a matching administrator token before launch. An independently
+admitted ordinary account and the signed installed window are still needed.
+The [provisioning access selector](../../tasks/windows11-integration.md#retain-both-original-scm-status-handles-through-pre-start-access)
+keeps both original status handles through the full access sequence, final
+observations and retirement. The installed window still owns continuous
+quiescence and the effective actor and package checks. The [native archive
+reader](../../tasks/windows11-integration.md#read-package-identity-and-both-service-members-from-one-msix-snapshot)
+now derives the package full name and both service-member hashes from the
+same independently pinned bytes. The [owned identity launch](../../tasks/windows11-integration.md#bind-the-owned-identity-child-to-one-inspected-msix--23-november-2026)
+supplies all child package arguments from those same facts and refuses a
+crossed carrier pin before creation. The [held archive lease](../../tasks/windows11-integration.md#hold-the-inspected-msix-archive-through-identity-retirement--23-november-2026)
+keeps that carrier through actual child retirement, including early caller
+disposal. Bind a qualified signature observation to that same archive before
+installed admission. Optional storage and packet
+adapters, later SOCKS and post-V1 formal work retain their separate
+dispositions.
+
+The [earlier Main-based laboratory pair](../../tasks/engine-transport-pilot.md#rebind-the-laboratory-timing-pair-to-main--23-november-2026)
+passed its offline Windows exchange and established relative ordering on
+one shared clock. The [timing pair after the CNG changes](../../tasks/engine-transport-pilot.md#verify-the-protected-timing-pair-with-current-cng-custody--23-november-2026)
+passed its cross-builds and static paired reader. The subsequent
+[managed observer checkpoint](../../tasks/engine-transport-pilot.md#keep-managed-power-notifications-armed-through-collection--23-november-2026)
+keeps delivery armed through collection. The
+[serial worker checkpoint](../../tasks/engine-transport-pilot.md#bind-serial-worker-collection-to-the-submitted-job--23-november-2026)
+binds each join and take to its actual submission. The
+[two-job facade](../../tasks/engine-transport-pilot.md#keep-one-native-acquisition-owner-across-two-protected-jobs--23-november-2026)
+keeps one provider and observer across reissue. The shared coordinator
+passed ordered loopback controls. The external PE linked, and the PDB
+layout gate refused export at reserved MSF blocks. The
+[two-peer witness preparation](../../tasks/engine-transport-pilot.md#prepare-the-two-peer-windows-witness-and-read-back-the-linker-diagnosis--23-november-2026)
+checks a private diagnostic symbol copy and the host receipt reader. The
+[explicit larger-page facade](../../tasks/engine-transport-pilot.md#export-the-two-peer-facade-with-a-fixed-larger-symbol-layout--23-november-2026)
+now exports four verified raw pairs. Rebuild the matching peer from the same
+current graph, reconcile the paired reader and run the admitted two-peer
+Windows case.
+The [joined protected receipt](../../tasks/engine-transport-pilot.md#retain-the-original-chart-on-joined-protected-receipts--23-november-2026)
+now retains its original invocation chart with an exact nominal midpoint.
+The
+[independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+still needs traceable calibration and event-placement evidence before the
+joined successor can enter production history. The
+[Engine process observation](../../tasks/engine-transport-pilot.md#retain-the-engine-process-presentation-around-each-joined-job--23-november-2026)
+now preserves the raw presentation reads for each normally joined successor.
 
 **Protected capture and retained SCM process — 22 November 2026.** The
 [W11-W01 capture checkpoint](../../tasks/engine-transport-pilot.md#retain-windows-clock-coordinates-through-the-protected-receipt)
@@ -1305,7 +1348,11 @@ now refuses a change between the two observations. The stable native
 read, scripted failure controls and selected GNU line command passed.
 The [retained fixture client](../../tasks/windows11-integration.md#retain-the-fixture-client-through-the-first-broker-reply--23-november-2026)
 now binds the original read and reply to its retained process and token
-and passes the protected same-pipe Windows cases. Continue with the
+and passes the protected same-pipe Windows cases. The [distinct-process
+exchange](../../tasks/windows11-integration.md#exercise-a-distinct-process-through-the-first-broker-exchange--23-november-2026)
+confirms the retained child receives the correlated reply and a different
+live process with equal actor identity is refused without reply bytes.
+Continue with the
 supported pre-start bridge, installed-role identity and effective
 Engine grants before enabling installed send or reply admission. The
 [pre-start observation coordinator](../../tasks/windows11-integration.md#supervise-the-fixed-pre-start-observation-sequence--23-november-2026)
@@ -2532,8 +2579,13 @@ the distinction between local wall coordinates and independently trusted
 peer date/era evidence.
 The [broker adjustment continuation](../../tasks/windows11-integration.md#withdraw-the-broker-observation-when-raw-adjustment-changes)
 withdraws the current observation when either raw adjustment word or its
-mode differs across successive captures. The physical reference and
-full-exchange validity still gate positive Engine-to-Core admission.
+mode differs across successive captures. The
+[failed-getter guard](../../tasks/windows11-integration.md#withdraw-the-sampled-broker-revision-on-a-failed-getter--23-november-2026)
+withdraws the previously observed raw revision when a required read fails.
+The [joined protected receipt](../../tasks/engine-transport-pilot.md#retain-authenticated-peer-quality-claims-on-joined-receipts--23-november-2026)
+retains the original peer quality claims for the future receiving check.
+The physical reference and full-exchange validity still gate positive
+Engine-to-Core admission.
 The earlier four generated fixture replay outcomes retain their own
 candidate; the current selected GNU ledger disposition is recorded above.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)

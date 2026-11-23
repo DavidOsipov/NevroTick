@@ -21,7 +21,9 @@ use zeroize::Zeroizing;
 
 use super::{
     Budget, CLIENT_EXIT_MARKER, ClientExit, Config, Failed, Failure, Flow, Mode, OFFER, RESPONSE,
-    admit_offer, protected_response, protected_udp::ProtectedUdp, ready_line, resolve,
+    admit_offer, protected_response,
+    protected_udp::{CompletedExchange, ProtectedUdp},
+    ready_line, resolve,
 };
 
 /// Maximum admitted public certificate or private PKCS8 extent.
@@ -437,7 +439,7 @@ fn close(stream: &mut StreamOwned<ServerConnection, BudgetIo>) -> Result<(), Fai
 ///
 /// # Errors
 /// Preserve input, setup, TLS, deadline and selected exchange failures.
-fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
+fn serve_owned(config: Config, origin: Instant) -> Result<CompletedExchange, Failed> {
     let Config {
         certificate,
         key,
@@ -536,7 +538,7 @@ fn finish_exchange(
     udp: Option<ProtectedUdp>,
     mode: Mode,
     acknowledgement: Option<&Path>,
-) -> Result<(), Failed> {
+) -> Result<CompletedExchange, Failed> {
     let mut offer: [u8; OFFER.len()] = [0; OFFER.len()];
     let received: io::Result<()> = stream.read_exact(&mut offer);
     stream.sock.settle(received)?;
@@ -560,7 +562,8 @@ fn finish_exchange(
     match udp {
         None => {
             drop((c2s, s2c));
-            write_and_close(&mut stream, &RESPONSE)
+            write_and_close(&mut stream, &RESPONSE)?;
+            Ok(CompletedExchange::Untimed)
         }
         Some(socket) => {
             let response: [u8; 38] = protected_response(socket.port());
@@ -588,14 +591,14 @@ fn finish_exchange(
                     )?;
                 }
                 (Mode::ProtectedSuccessorObserveExit(reply), Some(path)) => {
-                    socket.exchange_successor_observe_exit(
+                    return Ok(socket.exchange_successor_observe_exit(
                         &budget,
                         &mut c2s,
                         &mut s2c,
                         fill,
                         || read_exit_acknowledgement(path),
                         reply,
-                    )?;
+                    )?);
                 }
                 (Mode::ProtectedSuccessorDeny, None) => {
                     socket.exchange_successor_deny(&budget, &c2s, &s2c, fill)?;
@@ -603,7 +606,7 @@ fn finish_exchange(
                 (Mode::Protected, None) => socket.exchange(&budget, &c2s, &s2c, fill)?,
                 _ => return Err(Failure::Arguments.into()),
             }
-            Ok(())
+            Ok(CompletedExchange::Untimed)
         }
     }
 }
@@ -628,12 +631,12 @@ fn write_and_close(
 /// # Errors
 /// Preserve setup/operation refusal; nominal success must still be within the
 /// original lifetime after shutdown returns. Native close status is not exposed.
-pub(super) fn serve(config: Config) -> Result<(), Failed> {
+pub(super) fn serve(config: Config) -> Result<CompletedExchange, Failed> {
     let origin = Instant::now();
     let shutdown = ShutdownHandle {};
-    let result = serve_owned(config, origin);
+    let result: Result<CompletedExchange, Failed> = serve_owned(config, origin);
     drop(shutdown);
-    result?;
+    let completed: CompletedExchange = result?;
     Budget::new(origin)?.poll(Instant::now())?;
-    Ok(())
+    Ok(completed)
 }

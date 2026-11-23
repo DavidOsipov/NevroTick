@@ -30,6 +30,8 @@ mod association;
 mod datagram;
 #[cfg(any(windows, test))]
 mod job;
+#[cfg(any(windows, test))]
+mod power_target;
 mod process;
 mod profile;
 #[cfg(any(windows, test))]
@@ -1243,6 +1245,90 @@ fn run_with_power_observer(config: Config) -> Result<ObservedInvocation, Observe
     )
 }
 
+/// One checked lease and reservation for the same prepared invocation.
+#[cfg(any(windows, test))]
+struct ManagedObservedJob<'target> {
+    /// Original prepared Control and actual worker reservation.
+    reservation: job::SubmissionReservation,
+    /// Keeps the power delivery target bound until collection finishes.
+    active: power_target::ActivePower<'target>,
+    /// The exact Stop handle for an unconfirmed collection.
+    stop: StopHandle,
+}
+
+/// Use the observer's epoch across original Control preparation and reservation.
+/// # Errors
+/// Preserve caller, deadline, slot, source and power binding refusals before spawn.
+#[cfg(any(windows, test))]
+fn prepare_managed_observed<'target>(
+    config: Config,
+    cutoff: Option<Instant>,
+    worker: &job::ManagedWorker,
+    target: &'target power_target::PowerTarget,
+) -> Result<ManagedObservedJob<'target>, ObserverStartError> {
+    let power_refusal =
+        |failure: Failed| ObserverStartError::Preparation(RunFailed::Preparation(failure));
+    let attempt: power_target::PreparedPower<'_> = target
+        .prepare()
+        .map_err(Failed::from)
+        .map_err(power_refusal)?;
+    let prepared: job::PreparedInvocation =
+        prepare_synchronous(config, cutoff).map_err(ObserverStartError::Preparation)?;
+    let reservation: job::SubmissionReservation =
+        worker
+            .try_reserve(prepared)
+            .map_err(|error: job::SubmitError| {
+                ObserverStartError::Preparation(RunFailed::Submission(error))
+            })?;
+    let (active, stop): (power_target::ActivePower<'_>, StopHandle) =
+        attempt.activate(&reservation).map_err(power_refusal)?;
+    Ok(ManagedObservedJob {
+        reservation,
+        active,
+        stop,
+    })
+}
+
+/// One exact current-process presentation query outcome.
+#[cfg(windows)]
+type ProcessLeapPresentationRead = Result<
+    windows_platform_native::LeapPresentation,
+    windows_platform_native::LeapPresentationError,
+>;
+
+/// Enclose the original submission and normal joined take in process-local reads.
+/// Callers retain the original power owner across this operation. An alternate
+/// backend can omit the reads. The observations grant no mapping or continuity.
+/// # Errors
+/// Preserve outer submission, collection and abnormal-join refusals without a closing read.
+/// A normally joined successor retains both reads alongside its own terminal outcome.
+#[cfg(any(windows, test))]
+fn receive_managed_submission(
+    submit: impl FnOnce() -> Result<job::SubmittedJob, job::SubmitError>,
+    #[cfg(windows)] read_presentation: &mut Option<&mut dyn FnMut() -> ProcessLeapPresentationRead>,
+) -> Result<datagram::ReceivedInvocation, RunFailed> {
+    #[cfg(windows)]
+    let finish_presentation = read_presentation.as_mut().map(|read| {
+        let before: ProcessLeapPresentationRead = read();
+        move || [before, read()]
+    });
+    let joined: job::ReceivingOutcome = submit()
+        .map_err(RunFailed::Submission)?
+        .receive()
+        .map_err(RunFailed::Collection)?;
+    let received: datagram::ReceivedInvocation = datagram::receive_joined(joined, None)?;
+    #[cfg(windows)]
+    let received: datagram::ReceivedInvocation = match (received, finish_presentation) {
+        (datagram::ReceivedInvocation::ManagedSuccessor(mut result), Some(mut finish)) => {
+            let reads: [ProcessLeapPresentationRead; 2] = finish();
+            result.retain_process_leap_presentation(reads);
+            datagram::ReceivedInvocation::ManagedSuccessor(result)
+        }
+        (other, _) => other,
+    };
+    Ok(received)
+}
+
 /// Select the explicit bounded successor before any Native invocation effects.
 /// # Errors
 /// Preserve the same checked preparation and registration refusals as the probe.
@@ -1251,13 +1337,42 @@ fn run_managed_successor_with_power_observer(
     config: Config,
     owner_cutoff: Option<Instant>,
 ) -> Result<ObservedInvocation, ObserverStartError> {
-    run_observing_with_cutoff(
-        config,
-        owner_cutoff,
-        &PROCESS_WORKER,
-        subscribe_power_observer,
-        job::SubmissionReservation::try_submit_successor,
-    )
+    let worker: job::ManagedWorker = job::ManagedWorker::new(&PROCESS_WORKER);
+    let target: Arc<power_target::PowerTarget> = Arc::new(power_target::PowerTarget::new());
+    let ManagedObservedJob {
+        reservation,
+        active,
+        stop,
+    } = prepare_managed_observed(config, owner_cutoff, &worker, &target)?;
+    let close = subscribe_managed_power(Arc::clone(&target))
+        .map_err(|()| ObserverStartError::Registration)?;
+    let result: Result<datagram::ReceivedInvocation, RunFailed> = receive_managed_submission(
+        || {
+            let submitted: Result<job::SubmittedJob, job::SubmitError> =
+                reservation.try_submit_successor();
+            // This facade owns one job. The slot retains provider custody until actual join.
+            drop(worker);
+            submitted
+        },
+        &mut Some(&mut windows_platform_native::read_leap_presentation),
+    );
+    Ok(finish_observing(result, &stop, move || {
+        drop(active);
+        close()
+    }))
+}
+
+/// Register one persistent native callback for the target's owning scope.
+/// # Errors
+/// Refuse unavailable registration before any worker runs.
+#[cfg(windows)]
+fn subscribe_managed_power(
+    target: Arc<power_target::PowerTarget>,
+) -> Result<impl FnOnce() -> Result<(), NonZeroU32>, ()> {
+    let watch: ResumeWatch =
+        ResumeWatch::subscribe_persistent(move || target.deliver().map_err(|_| ()))
+            .map_err(|_| ())?;
+    Ok(move || watch.close().map_err(ResumeUnregistrationError::code))
 }
 
 /// Subscribe the actual Windows observer to this invocation's original Stop scope.
@@ -1357,16 +1472,26 @@ fn run_reserved_observing<Close: FnOnce() -> Result<(), NonZeroU32>>(
     let result: Result<datagram::ReceivedInvocation, RunFailed> = submit(reservation)
         .map_err(RunFailed::Submission)
         .and_then(|()| receive_submitted(slot, None));
+    Ok(finish_observing(result, &stop, close))
+}
+
+/// Keep actual collection refusal and independent observer teardown together.
+#[cfg(any(windows, test))]
+fn finish_observing(
+    result: Result<datagram::ReceivedInvocation, RunFailed>,
+    stop: &StopHandle,
+    close: impl FnOnce() -> Result<(), NonZeroU32>,
+) -> ObservedInvocation {
     let stop_failed: bool =
         matches!(&result, Err(RunFailed::Collection(_))) && stop.request_stop().is_err();
     let unregistration_error: Option<NonZeroU32> = close().err();
-    Ok(ObservedInvocation {
+    ObservedInvocation {
         result,
         cleanup: PowerObserverCleanup {
             stop_failed,
             unregistration_error,
         },
-    })
+    }
 }
 
 /// Own synchronous preparation, real submission, collection and result projection.

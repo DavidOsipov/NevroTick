@@ -1,7 +1,7 @@
 //! One-connection Windows TLS/KE laboratory peer.
 //!
 //! Only an independently admitted guest job may execute this fixture. The
-//! explicit protected mode exchanges one authenticated IPv4 loopback datagram.
+//! protected modes perform the admitted authenticated IPv4 loopback exchange.
 
 #![forbid(unsafe_code)]
 

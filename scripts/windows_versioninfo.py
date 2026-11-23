@@ -1,4 +1,4 @@
-"""Read selected Windows metadata from bounded llvm-readobj output.
+"""Read selected Windows metadata from bounded resource bytes or llvm-readobj output.
 
 The caller owns the executable, reader and report identities and compares the
 decoded values with its independently reviewed metadata expectations.
@@ -293,6 +293,13 @@ def decode_ui_resources(report: str) -> tuple[VersionInfo, UiExecutionManifest]:
     if not isinstance(report, str) or len(report) > _MAX_UI_REPORT_CHARS:
         raise ValueError("invalid or oversized llvm-readobj UI resource report")
     version_data, manifest_data = _resource_payloads(report, _GUI, ui_manifest=True)
+    return decode_ui_resource_payloads(version_data, manifest_data)
+
+
+def decode_ui_resource_payloads(version_data: bytes, manifest_data: bytes) -> tuple[VersionInfo, UiExecutionManifest]:
+    """Decode the two bounded payloads selected by the calling resource reader."""
+    if not (0 < len(version_data) <= _MAX_RESOURCE_BYTES and 0 < len(manifest_data) <= _MAX_RESOURCE_BYTES):
+        raise ValueError("invalid or oversized UI resource payload")
     return _decode_versioninfo(version_data), _decode_ui_execution_manifest(manifest_data)
 
 

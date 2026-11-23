@@ -27,20 +27,31 @@ pub mod probe;
 /// Where possible this crate aims to use the shared providers described in
 /// <https://learn.microsoft.com/en-us/windows/win32/seccng/cng-algorithm-pseudo-handles>.
 ///
-/// This should be created once at the start of the program and dropped at the end.
+/// Create one owner at program start and drop it after all provider work and
+/// dependent handles have retired. Dropping it never initializes a provider.
 pub struct ShutdownHandle {}
 
 impl Drop for ShutdownHandle {
     fn drop(&mut self) {
         #[cfg(feature = "fixture-init-probe")]
         probe::mark_shutdown_entry();
+        // SAFETY: The sole owner runs after all provider work and dependent
+        // handles have retired. Each populated cache owns one successful open.
         unsafe {
-            #[cfg(not(feature = "fixture-init-probe"))]
-            ecdh_x25519().free();
-            #[cfg(feature = "fixture-init-probe")]
-            probe::close_shutdown(ecdh_x25519());
+            if let Some(handle) = X25519_PROVIDER.get() {
+                #[cfg(not(feature = "fixture-init-probe"))]
+                {
+                    let mut provider: BCRYPT_ALG_HANDLE = handle.0;
+                    provider.free();
+                }
+                #[cfg(feature = "fixture-init-probe")]
+                probe::close_shutdown(handle.0);
+            }
             #[cfg(feature = "tls12")]
-            tls12_kdf().free();
+            if let Some(handle) = TLS12_KDF_PROVIDER.get() {
+                let mut provider: BCRYPT_ALG_HANDLE = handle.0;
+                provider.free();
+            }
         }
     }
 }
@@ -49,28 +60,32 @@ struct Handle(BCRYPT_ALG_HANDLE);
 unsafe impl Send for Handle {}
 unsafe impl Sync for Handle {}
 
-pub(crate) fn ecdh_x25519() -> BCRYPT_ALG_HANDLE {
+static X25519_PROVIDER: OnceCell<Handle> = OnceCell::new();
+#[cfg(feature = "tls12")]
+static TLS12_KDF_PROVIDER: OnceCell<Handle> = OnceCell::new();
+
+/// Return the initialized X25519 provider, publishing only a successful open.
+///
+/// The original initialization error remains available to the caller. A failed
+/// attempt leaves the cell empty and keeps cleanup with the initializer.
+pub(crate) fn ecdh_x25519() -> Result<BCRYPT_ALG_HANDLE, Error> {
     #[cfg(feature = "fixture-init-probe")]
     probe::mark_cache_access();
-    static ALG_HANDLE: OnceCell<Handle> = OnceCell::new();
-    ALG_HANDLE
-        .get_or_init(|| {
-            Handle(
-                load_algorithm(
-                    BCRYPT_ECDH_ALGORITHM,
-                    BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS::default(),
-                    Some((BCRYPT_ECC_CURVE_NAME, BCRYPT_ECC_CURVE_25519)),
-                )
-                .unwrap(),
+    X25519_PROVIDER
+        .get_or_try_init(|| {
+            load_algorithm(
+                BCRYPT_ECDH_ALGORITHM,
+                BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS::default(),
+                Some((BCRYPT_ECC_CURVE_NAME, BCRYPT_ECC_CURVE_25519)),
             )
+            .map(Handle)
         })
-        .0
+        .map(|handle| handle.0)
 }
 
 #[cfg(feature = "tls12")]
 pub(crate) fn tls12_kdf() -> BCRYPT_ALG_HANDLE {
-    static ALG_HANDLE: OnceCell<Handle> = OnceCell::new();
-    ALG_HANDLE
+    TLS12_KDF_PROVIDER
         .get_or_init(|| {
             Handle(
                 load_algorithm(

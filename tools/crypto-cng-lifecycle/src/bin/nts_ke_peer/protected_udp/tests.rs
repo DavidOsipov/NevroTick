@@ -518,7 +518,7 @@ fn protected_udp_ordinary_successors_observe_exact_expected_replies() -> TestRes
                 let mut s2c: Zeroizing<[u8; 32]> = Zeroizing::new(S2C);
                 let mut nonces: std::array::IntoIter<[u8; 16], 2> =
                     [SERVER_NONCE, terminal_nonce].into_iter();
-                server
+                let completed: super::CompletedExchange = server
                     .exchange_successor_observe_exit(
                         &budget,
                         &mut c2s,
@@ -537,6 +537,7 @@ fn protected_udp_ordinary_successors_observe_exact_expected_replies() -> TestRes
                         reply_mode,
                     )
                     .map_err(|_| "peer-exchange")?;
+                assert!(matches!(completed, super::CompletedExchange::Untimed));
                 assert_eq!(*c2s, [0; 32]);
                 assert_eq!(*s2c, [0; 32]);
                 assert_eq!(nonces.next(), None);
@@ -627,24 +628,26 @@ fn protected_udp_observation_checks_queue_again_after_client_exit() -> TestResul
         let mut c2s: Zeroizing<[u8; 32]> = Zeroizing::new(C2S);
         let mut s2c: Zeroizing<[u8; 32]> = Zeroizing::new(S2C);
         let mut nonces: std::array::IntoIter<[u8; 16], 2> = [SERVER_NONCE, [0x77; 16]].into_iter();
-        let result: Result<(), Failure> = server.exchange_successor_observe_exit(
-            &budget,
-            &mut c2s,
-            &mut s2c,
-            |nonce| {
-                *nonce = nonces.next().ok_or(Failure::Entropy)?;
-                Ok(())
-            },
-            || {
-                did_read.set(true);
-                if let Some(bytes) = extra {
-                    send(&client, bytes, endpoint)
-                        .map_err(|_| Failure::Io(ErrorKind::WriteZero))?;
-                }
-                ClientExit::admit(b"client-exited=1\n").map(Some)
-            },
-            SuccessorReply::Deny,
-        );
+        let result: Result<(), Failure> = server
+            .exchange_successor_observe_exit(
+                &budget,
+                &mut c2s,
+                &mut s2c,
+                |nonce| {
+                    *nonce = nonces.next().ok_or(Failure::Entropy)?;
+                    Ok(())
+                },
+                || {
+                    did_read.set(true);
+                    if let Some(bytes) = extra {
+                        send(&client, bytes, endpoint)
+                            .map_err(|_| Failure::Io(ErrorKind::WriteZero))?;
+                    }
+                    ClientExit::admit(b"client-exited=1\n").map(Some)
+                },
+                SuccessorReply::Deny,
+            )
+            .map(|_: super::CompletedExchange| ());
         assert!(did_read.get());
         assert_eq!(*c2s, [0_u8; 32]);
         assert_eq!(*s2c, [0_u8; 32]);

@@ -45,6 +45,16 @@ Run the payload publication and unsigned package reader regressions with
 The reader tests build inert archives and check the CLI's digest, payload, ZIP,
 block-map and XML decisions without installing a package.
 
+The Windows [archive reader](msix/prestart_archive_facts.cs) measures the
+package full name and the lengths and SHA-256 digests of both fixed service
+members. Supply bounded bytes from the admitted pack or signed-artifact
+readback and its independently expected archive digest. Inspect checks a
+private snapshot and gives those same bytes to the Windows Appx reader.
+The [native controls](msix/test_prestart_archive_facts.ps1) use two previously
+checked unsigned packages with the same manifest identity and different
+service bytes. Signature and signer verification remain separate from
+these archive observations.
+
 For the held §7.5 pre-start probe, the
 [installed identity entry](msix/observe_installed_identity.ps1) uses the
 [companion module](msix/installed_identity.psm1) for the two fixed laboratory
@@ -60,7 +70,15 @@ privately. [Identity controls](msix/test_installed_identity.ps1)
 
 For owned capture, `Invoke-PrestartIdentity` in
 [the child module](msix/prestart_child.psm1) uses the same suspended process,
-token, deadline, job, and retirement checks as the fixed observers. Precompile
+token, deadline, job, and retirement checks as the fixed observers. Open the
+archive with `Open-PrestartArchive` using its independently admitted length
+and SHA-256. Pass the returned `Archive` lease, the original clock and timeout,
+and the independently admitted carrier digest as `ExpectedArchiveSha256`.
+The launcher derives both role arguments and the child identity from the
+held archive. Use the unreset clock and keep the lease through collection
+and actual retirement. Early disposal revokes the capture and the child
+retains the file until retirement. Signature, role authorization and
+deployment-window checks still belong to the caller. Precompile
 [`prestart_image_path.cs`](msix/prestart_image_path.cs) as the x64 .NET
 Framework library `prestart_image_path.dll` before launching the identity
 child. Supply the approved original System32 PowerShell path and the lengths
@@ -99,6 +117,11 @@ observing that context. Role eligibility remains a separate input to the
 installed window.
 Supply the approved `nevrotick-prestart-observer.exe`, its exact length and
 SHA-256, the selector, and the original running Stopwatch and deadline.
+For the standard-user denial selector, also supply `-ExpectedStandardUserSid`
+from the window owner's independent account admission. Before creating a job
+or process, the launcher requires that SID to match the current primary token,
+with default elevation type, no elevation, and no Administrators SID in the
+token groups, including deny-only membership.
 The launcher retains the executable and observes the original suspended
 process in its one-child job before resuming it. It compares the observed
 primary-token attributes at that boundary and keeps the query-only child

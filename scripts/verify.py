@@ -24,7 +24,12 @@ import sys
 import tempfile
 import time
 import tomllib
+from types import ModuleType
+from typing import TYPE_CHECKING, Any
 import xml.etree.ElementTree as ET
+
+if TYPE_CHECKING:
+    from windows_versioninfo import UiExecutionManifest, VersionInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("product_environment", ROOT / "scripts/check-environment.py")
@@ -1456,6 +1461,17 @@ def windows_pe_reader(source: Path):
     return reader
 
 
+def windows_versioninfo_reader(source: Path) -> ModuleType:
+    """Load the resource payload decoder from the selected source."""
+    spec: importlib.machinery.ModuleSpec | None = importlib.util.spec_from_file_location(
+        "product_versioninfo", source / "scripts/windows_versioninfo.py")
+    if spec is None or spec.loader is None:
+        raise ENV.Incomplete("Windows resource decoder is unavailable.")
+    reader: ModuleType = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reader)
+    return reader
+
+
 def export_windows_artifacts(work: Path, output: Path, *, source: Path,
                              ui_sha256: str | None = None, observe_sha256: str | None = None,
                              final_output: Path | None = None) -> dict:
@@ -2567,14 +2583,44 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
 
     verified_digests = {"verification.json": receipt_sha256}
     pe = windows_pe_reader(source)
-    for image, symbol, subsystem, claimed in (
-        (ui, ui_symbols, "gui", images), (observer, observer_symbols, "console", images["engine"])
+    observed_ui: dict[str, object] = {}
+    observed_imports: dict[str, dict[str, list[str]]] = {}
+    for role, image, symbol, subsystem, claimed in (
+        ("ui", ui, ui_symbols, "gui", images),
+        ("observe", observer, observer_symbols, "console", images["engine"]),
     ):
-        image_record, _, symbols_record = pe.read_export_pair(anchor / image, anchor / symbol, subsystem=subsystem)
+        image_record: tuple[bytes, str]
+        symbols_record: dict[str, str | int]
+        image_record, _, symbols_record = pe.read_export_pair(
+            anchor / image, anchor / symbol, subsystem=subsystem)
         claimed_symbols = {key: claimed["symbols"][key] for key in ("sha256", "guid", "age")}
         if (image_record[1] != claimed["sha256"] or type(claimed_symbols["age"]) is not int
                 or symbols_record != claimed_symbols):
             raise ENV.Incomplete("Windows MSIX handoff PE or PDB differs from its pinned receipt.")
+        try:
+            imports: dict[str, list[str]] = pe.static_import_modules(image_record[0], subsystem=subsystem)
+        except ValueError as error:
+            raise ENV.Incomplete(f"Windows MSIX handoff {role} static import readback refused: {error}") from error
+        claimed_imports: object = report[role + "_versioninfo"].get("static_imports")
+        if imports != claimed_imports:
+            raise ENV.Incomplete(f"Windows MSIX handoff {role} static imports differ from the pinned receipt.")
+        observed_imports[role] = imports
+        if image == ui:
+            reader: ModuleType = windows_versioninfo_reader(source)
+            version: VersionInfo
+            manifest: UiExecutionManifest
+            try:
+                version, manifest = reader.decode_ui_resource_payloads(*pe.ui_resource_payloads(image_record[0]))
+            except ValueError as error:
+                raise ENV.Incomplete(f"Windows MSIX handoff UI resource readback refused: {error}") from error
+            claimed_ui: dict[str, Any] = report["ui_versioninfo"]
+            claimed_manifest: object = claimed_ui["execution_manifest"]
+            if (type(claimed_manifest) is not dict or claimed_manifest != manifest
+                    or claimed_manifest["ui_access"] is not manifest["ui_access"]
+                    or version["strings"].get("OriginalFilename") != claimed_ui["strings"]["OriginalFilename"]):
+                raise ENV.Incomplete("Windows MSIX handoff UI resources differ from the pinned receipt.")
+            observed_ui = {"generation_sha256": claimed_ui["generation_sha256"],
+                           "strings": version["strings"], "execution_manifest": manifest}
         verified_digests[image] = image_record[1]
         verified_digests[symbol] = symbols_record["sha256"]
 
@@ -2592,8 +2638,7 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
     source_receipt = authoring["receipt.json"]
     check_msix_inspection(inspection, decode_msix_authoring(source_receipt), generation, source=source)
     document = decode_msix_authoring(authoring[MSIX_AUTHORING_INPUT])
-    activation = check_msix_ui_activation(document, report["ui_versioninfo"], generation,
-                                          require_base_artwork=True)
+    activation = check_msix_ui_activation(document, observed_ui, generation, require_base_artwork=True)
     if (activation != claimed_activation or document["identity"] is not None
             or document["complete_manifest"] is not False or document["distribution_route"] != "direct-msix"):
         raise ENV.Incomplete("Windows MSIX handoff activation or assembly status differs.")
@@ -2610,6 +2655,7 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
         "generation_receipt_sha256": generation, "package_identity": None,
         "roles": inspection["roles"], "pending": inspection["pending"],
         "ui_application_id": activation["application_id"],
+        "static_imports": observed_imports,
         "product_dependency_and_resource_closure": "not-admitted",
         "product_platform_and_activation_profile": "not-admitted",
         "files": {name: {"disposition": value, "bytes": initial[name][4],
@@ -2668,10 +2714,7 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
     binaries = {"ui": PACKAGE, "observe": "nevrotick-observe"}
     if role not in binaries:
         raise ENV.Incomplete("Unsupported Windows version resource role.")
-    reader_path = source / "scripts/windows_versioninfo.py"
-    spec = importlib.util.spec_from_file_location("product_versioninfo", reader_path)
-    reader = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(reader)
+    reader: ModuleType = windows_versioninfo_reader(source)
     relative = f"target/{ENV.WINDOWS_TARGET}/release/{binaries[role]}.exe"
     binary = work / relative
     pe = windows_pe_reader(source)

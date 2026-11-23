@@ -124,15 +124,23 @@ function Wait-PrestartObserverRetirement {
 
 $script:PrestartObserverType = $null
 $script:PrestartActorType = $null
+$script:PrestartArchiveLeaseType = $null
 function Initialize-PrestartObserverTypes {
     if ($null -ne $script:PrestartObserverType) { return }
-    $sources = @((Join-Path $PSScriptRoot 'prestart_actor_token.cs'),
-        (Join-Path $PSScriptRoot 'prestart_observer_child.cs'))
+    [string[]]$sources = @((Join-Path $PSScriptRoot 'prestart_actor_token.cs'),
+        (Join-Path $PSScriptRoot 'prestart_observer_child.cs'),
+        (Join-Path $PSScriptRoot 'prestart_archive_facts.cs'))
     $types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') `
         -PassThru -ErrorAction Stop)
     $launchers = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartObserverChild' })
     $actors = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartActor' })
-    if ($launchers.Count -ne 1 -or $actors.Count -ne 1) { throw 'prestart-observer:launcher-type' }
+    [type[]]$archives = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartArchiveFacts' })
+    if ($launchers.Count -ne 1 -or $actors.Count -ne 1 -or $archives.Count -ne 1) {
+        throw 'prestart-observer:launcher-type'
+    }
+    [type]$lease = $launchers[0].GetNestedType('ArchiveLease')
+    if ($null -eq $lease) { throw 'prestart-observer:archive-lease-type' }
+    $script:PrestartArchiveLeaseType = $lease
     $script:PrestartActorType = $actors[0]
     $script:PrestartObserverType = $launchers[0]
 }
@@ -153,8 +161,9 @@ function Open-PrestartObserverActor {
 }
 
 # Same-actor observation in a dedicated launcher process. The caller lends
-# the live actor, admitted image and unreset deadline. Child launches are
-# serialized to keep the transient inheritable handles private.
+# the live actor, admitted image and unreset deadline. The standard-user
+# selector also requires an independently admitted ExpectedStandardUserSid.
+# Child launches are serialized to keep the transient inheritable handles private.
 function Invoke-PrestartObserver {
     param(
         [Parameter(Mandatory = $true)][string]$ImagePath,
@@ -163,7 +172,8 @@ function Invoke-PrestartObserver {
         [Parameter(Mandatory = $true)][string]$Selector,
         [Parameter(Mandatory = $true)][object]$Actor,
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
-        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds,
+        [string]$ExpectedStandardUserSid
     )
 
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
@@ -171,12 +181,33 @@ function Invoke-PrestartObserver {
         throw [ArgumentException]::new('prestart-observer:caller-actor')
     }
     $launcher = $script:PrestartObserverType
-    $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock, $TimeoutMilliseconds)
+    $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock,
+        $TimeoutMilliseconds, $ExpectedStandardUserSid)
     Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
 }
 
-# Keep the identity launch closed over the same held actor and original deadline
-# as the observer. The independently admitted package facts are only arguments.
+# Hold a read lease on one admitted archive. The coordinator owns its disposal
+# after observation, under the same clock and timeout used for acquisition.
+function Open-PrestartArchive {
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchivePath,
+        [Parameter(Mandatory = $true)][long]$ExpectedArchiveBytes,
+        [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:archive-deadline'
+    Initialize-PrestartObserverTypes
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:archive-deadline'
+    [type]$launcher = $script:PrestartObserverType
+    return $launcher::OpenArchive($ArchivePath, $ExpectedArchiveBytes, $ExpectedArchiveSha256,
+        $Clock, $TimeoutMilliseconds)
+}
+
+# Keep the identity launch within the original actor and deadline. The native
+# launcher derives every package argument from the same inspected archive.
 function Invoke-PrestartIdentity {
     [CmdletBinding(PositionalBinding = $false)]
     param(
@@ -191,13 +222,9 @@ function Invoke-PrestartIdentity {
         [Parameter(Mandatory = $true)][long]$HelperBytes,
         [Parameter(Mandatory = $true)][string]$HelperSha256,
         [Parameter(Mandatory = $true)][guid]$RunId,
-        [Parameter(Mandatory = $true)][string]$PackageFullName,
+        [Parameter(Mandatory = $true)][object]$Archive,
         [Parameter(Mandatory = $true)][string]$ExpectedUserSid,
-        [Parameter(Mandatory = $true)][string]$SignedPackageSha256,
-        [Parameter(Mandatory = $true)][long]$EngineBytes,
-        [Parameter(Mandatory = $true)][string]$EngineSha256,
-        [Parameter(Mandatory = $true)][long]$BrokerBytes,
-        [Parameter(Mandatory = $true)][string]$BrokerSha256,
+        [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
         [Parameter(Mandatory = $true)][object]$Actor,
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
         [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
@@ -207,11 +234,13 @@ function Invoke-PrestartIdentity {
     if ($null -eq $script:PrestartActorType -or -not $script:PrestartActorType.IsInstanceOfType($Actor)) {
         throw [ArgumentException]::new('prestart-observer:caller-actor')
     }
-    $launcher = $script:PrestartObserverType
-    $child = $launcher::StartIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
+    if (!$script:PrestartArchiveLeaseType.IsInstanceOfType($Archive)) {
+        throw [ArgumentException]::new('prestart-observer:archive-lease')
+    }
+    [type]$launcher = $script:PrestartObserverType
+    [object]$child = $launcher::StartIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
         $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
-        $RunId, $PackageFullName, $ExpectedUserSid, $SignedPackageSha256,
-        $EngineBytes, $EngineSha256, $BrokerBytes, $BrokerSha256, $Actor, $Clock, $TimeoutMilliseconds)
+        $RunId, $Archive, $ExpectedUserSid, $ExpectedArchiveSha256, $Actor, $Clock, $TimeoutMilliseconds)
     Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
 }
 
@@ -271,4 +300,5 @@ function Receive-OwnedPrestartChild {
     }
 }
 
-Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver, Invoke-PrestartIdentity
+Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver, `
+    Open-PrestartArchive, Invoke-PrestartIdentity

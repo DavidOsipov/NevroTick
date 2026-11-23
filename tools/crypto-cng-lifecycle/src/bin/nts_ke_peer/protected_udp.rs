@@ -6,6 +6,8 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::num::NonZeroU16;
 use std::time::{Duration, Instant};
 
+#[cfg(windows)]
+use windows_platform_native::{ClockCoordinates, read_clock_coordinates};
 use zeroize::{Zeroize, Zeroizing};
 
 use super::{
@@ -28,8 +30,141 @@ pub(super) enum SuccessorReply {
     Deny,
     /// One authenticated ordinary reply with a fresh replacement cookie.
     Ordinary,
+    /// The ordinary reply sequence with raw local captures on both legs.
+    OrdinaryTiming,
     /// One NTSN immediately followed by the authenticated ordinary reply.
     NakThenOrdinary,
+}
+
+/// The admitted local observation positions on one exchange leg.
+#[derive(Clone, Copy)]
+enum CapturePoint {
+    /// Immediately after a successful socket receive.
+    ReceiveReturn,
+    /// After preparing the nonblocking send, before the final deadline check and send.
+    PreSend,
+}
+
+/// Captures for one leg, private until both exchanges and exit observation complete.
+enum LegTiming {
+    /// This leg performs no extra clock reads.
+    Disabled,
+    /// Portable callers cannot produce native evidence through the test seam.
+    #[cfg(not(windows))]
+    Unsupported,
+    /// Retain each original checked Windows bracket at its socket boundary.
+    #[cfg(windows)]
+    Enabled {
+        /// Observation adjacent to the original successful receive.
+        receive_return: Option<ClockCoordinates>,
+        /// Observation preceding the original send attempt.
+        pre_send: Option<ClockCoordinates>,
+    },
+}
+
+impl LegTiming {
+    /// Arm native observations only for the ordinary timing selector.
+    fn for_reply(reply: SuccessorReply) -> Self {
+        match reply {
+            #[cfg(windows)]
+            SuccessorReply::OrdinaryTiming => Self::Enabled {
+                receive_return: None,
+                pre_send: None,
+            },
+            #[cfg(not(windows))]
+            SuccessorReply::OrdinaryTiming => Self::Unsupported,
+            _ => Self::Disabled,
+        }
+    }
+
+    /// Read and retain a raw bracket at its caller's original socket boundary.
+    ///
+    /// # Errors
+    /// Refuse a failed native read or a second observation at the same position.
+    fn capture(&mut self, point: CapturePoint) -> Result<(), Failure> {
+        match (self, point) {
+            (Self::Disabled, _) => Ok(()),
+            #[cfg(not(windows))]
+            (Self::Unsupported, _) => Err(Failure::IncompleteTiming),
+            #[cfg(windows)]
+            (
+                Self::Enabled {
+                    receive_return,
+                    pre_send,
+                },
+                point,
+            ) => {
+                let slot: &mut Option<ClockCoordinates> = match point {
+                    CapturePoint::ReceiveReturn => receive_return,
+                    CapturePoint::PreSend => pre_send,
+                };
+                if slot.is_some() {
+                    return Err(Failure::IncompleteTiming);
+                }
+                *slot = Some(read_clock_coordinates().map_err(Failure::TimingRead)?);
+                Ok(())
+            }
+        }
+    }
+
+    /// Yield the complete pair after the owning exchange has finished.
+    ///
+    /// # Errors
+    /// Refuse if either original observation is absent.
+    #[cfg(windows)]
+    fn finish(self) -> Result<[ClockCoordinates; 2], Failure> {
+        match self {
+            Self::Enabled {
+                receive_return: Some(receive_return),
+                pre_send: Some(pre_send),
+            } => Ok([receive_return, pre_send]),
+            _ => Err(Failure::IncompleteTiming),
+        }
+    }
+}
+
+/// The selected exchange has finished its socket and exporter lifecycle.
+#[must_use = "retain the completed peer observations"]
+pub(super) enum CompletedExchange {
+    /// The selected exchange completed without timing observations.
+    Untimed,
+    /// Both authenticated legs completed before client exit and no-extra checks.
+    #[cfg(windows)]
+    Timed(CompletedTiming),
+}
+
+/// Four observations in socket-call order, with no packet or session material.
+#[cfg(windows)]
+pub(super) struct CompletedTiming {
+    /// Receive-return and pre-send brackets for the first leg.
+    first: [ClockCoordinates; 2],
+    /// Receive-return and pre-send brackets for the successor leg.
+    successor: [ClockCoordinates; 2],
+}
+
+#[cfg(windows)]
+impl CompletedTiming {
+    /// Render the original raw observations, in order, for the fixture reader.
+    ///
+    /// # Errors
+    /// Preserve an output write failure.
+    pub(super) fn write_rows(self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        for (leg, [receive_return, pre_send]) in
+            [("first", self.first), ("successor", self.successor)]
+        {
+            for (point, raw) in [("receive-return", receive_return), ("pre-send", pre_send)] {
+                writeln!(
+                    output,
+                    "scope=managed-protected-peer-timing leg={leg} point={point} qpc_before={} filetime_100ns={} qpc_after={} frequency_hz={}",
+                    raw.qpc_before(),
+                    raw.filetime_100ns(),
+                    raw.qpc_after(),
+                    raw.frequency_hz(),
+                )?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// One kernel-assigned loopback endpoint and its original invocation deadline.
@@ -111,7 +246,7 @@ impl ProtectedUdp {
             return Err(Failure::Deadline);
         }
 
-        self.initial_exchange(budget, c2s, s2c, fill, &now)
+        self.initial_exchange(budget, c2s, s2c, fill, &now, &mut LegTiming::Disabled)
             .map(|_: Correlation| ())
     }
 
@@ -152,7 +287,7 @@ impl ProtectedUdp {
             return Err(Failure::Deadline);
         }
         let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
-            self.receive(budget, &Instant::now)?;
+            self.receive(budget, &Instant::now, &mut LegTiming::Disabled)?;
         let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
         budget.poll(Instant::now())?;
         fill(&mut nonce)?;
@@ -160,7 +295,13 @@ impl ProtectedUdp {
         let reply: Zeroizing<[u8; DENY_BYTES]> =
             admit_and_seal_initial_deny(&request[..REQUEST_BYTES], c2s, s2c, &nonce)
                 .map_err(Failure::Datagram)?;
-        self.send_reply(budget, &Instant::now, sender, &reply[..])
+        self.send_reply(
+            budget,
+            &Instant::now,
+            sender,
+            &reply[..],
+            &mut LegTiming::Disabled,
+        )
     }
 
     /// Use one listener and the original exporters for an ordinary reply and a DENY.
@@ -180,6 +321,7 @@ impl ProtectedUdp {
         fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
     ) -> Result<(), Failure> {
         self.reply_to_successor(budget, c2s, s2c, fill, SuccessorReply::Deny)
+            .map(|_: [LegTiming; 2]| ())
     }
 
     /// Complete the selected two exchanges, erase the exporters, then observe the socket.
@@ -196,13 +338,25 @@ impl ProtectedUdp {
         fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
         read_exit: impl FnMut() -> Result<Option<ClientExit>, Failure>,
         successor_reply: SuccessorReply,
-    ) -> Result<(), Failure> {
-        let replies: Result<(), Failure> =
+    ) -> Result<CompletedExchange, Failure> {
+        let replies: Result<[LegTiming; 2], Failure> =
             self.reply_to_successor(budget, c2s, s2c, fill, successor_reply);
         c2s.zeroize();
         s2c.zeroize();
-        replies?;
-        self.observe_client_exit(budget, read_exit, Instant::now)
+        let [first, successor]: [LegTiming; 2] = replies?;
+        self.observe_client_exit(budget, read_exit, Instant::now)?;
+        match (successor_reply, first, successor) {
+            #[cfg(windows)]
+            (SuccessorReply::OrdinaryTiming, first, successor) => {
+                Ok(CompletedExchange::Timed(CompletedTiming {
+                    first: first.finish()?,
+                    successor: successor.finish()?,
+                }))
+            }
+            #[cfg(not(windows))]
+            (SuccessorReply::OrdinaryTiming, _, _) => Err(Failure::IncompleteTiming),
+            _ => Ok(CompletedExchange::Untimed),
+        }
     }
 
     /// Complete the initial and successor legs before any observation.
@@ -219,18 +373,26 @@ impl ProtectedUdp {
         s2c: &[u8; 32],
         mut fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
         successor_reply: SuccessorReply,
-    ) -> Result<(), Failure> {
+    ) -> Result<[LegTiming; 2], Failure> {
         if self.deadline != budget.deadline {
             return Err(Failure::Deadline);
         }
-        let initial: Correlation =
-            self.initial_exchange(budget, c2s, s2c, &mut fill, &Instant::now)?;
+        let mut first_timing: LegTiming = LegTiming::for_reply(successor_reply);
+        let mut successor_timing: LegTiming = LegTiming::for_reply(successor_reply);
+        let initial: Correlation = self.initial_exchange(
+            budget,
+            c2s,
+            s2c,
+            &mut fill,
+            &Instant::now,
+            &mut first_timing,
+        )?;
         budget.poll(Instant::now())?;
         self.socket
             .set_nonblocking(false)
             .map_err(|error| Failure::Io(error.kind()))?;
         let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
-            self.receive(budget, &Instant::now)?;
+            self.receive(budget, &Instant::now, &mut successor_timing)?;
         let successor: SuccessorCorrelation =
             admit_successor(&request[..REQUEST_BYTES], c2s, &initial).map_err(Failure::Datagram)?;
         let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
@@ -241,20 +403,41 @@ impl ProtectedUdp {
             SuccessorReply::Deny => {
                 let reply: Zeroizing<[u8; DENY_BYTES]> =
                     seal_deny(successor, s2c, &nonce).map_err(Failure::Datagram)?;
-                self.send_reply(budget, &Instant::now, sender, &reply[..])
+                self.send_reply(
+                    budget,
+                    &Instant::now,
+                    sender,
+                    &reply[..],
+                    &mut successor_timing,
+                )?;
             }
-            SuccessorReply::Ordinary | SuccessorReply::NakThenOrdinary => {
+            SuccessorReply::Ordinary
+            | SuccessorReply::OrdinaryTiming
+            | SuccessorReply::NakThenOrdinary => {
                 let nak: Option<[u8; NAK_BYTES]> = (successor_reply
                     == SuccessorReply::NakThenOrdinary)
                     .then(|| correlated_nak(&successor));
                 let reply: Zeroizing<[u8; REPLY_BYTES]> =
                     seal_ordinary_successor(successor, s2c, &nonce).map_err(Failure::Datagram)?;
                 if let Some(nak) = nak {
-                    self.send_reply(budget, &Instant::now, sender, &nak)?;
+                    self.send_reply(
+                        budget,
+                        &Instant::now,
+                        sender,
+                        &nak,
+                        &mut LegTiming::Disabled,
+                    )?;
                 }
-                self.send_reply(budget, &Instant::now, sender, &reply[..])
+                self.send_reply(
+                    budget,
+                    &Instant::now,
+                    sender,
+                    &reply[..],
+                    &mut successor_timing,
+                )?;
             }
         }
+        Ok([first_timing, successor_timing])
     }
 
     /// Hold the existing nonblocking socket until the exact exit acknowledgement.
@@ -313,9 +496,10 @@ impl ProtectedUdp {
         s2c: &[u8; 32],
         fill: impl FnOnce(&mut [u8; 16]) -> Result<(), Failure>,
         now: &impl Fn() -> Instant,
+        timing: &mut LegTiming,
     ) -> Result<Correlation, Failure> {
         let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
-            self.receive(budget, now)?;
+            self.receive(budget, now, timing)?;
         let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
         budget.poll(now())?;
         fill(&mut nonce)?;
@@ -323,7 +507,7 @@ impl ProtectedUdp {
         let (initial, reply): (Correlation, Zeroizing<[u8; REPLY_BYTES]>) =
             admit_and_seal(&request[..REQUEST_BYTES], c2s, s2c, &nonce)
                 .map_err(Failure::Datagram)?;
-        self.send_reply(budget, now, sender, &reply[..])?;
+        self.send_reply(budget, now, sender, &reply[..], timing)?;
         Ok(initial)
     }
 
@@ -335,6 +519,7 @@ impl ProtectedUdp {
         &self,
         budget: &Budget,
         now: &impl Fn() -> Instant,
+        timing: &mut LegTiming,
     ) -> Result<(Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4), Failure> {
         // A one-byte sentinel distinguishes an overlong truncated datagram from
         // an exact frame on systems that return the truncated byte count.
@@ -347,7 +532,10 @@ impl ProtectedUdp {
                 .map_err(|error| Failure::Io(error.kind()))?;
             budget.poll(now())?;
             match self.socket.recv_from(request.as_mut()) {
-                Ok(received) => break received,
+                Ok(received) => {
+                    timing.capture(CapturePoint::ReceiveReturn)?;
+                    break received;
+                }
                 Err(error)
                     if matches!(error.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {}
                 #[cfg(windows)]
@@ -382,11 +570,13 @@ impl ProtectedUdp {
         now: &impl Fn() -> Instant,
         sender: SocketAddrV4,
         reply: &[u8],
+        timing: &mut LegTiming,
     ) -> Result<(), Failure> {
         budget.poll(now())?;
         self.socket
             .set_nonblocking(true)
             .map_err(|error| Failure::Io(error.kind()))?;
+        timing.capture(CapturePoint::PreSend)?;
         budget.poll(now())?;
         let sent: usize = self
             .socket

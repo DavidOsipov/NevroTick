@@ -28,7 +28,7 @@ with patch.object(Path, "home", return_value=Path("/tmp/nevrotick-native-control
 HASH = "a" * 64
 
 
-def emit_windows_fixture(path):
+def emit_windows_fixture(path: Path, *, pdb_page_size: int = 4096) -> None:
     """Emit an inert matching PE/PDB for a fake linker command."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix != ".exe":
@@ -37,7 +37,7 @@ def emit_windows_fixture(path):
     symbols = path.with_suffix(".pdb")
     guid = uuid.uuid5(uuid.NAMESPACE_OID, path.name).bytes_le
     path.write_bytes(_image(3, pdb_path=symbols.name, guid=guid))
-    symbols.write_bytes(_pdb(guid=guid))
+    symbols.write_bytes(_pdb(guid=guid, block=pdb_page_size))
 
 # Separate peer/trust/isolated-process cases retained by their canonical native owners.
 MANUAL_NATIVE_EXPECTATIONS = (
@@ -938,7 +938,129 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                         NATIVE.native(args, {})
                     allocate.assert_not_called()
 
-    def healthy_record(self, receipt, expected):
+    def test_large_facade_native_selection_admits_only_matching_held_symbols(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory: Path = Path(temporary)
+            receipt: Path = directory / "verification.json"
+            source: dict[str, str] = {"selected-source": HASH}
+            extras: dict[str, str] = {name: NATIVE.PRODUCT.sha256(ROOT / name) for name in NATIVE.EXTRAS}
+            expected: dict[str, object] = dict(
+                product_source_sha256=source, extra_inputs_sha256=extras,
+                candidate_sha256=NATIVE.ALLOCATION.canonical_digest(source), facade_target_flags=NATIVE.ENV.MSVC_FLAGS,
+            )
+            record: dict = self.healthy_record(receipt, expected)
+            path: Path = directory / "engine-facade-consumer.exe"
+            symbols: Path = path.with_suffix(".pdb")
+            emit_windows_fixture(path, pdb_page_size=8192)
+            _, _, identity = NATIVE.WINDOWS_PE.read_export_pair(
+                path, symbols, subsystem="console", expected_pdb_page_size=8192,
+            )
+            artifact: dict = record["artifacts"][path.name]
+            artifact.update(sha256=NATIVE.PRODUCT.sha256(path), pdb_sha256=identity["sha256"], pdb=identity)
+            healthy: bytes = symbols.read_bytes()
+            args: NATIVE.argparse.Namespace = NATIVE.argparse.Namespace(
+                build_receipt=receipt, native_dir=directory / "never-created",
+                facade_consumer=True, facade_large_pdb=True,
+            )
+            with (patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, source)),
+                  patch.object(NATIVE, "native_directory",
+                               side_effect=NATIVE.Incomplete("matching admission sentinel")) as staging):
+                for selected, value, message in (
+                    (True, 8192, "matching admission sentinel"),
+                    (False, 8192, "selection differs from the exact build profile"),
+                    (False, None, "unsupported block size"),
+                    (True, None, "selection differs from the exact build profile"),
+                    (True, 8192.0, "selection differs from the exact build profile"),
+                    (True, 4096, "selection differs from the exact build profile"),
+                ):
+                    with self.subTest(selected=selected, value=value):
+                        args.facade_large_pdb = selected
+                        changed: dict = dict(record)
+                        if value is not None:
+                            changed["facade_pdb_page_size"] = value
+                        receipt.write_text(json.dumps(changed))
+                        with self.assertRaisesRegex(NATIVE.Incomplete, message):
+                            NATIVE.native(args, {})
+                        self.assertEqual(staging.call_count, int(message == "matching admission sentinel"))
+                        staging.reset_mock()
+                args.facade_large_pdb = True
+                record["facade_pdb_page_size"] = 8192
+                for fault in ("crossed-layout", "crossed-guid", "changed-bytes"):
+                    with self.subTest(fault=fault):
+                        guid: bytes = uuid.uuid5(uuid.NAMESPACE_OID, path.name).bytes_le
+                        if fault == "crossed-layout":
+                            symbols.write_bytes(_pdb(guid=guid))
+                        elif fault == "crossed-guid":
+                            symbols.write_bytes(_pdb(block=8192))
+                        else:
+                            changed_bytes = bytearray(healthy)
+                            changed_bytes[-1] ^= 1
+                            symbols.write_bytes(changed_bytes)
+                        if fault != "changed-bytes":
+                            artifact["pdb_sha256"] = NATIVE.PRODUCT.sha256(symbols)
+                        else:
+                            artifact["pdb_sha256"] = identity["sha256"]
+                        receipt.write_text(json.dumps(record))
+                        message = {"crossed-layout": "unsupported block size", "crossed-guid": "PDB GUID or age",
+                                   "changed-bytes": "PE/PDB identity or bytes changed"}[fault]
+                        with self.assertRaisesRegex(NATIVE.Incomplete, message):
+                            NATIVE.native(args, {})
+                        staging.assert_not_called()
+                # Same source and no layout marker, with a genuine default-layout emitted pair.
+                self.healthy_record(receipt, expected)
+                args.facade_large_pdb = False
+                with self.assertRaisesRegex(NATIVE.Incomplete, "matching admission sentinel"):
+                    NATIVE.native(args, {})
+                staging.assert_called_once_with(args.native_dir)
+            self.assertFalse(args.native_dir.exists())
+
+    def test_native_refuses_changed_original_after_strict_snapshot_parse(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory: Path = Path(temporary)
+            receipt: Path = directory / "verification.json"
+            source: dict[str, str] = {"selected-source": HASH}
+            extras: dict[str, str] = {name: NATIVE.PRODUCT.sha256(ROOT / name) for name in NATIVE.EXTRAS}
+            record: dict = self.healthy_record(receipt, dict(
+                product_source_sha256=source, extra_inputs_sha256=extras,
+                candidate_sha256=NATIVE.ALLOCATION.canonical_digest(source), facade_target_flags=NATIVE.ENV.MSVC_FLAGS,
+            ))
+            original: bytes = receipt.read_bytes()
+            strict_read = NATIVE.read_record
+
+            def replace_after_capture(snapshot: Path) -> dict:
+                self.assertNotEqual(snapshot, receipt)
+                self.assertEqual(snapshot.read_bytes(), original)
+                self.assertEqual(snapshot.stat().st_mode & 0o777, 0o400)
+                receipt.write_text(json.dumps(dict(record, replacement=True)))
+                return strict_read(snapshot)
+
+            args: NATIVE.argparse.Namespace = NATIVE.argparse.Namespace(
+                build_receipt=receipt, native_dir=directory / "never-created", facade_consumer=True,
+            )
+            with (patch.object(NATIVE, "read_record", side_effect=replace_after_capture),
+                  patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, source)),
+                  patch.object(NATIVE, "native_directory") as staging):
+                with self.assertRaisesRegex(NATIVE.Incomplete, "build receipt changed before staging"):
+                    NATIVE.native(args, {})
+                staging.assert_not_called()
+
+    def test_large_facade_cli_rejects_irrelevant_combinations_before_output(self) -> None:
+        argv: list[str] = ["verify-engine-native", "--facade-large-pdb", "--output-dir", "/tmp/never-created"]
+        for flags in (
+            ["--lane", "build"],
+            ["--lane", "native", "--default-cohort"],
+            ["--lane", "native", "--facade-consumer", "--placement-cohort"],
+            ["--lane", "prepare-facade-faults", "--facade-consumer"],
+            ["--lane", "build", "--facade-consumer", "--prepared-faults", "/tmp/unused"],
+        ):
+            with (self.subTest(flags=flags), patch.object(NATIVE.sys, "argv", argv + flags),
+                  patch.object(NATIVE.ALLOCATION, "new_output") as output,
+                  contextlib.redirect_stdout(io.StringIO()) as result):
+                self.assertEqual(NATIVE.main(), 1)
+                self.assertIn("requires a normal facade build or native lane", json.loads(result.getvalue())["error"])
+                output.assert_not_called()
+
+    def healthy_record(self, receipt: Path, expected: dict, *, facade_page_size: int = 4096) -> dict:
         record = dict(expected, schema_version=1, status="passed", lane="build", facade_consumer=True,
                       bookends_passed=True, input_bookends_passed=True, native_windows_execution=False,
                       normal_library_bookends=True, exported_artifact_bookends=True, custody_errors=[],
@@ -946,15 +1068,35 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                                       "vendor", "tools", "stable_payload", "windows_libraries", "sdk_records")},
                       artifacts={})
         for name in ("gated-launcher.exe", "cpu-v3-probe.exe", "gate-control.exe", "engine-facade-consumer.exe"):
-            image = receipt.parent / name; image.write_bytes(("independent PE " + name).encode())
-            pdb = image.with_suffix(".pdb"); pdb.write_bytes(("independent PDB " + name).encode())
+            image: Path = receipt.parent / name
+            page_size: int = facade_page_size if name == "engine-facade-consumer.exe" else 4096
+            emit_windows_fixture(image, pdb_page_size=page_size)
+            pdb: Path = image.with_suffix(".pdb")
+            _, _, identity = NATIVE.WINDOWS_PE.read_export_pair(
+                image, pdb, subsystem="console", expected_pdb_page_size=page_size,
+            )
             record["artifacts"][name] = {"path": str(image), "sha256": NATIVE.PRODUCT.sha256(image),
-                                         "pdb_sha256": NATIVE.PRODUCT.sha256(pdb)}
+                                         "pdb_sha256": identity["sha256"], "pdb": identity}
+        if facade_page_size == 8192:
+            record["facade_pdb_page_size"] = facade_page_size
         receipt.write_text(json.dumps(record, default=str))
         return record
 
+    def test_fault_parent_refuses_large_emitted_layout_after_marker_removal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt: Path = Path(temporary) / "verification.json"
+            expected: dict = {key: {"independent": HASH} for key in NATIVE.FACADE_HEALTHY_FIELDS}
+            default: dict = self.healthy_record(receipt, expected)
+            self.assertEqual(NATIVE.read_healthy_facade_build(receipt, expected)["receipt"], default)
+            large: dict = self.healthy_record(receipt, expected, facade_page_size=8192)
+            del large["facade_pdb_page_size"]
+            receipt.write_text(json.dumps(large))
+            with self.assertRaisesRegex(NATIVE.Incomplete, "unsupported block size"):
+                NATIVE.read_healthy_facade_build(receipt, expected)
+
     def test_healthy_parent_requires_matching_current_environment_and_physical_pairs(self):
-        faults = (None, "status", "fault-metadata", "candidate", "tool-map", "bool-alias", "flags", "diagnostic-flags",
+        faults = (None, "status", "fault-metadata", "large-pdb", "candidate", "tool-map",
+                  "bool-alias", "flags", "diagnostic-flags",
                   "input-failed", "normal-unreached", "export-failed", "custody-error", "missing-bookend",
                   "extra-bookend", "false-bookend", "bool-bookend", "fault-bookend",
                   "missing-image", "image-bytes", "pdb-bytes", "image-link", "path-redirect")
@@ -973,6 +1115,7 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                 image = receipt.parent / "engine-facade-consumer.exe"
                 if fault == "status": record["status"] = "fault-build-completed"
                 elif fault == "fault-metadata": record["facade_fault"] = "entry-default"
+                elif fault == "large-pdb": record["facade_pdb_page_size"] = 8192
                 elif fault == "candidate": record["candidate_sha256"] = "f" * 64
                 elif fault == "tool-map": record["tools_sha256"] = {}
                 elif fault == "bool-alias": record["windows_inputs"] = {"library_files": True}
@@ -1078,8 +1221,8 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                     evidence["/work/" + str(path.relative_to(work))] = {"sha256": NATIVE.PRODUCT.sha256(path)}
                 return dict(normal), sorted({path.parent for path in normal.values()})
             export = NATIVE.export_build_artifacts
-            def export_then_drift(*args):
-                artifacts = export(*args)
+            def export_then_drift(*args, **kwargs):
+                artifacts = export(*args, **kwargs)
                 if active["fault"] and drift == "exported_artifacts":
                     (active["output"] / "gated-launcher.exe").write_bytes(b"changed exported image")
                 return artifacts
@@ -1262,7 +1405,8 @@ class TestRosterAdmission(unittest.TestCase):
                 if fault == "missing": del bad["test_roster"]
                 if fault == "stale":
                     roster_path.write_text(json.dumps(dict(manifest, candidate_sha256=HASH)))
-                with self.subTest(fault=fault), patch.object(NATIVE, "read_record", return_value=bad), \
+                args.build_receipt.write_text(json.dumps(bad))
+                with self.subTest(fault=fault), \
                      patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, inputs)), \
                      patch.object(NATIVE.PRODUCT, "sha256", return_value=HASH), \
                      patch.object(NATIVE, "native_directory") as staging:
@@ -1753,8 +1897,8 @@ class PlacementEngineCohortAdmission(unittest.TestCase):
                  "Placement cohort requires both fixed writer cases and no KE feature"),
             )
             for build, message in cases:
+                args.build_receipt.write_text(json.dumps(build))
                 with (self.subTest(message=message, build=build["placement_cohort"]),
-                      patch.object(NATIVE, "read_record", return_value=build),
                       patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, source)),
                       patch.object(NATIVE.PRODUCT, "sha256", return_value=HASH),
                       patch.object(NATIVE, "native_directory") as staging):
@@ -2154,7 +2298,7 @@ class EvidenceCustody(unittest.TestCase):
                  "crates/nevrotick-engine/Cargo.toml")
         inputs = {name: NATIVE.PRODUCT.sha256(ROOT / name) for name in names}
 
-        def run_case(fault):
+        def run_case(fault: str | None, *, large_pdb: bool = False) -> None:
             with tempfile.TemporaryDirectory() as temporary:
                 base = Path(temporary); output = base / "output"; output.mkdir()
                 vendor, toolchain, sdk = (base / name for name in ("vendor", "toolchain", "sdk"))
@@ -2164,7 +2308,8 @@ class EvidenceCustody(unittest.TestCase):
                 config, inventory = base / "xwin.toml", base / "xwin.json"
                 config.write_text("synthetic SDK configuration"); inventory.write_text("{}")
                 args = NATIVE.argparse.Namespace(output_dir=output, vendor_dir=vendor, toolchain_dir=toolchain,
-                    xwin_config=config, xwin_inventory=inventory, test_roster=None, facade_consumer=True, jobs=6)
+                    xwin_config=config, xwin_inventory=inventory, test_roster=None, facade_consumer=True,
+                    facade_large_pdb=large_pdb, jobs=6)
                 stable = {"stable": toolchain, "inventories": [], "readonly_roots": [],
                           "policy_sha256": HASH, "installation_pointer_sha256": HASH}
                 normal = {}
@@ -2181,7 +2326,16 @@ class EvidenceCustody(unittest.TestCase):
                 def external_command(command, **_kwargs):
                     if "-o" in command:
                         path = output / "work" / command[command.index("-o") + 1].removeprefix("/work/")
-                        emit_windows_fixture(path)
+                        use_large_pages: bool = large_pdb and path.name == "engine-facade-consumer.exe"
+                        layout_flag: str = "link-arg=/PDBPAGESIZE:8192"
+                        self.assertEqual(command.count(layout_flag), int(use_large_pages))
+                        if path.suffix == ".exe":
+                            consumer: bool = path.name == "engine-facade-consumer.exe"
+                            self.assertIn("target-cpu=x86-64-v3" if consumer else "target-cpu=x86-64", command)
+                            self.assertIn("debuginfo=2" if consumer else "debuginfo=1", command)
+                            self.assertIn("link-arg=/CETCOMPATSTRICT", command)
+                        emitted_page_size: int = 8192 if use_large_pages and fault != "wrong-layout" else 4096
+                        emit_windows_fixture(path, pdb_page_size=emitted_page_size)
                         if path.name == "engine-facade-consumer.exe":
                             if fault == "sdk-drift": sdk_file.write_bytes(b"changed SDK input")
                             elif fault == "normal-drift": normal["nevrotick_engine"].write_bytes(b"changed normal library")
@@ -2223,9 +2377,10 @@ class EvidenceCustody(unittest.TestCase):
                         message = {
                             "normal-drift": "normal_libraries", "image-drift": "after hardening readback",
                             "wrong-pdb": "PDB GUID or age", "wrong-age": "PDB GUID or age",
+                            "wrong-layout": "unsupported block size",
                         }.get(fault, "windows_libraries")
                         with self.assertRaisesRegex(NATIVE.Incomplete, message): build(args, report)
-                        if fault in ("wrong-pdb", "wrong-age"):
+                        if fault in ("wrong-pdb", "wrong-age", "wrong-layout"):
                             self.assertEqual(list(output.glob("*.exe")) + list(output.glob("*.pdb")), [])
                             self.assertEqual(report["artifacts"], {})
                     else:
@@ -2233,6 +2388,10 @@ class EvidenceCustody(unittest.TestCase):
                         self.assertEqual(report["status"], "passed")
                         self.assertTrue(report["bookends_passed"])
                         self.assertFalse(report["native_windows_execution"])
+                        self.assertEqual(report.get("facade_pdb_page_size"), 8192 if large_pdb else None)
+                        self.assertEqual(int.from_bytes(
+                            (output / "engine-facade-consumer.pdb").read_bytes()[32:36], "little",
+                        ), 8192 if large_pdb else 4096)
                         self.assertEqual(set(report["artifacts"]), {"gated-launcher.exe", "cpu-v3-probe.exe",
                                          "gate-control.exe", "engine-facade-consumer.exe"})
                         self.assertEqual(report["normal_library_inputs"].keys(),
@@ -2240,6 +2399,8 @@ class EvidenceCustody(unittest.TestCase):
 
         for fault in (None, "old-shadow", "sdk-drift", "normal-drift", "image-drift", "wrong-pdb", "wrong-age"):
             with self.subTest(fault=fault): run_case(fault)
+        run_case(None, large_pdb=True)
+        run_case("wrong-layout", large_pdb=True)
 
     def test_native_staging_refuses_traversal_with_valid_neighbor(self):
         prefix = Path("/mnt/c/Users/perso/AppData/Local/NevroTick")

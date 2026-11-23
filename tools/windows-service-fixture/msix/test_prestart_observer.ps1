@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# Inert CHECK-1/26/27 controls for the S0.6 launch owner in an offline Windows Sandbox.
-param([switch]$ExpectChildActorMismatch)
+# Inert CHECK-1/2/26/27 controls for the S0.6 launch owner in an offline Windows Sandbox.
+param(
+    [switch]$ExpectChildActorMismatch,
+    [ValidateNotNullOrEmpty()][string]$ExpectedStandardUserSid
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -209,6 +212,7 @@ function Invoke-ObserverControl {
         [string]$Label,
         [string]$ImagePath,
         [string]$Selector,
+        [string]$StandardUserSid,
         [string]$Digest = $imageDigest,
         [int]$ExitCode = 23,
         [byte[]]$Stdout = [byte[]]::new(0),
@@ -220,6 +224,7 @@ function Invoke-ObserverControl {
         [string]$WaitingState,
         [switch]$AlreadyExpired,
         [switch]$RefuseBeforeLaunch,
+        [switch]$RequireNoNativeCreation,
         [switch]$RefuseBeforeEntry,
         [switch]$RequireSettledPipeReads,
         [switch]$RefuseDescendant
@@ -236,9 +241,13 @@ function Invoke-ObserverControl {
     if ($AlreadyExpired -and $clock.ElapsedMilliseconds -lt $TimeoutMilliseconds) {
         throw "$Label clock is still live"
     }
+    [hashtable]$subject = @{}
+    if ($PSBoundParameters.ContainsKey('StandardUserSid')) {
+        $subject.ExpectedStandardUserSid = $StandardUserSid
+    }
     try {
         Invoke-PrestartObserver -Actor $Actor -ImagePath $ImagePath -ExpectedBytes $imageBytes -ExpectedSha256 $Digest `
-            -Selector $Selector -Clock $clock -TimeoutMilliseconds $TimeoutMilliseconds |
+            -Selector $Selector -Clock $clock -TimeoutMilliseconds $TimeoutMilliseconds @subject |
             ForEach-Object { $records.Add($_) }
     } catch {
         $refusal = $_.Exception
@@ -268,10 +277,19 @@ function Invoke-ObserverControl {
     if ($expectsRefusal) {
         if ($null -eq $refusal -or $records.Count -ne 0) { throw "$Label published a child capture" }
         $refusedPid = Get-RefusalFact $refusal 'PrestartObserverProcessId'
-        if ($RefuseBeforeLaunch) {
+        if ($RefuseBeforeLaunch -or $RequireNoNativeCreation) {
             if ($null -ne $refusedPid -or (Get-RefusalFact $refusal 'PrestartObserverProcessCreated') -eq $true -or
                 [IO.File]::Exists($marker) -or [IO.File]::Exists($descendantMarker)) {
                 throw "$Label launched an observer"
+            }
+            if ($RequireNoNativeCreation) {
+                [object]$jobCreated = Get-RefusalFact $refusal 'PrestartObserverJobCreated'
+                [object]$processCreated = Get-RefusalFact $refusal 'PrestartObserverProcessCreated'
+                [object]$released = Get-RefusalFact $refusal 'PrestartObserverReleased'
+                if ($jobCreated -isnot [bool] -or $jobCreated -or $processCreated -isnot [bool] -or $processCreated -or
+                    $released -isnot [bool] -or !$released) {
+                    throw "$Label did not confirm refusal before job and process creation and release of the image"
+                }
             }
         } elseif ($RefuseBeforeEntry) {
             $created = Get-RefusalFact $refusal 'PrestartObserverProcessCreated'
@@ -323,6 +341,7 @@ function Invoke-ObserverControl {
 $module = $null
 $actor = $null
 $firstFailure = $null
+[int]$controls = 16
 $sentinel = 'NEVROTICK_S06_OBSERVER_SENTINEL'
 $priorSentinel = [Environment]::GetEnvironmentVariable($sentinel, 'Process')
 try {
@@ -351,12 +370,58 @@ try {
         return
     }
 
-    $labels = @('observation-raw', 'access-raw', 'standard-raw')
+    $labels = @('observation-raw', 'access-raw')
     for ($index = 0; $index -lt $labels.Length; $index++) {
         $image = New-FixtureCopy (Join-Path $fixtureRoot $labels[$index])
         $selectorByte = $index + 1
         Invoke-ObserverControl -Actor $actor -Label $labels[$index] -ImagePath $image -Selector $selectors[$index] `
             -Stdout @(0, 255, 13, 10, 128, $selectorByte, 0) -Stderr @(254, 0, 10, $selectorByte)
+    }
+
+    [string]$standardSelector = $selectors[2]
+    $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-missing-sid')
+    Invoke-ObserverControl -Actor $actor -Label 'standard-missing-sid' -ImagePath $image -Selector $standardSelector `
+        -RefusalMessage 'prestart-observer:standard-user-subject-actor' -RequireNoNativeCreation
+    $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-foreign-sid')
+    Invoke-ObserverControl -Actor $actor -Label 'standard-foreign-sid' -ImagePath $image -Selector $standardSelector `
+        -StandardUserSid 'S-1-0-0' -RefusalMessage 'prestart-observer:standard-user-subject-actor' `
+        -RequireNoNativeCreation
+
+    [Security.Principal.WindowsIdentity]$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    try { [string]$currentSid = $identity.User.Value } finally { $identity.Dispose() }
+    $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-noncanonical-sid')
+    Invoke-ObserverControl -Actor $actor -Label 'standard-noncanonical-sid' -ImagePath $image -Selector $standardSelector `
+        -StandardUserSid $currentSid.ToLowerInvariant() -RefusalMessage 'prestart-observer:standard-user-subject-actor' `
+        -RequireNoNativeCreation
+
+    # Read the actual account's groups independently of the launcher using the SID column.
+    [string]$whoami = Join-Path ([Environment]::SystemDirectory) 'whoami.exe'
+    [string[]]$groupOutput = @(& $whoami /groups /fo csv /nh)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not observe the current actor groups' }
+    [object[]]$groups = @($groupOutput | ConvertFrom-Csv -Header Name, Type, Sid, Attributes)
+    if ($groups.Count -eq 0 -or @($groups | Where-Object { $_.Sid -cnotmatch '^S-1-[0-9]+(?:-[0-9]+)+$' }).Count -ne 0) {
+        throw 'Invalid SID column in the current actor group observation'
+    }
+    [bool]$isAdministrator = @($groups | Where-Object { $_.Sid -ceq 'S-1-5-32-544' }).Count -ne 0
+    if ($isAdministrator) {
+        $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-admin-same-sid')
+        Invoke-ObserverControl -Actor $actor -Label 'standard-admin-same-sid' -ImagePath $image -Selector $standardSelector `
+            -StandardUserSid $currentSid -RefusalMessage 'prestart-observer:standard-user-token-profile' `
+            -RequireNoNativeCreation
+        $controls++
+    } else {
+        's06-prestart-observer administrator profile unavailable'
+    }
+    if ($PSBoundParameters.ContainsKey('ExpectedStandardUserSid')) {
+        if ($isAdministrator -or $ExpectedStandardUserSid -cne $currentSid) {
+            throw 'The independently admitted standard-user SID does not identify this ordinary actor'
+        }
+        $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-raw')
+        Invoke-ObserverControl -Actor $actor -Label 'standard-raw' -ImagePath $image -Selector $standardSelector `
+            -StandardUserSid $ExpectedStandardUserSid -Stdout @(0, 255, 13, 10, 128, 3, 0) -Stderr @(254, 0, 10, 3)
+        $controls++
+    } else {
+        's06-prestart-observer independently admitted standard-user SID unavailable'
     }
 
     $selector = $selectors[0]
@@ -365,6 +430,9 @@ try {
     $image = New-FixtureCopy (Join-Path $fixtureRoot 'wrong-digest')
     Invoke-ObserverControl -Actor $actor -Label 'wrong-digest' -ImagePath $image -Selector $selector -Digest $wrongDigest `
         -RefusalMessage 'prestart-observer:image-digest' -RefuseBeforeLaunch
+    $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-wrong-digest')
+    Invoke-ObserverControl -Actor $actor -Label 'standard-wrong-digest' -ImagePath $image -Selector $standardSelector `
+        -Digest $wrongDigest -RefusalMessage 'prestart-observer:image-digest' -RequireNoNativeCreation
     $image = New-FixtureCopy (Join-Path $fixtureRoot 'unknown-selector')
     Invoke-ObserverControl -Actor $actor -Label 'unknown-selector' -ImagePath $image -Selector '--fixture-descendant' `
         -RefusalMessage 'prestart-observer:selector' -RefuseBeforeLaunch
@@ -453,4 +521,4 @@ try {
     }
 }
 
-'s06-prestart-observer controls=13'
+"s06-prestart-observer controls=$controls"

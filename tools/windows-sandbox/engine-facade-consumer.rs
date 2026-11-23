@@ -4,8 +4,9 @@
 //! Link the normal Engine and Tokio artifacts from the admitted Root graph.
 //! The supervisor admits this v3 image and owns its process/output custody.
 //! Exactly one closed mode selects an Engine operation. The managed successor
-//! mode obtains two canonical IPv4 loopback endpoints from the private harness
-//! environment and installs them with a fixed TLS identity.
+//! modes obtain canonical IPv4 loopback endpoints from the private harness
+//! environment and install them with a fixed TLS identity. The pair runs two
+//! separately configured acquisitions through one owner and one cutoff.
 //! Missing arguments reach admission refusal. Valid fixed loopback arguments
 //! under an entered current-thread runtime reach caller-context refusal before
 //! Engine preparation. The EOF mode owns one loopback listener and presents no
@@ -71,11 +72,11 @@ use std::{
 };
 
 use nevrotick_engine::{
-    KePreviewTarget, ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, ProtectedNativeClockObservation,
-    SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
-    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
-    SourceProtectedProbeFailure,
+    KePreviewTarget, ManagedProtectedPairReport, ManagedProtectedPlan, ManagedProtectedReceipt,
+    ManagedProtectedReport, ManagedProtectedRestriction, ManagedProtectedTerminal,
+    ProtectedNativeClockObservation, SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot,
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
+    SourcePolicySnapshot, SourceProtectedProbeFailure,
 };
 
 /// Fixed program atom consumed by the Engine's actual CLI entrypoint.
@@ -92,6 +93,12 @@ const PEER_POLL: Duration = Duration::from_millis(2);
 const SUCCESSOR_KE_PEER: &str = "NV_NTS_SUCCESSOR_KE_PEER";
 /// The private harness supplies only the owned numeric UDP endpoint here.
 const SUCCESSOR_UDP_PEER: &str = "NV_NTS_SUCCESSOR_UDP_PEER";
+/// Separate owned TCP endpoint for the second job in the pair.
+const PAIR_SECOND_KE_PEER: &str = "NV_NTS_PAIR_SECOND_KE_PEER";
+/// Separate owned UDP endpoint for the second job in the pair.
+const PAIR_SECOND_UDP_PEER: &str = "NV_NTS_PAIR_SECOND_UDP_PEER";
+/// One fixture deadline for both jobs, within the standalone peers' lifetime.
+const PAIR_WINDOW: Duration = Duration::from_secs(45);
 /// The identity verified by the Engine against the owned KE peer's certificate.
 const SUCCESSOR_TLS_IDENTITY: &str = "ke-a7e40ec4eade477dbaba6ca9e9f975a4.invalid";
 /// The complete fixed address and delimiter preceding a canonical port.
@@ -123,10 +130,18 @@ enum SetupFailure {
     ManagedOutcome,
     /// A protected or fallback UDP datagram reached the owned endpoint.
     ManagedDatagram,
-    /// One of the two required private successor endpoints did not pass admission.
+    /// A required private successor endpoint did not pass admission.
     ManagedSuccessorPeers,
     /// Successor history did not retain the original revision or chronological order.
     ManagedSuccessorHistory,
+    /// The timing witness did not receive an intact ordinary two-leg exchange.
+    ManagedSuccessorTiming,
+    /// The pair did not return two joined ordinary outcomes with original work.
+    ManagedPairOutcome,
+    /// The receipts or their adjacent application captures are inconsistent.
+    ManagedPairOrder,
+    /// The pair's single observer retirement returned a native error.
+    ManagedPairClose,
 }
 
 /// Closed peer refusal facts. Neither socket addresses nor bytes enter diagnostics.
@@ -162,6 +177,10 @@ impl SetupFailure {
             Self::ManagedDatagram => ("managed-datagram", 124),
             Self::ManagedSuccessorPeers => ("managed-successor-peers", 124),
             Self::ManagedSuccessorHistory => ("managed-successor-history", 124),
+            Self::ManagedSuccessorTiming => ("managed-successor-timing", 124),
+            Self::ManagedPairOutcome => ("managed-pair-outcome", 124),
+            Self::ManagedPairOrder => ("managed-pair-order", 124),
+            Self::ManagedPairClose => ("managed-pair-close", 124),
         };
         let _diagnostic_result = writeln!(io::stderr().lock(), "facade-consumer-stage={stage}");
         ExitCode::from(code)
@@ -179,7 +198,18 @@ enum Mode {
     /// Refuse a stale managed definition, then observe one current managed EOF.
     ManagedProtectedEof,
     /// Observe one explicit managed protected invocation with an earned successor.
-    ManagedProtectedSuccessor,
+    ManagedProtectedSuccessor(SuccessorWitness),
+    /// Observe two managed protected invocations in the same acquisition owner.
+    ManagedProtectedPair,
+}
+
+/// Select the output of the explicitly invoked protected successor fixture.
+#[derive(Clone, Copy)]
+enum SuccessorWitness {
+    /// Write the ordinary joined summary.
+    Summary,
+    /// Also export the original native coordinates of a healthy two-leg exchange.
+    Timing,
 }
 
 impl Mode {
@@ -197,7 +227,13 @@ impl Mode {
                 Self::ManagedProtectedEof
             }
             Some(value) if value == OsStr::new("managed-protected-successor") => {
-                Self::ManagedProtectedSuccessor
+                Self::ManagedProtectedSuccessor(SuccessorWitness::Summary)
+            }
+            Some(value) if value == OsStr::new("managed-protected-successor-timing") => {
+                Self::ManagedProtectedSuccessor(SuccessorWitness::Timing)
+            }
+            Some(value) if value == OsStr::new("managed-protected-pair") => {
+                Self::ManagedProtectedPair
             }
             _ => return Err(SetupFailure::Arguments),
         };
@@ -372,6 +408,7 @@ fn managed_definition_inputs(
     udp_address: SocketAddr,
     tls_identity: &str,
     sources: usize,
+    endpoints: usize,
 ) -> Result<
     (
         SourcePolicyAuthority,
@@ -383,7 +420,7 @@ fn managed_definition_inputs(
 > {
     let limits: SourcePolicyLimits = SourcePolicyLimits::new(
         sources,
-        1,
+        endpoints,
         Duration::from_millis(1),
         Duration::from_millis(4),
     )
@@ -412,7 +449,7 @@ fn managed_definition(
         SourceHandle,
         SourceAddressSet,
         KePreviewTarget,
-    ) = managed_definition_inputs(address, udp_address, "localhost", 1)?;
+    ) = managed_definition_inputs(address, udp_address, "localhost", 1, 1)?;
     let stale: SourceConfigurationSnapshot = authority
         .install_ke_preview_configuration(&source, addresses.clone(), target.clone())
         .map_err(|_| SetupFailure::ManagedPolicy)?;
@@ -863,12 +900,81 @@ fn write_successor_work(sink: &mut impl Write, report: &ManagedProtectedReport) 
     Ok(())
 }
 
+/// Export both original native triplets from a checked, joined ordinary exchange.
+///
+/// The six rows carry local application-boundary coordinates for the lab reader.
+/// They grant no calibrated mapping, sample eligibility or clock authority.
+///
+/// # Errors
+/// Refuse an incomplete exchange, a mismatched clock sequence or a failed write.
+fn write_successor_timing(report: &ManagedProtectedReport) -> Result<(), SetupFailure> {
+    use ProtectedNativeClockObservation::Recorded;
+
+    let (Some(first), ManagedProtectedTerminal::Ordinary(successor)) =
+        (report.first(), report.terminal())
+    else {
+        return Err(SetupFailure::ManagedSuccessorTiming);
+    };
+    if report.first_nak_at().is_some()
+        || report.power_unregistration_error().is_some()
+        || (report.attempted_sends(), report.fully_submitted_sends()) != (2, 2)
+    {
+        return Err(SetupFailure::ManagedSuccessorTiming);
+    }
+    let [
+        [
+            Some(Recorded(first_before)),
+            Some(Recorded(first_after)),
+            Some(Recorded(first_receive)),
+        ],
+        [
+            Some(Recorded(next_before)),
+            Some(Recorded(next_after)),
+            Some(Recorded(next_receive)),
+        ],
+    ] = [
+        first.application_native_clock_captures(),
+        successor.application_native_clock_captures(),
+    ]
+    else {
+        return Err(SetupFailure::ManagedSuccessorTiming);
+    };
+    if first_receive.qpc_after() > next_before.qpc_before()
+        || first_before.frequency_hz() != next_before.frequency_hz()
+    {
+        return Err(SetupFailure::ManagedSuccessorTiming);
+    }
+    let mut sink: io::StdoutLock<'_> = io::stdout().lock();
+    for (leg, captures) in [
+        ("first", [first_before, first_after, first_receive]),
+        ("successor", [next_before, next_after, next_receive]),
+    ] {
+        for (point, coordinates) in ["pre-send", "send-return", "receive-return"]
+            .into_iter()
+            .zip(captures)
+        {
+            writeln!(
+                sink,
+                "scope=managed-protected-successor-timing leg={leg} point={point} \
+                 qpc_before={} filetime_100ns={} qpc_after={} frequency_hz={}",
+                coordinates.qpc_before(),
+                coordinates.filetime_100ns(),
+                coordinates.qpc_after(),
+                coordinates.frequency_hz(),
+            )
+            .map_err(|_| SetupFailure::PeerWitness)?;
+        }
+    }
+    sink.flush().map_err(|_| SetupFailure::PeerWitness)
+}
+
 /// Invoke the actual protected successor facade once with both admitted peers.
 /// A joined observation exits zero, including a typed terminal refusal. An outer
 /// refusal exits with the managed setup code after its separate typed witness.
+/// The timing selector additionally requires a healthy ordinary exchange.
 /// # Errors
 /// Preserve endpoint admission, installation, witness continuity and output refusals.
-fn managed_protected_successor() -> Result<ExitCode, SetupFailure> {
+fn managed_protected_successor(witness: SuccessorWitness) -> Result<ExitCode, SetupFailure> {
     let ke_peer: SocketAddr = successor_peer(SUCCESSOR_KE_PEER)?;
     let udp_peer: SocketAddr = successor_peer(SUCCESSOR_UDP_PEER)?;
     let (mut authority, source, addresses, target): (
@@ -876,7 +982,7 @@ fn managed_protected_successor() -> Result<ExitCode, SetupFailure> {
         SourceHandle,
         SourceAddressSet,
         KePreviewTarget,
-    ) = managed_definition_inputs(ke_peer, udp_peer, SUCCESSOR_TLS_IDENTITY, 2)?;
+    ) = managed_definition_inputs(ke_peer, udp_peer, SUCCESSOR_TLS_IDENTITY, 2, 1)?;
     let alias: SourceHandle = authority
         .source(1)
         .map_err(|_| SetupFailure::ManagedPolicy)?;
@@ -900,7 +1006,140 @@ fn managed_protected_successor() -> Result<ExitCode, SetupFailure> {
     };
     write_successor_report(&mut io::stderr().lock(), outcome.as_ref())
         .map_err(|_| SetupFailure::PeerWitness)?;
+    if matches!(witness, SuccessorWitness::Timing) {
+        let report: &ManagedProtectedReport = outcome
+            .as_ref()
+            .map_err(|_| SetupFailure::ManagedSuccessorTiming)?;
+        write_successor_timing(report)?;
+    }
     Ok(code)
+}
+
+/// Require the two original ordinary receipts and admitted work for one paired job.
+///
+/// # Errors
+/// Refuse absent or foreign receipts, unexpected NAKs or mismatched work bounds.
+fn checked_pair_receipts<'a>(
+    report: &'a ManagedProtectedReport,
+    expected: &SourceConfigurationSnapshot,
+) -> Result<[&'a ManagedProtectedReceipt; 2], SetupFailure> {
+    let (Some(first), ManagedProtectedTerminal::Ordinary(successor)): (
+        Option<&ManagedProtectedReceipt>,
+        &ManagedProtectedTerminal,
+    ) = (report.first(), report.terminal()) else {
+        return Err(SetupFailure::ManagedPairOutcome);
+    };
+    if !first.same_invocation(successor)
+        || report.first_nak_at().is_some()
+        || report.power_unregistration_error().is_some()
+        || (report.attempted_sends(), report.fully_submitted_sends()) != (2, 2)
+        || report.remaining_driver_work() > 58
+        || report.remaining_association_work() != Some((30, 30, 130_792))
+        || [first, successor]
+            .into_iter()
+            .any(|receipt: &ManagedProtectedReceipt| {
+                receipt.packet_bytes() != 252
+                    || receipt.leap_indicator() != 0
+                    || !successor_receipt_matches(receipt, expected)
+            })
+    {
+        return Err(SetupFailure::ManagedPairOutcome);
+    }
+    Ok([first, successor])
+}
+
+/// Compare adjacent original captures without creating a clock mapping.
+fn pair_receipt_precedes(prior: &ManagedProtectedReceipt, next: &ManagedProtectedReceipt) -> bool {
+    use ProtectedNativeClockObservation::Recorded;
+
+    let prior_native: [Option<ProtectedNativeClockObservation>; 3] =
+        prior.application_native_clock_captures();
+    let next_native: [Option<ProtectedNativeClockObservation>; 3] =
+        next.application_native_clock_captures();
+    let [_, _, Some(Recorded(receive))]: [Option<ProtectedNativeClockObservation>; 3] =
+        prior_native
+    else {
+        return false;
+    };
+    let [Some(Recorded(before_send)), ..]: [Option<ProtectedNativeClockObservation>; 3] =
+        next_native
+    else {
+        return false;
+    };
+    let [next_start, ..]: [SoftwareClock; 3] = next.application_clock_captures();
+    prior.committed_at() <= next_start.monotonic()
+        && receive.frequency_hz() == before_send.frequency_hz()
+        && receive.qpc_after() <= before_send.qpc_before()
+}
+
+/// Run the two separately installed sources through one managed pair and cutoff.
+///
+/// # Errors
+/// Refuse malformed or crossed endpoints, incomplete joined custody, inconsistent
+/// original captures, or failed observer retirement before reporting success.
+fn managed_protected_pair() -> Result<ExitCode, SetupFailure> {
+    let first_ke: SocketAddr = successor_peer(SUCCESSOR_KE_PEER)?;
+    let first_udp: SocketAddr = successor_peer(SUCCESSOR_UDP_PEER)?;
+    let second_ke: SocketAddr = successor_peer(PAIR_SECOND_KE_PEER)?;
+    let second_udp: SocketAddr = successor_peer(PAIR_SECOND_UDP_PEER)?;
+    if first_ke == second_ke || first_udp == second_udp {
+        return Err(SetupFailure::ManagedSuccessorPeers);
+    }
+
+    let (mut authority, first, addresses, target): (
+        SourcePolicyAuthority,
+        SourceHandle,
+        SourceAddressSet,
+        KePreviewTarget,
+    ) = managed_definition_inputs(first_ke, first_udp, SUCCESSOR_TLS_IDENTITY, 2, 2)?;
+    let first_expected: SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&first, addresses, target)
+        .map_err(|_| SetupFailure::ManagedPolicy)?;
+    let second: SourceHandle = authority
+        .source(1)
+        .map_err(|_| SetupFailure::ManagedPolicy)?;
+    let second_addresses: SourceAddressSet =
+        SourceAddressSet::new(&[second_udp]).map_err(|_| SetupFailure::ManagedPolicy)?;
+    let second_target: KePreviewTarget = KePreviewTarget::new(second_ke, SUCCESSOR_TLS_IDENTITY)
+        .map_err(|_| SetupFailure::ManagedPolicy)?;
+    let second_expected: SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&second, second_addresses, second_target)
+        .map_err(|_| SetupFailure::ManagedPolicy)?;
+    let cutoff: Instant = Instant::now()
+        .checked_add(PAIR_WINDOW)
+        .ok_or(SetupFailure::ManagedDeadline)?;
+    let pair: ManagedProtectedPairReport = authority
+        .invoke_nts_protected_pair_before(&first_expected, &second_expected, cutoff)
+        .map_err(|_| SetupFailure::ManagedPairOutcome)?;
+    let second_report: &ManagedProtectedReport = pair
+        .second()
+        .ok_or(SetupFailure::ManagedPairOutcome)?
+        .map_err(|_| SetupFailure::ManagedPairOutcome)?;
+    let [first_initial, first_terminal]: [&ManagedProtectedReceipt; 2] =
+        checked_pair_receipts(pair.first(), &first_expected)?;
+    let [second_initial, second_terminal]: [&ManagedProtectedReceipt; 2] =
+        checked_pair_receipts(second_report, &second_expected)?;
+
+    if first_initial.same_invocation(second_initial)
+        || first_terminal.committed_at() >= cutoff
+        || second_terminal.committed_at() >= cutoff
+        || !pair_receipt_precedes(first_initial, first_terminal)
+        || !pair_receipt_precedes(first_terminal, second_initial)
+        || !pair_receipt_precedes(second_initial, second_terminal)
+    {
+        return Err(SetupFailure::ManagedPairOrder);
+    }
+    if pair.power_unregistration_error().is_some() {
+        return Err(SetupFailure::ManagedPairClose);
+    }
+    writeln!(
+        io::stderr().lock(),
+        "scope=managed-protected-pair-native measurement=mapping-unavailable eligible=0 fresh_sync=0 \
+         jobs=2 configuration=original receipt_order=valid authenticated=1 attempted_sends=4 \
+         fully_submitted_sends=4 observer_close_error=none"
+    )
+    .map_err(|_| SetupFailure::PeerWitness)?;
+    Ok(ExitCode::SUCCESS)
 }
 
 /// Invoke only the production facade and retain its operation and fixture outcomes.
@@ -927,7 +1166,8 @@ fn run(mode: &Mode) -> Result<ExitCode, SetupFailure> {
         }
         Mode::LoopbackEof => loopback_eof(),
         Mode::ManagedProtectedEof => managed_protected_eof(),
-        Mode::ManagedProtectedSuccessor => managed_protected_successor(),
+        Mode::ManagedProtectedSuccessor(witness) => managed_protected_successor(*witness),
+        Mode::ManagedProtectedPair => managed_protected_pair(),
     }
 }
 

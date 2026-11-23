@@ -130,14 +130,36 @@ impl ResumeWatch {
     ///
     /// # Errors
     /// Refuse repeated attempts, nonzero native status or a missing handle.
+    pub fn subscribe(
+        action: impl FnOnce() -> Result<(), ()> + Send + 'static,
+    ) -> Result<Self, ResumeRegistrationError> {
+        Self::register(Action::once(action))
+    }
+
+    /// Deliver each suspend or automatic-resume callback until the original watch is disarmed.
+    ///
+    /// Delivery is serialized and may start during registration. The action must be bounded,
+    /// non-panicking and independent of this watch's retirement. An action failure is reported
+    /// to Windows for that delivery, and the action remains available for a later notification.
+    ///
+    /// # Errors
+    /// Refuse repeated registration attempts, a nonzero native status or a missing handle.
+    pub fn subscribe_persistent(
+        action: impl FnMut() -> Result<(), ()> + Send + 'static,
+    ) -> Result<Self, ResumeRegistrationError> {
+        Self::register(Action::Persistent(Box::new(action)))
+    }
+
+    /// Bind the action and request the one native registration for the process.
+    ///
+    /// # Errors
+    /// Refuse a spent slot, a nonzero native status or a missing handle.
     #[expect(
         unsafe_code,
         reason = "Pass the permanent descriptor and a writable handle out parameter"
     )]
-    pub fn subscribe(
-        action: impl FnOnce() -> Result<(), ()> + Send + 'static,
-    ) -> Result<Self, ResumeRegistrationError> {
-        if !SLOT.bind(Box::new(action)) {
+    fn register(action: Action) -> Result<Self, ResumeRegistrationError> {
+        if !SLOT.bind(action) {
             return Err(ResumeRegistrationError::AlreadyUsed);
         }
         let mut handle: *mut c_void = null_mut();
@@ -198,7 +220,7 @@ mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    use super::{PARAMETERS, SLOT};
+    use super::{Action, PARAMETERS, ResumeRegistrationError, ResumeWatch, SLOT};
 
     /// Exercise the production callback in a fresh process without OS registration.
     ///
@@ -209,7 +231,7 @@ mod tests {
     fn callback_reports_failure_and_consumes_its_action() {
         let deliveries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
         let observed: Arc<AtomicUsize> = Arc::clone(&deliveries);
-        assert!(SLOT.bind(Box::new(move || {
+        assert!(SLOT.bind(Action::once(move || {
             let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
             Err(())
         })));
@@ -222,5 +244,9 @@ mod tests {
         assert!(SLOT.disarm().is_none());
         assert_eq!((PARAMETERS.callback)(null(), 4, null()), 0);
         assert_eq!(deliveries.load(Ordering::Relaxed), 1);
+        assert!(matches!(
+            ResumeWatch::subscribe_persistent(|| Ok(())),
+            Err(ResumeRegistrationError::AlreadyUsed)
+        ));
     }
 }

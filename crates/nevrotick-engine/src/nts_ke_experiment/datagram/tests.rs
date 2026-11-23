@@ -3153,7 +3153,7 @@ pub(in crate::nts_ke_experiment) fn serve_managed_loopback<T>(
         send_loopback_reply(peer, second, &CORRELATED_NTSN, || Ok(()))?;
     }
     let terminal: &[u8] = if ordinary_successor {
-        fixtures::SUCCESSOR_OLD_S2C
+        fixtures::LOOPBACK_SUCCESSOR_QUALITY_REPLY
     } else {
         &PROTECTED_DENY
     };

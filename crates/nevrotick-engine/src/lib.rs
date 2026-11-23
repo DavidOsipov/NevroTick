@@ -32,9 +32,9 @@ pub use clock_capture::NativeClockObservation;
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
-    ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, SourceProtectedProbeFailure,
-    SourceProtectedProbeReport,
+    ManagedProtectedPairReport, ManagedProtectedPlan, ManagedProtectedReceipt,
+    ManagedProtectedReport, ManagedProtectedRestriction, ManagedProtectedTerminal,
+    SourceProtectedProbeFailure, SourceProtectedProbeReport,
 };
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};
@@ -1930,7 +1930,7 @@ impl PreparedPilot {
                 reverse,
             )
             .await;
-            reverse = !reverse;
+            reverse.toggle();
             // Owner observation linearizes controls before any ready I/O is used.
             refresh_owner(&mut slots, &mut self.control, deadline);
             handle_wake(

@@ -19,8 +19,10 @@ namespace NevroTick
         private const int MaxTimeoutMilliseconds = 120000;
         private const int MaxInformationBytes = 256 * 1024;
         private const int PrimaryToken = 1;
+        private const uint DefaultElevationType = 1;
         private const int SidHeaderBytes = 8;
         private const int MaxSidSubAuthorities = 15;
+        private const string AdministratorsSid = "S-1-5-32-544";
         private const string CallerActor = "prestart-observer:caller-actor";
         private const string ChildActor = "prestart-observer:child-actor";
         private static readonly int StatisticsBytes = Marshal.SizeOf(typeof(TokenStatistics));
@@ -93,6 +95,22 @@ namespace NevroTick
             CheckDeadline(clock, timeoutMilliseconds);
             if (requiredSubjectSid != null && !snapshot.User.HasExactIdentity(requiredSubjectSid))
                 throw new InvalidOperationException("prestart-observer:identity-subject-actor");
+        }
+
+        // Classify the diagnostic role against the independently admitted subject.
+        internal void VerifyStandardUser(Stopwatch clock, int timeoutMilliseconds, string expectedSubjectSid)
+        {
+            VerifyCurrent(clock, timeoutMilliseconds);
+            // Exact equality with the observed SID also requires its canonical spelling.
+            if (!snapshot.User.HasExactIdentity(expectedSubjectSid))
+                throw new InvalidOperationException("prestart-observer:standard-user-subject-actor");
+
+            // Membership includes disabled and deny-only groups.
+            bool includesAdministrators = Array.Exists(snapshot.Groups,
+                (SidEntry group) => group.HasExactIdentity(AdministratorsSid));
+            CheckDeadline(clock, timeoutMilliseconds);
+            if (includesAdministrators || snapshot.ElevationType != DefaultElevationType || snapshot.Elevated)
+                throw new InvalidOperationException("prestart-observer:standard-user-token-profile");
         }
 
         internal ChildToken VerifyChild(SafeHandle process, Stopwatch clock, int timeoutMilliseconds)

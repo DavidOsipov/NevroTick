@@ -148,6 +148,10 @@ class CoverageReportRefusalTests(unittest.TestCase):
             self._assert_report_keys_refused((self.marker, "metadata/extra.py"), reason)
         with self.subTest("same count, duplicate aliases"):
             self._assert_report_keys_refused((self.name, self.absolute), reason)
+        with self.subTest("later module missing after first module succeeds"):
+            self._assert_report_keys_refused(
+                (self.name, "metadata/extra.py"), "missing-or-duplicate-raw-module-observation:" + self.marker
+            )
 
     def test_conflicting_measured_aliases_are_rejected(self) -> None:
         self._measure(self.name, self.absolute)

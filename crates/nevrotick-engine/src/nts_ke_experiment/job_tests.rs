@@ -13,6 +13,7 @@ use super::{
     AtomicBool, CollectError, Config, Control, Facts, Failed, Failure, Hooks, Instant,
     InvocationCompletion, IoPhase, Observation, Operation, Ordering, Phase, PreparedInvocation,
     ProcessAdmission, ProcessClaim, ProviderScope, SubmitError, Termination, WorkerSlot,
+    run_worker_with,
 };
 use crate::nts_ke_experiment::process::native_scope_with;
 use crate::nts_ke_experiment::{
@@ -67,6 +68,308 @@ fn component_failure<'a>(
         .map_err(Failed::from)?;
     drop(control);
     Err(primary())
+}
+
+/// Prepare the checked managed mode and its original Stop scope.
+/// # Errors
+/// Preserve configuration and startup checks before any admission.
+fn managed_prepared() -> Result<(PreparedInvocation, StopHandle), Failure> {
+    let (config, _, _authority): (Config, crate::SourceHandle, crate::SourcePolicyAuthority) =
+        crate::nts_ke_experiment::datagram::tests::managed_attempt_config(
+            Instant::now(),
+            Duration::from_millis(1),
+            Duration::from_millis(4),
+        )?;
+    PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)
+}
+
+/// Challenge the actual join-to-take interval before allowing same-owner reissue.
+/// # Errors
+/// Preserve any collection, preparation, or receiving refusal.
+/// # Panics
+/// Fail if a joined untaken result permits reissue or a bare slot can take it.
+fn take_serial_job(
+    owner: &super::ManagedWorker,
+    submitted: &super::SubmittedJob,
+) -> Result<super::ReceivingOutcome, Failure> {
+    let slot: &WorkerSlot = submitted.slot;
+    slot.collect_expected(Some(&submitted.facts))
+        .map_err(|_| Failure::Control)?;
+    assert!(matches!(
+        owner.try_reserve(managed_prepared()?.0),
+        Err(SubmitError::Used)
+    ));
+    assert!(matches!(
+        slot.take_for_receiving(),
+        Err(CollectError::NotReady)
+    ));
+    let custody: std::sync::MutexGuard<'_, super::Custody> =
+        slot.custody.lock().map_err(|_| Failure::Control)?;
+    assert!(matches!(submitted.receive(), Err(CollectError::Busy)));
+    drop(custody);
+    let received: super::ReceivingOutcome = submitted.receive().map_err(|_| Failure::Control)?;
+    assert!(matches!(submitted.receive(), Err(CollectError::NotReady)));
+    Ok(received)
+}
+
+/// Challenge a delivered idle event after real preparation and reservation.
+/// # Errors
+/// Preserve preparation, slot and target refusal.
+/// # Panics
+/// Fail if an event permits the stale preparation or if its unused reservation is spent.
+fn check_idle_power_between_jobs(
+    owner: &super::ManagedWorker,
+    target: &crate::nts_ke_experiment::power_target::PowerTarget,
+) -> Result<(), Failure> {
+    let stale: crate::nts_ke_experiment::power_target::PreparedPower<'_> = target.prepare()?;
+    let reservation: super::SubmissionReservation = owner
+        .try_reserve(managed_prepared()?.0)
+        .map_err(|_| Failure::Control)?;
+    target.deliver()?;
+    let refusal: Failed = stale.activate(&reservation).err().ok_or(Failure::Control)?;
+    assert_eq!(refusal.primary, Failure::Control);
+    drop(reservation);
+    assert_eq!(
+        owner.slot.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
+    Ok(())
+}
+
+/// Challenge former and bare collectors before the current generation is taken.
+/// # Panics
+/// Fail if either collector touches the successor's actual thread or facts.
+fn check_stale_collection(submitted: &super::SubmittedJob, former_facts: &mut Option<Arc<Facts>>) {
+    let slot: &WorkerSlot = submitted.slot;
+    if let Some(previous) = former_facts.replace(Arc::clone(&submitted.facts)) {
+        assert_eq!(
+            slot.collect_expected(Some(&previous)),
+            Err(CollectError::NotReady),
+            "former collector must leave the current worker in custody"
+        );
+        assert!(matches!(
+            slot.take_expected(Some(&previous)),
+            Err(CollectError::NotReady)
+        ));
+    }
+    assert_eq!(slot.collect(), Err(CollectError::NotReady));
+}
+
+/// Reuse the actual join/take boundary and provider, with a distinct original Stop at each start.
+/// # Errors
+/// Preserve real startup, submission, collection and Stop failures.
+/// # Panics
+/// Fail on stale facts, premature admission, foreign ownership or missing retirement.
+#[test]
+fn managed_worker_reissues_after_normal_take_with_one_provider() -> Result<(), Failure> {
+    use crate::nts_ke_experiment::power_target::{ActivePower, PowerTarget, PreparedPower};
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+
+    let owner: super::ManagedWorker = super::ManagedWorker::new(&SLOT);
+    let foreign: super::ManagedWorker = super::ManagedWorker::new(&SLOT);
+    let target: PowerTarget = PowerTarget::new();
+    let lifetime: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
+    let mut former: Option<StopHandle> = None;
+    let mut former_facts: Option<Arc<Facts>> = None;
+    for (job_index, stop_before_start) in [false, false, true].into_iter().enumerate() {
+        let attempt: PreparedPower<'_> = target.prepare()?;
+        let (prepared, stop): (PreparedInvocation, StopHandle) = managed_prepared()?;
+        let reservation: super::SubmissionReservation =
+            owner.try_reserve(prepared).map_err(|_| Failure::Control)?;
+        let (active, original): (ActivePower<'_>, StopHandle) = attempt
+            .activate(&reservation)
+            .map_err(|failure: Failed| failure.primary)?;
+        assert!(Arc::ptr_eq(&original.scope, &stop.scope));
+        if let Some(previous) = former.replace(stop) {
+            assert_eq!(previous.request_stop(), Ok(StopDisposition::Latched));
+        }
+        if stop_before_start {
+            target.deliver()?;
+        }
+        let observed_provider: Arc<OnceLock<Weak<()>>> = Arc::clone(&lifetime);
+        let submitted: super::SubmittedJob = reservation
+            .start_successor_with(
+                &ADMISSION,
+                component_provider,
+                move |config, provider, control, writer| {
+                    assert!(writer.owns(&control));
+                    let provider: Weak<()> = provider.retirement_witness();
+                    let first: &Weak<()> = observed_provider.get_or_init(|| provider.clone());
+                    assert!(Weak::ptr_eq(first, &provider));
+                    if job_index == 0 {
+                        Err(primary())
+                    } else {
+                        control
+                            .remaining(IoPhase::Handshake)
+                            .map_err(Failed::from)?;
+                        assert!(matches!(
+                            config.mode,
+                            super::super::ExchangeMode::ManagedProtected(_)
+                        ));
+                        Err(Failed::from(Failure::Endpoint))
+                    }
+                },
+                Hooks::none(),
+            )
+            .map_err(|_| Failure::Control)?;
+        check_stale_collection(&submitted, &mut former_facts);
+        let received: super::NormalOperation = take_serial_job(&owner, &submitted)?
+            .into_normal()
+            .map_err(|_| Failure::Control)?;
+        let expected: Failed = match job_index {
+            0 => primary(),
+            1 => Failed::from(Failure::Endpoint),
+            _ => Failed::from(Failure::Cancelled),
+        };
+        assert_eq!(operation_failure(Some(&received.operation)), Some(expected));
+        assert!(received.first_receipt.is_none());
+        assert_eq!(received.datagram_work, Some((0, 0, 64)));
+        let provider: &Weak<()> = lifetime.get().ok_or(Failure::Control)?;
+        assert_eq!(provider.strong_count(), 1);
+        assert!(matches!(
+            foreign.try_reserve(managed_prepared()?.0),
+            Err(SubmitError::Used)
+        ));
+        assert!(matches!(
+            SLOT.try_reserve(managed_prepared()?.0),
+            Err(SubmitError::Used)
+        ));
+        drop(active);
+        check_idle_power_between_jobs(&owner, &target)?;
+    }
+    drop(owner);
+    assert_eq!(lifetime.get().ok_or(Failure::Control)?.strong_count(), 0);
+    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
+}
+
+/// Retain the actual unwind result without permitting another managed submission.
+/// # Errors
+/// Preserve preparation, actual submission and collection refusals.
+/// # Panics
+/// Fail if taking an abnormal result reopens the occupied slot.
+#[test]
+fn managed_worker_abnormal_take_remains_spent() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+
+    let owner: super::ManagedWorker = super::ManagedWorker::new(&SLOT);
+    let submitted: super::SubmittedJob = owner
+        .try_reserve(managed_prepared()?.0)
+        .map_err(|_| Failure::Control)?
+        .start_successor_with(
+            &ADMISSION,
+            component_provider,
+            |_, _, _, _| std::panic::resume_unwind(Box::new(())),
+            Hooks::none(),
+        )
+        .map_err(|_| Failure::Control)?;
+    let joined: super::JoinedOutcome = submitted
+        .receive()
+        .map_err(|_| Failure::Control)?
+        .into_normal()
+        .err()
+        .ok_or(Failure::Control)?;
+    assert_eq!(joined.termination, Termination::Panicked);
+    assert!(!joined.retired);
+    assert_eq!(SLOT.sealed_count(), Ok(1));
+    assert!(matches!(
+        owner.try_reserve(managed_prepared()?.0),
+        Err(SubmitError::Used)
+    ));
+    Ok(())
+}
+
+/// One outer component provider survives two real joined jobs with distinct original Controls.
+/// A stopped neighbor reaches worker startup and retires before entering its producer.
+/// # Errors
+/// Preserve preparation, Stop, actual submission and actual collection failures.
+/// # Panics
+/// Fail if an invocation borrows another owner, bypasses Stop or loses joined custody.
+#[test]
+fn shared_provider_outlives_distinct_joined_jobs_and_stopped_startup() -> Result<(), Failure> {
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static FIRST: WorkerSlot = WorkerSlot::new();
+    static SECOND: WorkerSlot = WorkerSlot::new();
+    static STOPPED: WorkerSlot = WorkerSlot::new();
+
+    let owner: Arc<ProviderScope<'static>> = Arc::new(ProviderScope::component(ADMISSION.claim()?));
+    let lifetime: Weak<()> = owner.retirement_witness();
+    let provider_entries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let entries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let mut previous_stop: Option<StopHandle> = None;
+    for (slot, stop_at_startup) in [(&FIRST, false), (&SECOND, false), (&STOPPED, true)] {
+        let config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+        let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+        let (prepared, stop): (PreparedInvocation, StopHandle) =
+            PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)?;
+        if let Some(previous) = previous_stop {
+            assert!(!Arc::ptr_eq(&previous.scope, &stop.scope));
+            assert_eq!(previous.request_stop()?, StopDisposition::Latched);
+        }
+        if stop_at_startup {
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+        }
+        let exact_stop: StopHandle = stop.clone();
+        previous_stop = Some(stop);
+        let provider: Arc<ProviderScope<'static>> = Arc::clone(&owner);
+        let expected_provider: Weak<()> = Weak::clone(&lifetime);
+        let worker_provider_entries: Arc<AtomicUsize> = Arc::clone(&provider_entries);
+        let worker_entries: Arc<AtomicUsize> = Arc::clone(&entries);
+        slot.try_reserve(prepared)
+            .map_err(|_: SubmitError| Failure::Control)?
+            .start_worker(
+                move |prepared, facts, hooks| {
+                    run_worker_with(
+                        prepared,
+                        || Ok(()),
+                        |()| {
+                            worker_provider_entries.fetch_add(1, Ordering::AcqRel);
+                            Ok(provider)
+                        },
+                        move |config, borrowed, control| {
+                            assert!(Weak::ptr_eq(
+                                &expected_provider,
+                                &borrowed.retirement_witness()
+                            ));
+                            assert!(Arc::ptr_eq(&exact_stop.scope, &control.stop_scope));
+                            worker_entries.fetch_add(1, Ordering::AcqRel);
+                            component_failure(config, borrowed, control)
+                        },
+                        facts,
+                        hooks,
+                    )
+                },
+                None,
+                Hooks::none(),
+            )
+            .map(drop)
+            .map_err(|_: SubmitError| Failure::Control)?;
+        slot.collect().map_err(|_: CollectError| Failure::Control)?;
+        let joined: super::JoinedOutcome = slot
+            .take_result()
+            .map_err(|_: CollectError| Failure::Control)?;
+        let expected: Failed = if stop_at_startup {
+            Failed::from(Failure::Cancelled)
+        } else {
+            primary()
+        };
+        assert_eq!(operation_failure(joined.operation.as_ref()), Some(expected));
+        assert_eq!(joined.termination, Termination::Returned);
+        assert!(joined.retired);
+        assert!(matches!(slot.take_result(), Err(CollectError::NotReady)));
+        assert_eq!(config_lifetime.strong_count(), 0);
+        assert_eq!(lifetime.strong_count(), 1);
+        assert_eq!(Arc::strong_count(&owner), 1);
+    }
+    assert_eq!(provider_entries.load(Ordering::Acquire), 2);
+    assert_eq!(entries.load(Ordering::Acquire), 2);
+    drop(owner);
+    assert_eq!(lifetime.strong_count(), 0);
+    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
 }
 
 /// Controller-only observation copies a closed failure, never an owning completion.
@@ -289,8 +592,8 @@ fn job_native_foreign_origin_records_control_before_actual_retirement() -> Resul
             )
             .map_err(|_| Failure::Control)?;
             let entered = gate.wait();
-            let recorded_before = recorded_failure(&SLOT.facts)?;
-            let retired_before = SLOT.facts.retired.load(Ordering::Acquire);
+            let recorded_before = recorded_failure(SLOT.fixture_facts()?.as_ref())?;
+            let retired_before = SLOT.fixture_facts()?.retired.load(Ordering::Acquire);
             let live_config_before = lifetime.strong_count();
             let observed_before = SLOT.observer().poll_until(Instant::now() + WAIT);
             let withheld = SLOT.take_result();
@@ -464,8 +767,8 @@ fn job_actual_builder_refusal_preserves_unsubmitted_custody() -> Result<(), Fail
             let observed = SLOT.observer().poll_until(Instant::now() + WAIT);
             let collected = SLOT.collect();
             let taken = SLOT.take_result();
-            let operation_missing = SLOT.facts.operation.get().is_none();
-            let retired = SLOT.facts.retired.load(Ordering::Acquire);
+            let operation_missing = SLOT.fixture_facts()?.operation.get().is_none();
+            let retired = SLOT.fixture_facts()?.retired.load(Ordering::Acquire);
             let sealed = SLOT.sealed_count();
             let original_live = lifetime.strong_count();
             let providers = PROVIDERS.load(Ordering::Acquire);
@@ -542,7 +845,8 @@ fn poison(slot: &WorkerSlot) -> Result<(), Failure> {
 /// # Errors
 /// Refuse missing facts, failed acquisition or absent actual poison.
 fn poison_recorded_facts(slot: &WorkerSlot) -> Result<(), Failure> {
-    let cell = slot.facts.operation.get().ok_or(Failure::Control)?;
+    let facts: Arc<Facts> = slot.fixture_facts()?;
+    let cell = facts.operation.get().ok_or(Failure::Control)?;
     let caught = std::panic::catch_unwind(|| -> Result<(), Failure> {
         let _guard = cell.lock().map_err(|_| Failure::Control)?;
         std::panic::resume_unwind(Box::new(()));
@@ -763,8 +1067,8 @@ fn job_actual_preview_moves_once_and_record_after_take_refuses() -> Result<(), F
     .map_err(|_| Failure::Control)?;
     let entered = gate.wait();
     let premature = SLOT.take_result();
-    let recorded_before = SLOT.facts.operation.get().is_some();
-    let retired_before = SLOT.facts.retired.load(Ordering::Acquire);
+    let recorded_before = SLOT.fixture_facts()?.operation.get().is_some();
+    let retired_before = SLOT.fixture_facts()?.retired.load(Ordering::Acquire);
     let released = gate.release();
     let collected = collect_available(&SLOT);
     entered?;
@@ -775,8 +1079,11 @@ fn job_actual_preview_moves_once_and_record_after_take_refuses() -> Result<(), F
     }
     let outcome = SLOT.take_result().map_err(|_| Failure::Control)?;
     let duplicate = SLOT.take_result();
-    let record_after_take = SLOT.facts.record(Err(Failed::from(Failure::Cancelled)));
-    let cell = SLOT.facts.operation.get().ok_or(Failure::Control)?;
+    let record_after_take = SLOT
+        .fixture_facts()?
+        .record(Err(Failed::from(Failure::Cancelled)));
+    let facts: Arc<Facts> = SLOT.fixture_facts()?;
+    let cell = facts.operation.get().ok_or(Failure::Control)?;
     let payload_moved = cell.lock().map_err(|_| Failure::Control)?.is_none();
 
     assert!(
@@ -853,8 +1160,11 @@ fn job_actual_inner_fact_poison_preserves_failure_and_refuses_normal_claim() -> 
     }
     let outcome = SLOT.take_result().map_err(|_| Failure::Control)?;
     let duplicate = SLOT.take_result();
-    let record_after_take = SLOT.facts.record(Err(Failed::from(Failure::Cancelled)));
-    let cell = SLOT.facts.operation.get().ok_or(Failure::Control)?;
+    let record_after_take = SLOT
+        .fixture_facts()?
+        .record(Err(Failed::from(Failure::Cancelled)));
+    let facts: Arc<Facts> = SLOT.fixture_facts()?;
+    let cell = facts.operation.get().ok_or(Failure::Control)?;
     let Err(poisoned) = cell.lock() else {
         return Err(Failure::Control);
     };
@@ -898,7 +1208,7 @@ fn job_actual_duplicate_record_preserves_joined_contract() -> Result<(), Failure
         primary: Failure::Cancelled,
         ..primary()
     };
-    slot.facts.record(Err(original))?;
+    slot.fixture_facts()?.record(Err(original))?;
     let (prepared, config_lifetime) = prepared()?;
     let provider_lifetime = Arc::new(OnceLock::<Weak<()>>::new());
     let observed_provider = Arc::clone(&provider_lifetime);

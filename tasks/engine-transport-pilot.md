@@ -31223,6 +31223,28 @@ result qualifies its selected fixture scope.
    the enforcing types and final serialized, consume-once guard before
    construction or insertion.
 
+**Joined successor source boundary.** The ordinary two-leg path in
+`datagram::receive_joined` returns `ReceivedInvocation::ManagedSuccessor`
+before the single-probe `measure_for_source` call. A declaration supplied
+to `receive_submitted` alone would leave the pair unmeasured. The joining
+owner can consume the genuine first and terminal ordinary histories
+before `ManagedProtectedReport::from_observed` projects them for reporting.
+The future receiver must enforce at most one history append per admitted
+exchange, including repeats across reporting or reconnect. Keep the
+existing authenticated transport commit, cookie history and charged work
+as historical facts when numerical admission refuses the exchange.
+
+**Reissue prerequisite — 23 November 2026.** The current Windows facade
+owns one process-wide worker, one CNG provider claim and one process-wide
+resume registration attempt. The worker retires its provider scope after
+the invocation. The observation owner explicitly closes the registration,
+and the callback slot remains spent. The S2.2
+[process-owned provider requirement](#receiver-first-integration-continuation--11-november-2026)
+must precede the fresh-reissue control. The production owner needs to retain
+the initialized provider through all admitted jobs and their confirmed
+retirement, and keep power invalidation bound to the actual current
+invocation. Retain the one-shot controls for the present laboratory facade.
+
 **Acceptance planned:** one healthy current exchange enters history once and
 a fresh one works after qualified reissue. At the real final guard and
 history consumer, challenge absent or expired evidence, wrong source/trust/
@@ -31237,6 +31259,237 @@ Later Core proposal, broker effect and acknowledged settlement stay P3/P4.
 Reference admission, positive history integration and their exact-candidate
 results remain open. The plan update schedules no builds, native execution
 or formal work.
+
+###### Retain the original chart on joined protected receipts — 23 November 2026
+
+S2.1/S2.2, W11-W01 and CHECK-7/11/25/27. The genuine normal and abnormal
+joined receipt projections now retain the worker's original pre-acquisition
+chart. The nominal reference uses the existing exact midpoint of the leading
+pre-send and receive-return coordinates. It preserves a half nanosecond without
+a new clock observation. `same_invocation` compares the original allocation.
+Equal numeric origins do not make two invocations share a chart. These
+historical observations preserve the original receive age and guarded commit.
+The calibrated statistical reference and production sample admission remain
+with their existing owners.
+
+Rust contract and lifecycle controls verify both ordinary legs and the
+retained first receipt after abnormal join with an independent integer
+midpoint calculation and exact original receive and commit observations.
+The fixed test checks a 10.5 ns midpoint, reversed captures and an
+equal-origin foreign chart. The first build retained a test-only
+`unused-qualifications` refusal after the new import. A later candidate
+passed before tightening the test's exact age and commit assertions.
+
+The final detached tree `6b740db79ae8a663b75d2604048cfa16b25ad644` has 650
+product inputs with SHA-256
+`f426b7fd2e90eee145df99acfe8323b46fa8b8c56e89f2442fe748254741adec`.
+Rust 1.100.0 passed formatting, all 614 GNU EP1 library tests, GNU EP1
+Clippy and MSVC-target EP1 Clippy through the frozen offline runner.
+The Windows target accepted the existing 512-byte terminal layout ceiling.
+Independent review checked the actual join and raw result. The raw
+`engine-development-c.json` hashes to
+`f426e457987c7968e72547b22f2efef0a5593f580715ecd0ae558bc7d783b549` under
+`~/.local/share/nevrotick/v1-receiver-joins-20261123.0jVJwc9S/`.
+Exact-candidate Windows execution and affected metric gates remain open.
+Production history still needs qualified mapping and invalidation, date,
+scale and uncertainty inputs. The change supplies no sample eligibility.
+
+###### Retain authenticated peer quality claims on joined receipts — 23 November 2026
+
+S2.1/W11-W01 and CHECK-8/9/25/27. The managed protected receipt now keeps
+the stratum octet, signed precision exponent, and exact root-delay and
+root-dispersion wire bits from the same authenticated header as LI, T2
+and T3. The receiving path retains these claims with the original
+configuration, bracket and commit during the normal and abnormal joins.
+It does not interpret these claims as trusted error bounds or add them to
+the diagnostic output.
+
+Rust contract and lifecycle review traced the authenticated response
+through both genuine worker legs and the failure path that retains the
+first receipt. Those tests compare distinct literal values, including
+negative signed precision and high bits in both root fields. An independent
+fixture readback reproduced all three packets from their original test
+correlation and cookie plaintext with cryptography 41.0.7. Their sizes
+remain 156, 140 and 140 bytes. The private synthetic nominal-reference
+case supplies inert values for the four new fields after independent
+review identified the missing initialization.
+
+The 650-input product identity is
+`08033078c39ce8d5bb9e5fc464fe9f23ed7b3c5a585179e8c7f7ddfc0130317b` on detached tree
+`cf737a2e64f98081b4d139cb3353244cd8dc73c7`. Rust 1.100.0 passed formatting,
+614 GNU EP1 library tests, 91 doctests and GNU and MSVC-target
+EP1 Clippy. The Windows compile-time 512-byte ceiling remains enforced.
+The raw `engine-green.json` under
+`~/.local/share/nevrotick/v1-timing-custody-20261123.eorA0LXL/` hashes to
+`7bc33defb2ccbc2cf397cb974e802d4d7e1f1101bbfac0d212bb39f8c25b4d09`.
+Windows execution and affected-file coverage and mutation remain open.
+Positive Core admission still requires independent date, scale, mapping
+and uncertainty evidence.
+
+###### Run joined jobs with one held provider scope in the component fixture — 23 November 2026
+
+S2.2 and CHECK-8/9/25/26/27. The existing worker now calls a shared
+execution path that accepts job-held provider custody. The public
+laboratory route still claims its only process admission under the
+original configuration and deadline guard. It constructs and drops
+the native provider in that same worker. The path records the original
+outcome before releasing provider custody and configuration. An actual
+thread join still controls result transfer, including residual thread
+resources and unwind.
+
+Rust contract and lifecycle QA exercised two distinct jobs and a
+stopped third job through the actual reservation, Builder, join and
+take path. The first two used the same outer component provider and
+distinct original Stop scopes. Each transferred its own typed operation
+failure exactly once. Late Stop on a prior scope left the next scope
+eligible for its own startup check. The stopped third job entered
+neither the provider factory nor the producer. The outer component
+provider survived the joins and retired at the owner's final drop.
+
+Rust 1.100.0 passed 615 GNU EP1 library tests and 91 doctests,
+format and GNU and MSVC-target EP1 Clippy. The GNU optimized job
+selection passed 16 tests. The first attempt stopped at the
+reserved scratch path before any Cargo command. A separate optimized
+launcher setup error also stopped before compiling and was corrected.
+The initial compile
+then refused a test import that made an existing qualified name
+redundant. The corrected fixture keeps the original path and lint policy.
+Independent review checked the exact startup, failure and retirement order.
+
+The 650-input product identity is
+`548394b3d5c28339f224563ff065f1c56f3e76e84b39a5fffe55398fc5c3ff44`. The ordinary and optimized
+scopes match that product map. Their raw receipts under `~/.local/share/nevrotick/s22-worker-provider-20261123.EFmJTCHZ/`
+are `engine-retry.json` and `engine-optimized-final.json` with hashes
+`d89905cde6b60618d4298109ec2bea2b8f76139df58d03894eddb6fe7dd57ea7` and
+`8e71733bed85aa80816ae0eb7168a002a5c6ad3cbfbb321587f0045a16da0f2d`.
+The native process-owned provider and power observer still need a
+serialized acquisition owner and native lifecycle evidence. The
+affected coverage and mutation gates and calibrated Core admission
+remain open.
+
+###### Hold the managed CNG provider through the actual worker join — 23 November 2026
+
+S2.2 and CHECK-8/9/25/26/27. The actual Windows managed successor still claims
+the process provider on the worker under the original configuration, Stop and
+cutoff guard. The worker now borrows the initialized scope. The slot retains
+the owner from successful spawn through collection. The collector takes and
+releases it outside the slot gate after the original thread joins, before
+publishing the joined result or closing the power observer. If the Windows
+wait itself unwinds, the slot retains the provider and remains in Joining.
+The standard library consumes the join handle on that path, and no completion
+or retry is inferred. The ordinary one-shot probe retains its prior lifetime.
+
+The Rust contract and lifecycle checks observe the actual managed worker with
+a component provider. The predecessor's exact joined DENY case exited 101
+with zero provider owners after worker return, where the independent
+expectation was one until collection. The corrected loopback cases observe
+one owner before collection and zero after, including the original unwind
+case. Existing controls retain expiry, preserved operation outcomes, original
+resource receipts and the independent peer observations. The first scratch
+preflight refused the reserved path. The first exact selector ran zero cases.
+Later fixture revisions retained the initial Clippy length refusal and the
+missing type qualification before the final checks.
+
+Main `2868a53d97dd308015a0c5ff055bf815af06e439` supplies the current skill
+guidance. Final frozen tree `db7512928b138f17645a7ee40a254dfee4ad46e9` binds
+650 product inputs to
+`b67da5a54dc5ff74593673462c16011e94f72eba38e97bcb1973ed76af1db70f`.
+Rust 1.100.0 passed format, GNU and MSVC-target EP1 Clippy, 615 GNU library
+tests and 91 doctests in the configured isolated ordinary lanes. Independent
+review confirmed that the provider remains in static custody during the actual
+wait, and that a pre-transfer collection refusal keeps its original ownership.
+The exact failing and passing receipts under
+`~/.local/share/nevrotick/managed-provider-join-20261123.Ho6vXq4p/` are
+`red-actual.json` and `verified.json` with SHA-256
+`7ac5660a3870ac16402dba92954ee408bf4caf9dafb407c830dc26ed27c2dfb7` and
+`f43835a91f1819d43a493aa9ce9ba92a562ed2288f0b0244083c58d6f54f9f50`.
+
+The native destructor's close status and Windows wait failure were source
+reviewed and remain outside these executions. The next S2.2 slice still needs
+one provider held across successive real joined jobs and a process-owned
+power observer that withdraws continuity on delivery. Physical power
+transitions, native CNG teardown, affected coverage and mutation, and
+positive Core history admission remain open.
+
+###### Rebind the laboratory timing pair to Main — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/24/25/27. The prepared twelve-path
+overlay applies exactly to Main `f78f4a5218ee0e2aa4e6bc124c78921f1debd427`.
+The detached tree is `80540e5f0763d17426e3674edfe289cf492289b9`.
+All 2,250 paths match the frozen tree. Both locks, all 21 cooldown manifest
+bindings and all 112 standalone inputs match the reviewed preparation.
+The product and facade-helper maps changed with Main. The current
+650-input product identity is
+`873c72fe704abbb12524498e1d9d7397ccee985165087443c4a8a81912fdb4e7`.
+
+Rust 1.100.0 passed all 20 facade cross-link lanes, including MSVC
+x64-v3 PE/PDB readback, in 102.142 seconds. The matching peer passed
+all 12 lanes in 169.582 seconds. Both offline dependency and metadata
+rows passed. The same 31 GNU cases passed in ordinary and optimized
+modes, with both Clippy rows and MSVC release PE/PDB readback. Both
+build scratch roots retired. The selected 26 isolated Python dependency
+and facade controls passed after correcting the test import path.
+There were no tests in the initial import refusal.
+
+The paired reader admitted the current facade and peer with matching
+build, tool, SDK, EXE and PDB identities. It refused foreign facade
+path, crossed image pin, historical peer receipt and wrong patch.
+The restored pair passed, and its source and receipt bookends matched.
+The original 13 timing-reader cases and retained historical stream
+readback passed independently. The new facade, peer and CPU probe
+executables differ from the previous guest run. Its ten timing brackets
+retain their historical relative-order scope.
+
+The readback is under
+`~/.local/share/nevrotick/protected-timing-current-main-20261123.YshIe9f2/`.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `source-admission.json` | `45f849ddfa271694783e453b4c2e1d70ebe7a4186313e193097b0bb3b8af0eba` |
+| `facade-refresh/verification.json` | `f2112571a4c7aeedde6a74e676ed3f68c5cb3fad436af182bd0b0d5d4a83ab99` |
+| `build/verification.json` | `2fe9c3afde5fe0547c8caf28e3695505ee8da8d08567abbac45e7bf114aa20c9` |
+| `pair-readback/verification.json` | `634065f1a5e5e593eef5933327baea6ccaeb5726a50fb30a27087d0c0e32cadc` |
+| `kepre_4e5b3aaf5233/verification.json` | `ed3091324e06bf42380a731fd744a3592b89fa95f6befed704c55d68462d2544` |
+| `kefac_b6303f5cf6b4/verification.json` | `eaef948ccb4f3d62a20c4485c9215ae1836b7cf77bb87978fccc8647a9a16d69` |
+| `main-integration.json` | `c2dd32ceb758ff3ed555cc7a0eeab47f9be773f355d7a47656e8323d89ab9dcf` |
+
+The `manage-windows-sandbox` preflight observed the exact owned offline
+guest and ran the current CPU, peer-loader and facade-argument controls.
+Guest exits were 0, 2, 126, 126 and 124 as selected. Host memory was
+3,919 MiB before staging and 3,536 MiB at the payload bookend. The
+mapped leaves were empty after preflight. This run used no certificate
+store operation or protected exchange.
+
+The exact newly built pair then passed the ordinary two-leg exchange in
+the same owned offline Sandbox. Both processes exited, all four streams
+reached EOF, and the peer acknowledged the client exit after two requests
+and two replies with zero extra datagrams. The paired reader verified six
+facade and four peer brackets at 10 MHz. Request and reply gaps were
+11,349 and 2,644 ticks for the first leg and 2,560 and 835 ticks for the
+successor. The 42.148-second run observed restoration of the physical
+Root and CA rows, removal of guest scratch, and empty host mapped leaves.
+Host, guest and paired reader completed successfully. The scope is
+relative application-event order. The current report remains
+`mapping-unavailable eligible=0 fresh_sync=0`.
+
+Planning and execution used `plan-code-change`,
+`qa-environment-preflight`, `qa-regression-selection` and
+`qa-contract-tests` for the frozen source and its actual consumers.
+`qa-independent-review` checked the complete overlay, unchanged
+criteria, graph and raw outcomes. An independent readback matched the
+original delivered images, both child results, both timing comparisons
+and restored ownership. Applied the twelve files to the Main worktree.
+At integration, all 2,248 non-task paths matched the frozen bytes and modes.
+Root admission and the product, facade and peer input maps reproduced.
+The two updated task records fall outside those three admitted maps.
+The later [MSIX resource readback](windows11-integration.md#verify-the-held-ui-images-activation-resources--23-november-2026)
+changes shared PE verification source. Both reader versions agree on the
+five retained timing images and symbols. Native evidence remains bound
+to the original frozen timing candidate and delivered artifacts.
+The [reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+now defines the reference and invalidation controls. It awaits actual
+calibration and event-placement evidence before mapping or Core history
+admission.
 
 ###### Pair protected capture brackets on Windows loopback — 23 November 2026
 
@@ -31578,3 +31831,392 @@ receipt SHA-256 is `561f5b428ca9f3cdfede023c159ab70c69cb305974ee65d2c3878c55ef5c
 `~/.local/share/nevrotick/engine-core-selected-20261123-n_h2d3te/`. Build scratch
 was retired. Windows registration execution on these changed bytes and
 the affected-file 90% line and 95% mutation gates remain open.
+
+###### Refresh the protected timing pair after Engine and PE changes — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/24/25/27. Both producers
+used tree `21f05a6a4911726812ddd70741bd65a2f80bafd4` over Main
+`f78f4a5218ee0e2aa4e6bc124c78921f1debd427`. The detached sources
+agree on all 2,252 tracked paths and modes. The facade receipt also
+binds the worktree pointer. The paired reader checks that exact extra
+file and both producer source digests. Eight of 650 product inputs and
+three of 17 facade helpers changed since the earlier pair. All 112
+standalone peer inputs match their prior bytes. The peer links the
+updated Engine and uses the same Rust toolchain and Windows SDK as
+the facade.
+
+Rust 1.100.0 passed 20 facade cross-link lanes in 100.45 seconds.
+The peer passed all 12 lanes in 179.391 seconds against a 300-second
+allowance. The two configured locked dependency and metadata rows
+passed, and the same 31 GNU peer cases passed in ordinary and
+optimized modes. Both peer Clippy lanes and the MSVC x64-v3
+release link passed. The static paired reader verified the exact
+delivered PE/PDB pairs with the current PE helper. It refused the
+foreign facade path, crossed image pin, historical peer receipt and
+wrong patch, then accepted the restored pair. Its source and 38
+additional pinned-file bookends matched. Independent review checked
+raw lane results, SDK and tool equality, image and symbol identity,
+and the exact refusal diagnostics.
+
+The WSL-volume static preflight passed its input checks but the
+volume was 300 MiB short of the 5 GiB output start reserve. The peer
+build used the existing Windows user evidence volume for durable
+output, after verifying inherited permissions. It kept the 4 GiB
+WSL runtime floor, 7 GiB starting scratch requirement and the
+single execution lease. The peer preflight receipt describes the
+original WSL output location. Both build scratch roots retired.
+
+The WSL evidence directory is
+`~/.local/share/nevrotick/s21-timing-candidate-20261123.xHoeCaUD/`.
+The peer build and raw results are in the matching directory under
+`%LOCALAPPDATA%/NevroTick/`.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `source-overlay.patch` | `a1f60b1ddc227faa0f7c92b929135ef4704033848f882e5210a8b5bceed2802e` |
+| `facade-refresh/verification.json` | `c406860873845af5820555a8e30f0e4e870fbc319a9bba6626aefa85a65d8094` |
+| `build/verification.json` | `f15509edc7b35c1b66c87f47dfa6bbfc88043d8bca1d2097549f93ddbd7fcd5b` |
+| `pair-readback/verification.json` | `707f1f19045fc29b6c322b60470c9eaccc8c06248d5d09eeed5ad2dfbaa3616e` |
+
+`plan-code-change`, `qa-environment-preflight`, `qa-regression-selection`
+and `qa-contract-tests` governed the scoped rebind. The exact build
+and refusal results support the static pair. All three dispatch
+images differ from the previous Windows run. Its relative timing
+and restoration results remain bound to that run. Fresh native
+execution of this pair, the independent calibrated reference,
+finite event-placement error and production Core admission remain
+open. This checkpoint preserves the affected-file line-coverage
+and mutation obligations.
+
+###### Verify the protected timing pair with current CNG custody — 23 November 2026
+
+W11-W01/S2.1, TQ-01/08/09 and CHECK-7/11/24/25/27. The current
+tree `fd7914018c0560c411ef726207a65eab4018c45b` over Main `2868a53d97dd308015a0c5ff055bf815af06e439`
+binds both builds to the same 2,255 tracked files and modes.
+The facade admission separately binds its worktree pointer. Twelve of 650
+product inputs changed since the prior pair. All 17 facade helpers match.
+The standalone peer has three changed CNG inputs, all matching the accepted
+X25519 source evidence. The root and standalone locks, all 21 cooldown manifest
+bindings, the exact-lock advisory inventory, the SDK and the reviewed toolchain
+passed current admission.
+
+All 20 facade cross-link lanes passed in 90.046 seconds.
+The peer passed all 12 lanes in 177.623 seconds. That includes
+both locked dependency-policy and metadata rows, 31 tests in each GNU mode,
+both Clippy rows and the MSVC x64-v3 image link. Both scratch roots retired.
+The paired reader verified the delivered PE/PDB identities, rejected four
+crossed or historical inputs, and accepted the restored pair. It checked
+2,255 source leaves and
+38 additional pinned files before and after use.
+Independent review checked the source delta, the CNG and dependency bindings,
+the frozen products and the exact receipt and artifact identities.
+
+The WSL evidence is under `~/.local/share/nevrotick/s21-timing-rebind-20261123.VAhXGJuF/`.
+The peer's build receipts and artifacts use the matching private directory
+under `%LOCALAPPDATA%/NevroTick/`. The existing durable output and scratch
+reserves and the shared execution lease applied.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `source-overlay.patch` | `a15e1c2b55cc5378257360f814f88ae11c1489950191e047ecae773efd5f1d7b` |
+| `facade-refresh/verification.json` | `eec1e3bac7732989a40f2dcc48425fbfbd66ad184afcd588ccfcae379e488262` |
+| `build/verification.json` | `f0c5057cac9a9bdad70038177958bacdf4307c93e971c1263d84af45aa7e1cbf` |
+| `pair-readback/verification.json` | `ede62f9599e4e2220d32ec73b3148da3062cd85e08864128522b5d53ac0633ac` |
+
+The earlier guest exchange establishes relative capture order on its original
+images. The current pair still needs its native exchange. The
+[reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+still requires independently calibrated UTC and finite event-placement bounds.
+Production Core history admission and affected-file coverage and mutation
+remain open. This rebind used the existing checkpoint, preflight, contract,
+and independent review skills.
+
+###### Keep managed power notifications armed through collection — 23 November 2026
+
+S2.2/W11-W02, TQ-07/09 and CHECK-11/19/24/25/27. The managed successor
+uses persistent delivery through the existing PowrProf registration.
+The callback retains the original Stop handle and stays armed after each
+suspend or automatic-resume event, including a reported delivery failure.
+A second successful Stop observes the existing latch. The probe, plain
+observe CLI, KE preview and broker fixture still use one-shot delivery.
+Both modes share the permanent once-per-process registration slot.
+Delivery and disarm serialize under one lock, and disarm precedes native
+unregistration. The registering owner still closes after collection, or
+requests Stop before closing on an unconfirmed collection.
+
+On tree `20ca0b78ea1e9dafa753c7d8a606cfa846658ab1`, the pinned Rust 1.100.0 lanes passed
+formatting and GNU/MSVC-target Clippy. Six GNU slot tests and eleven GNU
+Engine EP1 tests passed. The managed fixture requested Stop twice after
+actual join and retained the original policy result and close status. A
+directed GNU fault discarded the callback after a delivery error. The
+same retention test then failed at the second delivery, exit 101. That
+fault excludes the final Windows-only public-entry control from its
+source input and gives no generated mutation credit.
+
+The initial MSVC leaf image linked slot and synthetic registration-status
+controls, with the unused PowrProf imports discarded. The final Windows
+control also reaches the public persistent subscription on a spent slot
+and expects `AlreadyUsed`. The ordinary x64-v3 MSVC test image passed
+linking and independent PE/PDB readback using its original Cargo basename.
+Both PowrProf imports are present. The ten named Windows resume controls
+in that image await native execution. Independent review checked both
+modes, the public call sites, lock ordering and the original latch.
+The development and review used the Rust contract and concurrency/lifecycle skills.
+
+| Evidence under `~/.local/share/nevrotick/s22-power-delivery-20261123.wltIuXz3/` | SHA-256 |
+| --- | --- |
+| `final-development.json` | `40fce9db8c20195444e218b8dcf0868952b201c74c8204c27c53f4d1356f56dc` |
+| `fault.json` | `ca83ef238d4684dc4da4d1a1f0f35a4222a697337d62ad34a49a8f95bbc52fb1` |
+| `final-windows-leaf/verification.json` | `95dc54e3d15aa6c449c0b2b112ce73bc71ca2928e348621f978aae8da47eeafd` |
+| `pe-pdb-readback.json` | `ba4dde5801ebf8044c54a2f47c0c6d5232488c23730f64c04b731ce507c0a9b5` |
+
+Power transition delivery and callback overlap require their own native
+evidence. Subsequent work needs a process-owned observer and reusable
+worker admission that binds invalidation to the active generation across
+joined jobs. Calibrated Core history admission and current leaf 90% line
+coverage and 95% critical-file mutation remain open.
+
+###### Bind serial worker collection to the submitted job — 23 November 2026
+
+S2.2/W11-W02, TQ-07/09 and CHECK-8/9/11/19/24/25/27. The same managed
+provider owner can reserve the static slot again after normal retirement,
+actual join and once-only take. Each actual submission installs fresh
+once-written facts. Join and take both check the submitted fact identity.
+The same ticket can retry a busy collection without rejoining a worker
+whose result already reached Joined. A stale ticket, a bare collector
+or a foreign provider owner cannot take managed custody. An abnormal
+join keeps the slot spent and retains one sealed panic payload.
+
+The observer target binds to the reservation's original Stop endpoint.
+Delivery, activation and disarm serialize. An idle delivery crossing
+preparation refuses attachment before spawn. An active delivery requests
+Stop only for that binding and retains it through collection. Epoch
+exhaustion, poison and a failed Stop close later admission. The existing
+Windows facade prepares and submits one job. Its outer provider reference
+drops before collection so CNG teardown still follows actual join and
+precedes Joined publication. Observer close status still reaches the
+caller separately. The process-lifetime admission latch never resets.
+
+Tree `c1c1eaf0b98862da73c052a187adbdaef282bc47` derives from `add74a54d018cc6a15e24e32d290ee142a2264d0` and binds 651 product inputs
+to `827e2979644189d220be9cf53484ef0088e63887bab61b8fd73d92e2d76a74ba`. The pinned Rust 1.100.0 isolated
+format, GNU Clippy and MSVC-target Clippy lanes passed. All 622 GNU
+EP1 library cases passed. Focused selections ran two serial worker and
+five observer target cases. The serial fixture submitted two normally
+retired operations and a stopped third through the same slot. It retained
+one component provider, distinct joined failures, original Stop scopes
+and independent per-job facts. Wrong-owner, former-collector, busy and
+untaken-join controls preserved custody. The fault removed fresh fact
+allocation on reissue. The former collector then joined the current
+worker and the scheduled control failed with exit 101. This is directed
+sensitivity evidence and adds zero generated mutation credit.
+
+Planning and Rust contract review mapped preparation, actual join/take,
+provider custody and callback delivery in the existing Engine owner. An
+isolated writer supplied the power target. The independent integrated
+review found and checked repairs for generation identity, original
+reservation binding, one-shot teardown order and retry after contention.
+The last source review was on `20bd1fe06765307b70e174a143fe37ff240924b4`. The verified delta explicitly
+discards the ticket in an older one-shot control that uses its legacy
+collector and documents the new custody fields. Early receipts retain the mistaken remaining-attempt
+expectation and the Clippy documentation and ticket-use refusals.
+
+| Evidence under `~/.local/share/nevrotick/s22-serial-worker-20261123.N3nbCLaG/` | SHA-256 |
+| --- | --- |
+| `checked.json` | `e2c1a5fa7aa4eb457b542957d31badf4f17405ea7a2d4fd8ba5abf2423f89982` |
+| `checked-fault.json` | `fd7e06d4a16cde4de55a083cfcc5e93d52b683a78df249e4689a001195b5948a` |
+
+Next, keep the actual native observer and provider across multiple jobs
+in an owning acquisition path and exercise confirmed join, real reissue
+and one terminal shutdown. Physical suspend/resume delivery, Windows
+handle and CNG retirement evidence and reached per-file 90% executable-line
+coverage and 95% mutation remain open. The new target is recorded in the
+existing security-module and critical-file inventory. Production history
+still requires independent calibration, date/scale and mapping authority.
+
+###### Keep one native acquisition owner across two protected jobs — 23 November 2026
+
+S2.2/W11-W02, TQ-07/09 and CHECK-8/9/11/19/24/25/27. The explicit
+Windows pair runs a first protected job and permits a second source
+authorization only after both first-job ordinary receipts are joined.
+The second job takes a fresh original configuration and Control under
+the same absolute effect cutoff. Each job uses its own submitted ticket
+and original Stop binding. One persistent PowrProf watch and one
+acquisition provider owner span the pair. Closing reports one native
+observer status. An unconfirmed collection requests the exact original
+Stop and leaves actual worker and provider custody in the static slot.
+The first report and an attempted second refusal remain independently
+readable. The one-job facade still releases its provider after the
+physical join before joined publication.
+
+The detached Engine tree `53860afdcf1f9c2a1180aaa5904f7b66623a57e0` derives from `d8313d7afd54699fd0cd4c4ac7b5eda9d3778f4b`.
+Rust 1.100.0 formatting, GNU/MSVC-target Clippy and all 625 GNU EP1
+library cases passed. Three selected lifecycle controls observed the
+two normal joins, a Stop during registration and an authenticated
+terminal DENY that preserves the first receipt. The two-job control
+used two controlled UDP peers, original configuration identities and
+one component provider, and observed its retirement before the
+observer close callback. The directed variant removed the Ordinary
+predicate alone. It attempted the second authorization after DENY,
+which the exact test caught with exit 101. This gives no generated-kill
+credit. Early GNU Clippy test documentation and length refusals remain
+in the initial receipt.
+
+The x64-v3 MSVC external consumer for tree `cf53ec8a4b80e55b01f8e44a2898bf3abcf7e5aa` compiled and
+linked. Independent review tightened invocation identity and cutoff
+checks in that consumer only, with all 651 Engine inputs unchanged.
+The `managed-protected-pair` case admits four explicit local peer
+atoms and requires original ordinary receipts, separate invocation
+charts, ordered local captures, bounded work and one observer close
+before writing its success witness. Its status keeps
+`mapping-unavailable eligible=0 fresh_sync=0`.
+
+All 20 isolated subprocess lanes returned zero. Final artifact
+export correctly refused the PDB, leaving the build incomplete.
+A diagnostic rerun used the same tools and sources, preserved the
+rejected PE and PDB as diagnostics, and propagated the same refusal.
+Independent MSF routing readback found stream 33 using blocks
+8193 and 8194, both reserved free-page-map locations. This matches the
+[LLVM MSF writer defect](https://github.com/llvm/llvm-project/issues/206436)
+and its boundary allocation in the pinned LLVM 23.1 writer. The
+[MSF layout](https://llvm.org/docs/PDB/MsfFile.html#file-layout)
+requires those pages to remain reserved. The exporter guard remains
+in force and no qualified Windows artifacts were exported.
+
+| Evidence under `~/.local/share/nevrotick/s22-pair-owner-20261123.KK6Irvi1/` | SHA-256 |
+| --- | --- |
+| `engine.json` | `445fc34f173986040f3bbe27bceb3f9a0229d96128dc2b57914b714135354fd4` |
+| `fault.json` | `bf3bffa104d548dcf4a795c71b9cac482c14907bce6d53015be9b96dd454fc1d` |
+| `facade/verification.json` | `107983824bfdef0f697ec3cfae4e4eacb53632c300c611f4f7627b4249c64f97` |
+| `facade-diagnostic/verification.json` | `3b8a6093f45d94b04b389fd51dfcc4fb4716c86d4e685578c07ac830bc816939` |
+| `pdb-debug-rejection/rejection.json` | `c641ec5a37d18531edecc5d3cfb6323396b952e21032f84c53065b231d44eab9` |
+| `pdb-layout.json` | `b2dd0b31c240dc6e4812ac35b1504b80f2a439edcee7a9e7975542b65af5587b` |
+
+Planning and Rust contracts established the original worker, cutoff,
+report and cleanup boundaries. Separate detached writers prepared
+the external consumer and lifecycle tests. Independent review traced
+both flows and corrected the public distinction between observer
+close and actual worker retirement. The checked components exercise
+the pair's real coordinator and joined receiving. Resume artifact export with an admitted linker that emits a conforming
+PE/PDB pair. Native guest execution also needs the qualified two-peer controller with two separate
+retirement markers, both independent peer observations and verified
+trust restoration. Physical power delivery and per-role resource
+retirement need native evidence. The changed 90%/95% gates and
+calibrated Core history admission remain open.
+
+###### Prepare the two-peer Windows witness and read back the linker diagnosis — 23 November 2026
+
+S2.2/W11-W02 and CHECK-19/24/25. Artifact QA used the original refused
+facade build at `cf53ec8a4b80e55b01f8e44a2898bf3abcf7e5aa`. The unchanged
+PE/PDB reader refused the original reserved-page layout. A private diagnostic
+copy routes stream 33 through two appended data pages. Independent readback
+matched the original executable bytes and all 203 logical stream lengths
+and hashes and checked the matching CodeView GUID and age using the same reader.
+The canonical export remains incomplete. The diagnostic copy has no native
+artifact admission.
+
+The prepared two-peer Sandbox controller uses the existing offline fixture and
+one 55-second case window. It binds distinct endpoint pairs to the original
+peer processes and publishes separate client-exit markers after the exact
+client exits successfully. Its success path requires three zero child exits,
+six capture streams through EOF and original physical-store restoration.
+PowerShell parsing, fresh rendered input admission and Windows execution remain
+open. The controller template keeps the facade and peer hash placeholders.
+
+Black-box QA ran nine isolated host witness controls with a read-only source
+and evidence bind. They reached the healthy synthetic sequence, crossed
+identity and alias refusal, missing EOF, altered pins, bad exit/restoration
+order and the retained one-peer receipt refusal. Independent review matched
+the reader to the prepared controller's schema and progress order. Outer
+dispatch must join the actual controller exit with the matching immutable
+records, admitted guest and artifact/PKI pins. The controller can exceed its
+deadline at final publication and then exit nonzero. A terminal JSON record
+alone cannot establish success.
+
+| Evidence under `~/.local/share/nevrotick/s22-pair-evidence-20261123.YWaELT2q/` | SHA-256 |
+| --- | --- |
+| `pdb/verification.json` | `1abf555a192e7e96ba8dfe819a54bd94ad2ae0cff50b9d166740fd858966232f` |
+| `pdb/independent-readback.json` | `21c476f9f8ad8d9c29f6c83723a299e24102b758ea1a98d7a9f734a2f13b948d` |
+| `controller/source-preparation.json` | `ccb7e540b7e2744f7f23ea20383125515fbd9b8a6a4c5963f91510d29a7bf65e` |
+| `reader-controls.log` | `22361c74bf3a3b7ef2e3bced841d73ec42a5dfd4ec86bd443bd8d708a39e2358` |
+
+The existing artifact acceptance, native power and per-role retirement,
+affected 90%/95% gates, and calibration prerequisites for Core history retain
+their prior status.
+
+###### Retain the Engine process presentation around each joined job — 23 November 2026
+
+S2.1/W11-W01, TQ-07/09 and CHECK-6/11/24/25/27. The Windows managed
+successor and each member of the managed pair read the Engine process's
+presentation before submitting the original reservation and after the
+same job's normal joined take. Both outcomes, including an exact typed
+query refusal, travel in the joined report. Submission, collection and
+abnormal retirement refusals produce no closing observation. A normally
+joined terminal refusal retains its observations beside its historical
+outcome. The original power owner stays live across the reads. Packet
+capture placement, source and time authority, and eligibility remain
+unchanged. The older one-leg protected probe keeps its existing report.
+
+Planning, Rust contracts and lifecycle QA traced the two actual producers
+and the sealed report. The integrated test cases distinguish each job's
+observations, an observed change, exact query refusals, an alternate
+backend, and absent closing evidence on abnormal join. The new Windows
+branches compile in the EP1 MSVC Clippy selection. Their runtime remains
+open. The GNU EP1 suite passed 625/625 including the matching loopback
+job and retirement cases. Rust 1.100 formatting and GNU/MSVC Clippy
+passed. The first attempts retained the test-length and E0596 refusals
+and a GNU scratch reserve stop. The test replay used an owned tmpfs
+with the same target, fixtures and resource floor. All 651 product inputs
+match the later combined facade tree. Independent review checked normal
+and abnormal custody, and the scope of the older probe.
+
+###### Export the two-peer facade with a fixed larger symbol layout — 23 November 2026
+
+S2.2/W11-W02, CHECK-19/24/25/26. The explicit normal-facade
+`--facade-large-pdb` selection passes `/PDBPAGESIZE:8192` to the existing
+pinned LLD. The default and the three companion images keep 4096-byte
+pages. The facade keeps full debug information, the x64-v3 floor and
+existing mitigation flags. Export admits the raw emitted pages and the
+exact PE/PDB identity. Both native profiles check their selected actual
+layout, hashes and CodeView identity before staging and again at
+completion. A fault parent requires a physical 4096-byte pair. The
+native receipt is parsed and hashed from the same bounded snapshot.
+
+The isolated producer emitted both probe layouts. LLVM read both, and
+Microsoft SDK Debugging Tools 10.0.28000.2957 on Windows loaded private
+symbols and lines for both. The crossed same-name pair failed with exit
+1. PowerShell parsed the prepared two-peer controller with zero
+diagnostics. The earlier observer captured the symbol-detail diagnostic
+on stderr and incorrectly expected it on stdout. The final control
+retains both channels and passed tool and input bookends and scratch
+retirement. These checks did not launch the probe or facade images.
+[Microsoft SymChk documentation](https://learn.microsoft.com/windows-hardware/drivers/debugger/using-symchk)
+
+The actual combined facade tree `855854ba7f8ce071937287596f747462d05a1262`
+passed all 20 offline MSVC lanes and exported four matching raw pairs.
+The facade has 5,538 pages of 8,192 bytes. The unchanged 4 KiB predecessor
+refusal and the private diagnostic transform retain their original
+scope. The larger layout remains subject to the same strict routing
+and extent checks. Independent review reproduced default and
+fault-parent acceptance when the new profile marker was removed from
+an earlier candidate. The repaired reader exercises both refusals and
+their healthy neighbors. The 98 Engine runner and 18 PE/PDB controls
+passed. The affected build and artifact checks used the existing
+configured verification and package QA paths.
+
+| Retained evidence under `~/.local/share/nevrotick/s21-engine-leap-20261123.9tkeq794/` | SHA-256 |
+| --- | --- |
+| `engine-corrected.json` | `97ccd988e1c198cd2f4831526f9bf0533b2ffe64de6e3e9111dd9265ff8e3928` |
+| `engine-tmpfs-execution-final.json` | `2e9719a08bd186e34ff27f0c48a7680c1e571ce3b02f771fd0801eba8090522c` |
+| `facade-large/verification.json` | `31ae791dbd5f0b7ca7b86d8ce3b07ee8ffeadf42c4ac29363f86624e40a95b9a` |
+| `facade-large/summary.json` | `f5360f6bf0911b5fb56320e6fa964cd7a18168d03a27e532e024c8f42d417fca` |
+| `windows-symbol-pilot-final.json` | `06a4e4b71952003465ae5df51f0b950e29476eeac2ed18647d246966d1247b84` |
+
+The live canonical receipt uses its original temporary filesystem
+paths. The durable copies keep the exact raw bytes for readback and
+do not rebind those paths. Rebuild the peer against the same current
+Cargo closure, then run the paired reader with only the facade's
+8192-byte profile. A later admitted two-peer Windows run still needs
+the exact controller, actual process outcomes and trust restoration.
+The raw process observations establish no continuity or calibrated bound.
+The independent reference, production history, physical power and
+affected 90%/95% gates remain open.

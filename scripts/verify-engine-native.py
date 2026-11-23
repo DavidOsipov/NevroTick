@@ -46,6 +46,8 @@ MANAGED_EOF_ROW = ("scope=managed-protected-native eligible=0 fresh_sync=0 stale
 MANAGED_EOF_BUFFERED = MANAGED_EOF_ROW.replace("cleanup=none", "cleanup=response/unexpected-eof")
 FACADE_CASES[MANAGED_EOF_MODE] = (0, MANAGED_EOF_ROW)
 TARGET = "x86_64-pc-windows-msvc"
+DEFAULT_PDB_PAGE_SIZE = 4096
+FACADE_LARGE_PDB_PAGE_SIZE = 8192
 TEST_ROSTER_NAME = "windows-test-roster.json"
 MAX_TEST_ROSTER_BYTES = 1024 * 1024
 MAX_LAUNCHER_SOURCE_BYTES = 64 * 1024
@@ -304,6 +306,20 @@ def read_record(path):
     return PE.Q.C.read_analysis_json(path, maximum=ALLOCATION.MAX_JSON)
 
 
+def read_native_build_record(path: Path) -> tuple[dict, bytes]:
+    """Bind strict JSON admission to one raw build receipt snapshot."""
+    raw: bytes = PE.Q.C.read_analysis_bytes(path, maximum=ALLOCATION.MAX_JSON)
+    with tempfile.TemporaryDirectory(prefix="engine-native-build-receipt-") as private:
+        snapshot: Path = Path(private) / "build-receipt.json"
+        descriptor: int = os.open(snapshot, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o400)
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(raw)
+        record: dict = read_record(snapshot)
+        require(PE.Q.C.read_analysis_bytes(snapshot, maximum=ALLOCATION.MAX_JSON) == raw,
+                "Private native build receipt changed during admission.")
+    return record, raw
+
+
 def facade_fault_sources(source: bytes, outcomes_record: dict) -> list[dict]:
     """Prepare only four exact V19 overlays; grant no build or execution result."""
     require(type(source) is bytes and len(source) <= 256 * 1024
@@ -546,7 +562,7 @@ def read_prepared_facade_fault(receipt_path: Path, fault_id: str, inputs: dict, 
 
 
 def validate_healthy_facade_build(record: dict, expected: dict) -> None:
-    """Require an ordinary successful current facade build in the same tool environment."""
+    """Require a successful default-layout facade build eligible as a fault parent."""
     require(type(record) is dict and type(record.get("schema_version")) is int and record["schema_version"] == 1
             and all(type(key) is str for key in record)
             and record.get("lane") == "build" and record.get("status") == "passed"
@@ -555,6 +571,7 @@ def validate_healthy_facade_build(record: dict, expected: dict) -> None:
             and not any(key.startswith(("fault", "facade_fault", "variant_", "prepared_faults", "healthy_build"))
                         for key in record),
             "Healthy parent must be an ordinary successful facade build, without fault metadata.")
+    require("facade_pdb_page_size" not in record, "Healthy fault parent requires the default PDB layout.")
     input_labels = {"product", "helpers", "copied_source", "control", "vendor", "tools", "stable_payload",
                     "windows_libraries", "sdk_records"}
     require(all(record.get(key) is True for key in ("input_bookends_passed", "normal_library_bookends",
@@ -579,6 +596,21 @@ def validate_healthy_facade_build(record: dict, expected: dict) -> None:
             "Healthy facade build differs from current product, helpers or tool environment.")
 
 
+def validate_facade_symbols(path: Path, artifact: dict, page_size: int) -> None:
+    """Check the selected facade symbol layout and digests on the snapshots consumed."""
+    image: tuple[bytes, str]
+    symbols: tuple[bytes, str]
+    identity: dict[str, str | int]
+    try:
+        image, symbols, identity = WINDOWS_PE.read_export_pair(
+            path, path.with_suffix(".pdb"), subsystem="console", expected_pdb_page_size=page_size,
+        )
+    except ValueError as error:
+        raise Incomplete(str(error)) from error
+    require(image[1] == artifact.get("sha256") and symbols[1] == artifact.get("pdb_sha256")
+            and identity == artifact.get("pdb"), "Facade PE/PDB identity or bytes changed.")
+
+
 def read_healthy_facade_build(receipt_path: Path, expected: dict) -> dict:
     """Bind the healthy receipt and all four exported PE/PDB pairs physically."""
     read = PE.Q.C.read_analysis_bytes
@@ -599,6 +631,8 @@ def read_healthy_facade_build(receipt_path: Path, expected: dict) -> dict:
             digest = hashlib.sha256(data).hexdigest()
             require(facts.get(key) == digest, "Healthy exported image or PDB bytes changed.")
             custody[member] = digest
+        if name == "engine-facade-consumer.exe":
+            validate_facade_symbols(image, facts, DEFAULT_PDB_PAGE_SIZE)
     return {"receipt": record, "receipt_sha256": hashlib.sha256(raw).hexdigest(), "custody_inputs": custody}
 
 
@@ -919,7 +953,7 @@ def engine_libraries(output, work, source, *, vendor, evidence=None):
     return libraries, sorted(directories)
 
 
-def export_build_artifacts(images, work, output, run):
+def export_build_artifacts(images, work, output, run, *, facade_pdb_page_size: int = DEFAULT_PDB_PAGE_SIZE):
     """Admit the complete image and symbol set before exposing any pair."""
     inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
     artifacts, admitted = {}, []
@@ -932,7 +966,10 @@ def export_build_artifacts(images, work, output, run):
             require(PRODUCT.sha256(image) == raw["image_sha256"], "Emitted image changed after hardening readback.")
             pdb = image.with_suffix(".pdb")
             try:
-                binary, symbols, identity = WINDOWS_PE.read_export_pair(image, pdb, subsystem="console")
+                page_size: int = facade_pdb_page_size if name == "engine-facade-consumer" else DEFAULT_PDB_PAGE_SIZE
+                binary, symbols, identity = WINDOWS_PE.read_export_pair(
+                    image, pdb, subsystem="console", expected_pdb_page_size=page_size,
+                )
             except ValueError as error:
                 raise Incomplete(str(error)) from error
             require(binary[1] == raw["image_sha256"], "Emitted image changed after hardening readback.")
@@ -979,8 +1016,23 @@ def export_build_artifacts(images, work, output, run):
     return artifacts
 
 
+def selected_facade_pdb_page_size(args: argparse.Namespace, lane: str) -> int:
+    """Choose the exact larger symbol layout only for the ordinary facade."""
+    large: bool = getattr(args, "facade_large_pdb", False)
+    require(type(large) is bool, "Facade large PDB selection must be an explicit Boolean.")
+    if not large:
+        return DEFAULT_PDB_PAGE_SIZE
+    require(lane in ("build", "native") and getattr(args, "facade_consumer", False) is True
+            and not getattr(args, "default_cohort", False) and not getattr(args, "placement_cohort", False)
+            and all(getattr(args, name, None) is None
+                    for name in ("facade_fault", "prepared_faults", "healthy_build_receipt")),
+            "Large PDB selection requires a normal facade build or native lane.")
+    return FACADE_LARGE_PDB_PAGE_SIZE
+
+
 def build(args, report):
     """Freeze exact inputs, build offline, inspect emitted PE declarations, and re-admit."""
+    facade_pdb_page_size: int = selected_facade_pdb_page_size(args, "build")
     facade = getattr(args, "facade_consumer", False)
     require(type(facade) is bool, "Facade profile must be an explicit Boolean.")
     default = default_cohort_requested(args)
@@ -1025,6 +1077,8 @@ def build(args, report):
                   diagnostic_profile="release", build_jobs=args.jobs, lanes=[],
                   facade_consumer=facade, default_cohort=default,
                   test_features=list(test_features))
+    if facade_pdb_page_size == FACADE_LARGE_PDB_PAGE_SIZE:
+        report["facade_pdb_page_size"] = facade_pdb_page_size
     if placement:
         report["placement_cohort"] = True
     if roster_raw is not None:
@@ -1144,7 +1198,10 @@ def build(args, report):
             run("facade-format", ["rustfmt", "--edition", "2024", "--check", consumer_source])
             run("facade-clippy", ["clippy-driver", *consumer_flags, "--crate-name", "engine_facade_consumer",
                                  "--emit=metadata", "-o", "/work/facade.rmeta", consumer_source])
-            run("facade-link", ["rustc", *consumer_flags, "--crate-name", "engine_facade_consumer",
+            layout_flags: list[str] = []
+            if facade_pdb_page_size == FACADE_LARGE_PDB_PAGE_SIZE:
+                layout_flags = ["-C", f"link-arg=/PDBPAGESIZE:{facade_pdb_page_size}"]
+            run("facade-link", ["rustc", *consumer_flags, *layout_flags, "--crate-name", "engine_facade_consumer",
                                "-o", "/work/engine-facade-consumer.exe", consumer_source])
             images["engine-facade-consumer"] = work / "engine-facade-consumer.exe"
             report["facade_target_flags"] = ENV.MSVC_FLAGS
@@ -1152,7 +1209,9 @@ def build(args, report):
             images["engine-tests"] = engine_artifact(run("engine-libtest-link", cargo), work,
                                                        features=test_features)
         report["artifacts"] = {}
-        report["artifacts"] = export_build_artifacts(images, work, args.output_dir, run)
+        report["artifacts"] = export_build_artifacts(
+            images, work, args.output_dir, run, facade_pdb_page_size=facade_pdb_page_size,
+        )
         build_completed = True
     except BaseException as error:
         primary_error = error
@@ -1772,11 +1831,22 @@ def native(args, report):
     """Run fixed controls, CPU and exact discovery before the selected cohort."""
     import re
     import uuid
+    facade_pdb_page_size: int = selected_facade_pdb_page_size(args, "native")
     if args.build_receipt is None or args.native_dir is None:
         raise Incomplete("Native lane requires --build-receipt and a fresh --native-dir.")
-    build_path = args.build_receipt.absolute()
-    build = read_record(build_path)
+    build_path: Path = args.build_receipt.absolute()
+    build: dict
+    build_raw: bytes
+    build, build_raw = read_native_build_record(build_path)
     require(type(build) is dict, "Native build receipt must be an object.")
+    if facade_pdb_page_size == FACADE_LARGE_PDB_PAGE_SIZE:
+        require(type(build.get("facade_pdb_page_size")) is int
+                and build["facade_pdb_page_size"] == facade_pdb_page_size,
+                "Native facade PDB selection differs from the exact build profile.")
+        report["facade_pdb_page_size"] = facade_pdb_page_size
+    else:
+        require("facade_pdb_page_size" not in build,
+                "Native facade PDB selection differs from the exact build profile.")
     require(not any(type(key) is str and key.startswith(
         ("fault", "facade_fault", "variant_", "prepared_faults", "healthy_build")) for key in build),
         "Fault-build metadata is not admitted by the ordinary native lane.")
@@ -1835,9 +1905,17 @@ def native(args, report):
         if (path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024 * 1024
                 or path.parent != build_path.parent or PRODUCT.sha256(path) != item.get("sha256")):
             raise Incomplete("Native emitted image is linked, absent, unbounded or changed.")
+    if facade:
+        facade_artifact: dict = artifacts["engine-facade-consumer.exe"]
+        facade_path: Path = Path(facade_artifact["path"])
+        require(facade_path == build_path.parent / "engine-facade-consumer.exe",
+                "Native facade image path differs from the emitted artifact.")
+        validate_facade_symbols(facade_path, facade_artifact, facade_pdb_page_size)
     if not (facade or default or placement):
         validate_ke_launcher_selection(PE.Q.C.read_analysis_bytes(
             ROOT / LAUNCHER, maximum=MAX_LAUNCHER_SOURCE_BYTES).decode("utf-8"))
+    require(PE.Q.C.read_analysis_bytes(build_path, maximum=ALLOCATION.MAX_JSON) == build_raw,
+            "Native build receipt changed before staging.")
     directory = native_directory(args.native_dir)
     # The host directory must be an owned fresh LocalAppData child, not UNC/WSL.
     prefix = Path("/mnt/c/Users/perso/AppData/Local/NevroTick")
@@ -1847,7 +1925,7 @@ def native(args, report):
     powershell = "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
     ps_before = PRODUCT.sha256(Path(powershell))
     report.update(candidate_sha256=build["candidate_sha256"], build_receipt=str(build_path),
-                  build_receipt_sha256=PRODUCT.sha256(build_path), windows_directory=str(directory),
+                  build_receipt_sha256=hashlib.sha256(build_raw).hexdigest(), windows_directory=str(directory),
                   powershell_sha256=ps_before, product_source_sha256=source_before,
                   extra_inputs_sha256=extras_before, observations=[],
                   test_roster=roster_record,
@@ -1974,13 +2052,14 @@ def native(args, report):
             record["peer_clienthello_eof_joined"] = True
     if (PRODUCT.admit_product(ROOT)[1] != source_before
             or {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS} != extras_before
-            or PRODUCT.sha256(build_path) != report["build_receipt_sha256"]
+            or PE.Q.C.read_analysis_bytes(build_path, maximum=ALLOCATION.MAX_JSON) != build_raw
             or PRODUCT.sha256(Path(powershell)) != ps_before
             or (not facade and read_test_roster(roster_path, build["candidate_sha256"], extras_before,
                                                 default_cohort=default, placement_cohort=placement)[1] != roster_raw)
             or any(PRODUCT.sha256(Path(item["path"])) != item["sha256"] for item in artifacts.values())):
         raise Incomplete("Native source, images, receipt, supervisor recipe or PowerShell drifted.")
     if facade:
+        validate_facade_symbols(facade_path, facade_artifact, facade_pdb_page_size)
         report["facade_refusal_cases_complete"] = True
         if loopback_eof:
             report["facade_loopback_eof_observed"] = True
@@ -2011,6 +2090,8 @@ def main():
                         help="Select only two fixed plain application placement writer cases.")
     parser.add_argument("--facade-consumer", action="store_true",
                         help="Select two fixed provider-free production facade refusal cases; no mutation scoring.")
+    parser.add_argument("--facade-large-pdb", action="store_true",
+                        help="Select 8192-byte PDB pages for the normal facade build and matching native lane.")
     parser.add_argument("--facade-loopback-eof", action="store_true",
                         help="Also observe one real loopback ClientHello/EOF with the native facade consumer.")
     parser.add_argument("--facade-managed-protected-eof", action="store_true",
@@ -2027,6 +2108,7 @@ def main():
               "scope": "Bounded Windows Engine scripted KE libtest; no product or release qualification."}
     output = None
     try:
+        selected_facade_pdb_page_size(args, args.lane)
         facade_loopback_eof_requested(args)
         facade_managed_protected_eof_requested(args)
         require(not args.default_cohort or (args.lane in ("build", "native") and not args.facade_consumer),

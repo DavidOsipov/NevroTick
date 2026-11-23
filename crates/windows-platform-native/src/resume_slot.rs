@@ -1,10 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! One-shot callback admission. Delayed notifications never reach a later owner.
+//! Process-lifetime callback admission. Delayed notifications cannot reach a replacement.
 
 use std::sync::{Mutex, OnceLock, PoisonError};
 
-/// The observer's exact one-shot invalidation operation.
-pub(super) type Action = Box<dyn FnOnce() -> Result<(), ()> + Send>;
+/// Delivery policy for the original registration.
+pub(super) enum Action {
+    /// Consume the action on the first relevant event, even if delivery fails.
+    Once(Box<dyn FnOnce() -> Result<(), ()> + Send>),
+    /// Keep the action until disarm, including after a reported delivery failure.
+    Persistent(Box<dyn FnMut() -> Result<(), ()> + Send>),
+}
+
+impl Action {
+    /// Own the bounded action for the single-delivery subscription.
+    pub(super) fn once(action: impl FnOnce() -> Result<(), ()> + Send + 'static) -> Self {
+        Self::Once(Box::new(action))
+    }
+}
 
 /// Notification that Windows is about to suspend (`PBT_APMSUSPEND`).
 const SUSPEND: u32 = 0x04;
@@ -12,7 +24,7 @@ const SUSPEND: u32 = 0x04;
 /// Automatic resume, including wake without interactive user activity.
 pub(super) const AUTOMATIC_RESUME: u32 = 0x12;
 
-/// Own one invocation's signal for the entire lifetime of the process.
+/// Own one registration's delivery state for the entire lifetime of the process.
 pub(super) struct ResumeSlot {
     /// Initialization consumes the only registration attempt.
     action: OnceLock<Mutex<Option<Action>>>,
@@ -31,7 +43,7 @@ impl ResumeSlot {
         self.action.set(Mutex::new(Some(action))).is_ok()
     }
 
-    /// Consume the invalidation on suspend or automatic resume, serialized with disarm.
+    /// Deliver suspend or automatic resume according to the bound action, serialized with disarm.
     ///
     /// # Errors
     /// Return the observer's failure or a poisoned slot as a callback refusal.
@@ -44,10 +56,15 @@ impl ResumeSlot {
         };
         let mut pending: std::sync::MutexGuard<'_, Option<Action>> =
             action.lock().map_err(|_| ())?;
-        let Some(deliver) = pending.take() else {
-            return Ok(());
+        let result: Result<(), ()> = match pending.take() {
+            Some(Action::Once(deliver)) => deliver(),
+            Some(Action::Persistent(mut deliver)) => {
+                let result: Result<(), ()> = deliver();
+                *pending = Some(Action::Persistent(deliver));
+                result
+            }
+            None => Ok(()),
         };
-        let result: Result<(), ()> = deliver();
         drop(pending);
         result
     }
@@ -79,7 +96,7 @@ mod tests {
         assert_eq!(slot.notify(4), Ok(()));
         assert_eq!(slot.notify(18), Ok(()));
         assert!(slot.disarm().is_none());
-        assert!(slot.bind(Box::new(|| Err(()))));
+        assert!(slot.bind(Action::once(|| Err(()))));
         assert_eq!(slot.notify(18), Err(()));
         assert_eq!(slot.notify(4), Ok(()));
         assert!(slot.disarm().is_none());
@@ -95,7 +112,7 @@ mod tests {
         let callback_slot: Weak<ResumeSlot> = Arc::downgrade(&slot);
         let serialized: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
         let lock_observation: Arc<AtomicBool> = Arc::clone(&serialized);
-        assert!(slot.bind(Box::new(move || {
+        assert!(slot.bind(Action::once(move || {
             let slot: Arc<ResumeSlot> = callback_slot.upgrade().ok_or(())?;
             let action: &Mutex<Option<Action>> = slot.action.get().ok_or(())?;
             lock_observation.store(
@@ -127,7 +144,7 @@ mod tests {
         let slot: ResumeSlot = ResumeSlot::new();
         let owner: Arc<()> = Arc::new(());
         let captured: Arc<()> = Arc::clone(&owner);
-        assert!(slot.bind(Box::new(move || {
+        assert!(slot.bind(Action::once(move || {
             drop(captured);
             Ok(())
         })));
@@ -145,7 +162,7 @@ mod tests {
         drop(retired);
         assert_eq!(Arc::strong_count(&owner), 1);
         assert!(slot.disarm().is_none());
-        assert!(!slot.bind(Box::new(|| Ok(()))));
+        assert!(!slot.bind(Action::once(|| Ok(()))));
         Ok(())
     }
 
@@ -159,10 +176,11 @@ mod tests {
             let slot: ResumeSlot = ResumeSlot::new();
             let delivered: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
             let observed: Arc<AtomicUsize> = Arc::clone(&delivered);
-            assert!(slot.bind(Box::new(move || {
+            assert!(slot.bind(Action::once(move || {
                 let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
                 Ok(())
             })));
+            assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
             assert_eq!(slot.notify(7), Ok(()));
             assert_eq!(slot.notify(u32::MAX), Ok(()));
             assert_eq!(delivered.load(Ordering::Relaxed), 0);
@@ -174,6 +192,55 @@ mod tests {
         }
     }
 
+    /// Keep the original action and its state across success and failure until disarm.
+    ///
+    /// # Errors
+    /// Refuse a missing original slot or retired action in this fixture.
+    ///
+    /// # Panics
+    /// Fail on duplicate admission, unprotected delivery or unretired capture.
+    #[test]
+    fn persistent_delivery_survives_failure_and_stops_at_disarm() -> Result<(), ()> {
+        let slot: Arc<ResumeSlot> = Arc::new(ResumeSlot::new());
+        let callback_slot: Weak<ResumeSlot> = Arc::downgrade(&slot);
+        let delivered: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        let observed: Arc<AtomicUsize> = Arc::clone(&delivered);
+        let mut first: bool = true;
+        assert!(slot.bind(Action::Persistent(Box::new(move || {
+            let slot: Arc<ResumeSlot> = callback_slot.upgrade().ok_or(())?;
+            let action: &Mutex<Option<Action>> = slot.action.get().ok_or(())?;
+            assert!(matches!(action.try_lock(), Err(TryLockError::WouldBlock)));
+            let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
+            if std::mem::replace(&mut first, false) {
+                Err(())
+            } else {
+                Ok(())
+            }
+        }))));
+        assert!(!slot.bind(Action::once(|| Ok(()))));
+        assert_eq!(slot.notify(7), Ok(()));
+        assert_eq!(slot.notify(u32::MAX), Ok(()));
+        assert_eq!(delivered.load(Ordering::Relaxed), 0);
+
+        assert_eq!(slot.notify(4), Err(()));
+        assert_eq!(delivered.load(Ordering::Relaxed), 1);
+        assert_eq!(slot.notify(18), Ok(()));
+        assert_eq!(delivered.load(Ordering::Relaxed), 2);
+        assert_eq!(slot.notify(4), Ok(()));
+        assert_eq!(delivered.load(Ordering::Relaxed), 3);
+
+        let retired: Action = slot.disarm().ok_or(())?;
+        assert_eq!(Arc::strong_count(&delivered), 2);
+        assert!(matches!(retired, Action::Persistent(_)));
+        assert_eq!(slot.notify(18), Ok(()));
+        assert_eq!(delivered.load(Ordering::Relaxed), 3);
+        drop(retired);
+        assert_eq!(Arc::strong_count(&delivered), 1);
+        assert!(!slot.bind(Action::once(|| Ok(()))));
+        assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
+        Ok(())
+    }
+
     /// Disarming the original observer leaves a delayed callback inert.
     ///
     /// # Panics
@@ -183,7 +250,7 @@ mod tests {
         let slot: ResumeSlot = ResumeSlot::new();
         let owner: Arc<()> = Arc::new(());
         let captured: Arc<()> = Arc::clone(&owner);
-        assert!(slot.bind(Box::new(move || {
+        assert!(slot.bind(Action::once(move || {
             drop(captured);
             Err(())
         })));
@@ -192,6 +259,6 @@ mod tests {
         assert_eq!(Arc::strong_count(&owner), 1);
         assert_eq!(slot.notify(4), Ok(()));
         assert_eq!(slot.notify(18), Ok(()));
-        assert!(!slot.bind(Box::new(|| Ok(()))));
+        assert!(!slot.bind(Action::once(|| Ok(()))));
     }
 }

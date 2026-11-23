@@ -50,6 +50,7 @@ aes-siv = { version = "=0.8.0", default-features = false, features = ["zeroize"]
 rustls = { version = "=0.23.46", default-features = false, features = ["std"] }
 rustls-cng-crypto = { version = "=0.1.2", default-features = false }
 rustls-platform-verifier = { version = "=0.7.1", default-features = false }
+windows-platform-native = { version = "=0.0.0", path = "../../crates/windows-platform-native" }
 
 [lints.rust]
 warnings = { level = "deny", priority = -1 }

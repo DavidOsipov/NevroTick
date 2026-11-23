@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Permanent custody of one complete synchronous laboratory invocation.
+//! Permanent custody for synchronous laboratory worker submission and collection.
 //!
 //! Only static slots are constructed. Observers borrow them and own no thread or
 //! completion resource. Explicit collection joins outside every gate; it promises
 //! neither finite join latency nor a Windows service-stop arrangement.
 
 use std::any::Any;
+use std::borrow::Borrow;
 use std::io;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Weak};
 use std::sync::{Mutex, OnceLock, TryLockError};
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
@@ -120,7 +121,8 @@ struct Facts {
     first_receipt: OnceLock<Mutex<Option<Box<ManagedProtectedHistory>>>>,
     /// Exact work for the selected bounded operation, read only after actual join.
     datagram_work: OnceLock<Arc<ProtectedDatagramWork>>,
-    /// True only after the actual provider and Config retirement boundary returned.
+    /// True after retiring the prepared input and any acquired provider custody.
+    /// Actual thread exit still requires join.
     retired: AtomicBool,
 }
 
@@ -323,6 +325,9 @@ pub(super) enum Observation {
     NotSubmitted(SubmitError),
 }
 
+/// The managed worker initializes this owner only after its guarded process claim.
+type ManagedProvider = Arc<OnceLock<ProviderScope<'static>>>;
+
 /// Slot phase; handles exist only here or in the explicit collector.
 enum Phase {
     /// No submission has been attempted.
@@ -335,8 +340,11 @@ enum Phase {
     Joining,
     /// Actual join returned; one owned history or closed failure may be consumed.
     Joined(JoinedOutcome),
-    /// Final typed facts were consumed, without reopening admission.
-    Taken,
+    /// Final facts were consumed. Only ordinary retirement permits managed reissue.
+    Taken {
+        /// True only after normal joined retirement and an exact result take.
+        retired: bool,
+    },
     /// Terminal pre-submission refusal; no completion is invented.
     NotSubmitted(
         #[cfg_attr(
@@ -350,21 +358,66 @@ enum Phase {
     ),
 }
 
-/// Slot gate protects phase plus one sealed unwind payload, never exposed or dropped.
+/// Slot gate protects phase, managed provider lifetime and one sealed unwind payload.
 struct Custody {
-    /// The original one-way phase owner.
+    /// Actual job phase, including original handle custody.
     phase: Phase,
+    /// The actual generation's once-written facts.
+    facts: Option<Arc<Facts>>,
+    /// Permanent identity of the managed owner. Does not prolong provider custody.
+    managed_owner: Option<Weak<OnceLock<ProviderScope<'static>>>>,
+    /// Retained in static custody during the join, even if the OS wait unwinds.
+    managed_provider: Option<ManagedProvider>,
     /// At most one opaque unwind payload; normal collection never runs its destructor.
     /// Permanent static custody bounds count, not bytes, privacy or zeroization.
     sealed_panic: Option<Box<dyn Any + Send + 'static>>,
 }
 
-/// One process-lifetime fixed owner; local owners and destructor-based completion are absent.
+impl Custody {
+    /// Check a submitted generation or admit the legacy one-shot collector.
+    fn owns(&self, expected: Option<&Arc<Facts>>) -> bool {
+        match expected {
+            Some(expected) => self
+                .facts
+                .as_ref()
+                .is_some_and(|facts: &Arc<Facts>| Arc::ptr_eq(facts, expected)),
+            None => self.managed_owner.is_none(),
+        }
+    }
+}
+
+/// One static slot; observers never acquire its handle, provider or joined result.
 pub(super) struct WorkerSlot {
     /// Separate from Control scope/phase gates, never held for join/provider work.
     custody: Mutex<Custody>,
-    /// Fixed typed facts reserved before any thread submission.
-    facts: Facts,
+}
+
+/// The sole provider owner across serial jobs on this slot.
+pub(super) struct ManagedWorker {
+    /// The original static admission and collection slot.
+    slot: &'static WorkerSlot,
+    /// One scope initialized under the original process claim.
+    provider: ManagedProvider,
+}
+
+impl ManagedWorker {
+    /// Hold one initially empty owner before guarded worker initialization.
+    pub(super) fn new(slot: &'static WorkerSlot) -> Self {
+        Self {
+            slot,
+            provider: Arc::new(OnceLock::new()),
+        }
+    }
+
+    /// Reserve the original prepared input with this same managed provider owner.
+    /// # Errors
+    /// Refuse a live or uncollected job, abnormal retirement, or a foreign owner.
+    pub(super) fn try_reserve(
+        &self,
+        prepared: PreparedInvocation,
+    ) -> Result<SubmissionReservation, SubmitError> {
+        self.slot.reserve(prepared, Some(&self.provider))
+    }
 }
 
 /// Closed Linux test requests; no caller-selected size enters ordinary submission.
@@ -393,7 +446,7 @@ pub(super) struct Hooks {
     /// Hold or fault after actual operation or factory-refusal recording, before retirement.
     #[cfg(test)]
     pub(super) before_retire: Option<Box<dyn FnOnce() + Send>>,
-    /// Observe the genuine provider-before-Config destruction boundary.
+    /// Observe release of job-held provider custody before destroying Config.
     #[cfg(test)]
     pub(super) after_provider: Option<Box<dyn FnOnce() + Send>>,
 }
@@ -422,9 +475,11 @@ impl WorkerSlot {
         Self {
             custody: Mutex::new(Custody {
                 phase: Phase::Unused,
+                facts: None,
+                managed_owner: None,
+                managed_provider: None,
                 sealed_panic: None,
             }),
-            facts: Facts::new(),
         }
     }
 
@@ -436,23 +491,44 @@ impl WorkerSlot {
         &'static self,
         prepared: PreparedInvocation,
     ) -> Result<SubmissionReservation, SubmitError> {
+        self.reserve(prepared, None)
+    }
+
+    /// Reserve an unused slot or a normally joined and taken managed generation.
+    /// # Errors
+    /// Refuse contention, prior use by another owner, or unavailable custody.
+    fn reserve(
+        &'static self,
+        prepared: PreparedInvocation,
+        owner: Option<&ManagedProvider>,
+    ) -> Result<SubmissionReservation, SubmitError> {
         let mut custody: std::sync::MutexGuard<'_, Custody> = match self.custody.try_lock() {
             Ok(custody) => custody,
             Err(TryLockError::WouldBlock) => return Err(SubmitError::Busy),
             Err(TryLockError::Poisoned(_)) => return Err(SubmitError::Control),
         };
-        match custody.phase {
-            Phase::Unused => custody.phase = Phase::Submitting,
+        let reissue: bool = match custody.phase {
+            Phase::Unused => false,
+            Phase::Taken { retired: true }
+                if owner.zip(custody.managed_owner.as_ref()).is_some_and(
+                    |(requested, original)| std::ptr::eq(Arc::as_ptr(requested), original.as_ptr()),
+                ) =>
+            {
+                true
+            }
             Phase::Submitting => return Err(SubmitError::Busy),
             Phase::Running(_)
             | Phase::Joining
             | Phase::Joined(_)
-            | Phase::Taken
+            | Phase::Taken { .. }
             | Phase::NotSubmitted(_) => return Err(SubmitError::Used),
-        }
+        };
+        custody.phase = Phase::Submitting;
         Ok(SubmissionReservation {
             slot: self,
             prepared: Some(prepared),
+            owner: owner.cloned(),
+            reissue,
         })
     }
 
@@ -517,19 +593,28 @@ impl WorkerSlot {
             + Send
             + 'static,
     {
-        self.submit_with(
-            prepared,
-            admission,
-            make_provider,
-            move |config, provider, control| {
-                let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
-                    facts: &self.facts,
-                    control_identity: Arc::clone(&control.first_receipt_identity),
-                };
-                execute(config, provider, control, writer)
-            },
-            hooks,
-        )
+        self.try_reserve(prepared)?
+            .start_worker(
+                move |prepared, facts, hooks| {
+                    run_prepared_with(
+                        prepared,
+                        admission,
+                        make_provider,
+                        move |config, provider, control| {
+                            let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
+                                facts,
+                                control_identity: Arc::clone(&control.first_receipt_identity),
+                            };
+                            execute(config, provider, control, writer)
+                        },
+                        facts,
+                        hooks,
+                    )
+                },
+                None,
+                hooks,
+            )
+            .map(drop)
     }
 
     /// Borrow ordinary observation without transferring any thread/result custody.
@@ -549,15 +634,25 @@ impl WorkerSlot {
     /// # Errors
     /// Refuse self-join, no actual handle, competing collection or unavailable custody.
     pub(super) fn collect(&self) -> Result<(), CollectError> {
+        self.collect_expected(None)
+    }
+
+    /// Join only the specified generation, or an eligible legacy one-shot job.
+    /// # Errors
+    /// Refuse a mismatched generation before moving any native custody.
+    fn collect_expected(&self, expected: Option<&Arc<Facts>>) -> Result<(), CollectError> {
         if tokio::runtime::Handle::try_current().is_ok() {
             return Err(CollectError::EnteredRuntime);
         }
-        let handle = {
+        let (handle, facts): (JoinHandle<Result<(), Failure>>, Arc<Facts>) = {
             let mut custody = match self.custody.try_lock() {
                 Ok(custody) => custody,
                 Err(TryLockError::WouldBlock) => return Err(CollectError::Busy),
                 Err(TryLockError::Poisoned(_)) => return Err(CollectError::Control),
             };
+            if !custody.owns(expected) {
+                return Err(CollectError::NotReady);
+            }
             // Keep the possibly panicking std current-thread lookup before handle transfer.
             if matches!(
                 &custody.phase,
@@ -565,32 +660,51 @@ impl WorkerSlot {
             ) {
                 return Err(CollectError::SelfJoin);
             }
+            let facts: Option<Arc<Facts>> = custody.facts.clone();
             match std::mem::replace(&mut custody.phase, Phase::Joining) {
-                Phase::Running(handle) => handle,
+                Phase::Running(handle) => {
+                    let Some(facts) = facts else {
+                        custody.phase = Phase::Running(handle);
+                        return Err(CollectError::Control);
+                    };
+                    (handle, facts)
+                }
                 phase @ (Phase::Submitting | Phase::Joining) => {
                     custody.phase = phase;
                     return Err(CollectError::Busy);
                 }
+                phase @ Phase::Joined(_) if expected.is_some() => {
+                    custody.phase = phase;
+                    return Ok(());
+                }
                 phase @ (Phase::Unused
                 | Phase::Joined(_)
-                | Phase::Taken
+                | Phase::Taken { .. }
                 | Phase::NotSubmitted(_)) => {
                     custody.phase = phase;
                     return Err(CollectError::NotReady);
                 }
             }
         };
-        let joined = handle.join();
+        let joined: thread::Result<Result<(), Failure>> = handle.join();
+        // Only an actual join can release the provider. Never run CNG shutdown
+        // under the slot gate or publish Joined before it returns.
+        let managed_provider: Option<ManagedProvider> = self
+            .custody
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .managed_provider
+            .take();
+        drop(managed_provider);
         // No worker locks this cell, and no lock spans the actual join or teardown.
         // Recover poison solely to preserve the original owned operation; never heal it.
         let (operation, facts_poisoned): (Option<Operation>, bool) =
-            take_recorded(&self.facts.operation);
+            take_recorded(&facts.operation);
         let (first_receipt, first_receipt_poisoned): (Option<Box<ManagedProtectedHistory>>, bool) =
-            take_recorded(&self.facts.first_receipt);
+            take_recorded(&facts.first_receipt);
         let facts_poisoned: bool = facts_poisoned || first_receipt_poisoned;
-        let datagram_work: Option<Arc<ProtectedDatagramWork>> =
-            self.facts.datagram_work.get().cloned();
-        let retired = self.facts.retired.load(Ordering::Acquire);
+        let datagram_work: Option<Arc<ProtectedDatagramWork>> = facts.datagram_work.get().cloned();
+        let retired: bool = facts.retired.load(Ordering::Acquire);
         // No other operation mutates Joining, and observers never hold this gate.
         // Even an unavailable gate must retain, rather than destroy, an unwind payload.
         // Poison is not repaired into a normal-return claim.
@@ -625,18 +739,33 @@ impl WorkerSlot {
     /// # Errors
     /// Refuse a premature/duplicate take, contention or unavailable custody.
     fn take_result(&self) -> Result<JoinedOutcome, CollectError> {
+        self.take_expected(None)
+    }
+
+    /// Transfer only the actual joined facts of the checked generation.
+    /// # Errors
+    /// Refuse a mismatched generation with the joined result still owned by its slot.
+    fn take_expected(&self, expected: Option<&Arc<Facts>>) -> Result<JoinedOutcome, CollectError> {
         let mut custody = match self.custody.try_lock() {
             Ok(custody) => custody,
             Err(TryLockError::WouldBlock) => return Err(CollectError::Busy),
             Err(TryLockError::Poisoned(_)) => return Err(CollectError::Control),
         };
-        match std::mem::replace(&mut custody.phase, Phase::Taken) {
-            Phase::Joined(outcome) => Ok(outcome),
+        if !custody.owns(expected) {
+            return Err(CollectError::NotReady);
+        }
+        match std::mem::replace(&mut custody.phase, Phase::Taken { retired: false }) {
+            Phase::Joined(outcome) => {
+                custody.phase = Phase::Taken {
+                    retired: outcome.termination == Termination::Returned && outcome.retired,
+                };
+                Ok(outcome)
+            }
             phase @ (Phase::Unused
             | Phase::Submitting
             | Phase::Running(_)
             | Phase::Joining
-            | Phase::Taken
+            | Phase::Taken { .. }
             | Phase::NotSubmitted(_)) => {
                 custody.phase = phase;
                 Err(CollectError::NotReady)
@@ -660,6 +789,18 @@ impl WorkerSlot {
         self.take_result().map(|joined| ReceivingOutcome { joined })
     }
 
+    /// Observe the original facts or initialize the first unsubmitted control fixture.
+    /// # Errors
+    /// Refuse unavailable custody.
+    #[cfg(test)]
+    fn fixture_facts(&self) -> Result<Arc<Facts>, Failure> {
+        let mut custody: std::sync::MutexGuard<'_, Custody> =
+            self.custody.lock().map_err(|_| Failure::Control)?;
+        Ok(Arc::clone(
+            custody.facts.get_or_insert_with(|| Arc::new(Facts::new())),
+        ))
+    }
+
     /// Observe only the count of sealed payloads, without borrowing or formatting one.
     /// # Errors
     /// Refuse unavailable custody without inspecting or disposing any payload.
@@ -672,6 +813,29 @@ impl WorkerSlot {
     }
 }
 
+/// The actual submitted generation. One-shot callers may discard this token
+/// and use the legacy slot collector. Only this token can collect a managed job.
+#[must_use = "receive this submitted job or retain its unconfirmed custody"]
+pub(super) struct SubmittedJob {
+    /// The permanent slot that installed the actual submitted handle.
+    slot: &'static WorkerSlot,
+    /// Exact generation identity, retained even across a busy receipt attempt.
+    facts: Arc<Facts>,
+}
+
+impl SubmittedJob {
+    /// Transfer only this actual joined result once.
+    /// # Errors
+    /// Keep the same generation available to the owner on transient refusal,
+    /// including when the actual join already succeeded before a busy take.
+    pub(super) fn receive(&self) -> Result<ReceivingOutcome, CollectError> {
+        self.slot.collect_expected(Some(&self.facts))?;
+        self.slot
+            .take_expected(Some(&self.facts))
+            .map(|joined| ReceivingOutcome { joined })
+    }
+}
+
 /// One unspent submission position paired with its original checked Control.
 #[must_use = "submit this reservation or release its unused worker position"]
 pub(super) struct SubmissionReservation {
@@ -679,6 +843,10 @@ pub(super) struct SubmissionReservation {
     slot: &'static WorkerSlot,
     /// Present until the Builder transaction consumes the original input.
     prepared: Option<PreparedInvocation>,
+    /// Strong owner through a serial managed start.
+    owner: Option<ManagedProvider>,
+    /// The reservation came from a normally retired and consumed generation.
+    reissue: bool,
 }
 
 impl SubmissionReservation {
@@ -700,6 +868,9 @@ impl SubmissionReservation {
     /// Preserve unavailable custody or typed spawn refusal without creating a job.
     #[cfg(windows)]
     pub(super) fn try_submit(self) -> Result<(), SubmitError> {
+        if self.owner.is_some() {
+            return Err(SubmitError::Control);
+        }
         self.start_with(
             &super::PROCESS_ADMISSION,
             native_provider,
@@ -719,7 +890,7 @@ impl SubmissionReservation {
     /// # Errors
     /// Refuse a different mode before spawning, or preserve actual submission failure.
     #[cfg(windows)]
-    pub(super) fn try_submit_successor(self) -> Result<(), SubmitError> {
+    pub(super) fn try_submit_successor(self) -> Result<SubmittedJob, SubmitError> {
         self.start_successor_with(
             &super::PROCESS_ADMISSION,
             native_provider,
@@ -745,7 +916,7 @@ impl SubmissionReservation {
         make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
         execute: F,
         hooks: Hooks,
-    ) -> Result<(), SubmitError>
+    ) -> Result<SubmittedJob, SubmitError>
     where
         F: for<'a> FnOnce(
                 &'a Config,
@@ -766,17 +937,43 @@ impl SubmissionReservation {
             return Err(SubmitError::Control);
         }
         prepared.control.datagram_work = Some(Arc::new(ProtectedDatagramWork::new()));
-        let slot: &'static WorkerSlot = self.slot;
-        self.start_with(
-            admission,
-            make_provider,
-            move |config, provider, control| {
-                let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
-                    facts: &slot.facts,
-                    control_identity: Arc::clone(&control.first_receipt_identity),
-                };
-                execute(config, provider, control, writer)
+        let managed_provider: ManagedProvider = self
+            .owner
+            .clone()
+            .unwrap_or_else(|| Arc::new(OnceLock::new()));
+        let worker_provider: ManagedProvider = Arc::clone(&managed_provider);
+        self.start_worker(
+            move |prepared, facts, hooks| {
+                run_worker_with(
+                    prepared,
+                    || {
+                        if worker_provider.get().is_some() {
+                            Ok(None)
+                        } else {
+                            admission.claim().map(Some)
+                        }
+                    },
+                    |claim: Option<ProcessClaim<'static>>| {
+                        if let Some(claim) = claim {
+                            let provider: ProviderScope<'static> = make_provider(claim)?;
+                            worker_provider
+                                .set(provider)
+                                .map_err(|_| Failure::Control)?;
+                        }
+                        worker_provider.get().ok_or(Failure::Control)
+                    },
+                    move |config, provider, control| {
+                        let writer: FirstReceiptWriter<'_> = FirstReceiptWriter {
+                            facts,
+                            control_identity: Arc::clone(&control.first_receipt_identity),
+                        };
+                        execute(config, provider, control, writer)
+                    },
+                    facts,
+                    hooks,
+                )
             },
+            Some(managed_provider),
             hooks,
         )
     }
@@ -792,6 +989,31 @@ impl SubmissionReservation {
         execute: F,
         hooks: Hooks,
     ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(
+                &'a Config,
+                &'a ProviderScope<'a>,
+                Control,
+                FirstReceiptWriter<'a>,
+            ) -> Operation
+            + Send
+            + 'static,
+    {
+        self.submit_pair_successor_fixture(admission, make_provider, execute, hooks)
+            .map(drop)
+    }
+
+    /// Return the actual generation ticket to the paired invocation control.
+    /// # Errors
+    /// Preserve the actual reservation's mode and spawn refusals.
+    #[cfg(test)]
+    pub(super) fn submit_pair_successor_fixture<F>(
+        self,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<SubmittedJob, SubmitError>
     where
         F: for<'a> FnOnce(
                 &'a Config,
@@ -830,7 +1052,7 @@ impl SubmissionReservation {
     /// # Errors
     /// Refuse poisoned custody or spawn without a queued alternative.
     fn start_with<F>(
-        mut self,
+        self,
         admission: &'static ProcessAdmission,
         make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
         execute: F,
@@ -839,10 +1061,41 @@ impl SubmissionReservation {
     where
         F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation + Send + 'static,
     {
+        self.start_worker(
+            move |prepared, facts, hooks| {
+                run_prepared_with(prepared, admission, make_provider, execute, facts, hooks)
+            },
+            None,
+            hooks,
+        )
+        .map(drop)
+    }
+
+    /// Install the actual thread handle before a collector can observe this submission.
+    /// # Errors
+    /// Preserve poisoned or unavailable custody and actual Builder refusal.
+    fn start_worker<F>(
+        mut self,
+        run: F,
+        managed_provider: Option<ManagedProvider>,
+        hooks: Hooks,
+    ) -> Result<SubmittedJob, SubmitError>
+    where
+        F: FnOnce(PreparedInvocation, &Facts, Hooks) -> Result<(), Failure> + Send + 'static,
+    {
         let slot: &'static WorkerSlot = self.slot;
         let mut custody: std::sync::MutexGuard<'_, Custody> =
             slot.custody.lock().map_err(|_| SubmitError::Control)?;
         let prepared: PreparedInvocation = self.prepared.take().ok_or(SubmitError::Control)?;
+        if self.reissue {
+            custody.facts = Some(Arc::new(Facts::new()));
+        }
+        let facts: Arc<Facts> =
+            Arc::clone(custody.facts.get_or_insert_with(|| Arc::new(Facts::new())));
+        let ticket: SubmittedJob = SubmittedJob {
+            slot,
+            facts: Arc::clone(&facts),
+        };
         #[cfg(test)]
         if let Some(kind) = hooks.spawn_refusal {
             let failure = SubmitError::Spawn(kind);
@@ -855,20 +1108,14 @@ impl SubmissionReservation {
             StackRequest::Selected => builder,
             StackRequest::InvalidAligned => builder.stack_size(1usize << 63),
         };
-        let submitted = builder.spawn(move || {
-            run_prepared_with(
-                prepared,
-                admission,
-                make_provider,
-                execute,
-                &slot.facts,
-                hooks,
-            )
-        });
+        let submitted: io::Result<JoinHandle<Result<(), Failure>>> =
+            builder.spawn(move || run(prepared, &facts, hooks));
         match submitted {
             Ok(handle) => {
+                custody.managed_provider = managed_provider;
+                custody.managed_owner = self.owner.as_ref().map(Arc::downgrade);
                 custody.phase = Phase::Running(handle);
-                Ok(())
+                Ok(ticket)
             }
             Err(error) => {
                 let failure = SubmitError::Spawn(error.kind());
@@ -903,7 +1150,11 @@ impl Drop for SubmissionReservation {
         if self.prepared.is_some()
             && let Ok(mut custody) = self.slot.custody.lock()
         {
-            custody.phase = Phase::Unused;
+            custody.phase = if self.reissue {
+                Phase::Taken { retired: true }
+            } else {
+                Phase::Unused
+            };
         }
     }
 }
@@ -945,7 +1196,7 @@ impl Observer {
             Phase::Running(handle) => Observation::Running(handle.is_finished()),
             Phase::Joining => Observation::Joining,
             Phase::Joined(_) => Observation::Joined,
-            Phase::Taken => Observation::Taken,
+            Phase::Taken { .. } => Observation::Taken,
             Phase::NotSubmitted(failure) => Observation::NotSubmitted(*failure),
         }
     }
@@ -967,6 +1218,34 @@ fn run_prepared_with<F>(
 where
     F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation,
 {
+    run_worker_with(
+        prepared,
+        || admission.claim(),
+        make_provider,
+        execute,
+        facts,
+        hooks,
+    )
+}
+
+/// Admit the exact original Control and execute under a live borrowed provider scope.
+/// Admission runs inside the fresh configuration guard. Provider acquisition and execution
+/// run after its release. This job retires the custody received from its provider owner.
+/// # Errors
+/// Record the original operation or admission refusal. Only a violated once-write
+/// contract escapes without confirming ordinary retirement.
+fn run_worker_with<'scope, A, P, F>(
+    prepared: PreparedInvocation,
+    admit: impl FnOnce() -> Result<A, Failure>,
+    make_provider: impl FnOnce(A) -> Result<P, Failure>,
+    execute: F,
+    facts: &Facts,
+    hooks: Hooks,
+) -> Result<(), Failure>
+where
+    P: Borrow<ProviderScope<'scope>>,
+    F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation,
+{
     #[cfg(test)]
     let mut hooks = hooks;
     #[cfg(not(test))]
@@ -982,16 +1261,16 @@ where
             .set(Arc::clone(work))
             .map_err(|_| Failure::Control)?;
     }
-    let admitted: Result<ProcessClaim<'_>, Failure> = (|| {
+    let admitted: Result<A, Failure> = (|| {
         let guard: super::ConfigurationGuard<'_> = config.guard(&control, None)?;
         guard.remaining(IoPhase::Handshake, Instant::now())?;
-        admission.claim()
+        admit()
     })();
     match admitted {
-        Ok(claim) => {
-            match make_provider(claim) {
+        Ok(admission) => {
+            match make_provider(admission) {
                 Ok(provider) => {
-                    let operation = execute(&config, &provider, control);
+                    let operation: Operation = execute(&config, provider.borrow(), control);
                     facts.record(operation)?;
                     #[cfg(test)]
                     if let Some(retire) = hooks.before_retire.take() {

@@ -29,10 +29,10 @@ enum KxGroup {
 }
 
 impl KxGroup {
-    fn alg_handle(self) -> BCRYPT_ALG_HANDLE {
+    fn alg_handle(self) -> Result<BCRYPT_ALG_HANDLE, Error> {
         match self {
-            Self::SECP256R1 => BCRYPT_ECDH_P256_ALG_HANDLE,
-            Self::SECP384R1 => BCRYPT_ECDH_P384_ALG_HANDLE,
+            Self::SECP256R1 => Ok(BCRYPT_ECDH_P256_ALG_HANDLE),
+            Self::SECP384R1 => Ok(BCRYPT_ECDH_P384_ALG_HANDLE),
             Self::X25519 => alg::ecdh_x25519(),
         }
     }
@@ -79,17 +79,13 @@ pub const SECP384R1: &dyn SupportedKxGroup = &KxGroup::SECP384R1;
 
 impl SupportedKxGroup for KxGroup {
     fn start(&self) -> Result<Box<dyn ActiveKeyExchange>, Error> {
+        let algorithm: BCRYPT_ALG_HANDLE = self.alg_handle()?;
         let mut key_handle = Owned::default();
 
         unsafe {
-            BCryptGenerateKeyPair(
-                self.alg_handle(),
-                &mut *key_handle,
-                self.key_bits() as u32,
-                0,
-            )
-            .ok()
-            .map_err(|e| Error::General(format!("CNG error: {e}")))?;
+            BCryptGenerateKeyPair(algorithm, &mut *key_handle, self.key_bits() as u32, 0)
+                .ok()
+                .map_err(|e| Error::General(format!("CNG error: {e}")))?;
             BCryptFinalizeKeyPair(*key_handle, 0)
                 .ok()
                 .map_err(|e| Error::General(format!("CNG error: {e}")))?;
@@ -184,7 +180,8 @@ impl ActiveKeyExchange for EcKeyExchange {
             &[0; 32]
         };
 
-        let peer_key_handle = import_ecdh_public_key(self.kx_group.alg_handle(), x, y)?;
+        let algorithm: BCRYPT_ALG_HANDLE = self.kx_group.alg_handle()?;
+        let peer_key_handle = import_ecdh_public_key(algorithm, x, y)?;
 
         // Now derive the shared secret
         let mut secret = Owned::default();
@@ -259,8 +256,8 @@ mod test {
                     key_handle: Owned::default(),
                     public_key: Vec::new(),
                 };
-                kx.key_handle =
-                    import_ecdh_private_key(kx.kx_group.alg_handle(), &test.private_key).unwrap();
+                let algorithm: BCRYPT_ALG_HANDLE = kx.kx_group.alg_handle().unwrap();
+                kx.key_handle = import_ecdh_private_key(algorithm, &test.private_key).unwrap();
 
                 let res = Box::new(kx).complete(&test.public_key);
                 let pub_key_uncompressed = test.public_key.first() == Some(&0x04);
@@ -302,7 +299,8 @@ mod test {
                 key[0] &= 0xf8;
                 key[31] &= 0x7f;
                 key[31] |= 0x40;
-                kx.key_handle = import_ecdh_private_key(kx.kx_group.alg_handle(), &key).unwrap();
+                let algorithm: BCRYPT_ALG_HANDLE = kx.kx_group.alg_handle().unwrap();
+                kx.key_handle = import_ecdh_private_key(algorithm, &key).unwrap();
 
                 let res = Box::new(kx).complete(&test.public_key);
 

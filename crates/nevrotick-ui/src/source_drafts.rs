@@ -209,13 +209,10 @@ impl DraftSource {
         {
             return Err(ModelError::InvalidHost.into());
         }
-        let host = if raw.host.contains(':') {
+        let host: &str = if raw.host.contains(':') {
             raw.host
         } else {
-            match raw.host.strip_suffix('.') {
-                Some(without_root_dot) => without_root_dot,
-                None => raw.host,
-            }
+            raw.host.trim_suffix('.')
         };
         let fields = SourcePreview::parse(raw.label, host, raw.port)?;
         let key = if let Ok(address) = fields.host().parse::<IpAddr>() {

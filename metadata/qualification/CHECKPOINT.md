@@ -110,6 +110,25 @@ again. These controls establish refusal and publication sensitivity, with no
 new coverage or generated mutation result. Native and installed package
 qualification remain open.
 
+### Preserve the published report after a later module refuses
+
+MD-P3 and CHECK-25. The maintained suite now also gives the reporter a
+valid first module and a missing second module at the expected inventory
+count. It checks the second module's diagnostic, the original published
+bytes and temporary output cleanup. The production reporter already
+completes every module before publication.
+
+On `f78f4a5218ee0e2aa4e6bc124c78921f1debd427` with the added subcase,
+all five test methods passed under the same isolated Coverage.py 7.17.2
+environment. A temporary variant published inside the loop. The previous
+suite passed that variant, and the new case failed at the published-byte
+comparison after the expected later-module diagnostic. Restoring the
+reporter passed all five methods again. Independent source review confirmed
+the case reaches the second module. This directed fault supplies no
+generated mutation credit. The receipt is
+`~/.local/share/nevrotick/coverage-later-module-20261123.b34g0sfp/verification.json`,
+SHA-256 `ff7efd9811af3eb219641938025633585f024d414166a1b8fbd4c4654ec594f6`.
+
 ## Completed finite repair — 8 November 2026
 
 David explicitly requested fixing the seven-quote metadata defect. The finite

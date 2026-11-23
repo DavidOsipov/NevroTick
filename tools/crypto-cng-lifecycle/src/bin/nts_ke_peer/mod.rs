@@ -69,6 +69,11 @@ enum Failure {
     ExitAcknowledgement,
     /// The provider could not fill the reply nonce.
     Entropy,
+    /// The native Windows clock adapter refused one socket-boundary observation.
+    #[cfg(windows)]
+    TimingRead(windows_platform_native::ClockReadError),
+    /// The selected timing path lacks one unique capture at each position.
+    IncompleteTiming,
     /// DER/key admission or fallible bounded allocation refused.
     #[cfg(windows)]
     Input,
@@ -228,6 +233,12 @@ impl Config {
             {
                 Mode::ProtectedSuccessorObserveExit(SuccessorReply::NakThenOrdinary)
             }
+            Some(flag)
+                if flag == "--protected-successor-ordinary-timing-observe-exit"
+                    && arguments.next().is_none() =>
+            {
+                Mode::ProtectedSuccessorObserveExit(SuccessorReply::OrdinaryTiming)
+            }
             Some(_) => return Err(Failure::Arguments),
         };
         let certificate = checked_path(certificate)?;
@@ -383,7 +394,6 @@ impl Budget {
 /// Admit CLI before touching CNG/files; report only closed bounded outcomes.
 #[cfg(windows)]
 pub(super) fn entry(arguments: impl Iterator<Item = OsString>) -> std::process::ExitCode {
-    use std::io::Write;
     use std::process::ExitCode;
     let config = match Config::parse(arguments) {
         Ok(config) => config,
@@ -391,18 +401,42 @@ pub(super) fn entry(arguments: impl Iterator<Item = OsString>) -> std::process::
     };
     let mode: Mode = config.mode;
     match transport::serve(config) {
-        Ok(()) => {
-            let mut output: std::io::StdoutLock<'_> = std::io::stdout().lock();
-            if writeln!(output, "{}", completion_line(mode))
-                .and_then(|()| output.flush())
-                .is_err()
-            {
+        Ok(completion) => {
+            let output: std::io::StdoutLock<'_> = std::io::stdout().lock();
+            if write_completion(mode, completion, output).is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS
         }
         Err(failure) => report(failure, ExitCode::FAILURE),
     }
+}
+
+/// Deliver the success record and any complete set of observations to stdout.
+///
+/// # Errors
+/// Preserve a write or flush refusal. The controller must also confirm EOF
+/// and successful exit before admitting any rows.
+#[cfg(windows)]
+fn write_completion(
+    mode: Mode,
+    completion: protected_udp::CompletedExchange,
+    mut output: impl std::io::Write,
+) -> std::io::Result<()> {
+    use protected_udp::CompletedExchange;
+    use std::io::Write;
+
+    match completion {
+        CompletedExchange::Untimed => writeln!(output, "{}", completion_line(mode))?,
+        CompletedExchange::Timed(timing) => {
+            // One fixed summary and four records of bounded-width decimal values.
+            let mut retained: Vec<u8> = Vec::with_capacity(1024);
+            writeln!(retained, "{}", completion_line(mode))?;
+            timing.write_rows(&mut retained)?;
+            output.write_all(&retained)?;
+        }
+    }
+    output.flush()
 }
 
 /// Project only the fixed observation for a successfully completed mode.
@@ -425,6 +459,9 @@ fn completion_line(mode: Mode) -> &'static str {
         }
         Mode::ProtectedSuccessorObserveExit(SuccessorReply::Ordinary) => {
             "scope=laboratory-ke-peer-protected-successor-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0"
+        }
+        Mode::ProtectedSuccessorObserveExit(SuccessorReply::OrdinaryTiming) => {
+            "scope=laboratory-ke-peer-protected-successor-ordinary-timing-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2 client_exited=1 extra_udp_received=0"
         }
         Mode::ProtectedSuccessorObserveExit(SuccessorReply::NakThenOrdinary) => {
             "scope=laboratory-ke-peer-protected-successor-nak-ordinary-observe-exit completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=3 client_exited=1 extra_udp_received=0"
@@ -449,6 +486,8 @@ fn report(failure: Failed, code: std::process::ExitCode) -> std::process::ExitCo
 /// Project only closed primary and owned-readiness-cleanup labels.
 #[cfg(windows)]
 fn labels(failure: Failure) -> (&'static str, &'static str, &'static str) {
+    use windows_platform_native::ClockReadError;
+
     match failure {
         Failure::Arguments => ("admission", "arguments", "none"),
         Failure::Deadline => ("currentness", "deadline", "none"),
@@ -461,6 +500,18 @@ fn labels(failure: Failure) -> (&'static str, &'static str, &'static str) {
         Failure::UnexpectedDatagram => ("protected-datagram", "unexpected-datagram", "none"),
         Failure::ExitAcknowledgement => ("client-exit", "acknowledgement", "none"),
         Failure::Entropy => ("protected-datagram", "entropy", "none"),
+        Failure::TimingRead(cause) => (
+            "timing",
+            match cause {
+                ClockReadError::Frequency(_) => "frequency-read",
+                ClockReadError::InvalidFrequency => "invalid-frequency",
+                ClockReadError::Before(_) => "before-read",
+                ClockReadError::After(_) => "after-read",
+                ClockReadError::Reversed => "reversed",
+            },
+            "none",
+        ),
+        Failure::IncompleteTiming => ("timing", "incomplete", "none"),
         Failure::Io(kind) => ("io", io_label(kind), "none"),
         Failure::Ready { primary, cleanup } => (
             "readiness",

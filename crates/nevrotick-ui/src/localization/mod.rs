@@ -320,7 +320,7 @@ impl Catalog {
         if !top.is_empty() || entries.len() > COUNT {
             return Err(Error::Schema);
         }
-        let mut slots: Vec<Option<Message>> = std::iter::repeat_with(|| None).take(COUNT).collect();
+        let mut slots: Vec<Option<Message>> = Vec::from_fn(COUNT, |_| None);
         for (key, entry) in entries {
             let id = MessageId::from_key(&key)?;
             if slots.get(id.index()).ok_or(Error::Schema)?.is_some() {

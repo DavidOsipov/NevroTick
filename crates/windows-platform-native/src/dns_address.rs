@@ -77,7 +77,7 @@ impl DnsQueryName {
     #[cfg(any(windows, test))]
     pub(super) fn matches_reported_dns_name(&self, reported: &[u16]) -> bool {
         let root: u16 = u16::from(b'.');
-        let reported: &[u16] = reported.strip_suffix(&[root]).unwrap_or(reported);
+        let reported: &[u16] = reported.trim_suffix(&[root]);
         let Some((name, suffix)): Option<(&[u16], &[u16])> =
             self.wide.split_at_checked(reported.len())
         else {

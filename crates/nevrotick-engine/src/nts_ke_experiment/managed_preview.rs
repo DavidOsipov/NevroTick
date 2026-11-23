@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt;
 use std::net::SocketAddr;
 use std::num::NonZeroU32;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[cfg(windows)]
@@ -20,8 +21,9 @@ use super::{
     response::{ControlProtection, ProtectedControlKind},
 };
 use crate::{
-    ExperimentalMeasurement, MeasurementRefusal, SoftwareClock, SourceConfigurationSnapshot,
-    SourcePolicyError,
+    ExperimentalMeasurement, ExperimentalReferenceNs, MeasurementRefusal,
+    RelativeMeasurementRefusal, RunClockContext, SoftwareClock, SourceConfigurationSnapshot,
+    SourcePolicyError, relative::reference_from_instants,
 };
 
 /// A genuine managed Preview completed and its actual worker returned and joined.
@@ -426,8 +428,9 @@ pub enum ManagedProtectedPlan {
 
 /// A historical ordinary authenticated reply committed under the original source.
 ///
-/// The receipt records the original packet operation and process-local monotonic
-/// observations. It supplies no sample eligibility, measurement or current authority.
+/// The receipt records the original packet operation, authenticated peer claims
+/// and process-local monotonic observations. It supplies no sample eligibility,
+/// measurement or current authority.
 #[must_use = "retain the original joined protected receipt"]
 pub struct ManagedProtectedReceipt {
     /// Immutable configuration checked by the actual send and final commit.
@@ -438,6 +441,14 @@ pub struct ManagedProtectedReceipt {
     initial_cookie_population: (usize, usize),
     /// Authenticated peer leap indicator accepted by ordinary response admission.
     leap_indicator: u8,
+    /// Original authenticated stratum octet.
+    peer_stratum: u8,
+    /// Original authenticated signed precision exponent.
+    peer_precision_exponent: i8,
+    /// Original authenticated root-delay bits.
+    peer_root_delay_bits: u32,
+    /// Original authenticated root-dispersion bits.
+    peer_root_dispersion_bits: u32,
     /// Original server receive and transmit wire values, in that order.
     peer_timestamps: [NtpTimestamp; 2],
     /// Original guarded operation commit time.
@@ -446,6 +457,8 @@ pub struct ManagedProtectedReceipt {
     received_at: Instant,
     /// Original pre-send, send-return and selected receive-return brackets.
     application_clock_captures: [SoftwareClock; 3],
+    /// Original pre-acquisition chart shared by this invocation's receipts.
+    run_context: Arc<RunClockContext>,
     /// Original native disposition for each corresponding software observation.
     #[cfg(windows)]
     application_native_clock_captures: [Option<ProtectedNativeClockObservation>; 3],
@@ -465,10 +478,15 @@ impl ManagedProtectedReceipt {
             packet_bytes: summary.packet_bytes,
             initial_cookie_population: (summary.cookies, summary.cookie_bytes),
             leap_indicator: header.leap_indicator(),
+            peer_stratum: header.stratum(),
+            peer_precision_exponent: header.precision(),
+            peer_root_delay_bits: header.root_delay_bits(),
+            peer_root_dispersion_bits: header.root_dispersion_bits(),
             peer_timestamps: [header.receive_timestamp(), header.transmit_timestamp()],
             committed_at: history.committed_at(),
             received_at: history.received_at(),
             application_clock_captures: history.captures(),
+            run_context: Arc::clone(history.run_context()),
             #[cfg(windows)]
             application_native_clock_captures: history.native_captures(),
             application_wall_elapsed_bounds: history.application_wall_elapsed_bounds(),
@@ -497,6 +515,30 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub const fn leap_indicator(&self) -> u8 {
         self.leap_indicator
+    }
+
+    /// Return the original authenticated peer stratum octet.
+    #[must_use]
+    pub const fn peer_stratum(&self) -> u8 {
+        self.peer_stratum
+    }
+
+    /// Return the original authenticated precision claim as a signed base-two exponent.
+    #[must_use]
+    pub const fn peer_precision_exponent(&self) -> i8 {
+        self.peer_precision_exponent
+    }
+
+    /// Return the original root-delay bits without numeric interpretation.
+    #[must_use]
+    pub const fn peer_root_delay_bits(&self) -> u32 {
+        self.peer_root_delay_bits
+    }
+
+    /// Return the original root-dispersion bits without admitting a quality bound.
+    #[must_use]
+    pub const fn peer_root_dispersion_bits(&self) -> u32 {
+        self.peer_root_dispersion_bits
     }
 
     /// Return the original authenticated server receive and transmit values (T2 and T3).
@@ -529,6 +571,36 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub const fn application_clock_captures(&self) -> [SoftwareClock; 3] {
         self.application_clock_captures
+    }
+
+    /// Derive the exact nominal reference in this receipt's original invocation chart.
+    ///
+    /// Use the midpoint of the leading pre-send and receive-return observations,
+    /// preserving a half nanosecond. The receipt retains the original age and
+    /// chart. This calculation does not observe a clock or establish capture
+    /// accuracy, mapping validity, current authority or sample eligibility.
+    ///
+    /// # Errors
+    /// Preserve the shared midpoint owner's order, origin, range and checked-output refusal.
+    pub fn nominal_reference(&self) -> Result<ExperimentalReferenceNs, RelativeMeasurementRefusal> {
+        let [send, _, read]: [SoftwareClock; 3] = self.application_clock_captures;
+        reference_from_instants(self.run_context.origin, send.monotonic(), read.monotonic())
+    }
+
+    /// Compare the original chart allocation of two historical receipts.
+    ///
+    /// Equal numeric origins alone do not identify the same invocation. Shared
+    /// chart identity permits comparing nominal references within that chart
+    /// and conveys no live association, clock mapping or admission authority.
+    #[must_use]
+    pub fn same_invocation(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.run_context, &other.run_context)
+    }
+
+    /// Independently check preservation of the actual history's chart allocation.
+    #[cfg(all(test, any(windows, target_os = "linux")))]
+    pub(super) fn retains_run_context(&self, original: &Arc<RunClockContext>) -> bool {
+        Arc::ptr_eq(&self.run_context, original)
     }
 
     /// Return the original native outcomes in the same order as the software brackets.
@@ -671,6 +743,9 @@ pub struct ManagedProtectedReport {
     remaining_driver_work: usize,
     /// Remaining checkout, frame and byte allowance of the admitted association.
     remaining_association_work: Option<(usize, usize, usize)>,
+    /// Raw current-process observations enclosing the original job, if read.
+    #[cfg(windows)]
+    process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]>,
 }
 
 impl ManagedProtectedReport {
@@ -692,6 +767,9 @@ impl ManagedProtectedReport {
                 cleanup,
             ));
         };
+        #[cfg(windows)]
+        let process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]> =
+            received.process_leap_presentation();
         let (first, terminal, (attempted_sends, fully_submitted_sends, remaining_driver_work)): (
             Option<Box<ManagedProtectedHistory>>,
             super::ManagedSuccessorTerminal,
@@ -722,7 +800,27 @@ impl ManagedProtectedReport {
             fully_submitted_sends,
             remaining_driver_work,
             remaining_association_work,
+            #[cfg(windows)]
+            process_leap_presentation,
         })
+    }
+
+    /// Return the original Windows process presentation before submission and after joined take.
+    ///
+    /// Each outcome retains the native query refusal or observed mode. Absence means
+    /// the backend did not take these observations. Equal modes describe only the two
+    /// reads and supply no continuity, clock mapping or sample eligibility.
+    #[cfg(windows)]
+    #[must_use]
+    pub const fn process_leap_presentation(
+        &self,
+    ) -> Option<
+        [Result<
+            windows_platform_native::LeapPresentation,
+            windows_platform_native::LeapPresentationError,
+        >; 2],
+    > {
+        self.process_leap_presentation
     }
 
     /// Borrow the genuine first committed receipt, when the worker recorded it.
@@ -796,6 +894,132 @@ impl fmt::Debug for ManagedProtectedReport {
             .field("remaining_driver_work", &self.remaining_driver_work)
             .finish_non_exhaustive()
     }
+}
+
+/// Joined history for an explicit two-job protected acquisition.
+#[derive(Debug)]
+#[must_use = "inspect both original jobs and the owning observer close"]
+pub struct ManagedProtectedPairReport {
+    /// First actual normally joined invocation.
+    first: ManagedProtectedReport,
+    /// Independent second outcome if the first job earned the second attempt.
+    second: Option<Result<ManagedProtectedReport, SourceProtectedProbeFailure>>,
+    /// Status of the owning observer's single close attempt.
+    power_unregistration_error: Option<NonZeroU32>,
+}
+
+impl ManagedProtectedPairReport {
+    /// Borrow the first normally joined result, including any terminal refusal.
+    #[must_use]
+    pub const fn first(&self) -> &ManagedProtectedReport {
+        &self.first
+    }
+
+    /// Borrow the independent outcome of the second attempt, when earned.
+    /// A restriction or terminal refusal in the first job leaves this absent.
+    #[must_use]
+    pub fn second(&self) -> Option<Result<&ManagedProtectedReport, &SourceProtectedProbeFailure>> {
+        self.second.as_ref().map(Result::as_ref)
+    }
+
+    /// Return the exact nonzero status of the pair's single observer close on failure.
+    #[must_use]
+    pub const fn power_unregistration_error(&self) -> Option<NonZeroU32> {
+        self.power_unregistration_error
+    }
+}
+
+/// Receive the original submitted job and detach its own power lease.
+/// # Errors
+/// Preserve the actual submission, collection or receiving refusal and Stop status.
+fn run_pair_member(
+    job: super::ManagedObservedJob<'_>,
+    submit: &mut impl FnMut(job::SubmissionReservation) -> Result<job::SubmittedJob, job::SubmitError>,
+    #[cfg(windows)] read_presentation: &mut Option<
+        &mut dyn FnMut() -> super::ProcessLeapPresentationRead,
+    >,
+) -> Result<ManagedProtectedReport, SourceProtectedProbeFailure> {
+    let super::ManagedObservedJob {
+        reservation,
+        active,
+        stop,
+    } = job;
+    let result: Result<ReceivedInvocation, RunFailed> = super::receive_managed_submission(
+        || submit(reservation),
+        #[cfg(windows)]
+        read_presentation,
+    );
+    ManagedProtectedReport::from_observed(Ok(super::finish_observing(result, &stop, move || {
+        drop(active);
+        Ok(())
+    })))
+}
+
+/// Run two explicit checked jobs within the original cutoff and one owning scope.
+///
+/// Each job uses its own original reservation and Stop binding. Only two
+/// genuine ordinary receipts from the first job admit the second authorization.
+/// Any unconfirmed collection retains actual job and provider custody in the slot.
+///
+/// # Errors
+/// Preserve first preparation, registration, submission and collection refusals.
+/// Retain terminal operation history and independent observer close status.
+pub(super) fn run_managed_pair_with<Close: FnOnce() -> Result<(), NonZeroU32>>(
+    first: super::Config,
+    second: impl FnOnce() -> Result<super::Config, SourceProtectedProbeFailure>,
+    cutoff: Instant,
+    slot: &'static job::WorkerSlot,
+    subscribe: impl FnOnce(Arc<super::power_target::PowerTarget>) -> Result<Close, ()>,
+    mut submit: impl FnMut(job::SubmissionReservation) -> Result<job::SubmittedJob, job::SubmitError>,
+    #[cfg(windows)] mut read_presentation: Option<
+        &mut dyn FnMut() -> super::ProcessLeapPresentationRead,
+    >,
+) -> Result<ManagedProtectedPairReport, SourceProtectedProbeFailure> {
+    let worker: job::ManagedWorker = job::ManagedWorker::new(slot);
+    let target: Arc<super::power_target::PowerTarget> =
+        Arc::new(super::power_target::PowerTarget::new());
+    let first_job: super::ManagedObservedJob<'_> =
+        super::prepare_managed_observed(first, Some(cutoff), &worker, &target)
+            .map_err(SourceProtectedProbeFailure::from_observer_start)?;
+    let close: Close = subscribe(Arc::clone(&target)).map_err(|()| {
+        SourceProtectedProbeFailure::from_observer_start(ObserverStartError::Registration)
+    })?;
+    let mut result: Result<ManagedProtectedPairReport, SourceProtectedProbeFailure> =
+        run_pair_member(
+            first_job,
+            &mut submit,
+            #[cfg(windows)]
+            &mut read_presentation,
+        )
+        .map(|first: ManagedProtectedReport| {
+            let second: Option<Result<ManagedProtectedReport, SourceProtectedProbeFailure>> =
+                (first.first().is_some()
+                    && matches!(first.terminal(), ManagedProtectedTerminal::Ordinary(_)))
+                .then(|| {
+                    let config: super::Config = second()?;
+                    let job: super::ManagedObservedJob<'_> =
+                        super::prepare_managed_observed(config, Some(cutoff), &worker, &target)
+                            .map_err(SourceProtectedProbeFailure::from_observer_start)?;
+                    run_pair_member(
+                        job,
+                        &mut submit,
+                        #[cfg(windows)]
+                        &mut read_presentation,
+                    )
+                });
+            ManagedProtectedPairReport {
+                first,
+                second,
+                power_unregistration_error: None,
+            }
+        });
+    drop(worker);
+    let status: Option<NonZeroU32> = close().err();
+    match &mut result {
+        Ok(report) => report.power_unregistration_error = status,
+        Err(failure) => failure.worker.cleanup.unregistration_error = status,
+    }
+    result
 }
 
 /// Bounded source, worker or operation refusal from the explicit protected invocation.
@@ -979,6 +1203,35 @@ impl crate::SourcePolicyAuthority {
         self.invoke_nts_protected_with_cutoff(expected, plan, Some(cutoff))
     }
 
+    /// Run up to two explicitly selected protected jobs under one native observer.
+    ///
+    /// A first job with both ordinary authenticated receipts earns the second job.
+    /// Recheck the second source revision at that boundary. Both jobs use the same
+    /// cutoff for effects, one provider scope and distinct original Control owners.
+    /// Synchronous collection can outlast the cutoff. A collection refusal requests
+    /// Stop and retains unconfirmed worker custody. Joined receipts are historical
+    /// and carry no clock or tracking authority.
+    ///
+    /// # Errors
+    /// Preserve first source, preparation, registration or worker failure.
+    /// The pair retains any second refusal and its independent observer close.
+    pub fn invoke_nts_protected_pair_before(
+        &self,
+        first: &SourceConfigurationSnapshot,
+        second: &SourceConfigurationSnapshot,
+        cutoff: Instant,
+    ) -> Result<ManagedProtectedPairReport, SourceProtectedProbeFailure> {
+        run_managed_pair_with(
+            self.protected_config(first)?,
+            || self.protected_config(second),
+            cutoff,
+            &super::PROCESS_WORKER,
+            super::subscribe_managed_power,
+            job::SubmissionReservation::try_submit_successor,
+            Some(&mut windows_platform_native::read_leap_presentation),
+        )
+    }
+
     /// Bind the exact installed definition before preparing either invocation window.
     /// # Errors
     /// Preserve source, preparation, observer and worker failures at their existing owners.
@@ -1068,5 +1321,101 @@ impl crate::SourceHandle {
             cleanup: PowerObserverCleanup::default(),
         })?;
         SourceKePreviewReport::from_run(receive_probe(result), cleanup)
+    }
+}
+
+#[cfg(test)]
+mod nominal_reference_tests {
+    //! Fixed endpoints challenge the actual receipt accessors without touching a clock owner.
+
+    use std::time::UNIX_EPOCH;
+
+    use ntp_wire::decode_fixed_header;
+
+    use super::{
+        Arc, Duration, ExperimentalReferenceNs, Failure, Instant, ManagedProtectedReceipt,
+        RawHeader, RelativeMeasurementRefusal, RunClockContext, SoftwareClock,
+        SourceConfigurationSnapshot,
+    };
+    use crate::nts_ke_experiment::{Config, datagram::tests::managed_attempt_config};
+    use crate::{SourceHandle, SourcePolicyAuthority};
+
+    /// Check a literal odd midpoint, equal-valued foreign chart, and reversed endpoints.
+    /// # Errors
+    /// Preserve source configuration failure or refuse an unrepresentable fixture instant.
+    /// # Panics
+    /// Fail if rounding, substituted captures or numeric equality override the receipt.
+    #[test]
+    fn protected_nominal_reference_rejects_reversal_and_distinguishes_chart_identity()
+    -> Result<(), Failure> {
+        let origin: Instant = Instant::now();
+        let (_config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
+            managed_attempt_config(origin, Duration::from_millis(1), Duration::from_millis(4))?;
+        let configuration: SourceConfigurationSnapshot = source
+            .configuration_snapshot()
+            .map_err(Failure::SourcePolicy)?
+            .ok_or(Failure::Control)?;
+        let header: RawHeader = decode_fixed_header(&[0_u8; 48]).map_err(|_| Failure::Control)?;
+        let send: Instant = origin
+            .checked_add(Duration::from_nanos(10))
+            .ok_or(Failure::Control)?;
+        let read: Instant = origin
+            .checked_add(Duration::from_nanos(11))
+            .ok_or(Failure::Control)?;
+        let trailing: Instant = origin
+            .checked_add(Duration::from_nanos(12))
+            .ok_or(Failure::Control)?;
+        let captures: [SoftwareClock; 3] = [
+            SoftwareClock {
+                mono: send,
+                utc: UNIX_EPOCH,
+                mono_after: read,
+            },
+            SoftwareClock {
+                mono: read,
+                utc: UNIX_EPOCH,
+                mono_after: read,
+            },
+            SoftwareClock {
+                mono: read,
+                utc: UNIX_EPOCH,
+                mono_after: trailing,
+            },
+        ];
+        // Only this private fixture constructs raw receipts. The normal and failed
+        // worker cases separately check the actual producer's chart allocation.
+        let receipt = |run_context: Arc<RunClockContext>| ManagedProtectedReceipt {
+            configuration: configuration.clone(),
+            packet_bytes: 192,
+            initial_cookie_population: (1, 12),
+            leap_indicator: 0,
+            peer_stratum: 0,
+            peer_precision_exponent: 0,
+            peer_root_delay_bits: 0,
+            peer_root_dispersion_bits: 0,
+            peer_timestamps: [header.receive_timestamp(), header.transmit_timestamp()],
+            committed_at: trailing,
+            received_at: trailing,
+            application_clock_captures: captures,
+            run_context,
+            #[cfg(windows)]
+            application_native_clock_captures: [None; 3],
+            application_wall_elapsed_bounds: None,
+        };
+        let mut selected: ManagedProtectedReceipt = receipt(Arc::new(RunClockContext { origin }));
+        let foreign: ManagedProtectedReceipt = receipt(Arc::new(RunClockContext { origin }));
+        let parts = |value: ExperimentalReferenceNs| {
+            (value.whole_nanoseconds(), value.has_half_nanosecond())
+        };
+        assert_eq!(selected.nominal_reference().map(parts), Ok((10, true)));
+        assert_eq!(foreign.nominal_reference().map(parts), Ok((10, true)));
+        assert!(!selected.same_invocation(&foreign));
+
+        selected.application_clock_captures.swap(0, 2);
+        assert_eq!(
+            selected.nominal_reference().map(parts),
+            Err(RelativeMeasurementRefusal::ReferenceOrder)
+        );
+        Ok(())
     }
 }

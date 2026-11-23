@@ -266,3 +266,32 @@ scheduling and reached Windows behavior to their existing QA owners. This is no
 new leaf, product defect finding, allocator choice, measured performance claim
 or completed Rust/native qualification. Documentation checks do not initiate
 builds, native jobs, proof work or changes to existing holds and gates.
+
+### Adopt four production expressions — 23 November 2026
+
+CHECK-19/25. [Source drafts](../../crates/nevrotick-ui/src/source_drafts.rs) and
+[reported DNS names](../../crates/windows-platform-native/src/dns_address.rs)
+now trim one optional trailing dot, with the raw draft guards and the mandatory
+query-root check still in place. [Catalog initialization](../../crates/nevrotick-ui/src/localization/mod.rs)
+constructs the same bounded message slots. The [Engine runtime](../../crates/nevrotick-engine/src/lib.rs)
+toggles wake priority in the existing position after the await and before the
+owner refresh. Independent review checked the four expressions and their
+consumers against the pinned Rust 1.100 source.
+
+Frozen tree `60ac9e4199ce5d61048e2a69ad2700f6db2c0a66` binds 650 product inputs.
+Formatting and GNU/MSVC-target Clippy passed for the three affected crates.
+Executed GNU controls passed for source drafts (12),
+localization (16), DNS (10)
+and Engine CLI transport (2). The combined UI attempt stopped at the scratch reserve on MSVC Clippy.
+Repeating only that lane with fresh scratch passed on the same source.
+Receipts under `~/.local/share/nevrotick/rust1100-production-20261123.YO0sMnG0/` are
+
+- `engine-dns.json` · SHA-256 `7e5ae177a7cc1b898797344fcc888d8bc3f4d815aa010cbd0a8511789415839c`
+- `ui.json` · SHA-256 `4db953959950e80c85716240c2fc89c6e409b1f3435af8af7aaebb81f95673c6`
+- `ui-windows.json` · SHA-256 `b724d0a4af3a1004720058037405a0124f6ab80e9f33ca2a1293326d9480cfe1`
+
+Simultaneous-ready alternation remains source-reviewed. Native execution
+and affected source-bound coverage and mutation remain open at their existing
+owners. Fixture-only substitutions enter with their corresponding tests.
+The [popup cleanup owner](../../tasks/slint-gui-handoff.md#bh-native-01-popup-cleanup-repair--7-november-2026)
+retains the separate nested-call, return, unwind and native teardown checks.

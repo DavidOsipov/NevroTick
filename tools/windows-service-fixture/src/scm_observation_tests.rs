@@ -67,6 +67,8 @@ impl Error for PrestartQueryFailure {}
 struct PrestartStatusCloseFailure {
     /// The original refusal, including any separate configuration or security close failure.
     primary: Box<dyn Error>,
+    /// Fixed role of the handle whose explicit retirement failed.
+    role: LabRole,
     /// Raw failure from explicitly closing the retained status handle.
     status_close: ServiceQueryError,
 }
@@ -75,8 +77,10 @@ impl fmt::Display for PrestartStatusCloseFailure {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "{} (additional status close failure: {})",
-            self.primary, self.status_close,
+            "{} (additional status close failure for {}: {})",
+            self.primary,
+            self.role.name(),
+            self.status_close,
         )
     }
 }
@@ -137,6 +141,7 @@ fn finish_prestart_status<T>(
         (Ok(_), Err(error)) => Err(prestart_open_failure(role, "status close", error).into()),
         (Err(primary), Err(status_close)) => Err(PrestartStatusCloseFailure {
             primary,
+            role,
             status_close,
         }
         .into()),
@@ -211,8 +216,9 @@ fn prestart_retains_primary_query_and_close_results() -> Result<(), Box<dyn Erro
         first.stage,
         first.primary,
         first.close_failure,
+        combined.role,
         combined.status_close,
-    ) != (role, stage, query, Some(close), status_close)
+    ) != (role, stage, query, Some(close), role, status_close)
     {
         return Err("pre-start observation lost a query or close failure".into());
     }
@@ -287,8 +293,10 @@ fn read_prestart_security(
     finish_prestart_query(role, "security read/close", result, closed)
 }
 
-/// Complete readback for one role, ready to publish after explicit closure.
-struct PrestartObservation {
+/// Readback for one fixed role, with owner's reported status endpoints.
+pub(super) struct PrestartObservation {
+    /// Laboratory key selected before opening any query handle.
+    role: LabRole,
     /// First status sampled on the retained status handle.
     before: ReportedServiceStatus,
     /// Configured fields read through a separate configuration-only handle.
@@ -299,79 +307,116 @@ struct PrestartObservation {
     after: ReportedServiceStatus,
 }
 
-/// Bracket narrow configuration and security reads with the same status handle.
+/// A fixed role's original status-only handle and the matching key for narrow reads.
 ///
-/// The retained status handle prevents deletion and replacement of the SCM
-/// record during the separate opens, per the Windows `DeleteService` contract.
-/// Both stopped observations are samples and do not establish inactivity between them.
-///
-/// # Errors
-/// Refuse a non-Stopped sample or observation failure and preserve a separate
-/// status close failure before a caller can publish a row.
-fn read_prestart_observation(
+/// Under the Windows `DeleteService` contract this handle defers removal of
+/// the SCM record across the separate opens. Stopped samples cannot establish
+/// uninterrupted inactivity.
+pub(super) struct PrestartRoleStatus {
+    /// Fixed role selected before opening any query handle.
     role: LabRole,
-    key: ServiceKey<'_>,
-) -> Result<PrestartObservation, Box<dyn Error>> {
-    let status: ServiceStatusQuery = ServiceStatusQuery::open_local(key)
-        .map_err(|error| prestart_open_failure(role, "status before", error))?;
-    let result: Result<PrestartObservation, Box<dyn Error>> = (|| {
-        let before: ReportedServiceStatus = status
-            .query()
+    /// Checked SCM key for the separate configuration and security reads.
+    key: ServiceKey<'static>,
+    /// Original query-only handle that owns this observation window.
+    status: ServiceStatusQuery,
+}
+
+impl PrestartRoleStatus {
+    /// Open the original query-only status handle for this fixed role.
+    /// # Errors
+    /// Attribute the original status open failure to the selected role.
+    pub(super) fn open(role: LabRole) -> Result<Self, Box<dyn Error>> {
+        let key: ServiceKey<'static> =
+            ServiceKey::new(role.wide_name()).map_err(|_| "invalid fixed lab role key")?;
+        let status: ServiceStatusQuery = ServiceStatusQuery::open_local(key)
             .map_err(|error| prestart_open_failure(role, "status before", error))?;
-        if before.state() != SERVICE_STOPPED {
-            return Err(format!(
-                "pre-start role {} reported type={} state={} before configuration",
-                role.name(),
-                before.service_type(),
-                before.state(),
-            )
-            .into());
-        }
-        let configuration: PrestartConfiguration = read_prestart_configuration(role, key)?;
-        let security: ReportedServiceSecurity = read_prestart_security(role, key)?;
-        let after: ReportedServiceStatus = status
-            .query()
-            .map_err(|error| prestart_open_failure(role, "status after", error))?;
-        if after.state() != SERVICE_STOPPED {
-            return Err(format!(
-                "pre-start role {} reported type={} state={} after security readback",
-                role.name(),
-                after.service_type(),
-                after.state(),
-            )
-            .into());
-        }
+        Ok(Self { role, key, status })
+    }
+
+    /// Bracket narrow configuration and security reads with this status handle.
+    /// # Errors
+    /// Preserve the first read, close or non-disabled/non-Stopped refusal.
+    pub(super) fn read_observation(&self) -> Result<PrestartObservation, Box<dyn Error>> {
+        let role: LabRole = self.role;
+        let before: ReportedServiceStatus =
+            self.stopped("status before", "before configuration")?;
+        let configuration: PrestartConfiguration = read_prestart_configuration(role, self.key)?;
+        let security: ReportedServiceSecurity = read_prestart_security(role, self.key)?;
+        let after: ReportedServiceStatus =
+            self.stopped("status after", "after security readback")?;
         Ok(PrestartObservation {
+            role,
             before,
             configuration,
             security,
             after,
         })
-    })();
-    finish_prestart_status(role, result, status.close())
+    }
+
+    /// Sample the original object again after the final access handle has closed.
+    /// # Errors
+    /// Refuse a non-Stopped report, changed raw service type or native query error.
+    pub(super) fn recheck(&self, observed_type: u32) -> Result<(), Box<dyn Error>> {
+        let final_status: ReportedServiceStatus =
+            self.stopped("status after access", "after access readback")?;
+        let final_type: u32 = final_status.service_type();
+        if final_type != observed_type {
+            return Err(format!(
+                "pre-start role {} status type changed from {observed_type} to {final_type} during access readback",
+                self.role.name(),
+            )
+            .into());
+        }
+        Ok(())
+    }
+
+    /// Read one Stopped sample and attribute refusal to this object's fixed role.
+    /// # Errors
+    /// Reject a different state or retain the native query failure.
+    fn stopped(
+        &self,
+        stage: &'static str,
+        sample: &'static str,
+    ) -> Result<ReportedServiceStatus, Box<dyn Error>> {
+        let status: ReportedServiceStatus = self
+            .status
+            .query()
+            .map_err(|error| prestart_open_failure(self.role, stage, error))?;
+        if status.state() != SERVICE_STOPPED {
+            return Err(format!(
+                "pre-start role {} reported type={} state={} {sample}",
+                self.role.name(),
+                status.service_type(),
+                status.state(),
+            )
+            .into());
+        }
+        Ok(status)
+    }
+
+    /// Retire the retained handle, recording closure independently of the observation.
+    /// # Errors
+    /// Preserve the first refusal and any failure to close this status handle.
+    pub(super) fn finish<T>(self, result: Result<T, Box<dyn Error>>) -> Result<T, Box<dyn Error>> {
+        finish_prestart_status(self.role, result, self.status.close())
+    }
 }
 
-/// Observe both untouched installed fixture roles for §7.5 step 2.
-///
-/// The supervisor owns installation, independent installed image and package
-/// evidence, actor identity, and continuous activation evidence. This selector
-/// reports two sampled endpoints and redacted configuration/security shape.
-///
-/// # Errors
-/// Stop after the first failed or non-disabled/non-stopped role. Only two
-/// completed rows and the terminal marker constitute complete readback.
-#[test]
-#[ignore = "requires the separately admitted installed S0.6 MSIX and its owned guest"]
-pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dyn Error>> {
-    for role in [LabRole::Engine, LabRole::ClockBroker] {
-        let key: ServiceKey<'_> =
-            ServiceKey::new(role.wide_name()).map_err(|_| "invalid fixed lab role key")?;
-        let PrestartObservation {
+impl PrestartObservation {
+    /// The raw status type from the original handle after configuration and security reads.
+    pub(super) const fn status_service_type(&self) -> u32 {
+        self.after.service_type()
+    }
+
+    /// Write one fixed observation row. The owning selector determines completion.
+    pub(super) fn write(&self) {
+        let Self {
+            role,
             before,
             configuration,
             security,
             after,
-        } = read_prestart_observation(role, key)?;
+        }: &Self = self;
         let (dacl_kind, dacl_bytes): (&str, usize) = match security.dacl() {
             ReportedDacl::Absent => ("absent", 0),
             ReportedDacl::Null => ("null", 0),
@@ -401,6 +446,25 @@ pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dy
             dacl_kind,
             dacl_bytes,
         );
+    }
+}
+
+/// Observe both untouched installed fixture roles for §7.5 step 2.
+///
+/// The supervisor owns installation, independent installed image and package
+/// evidence, actor identity, and continuous activation evidence. This selector
+/// reports sampled endpoints and redacted configuration/security shape.
+///
+/// # Errors
+/// Stop after the first failed or non-disabled/non-Stopped role. Only two
+/// completed rows and the terminal marker constitute complete readback.
+#[test]
+#[ignore = "requires the separately admitted installed S0.6 MSIX and its owned guest"]
+pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dyn Error>> {
+    for role in [LabRole::Engine, LabRole::ClockBroker] {
+        let status: PrestartRoleStatus = PrestartRoleStatus::open(role)?;
+        let observation: Result<PrestartObservation, Box<dyn Error>> = status.read_observation();
+        status.finish(observation)?.write();
     }
     println!("scm-prestart observed-rows=2");
     Ok(())

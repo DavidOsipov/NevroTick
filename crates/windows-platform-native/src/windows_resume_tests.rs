@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use super::{
     ResumeRegistrationError, ResumeUnregistrationError, complete_registration, retire_registration,
 };
-use crate::resume_slot::ResumeSlot;
+use crate::resume_slot::{Action, ResumeSlot};
 
 /// An owned fixture token that cannot be passed to a native release call.
 #[derive(Debug, Eq, PartialEq)]
@@ -18,13 +18,19 @@ struct FixtureRegistration(#[doc = "Independent token identity."] u8);
 ///
 /// # Panics
 /// Fail if the test does not supply a fresh local slot.
-fn bind_action(slot: &ResumeSlot) -> Arc<AtomicBool> {
+fn bind_action(slot: &ResumeSlot, persistent: bool) -> Arc<AtomicBool> {
     let delivered: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let capture: Arc<AtomicBool> = Arc::clone(&delivered);
-    assert!(slot.bind(Box::new(move || {
+    let record = move || {
         capture.store(true, Ordering::Relaxed);
         Ok(())
-    })));
+    };
+    let action: Action = if persistent {
+        Action::Persistent(Box::new(record))
+    } else {
+        Action::once(record)
+    };
+    assert!(slot.bind(action));
     delivered
 }
 
@@ -38,22 +44,36 @@ fn bind_action(slot: &ResumeSlot) -> Arc<AtomicBool> {
 #[test]
 fn registration_failures_disarm_without_reopening_slot() -> Result<(), ()> {
     let code: NonZeroU32 = NonZeroU32::new(5).ok_or(())?;
-    let cases: [(u32, Option<FixtureRegistration>, ResumeRegistrationError); 2] = [
+    let cases: [(
+        u32,
+        Option<FixtureRegistration>,
+        ResumeRegistrationError,
+        bool,
+    ); 4] = [
         (
             5,
             Some(FixtureRegistration(7)),
             ResumeRegistrationError::Native(code),
+            false,
         ),
-        (0, None, ResumeRegistrationError::MissingHandle),
+        (0, None, ResumeRegistrationError::MissingHandle, false),
+        (
+            5,
+            Some(FixtureRegistration(7)),
+            ResumeRegistrationError::Native(code),
+            true,
+        ),
+        (0, None, ResumeRegistrationError::MissingHandle, true),
     ];
-    for (status, handle, expected) in cases {
+    for (status, handle, expected, persistent) in cases {
         let slot: ResumeSlot = ResumeSlot::new();
-        let delivered: Arc<AtomicBool> = bind_action(&slot);
+        let delivered: Arc<AtomicBool> = bind_action(&slot, persistent);
         assert_eq!(complete_registration(&slot, status, handle), Err(expected));
         assert_eq!(Arc::strong_count(&delivered), 1);
         assert_eq!(slot.notify(18), Ok(()));
         assert!(!delivered.load(Ordering::Relaxed));
-        assert!(!slot.bind(Box::new(|| Ok(()))));
+        assert!(!slot.bind(Action::once(|| Ok(()))));
+        assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
     }
     Ok(())
 }
@@ -65,7 +85,7 @@ fn registration_failures_disarm_without_reopening_slot() -> Result<(), ()> {
 #[test]
 fn registration_success_preserves_live_capture() {
     let slot: ResumeSlot = ResumeSlot::new();
-    let delivered: Arc<AtomicBool> = bind_action(&slot);
+    let delivered: Arc<AtomicBool> = bind_action(&slot, false);
     assert_eq!(
         complete_registration(&slot, 0, Some(FixtureRegistration(7))),
         Ok(FixtureRegistration(7))
@@ -82,10 +102,15 @@ fn registration_success_preserves_live_capture() {
 /// Fail if retirement invokes the callback, loses the status, leaks or retries the token.
 #[test]
 fn retirement_disarms_before_attempt_and_never_retries() {
-    let cases: [(u32, Result<(), u32>); 2] = [(0, Ok(())), (6, Err(6))];
-    for (status, expected) in cases {
+    let cases: [(u32, Result<(), u32>, bool); 4] = [
+        (0, Ok(()), false),
+        (6, Err(6), false),
+        (0, Ok(()), true),
+        (6, Err(6), true),
+    ];
+    for (status, expected, persistent) in cases {
         let slot: ResumeSlot = ResumeSlot::new();
-        let delivered: Arc<AtomicBool> = bind_action(&slot);
+        let delivered: Arc<AtomicBool> = bind_action(&slot, persistent);
         let mut handle: Option<FixtureRegistration> = Some(FixtureRegistration(7));
         let mut attempt: Option<(FixtureRegistration, Result<(), ()>, bool, usize)> = None;
         let result: Result<(), ResumeUnregistrationError> =

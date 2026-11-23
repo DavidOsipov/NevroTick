@@ -215,7 +215,7 @@ impl ClockRevision<'_> {
             .is_ok()
     }
 
-    /// Invalidate only the awake context whose own samples disagree.
+    /// Invalidate only the awake context whose sampled continuity was lost.
     ///
     /// # Errors
     /// Return refusal when a concurrent notification or shutdown already won.
@@ -307,7 +307,7 @@ pub(super) struct BrokerClockReader<T, E> {
     changes: &'static BrokerClockChanges,
     /// Sole owner-thread raw observation adapter.
     getter: fn() -> Result<T, E>,
-    /// Last attempted revision, including retired and native-failed reads.
+    /// Last attempted revision or its sampled replacement waiting for the next due read.
     attempted: Option<NonZeroU64>,
     /// Most recent attempt. Subsequent events alone never rewrite it.
     history: Option<BrokerClockRead<T, E>>,
@@ -385,6 +385,7 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
     }
 
     /// Keep the native result bound to the original revision and both owner edges.
+    /// A failed getter withdraws an existing comparison baseline and retains its error.
     fn capture(
         &mut self,
         revision: &ClockRevision<'_>,
@@ -408,6 +409,21 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
         };
         if let Some(sampling) = &mut self.sampling {
             sampling.due = after.checked_add(SAMPLE_INTERVAL);
+            if sampling.previous.is_some()
+                && let Err(error) = result
+            {
+                let Ok(replacement): Result<Option<NonZeroU64>, ()> = revision.invalidate() else {
+                    return self.retire(number, ClockReadRetirement::Generation, Some(error));
+                };
+                self.attempted = replacement;
+                sampling.previous = None;
+                return BrokerClockRead::Completed {
+                    revision: number,
+                    before,
+                    after,
+                    result: Err(error),
+                };
+            }
             if let (Some(previous), Ok(sample)) = (&sampling.previous, &result)
                 && let Some(reason) = (sampling.compare)(previous, sample)
             {
@@ -528,7 +544,8 @@ mod tests {
 
     use super::{
         BrokerClockChanges, BrokerClockRead, BrokerClockReader, ClockNotice, ClockReadRetirement,
-        SAMPLE_INTERVAL, SampledClockDiscontinuity, deliver, report_status,
+        ClockRevision, ControlDisposition, SAMPLE_INTERVAL, SampledClockDiscontinuity, TIME_CHANGE,
+        deliver, report_status,
     };
 
     /// A bound reporter advertises only its live mask and retains early delivery.
@@ -670,39 +687,155 @@ mod tests {
         match GAP_READS.fetch_add(1, SeqCst) {
             0 => Ok(100),
             1 => Err(0),
-            _ => Ok(99),
+            2 => Err(83),
+            3 => Ok(99),
+            _ => Err(99),
         }
     }
 
-    /// A failed getter clears the comparison baseline and preserves its own error.
+    /// A failed getter revokes its baseline but retains the failed observation.
+    /// # Errors
+    /// Returns the missing-revision assertion if either healthy read is unavailable.
     /// # Panics
-    /// Fails if comparison crosses the failed sample or the failure is replaced early.
+    /// Fails if the gap leaves a live revision, renews cadence, or loses raw evidence.
     #[test]
-    fn native_failure_breaks_the_sample_pair() {
+    fn native_failure_revokes_the_sample_pair() -> Result<(), &'static str> {
         assert!(GAP.arm());
         let now: Instant = Instant::now();
-        let second: Instant = now + SAMPLE_INTERVAL;
-        let third: Instant = second + SAMPLE_INTERVAL;
+        let before: Instant = now + SAMPLE_INTERVAL;
+        let after: Instant = before + Duration::from_millis(1);
+        let retry: Instant = after + SAMPLE_INTERVAL;
+        let fresh: Instant = retry + SAMPLE_INTERVAL;
         let mut reader: BrokerClockReader<u64, u32> = BrokerClockReader::new(&GAP, gap_read)
             .with_sampling(|a: &u64, b: &u64| {
                 (b < a).then_some(SampledClockDiscontinuity::FiletimeReversed)
             });
         reader.poll(now, || Ok(now));
-        reader.poll(second, || Ok(second));
-        assert!(matches!(
-            reader.history(),
-            Some(BrokerClockRead::Completed { result: Err(0), .. })
-        ));
-        reader.poll(third, || Ok(third));
-        assert!(matches!(
+        let original: ClockRevision<'_> =
+            reader.observed_awake_revision().ok_or("missing baseline")?;
+        assert!(original.admits());
+        let mut edges: std::array::IntoIter<Instant, 2> = [before, after].into_iter();
+        reader.poll(before, || edges.next().ok_or(ClockReadRetirement::Clock));
+        assert!(!original.admits());
+        let failed: Option<BrokerClockRead<u64, u32>> = Some(BrokerClockRead::Completed {
+            revision: original.number(),
+            before,
+            after,
+            result: Err(0),
+        });
+        assert_eq!(reader.history(), failed);
+        assert!(reader.observed_awake_revision().is_none());
+        let replacement: ClockRevision<'_> = GAP.revision().ok_or("missing replacement")?;
+        assert_eq!(Some(replacement.number()), NonZeroU64::new(2));
+
+        let just_early: Instant = retry
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("missing pre-due instant")?;
+        assert_eq!(
+            reader.sample_wait(just_early),
+            Some(Duration::from_nanos(1))
+        );
+        reader.poll(just_early, || Ok(just_early));
+        assert_eq!(GAP_READS.load(SeqCst), 2);
+        assert_eq!(reader.history(), failed);
+
+        reader.poll(retry, || Ok(retry));
+        assert_eq!(
             reader.history(),
             Some(BrokerClockRead::Completed {
-                revision: NonZeroU64::MIN,
-                result: Ok(99),
-                ..
+                revision: replacement.number(),
+                before: retry,
+                after: retry,
+                result: Err(83),
             })
-        ));
+        );
+        assert!(replacement.admits());
+        assert!(reader.observed_awake_revision().is_none());
+        reader.poll(fresh, || Ok(fresh));
+        assert_eq!(
+            reader.history(),
+            Some(BrokerClockRead::Completed {
+                revision: replacement.number(),
+                before: fresh,
+                after: fresh,
+                result: Ok(99),
+            })
+        );
         assert_eq!(reader.last_discontinuity(), None);
+        assert_eq!(GAP_READS.load(SeqCst), 4);
+        let observed: ClockRevision<'_> = reader
+            .observed_awake_revision()
+            .ok_or("missing fresh observation")?;
+        assert_eq!(observed.number(), replacement.number());
+        assert!(observed.admits());
+        assert!(!original.admits());
+        Ok(())
+    }
+
+    /// Count the actual getter calls for the sequential notice and Stop controls.
+    static GAP_RACE_READS: AtomicU32 = AtomicU32::new(0);
+
+    /// Supply a successful baseline followed by an original failed observation.
+    /// # Errors
+    /// Return code zero on the second getter call of each fixture history.
+    fn gap_race_read() -> Result<u64, u32> {
+        match GAP_RACE_READS.fetch_add(1, SeqCst) {
+            0 => Ok(100),
+            1 => Err(0),
+            _ => Err(99),
+        }
+    }
+
+    /// An independent control can revoke the failed getter's baseline first.
+    /// # Panics
+    /// Fails if the sampler advances the winner's revision or loses the raw error.
+    #[test]
+    fn notice_or_stop_wins_over_a_sampled_getter_failure() {
+        static NOTICE: BrokerClockChanges = BrokerClockChanges::new();
+        static STOP: BrokerClockChanges = BrokerClockChanges::new();
+        let cases: [(&BrokerClockChanges, u32, Option<NonZeroU64>); 2] =
+            [(&NOTICE, TIME_CHANGE, NonZeroU64::new(2)), (&STOP, 1, None)];
+        for (changes, control, expected) in cases {
+            GAP_RACE_READS.store(0, SeqCst);
+            assert!(changes.arm());
+            let stop: StopNotification = StopNotification::new();
+            let now: Instant = Instant::now();
+            let due: Instant = now + SAMPLE_INTERVAL;
+            let mut reader: BrokerClockReader<u64, u32> =
+                BrokerClockReader::new(changes, gap_race_read).with_sampling(|a: &u64, b: &u64| {
+                    (b < a).then_some(SampledClockDiscontinuity::FiletimeReversed)
+                });
+            reader.poll(now, || Ok(now));
+            assert!(reader.observed_awake_revision().is_some());
+            let mut edges: u32 = 0;
+            reader.poll(due, || {
+                edges += 1;
+                if edges == 2 {
+                    let notice: ControlDisposition = deliver(Some(changes), &stop, control, 0);
+                    assert_eq!(notice.status, 0);
+                    assert!(notice.wake);
+                }
+                Ok(due)
+            });
+            assert_eq!(GAP_RACE_READS.load(SeqCst), 2);
+            assert_eq!(
+                changes
+                    .revision()
+                    .map(|revision: ClockRevision<'_>| revision.number()),
+                expected
+            );
+            assert_eq!(stop.stop_requested(), control == 1);
+            assert_eq!(
+                reader.history(),
+                Some(BrokerClockRead::Retired {
+                    revision: NonZeroU64::MIN,
+                    reason: ClockReadRetirement::Generation,
+                    native_failure: Some(0),
+                })
+            );
+            assert!(reader.observed_awake_revision().is_none());
+            assert_eq!(reader.last_discontinuity(), None);
+        }
     }
 
     /// The last valid awake revision can retire without wrapping.

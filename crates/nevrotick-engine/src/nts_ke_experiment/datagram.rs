@@ -789,9 +789,29 @@ mod reached {
         terminal: ManagedSuccessorTerminal,
         /// Attempted sends, full sends, and the original driver's remaining work.
         work: (usize, usize, usize),
+        /// Process presentation around this original submission and joined take.
+        #[cfg(windows)]
+        process_leap_presentation: Option<[super::super::ProcessLeapPresentationRead; 2]>,
     }
 
     impl ReceivedManagedSuccessor {
+        /// Retain the private observation enclosing this worker submission and take.
+        #[cfg(windows)]
+        pub(in super::super) const fn retain_process_leap_presentation(
+            &mut self,
+            reads: [super::super::ProcessLeapPresentationRead; 2],
+        ) {
+            self.process_leap_presentation = Some(reads);
+        }
+
+        /// Return the exact optional pair without querying the process again.
+        #[cfg(windows)]
+        pub(in super::super) const fn process_leap_presentation(
+            &self,
+        ) -> Option<[super::super::ProcessLeapPresentationRead; 2]> {
+            self.process_leap_presentation
+        }
+
         /// Observe the exact first packet history in joined component assertions.
         #[cfg(test)]
         pub(in super::super) fn first_history(&self) -> Option<&ManagedProtectedHistory> {
@@ -1056,6 +1076,8 @@ mod reached {
                     first: first_receipt,
                     terminal,
                     work,
+                    #[cfg(windows)]
+                    process_leap_presentation: None,
                 },
             )));
         }
@@ -1185,8 +1207,7 @@ mod reached {
             &self.identity
         }
 
-        /// Borrow the invocation's actual pre-acquisition chart for identity controls.
-        #[cfg(test)]
+        /// Borrow the original pre-acquisition chart for immutable receipt projection.
         pub(in super::super) const fn run_context(&self) -> &Arc<RunClockContext> {
             &self.run_context
         }
