@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure the portable fixture host, diagnostics, worker and writer (GPL-2.0-only).
+"""Measure selected portable service fixture owners (GPL-2.0-only).
 
 The fixture runner owns tool admission and isolated execution. This module reuses
 only existing pure metric parsers and evidence export; it changes no shared gate.
@@ -53,6 +53,10 @@ FIXTURE_TARGETS = {LIBRARY: ("lib", "src/lib.rs"), "entrypoints": ("test", "test
 NATIVE_SUBJECTS = {"host": "src/host.rs", "error": "src/error.rs", "diagnostics": "src/diagnostics.rs"}
 SUBJECTS = {**NATIVE_SUBJECTS, "engine_worker": "src/engine_worker.rs",
             "diagnostics_thread": "src/diagnostics_thread.rs"}
+CLOCK_SUBJECTS = {"broker_clock_change": "src/broker_clock_change.rs",
+                  "broker_clock_continuity": "src/broker_clock_continuity.rs"}
+DIRECT_SUBJECTS = SUBJECTS | CLOCK_SUBJECTS
+COVERAGE_LANES = {"coverage": SUBJECTS, "broker-clock-coverage": CLOCK_SUBJECTS}
 SCOPE = C.Scope(PACKAGE, tuple(NATIVE_SUBJECTS.items()), "fixture-local")
 
 
@@ -65,7 +69,7 @@ class DirectOwner(NamedTuple):
 
     @property
     def file(self) -> str:
-        return SUBJECTS[self.subject]
+        return DIRECT_SUBJECTS[self.subject]
 
     @property
     def path(self) -> str:
@@ -78,9 +82,14 @@ class DirectOwner(NamedTuple):
 
 WORKER_DIRECT = DirectOwner("worker", "engine_worker", "fixture-worker-direct-replay-v1")
 WRITER_DIRECT = DirectOwner("writer", "diagnostics_thread", "fixture-writer-direct-replay-v1")
-DIRECT_LANES = {f"{owner.prefix}-{suffix}": owner for owner in (WORKER_DIRECT, WRITER_DIRECT)
+CHANGE_DIRECT = DirectOwner("broker-clock-change", "broker_clock_change",
+                            "fixture-broker-clock-change-direct-replay-v1")
+CONTINUITY_DIRECT = DirectOwner("broker-clock-continuity", "broker_clock_continuity",
+                                "fixture-broker-clock-continuity-direct-replay-v1")
+DIRECT_LANES = {f"{owner.prefix}-{suffix}": owner
+                for owner in (WORKER_DIRECT, WRITER_DIRECT, CHANGE_DIRECT, CONTINUITY_DIRECT)
                 for suffix in ("enumerate", "replay-pilot", "replay")}
-METRIC_LANES = ("coverage", "enumerate", "mutation", *DIRECT_LANES)
+METRIC_LANES = (*COVERAGE_LANES, "enumerate", "mutation", *DIRECT_LANES)
 WORKER_ROUND_ASSERTIONS = {
     "engine_worker::tests::address_round::" + name: "src/engine_worker_round_tests.rs"
     for name in (
@@ -97,7 +106,54 @@ WRITER_ASSERTIONS = {
     "host::tests::worker_tests::threaded_writer_controls::refused_startup_never_starts_the_writer_backend":
         "src/host_tests.rs",
 }
-COVERAGE_SCOPE = C.Scope(PACKAGE, tuple((k, Q.TOOL + "/" + v) for k, v in SUBJECTS.items()), "fixture-local")
+CLOCK_TRANSITION_ASSERTIONS = {
+    "broker_clock_change::continuity::tests::" + name: "src/broker_clock_continuity_tests.rs"
+    for name in ("adjustment_change_retires_the_original_observation",
+                 "presentation_change_retires_the_original_observation")
+}
+CLOCK_ASSERTIONS = {
+    CHANGE_DIRECT: {
+        **CLOCK_TRANSITION_ASSERTIONS,
+        **{"broker_clock_change::tests::" + name: "src/broker_clock_reader_tests.rs" for name in (
+            "crossing_read_keeps_the_original_failure_under_its_revision",
+            "native_failure_revokes_the_sample_pair",
+            "newer_notice_wins_over_a_sampled_contradiction",
+            "notice_or_stop_wins_over_a_sampled_getter_failure",
+            "sampled_invalidation_closes_at_revision_exhaustion",
+            "time_change_controls_are_role_and_lifecycle_bound")},
+        **{"broker_clock_change::power_tests::" + name: "src/broker_clock_power_tests.rs" for name in (
+            "power_delivery_is_role_lifecycle_and_event_scoped",
+            "suspend_blocks_capture_until_automatic_resume_begins_a_fresh_ordinal",
+            "suspended_ordinal_exhaustion_is_irreversible")},
+        **{"host::tests::broker_clock_change_tests::" + name: path for name, path in (
+            ("availability_tests::broker_reports_only_current_availability_before_cleanup",
+             "src/broker_availability_tests.rs"),
+            ("sampling_tests::cutoff_tests::sampled_broker_refuses_work_at_the_original_cutoff",
+             "src/broker_clock_sampling_cutoff_tests.rs"),
+            ("sampling_tests::selected_broker_samples_quietly_and_retains_observed_breaks",
+             "src/broker_clock_sampling_tests.rs"),
+            ("selected_broker_power_resumes_across_repeated_callbacks", "src/broker_clock_change_tests.rs"),
+            ("selected_broker_renews_after_crossing_and_refuses_failed_running", "src/broker_clock_change_tests.rs"))},
+    },
+    CONTINUITY_DIRECT: {
+        **CLOCK_TRANSITION_ASSERTIONS,
+        **{"broker_clock_change::continuity::tests::" + name: "src/broker_clock_continuity_tests.rs"
+           for name in ("changed_frequency_precedes_other_conflicts",
+                        "compares_each_adjustment_field_exactly",
+                        "compares_only_known_presentation_changes_after_adjustment",
+                        "counter_order_uses_the_two_inner_edges",
+                        "filetime_order_refuses_only_strict_regression",
+                        "signed_tick_and_unsigned_wall_extremes_remain_exact")},
+    },
+}
+DIRECT_ASSERTIONS = {WORKER_DIRECT: WORKER_ROUND_ASSERTIONS, WRITER_DIRECT: WRITER_ASSERTIONS, **CLOCK_ASSERTIONS}
+CLOCK_NATIVE_GAPS = {
+    "broker_clock_change": "GNU libtest excludes Windows-only native sampling attachment and reader construction.",
+    "broker_clock_continuity": "GNU libtest excludes Windows-only raw sample getters and native sample projection.",
+}
+COVERAGE_SCOPES = {lane: C.Scope(PACKAGE, tuple((owner, Q.TOOL + "/" + path) for owner, path in subjects.items()),
+                                "fixture-local")
+                   for lane, subjects in COVERAGE_LANES.items()}
 LIMITS = {"coverage_wall_seconds": 300, "enumeration_wall_seconds": 120,
           "mutation_wall_seconds": 1200, "build_seconds": 90, "test_seconds": 60,
           "maximum_mutants": 512, "mutation_jobs": 4, "inner_cargo_jobs": 1,
@@ -289,10 +345,11 @@ def ordinary_fixture_tests(receipt, binding, source, graph_path, graph_digest):
     return rosters[tuple(ordinary)]
 
 
-def metric_coverage(report):
+def metric_coverage(report, lane: str = "coverage"):
     """Score exact owner files independently, preserving all other raw line data."""
-    return {name: C.coverage_counts(COVERAGE_SCOPE, report, "/work/source/" + Q.TOOL + "/" + filename)
-            for name, filename in SUBJECTS.items()}
+    require(lane in COVERAGE_LANES, "Unknown fixture coverage lane.")
+    return {name: C.coverage_counts(COVERAGE_SCOPES[lane], report, "/work/source/" + Q.TOOL + "/" + filename)
+            for name, filename in COVERAGE_LANES[lane].items()}
 
 
 def inventory_listing(text, subject):
@@ -676,6 +733,9 @@ def direct_inventory(text: str, source: bytes, *, owner: DirectOwner = WORKER_DI
     require(type(rows) is list and 0 < len(rows) <= LIMITS["maximum_mutants"],
             "Direct inventory is empty or oversized.")
     lines, inventory = source.splitlines(keepends=True), {}
+    genres = {"FnValue", "BinaryOperator", "UnaryOperator", "MatchArmGuard"}
+    if owner == CHANGE_DIRECT:
+        genres.add("MatchArm")
 
     def offset(point: dict) -> int:
         require(type(point) is dict and set(point) == {"line", "column"}
@@ -696,7 +756,7 @@ def direct_inventory(text: str, source: bytes, *, owner: DirectOwner = WORKER_DI
                 and row["file"] == owner.leaf
                 and all(type(row[key]) is str and len(row[key]) <= 65536
                         for key in ("name", "replacement", "genre", "diff"))
-                and row["name"] and row["genre"] in {"FnValue", "BinaryOperator", "UnaryOperator", "MatchArmGuard"}
+                and row["name"] and row["genre"] in genres
                 and row["name"] not in inventory and row["replacement"].isascii()
                 and "\n" not in row["replacement"] and "\r" not in row["replacement"],
                 "Direct descriptor is incomplete, duplicated or outside its owner.")
@@ -717,6 +777,12 @@ def direct_inventory(text: str, source: bytes, *, owner: DirectOwner = WORKER_DI
         if row["genre"] == "FnValue":
             returns = (" " + function["return_type"]) if function["return_type"] else ""
             expected_description = f"replace {function_name}{returns} with {replacement}"
+        elif row["genre"] == "MatchArm":
+            # The pinned generator names these deletions from the dispatch arm pattern alone.
+            pattern = re.match(r"(\(TIME_CHANGE, _\)|\(POWER_EVENT, (?:SUSPENDING|AUTOMATIC_RESUME)\)) => ", original)
+            require(not replacement and function_name == "deliver" and pattern is not None,
+                    "Direct match-arm deletion differs from the broker control dispatch.")
+            expected_description = f"delete match arm {pattern[1]} in {function_name}"
         elif row["genre"] == "UnaryOperator":
             require(replacement == "", "Unary deletion must preserve the empty raw replacement.")
             expected_description = f"delete {original} in {function_name}"
@@ -909,8 +975,7 @@ def replay_outcome(build: dict, test: dict | None, expected: list[str], *,
     runtime = fixture_test_runtime(test["output"], root, artifacts, complete=test["exit_code"] == 0, verbose=False)
     if test["exit_code"] == 0:
         return {"kind": "survived", "tests": executed_tests(runtime, expected), "kill_credit": 0}
-    assertions = WRITER_ASSERTIONS if owner == WRITER_DIRECT else WORKER_ROUND_ASSERTIONS
-    return {"kind": "killed", "cause": classify_cause(runtime, expected, assertion_files=assertions,
+    return {"kind": "killed", "cause": classify_cause(runtime, expected, assertion_files=DIRECT_ASSERTIONS[owner],
                                                     allow_legacy_assertions=owner == WORKER_DIRECT),
             "kill_credit": 1}
 
@@ -985,7 +1050,7 @@ def retained_variant(session, directory: Path, manifest: dict, *, owner: DirectO
     require(hashlib.sha256(source).hexdigest() == retained_hash
             and actual["original_source_sha256"] == session.identity
             and actual["original_sha256"] == Q.canonical(session.identity),
-            "Retained worker bytes or original full source identity differ.")
+            "Retained owner bytes or original full source identity differ.")
     reconstructed = {**actual["original_source_sha256"], retained_path: retained_hash}
     require(retained_path == owner.path and owner.path in session.identity
             and retained_hash != session.identity[owner.path]
@@ -1071,6 +1136,8 @@ def execute_direct(session, owner: DirectOwner) -> None:
     require(DIRECT_LANES.get(args.lane) == owner, "Direct lane differs from its configured source owner.")
     if owner == WRITER_DIRECT:
         require(WRITER_ASSERTIONS.keys() <= set(session.tests), "Admitted test roster omits a writer control.")
+    if owner in CLOCK_ASSERTIONS:
+        require(CLOCK_ASSERTIONS[owner].keys() <= set(session.tests), "Admitted test roster omits a broker clock control.")
     result = session.run(f"{prefix}-direct-generated", [str(session.admitted["extensions"]["cargo-mutants"]),
                           "mutants", "--Zmutate-file", owner.file, "--json"], 120)
     source = C.read_analysis_bytes(session.source / owner.path, maximum=256 * 1024)
@@ -1087,8 +1154,12 @@ def execute_direct(session, owner: DirectOwner) -> None:
             and previous.get("bookends_passed") is True and previous.get("export_complete") is True
             and previous.get("graph_binding") == session.binding
             and previous.get("direct_schema") == owner.schema and previous.get("direct_summary") == summary
-            and (owner != WRITER_DIRECT or previous.get("subjects") == {owner.subject: owner.file})
+            and (owner == WORKER_DIRECT or previous.get("subjects") == {owner.subject: owner.file})
             and previous.get("direct_inventory") == record["direct_inventory"], "Replay differs from current direct enumeration.")
+    if owner in CLOCK_ASSERTIONS:
+        require(previous.get("candidate_sha256") == record["candidate_sha256"]
+                and previous.get("source_sha256") == session.identity,
+                "Broker clock enumeration differs from the complete current source.")
     review = session.receipt(args.reviewed_inventory)
     require(type(review) is dict and set(review) == {"schema", "candidate_sha256", "summary", "reviewer", "reconciliation"}
             and review.get("schema") == owner.schema and review.get("candidate_sha256") == record["candidate_sha256"]
@@ -1357,14 +1428,18 @@ def execute(session):
     if owner is not None:
         execute_direct(session, owner)
         return
-    if args.lane == "coverage":
-        require(WRITER_ASSERTIONS.keys() <= set(session.tests), "Admitted test roster omits a writer control.")
+    if args.lane in COVERAGE_LANES:
+        if args.lane == "coverage":
+            require(WRITER_ASSERTIONS.keys() <= set(session.tests), "Admitted test roster omits a writer control.")
+        else:
+            require(all(assertions.keys() <= set(session.tests) for assertions in CLOCK_ASSERTIONS.values()),
+                    "Admitted test roster omits a broker clock control.")
         command = [str(session.admitted["extensions"]["cargo-llvm-cov"]), "llvm-cov", "--package", PACKAGE,
                    "--frozen", "--offline", "--jobs", "1", "--lib", "--tests", "--json",
                    "--output-path", "/work/coverage.json", "--failure-mode", "any", "--", "--test-threads=1"]
         result = session.run("coverage", command, LIMITS["coverage_wall_seconds"])
         record["coverage_tests"] = executed_tests(result["output"], session.tests)
-        record["coverage"] = metric_coverage(C.read_analysis_json(session.work / "coverage.json"))
+        record["coverage"] = metric_coverage(C.read_analysis_json(session.work / "coverage.json"), args.lane)
         record["metrics_passed"] = True
         return
     inventories, summaries = enumerate_owners(session)
@@ -1555,7 +1630,7 @@ def run(args):
         output.mkdir(mode=0o700)
         evidence.mkdir(mode=0o700)
         selected = ({owner.subject: owner.file} if owner is not None
-                    else SUBJECTS if args.lane == "coverage" else NATIVE_SUBJECTS)
+                    else COVERAGE_LANES.get(args.lane, NATIVE_SUBJECTS))
         record = {"schema_version": 1, "scope": "portable fixture selected owners only", "lane": args.lane,
                   "core_dump_policy": core_policy,
                   "status": "incomplete", "started_unix": time.time(), "commands": [], "limits": LIMITS,
@@ -1564,6 +1639,8 @@ def run(args):
                   "native_execution": False, "formal_execution": False,
                   "remaining_qualification": ["Independent function/guard, derive/macro and unsafe/cfg omission reconciliation.",
                                               "Windows-native service and memory/lifecycle evidence remain separate."]}
+        record["remaining_qualification"].extend(CLOCK_NATIVE_GAPS[subject]
+                                                 for subject in selected if subject in CLOCK_NATIVE_GAPS)
         if durable is not None:
             record.update(durable_roots=durable, deadline_monotonic=deadline, durable_stage=stage)
         errors = []

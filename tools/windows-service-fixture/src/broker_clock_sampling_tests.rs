@@ -20,7 +20,8 @@ use super::{observe_native, reference_filetime};
 use crate::broker_clock_change::sampled_native_reader;
 #[cfg(not(windows))]
 use crate::{
-    SampledClockBreak, SampledClockDiscontinuity, broker_clock_change::NativeBrokerReader,
+    SampledClockBreak, SampledClockDiscontinuity,
+    broker_clock_change::{NativeBrokerReader, SampledClockTransition},
 };
 
 #[cfg(not(windows))]
@@ -118,7 +119,9 @@ fn selected_broker_samples_quietly_and_retains_observed_breaks() -> Result<(), B
     #[cfg(not(windows))]
     let reader: NativeBrokerReader =
         NativeBrokerReader::new(&CHANGES, read).with_sampling(|before: &u64, after: &u64| {
-            (after < before).then_some(SampledClockDiscontinuity::FiletimeReversed)
+            (after < before).then_some(SampledClockTransition::Discontinuity(
+                SampledClockDiscontinuity::FiletimeReversed,
+            ))
         });
     #[cfg(windows)]
     let wall_lower: Option<u64> = reference_filetime();

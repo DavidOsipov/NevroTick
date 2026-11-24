@@ -1246,6 +1246,14 @@ checks both held-out legs and their original wire and residual record
 digests within the declared QPC validity. Its controls used the original
 Windows application bytes with synthetic reference values. The wired
 reference and its admitted calibration and pairing remain required.
+The [broker presentation withdrawal](../../tasks/windows11-integration.md#withdraw-the-broker-revision-when-leap-presentation-becomes-unavailable)
+keeps an unavailable query in the historical sample and withdraws the
+old live revision. This supplies the broker-side guard under TQ-07 while
+the independently qualified mapping and actual Core receiver remain open.
+The [broker clock metric checkpoint](../../tasks/windows11-integration.md#measure-the-broker-clock-files-independently--25-november-2026)
+passes both GNU implementation line gates, preserves the complete generated
+inventories and records compiler refusals for all ten MSVC-only overlays.
+Full-file replay and Windows-only line evidence remain open.
 The [joined measurement projection](../../tasks/engine-transport-pilot.md#calculate-each-original-joined-ordinary-receipt)
 now checks conditional nominal arithmetic for both original ordinary
 receipts through the actual Engine join. The Windows facade still supplies
@@ -2062,8 +2070,10 @@ requires the requested path to name the original staged tree and
 retains uncertainty and cleanup diagnostics after rename.
 The [UI startup DLL search](../../tasks/slint-gui-handoff.md#configure-the-default-dll-search-before-slint-backend-selection)
 sets the fixed Application Directory and System32 default before Slint
-backend selection. Exact loaded paths and installed dependency admission
-stay under WIN-3/WIN-4 and CHECK-16.
+backend selection. The [startup path observation](../../tasks/slint-gui-handoff.md#observe-the-loaded-modules-at-slint-window-startup)
+records the original process's 39 paths and a separate exact Common
+Controls check. Installed dependency admission stays under WIN-3/WIN-4
+and CHECK-16.
 The [UI execution manifest](../../tasks/windows11-integration.md#embed-and-verify-the-ordinary-ui-execution-manifest)
 now reads back `asInvoker` and `uiAccess=false` from the linked image.
 The [Windows handoff publication](../../tasks/windows11-integration.md#publish-the-checked-windows-build-handoff-as-a-single-tree)

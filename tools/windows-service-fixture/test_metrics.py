@@ -448,6 +448,131 @@ class FixtureMetricControls(unittest.TestCase):
                 M.execute(session)
             self.assertEqual(calls, expected)
 
+    def test_clock_direct_lanes_bind_their_source_roster_and_receipt(self):
+        owners = (("broker-clock-change", "broker_clock_change", M.CHANGE_DIRECT),
+                  ("broker-clock-continuity", "broker_clock_continuity", M.CONTINUITY_DIRECT))
+        for prefix, subject, owner in owners:
+            with self.subTest(subject=subject), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                source, row = self._direct_owner_specimen(subject + ".rs")
+                filename = "src/" + subject + ".rs"
+                path = directory / "tools/windows-service-fixture" / filename
+                path.parent.mkdir(parents=True)
+                path.write_bytes(source)
+                tests = list(M.CLOCK_ASSERTIONS[owner])
+                calls = []
+
+                def enumerate_once(label, command, seconds):
+                    calls.append((label, command, seconds))
+                    return {"exit_code": 0, "failure": None, "output": json.dumps([row])}
+
+                identity = {str(path.relative_to(directory)): hashlib.sha256(source).hexdigest()}
+                session = SimpleNamespace(args=SimpleNamespace(lane=prefix + "-enumerate"),
+                                          record={"candidate_sha256": "a" * 64}, source=directory,
+                                          tests=tests[:-1], binding={"graph": "selected"}, identity=identity,
+                                          admitted={"extensions": {"cargo-mutants": Path("/selected/mutants")}},
+                                          run=enumerate_once)
+                with self.assertRaisesRegex(M.Incomplete, "omits a broker clock control"):
+                    M.execute(session)
+                self.assertEqual(calls, [])
+                session.tests = tests
+                M.execute(session)
+                command = (prefix + "-direct-generated",
+                           ["/selected/mutants", "mutants", "--Zmutate-file", filename, "--json"], 120)
+                self.assertEqual(calls, [command])
+                self.assertEqual(session.record["direct_schema"], f"fixture-{prefix}-direct-replay-v1")
+                self.assertEqual(session.record["direct_inventory"], {row["name"]: row})
+                _, sibling = self._direct_owner_specimen(next(
+                    other + ".rs" for _, other, _ in owners if other != subject))
+                with self.assertRaises(M.Incomplete):
+                    M.direct_inventory(json.dumps([sibling]), source, owner=owner)
+
+                previous = {**session.record, "status": "passed", "lane": prefix + "-enumerate",
+                            "bookends_passed": True, "export_complete": True, "graph_binding": session.binding,
+                            "subjects": {subject: filename}, "source_sha256": identity}
+                session.args = SimpleNamespace(lane=prefix + "-replay-pilot", direct_inventory="inventory",
+                                               reviewed_inventory="review", pilot_mutant=row["name"])
+                for change in ({"subjects": {"host": "src/host.rs"}},
+                               {"candidate_sha256": "b" * 64}, {"source_sha256": {}}):
+                    calls.clear()
+                    session.receipt = lambda _: {**previous, **change}
+                    with self.subTest(change=change), self.assertRaises(M.Incomplete):
+                        M.execute(session)
+                    self.assertEqual(calls, [command])
+                calls.clear()
+                session.receipt = lambda label: previous if label == "inventory" else {
+                    **session.record["review_template"], "reviewer": "reviewed", "reconciliation": {}}
+                with self.assertRaisesRegex(M.Incomplete, "function/cfg/generation gaps"):
+                    M.execute(session)
+                self.assertEqual(calls, [command])
+
+    def test_clock_replay_attributes_only_the_mutated_owners_test_and_assertion_file(self):
+        availability = ("host::tests::broker_clock_change_tests::availability_tests::"
+                        "broker_reports_only_current_availability_before_cleanup")
+        gap = "broker_clock_change::continuity::tests::presentation_change_retires_the_original_observation"
+        counter_order = "broker_clock_change::continuity::tests::counter_order_uses_the_two_inner_edges"
+        unrelated = "healthy_owner"
+        expected = [availability, gap, counter_order, unrelated]
+        build = {"exit_code": 0, "failure": None, "output": direct_build()}
+        available_file = "src/broker_availability_tests.rs"
+        comparator_file: str = "src/broker_clock_continuity_tests.rs"
+        for owner, name, path, accepted in (
+            (M.CHANGE_DIRECT, availability, available_file, True),
+            (M.CHANGE_DIRECT, gap, comparator_file, True),
+            (M.CONTINUITY_DIRECT, gap, comparator_file, True),
+            (M.CONTINUITY_DIRECT, counter_order, comparator_file, True),
+            (M.CONTINUITY_DIRECT, availability, available_file, False),
+            (M.CHANGE_DIRECT, counter_order, comparator_file, False),
+            (M.CHANGE_DIRECT, availability, "src/host_tests.rs", False),
+            (M.CONTINUITY_DIRECT, gap, "src/broker_clock_reader_tests.rs", False),
+            (M.CONTINUITY_DIRECT, gap, "src/broker_clock_continuity.rs", False),
+            (M.CONTINUITY_DIRECT, gap, "/foreign/" + comparator_file, False),
+            (M.CHANGE_DIRECT, unrelated, available_file, False),
+        ):
+            body = f"thread '{name}' panicked at {path}:12:5:\nassertion failed\n"
+            test = {"exit_code": 101, "failure": None, "output": fixture_test_output(body)}
+            with self.subTest(owner=owner.subject, name=name, path=path):
+                if accepted:
+                    verdict = M.replay_outcome(build, test, expected, owner=owner)
+                    self.assertEqual((verdict["kind"], verdict["kill_credit"]), ("killed", 1))
+                else:
+                    with self.assertRaisesRegex(M.Incomplete, "semantic assertion"):
+                        M.replay_outcome(build, test, expected, owner=owner)
+        healthy = {"exit_code": 0, "failure": None, "output": fixture_test_output(execution(expected), complete=True)}
+        for owner in (M.CHANGE_DIRECT, M.CONTINUITY_DIRECT):
+            result = M.replay_outcome(build, healthy, expected, owner=owner)
+            self.assertEqual(result, {"kind": "survived", "tests": sorted(expected), "kill_credit": 0})
+            with self.assertRaises(M.Incomplete):
+                M.replay_outcome(build, healthy, expected[:-1], owner=owner)
+
+    def test_clock_change_admits_only_exact_broker_dispatch_match_deletions(self):
+        leaf = "broker_clock_change.rs"
+        description = "delete match arm (TIME_CHANGE, _) in deliver"
+        source = (b"fn deliver() {\n    match (raw, event) {\n"
+                  b"        (TIME_CHANGE, _) => observation(),\n        _ => fallback(),\n    }\n}\n")
+        row = {
+            "name": f"{leaf}:3:9: {description}", "package": "single_file", "file": leaf,
+            "function": {"function_name": "deliver", "return_type": "",
+                         "span": {"start": {"line": 1, "column": 1}, "end": {"line": 6, "column": 2}}},
+            "span": {"start": {"line": 3, "column": 9},
+                     "end": {"line": 3, "column": len(source.splitlines()[2]) + 1}},
+            "replacement": "", "genre": "MatchArm",
+            "diff": (f"--- {leaf}\n+++ {description}\n@@ -1,6 +1,6 @@\n"
+                     " fn deliver() {\n     match (raw, event) {\n"
+                     "-        (TIME_CHANGE, _) => observation(),\n+         /* ~ changed by cargo-mutants ~ */\n"
+                     "         _ => fallback(),\n     }\n }\n"),
+        }
+        admitted = M.direct_inventory(json.dumps([row]), source, owner=M.CHANGE_DIRECT)
+        self.assertEqual(admitted[row["name"]]["source"],
+                         b"fn deliver() {\n    match (raw, event) {\n         /* ~ changed by cargo-mutants ~ */\n"
+                         b"        _ => fallback(),\n    }\n}\n")
+        for forged in ({**row, "replacement": "true"},
+                       {**row, "name": row["name"].replace("TIME_CHANGE", "POWER_EVENT")},
+                       {**row, "diff": row["diff"].replace("observation", "replacement")},
+                       {**row, "function": {**row["function"], "function_name": "unrelated"}}):
+            with self.subTest(forged=forged), self.assertRaises(M.Incomplete):
+                M.direct_inventory(json.dumps([forged]), source, owner=M.CHANGE_DIRECT)
+
     def test_writer_sparse_evidence_reconstructs_only_the_writer(self):
         bytes_changed = b"changed writer\n"
         changed_hash = hashlib.sha256(bytes_changed).hexdigest()
@@ -1020,6 +1145,51 @@ class FixtureMetricControls(unittest.TestCase):
                 if bad == "bool": subject["summary"]["lines"]["covered"] = True
                 with self.subTest(owner=owner, bad=bad), self.assertRaises(M.Incomplete):
                     M.metric_coverage(changed)
+
+    def test_clock_coverage_lane_scores_only_exact_clock_files_with_the_full_roster(self):
+        change = "broker_clock_change"
+        continuity = "broker_clock_continuity"
+        report = {"data": [{"files": [
+            {"filename": f"/work/source/tools/windows-service-fixture/src/{subject}.rs",
+             "summary": {"lines": {"count": 100, "covered": covered}}}
+            for subject, covered in ((change, 90), (continuity, 94), ("host", 1))
+        ]}]}
+        lane = "broker-clock-coverage"
+        self.assertEqual(set(M.metric_coverage(report, lane)), {change, continuity})
+        self.assertEqual(M.metric_coverage(report, lane)[change]["line_percent"], 90)
+        with self.assertRaises(M.Incomplete):
+            M.metric_coverage(report)
+        for index in (0, 1):
+            for change_type in ("missing", "duplicate", "low", "wrong-path", "empty"):
+                bad = copy.deepcopy(report)
+                files = bad["data"][0]["files"]
+                if change_type == "missing": del files[index]
+                if change_type == "duplicate": files.append(copy.deepcopy(files[index]))
+                if change_type == "low": files[index]["summary"]["lines"]["covered"] = 89
+                if change_type == "wrong-path": files[index]["filename"] = "/foreign" + files[index]["filename"]
+                if change_type == "empty": files[index]["summary"]["lines"] = {"count": 0, "covered": 0}
+                with self.subTest(index=index, change=change_type), self.assertRaises(M.Incomplete):
+                    M.metric_coverage(bad, lane)
+        tests = sorted(set(M.CLOCK_ASSERTIONS[M.CHANGE_DIRECT]) | set(M.CLOCK_ASSERTIONS[M.CONTINUITY_DIRECT]))
+        all_tests = [*tests, "unrelated_ordinary_test"]
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            (work / "coverage.json").write_text(json.dumps(report))
+            session = SimpleNamespace(args=SimpleNamespace(lane=lane), work=work, tests=tests[1:], record={},
+                                      admitted={"extensions": {"cargo-llvm-cov": Path("/selected/cov")}})
+            with patch.object(session, "run", create=True) as run:
+                with self.assertRaisesRegex(M.Incomplete, "omits a broker clock control"):
+                    M.execute(session)
+                run.assert_not_called()
+                session.tests = all_tests
+                run.return_value = {"output": execution(tests)}
+                with self.assertRaises(M.Incomplete):
+                    M.execute(session)
+                run.return_value = {"output": execution(all_tests)}
+                M.execute(session)
+                self.assertEqual(session.record["coverage_tests"], sorted(all_tests))
+                self.assertEqual(set(session.record["coverage"]), {change, continuity})
+                self.assertTrue(session.record["metrics_passed"])
 
     def test_received_record_is_parsed_from_one_strict_owned_snapshot(self):
         self.assertEqual(M.decode_record(b'{"status":"passed","count":1}'), {"status": "passed", "count": 1})
@@ -1606,6 +1776,31 @@ class FixtureMetricControls(unittest.TestCase):
             export.assert_called_once_with(cache / args.label, records / "owned-export-evidence/raw",
                                            records / "owned-export-evidence", disk_floor=M.Q.DISK_FLOOR)
             self.assertEqual(M.Q.DISK_FLOOR, 4 * 1024 ** 3)
+
+    def test_clock_entrypoint_records_exact_selection_and_native_custody_limits(self):
+        change = {"broker_clock_change": "src/broker_clock_change.rs"}
+        continuity = {"broker_clock_continuity": "src/broker_clock_continuity.rs"}
+        for lane, subjects, gap_count in (
+            ("broker-clock-coverage", change | continuity, 2),
+            ("broker-clock-change-enumerate", change, 1),
+            ("broker-clock-continuity-enumerate", continuity, 1),
+        ):
+            with self.subTest(lane=lane), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                records = root / "records"
+                records.mkdir()
+                args = SimpleNamespace(lane=lane, label="clock", equivalence_review=None)
+                with patch.object(M.Q, "CACHE", root / "cache"), patch.object(M.Q, "RECORDS", records), \
+                        patch.object(M.Q, "no_ambient_flags"), patch.object(M.Q, "disable_core_dumps", return_value={}), \
+                        patch.object(M.shutil, "disk_usage", return_value=SimpleNamespace(free=2**60)), \
+                        patch.object(M, "Session"), patch.object(M, "execute"), patch.object(M.E, "export_tree"):
+                    self.assertEqual(M.run(args), "passed")
+                record = json.loads((records / "clock.json").read_text())
+                self.assertEqual(record["subjects"], subjects)
+                self.assertIs(record["native_execution"], False)
+                self.assertIs(record["qualification_passed"], False)
+                self.assertEqual(sum(text.startswith("GNU libtest excludes Windows-only ")
+                                     for text in record["remaining_qualification"]), gap_count)
 
 
 if __name__ == "__main__":

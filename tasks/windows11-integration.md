@@ -17043,6 +17043,161 @@ Optimized execution, native runtime behavior and affected coverage and
 mutation qualification remain open. Physical reference and calibrated
 mapping validity remain prerequisites for Core admission.
 
+### Withdraw the broker revision when leap presentation becomes unavailable
+
+W11-W02/S0.4, LP-C16 and CHECK-11/25/27 support W11-W01/TQ-07. A checked
+raw sample may retain a failed process-presentation query. When the
+previous sample had a known mode and the new query is unavailable, the
+sampler withdraws the original revision at the existing mailbox CAS
+and clears its comparison baseline. The original bracket, revision and
+exact nested query result remain historical. The next due read is still
+measured from completion. The live status receiver and outstanding
+positive replies recheck the original revision.
+
+An earlier coordinate or adjustment contradiction retains precedence,
+as does a known mode change. A Stop or clock notice that wins before the
+withdrawal keeps its existing retirement path. Initial and repeated
+unavailable observations and later restored presentation can supply raw
+read evidence in the admitted revision. Production mapping still needs
+qualified reference, valid date and scale, bounded uncertainty and
+current-holder withdrawal at the actual Core receiver.
+
+Rust contract and lifecycle QA used the real reader and the guarded
+status receiver. The GNU regression observed the old revision admitting
+after loss, with 196 neighboring cases passing. The repaired case checks
+the exact old bracket, no contradictory observation, no early retry, and
+recovery at the completion-relative due instant. The first corrected
+GNU Clippy run detected a sibling host control still returning the
+previous comparator type. The revised fixture uses the same transition
+type in that caller, without changing its expected clock break or test
+name. Further GNU and MSVC Clippy checks required the Windows receipt
+assertions to move into a focused helper and the existing test getter to
+document its new assertion. The earlier attempts remain in the raw
+records. Fresh-context review matched the corrected sampler and retained
+predecessor result and traced both live decision points.
+
+The repaired Rust 1.100.0 candidate passed all six graph and 12
+development commands. Each GNU test mode ran 197 library and one fixture
+integration case plus 70 platform cases. Formatting, GNU and MSVC Clippy,
+28 platform doctests and fixture rustdoc passed. The frozen tree
+`05f67d06b57773268b91dcd433e8dd410e1d3628` binds 856 inputs to
+`e9e776249726206b577de0ff3cdb95e23a4687da580164dc0c7672b371c6753e`.
+All 856 inputs match the working tree after pulling the documentation-only
+`00af532` update.
+
+| Result under `~/.local/share/nevrotick/s31-clock-gap.TktECjb2/` | SHA-256 |
+| --- | --- |
+| `red-r1/clock-gap-red-fixture-r1.json` | `a23a5ae818f792d1ce3ca3c88b27f4edc87da2305d2f57ec42dab3a93552f162` |
+| `green-g4/clock-gap-green-graph-g4.json` | `86c79d991a2378f968967940b62cfdac8ab526932f710eac9a85c50237f96404` |
+| `green-g4/clock-gap-green-development-g4.json` | `c725c8dae17dbfff8e3365503c1417a460dfc950b584163453c2fb0fcf5867c8` |
+| `green-g4/cross-clock-gap-green-libtest-g4.json` | `b183b2785c1061fba163b762a6f3579bcc1759f58cb256c2657c03bdb8447419` |
+
+The x64-v3 MSVC image and PDB passed link and native format readback.
+Both exact selectors passed in the owned offline Windows build-26100
+guest. The broker fixture started with actual Windows coordinates,
+adjustment and a known presentation. The second read retained actual
+coordinates and adjustment with the injected `QueryFailed(0)` result.
+The live guarded status became unavailable while the host was Running.
+The final receipt retained the original revision and that exact nested
+query error without recording a contradiction. The comparator selector
+also passed its deterministic cadence and recovery controls. Both
+processes exited zero with complete output and confirmed reaping. The
+read-only input and output files and owned guest scratch were retired.
+The native verdict SHA-256 is
+`63f1c5aa050c3b8720e8fb9215f72386d9a77522fb1485df4c2d637952362aa0`
+under `%LOCALAPPDATA%/NevroTick/broker-clock-sampler.1nRH4yGk/execution/`.
+
+The selected service fixture metric role currently binds other owners.
+The broker change receiver and comparator require exact line and mutation
+lanes under their existing 90% and 95% obligations. The directed
+predecessor failure supplies behavioral sensitivity for the withdrawal
+case. Installed operation, physical presentation transitions and calibrated
+Engine-to-Core admission remain open.
+
+### Measure the broker clock files independently — 25 November 2026
+
+W11-W02/S0.4, LP-C16 and CHECK-11/25/27. The original GNU LLVM run on
+the verified presentation-withdrawal candidate executed all 198 ordinary
+fixture cases and emitted both broker files alongside the existing five
+scored owners. Its raw totals were 484/520 and 383/388. Those totals included
+inline test bodies. The line view also identified two unreached lines in
+the opening revision fence. The complete producer archive was copied and
+rehash-checked under `%LOCALAPPDATA%/NevroTick/broker-clock-gnu-coverage.5YokursP/`.
+The archive SHA-256 is
+`afcc3df7fb1aedd3f18280e7549259796a02bd8293b523e7fafcaf39ab962eed`.
+
+The comparator and receiver's inline test bodies now live in sibling
+modules with their existing test names. The dedicated coverage lane now
+selects the two implementation files and applies the per-file 90% gate.
+The direct replay lanes bind each file's complete generated inventory,
+source overlay, allowed assertions and healthy restoration. Existing
+fixture metric selections and the 95% minimum retain their prior rules.
+The strengthened tests cover retirement before the getter, all nine
+presentation pairs, and fresh sampling after a retained unavailable
+observation whose FILETIME would otherwise contradict the next sample.
+Fresh-context review checked the unchanged implementation bytes, test
+roster and assertion source paths. All 93 Python controls passed, as did
+all six graph and 12 development commands, including both GNU modes and
+MSVC Clippy. The candidate tree is
+`d71b9edd869aae81d974f1ccd6ff98889f549f12`. Its 858 source inputs bind to
+`d644175b4ca84eb4af89cf8e4c888141392b6e10290b16fae41837418ac23345`.
+
+The pinned single-file generator emitted 71 reader and 22 comparator
+descriptors. Exact replay of the renderer in the receipt reader matched
+every source overlay, including three deletion descriptors for explicit
+control match arms. Two reader and eight comparator descriptors affect
+Windows-only code. They remain in the inventory. The independently
+reviewed GNU pilot selects the comparator's `&&` to `||` substitution and
+expects a stable known-mode pair to refuse the modified behavior.
+
+`broker-clock-coverage` passed the 90% GNU line gate for each file.
+The receiver covered 261/282 executable lines and the comparator covered
+35/35. All 198 cases ran. The receipt records no branch instrumentation.
+Both maintained enumeration lanes matched the complete pinned inventories
+and retained their raw files. The comparator pilot rebuilt seven fresh
+fixture artifacts. Its selected variant ran and failed at the stable
+known-mode assertion, which expected `None` and received `PresentationGap`.
+Clean restoration rebuilt all seven artifacts and passed the same 198-case
+roster. The reader pilot deleted the exact `TIME_CHANGE` match arm. Its
+fresh variant failed the broker control assertion with status `120` where
+the armed reader required `0`. Restoration rebuilt all seven artifacts
+and passed the same 198-case roster. Each pilot credits one observed
+kill and leaves its complete-file 95% gate open.
+
+| Result under `~/.local/share/nevrotick/s31-clock-metrics.o4CmJL33/` | SHA-256 |
+| --- | --- |
+| `green-g5/clock-gap-green-graph-g5.json` | `07671b432e1135b1ec6d71ad407172ee63aac05fbd27d1f289a3e29844678a65` |
+| `green-g5/clock-gap-green-development-g5.json` | `88a29a721e0c5bf85a17cf4ba591081835d33c4ac4e04a69b4cdbd5af0deae23` |
+| `broker-clock-coverage-g5.json` | `91a43e1daf25558bf698aff450596e36912ffe018c4395672e3785b6b42e0953` |
+| `broker-clock-change-enumerate-g5.json` | `aaf0859ab5f6abae4bf8d57dc5f65cea36cdc82fecd04a4c7d4cb345289d08d8` |
+| `broker-clock-continuity-enumerate-g5.json` | `2598792fd526f67502f96578f2a4c25347ee180bd7b3ac204a46b41fd61fee52` |
+| `broker-clock-continuity-pilot-g5.json` | `98b7206feb32d299f964da33bad69d7554fb0bfdb35750548c420d7481f2e183` |
+| `broker-clock-change-pilot-g5.json` | `6bfe5dab60648996d88338e9f97a258a0bbef595ee8208f4c2bd7aff8071e4d8` |
+| `msvc-r1/msvc-observations.json` | `43526fc100243ff2ebfbce3b536b09fe8e8adb8bd563d4e36a68b166662883ee` |
+
+The complete GNU coverage archive `broker-clock-coverage-g5.tar.gz`
+under the same `%LOCALAPPDATA%` directory matched all 1,304 retained file
+hashes. Its SHA-256 is
+`2feae0ebf81f7e5281d0469e5b1a396f9650931c020f9d31f8e048183f93a08d`.
+The isolated MSVC compiler observation reconstructed the same 858 inputs
+and selected the ten Windows-only overlays from the pinned inventories.
+The unmodified and restored source each passed release `cargo check
+--all-targets` for `x86_64-pc-windows-msvc` with fresh fixture-library
+metadata for normal and test roles. Each overlay exited 101 with a
+compiler refusal in the fixture crate. Nine reached a missing `Default`
+implementation. Returning `None` from the native comparator instead
+triggered denied unused parameters and dead code after removing the
+comparison calls. All ten receive zero behavioral kill credit. The raw
+Cargo JSON, commands and overlay hashes bind these classifications to
+the g5 candidate. This was compile-only and emitted no linked fixture.
+
+Both per-file mutation gates, Windows-only line evidence and installed
+operation remain open. The full-file replay still requires a receiver
+that reconciles the GNU and MSVC evidence with the original inventories.
+The configured durable fixture campaign needs 6 GiB free on the distro
+disk at launch. This checkpoint used bounded private tmpfs work and
+verified transfer of producer evidence.
+
 ### Observe fresh broker status after a delivered power cycle — 23 November 2026
 
 W11-W02 and CHECK-11/25/27. A new control drives the original private

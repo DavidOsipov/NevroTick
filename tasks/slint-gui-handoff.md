@@ -1227,6 +1227,44 @@ Pre-entry imports, explicit loads, the installed dependency closure,
 loaded-path observations and affected-file qualification retain their
 own checks.
 
+#### Observe the loaded modules at Slint window startup
+
+W11-W10/S6.1, WIN-3/WIN-4 and CHECK-16/18. In the same owned offline
+Windows build-26100 guest, the exact linked fixture opened its sample
+window in the elevated unpackaged profile. The bounded observer recorded
+39 module paths on the original live child after the window appeared and
+before requesting Close. The child exited zero, both streams completed,
+and the observer reaped it and retired the staged files. The snapshot
+contained the staged executable, 37 direct System32 DLL paths, and one
+Common Controls DLL in WinSxS. The original reader refused the WinSxS
+row and retained the complete raw snapshot.
+
+A separate read-only check in that guest observed the exact reported
+`comctl32.dll` and its supplying manifest. It checked the path ancestors
+and file attributes for reparse points, the bounded file hashes against
+the host's exact component, and the manifest identity
+`Microsoft.Windows.Common-Controls` amd64 `5.82.26100.8328`. The guest
+exited zero and the observer retired its staged files. The independent
+review compared the path with the direct Common Controls import in the
+original executable. Windows can resolve DLLs through side-by-side
+assemblies independently of ordinary search order.
+[Activation contexts](https://learn.microsoft.com/windows/win32/sbscs/activation-contexts)
+
+| Result under `~/.local/share/nevrotick/s61-loaded-images.RRGxJaQM/` | SHA-256 |
+| --- | --- |
+| `native-20261124T193759Z-ur634hby/receipt.json` | `8ebbc202b0d811ce6f2bebbd651b6b7167ed27f7c294cb9dc6ba7be74dc297d4` |
+| `native-20261124T193759Z-ur634hby/modules.json` | `e795362b8b79ff1577993a6f734c7a06b0104a3c2c19fe93ffbcb7554bb8a3de` |
+| `common-controls-readback/receipt-dk3u8frv/receipt.json` | `6e3f040e4bd9938d283f6c2f9730852ddc082a46d99bcac2b895f15a796637d0` |
+| `common-controls-readback/receipt-dk3u8frv/component.json` | `1aa019d87333e0fd754b4395063726d04759b8d3eeb17f13960e9f2988df9f93` |
+
+This establishes the sampled paths and corroborates that one Windows
+component's separate file identity. The original reader's refusal remains
+in its receipt. Mapped image byte identity, catalog authority, transient
+or later loads, the causal search path of each dependency, and the ordinary
+installed role retain their own qualification. Apply the
+[updated Windows security profile cases](../docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
+when qualifying the final service and package profile.
+
 ### Observe the Low-integrity image boundary — 23 November 2026
 
 W11-W10, WIN-3/WIN-4 and CHECK-16/26. The security-boundary, integration and

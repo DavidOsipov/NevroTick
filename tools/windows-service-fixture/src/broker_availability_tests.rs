@@ -30,6 +30,9 @@ use crate::{
 
 /// Separate registered callback state for each history in the single test.
 static MAILBOXES: [BrokerClockChanges; 5] = [const { BrokerClockChanges::new() }; 5];
+/// Independent mailbox for the Windows history with a presentation gap.
+#[cfg(windows)]
+static PRESENTATION_GAP: BrokerClockChanges = BrokerClockChanges::new();
 /// Actual raw getter calls, independent of the host's decision clock.
 static GETTERS: AtomicU32 = AtomicU32::new(0);
 /// The next scheduled sample returns the original native failure code zero.
@@ -124,9 +127,15 @@ enum Scenario {
     StopAtDecision,
     /// Exact cutoff refusal beside its still-admitted predecessor.
     Deadline,
+    /// Lost process presentation while the actual broker remains Running.
+    #[cfg(windows)]
+    PresentationGap,
 }
 
 /// Select where the host sees a typed presentation failure on Windows.
+///
+/// # Panics
+/// The gap getter panics if its first successful read lacks the known default mode.
 #[cfg(windows)]
 fn presentation_getter(scenario: Scenario) -> fn() -> Sample {
     match scenario {
@@ -138,6 +147,17 @@ fn presentation_getter(scenario: Scenario) -> fn() -> Sample {
                 flags: 2,
                 reserved: 19,
             })
+        },
+        Scenario::PresentationGap => || {
+            if GETTERS.load(SeqCst) == 0 {
+                let sample: crate::BrokerClockSample = read()?;
+                assert_eq!(
+                    sample.leap_presentation(),
+                    Ok(LeapPresentation::Compatibility)
+                );
+                return Ok(sample);
+            }
+            read_with_presentation_failure(LeapPresentationError::QueryFailed(0))
         },
         _ => read,
     }
@@ -183,6 +203,12 @@ fn subsequent(
             clock.time = start + Duration::from_nanos(59_999_999_999);
             renewal[0] = owner.broker_availability(clock, stop);
             clock.time = start + Duration::from_secs(60);
+            crossed = owner.broker_availability(clock, stop);
+        }
+        #[cfg(windows)]
+        Scenario::PresentationGap => {
+            clock.time = start + Duration::from_secs(1);
+            let _observed_wait: InvocationPoll = owner.poll(clock, stop);
             crossed = owner.broker_availability(clock, stop);
         }
         Scenario::Renewal => {
@@ -234,6 +260,8 @@ fn broker_reports_only_current_availability_before_cleanup() -> Result<(), Box<d
     for (scenario, mailbox) in cases.into_iter().zip(&MAILBOXES) {
         check_scenario(scenario, mailbox)?;
     }
+    #[cfg(windows)]
+    check_scenario(Scenario::PresentationGap, &PRESENTATION_GAP)?;
     Ok(())
 }
 
@@ -271,8 +299,15 @@ fn check_scenario(
     let getter: fn() -> Sample = presentation_getter(scenario);
     #[cfg(not(windows))]
     let getter: fn() -> Sample = read;
-    let reader: NativeBrokerReader =
-        NativeBrokerReader::new(mailbox, getter).with_sampling(|_, _| None);
+    let reader: NativeBrokerReader = NativeBrokerReader::new(mailbox, getter);
+    #[cfg(windows)]
+    let reader: NativeBrokerReader = if scenario == Scenario::PresentationGap {
+        reader.with_native_sampling()
+    } else {
+        reader.with_sampling(|_, _| None)
+    };
+    #[cfg(not(windows))]
+    let reader: NativeBrokerReader = reader.with_sampling(|_, _| None);
     let mut owner: ServiceInvocation<Reporting<'_>, InertWorker> = start_broker_invocation(
         0,
         &mut reporter,
@@ -333,8 +368,35 @@ fn check_scenario(
             assert_eq!(decision_getters, 1);
             check_terminal_receipt(scenario, &receipt, renewal[0], clock.delivered_wake);
         }
+        #[cfg(windows)]
+        Scenario::PresentationGap => {
+            check_presentation_gap(initial, crossed, decision_getters, &receipt);
+        }
     }
     Ok(())
+}
+
+/// Check live withdrawal and the retained nested refusal through the actual host receipt.
+/// # Panics
+/// Panics if the live status, exact query error, sampling charge or retirement differs.
+#[cfg(windows)]
+fn check_presentation_gap(
+    before: BrokerAvailability,
+    after: BrokerAvailability,
+    getters: u32,
+    receipt: &HostReceipt,
+) {
+    assert_eq!(before, BrokerAvailability::Available);
+    assert_eq!(after, BrokerAvailability::Unavailable);
+    assert_eq!(getters, 2);
+    assert_eq!(receipt.result(), &Ok(()));
+    assert_eq!(receipt.broker_clock_break(), None);
+    assert!(matches!(
+        receipt.broker_clock_read(),
+        Some(BrokerClockRead::Completed { revision, result: Ok(sample), .. })
+            if revision.get() == 1
+                && sample.leap_presentation() == Err(LeapPresentationError::QueryFailed(0))
+    ));
 }
 
 /// Check the completed sample and the original termination outcome.
@@ -384,7 +446,7 @@ fn check_leap_presentation(
             println!("broker_leap_presentation={observed:?}");
             Ok(LeapPresentation::Compatibility)
         }
-        Scenario::RunningRefused | Scenario::Renewal => return,
+        Scenario::RunningRefused | Scenario::Renewal | Scenario::PresentationGap => return,
     };
     assert_eq!(observed, expected);
 }
