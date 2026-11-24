@@ -729,10 +729,17 @@ owner retain CHECK-11/12/15/27; access and applicability remain unresolved.
 Reviewed relevant sections, not the entire compilation. Repository baseline
 `1b1dc6b6a3b2cbc4a77eef80a716ffc8887c14e6`. The coordinator compared the current architecture, network,
 storage, signing, trust and environment plans and checked key current Learn
-pages. Separate fresh-context agents/judge were unavailable; this is a
-disclosed self-review, not independent stage admission. Recheck the current
+pages. Separate fresh-context agents/judge were unavailable during that initial
+preparation, which was disclosed self-review. The subsequent
+[independent proposal review](#independent-proposal-review--24-november-2026)
+records its own candidate, completion and scope. Recheck the current
 source, owner assignments and exact Windows behavior before adopting dependent
-work. David explicitly deferred enterprise certificate pinning until after V1.
+work. The preparation record reports David's instruction of 24 November 2026 to
+defer enterprise Windows certificate-pinning compatibility until after actual V1
+release. The original instruction was unavailable in the independent review
+packet, so this review does not independently authenticate its wording. Retain
+the reported deferral and existing OPEN-8/R-05 obligations; ARC-1 below preserves
+this provenance limit.
 Other later dispositions below are proposals, not newly accepted security
 exceptions. No implementation, tool admission, native execution, host security
 change or hold lift occurred.
@@ -741,16 +748,18 @@ change or hold lift occurred.
 mitigations, MSIX/signatures, VBS/CNG/TPM, enclave, ZTDNS, logging, certificate
 and Sandbox contracts remain authoritative. Refine their verification at the
 existing stage triggers; no production scanner, collector, new background
-service, crate or runtime dependency is needed now.
+service, crate or runtime dependency is needed now. The CHECK identifiers in the
+table are selected routing references; retain each assignment's full existing
+acceptance mapping.
 
 | Existing owner / trigger | Before V1, refine the applicable existing qualification | Negative and healthy controls / limits |
 | --- | --- | --- |
 | W11-W04 / W11-W05 / CHECK-1/18/23, real installed service networking | Capture actual identity, rule activation and attributable WFP outcomes under the final service SID, both address families, allowed endpoint/delegate paths and managed conflicts. Where authorized audit is available, use Security events 5152/5157, Filter Origin and Interface Index (Windows 11/Server 2022+); runtime filter IDs alone are unstable. [WS24-1] | Known WSH-denied request reaching the boundary vs reachable permitted request; separately identify ordinary firewall rule, missing route, boot-time refusal or transient interface quarantine. No credit for an unreachable peer or missing event. Quarantine guidance covers new non-loopback inbound connections; do not generalize to all outbound traffic. Audit access/configuration belongs to an authorized disposable observer, never an extra service privilege. |
 | W11-W04 / W11-W03 / future DNS-C14/17, if dynamic addressing is considered | Microsoft's FQDN dynamic keywords depend on DNS observation and resolution, have update/restart races and limitations with encrypted DNS/proxy/VPN/cache. A rule with no resolved remote addresses is not enforced. [WS24-2] Retain WSH and actual destination admission; do not adopt FQDN dynamic rules as the DoQ allowlist. | Unresolved/expired/restarted lists, policy change and first-connect race cannot silently permit a forbidden destination or authorize a weaker DNS route. Useful allowed endpoints still work. No blanket block-plus-allow construction, automatic retries outside policy, disabling DoH/Defender or changing global defaults. |
 | W11-W08 / QA native observer / CHECK-14/17/18/27, affected source/native checkpoints | Prefer the existing admitted Windows observers. If a concrete coverage gap warrants Sysmon, compare built-in vs standalone on exact OS; no coexistence assumption, runtime/product dependency or automatic install. Use scoped XML events for process creation/termination, image loads, process access, pipes, network, registry, DNS and file deletion only where relevant; retain event/schema version, process identity, observation/record sequence, correlation, filter/config identity, candidate and bounded collection interval. [WS24-3] | A known canary event must reach the selected observer and an independently checked expected denial/allow must be exercised; missing/dropped/overwritten records, disabled rules, ambiguous identity or observer failure leave the intended assertion unproved. Sysmon records activity, not universal prevention or successful access. DNSQuery cannot prove absence of custom encrypted resolver traffic; a network event does not prove WSH causality. Local/forwarded logs may be lost or altered; absence is not nonoccurrence. |
-| W11-W08 / ST-W07 / CHECK-14/17, diagnostics and privacy | Add external collector residuals to the existing privacy and dump contract: Sysmon can capture command lines, paths, DNS names and, by configuration, archive deleted files. Event Forwarding cannot guarantee gap-free collection (PDF pp. 228–233). Use bounded synthetic data, no real secret fixtures, least log access and explicit retention/cleanup; structured fields rather than localized rendered text. | Fault and healthy observations, collector omission/overwrite, UTC step, PID reuse, unrelated process, denied access, and safe disposal/export. Product deletion/wiping promises cannot cover independent admin-owned logs/archives. No SIEM service, forwarding/archival defaults, collection of user DNS history or authorization based on logs. |
+| W11-W08 / ST-W07 / CHECK-14/17, diagnostics and privacy | Add external collector residuals to the existing privacy and dump contract: Sysmon can capture command lines, paths, DNS names and, by configuration, archive deleted files. Event Forwarding cannot guarantee gap-free collection (PDF pp. 228–233; [WS24-10]). Use bounded synthetic data, no real secret fixtures, least log access and explicit retention/cleanup; structured fields rather than localized rendered text. | Fault and healthy observations, collector omission/overwrite, UTC step, PID reuse, unrelated process, denied access, and safe disposal/export. Product deletion/wiping promises cannot cover independent admin-owned logs/archives. No SIEM service, forwarding/archival defaults, collection of user DNS history or authorization based on logs. |
 | ST-W01/ST-W04, protected storage provider/outcome freeze | Carry the [TPM recovery refinement](windows-protected-storage.md) into the existing failure-class matrix (see also PDF pp. 21–26, 41–62; [WS24-4]). Identify provider/key-policy-specific lockout and shared effects; test throttling, denied operations, missing expected root and legitimate servicing without resetting shared hardware. | Retain actual-work custody and distinct unknown outcomes, useful known-key use/recovery and no automatic weaker store or fresh-install inference. Test clear/replacement/PCR changes only as fault models or explicitly authorized disposable experiments; no host TPM/BitLocker changes. |
-| W11-W05/W11-W10/P5/P6 / CHECK-16/18/23/27, actual package and service lifecycle | At existing supported-security-profile gates, challenge Defender Controlled Folder Access/ASR, applicable untrusted-font policy and managed configuration reassertion (PDF pp. 307–314, 787–792). Verify exact role, actual policy and affected service/configuration/diagnostic/UI behavior, including reassertion during update/repair/removal. | Preserve refusal/indeterminate saved-vs-effective states, approved writable roots, recovery and useful permitted install/UI/Slint rendering. Do not assume Windows font policy covers every application parser. No antivirus exclusion, machine-policy reset, automatic security weakening or change to a user/admin's later settings. |
+| W11-W05/W11-W10/P5/P6 / CHECK-16/18/23/27, actual package and service lifecycle | At existing supported-security-profile gates, challenge Defender Controlled Folder Access/ASR, applicable untrusted-font policy and managed configuration reassertion (PDF pp. 307–314, 787–792; [WS24-11]–[WS24-14]). Verify exact role, actual policy and affected service/configuration/diagnostic/UI behavior, including reassertion during update/repair/removal. | Preserve refusal/indeterminate saved-vs-effective states, approved writable roots, recovery and useful permitted install/UI/Slint rendering. Do not assume Windows font policy covers every application parser. No antivirus exclusion, machine-policy reset, automatic security weakening or change to a user/admin's later settings. |
 
 The PDF's newer Baseline Protection chapter (pp. 133–149; [WS24-5])
 distinguishes evaluated boot protections from next-boot configuration and
@@ -773,7 +782,8 @@ rather than code admission; exact Server support must be rechecked
 ([WS24-7], PDF firewall chapter). Baseline Protection, AppId tagging, MXC
 containment/Hyper-V firewall for development, and COSE-signed evidence are
 separate conditional evaluations, not the current runtime security design.
-MXC's per-backend enforcement varies ([WS24-8], PDF p. 1495); preserve
+MXC's per-backend enforcement varies ([WS24-8], PDF p. 1495); Hyper-V firewall
+has its own network/policy scope ([WS24-15]). Preserve
 the existing Sandbox/host isolation and no-signing-secrets contract. COSE
 ([WS24-9], PDF p. 1670) authenticates a defined evidence object, not the
 correctness or completeness of its contents; retain optional provenance
@@ -793,8 +803,10 @@ Windows/fuzz/storage/UI holds remain. No immediate Rust/Python/PowerShell
 patch was justified by the bounded review: these depend on selected native
 profiles or absent final consumers. Do not scaffold them, promote a future
 research proposal into a new V1 gate or claim these cases were executed.
-Independent review of this source-only refinement is still open. The massive
-Windows task was not fully retrievable through the connector; reconcile
+The independent review below supersedes the initial self-review's completion
+status. The initial preparation could not retrieve the full Windows task through
+the connector; subsequent reviewers inspected its applicable W11/ST owner
+sections from the local checkout, not every historical receipt. Reconcile
 existing cases before adding any duplicate tests.
 
 **Primary source anchors (checked 24 November 2026).**
@@ -808,6 +820,145 @@ existing cases before adding any duplicate tests.
 - **WS24-7:** [AppId tagging guide](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/appidtagging/appcontrol-appid-tagging-guide).
 - **WS24-8:** [MXC architecture](https://learn.microsoft.com/en-us/windows/apps/develop/mxc/architecture).
 - **WS24-9:** [Software bill of materials](https://learn.microsoft.com/en-us/windows/security/security-foundations/software-bill-of-materials).
+- **WS24-10:** [Windows Event Forwarding](https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/use-windows-event-forwarding-to-assist-in-intrusion-detection); the collector-loss case above, PDF pp. 228–233.
+- **WS24-11:** [Controlled Folder Access](https://learn.microsoft.com/en-us/defender-endpoint/controlled-folder-access-overview); qualify actual Defender prerequisites and the selected profile.
+- **WS24-12:** [Attack surface reduction rules](https://learn.microsoft.com/en-us/defender-endpoint/attack-surface-reduction-rules-overview); qualify actual rule applicability and enforcement.
+- **WS24-13:** [Untrusted-font policy](https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/block-untrusted-fonts-in-enterprise); the documented GDI boundary is narrower than every application font parser.
+- **WS24-14:** [Windows declared configuration](https://learn.microsoft.com/en-us/windows/client-management/declared-configuration) and [Config Refresh](https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/config-refresh); distinguish their actual platform/enrollment/policy applicability.
+- **WS24-15:** [Hyper-V firewall](https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/hyper-v-firewall); a separate network-filtering mechanism from MXC containment. The PDF's adjacent WSL overview is p. 1496; MXC is p. 1495.
+
+#### Independent proposal review — 24 November 2026
+
+**Request:** run several agents and a judge to review these proposals.
+**Stage:** source-only documentation integration of draft PR #31; no runtime,
+native Windows, installed-package or release qualification.
+**Final verdict:** **READY for source-only documentation integration.** All three
+specialists and the independent judge completed their assigned review. No
+confirmed material plan defect or demonstrated NevroTick runtime vulnerability
+was found in this five-file change; this does not establish that the product is
+free of bugs.
+
+**Frozen input:** base `1b1dc6b6a3b2cbc4a77eef80a716ffc8887c14e6`,
+candidate `bf1b626b4978d68d97b9d5dd715e50a9c7768238`, tree
+`8a3575d4b2ba6cf8684c5c280593866e32c72c07`. The full diff changes five Markdown
+files, with 151 additions and four deletions. The review checkout was clean.
+The supplied PDF has 1,678 pages; its inspected byte identity is SHA-256
+`0b445ab6b5473e374457050da0fa57aa10dbff1c5683665ac5b13da66cfa41bd`.
+
+Three specialists and a separate judge were spawned with `fork_turns: "none"`.
+Each specialist inspected the frozen proposal independently. The judge sent
+its own comprehension and provisional assessment before receiving the specialist
+results. Fresh conversation does not establish statistical independence or
+independent execution. All work was source/Git/text inspection and primary-source
+retrieval; no target-controlled build, test, script, installation or Windows
+operation ran.
+
+| Reviewer / assigned scope | Reported inspected inputs beyond the full diff and shared guidance | Completion / returned disposition |
+| --- | --- | --- |
+| `winsec31_sources` — Microsoft facts and Windows applicability | All nine original WS24 sources; additional current Microsoft pages; selected cited PDF pages and metadata; relevant owner/architecture/task sections; manifests and actual Windows verifier call. Not the full PDF or Windows task history. | Completed; `READY` for source-only documentation integration; no confirmed material plan defect in this lane. SRC-1 is a nonblocking citation-maintenance advisory. |
+| `winsec31_contracts` — authority, boundaries, recovery, sequence and ownership | Canonical configuration/admin/storage/trust boundaries; OD-05/14/20; current development queue; W11-W04/05/08/10 and ST-W01/04/07; actual verifier call and relevant primary sources. | Completed; `ready` for source-only documentation integration; no confirmed material architecture/security-contract defect. ARC-1 is a nonblocking provenance limitation. |
+| `winsec31_qa` — distinguishing checks, forgotten states/errors and evidence layers | Testing contract/index and relevant QA skills, including recovery, lifecycle, model/property/structured fuzzing, security boundaries and installed-package evidence; applicable CHECK/W11/ST owners; current Sysmon/TPM/dynamic-keyword sources. | Completed; `ready` for source-only documentation integration; no confirmed material QA plan defect. QA-1–QA-7 below are rejected candidate defects. |
+| `winsec31_judge` — independent comprehension and final adjudication | Full frozen diff, shared review guidance, canonical decisions/current queue, affected owner/source contracts, all nine original WS24 anchors and seven added primary pages, then the three completed specialist results. | Completed; `READY` for source-only documentation integration. Retained ARC-1/SRC-1 as nonblocking advisories and QA-7 as an editorial clarification; rejected the material defect hypotheses below. |
+
+**Raw terminal result excerpts.** Sources: "Confirmed plan defects: none in the
+primary-source accuracy and Windows applicability lane." Contracts: "I found no
+confirmed material architecture or security-contract defect in the five-file
+proposal." QA: "Confirmed material plan defects: none in the reviewed QA scope."
+Judge: "I found no confirmed material plan defect and no demonstrated NevroTick
+runtime vulnerability in the reviewed change." These are bounded review results,
+not a claim that the product has no bugs.
+
+**Initial comprehension, preserved verbatim.** The statements about owner-deferred
+pinning below describe the reviewed proposal; ARC-1 retains the independent
+provenance limit.
+
+Sources reviewer:
+
+> The five-file proposal adds a dated source reconciliation of Microsoft's Windows security compilation to existing NevroTick planning. It routes WFP attribution, dynamic-addressing limitations, independent Sysmon/collector evidence, TPM recovery cases and managed-protection compatibility into existing W11/ST qualification owners, while adding a WINSEC-0 table for enterprise pinning and other conditional post-V1 evaluations. It does not change implementation or claim native execution.
+>
+> The existing system is a partially implemented Rust NTP/NTS product with fixture-backed core/transport/UI work and planned Windows service, CNG/storage, package and native qualification. Current authority selects Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience, direct complete MSIX, role-specific service/network protections and unchanged OPEN-8 trust obligations. Enterprise certificate pinning is explicitly owner-deferred; Baseline Protection, AppId tagging, MXC/Hyper-V firewall and COSE remain proposed feasibility work, and current execution holds persist.
+
+Contracts reviewer:
+
+> PR #31 adds a source-only Windows security reconciliation to existing W11/ST work. Its immediate effect is to refine already-planned service-network, observer/privacy, storage-provider recovery, and package compatibility checks at their existing triggers. It separately records owner-deferred enterprise certificate-pinning evaluation and several proposed post-V1 feasibility candidates, without selecting dependencies, executing native checks, or lifting holds.
+>
+> NevroTick currently has a Rust workspace with portable domain/core/engine/service contracts and bounded laboratory/native-adapter work, while production service identities, complete NTS/provider/trust behavior, Windows confinement, persistence, and package qualification remain open. Canonical architecture separates the unprivileged UI, engine, privileged broker, lifecycle helper, mandatory policy/journals, and optional secret cache; malicious administrators and the kernel are outside prevention scope. Existing OPEN-8/R-05 trust gates, W11/ST owner tasks, direct-MSIX policy, and current development order remain controlling.
+
+QA reviewer:
+
+> This patch adds a dated source-only Windows security assessment and routes its applicable acceptance cases into existing Windows, storage, diagnostics, package, and service owners. Its immediate purpose is to sharpen evidence—for example, attributable WSH denials with working permitted controls, observer failure and privacy handling, TPM recovery classifications, and managed protection compatibility. It separately records enterprise pinning for post-V1 evaluation and makes Baseline Protection, AppId tagging, MXC/Hyper-V firewall, and COSE evidence conditional candidates. It changes planning text, not executable product behavior.
+>
+> The current system is a partially implemented Rust NTP/NTS client with a normal-user Slint UI, a network engine, a narrow clock broker, and lifecycle/package helpers; existing portable/source and lab-host receipts do not qualify the final installed Windows identities, native providers, or complete direct MSIX. Canonical architecture and owner decisions retain least privilege, actual-operation custody, truthful saved-versus-effective status, recovery and privacy guarantees. Native Windows qualification, selected storage construction, and final signing/package behavior remain open at their existing stages; formal work, enterprise pinning, and several optional technologies are deferred. The proposal preserves current priority, the scoped Windows/fuzz/storage/UI holds, and the distinction between a research record, a qualified implementation, and release authority.
+
+Judge, before specialist results:
+
+> 1. The proposal is a source-only refinement of existing Windows security qualification: it adds concrete firewall attribution and dynamic-address cases, optional observer/privacy checks, TPM recovery distinctions, and managed-protection compatibility cases under existing W11/ST/CHECK owners. A new WINSEC-0 roadmap entry records owner-deferred enterprise certificate-pinning evaluation and conditional later Baseline Protection, AppId, MXC/Hyper-V and COSE evaluations; it expressly selects no implementation, runtime dependency, security exception, reordered milestone or lifted hold.
+>
+> 2. NevroTick currently has portable Core/protocol components, a default-off Engine NTS path with bounded laboratory evidence, a fixture-oriented Slint UI, portable Windows service contracts and separate laboratory/package preparation. The present queue's next development child is reference and mapping for S2.1/W11-W01; production sample admission, secured services/IPC, clock control, complete direct MSIX and native/product acceptance remain later joins. The adopted architecture separates network engine, privileged clock broker, normal-user UI and lifecycle helper; optional storage still follows its VBS/TPM/no-cache contract, while enterprise pinning and supplementary public distrust are separate post-V1 work and all existing execution holds retain their scope.
+
+**Finding identities and current disposition.** No severity is assigned to these
+advisories or rejected hypotheses; none establishes a runtime vulnerability.
+
+| ID | Observation and evidence | Current disposition / reopening condition |
+| --- | --- | --- |
+| SRC-1 | Some accurate PDF page citations lacked direct current anchors, particularly the distinct Hyper-V firewall row. | Added WS24-10–15 above, including separate WinDC/Config Refresh links and the p. 1495/p. 1496 distinction. The independent judge verified these source and editorial additions in the bounded receipt-delta review. SRC-1 is resolved as a citation-maintenance advisory; exact platform and consumer applicability remains for later qualification. |
+| ARC-1 | The draft and retained preparation record report David's 24 November enterprise-pinning deferral; the original instruction was unavailable to this review and no matching canonical owner-decision entry was found. | Retain the reported deferral and explicitly disclose this provenance limit. This is not evidence that the instruction never occurred, authority to reverse it, or a waiver of OPEN-8/R-05. Reconcile the smallest canonical record if its direct provenance becomes available; do not invent an approval or request a duplicate decision merely to close this note. |
+| QA-1 | Native results are absent. | Rejected as a defect of this source-only stage. Reopen if this receipt is used as native/product acceptance. |
+| QA-2 | Denial tests could pass because every destination fails or the observer is broken. | Rejected: reached boundary, attributable denial, useful permitted peer and observer canary are required. Reopen if the actual execution card omits them or credits missing events. |
+| QA-3 | TPM failure could imply fresh installation, silent downgrade or continuity reset. | Rejected: the added failure distinctions and existing storage outcome/recovery matrix prohibit those inferences and retain actual-operation custody. Reopen if the selected provider mapping collapses them. |
+| QA-4 | Sysmon permits unbounded collection or promises erasure of independent administrator archives. | Rejected: QA-only selection, synthetic/bounded collection, retention/cleanup and collector residuals are explicit. Reopen on an actual configuration or claim violating those limits. |
+| QA-5 | No new model/property/fuzz framework or tests were implemented. | Rejected: no executable consumer changed. Apply independent state/input oracles and relevant bounded techniques when the real consumer is selected; a framework name is not evidence. |
+| QA-6 | Conditional technologies become new V1 prerequisites or waive existing obligations. | Rejected: existing order, owners, holds and V1 trust/release duties remain. Reopen on a dependent task that introduces that conflict. |
+| QA-7 | The short CHECK lists replace each owner's complete mapping. | Rejected as a material defect; canonical assignments remain controlling. Added the selected-routing-reference clarification before the table. Reopen if an execution receipt drops existing obligations. |
+
+**Coordinator checks on the frozen proposal:** clean Git state; full five-file
+diff inspected; `git diff --check` passed; all nine added relative links resolved
+and both unique new anchors existed. `docs/SHA256SUMS.txt` is absent, so no
+manifest verification is claimed. Reviewers traced routing through development
+section 8.5, the follow-up assignment map, W11-W04's WSH prerequisite and
+ST-W01/ST-W04's existing failure/provider contract. The large Windows task was
+not read exhaustively. The original candidate commit is unsigned; documentation
+readiness does not qualify a publication signature.
+
+**Final adjudication and English handoff.** Retain the proposal's technical
+dispositions. The judge independently checked the source grounds of each
+specialist candidate; agreement was not treated as proof. The following are
+the required next-stage handoffs, not new prerequisites for integrating these
+documents:
+
+| Existing owner / trigger | Required consumer-specific preparation and evidence |
+| --- | --- |
+| W11-W04 with W11-W05 and delegated network owners | Freeze final identities and the selected restriction mechanism; observe useful and denied IPv4/IPv6 paths, causal attribution, activation/restart, managed conflicts and delegated certificate/DNS traffic. Retain the complete CHECK mapping. |
+| W11-W08 / affected QA, with ST-W07 | Identify the actual observation gap before choosing another observer. Bind candidate/configuration/schema/identity, finite collection, canary and known allow/deny controls, loss, access and cleanup. Logs do not grant effect authority. |
+| ST-W01/ST-W04 | Extend the existing construction/outcome card for the selected provider and key policy. Preserve the distinct failure/unknown states, authorized optional fallback, separate mandatory continuity, actual-work custody and repeated/interrupted recovery. |
+| W11-W05/W11-W10 with P5/P6 | Qualify the actual direct package, role and paths under applicable managed protections; observe useful operation, truthful refusal/indeterminate outcomes, reassertion during servicing and owned recovery. Keep maximum compatible hardening and signing/distribution requirements. |
+| OPEN-8/R-05, crypto/Engine/platform | Continue required V1 trust/revocation/retrieval/lifetime work. At the reported post-V1 enterprise-pinning trigger, separately qualify the actual wrapper with controlled CTL cases and Schannel controls; API/provider branding supplies no enforcement result. |
+| Conditional WINSEC-0 consumers | Refresh current sources and exact support, identify a real consumer/threat, freeze a bounded contract, and record adoption/refusal/deferral under existing authority. No new milestone order follows. |
+
+The judge also rejected the claims that the draft assumes Rustls inherits
+Schannel pins, uses Baseline audit output as attestation, guarantees Server 2025
+AppId support, or loses task routing. The proposal expressly avoids the first
+three; the existing development/task links establish the last. Reopen a finding
+if an actual later consumer contradicts those limits. Source specialist and judge
+both inspected the Baseline sample's final-resize error handling; that remains
+an external static sample observation, not an executed NevroTick or Windows API
+vulnerability.
+
+**One permitted next action from the judge:** record this completed review and
+the bounded ARC-1/SRC-1/QA-7 clarifications in the existing draft evidence chain.
+The current development queue continues unchanged. Native/provider/installed
+package and signing qualification remain separate; neither this receipt nor
+the proposed tests claim those executions.
+
+**Receipt-delta verification:** completed by the independent judge on the
+three-file editorial delta based on `bf1b626b4978d68d97b9d5dd715e50a9c7768238`,
+with diff SHA-256
+`ce375a66b008c0668f08443159513efab795300b8be3b36f83a6eb32445aea8a`
+before these factual status replacements. Verdict: **READY**. The judge
+confirmed matching file identities, preserved comprehension and evidence scope,
+no policy/runtime/order expansion, and passing `git diff --check`. The coordinator
+separately verified the three new relative links and their anchors. The original
+frozen proposal remains the source of the substantive verdict.
 
 ## 7. Existing owners and next work
 

@@ -766,10 +766,13 @@ by this entry.
 
 ### WINSEC-0 — post-V1 Windows security compatibility and evidence
 
-**Status:** enterprise certificate pinning compatibility deferred until actual
-V1 release by David on 24 November 2026. Other rows are coordinator-proposed
-post-V1 feasibility candidates, pending independent review and any material
-owner decision. No new dependency, production API, device-wide security policy
+**Status:** the preparation record reports David's 24 November 2026 deferral of
+enterprise certificate pinning compatibility until actual V1 release; the
+[completed independent review](docs/plans/windows11-integration-follow-up.md#independent-proposal-review--24-november-2026)
+retains the original-instruction provenance limit as ARC-1. Other rows remain
+coordinator-proposed post-V1 feasibility candidates, independently reviewed as
+source-only proposals; any material owner decision remains separate. No new
+dependency, production API, device-wide security policy
 or release gate is adopted. No new predecessor or rank is assigned within
 MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android; retain that order and the
 separate RGT-0 → CHR-0 relationship. Reuse the existing task owners, not a new
