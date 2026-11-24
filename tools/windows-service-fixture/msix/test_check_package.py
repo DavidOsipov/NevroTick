@@ -243,6 +243,70 @@ class PackageReaderTests(unittest.TestCase):
     def test_admits_streamed_deflate_with_two_blocks(self):
         self.assert_accepted(self.write_package(compressed_member=INERT))
 
+    def test_requires_element_only_package_metadata(self) -> None:
+        members: dict[str, bytes] = self.write_package()
+        cases: tuple[tuple[str, tuple[int, ...], str, str, str], ...] = (
+            (BLOCK_MAP, (), "text", "caption", "unexpected text within BlockMap"),
+            (BLOCK_MAP, (0,), "tail", "caption", "unexpected text within BlockMap"),
+            (BLOCK_MAP, (0,), "text", "caption", "unexpected text within block-map File"),
+            (BLOCK_MAP, (0, 0), "tail", "caption", "unexpected text within block-map File"),
+            (BLOCK_MAP, (0, 0), "text", "caption", "unexpected text within block-map Block"),
+            (CONTENT_TYPES, (), "text", "caption", "unexpected text within content-types document"),
+            (CONTENT_TYPES, (0,), "tail", "caption", "unexpected text within content-types document"),
+            (CONTENT_TYPES, (0,), "text", "\u00a0", "unexpected text within content-type declaration"),
+        )
+        name: str
+        path: tuple[int, ...]
+        attribute: str
+        text: str
+        reason: str
+        for name, path, attribute, text, reason in cases:
+            with self.subTest(name=name, path=path, attribute=attribute):
+                root: ET.Element = ET.fromstring(members[name])
+                node: ET.Element = root
+                index: int
+                for index in path:
+                    node = node[index]
+                setattr(node, attribute, text)
+                changed: dict[str, bytes] = {**members, name: ET.tostring(root, encoding="utf-8")}
+                self.package.write_bytes(make_zip(changed, {}))
+                self.assert_refused(reason)
+
+    def test_admits_xml_spacing_in_both_package_metadata_parts(self) -> None:
+        members: dict[str, bytes] = self.write_package()
+        name: str
+        for name in (BLOCK_MAP, CONTENT_TYPES):
+            root: ET.Element = ET.fromstring(members[name])
+            element: ET.Element
+            for element in root.iter():
+                element.text = "\t\n "
+                if element is not root:
+                    element.tail = "\n \t"
+            members[name] = ET.tostring(root, encoding="utf-8")
+        self.package.write_bytes(make_zip(members, {}))
+        self.assert_accepted(members)
+
+    def test_requires_element_only_manifest_service_and_capability_containers(self) -> None:
+        cases: tuple[tuple[bytes, bytes, str], ...] = (
+            (b"<Extensions>", b"<Extensions>caption", "unexpected text within Extensions"),
+            (b"</desktop6:Extension>", b"</desktop6:Extension>caption", "unexpected text within Extensions"),
+            (b"<Capabilities>", b"<Capabilities>caption", "unexpected text within Capabilities"),
+            (b'<rescap:Capability Name="runFullTrust" />',
+             b'<rescap:Capability Name="runFullTrust" />caption', "unexpected text within Capabilities"),
+        )
+        original: bytes
+        replacement: bytes
+        reason: str
+        for original, replacement, reason in cases:
+            with self.subTest(original=original):
+                changed_manifest: bytes = self.payload[MANIFEST].replace(original, replacement, 1)
+                self.assertNotEqual(changed_manifest, self.payload[MANIFEST])
+                changed_payload: dict[str, bytes] = {**self.payload, MANIFEST: changed_manifest}
+                (self.payload_dir / MANIFEST).write_bytes(changed_manifest)
+                self.write_input_set(changed_payload)
+                self.write_package(payload=changed_payload)
+                self.assert_refused(reason)
+
     def add_event_resource(self):
         data = b"R" * BLOCK_BYTES + b"event resource marker"
         self.payload[EVENT_RESOURCE] = data

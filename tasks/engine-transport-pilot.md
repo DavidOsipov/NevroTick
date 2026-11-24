@@ -30887,6 +30887,110 @@ authority remain open. The retained preflight receipt hashes to
 The scripts, admission, oracle and receipts are under
 `~/.local/share/nevrotick/first-deny-pair-20261122.j5rV6jBQ/certfree/`.
 
+###### Rebind the first-request DENY controller to the retained pair
+
+S2.2, REQ-8/BND-2 and CHECK-6/8/9/17/21/25/26/27. Planning and black-box
+acceptance retained the original one-request, authenticated DENY case and
+its independent client and peer expectations. The existing paired binder
+rechecked the producer receipts, exact executables and symbols from retained
+tree `e57085d7c880808881d34ed70cae6d892718b06d`. All 112 standalone peer
+inputs match the current checkout. The facade's 752 of 754 product inputs
+and 13 of 17 helper inputs match. The two product differences are
+`transport.rs` and the private `measurement.rs` tests. The result belongs
+to the retained binaries. It grants no new build or metrics credit to
+`5845260` or the working tree.
+
+Sandbox preflight reused the exact same-guest executable-loader receipt
+`106fb082e1b3e4d5f195a03a1bc42fe0b2bd12257d662c8be3ca37ef527d37f8`.
+The controller rebind substituted only the client and peer image digests
+in the historical first-DENY template. It staged the rendered 39,696-byte
+controller as the sole input and used the held-file parser, with its byte
+extent and SHA-256 checks before parsing and a second digest check after.
+Run `keparse_161c2100685c` used the original owned Windows Sandbox,
+build 26100 and CLI 0.8.114.0. All 11 host calls and all four guest returns
+were zero. Host headroom was 6,008 and 6,049 MiB. The guest was offline
+before and after parsing. The controller and executables were not launched.
+
+The first attempt stopped in the host's parser-shelf inventory before
+guest work. The retry used a separate shelf under the existing durable
+dispatch barrier. Its host wrapper stopped after writing the completed
+parser receipt because it looked for the earlier owner's directories in
+the new shelf. The original outcome and error log were retained. A
+separate owner-bound readback verified the exact intent, terminal receipt,
+all 11 returns and both empty directories, and then retired the barrier.
+Independent review matched the native receipt to the original input bytes,
+same-guest loader and the empty mapped directories. No guest rerun was
+needed for this recovery.
+
+The next bounded action remains the authenticated serial-1 DENY with
+the expected one-send and policy results. It needs a refreshed paired
+runner and the temporary certificate prompt for that run, followed by
+verified trust restoration. No trust, packet, mapping, Core history or
+current-file metric result follows from this parser checkpoint.
+
+| Record under `~/.local/share/nevrotick/s22-first-deny-rebind.lNug3RV6/` | SHA-256 |
+| --- | --- |
+| `binding.json` | `285d52c31c853758ef97707408efa368c3e99ed20b663fe01aa74f50097e6f60` |
+| `nts-ke-healthy-peer.ps1` | `b635b713d8847620ffd753eacf67c8a80e722ca2eec14d7b439489a1588941fe` |
+| `verify_and_parse.py` | `5580974c934749ff7b58a92e6451a6c37701d7c1270cb324f9f59bd69e3b04b4` |
+| `keparse_161c2100685c/verification.json` | `37a75f7ed7335edec25ac4effbbcff176134a3e5f32f4600fb3528f61f39aced` |
+| `parse.log` | `880f5e3c2905bcb7379fde80aa00412cedc28bc5e969f8508cf2babe93d0fae2` |
+| `settle.py` | `4f45b1bff1eeacc125eecb19451ec98da163d6e66efba3c1daa710548923f346` |
+| `barrier-retired.json` | `f5296ab86eb8597671202d0e0e31ea68ff61b9e830c82ffb2ab7eda146ab2206` |
+
+###### Observe one authenticated first-request DENY in the offline guest
+
+S2.2, REQ-8/BND-2 and CHECK-6/8/9/17/21/25/26/27. David confirmed the
+temporary lab-root prompts for this case. Run `kefac_d74f087f21c9` used
+owned Windows Sandbox `a18deba5-a8bf-4295-aa28-d7222052ef8f`, build 26100
+and CLI 0.8.114.0. It bound the same rendered controller, retained facade
+and peer from `e57085d7`, original parser receipt and admitted lab PKI.
+The runner retained the common execution lease and recorded a durable
+dispatch hold before acting. Host headroom was 5,166 and 5,207 MiB.
+All 20 host commands returned zero. The image controls returned
+2/126/126/124 as expected and the certificate-bearing guest command
+returned zero.
+
+The real Engine facade emitted an authenticated initial DENY on its
+original configuration, with one attempted and one fully submitted send
+and no committed time receipt. Its success path requires serial 1 and the
+refused source and exact shared endpoint records. The alias's own source
+record stays available. The peer reported one receive, one response and
+zero extra datagrams after the original client exit acknowledgement.
+The client recorded 61 remaining driver credits and 31 checkouts, 31
+frames and 130,948 bytes remaining. The report retains
+`mapping-unavailable eligible=0 fresh_sync=0`.
+
+Both original children exited zero and were reaped. All four streams
+ended cleanly and 11 progress rows reached baseline restoration. The
+physical CurrentUser Root and CA inventory matched the original baseline.
+Scratch was absent, both mapped directories were empty and the common
+hold retired after the typed receipt and physical checks. The offline
+checks passed before and after the payload. Independent review matched
+all 17 exported file hashes and checked the raw witnesses, the facade
+policy guard and dispatch custody.
+
+The black-box reader accepted the healthy raw output before and after
+seven directed receipt faults. It refused unauthenticated DENY, a second
+send, extra UDP after exit, unrestored trust, unreaped child, missing
+stream EOF and missing progress. The first control attempt retained a
+stream name mismatch that reached the capture digest check too early.
+Correcting the injected capture's binding reached each stated refusal.
+These are host observer sensitivity controls. The successful native
+exchange closes the selected first-request laboratory case for the
+retained binaries. Current-file metrics, wider native qualification and
+production sample admission remain open.
+
+| Record under `~/.local/share/nevrotick/s22-first-deny-rebind.lNug3RV6/` | SHA-256 |
+| --- | --- |
+| `run_pair.py` | `1588b6cd1d9328bf6ed4542ad0298cbd770044e432c86a07d6562ec87c3a1395` |
+| `kefac_d74f087f21c9/dispatch-intent.json` | `1fe5c06fbecf566ab7065387233fb1cbf4e8f878455040fe537b5e3dd4f2619e` |
+| `kefac_d74f087f21c9/verification.json` | `a5510f34687183c750823a2ce8fb439b342829c15c6c9378853014c1abe9f394` |
+| `kefac_d74f087f21c9/dispatch-retired.json` | `744228ef4fde4d616e84fd2ac87adfc9605af69b72b7f066189a77d9ee15d4fe` |
+| `kefac_d74f087f21c9/barrier-retired.json` | `542696c7ef9a7abe3a0ecdc6232c65366bd9a94d0ffcfccdfa2b845685b3b93d` |
+| `check_retained_pair.py` | `194835576b43f37b34640defe4bce5e47e7b1f14a5b898dfb48cbae84b48612c` |
+| `retained-reader-controls.log` | `f392186e3bb072daa0e2dec65ddd5e7195763e57a25ebcd56a856d951d96068e` |
+
 ###### Retain Windows clock coordinates through the protected receipt
 
 W11-W01/S2.1 and CHECK-6/7/11/21/24/25/27. The protected socket path
@@ -31211,7 +31315,11 @@ result qualifies its selected fixture scope.
    clock-effect and invalidation owner supplies a checked revision and
    withdraws stale authority on discontinuity or ambiguity. Domain/bootstrap
    and S1.4 supply independent date, era, scale and leap evidence. Prepare
-   this read-side seam without enabling a product clock effect.
+   this read-side seam without enabling a product clock effect. The
+   [whole-exchange bench comparison](windows11-integration.md#check-both-held-out-legs-inside-one-exchange-validity-window)
+   now checks the declared validity against both reference legs and all
+   original brackets. The physical bench must supply the independent pairing
+   and calibrated bounds before the read-side issuer can use the result.
 3. **Current production receiver.** After those inputs exist, bind an
    authenticated ordinary NTS receipt to its original source, policy,
    association, continuity and mapping revisions. Cover the full possible

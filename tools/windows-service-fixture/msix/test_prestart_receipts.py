@@ -85,6 +85,19 @@ class PrestartReceiptTests(unittest.TestCase):
         self.assertEqual(result.signed_package_sha256, "1" * 64)
         self.assertEqual(result.service_types, ((528, 528, 528), (528, 16, 16)))
 
+    def test_malformed_private_identity_bytes_stay_out_of_receipt_exception_chains(self) -> None:
+        raw: bytes
+        diagnostic: str
+        for raw, diagnostic in (
+            (b"private-identity-stream\xff", "malformed child output"),
+            (b'{"private-identity-stream": ', "malformed installed identity report"),
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                with self.assertRaisesRegex(ReceiptRefused, diagnostic) as caught:
+                    self.join(identity=replace(self.identity, stdout=raw))
+                self.assertIsNone(caught.exception.__cause__)
+                self.assertIsNone(caught.exception.__context__)
+
     def deployment_run(self) -> DeploymentRun:
         return DeploymentRun(self.run.id, self.run.package_full_name, self.run.signed_package_sha256,
                              self.run.engine, self.run.broker, self.run.companion_sha256,

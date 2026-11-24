@@ -168,13 +168,15 @@ class AccessKitPathPatchControls(unittest.TestCase):
 
     def test_commands_are_identical_to_spin_only_and_do_not_compile_accesskit_on_linux(self):
         targets = {"portable": (HOST,), "windows": (WINDOWS,), "dependencies": (HOST, WINDOWS)}
+        # The live command roster includes the native leaf beyond the synthetic graph above.
+        expected_scopes: tuple[str, ...] = ("", *EXPECTED_MEMBERS, "windows-platform-native", "spin_on")
         for lane in ("portable", "windows", "dependencies"):
             single = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on",))
             double = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on", "accesskit_windows"))
             self.assertEqual(single, double)
             self.assertEqual([label for label, _ in double if label.startswith("dependency-tree-")], [
                 "dependency-tree-" + (scope + "-" if scope else "") + target
-                for target in targets[lane] for scope in ("", *EXPECTED_MEMBERS, "spin_on")
+                for target in targets[lane] for scope in expected_scopes
             ])
             self.assertFalse(any("accesskit_windows" in label or AK_PATH in " ".join(command) for label, command in double))
 

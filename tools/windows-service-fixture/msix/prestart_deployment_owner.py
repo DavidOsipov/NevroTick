@@ -101,6 +101,8 @@ def render_prestart_access_owner(
     expected_actor_sid: str,
     pins: Mapping[str, Member],
     work_milliseconds: int,
+    *,
+    private_capture_diagnostics: bool = False,
 ) -> tuple[bytes, Member]:
     """Bind one fixed access owner entry to a separately admitted actor and run.
 
@@ -108,6 +110,8 @@ def render_prestart_access_owner(
     namespace. An access entry accepts only its original run ID at startup.
     The native session and enclosing watchdog keep the original cutoff and
     independently observe child and process retirement.
+    Capture diagnostics require the launcher to retain the original private
+    regular stderr file for this role and run.
     """
     require(isinstance(run, DeploymentRun), "invalid pre-start access owner run")
     run_id: UUID = run.id
@@ -126,6 +130,7 @@ def render_prestart_access_owner(
     )
     require(type(work_milliseconds) is int and 0 < work_milliseconds <= 120_000,
             "invalid pre-start access owner deadline")
+    require(type(private_capture_diagnostics) is bool, "invalid pre-start access capture diagnostics selection")
     bound_pins: dict[str, Member] = _snapshot_pins(pins, _ACCESS_PIN_LIMITS)
     require(bound_pins["observer"].sha256 == run.observer_sha256,
             "pre-start access observer pin differs from the admitted run")
@@ -134,6 +139,7 @@ def render_prestart_access_owner(
         f"[string]$ownerRole = '{role}'",
         f"[string]$expectedActorSid = '{expected_actor_sid}'",
         f"[int]$workMilliseconds = {work_milliseconds}",
+        "[bool]$privateCaptureDiagnostics = " + ("$true" if private_capture_diagnostics else "$false"),
     ]
     return _render_owner(template, template_pin, bindings, bound_pins)
 

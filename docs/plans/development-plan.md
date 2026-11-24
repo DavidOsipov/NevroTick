@@ -1234,12 +1234,18 @@ schedule execution while a hold applies.
 | Order and owner | Entry and allowed parallel work | Discriminating exit |
 | --- | --- | --- |
 | **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [current native pair](../../tasks/engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
-| **Next development child — reference and mapping, S2.1/W11-W01** | Prepare the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
+| **Next development child — reference and mapping, S2.1/W11-W01** | The [bench reader](../../tasks/windows11-integration.md#bind-retained-application-captures-to-the-reference-trial--24-november-2026) binds the original application brackets for the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
 | **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |
 | **Secured service status — P3 and S-2** | Independent source preparation can proceed with the admitted service adapters and W11-W05/W11-W10 fixture. Bind exact roles and create protections before exposure. Qualify minimum authenticated management admission before functional IPC, then full handlers, mandatory state and simulated integration. Restore D2 freshness, connection and generation rules before connecting live status, including read-only. | Intended peers complete ready/stop and read status. Foreign identity, stale generations, failed state commit and retained native work cannot produce a false success. S-2 joins real admitted acquisition, secured status and ordinary-user read-only UI. |
 | **Real clock control — P4** | Require the reached P3/S0 evidence, independent reference and finite owned-lab card. Join current ownership, durable reservation, checked budgets and recoverable handover before the first product-backed write. Keep measurement admission independent of actuation. | Observe actual delivered correction and cleanup with current authorization. Crash, lost acknowledgement, competing ownership or invalidation cannot repeat a step, restore spent authority or publish a current synthetic effect. |
 | **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
 | **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
+
+The [whole-exchange comparison](../../tasks/windows11-integration.md#check-both-held-out-legs-inside-one-exchange-validity-window)
+now joins both held-out comparisons and all retained application
+brackets within the declared QPC validity. Its controls used the original
+Windows application bytes with synthetic reference values. The wired
+reference and its admitted calibration and pairing remain required.
 
 Keep the [S0.6/W11 service and direct-package handoff](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
 independent of later production signer selection. The [pre-start ordinary-user
@@ -1283,7 +1289,11 @@ The [native outer job checkpoint](../../tasks/windows11-integration.md#contain-a
 exercises original process and job custody on the inert route, including
 controller disconnect. The [independent native watchdog](../../tasks/windows11-integration.md#enforce-the-guardian-cutoff-from-its-native-parent)
 now exercises cutoff and recovery while the inert guardian is blocked or
-exits abruptly. The [fixed deployment entry](../../tasks/windows11-integration.md#wire-the-fixed-deployment-entry-to-the-original-native-window)
+exits abruptly. The [native job readback and recovery](../../tasks/windows11-integration.md#read-back-the-original-job-limits-and-measure-watchdog-retirement)
+confirms the configured limits before launch and records the blocked
+owner's retirement timing. A repeated six-member sample included three
+console-host processes. Effective cap enforcement stays open.
+The [fixed deployment entry](../../tasks/windows11-integration.md#wire-the-fixed-deployment-entry-to-the-original-native-window)
 binds the original run and staged inputs to the typed native session.
 The [failed-pipe continuation](../../tasks/windows11-integration.md#retain-the-original-deployment-failure-when-the-pipe-breaks)
 preserves the first operation refusal and cleanup in bounded diagnostics
@@ -1298,7 +1308,27 @@ owners independently.
 The [pinned access entries](../../tasks/windows11-integration.md#run-the-pinned-access-entries-under-the-existing-native-watchdog)
 reuse the existing Windows watchdog and guardian. The matched inert
 provisioning case and the typed refusal and deadline controls passed.
-Actual cross-context admission remains an installed prerequisite.
+The [three-role launch coordinator](../../tasks/windows11-integration.md#retain-the-original-three-pre-start-launch-attempts)
+signals every attempted role on partial activation and checks settlement
+under the original retirement cutoff. It binds distinct pipes before handing
+off. Portable pipe histories
+passed. The [private capture reader](../../tasks/windows11-integration.md#retain-private-pre-start-captures-through-receipt-refusal)
+now retains the original bytes and role when a received capture fails
+receipt or retirement checks. The [native access fallback](../../tasks/windows11-integration.md#keep-complete-native-access-captures-when-the-reply-fails)
+preserves a complete capture before ordinary frame publication on the
+opted-in private file. Inert Windows controls passed. The
+[held-file reader](../../tasks/windows11-integration.md#read-the-settled-private-access-capture-through-its-original-descriptor)
+validated that retained output in WSL. The
+[native settled-refusal control](../../tasks/windows11-integration.md#distinguish-settled-access-refusal-at-the-original-native-watchdog)
+observed the full original watchdog disposition and drained the private
+relay before recovering the inert capture. The
+[access watchdog parent and provider](../../tasks/windows11-integration.md#carry-a-full-native-access-watchdog-exit-to-the-pre-start-supervisor)
+now carry a full Windows status and settled diagnostic bytes for one admitted
+actor. Windows process-pipe cases and portable coordinator cases passed.
+The [native access recovery reserve](../../tasks/windows11-integration.md#reserve-native-retirement-time-for-the-original-access-job)
+retired a hung watchdog and its descendant before the unchanged cutoff
+with no success receipt. Actual WSL relay, hung-parent recovery and
+cross-context launch custody remain open before installed readback.
 The installed run still needs the admitted signed package, effective
 actors, continuous quiescence and the actual installed observations.
 The [native archive
@@ -1421,8 +1451,10 @@ despite a precredited replacement in the laboratory refresh fixture.
 The [broker first-reply checkpoint](../../tasks/windows11-integration.md#revalidate-the-original-awake-revision-before-broker-reply-submission)
 now includes two offline Windows pending-read results. The original pipe
 delivered the healthy reply and withheld the stale one after revision
-retirement. Installed current publication and physical clock changes
-remain separate exits.
+retirement. The [scripted Suspend control](../../tasks/windows11-integration.md#receive-a-normal-unavailable-reply-after-suspend)
+also passed in the offline Windows guest, delivering an unavailable reply
+on the original pipe and retiring it on Stop. Installed current
+publication and physical clock changes remain separate exits.
 The [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
 still needs traceable calibration and event-placement evidence before the
 joined successor can enter production history. The
@@ -1910,7 +1942,10 @@ discrepancies that the earlier fixture reader accepted. The
 checks the original XML bytes and retains local CLI regressions. The
 [ZIP directory readback](../../tasks/windows11-integration.md#check-the-original-zip-directory-and-footer-in-s06-readback--23-november-2026)
 now independently confirms the single-disk directory and footer.
-Both retained MakeAppx outputs still pass. The
+The [element-only XML readback](../../tasks/windows11-integration.md#refuse-character-data-in-element-only-unsigned-package-xml)
+refuses unexpected text in block-map, content-type and manifest containers.
+All three retained MakeAppx outputs passed, including the event-resource
+profile. The
 [SCM security child](../../tasks/windows11-integration.md#read-scm-service-owner-and-dacl-without-mutation--22-november-2026)
 matched the separate owner and DACL readback on two existing offline
 guest services. The
@@ -2483,9 +2518,16 @@ now checks one protected request, one DENY reply and the original exit
 observation. Its portable socket controls passed. The
 [certificate-free pair preflight](../../tasks/engine-transport-pilot.md#first-request-deny-pair-certificate-free-windows-preflight)
 accepted the exact linked peer and facade, joined controller syntax,
-CPU admission and offline share guards. Complete the authenticated
-first-request exchange with its temporary lab trust confirmation and
-verified cleanup.
+CPU admission and offline share guards. The
+[first-request controller rebind](../../tasks/engine-transport-pilot.md#rebind-the-first-request-deny-controller-to-the-retained-pair)
+binds the controller to the retained association-aware pair. The exact
+rendered bytes passed the held-file parser in the same offline guest. The
+[authenticated first-request exchange](../../tasks/engine-transport-pilot.md#observe-one-authenticated-first-request-deny-in-the-offline-guest)
+then passed with one send, exact source and shared endpoint refusal and
+zero extra datagrams. Both children and all captures retired, and the
+physical trust inventory returned to baseline. This closes the selected
+laboratory case on the retained pair. Current-file metrics and production
+acquisition qualification remain open.
 The [review follow-up](../../tasks/engine-transport-pilot.md#follow-up-to-the-0498765-implementation-review)
 retains the certificate-bearing Windows refusals, raw adjustment reporting
 through acquisition and cleanup failures, and joined leap/scale history.

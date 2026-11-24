@@ -3,6 +3,7 @@
 
 from base64 import b64encode
 from collections.abc import Callable
+from contextlib import ExitStack
 from dataclasses import replace
 from hashlib import sha256
 import json
@@ -14,23 +15,140 @@ import sys
 from tempfile import TemporaryDirectory, TemporaryFile
 from threading import Event, Thread
 from time import monotonic
+from traceback import format_exception
 from types import SimpleNamespace, TracebackType
-from typing import BinaryIO, Self
+from typing import BinaryIO, Generic, Self, TypeVar
 import unittest
 from unittest.mock import patch
 from uuid import UUID
 
 import prestart_deployment_session as session
 from prestart_deployment_session import (
-    GuardedDeploymentProcess, launch_deployment_watchdog, supervise_deployment_session, supervise_prestart_session,
+    GuardedDeploymentProcess, PrivateAccessDiagnostic, launch_deployment_watchdog, read_private_access_diagnostic,
+    supervise_deployment_session, supervise_prestart_session,
 )
 from prestart_receipts import (
-    Capture, DeploymentObservation, DeploymentRun, Member, PrestartObservation, ReceiptRefused, Run,
+    Capture, DeploymentObservation, DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, Run,
 )
 import test_prestart_receipts as receipts
 
 
 PipeScript = tuple[tuple[bytes, bytes], ...]
+
+
+class PrivateAccessDiagnosticTests(unittest.TestCase):
+    failure: bytes = b"nevrotick-deployment-owner failure=session cause=none cleanup=actor-close\r\n"
+    prefix: bytes = b"nevrotick-prestart-access-capture "
+
+    def setUp(self) -> None:
+        fixture: receipts.PrestartReceiptTests = receipts.PrestartReceiptTests()
+        fixture.setUp()
+        self.run: DeploymentRun = fixture.deployment_run()
+        self.payload: dict[str, object] = {
+            "run": str(self.run.id), "role": "access", "expected": self.run.observer_sha256,
+            "pid": 413, "exit": 101, "before": self.run.observer_sha256, "after": self.run.observer_sha256,
+            "stdout": "/wo=", "stderr": "ZXJyb3I=",
+        }
+
+    def line(self, **changes: object) -> bytes:
+        return self.prefix + json.dumps(self.payload | changes, separators=(",", ":")).encode("ascii") + b"\n"
+
+    def read(self, data: bytes, probe: PrestartProbe = PrestartProbe.ACCESS) -> PrivateAccessDiagnostic | None:
+        original: BinaryIO
+        with TemporaryFile() as original:
+            original.write(data)
+            original.flush()
+            original.seek(2)
+            result: PrivateAccessDiagnostic | None = read_private_access_diagnostic(self.run, probe, original)
+            self.assertEqual(original.tell(), 2)
+            return result
+
+    def test_original_bytes_and_unconfirmed_input(self) -> None:
+        result: PrivateAccessDiagnostic | None = self.read(self.failure + self.line() + b"watchdog exited 1\r\n")
+        self.assertEqual(result, PrivateAccessDiagnostic(self.run.id, PrestartProbe.ACCESS, 413, 101,
+                                                        self.run.observer_sha256, b"\xff\n", b"error"))
+        self.assertNotIn("error", repr(result))
+        self.assertEqual(self.read(self.failure + self.line(role="standard", before=None, after=None),
+                                   PrestartProbe.STANDARD),
+                         PrivateAccessDiagnostic(self.run.id, PrestartProbe.STANDARD, 413, 101,
+                                                 None, b"\xff\n", b"error"))
+
+    def test_no_record_and_stream_limits(self) -> None:
+        raw: bytes
+        for raw in (b"", self.failure, self.failure + b"nevrotick-prestart-access-capture-unavailable\r\n"):
+            with self.subTest(size=len(raw)):
+                self.assertIsNone(self.read(raw))
+        stream: bytes = b"\x00" * 8192
+        encoded: str = b64encode(stream).decode("ascii")
+        result: PrivateAccessDiagnostic | None = self.read(self.failure + self.line(stdout=encoded, stderr=encoded))
+        self.assertEqual(result, PrivateAccessDiagnostic(self.run.id, PrestartProbe.ACCESS, 413, 101,
+                                                        self.run.observer_sha256, stream, stream))
+        with self.assertRaisesRegex(ReceiptRefused, "native child output"):
+            self.read(self.failure + self.line(stdout=b64encode(stream + b"\0").decode("ascii")))
+
+    def test_crossed_or_malformed_record_refused(self) -> None:
+        cases: tuple[tuple[dict[str, object], str], ...] = (
+            ({"run": str(UUID(int=99))}, "foreign private access diagnostic"),
+            ({"role": "standard"}, "foreign private access diagnostic"),
+            ({"expected": "6" * 64}, "foreign private access diagnostic"),
+            ({"before": None}, "invalid private access diagnostic inputs"),
+            ({"before": "6" * 64, "after": "6" * 64}, "invalid private access diagnostic inputs"),
+            ({"pid": 1 << 31}, "invalid private access diagnostic PID"),
+            ({"pid": True}, "invalid private access diagnostic PID"),
+            ({"exit": -(1 << 31) - 1}, "invalid private access diagnostic exit"),
+            ({"exit": False}, "invalid private access diagnostic exit"),
+            ({"stdout": "/wp="}, "noncanonical native child output"),
+            ({"reaped": True}, "invalid private access diagnostic record"),
+        )
+        changes: dict[str, object]
+        error: str
+        for changes, error in cases:
+            with self.subTest(field=next(iter(changes))), self.assertRaisesRegex(ReceiptRefused, error):
+                self.read(self.failure + self.line(**changes))
+
+    def test_partial_repeated_and_oversized_file_refused(self) -> None:
+        line: bytes = self.line()
+        cases: tuple[tuple[bytes, str], ...] = (
+            (self.failure + line[:-1], "incomplete private access diagnostic file"),
+            (line, "missing owner failure"),
+            (b"nevrotick-deployment-owner failure=session\r\n" + line, "missing owner failure"),
+            (self.failure + line + self.failure + line, "repeated private access diagnostic"),
+            (self.failure + line + self.failure + b"nevrotick-prestart-access-capture-unavailable\n",
+             "repeated private access diagnostic"),
+            (self.failure + line[:-2] + b',"\\u0070id":413}\n', "invalid private access diagnostic record"),
+            (self.failure + self.prefix + b" " * 24000 + b"\n", "oversized private access diagnostic record"),
+            (b"x" * (32 * 1024) + b"\n", "invalid private access diagnostic file"),
+        )
+        raw: bytes
+        error: str
+        for raw, error in cases:
+            with self.subTest(error=error), self.assertRaisesRegex(ReceiptRefused, error):
+                self.read(raw)
+
+    def test_requires_an_original_regular_file(self) -> None:
+        read_end: int
+        write_end: int
+        pipe: BinaryIO
+        original: BinaryIO
+        read_end, write_end = os.pipe()
+        try:
+            with os.fdopen(read_end, "rb") as pipe, self.assertRaisesRegex(ReceiptRefused, "diagnostic file"):
+                read_private_access_diagnostic(self.run, PrestartProbe.ACCESS, pipe)
+        finally:
+            os.close(write_end)
+        with TemporaryFile() as original, self.assertRaisesRegex(ReceiptRefused, "diagnostic probe"):
+            read_private_access_diagnostic(self.run, PrestartProbe.OBSERVATION, original)
+
+    def test_refuses_growth_during_read(self) -> None:
+        def read_then_grow(fd: int, size: int, offset: int) -> bytes:
+            data: bytes = pread(fd, size, offset)
+            os.pwrite(fd, b"late diagnostic\n", len(data))
+            return data
+
+        pread: Callable[[int, int, int], bytes] = os.pread
+        with patch.object(session.os, "pread", read_then_grow):
+            with self.assertRaisesRegex(ReceiptRefused, "diagnostic file changed"):
+                self.read(self.failure + self.line())
 
 
 def frame(payload: bytes) -> bytes:
@@ -356,7 +474,7 @@ class DeploymentSessionTests(unittest.TestCase):
 
 
     def test_guardian_wait_uses_actual_exit_after_pipe_custody(self) -> None:
-        for status in (0, 23):
+        for status in (0, 3, 23):
             with self.subTest(status=status):
                 args: list[str] = [sys.executable, "-I", "-B", "-c", f"raise SystemExit({status})"]
                 deadline: float = monotonic() + 4
@@ -392,7 +510,8 @@ class FullPrestartSessionTests(unittest.TestCase):
         return replace(self.fixture.run, provisioning_actor=provisioning, standard_actor=standard)
 
     def supervise(self, owner: ScriptedProcess, provisioning: ScriptedProcess, standard: ScriptedProcess, *,
-                  work_deadline: float | None = None, retirement_deadline: float | None = None) -> PrestartObservation:
+                  work_deadline: float | None = None, retirement_deadline: float | None = None,
+                  captures: session.PrestartCaptures | None = None) -> PrestartObservation:
         now: float = monotonic()
         if work_deadline is None:
             work_deadline = now + 3.0
@@ -401,7 +520,7 @@ class FullPrestartSessionTests(unittest.TestCase):
         try:
             return supervise_prestart_session(
                 self.bind(provisioning, standard), owner, provisioning, standard,
-                work_deadline, retirement_deadline,
+                work_deadline, retirement_deadline, captures=captures,
             )
         finally:
             self.assertEqual(owner.waits, [(retirement_deadline, True, True)])
@@ -415,6 +534,22 @@ class FullPrestartSessionTests(unittest.TestCase):
               wait_failure: OSError | None = None) -> ScriptedProcess:
         requests: tuple[bytes, ...] = (command, b"") if command else (b"",)
         return ScriptedProcess((), response, retirement_requests=requests, wait_failure=wait_failure)
+
+    def assert_captures(self, captures: session.PrestartCaptures, deployment: ScriptedProcess,
+                        *access: tuple[PrestartProbe, ScriptedProcess, Capture]) -> None:
+        expected: tuple[tuple[PrestartProbe, ScriptedProcess, Capture], ...] = (
+            (PrestartProbe.IDENTITY, deployment, self.fixture.identity),
+            (PrestartProbe.OBSERVATION, deployment, self.fixture.observation),
+            *access,
+        )
+        records: tuple[session.CapturedProbe, ...] = captures.records
+        self.assertIsInstance(records, tuple)
+        self.assertEqual(len(records), len(expected))
+        for record, (probe, owner, capture) in zip(records, expected, strict=True):
+            self.assertIs(record.probe, probe)
+            self.assertIs(record.owner, owner)
+            self.assertIs(record.capture.actor, capture.actor)
+            self.assertEqual(record.capture, capture)
 
     def test_joins_only_after_both_original_captures_and_all_retirements(self) -> None:
         with self.actor(b"A", self.access) as provisioning, self.actor(b"U", self.standard) as standard:
@@ -500,13 +635,16 @@ class FullPrestartSessionTests(unittest.TestCase):
     def test_invalid_provisioning_frames_block_the_standard_probe_and_confirmation(self) -> None:
         foreign: bytes = self.deployment.capture("access", self.fixture.access, run=str(UUID(int=124)))
         crossed: bytes = self.deployment.capture("access", self.fixture.standard)
-        for label, response, reason in (
-            ("crossed selector", crossed, r"libtest"),
-            ("crossed role frame", self.standard, r"unexpected deployment frame"),
-            ("foreign run", foreign, r"foreign"),
-            ("trailing output", self.access + b"X", r"trailing native access output"),
+        invalid_base64: bytes = self.deployment.capture("access", self.fixture.access, stdout="?!")
+        for label, response, reason, decoded in (
+            ("crossed selector", crossed, r"libtest", self.fixture.standard),
+            ("crossed role frame", self.standard, r"unexpected deployment frame", None),
+            ("foreign run", foreign, r"foreign", None),
+            ("malformed private JSON", frame(b'{"private-access-capture":'), r"invalid deployment frame JSON", None),
+            ("malformed capture encoding", invalid_base64, r"invalid native child output", None),
+            ("trailing output", self.access + b"X", r"trailing native access output", self.fixture.access),
             ("native refusal", self.deployment.reply("refused", code="access-capture-refused", cleanup=[]),
-             r"native access refused access-capture-refused"),
+             r"native access refused access-capture-refused", None),
         ):
             with self.subTest(label=label):
                 with (
@@ -514,11 +652,20 @@ class FullPrestartSessionTests(unittest.TestCase):
                     self.actor(b"A", response) as provisioning,
                     self.actor(b"") as standard,
                 ):
-                    with self.assertRaisesRegex(ReceiptRefused, reason):
-                        self.supervise(owner, provisioning, standard)
+                    captures: session.PrestartCaptures = session.PrestartCaptures()
+                    with self.assertRaisesRegex(ReceiptRefused, reason) as caught:
+                        self.supervise(owner, provisioning, standard, captures=captures)
+                    self.assertIsNone(caught.exception.__cause__)
+                    self.assertIsNone(caught.exception.__context__)
                     self.deployment.assert_requests(owner, b"SCICOA")
                     self.assertEqual(provisioning.requests, [b"A", b""])
                     self.assertEqual(standard.requests, [b""])
+                    if decoded is None:
+                        self.assert_captures(captures, owner)
+                    else:
+                        self.assert_captures(captures, owner, (
+                            PrestartProbe.ACCESS, provisioning, replace(decoded, actor=provisioning),
+                        ))
 
     def test_invalid_standard_observation_blocks_final_confirmation(self) -> None:
         stdout: bytes = receipts.libtest(receipts.ORDINARY, [
@@ -558,6 +705,38 @@ class FullPrestartSessionTests(unittest.TestCase):
             self.assertEqual(provisioning.requests, [b""])
             self.assertEqual(standard.requests, [b""])
 
+    def test_identity_frame_decoded_at_work_cutoff_is_retained_without_acceptance(self) -> None:
+        work_deadline: float = monotonic() + 3.0
+        retirement_deadline: float = work_deadline + 1.0
+        now: float = work_deadline - 1.0
+        expect: Callable[..., None] = session._expect
+        failed_identity: Capture = replace(self.fixture.identity, exit_code=19)
+
+        def expire_after_identity_frame(row: dict[str, object], kind: str, *fields: str) -> None:
+            nonlocal now
+            expect(row, kind, *fields)
+            if kind == "identity":
+                now = work_deadline
+
+        with (
+            ScriptedProcess((
+                *self.script[:2], (b"I", self.deployment.capture("identity", failed_identity)),
+            ), self.deployment.retired) as owner,
+            self.actor(b"") as provisioning,
+            self.actor(b"") as standard,
+            patch.object(session, "time", SimpleNamespace(monotonic=lambda: now)),
+            patch.object(session, "_expect", expire_after_identity_frame),
+        ):
+            captures: session.PrestartCaptures = session.PrestartCaptures()
+            with self.assertRaises(TimeoutError):
+                self.supervise(owner, provisioning, standard, work_deadline=work_deadline,
+                               retirement_deadline=retirement_deadline, captures=captures)
+            records: tuple[session.CapturedProbe, ...] = captures.records
+            self.assertEqual(records, (session.CapturedProbe(PrestartProbe.IDENTITY, owner, failed_identity),))
+            self.deployment.assert_requests(owner, b"SCI")
+            self.assertEqual(provisioning.requests, [b""])
+            self.assertEqual(standard.requests, [b""])
+
     def test_complete_access_capture_expires_while_observing_its_retirement(self) -> None:
         work_deadline: float = monotonic() + 3.0
         retirement_deadline: float = work_deadline + 1.0
@@ -569,10 +748,16 @@ class FullPrestartSessionTests(unittest.TestCase):
                     self.actor(b"A", self.access) as provisioning,
                     self.actor(b"U", self.standard) as standard,
                 ):
+                    captures: session.PrestartCaptures = session.PrestartCaptures()
                     wait_retired: Callable[[float], None] = standard.wait_retired
+                    expected: tuple[tuple[PrestartProbe, ScriptedProcess, Capture], ...] = (
+                        (PrestartProbe.ACCESS, provisioning, replace(self.fixture.access, actor=provisioning)),
+                        (PrestartProbe.STANDARD, standard, replace(self.fixture.standard, actor=standard)),
+                    )
 
                     def finish_at_cutoff(deadline: float) -> None:
                         nonlocal now
+                        self.assert_captures(captures, owner, *expected)
                         wait_retired(deadline)
                         now = work_deadline + delta
 
@@ -583,17 +768,18 @@ class FullPrestartSessionTests(unittest.TestCase):
                         if delta < 0:
                             self.assertEqual(self.supervise(
                                 owner, provisioning, standard, work_deadline=work_deadline,
-                                retirement_deadline=retirement_deadline,
+                                retirement_deadline=retirement_deadline, captures=captures,
                             ).run_id, self.fixture.run.id)
                         else:
                             with self.assertRaises(TimeoutError):
                                 self.supervise(
                                     owner, provisioning, standard, work_deadline=work_deadline,
-                                    retirement_deadline=retirement_deadline,
+                                    retirement_deadline=retirement_deadline, captures=captures,
                                 )
                     self.deployment.assert_requests(owner, b"SCICOAUF" if delta < 0 else b"SCICOAU")
                     self.assertEqual(provisioning.requests, [b"A", b""])
                     self.assertEqual(standard.requests, [b"U", b""])
+                    self.assert_captures(captures, owner, *expected)
 
     def test_unconfirmed_provisioning_retirement_blocks_the_next_probe(self) -> None:
         refusal = OSError("original provisioning process exit was unconfirmed")
@@ -648,8 +834,9 @@ class FullPrestartSessionTests(unittest.TestCase):
             self.actor(b"A", self.access + b"X") as provisioning,
             self.actor(b"", wait_failure=refusal) as standard,
         ):
+            captures: session.PrestartCaptures = session.PrestartCaptures()
             with self.assertRaises(ExceptionGroup) as caught:
-                self.supervise(owner, provisioning, standard)
+                self.supervise(owner, provisioning, standard, captures=captures)
             observation, retirement = caught.exception.exceptions
             self.assertIsInstance(observation, ReceiptRefused)
             self.assertEqual(str(observation), "trailing native access output")
@@ -657,6 +844,11 @@ class FullPrestartSessionTests(unittest.TestCase):
             self.deployment.assert_requests(owner, b"SCICOA")
             self.assertEqual(provisioning.requests, [b"A", b""])
             self.assertEqual(standard.requests, [b""])
+            self.assertTrue(owner.retired_exit.is_set() and provisioning.retired_exit.is_set())
+            self.assertFalse(standard.retired_exit.is_set())
+            self.assert_captures(captures, owner, (
+                PrestartProbe.ACCESS, provisioning, replace(self.fixture.access, actor=provisioning),
+            ))
 
     def test_preserves_the_access_failure_and_its_observed_child_cleanup(self) -> None:
         response: bytes = self.deployment.reply(
@@ -675,6 +867,351 @@ class FullPrestartSessionTests(unittest.TestCase):
             ])
             self.deployment.assert_requests(owner, b"SCICOA")
             self.assertEqual(standard.requests, [b""])
+
+
+LaunchRunT = TypeVar("LaunchRunT", bound=DeploymentRun)
+LaunchEvent = tuple[str, str, float]
+
+
+class ScriptedOwnerAttempt(Generic[LaunchRunT]):
+    """Retain the original process even when start cannot return it."""
+
+    def __init__(self, role: str, events: list[LaunchEvent], process: ScriptedProcess | None = None, *,
+                 result: session.OwnedDeploymentProcess | None = None,
+                 on_start: Callable[[], None] | None = None) -> None:
+        self.role: str = role
+        self.events: list[LaunchEvent] = events
+        self.process: ScriptedProcess | None = process
+        self.result: session.OwnedDeploymentProcess | None = result
+        self.on_start: Callable[[], None] | None = on_start
+        self.starts: list[tuple[LaunchRunT, float, float]] = []
+
+    def start(self, run: LaunchRunT, deadline: float, retirement_deadline: float) -> session.OwnedDeploymentProcess:
+        self.events.append(("start", self.role, deadline))
+        self.starts.append((run, deadline, retirement_deadline))
+        if self.on_start is not None:
+            self.on_start()
+        if self.result is not None:
+            return self.result
+        if self.process is None:
+            raise AssertionError("scripted attempt did not acquire an original process")
+        return self.process
+
+    def request_retirement(self, deadline: float) -> None:
+        self.events.append(("request", self.role, deadline))
+        if self.process is not None:
+            self.process.stdin.close()
+            self.process.stdout.close()
+
+    def wait_retired(self, deadline: float) -> None:
+        self.events.append(("wait", self.role, deadline))
+        if self.process is not None:
+            self.process.wait_retired(deadline)
+
+
+class FullPrestartLaunchTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.full: FullPrestartSessionTests = FullPrestartSessionTests()
+        self.full.setUp()
+        self.run: DeploymentRun = self.full.deployment.run
+        self.work_deadline: float = monotonic() + 3.0
+        self.retirement_deadline: float = self.work_deadline + 1.0
+        self.events: list[LaunchEvent] = []
+
+    def launch(self, provisioning: ScriptedOwnerAttempt[DeploymentRun],
+               standard: ScriptedOwnerAttempt[DeploymentRun],
+               deployment: ScriptedOwnerAttempt[Run], *,
+               captures: session.PrestartCaptures | None = None) -> PrestartObservation:
+        if captures is None:
+            captures = session.PrestartCaptures()
+        return session.launch_prestart_session(
+            self.run, provisioning, standard, deployment, self.work_deadline, self.retirement_deadline,
+            captures=captures,
+        )
+
+    def assert_rollback(self, *roles: str) -> None:
+        count: int = len(roles)
+        self.assertEqual(self.events[:count], [("start", role, self.work_deadline) for role in roles])
+        self.assertCountEqual(
+            self.events[count:2 * count], [("request", role, self.retirement_deadline) for role in roles],
+        )
+        self.assertCountEqual(
+            self.events[2 * count:], [("wait", role, self.retirement_deadline) for role in roles],
+        )
+
+    def assert_unused_retired(self, *processes: ScriptedProcess) -> None:
+        for process in processes:
+            self.assertEqual(process.requests, [b""])
+            self.assertEqual(process.waits, [(self.retirement_deadline, True, True)])
+            self.assertTrue(process.retired_exit.is_set())
+
+    def test_launches_the_original_roles_then_supervises_their_pipes_once(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        empty: tuple[session.CapturedProbe, ...] = captures.records
+        with (
+            self.full.actor(b"A", self.full.access) as access,
+            self.full.actor(b"U", self.full.standard) as ordinary,
+            ScriptedProcess(self.full.script, self.full.deployment.retired) as owner,
+        ):
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "provisioning", self.events, access,
+            )
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events, ordinary)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events, owner)
+
+            result: PrestartObservation = self.launch(provisioning, standard, deployment, captures=captures)
+            self.assertEqual(result, PrestartObservation(
+                self.run.id, "1" * 64, ((528, 528, 528), (528, 16, 16)),
+            ))
+            self.assertEqual(self.events, [("start", role, self.work_deadline) for role in (
+                "provisioning", "standard", "deployment",
+            )])
+            for attempt in (provisioning, standard):
+                [(base, deadline, retirement)] = attempt.starts
+                self.assertIs(base, self.run)
+                self.assertEqual((deadline, retirement), (self.work_deadline, self.retirement_deadline))
+            [(bound, deadline, retirement)] = deployment.starts
+            self.assertEqual((deadline, retirement), (self.work_deadline, self.retirement_deadline))
+            self.assertEqual(bound, self.full.bind(access, ordinary))
+            self.assertIs(bound.deployment_actor, self.run.deployment_actor)
+            self.assertIs(bound.provisioning_actor, access)
+            self.assertIs(bound.standard_actor, ordinary)
+            self.full.deployment.assert_requests(owner, b"SCICOAUF")
+            self.assertEqual(access.requests, [b"A", b""])
+            self.assertEqual(ordinary.requests, [b"U", b""])
+            self.assertEqual(owner.waits, [(self.retirement_deadline, True, True)])
+            for process in (access, ordinary):
+                self.assertEqual(process.waits, [(self.work_deadline, True, True)])
+            self.assertTrue(all(process.retired_exit.is_set() for process in (access, ordinary, owner)))
+            self.full.assert_captures(
+                captures, owner,
+                (PrestartProbe.ACCESS, access, replace(self.full.fixture.access, actor=access)),
+                (PrestartProbe.STANDARD, ordinary, replace(self.full.fixture.standard, actor=ordinary)),
+            )
+            self.assertEqual(empty, ())
+
+    def test_launch_retains_raw_provisioning_failure_and_rejects_capture_store_reuse(self) -> None:
+        marker: str = "synthetic-private-child-marker"
+        stdout: bytes = (
+            f"\r\nrunning 1 test\r\ntest {receipts.ACCESS} ... "
+            f"{self.full.fixture.role_rows[0]}\r\n"
+            f"{self.full.fixture.role_rows[1]}\r\n"
+            "scm-prestart observed-rows=2\r\n"
+            "scm-prestart-access invoking-pid=303\r\n"
+            "FAILED\r\n"
+        ).encode("ascii")
+        stderr: bytes = (
+            f'Error: "scm-prestart-access {receipts.ENGINE} mask=0x4 access-denied '
+            f'stage=OpenService code=5 additional-manager-close=None"\r\n{marker}\r\n'
+        ).encode("ascii")
+        failed: Capture = replace(self.full.fixture.access, stdout=stdout, stderr=stderr, exit_code=101)
+        reply: bytes = self.full.deployment.capture("access", failed)
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        with (
+            self.full.actor(b"A", reply) as access,
+            self.full.actor(b"") as ordinary,
+            ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as owner,
+        ):
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "provisioning", self.events, access,
+            )
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events, ordinary)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events, owner)
+            with self.assertRaisesRegex(ReceiptRefused, "child did not exit successfully and reap") as caught:
+                self.launch(provisioning, standard, deployment, captures=captures)
+            self.full.assert_captures(captures, owner, (PrestartProbe.ACCESS, access, replace(failed, actor=access)))
+            self.assertNotIn(marker, "".join(format_exception(caught.exception)))
+            self.full.deployment.assert_requests(owner, b"SCICOA")
+            self.assertEqual(access.requests, [b"A", b""])
+            self.assert_unused_retired(ordinary)
+            self.assertTrue(all(process.retired_exit.is_set() for process in (access, ordinary, owner)))
+
+        retained: tuple[session.CapturedProbe, ...] = captures.records
+        with self.assertRaises(AttributeError):
+            setattr(retained[-1], "probe", PrestartProbe.STANDARD)
+        with self.assertRaises(AttributeError):
+            setattr(retained[-1].capture, "stdout", b"")
+        self.events.clear()
+        self.run = replace(self.run, id=UUID(int=124))
+        with self.assertRaises(ReceiptRefused):
+            self.launch(
+                ScriptedOwnerAttempt("provisioning", self.events),
+                ScriptedOwnerAttempt("standard", self.events),
+                ScriptedOwnerAttempt("deployment", self.events),
+                captures=captures,
+            )
+        self.assertEqual(self.events, [])
+        self.assertEqual(captures.records, retained)
+        self.full.assert_captures(captures, owner, (PrestartProbe.ACCESS, access, replace(failed, actor=access)))
+
+    def test_deployment_render_refusal_retires_both_unused_access_owners(self) -> None:
+        refusal: ReceiptRefused = ReceiptRefused("full deployment entry failed independent pin admission")
+
+        def reject_render() -> None:
+            raise refusal
+
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary:
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "provisioning", self.events, access,
+            )
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events, ordinary)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events, on_start=reject_render)
+            with self.assertRaises(ReceiptRefused) as caught:
+                self.launch(provisioning, standard, deployment)
+            self.assertIs(caught.exception, refusal)
+            self.assert_rollback("provisioning", "standard", "deployment")
+            self.assert_unused_retired(access, ordinary)
+
+    def test_interrupted_second_launch_and_unconfirmed_retirement_preserve_both_failures(self) -> None:
+        interruption: KeyboardInterrupt = KeyboardInterrupt("interrupted after acquiring the original process")
+        unconfirmed: TimeoutError = TimeoutError("the interrupted original did not confirm exit")
+        with ExitStack() as stack:
+            access: ScriptedProcess = stack.enter_context(self.full.actor(b""))
+
+            def interrupt_after_activation() -> None:
+                standard.process = stack.enter_context(self.full.actor(b"", wait_failure=unconfirmed))
+                raise interruption
+
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "provisioning", self.events, access,
+            )
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "standard", self.events, on_start=interrupt_after_activation,
+            )
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
+            with self.assertRaises(BaseExceptionGroup) as caught:
+                self.launch(provisioning, standard, deployment)
+            self.assertEqual(caught.exception.exceptions, (interruption, unconfirmed))
+            self.assert_rollback("provisioning", "standard")
+            self.assert_unused_retired(access)
+            original: ScriptedProcess | None = standard.process
+            assert original is not None
+            self.assertEqual(original.waits, [(self.retirement_deadline, True, True)])
+            self.assertFalse(original.retired_exit.is_set())
+
+    def test_shared_attempt_is_refused_without_launching(self) -> None:
+        shared: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("shared", self.events)
+        deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
+        with self.assertRaises(ReceiptRefused):
+            self.launch(shared, shared, deployment)
+        self.assertEqual(self.events, [])
+
+    def test_unavailable_retirement_observer_does_not_prevent_other_signals_or_waits(self) -> None:
+        primary: OSError = OSError("deployment preparation failed")
+        unavailable: OSError = OSError("original retirement observer unavailable")
+
+        class UnavailableWaitAttempt(ScriptedOwnerAttempt[DeploymentRun]):
+            @property
+            def wait_retired(self) -> Callable[[float], None]:
+                raise unavailable
+
+        def fail_preparation() -> None:
+            raise primary
+
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary:
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("provisioning", self.events, access)
+            standard: UnavailableWaitAttempt = UnavailableWaitAttempt("standard", self.events, ordinary)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt(
+                "deployment", self.events, on_start=fail_preparation,
+            )
+            with self.assertRaises(ExceptionGroup) as caught:
+                self.launch(provisioning, standard, deployment)
+            self.assertEqual(caught.exception.exceptions, (primary, unavailable))
+            self.assertEqual(self.events[3:6], [
+                ("request", role, self.retirement_deadline) for role in ("provisioning", "standard", "deployment")
+            ])
+            self.assertEqual(self.events[6:], [
+                ("wait", role, self.retirement_deadline) for role in ("provisioning", "deployment")
+            ])
+            self.assert_unused_retired(access)
+            self.assertTrue(ordinary.stdin.closed and ordinary.stdout.closed)
+            self.assertEqual(ordinary.waits, [])
+
+    def test_crossed_pipe_and_shared_process_are_refused_before_any_protocol_request(self) -> None:
+        fault: str
+        for fault in ("aliased-pipe", "shared-process", "reversed-directions"):
+            self.events.clear()
+            with (
+                self.subTest(fault=fault),
+                self.full.actor(b"") as access,
+                self.full.actor(b"") as ordinary,
+                self.full.actor(b"") as owner,
+                os.fdopen(os.dup(access.stdin.fileno()), "wb", buffering=0) as alias,
+            ):
+                crossed: session.OwnedDeploymentProcess
+                if fault == "shared-process":
+                    crossed = access
+                elif fault == "reversed-directions":
+                    crossed = SimpleNamespace(stdin=owner.stdout, stdout=owner.stdin, wait_retired=owner.wait_retired)
+                else:
+                    crossed = SimpleNamespace(stdin=alias, stdout=owner.stdout, wait_retired=owner.wait_retired)
+                provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                    "provisioning", self.events, access,
+                )
+                standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events, ordinary)
+                deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt(
+                    "deployment", self.events, owner, result=crossed,
+                )
+                # The independently retained deployment provider closes its own alias on rollback.
+                request_retirement: Callable[[float], None] = deployment.request_retirement
+
+                def retire_alias(deadline: float) -> None:
+                    alias.close()
+                    request_retirement(deadline)
+
+                with patch.object(deployment, "request_retirement", side_effect=retire_alias):
+                    with self.assertRaises(ReceiptRefused):
+                        self.launch(provisioning, standard, deployment)
+                self.assert_rollback("provisioning", "standard", "deployment")
+                self.assert_unused_retired(access, ordinary, owner)
+
+    def test_elapsed_work_deadline_prevents_the_first_launch(self) -> None:
+        provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("provisioning", self.events)
+        standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events)
+        deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
+        with patch.object(session, "time", SimpleNamespace(monotonic=lambda: self.work_deadline)):
+            with self.assertRaises(TimeoutError):
+                self.launch(provisioning, standard, deployment)
+        self.assertEqual(self.events, [])
+
+    def test_work_deadline_reached_during_launch_retires_original_without_starting_another(self) -> None:
+        now: float = self.work_deadline - 1.0
+
+        def reach_deadline() -> None:
+            nonlocal now
+            now = self.work_deadline
+
+        with self.full.actor(b"") as access:
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+                "provisioning", self.events, access, on_start=reach_deadline,
+            )
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
+            with patch.object(session, "time", SimpleNamespace(monotonic=lambda: now)):
+                with self.assertRaises(TimeoutError):
+                    self.launch(provisioning, standard, deployment)
+            self.assert_rollback("provisioning")
+            self.assert_unused_retired(access)
+
+    def test_work_cutoff_during_pipe_admission_settles_all_roles_without_protocol_traffic(self) -> None:
+        now: float = self.work_deadline - 1.0
+        check_pipes: Callable[[session._PrestartPipe], None] = session._PrestartPipe.require_separate_pipes
+
+        def reach_deadline(window: session._PrestartPipe) -> None:
+            nonlocal now
+            check_pipes(window)
+            now = self.work_deadline
+
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary, self.full.actor(b"") as owner:
+            provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("provisioning", self.events, access)
+            standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt("standard", self.events, ordinary)
+            deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events, owner)
+            with (patch.object(session, "time", SimpleNamespace(monotonic=lambda: now)),
+                  patch.object(session._PrestartPipe, "require_separate_pipes", reach_deadline)):
+                with self.assertRaises(TimeoutError):
+                    self.launch(provisioning, standard, deployment)
+            self.assert_rollback("provisioning", "standard", "deployment")
+            self.assert_unused_retired(access, ordinary, owner)
 
 
 class DeploymentWatchdogLaunchTests(unittest.TestCase):
@@ -696,12 +1233,14 @@ class DeploymentWatchdogLaunchTests(unittest.TestCase):
         self.executable.chmod(0o700)
         self.pin = Member(len(image), sha256(image).hexdigest())
 
-    def launch(self, executable: Path, pin: Member, diagnostics: BinaryIO) -> Popen[bytes]:
+    def launch(self, executable: Path, pin: Member, diagnostics: BinaryIO,
+               *, observe_access_settlement: bool = False) -> Popen[bytes]:
         return launch_deployment_watchdog(
             self.run, executable, pin,
             r"C:\Staging & Data\prestart_deployment_guardian.ps1", Member(101, "a" * 64), Member(202, "b" * 64),
             r"C:\Staging & Data\prestart_deployment_owner.ps1", Member(303, "c" * 64),
             (1000, 2000), (3000, 4000), diagnostics,
+            observe_access_settlement=observe_access_settlement,
         )
 
     def test_wrong_watchdog_digest_is_refused_before_process_creation(self) -> None:
@@ -744,6 +1283,47 @@ class DeploymentWatchdogLaunchTests(unittest.TestCase):
             ])
             diagnostics.seek(0)
             self.assertEqual(diagnostics.read(), b"watchdog diagnostic\n")
+
+    def test_access_settlement_opt_in_reaches_the_original_watchdog(self) -> None:
+        diagnostics: BinaryIO
+        with TemporaryFile() as diagnostics, self.launch(self.executable, self.pin, diagnostics,
+                                                         observe_access_settlement=True) as process:
+            stdout: bytes
+            stderr: None
+            try:
+                stdout, stderr = process.communicate(b"A", timeout=4)
+            except TimeoutExpired:
+                process.kill()
+                process.communicate(timeout=4)
+                raise
+            arguments: list[str]
+            request: str
+            pipes: list[bool]
+            arguments, request, pipes = json.loads(stdout)
+            self.assertEqual(process.returncode, 0)
+            self.assertIsNone(stderr)
+            self.assertEqual(len(arguments), 14)
+            self.assertEqual(arguments[-1], "--observe-access-settlement")
+            self.assertEqual((request, pipes), ("41", [True, True, False]))
+            diagnostics.seek(0)
+            self.assertEqual(diagnostics.read(), b"watchdog diagnostic\n")
+
+    def test_access_settlement_requires_a_fresh_read_write_diagnostic_file(self) -> None:
+        diagnostics: BinaryIO
+        with TemporaryFile() as diagnostics, patch("prestart_deployment_session.Popen") as popen:
+            diagnostics.seek(1)
+            with self.assertRaisesRegex(ReceiptRefused, "diagnostic file at offset zero"):
+                self.launch(self.executable, self.pin, diagnostics, observe_access_settlement=True)
+            diagnostics.seek(0)
+            diagnostics.write(b"earlier output\n")
+            diagnostics.seek(0)
+            with self.assertRaisesRegex(ReceiptRefused, "diagnostic file at offset zero"):
+                self.launch(self.executable, self.pin, diagnostics, observe_access_settlement=True)
+            popen.assert_not_called()
+        with TemporaryFile(mode="wb") as diagnostics, patch("prestart_deployment_session.Popen") as popen:
+            with self.assertRaisesRegex(ReceiptRefused, "diagnostic file at offset zero"):
+                self.launch(self.executable, self.pin, diagnostics, observe_access_settlement=True)
+            popen.assert_not_called()
 
 
 if __name__ == "__main__":

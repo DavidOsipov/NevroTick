@@ -17,7 +17,7 @@ function Assert-PrestartDeadline {
 function Receive-PrestartStreams {
     param(
         [int]$ProcessId, [IO.Stream]$StdoutStream, [IO.Stream]$StderrStream,
-        [scriptblock]$ObserveExit, [scriptblock]$RequireTime
+        [scriptblock]$ObserveExit, [scriptblock]$RequireTime, [ref]$CollectedCapture
     )
 
     $limit = 8192
@@ -66,9 +66,15 @@ function Receive-PrestartStreams {
                     [Array]::Copy($channel.Bytes, $bytes, $channel.Used)
                     $channel.Bytes = $bytes
                 }
-                & $RequireTime
-                return [pscustomobject]@{ ProcessId = $processId; ExitCode = $exitCode;
+                [object]$capture = [pscustomobject]@{ ProcessId = $ProcessId; ExitCode = $exitCode;
                     Stdout = $stdout.Bytes; Stderr = $stderr.Bytes }
+                if ($null -ne $CollectedCapture) {
+                    # Complete historical streams survive refusal of the final
+                    # work, input confirmation and publication checks.
+                    $CollectedCapture.Value = [pscustomobject]@{ Capture = $capture; InputDigests = $null }
+                }
+                & $RequireTime
+                return $capture
             }
             if (-not $advanced) { Start-Sleep -Milliseconds 5 }
         }
@@ -293,17 +299,21 @@ function Invoke-PrestartObserver {
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
         [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds,
         [string]$ExpectedStandardUserSid,
-        [string]$ExpectedProvisioningUserSid
+        [string]$ExpectedProvisioningUserSid,
+        [ref]$CollectedCapture
     )
 
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
     if ($null -eq $script:PrestartActorType -or -not $script:PrestartActorType.IsInstanceOfType($Actor)) {
         throw [ArgumentException]::new('prestart-observer:caller-actor')
     }
+    if ($null -ne $CollectedCapture -and $null -ne $CollectedCapture.Value) {
+        throw [ArgumentException]::new('prestart-observer:capture-slot-used')
+    }
     $launcher = $script:PrestartObserverType
     $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock,
         $TimeoutMilliseconds, $ExpectedStandardUserSid, $ExpectedProvisioningUserSid)
-    Receive-OwnedPrestartChild $child
+    Receive-OwnedPrestartChild $child $CollectedCapture
 }
 
 # Hold a read lease on one admitted archive. The coordinator owns its disposal
@@ -398,7 +408,7 @@ function Invoke-PrestartIdentity {
 }
 
 function Receive-OwnedPrestartChild {
-    param([object]$Child)
+    param([object]$Child, [ref]$CollectedCapture)
 
     $childId = $child.ProcessId
     $failure = $null
@@ -416,7 +426,7 @@ function Receive-OwnedPrestartChild {
         & $requireCollectionTime
         $capture = Receive-PrestartStreams $childId $child.Stdout $child.Stderr {
             if ($child.HasExited) { $child.ExitCode }
-        } $requireCollectionTime
+        } $requireCollectionTime $CollectedCapture
         while ($true) {
             & $requireCollectionTime
             if ($child.IsJobEmpty) { break }
@@ -424,6 +434,7 @@ function Receive-OwnedPrestartChild {
         }
         & $requireCollectionTime
         $inputDigests = $child.ConfirmImage()
+        if ($null -ne $CollectedCapture) { $CollectedCapture.Value.InputDigests = $inputDigests }
     } catch {
         $failure = $_
     } finally {

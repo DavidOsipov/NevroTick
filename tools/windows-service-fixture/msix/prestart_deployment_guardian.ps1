@@ -31,6 +31,9 @@ function Read-FailureType([Exception]$Failure) {
 [hashtable]$record = @{
     run = $RunId.ToString('D'); owner_pid = $null; owner_exit = $null
     job_empty = $false; recovered = $false; active_at_recovery = $null; total_processes = $null
+    verified_process_limit = $null; total_at_recovery = $null
+    limit_terminations_at_recovery = $null; limit_terminations_at_empty = $null
+    recovery_start_tick = $null; termination_accepted_tick = $null; job_empty_tick = $null; tick_frequency = $null
     failure = $null; recovery_failure = $null; members_at_recovery = $null
 }
 try {
@@ -51,6 +54,14 @@ try {
     $record.active_at_recovery = $report.ActiveAtRecovery
     $record.total_processes = $report.TotalProcesses
     $record.members_at_recovery = $report.MemberPidsAtRecovery
+    $record.verified_process_limit = $report.VerifiedProcessLimit
+    $record.total_at_recovery = $report.TotalAtRecovery
+    $record.limit_terminations_at_recovery = $report.LimitTerminationsAtRecovery
+    $record.limit_terminations_at_empty = $report.LimitTerminationsAtEmpty
+    $record.recovery_start_tick = $report.RecoveryStartTick
+    $record.termination_accepted_tick = $report.TerminationAcceptedTick
+    $record.job_empty_tick = $report.JobEmptyTick
+    $record.tick_frequency = $report.TickFrequency
     $record.failure = Read-FailureType $report.Failure
     $record.recovery_failure = Read-FailureType $report.RecoveryFailure
 } catch {

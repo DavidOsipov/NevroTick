@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 public enum PrestartRetirementFault
 {
     None, AfterDisposalStart, Observation, BeforeDisposalStart, InitialObservation,
-    CollectionEntry, CollectionAfterRead, PublicationExpiry, PublicationArchiveRetired
+    CollectionEntry, CollectionAfterRead, CollectionAfterExit, ImageConfirmation, PublicationExpiry, PublicationArchiveRetired
 }
 
 public sealed class PrestartRetirementControl : IDisposable
@@ -36,14 +36,17 @@ public sealed class PrestartRetirementControl : IDisposable
 
     private readonly TaskCompletionSource<int> pending = new TaskCompletionSource<int>();
     private readonly PrestartRetirementFault fault;
+    private bool exitObserved;
     public readonly Exception CollectionFailure = new IOException("controlled stream read failed");
     public readonly Exception TerminationFailure = new InvalidOperationException("controlled termination failed");
     public readonly Exception ObservationFailure = new IOException("controlled job observation failed");
+    public readonly Exception ImageFailure = new IOException("controlled image confirmation failed");
     public readonly Exception DisposalFailure = new InvalidOperationException("controlled disposal failed");
     public readonly Exception ArchiveRetired = new InvalidOperationException("prestart-observer:archive-retired");
     public readonly TimeoutException CollectionExpiry = new TimeoutException("prestart-child:collection-deadline");
     public readonly int ProcessId = 413;
-    public readonly int ExitCode = 23;
+    public int ExitCode { get { exitObserved = true; return 23; } }
+    public readonly object ConfirmedDigests = new { Before = "held-before", After = "held-after" };
     public readonly Stream Stdout;
     public readonly Stream Stderr;
     public int StdoutReads { get { return ((ControlledStream)Stdout).Reads; } }
@@ -58,6 +61,7 @@ public sealed class PrestartRetirementControl : IDisposable
     public int Disposals { get; private set; }
     public bool DisposalStarted { get; private set; }
     public bool ReleaseConfirmed { get; private set; }
+    public Action<string> ObserveCapture { get; set; }
     public Task<int> PendingRead { get { return pending.Task; } }
 
     public PrestartRetirementControl(bool failCollection, PrestartRetirementFault fault)
@@ -107,6 +111,7 @@ public sealed class PrestartRetirementControl : IDisposable
     {
         if (fault == PrestartRetirementFault.CollectionEntry ||
             (fault == PrestartRetirementFault.CollectionAfterRead && StdoutReads != 0) ||
+            (fault == PrestartRetirementFault.CollectionAfterExit && exitObserved) ||
             (fault == PrestartRetirementFault.PublicationExpiry && ReleaseConfirmed))
             throw CollectionExpiry;
     }
@@ -114,7 +119,9 @@ public sealed class PrestartRetirementControl : IDisposable
     public object ConfirmImage()
     {
         Confirms++;
-        return new { Before = "held-before", After = "held-after" };
+        if (ObserveCapture != null) ObserveCapture("image");
+        if (fault == PrestartRetirementFault.ImageConfirmation) throw ImageFailure;
+        return ConfirmedDigests;
     }
 
     public void ConfirmPublication()
@@ -122,6 +129,7 @@ public sealed class PrestartRetirementControl : IDisposable
         PublicationChecks++;
         if (!ReleaseConfirmed || Confirms != 1)
             throw new InvalidOperationException("publication checked before confirmed image and release");
+        if (ObserveCapture != null) ObserveCapture("publication");
         if (fault == PrestartRetirementFault.PublicationExpiry)
             throw CollectionExpiry;
         if (fault == PrestartRetirementFault.PublicationArchiveRetired)
@@ -143,6 +151,7 @@ public sealed class PrestartRetirementControl : IDisposable
     public void Dispose()
     {
         Disposals++;
+        if (ObserveCapture != null) ObserveCapture("disposal");
         if (!pending.Task.IsCompleted) throw new InvalidOperationException("disposed with a pending read");
         if (fault == PrestartRetirementFault.BeforeDisposalStart) throw DisposalFailure;
         DisposalStarted = true;
@@ -163,6 +172,61 @@ function Test-ExceptionCause {
     return $false
 }
 
+function Watch-ControlCapture {
+    param([PrestartRetirementControl]$Child, [ref]$Slot)
+
+    $observed = @{}
+    $Child.ObserveCapture = [Action[string]]({
+        param([string]$Phase)
+
+        $evidence = $Slot.Value
+        # Snapshot the current bytes and pins before this phase can change the slot.
+        $observed[$Phase] = if ($null -ne $evidence) {
+            [pscustomobject]@{
+                ProcessId = $evidence.Capture.ProcessId; ExitCode = $evidence.Capture.ExitCode
+                Stdout = $evidence.Capture.Stdout.Clone(); Stderr = $evidence.Capture.Stderr.Clone()
+                InputDigests = $evidence.InputDigests
+            }
+        }
+    }.GetNewClosure())
+    return $observed
+}
+
+function Assert-OriginalCapture {
+    param([object]$Capture, [string]$Label)
+
+    if ($null -eq $Capture -or $Capture.ProcessId -ne 413 -or $Capture.ExitCode -ne 23 -or
+        $Capture.Stdout -isnot [byte[]] -or $Capture.Stdout.Length -ne 1 -or $Capture.Stdout[0] -ne 255 -or
+        $Capture.Stderr -isnot [byte[]] -or $Capture.Stderr.Length -ne 1 -or $Capture.Stderr[0] -ne 128) {
+        throw "$Label did not preserve the original PID, exit code, and stream bytes"
+    }
+}
+
+function Assert-CompleteControlCapture {
+    param([object]$Evidence, [hashtable]$Observed, [PrestartRetirementControl]$Child, [bool]$ImageConfirmed)
+
+    if ($null -eq $Evidence) { throw 'complete streams and exit were missing from the diagnostic slot' }
+    Assert-OriginalCapture $Evidence.Capture 'diagnostic slot'
+    if ($Child.Confirms -ne 0) {
+        Assert-OriginalCapture $Observed['image'] 'image confirmation'
+        if ($null -ne $Observed['image'].InputDigests) {
+            throw 'image confirmation started with purportedly confirmed pins'
+        }
+    }
+    $expectedDigests = if ($ImageConfirmed) { $Child.ConfirmedDigests }
+    foreach ($phase in @('disposal', 'publication')) {
+        if ($phase -eq 'publication' -and $Child.PublicationChecks -eq 0) { continue }
+        $snapshot = $Observed[$phase]
+        Assert-OriginalCapture $snapshot $phase
+        if (![object]::ReferenceEquals($snapshot.InputDigests, $expectedDigests)) {
+            throw "confirmed pins differed at $phase"
+        }
+    }
+    if (![object]::ReferenceEquals($Evidence.InputDigests, $expectedDigests)) {
+        throw 'diagnostic slot ended with different or unconfirmed pins'
+    }
+}
+
 $module = Import-Module (Join-Path $PSScriptRoot 'prestart_child.psm1') -Force -PassThru
 try {
     [hashtable[]]$failures = @(
@@ -175,6 +239,12 @@ try {
         @{ Mode = [PrestartRetirementFault]::CollectionAfterRead; Stdout = 1; Stderr = 0
             Failure = 'CollectionExpiry'; Confirms = 0; PublicationChecks = 0
             Retirements = 2; Pending = $true }
+        @{ Mode = [PrestartRetirementFault]::CollectionAfterExit; Stdout = 2; Stderr = 2
+            Failure = 'CollectionExpiry'; Confirms = 0; PublicationChecks = 0
+            Retirements = 2; Pending = $false }
+        @{ Mode = [PrestartRetirementFault]::ImageConfirmation; Stdout = 2; Stderr = 2
+            Failure = 'ImageFailure'; Confirms = 1; PublicationChecks = 0
+            Retirements = 2; Pending = $false }
         @{ Mode = [PrestartRetirementFault]::PublicationExpiry; Stdout = 2; Stderr = 2
             Failure = 'CollectionExpiry'; Confirms = 1; PublicationChecks = 1
             Retirements = 1; Pending = $false }
@@ -184,10 +254,16 @@ try {
     )
     foreach ($case in $failures) {
         $fault = [PrestartRetirementControl]::new($false, $case.Mode)
+        $collected = $null
+        $slot = [ref]$collected
+        $observed = Watch-ControlCapture $fault $slot
         $records = [Collections.Generic.List[object]]::new()
         $failure = $null
         try {
-            & $module { param($child) Receive-OwnedPrestartChild $child } $fault |
+            & $module {
+                param($child, [ref]$slot)
+                Receive-OwnedPrestartChild $child -CollectedCapture $slot
+            } $fault $slot |
                 ForEach-Object { $records.Add($_) }
         } catch {
             $failure = $_.Exception
@@ -217,22 +293,40 @@ try {
                 ![object]::ReferenceEquals($reads[0], $fault.StdoutReadTask) -or !$reads[0].IsCompleted) {
                 throw "$($case.Mode) failed to preserve the original read through retirement"
             }
+        } elseif ($case.Mode -eq [PrestartRetirementFault]::CollectionAfterExit) {
+            if ($reads -isnot [Array] -or $reads.Length -ne 0) {
+                throw 'complete collection should have no pending reads at the cutoff'
+            }
         } elseif ($null -ne $reads) {
             throw "$($case.Mode) reported an unexpected pending read"
+        }
+        if ($case.Confirms -eq 0 -and $case.Mode -ne [PrestartRetirementFault]::CollectionAfterExit) {
+            if ($null -ne $collected -or !$observed.ContainsKey('disposal') -or $null -ne $observed['disposal']) {
+                throw "$($case.Mode) retained a capture before both EOFs and exit"
+            }
+        } else {
+            Assert-CompleteControlCapture $collected $observed $fault (
+                $case.Confirms -ne 0 -and $case.Failure -cne 'ImageFailure')
         }
         "s06-prestart-retirement $($case.Mode) passed"
     }
 
     $healthy = [PrestartRetirementControl]::new($false, [PrestartRetirementFault]::None)
-    $capture = @(& $module { param($child) Receive-OwnedPrestartChild $child } $healthy)
-    if ($capture.Count -ne 1 -or $capture[0].ProcessId -ne 413 -or $capture[0].ExitCode -ne 23 -or
-        $capture[0].Stdout.Length -ne 1 -or $capture[0].Stdout[0] -ne 255 -or
-        $capture[0].Stderr.Length -ne 1 -or $capture[0].Stderr[0] -ne 128 -or
+    $collected = $null
+    $slot = [ref]$collected
+    $observed = Watch-ControlCapture $healthy $slot
+    $capture = @(& $module {
+        param($child, [ref]$slot)
+        Receive-OwnedPrestartChild $child -CollectedCapture $slot
+    } $healthy $slot)
+    if ($capture.Count -ne 1 -or
         $capture[0].InputSha256Before -cne 'held-before' -or $capture[0].InputSha256After -cne 'held-after' -or
         $healthy.Confirms -ne 1 -or $healthy.PublicationChecks -ne 1 -or $healthy.Retirements -ne 1 -or
         $healthy.Terminations -ne 0 -or $healthy.Disposals -ne 1 -or !$healthy.ReleaseConfirmed) {
         throw 'healthy collector did not return one retired capture'
     }
+    Assert-OriginalCapture $capture[0] 'healthy collector output'
+    Assert-CompleteControlCapture $collected $observed $healthy $true
     's06-prestart-retirement healthy passed'
 
     $cases = @(
@@ -313,4 +407,4 @@ try {
     Remove-Module $module
 }
 
-'s06-prestart-retirement controls=11'
+'s06-prestart-retirement controls={0}' -f ($failures.Length + $cases.Length + 1)

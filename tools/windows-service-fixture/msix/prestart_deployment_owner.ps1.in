@@ -75,11 +75,47 @@ function Add-PrestartAccessOwnerCleanup {
     }
 }
 
+function Write-PrestartAccessCaptureDiagnostic {
+    param([object]$Record)
+
+    # This file is a separate private stderr destination retained by the
+    # lab launcher. A collected record carries no publication or reap claim.
+    [object]$capture = $Record.Capture
+    if ($capture.ProcessId -isnot [int] -or $capture.ProcessId -le 0 -or $capture.ExitCode -isnot [int] -or
+        $capture.Stdout -isnot [byte[]] -or $capture.Stdout.Length -gt 8192 -or
+        $capture.Stderr -isnot [byte[]] -or $capture.Stderr.Length -gt 8192) {
+        throw [IO.InvalidDataException]::new('prestart-owner:capture-diagnostic')
+    }
+    [object]$before = $null
+    [object]$after = $null
+    if ($null -ne $Record.InputDigests) {
+        $before = $Record.InputDigests.Before
+        $after = $Record.InputDigests.After
+        if ($before -isnot [string] -or $before -cne $pins.observer.Sha256 -or
+            $after -isnot [string] -or $after -cne $pins.observer.Sha256) {
+            throw [IO.InvalidDataException]::new('prestart-owner:capture-diagnostic-inputs')
+        }
+    }
+    [string]$json = ConvertTo-Json -InputObject ([ordered]@{
+        run = $RunId.ToString('D'); role = $ownerRole
+        pid = $capture.ProcessId; exit = $capture.ExitCode
+        expected = $pins.observer.Sha256; before = $before; after = $after
+        stdout = [Convert]::ToBase64String($capture.Stdout)
+        stderr = [Convert]::ToBase64String($capture.Stderr)
+    }) -Depth 2 -Compress
+    [byte[]]$line = [Text.Encoding]::ASCII.GetBytes('nevrotick-prestart-access-capture ' + $json + "`n")
+    if ($line.Length -gt 24000) { throw [IO.InvalidDataException]::new('prestart-owner:capture-diagnostic-size') }
+    [IO.Stream]$destination = [Console]::OpenStandardError()
+    $destination.Write($line, 0, $line.Length)
+    $destination.Flush()
+}
+
 # Protect the checked module bytes through the session. The caller owns the
 # staging namespace, including the parent directories and fixed companion files.
 [IO.FileStream]$childModule = $null
 [IO.FileStream]$sessionModule = $null
 [Exception]$failure = $null
+[object]$collectedAccess = $null
 [Collections.Generic.List[string]]$cleanup = [Collections.Generic.List[string]]::new()
 [string]$stage = 'bindings'
 try {
@@ -91,6 +127,9 @@ try {
         $expectedActorSid -cnotmatch '\AS-1-(?:0|[1-9][0-9]{0,9}|0x[0-9A-Fa-f]{12})(?:-(?:0|[1-9][0-9]{0,9})){1,15}\z' -or
         $workMilliseconds -lt 1 -or $workMilliseconds -gt 120000) {
         throw [ArgumentException]::new('prestart-owner:profile')
+    }
+    if ($ownerRole -cne 'deployment' -and $privateCaptureDiagnostics -and ![Console]::IsErrorRedirected) {
+        throw [ArgumentException]::new('prestart-owner:capture-diagnostic-destination')
     }
     [hashtable]$limits = @{
         child_module = 2097152; session_module = 2097152; deployment_helper = 2097152; observer = 16777216
@@ -156,7 +195,10 @@ try {
             HelperPath = [IO.Path]::Combine($PSScriptRoot, 'prestart_deployment_helpers.dll')
             HelperBytes = $pins.deployment_helper.Bytes; HelperSha256 = $pins.deployment_helper.Sha256
         }
+        if ($privateCaptureDiagnostics) { $access.CollectedCapture = [ref]$collectedAccess }
         prestart_deployment_session\Invoke-PrestartAccessSession @access
+        # A successfully written capture belongs to the normal private pipe.
+        $collectedAccess = $null
     }
 } catch {
     $failure = $_.Exception
@@ -232,6 +274,15 @@ if ($null -ne $failure -or $cleanup.Count -ne 0) {
     [string]$release = if ($cleanup.Count -eq 0) { 'none' } else { [string]::Join(',', $cleanup) }
     [Console]::Error.WriteLine('nevrotick-deployment-owner failure=' + $reason + ' cause=' + $cause + ' cleanup=' +
         $release + $transport)
+    if ($null -ne $collectedAccess) {
+        try {
+            [Console]::Error.Flush()
+            Write-PrestartAccessCaptureDiagnostic $collectedAccess
+        } catch {
+            # The independently emitted first failure remains the outcome.
+            try { [Console]::Error.WriteLine('nevrotick-prestart-access-capture-unavailable') } catch {}
+        }
+    }
     exit 1
 }
 exit 0

@@ -11,6 +11,9 @@ namespace NevroTick
     // separate diagnostic record and returns the observed native exit decision.
     internal static class PrestartDeploymentWatchdog
     {
+        private const string ObserveAccessSettlement = "--observe-access-settlement";
+        private const int FailedAfterWriterSettlement = 3;
+
         private static int Main(string[] args)
         {
             long guardianBytes;
@@ -21,7 +24,9 @@ namespace NevroTick
             int guardianRetirement;
             int work;
             int retirement;
-            if (args.Length != 13 ||
+            bool observeAccessSettlement = args.Length == 14 &&
+                String.Equals(args[13], ObserveAccessSettlement, StringComparison.Ordinal);
+            if ((args.Length != 13 && !observeAccessSettlement) ||
                 !PositiveLength(args[1], out guardianBytes) ||
                 !PositiveLength(args[3], out powerShellBytes) ||
                 !PositiveLength(args[6], out ownerBytes) ||
@@ -50,12 +55,28 @@ namespace NevroTick
                 "active_at_recovery=" + Number(report.ActiveAtRecovery),
                 "members_at_recovery=" + members,
                 "total_processes=" + Number(report.TotalProcesses),
+                "verified_process_limit=" + Number(report.VerifiedProcessLimit),
+                "total_at_recovery=" + Number(report.TotalAtRecovery),
+                "limit_terminations_at_recovery=" + Number(report.LimitTerminationsAtRecovery),
+                "limit_terminations_at_empty=" + Number(report.LimitTerminationsAtEmpty),
+                "recovery_start_tick=" + Number(report.RecoveryStartTick),
+                "termination_accepted_tick=" + Number(report.TerminationAcceptedTick),
+                "job_empty_tick=" + Number(report.JobEmptyTick),
+                "tick_frequency=" + report.TickFrequency.ToString(CultureInfo.InvariantCulture),
                 "failure=" + Describe(report.Failure),
                 "recovery_failure=" + Describe(report.RecoveryFailure)
             }));
 
-            return report.ExitCode == 0 && report.JobEmpty && !report.Recovered &&
-                report.Failure == null && report.RecoveryFailure == null ? 0 : 1;
+            if (report.ExitCode == 0 && report.JobEmpty && !report.Recovered &&
+                report.Failure == null && report.RecoveryFailure == null)
+                return 0;
+            // Preserve refusal while distinguishing a settled job for a private
+            // diagnostic reader. Only a native observer of the full original exit
+            // may interpret this value. Recovery and its diagnostics stay separate.
+            bool failedAfterWriterSettlement = report.Pid.HasValue && report.ExitCode.HasValue &&
+                report.ExitCode.Value != 0 && report.JobEmpty && report.RecoveryStartTick == null &&
+                report.RecoveryFailure == null;
+            return observeAccessSettlement && failedAfterWriterSettlement ? FailedAfterWriterSettlement : 1;
         }
 
         private static bool PositiveLength(string value, out long parsed)

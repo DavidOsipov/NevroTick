@@ -8,7 +8,7 @@ output crosses the byte parser. There is intentionally no file/CLI loader for
 trusted inputs.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import re
 from collections.abc import Callable
@@ -101,14 +101,14 @@ class Capture:
     """
 
     run_id: UUID
-    actor: object
+    actor: object = field(repr=False)
     pid: int
     input_sha256_before: str
     input_sha256_after: str
     exit_code: int
     reaped: bool
-    stdout: bytes
-    stderr: bytes
+    stdout: bytes = field(repr=False)
+    stderr: bytes = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,7 +152,7 @@ def is_dword(value: object) -> bool:
     return type(value) is int and 0 <= value <= 0xFFFFFFFF
 
 
-def _require_deployment_run(run: DeploymentRun) -> None:
+def require_deployment_run(run: DeploymentRun) -> None:
     """Reject incomplete or out-of-profile deployment inputs before capture."""
     require(type(run.id) is UUID and run.id.int != 0, "invalid supervisor run")
     require(type(run.package_full_name) is str and PACKAGE_NAME.fullmatch(run.package_full_name) is not None,
@@ -167,7 +167,7 @@ def _require_deployment_run(run: DeploymentRun) -> None:
 
 def require_run(run: Run) -> None:
     """Require independent deployment and access contexts for the full run."""
-    _require_deployment_run(run)
+    require_deployment_run(run)
     require(isinstance(run, Run) and run.provisioning_actor is not None and run.standard_actor is not None
             and run.provisioning_actor is not run.standard_actor
             and run.deployment_actor is not run.provisioning_actor
@@ -186,17 +186,24 @@ def read_capture(capture: Capture, run: DeploymentRun, actor: object, expected_i
             and type(capture.stderr) is bytes and capture.stderr == b"", "unexpected child streams")
     try:
         return capture.stdout.decode("utf-8").replace("\r\n", "\n")
-    except UnicodeError as error:
-        raise ReceiptRefused("malformed child output") from error
+    except UnicodeError:
+        pass
+    raise ReceiptRefused("malformed child output")
+
+
+def _identity_report(output: str) -> object:
+    """Decode the private identity output without retaining it in a parser exception."""
+    try:
+        return json.loads(output, object_pairs_hook=unique_object)
+    except (ValueError, RecursionError):
+        pass
+    raise ReceiptRefused("malformed installed identity report")
 
 
 def read_installed_identity(capture: Capture, run: DeploymentRun) -> None:
     """Compare the companion's closed record with independent signed bytes."""
-    output = read_capture(capture, run, run.deployment_actor, run.companion_sha256)
-    try:
-        report = json.loads(output, object_pairs_hook=unique_object)
-    except (ValueError, RecursionError) as error:
-        raise ReceiptRefused("malformed installed identity report") from error
+    output: str = read_capture(capture, run, run.deployment_actor, run.companion_sha256)
+    report: object = _identity_report(output)
     expected = {
         "schema_version": 2,
         "outcome": "observed-installed-images",
@@ -274,7 +281,7 @@ def read_deployment(run: DeploymentRun, collect: Callable[[PrestartProbe], Captu
     native owner. This result establishes the deployment receipt checks.
     """
     expected_types: tuple[tuple[int, int, int], ...] = _opening_service_types(scm_types)
-    _require_deployment_run(run)
+    require_deployment_run(run)
     _, service_types = _read_deployment(run, collect, expected_types)
     return DeploymentObservation(run.id, run.signed_package_sha256, service_types)
 

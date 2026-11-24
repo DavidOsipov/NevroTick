@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Drive one admitted S0.6 Windows deployment window over private process pipes."""
 
+from _thread import LockType
 import base64
 import binascii
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from hashlib import sha256
 import json
 import math
@@ -13,13 +15,15 @@ import re
 import select
 import stat
 from subprocess import PIPE, Popen, TimeoutExpired
+from threading import Lock
 import time
-from typing import BinaryIO, Generic, Protocol
+from typing import BinaryIO, Generic, Protocol, TypeVar, runtime_checkable
+from uuid import UUID
 
 from check_package import Refused, read_regular, unique_object
 from prestart_receipts import (
     MAX_OUTPUT, SHA256, Capture, DeploymentObservation, DeploymentRun, Member, PrestartObservation,
-    PrestartProbe, ReceiptRefused, Run, ScmTypeSample, is_dword, require, require_run,
+    PrestartProbe, ReceiptRefused, Run, ScmTypeSample, is_dword, require, require_deployment_run, require_run,
 )
 from prestart_supervisor import OBSERVER_ARGUMENTS, RunT, supervise_deployment, supervise_prestart
 
@@ -27,6 +31,13 @@ from prestart_supervisor import OBSERVER_ARGUMENTS, RunT, supervise_deployment, 
 MAX_FRAME = 24000
 CODE = re.compile(r"[a-z0-9-]{1,80}")
 _CAPTURE_FIELDS: tuple[str, ...] = ("pid", "before", "after", "exit", "stdout", "stderr")
+_ACCESS_DIAGNOSTIC_PREFIX: bytes = b"nevrotick-prestart-access-capture "
+_ACCESS_DIAGNOSTIC_UNAVAILABLE: bytes = b"nevrotick-prestart-access-capture-unavailable"
+_ACCESS_DIAGNOSTIC_FILE_LIMIT: int = 32 * 1024
+_ACCESS_OWNER_FAILURE: re.Pattern[bytes] = re.compile(
+    rb"nevrotick-deployment-owner failure=[a-z/-]+ cause=[a-z0-9:-]+ cleanup=[a-z-]+(?:,[a-z-]+)*"
+    rb"(?: transport=reply-transport)?\r?"
+)
 
 
 class OwnedDeploymentProcess(Protocol):
@@ -50,11 +61,186 @@ class OwnedDeploymentProcess(Protocol):
         ...
 
 
+@runtime_checkable
+class AccessWriterSettlement(Protocol):
+    """Original access owner with separate observation of refusal cleanup."""
+
+    def wait_access_settled(self, deadline: float) -> None:
+        """Require actual access process and writer retirement after success or refusal."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class CapturedProbe:
+    """Original bounded capture associated with its fixed probe and pipe owner."""
+
+    probe: PrestartProbe
+    owner: OwnedDeploymentProcess = field(repr=False)
+    capture: Capture = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class PrivateAccessDiagnostic:
+    """Historical child bytes from the original access owner's private stderr."""
+
+    run_id: UUID
+    probe: PrestartProbe
+    pid: int
+    exit_code: int
+    confirmed_input_sha256: str | None
+    stdout: bytes = field(repr=False)
+    stderr: bytes = field(repr=False)
+
+
+def read_private_access_diagnostic(
+    run: DeploymentRun, probe: PrestartProbe, diagnostics: BinaryIO,
+) -> PrivateAccessDiagnostic | None:
+    """Read the original retained stderr file after the role's writers retire.
+
+    The launcher supplies its original private regular file and independently
+    confirms writer settlement. Reading preserves the caller's offset and rejects
+    incomplete, oversized or crossed records. This result is diagnostic only.
+    """
+    require_deployment_run(run)
+    require(probe is PrestartProbe.ACCESS or probe is PrestartProbe.STANDARD,
+            "invalid private access diagnostic probe")
+    try:
+        fd: int = diagnostics.fileno()
+        before: os.stat_result = os.fstat(fd)
+    except (OSError, ValueError):
+        raise ReceiptRefused("private access diagnostic descriptor refused") from None
+    require(stat.S_ISREG(before.st_mode) and 0 <= before.st_size <= _ACCESS_DIAGNOSTIC_FILE_LIMIT,
+            "invalid private access diagnostic file")
+    try:
+        raw: bytes = os.pread(fd, before.st_size + 1, 0)
+        after: os.stat_result = os.fstat(fd)
+    except OSError:
+        raise ReceiptRefused("private access diagnostic read refused") from None
+    require(len(raw) == before.st_size == after.st_size
+            and before.st_mtime_ns == after.st_mtime_ns and before.st_ctime_ns == after.st_ctime_ns,
+            "private access diagnostic file changed during read")
+    return _decode_private_access_diagnostic(run, probe, raw)
+
+
+def _decode_private_access_diagnostic(
+    run: DeploymentRun, probe: PrestartProbe, raw: bytes,
+) -> PrivateAccessDiagnostic | None:
+    """Decode the exact byte snapshot from the independently settled writer."""
+    require(probe is PrestartProbe.ACCESS or probe is PrestartProbe.STANDARD,
+            "invalid private access diagnostic probe")
+    require(len(raw) <= _ACCESS_DIAGNOSTIC_FILE_LIMIT, "invalid private access diagnostic file")
+    require(not raw or raw.endswith(b"\n"), "incomplete private access diagnostic file")
+
+    diagnostic: bytes | None = None
+    unavailable: bool = False
+    previous: bytes = b""
+    for line in raw.split(b"\n"):
+        is_capture: bool = line.startswith(_ACCESS_DIAGNOSTIC_PREFIX)
+        if is_capture or line.rstrip(b"\r") == _ACCESS_DIAGNOSTIC_UNAVAILABLE:
+            require(diagnostic is None and not unavailable, "repeated private access diagnostic")
+            require(_ACCESS_OWNER_FAILURE.fullmatch(previous) is not None,
+                    "private access diagnostic missing owner failure")
+            unavailable = not is_capture
+            if is_capture:
+                require(len(line) < MAX_FRAME, "oversized private access diagnostic record")
+                diagnostic = line[len(_ACCESS_DIAGNOSTIC_PREFIX):]
+        previous = line
+    if diagnostic is None:
+        return None
+
+    row: object = None
+    try:
+        row = json.loads(diagnostic.decode("ascii"), object_pairs_hook=unique_object)
+    except (ValueError, RecursionError):
+        pass
+    require(type(row) is dict and set(row) == {"run", "role", "expected", *_CAPTURE_FIELDS},
+            "invalid private access diagnostic record")
+    role: str = "access" if probe is PrestartProbe.ACCESS else "standard"
+    require(row["run"] == str(run.id) and row["role"] == role and row["expected"] == run.observer_sha256,
+            "foreign private access diagnostic")
+    observed_input: object = row["before"]
+    require(observed_input == row["after"] and (observed_input is None or observed_input == run.observer_sha256),
+            "invalid private access diagnostic inputs")
+    pid: object = row["pid"]
+    exit_code: object = row["exit"]
+    require(type(pid) is int and 0 < pid < (1 << 31), "invalid private access diagnostic PID")
+    require(type(exit_code) is int and -(1 << 31) <= exit_code < (1 << 31),
+            "invalid private access diagnostic exit")
+    confirmed_input: str | None = run.observer_sha256 if observed_input is not None else None
+    return PrivateAccessDiagnostic(run.id, probe, pid, exit_code, confirmed_input,
+                                   _output(row["stdout"]), _output(row["stderr"]))
+
+
+class PrestartCaptures:
+    """Private in-memory observations for one S0.6 attempt, including refusals.
+
+    The lab owner retains this object separately from the session result.
+    Each fixed probe contributes at most one structurally decoded capture.
+    Access through `records` supplies raw evidence for that owner. It conveys
+    no semantic receipt admission, completion or permission to repeat a probe.
+    """
+
+    def __init__(self) -> None:
+        self._lock: LockType = Lock()
+        self._claimed: bool = False
+        self._records: dict[PrestartProbe, CapturedProbe] = {}
+
+    @property
+    def records(self) -> tuple[CapturedProbe, ...]:
+        """Return an immutable snapshot in capture order for the private lab owner."""
+        with self._lock:
+            return tuple(self._records.values())
+
+    def _claim(self) -> None:
+        """Spend this collection on its one attempt before any launch or request."""
+        with self._lock:
+            require(not self._claimed, "pre-start capture collection already used")
+            self._claimed = True
+
+    def _retain(self, probe: PrestartProbe, owner: OwnedDeploymentProcess, capture: Capture) -> None:
+        """Keep the first complete, bounded capture from the admitted pipe."""
+        with self._lock:
+            require(self._claimed and probe not in self._records, "unexpected repeated pre-start capture")
+            self._records[probe] = CapturedProbe(probe, owner, capture)
+
+
+LaunchRunT = TypeVar("LaunchRunT", bound=DeploymentRun, contravariant=True)
+
+
+class PrestartOwnerAttempt(Protocol[LaunchRunT]):
+    """One fixed actor's retained launcher and independent recovery owner.
+
+    The lab caller supplies this one-shot attempt from an independently
+    admitted effective context. It holds the protected inputs, actual process,
+    job and diagnostics, including after an interrupted start with no returned
+    process. Successful start returns the original process with its private
+    pipes, ready for supervision. A failed observation leaves any unresolved
+    original with the external custodian.
+    """
+
+    def start(self, run: LaunchRunT, deadline: float, retirement_deadline: float) -> OwnedDeploymentProcess:
+        """Start only the admitted role for this run under the original absolute cutoffs.
+
+        Include launch and idle time. The provider independently enforces
+        the cutoffs even if this host stops observing startup.
+        """
+        ...
+
+    def request_retirement(self, retirement_deadline: float) -> None:
+        """Signal the original attempt without waiting, even on startup failure or expiry."""
+        ...
+
+    def wait_retired(self, retirement_deadline: float) -> None:
+        """Confirm settlement or raise by the original cutoff, retaining uncertain custody."""
+        ...
+
+
 def launch_deployment_watchdog(
     run: DeploymentRun, executable: Path, executable_pin: Member,
     guardian_path: str, guardian_pin: Member, power_shell_pin: Member,
     owner_path: str, owner_pin: Member,
     guardian_cutoffs: tuple[int, int], watchdog_cutoffs: tuple[int, int], diagnostics: BinaryIO,
+    *, observe_access_settlement: bool = False,
 ) -> Popen[bytes]:
     """Start the admitted native watchdog with fixed arguments and private pipes.
 
@@ -62,7 +248,9 @@ def launch_deployment_watchdog(
     supplies independent pins, including the guardian's transitive inputs.
     It retains the returned process for exit observation and recovery.
     Windows paths and native deadline relationships are checked by the
-    native launch boundary. The diagnostic file supplies no authority.
+    native launch boundary. The settlement option requires a new private
+    diagnostic file. Its consumer must independently observe full native
+    status and diagnostic writer retirement before readback.
     """
     require(executable.is_absolute() and executable.name == "prestart_deployment_watchdog.exe",
             "invalid deployment watchdog path")
@@ -70,7 +258,12 @@ def launch_deployment_watchdog(
             "invalid deployment watchdog extent")
     require(type(executable_pin.sha256) is str and SHA256.fullmatch(executable_pin.sha256) is not None,
             "invalid deployment watchdog digest")
-    require(stat.S_ISREG(os.fstat(diagnostics.fileno()).st_mode), "deployment watchdog requires private diagnostics")
+    facts: os.stat_result = os.fstat(diagnostics.fileno())
+    require(stat.S_ISREG(facts.st_mode), "deployment watchdog requires private diagnostics")
+    require(type(observe_access_settlement) is bool, "invalid watchdog settlement selection")
+    if observe_access_settlement:
+        require(diagnostics.readable() and diagnostics.writable() and facts.st_size == 0 and diagnostics.tell() == 0,
+                "access watchdog needs an empty private diagnostic file at offset zero")
     try:
         image: bytes = read_regular(executable, executable_pin.size, "deployment watchdog")
     except (OSError, Refused) as error:
@@ -82,6 +275,8 @@ def launch_deployment_watchdog(
         str(power_shell_pin.size), power_shell_pin.sha256, owner_path, str(owner_pin.size), owner_pin.sha256,
         str(run.id), *(str(value) for value in guardian_cutoffs), *(str(value) for value in watchdog_cutoffs),
     ]
+    if observe_access_settlement:
+        arguments.append("--observe-access-settlement")
     return Popen(arguments, stdin=PIPE, stdout=PIPE, stderr=diagnostics, bufsize=0)
 
 
@@ -102,6 +297,7 @@ def supervise_deployment_session(
 def supervise_prestart_session(
     run: Run, owner: OwnedDeploymentProcess, provisioning: OwnedDeploymentProcess,
     standard: OwnedDeploymentProcess, deadline: float, retirement_deadline: float,
+    *, captures: PrestartCaptures | None = None,
 ) -> PrestartObservation:
     """Observe the original full-mode window and two fixed same-actor owners.
 
@@ -109,15 +305,103 @@ def supervise_prestart_session(
     effective actors, and an original process/job per route. The two access actor
     identities in the run are those retained process owners. A failed input
     check leaves custody with the caller. After admission, all three processes
-    must confirm retirement before any result can be returned.
+    must confirm retirement before any result can be returned. An optional
+    private collection retains decoded captures independently of that result.
     """
     _require_deadlines(deadline, retirement_deadline)
+    if captures is not None:
+        captures._claim()
+    return supervise_prestart(_admit_prestart_pipe(
+        run, owner, provisioning, standard, deadline, retirement_deadline, captures,
+    ))
+
+
+def launch_prestart_session(
+    run: DeploymentRun, provisioning: PrestartOwnerAttempt[DeploymentRun], standard: PrestartOwnerAttempt[DeploymentRun],
+    deployment: PrestartOwnerAttempt[Run], deadline: float, retirement_deadline: float,
+    *, captures: PrestartCaptures,
+) -> PrestartObservation:
+    """Acquire the original role owners and pass them to the fixed supervisor once.
+
+    The lab owner supplies the signed-artifact run and its one-shot role
+    providers after actor admission and under a continuously held quiescent
+    window. Both cutoffs are absolute host monotonic seconds from before the
+    first launch. No capture command is sent until all owners and their private
+    pipes are admitted. An observed acquisition or admission failure attempts
+    to signal and confirm settlement of every attempted owner under the
+    original retirement cutoff. The external custodian keeps recovery
+    authority across handoff and interruption of this coordinator. The caller
+    owns the capture collection, including when result admission fails.
+    """
+    _require_deadlines(deadline, retirement_deadline)
+    require(type(run) is DeploymentRun, "pre-start launches require the base deployment run")
+    require_deployment_run(run)
+    require(provisioning is not standard and provisioning is not deployment and standard is not deployment,
+            "pre-start roles require distinct launch attempts")
+    captures._claim()
+    attempted: list[PrestartOwnerAttempt[Run]] = []
+    try:
+        _remaining(deadline)
+        attempted.append(provisioning)
+        provisioning_owner: OwnedDeploymentProcess = provisioning.start(run, deadline, retirement_deadline)
+        _remaining(deadline)
+        attempted.append(standard)
+        standard_owner: OwnedDeploymentProcess = standard.start(run, deadline, retirement_deadline)
+        full: Run = Run(
+            run.id, run.package_full_name, run.signed_package_sha256, run.engine, run.broker,
+            run.companion_sha256, run.observer_sha256, run.deployment_actor, provisioning_owner, standard_owner,
+        )
+        require_run(full)
+        _remaining(deadline)
+        attempted.append(deployment)
+        owner: OwnedDeploymentProcess = deployment.start(full, deadline, retirement_deadline)
+        _remaining(deadline)
+        window: _PrestartPipe = _admit_prestart_pipe(
+            full, owner, provisioning_owner, standard_owner, deadline, retirement_deadline, captures,
+        )
+        _remaining(deadline)
+    except BaseException as primary:
+        failure: BaseException | None = _retire_unadmitted_prestart(attempted, retirement_deadline)
+        if failure is None:
+            raise
+        raise BaseExceptionGroup("pre-start launch and retirement failed", [primary, failure]) from None
+    return supervise_prestart(window)
+
+
+def _admit_prestart_pipe(
+    run: Run, owner: OwnedDeploymentProcess, provisioning: OwnedDeploymentProcess,
+    standard: OwnedDeploymentProcess, deadline: float, retirement_deadline: float,
+    captures: PrestartCaptures | None,
+) -> "_PrestartPipe":
+    """Check the original process identities and pipe separation before sending any command."""
     require_run(run)
     require(run.provisioning_actor is provisioning and run.standard_actor is standard,
             "foreign pre-start access owner")
-    window: _PrestartPipe = _PrestartPipe(run, owner, provisioning, standard, deadline, retirement_deadline)
+    require(owner is not provisioning and owner is not standard, "pre-start roles require distinct processes")
+    window: _PrestartPipe = _PrestartPipe(run, owner, provisioning, standard, deadline, retirement_deadline, captures)
     window.require_separate_pipes()
-    return supervise_prestart(window)
+    return window
+
+
+def _retire_unadmitted_prestart(attempted: list[PrestartOwnerAttempt[Run]], deadline: float) -> BaseException | None:
+    """Signal every original before waiting, preserving independent refusal and expiry."""
+    if not attempted:
+        return None
+    errors: list[BaseException] = []
+    requesting: bool
+    attempt: PrestartOwnerAttempt[Run]
+    for requesting in (True, False):
+        for attempt in attempted:
+            try:
+                outcome: None = attempt.request_retirement(deadline) if requesting else attempt.wait_retired(deadline)
+                require(outcome is None, "invalid pre-start launch cleanup result")
+            except BaseException as error:
+                errors.append(error)
+    try:
+        _remaining(deadline)
+    except TimeoutError as error:
+        errors.append(error)
+    return _combined_failure("pre-start launch retirement failed", errors)
 
 
 class GuardedDeploymentProcess:
@@ -149,14 +433,22 @@ class _ProcessPipe(Generic[RunT]):
     """Bounded framing on one retained process's original pipe ends."""
 
     def __init__(self, run: RunT, owner: OwnedDeploymentProcess,
-                 deadline: float, retirement_deadline: float):
+                 deadline: float, retirement_deadline: float, captures: PrestartCaptures | None = None):
         self._run: RunT = run
         self._owner: OwnedDeploymentProcess = owner
         self._stdin: BinaryIO = owner.stdin
         self._stdout: BinaryIO = owner.stdout
         self._deadline: float = deadline
         self._retirement_deadline: float = retirement_deadline
+        self._captures: PrestartCaptures | None = captures
         self._frame: bytearray = bytearray()
+
+    def _capture_record(self, row: dict[str, object], probe: PrestartProbe, actor: object) -> Capture:
+        """Save the decoded private frame before semantic validation and pipe retirement."""
+        capture: Capture = _captured(row, self._run, actor)
+        if self._captures is not None:
+            self._captures._retain(probe, self._owner, capture)
+        return capture
 
     def _send(self, command: bytes, deadline: float) -> None:
         fd: int = self._stdin.fileno()
@@ -168,6 +460,7 @@ class _ProcessPipe(Generic[RunT]):
         require(os.write(fd, command) == len(command), "short deployment request write")
 
     def _receive(self, deadline: float) -> dict[str, object]:
+        """Read a bounded private frame for the original run with redacted decoding failures."""
         fd: int = self._stdout.fileno()
         self._fill(fd, 4, deadline)
         length: int = int.from_bytes(self._frame[:4], "little")
@@ -179,10 +472,12 @@ class _ProcessPipe(Generic[RunT]):
         self._frame.clear()
         try:
             row: object = json.loads(payload.decode("utf-8"), object_pairs_hook=unique_object)
-        except (ValueError, Refused, RecursionError) as error:
-            raise ReceiptRefused("invalid deployment frame JSON") from error
-        require(type(row) is dict and row.get("run") == str(self._run.id), "foreign deployment frame")
-        return row
+        except (ValueError, Refused, RecursionError):
+            pass
+        else:
+            require(type(row) is dict and row.get("run") == str(self._run.id), "foreign deployment frame")
+            return row
+        raise ReceiptRefused("invalid deployment frame JSON")
 
     def _fill(self, fd: int, length: int, deadline: float) -> None:
         # Retain at most one bounded frame if observation expires mid-read.
@@ -199,8 +494,8 @@ class _ProcessPipe(Generic[RunT]):
 
 class _DeploymentPipe(_ProcessPipe[RunT]):
     def __init__(self, run: RunT, owner: OwnedDeploymentProcess,
-                 deadline: float, retirement_deadline: float):
-        super().__init__(run, owner, deadline, retirement_deadline)
+                 deadline: float, retirement_deadline: float, captures: PrestartCaptures | None = None):
+        super().__init__(run, owner, deadline, retirement_deadline, captures)
         self._taken = False
         self._observation_received = False
         self._pending_reply: tuple[str, tuple[str, ...]] | None = None
@@ -224,22 +519,35 @@ class _DeploymentPipe(_ProcessPipe[RunT]):
 
     def capture_identity(self, run: RunT) -> Capture:
         self._require_run(run)
-        return self._capture(b"I", "identity")
+        return self._capture(b"I", "identity", PrestartProbe.IDENTITY)
 
     def capture_deployment_observation(self, run: RunT) -> Capture:
         self._require_run(run)
-        capture: Capture = self._capture(b"O", "observation")
+        capture: Capture = self._capture(b"O", "observation", PrestartProbe.OBSERVATION)
         self._observation_received = True
         return capture
 
     def _require_run(self, run: RunT) -> None:
         require(run is self._run and self._taken, "foreign deployment session run")
 
-    def _capture(self, command: bytes, kind: str) -> Capture:
-        row: dict[str, object] = self._exchange(command, kind, *_CAPTURE_FIELDS)
-        return _captured(row, self._run, self._run.deployment_actor)
+    def _capture(self, command: bytes, kind: str, probe: PrestartProbe) -> Capture:
+        """Retain the decoded capture even if elapsed work time precludes admission."""
+        row: dict[str, object] = self._request_reply(command, kind, *_CAPTURE_FIELDS)
+        try:
+            capture: Capture = self._capture_record(row, probe, self._run.deployment_actor)
+        except ReceiptRefused:
+            _remaining(self._deadline)
+            raise
+        _remaining(self._deadline)
+        return capture
 
     def _exchange(self, command: bytes, kind: str, *fields: str) -> dict[str, object]:
+        row: dict[str, object] = self._request_reply(command, kind, *fields)
+        _remaining(self._deadline)
+        return row
+
+    def _request_reply(self, command: bytes, kind: str, *fields: str) -> dict[str, object]:
+        """Consume one matching frame. A timeout while reading leaves one pending reply."""
         self._send(command, self._deadline)
         try:
             row: dict[str, object] = self._receive(self._deadline)
@@ -249,9 +557,6 @@ class _DeploymentPipe(_ProcessPipe[RunT]):
         if row.get("kind") == "refused":
             raise ReceiptRefused("native deployment refused " + _refusal(row))
         _expect(row, kind, *fields)
-        # The complete reply has been consumed. A late success still expires,
-        # but retirement must not expect that reply again.
-        _remaining(self._deadline)
         return row
 
     def _read_retirement(self) -> None:
@@ -297,8 +602,8 @@ class _AccessPipe(_ProcessPipe[Run]):
     """Consume one pre-admitted same-actor observation and its original process."""
 
     def __init__(self, run: Run, owner: OwnedDeploymentProcess, deadline: float,
-                 retirement_deadline: float, probe: PrestartProbe):
-        super().__init__(run, owner, deadline, retirement_deadline)
+                 retirement_deadline: float, probe: PrestartProbe, captures: PrestartCaptures | None):
+        super().__init__(run, owner, deadline, retirement_deadline, captures)
         self.probe: PrestartProbe = probe
         self.command: bytes = b"A" if probe is PrestartProbe.ACCESS else b"U"
         self._kind: str = "access" if probe is PrestartProbe.ACCESS else "standard"
@@ -321,7 +626,7 @@ class _AccessPipe(_ProcessPipe[Run]):
                 raise ExceptionGroup("native access observation and cleanup failed", [cause, cleanup])
             raise cause
         _expect(row, self._kind, *_CAPTURE_FIELDS)
-        result: Capture = _captured(row, self._run, actor)
+        result: Capture = self._capture_record(row, self.probe, actor)
         require(_read(self._stdout.fileno(), 1, self._deadline) == b"", "trailing native access output")
         self._close_output()
         _remaining(self._deadline)
@@ -348,6 +653,11 @@ class _AccessPipe(_ProcessPipe[Run]):
             self._stdout.close()
 
     def close_pipes(self) -> None:
+        if isinstance(self._owner, AccessWriterSettlement):
+            # Signal first. The WSL relay keeps its original output writer
+            # until the owner drains the bounded remainder to actual EOF.
+            self._close_input()
+            return
         failure: BaseException | None = _retire("native access pipe closure failed", (
             self._close_input, self._close_output,
         ))
@@ -358,31 +668,44 @@ class _AccessPipe(_ProcessPipe[Run]):
         if self._retirement_attempted:
             return
         self._retirement_attempted = True
-        self._wait_retired()
+        if isinstance(self._owner, AccessWriterSettlement):
+            observed: None = self._owner.wait_access_settled(self._retirement_deadline)
+            require(observed is None, "invalid native access writer retirement result")
+            _remaining(self._retirement_deadline)
+        else:
+            self._wait_retired()
 
 
 class _PrestartPipe(_DeploymentPipe[Run]):
     """Keep the original deployment window live across both fixed access roles."""
 
     def __init__(self, run: Run, owner: OwnedDeploymentProcess, provisioning: OwnedDeploymentProcess,
-                 standard: OwnedDeploymentProcess, deadline: float, retirement_deadline: float):
-        super().__init__(run, owner, deadline, retirement_deadline)
+                 standard: OwnedDeploymentProcess, deadline: float, retirement_deadline: float,
+                 captures: PrestartCaptures | None):
+        super().__init__(run, owner, deadline, retirement_deadline, captures)
         self._access: tuple[_AccessPipe, _AccessPipe] = (
-            _AccessPipe(run, provisioning, deadline, retirement_deadline, PrestartProbe.ACCESS),
-            _AccessPipe(run, standard, deadline, retirement_deadline, PrestartProbe.STANDARD),
+            _AccessPipe(run, provisioning, deadline, retirement_deadline, PrestartProbe.ACCESS, captures),
+            _AccessPipe(run, standard, deadline, retirement_deadline, PrestartProbe.STANDARD, captures),
         )
         self._next_access: int = 0
         self._access_ready: bool = False
 
     def require_separate_pipes(self) -> None:
         """Check the six retained pipe ends before the supervisor consumes a run."""
+        from fcntl import F_GETFL, fcntl
+
         pipes: set[tuple[int, int]] = set()
+        stream: BinaryIO
+        direction: int
         for process in (self, *self._access):
-            for stream in (process._stdin, process._stdout):
-                facts: os.stat_result = os.fstat(stream.fileno())
+            for stream, direction in ((process._stdin, os.O_WRONLY), (process._stdout, os.O_RDONLY)):
+                fd: int = stream.fileno()
+                facts: os.stat_result = os.fstat(fd)
                 identity: tuple[int, int] = (facts.st_dev, facts.st_ino)
                 require(stat.S_ISFIFO(facts.st_mode) and identity not in pipes,
                         "pre-start owners require separate private pipes")
+                access_mode: int = fcntl(fd, F_GETFL) & os.O_ACCMODE
+                require(access_mode == direction, "pre-start owner pipe has wrong direction")
                 pipes.add(identity)
 
     def current_run(self) -> Run:
@@ -466,14 +789,17 @@ def _sample_pair(value: object) -> tuple[int, int]:
 
 
 def _output(value: object) -> bytes:
+    """Decode a bounded canonical stream without exposing its bytes in errors."""
     require(type(value) is str and len(value) <= 4 * ((MAX_OUTPUT + 2) // 3), "invalid native child output")
     try:
         result: bytes = base64.b64decode(value, validate=True)
-    except (binascii.Error, ValueError) as error:
-        raise ReceiptRefused("invalid native child output") from error
-    require(len(result) <= MAX_OUTPUT and base64.b64encode(result).decode("ascii") == value,
-            "noncanonical native child output")
-    return result
+    except (binascii.Error, ValueError):
+        pass
+    else:
+        require(len(result) <= MAX_OUTPUT and base64.b64encode(result).decode("ascii") == value,
+                "noncanonical native child output")
+        return result
+    raise ReceiptRefused("invalid native child output")
 
 
 def _code(value: object) -> str:

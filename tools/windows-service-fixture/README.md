@@ -218,16 +218,23 @@ watchdog from each independently admitted primary-token context. The
 native role entry checks the expected SID before the observer starts.
 The standard-user path also requires the standard token profile.
 
-Form the full `Run` after acquiring the original role owners. Render
-the deployment entry with `full_prestart=True`, then use
-[`supervise_prestart_session`](msix/prestart_deployment_session.py) with
-three independently admitted process owners and distinct private pipes.
-Use the original provisioning and standard-user owners as their actor
-references in `Run`. The deployment actor has its own separate reference.
-The enclosing owner retains the original processes and jobs through
-confirmed retirement. Include launch and idle waiting in the enclosing
-work and retirement budgets. The native clocks start at their respective
-process entries.
+Use [`launch_prestart_session`](msix/prestart_deployment_session.py) with
+the independently admitted deployment run, three fixed role launch attempts
+and a fresh private `PrestartCaptures` instance. The coordinator starts the
+two access owners and puts their original process references in the full
+`Run` for the deployment launcher with `full_prestart=True`. It checks all six pipe
+ends and the work cutoff before handing off to the existing receipt
+supervisor. If acquisition or admission fails, it signals every
+attempted owner before checking settlement with the original retirement
+cutoff.
+
+Each independently admitted launcher retains its actual context, process,
+job and private diagnostics from before activation through confirmed
+retirement. This includes an attempt that raised before returning a
+process. The caller supplies the original absolute deadlines before the
+first launch, and the external custodians enforce them across launch and
+idle waiting. The watchdogs' own relative clocks start at their process
+entries.
 
 The deployment window checks its original SCM objects before each access
 probe. Each role accepts its one fixed command followed by input EOF. The
@@ -238,6 +245,59 @@ settles the original deployment owner. The default paired path retains
 its two captures and final confirmation. The full installed run requires
 the actual eligible role processes, signed artifact and continuous
 quiescence.
+
+The lab owner retains `PrestartCaptures` for the attempt and examines its
+private `records` after success or refusal. Each decoded original frame is
+bound to its probe and original pipe owner. Preserve the exact bounded
+stdout and stderr as local diagnostic evidence, including the access
+target, mask, stage and raw error on a refused probe. The joined result
+still requires receipt validation and retirement. Worker refusal frames,
+undecodable data and replies drained solely for retirement supply no capture.
+
+When rendering an access entry with `private_capture_diagnostics=True`,
+the launcher retains its original distinct private regular stderr file.
+If the child captured both streams and exit but native cleanup or reply
+delivery fails, the opted-in entry can add one bounded
+`nevrotick-prestart-access-capture` line after the redacted failure. Preserve
+the file under the original role and process through readback. After the
+custodian confirms that its writers have settled, call
+[`read_private_access_diagnostic`](msix/prestart_deployment_session.py) with
+the original retained file, admitted run and fixed probe. It checks the run,
+role, observer pin and bounded streams without reopening a path. Input
+digests can be absent if confirmation refused. A complete diagnostic
+records historical bytes even after a failed native exit. Receipt admission
+and retirement still follow the original process and protocol.
+
+A launcher that retains the full native watchdog exit status can select
+`observe_access_settlement=True` with a fresh private read/write file.
+The watchdog reports exit `3` only for an original nonzero guardian exit
+followed by observed empty outer-job accounting, with no outer recovery
+attempt or recorded outer cleanup failure. This settled refusal permits
+private diagnostic readback after independent writer settlement. The
+ordinary receipt supervisor still requires success. A WSL `Popen`
+return code can lose the high bits of a Windows status and is insufficient
+to establish the native exit `3`.
+
+[`PrestartAccessAttempt`](msix/prestart_access_process.py) implements the
+existing pre-start launch interface for one independently admitted access
+actor. Build [`prestart_access_parent.exe`](msix/prestart_access_parent.cs)
+with the same shared x64 sources as the deployment watchdog and select
+`NevroTick.PrestartAccessParent` as its entry. The native parent runs the
+pinned watchdog in the same primary-token context and passes through the
+original protocol pipes. The watchdog writes diagnostics to the original
+staged `prestart-access-diagnostics.log`. Reserve the parent's original
+stderr for its fixed native exit record. The host owner holds the empty
+diagnostic file from before launch and admits its staging directory and
+transitive inputs independently.
+
+The adapter requires the original parent and its status stream to settle.
+It validates the exact full exit and matching diagnostic bytes. A settled
+exit `3` preserves refusal and permits `private_diagnostic()` after
+retirement. Only exit `0` can complete a successful access capture.
+Rollback closes input first and drains a bounded remainder of the original
+output before accepting settlement. The Sandbox exercised Windows process
+pipes. Actual WSL relay settlement, original launch recovery for the
+installed actor contexts, and installed pre-start admission remain open.
 
 If the private pipe fails before retirement can be acknowledged, the fixed
 owner exits unsuccessfully and reports the first operation refusal, transport

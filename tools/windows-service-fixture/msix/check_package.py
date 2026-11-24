@@ -188,7 +188,13 @@ def parse_xml(data: bytes, label: str) -> ET.Element:
 def exact_children(node: ET.Element, tags: set[str], label: str) -> None:
     require(len(node) == len(tags) and {child.tag for child in node} == tags,
             f"{label} children differ from the fixture contract")
-    require(not (node.text or "").strip() and all(not (child.tail or "").strip() for child in node),
+    require_xml_spacing(node, label)
+
+
+def require_xml_spacing(node: ET.Element, label: str) -> None:
+    """Accept XML 1.0 spacing between elements and refuse character data."""
+    spacing: str = " \t\r\n"
+    require(not (node.text or "").strip(spacing) and all(not (child.tail or "").strip(spacing) for child in node),
             f"unexpected text within {label}")
 
 
@@ -266,6 +272,7 @@ def check_manifest(data: bytes) -> None:
     extensions = singleton(app, FOUNDATION + "Extensions")
     require(not extensions.attrib and len(extensions) == len(SERVICES),
             "expected exactly two application-scoped service extensions")
+    require_xml_spacing(extensions, "Extensions")
     seen = set()
     for extension in extensions:
         executable = extension.get("Executable", "")
@@ -284,6 +291,7 @@ def check_manifest(data: bytes) -> None:
     require(not capabilities.attrib and len(capabilities) == 2
             and {capability.get("Name") for capability in capabilities}
             == {"runFullTrust", "packagedServices"}, "fixture capabilities differ")
+    require_xml_spacing(capabilities, "Capabilities")
     for capability in capabilities:
         require(capability.tag == RESCAP + "Capability", "unexpected capability namespace")
         exact_leaf(capability, {"Name": capability.attrib["Name"]}, "Capability")
@@ -412,6 +420,7 @@ def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) 
             and set(block_map.attrib) <= {"HashMethod", "IgnorableNamespaces"},
             "expected a SHA-256 AppxBlockMap")
     require(len(block_map) == len(payload_names), "block-map file count differs")
+    require_xml_spacing(block_map, "BlockMap")
     seen = set()
     for record in block_map:
         name = attribute_path(record.get("Name", ""))
@@ -424,6 +433,7 @@ def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) 
                 and record.get("Size") == str(len(payload_bytes))
                 and record.get("LfhSize") == str(member.header_size),
                 f"block-map size or local header size differs for {name}")
+        require_xml_spacing(record, "block-map File")
         offsets = range(0, len(payload_bytes), BLOCK_BYTES)
         blocks = list(record)
         if blocks and blocks[-1].tag == FILE_HASH:
@@ -439,6 +449,7 @@ def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) 
             require(block.tag == BLOCK_MAP + "Block" and len(block) == 0
                     and {"Hash"} <= set(block.attrib) <= {"Hash", "Size"}
                     and block.get("Hash") == digest, f"block-map hash differs for {name}")
+            require_xml_spacing(block, "block-map Block")
             size = block.get("Size")
             if compressed is None:
                 require(size is None, f"{name} has a Size on a stored block")
@@ -461,13 +472,14 @@ def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) 
 def check_content_types(data: bytes, archive_names: set[str]) -> None:
     types = parse_xml(data, CONTENT_TYPES_FILE)
     require(types.tag == CONTENT_TYPES + "Types" and not types.attrib, "content-types root differs")
+    require_xml_spacing(types, "content-types document")
     defaults = {}
     overrides = {}
     part_names: set[str] = archive_names - {CONTENT_TYPES_FILE}
     extensions: set[str] = {name.rsplit(".", 1)[1] for name in part_names}
     for declaration in types:
-        require(len(declaration) == 0 and not (declaration.text or "").strip(),
-                "content-type declaration contains unexpected content")
+        require(len(declaration) == 0, "content-type declaration contains unexpected content")
+        require_xml_spacing(declaration, "content-type declaration")
         value = declaration.get("ContentType", "")
         require(value and "/" in value and value.isascii() and not any(c.isspace() for c in value),
                 "content-type declaration has an invalid media type")

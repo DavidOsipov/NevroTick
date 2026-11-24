@@ -139,6 +139,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
                     f"[string]$ownerRole = '{role}'",
                     f"[string]$expectedActorSid = '{self.sid}'",
                     "[int]$workMilliseconds = 8000",
+                    "[bool]$privateCaptureDiagnostics = $false",
                     "[hashtable]$pins = @{",
                 ]
                 for key, member in pins.items():
@@ -150,6 +151,21 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
                     dict(reversed(tuple(pins.items()))), 8000,
                 ), (entry, pin))
         self.assertEqual(self.template.read_bytes(), self.original)
+
+    def test_private_capture_diagnostics_must_be_selected_in_the_pinned_access_entry(self) -> None:
+        entry: bytes
+        pin: Member
+        entry, pin = render_prestart_access_owner(
+            self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
+            private_capture_diagnostics=True,
+        )
+        self.assertEqual(entry.count(b"[bool]$privateCaptureDiagnostics = $true\n"), 1)
+        self.assertEqual(pin, Member(len(entry), sha256(entry).hexdigest()))
+        with self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access capture diagnostics selection"):
+            render_prestart_access_owner(
+                self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
+                private_capture_diagnostics=1,
+            )
 
     def test_access_role_rejects_other_probes_as_well_as_role_aliases(self) -> None:
         for probe in (PrestartProbe.IDENTITY, PrestartProbe.OBSERVATION, PrestartProbe.ACCESS.value,

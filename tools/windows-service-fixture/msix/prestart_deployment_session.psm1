@@ -566,7 +566,8 @@ function Invoke-PrestartAccessSession {
         [Parameter(Mandatory)][ValidateRange(1, 2097152)][int]$HelperBytes,
         [Parameter(Mandatory)][string]$HelperSha256,
         [IO.Stream]$InputStream,
-        [IO.Stream]$OutputStream
+        [IO.Stream]$OutputStream,
+        [ref]$CollectedCapture
     )
 
     [hashtable]$session = @{
@@ -578,6 +579,7 @@ function Invoke-PrestartAccessSession {
 
         [object]$actor = $null
         [Exception]$failure = $null
+        [object]$capture = $null
         try {
             Assert-PrestartDeploymentTime $Clock $TimeoutMilliseconds
             [hashtable]$helper = @{
@@ -589,7 +591,8 @@ function Invoke-PrestartAccessSession {
                 ImagePath = $ObserverPath; ExpectedBytes = $ObserverBytes; ExpectedSha256 = $ObserverSha256
                 Actor = $actor; Clock = $Clock; TimeoutMilliseconds = $TimeoutMilliseconds
             }
-            prestart_child\Invoke-PrestartObserver @ObserverInputs @pinnedImage
+            if ($null -ne $CollectedCapture) { $pinnedImage.CollectedCapture = $CollectedCapture }
+            $capture = prestart_child\Invoke-PrestartObserver @ObserverInputs @pinnedImage
         } catch {
             $failure = $_.Exception
             throw
@@ -604,6 +607,7 @@ function Invoke-PrestartAccessSession {
                 }
             }
         }
+        return $capture
     }
 }
 

@@ -42,6 +42,14 @@ namespace NevroTick
             public uint? ActiveAtRecovery { get; private set; }
             public uint[] MemberPidsAtRecovery { get; private set; }
             public uint? TotalProcesses { get; private set; }
+            public uint? VerifiedProcessLimit { get; internal set; }
+            public uint? TotalAtRecovery { get; internal set; }
+            public uint? LimitTerminationsAtRecovery { get; internal set; }
+            public uint? LimitTerminationsAtEmpty { get; internal set; }
+            public long? RecoveryStartTick { get; internal set; }
+            public long? TerminationAcceptedTick { get; internal set; }
+            public long? JobEmptyTick { get; internal set; }
+            public long TickFrequency { get { return Stopwatch.Frequency; } }
             public Exception Failure { get; private set; }
             public Exception RecoveryFailure { get; private set; }
 
@@ -176,8 +184,13 @@ namespace NevroTick
             private int? pid;
             private int? exitCode;
             private uint? totalProcesses;
-            private uint? activeAtRecovery;
+            private uint? verifiedProcessLimit;
+            private JobAccounting? recoveryAccounting;
+            private uint? limitTerminationsAtEmpty;
             private uint[] memberPidsAtRecovery;
+            private long? recoveryStartTick;
+            private long? terminationAcceptedTick;
+            private long? jobEmptyTick;
 
             internal DeploymentJob(Stopwatch clock, int workMilliseconds, int retirementMilliseconds,
                 DeploymentGuardianArguments guardian)
@@ -246,8 +259,19 @@ namespace NevroTick
                     recoveryFailure = new AggregateException("prestart-deployment-job:retirement", recoveryFailures);
                 bool recovered = terminationRequested && exitCode.HasValue && totalProcesses.HasValue &&
                     recoveryFailure == null;
-                return new DeploymentJobReport(pid, exitCode, totalProcesses, recovered, activeAtRecovery,
-                    memberPidsAtRecovery, failure, recoveryFailure);
+                return new DeploymentJobReport(pid, exitCode, totalProcesses, recovered,
+                    recoveryAccounting.HasValue ? (uint?)recoveryAccounting.Value.ActiveProcesses : null,
+                    memberPidsAtRecovery, failure, recoveryFailure)
+                {
+                    VerifiedProcessLimit = verifiedProcessLimit,
+                    TotalAtRecovery = recoveryAccounting.HasValue ? (uint?)recoveryAccounting.Value.TotalProcesses : null,
+                    LimitTerminationsAtRecovery = recoveryAccounting.HasValue ?
+                        (uint?)recoveryAccounting.Value.TotalTerminatedProcesses : null,
+                    LimitTerminationsAtEmpty = limitTerminationsAtEmpty,
+                    RecoveryStartTick = recoveryStartTick,
+                    TerminationAcceptedTick = terminationAcceptedTick,
+                    JobEmptyTick = jobEmptyTick
+                };
             }
 
             private void Start(string entryPath, long entryBytes, string entrySha256,
@@ -286,13 +310,23 @@ namespace NevroTick
                 job = CreateJobObjectW(IntPtr.Zero, null);
                 if (job.IsInvalid)
                     throw DeploymentNativeError("create-job");
-                JobExtendedLimits limits = new JobExtendedLimits();
-                limits.Basic.LimitFlags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
-                limits.Basic.ActiveProcessLimit = guardian == null ?
+                const uint requiredFlags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
+                uint requiredProcessLimit = guardian == null ?
                     DeploymentActiveProcessLimit : DeploymentGuardianActiveProcessLimit;
+                JobExtendedLimits limits = new JobExtendedLimits();
+                limits.Basic.LimitFlags = requiredFlags;
+                limits.Basic.ActiveProcessLimit = requiredProcessLimit;
                 if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref limits,
                     (uint)Marshal.SizeOf(typeof(JobExtendedLimits))))
                     throw DeploymentNativeError("configure-job");
+                JobExtendedLimits observedLimits;
+                if (!QueryJobLimits(job, JobObjectExtendedLimitInformation, out observedLimits,
+                    (uint)Marshal.SizeOf(typeof(JobExtendedLimits)), IntPtr.Zero))
+                    throw DeploymentNativeError("query-job-limits");
+                if (observedLimits.Basic.LimitFlags != requiredFlags ||
+                    observedLimits.Basic.ActiveProcessLimit != requiredProcessLimit)
+                    throw new InvalidDataException("prestart-deployment-job:job-limits");
+                verifiedProcessLimit = observedLimits.Basic.ActiveProcessLimit;
 
                 string windowsDirectory = Path.GetDirectoryName(systemDirectory);
                 string environment = "PSModuleAnalysisCachePath=NUL\0PSModulePath=" + powerShellDirectory +
@@ -439,7 +473,8 @@ namespace NevroTick
 
             private void Recover()
             {
-                TryRecover(() => activeAtRecovery = ReadAccounting().ActiveProcesses);
+                recoveryStartTick = clock.ElapsedTicks;
+                TryRecover(() => recoveryAccounting = ReadAccounting());
                 TryRecover(() => memberPidsAtRecovery = ReadJobMemberPids());
 
                 // An original whose membership was not confirmed could not
@@ -469,6 +504,7 @@ namespace NevroTick
                 {
                     if (!TerminateJobObject(job, ErrorCancelled))
                         throw DeploymentNativeError("terminate-job");
+                    terminationAcceptedTick = clock.ElapsedTicks;
                     terminationRequested = true;
                 });
                 ReleaseHandle(thread, "close-thread");
@@ -556,6 +592,8 @@ namespace NevroTick
                     if (accounting.ActiveProcesses == 0)
                     {
                         totalProcesses = accounting.TotalProcesses;
+                        limitTerminationsAtEmpty = accounting.TotalTerminatedProcesses;
+                        jobEmptyTick = clock.ElapsedTicks;
                         return;
                     }
                     Thread.Sleep((int)Math.Min(5U, RemainingWait(cutoffMilliseconds, "job-deadline")));
@@ -646,6 +684,10 @@ namespace NevroTick
         [DllImport("kernel32.dll", EntryPoint = "QueryInformationJobObject", ExactSpelling = true, SetLastError = true)]
         private static extern bool QueryJobMembers(KernelHandle job, int informationClass, IntPtr buffer,
             int bytes, IntPtr returned);
+
+        [DllImport("kernel32.dll", EntryPoint = "QueryInformationJobObject", ExactSpelling = true, SetLastError = true)]
+        private static extern bool QueryJobLimits(KernelHandle job, int informationClass,
+            out JobExtendedLimits limits, uint bytes, IntPtr returned);
 
         [DllImport("kernel32.dll", EntryPoint = "CloseHandle", ExactSpelling = true, SetLastError = true)]
         private static extern bool CloseDeploymentHandle(IntPtr handle);

@@ -4284,6 +4284,15 @@ and placement measurements. [NIST traceability](https://www.nist.gov/calibration
 [BIPM UTC](https://www.bipm.org/en/time-department/utc)
 [Windows QPC](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps)
 
+The retained laboratory backend and peer bind exclusively to loopback.
+For the wired trial, first bind the admitted interface and capture device
+to a separately scoped acquisition route that reaches that interface.
+The pairing records must connect both original application brackets to
+their corresponding wire events on an admitted chart. Preserve the
+existing loopback limits and its redacted transcript.
+[Laboratory backend](../crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs)
+[Laboratory peer](../tools/crypto-cng-lifecycle/src/bin/nts_ke_peer/protected_udp.rs)
+
 For each held-out leg, compare the modeled Windows local-wall coordinate
 with an independent interval for the UTC event time plus the independently
 observed residual `local_wall(event) - UTC(event)`. This residual is
@@ -4446,6 +4455,93 @@ independent record for those inputs.
 | `comparison-inputs.sha256` | `be42ce7bf8dc18d1da51768ab4cba9d8bac8c00b05d0b5955f52f5029c89222b` |
 | `comparison-final.log` | `c7b8a32e55d2910a28e2275b79bc22254c195a257d18cfe520d7f26dc07fc60d` |
 | `directed-controls.log` | `402d8792b80a26b4f1b22861c78d5c3dd4b4c644ee274911aceba13d5fc258c9` |
+
+##### Bind retained application captures to the reference trial — 24 November 2026
+
+S2.1/W11-W01, TQ-09 and CHECK-7/11/25. The bench reader takes an
+independently pinned, owner-admitted terminal timing receipt and the
+retained Engine stdout bytes. It checks the stdout hash and length before
+parsing all six ordered rows. Each triplet retains its original signed QPC
+endpoints, unsigned FILETIME values, socket ports, positive signed QPC
+frequency and exact terminated row digests. The receipt digest and exchange
+position distinguish the two exchanges and separate equal-valued runs. T1
+and T4 projections bind their modeled local-wall intervals to the original
+rows for the existing held-out comparison.
+[Application capture reader](../tools/windows-sandbox/timing_reference_trial.py)
+
+On `5845260` plus the reader and test changes, CPython 3.12.3 ran 13
+controls with `python3 -I -B -Werror -m unittest discover -s scripts/tests -p test_timing_reference_trial.py`.
+The controls cover both legal projections, changed or crossed receipts and
+streams, overlapping or malformed brackets, exact signed frequency and
+unsigned FILETIME limits, duplicate decoded receipt fields and input caps.
+Five directed fault copies failed at their selected assertions after dropping
+the receipt pin, stdout pin, run binding, chronology check or signed frequency
+limit. The first fault driver expected a diagnostic substring that the test
+runner does not emit for a missing exception. The corrected driver checked
+the affected assertion and return code. The restored copy passed all 13.
+[Retained controls](../scripts/tests/test_timing_reference_trial.py)
+
+Fresh-context review inspected the actual pinned `ketiming_66b0192f84a5`
+receipt and stdout, all six decoded brackets and four T1/T4 projections at
+10 MHz. The review caught and the final controls distinguish the positive
+signed native frequency range from the unsigned FILETIME range. The
+reader SHA-256 is `8dc42b27e8abcbb9440500016ceeed1e3a8811387738f447467d6dd12dbc203a`
+and the test SHA-256 is `d63f81ddc731ac5e97b9e1ee44b60b68f0ad69d3a4ded99c3bfd392193c679a2`.
+This was host readback of retained evidence. Physical wire pairing,
+calibrated placement and independent residuals across the full exchange
+span remain required before mapping issuance and Core admission.
+[Native run identity](engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026)
+
+##### Check both held-out legs inside one exchange validity window
+
+S2.1/W11-W01, TQ-09 and CHECK-7/11/25. The bench comparison reads
+the original pinned receipt and Engine stream, selects one original
+exchange by the externally paired span's identity, and checks that the
+declared window and span refer to the same QPC chart. The half-open validity
+window must cover all three original application brackets and the
+independently supplied closed possible span. A window may cover both
+exchanges. The pairing identity and both original event directions decide
+which one is compared. Both T1 and T4 must meet their original limits
+before the pair of worst-case discrepancies is returned.
+[Complete exchange comparison](../tools/windows-sandbox/timing_reference_trial.py)
+
+The comparison rejects exact reuse of the timing receipt, complete
+application stream, or any of its six original rows as the wire or residual
+reference. The same owner-admitted independent record may contain both
+events. QPC ticks, wall nanoseconds and the UTC reference remain separate.
+The bench owner still admits the pairing, complete-span evidence, modeled
+wall coordinates, calibration, physical continuity and aggregate uncertainty.
+The tool checks declared containment and the supplied comparisons.
+
+On `5845260` plus the pinned changes, CPython 3.12.3 passed 20 selected
+timing tests. The boundary controls compared `[100, 200)` against the
+original application endpoints and the separate paired span. An independent
+explicit tick-membership oracle checked 81 combinations. Both wide-window
+exchange identities, crossed inputs and refusal of a failing second leg
+were checked. Five directed guard faults failed their intended assertions.
+They admitted end equality, omitted the span check or chart pin, accepted
+application-only reference bytes, or skipped the second leg comparison.
+The restored copy passed all seven focused controls.
+
+Independent read-only reviewers checked the signed QPC interval contract,
+exact receipt and stream hashes and both exchange coordinate sets. Taking
+the retained Windows application bytes as input and expressly synthetic
+reference values, both exchanges passed their minimum bracket windows.
+Bringing either endpoint in by one tick refused each exchange. This verifies
+the comparison on real retained application rows. The physical wired
+reference, calibrated bounds, mapping issuance and serialized Core receiver
+remain open. No native acquisition or new output eligibility was exercised.
+
+| Input or result | SHA-256 |
+| --- | --- |
+| `timing_reference_trial.py` | `f04f5ed7b0ee70d724828cc5e7be944c1e1f1546722699db6afe83a9a3936000` |
+| `test_timing_reference_trial.py` | `f95cd5ad79352d98f8b040dc7639adae5e2048ea35c5b37925296c559f186b69` |
+| `focused.final.log` | `bd19f781e158d28be45ad91d9ee408935ead1290b91ba444f54d79141bb658c8` |
+| `retained-control.log` | `82589efd84bdb2a940838305f09cbd783d015aa39e09bdcd4a491fbd6cedb4e3` |
+| `guard-controls/run.log` | `3727f32f0b76112aa2b3890d7382ec0b5cc0da1221bcb8f17075c3e5782d3466` |
+
+The host logs and their drivers are retained under
+`~/.local/share/nevrotick/timing-complete-exchange.yY0kIKGc/`.
 
 ### 4.27 Address-family admission routing — 5 November 2026
 
@@ -12600,6 +12696,38 @@ trust, format parity and installed role qualification remain open.
 Raw results and frozen artifact checks remain under
 `~/.local/share/nevrotick/s06-zip-footer-20261123.MAWxbiam/`.
 
+###### Refuse character data in element-only unsigned package XML
+
+W11-W10/S0.6 and CHECK-18/26/27. The unsigned reader accepts XML 1.0
+formatting whitespace between expected elements. It refuses other character
+data in the block-map hierarchy, content-type declarations and the manifest
+service extension and capability containers. The existing required manifest
+text values and package-byte, inventory and block checks still apply.
+
+`qa-package-artifacts` and `qa-negative-paths` exercised the real reader CLI.
+Each changed archive used its own expected digest. The earlier reader
+accepted all 12 malformed cases. The current reader gives each the specific
+text refusal, with no success output. The formatting control passes.
+CPython 3.12.3 passed all 134 portable MSIX tests. Independent review
+checked the consumer and the retained package and authored input identities.
+
+The original and current nine-member MakeAppx archives and the ten-member
+event-resource variant passed using their own pinned authored inputs. All
+three include stored and deflated members. For the event-resource check,
+the retained input manifest and DLL were recovered from the replay archive
+and checked against their recorded digests. This was a portable readback of
+existing unsigned packages. Signature, trust, parity with native validation
+and installed-role qualification remain open.
+
+| Input or record under `~/.local/share/nevrotick/s06-msix-element-content.d5vTw9yz/` | SHA-256 |
+| --- | --- |
+| Repository `check_package.py` | `85865bda6d552dbca71df438e20a2fd57a9a91acce905728b9fb379a24b38b76` |
+| Repository `test_check_package.py` | `b6b8410c23ca7e15c70fdd645d4ab76fcd8f2559198e04ef13f5c6814dc73dbf` |
+| `before.log` | `fd372b97fc48bbebb6d53923b00e74e1166ee4dce0dbef01e7d84faad112423c` |
+| `manifest-before.log` | `c887190a84eb4676a86f23cf53502c1ee3de5cf985c6ce4670d745285422dd41` |
+| `portable.final.log` | `cbbb9346feedb50bcff17c74fb15a68499f76ae6625c0ac997c4a9c9ae43e90e` |
+| `retained.log` | `000b5c9c1338c840f9891d43f93f6b09fba48e113ffec50e9cfa90f3b056f298` |
+
 ##### Read SCM service owner and DACL without mutation — 22 November 2026
 
 W11-W05/S0.6 and CHECK-1/2/15/16/27. The native adapter opens the local
@@ -17768,7 +17896,7 @@ values `375a8037920e71c3c9aadc284d90459ddb241d5b603522d2f9b1426e0291d0a5`,
 The offline Windows supervisor stopped before guest staging at its 2,048 MiB
 host memory floor. After owned build scratch was retired, the read-only
 recheck found 1,888 MiB available. Four selectors were selected and zero
-ran. The native outcome remains open on the retained source and test image.
+ran. That attempt produced no native result for its source and test image.
 The setup refusal and memory recheck are under
 `~/.local/share/nevrotick/broker-suspend-20261124.zbDbIThp/`.
 
@@ -17783,6 +17911,35 @@ source. Keep the historical index identity with its build receipts. The
 alternative is a configured rebuild. The follow-up executed no selectors.
 `reuse-preflight-20261124.json` under the same directory hashes to
 `b92113266d240bebe6e52b0d1ed3bee20953c0425f60a2de34474a36b37320e2`.
+
+The subsequent native run reused the 851-input MSVC x64-v3 libtest build
+`c46dcabcf5008813f3bb5f8d14f8503e0f1389c38a85a700d3028d0455db2b8f`.
+The linked image SHA-256 is
+`6eb0504c0b91b470468afa9ca53ddaf628bce3785f3023a216f69e2eb0a52837`.
+Of those inputs, 839 matched the current checkout. The other 12 are the
+fixture README and pre-start MSIX scripts and tests outside the libtest
+build. This result belongs to the retained candidate.
+
+The exact `native_first_read_returns_unavailable_after_suspend` selector
+passed in the admitted offline Windows Sandbox on build 26100. It observed
+one complete unavailable frame for request 42 on the original connection
+and retirement to zero outstanding work on Stop. The exact healthy
+`native_first_read_returns_reply_on_the_original_connection` selector
+also passed. Each invocation ran one test and exited zero with empty
+stderr. Both children were reaped, the image was rechecked and the mapped
+staging shelves were empty after retirement. Host memory was 4,002 MiB at
+preflight and 3,814 MiB before execution, above the 2,048 MiB floor. The
+guest had no default route before or after the run.
+
+| Record under `~/.local/share/nevrotick/owned-sandbox-20261124-07924522-122f-4495-a905-8f43eec26b53/` | SHA-256 |
+| --- | --- |
+| `broker-suspend-exact-preparation/observe.ps1` | `229f7e15f70729f8b308a66cc95efa91196043326877eea722666436b0526e7e` |
+| `broker-suspend-exact-v1/verification.json` | `7f36e00c0fba5f03deaadebb8e68db5611967122790f5eefee38fd6870943045` |
+| `broker-suspend-exact-v1/guest.json` | `eded06593fc59b164d7633af695de6a9022dc4db86ec6576be5f73480dd4f6e9` |
+
+This closes the exact scripted native selector obligation for LG-G1.
+Physical suspension, SCM callback delivery, installed-service behavior
+and affected coverage and mutation gates remain open.
 
 ### Hold both original SCM status objects through pre-start observation
 
@@ -18554,9 +18711,21 @@ owner and leaf launch and the identical outer binary. Both confirmed a
 sharing violation before the fault. The configured outer and inner
 active-process limits are three and two. The blocked control reported
 five active outer job members, including all three tracked processes.
-The remaining two were unclassified. Cutoffs are configured budgets.
-The driver retained no measured cutoff latency. The Windows interpreter
-pin was supplied live and lacks a separate retained hash bookend.
+The separately read member list retained PIDs `42160`, `42420`, `42564`,
+`41648` and `13960`. The guardian, owner and leaf correspond to `42160`,
+`42564` and `13960` respectively. The other two PIDs remain unclassified.
+The final count of seven is lifetime process accounting. The job emptied
+and all three retained handle witnesses saw exit `1223`. Windows can
+temporarily increment active accounting on a failed association due to a
+limit violation. The cause of this observed count remains unresolved.
+[Microsoft job accounting](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information#members)
+
+The driver retained configured limits and deadlines, with effective limit
+readback, limit-triggered termination counts and measured latency absent.
+The bounded follow-up needs samples from both original job handles, retained
+member identity and exit observations, and monotonic timestamps at cutoff
+detection, termination and empty accounting. The Windows interpreter pin
+was supplied live and lacks a separate retained hash bookend.
 
 The checked executable is reopened by path for activation and the guardian
 loads sibling sources by path. This requires caller-owned protected staging
@@ -18584,7 +18753,68 @@ The combined source was integrated over
 | `settled/wrong-guardian.log` | `cca675d95df25c57c50dee0a11eddcfcc2ceda78556b2d119e475a013eb92e08` |
 | `settled/nonzero.log` | `424ed469714efee9a9483cf554d7fbb9cbff8b93b9a95602c12cf36a3a5e8c6b` |
 | `settled/stalled.log` | `e495a4ab6fcae8f3bb1ce3fa50e10e995430bf81e288418497c91c0739b3bdfe` |
+| `settled/harness/stalled.stderr` | `4a426e2a62b14deadbadf37405afe4483cabfa6ce0703d9abb4a249a80d05301` |
 | `settled/crash.log` | `0f7dbc3f051553c04a7211808ae78f2cfcfcc053880ac342f96b40d4ecc5df92` |
+
+##### Read back the original job limits and measure watchdog retirement
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The watchdog and guardian
+read back `JobObjectExtendedLimitInformation` from each original unnamed
+job before launching its child. Each checks both required flags and the
+exact active-process limit. A mismatch refuses before child creation.
+Recovery records the original monotonic tick at recovery entry, successful
+termination API return and the first accepted empty accounting sample.
+The accounting samples retain the lifetime and limit-termination counts.
+The extra fields are private diagnostics. The original exit, job, cutoff
+and cleanup checks still determine the native result.
+[Job owner](../tools/windows-service-fixture/msix/prestart_deployment_job.cs)
+
+On `5845260` plus the pinned source, CPython 3.12.3 passed 129 portable
+MSIX tests. The same admitted offline Windows Sandbox, build 26100,
+compiled the x64 C# sources with warnings as errors. The old run's member
+markers were excluded. This inert cohort started no services and made no
+clock, package or trust changes.
+
+| Native control | Observed result |
+| --- | --- |
+| Healthy | The watchdog and guardian read back limits three and two from their original jobs. The inert owner wrote its one expected completion line. Both jobs reported empty and all three owners exited zero. |
+| Forced readback mismatch | The fault copy still configured the intended limit and compared the readback to a different expectation. The watchdog reported `job-limits`, had no guardian PID, and exited 1 with no output or owner marker. |
+| Blocked owner | The outer limit read back as three. Recovery saw six active members and zero limit-triggered terminations. The watchdog observed guardian exit 1223 and separate retained handles observed owner and leaf exit 1223. Empty accounting arrived 18.125 ms after recovery began, within the original 25-second retirement cutoff. |
+
+One additional blocked run kept the same three source edits and sampled
+names and creation times independently. Each of three live process
+samples matched the six PIDs read from the original job at recovery.
+Three were the expected PowerShell processes and three were `conhost`.
+The final sample ended about 0.59 seconds before the cutoff. The outer
+accounting again reported six active members, eight lifetime members,
+zero limit-triggered terminations and subsequent empty accounting.
+Recovery to observed empty was 20.149 ms. The original host verifier
+stopped because PowerShell serialized the nested census rows as strings.
+The retained guest execution and output custody completed. Two offline
+readbacks verified the output hashes and matched the bounded rows against
+the exact job member list. The original incomplete host receipt stays
+unchanged. The subsequent driver must preserve structured census rows.
+
+Independent review checked the x64 layout and information class,
+the same-handle readback, the deadline and the exact output. The
+follow-up made the readiness marker atomic and withheld staging cleanup
+until the original exit, pipe EOF, held witnesses and job report were
+observed. Both runs retired their private staging. This identifies the
+extra PIDs in the second run. The historical five-PID sample and the
+cause of the console-host accounting remain unresolved. The readback
+establishes the configured limits. Live cap enforcement, broader native
+resource diagnostics and the installed service/package journey remain open.
+[Microsoft job query](https://learn.microsoft.com/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject)
+[Microsoft job accounting](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information)
+
+| Record under `~/.local/share/nevrotick/s06-job-readback.RiFV0iNu/` | SHA-256 |
+| --- | --- |
+| `observed-01/inputs.json` | `4f0850966f0b63c3cb357026de01ba2386058799dfdc10f6c9c4a3cd3d3ae19e` |
+| `observed-01/verification.json` | `def68bbc887abd76f7089267c0df1aa06c1774fb13523335818e41c3d5e8de3e` |
+| `observed-02/inputs.json` | `2f4db781ab3b53898a36bfa2840705135e863465abbadd507a6e3ff3c6db844e` |
+| `observed-02/verification.json` | `a1fa5d30838daa529265ffa48e99b087dad551cb77ef15f4691bd7038038f244` |
+| `census-readback.json` | `fb10b222dd210aad386c7136fccfebc779a25b0bd479229c66e8163e0484941f` |
+| `portable.log` | `9ce89bd80b95da8da7d12699f625c6c3ae8d2d2dbc5224463ddbe4b23571a19f` |
 
 #### Wire the fixed deployment entry to the original native window
 
@@ -18962,8 +19192,12 @@ in its common cutoffs. Each native process starts its own clock at entry.
 | `role-entry.patch` | `494b6eb39a34d6e76b2a8eb05197448d8556880e8a91cfead603dcd507928d6f` |
 | `portable.log` | `c5074d7daf62d0f8b166ab686fb7be0131d1453dfd78a2ad072fb4fd12b412f2` |
 | `native-first.log` | `44a4aa19e43fb0686c6538ccfdd85f0ad15ee1ed44a9615e10fe0b69dc2a95be` |
-| `native-tail.log` | `e42783319a77bb26b4ab7801b5fcfd47bba6db80610329082fe6e3f3af89` |
+| `native-tail.log` | `e42783319a77bb26b4ab7801b5fcfd47bba6db80610329082fe6bfe6e3f3af89` |
 | `native-summary.json` | `ac3d4c307797710e9e14b3f39fca3fc542e2907456209a1bfa6a498744eaaf3c` |
+
+The full tail-log digest was recomputed from the original retained bytes.
+The two cases and the watchdog, helper and inert-child digests agree with
+the companion native summary and cohort.
 
 Staging preflight found one extra blank line at the end of the portable
 session supervisor. Removing it preserved the parsed Python tree,
@@ -18976,6 +19210,398 @@ The fixture's `python3 -I -B -m unittest discover -s tools/windows-service-fixtu
 ran 110 portable tests in 17.005 seconds and exited zero. The live index
 matched the projection after adding the 22 verified pre-start paths. The
 Windows watchdog results above retain their original candidate.
+
+#### Retain the original three pre-start launch attempts
+
+W11-W05/W11-W10, S0.6 and CHECK-2/3/15/16/25/27. The first acquisition
+must retain recovery custody even if a launch raises before returning a
+process. The fixed coordinator accepts three independently admitted role
+providers and the original absolute work and retirement cutoffs. It checks
+the base deployment facts before activation, acquires the original
+provisioning and standard-user owners, and passes their exact references in
+the full `Run` to the deployment provider. It checks the six distinct FIFO
+ends and their access direction, then samples the remaining work time before
+transferring to the existing receipt supervisor.
+[Launch and admission](../tools/windows-service-fixture/msix/prestart_deployment_session.py)
+
+An observed acquisition or admission failure signals every attempted
+owner before waiting on any of them. The original retirement cutoff bounds
+each observation. A failed signal, failed observer or unconfirmed exit
+preserves the first cause and the cleanup outcome. A successful handoff uses
+the fixed supervisor for the original receipt sequence and wire retirement.
+The independently admitted providers retain custody through interruption,
+including an interruption at handoff, and must enforce the original cutoffs
+outside the Python observer.
+
+Service planning, privilege review and fault-recovery QA traced the existing
+native ownership and kept actor admission with the original lab owner.
+The independent test writer used a detached `5845260` worktree. The baseline
+lacks the new entry point. A portable unguarded-launch control passed the
+healthy pipe transcript and failed to retire the owners after the third
+preparation refused. Fresh source review identified eager cleanup-method
+lookup, work expiry during endpoint admission, and reversed descriptor
+directions. The first candidate failed the corresponding three controls.
+The corrected source passes all nine launch tests, including an interruption
+after activation, before process return, and a foreign pipe that sends no
+observation command. The complete portable MSIX suite selected 119 tests in
+CPython 3.12.3 using
+`python3 -I -B -Werror -m unittest discover -s tools/windows-service-fixture/msix`.
+[Launch controls](../tools/windows-service-fixture/msix/test_prestart_deployment_session.py)
+
+The final suite exited zero in 18.183 seconds. Three directed copies also
+discriminated the interrupted attempt, late handoff and reversed descriptor
+guards. The interrupted-attempt control propagated its scripted interrupt
+without the expected combined cleanup outcome. The first driver expected a
+normal unittest footer for that exception. The corrected driver checked the
+exact reached interruption. All nine cases passed again on restored bytes.
+
+| Input relative to `tools/windows-service-fixture/msix/` | SHA-256 |
+| --- | --- |
+| `prestart_deployment_session.py` | `134567231c0eb8f0a506a90beddc3fca9f0119895f40c73e37a321ead03ea679` |
+| `prestart_receipts.py` | `3c48741656d7a6665e2d7de0b55f061af935bd379d7a7a3dec7a0ceed09cfad4` |
+| `test_prestart_deployment_session.py` | `18b223d9f973321cae5d66c5d3b04ce35096899c53af5092d370c798ac1f1100` |
+
+The installed route still needs the signed lab package, actual role
+providers with independently observed effective contexts, original process
+and job enforcement, and continuous quiescence. The retained native
+watchdog and process-pipe results cover their original inert inputs. The
+following checkpoint binds the original received bytes to the capture owner.
+
+#### Retain private pre-start captures through receipt refusal
+
+S0.6, W11-W05/W11-W10 and CHECK-15/16/17/25/27. The fixed access observer
+reports the role, requested mask, operation and raw Win32 error in the
+original child output. The existing reader correctly refuses a failed exit
+before trusting its receipt, but the caller originally lost that diagnostic.
+The portable host owner demonstrated the loss over the actual private pipe
+with a scripted exit-101 capture and Win32 error 5.
+[Access readback requirements](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+
+The full launch route requires a fresh private `PrestartCaptures` instance
+from its lab owner. The sole pipe reader retains each complete, structurally
+decoded capture under its original probe and owner before receipt or EOF
+checks. Each fixed probe can contribute once. The four probes carry at most
+64 KiB of original stream bytes in total. The single-use claim and snapshot
+are serialized without holding the lock across native work. Record
+representations and ordinary decoder error chains omit the raw bytes. The
+normal joined result still requires semantic admission, final currentness and
+confirmed retirement. Refused frames and retirement-only reads supply no
+capture record.
+[Private capture owner](../tools/windows-service-fixture/msix/prestart_deployment_session.py)
+
+Privacy, negative-path and lifecycle controls retained both raw streams,
+exit, PID, original owner and actor after the failed provisioning receipt.
+The standard-user command and final confirmation were withheld. Tests also
+cover healthy raw readback of all four probes, foreign and malformed frames,
+post-decode expiry, used-store refusal,
+trailing bytes and independent cleanup failure. Fresh source review found
+the claim race and parser exception-chain exposure. The claim now serializes
+access, and the malformed UTF-8, JSON and base64 cases emit bounded refusals
+outside the parser exception handlers. Four isolated fault controls removed
+capture retention, restored the pre-decode expiry check, omitted the
+post-decode cutoff, or restored raw UTF-8 exception chaining. Each failed its
+named assertion and passed on restoration. The exact-cutoff frame carries a
+structurally valid nonzero exit so its timeout differs from semantic refusal.
+
+On `5845260` plus the existing launch and capture changes,
+`python3 -I -B -Werror -m unittest discover -s tools/windows-service-fixture/msix`
+ran 122 tests on CPython 3.12.3 and exited zero in 17.231 seconds.
+
+| Input relative to `tools/windows-service-fixture/msix/` | SHA-256 |
+| --- | --- |
+| `prestart_deployment_session.py` | `29beb464dde8e496e4d375b9d91a99347c2ccb80bc2422bff5af98a52371fa0d` |
+| `prestart_receipts.py` | `feb1fa785854ff294be7561a8ab08c330dee400901db05cb59d65ecd046bfac2` |
+| `test_prestart_deployment_session.py` | `f10a1892cf071646265d2e66e448e69e5da01e735c500c4b422c4332dad40b31` |
+| `test_prestart_receipts.py` | `56ccfb59330635515b04e50b74a2180caecd9e3507197a1bce9dca2c8fdbd8d7` |
+
+The next checkpoint covers native failure after completion of both streams
+and the child exit but before ordinary capture delivery.
+
+#### Keep complete native access captures when the reply fails
+
+W11-W05/W11-W10, S0.6 and CHECK-15/16/17/25/27. The child collector can
+retain its exact bounded stdout, stderr and observed exit immediately after
+both EOFs, before the last collection cutoff and independent image,
+retirement, release and publication checks. Confirmed image digests enter
+the retained observation only after `ConfirmImage` returns. On the access
+route the actor is disposed before the eligible capture goes to the ordinary
+reply writer. A failure with complete collected bytes leaves them in the
+original fixed access owner's private slot.
+[Native collector](../tools/windows-service-fixture/msix/prestart_child.psm1)
+
+The access entry renderer provides an explicit `private_capture_diagnostics`
+selection, disabled by default. The launcher must independently bind a
+distinct private regular stderr file to the original role. The entry also
+requires redirection when opted in. If normal capture delivery fails, the
+entry writes the existing redacted error first, followed by at most one
+newline-terminated ASCII record to the inherited private stderr handle.
+The record binds the run, role, PID, exit, original expected image pin and
+the observed input digests or nulls. Both base64 streams retain the original
+8,192-byte limits, and the complete diagnostic record is capped at 24,000
+bytes. The original owner failure controls exit. A normal write, unused
+EOF or disabled selection produces no raw fallback record.
+[Fixed owner](../tools/windows-service-fixture/msix/prestart_deployment_owner.ps1.in)
+
+Privacy, fault recovery and environment-preflight skills scoped execution
+to existing Windows PowerShell 5.1.26100.10068 x64 with inert child controls
+and local owned staging. Parse-only checks passed for the five staged
+PowerShell inputs. The first collector predecessor reached image confirmation
+without the retained streams. An intermediate implementation still lost the
+complete streams at its last collection cutoff. The new oracle initially
+refused the empty pending-read array. After correcting it to observe zero
+pending reads, the intermediate implementation exited 1 for missing
+completed streams. The final collector passed all 13 controls, including
+the exact cutoff, failed image confirmation, disposal and publication
+refusals, partial collection and the successful neighbor. The existing 21
+session controls passed. The independent source reviewer checked capture
+placement, opt-in and reader authority. The launcher supplies independent
+evidence of the file's private provenance.
+
+Eight rendered-owner controls ran the actual fixed entry and access session
+with inert stage pins and stub child and actor effects. The selected actor
+disposal and image-revalidation refusals preserved byte-exact private records.
+The normal capture and unused EOF exited zero with no fallback. Opt-out
+preserved only the legacy diagnostic. The maximum two-stream case wrote
+one 22,218-byte line before its newline. The oversize case emitted only a
+bounded unavailable code beside the original error. Closing the test
+process's own stdout handle yielded the original reply-transport failure,
+no normal reply and exactly one complete diagnostic on the private file.
+The portable Python MSIX suite passed 123 tests. All Windows staging and
+detached test worktrees retired.
+
+| Record under `~/.local/share/nevrotick/s06-native-access-capture.xOTBr22C/` | SHA-256 |
+| --- | --- |
+| `inputs.sha256` | `d15146d956b82f62f6d77a8449fcc779129c9553da0535705b2ad77b2761dcad` |
+| `test_prestart_retirement.final.log` | `4ac50301bab7ac899d832fcd8fd51bf3a0ddc48e385c1feea0c01cad0260c9ab` |
+| `test_prestart_deployment_session.final.log` | `904d26ca2a15505d2cc5437b5e32a2042b1284ca9a9a6f9481b69c809a86c7b6` |
+| `enabled-broken-reply.stderr` | `b5b5ce9abcfde61ac243b84cebb8da8a9584c7c8f9b41a9daa5246211ff72396` |
+
+##### Read the settled private access capture through its original descriptor
+
+S0.6/W11-W05/W11-W10 and CHECK-15/16/17/25/27. The WSL reader takes
+the existing admitted run, one fixed access probe and the original
+private stderr file after its custodian confirms writer settlement.
+It reads positionally with a 32 KiB file bound and unchanged extent and
+timestamp observations around the read. The original file offset is
+preserved. Any diagnostic must follow a complete redacted owner failure
+record. The reader limits it to the producer's 24,000-byte line and
+8,192-byte decoded streams, checks exact run, role and expected image
+pin, and preserves the child's PID, exit, bytes and optional confirmed
+image digest. It refuses duplicate records, partial writes and a changed
+file. Redacted-only output or the unavailable marker yields no capture.
+The diagnostic value carries no reap or receipt authority.
+[Held-file reader](../tools/windows-service-fixture/msix/prestart_deployment_session.py)
+
+On `5845260` plus the listed readback and pre-start source, CPython
+3.12.3 passed 129 portable MSIX tests. The focused negative-path and
+ownership controls used real regular descriptors for positional reads,
+with a directed file growth during read. Three isolated fault copies
+omitting the role match or file bookend or accepting an incomplete
+failure record each failed the intended assertion. The restored copy
+passed all six focused tests. The actual reader also checked all eight
+retained Windows stderr files against independent inert producer inputs.
+Four contained the expected exact streams, including the broken-reply
+and unconfirmed-image cases. Four contained no raw record. Passing the
+provisioning file back as the standard-user role was refused. This was
+host readback of prior native output.
+
+The fresh-context reviewer reproduced all eight reads independently,
+checked the producer's failure envelope and the unchanged normal receipt
+path, and accepted the frozen reader within that scope. The growth
+control exercises the size bookend. Same-size timestamp changes were
+source-reviewed.
+
+| Record under `~/.local/share/nevrotick/s06-access-readback.rmfOWFZe/` | SHA-256 |
+| --- | --- |
+| `candidate.sha256` | `7561f6389eb03f720d8e374aafc6a0aa30183cb8f04c2f64c5128c7bea16c2d8` |
+| `portable.final.log` | `8e4234d5484e86c5ad3e0c2143c7bab702d1a9f371a92faade6e1c47f3118a84` |
+| `native-output-readback.final.log` | `13684c20bd994be8e55ab27c535ad4747cba9492d9563536f3ad311a55f38656` |
+| `sensitivity.log` | `18ac44247643b5526e6fa95b11213b7757aa49f34cce70772009ee3ead01efd4` |
+
+The installed caller still needs the original private file and confirmed
+writer settlement from each actual cross-context launch provider. The
+nonzero native exit or readback refusal remains separate from observing
+actual job retirement. The signed package, real actor admission,
+continuous SCM quiescence and installed verification remain open.
+
+##### Distinguish settled access refusal at the original native watchdog
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. The fixed optional
+`--observe-access-settlement` flag preserves refusal and exposes native
+exit `3` for a nonzero original guardian exit with empty outer-job
+accounting, no outer recovery attempt and no recorded outer cleanup
+failure. A retirement-check failure retains `1` even when the job is
+observed empty. Legacy invocation keeps its original exit contract. The
+WSL launcher appends the fixed option only for an explicit selection
+and an empty private read/write regular file at offset zero. The
+ordinary receipt supervisor continues to require exit zero. The new
+number addresses outer writer settlement. Inner receipt admission and
+the original access failure keep their separate owners.
+[Native watchdog](../tools/windows-service-fixture/msix/prestart_deployment_watchdog.cs)
+[Launch boundary](../tools/windows-service-fixture/msix/prestart_deployment_session.py)
+
+On `5845260` plus the pinned changes, CPython 3.12.3 passed 131 portable
+MSIX checks. The new controls reached the real portable process launcher,
+verified the extra argument and distinct diagnostic descriptor, and
+refused wrong offset, prior content and write-only access before launch.
+The ordinary wait control rejected exit `3` after original pipe closure.
+
+The admitted offline Windows Sandbox on build 26100 compiled x64 with
+warnings as errors. A native parent took the full original Windows
+process exit after `WaitForExit`, waited for both redirected streams to
+finish, and independently reopened the original watchdog, guardian and
+entry files exclusively. The first run reached an unexpected-command
+refusal and produced no capture. In the second run the parent observed
+a three-byte preamble on the original encoding and used a BOM-less
+redirected input, restoring its original encoding after launch. The
+same four cases then reached their intended outcomes.
+
+| Case | Original watchdog exit | Observation |
+| --- | --- | --- |
+| Healthy opt-in | `0` | Original owner and guardian exited zero, with one expected completion line. |
+| Settled access refusal | `3` | The rendered owner returned one framed actor-disposal refusal. Both jobs emptied and the separate private file contained the exact original inert capture. |
+| Same refusal through legacy launch | `1` | Same refused frame, private capture, and job and stream retirement. |
+| Outer release-deadline fault | `1` | Same refused frame and observed exit and emptiness. The fault copy triggered the existing release-deadline check after closing original handles and withheld the settlement status. |
+
+The guest kept the private relay file open from before launch through
+stderr drain and readback. The WSL reader decoded the exact exported
+bytes only for the opt-in disposition and preserved the file offset.
+The fresh-context reviewer independently matched all 13 output hashes,
+native results and inert frame and capture facts. Owned staging retired.
+This proves the full-exit distinction and private readback on the
+inert native route. The WSL launcher still needs a provider that retains
+the full original Windows exit and independently observes its relay
+settlement. The POSIX wait status can truncate a Windows exit code.
+Signed installed actors, their actual private descriptors and native
+provisioning remain open.
+[Windows exit status](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getexitcodeprocess)
+[WSL interop relay](https://github.com/microsoft/WSL/blob/master/src/linux/init/binfmt.cpp#L221-L372)
+
+| Record under `~/.local/share/nevrotick/s06-watchdog-settlement.Lvib7uFj/` | SHA-256 |
+| --- | --- |
+| `observed-01/verification.json` | `627b8912a2c0504d9ba96beb97acda436a12f873c186480b88dcdb6bd09a9ec9` |
+| `observed-02/inputs.json` | `752b832f7becf06efc26a6c7b14e8d510606537e724c6caaa3288a82a7a2e7cc` |
+| `observed-02/verification.json` | `f729682cddce23323e060e76d9f063c135d6196f69975c334381928c7d54ff66` |
+| `observed-02/guest.json` | `4017eb54f3866ab5e459a3842f4866343e9bd0973c81938270f4738fdcf27a87` |
+| `portable.final.log` | `cc268187e8e2741da0b07bc8b5c8069ad75a976f0573da38da55156799a0b8dd` |
+
+##### Carry a full native access watchdog exit to the pre-start supervisor
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. The Windows parent holds the
+pinned watchdog, enrolls its original suspended process in a private
+kill-on-close job, and verifies its original image and actor before resume.
+The fixed protocol keeps its input and output handles. A separate diagnostic
+writer and the parent's private status channel carry different data. After
+watchdog exit and empty job accounting, the parent reads the full unsigned
+exit code and hashes the original bounded diagnostics. The status line binds
+the run, role, attempt nonce, image, process and diagnostic extent and hash.
+[Windows parent](../tools/windows-service-fixture/msix/prestart_access_parent.cs)
+
+The WSL access attempt plugs into `launch_prestart_session` for one
+independently admitted same-context role. It preserves the original caller's
+absolute observation cutoffs and passes bounded remaining allowances to the
+native parent. Success requires full exit `0`. Full exit `3` retains the
+original operation refusal and separately settles its cleanup. The private
+decoder consumes the exact byte snapshot matched to the parent's digest.
+Rollback closes input and drains the bounded remainder of original output
+to EOF before reading settlement. The provider keeps missing or unconfirmed
+startup custody as a failure.
+[Host provider](../tools/windows-service-fixture/msix/prestart_access_process.py)
+
+`implement-windows-service`, lifecycle QA and integration QA reached the
+actual pre-start supervisor with unbuffered POSIX pipes and an inert
+parent. The healthy control reached both role probes and original retirement.
+Refused access with pending output kept the primary refusal alone. A
+complete success frame with exit `3` could not advance to the next role.
+Crossed status, changed diagnostics, low-byte lookalikes and the late
+launch rollback were refused or retired at their intended owners. CPython
+3.12.3 passed all 141 portable MSIX fixture tests. The first focused run
+revealed a double-framed test reply and a status capacity too small for the
+full-width format. The corrected controls exercise the full DWORD bound.
+
+The Sandbox on build 26100 compiled the x64 parent and watchdog with
+warnings as errors. The first native driver omitted the guardian's adjacent
+C# inputs. Both real watchdog cases then reported an earlier failure and no
+access frame. The retained retry staged the missing sources and completed
+all three cases. Original native results were `0` for the healthy inert
+owner, `3` for the deliberately refused access capture and `65539` for the
+inert full-width control. The refusal kept the exact framed output and
+private bytes from the pinned synthetic observer. Both process pipes
+reached EOF in all cases. Independent review matched the full native output
+inventory. The actual host decoders replayed the retained status and
+diagnostic bytes. The guest removed its scratch and the shelves retired.
+
+The parent withholds ordinary success after its work cutoff. A settled
+refusal can be recorded through retirement. On retirement expiry it requests
+termination of the original job and closes the kill-on-close handle as a
+fallback. Confirmed retirement for a hung watchdog or parent at that
+cutoff remains open. The tests exercised Windows process pipes in Sandbox
+and POSIX pipes with an inert parent. Native WSL relay and cross-context
+launch custody are separate outstanding checks. Installed qualification
+still needs the signed package, independently admitted actor contexts,
+retained native owners and continuous SCM quiescence.
+
+| Input or record under `~/.local/share/nevrotick/s06-native-settlement.RkTYHulc/` | SHA-256 |
+| --- | --- |
+| Repository `prestart_access_parent.cs` | `214e45bb79a017d76bc9df226e8b245bea261ab43641015080f0b8db549b453a` |
+| Repository `prestart_access_process.py` | `5e1752761cd11679f38c2c67790afd7f26dac81cbdf1b1cc13c8ca4847cfb16b` |
+| Repository `prestart_deployment_session.py` | `71fb0700ac665f3e77e96f0682b0eb0c96efa9bfc8df99d9df66162d5201db06` |
+| Repository `test_prestart_access_process.py` | `bfe4065970936866b60eb6d7ef8c92fe8c53887003124825d1c0d8d66df5217d` |
+| `portable-final.log` | `f747a8d9811de043ca2c8f5b8e3fb019ac5bb369378533e9085b153f620db232` |
+| `guest-controls/native-02/verification.json` | `84fac80c4f0e3e21afac466af04aa53b5b98261f0ad37aa5a3eb9eaead4150d4` |
+| `guest-controls/native-03/verification.json` | `7024c2b7acd9332c62d69b71206f32396f89503eab7ce12aa6fb3cae7b51e445` |
+| `guest-controls/native-03/guest.json` | `e30ca484e9bb2a2a6f0959fe9b4473aef48151ecc62f05eb0193e1dc98fb4080` |
+| `guest-controls/readback.log` | `541c0bffc7d1789c153bd66630bfb633d1fc89bf6c0db5785b052f5a7bf6d268` |
+
+##### Reserve native retirement time for the original access job
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. The parent splits the
+original work-to-retirement interval into cooperative and forced recovery
+allowances. It caps the watchdog's relative budget by the cooperative time
+remaining and enforces the earlier cutoff on the parent's original clock.
+The original final cutoff still bounds termination, signalled process
+readback, empty job accounting and checked release. If a termination request
+fails, the parent still attempts the other applicable request and reads the
+actual outcome. It retains the request or recovery failure alongside the
+initiating failure. Forced recovery emits no successful settlement record.
+An ordinary exit zero still requires the original work cutoff.
+
+The portable provider refuses a native allowance shorter than two
+milliseconds, including after clipping to the original host deadlines.
+The guardian's existing minimum is unchanged. A boundary control checks
+two positive intervals against a clipped one-millisecond neighbor.
+CPython 3.12.3 passed all 142 portable MSIX fixture tests.
+
+The fault-recovery control compiled the pinned parent and an inert watchdog
+in the owned offline Sandbox, build 26100. The watchdog and its descendant
+reported readiness and remained live. The guest observer held both original
+process handles, read their full exits and drained both original streams.
+Every run used a 4,000 ms work cutoff and a 12,000 ms final cutoff.
+The predecessor reached observed retirement in 12,115 ms. The first split
+candidate reached it in 8,109 ms. The final candidate, with both termination
+requests and observation preserved on a request failure, reached it in
+8,116 ms. These times span native parent launch through original process
+exit and stream EOF on the guest observer's clock. Both retained handles
+reported exit `1223`, the parent exited `1`, and the status stream was empty.
+
+The final healthy controls still observed full `0`, `3` and `65539`.
+The settled refusal kept its original frame and diagnostic bytes. All
+cases reached EOF, the guest scratch was absent and the shelf retired.
+The fixture distinguishes a hung watchdog and inherited writer from
+cooperative retirement. It does not cover a hung parent, observed native
+termination-request failure, actual WSL relay settlement or installed
+actor custody. Signed installed and broader qualification remain open.
+
+| Input or record under `~/.local/share/nevrotick/s06-access-recovery.7aTM3qgn/` | SHA-256 |
+| --- | --- |
+| Repository `prestart_access_parent.cs` | `6f3c58641f1ca728168b7ae3f35cae4c9261f0fc216f479271ee32b273fc9e51` |
+| Repository `prestart_access_process.py` | `f6b9e0365e9ec77ac155ebb630ad4bc2d01ecf4bb4bd12ae4440337b1ad47bc4` |
+| Repository `test_prestart_access_process.py` | `c79267a7fabadfcde2c711f0e98eaa04faeca4ee6b891329948175be8ca14c9e` |
+| `portable.log` | `c1630b941a118b56a30a5dc0de8fe402e01e8991d0b66ebf28f546ccf16b6026` |
+| `native-before-02/verification.json` | `5c108dff6cc88c7071ee489223cfbe7cfe18403d2ae94291b840fbf132c39698` |
+| `native-after/verification.json` | `e0c22ced1ee30d685ea25675d176686e3ee30b96be6ec5a29a6b6cc3fc3ca681` |
+| `native-final/verification.json` | `ae139bde2dc6ad1580cbd17dce27ff26c51167f479599a86ef86f58bdcd3f313` |
+| `native-final/guest.json` | `bbddb281df537ae8bb2feb14ddeb420a278f818c0bb4d7d33cdeafefbdaf2e5b` |
 
 #### Bind startup admission to the first native exposure
 
