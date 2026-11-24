@@ -1065,6 +1065,15 @@ this review does not activate UI-M0's deferred D2 work.
 | Rewrite configuration, feature or protected-storage contracts | **Not needed.** §§12/14, F-06 and the storage plan already own the guarantees and limits. Preserve strict machine-policy JSON and separate per-user preferences; no benchmark establishes a superior format, and no filename or preferences format is selected here. |
 | Adopt full enclaves, signed App Control, an external signer or mandatory Hello | **Rejected as scope expansion.** Research/documentation authorization selects none of these mechanisms and changes no hostile-admin guarantee, default, privilege, dependency or execution hold. |
 
+**Later request, 24 November 2026:** David subsequently asked to plan custom
+enclaves and supplied Microsoft's development guide. The [supporting plan](../docs/plans/windows-vbs-enclave.md)
+and [existing storage-task card](windows-protected-storage.md#8-custom-enclave-planning--24-november-2026)
+record that newly authorized source-only boundary/feasibility stage. The earlier rejection
+above retains its original scope; product adoption, hostile-admin authority,
+secret ingress, dependencies, signing, host-policy changes and native work remain
+unselected or behind their existing gates. No App Control/signer/Hello decision
+or execution hold is changed by planning.
+
 **Owner/readiness:** W11-W05 with W11-W10 for installed activation/helper/package
 identity and P5/D2 for real configuration/result presentation. Source refinement
 is ready when those existing stages are reached; native cases remain held and
@@ -1759,7 +1768,7 @@ is preserved for existing links.
 | Job Objects or SCM triggers / platform | A measured optional-role resource/activation need; compare healthy useful work with limit exhaustion, stopping/maintenance races and owner death. Preserve independent broker cleanup; an address or endpoint trigger is not Internet readiness or first-UDP/53 activation. |
 | LPAC/AppContainer or preview Win32 app isolation / architecture/security | A named untrusted-work boundary justifies capabilities, IPC, supported launch/deployment and lifetime costs. Observe actual denied access beside admitted work; standalone creation APIs do not prove SCM compatibility. No new privileged broker follows automatically. |
 | Strict CET and EHCONT support / build/security | CET plus strict-CET image markers are now selected; require effective strict enforcement on the supported hardware/OS class. EHCONT generation remains limited by the pinned stable compiler and cannot be supplied by a linker-only switch. Inspect the exact metadata/module closure and legitimate provider/callback behavior under CHECK-16/20/26 and the current build-task amendment. |
-| Full VBS enclave / storage/release | A secret operation needs enclave execution beyond isolated CNG roots. Separate runtime build/VBS/HVCI from development/signing eligibility, and use the existing storage task and ST-T11/12/13; the native storage pause remains. |
+| Full VBS enclave / storage/release | **Source planning requested 24 November 2026:** use the [NTS boundary/feasibility plan](../docs/plans/windows-vbs-enclave.md) and [existing storage-task card](windows-protected-storage.md#8-custom-enclave-planning--24-november-2026). Freeze one operation's ingress/authority/ABI/outcomes and exact two-family runtime/build/signing rows. ST-T11/12/13 and related existing owners remain; adoption and implementation are conditional and the native storage pause remains. |
 | External-location identity or WinGet / UI/packaging | External executable content is excluded by the selected MSIX profile; reconsider only through a later explicit architecture decision, not to bypass packaging gates. An additional WinGet acquisition path needs the same complete-package identity/lifecycle and CHECK-18/23 evidence. Local notifications alone do not select another updater. |
 | Complete hardened MSIX with Store distribution / packaging/release/security | **Selected preparation target under amended OD-05.** Execute the source/design work in [section 4.8](#48-owner-selected-hardened-msix--3-november-2026) using the [focused plan](../docs/plans/windows-msix-store.md). Explicit content integrity, immutable executable paths, Store-compatible CIG and per-role protections join supported service provisioning and complete recovery. Store preapproval is not a preparation gate; actual signed-artifact qualification follows David's controlled Store attempt. All existing §19.4/CHECK owners and execution holds remain; MSI is a retained alternative for a later owner decision. |
 | W32Time provider DLL / architecture/clock | An explicitly different Windows-managed-discipline goal. First reconcile controller ownership, trust and restoration in a source-only decision card; never add it as a competing controller. Existing CHECK-5/10/13 remain. |
