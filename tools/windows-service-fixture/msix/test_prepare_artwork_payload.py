@@ -17,6 +17,10 @@ import prepare_artwork_payload as producer
 
 FOUNDATION: str = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
 TRUSTED_LAUNCH: str = "http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"
+UAP: str = "http://schemas.microsoft.com/appx/manifest/uap/windows10"
+UAP10: str = "http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+DESKTOP6: str = "http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+RESCAP: str = "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
 PROPERTIES: bytes = (
     '<?xml version="1.0" encoding="utf-8"?>\n'
     f'<Properties xmlns="{FOUNDATION}" xmlns:trustedlaunch="{TRUSTED_LAUNCH}">\n'
@@ -27,7 +31,7 @@ PROPERTIES: bytes = (
 ).encode("utf-8")
 
 
-class ArtworkPayloadTests(unittest.TestCase):
+class ArtworkPayloadInputs(unittest.TestCase):
     def setUp(self) -> None:
         self.root: Path = Path(self.enterContext(TemporaryDirectory()))
         self.handoff: Path = self.root / "handoff"
@@ -85,6 +89,8 @@ class ArtworkPayloadTests(unittest.TestCase):
         (self.pri_dir / "readback.json").write_bytes(raw)
         return sha256(raw).hexdigest()
 
+
+class ArtworkPayloadTests(ArtworkPayloadInputs):
     def invoke(self, *, inert_pin: str | None = None) -> tuple[int, str, str]:
         out: io.StringIO = io.StringIO()
         err: io.StringIO = io.StringIO()
@@ -130,6 +136,7 @@ class ArtworkPayloadTests(unittest.TestCase):
         self.assertEqual(report["generation_receipt_sha256"], "7" * 64)
         self.assertEqual(report["pri_readback_sha256"], self.pri_pin)
         self.assertEqual(report["properties_sha256"], sha256(PROPERTIES).hexdigest())
+        self.assertNotIn("role_link_receipt_sha256", report)
 
         actual: dict[str, bytes] = {
             path.relative_to(self.output).as_posix(): path.read_bytes()
@@ -257,6 +264,169 @@ class ArtworkPayloadTests(unittest.TestCase):
         self.assertIn("fixture parent close failure", stderr)
         self.assertFalse(self.output.exists())
         self.assertEqual(sum(path.is_file() for path in renamed.rglob("*")), 54)
+
+
+class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
+    def setUp(self) -> None:
+        super().setUp()
+        self.role_directory: Path = self.root / "roles"
+        self.role_directory.mkdir()
+        self.role_receipt: Path = self.role_directory / "cross-roles.json"
+        self.role_receipt.write_bytes(b"two-role link receipt")
+        self.role_pin: str = sha256(self.role_receipt.read_bytes()).hexdigest()
+        self.role_args: tuple[str, ...] = (
+            "--role-link-receipt", str(self.role_receipt), "--role-link-receipt-sha256", self.role_pin,
+        )
+        self.ui: bytes = b"linked UI fixture"
+        self.ui_path: Path = self.handoff / "nevrotick-ui.exe"
+        self.ui_path.write_bytes(self.ui)
+        self.handoff_report["files"][self.ui_path.name] = {
+            "disposition": "unadmitted-ui-image", "sha256": sha256(self.ui).hexdigest(),
+        }
+        self.properties: bytes = PROPERTIES.replace(
+            b"<Properties ", f'<Properties xmlns:uap10="{UAP10}" '.encode("ascii"),
+        ).replace(
+            b"  <trustedlaunch:TrustedLaunch>",
+            b'  <uap10:PackageIntegrity><uap10:Content Enforcement="on" /></uap10:PackageIntegrity>\n'
+            b"  <trustedlaunch:TrustedLaunch>",
+        )
+        (self.handoff / producer.PROPERTIES).write_bytes(self.properties)
+        self.handoff_report["files"][producer.PROPERTIES]["sha256"] = sha256(self.properties).hexdigest()
+
+    def invoke(self, arguments: tuple[str, ...], *, parsed: bool = True) -> tuple[int, str, str]:
+        out: io.StringIO = io.StringIO()
+        err: io.StringIO = io.StringIO()
+        argv: list[str] = [
+            "prepare_artwork_payload", "--handoff", str(self.handoff),
+            "--handoff-receipt-sha256", self.handoff_pin, "--pri-dir", str(self.pri_dir),
+            "--pri-receipt-sha256", self.pri_pin, "--output", str(self.output), *arguments,
+        ]
+        with (
+            patch.object(producer.verify, "inspect_msix_handoff", return_value=self.handoff_report) as inspect,
+            patch.object(sys, "argv", argv), redirect_stdout(out), redirect_stderr(err),
+        ):
+            if parsed:
+                status: int = producer.main()
+                inspect.assert_called_once_with(producer.stage.ROOT, self.handoff, self.handoff_pin)
+            else:
+                with self.assertRaises(SystemExit) as error:
+                    producer.main()
+                status = error.exception.code
+                inspect.assert_not_called()
+        return status, out.getvalue(), err.getvalue()
+
+    def test_stages_the_fixed_ui_and_both_disabled_roles_with_the_checked_resources(self) -> None:
+        role_names: dict[str, str] = {
+            "nevrotick-lab-s02-engine.exe": "NevroTick-Lab-S02-Engine",
+            "nevrotick-lab-s02-broker.exe": "NevroTick-Lab-S02-Broker",
+        }
+        role_images: dict[str, bytes] = {image: name.encode("ascii") for image, name in role_names.items()}
+        with patch.object(producer.stage, "role_images", return_value=role_images) as read_roles:
+            status, stdout, stderr = self.invoke(self.role_args)
+            read_roles.assert_called_once_with(self.role_receipt, self.role_pin)
+        self.assertEqual((status, stderr), (0, ""))
+        actual: dict[str, bytes] = {
+            path.relative_to(self.output).as_posix(): path.read_bytes()
+            for path in self.output.rglob("*") if path.is_file()
+        }
+        self.assertEqual(json.loads(stdout), {
+            "status": "unsigned-combined-artwork-lab-inputs-staged", "assembly_ready": False,
+            "lab_identity": "NevroTick.S06.ArtworkLab", "handoff_receipt_sha256": self.handoff_pin,
+            "generation_receipt_sha256": "7" * 64, "pri_readback_sha256": self.pri_pin,
+            "properties_sha256": sha256(self.properties).hexdigest(), "role_link_receipt_sha256": self.role_pin,
+            "payload": {name: sha256(data).hexdigest() for name, data in actual.items()},
+        })
+        manifest: ET.Element = ET.fromstring(actual.pop("AppxManifest.xml"))
+        self.assertEqual(actual, {
+            **self.artwork, **role_images, "nevrotick-ui.exe": self.ui, "resources.pri": self.pri,
+        })
+        ns: dict[str, str] = {"f": FOUNDATION, "uap": UAP, "uap10": UAP10, "d": DESKTOP6, "r": RESCAP}
+        self.assertEqual(manifest.find("f:Identity", ns).attrib, {
+            "Name": "NevroTick.S06.ArtworkLab", "Publisher": "CN=NevroTick S06 Laboratory",
+            "Version": "1.0.1.0", "ProcessorArchitecture": "x64",
+        })
+        self.assertEqual(manifest.findtext(f"f:Properties/{{{TRUSTED_LAUNCH}}}TrustedLaunch", namespaces=ns), "true")
+        self.assertEqual(manifest.find("f:Properties/uap10:PackageIntegrity/uap10:Content", ns).attrib,
+                         {"Enforcement": "on"})
+        app: ET.Element
+        app, = manifest.findall("f:Applications/f:Application", ns)
+        self.assertEqual(app.attrib, {
+            "Id": "Observe", "Executable": "nevrotick-ui.exe",
+            f"{{{UAP10}}}RuntimeBehavior": "packagedClassicApp", f"{{{UAP10}}}TrustLevel": "mediumIL",
+        })
+        self.assertEqual(app.find("uap:VisualElements", ns).get("AppListEntry"), "none")
+        extensions: list[ET.Element] = app.findall("f:Extensions/d:Extension", ns)
+        self.assertEqual(extensions, manifest.findall(".//d:Extension", ns))
+        self.assertEqual(len(extensions), 2)
+        self.assertEqual({row.get("Executable") for row in extensions}, set(role_names))
+        for extension in extensions:
+            executable: str = extension.attrib["Executable"]
+            self.assertEqual(extension.attrib, {
+                "Category": "windows.service", "Executable": executable, "EntryPoint": "Windows.FullTrustApplication",
+            })
+            service: ET.Element
+            service, = extension
+            self.assertEqual((service.tag, service.attrib), (f"{{{DESKTOP6}}}Service", {
+                "Name": role_names[executable], "StartupType": "disabled", "StartAccount": "localService",
+            }))
+        capabilities: ET.Element = manifest.find("f:Capabilities", ns)
+        self.assertCountEqual([(capability.tag, capability.attrib) for capability in capabilities], [
+            (f"{{{RESCAP}}}Capability", {"Name": "runFullTrust"}),
+            (f"{{{RESCAP}}}Capability", {"Name": "packagedServices"}),
+        ])
+
+    def test_rejects_missing_and_crossed_profile_arguments_during_parsing(self) -> None:
+        inert_path: tuple[str, ...] = ("--inert", str(self.inert))
+        inert_pin: tuple[str, ...] = ("--inert-sha256", self.inert_pin)
+        role_path: tuple[str, ...] = self.role_args[:2]
+        role_pin: tuple[str, ...] = self.role_args[2:]
+        for arguments in ((), inert_pin, inert_path, role_pin, role_path, inert_path + role_pin,
+                          role_path + inert_pin, inert_path + inert_pin + self.role_args):
+            with self.subTest(arguments=arguments), patch.object(producer.stage, "role_images") as read_roles:
+                status, stdout, stderr = self.invoke(arguments, parsed=False)
+                self.assertEqual((status, stdout), (2, ""))
+                self.assertIn("error:", stderr)
+                self.assertFalse(self.output.exists())
+                read_roles.assert_not_called()
+
+    def test_rejects_unlisted_missing_and_substituted_ui_without_publishing(self) -> None:
+        files: dict[str, dict[str, str]] = self.handoff_report["files"]
+        ui_row: dict[str, str] = files.pop(self.ui_path.name)
+        role_images: dict[str, bytes] = {
+            "nevrotick-lab-s02-engine.exe": b"engine", "nevrotick-lab-s02-broker.exe": b"broker",
+        }
+        with patch.object(producer.stage, "role_images", return_value=role_images):
+            status, stdout, stderr = self.invoke(self.role_args)
+            self.assertEqual((status, stdout), (1, ""), stderr)
+            self.assertFalse(self.output.exists())
+            files[self.ui_path.name] = {**ui_row, "disposition": "excluded-observe-image"}
+            status, stdout, stderr = self.invoke(self.role_args)
+            self.assertEqual((status, stdout), (1, ""), stderr)
+            self.assertFalse(self.output.exists())
+            files[self.ui_path.name] = ui_row
+            self.ui_path.unlink()
+            status, stdout, stderr = self.invoke(self.role_args)
+            self.assertEqual((status, stdout), (1, ""), stderr)
+            self.assertFalse(self.output.exists())
+            self.ui_path.write_bytes(b"substituted UI fixture")
+            self.output.mkdir(mode=0o700)
+            marker: Path = self.output / "prior"
+            marker.write_bytes(b"unchanged")
+            status, stdout, stderr = self.invoke(self.role_args)
+            self.assertEqual((status, stdout), (1, ""), stderr)
+            self.assertIn("differs from the checked generation", stderr)
+            self.assertEqual(list(self.output.iterdir()), [marker])
+            self.assertEqual(marker.read_bytes(), b"unchanged")
+
+    def test_rejects_the_role_reader_failure_without_partial_output(self) -> None:
+        with patch.object(producer.stage, "role_images", side_effect=ValueError("fixture role read refused")) as read:
+            status, stdout, stderr = self.invoke(self.role_args)
+            read.assert_called_once_with(self.role_receipt, self.role_pin)
+        self.assertEqual((status, stdout), (1, ""))
+        self.assertIn("fixture role read refused", stderr)
+        self.assertEqual(set(self.root.iterdir()), {
+            self.handoff, self.pri_dir, self.inert, self.role_directory,
+        })
 
 
 if __name__ == "__main__":

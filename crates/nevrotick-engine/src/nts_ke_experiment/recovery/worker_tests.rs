@@ -35,6 +35,12 @@ use crate::nts_ke_experiment::job::{
     CollectError, Hooks, JoinedOutcome, Observation, Operation, PreparedInvocation,
     SubmissionReservation, SubmitError, Termination, WorkerSlot,
 };
+#[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::managed_preview::{
+    ManagedPowerObservation, ManagedProtectedPairReport,
+};
+#[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::power_target::{PowerEvent, PowerTarget};
 use crate::nts_ke_experiment::process::ProcessClaim;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
@@ -2679,6 +2685,7 @@ fn submit_pair_loopback(
     provider_witness: Arc<OnceLock<Weak<()>>>,
     cutoff: Instant,
     remote: std::net::SocketAddr,
+    hooks: Hooks,
 ) -> Result<crate::nts_ke_experiment::job::SubmittedJob, SubmitError> {
     reservation.submit_pair_successor_fixture(
         admission,
@@ -2698,8 +2705,31 @@ fn submit_pair_loopback(
                 Box::new(|| Ok(())),
             )
         },
-        Hooks::none(),
+        hooks,
     )
+}
+
+/// Deliver the scripted event after the original operation is recorded.
+/// # Errors
+/// Refuse a missing original target if a late event was requested.
+/// # Panics
+/// Fail if the original target has no active binding or refuses the event.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_retirement_hooks(
+    observer: Option<&Weak<PowerTarget>>,
+    event: Option<PowerEvent>,
+) -> Result<Hooks, SubmitError> {
+    let mut hooks: Hooks = Hooks::none();
+    if let Some(event) = event {
+        let target: Arc<PowerTarget> = observer
+            .and_then(Weak::upgrade)
+            .ok_or(SubmitError::Control)?;
+        hooks.before_retire = Some(Box::new(move || {
+            assert!(matches!(target.prepare(), Err(Failure::Control)));
+            assert!(target.deliver(event).is_ok());
+        }));
+    }
+    Ok(hooks)
 }
 
 /// Actual synthetically authenticated UDP peer result for one managed job.
@@ -2812,6 +2842,50 @@ fn assert_pair_invocation_order(
     Ok(())
 }
 
+/// Match the two actual joined reports to the independent peer and power histories.
+/// # Errors
+/// Preserve a missing report, peer failure or inconsistent receipt.
+/// # Panics
+/// Fail if original work, identity, chronology or the scope of power delivery differs.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_pair_loopback_reports(
+    pair: &ManagedProtectedPairReport,
+    peers: [(PairPeerJoin<'_>, &crate::SourceConfigurationSnapshot); 2],
+    cutoff: Instant,
+    configurations: PairConfigurations,
+    first_retire_event: Option<PowerEvent>,
+    #[cfg(windows)] presentation_reads: usize,
+) -> Result<(), Failure> {
+    let [(first_peer, first_expected), (second_peer, second_expected)] = peers;
+    let first: &ManagedProtectedReport = pair.first();
+    let second: &ManagedProtectedReport = pair
+        .second()
+        .ok_or(Failure::Control)?
+        .map_err(|_| Failure::Control)?;
+    let first_power: ManagedPowerObservation = if first_retire_event.is_some() {
+        ManagedPowerObservation::Invalidated
+    } else {
+        ManagedPowerObservation::NoEventObserved
+    };
+    for (report, peer, expected, power) in [
+        (first, first_peer, first_expected, first_power),
+        (
+            second,
+            second_peer,
+            second_expected,
+            ManagedPowerObservation::NoEventObserved,
+        ),
+    ] {
+        let observed: [LoopbackPeerLeg<Instant>; 2] =
+            peer.join().map_err(|_| Failure::Control)??;
+        assert_pair_loopback_report(report, expected, cutoff, observed)?;
+        assert_eq!(report.power_observation(), Some(power));
+    }
+    #[cfg(windows)]
+    assert_pair_presentation(first, second, presentation_reads);
+    assert_pair_invocation_order(first, second, configurations)
+}
+
 /// Retain one provider, observer and configuration across both loopback jobs.
 /// # Errors
 /// Preserve admission, worker result and independent peer refusal.
@@ -2823,7 +2897,30 @@ fn assert_pair_invocation_order(
 fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    assert_managed_pair_reissue(&SLOT, &ADMISSION, PairConfigurations::Shared, |_| Ok(()))
+    assert_managed_pair_reissue(&SLOT, &ADMISSION, PairConfigurations::Shared, None, |_| {
+        Ok(())
+    })
+}
+
+/// Deliver automatic resume after the first terminal commit and before its join.
+/// # Errors
+/// Preserve admission, worker result and independent peer refusal.
+/// # Panics
+/// Fail if a late delivery changes original work or history, if the first
+/// report misses the invalidation, or if the new invocation inherits it.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_pair_late_power_event_invalidates_only_first_joined_observation() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_managed_pair_reissue(
+        &SLOT,
+        &ADMISSION,
+        PairConfigurations::Shared,
+        Some(PowerEvent::AutomaticResume),
+        |_| Ok(()),
+    )
 }
 
 /// Reissue the actual joined pair after delivered suspend and automatic resume.
@@ -2835,14 +2932,13 @@ fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), 
 #[cfg(any(windows, target_os = "linux"))]
 #[test]
 fn managed_pair_reissues_after_delivered_suspend_and_automatic_resume() -> Result<(), Failure> {
-    use crate::nts_ke_experiment::power_target::{PowerEvent, PowerTarget};
-
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     assert_managed_pair_reissue(
         &SLOT,
         &ADMISSION,
         PairConfigurations::Distinct,
+        None,
         |target: &PowerTarget| {
             target.deliver(PowerEvent::Suspending)?;
             assert!(matches!(target.prepare(), Err(Failure::Control)));
@@ -2857,7 +2953,7 @@ fn pair_preparation_refusal(cause: Failure) -> SourceProtectedProbeFailure {
     SourceProtectedProbeFailure::from_run_failure(RunFailed::Preparation(Failed::from(cause)))
 }
 
-/// Join both original worker jobs and observe the selected transition between them.
+/// Join both original worker jobs and observe selected power delivery boundaries.
 /// # Errors
 /// Preserve the transition, admission, worker result and independent peer refusal.
 /// # Panics
@@ -2868,16 +2964,12 @@ fn assert_managed_pair_reissue(
     slot: &'static WorkerSlot,
     admission: &'static ProcessAdmission,
     configurations: PairConfigurations,
-    after_first_take: impl FnOnce(
-        &crate::nts_ke_experiment::power_target::PowerTarget,
-    ) -> Result<(), Failure>,
+    first_retire_event: Option<PowerEvent>,
+    after_first_take: impl FnOnce(&PowerTarget) -> Result<(), Failure>,
 ) -> Result<(), Failure> {
     use std::cell::OnceCell;
 
-    use crate::nts_ke_experiment::managed_preview::{
-        ManagedProtectedPairReport, run_managed_pair_with,
-    };
-    use crate::nts_ke_experiment::power_target::PowerTarget;
+    use crate::nts_ke_experiment::managed_preview::run_managed_pair_with;
 
     let mut authority: crate::SourcePolicyAuthority = pair_loopback_authority()?;
     let [first, second]: [PairLoopbackPeer; 2] =
@@ -2937,6 +3029,8 @@ fn assert_managed_pair_reissue(
                         .get(index)
                         .copied()
                         .ok_or(SubmitError::Control)?;
+                    let event: Option<PowerEvent> = first_retire_event.filter(|_| index == 0);
+                    let hooks: Hooks = pair_retirement_hooks(observer.get(), event)?;
                     submissions.set(index + 1);
                     submit_pair_loopback(
                         reservation,
@@ -2944,6 +3038,7 @@ fn assert_managed_pair_reissue(
                         Arc::clone(&provider),
                         cutoff,
                         remote,
+                        hooks,
                     )
                 },
                 #[cfg(windows)]
@@ -2952,19 +3047,18 @@ fn assert_managed_pair_reissue(
                 }),
             )
             .map_err(|_| Failure::Control)?;
-            let first_result: [LoopbackPeerLeg<Instant>; 2] =
-                first_peer.join().map_err(|_| Failure::Control)??;
-            let second_result: [LoopbackPeerLeg<Instant>; 2] =
-                second_peer.join().map_err(|_| Failure::Control)??;
-            assert_pair_loopback_report(pair.first(), &first.expected, cutoff, first_result)?;
-            let second_report: &ManagedProtectedReport = pair
-                .second()
-                .ok_or(Failure::Control)?
-                .map_err(|_| Failure::Control)?;
-            assert_pair_loopback_report(second_report, &second.expected, cutoff, second_result)?;
-            #[cfg(windows)]
-            assert_pair_presentation(pair.first(), second_report, presentation_reads.get());
-            assert_pair_invocation_order(pair.first(), second_report, configurations)?;
+            assert_pair_loopback_reports(
+                &pair,
+                [
+                    (first_peer, &first.expected),
+                    (second_peer, &second.expected),
+                ],
+                cutoff,
+                configurations,
+                first_retire_event,
+                #[cfg(windows)]
+                presentation_reads.get(),
+            )?;
             Ok::<ManagedProtectedPairReport, Failure>(pair)
         })?;
 
@@ -3041,6 +3135,7 @@ fn managed_pair_delivered_suspend_between_jobs_refuses_second_submission() -> Re
                         Arc::clone(&provider),
                         cutoff,
                         first.remote,
+                        Hooks::none(),
                     )
                 },
                 #[cfg(windows)]
@@ -3115,6 +3210,7 @@ fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Fa
                     Arc::clone(&provider),
                     cutoff,
                     first.remote,
+                    Hooks::none(),
                 )
             },
             #[cfg(windows)]
@@ -3216,7 +3312,7 @@ fn managed_pair_joined_stop_refusal_suppresses_second_job() -> Result<(), Failur
         &SLOT,
         |target: Arc<PowerTarget>| {
             target
-                .deliver(crate::nts_ke_experiment::power_target::PowerEvent::AutomaticResume)
+                .deliver(PowerEvent::AutomaticResume)
                 .map_err(|_| ())?;
             let closes: &Cell<usize> = &closes;
             Ok(move || {
@@ -4213,6 +4309,19 @@ fn verify_native_loopback_leg(
     else {
         return Err(Failure::Control);
     };
+    let span: crate::ProtectedNativeCaptureSpan = receipt
+        .native_capture_span()
+        .map_err(|_| Failure::Control)?;
+    assert!(
+        span.captures() == [pre_send, send_return, receive_return],
+        "{leg}"
+    );
+    assert_eq!(span.frequency_hz(), pre_send.frequency_hz(), "{leg}");
+    assert_eq!(
+        span.qpc_bounds(),
+        [pre_send.qpc_before(), receive_return.qpc_after()],
+        "{leg}",
+    );
     assert_eq!(receipt.local_endpoint(), peer.client_endpoint, "{leg}");
     assert_eq!(receipt.peer_endpoint(), peer.peer_endpoint, "{leg}");
     let points: [(&str, ClockCoordinates); 5] = [

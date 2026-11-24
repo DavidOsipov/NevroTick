@@ -23,6 +23,9 @@ use windows_sys::Win32::System::Threading::{
     GetCurrentProcess, GetCurrentThread, OpenProcessToken, OpenThreadToken,
 };
 
+#[cfg(test)]
+mod acquisition_tests;
+
 /// Maximum binary SID size from the Win32 SDK's `SECURITY_MAX_SID_SIZE`.
 const MAX_SID_BYTES: usize = 68;
 /// Length of the fixed portion of a binary SID before its subauthorities.
@@ -246,10 +249,29 @@ impl RetainedPrimaryToken {
     pub(super) fn open(process: BorrowedHandle<'_>) -> Result<Self, PipeIdentityError> {
         ensure_unimpersonated()?;
         let token: OwnedHandle = open_primary_token(process.as_raw_handle())?;
-        let original: TOKEN_STATISTICS = query_statistics(token.as_handle(), TokenPrimary)?;
+        Self::from_token(token, read_statistics, sample_identity)
+    }
+
+    /// Retain the original handle only after an identity read and matching statistics.
+    ///
+    /// Both readers borrow the same query-only token. A refusal drops the owned
+    /// handle before returning and supplies no retained identity.
+    /// # Errors
+    /// Preserve the first read or validation error, or refuse a changed generation.
+    fn from_token(
+        token: OwnedHandle,
+        mut read: impl FnMut(BorrowedHandle<'_>) -> Result<(TOKEN_STATISTICS, u32), PipeIdentityError>,
+        read_identity: impl FnOnce(
+            BorrowedHandle<'_>,
+            &TOKEN_STATISTICS,
+        ) -> Result<PipeIdentity, PipeIdentityError>,
+    ) -> Result<Self, PipeIdentityError> {
+        let original: TOKEN_STATISTICS =
+            validate_statistics(read(token.as_handle())?, TokenPrimary)?;
         let generation: PrimaryTokenGeneration = PrimaryTokenGeneration::from_statistics(&original);
-        let identity: PipeIdentity = sample_identity(token.as_handle(), &original)?;
-        let confirmed: TOKEN_STATISTICS = query_statistics(token.as_handle(), TokenPrimary)?;
+        let identity: PipeIdentity = read_identity(token.as_handle(), &original)?;
+        let confirmed: TOKEN_STATISTICS =
+            validate_statistics(read(token.as_handle())?, TokenPrimary)?;
         if PrimaryTokenGeneration::from_statistics(&confirmed) != generation {
             return Err(PipeIdentityError::ChangedPrimaryToken);
         }
@@ -399,17 +421,16 @@ fn query_identity(
     token: BorrowedHandle<'_>,
     expected_type: TOKEN_TYPE,
 ) -> Result<PipeIdentity, PipeIdentityError> {
-    let statistics: TOKEN_STATISTICS = query_statistics(token, expected_type)?;
+    let statistics: TOKEN_STATISTICS = validate_statistics(read_statistics(token)?, expected_type)?;
     sample_identity(token, &statistics)
 }
 
-/// Obtain one complete native statistics sample of the requested token type.
+/// Obtain the raw native statistics output and its reported extent.
 /// # Errors
-/// Reject a denied query, invalid extent, unexpected type or identification level.
-fn query_statistics(
+/// Preserve the native failure or refuse an unrepresentable buffer size.
+fn read_statistics(
     token: BorrowedHandle<'_>,
-    expected_type: TOKEN_TYPE,
-) -> Result<TOKEN_STATISTICS, PipeIdentityError> {
+) -> Result<(TOKEN_STATISTICS, u32), PipeIdentityError> {
     let mut statistics: TOKEN_STATISTICS = TOKEN_STATISTICS::default();
     let capacity: u32 = u32::try_from(size_of::<TOKEN_STATISTICS>())
         .map_err(|_| PipeIdentityError::InvalidTokenInformation)?;
@@ -429,7 +450,17 @@ fn query_statistics(
     if success == 0 {
         return Err(last_error("GetTokenInformation(TokenStatistics)"));
     }
-    if written != capacity {
+    Ok((statistics, written))
+}
+
+/// Require a complete statistics record for the requested token type and level.
+/// # Errors
+/// Refuse an invalid extent, unexpected token type or identification level.
+fn validate_statistics(
+    (statistics, written): (TOKEN_STATISTICS, u32),
+    expected_type: TOKEN_TYPE,
+) -> Result<TOKEN_STATISTICS, PipeIdentityError> {
+    if usize::try_from(written).ok() != Some(size_of::<TOKEN_STATISTICS>()) {
         return Err(PipeIdentityError::InvalidTokenInformation);
     }
     if statistics.TokenType != expected_type {

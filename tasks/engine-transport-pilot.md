@@ -33838,3 +33838,161 @@ production Core history and affected qualification gates stay open.
 | `dispatch-intent.json` | `2e8b26d8e7d2bc16c7a8f4112135e158883b16634650bf4f6646f22e99aeed7f` |
 | `verification.json` | `5bab0a62f0645481c91315cbc33cf36228087b997227dd449f5c368246881c2b` |
 | `dispatch-retired.json` | `f95e2b62632b4b345673f6c3f7ab17556c3d8393097c2371e76da88efad01177` |
+
+##### Require an ordered native capture span before exporting protected timing
+
+S2.1/W11-W01, TQ-01 and the reached CHECK-7/25 application capture boundary.
+The joined ordinary receipt now checks its original Windows pre-send,
+send-return and receive-return reads before returning a typed QPC span.
+It preserves the earliest typed read refusal, requires one reported
+frequency and checks all five adjacent edges with equality admitted.
+It returns the original captures and the first and last tick, without
+reading a clock or deriving an elapsed duration.
+The production adapter takes each triplet on its current-thread worker.
+The one-tick ambiguity in the independent peer comparison applies across
+threads. [Microsoft QPC ordering guidance](https://learn.microsoft.com/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#guidance-for-acquiring-time-stamps)
+
+The timing exporter requires both native spans before writing any of
+its six rows. It keeps the existing invocation, association, endpoint
+and retirement checks, and compares the original span ends and shared
+frequency across the two exchanges. The receipt's transport outcome,
+conditional software arithmetic, original age and work remain separate
+from the native capture decision. Calibrated placement and mapping
+remain unavailable.
+
+Planning, Rust contracts and QA traced the socket capture through
+the selected datagram, original operation commit, actual join, receipt
+and timing writer. Boundary and numerical tests check touching edges,
+signed extremes, each one-tick overlap and each later frequency mismatch.
+The portable generated control compares 729 original six-tick sequences
+against an independently sorted sequence. The actual joined controls keep
+typed read refusal and alternate-backend absence beside the preserved
+ordinary result and original work. Native controls use the genuine
+read-only adapter and original joined loopback receipts. The direct
+unrepresentable case supplies a controlled disposition.
+
+The first ordinary build refused an unreachable test-only public error.
+After exporting the error within the existing Windows and unit-test
+selection, the next format check required import ordering. The corrected
+GNU candidate passed five joined transport histories and three QPC
+controls. Its bootstrap optimized build reached a compiler SIGKILL before
+test discovery under the 90-second CPU cap. The configured isolated retry
+with the existing optimized CPU and wall allowance passed all three
+selected cases on the same candidate.
+
+MSVC Clippy refused a redundant `must_use` on a Windows-only accessor.
+Removing that attribute was the sole source change from the passing GNU
+controls. The final tree `897bd6b7a4a5724a4fb8ee2ab60c84cc0bab02bd` binds
+754 product inputs to
+`88b4ebbdd832df0c02a8d7884b4c3fa987ff2ba07236ee4774f4cd01ec278c43`,
+with 17 separate helper inputs. All ten configured continuation
+commands passed, including GNU and MSVC Clippy, the Windows libtest
+link and PE readback, and compile/lint checking of the standalone
+facade against the actual Windows Engine library. The raw receipts retain
+each attempt and its original scope.
+
+| Record under `~/.local/share/nevrotick/s21-native-capture-span.6yh1YCJT/` | SHA-256 |
+| --- | --- |
+| `final.patch` | `0180fc20512f848e22e5f8c6bf7e653d357afbedaf114ae9cb7b5c527a26b938` |
+| `validation-03/verification.json` | `b6ce79d0a424cbc1edae88f721e6ae3dbc9f8e947d0be1b12c50f5d4fc1dd078` |
+| `optimized-retry/optimized-verification.json` | `08fc011930e2b5a080847d2d7433f27e670dee399777d6f1d47c20f2834daa91` |
+| `validation-04/verification.json` | `99d443fdb25c5c26084a086e7facef0981daa5777692656691e9a3266b1ab4ad` |
+| `validation-05/verification.json` | `dbc8748bfb6d740794d9c5af6f3b582f43fda6e123756214d169e71ef0adba60` |
+| `native-recipe/join_733fdcc73c28/verification.json` | `bb31d606e80baa6bad404e4a92fdd528b0fb3d2fb92cfae6a05c32ca6c91baea` |
+
+The native preflight first refused the build-driver pin because it still
+selected the prior filename. After binding the final driver, the owned
+offline Windows guest accepted the v3 check and ran four exact cases
+from the bound MSVC libtest. The actual joined loopback case verified
+both receipt spans against their original capture triplets and checked
+the independent peer chronology. The other cases preserved the original
+typed read refusal, alternate-backend absence, and a supplied
+unrepresentable disposition. All four discovery and four execution
+children reaped with both streams closed. The eight child exits were
+zero, the input bookends passed and the scratch and transfers retired.
+The native selector route needed no certificate changes.
+
+Independent source review checked the selected I/O captures, normal
+join, private span constructor and timing writer. The standalone
+exporter's earlier raw check can refuse malformed receipts before it
+reaches the span call. Current native evidence is for the actual receipt
+and adapter paths. The new exporter has compile/lint evidence and still
+needs a fresh linked authenticated timing pair. Physical calibration,
+mapping validity and current Core history admission remain open, as do
+the affected per-file line and mutation gates. This fixed typed-input
+check adds no decoder, clock effect, resource owner or synchronization.
+
+##### Retain delivered power invalidation through the original managed join
+
+S2.1/W11-W01, TQ-07/09 and CHECK-11/25/27. The managed power target
+records delivery on the original active binding before requesting Stop.
+The receiving owner keeps the binding through the actual joined take
+and the closing presentation read. It checks and detaches the same
+binding once under the delivery mutex, then closes the observer outside
+that mutex. Unconfirmed collection retains its existing Stop attempt
+before detachment. The separate native close result stays visible.
+
+The managed report retains `Invalidated` for recorded delivery even if
+Stop fails or the gate or epoch becomes unavailable. `Unavailable`
+covers an unobservable binding with no recorded delivery.
+`NoEventObserved` describes the available binding through its own
+retirement, and absence describes a path with no binding observation.
+A recorded mark belongs to that historical job. Subsequent idle delivery
+and the next active binding have their own scope. The original receipts,
+chronology, nominal arithmetic and charged work stay available. A
+future mapping guard can refuse on delivered withdrawal or missing
+evidence. An event-free observation supplies no physical continuity,
+QPC crossing time, mapping validity or sample eligibility.
+
+Rust contract and lifecycle QA exercised automatic resume on the
+original active target after the first worker recorded both ordinary
+operations and before worker retirement. The real loopback peer and
+joined report checks preserved both receipts, accounting and original
+cutoff, with `Invalidated` on the first report and `NoEventObserved`
+on the reissued job. The healthy no-delivery and idle-transition cases
+check that the mark stays with its owner. Power-target controls retain
+the event across poisoned Stop, target poison and epoch exhaustion.
+A poisoned target without recorded delivery remains unavailable.
+The independent source review traced both managed entry points and
+the receiver, original Stop and close order.
+
+The initial GNU test selection passed but Clippy refused the length
+of the augmented fixture helper. The split helper exposed one obsolete
+qualification on recompilation. The corrected overlay on `cfd4c753`
+has tree `d358bdb8f037805d69431468ef56ab29615f1069` and source
+digest `2b7a1bfe7f7bcb46abcb8b4f59ec777c69640b0ae175a624a72252002aca8c0e`
+for 754 product files, with 17 independently pinned helpers.
+Rust 1.100.0 passed 13 development lanes with 16 ordinary GNU cases,
+GNU and MSVC Clippy, the x64-v3 Windows link and PE/PDB readback, and
+facade formatting and Clippy against the linked Engine library. The
+separate configured GNU `verify-release` runner passed the same 16 cases
+on the same source. The earlier refusals retain their original receipts.
+
+The owned offline build-26100 Sandbox accepted the bound image and ran
+four exact managed fixtures covering late delivery, no delivery, idle
+suspend/resume and abnormal join. All eight listing and test processes
+exited zero and were reaped with both streams closed. Scratch retired
+and the attached shelves were empty. Independent readback matched all
+771 source and helper files, the PE/PDB and the native transcripts.
+The raw dispatcher retains a legacy capture-span scope label. The
+selector-bound scope readback records the actual managed-power run
+beside the preserved original receipt.
+
+The tests use controlled event delivery over the actual target and
+actual worker joins. Physical suspend/resume coverage and delay, an
+independent calibrated timing reference, current mapping authority,
+Core admission and the affected per-file line and mutation gates remain
+open. The existing fuzz and formal execution holds retain their scope.
+No native handle or FFI ownership model changed.
+
+| Record under `~/.local/share/nevrotick/s21-joined-power.FI4h0GFO/` | SHA-256 |
+| --- | --- |
+| `power.patch` | `3a62953229f36542892254ddbe3508827574203e316aab7a1a624e1447b338fc` |
+| `combined.patch` | `67343c6aca160bcd8610a8bc1e88ba9d46c5fd7812e1f5feba4e4ccf70087a92` |
+| `development-r1/verification.json` | `5fea5ad7172423fe2ddeb1f3a8ff0998bafb589b79b7256e68f147970f397c0c` |
+| `development-r2/verification.json` | `441693a543372319281d6f5239448436e5db745f7540439467834db634e6f7a5` |
+| `development-r3/verification.json` | `4da98f5684c561476208b310bcf2ab879900b314385d25c629ad67054e38f79b` |
+| `optimized-r2/optimized-verification.json` | `8a9bd299af4770d3ee1fcd670ac5eef29905b16bbd4c9202a508bee5ef816d14` |
+| `windows-symbol-readback.json` | `6c375a366704a16e6004f0ed8eb54b50bc5d2427ec792436d6c152afa8ede88f` |
+| `native-recipe/join_5e48fa50925f/verification.json` | `265c1124c9ecf6768380c29fd2825d36a0c7ea40051c18091ccb25a770d5ec36` |
+| `native-scope-readback.json` | `7b377760ccba9865bf8f101756eac720601d63254a15c2e59a8df52a04f80cc5` |

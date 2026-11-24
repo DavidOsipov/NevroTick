@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Local application captures at the original datagram adapter boundaries.
 
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+use std::num::NonZeroU64;
 #[cfg(windows)]
 use std::time::Instant;
 #[cfg(any(windows, test))]
@@ -25,6 +27,127 @@ pub enum NativeClockObservation {
     ReadRefused(ClockReadError),
     /// The exact raw read was retained but cannot supply a checked software wall value.
     UnrepresentableWall(ClockCoordinates),
+}
+
+/// Why the original native capture triplet cannot supply an ordered QPC span.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProtectedNativeCaptureRefusal {
+    /// The adapter did not attempt a native read at one of the original points.
+    #[cfg(windows)]
+    Absent,
+    /// An original native read refused with this typed cause.
+    #[cfg(windows)]
+    ReadRefused(ClockReadError),
+    /// An original raw wall reading had no checked software representation.
+    #[cfg(windows)]
+    UnrepresentableWall,
+    /// The original captures report different QPC frequencies.
+    FrequencyChanged,
+    /// One bracket is reversed or two successive brackets overlap.
+    CaptureOrder,
+}
+
+/// The original three application brackets from a protected receipt.
+///
+/// Each bracket is ordered and the three share one reported QPC frequency.
+/// Success makes the original application span available for comparison to a
+/// mapping's validity. Physical placement, continuity and eligibility need
+/// separate evidence.
+#[cfg(all(feature = "ke-association-prototype", windows))]
+#[must_use = "retain the original checked application capture span"]
+pub struct ProtectedNativeCaptureSpan {
+    /// Pre-send, send-return and selected receive-return readings, in order.
+    captures: [ClockCoordinates; 3],
+}
+
+#[cfg(all(feature = "ke-association-prototype", windows))]
+impl ProtectedNativeCaptureSpan {
+    /// Check the original receipt's native read dispositions in capture order.
+    ///
+    /// # Errors
+    /// Preserve the first absent, failed or unrepresentable read, then refuse
+    /// incompatible frequencies or unordered brackets. No clock is read here.
+    pub(crate) fn from_observations(
+        [pre_send, send_return, receive_return]: [Option<NativeClockObservation>; 3],
+    ) -> Result<Self, ProtectedNativeCaptureRefusal> {
+        let captures: [ClockCoordinates; 3] = [
+            recorded_coordinates(pre_send)?,
+            recorded_coordinates(send_return)?,
+            recorded_coordinates(receive_return)?,
+        ];
+        check_qpc_triplet(
+            captures.map(|capture: ClockCoordinates| capture.frequency_hz()),
+            captures.map(|capture: ClockCoordinates| [capture.qpc_before(), capture.qpc_after()]),
+        )?;
+        Ok(Self { captures })
+    }
+
+    /// Return the original pre-send, send-return and receive-return brackets.
+    pub const fn captures(&self) -> [ClockCoordinates; 3] {
+        self.captures
+    }
+
+    /// Return the shared frequency, in QPC ticks per second.
+    #[must_use]
+    pub const fn frequency_hz(&self) -> NonZeroU64 {
+        let [first, _, _]: [ClockCoordinates; 3] = self.captures;
+        first.frequency_hz()
+    }
+
+    /// Return the inclusive first and last QPC ticks of the original span.
+    #[must_use]
+    pub const fn qpc_bounds(&self) -> [i64; 2] {
+        let [first, _, last]: [ClockCoordinates; 3] = self.captures;
+        [first.qpc_before(), last.qpc_after()]
+    }
+}
+
+/// Preserve the original disposition when a capture cannot furnish coordinates.
+///
+/// # Errors
+/// Return the typed absence, read refusal or wall representation failure.
+#[cfg(all(feature = "ke-association-prototype", windows))]
+const fn recorded_coordinates(
+    observation: Option<NativeClockObservation>,
+) -> Result<ClockCoordinates, ProtectedNativeCaptureRefusal> {
+    match observation {
+        Some(NativeClockObservation::Recorded(coordinates)) => Ok(coordinates),
+        Some(NativeClockObservation::ReadRefused(error)) => {
+            Err(ProtectedNativeCaptureRefusal::ReadRefused(error))
+        }
+        Some(NativeClockObservation::UnrepresentableWall(_)) => {
+            Err(ProtectedNativeCaptureRefusal::UnrepresentableWall)
+        }
+        None => Err(ProtectedNativeCaptureRefusal::Absent),
+    }
+}
+
+/// Check the whole triplet in its original order without tick arithmetic.
+///
+/// # Errors
+/// Refuse unequal frequencies or any reversed edge. Touching endpoints are valid.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+fn check_qpc_triplet(
+    [pre_frequency, send_frequency, receive_frequency]: [NonZeroU64; 3],
+    [
+        [pre_start, pre_end],
+        [send_start, send_end],
+        [receive_start, receive_end],
+    ]: [[i64; 2]; 3],
+) -> Result<(), ProtectedNativeCaptureRefusal> {
+    if pre_frequency != send_frequency || pre_frequency != receive_frequency {
+        return Err(ProtectedNativeCaptureRefusal::FrequencyChanged);
+    }
+    if pre_start > pre_end
+        || pre_end > send_start
+        || send_start > send_end
+        || send_end > receive_start
+        || receive_start > receive_end
+    {
+        return Err(ProtectedNativeCaptureRefusal::CaptureOrder);
+    }
+    Ok(())
 }
 
 /// The original software bracket and, on Windows, the result of its native read.
@@ -148,6 +271,78 @@ fn wall_from_filetime(filetime: u64) -> Option<SystemTime> {
 #[cfg(test)]
 mod tests {
     use super::{Duration, UNIX_EPOCH, wall_from_filetime};
+    #[cfg(feature = "ke-association-prototype")]
+    use super::{NonZeroU64, ProtectedNativeCaptureRefusal, check_qpc_triplet};
+
+    /// Check inclusive ordering across the full signed tick range.
+    /// # Panics
+    /// Panics if an equal edge or extreme tick is refused, or an overlap is admitted.
+    #[cfg(feature = "ke-association-prototype")]
+    #[test]
+    fn qpc_triplet_checks_each_one_tick_overlap_beside_touching_edges() {
+        let frequency: NonZeroU64 = NonZeroU64::MIN;
+        let touching: [[i64; 2]; 3] = [[i64::MIN, -4], [-4, 2], [2, i64::MAX]];
+        assert_eq!(check_qpc_triplet([frequency; 3], touching), Ok(()));
+
+        let overlaps: [[[i64; 2]; 3]; 2] = [
+            [[i64::MIN, -4], [-5, 2], [2, i64::MAX]],
+            [[i64::MIN, -4], [-4, 2], [1, i64::MAX]],
+        ];
+        for triplet in overlaps {
+            assert_eq!(
+                check_qpc_triplet([frequency; 3], triplet),
+                Err(ProtectedNativeCaptureRefusal::CaptureOrder),
+            );
+        }
+    }
+
+    /// Challenge the second and third frequency independently.
+    /// # Panics
+    /// Panics if a triplet mixes frequencies or refuses a common nondefault frequency.
+    #[cfg(feature = "ke-association-prototype")]
+    #[test]
+    fn qpc_triplet_rejects_frequency_changes_at_either_later_capture() {
+        let alternate: NonZeroU64 = NonZeroU64::MIN;
+        let frequency: NonZeroU64 = NonZeroU64::MAX;
+        let ticks: [[i64; 2]; 3] = [[1, 2], [3, 4], [5, 6]];
+        assert_eq!(check_qpc_triplet([frequency; 3], ticks), Ok(()));
+        for frequencies in [
+            [frequency, alternate, frequency],
+            [frequency, frequency, alternate],
+        ] {
+            assert_eq!(
+                check_qpc_triplet(frequencies, ticks),
+                Err(ProtectedNativeCaptureRefusal::FrequencyChanged),
+            );
+        }
+    }
+
+    /// Enumerate six ticks over a small signed range and compare with sorting.
+    /// # Panics
+    /// Panics if the real comparison disagrees with the independent sorted sequence.
+    #[cfg(feature = "ke-association-prototype")]
+    #[test]
+    fn qpc_triplet_order_matches_sorted_sequence_for_small_signed_ticks() {
+        for mut encoding in 0..729_u32 {
+            let mut original: [i64; 6] = [0; 6];
+            for tick in &mut original {
+                *tick = i64::from(encoding % 3) - 1;
+                encoding /= 3;
+            }
+            let mut sorted: [i64; 6] = original;
+            sorted.sort_unstable();
+            let [first, second, third, fourth, fifth, sixth]: [i64; 6] = original;
+            assert_eq!(
+                check_qpc_triplet(
+                    [NonZeroU64::MIN; 3],
+                    [[first, second], [third, fourth], [fifth, sixth]],
+                )
+                .is_ok(),
+                original == sorted,
+                "{original:?}",
+            );
+        }
+    }
 
     /// Independent epoch neighbors and mixed seconds/fractions on both sides.
     ///
@@ -241,6 +436,19 @@ mod tests {
             .map_err(|_| String::from("software wall preceded the Windows epoch"))?;
         let expected_ns: u128 = u128::from(coordinates.filetime_100ns()) * 100;
         assert_eq!(observed.as_nanos(), expected_ns);
+        #[cfg(feature = "ke-association-prototype")]
+        {
+            use super::ProtectedNativeCaptureSpan;
+
+            assert!(matches!(
+                ProtectedNativeCaptureSpan::from_observations([
+                    Some(NativeClockObservation::Recorded(coordinates)),
+                    Some(NativeClockObservation::UnrepresentableWall(coordinates)),
+                    None,
+                ]),
+                Err(ProtectedNativeCaptureRefusal::UnrepresentableWall)
+            ));
+        }
         Ok(())
     }
 }

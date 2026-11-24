@@ -9,10 +9,11 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[cfg(windows)]
-use crate::ProtectedNativeClockObservation;
+use crate::{
+    ProtectedNativeCaptureRefusal, ProtectedNativeCaptureSpan, ProtectedNativeClockObservation,
+};
 use ntp_wire::{NtpTimestamp, RawHeader};
 
-pub use super::profile::CertificateTimeProvenance;
 use super::{
     Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
     PowerObserverCleanup, RunFailed, StopHandle,
@@ -21,6 +22,7 @@ use super::{
     failure_labels, handoff, io_label, job, receive_probe,
     response::{ControlProtection, ProtectedControlKind},
 };
+pub use super::{power_target::ManagedPowerObservation, profile::CertificateTimeProvenance};
 use crate::{
     ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
     RelativeMeasurementRefusal, RunClockContext, SoftwareClock, SourceConfigurationSnapshot,
@@ -680,6 +682,19 @@ impl ManagedProtectedReceipt {
         self.application_native_clock_captures
     }
 
+    /// Admit the original application brackets for a QPC span comparison.
+    ///
+    /// # Errors
+    /// Refuse missing or failed native observations, a frequency change or
+    /// unordered brackets. The authenticated receipt and its original age
+    /// remain available on refusal.
+    #[cfg(windows)]
+    pub fn native_capture_span(
+        &self,
+    ) -> Result<ProtectedNativeCaptureSpan, ProtectedNativeCaptureRefusal> {
+        ProtectedNativeCaptureSpan::from_observations(self.application_native_clock_captures)
+    }
+
     /// Return the inclusive minimum and maximum monotonic intervals between
     /// this exchange's original pre-send and receive-return wall reads.
     /// The minimum pairs the leading receive reading with the trailing pre-send
@@ -802,6 +817,8 @@ pub struct ManagedProtectedReport {
     first_nak_at: Option<Instant>,
     /// A failed observer close is retained independently of normal retirement.
     power_unregistration_error: Option<NonZeroU32>,
+    /// Delivery observed through retirement of this invocation's own power binding.
+    power_observation: Option<ManagedPowerObservation>,
     /// Actual calls to the local send operation.
     attempted_sends: usize,
     /// Actual complete local datagram submissions.
@@ -865,6 +882,7 @@ impl ManagedProtectedReport {
             profile,
             first_nak_at,
             power_unregistration_error: cleanup.unregistration_error,
+            power_observation: cleanup.managed_observation,
             attempted_sends,
             fully_submitted_sends,
             remaining_driver_work,
@@ -951,6 +969,15 @@ impl ManagedProtectedReport {
     #[must_use]
     pub const fn power_unregistration_error(&self) -> Option<NonZeroU32> {
         self.power_unregistration_error
+    }
+
+    /// Return historical delivery through retirement of this invocation's binding.
+    ///
+    /// Absence means this acquisition path supplied no binding observation.
+    /// Even an event-free observation supplies no physical continuity or mapping.
+    #[must_use]
+    pub const fn power_observation(&self) -> Option<ManagedPowerObservation> {
+        self.power_observation
     }
 
     /// Return the total number of actual local send calls across both operations.
@@ -1045,10 +1072,12 @@ fn run_pair_member(
         #[cfg(windows)]
         read_presentation,
     );
-    ManagedProtectedReport::from_observed(Ok(super::finish_observing(result, &stop, move || {
-        drop(active);
-        Ok(())
-    })))
+    ManagedProtectedReport::from_observed(Ok(super::finish_observing(
+        result,
+        &stop,
+        Some(active),
+        || Ok(()),
+    )))
 }
 
 /// Run two explicit checked jobs within the original cutoff and one owning scope.

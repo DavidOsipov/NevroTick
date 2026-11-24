@@ -13,13 +13,17 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prepare_payload as stage
 import verify
+from windows_pe import MAX_PE_BYTES
 
 IDENTITY: str = "NevroTick.S06.ArtworkLab"
+UI_IMAGE: str = "nevrotick-ui.exe"
 ARTWORK_PREFIX: str = "msix-inputs/"
 PROPERTIES: str = "msix-authoring/authoring/msix-properties.xml"
 GROUPS: dict[str, int] = {"PackageLogo.png": 3, "Square150x150Logo.png": 3, "Square44x44Logo.png": 45}
 # Reviewed build of inert.c retained in the unsigned MakeAppx fixture evidence.
 INERT_SHA256: str = "466e48e377946eed00c03469c8a0e24d51e1774a391b221b26136cefc26abe98"
+# The disabled-service authoring owns the exact extension block.
+ROLE_MANIFEST_SHA256: str = "76f52cde2c3fc40b39a2150f3529df0bcab76d99886293fef81e71e33881b41c"
 XML_DECLARATION: bytes = b'<?xml version="1.0" encoding="utf-8"?>\n'
 TRUSTED_LAUNCH_NS: bytes = b' xmlns:trustedlaunch="http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"'
 MANIFEST_TOP: bytes = (
@@ -58,8 +62,10 @@ def held_directory(path: Path) -> Iterator[tuple[int, Path]]:
         os.close(descriptor)
 
 
-def handoff_snapshot(path: Path, pin: str) -> tuple[dict[str, bytes], bytes, str]:
-    """Recheck the selected art and Properties leaves against the inspected export."""
+def handoff_snapshot(
+    path: Path, pin: str, *, include_ui: bool = False,
+) -> tuple[dict[str, bytes], bytes, str]:
+    """Recheck the selected art, Properties and optional UI on one held export."""
     descriptor: int
     anchor: Path
     with held_directory(path) as (descriptor, anchor):
@@ -89,6 +95,13 @@ def handoff_snapshot(path: Path, pin: str) -> tuple[dict[str, bytes], bytes, str
         properties: bytes = verify.read_bound_msix_leaf(
             anchor / PROPERTIES, files[PROPERTIES]["sha256"], staging_descriptor=descriptor,
         )
+        if include_ui:
+            image: dict[str, Any] = files.get(UI_IMAGE, {})
+            stage.require(image.get("disposition") == "unadmitted-ui-image",
+                          "ArtworkLab requires the checked UI image from this handoff.")
+            selected[UI_IMAGE] = verify.read_bound_msix_leaf(
+                anchor / UI_IMAGE, image["sha256"], staging_descriptor=descriptor, maximum=MAX_PE_BYTES,
+            )
         return selected, properties, observed["generation_receipt_sha256"]
 
 
@@ -121,8 +134,8 @@ def pri_snapshot(path: Path, pin: str, artwork: dict[str, bytes]) -> bytes:
             raise ValueError("ArtworkLab PRI or detailed dump differs from the pinned readback.") from error
 
 
-def lab_manifest(properties: bytes) -> bytes:
-    """Insert the checked Properties fragment under the fixed lab identity."""
+def _manifest_properties(properties: bytes) -> bytes:
+    """Project checked Properties under the package's own Trusted Launch prefix."""
     stage.require(properties.startswith(XML_DECLARATION), "ArtworkLab Properties XML declaration differs.")
     start: bytes
     separator: bytes
@@ -135,7 +148,40 @@ def lab_manifest(properties: bytes) -> bytes:
     )
     # The fixed package root already declares this prefix for IgnorableNamespaces.
     start = start.removesuffix(TRUSTED_LAUNCH_NS + b">") + b">"
-    return MANIFEST_TOP + start + separator + children + MANIFEST_BOTTOM
+    return start + separator + children
+
+
+def lab_manifest(properties: bytes) -> bytes:
+    """Insert the checked Properties fragment under the fixed lab identity."""
+    return MANIFEST_TOP + _manifest_properties(properties) + MANIFEST_BOTTOM
+
+
+def _replace_once(document: bytes, marker: bytes, replacement: bytes) -> bytes:
+    """Replace one unique fixed authoring marker or refuse a template change."""
+    stage.require(document.count(marker) == 1, "Combined ArtworkLab manifest template differs.")
+    return document.replace(marker, replacement)
+
+
+def combined_manifest(properties: bytes) -> bytes:
+    """Retain the checked ArtworkLab identity with both exact disabled extensions."""
+    roles: bytes = stage.read_bound(stage.HERE / "AppxManifest.xml", 64 * 1024, ROLE_MANIFEST_SHA256)
+    start: bytes = b"      <Extensions>\n"
+    end: bytes = b"      </Extensions>\n"
+    stage.require(roles.count(start) == roles.count(end) == 1, "The disabled service extension block differs.")
+    extensions: bytes = start + roles.split(start, 1)[1].split(end, 1)[0] + end
+    top: bytes = _replace_once(
+        MANIFEST_TOP, b' IgnorableNamespaces="uap uap10 rescap trustedlaunch"',
+        b' xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"'
+        b' IgnorableNamespaces="uap uap10 rescap trustedlaunch desktop6"',
+    )
+    top = _replace_once(top, b'Version="1.0.0.0"', b'Version="1.0.1.0"')
+    bottom: bytes = _replace_once(
+        MANIFEST_BOTTOM, b'Id="Inert" Executable="Inert.exe"', b'Id="Observe" Executable="nevrotick-ui.exe"',
+    )
+    bottom = _replace_once(bottom, b"    </Application>\n", extensions + b"    </Application>\n")
+    bottom = _replace_once(bottom, b'<rescap:Capability Name="runFullTrust" />',
+                           b'<rescap:Capability Name="runFullTrust" /><rescap:Capability Name="packagedServices" />')
+    return top + _manifest_properties(properties) + bottom
 
 
 def main() -> int:
@@ -144,27 +190,51 @@ def main() -> int:
     parser.add_argument("--handoff-receipt-sha256", required=True)
     parser.add_argument("--pri-dir", type=Path, required=True)
     parser.add_argument("--pri-receipt-sha256", required=True)
-    parser.add_argument("--inert", type=Path, required=True)
-    parser.add_argument("--inert-sha256", required=True)
+    image_choice: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
+    image_choice.add_argument("--inert", type=Path)
+    image_choice.add_argument("--role-link-receipt", type=Path, help="stage the checked Slint UI and disabled service pair")
+    digest_choice: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
+    digest_choice.add_argument("--inert-sha256")
+    digest_choice.add_argument("--role-link-receipt-sha256")
     parser.add_argument("--output", type=Path, required=True)
     args: argparse.Namespace = parser.parse_args()
     handoff: Path = args.handoff.absolute()
     pri_dir: Path = args.pri_dir.absolute()
-    inert: Path = args.inert.absolute()
+    inert: Path | None = args.inert
+    role_receipt: Path | None = args.role_link_receipt
+    role_pin: str | None = args.role_link_receipt_sha256
     output: Path = args.output.absolute()
+    combined: bool = role_receipt is not None
+    if combined != (role_pin is not None):
+        parser.error("the selected image input and its digest must name the same ArtworkLab profile")
     try:
-        for source in (handoff, pri_dir, inert):
-            stage._outside_source(source, output)
-        stage.require(args.inert_sha256 == INERT_SHA256, "ArtworkLab requires the reviewed inert image.")
-        artwork: dict[str, bytes]
+        stage._outside_source(handoff, output)
+        stage._outside_source(pri_dir, output)
+        if role_receipt is not None:
+            role_receipt = role_receipt.absolute()
+            stage._outside_source(role_receipt.parent, output)
+        if inert is not None:
+            inert = inert.absolute()
+            stage._outside_source(inert, output)
+            stage.require(args.inert_sha256 == INERT_SHA256, "ArtworkLab requires the reviewed inert image.")
+        selected: dict[str, bytes]
         properties: bytes
         generation: str
-        artwork, properties, generation = handoff_snapshot(handoff, args.handoff_receipt_sha256)
-        pri: bytes = pri_snapshot(pri_dir, args.pri_receipt_sha256, artwork)
-        inert_bytes: bytes = stage.read_bound(inert, 64 * 1024, INERT_SHA256)
+        selected, properties, generation = handoff_snapshot(handoff, args.handoff_receipt_sha256, include_ui=combined)
+        ui: bytes | None = selected.pop(UI_IMAGE, None)
+        pri: bytes = pri_snapshot(pri_dir, args.pri_receipt_sha256, selected)
+        images: dict[str, bytes]
+        manifest: bytes
+        if role_receipt is not None and role_pin is not None and ui is not None:
+            images = {**stage.role_images(role_receipt, role_pin), UI_IMAGE: ui}
+            manifest = combined_manifest(properties)
+        elif inert is not None:
+            images = {"Inert.exe": stage.read_bound(inert, 64 * 1024, INERT_SHA256)}
+            manifest = lab_manifest(properties)
+        else:
+            raise ValueError("The combined ArtworkLab selections are incomplete.")
         payload: dict[str, bytes] = {
-            **artwork, "AppxManifest.xml": lab_manifest(properties),
-            "Inert.exe": inert_bytes, "resources.pri": pri,
+            **selected, **images, "AppxManifest.xml": manifest, "resources.pri": pri,
         }
         files: dict[str, str | dict[str, str]] = stage.stage_payload(output, payload, None)
     except stage.PublicationUncertainError as error:
@@ -178,12 +248,16 @@ def main() -> int:
         messages: tuple[str, ...] = (f"ArtworkLab staging refused: {error}", *getattr(error, "__notes__", ()))
         print("\n".join(messages), file=sys.stderr)
         return 1
-    print(json.dumps({
-        "status": "unsigned-artwork-lab-inputs-staged", "assembly_ready": False,
+    report: dict[str, object] = {
+        "status": "unsigned-combined-artwork-lab-inputs-staged" if combined else "unsigned-artwork-lab-inputs-staged",
+        "assembly_ready": False,
         "lab_identity": IDENTITY, "handoff_receipt_sha256": args.handoff_receipt_sha256,
         "generation_receipt_sha256": generation, "pri_readback_sha256": args.pri_receipt_sha256,
         "properties_sha256": stage.digest(properties), "payload": files,
-    }, sort_keys=True))
+    }
+    if combined:
+        report["role_link_receipt_sha256"] = role_pin
+    print(json.dumps(report, sort_keys=True))
     return 0
 
 

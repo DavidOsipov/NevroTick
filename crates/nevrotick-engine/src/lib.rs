@@ -28,13 +28,18 @@ mod nts_ke_experiment;
 pub use clock_capture::NativeClockObservation as ProtectedNativeClockObservation;
 #[cfg(windows)]
 pub use clock_capture::NativeClockObservation;
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub use clock_capture::ProtectedNativeCaptureRefusal;
+#[cfg(all(feature = "ke-association-prototype", windows))]
+pub use clock_capture::ProtectedNativeCaptureSpan;
 #[cfg(feature = "ke-association-prototype")]
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
-    CertificateTimeProvenance, ManagedProtectedPairReport, ManagedProtectedPlan,
-    ManagedProtectedReceipt, ManagedProtectedReport, ManagedProtectedRestriction,
-    ManagedProtectedTerminal, SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    CertificateTimeProvenance, ManagedPowerObservation, ManagedProtectedPairReport,
+    ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
+    ManagedProtectedRestriction, ManagedProtectedTerminal, SourceProtectedProbeFailure,
+    SourceProtectedProbeReport,
 };
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};

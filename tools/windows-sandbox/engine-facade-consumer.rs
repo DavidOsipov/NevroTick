@@ -74,9 +74,10 @@ use std::{
 use nevrotick_engine::{
     CertificateTimeProvenance, KePreviewTarget, ManagedProtectedPairReport, ManagedProtectedPlan,
     ManagedProtectedReceipt, ManagedProtectedReport, ManagedProtectedRestriction,
-    ManagedProtectedTerminal, ProtectedNativeClockObservation, SoftwareClock, SourceAddressSet,
-    SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicyError,
-    SourcePolicyLimits, SourcePolicySnapshot, SourceProtectedProbeFailure,
+    ManagedProtectedTerminal, ProtectedNativeCaptureSpan, ProtectedNativeClockObservation,
+    SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
+    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
+    SourceProtectedProbeFailure,
 };
 
 /// Fixed program atom consumed by the Engine's actual CLI entrypoint.
@@ -928,13 +929,12 @@ fn successor_timing_ports(
 /// They grant no calibrated mapping, sample eligibility or clock authority.
 ///
 /// # Errors
-/// Refuse incomplete or mismatched history, a wrong endpoint, or a failed write.
+/// Refuse incomplete or mismatched history, invalid native capture spans,
+/// mismatched frequencies, overlapping or reversed legs, a wrong endpoint, or a failed write.
 fn write_successor_timing(
     report: &ManagedProtectedReport,
     expected_peer: SocketAddr,
 ) -> Result<(), SetupFailure> {
-    use ProtectedNativeClockObservation::Recorded;
-
     let (Some(first), ManagedProtectedTerminal::Ordinary(successor)) =
         (report.first(), report.terminal())
     else {
@@ -957,41 +957,21 @@ fn write_successor_timing(
     }
     let first_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(first, expected_peer)?;
     let next_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(successor, expected_peer)?;
-    let [
-        [
-            Some(Recorded(first_before)),
-            Some(Recorded(first_after)),
-            Some(Recorded(first_receive)),
-        ],
-        [
-            Some(Recorded(next_before)),
-            Some(Recorded(next_after)),
-            Some(Recorded(next_receive)),
-        ],
-    ] = [
-        first.application_native_clock_captures(),
-        successor.application_native_clock_captures(),
-    ]
-    else {
-        return Err(SetupFailure::ManagedSuccessorTiming);
-    };
-    if first_receive.qpc_after() > next_before.qpc_before()
-        || first_before.frequency_hz() != next_before.frequency_hz()
-    {
+    let first_span: ProtectedNativeCaptureSpan = first
+        .native_capture_span()
+        .map_err(|_| SetupFailure::ManagedSuccessorTiming)?;
+    let next_span: ProtectedNativeCaptureSpan = successor
+        .native_capture_span()
+        .map_err(|_| SetupFailure::ManagedSuccessorTiming)?;
+    let [_, first_end]: [i64; 2] = first_span.qpc_bounds();
+    let [next_start, _]: [i64; 2] = next_span.qpc_bounds();
+    if first_end > next_start || first_span.frequency_hz() != next_span.frequency_hz() {
         return Err(SetupFailure::ManagedSuccessorTiming);
     }
     let mut sink: io::StdoutLock<'_> = io::stdout().lock();
     for (leg, (client_port, peer_port), captures) in [
-        (
-            "first",
-            first_ports,
-            [first_before, first_after, first_receive],
-        ),
-        (
-            "successor",
-            next_ports,
-            [next_before, next_after, next_receive],
-        ),
+        ("first", first_ports, first_span.captures()),
+        ("successor", next_ports, next_span.captures()),
     ] {
         for (point, coordinates) in ["pre-send", "send-return", "receive-return"]
             .into_iter()

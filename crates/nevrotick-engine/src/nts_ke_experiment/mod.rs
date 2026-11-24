@@ -1356,10 +1356,7 @@ fn run_managed_successor_with_power_observer(
         },
         &mut Some(&mut windows_platform_native::read_leap_presentation),
     );
-    Ok(finish_observing(result, &stop, move || {
-        drop(active);
-        close()
-    }))
+    Ok(finish_observing(result, &stop, Some(active), close))
 }
 
 /// Register one persistent native callback for the target's owning scope.
@@ -1414,6 +1411,8 @@ struct ObservedInvocation {
 struct PowerObserverCleanup {
     /// The actual stop scope could not be latched after collection refusal.
     stop_failed: bool,
+    /// Historical observation from retirement of the original managed binding.
+    managed_observation: Option<power_target::ManagedPowerObservation>,
     /// Exact nonzero status from consuming close after disarm.
     unregistration_error: Option<NonZeroU32>,
 }
@@ -1482,23 +1481,28 @@ fn run_reserved_observing<Close: FnOnce() -> Result<(), NonZeroU32>>(
     let result: Result<datagram::ReceivedInvocation, RunFailed> = submit(reservation)
         .map_err(RunFailed::Submission)
         .and_then(|()| receive_submitted(slot, None));
-    Ok(finish_observing(result, &stop, close))
+    Ok(finish_observing(result, &stop, None, close))
 }
 
-/// Keep actual collection refusal and independent observer teardown together.
+/// Keep collection refusal, the original binding observation and native close separate.
+/// Request Stop for unconfirmed collection before detaching or closing the observer.
 #[cfg(any(windows, test))]
 fn finish_observing(
     result: Result<datagram::ReceivedInvocation, RunFailed>,
     stop: &StopHandle,
+    active: Option<power_target::ActivePower<'_>>,
     close: impl FnOnce() -> Result<(), NonZeroU32>,
 ) -> ObservedInvocation {
     let stop_failed: bool =
         matches!(&result, Err(RunFailed::Collection(_))) && stop.request_stop().is_err();
+    let managed_observation: Option<power_target::ManagedPowerObservation> =
+        active.map(power_target::ActivePower::retire);
     let unregistration_error: Option<NonZeroU32> = close().err();
     ObservedInvocation {
         result,
         cleanup: PowerObserverCleanup {
             stop_failed,
+            managed_observation,
             unregistration_error,
         },
     }

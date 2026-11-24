@@ -1831,6 +1831,7 @@ fn assert_original_receipt_captures(
     let actual: [SoftwareClock; 3] = receipt.application_clock_captures();
     #[cfg(windows)]
     {
+        use crate::ProtectedNativeCaptureRefusal;
         use crate::ProtectedNativeClockObservation::ReadRefused;
         use windows_platform_native::ClockReadError;
 
@@ -1843,6 +1844,12 @@ fn assert_original_receipt_captures(
                 ],
             "same ordered read refusals must survive the actual joined receipt"
         );
+        assert!(matches!(
+            receipt.native_capture_span(),
+            Err(ProtectedNativeCaptureRefusal::ReadRefused(
+                ClockReadError::Frequency(7)
+            ))
+        ));
     }
     assert_eq!(actual.map(SoftwareClock::utc), expected_wall);
     for (actual, original) in actual.into_iter().zip(original) {
@@ -1886,6 +1893,7 @@ fn managed_preview_cannot_project_a_protected_report() -> Result<(), Failure> {
     let close_error: NonZeroU32 = NonZeroU32::new(23).ok_or(Failure::Control)?;
     let cleanup: PowerObserverCleanup = PowerObserverCleanup {
         stop_failed: false,
+        managed_observation: None,
         unregistration_error: Some(close_error),
     };
     let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
@@ -2148,6 +2156,10 @@ fn managed_protected_worker_refuses_membership_before_reply_commit() -> Result<(
                 .iter()
                 .all(Option::is_none)
         );
+        assert!(matches!(
+            receipt.native_capture_span(),
+            Err(crate::ProtectedNativeCaptureRefusal::Absent)
+        ));
     }
     let report: SourceProtectedProbeReport = protected_report(completion)?;
     assert!(report.configuration().same_configuration(&healthy.expected));

@@ -4347,8 +4347,11 @@ generation, local clock domain and scale to finite validity. Bind the
 Engine capture process's own leap presentation. The
 [managed successor now retains the Engine process's two observations](engine-transport-pilot.md#retain-the-engine-process-presentation-around-each-joined-job--23-november-2026)
 around its original submission and normally joined take. They are
-historical endpoints. Mapping admission still requires continuous
-validity and independent reference evidence. The broker's process-local
+historical endpoints. The [managed receiver retains a delivered withdrawal](engine-transport-pilot.md#retain-delivered-power-invalidation-through-the-original-managed-join)
+through retirement of its original binding. This historical observation
+preserves the receipts and identifies delivery at the target. Mapping
+admission still requires continuous validity and independent reference
+evidence. The broker's process-local
 presentation observation supports its own invalidation. Withdraw
 mapping on discontinuity or ambiguous continuity, uncovered observation
 gaps, expiry of a required reference, Stop/restart and generation
@@ -15420,6 +15423,119 @@ the single inert role. Raw records are under
 The package is the unsigned inert lab profile. Product manifest
 assembly, signing, installed role admission and enforcement remain open.
 
+###### Pack the linked Slint UI with both disabled laboratory services
+
+W11-W05/W11-W10, S0.6/P6 and CHECK-16/18/23/26. The separate unsigned
+`NevroTick.S06.ArtworkLab` 1.0.1.0 fixture joins the actual linked Slint
+image from the checked Windows handoff, both exact linked laboratory
+service images and all 51 artwork files with the original ArtworkLab PRI.
+The manifest binds the UI as the hidden medium-integrity `Observe`
+application. Both service declarations retain the fixed lab names,
+`localService` and Disabled startup. It carries the checked Properties,
+content integrity enforcement and Trusted Launch declarations. The
+pre-start identity probe remains bound to its separate ScmFixture package.
+
+Planning and metadata admission used the existing manifest and artifact
+owners on `cfd4c753`. The atomic stager rechecked the 61-file handoff,
+the native artwork readback, the separate two-role link/PE/PDB receipt and
+the 55 independently pinned non-manifest members. The handoff pin is
+`60a573d0cef8e99378611af70dd1be85f394b1fe3c914130c8bc5226cda6a666`.
+The role link and PRI readback retain their original inputs. A crossed
+receipt pin and a wrong Engine image expectation both refused before
+publishing an output. The existing staging and package-reader suites
+passed 23 and 22 cases respectively.
+
+Package and Sandbox QA ran the pinned MakeAppx 10.0.28000.2705 in
+offline build-26100 guest run `a09855ee24fc`. The retained command
+received 63 exact inputs. The healthy pack exited zero and exported 11,292,176
+bytes. The sole fault changed the Engine startup value to
+`invalid-startup`. MakeAppx exited 1 with the startup enumeration
+diagnostic, leaving the fault output absent. Both MakeAppx processes were
+reaped, offline and input bookends passed, and owned scratch and transfers
+retired.
+Independent readback matched all 58 archive entries, including the 56
+authored payload files, ZIP layout, block map, content types, declared
+roles and exact AMD64 images. The independent reader accepted a healthy
+ZIP64 neighbor and refused two rebuilt archives with fresh digests and
+matching staged payloads. The controls substituted broker bytes for the
+engine and changed the engine startup to Manual. Execution covered the
+SDK packer and inert artifact readback.
+
+| Record under `~/.local/share/nevrotick/p6-combined-pack.uTBtyNeX/` | SHA-256 |
+| --- | --- |
+| `stage-combined.py` | `8b61749b03948d12db8b6a9b9f1767528eaf4922e817a955b57f903863c8d4e1` |
+| `stage.json` | `3a5c0afb6b60a5bd7eeeaa510bd1d50a182e22dee5e46824b448ececf1260904` |
+| `member-pins.json` | `af25978948b712b1e60e3aa4f81700327f8fd091e97d8e52e00c2ea811345cd9` |
+| `pack-inputs/input-set.json` | `1d9f4a18a7023d47b3a82746d1d8edb6b36a9c33bbcfe176e7b4242e83f72f34` |
+| `pack-a09855ee24fc/dispatch.json` | `206432fa6996704076e3a41b9aa559e9f89c7c2f00e8033a56c6192a7e135e70` |
+| `pack-a09855ee24fc/guest.json` | `905ab12ec838a5e175456d3ec9b9d969624c930de515708870bc219a94a0410f` |
+| `pack-a09855ee24fc/NevroTick-ArtworkLab-UI-DisabledServices-unsigned.msix` | `50948f85a739d80ef7dfd290ee2f261fdef1b2aaf5ab561b56a93e9454c01750` |
+| `native-readback.json` | `cc6e0c1c15a633a9d3e85fe73d5bbb48b7787f33d91cb33a6bc737d9ade14c09` |
+| `controls-readback.json` | `bca608e9d5551a62fb08d8a42e5e15e233e957fbf176d193377b6343bd1cd00b` |
+
+The independent reader and controls are retained in
+`~/.local/share/nevrotick/p6-combined-reader.yBp6TX0f/`. The existing
+artifact and environment records supply the two earlier linked candidates.
+
+This closes the composition and byte readback of these three linked lab
+images with checked artwork and resource index. Product provisioning,
+the helper and production roles, runtime dependency closure, pre-v3
+activation, signer and installed behavior retain their existing P6 gates.
+
+###### Stage the combined ArtworkLab package from pinned inputs
+
+W11-W05/W11-W10, S0.6/P6 and CHECK-16/18/23/26. The maintained
+[ArtworkLab command](../tools/windows-service-fixture/msix/prepare_artwork_payload.py)
+accepts `--role-link-receipt PATH --role-link-receipt-sha256 SHA256` in
+place of the inert image and its pin. It reads the Slint UI, Properties
+and 51 assets against the original held handoff and uses the same PE
+size ceiling as its inspector. It reads the two original service images
+through the configured role-link and PE/PDB checks and reconciles the
+native PRI against the exact artwork. The manifest projects the fixed
+mediumIL hidden `Observe` application and both Disabled LocalService
+extensions from the pinned authoring. All 56 input files go through the
+existing atomic staging owner. The original inert mode keeps its
+payload, assertions and receipt fields.
+
+Planning, metadata and artifact QA checked the integrated source at
+`cfd4c753` with the two-file overlay tree `c5f49e92818de340295556ccdd96f0d362cd9228`.
+Python 3.12.3 passed all 166 portable MSIX fixture tests. The four added
+controls verify the combined inventory and manifest, refusal of mixed
+and incomplete options, original UI leaf custody and no publication
+after a role reader refusal. The fresh-context review found a redundant
+smaller UI ceiling and called for a real crossed-symbol control. The
+shared limit replaced the smaller ceiling. The real CLI refused a
+crossed handoff digest used as the role pin and refused the broker PDB
+substituted for the original Engine PDB. Both attempts exited 1 with
+empty stdout and absent output. Restoring the input passed.
+
+The maintained command reproduced all 56 authored members byte for byte.
+The independent reader matched those bytes to the existing 58-entry
+MakeAppx archive and reproduced its original report. The first reader
+invocation under isolated Python lacked its local import path and exited
+before readback. The successful invocation selected the original pinned
+reader directory explicitly. There was no new Windows pack run.
+On the exact archive bytes, the maintained PE reader verified the
+expected subsystem, strict CET, CFG and relocation declarations and
+`DependentLoadFlags=0xA00` for all three executables. The UI, Engine and
+broker have 27, 24 and 26 direct import entries and zero delay imports.
+All import `vcruntime140.dll` and six UCRT API-set contracts. The archive
+offers no VC framework or bundled DLL provider. Effective mitigations,
+a supported runtime provider and servicing on both target families,
+pre-v3 entry, the production helper, signatures and installed behavior
+retain their own gates. The ScmFixture signed observation remains a
+separate artifact and authority.
+
+| Record under `~/.local/share/nevrotick/p6-maintained-combined.qrBXA651/` | SHA-256 |
+| --- | --- |
+| `final.patch` | `ab250261fcfe88b603f7ad319f7b10369d9ebdcd1c79385a85f087f46feb301d` |
+| `fixture-tests-r3.log` | `c78097c64893ebcb2435f8d9e27dced21cf97e43b6da6eca5986792701b18f76` |
+| `stage-r3.json` | `394c807a4308c1eeba2f824813adccf7d3e8cfee267de9b64da0b2f6ff284ed6` |
+| `retained-package-readback-r3.json` | `cc6e0c1c15a633a9d3e85fe73d5bbb48b7787f33d91cb33a6bc737d9ade14c09` |
+| `archived-role-pe.json` | `a9061a0f7f3f0a054dc286ebca971190acc2eae2c53779b4e8879a5170078211` |
+| `crossed-pin.stderr` | `43c45e0c6a9338e76b66f833f4e002f74cb865994b4fabaae7f4f07e5c0e52ce` |
+| `crossed-pdb.stderr` | `40ef07ede38c86220437b85542892574e736498c1b9d5d3a2238be90a692c6e5` |
+
 ###### Confirm the original staged tree at the requested package path
 
 W11-W10 and CHECK-18/23/26. After the no-replace rename and parent
@@ -18011,6 +18127,60 @@ candidate. Its coverage and mutation receipts retain their original
 scope. WSL cleanup recovered 1.31 GiB from idle Cargo build and incremental
 caches. The distro still has about 2 GiB free, below the durable mutation
 runner's 6 GiB launch floor.
+
+##### Exercise primary-token acquisition and confirmation
+
+W11-W05/S3.1–S3.2 and CHECK-2/25/27. The saved-generation control
+already exercised refusal after acquisition. Contract and negative-path
+QA added a private reader seam at the native fixture's acquisition owner.
+It checks the first statistics result, reads the real SID on the same
+query-only handle, and checks the confirming statistics and original
+generation before retaining the client token. The native fixture supplies the
+original Win32 readers. An independent source review
+checked the preserved validation, error precedence and handle ownership.
+
+The exact Windows test observes the statistics → SID → statistics
+sequence, both unequal halves of the literal `ModifiedId`, and the
+retained live handle. It then refuses a change to either half, a denied
+confirmation read, a short or long record, and a wrong token type. Each
+refusal checks the exact error and independently probes the original
+handle immediately after the acquisition returns. The test scripts statistics
+on the test process's real query-only handle. Physical token transitions,
+native failure injection and the installed path remain separate.
+[Win32 handle observation](https://learn.microsoft.com/windows/win32/api/handleapi/nf-handleapi-gethandleinformation)
+
+The test tree at `cfd4c753` plus the two-file overlay is
+`369f68b75832bee2255b160a8925855de0097ccb`. Its 859 inputs bind to
+`2f0e1532591eb628cb067072c7148df1e85f035c2f22985b6072fde16fdfbc1b`.
+Six graph commands, all 12 development commands and both x64-v3 MSVC
+libtest link and PE/PDB readback commands passed on Rust 1.100.0.
+Ordinary and optimized GNU each passed 70 platform and 198 fixture
+cases. The platform passed 28 doctests. The initial graph preflight
+refused a relative scratch path and the first Sandbox preflight refused
+host memory below 2 GiB. The admitted runs used absolute scratch paths
+and the native retry followed retirement of 1.66 GiB of this run's
+derived scratch and reconstructed vendor copy.
+
+The same-session offline build-26100 Sandbox run passed the new
+acquisition selector and the four original broker selectors. Each
+separate test process returned one pass and 231 filtered cases. The
+runner observed exit and both stream EOFs, verified the image and
+offline status at both ends, and retired scratch files while preserving
+the guest. Independent readback matched all 859 source inputs, the PE
+and PDB, and all five transcript pairs to the retained receipts. The 90%
+executable-line coverage and 95% per-file mutation gates remain open for
+this fixture owner. The acquisition
+test's sensitivity to omitted confirmation and wrong-field projection
+was source-reviewed. No generated mutation or fuzz campaign ran for
+this fixed native record and call-order control.
+
+| Record under `~/.local/share/nevrotick/s31-token-acquisition.nl0eLWtI/` | SHA-256 |
+| --- | --- |
+| `candidate-r1.patch` | `b0334fcc71375964c583f157cfbf8f7768a5ecbd76acc68b56ea91d3e5a7940e` |
+| `token-acquisition-graph-r1.json` | `3c5759245ad0dddf49b82c31bae607d0ddf753cc717312d23b834034b3611c60` |
+| `token-acquisition-development-r1.json` | `320e92ff5cc7702b846cc492b3bed941552484fc21160d7f15aedd58e8dea834` |
+| `cross-token-acquisition-libtest-r1.json` | `ebda9803269a9395f885f39bdd4b8d1135e3421e1c754ee63f8232f8c2f373f2` |
+| `native/native-verdict.json` | `1e4503b555902fe3397066417ae60100160cff78d461d5deb0d3049bc08195d8` |
 
 ### Guard the native request and read the retained peer privileges — 24 November 2026
 

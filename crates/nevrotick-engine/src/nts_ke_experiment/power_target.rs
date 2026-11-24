@@ -26,6 +26,20 @@ pub(super) enum PowerEvent {
     AutomaticResume,
 }
 
+/// What the original power binding recorded through its serialized retirement.
+///
+/// A historical observation supplies no clock mapping or current authorization.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "use the observation only as historical power-delivery evidence"]
+pub enum ManagedPowerObservation {
+    /// No event reached the original, available binding before retirement.
+    NoEventObserved,
+    /// At least one event reached the original binding before retirement.
+    Invalidated,
+    /// The original binding could not establish even an event-free observation.
+    Unavailable,
+}
+
 /// Current power epoch and, independently, the one retained active binding.
 struct TargetState {
     /// Advance on every delivery and successful activation. Exhaustion is final.
@@ -42,6 +56,8 @@ struct Binding {
     epoch: u64,
     /// The actual acquired invocation latch.
     stop: StopHandle,
+    /// Sticky evidence of delivery, independent of Stop and epoch advancement.
+    delivered: bool,
 }
 
 /// One idle epoch observed before preparing an original invocation.
@@ -57,8 +73,8 @@ pub(super) struct PreparedPower<'target> {
 pub(super) struct ActivePower<'target> {
     /// Physical owner of the registered binding.
     target: &'target PowerTarget,
-    /// Identify only this activation, independently of subsequent events.
-    epoch: u64,
+    /// Identify this activation until this owner detaches it exactly once.
+    epoch: Option<u64>,
 }
 
 impl PowerTarget {
@@ -102,10 +118,10 @@ impl PowerTarget {
         let locked: LockResult<MutexGuard<'_, TargetState>> = self.state.lock();
         let poisoned: bool = locked.is_err();
         let mut state: MutexGuard<'_, TargetState> = locked.unwrap_or_else(PoisonError::into_inner);
-        let stop_failed: bool = state
-            .binding
-            .as_ref()
-            .is_some_and(|binding: &Binding| binding.stop.request_stop().is_err());
+        let stop_failed: bool = state.binding.as_mut().is_some_and(|binding: &mut Binding| {
+            binding.delivered = true;
+            binding.stop.request_stop().is_err()
+        });
         state.suspended = match event {
             PowerEvent::Suspending => true,
             PowerEvent::AutomaticResume => false,
@@ -146,30 +162,57 @@ impl<'target> PreparedPower<'target> {
         }
         state.epoch = self.epoch.checked_add(1);
         let epoch: u64 = state.epoch.ok_or(Failure::Control)?;
-        state.binding = Some(Binding { epoch, stop });
+        state.binding = Some(Binding {
+            epoch,
+            stop,
+            delivered: false,
+        });
         Ok(ActivePower {
             target: self.target,
-            epoch,
+            epoch: Some(epoch),
         })
     }
 }
 
-impl Drop for ActivePower<'_> {
-    /// Detach this exact binding even if the gate is poisoned. Poison remains
-    /// unavailable for admission and this operation acknowledges no shutdown.
-    fn drop(&mut self) {
-        let mut state: MutexGuard<'_, TargetState> = self
-            .target
-            .state
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
-        if state
+impl ActivePower<'_> {
+    /// Observe delivery and detach this exact binding in one target transaction.
+    /// Consume the lease without acknowledging any worker or native completion.
+    pub(super) fn retire(mut self) -> ManagedPowerObservation {
+        self.detach()
+    }
+
+    /// Retire once even on a poisoned gate. Keep recorded delivery on refusal.
+    /// The owner holds no Stop guard and leaves any other binding untouched.
+    fn detach(&mut self) -> ManagedPowerObservation {
+        let Some(epoch): Option<u64> = self.epoch.take() else {
+            return ManagedPowerObservation::Unavailable;
+        };
+        let locked: LockResult<MutexGuard<'_, TargetState>> = self.target.state.lock();
+        let poisoned: bool = locked.is_err();
+        let mut state: MutexGuard<'_, TargetState> = locked.unwrap_or_else(PoisonError::into_inner);
+        let Some(binding): Option<&Binding> = state
             .binding
             .as_ref()
-            .is_some_and(|binding: &Binding| binding.epoch == self.epoch)
-        {
-            state.binding = None;
-        }
+            .filter(|binding: &&Binding| binding.epoch == epoch)
+        else {
+            return ManagedPowerObservation::Unavailable;
+        };
+        let observation: ManagedPowerObservation = if binding.delivered {
+            ManagedPowerObservation::Invalidated
+        } else if poisoned || state.epoch != Some(epoch) {
+            ManagedPowerObservation::Unavailable
+        } else {
+            ManagedPowerObservation::NoEventObserved
+        };
+        state.binding = None;
+        observation
+    }
+}
+
+impl Drop for ActivePower<'_> {
+    /// Detach the exact original binding on refusal before a report can be made.
+    fn drop(&mut self) {
+        let _observation: ManagedPowerObservation = self.detach();
     }
 }
 
@@ -181,7 +224,8 @@ mod tests {
 
     use super::super::{StopDisposition, StopScope};
     use super::{
-        ActivePower, Failure, PowerEvent, PowerTarget, PreparedPower, StopHandle, TargetState,
+        ActivePower, Failure, ManagedPowerObservation, PowerEvent, PowerTarget, PreparedPower,
+        StopHandle, TargetState,
     };
 
     /// Create the original latch used by the actual cooperative Stop path.
@@ -292,7 +336,7 @@ mod tests {
         let first: StopHandle = original_stop();
         let active: ActivePower<'_> = prepared.activate_scope(first.clone())?;
         assert!(matches!(target.prepare(), Err(Failure::Control)));
-        drop(active);
+        assert_eq!(active.retire(), ManagedPowerObservation::NoEventObserved);
 
         let second: StopHandle = original_stop();
         assert!(matches!(
@@ -309,7 +353,7 @@ mod tests {
         deliver_from_producer(&target)?;
         assert!(!second.scope.lock()?.is_stopped());
         assert_eq!(third.request_stop(), Ok(StopDisposition::AlreadyLatched));
-        drop(successor);
+        assert_eq!(successor.retire(), ManagedPowerObservation::Invalidated);
         Ok(())
     }
 
@@ -330,7 +374,7 @@ mod tests {
             Err(Failure::Control)
         );
         assert_eq!(original.request_stop(), Ok(StopDisposition::AlreadyLatched));
-        drop(active);
+        assert_eq!(active.retire(), ManagedPowerObservation::Invalidated);
         assert!(matches!(target.prepare(), Err(Failure::Control)));
         assert_eq!(
             target.deliver(PowerEvent::AutomaticResume),
@@ -355,7 +399,7 @@ mod tests {
             Err(Failure::Control)
         );
         assert_eq!(original.request_stop(), Ok(StopDisposition::AlreadyLatched));
-        drop(active);
+        assert_eq!(active.retire(), ManagedPowerObservation::Invalidated);
         let state: MutexGuard<'_, TargetState> = target
             .state
             .lock()
@@ -365,6 +409,27 @@ mod tests {
         assert!(state.binding.is_none());
         drop(state);
         assert!(matches!(target.prepare(), Err(Failure::Control)));
+        Ok(())
+    }
+
+    /// An unobservable gate may retire its binding but cannot report an event-free history.
+    /// # Errors
+    /// Propagate setup and original binding refusal.
+    /// # Panics
+    /// Fail if poisoned evidence establishes an event-free observation or retains the binding.
+    #[test]
+    fn poisoned_retirement_without_delivery_is_unavailable() -> Result<(), Failure> {
+        let target: PowerTarget = PowerTarget::new();
+        let active: ActivePower<'_> = target.prepare()?.activate_scope(original_stop())?;
+        poison(&target.state)?;
+        assert_eq!(active.retire(), ManagedPowerObservation::Unavailable);
+        let state: MutexGuard<'_, TargetState> = target
+            .state
+            .lock()
+            .err()
+            .ok_or(Failure::Control)?
+            .into_inner();
+        assert!(state.binding.is_none());
         Ok(())
     }
 
@@ -383,7 +448,7 @@ mod tests {
             target.deliver(PowerEvent::AutomaticResume),
             Err(Failure::Control)
         );
-        drop(active);
+        assert_eq!(active.retire(), ManagedPowerObservation::Invalidated);
         assert!(matches!(target.prepare(), Err(Failure::Control)));
         Ok(())
     }

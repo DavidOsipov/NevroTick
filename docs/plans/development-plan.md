@@ -1246,6 +1246,12 @@ checks both held-out legs and their original wire and residual record
 digests within the declared QPC validity. Its controls used the original
 Windows application bytes with synthetic reference values. The wired
 reference and its admitted calibration and pairing remain required.
+The [protected capture span](../../tasks/engine-transport-pilot.md#require-an-ordered-native-capture-span-before-exporting-protected-timing)
+checks the original QPC brackets and frequency on each joined receipt
+before timing export. The [joined managed power observation](../../tasks/engine-transport-pilot.md#retain-delivered-power-invalidation-through-the-original-managed-join)
+retains event delivery through the original binding's serialized retirement
+beside the original transport facts. Production mapping still needs the
+independent reference, coverage of physical transitions and a validity issuer.
 The [broker presentation withdrawal](../../tasks/windows11-integration.md#withdraw-the-broker-revision-when-leap-presentation-becomes-unavailable)
 keeps an unavailable query in the historical sample and withdraws the
 old live revision. This supplies the broker-side guard under TQ-07 while
@@ -1395,7 +1401,10 @@ write and before publishing acceptance of the correlated reply. Installed
 peer identity and the installed request and reply guards retain their own exits.
 The [broker-side client continuity check](../../tasks/windows11-integration.md#bind-broker-side-client-continuity-to-the-original-token-generation)
 also retains the original primary-token generation for request attribution and
-reply admission and confirmation.
+reply admission and confirmation. The [native acquisition control](../../tasks/windows11-integration.md#exercise-primary-token-acquisition-and-confirmation)
+now verifies statistics/SID ordering, both generation halves, refusal propagation
+and release of the original query handle. Physical token transitions and
+installed identities still need their own execution.
 The [native submission and token checkpoint](../../tasks/windows11-integration.md#guard-the-native-request-and-read-the-retained-peer-privileges--24-november-2026)
 places the request check on the exact writer after buffer preparation. It
 also captures the peer's complete privilege list at its acquisition generation.
@@ -2072,6 +2081,15 @@ The [ArtworkLab stage and pack](../../tasks/windows11-integration.md#verify-the-
 uses that exact handoff to stage 54 lab payload files. Separate readback
 matched every file in the unsigned native package. The malformed
 Trusted Launch control failed at the expected manifest field.
+The [combined unsigned lab package](../../tasks/windows11-integration.md#pack-the-linked-slint-ui-with-both-disabled-laboratory-services)
+now carries the linked Slint UI, both disabled laboratory services and
+the checked artwork and PRI in one MakeAppx output. Independent readback
+matched all 58 archive entries and the native packer refused the invalid
+service startup declaration. The [maintained combined stager](../../tasks/windows11-integration.md#stage-the-combined-artworklab-package-from-pinned-inputs)
+reproduces all 56 authored bytes and rejects crossed role evidence before
+publication. Direct PE readback on the archive keeps runtime provider
+admission open. The signed installed experiment retains its own
+package and prerequisites.
 The [publication check](../../tasks/windows11-integration.md#confirm-the-original-staged-tree-at-the-requested-package-path)
 requires the requested path to name the original staged tree and
 retains uncertainty and cleanup diagnostics after rename.
