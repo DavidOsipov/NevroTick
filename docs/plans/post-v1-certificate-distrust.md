@@ -48,6 +48,18 @@ are local planning identifiers, not replacements for canonical requirements.
 Deferring these enhancements does not weaken existing V1 trust, revocation,
 wrong-date, egress, association-lifetime or actual-native-completion obligations.
 
+**24 November 2026 scope clarification.** The preparation record reports David's
+separate deferral of enterprise Windows certificate pinning compatibility until
+actual V1 release; [review advisory ARC-1](windows11-integration-follow-up.md#independent-proposal-review--24-november-2026)
+retains the original-instruction provenance limit without reversing that reported
+deferral. Its
+[WINSEC-0 roadmap entry](../../ROADMAP.md#winsec-0--post-v1-windows-security-compatibility-and-evidence)
+owns the later compatibility evaluation; it is not a new TRUST-C01
+prerequisite or a OneCRL/CRLite requirement. Preserve current OPEN-8/R-05
+trust-policy obligations and explicitly avoid claiming Schannel-specific
+pin-rule enforcement from use of CNG or Windows chain APIs alone. No enterprise
+pinning implementation or additional trust weakening before V1.
+
 ## 2. Evidence and its limits
 
 The research supports additional protection, not a claim that Windows is always

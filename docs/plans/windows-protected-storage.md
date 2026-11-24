@@ -282,6 +282,23 @@ or relocate authoritative state. No new storage dependency/backend is adopted.
 
 Examples remain contextual: `NTE_VBS_UNAVAILABLE` at required creation does not prove deliberate disabling; `NTE_EXISTS` requires reconciliation; opening an expected key with `NTE_BAD_KEYSET` is recovery. Unknown errors/bad flags must not strip required options, try arbitrary providers or prompt interactively from a service. Avoid oscillation and per-packet capability probing. [P1, P3]
 
+**TPM recovery refinement (24 November 2026; ST-W01/ST-W04 and existing
+ST-T/CHECK owners).** For the eventual selected provider, establish which
+operations use TPM authorization and may contribute to shared dictionary-attack
+lockout; not all keys require that authorization. Bound retry/backoff using the
+existing monotonic deadline and actual-operation custody. Distinguish
+unavailable, throttled/locked, denied, missing expected key, provider failure and
+unknown outcomes; none authorizes silently creating fresh keys, weakening an
+existing store or resetting an expected mandatory witness. Cover lockout,
+command-policy denial, missing/replaced/cleared TPM, interrupted provisioning,
+and, only if measurement binding is selected, changed PCR bank/measurements
+and legitimate OS/firmware servicing. Use independent fake-provider/fault
+controls first; native destructive cases require separately admitted disposable
+hardware/VM and recovery evidence. No TPM owner-password capture, reset,
+clear, global command-policy or BitLocker/UEFI/PCR modification by the product.
+See [source and routing](windows11-integration-follow-up.md#windows-security-compilation--24-november-2026).
+This refines existing recovery, not the selected fallback policy or a hold lift.
+
 Freeze documented flags, actual key policy, account/session and refusal behavior
 per native call; silent opening does not qualify later private use. Bound the
 property-query allocation and both advertised/actual returned lengths; validate
