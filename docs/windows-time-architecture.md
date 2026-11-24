@@ -2247,6 +2247,16 @@ full-memory encryption or isolation of every cryptographic operation. A full
 enclave must separately cover secret creation, ingress, use and outputs, including
 the TLS/NTS path. [S123, S124]
 
+**Custom-enclave planning, 24 November 2026:** the owner requested the
+[supporting NTS boundary/feasibility plan](plans/windows-vbs-enclave.md), with the
+[existing storage task](../tasks/windows-protected-storage.md#8-custom-enclave-planning--24-november-2026)
+as its evidence owner. It proposes fixed association/request/reply operations
+and an immediately actionable source-only card. Actual host TLS exporters,
+independent change authority, trusted freshness/ingress and the exact enclave
+crypto/import/build graph remain gates. Planning changes neither section 14.1's
+general threat scope nor elevated administrative recovery, C1's storage design,
+product defaults, execution holds or current development order.
+
 ##### Policy, readiness and mechanism claims
 
 Keep platform capability, authorized policy, actual root evidence, persistence
@@ -2461,13 +2471,17 @@ deadlock caveat. No per-packet TPM operation or protection probe is required.
 A full enclave has separate supported-build, ABI/runtime/import, production
 signing, debug and strict-memory gates. Microsoft requires CFG for enclave DLLs;
 neither blanket conflict nor complete host-profile compatibility follows.
-The reviewed runtime floor is Windows 11 build **26100.2314+ with VBS/HVCI**;
+The current Microsoft runtime row is Windows 11 build **26100.2314+** or
+**Windows Server 2025+**, with **VBS/HVCI** enabled;
 development-tool/SDK requirements and production enclave-signing eligibility are
 separate. These are full-enclave requirements, not CNG VBS-root eligibility or a
 requirement to install development tools on users' machines. Ordinary release
 signing does not prove enclave admission. [S123, S124]
 The [current integration review](plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
 refines this conditional row without lifting the storage experiment pause.
+The [24 November admission table](plans/windows-vbs-enclave.md#5-platform-build-and-signing-admission)
+records the dated source/SDK successor, exact two-family/build/signing gates and
+pre-handler resource-admission issue; no native or dependency qualification follows.
 
 Future D2 status carries bounded store/instance/sequence/policy/root/data
 identity, actual mechanism/evidence, readiness, reason and freshness.

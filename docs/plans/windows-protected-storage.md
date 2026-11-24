@@ -1,7 +1,7 @@
 # Windows protected optional storage: execution and qualification plan
 
-**Document:** NV-STORAGE-PLAN-001, revision 1.4<br>
-**Date:** 4 November 2026<br>
+**Document:** NV-STORAGE-PLAN-001, revision 1.5<br>
+**Date:** 24 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Maintained design and future qualification plan. Recording this direction is authorized; implementation, native experiments, exact cryptographic choices and the product default are not approved by this document.<br>
 **Initial design baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e). Revision 1.1 records the first upstream research against [`1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea`](https://github.com/DavidOsipov/NevroTick/tree/1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea). Revision 1.2 incorporates the second source review and agent-task routing against [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5). These were API-derived partial snapshots, not local checkouts.
@@ -20,10 +20,19 @@ The preferred candidate protects optional saved NTS associations and, separately
 | Narrow root-key protection goal | Candidate scope recorded for qualification; no promise that the whole engine runs in an enclave. |
 | Separate wrapping and signing roots | Preferred construction to evaluate; algorithms, provider support and supported alternative constructions remain open. |
 | `PreferVbsAllowTpm + ContinueWithoutRestore` default | Engineering recommendation, not an accepted owner choice. |
-| Stronger live-secret isolation in a custom application enclave | Separate future decision and workstream. |
+| Stronger live-secret isolation in a custom application enclave | Planning requested 24 November 2026; the [supporting boundary/feasibility plan](windows-vbs-enclave.md) reuses this task/evidence chain. Product adoption, trusted ingress, change authority and implementation remain unresolved. |
 | Native support, durability, performance, ASVS or release readiness | Unqualified; source review and reviewer agreement cannot establish them. |
 
 A CNG VBS-protected key is distinct from a custom application VBS enclave. Working DEKs, TLS exporters, NTS keys and plaintext may remain in ordinary engine RAM. Protecting storage roots does not satisfy complete-memory encryption or all-cryptographic-operations-isolated requirements. Host compromise, authorized malicious key use, selective offline replacement of ACL-only trust anchors and full-environment rollback remain explicit limitations; recording them is not owner acceptance of residual risk. [P4–P6, P11–P14]
+
+**24 November custom-enclave planning:** the requested [supporting plan](windows-vbs-enclave.md)
+defines a candidate NTS association/request/reply boundary, source-only next card,
+authority and secret-ingress limits, failure cases and separate runtime/build/
+signing gates. It belongs beside this root-storage design because live-secret
+custody has different callers and trust assumptions. The [existing task](../../tasks/windows-protected-storage.md#8-custom-enclave-planning--24-november-2026)
+remains the sole evidence/continuation owner. C1, the unaccepted cache default,
+mandatory-state separation and all execution holds remain; no general
+hostile-administrator prevention claim or weaker live-secret fallback is adopted.
 
 The architecture and original plan were recorded before upstream research. The owner then requested that the completed findings also be recorded: [upstream implementation lessons](windows-protected-storage-upstream-lessons.md) now preserves pinned source observations, proposed adaptations, unsuitable sample policies and future checks. This completes the initial source inventory, not the construction/provider/build/account/profile freeze. It starts no implementation, dependency acquisition, key creation, service operation, experiment or process-policy change. Existing held TLS/CNG dependency and fixture decisions remain held.
 
@@ -293,7 +302,8 @@ follows.
 Preserve [architecture §15.4](../windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening §6.4](../windows-time-development-hardening.md#64-per-process-mitigation-qualification). Qualify create/open/wrap/sign/unprotect/teardown with the actual SCM path, final account, no-login boot and required controls. Keep ACG no-opt-out/no-remote-downgrade, ordinary versus Strict CFG, effective CET/HSP versus image marking, CIG signer classes, Win32k/extension points, child restrictions and image-load policy distinct. Do not introduce a permissive launcher, extra privilege, interactive Hello dependency, or machine-policy reset. Respect the documented NCrypt service-start caveat. Full-enclave imports/ABI/signing/debug/strict-memory support is a separate gate if that path is selected; neither blanket Rust incompatibility nor compatibility has been established. [P1, P7–P12, P15–P16]
 
 For the conditional **full application enclave** path, the current reviewed
-runtime requirement is Windows 11 build **26100.2314+ and enabled VBS/HVCI**.
+runtime requirement is Windows 11 build **26100.2314+** or **Windows Server
+2025+**, with enabled **VBS/HVCI**; exact product-family qualification remains open.
 Development separately requires the supported compiler/SDK/tooling and enclave
 ABI/import environment; production publication separately requires the enclave
 signing profile and nondebug image. Neither ordinary Authenticode/OpenPGP signing
@@ -302,6 +312,9 @@ CNG VBS-key feature floor, actual root protection or provider support, and do no
 require end users to install development tools. Record exact selected rows before
 dependent work; [the integration review](windows11-integration.md#9-conditional-mechanisms-worth-understanding)
 supplies source context, not a native pass. [P11–P12]
+The [24 November admission table](windows-vbs-enclave.md#5-platform-build-and-signing-admission)
+separates this basic runtime/developer path from the newer pinned Rust/SDK route,
+early generated-ABI resource admission and the actual crypto/import/panic graph.
 
 Independently qualify file, directory, catalogue and provider-key owners/DACLs, inheritance, handle rights and replacement. Challenge another LocalService service, including owner-mediated ACL changes; service SID and machine key scope alone prove no isolation. Use the already allowed distinct restricted engine account if the required shared-account isolation cannot be established. [P15]
 
@@ -354,7 +367,7 @@ These are future distinguishing controls, not executed results. Each rejection c
 | ST-T08: stale NTS trust | Unknown/expired ages, changed trust/source and restored pending exchanges fail; compatible state sends only current protected traffic. | THR-1/3/4/11/17; CHECK-6/9/11/15/27 |
 | ST-T09: wrong-date bootstrap bypass | Cache loss and wrong-name/chain certificates never authorize plain discipline or erase floors; qualified authenticated recovery works. | THR-3/4/17; CHECK-4/8/9 |
 | ST-T10: crash/late-completion race | Every prepare/flush/commit/retire interruption preserves declared eligibility, bounded resources and no stale publication; healthy commit survives restart. | THR-16/17/25/26; CHECK-12/13/15/25/27; DNS-C13/15 |
-| ST-T11: enclave-interface confusion | If selected, malformed/racing shared inputs cannot disclose secrets or cross operation authority; bounded copy-in/validation/copy-out succeeds. | THR-10/25/26; CHECK-15/25/27 |
+| ST-T11: enclave-interface confusion | If selected, malformed/racing shared inputs cannot disclose secrets or cross operation authority; bounded copy-in/validation/copy-out succeeds. The [custom-enclave case map](windows-vbs-enclave.md#6-discriminating-cases-and-evidence-layers) includes admission before generated allocation/unpacking and actual completion. | THR-10/25/26; CHECK-15/25/27 |
 | ST-T12: weakened mitigation | Storage incompatibility cannot relax required controls; actual protected SCM/provider workflow and denial controls qualify together. | THR-14/15; BND-8; CHECK-16/18/20/23 |
 | ST-T13: false origin/upgrade identity | Imported roots cannot claim never-host-exposed origin; unadmitted debug/wrong-version readers fail; supported upgrade and retirement work. | THR-10/14/15/17; CHECK-15/18/23 |
 | ST-T14: secret/statistics disclosure | Sentinel keys/cookies/names stay absent from default logs, temp/backup/status/export artifacts; permitted aggregate status remains useful. | THR-9/10/18; CHECK-15/17/22; DNS-C14 |
@@ -389,9 +402,10 @@ work under ST-T05/06/07/10/15/16/18; directory authority under ST-T03/05/10/17;
 CNG properties, silence and independent crypto expectations under ST-T01/02/05/12/13/16/18;
 mitigation startup/behavioral evidence under ST-T12; completion and output privacy
 under ST-T10/14/15/16. The mapping retains section 7's CHECK/DNS-C authority and
-creates no new acceptance catalogue. The next documentation action is one
-source-qualified construction/error/ownership decision record, not tool acquisition
-or a native experiment.
+creates no new acceptance catalogue. The CNG documentation action is one
+source-qualified construction/error/ownership decision record. The custom-enclave
+continuation is its [separate source-only boundary/feasibility card](windows-vbs-enclave.md#7-one-next-stage-and-phased-integration)
+in the same task, not tool acquisition or a native experiment.
 
 ## 9. Review reconciliation and remaining choices
 

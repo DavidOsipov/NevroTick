@@ -2,6 +2,8 @@
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
 **Status:** Documentation integration and the bounded ST-W01 documentary card are reviewed; the engineering construction freeze, implementation and native qualification remain open.
+The [24 November custom-enclave planning continuation](#8-custom-enclave-planning--24-november-2026)
+has its own source-only scope and review status below; it does not complete C1.
 **Inspected project baseline:** [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5), tree `fbc8b31f827d55f2c2e85426268979b0d1f827eb`. This task was prepared from an API-derived partial snapshot; it establishes no local checkout or dirty/staged state.  
 **Owner request:** integrate the completed deeper GitHub research into repository documentation, the plan and tasks for the development agent.
 
@@ -842,3 +844,120 @@ These are documentary/source-consistency results only. No ST-T trace, primitive,
 actual key, owner/DACL, persistence, durability or native gate ran. ST-W02 remains
 behind its relevant frozen contracts and admitted implementation slice; the
 storage experiment pause and every other execution hold remain unchanged.
+
+## 8. Custom-enclave planning — 24 November 2026
+
+**Request and scope:** David's later request, “Probably we can plan it,” with the
+[Microsoft development guide](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves-dev-guide),
+authorizes the concrete [custom-enclave boundary/feasibility plan](../docs/plans/windows-vbs-enclave.md).
+The earlier [configuration/elevation review](windows11-integration.md#configuration-and-elevation-review--24-november-2026)
+correctly declined unrequested enclave adoption at its earlier scope. This later
+request opens planning; it selects no production implementation, new dependency,
+key, signer, authority root, fallback or hostile-administrator prevention policy.
+Current development order and execution holds remain unchanged.
+
+**Source identity:** clean worktree at
+`5a142812b260c33493f8ec970e68d2d223333dbc`, Git tree
+`e932da18412940fde40f024e7f19a7753150c1df`, branch
+`docs/vbs-enclave-plan-20261124` before edits. One writer owns this documentary
+candidate. Required local instructions, planning/review/security/QA contracts,
+current architecture/decision/routing sections and the actual Engine/UI seams
+were inspected. This is not a comprehensive source audit or native result.
+
+### 8.1 Independent comprehension and reviewer context
+
+Fresh-context judge `/root/enclave_plan_judge` supplied the following two
+paragraphs **before receiving specialist findings**, retained verbatim:
+
+> Initial independent comprehension — proposed change: The new request authorizes a concrete documentary plan for a custom application VBS enclave, aimed at a narrowly stated live-secret/confidential-operation claim against an administrator-controlled host. The plan should identify an enclave-owned NTS operation and its actual future callers, secret ingress and output boundaries, failure/uncertain outcomes, platform/build/signing prerequisites and discriminating evidence before any implementation. It should explicitly distinguish that claim from configuration integrity or administrative policy authority, which an enclave does not automatically supply.
+
+> Initial independent comprehension — current system: The checked-in architecture separates the network engine, privileged broker, ordinary UI and lifecycle helper; my scoped source search found no custom-enclave API or runtime integration in the current crates/selected fixture sources. Protected optional storage currently proposes CNG VBS-held wrapping/signing roots, optional separately qualified fresh TPM state and policy-permitted no-cache operation. The 10 November C1 card is documentary, with exact bytes/limits, identities and actual-key/native evidence still unresolved; DEKs, TLS exporters and NTS working keys can remain in host RAM. Full application enclaves are currently conditional, and storage/native/fuzz holds, D2 deferral, mandatory broker continuity and current product priority remain intact.
+
+Initial assessment was ready for the bounded planning revision, with runtime
+integration/construction/native qualification not ready. The judge initially
+considered an annex; after source and proposal review, a focused supporting
+plan was warranted because live-secret ingress and operation authority differ
+from C1's root-storage construction. This task remains the sole evidence chain.
+
+| Reviewer / context | Actual reviewed scope and completion |
+| --- | --- |
+| `/root/enclave_plan_boundary`; fresh context, read-only | **Completed** architecture/security proposal against the clean baseline: actual host exporter/association/request chain, configuration authority, ingress, rollback and lifecycle limits. Its ASVS full-source retrieval gap remains; no new clause or conformity claim follows. |
+| `/root/enclave_plan_platform`; fresh context, read-only | **Completed** current Microsoft runtime/SDK/Rust/signing/API source review, including pinned generated pre-handler allocation, import/panic and teardown gaps. No build, installation or native execution. |
+| `/root/enclave_plan_qa`; fresh context, read-only | **Completed** phase/skill/acceptance routing and paired case proposal against existing ST-W/ST-T/CHECK owners. Test strategies are planned; no target tests ran. |
+| `/root/enclave_plan_judge`; fresh context before proposals, sole editor afterward | **Completed** independent baseline comprehension and proposal adjudication, direct Engine/UI/manifest inspection and independent primary-source reads. Independently fetched pinned Microsoft README, generated helper, binding build, Rust sample and linker-helper sources; rechecked relevant Learn APIs. Editing makes this writer's final patch check a self-check, not independent final acceptance. |
+| Coordinator `/root` | **Completed** independent review of the combined plan/routing diff and selected source/platform facts after the writer's freeze. Verified all eight candidate hashes, whitespace, 42 newly introduced relative-link occurrences across 16 targets (24 anchors), and 11 source-reference definitions. Publication and native qualification are separate evidence. |
+
+The original specialist returns remain in the parent coordination transcript.
+The judge received **condensed forwarded findings**, not byte-for-byte raw
+returns; the table does not claim otherwise or invent unavailable read traces.
+The independent final reviewer must inspect the actual combined patch.
+
+### 8.2 Adjudication and retained decisions
+
+| Proposal / finding | Disposition and concrete consequence |
+| --- | --- |
+| Useful enclave purpose | **Accepted as a proposal:** NTS association custody with fixed request/reply operations; protect one request is the next source-card operation. No new general encryption service, whole-engine migration or product API is selected. |
+| Protect secrets from creation by moving later AEAD calls | **Rejected as unsupported:** `transport.rs` exports into host memory. The plan distinguishes after-import evidence from the stronger claim; trusted TLS/exporter ingress is a named blocker before the stronger dependent implementation/claim. |
+| Make all configuration administrator-proof | **Rejected:** existing elevated authority remains. The plan requires an explicit independently verifiable authority design for a stronger enclave-operation claim and preserves the host/broker enforcement limit. No signer, Hello or attestation service is implicitly adopted. |
+| Rust is incompatible, or the existing Rust graph can be moved unchanged | **Both rejected:** pinned Microsoft source supports Rust but uses enclave-specific runtime/import/build behavior. Exact TLS/verifier/AEAD15/allocator/panic graph, v3, linker and hardening compatibility remain gates. |
+| Generated EDL handlers already establish bounded input | **Rejected for the inspected candidate:** upstream helpers allocate from host lengths before the developer handler. Early admission at the real ABI entry is required; this is not a demonstrated NevroTick vulnerability. |
+| Reuse the CNG cache fallback/default for enclave failure | **Rejected:** root storage and live-secret isolation have different claims. Existing C1/default decisions remain; no automatic downgrade of a proposed enclave requirement. |
+| Model only happy-path create/call/delete and successful crypto round trips | **Rejected:** require paired boundary/authority/freshness/custody/uncertainty/crash/upgrade/native-package observations. Late output, teardown and repeated recovery stay with ST-W02/06; raw unseal output must remain enclave-private. |
+| New enclave task, acceptance IDs or V1 scheduling prerequisite | **Rejected:** supporting plan plus this source card and minimal existing-phase pointers suffice. Reuse ST-T11/12/13 and related cases; §7 priority, accepted roadmap order, native/fuzz/storage holds and OD-10 remain. |
+
+No residual risk is accepted by these dispositions. Material authority, protection
+goal, unavailable-mode, sealing-reader or rollback-anchor choices need concrete
+NV-DEC evidence/options before their dependent adoption. Numerical ABI budgets,
+crypto/import details and supported build rows are engineering fields to freeze;
+they are not invented defaults or a reason to ask permission to prepare the plan.
+
+### 8.3 Source-only next card and verification scope
+
+**Next permitted action:** ST-W01's supporting enclave card for **Protect one
+NTS request**, with its admission/reply/retirement dependencies, under
+[plan §7](../docs/plans/windows-vbs-enclave.md#7-one-next-stage-and-phased-integration).
+The storage/architecture coordinator owns the integrated card; Engine/S2.2 owns
+real secret ingress and consumers, security owns the authority/claim comparison,
+Windows/build owns exact ABI/runtime/crypto/import/signing rows, and QA owns
+independent paired cases. It may proceed source-only within the current request;
+it does not admit ST-W02 code, dependencies, keys, host-policy changes or probes.
+
+**Exit:** one finite source-backed operation/claim/copy inventory, versioned
+contract with actual limits or precise blockers, authority/freshness/rollback
+decision card, platform/build/signing table and concrete independent sequences
+for the eight case families. One fresh review assigns the next named engineering
+slice `ready`, `revise` or `blocked`. Unresolved feasibility is an honest
+documentary result; stop after that card/review rather than starting experiments.
+
+| Stage / applied skill and trigger | Concrete application / evidence status | Gap owner and next condition |
+| --- | --- | --- |
+| Scope/ownership — `plan-code-change`, `plan-architecture`, planning references | Existing task and source owners retained; actual source chain distinguished from proposed enclave. **Documentary work completed.** | ST-W01 coordinator closes the next card's exact engineering fields or records blockers. |
+| Threat/contracts — `plan-threat-model`, `security-crypto-secrets`, `security-windows-privileges`, `security-privacy-logging`, `security-build-deployment`, `implement-rust-contracts` | Claim/authority/ingress, memory/output and build/servicing contracts applied to the plan; no changed code or compliance claim. **Source planning completed.** | Security/Engine/build owners resolve dependent choices and qualification. Existing ASVS gaps remain. |
+| Evidence design — testing contract, `qa-test-planning`, `qa-contract-tests`, `qa-security-boundaries`, `qa-regression-selection` | Eight paired case families and source/portable/native/package distinctions; 90%/95% gates retained at their checkpoints. **Cases planned, not executed.** | Actual admitted implementation/harness/environment needed for behavioral evidence; formal execution remains post-V1. |
+| Readiness/continuity — `qa-environment-preflight`, `qa-context-checkpoint` | Verified clean baseline, writer isolation and scope; no target/tool installation or application execution required for Markdown. Current holds and finite next stage preserved. **Source preflight completed.** | Native/build/tool prerequisites remain unqualified, not N/A. |
+| Independent review — `plan-independent-review`, `qa-independent-review`, review/handoff procedure | Pre-proposal comprehension retained; three completed read-only reports adjudicated against actual sources. Writer's structural self-check and coordinator final combined review are separate. | Final patch verification/publication status belongs to the coordinator's actual evidence. |
+
+The present milestone delivers the plan and owned next action. It demonstrates
+no enclave load, isolation, cryptography, runtime protection, durability, resource
+budget, installed product or release readiness. C1 and later storage/Windows
+phase obligations keep their exact earlier status.
+
+**Writer structural checks:** tracked diff whitespace is clean; the new-file
+check initially flagged three Markdown hard-break spaces, corrected to explicit
+line breaks and rechecked without diagnostics. Checked 47 relative links across
+18 target files, including 25 anchors, and all 11 unique source-reference
+definitions; no missing target/anchor/reference was found. The index remains
+unchanged. `docs/SHA256SUMS.txt` is absent, so no documentation-manifest integrity
+claim is made. Only trusted text, hash and Git structural inspection was used;
+no target script, build, test, key, service or native operation ran. Coordinator
+final combined-diff verification and publication are not claimed by this receipt.
+
+**Coordinator final review:** the combined documentation candidate is ready for
+publication. Independent source checks confirmed the current host exporter and
+crypto/panic graph, the pinned Microsoft README/helper blob identities and the
+relevant copy, unseal, native-completion and signing contracts. The narrower link
+count above checks newly introduced occurrences; the writer's count also includes
+existing links in inspected spans. No material planning contradiction remains
+within this scope. This review closes the documentation milestone, not the next
+engineering card or any implementation/native/release gate. Publication must
+preserve the reviewed file identities and be verified against the remote head.
