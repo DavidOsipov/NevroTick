@@ -722,6 +722,93 @@ restore/clone, absent/denied device, change races and cancelled IOCTL lifetime.
 Consumed clock authority must not reset. W11-W10 and the existing VM/boot-epoch
 owner retain CHECK-11/12/15/27; access and applicability remain unresolved.
 
+### Windows security compilation — 24 November 2026
+
+**Source-only reconciliation.** Owner supplied Microsoft's `windows-security.pdf`
+(1,678 pages, PDF creation 19 November 2026; selected page ranges below).
+Reviewed relevant sections, not the entire compilation. Repository baseline
+`1b1dc6b6a3b2cbc4a77eef80a716ffc8887c14e6`. The coordinator compared the current architecture, network,
+storage, signing, trust and environment plans and checked key current Learn
+pages. Separate fresh-context agents/judge were unavailable; this is a
+disclosed self-review, not independent stage admission. Recheck the current
+source, owner assignments and exact Windows behavior before adopting dependent
+work. David explicitly deferred enterprise certificate pinning until after V1.
+Other later dispositions below are proposals, not newly accepted security
+exceptions. No implementation, tool admission, native execution, host security
+change or hold lift occurred.
+
+**Disposition.** Existing service SID/SCM, IPC, WSH, effective process
+mitigations, MSIX/signatures, VBS/CNG/TPM, enclave, ZTDNS, logging, certificate
+and Sandbox contracts remain authoritative. Refine their verification at the
+existing stage triggers; no production scanner, collector, new background
+service, crate or runtime dependency is needed now.
+
+| Existing owner / trigger | Before V1, refine the applicable existing qualification | Negative and healthy controls / limits |
+| --- | --- | --- |
+| W11-W04 / W11-W05 / CHECK-1/18/23, real installed service networking | Capture actual identity, rule activation and attributable WFP outcomes under the final service SID, both address families, allowed endpoint/delegate paths and managed conflicts. Where authorized audit is available, use Security events 5152/5157, Filter Origin and Interface Index (Windows 11/Server 2022+); runtime filter IDs alone are unstable. [WS24-1] | Known WSH-denied request reaching the boundary vs reachable permitted request; separately identify ordinary firewall rule, missing route, boot-time refusal or transient interface quarantine. No credit for an unreachable peer or missing event. Quarantine guidance covers new non-loopback inbound connections; do not generalize to all outbound traffic. Audit access/configuration belongs to an authorized disposable observer, never an extra service privilege. |
+| W11-W04 / W11-W03 / future DNS-C14/17, if dynamic addressing is considered | Microsoft's FQDN dynamic keywords depend on DNS observation and resolution, have update/restart races and limitations with encrypted DNS/proxy/VPN/cache. A rule with no resolved remote addresses is not enforced. [WS24-2] Retain WSH and actual destination admission; do not adopt FQDN dynamic rules as the DoQ allowlist. | Unresolved/expired/restarted lists, policy change and first-connect race cannot silently permit a forbidden destination or authorize a weaker DNS route. Useful allowed endpoints still work. No blanket block-plus-allow construction, automatic retries outside policy, disabling DoH/Defender or changing global defaults. |
+| W11-W08 / QA native observer / CHECK-14/17/18/27, affected source/native checkpoints | Prefer the existing admitted Windows observers. If a concrete coverage gap warrants Sysmon, compare built-in vs standalone on exact OS; no coexistence assumption, runtime/product dependency or automatic install. Use scoped XML events for process creation/termination, image loads, process access, pipes, network, registry, DNS and file deletion only where relevant; retain event/schema version, process identity, observation/record sequence, correlation, filter/config identity, candidate and bounded collection interval. [WS24-3] | A known canary event must reach the selected observer and an independently checked expected denial/allow must be exercised; missing/dropped/overwritten records, disabled rules, ambiguous identity or observer failure leave the intended assertion unproved. Sysmon records activity, not universal prevention or successful access. DNSQuery cannot prove absence of custom encrypted resolver traffic; a network event does not prove WSH causality. Local/forwarded logs may be lost or altered; absence is not nonoccurrence. |
+| W11-W08 / ST-W07 / CHECK-14/17, diagnostics and privacy | Add external collector residuals to the existing privacy and dump contract: Sysmon can capture command lines, paths, DNS names and, by configuration, archive deleted files. Event Forwarding cannot guarantee gap-free collection (PDF pp. 228–233). Use bounded synthetic data, no real secret fixtures, least log access and explicit retention/cleanup; structured fields rather than localized rendered text. | Fault and healthy observations, collector omission/overwrite, UTC step, PID reuse, unrelated process, denied access, and safe disposal/export. Product deletion/wiping promises cannot cover independent admin-owned logs/archives. No SIEM service, forwarding/archival defaults, collection of user DNS history or authorization based on logs. |
+| ST-W01/ST-W04, protected storage provider/outcome freeze | Carry the [TPM recovery refinement](windows-protected-storage.md) into the existing failure-class matrix (see also PDF pp. 21–26, 41–62; [WS24-4]). Identify provider/key-policy-specific lockout and shared effects; test throttling, denied operations, missing expected root and legitimate servicing without resetting shared hardware. | Retain actual-work custody and distinct unknown outcomes, useful known-key use/recovery and no automatic weaker store or fresh-install inference. Test clear/replacement/PCR changes only as fault models or explicitly authorized disposable experiments; no host TPM/BitLocker changes. |
+| W11-W05/W11-W10/P5/P6 / CHECK-16/18/23/27, actual package and service lifecycle | At existing supported-security-profile gates, challenge Defender Controlled Folder Access/ASR, applicable untrusted-font policy and managed configuration reassertion (PDF pp. 307–314, 787–792). Verify exact role, actual policy and affected service/configuration/diagnostic/UI behavior, including reassertion during update/repair/removal. | Preserve refusal/indeterminate saved-vs-effective states, approved writable roots, recovery and useful permitted install/UI/Slint rendering. Do not assume Windows font policy covers every application parser. No antivirus exclusion, machine-policy reset, automatic security weakening or change to a user/admin's later settings. |
+
+The PDF's newer Baseline Protection chapter (pp. 133–149; [WS24-5])
+distinguishes evaluated boot protections from next-boot configuration and
+independent query errors. The current experimental export is local audit-only,
+not a security boundary or a supported production dependency; general
+availability is planned for spring 2027. Its sample's final resize retry can
+leave a reported required count larger than the allocated buffer after
+`ERROR_MORE_DATA`; do not copy it. Later code must require confirmed fill
+success, validate actual count against capacity, bound sizes/retries and
+preserve unknown enum values and HRESULTs. This is a static sample observation,
+not a Windows vulnerability or evidence that NevroTick currently contains it.
+
+**Post-V1 / conditional.** See [WINSEC-0](../../ROADMAP.md#winsec-0--post-v1-windows-security-compatibility-and-evidence):
+enterprise CTL pinning (PDF pp. 1446–1457, [WS24-6]) is owner-deferred; current
+Learn says Windows certificate-policy APIs participate but documents Schannel
+client scope, contrary to the older overview's Edge claim (PDF p. 151).
+Neither inference establishes actual Rustls wrapper behavior. No new V1
+pinning feature or weakening of OPEN-8/R-05. AppId tagging is classification
+rather than code admission; exact Server support must be rechecked
+([WS24-7], PDF firewall chapter). Baseline Protection, AppId tagging, MXC
+containment/Hyper-V firewall for development, and COSE-signed evidence are
+separate conditional evaluations, not the current runtime security design.
+MXC's per-backend enforcement varies ([WS24-8], PDF p. 1495); preserve
+the existing Sandbox/host isolation and no-signing-secrets contract. COSE
+([WS24-9], PDF p. 1670) authenticates a defined evidence object, not the
+correctness or completeness of its contents; retain optional provenance
+policy. Secure Boot, HVCI, System Guard, HVPT, DMA protection, Credential
+Guard and device attestations remain distinct host mechanisms, not new
+administrator-proof application claims. No PQC algorithm or FIPS product
+claim follows.
+
+**Next action and readiness.** Continue the current development-plan order.
+Before each affected W11/ST qualification, the current owner imports only its
+applicable cases into its existing task/receipt, identifies the real code
+consumer and obtains independent plan review. In particular, W11-W04 owns
+WSH/actual-network qualification; W11-W08 owns authorized diagnostic observer
+integration; ST-W01/ST-W04 own the selected storage-provider error contract;
+W11-W05/W11-W10 and P5/P6 own final service/package/UI compatibility. Existing
+Windows/fuzz/storage/UI holds remain. No immediate Rust/Python/PowerShell
+patch was justified by the bounded review: these depend on selected native
+profiles or absent final consumers. Do not scaffold them, promote a future
+research proposal into a new V1 gate or claim these cases were executed.
+Independent review of this source-only refinement is still open. The massive
+Windows task was not fully retrievable through the connector; reconcile
+existing cases before adding any duplicate tests.
+
+**Primary source anchors (checked 24 November 2026).**
+
+- **WS24-1:** [Filter origin audit log](https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/filter-origin-documentation).
+- **WS24-2:** [Windows Firewall dynamic keywords](https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/dynamic-keywords).
+- **WS24-3:** [Sysmon overview](https://learn.microsoft.com/en-us/windows/security/operating-system-security/sysmon/overview); PDF pp. 154–185 and 228–233.
+- **WS24-4:** [Manage TPM lockout](https://learn.microsoft.com/en-us/windows/security/hardware-security/tpm/manage-tpm-lockout); PDF pp. 21–26, 55–62.
+- **WS24-5:** [Windows baseline protection](https://learn.microsoft.com/en-us/windows/security/operating-system-security/system-security/windows-baseline-protection).
+- **WS24-6:** [Enterprise certificate pinning](https://learn.microsoft.com/en-us/windows/security/identity-protection/enterprise-certificate-pinning).
+- **WS24-7:** [AppId tagging guide](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/appidtagging/appcontrol-appid-tagging-guide).
+- **WS24-8:** [MXC architecture](https://learn.microsoft.com/en-us/windows/apps/develop/mxc/architecture).
+- **WS24-9:** [Software bill of materials](https://learn.microsoft.com/en-us/windows/security/security-foundations/software-bill-of-materials).
+
 ## 7. Existing owners and next work
 
 The assignments below reuse [W11-W01–W11-W10](../../tasks/windows11-integration.md#3-bounded-work-assignments)
@@ -733,15 +820,15 @@ They add source details and cases, not acceptance IDs or a parallel backlog.
 | W11-W01 | Same-interface timestamp changes; separate ancillary admission; selected socket completion; exact SDK ABI and QPC assumptions. |
 | W11-W02 | Actual I/O-wait timeout and unattended/hibernate resume cases alongside the existing sleep model. |
 | W11-W03 | DNS immediate/pending completion, NRPT precedence and exact field preservation. Keep private-name routing and DoQ pins. |
-| W11-W04 | COM ownership if WSH is selected; existing identity and network-confinement evidence remains. |
-| W11-W05 | Compare declarative MSI ACLs only for a later selected MSI alternative, managed service state and an SCM observer's actual callback lifetime. Apply the 7 November argument/error/mutex/environment refinements and conditional startup-wait cases before their dependent adapters. Carry the 24 November profile-separated elevation cases with W11-W10 and P5/D2. |
+| W11-W04 | COM ownership if WSH is selected; existing identity and network-confinement evidence remains. Carry the 24 November attributable-denial and dynamic-addressing cases into the real installed boundary. |
+| W11-W05 | Compare declarative MSI ACLs only for a later selected MSI alternative, managed service state and an SCM observer's actual callback lifetime. Apply the 7 November argument/error/mutex/environment refinements and conditional startup-wait cases before their dependent adapters. Carry the 24 November profile-separated elevation and managed protection/servicing compatibility cases with W11-W10 and P5/P6/D2. |
 | W11-W06 | Compare native global/interface hints with destination-aware COM information for the selected optional workload. |
 | W11-W07 | No new hashing/provider requirement; the prior eligible-workload and measured batching gates remain. |
-| W11-W08 | ETW emission authorization versus session/file access, collector-specific crash privacy and useful diagnostics alongside effective unattended error behavior. |
+| W11-W08 | ETW emission authorization versus session/file access, collector-specific crash privacy and useful diagnostics alongside effective unattended error behavior. Carry the 24 November independent observer and external retention cases; Sysmon is conditional QA-only. |
 | W11-W09 | Carry observer/privacy semantics into deferred D2/D3 consumers only at their existing triggers. |
 | W11-W10 | Keep VBS claims, side-channel fields, UDP batching and VM-generation access conditional. |
 | ST-W01/02/03 | Refine the existing construction/outcome/directory card with the ReplaceFile matrix, managed-state lifetime and MSI inheritance where selected. |
-| ST-W04/05/07 | Conditional VBS claim prerequisites, measured role-specific side-channel policy and explicit collector/OS-cache privacy limits. |
+| ST-W04/05/07 | Conditional VBS claim prerequisites, measured role-specific side-channel policy and explicit collector/OS-cache privacy limits. Carry the 24 November TPM failure/lockout and external collector cases at their actual owners. |
 
 The next source-only W11-W01 card remains bounded. The ready ST-W01 contract
 card may consume these persistence details when assigned. Neither card is

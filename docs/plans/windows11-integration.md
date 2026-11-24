@@ -154,6 +154,13 @@ Zero Trust DNS is especially relevant to enterprise coexistence. Current documen
 
 **Composition boundary.** This is a specific WSH mechanism. Ordinary explicit firewall blocks still take precedence over ordinary allows. [S3] Also observe certificate or DNS operations delegated to other services; restricting one process does not automatically constrain every delegate. Test actual installed identities, IPv4/IPv6, permitted and forbidden destinations, rule activation delay, update/recovery, and managed-policy conflicts before reporting confinement as effective.
 
+Use the [24 November security evidence refinement](windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
+for the existing W11-W04/CHECK-1/18/23 qualification. Attribute actual denied
+flows to their reached filter/identity; test managed-policy conflict and
+activation/restart without weakening host settings. Dynamic FQDN firewall
+rules are not a secure resolver or proof of DoQ-compatible destination
+admission. AppId tagging remains a separate post-V1 candidate.
+
 Custom WFP remains conditional on a demonstrated WSH gap. Its object ACLs, transaction scope, and filter/session lifetime require their own design. Dynamic-session objects are removed when their session ends. [S11] [S12] [S13] A denial that disappears when its owner crashes can defeat the intended protection. No new kernel driver or machine-wide policy change follows from this recommendation.
 
 ## 4. Make installation and service state reflect actual Windows behavior
