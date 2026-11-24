@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 use crate::ProtectedNativeClockObservation;
 use ntp_wire::{NtpTimestamp, RawHeader};
 
+pub use super::profile::CertificateTimeProvenance;
 use super::{
     Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
     PowerObserverCleanup, RunFailed, StopHandle,
@@ -521,6 +522,24 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub fn same_exchange(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.history, &other.history)
+    }
+
+    /// Check whether both receipts came from the same published KE association.
+    ///
+    /// Distinct exchanges can use one association. Equality records historical
+    /// provenance only and grants no current trust or admission authority.
+    #[must_use]
+    pub fn same_ke_association(&self, other: &Self) -> bool {
+        self.history
+            .history()
+            .same_ke_association(other.history.history())
+    }
+
+    /// Return the verifier and time-input classification of the original KE.
+    /// This historical receipt supplies no independent date or current trust.
+    #[must_use]
+    pub fn certificate_time_provenance(&self) -> CertificateTimeProvenance {
+        self.history.history().certificate_time_provenance()
     }
 
     /// Return the complete locally submitted protected request length in bytes.
@@ -1420,11 +1439,16 @@ mod nominal_reference_tests {
         assert!(!selected.same_invocation(&foreign));
         assert_eq!(selected.local_endpoint(), foreign.local_endpoint());
         assert_eq!(selected.peer_endpoint(), foreign.peer_endpoint());
+        assert_eq!(
+            selected.certificate_time_provenance(),
+            foreign.certificate_time_provenance()
+        );
         assert!(!selected.same_exchange(&foreign));
 
         foreign.run_context = Arc::clone(&selected.run_context);
         assert!(selected.same_invocation(&foreign));
         assert!(!selected.same_exchange(&foreign));
+        assert!(!selected.same_ke_association(&foreign));
 
         selected.application_clock_captures.swap(0, 2);
         assert_eq!(

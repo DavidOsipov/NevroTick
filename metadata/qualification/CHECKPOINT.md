@@ -260,6 +260,18 @@ The 9,244-variant campaign remains incomplete. The 263-case instrumented
 predecessor served as source-bound selection evidence for this replay.
 The 264-case baseline above is ordinary execution.
 
+The QA76-G1 follow-up keeps startup-review controls in `mutation_tests.py`
+under the existing qualification test discovery. The tests call `apply_reviews`
+with independently bound prior evidence and a replay result. Both CLI roles
+and the source-stage case accept the intended assertion. Timeouts, abnormal
+exits, wrong or conflicting test results and ambiguous roles withhold credit.
+The `record_startup_probe` controls inject supplemental I/O and report errors
+and check that the original failure is retained. Python 3.12.3 ran all 10
+tests in the qualification discovery at base `9bfc3b5` with the new test file.
+Ten isolated single-change controls failed their intended assertions after
+weakening a startup-review check or removing the supplemental error record.
+The logs are under `~/.local/share/nevrotick/qa76-lg-followup/`.
+
 ### Complete the field registry and probe delivery discrimination
 
 W11-W10, MD-P3. The checkpoint and mutation-testing skills bound the

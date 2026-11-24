@@ -6,7 +6,10 @@ import json
 import unittest
 from uuid import UUID
 
-from prestart_receipts import Capture, Member, ReceiptRefused, Run, join_prestart
+from prestart_receipts import (
+    Capture, DeploymentObservation, DeploymentRun, Member, PrestartProbe, ReceiptRefused, Run,
+    ScmTypeSample, join_prestart, read_deployment, read_prestart,
+)
 
 
 ENGINE = "NevroTick-Lab-S02-Engine"
@@ -81,6 +84,67 @@ class PrestartReceiptTests(unittest.TestCase):
         self.assertEqual(result.run_id, self.run.id)
         self.assertEqual(result.signed_package_sha256, "1" * 64)
         self.assertEqual(result.service_types, ((528, 528, 528), (528, 16, 16)))
+
+    def deployment_run(self) -> DeploymentRun:
+        return DeploymentRun(self.run.id, self.run.package_full_name, self.run.signed_package_sha256,
+                             self.run.engine, self.run.broker, self.run.companion_sha256,
+                             self.run.observer_sha256, self.run.deployment_actor)
+
+    def test_deployment_only_reads_the_two_fixed_captures(self) -> None:
+        run: DeploymentRun = self.deployment_run()
+        baseline: ScmTypeSample = ScmTypeSample(engine=(528, 528), broker=(528, 16))
+        order: list[PrestartProbe] = []
+        captures: dict[PrestartProbe, Capture] = {
+            PrestartProbe.IDENTITY: self.identity, PrestartProbe.OBSERVATION: self.observation,
+        }
+
+        def collect(probe: PrestartProbe) -> Capture:
+            order.append(probe)
+            return captures[probe]
+
+        result: DeploymentObservation = read_deployment(run, collect, baseline)
+        self.assertEqual(result, DeploymentObservation(self.run.id, "1" * 64, ((528, 528, 528), (528, 16, 16))))
+        self.assertEqual(order, [PrestartProbe.IDENTITY, PrestartProbe.OBSERVATION])
+
+        order.clear()
+        with self.assertRaisesRegex(ReceiptRefused, "actor contexts are incomplete"):
+            read_prestart(run, collect, baseline)
+        self.assertEqual(order, [])
+
+    def test_deployment_identity_refusal_prevents_the_observer(self) -> None:
+        run: DeploymentRun = self.deployment_run()
+        baseline: ScmTypeSample = ScmTypeSample(engine=(528, 528), broker=(528, 16))
+        order: list[PrestartProbe] = []
+        wrong: bytes = self.identity.stdout.replace(b'"sha256": "' + b"2" * 64, b'"sha256": "' + b"9" * 64, 1)
+        self.assertNotEqual(wrong, self.identity.stdout)
+
+        def collect(probe: PrestartProbe) -> Capture:
+            order.append(probe)
+            self.assertIs(probe, PrestartProbe.IDENTITY)
+            return replace(self.identity, stdout=wrong)
+
+        with self.assertRaisesRegex(ReceiptRefused, "identity differs"):
+            read_deployment(run, collect, baseline)
+        self.assertEqual(order, [PrestartProbe.IDENTITY])
+
+    def test_deployment_requires_original_scm_sample(self) -> None:
+        run: DeploymentRun = self.deployment_run()
+        malformed: ScmTypeSample = ScmTypeSample(engine=(528, 528), broker=(528, True))
+
+        def unexpected(probe: PrestartProbe) -> Capture:
+            self.fail(f"invalid baseline dispatched {probe}")
+
+        with self.assertRaisesRegex(ReceiptRefused, "invalid original SCM type sample"):
+            read_deployment(run, unexpected, malformed)
+
+        forged_row: str = self.role_rows[1].replace("before-type=16", "before-type=32")
+        forged: Capture = replace(self.observation, stdout=libtest(READ, [self.role_rows[0], forged_row, self.role_rows[2]]))
+        baseline: ScmTypeSample = ScmTypeSample(engine=(528, 528), broker=(528, 16))
+        captures: dict[PrestartProbe, Capture] = {
+            PrestartProbe.IDENTITY: self.identity, PrestartProbe.OBSERVATION: forged,
+        }
+        with self.assertRaisesRegex(ReceiptRefused, "SCM types differ from the original window"):
+            read_deployment(run, captures.__getitem__, baseline)
 
     def test_supervised_child_custody_has_no_stdout_fallback(self):
         for change in (

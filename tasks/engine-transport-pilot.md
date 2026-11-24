@@ -31234,16 +31234,18 @@ exchange, including repeats across reporting or reconnect. Keep the
 existing authenticated transport commit, cookie history and charged work
 as historical facts when numerical admission refuses the exchange.
 
-**Reissue prerequisite — 23 November 2026.** The current Windows facade
-owns one process-wide worker, one CNG provider claim and one process-wide
-resume registration attempt. The worker retires its provider scope after
-the invocation. The observation owner explicitly closes the registration,
-and the callback slot remains spent. The S2.2
-[process-owned provider requirement](#receiver-first-integration-continuation--11-november-2026)
-must precede the fresh-reissue control. The production owner needs to retain
-the initialized provider through all admitted jobs and their confirmed
-retirement, and keep power invalidation bound to the actual current
-invocation. Retain the one-shot controls for the present laboratory facade.
+**Reissue prerequisite.** The one-job Windows facade still spends one
+process-wide CNG claim and resume registration attempt. The later
+[two-job facade](#keep-one-native-acquisition-owner-across-two-protected-jobs--23-november-2026)
+holds one provider and persistent observer across two original jobs under
+one cutoff. Each job has its own Stop and collection ticket, and confirmed
+collection of the required first-job receipts gates the second job.
+The [current artifact pair](#rebind-the-matching-peer-to-the-provenance-facade)
+still needs the real two-peer authenticated execution and temporary trust
+restoration in an admitted offline guest. The bounded pair supplies
+no production service acquisition owner. Its power-binding epoch advances
+on activation as well as delivered events. Mapping continuity still needs
+the independent qualified issuer above.
 
 **Acceptance planned:** one healthy current exchange enters history once and
 a fresh one works after qualified reissue. At the real final guard and
@@ -32969,3 +32971,631 @@ The staged source is `timing_coordinator.py` under
 SHA-256 `499f68ff6dc8d5feafdc5ee376bd4bcd16ec5da451ea7369ec290b26b9bc5560`.
 The six controls' `controls.log` hashes to
 `8fc5859ee3c2dae5577f598d8c45dd3338a499558d4c608edfe3ca5603e7fee5`.
+
+### Keep original KE certificate-time provenance on protected receipts
+
+S2.1/S2.2, W11-W01 and CHECK-8/9/25/27. The Windows transport supplies
+the checked TLS profile with the wall-input classification of its own
+configured connection after full TLS acceptance. The transport-owned input
+has a private constructor path. Successful same-connection KE, exporter
+derivation and TLS retirement still precede association publication.
+Each guarded ordinary commit keeps that association's classification in
+its original history. The existing joined receipt reads it from that history,
+including a retained first receipt after abnormal join. Ordinary local wall,
+injected Windows fixture wall and component material stay distinguishable.
+Current trust, reliable date and sample authority require their own inputs.
+
+The one-job and two-job Windows timing facade consumers check the ordinary
+Windows classification on every original receipt before emitting timing
+rows or a pair success summary. Output fields retain their existing format.
+Components exercise the normal pair and abnormal retained-first branches.
+The existing native DENY fixture now also checks its actual Windows
+association classification before the protected exchange. The new native
+assertions await the admitted certificate-bearing runs.
+
+The isolated writer used the Rust contract, cryptographic trust and
+regression-selection skills. Independent source review traced configuration,
+full TLS, retirement, both guarded commits, and the exact facade consumers.
+The combined development candidate is tree
+`912685c60aa34dda9b1887d9124d1990557d1528` over
+`9bfc3b5904808de973defbc81f8a91caaaaa2875`, with 754 Engine product inputs
+hashing to `d56a6e79585d478094c1fa79f572fc20304bf687d0f2e163f778921e44ce3eab`.
+Configured Rust 1.100.0 formatting, GNU and MSVC EP1 Clippy, four focused
+managed-pair cases and all 627 GNU EP1 library tests passed. The admitted
+x64-v3 facade passed all 20 build and static readback commands. Its 29
+durable exported files matched the originals, including all four PE/PDB
+pairs. Both locks retain their original admitted graph.
+
+| Record under `%LOCALAPPDATA%/NevroTick/engine-ke-provenance-9bfc3b5/` | SHA-256 |
+| --- | --- |
+| `engine-combined1.json` | `0efb37d9bfa27421fefb5b2e892cb7e5553d11d0cad6dd997469e40b3c7f9755` |
+| `facade/verification.json` | `5a7d0d9983ce4f93685bf5f54cdf93f6fa8fb926bafc1270ef4cb1f651942590` |
+
+Before this change, current Main matched all 17 helper pins of the older
+`890e70f0` facade. Four of its 754 product inputs differed in the Slint
+calendar and dependency-profile scope. The loader and parser receipts
+retain that older pair's identity. Rebind the matching peer and controlled
+guest for the rebuilt facade. Ordinary authenticated Windows execution,
+the successful injected-wall fixture contrast and affected 90%/95%
+qualification remain open. The independent reference and mapping trial
+still precede any current Core admission.
+
+### Rebind the matching peer to the provenance facade
+
+S2.1/W11-W01 and CHECK-19/24/25/27. The frozen pair still uses tree
+`912685c60aa34dda9b1887d9124d1990557d1528`. The peer owner checked all
+2,363 archived source paths and modes and all 112 standalone peer inputs,
+then rebuilt against the already verified facade receipt. All 12 configured
+peer lanes passed in 202.473 seconds. Both GNU modes passed the same 31 cases.
+The MSVC x64-v3 release image and PDB passed static readback. The temporary
+work was retired before the independent paired readback.
+
+The reader checked the 20 facade and 12 peer lane records and all five
+PE/PDB pairs. Eight retired, crossed or incorrectly pinned inputs refused,
+and the restored pair passed. The current Engine and peer input maps still
+match the selected live bytes. Independently owned service and metadata work
+lies outside those maps.
+
+The environment-preflight and Sandbox skills scoped the next run to loading
+and argument checks, with no certificate or protocol payload. The host-only
+binding passed for the exact owned guest. It checks the standing retirement
+receipts, the earlier typed parser retirement and the physical mapped shelf
+contents under the shared lease. Five controls exercised empty shelves,
+pending data, an extra directory, an aliased directory and restored state.
+The exact rendered timing controller uses the pinned earlier template and
+new image hashes. Host parser-preparation controls reproduced those bytes
+independently and required the recorded command prefix and retirement
+bookends before a passing receipt. The first attempts stopped below the
+2,048 MiB Windows memory floor, at 1,240, 1,428 and 1,844 MiB available.
+After capacity recovered, `kepre_43697ecdda1b` passed the certificate-free
+Windows loader and argument controls for the exact peer and facade.
+The peer returned the expected usage exit, the facade refused unknown and
+extra arguments, and both missing-endpoint checks passed. The run retained
+all 17 command records and verified empty mapped directories at retirement.
+
+The timing controller's subsequent host-only binding checked the loader
+receipt, both images and the exact rendered controller bytes. The Sandbox
+inventory was empty on resumption. Parsing that controller remains due
+in an admitted guest. The authenticated exchange still needs confirmation
+for its exact temporary lab root and CRL, plus restoration readback.
+The independent physical reference retains its own exit.
+
+| Record | SHA-256 |
+| --- | --- |
+| Durable `engine-ke-provenance-9bfc3b5/peer/build/verification.json` | `359d984f30983ff8c5d2382e6c2b6face0f6de5c0e70056744a67a23af15dcca` |
+| `s21-ke-provenance-pair.fxqsI0pe/readback/paired-readback.json` | `42051ca609151ac56611b52e8dd078fe636ce5c15befae8889e327492ca12ad8` |
+| `s21-ke-provenance-loader.6pDZyyZT/host-binding-verified-retirement.json` | `ac4ca85114809890f301d1ed2854314ac04e1fb84fcad8060349decb62a3d99c` |
+| `s21-ke-provenance-controller.glZGeLlU/controller-timing-rendered.ps1` | `1a25fd015486b94c1ea6e11f5580ec18da34542ed4034a28fb8fc6c91800c4a6` |
+| Same stage `bind-parser.py` | `02750861a4b6a614b66bdf1619cc731e2a1ad6875f63e868f174af1647ef64dc` |
+| `s22-peer-current-a17d499/dispatch/kepre_43697ecdda1b/verification.json` | `6f68952217666e0b0e71fd35cd341d62d6ef66a688680f3a8dc3a8bffcf00477` |
+| Same run `dispatch-retired.json` | `99b851d426f85cd71959847cf814153d45b9ad252e5abcd4f121aa3530ba9b59` |
+| `s21-ke-provenance-controller.glZGeLlU/check-current-loader.log` | `d686a534de64b5b7bc45793b2171a59f3ef48ad1c947ae1f914ebed0235d2a17` |
+
+The build remains in the current Engine evidence chain. All required
+production mapping, current Core admission and 90%/95% qualification
+remain with their existing owners.
+
+#### Parse the rendered provenance controller on the Windows host
+
+S2.1/W11-W01 and CHECK-25/27. The exact 42,357-byte timing controller
+passed the held-file `Parser.ParseFile` command in Windows PowerShell
+5.1.26100.10068. The check used the `parser_command` body from the already
+bound dispatcher. The four exits were `0, 53, 52, 0`. The original and
+restored controller parsed, the altered copy failed its initial extent or
+digest check, and the same malformed bytes reached the syntax refusal
+under their own pin. Each input remained byte-identical through the run,
+and the private temporary files were retired.
+
+The preflight and negative-path controls initially recorded an incomplete
+result because the host emitted 616 stderr bytes in three invocations.
+The repeat preserved the exits and retained each byte stream. Independent
+review confirmed the nonempty streams contain exactly two structured
+PowerShell module-initialization progress records each. Output contained no
+error record. No controller or protocol program was executed.
+
+The parser capsule still binds the preceding offline guest session's
+loader. The currently running session has a different identity, and its
+launch profile does not explicitly disable networking. Use a newly admitted
+offline guest, a matching loader receipt and a current parser run before
+the separately admitted certificate-bearing exchange. The host parse
+supplies source syntax evidence for the exact controller.
+
+| Record under `s21-ke-provenance-controller.glZGeLlU/` | SHA-256 |
+| --- | --- |
+| `host-windows-parser-readback.json` | `97d711b65b6e8874358d300ae9cb3465f08c33585529660e9beda7ee64fac109` |
+| `host-windows-parser-progress-readback.json` | `2257358935daa79ab16c6a5b4cafb2892e8b043e4ff32e3b7c58f421b4bfb8db` |
+
+#### Keep the original address selection when the first round replies
+
+S2.1, REQ-8/BND-1 and CHECK-6/8/21/25/27. The public address-round driver
+now has a regression for a changed precredited laboratory answer beside a
+genuine correlated UDP reply. The test checks the actual first request,
+accepted header and original source configuration. The result remains
+`Reply` with `NotNeeded` and reports no native refresh pending. The other
+two loopback sockets receive zero datagrams. The existing ordered
+membership stays admissible, and the proposed in-envelope successor
+remains inadmissible. The adjacent exhaustion case observes the actual
+successor instead. Source inspection confirms abort and await of the
+laboratory task on the reply branch.
+
+The regression-selection and independent-review skills checked the
+original and replacement membership oracles and the actual socket path.
+The frozen combined candidate is tree
+`02d9002456467c3e3c350710fbaf572c8a2802cf` with 754 admitted inputs
+at `9149d0e1a6495c5bcd5eaa7073c51e25522f7f9a934639998ec95ac3010c0abc`.
+Rust 1.100.0 formatting and GNU Clippy passed. Ordinary and
+`verify-release` GNU runs each passed both selected tests. The isolated
+runner read back the same tool, vendor, source and index identities.
+The 588-package vendor was reconstructed from 579 retained trees and
+nine exact archives. The resulting 29,510-file digest matched the
+previously admitted vendor.
+
+One directed derivative admitted successor collection on `Reply`.
+The first fault invocation omitted the leading module from its exact
+selector and reached zero tests. Using the name reported by the healthy
+run, the same derivative selected one test, which exited 101 at the
+`NotNeeded` assertion. This is sensitivity evidence for that guard.
+The new test changes the selected source inventory. The prior timing
+images retain their frozen inputs, and actual Windows DNS retirement and
+the per-file metric gates still require their own evidence.
+
+| Record under `~/.local/share/nevrotick/s21-joined-refresh-qa.gPwVfzEE/` | SHA-256 |
+| --- | --- |
+| `engine-development.json` | `c376e5c239cb68ae93708863b3a022d2b4eff43dfa4ce013c963a4e7ab9c9745` |
+| `vendor-readback.json` | `9cf0ce73fddaf25a1a2c857ede5f34547919676f9ae2d0f6502b922ac61a9924` |
+| `engine-fault.json` | `3d36f7afda733825742b215a394b8025dba94b46a3c4ee83f380f87709338380` |
+| `engine-fault-exact.json` | `8b0f9502f1599bbe98e0e287fe63b734c867f96e4a3f51d9e8a997c467a67aad` |
+
+#### Verify certificate-time classification at the Windows connection constructor
+
+S2.1 and CHECK-8/25/27. The Windows EP1 test calls the actual TLS
+connection constructor with ordinary local wall time and a fixed valid
+test input. Each configured client retains the corresponding distinct
+certificate-time provenance before any handshake I/O. The existing
+epoch control separately checks the configured callback and its
+pre-epoch and healthy cases.
+
+The frozen source tree `2fa575bad16391c09e91c20befa0e551eb0a1887` adds
+the test to the staged earlier checkpoint. The first launcher stopped
+before tool admission when Git tried to open a write lock on the
+read-only index. The retry compared the complete staged tree and read
+the index digest without modifying it. The bounded Rust 1.100.0 runner
+passed namespace controls, format, the Windows x64-v3 EP1 libtest link
+and PE/PDB readback, with source, vendor, tool, SDK and index bookends.
+
+On the Windows host at build 26300, the CPU and OS probe passed. Libtest
+listed both exact selectors, and a separate invocation of each executed
+one passing test. All four children exited and their streams completed.
+The executable and symbols retained the linked digests. This is a
+certificate-free component result. The successful injected-wall and
+ordinary certificate-bearing exchanges, original loaded guest controller,
+physical reference, and affected 90%/95% gates retain their own evidence.
+
+| Record under `~/.local/share/nevrotick/s21-constructor-provenance.SajpQ5AV/` | SHA-256 |
+| --- | --- |
+| `source.patch` | `3c41cbf92cb7736e666c79899ac459fb58bf7179993a582e92fd211083f447ec` |
+| `component-link.json` | `2eaa226e520224a4eef99a642c42b78bbb7e06ddd85b3fbeb2bbe95505bd878a` |
+| `component-link-read-index.json` | `374dd8401c049765c073088b579648e79116af16e10bc83976574e946303f810` |
+| `native-component.json` | `ecc9b782982de0cca4991d4656fbf8aac083486aa20f1394d3fdf363ed1a6413` |
+
+#### Carry both certificate-time classes through completed laboratory KE
+
+S2.1/S2.2 and CHECK-8/9/25/27. Two new Windows-only manual tests call
+the actual network transport and require TLS, KE and local stream
+retirement to succeed before the original association is published. The
+fixed-wall case expects `WindowsLaboratoryFixtureWall`. The ordinary
+case expects `WindowsLaboratoryLocalWall`. Each checks the original
+control's published phase and the KE-only peer's one 12-byte cookie.
+The scripted native launcher and exact roster exclude both cases from
+ordinary execution. The production treatment of wall input is unchanged.
+
+The fixed reading is 23 November 2026 at 00:00 UTC. OpenSSL verified the
+pinned v4 leaf, chain, server identity and CRL at that reading. Windows
+also requires a current CRL under the guest clock. The retained CRL ends
+on 26 November 2026 at 03:21:26 UTC. Admit the actual guest UTC and trust
+window before dispatch. Use a separate process for each exact selector,
+bind the IPv4 loopback listener to the owned peer and require its
+close-notify witness and natural exit alongside the client result.
+The two successes exercise label transfer through KE. The previously
+observed out-of-range refusals separately test the effect of the time
+input on certificate admission.
+
+Rust contract, positive-path and regression selection checks covered the
+transport and manual/scripted partition. The first Python check reached
+the output space floor. An adequate temporary directory exposed stale
+fixture counts and source-owner slices. After correction, all 98 reader
+controls passed. On frozen tree `f1c47dc05bae3fe461d69e5b56f51cdcdc9b8ce3`,
+Rust 1.100.0 passed Windows EP1 Clippy, launcher format and Clippy, and
+the x64-v3 libtest link and PE/PDB readback. All 754 product inputs,
+the launcher, SDK, compiler, vendor and index retained their digests.
+
+Windows host build 26300 accepted the CPU and OS probe. Both exact
+certificate-free constructor and epoch controls passed. An ignored-only
+listing discovered both new cases. The certificate-bearing cases ran
+zero times. The remaining action needs a current admitted offline guest
+and a dedicated positive collector, with temporary trust and restoration
+observed for the admitted chain. No measurement or Core history
+eligibility follows from these checks.
+
+| Record under `~/.local/share/nevrotick/s21-certificate-handshake-controls.R1vKkS0d/` | SHA-256 |
+| --- | --- |
+| `reviewed-overlay.patch` | `856e9440a77e6d567112b74824b75692c6fe308b12c354abd027d907e530855f` |
+| `engine-native-reader-complete.log` | `6c855a9f5ae849ab398a7454a5ddb74ab4fadbe1d884d5d04407bf94110bd91b` |
+| `component-link-read-index.json` | `ad11435c7ee49851f4f302f9cbcfa32b939ac277ea5ece416670b73ee54f6d05` |
+| `component-discovery.json` | `7ad9b767f56273a42dd621d77f47cf4dcdcf27636236cb09f0f363bd657afb1c` |
+
+The positive collector is prepared under `positive-collector.1sJglxOl/`
+in the same evidence directory. It derives from the pinned healthy KE
+controller and reuses its original image, input, peer-listener, process,
+bounded stream and physical CurrentUser Root/CA retirement owners. The
+two selectors run separately with the exact loopback listener passed
+through the client environment. Success requires the specified provenance,
+one 12-byte cookie, both natural zero exits, complete captures, the peer's
+close-notify witness, and restoration against the original inventory.
+The whole invocation retains a 300-second limit.
+
+Independent review required an effective offline check before trust
+insertion and a UTC check at the actual client launch. The rendered
+collector checks active non-loopback interfaces and routes before each
+trust write and case. It samples UTC immediately before the client start
+and checks the recorded process start timestamp against the same window.
+The original outer Sandbox owner still verifies the exact session's
+offline configuration, mappings, two host-memory observations and
+restoration. Admissible guest UTC ends five minutes before the pinned CRL
+expires. The case cutoff stays monotonic.
+
+Host Windows PowerShell 5.1 parsed the complete controller and exercised
+its case, UTC-window, offline and transcript predicates. Seven healthy
+controls passed and nineteen expected refusals occurred, including the
+live host network observation. Two changed renderer inputs refused. The
+host binder rehashed nine inputs and both retained symbol files. It
+matched the original component and static peer readbacks. An initial
+preparation used a mistaken receipt pin and underestimated the retained
+Engine PDB size. The final binder reads the documented receipt identities
+and streams the exact bounded symbol input. The five current source
+differences are recorded against the retained Engine test image.
+Both certificate-bearing exchanges still need an owned offline guest and
+same-session execution. The existing replacement guest's launch profile
+and ownership remain unverified.
+
+| File in the collector directory | SHA-256 |
+| --- | --- |
+| `render.py` | `e954d6def947fe5f99de0988149a90c3128f5031e60cc4c209bd441bf4217e54` |
+| `reviewed/nts-ke-healthy-peer.ps1` | `fcb31afa3209da7a67fc78a9aa8dc5260fe5f9fb3f74152b0ee21fef510940f0` |
+| `reviewed/host-controls.stdout` | `eb989682e76ac1cecd095bc29ba4522132f47211ca72dec2557570130fa1271f` |
+| `reviewed/input-binding.json` | `dfd312f5d50ffb8042ec79a815c8cd274c49a83b4f94ed010c742fcaef3e0268` |
+
+#### Complete both certificate-time handshakes in the restarted guest
+
+S2.1/S2.2 and CHECK-8/9/25/27. David reported the newly started Sandbox
+ready after the host restart. The native ExistingLogin inventory and
+effective offline checks bound the two positive cases to
+`a18deba5-a8bf-4295-aa28-d7222052ef8f`. The same-session loader returned
+the exact CPU success and peer argument refusal and discovered all six
+ignored certificate-time selectors in the retained Engine libtest image.
+Neither positive used the standard scripted runner selection.
+
+Run `keprov1124a18deba5` observed real TLS and KE in distinct cold
+client/peer pairs. The fixed-wall case published
+`WindowsLaboratoryFixtureWall`. The ordinary case published
+`WindowsLaboratoryLocalWall`. Both cases retained one 12-byte cookie.
+Both peers observed close-notify. The guest command returned zero.
+Independent readback matched all 25 files, four reaped children, eight
+closed streams, fifteen progress records and the actual client start
+timestamps within the pinned certificate window. The physical guest
+trust stores matched the original baseline. Guest scratch was removed
+and both mapped shelves were empty after export and input retirement.
+
+The result applies to the retained `f1c47dc05bae3fe461d69e5b56f51cdcdc9b8ce3`
+Engine source, the exact peer and the admitted lab chain. Five product
+inputs in the checkout differ from that link projection. The current
+transport control source and image pins matched the retained evidence.
+This completes the two positive laboratory provenance controls.
+The current protected timing pair, calibrated measurement admission,
+and affected-file metrics retain their separate scope.
+
+The current four-file overlay matched the retained reviewed patch.
+All 98 runner-reader tests passed in the admitted temporary directory
+under `/dev/shm`. The first attempt under `/mnt/wsl` reached the
+output-directory prerequisites and produced 29 failures and seven
+errors without qualifying those controls. The four verified files and
+the matching nine-case tooling guidance were staged after the repeat.
+
+| Record under `~/.local/share/nevrotick/owned-sandbox-20261124-07924522-122f-4495-a905-8f43eec26b53/` | SHA-256 |
+| --- | --- |
+| `tls/prepare.json` | `c4b9b548540e740287ec6f8043b9dc43dec2821108f255cb1b87b7fe71b76b11` |
+| `tls/loader.json` | `b8a953f362da2a8dad4a1efa8632df37e9ec7f1109fcc571875dda5b909403c8` |
+| `tls/execute.json` | `269d651d832e63405e6c3e265008914e16bb2816e6a04c7f1ba44659ac9efd6e` |
+| `tls/accepted-readback.json` | `1ec72b7bf440814ac2aac1aa4732d298072bdfc3a73a085e44fbcf22f0f7c7e9` |
+| `tls/mapping-retirement.json` | `dab24d33d96952481084152e6bd6a3d727adb99e2a27dd539c810f86d0b7fbc8` |
+| `check-tls.py` | `b2c282364b2fb761339859ee6f07e77b98b694ddd3021513f42b67724bf7944d` |
+| `native-reader-rerun.log` | `2cde4f42a1ff1de55b142c1089201684315ab022d0504966bdabbb6807823a2b` |
+
+#### Verify persistent watch close and reissue after delivered automatic resume
+
+S2.2/W11-W02 and CHECK-11/25/27. The new Engine regression uses the
+existing two-job worker and two independent loopback peers. It observes
+the original target idle after the first take, delivers Suspend, confirms
+preparation is refused, then delivers AutomaticResume before second-job
+preparation. Both results retain their own configuration, peer receipts,
+invocation and exchange identities. Both jobs use the original cutoff,
+one component provider and one registration. The observer close follows
+the second take and provider retirement. The no-event success and the
+Suspend-only refusal still run through the same worker. The recovery and
+refusal cases together exercise the original observer's effect on reissue.
+
+The native leaf's fresh-process case calls `ResumeWatch::subscribe_persistent`
+and explicit `close` through the actual PowrProf registration. A thread-local
+test gate attributes each direct callback invocation to its own expected
+event class. Ambient notifications cannot provide the test's marker.
+The action stays alive until close and its capture is released after
+close. A one-shot subscription refuses while the watch is live, and a
+persistent subscription refuses after close. The direct callback calls
+provide no evidence of physical delivery, scheduling or drainage.
+
+The planning and Rust contract skills confirmed that the existing bounded
+pair already owns the worker/provider and observer. The lifecycle, positive
+and negative QA checks selected actual joins, distinct peers and native
+retirement. Independent review corrected the direct callback oracle and
+checked the original idle-power and cutoff conditions. No production path
+or dependency changed. The earlier leaf image differs in its resume
+sources, so it was excluded from current execution.
+
+On frozen tree `8008d4c07fef348909dc24546c8f72ec49c57c6c`, Rust 1.100.0
+passed format, GNU/MSVC Engine EP1 Clippy and MSVC native-leaf Clippy. All
+five reached GNU pair cases passed. The first helper exceeded the existing
+Clippy length limit. After splitting the refusal mapping, the first roster
+comparison still expected one Windows-only selector in the GNU output.
+Both original failures are retained. The bootstrap optimized compile
+reached its 90-second CPU ceiling in LTO before executing a test. The bounded
+development retry first hit a launcher name error and then refused the
+reserved scratch path before Cargo. With owned scratch under `/mnt/wsl`
+and the existing 180-second allowance, it passed the same five tests in
+`verify-release`. The ordinary, optimized and leaf receipts bind the same
+frozen source. The final runs retained their index, vendor and tool identities.
+
+The current x64-v3 Windows leaf linked and passed PE/PDB readback. On
+ordinary non-elevated Windows host build 26300, the CPU probe passed and
+two module listings and an ignored-only listing matched the roster. Each
+of the ten existing selected controls and
+the new ignored persistent lifecycle case passed in its own exact process.
+All fifteen children exited and their streams completed. Image and symbol
+bookends matched. The native timed pair, physical power transition,
+calibrated mapping, production Core admission and affected-file metrics
+retain separate exits.
+
+Publication readback matched 753 of the 754 bound inputs. The sole
+difference is the Windows-only TLS test module in `transport.rs`.
+The two manual certificate handshake tests are outside this checkpoint.
+The GNU pair selection excludes that module, and the linked native
+leaf does not compile Engine. The respective executed results retain
+their original frozen candidate.
+
+| Record under `~/.local/share/nevrotick/s22-power-reissue-controls.kX4QJqoK/` | SHA-256 |
+| --- | --- |
+| `reviewed-overlay.patch` | `9bffe9d3dad025056edc12523bdab9f2bb5bbcb5aa32d77d0f8e21d052e5e3ff` |
+| `final-combined-controls.json` | `4e9d74559beca81e649cc95fee97232c496301c723135af7d17e0216558b1af9` |
+| `optimized-controls-admitted.json` | `d52549ecad960962440d5afa0840773b06a9612e7a9310d98fdf03473520ca31` |
+| `leaf-combined-controls.json` | `a2e3bbdcf651e8d0bb32e798144f4d4113ca88399b5c0fc923140b683c69da01` |
+| `resume-native.json` | `dd78f93d72b21e06f60d916e6ac604317c1e9ef7c58459ec7c298a9bcfeba329` |
+
+#### Retain the original KE association through joined receipts
+
+S2.1/S2.2, W11-W01, TQ-09 and CHECK-8/9/24/25/27. Both ordinary
+protected receipts keep the identity of the actual Control that published
+their association. Only one successful KE publication can occur on that
+Control. A replacement or a later job gets a different identity even
+when the source definition is reused. The first-receipt worker check
+compares the same identity from the original committed history. The
+opaque comparison retains historical provenance without carrying keys,
+cookies, Control access or current authorization.
+
+The Windows timing consumer checks the association before publishing
+ordinary timing output. Two exchanges in one bounded job must share the
+association. Two separately issued jobs must have different associations.
+The test controls cover distinct exchanges, two genuine loopback jobs
+sharing the same installed configuration and provider, separate source
+configurations through delivered suspend and resume, and repeated
+projection after abnormal join. The equal-endpoint control also equates
+certificate-time class and the public invocation chart before checking
+that the committed associations differ. The shared-configuration jobs use
+different UDP ports. Independent review traced the exact original
+allocation and the worker and facade consumers.
+
+The prior integrated candidate `0e41706bf7ce3dbb3a8c9a9b609939cec1ca9e5f`
+passed 629 ordinary and 629 optimized EP1 cases, 91 doctests across the
+two recorded result groups, format and GNU/MSVC Clippy. The first driver
+misread the completed ordinary runner's output field. The raw passing
+ordinary result was checked, its named cases and bookends reconciled, and
+the continuation ran the remaining lanes. The same-source control changed
+only the worker test file. The final source tree is
+`e57085d7c880808881d34ed70cae6d892718b06d` over staged
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1` at `9bfc3b590`.
+
+The final tree passed all five affected `managed_pair_` cases in both
+ordinary and optimized mode, with format and GNU/MSVC Clippy. The
+same-source jobs pass without changing the production polling floor or
+the fixture cutoff. The configured x64-v3 facade build passed all 20
+commands on those exact inputs, including external consumer Clippy,
+link, and four PE/PDB readbacks. All 29 exported files matched the
+checked originals. The older advisory snapshot's temporary directory
+had been retired. A fresh bounded acquisition recorded 2,162 metadata
+files for the identical lock after two namespace setup refusals. The
+first facade invocation refused its proposed output location before
+starting compilation. The retry used owned Linux output under a
+private mount and retained the configured admission and resource
+checks.
+
+Current Windows host readback found 3,195 MiB available against the
+2,048 MiB floor. WSB 0.8.114.0 listed a different guest from the one
+recorded for the earlier pair. The retained pair and scoped library
+checks keep their original source and artifact identities. The new
+facade still needs a matching peer receipt and same-session loader
+and parser checks in an admitted offline guest before authenticated
+execution. Calibrated mapping, physical uncertainty, exactly-once
+production history admission and affected 90%/95% gates remain open.
+
+| Record under `~/.local/share/nevrotick/s21-provenance-resume.U6QmeThM/` | SHA-256 |
+| --- | --- |
+| `association-final.patch` | `f8f3bdd859cf8fa95ec45168439ce3f805818eb84a4ba0b0cc65d262a07f9737` |
+| `engine-development.json` | `7913824e8f4162dae93e5523dc7dcc9e3b517bcbde472af1b4d476fd0431badf` |
+| `engine-development-continuation.json` | `46a7416941115d70fc067423345b6da7de435b3a7d155e322d271b52039fa7e7` |
+| `final-engine-development.json` | `9ccba38889723e9afd8f70d7f2238d989121220d3e182fdf8f38eeb800545724` |
+| `inventory.stdout` | `168d926756289527c905fdf0d4e12928a2603fc5aebcec3f9f7d4a74898b7f6d` |
+| `memory.txt` | `7260f052531b131124bea7b7e13cb9409a34d62319db91ef6eb70eb82320f413` |
+| `advisory-refresh.json` | `467860bec3edf6ae3d15150117211716c464d10efb3aca4557f46c873bff40c9` |
+| `facade-output-location-refusal.json` | `86447fe6fa1506adb09611fe7dd6995ee89be97c9378a48b615273ac035e22e6` |
+| `facade-summary.json` | `5f295cb858a065fdca7dc531bcca3aa5bb1ad44e798bdfd02cbd4fcca5067979` |
+| `%LOCALAPPDATA%/NevroTick/s21-ke-association-facade.tPRQ1VJb/verification.json` | `e1302d441e89c06f4f77aeb28a7f047b18ddd055b6eae2f53aa014720117e080` |
+
+#### Rebind the matching peer to the association-aware facade
+
+S2.1/W11-W01 and CHECK-19/24/25/27. The standalone peer and the facade
+bind to frozen source tree `e57085d7c880808881d34ed70cae6d892718b06d`, derived
+from staged tree `5a3e3d7b17421730120c91be73ea2975b71ca8b1` at
+`9bfc3b5904808de973defbc81f8a91caaaaa2875`. Preflight reconciled all
+2,367 source paths, 754 product inputs, 17 facade helpers and 112
+standalone peer inputs. The standalone scope matches the previous peer
+inputs byte for byte. Its two retained GNU rosters supplied 31 expected
+cases, independently compared with the new ordinary and optimized outputs.
+The first preflight tried to decode a pinned patch as JSON and stopped
+before compilation. The retry checked the patch as opaque bytes and
+retained its digest at both bookends.
+
+All 12 peer commands exited zero in 164.038 of the admitted 300 seconds.
+They covered the isolation control, two metadata graphs and dependency
+policy checks, formatting, 31 GNU cases in each mode, both Clippy targets,
+and the x64-v3 MSVC peer link and readback. The build retained its original
+SDK, tool, vendor and lock-bound advisory inputs and retired its scratch.
+The independent readback checked all 20 facade and 12 peer command records
+and five PE/PDB pairs. Nine fault controls refused wrong symbol names, page
+sizes or identities, mismatched receipt digests and the correctly hashed
+peer from the preceding candidate. The original pairs passed again. The
+first static readback had stopped at a private umask difference. Its retry
+compared the Git-tracked executable bit and retained the full tree and byte
+checks.
+
+The host-only render binds both actual executable digests to the paired
+receipt. It changed only the two image digest literals in the previously
+parsed controller. The render refused a facade-only receipt, a wrong pair
+digest and a malformed digest. The next step is the certificate-free
+loader and held-file parser in the same admitted offline Windows guest.
+The current images have no such guest evidence yet. Temporary trust and
+the authenticated loopback run follow separately. Physical calibration,
+mapping eligibility, production Core history admission and affected-file
+qualification remain open.
+
+| Record under `~/.local/share/nevrotick/s21-ke-association-pair.M5gKJtUj/` | SHA-256 |
+| --- | --- |
+| `execution.log` | `b8f23674ca1796ea0710002c3d66724df52f07af6211f58a01334e2b0695e482` |
+| `preflight-advisory-retry.json` | `b97bc156573c70de4157dd79599751609a0860016232e29f06730d895f1e21b3` |
+| `peer-runner.py` | `39dc8ee1ce4bf7fe1d14ceeba47a4715673360833ff1d6b203865f8dc2f2eb44` |
+| `readback/paired-readback-attempt-01.json` | `d629ccc5e6d19efaa55df7869cbdf159526d4e4a4902467a08ec13ca26d05fdd` |
+| `readback/paired-readback.json` | `af51601b1fd860e56c6aa5db3c04846b36200f4a03271cdab95bd2a31ac572c1` |
+| `controller/host-render.json` | `6b40e6b2e890d488e02305740f6a8387e3dcc1127018398fb06a799f629c2213` |
+| `%LOCALAPPDATA%/NevroTick/s21-ke-association-peer.gm6EuM0p/build/verification.json` | `476fac3d4bb29be1b6a66c1f776ca8b0f54769ba6d433e4ab8391fccf788fd6c` |
+
+Host preparation independently checked all five recorded executable and
+symbol pairs, reproduced the rendered controller, and exercised crossed
+pair/render pins and a malformed parser run ID. It rebound the two digest
+literals in the held-file parser command and checked historical retirement
+under the original owner lease. The receipt
+`loader-preparation/host-input-binding.json` in the same evidence
+directory hashes to
+`e524ab76ab1087c1e634f62d75bdcc20b4fba8e974aaf7209ef7f60b8b8f8009`.
+These checks used the retained frozen candidate. The live checkout
+differs in one bound product file and three facade helpers.
+Read-only WSB inventory listed only the replacement guest. Its launch
+profile still lacks offline admission evidence. Both the loader and the
+held-file parser await one admitted offline session.
+
+The candidate dispatch preparation retains the same frozen pair and
+controller. Host simulation passed all 17 loader and 11 parser steps.
+Five refusal controls reached bad child exit, the memory floor, foreign
+guest identity, a crossed parser command and a premature authenticated
+request. It rechecked the historical cleanup and live staging shelves,
+and retired its private simulation. The `dispatch-next/preparation.json`
+receipt under the same evidence directory hashes to
+`f689c6292f529e363e52a0d5a3c2853c9871bd9b79096fc9135986faa28c29da`.
+WSB 0.8.114.0 still listed only the existing replacement guest.
+Windows 11 Pro build 26300 reported 5,641 MiB available during
+preflight. Windows supports one active Sandbox. A fresh run requires
+the owner to free the slot, then an admitted offline launch and
+same-session loader and parser results.
+[Microsoft Sandbox FAQ](https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-faq#how-do-i-open-multiple-sandbox-instances)
+
+Independent readback compared the live checkout against the frozen inputs.
+All 112 standalone peer inputs match. The four mismatches in the facade
+projection match their frozen pins in the Git index. The unstaged
+differences add two manual Windows TLS tests and their runner, test roster
+and launcher exclusions. The direct guest route executes the CPU probe,
+facade and peer from the frozen pair. Those four changes do not enter that
+loader and parser selection. Continue on the retained scope once the guest
+owner and original offline launch profile are admitted. A fresh test roster
+and physical reference remain separate qualifications. The replacement
+guest `4e89db0d-0854-47ba-b3fd-809486db8e03` remains the sole inventory entry.
+
+##### Load the association-aware timing pair in the restarted offline guest
+
+S2.1/W11-W01 and CHECK-8/9/21/25/27. The replacement after the host
+restart was `a18deba5-a8bf-4295-aa28-d7222052ef8f`. David reported the
+guest ready. The admission record retains effective network and runtime
+observations and the earlier observed broker and TLS retirement from this
+session. The launch XML is unavailable for this owner-started guest.
+Both native preparation phases checked the actual guest and restored
+each original mapped shelf to empty.
+
+The prepared `e57085d7c880808881d34ed70cae6d892718b06d` pair completed
+all 17 certificate-free loader commands and 11 held-file parser commands.
+The parser received the same rendered controller bytes, guest identity
+and loader receipt. Both retirement records were checked against the
+physical shelves. The peer matches all 112 current inputs. The 754-input
+facade binding differs in two test files or regions, and four additional
+build-helper inputs differ. The current dispatch uses the exact retained
+v3 probe, facade, peer and held controller. These two native phases cover
+loader and parser acceptance before the distinct authenticated exchange.
+
+| Record under the restarted guest's evidence directory `timing-loader/` | SHA-256 |
+| --- | --- |
+| `owner-record.json` | `0bf5deab8cd3f1926900b703a0dcf22e7251ccb23cfbd89fb20caefacacb7719` |
+| `kepre_c00260e8a490/verification.json` | `106fb082e1b3e4d5f195a03a1bc42fe0b2bd12257d662c8be3ca37ef527d37f8` |
+| `keparse_2b7ca87a45ad/verification.json` | `4bd731a45e996c4fe709fe20b42d3b227e7d0c59e668f4a2b9b40d6e6a330092` |
+
+##### Complete the association-aware Windows timing pair — 24 November 2026
+
+S2.1/W11-W01 and CHECK-6/8/9/11/21/25/27. David confirmed availability
+for the same temporary guest root. Run `ketiming_66b0192f84a5` consumed
+the fresh loader and held-file parser receipts above. It bound the exact
+retained `e57085d7c880808881d34ed70cae6d892718b06d` facade and peer and the
+rendered controller `63dc23c7…` to the original offline guest. The
+two host memory observations were 4,478 and 4,446 MiB. The actual guest
+command returned zero.
+
+The original association supplied two authenticated ordinary UDP
+exchanges over two distinct client ports with one listener. The
+paired reader admitted six Engine rows and four peer rows on the
+same 10 MHz QPC. The first request/reply differences were 1,343 and
+924 ticks. The successor request/reply differences were 1,885 and
+733 ticks. These are the observed differences between the adopted
+application bracket endpoints. The peer retained the client-exit
+acknowledgement and exactly two receives and two sends. The Engine's
+final report retained `measurement=mapping-unavailable eligible=0
+fresh_sync=0`.
+
+Both children reaped and four captured streams reached EOF. The
+physical guest trust store returned to its original inventory,
+the private scratch was absent, and the exact mapped shelves were
+empty after readback. The temporary dispatch barrier retired after
+both the receipt and physical checks. The image receipts tie the
+result to the retained candidate. The facade projection differs
+from the checkout in the `transport.rs` test module, `measurement.rs`
+tests and four helper inputs. The exact peer inputs all match. This
+completes native laboratory execution of the current admitted pair.
+The calibrated physical reference, mapping-validity issuer,
+production Core history and affected qualification gates stay open.
+
+| Record under the restarted guest's evidence directory `ketiming_66b0192f84a5/` | SHA-256 |
+| --- | --- |
+| `dispatch-intent.json` | `2e8b26d8e7d2bc16c7a8f4112135e158883b16634650bf4f6646f22e99aeed7f` |
+| `verification.json` | `5bab0a62f0645481c91315cbc33cf36228087b997227dd449f5c368246881c2b` |
+| `dispatch-retired.json` | `f95e2b62632b4b345673f6c3f7ab17556c3d8393097c2371e76da88efad01177` |

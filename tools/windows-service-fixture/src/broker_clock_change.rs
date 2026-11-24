@@ -190,6 +190,14 @@ impl BrokerClockChanges {
             number,
         })
     }
+
+    /// Sample whether this original awake revision is still current.
+    fn admits_revision(&self, number: NonZeroU64) -> bool {
+        let expected: u64 = number.get() << 1;
+        self.revision
+            .compare_exchange(expected, expected, SeqCst, SeqCst)
+            .is_ok()
+    }
 }
 
 /// A single observation's original, private process-local revision.
@@ -208,11 +216,7 @@ impl ClockRevision<'_> {
 
     /// Order the decision against notification and shutdown on the original mailbox.
     pub(super) fn admits(&self) -> bool {
-        let expected: u64 = self.number.get() << 1;
-        self.owner
-            .revision
-            .compare_exchange(expected, expected, SeqCst, SeqCst)
-            .is_ok()
+        self.owner.admits_revision(self.number)
     }
 
     /// Invalidate only the awake context whose sampled continuity was lost.
@@ -227,6 +231,37 @@ impl ClockRevision<'_> {
             .compare_exchange(expected, replacement, SeqCst, SeqCst)
             .map_err(|_| ())?;
         Ok(NonZeroU64::new(replacement >> 1))
+    }
+}
+
+/// Read-only revision sample retained with the fixture's exact reply operation.
+/// Copies can only recheck the original revision. They cannot invalidate it
+/// or authorize a new operation.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(super) struct ReplyRevision {
+    /// The exact mailbox that produced the original positive decision.
+    owner: &'static BrokerClockChanges,
+    /// The awake revision behind that decision.
+    number: NonZeroU64,
+}
+
+#[cfg(test)]
+impl ReplyRevision {
+    /// Recheck the original mailbox without taking a successor revision.
+    pub(super) fn is_current(self) -> bool {
+        self.owner.admits_revision(self.number)
+    }
+}
+
+#[cfg(test)]
+impl ClockRevision<'static> {
+    /// Preserve the exact mailbox and number for the fixture reply's currentness checks.
+    pub(super) const fn for_status_reply(&self) -> ReplyRevision {
+        ReplyRevision {
+            owner: self.owner,
+            number: self.number,
+        }
     }
 }
 

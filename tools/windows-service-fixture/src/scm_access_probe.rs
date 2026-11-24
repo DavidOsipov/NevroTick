@@ -152,35 +152,80 @@ fn visit<E>(mut inspect: impl FnMut(LabRole, Right) -> Result<(), E>) -> Result<
     Ok(())
 }
 
-/// Keep both original status objects through the access sequence and final samples.
+/// Own both fixed status handles for one observation and retire them in reverse order.
 ///
-/// The first role's handle is retired even when the second open fails. The
-/// retirement operation consumes each acquired handle and combines its result
-/// with the first failure. The caller publishes completion only after success.
+/// The body can borrow either original only after both opens succeed. Each finish
+/// consumes one acquired handle and preserves any earlier failure beside its own
+/// close failure. Return a successful body value only after both closes succeed.
+///
 /// # Errors
-/// Preserve the first open, preamble, access or final-read failure and any
-/// later status close failures. Failed access prevents later right acquisitions.
-fn probe_access<H, E>(
+/// Preserve the first open or body failure and any independent close failures.
+fn with_prestart_status_pair<H, T, E>(
     mut open_status: impl FnMut(LabRole) -> Result<H, E>,
-    preamble: impl FnOnce(&H, &H) -> Result<[u32; 2], E>,
-    inspect: impl FnMut(LabRole, Right) -> Result<(), E>,
-    mut recheck: impl FnMut(&H, u32) -> Result<(), E>,
-    mut finish: impl FnMut(H, Result<(), E>) -> Result<(), E>,
-) -> Result<(), E> {
+    observe: impl FnOnce(&H, &H) -> Result<T, E>,
+    mut finish: impl FnMut(H, Result<T, E>) -> Result<T, E>,
+) -> Result<T, E> {
     let engine: H = open_status(LabRole::Engine)?;
-    let result: Result<(), E> = match open_status(LabRole::ClockBroker) {
+    let result: Result<T, E> = match open_status(LabRole::ClockBroker) {
         Ok(broker) => {
-            let access: Result<(), E> =
-                preamble(&engine, &broker).and_then(|[engine_type, broker_type]: [u32; 2]| {
-                    visit(inspect)?;
-                    recheck(&engine, engine_type)?;
-                    recheck(&broker, broker_type)
-                });
-            finish(broker, access)
+            let observation: Result<T, E> = observe(&engine, &broker);
+            finish(broker, observation)
         }
         Err(open_failure) => Err(open_failure),
     };
     finish(engine, result)
+}
+
+/// Read the two fixed observations and resample both originals before retirement.
+///
+/// Each final sample uses the corresponding observation from the same handle.
+/// The caller may publish the pair after this operation returns it.
+///
+/// # Errors
+/// Preserve the first open, observation or recheck failure and later close errors.
+pub(super) fn observe_prestart_pair<H, T, E>(
+    open_status: impl FnMut(LabRole) -> Result<H, E>,
+    mut observe: impl FnMut(&H) -> Result<T, E>,
+    mut recheck: impl FnMut(&H, &T) -> Result<(), E>,
+    finish: impl FnMut(H, Result<[T; 2], E>) -> Result<[T; 2], E>,
+) -> Result<[T; 2], E> {
+    with_prestart_status_pair(
+        open_status,
+        |engine: &H, broker: &H| {
+            let engine_observation: T = observe(engine)?;
+            let broker_observation: T = observe(broker)?;
+            recheck(engine, &engine_observation)?;
+            recheck(broker, &broker_observation)?;
+            Ok([engine_observation, broker_observation])
+        },
+        finish,
+    )
+}
+
+/// Keep both original status objects through the access sequence and final samples.
+///
+/// The caller publishes completion only after both handles retire successfully.
+///
+/// # Errors
+/// Preserve the first open, preamble, access or final-read failure and any
+/// later status close failures. Failed access prevents later right acquisitions.
+fn probe_access<H, E>(
+    open_status: impl FnMut(LabRole) -> Result<H, E>,
+    preamble: impl FnOnce(&H, &H) -> Result<[u32; 2], E>,
+    inspect: impl FnMut(LabRole, Right) -> Result<(), E>,
+    mut recheck: impl FnMut(&H, u32) -> Result<(), E>,
+    finish: impl FnMut(H, Result<(), E>) -> Result<(), E>,
+) -> Result<(), E> {
+    with_prestart_status_pair(
+        open_status,
+        |engine: &H, broker: &H| {
+            let [engine_type, broker_type]: [u32; 2] = preamble(engine, broker)?;
+            visit(inspect)?;
+            recheck(engine, engine_type)?;
+            recheck(broker, broker_type)
+        },
+        finish,
+    )
 }
 
 #[cfg(windows)]
@@ -202,7 +247,7 @@ mod windows {
 
     use crate::{
         native_pipe_identity::ensure_unimpersonated,
-        scm_observation_tests::{PrestartObservation, PrestartRoleStatus},
+        scm_observation_tests::{PrestartObservation, PrestartReadback, PrestartRoleStatus},
     };
 
     use super::{
@@ -327,7 +372,9 @@ mod windows {
                 }
                 Ok(())
             },
-            PrestartRoleStatus::recheck,
+            |status: &PrestartRoleStatus, raw_type: u32| {
+                status.recheck(raw_type, PrestartReadback::Access)
+            },
             PrestartRoleStatus::finish,
         )?;
         ensure_unimpersonated()?;
@@ -388,7 +435,10 @@ mod windows {
 mod tests {
     use std::cell::RefCell;
 
-    use super::{AccessHandles, Failure, LabRole, Right, Stage, observe, probe_access, visit};
+    use super::{
+        AccessHandles, Failure, LabRole, Right, Stage, observe, observe_prestart_pair,
+        probe_access, visit,
+    };
 
     /// One call in the scripted ownership trace.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -552,6 +602,8 @@ mod tests {
         Open(LabRole),
         /// Observe both acquired objects before access acquisition.
         Preamble([LabRole; 2]),
+        /// Read one complete role observation while the pair is held.
+        Observation(LabRole),
         /// Acquire and close one selected access right.
         Right(LabRole, u32),
         /// Resample the retained role and compare with its original raw type.
@@ -569,39 +621,178 @@ mod tests {
         additional_closes: Vec<(ProbeCall, u32)>,
     }
 
-    /// Exercise the access selector's own scope and ordered visitor using recorded calls.
-    fn run_probe(failures: &[(ProbeCall, u32)]) -> (Vec<ProbeCall>, Result<(), ProbeErrors>) {
-        let trace: RefCell<Vec<ProbeCall>> = RefCell::default();
-        let record = |call: ProbeCall| -> Result<(), ProbeErrors> {
-            trace.borrow_mut().push(call);
-            if let Some(&(failed, code)) = failures.iter().find(|&&(failed, _)| failed == call) {
+    /// Bounded operation history with scripted failures on exact calls.
+    struct ProbeScript<'a> {
+        /// Observed calls, in execution order.
+        trace: RefCell<Vec<ProbeCall>>,
+        /// Injected failures, each with its native-like raw code.
+        failures: &'a [(ProbeCall, u32)],
+    }
+
+    impl ProbeScript<'_> {
+        /// Record the operation and return its scripted failure, if any.
+        /// # Errors
+        /// Return the specified call and code without performing native work.
+        fn record(&self, call: ProbeCall) -> Result<(), ProbeErrors> {
+            self.trace.borrow_mut().push(call);
+            if let Some(&(_, code)) = self.failures.iter().find(|&&(failed, _)| failed == call) {
                 return Err(ProbeErrors {
-                    first: (failed, code),
+                    first: (call, code),
                     additional_closes: Vec::new(),
                 });
             }
             Ok(())
+        }
+
+        /// Consume the simulated handle and record its close outcome.
+        /// # Errors
+        /// Preserve the original failure and append this close error if both fail.
+        fn finish<T>(
+            &self,
+            role: LabRole,
+            prior: Result<T, ProbeErrors>,
+        ) -> Result<T, ProbeErrors> {
+            let closed: Result<(), ProbeErrors> = self.record(ProbeCall::Close(role));
+            match (prior, closed) {
+                (Err(mut first), Err(cleanup)) => {
+                    first.additional_closes.push(cleanup.first);
+                    Err(first)
+                }
+                (result, Ok(())) => result,
+                (Ok(_), Err(cleanup)) => Err(cleanup),
+            }
+        }
+    }
+
+    /// Exercise the access selector's own scope and ordered visitor using recorded calls.
+    fn run_probe(failures: &[(ProbeCall, u32)]) -> (Vec<ProbeCall>, Result<(), ProbeErrors>) {
+        let script: ProbeScript<'_> = ProbeScript {
+            trace: RefCell::default(),
+            failures,
         };
         let result: Result<(), ProbeErrors> = probe_access(
-            |role: LabRole| record(ProbeCall::Open(role)).map(|()| role),
+            |role: LabRole| script.record(ProbeCall::Open(role)).map(|()| role),
             |engine: &LabRole, broker: &LabRole| {
-                record(ProbeCall::Preamble([*engine, *broker])).map(|()| [16, 272])
+                script
+                    .record(ProbeCall::Preamble([*engine, *broker]))
+                    .map(|()| [16, 272])
             },
-            |role: LabRole, right: Right| record(ProbeCall::Right(role, right.mask())),
-            |role: &LabRole, raw_type: u32| record(ProbeCall::Recheck(*role, raw_type)),
-            |role: LabRole, prior: Result<(), ProbeErrors>| {
-                let closed: Result<(), ProbeErrors> = record(ProbeCall::Close(role));
-                match (prior, closed) {
-                    (Err(mut first), Err(cleanup)) => {
-                        first.additional_closes.push(cleanup.first);
-                        Err(first)
-                    }
-                    (Err(first), Ok(())) => Err(first),
-                    (Ok(()), result) => result,
+            |role: LabRole, right: Right| script.record(ProbeCall::Right(role, right.mask())),
+            |role: &LabRole, raw_type: u32| script.record(ProbeCall::Recheck(*role, raw_type)),
+            |role: LabRole, prior: Result<(), ProbeErrors>| script.finish(role, prior),
+        );
+        (script.trace.into_inner(), result)
+    }
+
+    /// Exercise the read-only selector's paired preparation and retirement.
+    fn run_observation_probe(
+        failures: &[(ProbeCall, u32)],
+    ) -> (Vec<ProbeCall>, Result<[u32; 2], ProbeErrors>) {
+        let script: ProbeScript<'_> = ProbeScript {
+            trace: RefCell::default(),
+            failures,
+        };
+        let result: Result<[u32; 2], ProbeErrors> = observe_prestart_pair(
+            |role: LabRole| script.record(ProbeCall::Open(role)).map(|()| role),
+            |role: &LabRole| {
+                script.record(ProbeCall::Observation(*role))?;
+                match role {
+                    LabRole::Engine => Ok(16),
+                    LabRole::ClockBroker => Ok(272),
                 }
             },
+            |role: &LabRole, raw_type: &u32| script.record(ProbeCall::Recheck(*role, *raw_type)),
+            |role: LabRole, prior: Result<[u32; 2], ProbeErrors>| script.finish(role, prior),
         );
-        (trace.into_inner(), result)
+        (script.trace.into_inner(), result)
+    }
+
+    /// Both original handles stay open through both whole observations and final samples.
+    /// # Panics
+    /// Fail if an operation is skipped, reordered or returns a different pair.
+    #[test]
+    fn prestart_observation_returns_pair_after_both_status_handles_close() {
+        use LabRole::{ClockBroker, Engine};
+
+        let (calls, result): (Vec<ProbeCall>, Result<[u32; 2], ProbeErrors>) =
+            run_observation_probe(&[]);
+        assert_eq!(
+            calls,
+            [
+                ProbeCall::Open(Engine),
+                ProbeCall::Open(ClockBroker),
+                ProbeCall::Observation(Engine),
+                ProbeCall::Observation(ClockBroker),
+                ProbeCall::Recheck(Engine, 16),
+                ProbeCall::Recheck(ClockBroker, 272),
+                ProbeCall::Close(ClockBroker),
+                ProbeCall::Close(Engine),
+            ],
+        );
+        assert_eq!(result, Ok([16, 272]));
+    }
+
+    /// Failures withhold the pair and keep the first cause and later close errors.
+    /// # Panics
+    /// Fail if an incomplete observation returns a pair or loses a failure.
+    #[test]
+    fn prestart_observation_refuses_partial_open_late_change_and_close_failure() {
+        use LabRole::{ClockBroker, Engine};
+
+        let engine_close: (ProbeCall, u32) = (ProbeCall::Close(Engine), 61);
+        let broker_close: (ProbeCall, u32) = (ProbeCall::Close(ClockBroker), 62);
+        for (primary, additional_closes, expected_calls) in [
+            (
+                (ProbeCall::Open(ClockBroker), 1060),
+                &[engine_close][..],
+                &[
+                    ProbeCall::Open(Engine),
+                    ProbeCall::Open(ClockBroker),
+                    ProbeCall::Close(Engine),
+                ][..],
+            ),
+            (
+                // The Engine status snapshot is withdrawn while observing the Broker.
+                (ProbeCall::Recheck(Engine, 16), 33),
+                &[broker_close, engine_close][..],
+                &[
+                    ProbeCall::Open(Engine),
+                    ProbeCall::Open(ClockBroker),
+                    ProbeCall::Observation(Engine),
+                    ProbeCall::Observation(ClockBroker),
+                    ProbeCall::Recheck(Engine, 16),
+                    ProbeCall::Close(ClockBroker),
+                    ProbeCall::Close(Engine),
+                ][..],
+            ),
+            (
+                broker_close,
+                &[engine_close][..],
+                &[
+                    ProbeCall::Open(Engine),
+                    ProbeCall::Open(ClockBroker),
+                    ProbeCall::Observation(Engine),
+                    ProbeCall::Observation(ClockBroker),
+                    ProbeCall::Recheck(Engine, 16),
+                    ProbeCall::Recheck(ClockBroker, 272),
+                    ProbeCall::Close(ClockBroker),
+                    ProbeCall::Close(Engine),
+                ][..],
+            ),
+        ] {
+            let mut failures: Vec<(ProbeCall, u32)> = vec![primary];
+            failures.extend_from_slice(additional_closes);
+            let (calls, result): (Vec<ProbeCall>, Result<[u32; 2], ProbeErrors>) =
+                run_observation_probe(&failures);
+            assert_eq!(calls, expected_calls);
+            assert_eq!(
+                result,
+                Err(ProbeErrors {
+                    first: primary,
+                    additional_closes: additional_closes.to_vec()
+                }),
+            );
+        }
     }
 
     /// Both roles stay open through every ordered right and each final read.

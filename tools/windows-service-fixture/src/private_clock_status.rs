@@ -26,6 +26,8 @@ use crate::{
 };
 
 #[cfg(windows)]
+use crate::broker_clock_change::ReplyRevision;
+#[cfg(windows)]
 use crate::native_pipe_read::{AttributedStatusRead, IdentifiedReadError};
 
 /// Finite lifetime of the selected in-memory fixture connection.
@@ -574,7 +576,7 @@ impl<R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWriter
 pub(super) struct NativeStatusObservation {
     /// Synchronous same-handle attribution returned, even if currentness later closed.
     pub(super) capture_observed: bool,
-    /// The actual full write count was collected on the same admitted connection.
+    /// The full write was confirmed while the original decision and connection were current.
     pub(super) reply_written: bool,
     /// The eligible receiver outcome, if an attributed or refused read was forwarded.
     pub(super) outcome: Option<NativeStatusOutcome>,
@@ -614,9 +616,11 @@ impl NativeStatusReply {
         self.cutoff
     }
 
-    /// Borrow the producer's original positive revision for the write guard.
-    pub(crate) const fn positive_revision(&self) -> Option<&ClockRevision<'static>> {
-        self.positive_revision.as_ref()
+    /// Retain the producer's original positive revision for submission and confirmation.
+    pub(crate) fn positive_revision(&self) -> Option<ReplyRevision> {
+        self.positive_revision
+            .as_ref()
+            .map(ClockRevision::for_status_reply)
     }
 }
 

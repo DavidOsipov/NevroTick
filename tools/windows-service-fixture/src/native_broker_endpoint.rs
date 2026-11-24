@@ -47,7 +47,7 @@ use crate::{
 
 #[cfg(test)]
 use crate::{
-    broker_clock_change::ClockRevision,
+    broker_clock_change::ReplyRevision,
     broker_endpoint::{FirstReadCompletion, FirstReadStart, FirstReplyCompletion, FirstReplyStart},
     host::{Clock, ConnectionEdge, RunningConnection},
     native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
@@ -169,6 +169,8 @@ struct FirstExchange {
     reply: FirstReplyState,
     /// Retain the original client identity through the read and the one write.
     peer: RetainedFixtureClient,
+    /// A fixture action after the exact terminal count is collected, before confirmation.
+    observe_full_write: Option<fn()>,
 }
 
 /// The original pipe has exactly one native handle owner through its operations.
@@ -386,6 +388,7 @@ impl NativeBrokerEndpoint {
     pub(super) fn for_first_exchange_fixture(
         server: LabUnconnectedDuplexPipe,
         peer: RetainedFixtureClient,
+        observe_full_write: Option<fn()>,
     ) -> Result<Self, NativeError> {
         let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
         let read: NativePipeRead = NativePipeRead::for_first_read(server)
@@ -399,6 +402,7 @@ impl NativeBrokerEndpoint {
                 write,
                 reply: FirstReplyState::WaitingForAttribution,
                 peer,
+                observe_full_write,
             })),
             fixture_pipe: false,
             status_client: None,
@@ -684,7 +688,7 @@ impl Reservation for NativeBrokerEndpoint {
         bytes: &[u8],
         connection: &mut RunningConnection<'_, C>,
         cutoff: Instant,
-        positive_revision: Option<&ClockRevision<'_>>,
+        positive_revision: Option<ReplyRevision>,
     ) -> Result<FirstReplyStart, NativeError> {
         let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
             return Ok(FirstReplyStart::Unarmed);
@@ -698,7 +702,7 @@ impl Reservation for NativeBrokerEndpoint {
             exchange
                 .write
                 .begin_guarded(bytes, |pipe: BorrowedHandle<'_>| {
-                    match connection.reply_submission_edge(cutoff, positive_revision, || {
+                    match connection.reply_edge_with_revision(cutoff, positive_revision, || {
                         exchange.peer.observe(pipe)
                     }) {
                         ConnectionEdge::Open(_) => Ok(()),
@@ -745,6 +749,11 @@ impl Reservation for NativeBrokerEndpoint {
             Err(error) => return Err(write_error(operation, error)),
         };
         exchange.reply = FirstReplyState::Retired;
+        if matches!(completion, FirstReplyCompletion::Written)
+            && let Some(observe) = exchange.observe_full_write.take()
+        {
+            observe();
+        }
         Ok(Poll::Ready(completion))
     }
 

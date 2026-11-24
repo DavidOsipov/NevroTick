@@ -97,6 +97,14 @@ namespace NevroTick
                 throw new InvalidOperationException("prestart-observer:identity-subject-actor");
         }
 
+        // The window owner supplies the subject of the proposed provisioning context.
+        internal void VerifyProvisioningUser(Stopwatch clock, int timeoutMilliseconds, string expectedSubjectSid)
+        {
+            VerifyCurrent(clock, timeoutMilliseconds);
+            if (!snapshot.User.HasExactIdentity(expectedSubjectSid))
+                throw new InvalidOperationException("prestart-observer:provisioning-subject-actor");
+        }
+
         // Classify the diagnostic role against the independently admitted subject.
         internal void VerifyStandardUser(Stopwatch clock, int timeoutMilliseconds, string expectedSubjectSid)
         {

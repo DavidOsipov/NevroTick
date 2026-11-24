@@ -67,6 +67,7 @@ mod reached {
         StagedProtectedSuccessor, Ticket,
     };
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
+    use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
         Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase,
@@ -663,15 +664,15 @@ mod reached {
         committed_at: Instant,
         /// Historical managed configuration, checked at both original effects.
         configuration: Option<SourceConfigurationSnapshot>,
+        /// The actual publishing association's original accepted KE provenance.
+        certificate_time_provenance: CertificateTimeProvenance,
     }
 
     /// Genuine first-leg commit that left the original invocation published.
     pub(in super::super) struct CommittedFirstProtected<'control>(CommittedProtected<'control>);
 
-    /// Detached first history bound to one actual invocation before worker storage.
+    /// Detached first history bound to the original KE Control before worker storage.
     pub(in super::super) struct BoundFirstHistory {
-        /// Identity of the exact committed Control instance, without authority.
-        control_identity: Arc<()>,
         /// Original managed first receipt with its pre-exchange population.
         history: Arc<ManagedProtectedHistory>,
     }
@@ -684,7 +685,10 @@ mod reached {
             self,
             control_identity: &Arc<()>,
         ) -> Result<Arc<ManagedProtectedHistory>, Failure> {
-            if !Arc::ptr_eq(&self.control_identity, control_identity) {
+            if !Arc::ptr_eq(
+                &self.history.history.ke_association_identity,
+                control_identity,
+            ) {
                 return Err(Failure::Control);
             }
             Ok(self.history)
@@ -705,6 +709,10 @@ mod reached {
         summary: Summary,
         /// Genuine original authenticated header, ordinal and packet-admission time.
         receipt: Receipt,
+        /// Historical identity of the exact Control that published this association.
+        ke_association_identity: Arc<()>,
+        /// Original KE verifier and time input, with no current trust or date claim.
+        certificate_time_provenance: CertificateTimeProvenance,
         /// The guarded terminal decision, separate from the receipt age reference.
         committed_at: Instant,
         /// Checked historical pool entries/bytes, including duplicate entries.
@@ -1131,6 +1139,21 @@ mod reached {
     }
 
     impl ProtectedHistory {
+        /// Compare the original one-publication KE Control identities.
+        pub(in super::super) fn same_ke_association(&self, other: &Self) -> bool {
+            Arc::ptr_eq(
+                &self.ke_association_identity,
+                &other.ke_association_identity,
+            )
+        }
+
+        /// Return the original KE provenance retained at the protected commit.
+        pub(in super::super) const fn certificate_time_provenance(
+            &self,
+        ) -> CertificateTimeProvenance {
+            self.certificate_time_provenance
+        }
+
         /// Borrow only the unchanged CLI count projection of this owning history.
         pub(in super::super) const fn summary(&self) -> &Summary {
             &self.summary
@@ -1261,6 +1284,7 @@ mod reached {
                 identity,
                 committed_at,
                 configuration,
+                certificate_time_provenance: association.certificate_time_provenance(),
             }))
         }
 
@@ -1316,6 +1340,7 @@ mod reached {
                 identity,
                 committed_at,
                 configuration,
+                certificate_time_provenance: association.certificate_time_provenance(),
             })
         }
         /// Only completed socket/runtime retirement permits making the ledger transfer.
@@ -1347,16 +1372,11 @@ mod reached {
             self,
             receiving: &BoundProtectedReceiver<'_, '_, '_, '_>,
         ) -> Result<BoundFirstHistory, Failure> {
-            let control_identity: Arc<()> =
-                Arc::clone(&self.0.operation.control.first_receipt_identity);
             let InvocationCompletion::ManagedProtected(history) = self.0.into_history(receiving)?
             else {
                 return Err(Failure::Control);
             };
-            Ok(BoundFirstHistory {
-                control_identity,
-                history,
-            })
+            Ok(BoundFirstHistory { history })
         }
 
         /// Borrow the committed fact for the actual-owner continuation control.
@@ -1434,7 +1454,7 @@ mod reached {
         ) -> Result<InvocationCompletion, Failure> {
             let (run_context, population) = receiving.historical_context(self.operation.control)?;
             let OperationHistory {
-                control: _,
+                control,
                 receipt,
                 send_before,
                 send_after,
@@ -1456,6 +1476,8 @@ mod reached {
                     transmitted: true,
                 },
                 receipt,
+                ke_association_identity: Arc::clone(&control.first_receipt_identity),
+                certificate_time_provenance: self.certificate_time_provenance,
                 committed_at: self.committed_at,
                 population: (cookies, cookie_bytes),
                 send_before,

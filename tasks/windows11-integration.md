@@ -4187,6 +4187,12 @@ UTC reference, finite physical event-pairing errors and a valid mapping
 envelope are still missing. The protected receiver continues to publish
 timing unavailability.
 
+The [24 November association-aware pair](engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026)
+now supplies this relative evidence for the current admitted facade and
+peer. Both authenticated exchanges preserved the original association.
+The report still gives zero eligible samples. The physical reference
+and independently bounded placement errors remain the next inputs.
+
 The owner reports ordinary pool synchronization on the available Windows
 host. An independent calibrated reference and packet capture setup have
 yet to be identified for this trial. Preserve existing host synchronization
@@ -4309,6 +4315,74 @@ endpoint neighbors above. Bench execution needs an actual lab reference,
 calibration and transfer record, and measured placement bounds for the
 selected Windows path. Reference admission, issuance and production
 history acceptance remain open.
+
+##### Verify the local-wall comparison arithmetic — 24 November 2026
+
+S2.1/W11-W01, TQ-09 and CHECK-7/25. The Engine's existing measurement
+receiver now exercises both sets of local endpoints from the trial's
+dyadic control. With Windows behind by `2/128 s`, the original local
+endpoints give `+1/64 s` phase. Substituting true UTC gives zero phase.
+Both runs retain `5/64 s` signed raw RTT and `14,062,500 ns` acquisition
+age. The peer bytes, receive chronology and processing instant remain
+fixed. The test uses an explicit experimental profile.
+
+The [held-out leg comparison](../tools/windows-sandbox/timing_reference_trial.py)
+adds the bounded application-minus-wire placement and independent
+local-wall-minus-UTC residual to the observed UTC wire interval. It
+compares the resulting local-wall interval with the unenlarged modeled
+interval using the farthest endpoint distance. It requires that distance
+to fit the declared error and that error to fit the predeclared leg
+budget. Both records use an agreed common epoch in integer nanoseconds.
+The comparison refuses crossed exchange or direction labels and exact
+reuse of the application capture as either reference record.
+
+Planning, boundary and numerical QA separated modeled coordinates from
+bench facts. The confined Rust 1.100.0 EP1 runner passed all 41 ordinary
+measurement cases and the exact new case in `verify-release` mode, with
+one test thread, two Cargo jobs and the existing 180-second per-command
+limits. The frozen tree was `138de46fe1e127f7554ec1e5b81033af87ab6b6f`.
+Its 754 product inputs hashed to
+`d8e69e02a57629891d5a70d62207acb6eed86e60e6c1daabb8d322f264d662ca`.
+The frozen source and work directories used the unchanged 4 GiB reserves
+on `/mnt/wsl`. The exact offline vendor was reconstructed from retained
+sources and verified archives. No live network peer or Windows process
+was used.
+
+Eight isolated CPython 3.12.3 controls passed on the comparison source.
+They include the 230 ns boundary with 229 ns refusal neighbors and
+1,296 small interval combinations checked by enumeration of individual
+points. Three directed faulty copies failed at the intended controls
+after using the nearer endpoint, allowing exact capture reuse or
+dropping the local-wall residual. Those are comparator sensitivity
+results. Independent review recomputed the Q32/Q33 expectations and
+challenged signs, custody and scope.
+
+The bench owner still must bind the raw records to both original
+application brackets and the actual packet interface, direction and
+exchange, verify that acquisitions are independent, and supply calibrated
+placement and residual bounds. Matching digest labels provide a
+consistency check. Full-span mapping validity, peer/date/scale
+admission, and aggregate uncertainty retain their own checks. No
+physical reference, mapping lease or Core history admission was produced.
+Historical relative-QPC evidence retains its original scope.
+
+The current timing facade checks invocation, association and distinct
+exchange ownership before emitting the native bracket coordinates. Its
+export identifies each leg by position and loopback ports. The packet
+reference trial still needs an independently bound exchange and chart
+identity, traceable wire observations and the complete possible exchange
+span from the bench owner. The existing relative-order parser has no
+independent record for those inputs.
+
+| Record under `~/.local/share/nevrotick/s21-independent-reference.Wk49IMK6/` | SHA-256 |
+| --- | --- |
+| `engine-reference-verification.json` | `b8110fb086d6f1969ae4ab32c764e27d4a171cc23533b4b482fd295a5ed53ca1` |
+| `ordinary.json` | `4d8ac8c8c94595a4c428a40ca432929fd448524cdb5984eb62348fda63b4bb42` |
+| `optimized.json` | `df2dc16bebf3d3ac44c0d2ab2047e1430dd358e562643941b53e91913415444b` |
+| `local-wall-phase.patch` | `6e0d6db6e819b0c308d3aa87964572be2669e30fa745fd3ed66931f97abd3840` |
+| `comparison-inputs.sha256` | `be42ce7bf8dc18d1da51768ab4cba9d8bac8c00b05d0b5955f52f5029c89222b` |
+| `comparison-final.log` | `c7b8a32e55d2910a28e2275b79bc22254c195a257d18cfe520d7f26dc07fc60d` |
+| `directed-controls.log` | `402d8792b80a26b4f1b22861c78d5c3dd4b4c644ee274911aceba13d5fc258c9` |
 
 ### 4.27 Address-family admission routing — 5 November 2026
 
@@ -17593,3 +17667,1288 @@ Independent readback checked the exact image, selectors, source binding,
 child exits and retirement. Installed current publication, physical clock
 changes and affected 90%/95% qualification retain their existing owners
 and gates.
+
+#### Receive a normal unavailable reply after Suspend
+
+LG-G1, W11-W05/S3.2 and CHECK-25/27. The Windows-only first-reply fixture
+starts with an awake revision and the original accepted pipe. After the
+client queues its read, the test delivers Suspend through the real control
+decoder and checks revision withdrawal while Stop and cutoff still permit
+the request. It requires a confirmed write and exactly one complete
+`available:false` frame for request 42 on that pipe. The same invocation
+retains custody until Stop retires the connection, disconnects the client and
+returns the outstanding work count to zero. The awake reply, stale-revision
+refusal and submission-cutoff refusal retain their own selectors.
+
+Independent source review traced the delivered control, retained owner,
+wire oracle and Stop path. The scenario uses a scripted clock and direct
+control delivery to isolate native I/O and retirement. Physical suspension,
+SCM callback dispatch and installed-service behavior retain separate evidence.
+
+The detached candidate `243e52a6f4d47bbc02f8f7e254afb9560f1ff1ca9cf73c2ab68e459a3b13aa26`
+binds 838 selected inputs at `9bfc3b5904808de973defbc81f8a91caaaaa2875` with
+the test overlay. Rust 1.100.0 passed six graph and 12 development commands,
+including Windows-target Clippy. Each GNU mode passed 195 fixture and 70
+platform cases, with 28 platform doctests passing separately. The first
+setup omitted the output directory, and the first complete cross-check
+exceeded the test helper's Clippy line limit. The final candidate keeps
+the original lint level and moves the expected frames to the case enum.
+
+Both MSVC x64-v3 link and PE/PDB readback commands passed. The exact test
+image hashes to `69c8f4b07966bc884c2df3c779464e28be2a0ee2b603504fd94898be7840656c`.
+The graph, development and link receipts are under
+`%LOCALAPPDATA%/NevroTick/broker-suspend-9bfc3b5/`, with respective SHA-256
+values `375a8037920e71c3c9aadc284d90459ddb241d5b603522d2f9b1426e0291d0a5`,
+`1dd0d86a6b8b17ec9cea8a5dd599a0c39038080f36499ee2879a84b08820b15d` and
+`8af8e77626ecf1b88189b3be95b9c9c73263c07e7a1e68a2a36a364b9a62c5c9`.
+
+The offline Windows supervisor stopped before guest staging at its 2,048 MiB
+host memory floor. After owned build scratch was retired, the read-only
+recheck found 1,888 MiB available. Four selectors were selected and zero
+ran. The native outcome remains open on the retained source and test image.
+The setup refusal and memory recheck are under
+`~/.local/share/nevrotick/broker-suspend-20261124.zbDbIThp/`.
+
+The follow-up reported 3,867 MiB available against that same floor. The
+running Sandbox differs from the admitted instance. The original source
+directory and raw Git index required by the launcher have been retired.
+Independent readback matched the retained PE/PDB and all three receipts.
+It matched 837 input hashes to the committed tree and the last one to the
+exact test overlay. Reusing the linked image requires a fresh boundary
+check for the offline guest and a separate custody check for reconstructed
+source. Keep the historical index identity with its build receipts. The
+alternative is a configured rebuild. The follow-up executed no selectors.
+`reuse-preflight-20261124.json` under the same directory hashes to
+`b92113266d240bebe6e52b0d1ed3bee20953c0425f60a2de34474a36b37320e2`.
+
+### Hold both original SCM status objects through pre-start observation
+
+W11-W05/W11-W10, S0.6 and CHECK-18/26/27. The fixed read-only selector
+keeps both original Engine and Broker status handles while gathering both
+role observations. It samples each original object again for Stopped
+state and its own observed raw type. Both closes must succeed before
+either accepted row is written. The provisioning selector uses the same
+pair owner and keeps its existing individual rights, output and failure
+precedence. A failed second open retires the first handle. A failed read
+or final sample remains the first error beside any subsequent close
+failures. The receipt schema and Python consumer are unchanged.
+
+The isolated writer and fresh reviewer applied the Rust contract,
+negative-path and regression-selection skills. The healthy trace requires
+both acquisitions, both complete reads, both final samples and reverse
+retirement. The negative histories cover an incomplete acquisition,
+refusal of the Engine sample after the Broker read, and failed closes
+after a successful pair body. The first Windows-target Clippy attempt
+refused a non-Copy stage enum. The corrected scope is a two-variant
+scalar. All six graph and twelve development commands passed on the
+838-input candidate `059356e982c1f6e4f81a0eb976bd0ec13f959824714e1e74718451822a8fae78`
+over `9bfc3b5904808de973defbc81f8a91caaaaa2875`. Both GNU modes passed
+197 fixture and 70 platform cases. The 28 platform doctests and 16
+Python pre-start receipt and supervisor controls passed.
+
+The first cross-link refused the changed roster before compilation.
+Independent comparison of both test modes found the exact previous 195
+fixture names and the two new histories. Updating only that roster pin
+preserved the reader's strict check. Its 23 controls passed, including
+refusal of missing and skipped cases. The retained source receipts then
+admitted both MSVC link and PE/PDB readback commands for the same fixture.
+
+| Record under `%LOCALAPPDATA%/NevroTick/prestart-pair-9bfc3b5/` | SHA-256 |
+| --- | --- |
+| `prestart-status-pair-graph-pair2.json` | `570d11595e50290017c9d1093f25edec5c547a7b894540ef72e12656e5f654a9` |
+| `prestart-status-pair-development-pair2.json` | `dae6a891053ccfee39b726b72c3c6e1a132163e5c598bed0308f29cde8fb79cd` |
+| `cross-prestart-status-pair-libtest-pair3.json` | `4c634f7ed210349ce96e7c4eb6783000bef2436c3fea3e6e38966aa8d1779f35` |
+
+The scripted samples exercise the paired selector's sequencing and failure
+custody. The Windows selectors still require the separately admitted signed
+lab package, the actual deployment and standard-user actors, and a common
+continuous quiescence owner. The pair's final status samples cannot establish
+continuous inactivity, configuration stability or a completed installed run.
+
+#### Bind the provisioning access child to the admitted actor
+
+W11-W05/W11-W10, S0.6 and CHECK-1/2/15/16/18/27. The installed window
+supplies the canonical SID for its independently admitted provisioning
+context. The PowerShell wrapper passes it to the fixed C# access selector.
+After admitting the held image, the launcher freshly checks the retained
+caller token and requires an exact SID match before creating the job or
+child. The original suspended-child token comparison and failed-launch
+release still apply. The window owner remains responsible for role
+eligibility, live grants, continuity, and independently admitted actors.
+
+The plan, Windows privilege, negative-path and independent-review skills
+bound this slice to the actual pre-launch owner and its inert controls.
+On base `9bfc3b5904808de973defbc81f8a91caaaaa2875`, the C# x64 launcher and
+fixture compiled with warnings treated as errors. Windows PowerShell
+5.1.26100.10068 parsed both scripts. All 16 Python pre-start receipt and
+supervisor controls passed.
+
+In a private temporary directory on the Windows host, the maintained inert
+observer suite passed 30 controls. The wrapper and direct launcher both
+accepted the independently observed current SID. Missing, malformed,
+noncanonical, foreign, and wrong-slot inputs refused with no job, process,
+PID or capture and with the held image released. A wrong image digest
+retained precedence. The administrator profile refused the standard-user
+selector. A genuine admitted ordinary-user context was unavailable.
+
+In a separate inert derivative that omitted the new pre-launch comparison,
+the healthy observation and access cases passed and the missing-SID control
+failed at the unexpected child capture, with exit 1. Both runs retired
+their private fixture directories. Independent review checked the exact
+input and patch hashes, control labels and terminal result.
+These are launcher and reader results. Installed package, actual
+provisioner, common continuous window and supported-family checks remain
+with the existing S0.6 owner.
+
+| Record under `~/.local/share/nevrotick/prestart-provisioning-subject.HlLjhugB/` | SHA-256 |
+| --- | --- |
+| `source.patch` | `f088950707327359e227dd07974fcda1c4dc79d5429ed319f8aec0b0507c9f5b` |
+| `candidate-check.log` | `b9088ae079f267d13302a019527e4b48a611451d3b1aa6a541242550b32ada79` |
+| `candidate-host-inert.log` | `0cea992b6488f0e70f0e9fb4c7269ef2dcf4e7bf5657b541583451d575dee3b2` |
+| `fault-host-inert.log` | `1d6e9e8ea93cbb34a0c904cc153d6817023b6b72154128120172693b53ab937f` |
+
+#### Retain both original SCM objects across pre-start samples
+
+W11-W05/W11-W10, S0.6 and CHECK-1/2/15/16/18/27. The new
+[SCM observation owner](../tools/windows-service-fixture/msix/prestart_scm_window.cs)
+opens the local manager with `SC_MANAGER_CONNECT` and each of the two fixed
+lab keys with `SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS`. Both original
+handles stay in the opening process. Each point check requires Disabled
+configuration and Stopped status and compares each raw type DWORD against
+its own opening value. An observed change, query failure or elapsed
+deadline permanently refuses the lease. The original deadline is bounded
+by an independent monotonic observation even if the caller resets its
+stopwatch. The enclosing process owns the execution ceiling for synchronous
+SCM calls.
+
+Retirement tries each acquired handle once in reverse order. It keeps the
+first error and attaches later close errors. Close uncertainty withholds
+acceptance and requires confirmed native owner retirement before package
+cleanup. Holding these handles postpones final deletion under the SCM
+contract. A service can still change between point samples or be marked for
+deletion. The native window must still establish independent signed-artifact
+and actor admission and continuous quiescence before the installed
+coordinator can report a current run.
+[SCM deletion contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-deleteservice)
+
+The service, privilege and contract-testing skills selected read-only
+rights and bounded raw observations. The isolated writer and independent
+reviewer checked the fixed keys, the native ABI, same-handle rechecks,
+original deadline and cleanup precedence. On base
+`9bfc3b5904808de973defbc81f8a91caaaaa2875` with the existing provisioning
+guard and paired-window overlay, Windows PowerShell 5.1 parsed the
+module and control script. The x64 C# owner and controls compiled with
+warnings treated as errors. All 15 scripted cases passed, including raw
+configuration and status type differences, deadline expiry, sticky refusal
+and independent close errors. Removing the status-type comparison in a
+disposable scripted derivative triggered the intended refusal assertion
+at exit 1. The normal candidate retained the comparison throughout its
+Windows runs.
+
+Both fixed keys were absent on the Windows host. The direct C# path and
+the exported PowerShell wrapper retained the original Win32 1060 from
+the Engine open. Independent status queries confirmed the absence before
+and after the direct control. All 30 earlier inert child controls also
+passed with the updated module in the original bundle that omits the new
+C# source. These runs leave positive installed-role native checks and
+native memory and lifecycle qualification with the S0.6 owner.
+
+| Record under `~/.local/share/nevrotick/prestart-paired-scm-window.SNnU3jhv/` | SHA-256 |
+| --- | --- |
+| `owner.patch` | `83f296d2af75a441915acdd25bc70cc90a1ba460dbf24e20ec3097799e865a5e` |
+| `input-final.sha256` | `89eb2daabf81d89dfe432f4fd53cd89d02caf35a26e7ca7271ddeb6c96cd8f62` |
+| `source-host-final.log` | `e0eb4553fc9c49e1032e01c0402b87a330b68c6291907caa17bb919bf5c15fe3` |
+| `scripted.log` | `18a4bcf79934ab91685c7d6c2bcb070a3b035617a0aa1abed17bb644b4ffa106` |
+| `native-absence.log` | `cc114aa2805fec351174f2212cdd37869e01ac318b9927ac3ac2a31bf7fefc14` |
+| `wrapper-absence.log` | `adae5a40815ac96657a357e24c9c1e84319da1a3ca11fce2ff0021592c8fbc8b` |
+| `observer-compatibility.log` | `0cea992b6488f0e70f0e9fb4c7269ef2dcf4e7bf5657b541583451d575dee3b2` |
+| `scripted-fault.log` | `5e6ee2bc47e0f54fc229185c2016d1903bf5d4061d56de933998610dafabbc95` |
+
+#### Require confirmed retirement before returning the joined pre-start result
+
+W11-W05/W11-W10, S0.6 and CHECK-18/24/27. The
+[pre-start supervisor](../tools/windows-service-fixture/msix/prestart_supervisor.py)
+now asks the original admitted window to retire the consumed run after
+the final currentness check. A joined result can leave the supervisor
+only after the retirement hook confirms completion. A returned or raised
+exception withholds the result. An unexpected return value also refuses.
+Failure or interruption in the observation block still attempts retirement
+once. If both stages fail, the same primary exception stays first and the
+independent retirement failure follows it. A rethrow of the same object
+appears once. Failed acquisition and interrupted or uncertain native
+retirement remain with the native window owner.
+
+The contract and fault-recovery controls exercise the actual four-capture
+receipt reader and supervisor. On the predecessor, a window programmed to
+refuse retirement still returned its otherwise healthy observation.
+The added cases and valid neighbors passed with Python 3.12.3. All 26
+pre-start tests passed on base `9bfc3b5904808de973defbc81f8a91caaaaa2875`
+with the exact supervisor and test overlay. An independent review traced
+raised and returned retirement failure, exact run identity and the
+unchanged historical receipt reader. This verifies the coordinator
+contract. Installed admission still needs the actual signed-artifact,
+actor, quiescence and native owner implementation.
+
+| Record under `~/.local/share/nevrotick/prestart-supervisor-retirement.iA8PPN1o/` | SHA-256 |
+| --- | --- |
+| `integration.patch` | `837c9efd21c590f97c461b92ce3061fa1c611bf2245594520ed0e480822531a9` |
+| `input-integration.sha256` | `f99c428e406f69381a8896e39aab8300d3e70ce721e164dc979a363afd6290a7` |
+| `predecessor-retirement.log` | `56ec75674d43a20603cf657ae4874740b6ebf5c9add362832188aa7ec2d6283e` |
+| `integration.log` | `990d1aa619f385c2fd82c78f259bd20b094039c090f8be646e39e6e558b9cb2c` |
+
+#### Bind the pre-start archive cutoff and retained SCM observations
+
+W11-W05/W11-W10, S0.6 and CHECK-16/18/24/26/27. The held archive now
+captures the time remaining on the caller's clock at admission. A private
+monotonic clock enforces that limit through signer verification, identity
+launch, collection and publication after confirmed disposal. The original
+clock and timeout remain required. An expired observation cannot start
+new work or publish a capture after the caller restarts its stopwatch.
+Retirement keeps its separate allowance and still reports original
+process, read, job and handle outcomes. The enclosing process must still
+bound synchronous native calls and settle uncertain retirement.
+
+The native SCM owner requires the retained deployment actor and its
+independently admitted canonical SID before opening the manager or either
+service. It verifies the actor before the query calls and before publishing
+a sample. Actor withdrawal permanently refuses further samples. Both
+original handles retain their query-only rights and reverse retirement.
+The coordinator requires the independently supplied opening configuration
+and status DWORDs in Engine and Broker order. It compares them with the
+validated child observation before requesting either access probe. Merely
+agreeing child transcripts cannot establish that the original window was
+observed. The offline join continues to report transcript consistency.
+
+Service and privilege review traced both native ownership paths. Contract,
+negative-path and fault-recovery controls selected the real producer and
+consumer, live neighbors, expiry before publication, retirement and
+independent withdrawal. The staged baseline was
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1` at `9bfc3b590`. The combined
+source tree before this task entry was
+`11bcdb6b635fd51fe152fcc903088ae972e02d78`. Separate independent reviewers
+checked the SCM and archive/collector boundaries and reconciled the
+source manifests with the observed controls.
+
+Windows PowerShell 5.1.26100.10068 parsed the affected scripts and the x64
+C# build passed with warnings as errors. All 18 scripted SCM controls,
+9 controlled retirement cases and 7 raw stream cases passed. The
+launch-only source bundle could load its actor and refused the missing SCM
+owner before dispatch. Both actual SCM entry points refused the wrong SID
+and preserved the original Win32 1060 for the matching subject, with each
+fixed key independently observed absent before and after. Removing the
+last actor check in a private scripted derivative reached the intended
+withdrawal failure. Removing the collection check after release also
+failed its selected oracle. Both derivatives exited 1.
+
+For the unsigned archive, the predecessor let an expired, pre-aged lease
+reach the malformed signer and missing-signature guards again after a
+stopwatch restart. The final candidate refused both operations at the
+original cutoff, with no job or process created. The control restarted the
+clock before observing expiry and while the lease's age was below a new
+full budget. A fresh lease reached its live guard and the archive reopened
+exclusively. A separate inert child used the actual owned identity
+collector. The healthy run returned its exact bytes under the original PID.
+The expired run returned no capture and confirmed retirement and release
+under its original PID. All held input files reopened exclusively afterward.
+These checks made no trust, package, clock or service changes.
+
+The first Python predecessor setup omitted a reader import. With its
+original input restored, the predecessor accepted both child transcripts
+with Broker status 32 against the original sample's 16. The corrected
+coordinator refused before requesting access. All 29 focused Python tests
+passed on the combined inputs. The positive signed identity path, actual
+installed SCM checks and the concrete owner binding distinct actor
+launchers, continuous quiescence and native retirement to the same run
+retain their S0.6 exits. The full offline identity and observer suites were
+parsed. The executed native cases above retain their selected scope.
+
+| Record under `~/.local/share/nevrotick/s06-archive-bound-20261124.l47LRr5S/` | SHA-256 |
+| --- | --- |
+| `integrated-code.patch` | `e99706b81c4e7aefe10b33b78e891f439233573a20d0679e0d103d0166d6d34a` |
+| `native-integrated-inputs.sha256` | `d6bdda4a2bda38274533523f95dede3339add0b63d58f1b89be3c3fce4ac9c84` |
+| `python-inputs.sha256` | `eb63104ac6c3aaafdaabbf4ca7c1a3eacc63014fe525a1325e7169c75f4a3a1f` |
+| `final-check-integrated-source.log` | `340b51e086c035b8962bd863df20480d5bd561971f4515dc7515c318cb878d18` |
+| `final-control-v2.log` | `3cc5fb8648b00093d9501b4a8d4f18e4430be9bdfc76cc2b6ecf7b33cda8890b` |
+| `v2-predecessor.log` | `0c280f9fd52eee30a3fd8ed554544edb6cfe9d5c31f639346b94c046b2f025a3` |
+| `final-owned-capture-control.log` | `d09a3bf3ea3c9acbf5ec7ba0d95b5c01af0fddf2991556b4db14ba935dc6fe48` |
+| `final-test_prestart_retirement.log` | `1488e6325c552fc2ee03a0556f7ea4c7a67cc265eeb6c528e77848da4f455e15` |
+| `final-test_prestart_child.log` | `7d8f7ef7f54b66f78170b44fc721c77203248b6d191fd655d00dfff0388ee7ad` |
+| `final-test_prestart_scm_window.log` | `18a4bcf79934ab91685c7d6c2bcb070a3b035617a0aa1abed17bb644b4ffa106` |
+| `final-scm-direct.log` | `15eb47c4110e173ddf07d4b1a6d12be7ed0a480df382c2bcf88b2c2241768a94` |
+| `final-scm-wrapper.log` | `a068f6590234e7842209e63414d59855c35e4e1a3b9e7880c7d0b734890eb2df` |
+| `final-legacy-loading.log` | `b65c5bbe1a8a7a674b122dc914ca5a5e642fbba89ef03e16e2655c79b3d9dfcc` |
+| `scm-drop-final.log` | `cf02f247d882fcfd1276a72ab2df9ac02475a087c72f4e230bf637db358dae84` |
+| `collection-drop-final.log` | `3e700ca66bbfa349dbe10567f06d0539c86d7d9003eb5c67b1842e09a4c88698` |
+| `scm-python-red.log` | `0c201218c36b80e67038eadc6070aa7b7f968f4df01c97359da550b08a10ecff` |
+| `final-python.log` | `eef1459f46f86bbe657ec5e4b14be38c733a6a2af68533ae14dae244b1872926` |
+
+#### Retain the original cutoff for the fixed SCM observers
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/26/27. The observer launcher now
+captures the remaining allowance once at native launch admission. Its
+original cutoff is checked immediately before job creation, suspended
+process creation, resume and capture publication after retirement. The
+ordinary caller clock remains required. The archive uses the same private
+cutoff implementation at its existing boundaries while keeping the original
+clock, timeout, signature, actor and held-file checks. Retirement keeps
+its separate allowance and preserves the original operation and cleanup
+outcomes.
+
+The service, fault-recovery and regression-selection skills traced all
+three selectors through the shared native launcher and collector. The
+new inert child control starts with seven seconds already spent from an
+eleven-second budget. It restarts the same caller stopwatch after launch.
+The launcher retains the original process while the child closes both
+output streams and waits before exiting.
+The predecessor exited 1 after the assertion observed an incorrect
+published capture. The repaired x64 Windows PowerShell 5.1.26100.10068
+run passed all 31 controls, including the new refusal while the restarted
+clock was still live. The control requires the original PID, actual
+retirement, exclusive image reopen, no remaining owned process and no
+natural-exit marker. The regular EOF timeout and healthy outputs passed.
+A matched ordinary-user positive needs a separately admitted subject.
+The initial command collector expected the base control count alone. Raw
+readback reconciled all 31 distinct success records and the final footer
+with their zero native exit before checking both source inventories.
+
+The x64 C# library compiled with warnings as errors. The retained unsigned
+archive control still refused verification and launch at its original
+cutoff after restart. The live guards, fresh lease and exclusive release
+passed. All nine retirement and seven raw capture controls also passed.
+A fresh-context reviewer checked the final source and its guarded effects.
+The cutoff begins at the single admission sample. Synchronous calls may
+cross the preceding guard, and the enclosing owner still bounds the full
+window. Installed SCM, trusted lab signature, continuous quiescence and
+applicable native diagnostics retain their own gates. No services, package
+registration or trust settings changed.
+
+The exact C# and test bytes were integrated on Main base
+`9bfc3b5904808de973defbc81f8a91caaaaa2875` over staged tree
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1`. The independent downstream
+step remains one retentive deployment owner for the signed identity and
+the paired observation. Validate the identity receipt before launching
+the observer. Acquire the provisioner and standard-user contexts through
+their own admitted launch owners. Retained status observations supplement
+the separate quiescence obligation.
+
+| Record under `~/.local/share/nevrotick/s06-observer-deadline.E3UFEYGQ/` | SHA-256 |
+| --- | --- |
+| `native-inputs.sha256` | `a0c6458ddd5f33f79e0ab2a1d0a054c6ffbf5a22f099dff6df387fa2a1fe8c6f` |
+| `red.log` | `4368b8bf64797971b4c7773935d4e3d0433770c565c35dd90cabec33cae2f148` |
+| `green.log` | `6383f064bade6d448340a22173939c7aaec9456ee5c6426010e5dc953f227872` |
+| `shared-cutoff-inputs.sha256` | `5515c572b9e622615541e48d98a31d784e39cc3d079f9e02408e2a1f114fdc82` |
+| `check.log` | `640e664abfaa6c2e5a4c527f984aa722daaee227b782fe8a937fb3bb09187878` |
+| `control-v2.log` | `3cc5fb8648b00093d9501b4a8d4f18e4430be9bdfc76cc2b6ecf7b33cda8890b` |
+| `test_prestart_retirement.log` | `1488e6325c552fc2ee03a0556f7ea4c7a67cc265eeb6c528e77848da4f455e15` |
+| `test_prestart_child.log` | `7d8f7ef7f54b66f78170b44fc721c77203248b6d191fd655d00dfff0388ee7ad` |
+
+#### Recheck the held archive after child retirement
+
+S0.6/W11-W05/W11-W10, CHECK-18/24/26/27. The collector now checks the
+original archive after the original child, job and streams have retired
+and the owner has released them. The final guard retains the original
+cutoff. It checks archive currentness, path and the applicable signer and
+actor pins under the lock shared with withdrawal. Withdrawal before the
+guard withholds the capture. A successful guard admits the historical
+capture. The actual release result and original PID accompany a refusal.
+Earlier collection and cleanup failures retain their original precedence.
+
+Lifecycle and fault-recovery controls directed withdrawal after successful
+image confirmation and before actual child release. The maintained
+identity test forwards to the real launcher and collector with an inert
+companion and the previously checked unsigned archive. The predecessor
+published one capture after withdrawal and exited 1 at the intended
+assertion. The repaired consumer returned no capture and reported the
+original PID, archive retirement cause, and confirmed child retirement
+and release. The archive and the child inputs reopened exclusively.
+Live and fresh-lease runs returned the independently expected capture.
+A controlled release failure withheld publication without claiming
+release.
+
+The exact x64 .NET Framework assembly compiled with warnings as errors.
+The selected identity probe, 11 retirement controls, 31 observer controls,
+seven stream controls and retained archive expiry case passed on
+Windows PowerShell 5.1.26100.10068. The full identity test parsed. The
+executed identity probe used its maintained functions and inert
+companion, with a scoped driver that performed no trust, SCM or package
+registration operations. The first staging command refused a missing
+parent directory before native execution. The production bytes matched
+the tested inputs on base `9bfc3b5904808de973defbc81f8a91caaaaa2875`
+over staged tree `5a3e3d7b17421730120c91be73ea2975b71ca8b1`.
+
+Independent review traced the shared archive lock, typed failure and
+release-state projection. The next deployment owner can reuse this
+final guard and must still join the actual signed package, retained actor,
+original SCM handles and continuous quiescence. Validate the identity
+receipt before dispatching the fixed observation from that window.
+Separately admitted actor processes and installed/native diagnostics
+retain their own requirements.
+
+| Record under `~/.local/share/nevrotick/s06-archive-publication.fpLfACHD/` | SHA-256 |
+| --- | --- |
+| `final-selected-inputs.sha256` | `19a98905ba0e273fac36d8f77dfb6b261aa5b9d0a0a35f2a59fd3e656555a9c4` |
+| `previous-publication-bound.log` | `ca56b5e36e6f2c4d30578ea74b4b753f05964ebe67944aec3718a944786ea759` |
+| `final-publication-bound.log` | `2937325fdd2f8885eec3205055a53827a5976cea012c68a6e6840193b73eb4d5` |
+| `final-test_prestart_retirement-bound.log` | `63e0b8ab39fe0abaf04e609583faf0833a0c0c38e3d81283a86b3f9c5dac5647` |
+| `final-parse-maintained-bound.log` | `0459d27596243dc3250464a2e0e45014c314e532e9233f05b493c4bbbffdb774` |
+| `final-inputs.sha256` | `bdf9d3815125e15dfe14ada158697ea0adf8b87246223711ef17f75e8e0235bc` |
+
+#### Bind the fixed deployment observation to the verified archive and SCM window
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/18/24/26/27. The deployment
+observer in `prestart_child.psm1` now consumes the original native SCM
+window and the verified held archive. The window supplies its original
+actor, canonical SID, clock and timeout to the fixed selector. Admission
+checks the independent carrier and signer pins on the verified lease
+before reaching image or window operations. The launcher still compares
+the actual actor and suspended child. The archive gate covers the borrow,
+job creation, suspended launch and resume. The original child keeps the
+borrow through retirement.
+
+The collector polls the two original deadlines. Clock failure on either
+new SCM guard remains attached to the original window through retirement.
+Fresh point samples guard the original handles before launch effects and
+at publication. The final sample and subsequent held-archive check share
+the SCM window lock. The window checks its own cutoff again after the
+archive check, preserving retirement order and failure precedence. The
+outer process still owns synchronous-call bounds and the proof of
+continuous quiescence between point observations.
+
+Service, lifecycle and fault-recovery review checked the fixed selector,
+signer and actor binding, lock order and failed-launch retirement. The
+final Windows PowerShell 5.1.26100.10068 run passed the x64 C# compile
+with warnings as errors. The scripted SCM controls checked healthy
+samples, scripted-window refusal before launch, an elapsed cutoff during
+publication, and a stopped clock that stays refused after restart.
+Removing the final cutoff check failed the intended scripted assertion.
+Four guarded archive cases used the retained unsigned package and required
+the exact refusal with no job, child or SCM callback and exclusive reopen.
+The optional launch-only bundle loaded the actor and refused a deployment
+observation without the SCM owner. The inert native identity publication,
+archive deadline regression and all 31 observer controls passed again.
+The final archive and collector setup made no trust or installed-service
+changes.
+
+The tested source was integrated over staged
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1` at
+`9bfc3b5904808de973defbc81f8a91caaaaa2875`. Independent review
+confirmed the candidate's archive borrow, scope and sticky clock refusal
+through release. The next owner must carry the validated identity and
+fixed observation through a single admitted deployment attempt. The
+positive signed installed observation, continuous quiescence, separately
+admitted access actors and applicable native diagnostics retain their
+qualification gates.
+
+| Record under `~/.local/share/nevrotick/s06-signed-scm.gVPVwCTe/` | SHA-256 |
+| --- | --- |
+| `settled-inputs.sha256` | `035d7e83170fc99ba60f7b14a6a22579b11cd830a480a214338cf5ad7ee8d867` |
+| `settled-compiler.log` | `fe37734717faf3075765ebba4ee0ee8bdacf68b95ea731ddc845f44eb8c667ee` |
+| `settled-scripted.log` | `18a4bcf79934ab91685c7d6c2bcb070a3b035617a0aa1abed17bb644b4ffa106` |
+| `settled-unsigned.log` | `3ae4679ec9451a0bf5b58a7892850c92082e98d8c289fe6afe6297ec31fe82f7` |
+| `settled-directed-cutoff.log` | `76c4cecdd8c7c015eb0b733d1cee45a362b6059a6131c8822684d754da3ab472` |
+| `settled-identity-publication.log` | `2937325fdd2f8885eec3205055a53827a5976cea012c68a6e6840193b73eb4d5` |
+| `settled-archive-cutoff.log` | `3cc5fb8648b00093d9501b4a8d4f18e4430be9bdfc76cc2b6ecf7b33cda8890b` |
+| `settled-observer.log` | `6383f064bade6d448340a22173939c7aaec9456ee5c6426010e5dc953f227872` |
+| `final-launch-only.log` | `74eb0a9285f45faae21b74468438ae4003b43787e25eb10115b75420d2816ffa` |
+
+#### Gate the fixed observer on the identity capture from the same window
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/18/24/26/27. The verified identity
+entry now uses the actor, SID, timeout, clock and point checks of the
+original SCM window. It verifies the held archive and allocates the
+attempt binding before child creation. The window keeps that archive
+object and the original pins when issuing the fixed observer. Each
+launch has one attempt. The second requires a zero identity exit,
+confirmed image checks, actual child release and successful native
+publication under the original window and archive. The native success
+bit records that original outcome. Receipt meaning belongs to the
+coordinator.
+
+The Python supervisor validates the identity through its existing reader
+before calling the dedicated deployment operation. It retains the
+independent opening SCM sample and the separate fixed access selectors
+and actors. The predecessor failed the dispatch-route control. An
+otherwise healthy identity capture with a wrong service member digest
+refused before deployment dispatch. All 30 supervisor and receipt
+controls passed with the exact portable inputs in a read-only,
+network-isolated namespace.
+
+The Windows PowerShell 5.1.26100.10068 controls compiled the x64 C#
+assembly with warnings as errors. The scripted SCM owner and retained
+unsigned archive refused both new verified launch routes at their
+expected boundary. The launch-only module kept the existing actor route,
+refused both missing-window commands and exposed no independent actor
+or clock parameters on the paired identity route. The original native
+inert identity publication, archive cutoff and all 31 observer controls
+passed again. Independent review checked the lock order, prelaunch
+allocation and monotonic publication state before integration.
+
+The final source matches those inputs over staged
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1` at
+`9bfc3b5904808de973defbc81f8a91caaaaa2875`. A concrete Windows adapter
+must still route the Python callback to this held native attempt and
+report retirement of the full run. Signer-positive installed execution,
+continuous quiescence, separately admitted actors and applicable
+diagnostics remain open.
+
+| Record under `~/.local/share/nevrotick/s06-fixed-deployment.qZMISIyw/` | SHA-256 |
+| --- | --- |
+| `settled-inputs.sha256` | `0e6230e3683983f7979466eea23cb1e5da021899aae8166b7b1442d4095ed70c` |
+| `settled-compiler.log` | `fe37734717faf3075765ebba4ee0ee8bdacf68b95ea731ddc845f44eb8c667ee` |
+| `settled-scripted.log` | `18a4bcf79934ab91685c7d6c2bcb070a3b035617a0aa1abed17bb644b4ffa106` |
+| `settled-unsigned.log` | `3ae4679ec9451a0bf5b58a7892850c92082e98d8c289fe6afe6297ec31fe82f7` |
+| `settled-launch-only.log` | `603f305a73cd867997f0407742fb6c9bb858e5d2aa82056bd26029bf45d43106` |
+| `settled-observer.log` | `6383f064bade6d448340a22173939c7aaec9456ee5c6426010e5dc953f227872` |
+| `combined-portable-inputs.sha256` | `b5442b0594209d27dc87d05b0d4d8176fa8b8a8c298507fdd6233e4db8f936f1` |
+| `portable-predecessor.log` | `8dbad7fb82406c1bc40f7dca1323f90a81476e17191c8fb17d49bd217a0c7ab2` |
+| `portable.log` | `c281cca10e1cf53960fb4f3e064821fadb23072b7c4fb8c57706929ce90e2df6` |
+
+#### Validate deployment receipts across a private Windows host pipe
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. `read_deployment` takes the
+original deployment run and independent opening SCM sample and validates
+the identity companion before requesting the fixed observer. It returns a
+deployment observation with the two roles' raw SCM readings. The full
+reader still requires provisioning and standard-user captures, and the
+offline join retains its separate semantics. `supervise_deployment` checks
+the same run object before each launch and after reading both receipts.
+Both supervisors return only after confirmed retirement and preserve the
+original failure alongside any independent retirement failure.
+
+All 36 portable receipt and supervisor controls passed under Python 3.12.3
+in a read-only, network-isolated namespace. Directed copies each exited 1
+at the intended assertion when they omitted identity validation, the
+opening sample guard, the final currentness check or retirement, or when
+they used value equality for a foreign run. Initial direct-name fault runs
+that stopped at imports are setup failures. Independent source review
+found no blocking issue in the receipt or supervisor changes and checked
+full-path compatibility, failure precedence and retirement custody.
+
+The Windows host pilot passed raw receipts from two real inert children
+through one owner in 64-bit Windows PowerShell 5.1.26100.10068. The input
+was an independently pinned unsigned archive. The observer emitted fixed
+fixture readings. Python called the same `read_deployment` implementation
+and checked it against a separate fixture SCM sample. The healthy case
+started both children. A wrong Engine member digest withheld continuation,
+and an extra byte after the allowed continuation withheld observer launch.
+Those two refusal cases started only the identity child. All three settled
+the original child collection before terminal output, confirmed exclusive
+file reopening and exited zero. The initial attempt exited 1 after
+identity because the test driver called an internal actor method directly.
+The retry used the existing launcher's native actor checks. Independent
+review decoded the retained frames and checked the archive member bytes.
+
+The host pilot exercises the reader and child transport. The portable tests
+exercise the supervisor. The pilot uses the unsigned test launcher and an
+inert executable, and retires after sending the last capture. The installed
+adapter must keep the verified archive, original SCM window and owning
+process live through the supervisor's final currentness check and report
+confirmed retirement of that attempt. Signed installed admission, actual
+SCM sampling through this transport, outer process containment and bounded
+interruption recovery, continuous quiescence, access actors and applicable
+native diagnostics remain open.
+
+The source was integrated over `9bfc3b5904808de973defbc81f8a91caaaaa2875`
+and staged tree `5a3e3d7b17421730120c91be73ea2975b71ca8b1`. The pilot's
+reader bytes match the portable candidate. The pilot does not import the
+supervisor. No native code changed in this checkpoint.
+
+| Record under `~/.local/share/nevrotick/s06-deployment-pipe.O1qCRipi/` | SHA-256 |
+| --- | --- |
+| `portable-combined-inputs.sha256` | `1422bcb37c9cc23783d828cff284d06e5e10779a15af751a5d04c43a6a7dc0bb` |
+| `portable-combined.log` | `38c2c71f1b4ef544e9a94da9c30de1505fef8258495de4b02d218f1fd6c7d9c5` |
+| `retry/native-inputs.sha256` | `a507e0726273f0d81b15f74795d0c59d911244124f54cd07ad2c02e172a85d58` |
+| `retry/pipe-probe.log` | `1df1dd96114e9ab33601c156bcec0650eb3d27794e969a9e681c21a67b52d066` |
+| `retry/healthy.completion.json` | `1c224a3f0896e4e2c19c9e2d05444fb80fe89a6f1b7dac09380860fa4aee3d57` |
+| `retry/wrong-member.completion.json` | `a06a4fdd19ee5b0d7632575fec4d1df49d0b02545883fc42418303a287f13313` |
+| `retry/trailing.completion.json` | `d8837fb8912ed521f46faa724d2e0609027f08ed52d0b646731c6e8c72b2c135` |
+| `retry/native-inputs-bookend.log` | `de2b408d0a1cbd58c014d49048d5457afec517bed21b9ec53129377dc734f5ad` |
+
+#### Confirm the original deployment window after both receipts
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The original SCM owner now
+retains the fixed observer through `ConfirmDeployment()`. Each original
+child records success only after a zero exit, confirmed held input and
+actual release followed by its native publication checks. The final call
+requires both records and uses the original observer to resample the same
+SCM handles and recheck the held archive. It checks the effective actor and
+independent archive deadline while the archive lock is held, then checks
+the original SCM deadline. A failure during final confirmation withdraws
+the window and preserves the original exception for retirement. Refusing
+an early call with incomplete captures leaves ordinary collection available.
+
+The lifecycle and negative controls exercise the original sampled-handle
+owner and separate archive withdrawal from actor withdrawal. The scripted
+window refuses deployment confirmation and preserves a post-sample archive
+failure through repeated observation attempts and retirement. The native
+unsigned archive check reached the actual actor and archive code with a
+live original token, then refused the disposed token. Retiring the archive
+preserved archive refusal precedence with the same disposed token. Both
+directed copies exited 1 at their intended assertions after omitting actor
+verification or failure retention. The earlier shell assertions had
+misread the PowerShell wording and line wrapping. The retained command
+results were checked before continuing.
+
+The final inputs passed x64 C# compilation with warnings as errors,
+PowerShell parsing, the scripted SCM window selection, the unsigned archive
+selection and 31 existing inert observer controls under Windows PowerShell
+5.1.26100.10068 on the Windows host. Input hashes matched before and after
+execution and on integration. Independent review caught the archive lock
+gap and early timeout retention gap in earlier candidates, then reviewed
+the corrected bytes. No package, SCM configuration or trust settings changed.
+
+The verified-admission success branch still needs an actual signed installed
+pair and a dedicated adapter carrying the original native window through
+both Python receipt checks. Bind the final request to `ConfirmDeployment()`
+before explicitly retiring the original run. Preserve the original failure
+and any independent cleanup failure across the transport. The component
+controls provide no installed positive result, continuous quiescence,
+outer interruption recovery or native memory diagnostic qualification.
+
+The exact source was integrated over `9bfc3b5904808de973defbc81f8a91caaaaa2875`
+and staged tree `5a3e3d7b17421730120c91be73ea2975b71ca8b1`.
+
+| Record under `~/.local/share/nevrotick/s06-final-native-sample.MesjCFt4/` | SHA-256 |
+| --- | --- |
+| `proposed-inputs.sha256` | `748202478d4b84a963335d459bf2a77d2b361e1c46e8ed85d62b29aee15d0ea3` |
+| `settled/native-inputs.sha256` | `6389b5afa74ab39061cf4d95b758e817887631fcfc6747bc913ffc3908158fda` |
+| `settled/compile.log` | `fe37734717faf3075765ebba4ee0ee8bdacf68b95ea731ddc845f44eb8c667ee` |
+| `settled/scripted.log` | `18a4bcf79934ab91685c7d6c2bcb070a3b035617a0aa1abed17bb644b4ffa106` |
+| `settled/unsigned.log` | `3ae4679ec9451a0bf5b58a7892850c92082e98d8c289fe6afe6297ec31fe82f7` |
+| `settled/observer.log` | `6383f064bade6d448340a22173939c7aaec9456ee5c6426010e5dc953f227872` |
+| `settled/omitted-actor-check.log` | `0cdf1982c96bf5351b88437cf43dcac2975e66eefdb9e6a9377619aeec510e97` |
+| `settled/omitted-withdrawal.log` | `3636911a5351d9fb9acf0d66ab89e6cfe84a1ca9e915cfd7459e9b34412083b2` |
+
+#### Drive the deployment window through the live receipt supervisor
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The paired Python supervisor
+and native PowerShell module now share a private process pipe. The admitted
+run stays outside the raw child receipts. The fixed requests take the
+original SCM sample, check currentness before each capture and request
+`ConfirmDeployment()` after reading both receipts. The dedicated reply for
+that final request differs from the earlier currentness replies. The
+producer binds each capped response to the run and captures both children
+through the existing fixed native commands. It retires the same window,
+archive and actor before sending the terminal reply. Python checks that
+reply and pipe EOF and waits on the original external process owner before
+returning a result.
+
+The planning, lifecycle, component, negative-path and independent-review
+checks cover producer order, late response handling and original failure
+precedence. A separate bounded retirement deadline allows the pipes to
+finish after observation expires. The native observation cutoff retains
+its original authority. Python retains at most one partial frame and drains
+at most one late response after timeout so it can collect independent
+cleanup errors. The original timeout still withholds the result. Malformed
+or broken transport can prevent the terminal details from arriving. The
+outer process owner must then retain recovery custody.
+
+All 49 receipt, supervisor and private-pipe tests passed on Python 3.12.3
+in a read-only network-isolated namespace. Directed copies exposed missing
+run binding, EOF and owner wait, reuse of the shorter cutoff, stale
+confirmation, dropped cleanup detail, incomplete and excessive late
+reply drainage. Earlier variants and their outcomes remain retained.
+Independent review examined the encoding, failure precedence, native
+callers and raw Windows results. The final source adds explicit local type
+annotations to the reviewed Python implementation.
+
+Windows PowerShell 5.1 parsed the module and exposed one fixed command.
+Seven host controls exercised the same private session loop with two
+real inert child launchers, a held unsigned archive and a scripted SCM
+window. Healthy execution returned both raw role triples and recorded
+confirmation, retirement, exclusive reopening and actual owner exit.
+Wrong member identity withheld observer launch. Wrong SCM data withheld
+confirmation. Confirmation and cleanup failures withheld the result.
+The observation cutoff still allowed retirement. A separate control
+injected WinTrust close metadata beside its initiating failure. Three
+direct malformed-command and EOF controls launched no children and reopened
+the inputs after retirement. No services or trust settings changed.
+
+The signed installed route still needs its dedicated admitted outer
+launcher and actual Windows job and interruption-recovery observations.
+The host controls exercise the module's private transport loop and the
+existing inert child paths. The exported typed route, real SCM samples
+through the adapter, native WinTrust failure, continuous quiescence,
+access roles and applicable native diagnostics retain their separate exits.
+Integrated over `9bfc3b5904808de973defbc81f8a91caaaaa2875` and staged tree
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1`.
+
+| Record under `~/.local/share/nevrotick/s06-deployment-supervisor-link.yniIOo6C/` | SHA-256 |
+| --- | --- |
+| `settled/portable-inputs.sha256` | `ded9d99110b2246e8582cee7c0c6b0ee83094ed12311eba03b03990895e93801` |
+| `settled/portable.log` | `25db9674d864303870ee83cc98c49b2b111ab3c7552613748cf6840ef8ee7bf6` |
+| `settled/native-inputs.sha256` | `55ad83fe131dc623a06223afeb09195440c5a8cb0f4e4e33d9fa2cb14ea10edd` |
+| `settled/drive.log` | `cc8a29a12267be2b8f2b8b29b0f8bbffbc4eee497f230551db852921d52daadf` |
+| `settled/refused-wire.log` | `f32ec9263e698856acff9f149d3edaf37d306320ddbdc295332e2009c47fc2b4` |
+| `settled/native-bookend.log` | `a7ffe09bb63a80d6c040e6d652b6b275e946cdd2f39070b7c5e8f394f9aa0eb7` |
+| `native-parse.log` | `08c0c11ba543b9ae8278a6fd38fa417f98dd1e6ef43ac1f1cecad57dc7f5cd03` |
+| `pre-drain.log` | `dd56cb343408471ca073e7cbc256fabc8d41d6c43564871d01d07b32932bf1c9` |
+
+#### Contain and retire the deployment supervisor in a native job
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The dedicated Windows guardian
+holds the pinned System32 interpreter and fixed owner entry. It places the
+suspended child in its original unnamed job during creation and passes
+only the three redirected handles on the inheritance list. It verifies
+membership, image, x64 and actor before resume. It observes the original
+process exit, releases its process handle and samples job accounting until
+empty. The two cutoffs retain one origin. The first bounds the entire
+cooperative owner and the second bounds forced recovery and release.
+The Python adapter requires exit zero from the original guardian alongside
+the existing retirement frame and EOF checks.
+
+The first composed attempt failed when inline C# tried to write into the
+Windows directory. The owned temporary directory advanced the run to a
+CVTRES launch blocked in the two-slot job. The dedicated owner now admits
+a precompiled x64 helper by exact bounded length and SHA-256, loading the
+same byte array before opening the window. The precompiled attempt without
+private temp reached a package-reader refusal. The final configuration
+holds its owned `prestart-temp` directory through retirement and uses it
+for TEMP and TMP. It retains the configured two-process limit. The legacy
+helper route still compiles in its original profile.
+
+Native checks on Windows PowerShell 5.1.26100.10068 passed x64 compilation
+with warnings as errors, the two helper admission controls and all 31
+legacy observer controls. The guarded healthy session reached both inert
+children, verified the scripted role triples and observed job settlement.
+Wrong member identity withheld the observer. A second complete wire run
+exited 23 from the actual owner, which withheld success despite EOF and an
+empty job. Wrong entry digest and a regular file at the scratch directory
+path refused before launch. Wrong helper digest refused before receipt work.
+
+In the disconnect control the inert leaf's sentinel produced a Win32
+sharing violation before both WSL control streams closed. The first
+harness comparison treated accounting as an exact process census and
+stopped before reopen. The completed control used the original job's
+member list. It contained the known owner and leaf, plus a PID matching
+the separately observed `conhost` process-name census. The guardian
+observed original exit 1223 and an empty job after termination. Its exit
+remained nonzero. The harness exclusively reopened the sentinel and pinned
+owner entry before reporting success. Raw membership and accounting are
+retained as separate observations. [Windows job process list](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-jobobject_basic_process_id_list)
+
+All 50 portable tests passed, including actual local process exits 0 and
+23 after stream closure. Independent review inspected the exact source,
+raw launch and retirement artifacts and the corrected native recovery
+control. No SCM, installation or trust settings changed. The exercised
+route uses an unsigned archive and a scripted SCM window. The signed
+installed entry, real SCM samples, continuous quiescence, access actors
+and applicable native diagnostics retain their separate exits. An outside
+owner must still enforce the hard cutoff when the guardian itself stalls
+or is interrupted and confirm any remaining cleanup. The current WSL
+adapter observes exit under a bounded wait. The follow-up below exercises
+that independent owner on the inert route.
+
+| Record under `~/.local/share/nevrotick/s06-deployment-outer-job.G3wjDtha/` | SHA-256 |
+| --- | --- |
+| `integrated-inputs.sha256` | `fda123fffe37864b6d38e1e3ba75e093e9b61bcb43bbc5a1d2ae1ccb657585f6` |
+| `portable.log` | `1cd7da2fc92930a03929ad36180a7a9515dc4ad89e48ecd981190c67114182cb` |
+| `helper-build/inputs.sha256` | `66dc5efec753a861cec65f3336d6da6bd9bdfc64ab1ed32dc3a2a0f52963658e` |
+| `helper-build/prestart_deployment_helpers.dll` | `79ec26ad69df3b2ee6bfb196d6495b4f3333747dc2439368d960e6bc803618b7` |
+| `final/native-inputs.sha256` | `515bfa041e255bc727b988b33e5cd8f7cffcd1e6f904b03ac2edef693e61b7f1` |
+| `final/compile.log` | `5eefafaded5cd0e1a6d56a78630b7ef444837307a36cc623545aacacc57539b2` |
+| `final/healthy.log` | `bda65590bb28d9c9531974b4c9fcbce4b1a182066049141f006127ffa2b44990` |
+| `final/nonzero.log` | `2a2033fb99c07b9c422e9d02c7732600d2af203633cc3d0512ffce158602e7dc` |
+| `recovery/native-inputs.sha256` | `0c41122c0ddf9e26399d269b35614643e489d196a03a021830afe62522672f3d` |
+| `recovery/disconnect.log` | `b5421751441553cd96d69f8985878cbea66cf25e1e337241fc1aebe707a5942b` |
+| `recovery/native-bookend.log` | `82508f98cdab0cb655507b097c34ae000fd12bd98c898ed972e2083c41617eb5` |
+| `legacy/observer.log` | `6383f064bade6d448340a22173939c7aaec9456ee5c6426010e5dc953f227872` |
+
+#### Enforce the guardian cutoff from its native parent
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The dedicated x64 watchdog
+admits the pinned guardian and System32 PowerShell, creates the original
+guardian suspended in an outer kill-on-close job and passes only the fixed
+pipe and diagnostic handles. It checks image, actor, architecture and job
+membership before resume. The WSL launcher checks the executable extent
+and digest and returns the original process to the receipt supervisor.
+The watchdog uses one native monotonic origin for work and retirement.
+It requires guardian exit zero and empty outer job accounting before
+returning success. A cutoff requests termination of the original outer
+job and records both the initiating failure and any recovery failure.
+The guardian retains its separate owner job and deadlines.
+
+The lifecycle and independent reviews traced launch through receipt
+publication and cleanup. The isolated CPython 3.12.3 suite passed all 53
+tests, including wrong executable pin and nonregular-path refusals before
+launch, and a real local child checking argument separation, binary pipes
+and separate diagnostics. An initial run had three setup errors because
+its namespace lacked writable temporary storage. The retry supplied a
+private writable temporary directory and used the same source bytes.
+Native x64 compilation used the retained .NET Framework C# compiler with
+warnings as errors. The five Windows control drivers exited zero.
+
+| Native control | Observation |
+| --- | --- |
+| Healthy | The actual private pipe completed both captures, confirmation and retirement. The watchdog, guardian and owner exited zero and both jobs reported empty. |
+| Wrong guardian pin | Image-digest refusal before guardian creation. No inner owner ran and the watchdog exited 1. |
+| Nonzero owner | The complete wire exchange reached EOF and both jobs emptied. Owner exit 23 and watchdog exit 1 withheld the observation. |
+| Blocked guardian | The original guardian, owner and leaf were live and the sentinel was held. The outer 15-second work cutoff fired ahead of the inner 45-second cutoff, with configured retirement cutoffs of 25 and 52 seconds respectively. Independent retained handles observed all three exits as 1223. The outer job emptied, three exclusive reopens passed and the watchdog exited 1. |
+| Abrupt guardian exit | The original guardian exited 117. The independent handles observed both original descendants exit, the outer job emptied without explicit outer termination, three exclusive reopens passed and the watchdog exited 1. |
+
+The last two controls used fault-only inner source copies after real
+owner and leaf launch and the identical outer binary. Both confirmed a
+sharing violation before the fault. The configured outer and inner
+active-process limits are three and two. The blocked control reported
+five active outer job members, including all three tracked processes.
+The remaining two were unclassified. Cutoffs are configured budgets.
+The driver retained no measured cutoff latency. The Windows interpreter
+pin was supplied live and lacks a separate retained hash bookend.
+
+The checked executable is reopened by path for activation and the guardian
+loads sibling sources by path. This requires caller-owned protected staging
+and transitive input admission. The checks exercise an operating watchdog
+with a blocked or abruptly exiting guardian. A stuck watchdog or
+unconfirmed native recovery remains a failed attempt. The unsigned
+archive and scripted SCM inputs exercised no service, clock or trust
+changes. The signed installed launch, real SCM handles, effective actors,
+continuous quiescence and applicable native diagnostics remain open.
+The combined source was integrated over
+`9bfc3b5904808de973defbc81f8a91caaaaa2875` and staged tree
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1`.
+
+| Record under `~/.local/share/nevrotick/s06-deployment-hard-cutoff.ZFj6uDDA/` | SHA-256 |
+| --- | --- |
+| `integrated-inputs.sha256` | `125c09ab8d28dc58f5999e257f1ccb20e9b9e246263adeed6d48995af14b683d` |
+| `portable-inputs.sha256` | `0f8475abf95bccf865148901584905381c27fe3d704c8c57b7b140b041563ffc` |
+| `portable-retry.log` | `9b2de49dbfc11e057f938ab57b16bd399fc81a1545a9feeeef73e0d1d21a2a37` |
+| `build/inputs.sha256` | `5e54c99bb9b54f3936f6f87995b6a13201d9f219c8e1f7ff695d9f5e835fd3c9` |
+| `build/compile.log` | `56b1100a10bf277536decdd453b30aa5cb33d7766d851f272ba8c572b2f68de7` |
+| `build/prestart_deployment_watchdog.exe` | `581bc689d2e54927d8626b3254343235b292769cd86e93898504170c08e11afb` |
+| `settled/native-inputs.sha256` | `929d1e7014aff41245a15014a8ea4104f81796c450cea14fb17a1b54c88adb73` |
+| `settled/native-bookend.log` | `0eed60fce52cf46c5b65a855225477b1f3b90e8a1f3b82894d8431b90216005a` |
+| `settled/healthy.log` | `02857de1eb0cf84e70c7fc98becd7d0d27df6d5234871c1dceb08e252a1355c8` |
+| `settled/wrong-guardian.log` | `cca675d95df25c57c50dee0a11eddcfcc2ceda78556b2d119e475a013eb92e08` |
+| `settled/nonzero.log` | `424ed469714efee9a9483cf554d7fbb9cbff8b93b9a95602c12cf36a3a5e8c6b` |
+| `settled/stalled.log` | `e495a4ab6fcae8f3bb1ce3fa50e10e995430bf81e288418497c91c0739b3bdfe` |
+| `settled/crash.log` | `0f7dbc3f051553c04a7211808ae78f2cfcfcc053880ac342f96b40d4ecc5df92` |
+
+#### Wire the fixed deployment entry to the original native window
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The fixed deployment entry
+now accepts only the guardian's original run ID. The host renderer
+snapshots the nine artifact pins and checks the archive, identity module
+and observer digests against the admitted run. It renders the pinned
+template and returns the exact extent and digest for the watchdog. The
+Windows entry holds both original checked PowerShell modules through
+import and execution. The session uses one child-module instance to
+load the pinned helper and acquire the deployment actor, archive and
+original pair of SCM handles under one monotonic clock. It hands them
+to the existing typed capture and retirement sequence. Partial failure
+preserves the first cause, records cleanup separately and withholds a
+successful exit. The existing identity launch still verifies the held
+archive's signature before creating its child.
+
+Planning, service implementation, lifecycle, negative-path and
+regression selection mapped the checked bytes and actor to their actual
+consumers. The independent review reproduced the pin reread in the
+first renderer. A test mapping returned another valid-looking archive
+digest after validation. The focused control failed on the changed
+literal and passed after the renderer used one owned snapshot. The
+initial native setup misread the WSL projection of exit 1060. Later
+attempts reached the missing SCM service but omitted its structured
+native error from the owner's diagnostic, or compared the archive
+extent refusal with the wrong diagnostic. The retained retries preserve
+the native error and match the actual archive reader's refusal.
+
+On the combined source, isolated CPython 3.12.3 passed all 61 portable
+tests, including eight renderer controls. Windows PowerShell
+5.1.26100.10068 on the x64 Windows host passed nine refusal controls
+using the retained inert helper and unsigned archive. The cases reached
+the crossed run ID, both module pins, helper pin, archive extent and a
+foreign actor. A matching actor reached the real SCM window and reported
+Win32 1060. Independent queries reported both fixture services absent
+before and after. All nine cases exited 1 as expected and emitted zero
+protocol bytes. PowerShell parsed the three exact scripts and reopened
+all nine staged inputs exclusively after each owner process exited.
+The two cases started by the actual watchdog preserved the original
+nonzero owner and guardian exits and observed both jobs empty.
+Independent review checked the exact source, native results, roster and
+custody. No services, trust settings or clocks changed.
+
+The launcher requires the rendered SID and actual launch context to
+come from the same independently admitted deployment actor represented
+in the supervisor's run. The lab owner supplies protected staging and
+continuous quiescence. The host refusal paths finish before signature
+verification or positive typed receipt publication. The signed installed
+journey, actual access actors, applicable native diagnostics and scoped
+production acceptance remain open. The integration preserves HEAD
+`9bfc3b5904808de973defbc81f8a91caaaaa2875` and staged tree
+`5a3e3d7b17421730120c91be73ea2975b71ca8b1`.
+
+| Record under `~/.local/share/nevrotick/s06-fixed-deployment-owner.PH2F4Jb5/` | SHA-256 |
+| --- | --- |
+| `integrated-inputs.sha256` | `68726607ce4aeed48438d6e165ba48943c77d23ddd751dac26a2068394e7c6fa` |
+| `final-inputs.sha256` | `b5582d51245dd58a89e2e4e4cc312991444975e2f601a269f7b622b4a6aa0c1b` |
+| `pin-read-red.log` | `5a8d5813617fbb0319a20ee6508af82110346536b2b09ecd546b263165af013b` |
+| `portable-final.log` | `21a89b0cc346869d3015f0ce97ec89691b2ca22a4ffc8b6978e31b626cb30857` |
+| `native-settled.log` | `bec1cc15e2c7f853d84c12d0b55e225e4c83a17a2b9330424be274f71a25743a` |
+| `settled-harness.sha256` | `17462183ba86eb4ad83dba9eab0f19142f9ca06a85b051d4de3c58c0d1e1a5ec` |
+| `windows-bookend.log` | `4ce8627cdb526bab033326775d79ed7159fb4d6fc15afd0f8ca69a1452044c1d` |
+| `settled-source-bookend.log` | `1630be1089f0c31e2e6dff20437491c8dd60ae8e772e4338da5274bf67bfc2fd` |
+
+#### Retain the original deployment failure when the pipe breaks
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/27. The paired deployment
+session retires its original window, archive and actor once after a
+failed write or incomplete retirement request. A broken write stops
+further frame publication. The owner exits unsuccessfully and sends the
+first operation refusal, transport cause and separate cleanup codes to
+its private diagnostic stream when it cannot acknowledge retirement on
+the wire. The failure record uses bounded codes. A successful `R` plus
+EOF exchange retains the existing typed retirement response, including
+cleanup codes after an already reported operation refusal.
+
+On the Windows x64 host, PowerShell 5.1.26100.10068 ran the maintained
+session controls against the preceding module and the exact replacement.
+The predecessor passed two healthy retirement histories and failed all
+five unconfirmed histories at missing retirement evidence. The replacement
+passed all seven. The controls observed premature EOF and trailing input
+after an operation refusal, broken operation and terminal writes, and
+retention of the original best-effort wire refusal. Each history checked
+one retirement attempt per original object.
+
+The fixed rendered entry also ran under the original native watchdog
+with a fault-only module derivative that substitutes an inert SCM window.
+The incomplete exchange produced the exact separate operation, EOF and
+cleanup codes with owner and guardian exit 1. Its `R` plus EOF neighbor
+retained the structured cleanup in the terminal frame and both owners
+exited zero. Both original jobs reported empty in each case. The native
+archive and actor were private fixture inputs. Installed SCM and signature
+verification remain with the installed admission gate. The 61 portable
+reader and supervisor controls passed on the combined source. Lifecycle,
+negative-path and independent review traced primary failure, cleanup and
+terminal custody. Diagnostic delivery still depends on the owner remaining
+alive and able to write its separate stream.
+
+| Record under `~/.local/share/nevrotick/s06-p3-reply-faults.7vZI0ly5/` | SHA-256 |
+| --- | --- |
+| `wire-before.log` | `46232b64e9e8a228888eaa9f5c1a22756c52d32d83c1fe91c4246ba583898ed4` |
+| `wire-after.log` | `c92a748a5bd3a56a7cbe549e7c7aec24244c35d9a44e60859d30b8499f4f5da5` |
+| `wire-inputs.sha256` | `33bef64eb9175f915d0a05dc0ae640bed1f21ac7b9c79343e04f3ae6ac8d8f74` |
+| `guarded-diagnostic.log` | `77bc6ac3bc2a57fcb5b62611d2c067859361a08bde6fcda0f834c734d73b1ad2` |
+| `prestart-portable.log` | `21a89b0cc346869d3015f0ce97ec89691b2ca22a4ffc8b6978e31b626cb30857` |
+
+#### Confirm a broker reply against its original clock revision
+
+W11-W05/S3.2 and CHECK-2/3/25/27. The sealed first-reply fixture keeps the
+original positive clock observation with the queued or inline writer. It
+collects the full terminal count, reobserves the original peer and cutoff,
+then checks that same awake revision before confirming current availability.
+An unavailable reply has no positive revision requirement. An already
+submitted write can still deliver bytes as its revision retires. The
+historical decision, physical completion, cancellation and Stop custody
+remain distinct from current confirmation.
+
+The tests-only predecessor returned exit 101 at the intended stale
+confirmation assertion after Stop retired the original invocation. The
+repaired GNU fixture accepted the current positive reply, confirmed the
+unavailable neighbor across a time change and withheld confirmation for
+both stale terminal histories. The existing 16-history regression also
+passed. The first MSVC-target lint rejected the test helper at 102 lines
+after its focused GNU checks passed. Combining the three mutually
+exclusive setup cases preserved their behavior and satisfied the lint.
+
+Rust 1.100.0 passed the settled ordinary and optimized selected controls
+and MSVC-target all-target Clippy with warnings denied. The configured
+sealed runner retained the original 4 GiB disk reserves, one Cargo job,
+one test thread and per-command deadlines. The combined 851-input
+service candidate hashes to
+`567a380114bb9071038cc402ba1f6dd1a362eafa44f762557ddace691cc6c4b1`.
+The worktree matches 850 pins. The fixture README has the later
+deployment diagnostic documentation. Independent review traced the
+original revision through submission and the actual completion handler,
+and verified the test-only lint repair. Current Windows broker completion,
+installed admission and affected coverage and mutation gates remain open.
+
+| Record under `~/.local/share/nevrotick/s06-p3-reply-faults.7vZI0ly5/` | SHA-256 |
+| --- | --- |
+| `red-broker-verification.json` | `29cbc1ba0600ceec50c041b3a2c5c4d70b5da994e19bfbb2facd7b54e0fea0b3` |
+| `settled/green-broker-verification.json` | `9f796f063bf04a13a920aee62ccf5b9814f0195af0745c4bbaad6316008b674f` |
+| `settled/green-history.json` | `ba0e028a4d8c70b44fccb3f55bc585cabe5f6cb4b80420789535320479a14429` |
+| `settled/green-neighbor.json` | `c8526ad17f1d35b2e396fb92096abf534d47f96614733691a6c1184c07049a89` |
+| `settled/green-optimized.json` | `0eb873126c221d57625005542ea33999e8f68276535205f38fb2fd9dcced5efe` |
+| `settled/green-msvc-clippy.json` | `163af46a317973885e1105bf0cb0a360ec7b2422fb8fe45f783269097cfcbbbc` |
+| `settled/reply-final.patch` | `544dfac476d047a34f6992927887d434de86989d53e37860ef5ec344dee4486a` |
+| `settled/repository-readback.json` | `ace299c26885223f6ef1c9c040d51a2930f3c96287c037a17d64e8a7fa77b1c8` |
+
+#### Prepare the native control for confirmation after a full pipe write
+
+W11-W05/S3.2 and CHECK-2/3/25/27. The Windows-only first-exchange fixture
+delivers Suspend to the original mailbox just after the native write owner
+collects its exact terminal count. The new control requires the original
+client to receive the exact positive wire reply while the broker withholds
+current confirmation. It also checks the retained historical decision,
+same cutoff, live suspended mailbox, absence of a second reply, and
+disconnection with zero outstanding work after the original Stop. The
+healthy same-client and distinct-client replies require confirmation. The
+portable TimeChange history separately challenges a different awake
+revision. Independent review checked that a premature wait return cannot
+satisfy the stale case without the actual wire bytes and suspension.
+
+The environment-preflight and lifecycle procedures selected one isolated
+build from the combined 851-input candidate
+`c46dcabcf5008813f3bb5f8d14f8503e0f1389c38a85a700d3028d0455db2b8f`.
+The existing driver preserved the 4 GiB reserves and the single writer.
+All six graph and twelve development commands passed. GNU ordinary and
+optimized each executed 198 fixture and 70 platform tests. All 28 platform
+doctests and the Windows-target all-target Clippy check passed. Both GNU
+fixture rosters matched the updated receiver pin. The two MSVC link and
+readback commands passed. The captured artifact pair and raw receipts are
+under `~/.local/share/nevrotick/broker-terminal-count.tLfQ9GFc/build/`.
+Independent receipt review rehashed the source map and checked both test
+rosters and all command outcomes. The applied worktree matches all 851
+admitted inputs and preserves the prior staged patch.
+
+| Record or artifact | SHA-256 |
+| --- | --- |
+| `broker-reply-count-graph-count1.json` | `d38ca9ddc7977c5190f902d42dd4ffc360ca31683b8a8bcfc1e30f0ce6b71a0d` |
+| `broker-reply-count-development-count1.json` | `ba342fe633d13d4ffd311c9635bc6af8ff012a43f97a10bb100848b35ef46d31` |
+| `cross-broker-reply-count-libtest-count1.json` | `6ea33f451e55596fd4467744a233e0780aa844ff98d7c2e557826e8058bd055c` |
+| `nevrotick_windows_service_fixture-d7a1ccedc33cd2a9.exe` | `6eb0504c0b91b470468afa9ca53ddaf628bce3785f3023a216f69e2eb0a52837` |
+| `nevrotick_windows_service_fixture-d7a1ccedc33cd2a9.pdb` | `38350e8f7c4e47d7d0305c98c356a443a99a1b6f12163ffdbe9b9e6c9631fed5` |
+
+Native execution is open. The 24 November inventory still shows only
+`4e89db0d-0854-47ba-b3fd-809486db8e03`, whose custody and offline profile
+for this run are unconfirmed. Resume with the admitted offline supervisor
+and the exact linked `native_first_reply_withholds_confirmation_at_completion`
+and `native_first_read_returns_reply_on_the_original_connection` selectors
+when an owned guest is ready. Scripted control delivery, physical power
+delivery, installed admission and affected metric qualification retain
+their separate evidence obligations.
+
+After David restarted and reported the replacement Sandbox ready, the
+guest inventory bound the run to `a18deba5-a8bf-4295-aa28-d7222052ef8f`.
+The preflight and payload checks confirmed effective offline networking,
+the existing x64 runtime and adequate host headroom. Both exact ignored
+selectors above ran in separate processes. Each returned one pass, zero
+ignored and native exit zero. Both captured streams settled for each
+case. The guest retired its private scratch. The host matched the
+original and staged executable hashes, preserved all five output files
+and confirmed both mapped shelves empty. This executes the scripted
+Suspend and original-connection controls on the retained broker image.
+Physical suspension, installed peer admission and affected metrics
+retain their own gates.
+
+The launch before the restart reproduced the Sandbox system exception.
+The first broker dispatch attempt reached mapping admission but stopped
+at the controller's single-line command check before a child launched.
+The encoded retry used a malformed PowerShell path and returned host
+exit 2 with an empty output shelf. The completed run reused the original
+admitted mappings with the configured PowerShell path. Keep the two
+earlier attempts as setup refusals.
+
+| Record under `~/.local/share/nevrotick/owned-sandbox-20261124-07924522-122f-4495-a905-8f43eec26b53/` | SHA-256 |
+| --- | --- |
+| `broker-native-final/verification.json` | `f6646a868c0de9aba835e7492c13357a61a9b405b1e0cabe0f27870f66e67475` |
+| `broker-native-final/guest.json` | `b83909057edfe99b2557072a1884c3ff11e3f75fa32fcaba8a750e46218aaae3` |
+
+#### Enforce the work cutoff on the complete deployment confirmation
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/27. The host receipt supervisor
+now checks the original work deadline after completely reading and
+validating a native response. A complete confirmation at or after
+expiry withholds the observation. The frame has already been consumed,
+so retirement reads the terminal frame directly under the original
+retirement deadline. A receive timeout with an incomplete or unread
+response still uses the existing bounded late-frame drain.
+
+The lifecycle and negative-path controls use the actual supervisor and
+anonymous pipes. They move the host work clock to 125 ms before, exactly
+at, and 125 ms after the cutoff as the valid final confirmation finishes
+validation. The on-time result and ordinary neighbor succeed. Both late
+predecessor cases returned success and failed the refusal assertion. The
+settled repair refuses both and verifies original `R`, EOF and observed
+retirement. The first green attempt used a simulated clock epoch for the
+independent test producer join. The settled control anchors both cutoffs
+to the real monotonic epoch while scripting only the supervisor sample.
+
+All 62 portable pre-start controls passed on the 36-file cohort under
+CPython 3.12 in isolated development mode with warnings treated as
+errors. Independent source and raw-result review confirmed the consumed
+versus pending distinction and the two targeted predecessor failures.
+The staged tree is unchanged. Installed execution under the exact signed
+lab artifact remains open.
+
+The full handle-only pre-start path next needs to join the original
+deployment window to the provisioning and standard-user capture owners
+already required by `supervise_prestart`. Each actor uses its own fixed
+observer under its independently admitted primary token. Keep the
+verified archive and both original SCM handles in the deployment owner
+through those captures and the final native confirmation. Installed
+qualification needs actual actor eligibility, the signed lab package,
+continuous quiescence and observed retirement.
+
+| Record under `~/.local/share/nevrotick/deployment-confirmation-cutoff.1GZ6Wplj/` | SHA-256 |
+| --- | --- |
+| `verified-cohort.json` | `b0b72da041d090e965c35b3abf3f4e2ff832e871ff0b7068bf0b6806f63255cc` |
+| `work-cutoff.patch` | `9c30e93185568b8913157de8db18d26e463d3a51d2f9b10b151205ca79eab5f6` |
+| `red-settled.log` | `3bcdf68558f24e223c6403405c26bdc8f6c33ad5795962abd8d07a3f20b352b2` |
+| `green-settled.log` | `a190c74b21baa56524d720ca99f882cc4b14329454922a6b4bdfd3d73a218fb0` |
+
+#### Join both access owners to the original deployment window
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/27. The full handle-only session
+uses the existing `supervise_prestart` receipt consumer over three
+retained process pipes. The deployment owner keeps its original actor,
+archive and SCM handles through `SCICOAUF`. The `A` and `U` replies are
+distinct checks against that window before the separate provisioning and
+standard-user observers run. The rendered entry binds full mode to a
+checked run with three distinct actor references. The paired mode still
+uses `SCICOF`.
+
+Each fixed role producer waits for its one command and input EOF before
+calling the existing same-actor launcher. The host takes the retained
+role owner as actor authority and verifies the bounded capture, EOF and
+original role exit within the work deadline. Both receipts must pass
+before the original deployment owner confirms the window. On refusal,
+the host closes both access channels before waiting for deployment
+retirement. A work-cutoff timeout can leave one later exit observation
+under the original retirement deadline. Delivered native access refusals
+carry the first cause and separate bounded cleanup codes.
+
+The planning, data-contract, service, lifecycle and independent-review
+procedures bound the two modes and actual consumers. The coordinator
+integrated disjoint PowerShell and portable test patches, then corrected
+the stale-acknowledgement and cleanup-order gaps. Directed fault controls
+observed the forbidden provisioning command after a stale acknowledgement
+and open role pipes at deployment wait with reversed retirement ordering.
+Fresh review found the actor-reference and cleanup-projection gaps. The
+integrated controls exercise both refused aliases and child and actor
+cleanup failures, including an actor-only cleanup report.
+
+CPython 3.12.3 passed all 76 portable pre-start cases on the exact
+36-file cohort. Windows PowerShell 5.1 on the x64 host passed all 21
+in-memory session controls. The first PowerShell run found an obsolete
+test expectation for the newly typed refusal. After correcting that
+expectation and finishing cleanup projection, the combined cohort passed.
+Two separate bridge journeys used the checked Python consumer and actual
+pipes to three Windows PowerShell processes per case. With inert capture
+inputs, the healthy case returned the joined observation. The malformed
+provisioning capture blocked the standard-user observation and final
+confirmation. Both cases observed all original pipe ends closed and all
+three process exits zero before fallback cleanup. The index and other
+worktree changes retain their original custody.
+
+The installed caller still needs to start and independently admit both
+actual same-actor owners, pin their executable inputs and verify native
+job retirement. The signed lab package, effective actor eligibility and
+continuous quiescence remain prerequisites of the installed run. The
+bridge used inert window and capture producers and establishes the
+Windows process-pipe contract. Installed SCM, actual token checks, job
+recovery, native diagnostics and package lifecycle acceptance remain open.
+
+| Record under `~/.local/share/nevrotick/prestart-full.6nRJtFNF/` | SHA-256 |
+| --- | --- |
+| `verified-cohort.json` | `6a71ce8ca70e8e069ded0e548f1c2047fda03332f202ea5238c0ff4fbdd12a8a` |
+| `combined.patch` | `5babb15fb77069100b89b234384883eb1152a34b92fa64860343cbb6a26d86fe` |
+| `portable-combined.log` | `87b3a2ba622864bed45a075c8b17c43a525b4e3daeef2c4e5161d2d4c46fd06c` |
+| `windows-pure-final.log` | `904d26ca2a15505d2cc5437b5e32a2042b1284ca9a9a6f9481b69c809a86c7b6` |
+| `bridge-final.log` | `21774dea784ce2601ffa24087878e6d0b049749afed17f1dc48b8c8d84373898` |
+| `bridge/input-bookends.json` | `422f094319d3f68648c732e52e48867adbe74508eb9768a5bedc05d56e151f21` |
+
+#### Run the pinned access entries under the existing native watchdog
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/26/27. The base `DeploymentRun`
+now supplies the trusted run ID and observer digest for two fixed access
+entries. Each binds its own role, independently supplied expected SID,
+work cutoff, two modules, helper and observer. The renderer verifies the
+template bytes and snapshots the exact four pins. The native entry keeps
+both original checked modules held through the session. Each role can use
+the established `-RunId` entry and its existing suspended-process and
+job admission. The installed coordinator composes the full `Run` after
+retaining the actual role owners under their separately admitted actors.
+
+Service, privilege, lifecycle and regression selection scoped host
+execution to a harmless observer that checks its literal argument list,
+reports its PID and exits 73. Reused C# watchdog and helper binaries
+matched all retained source and artifact pins. The Windows owner still
+reaches the existing query-only same-actor and exact role SID guards
+before an admitted observation. The ordinary-user variant applies its
+existing token-profile check at the observer launch boundary. A refusal
+can report bounded cleanup and pipe-write failures through diagnostics
+when the wire cannot deliver them.
+
+All 80 portable checks passed on the frozen 36-file cohort. Nine Windows
+watchdog controls settled. The matching provisioning role reached the
+inert child on the exact argument list, preserving its distinct PID,
+matching before and after digests and exit 73 in the capture. Both unused
+roles retired at EOF. Both foreign subjects produced the corresponding
+native SID refusal. A crossed standard-user command and a bad module
+digest produced no capture. Withholding EOF after the provisioning
+command reached the role's 7.5-second work cutoff and retired before
+observer invocation. The default paired neighbor reached its existing
+archive stage and refused the absent file with Win32 error 2. The first
+driver expected a raw exception label for that case and exited 1 after
+seven completed controls. The targeted rerun checked the actual bounded
+diagnostic, exclusive reopen and final source readback. All nine completed
+controls observed empty original inner and outer jobs and exclusive
+reopening of the fixture inputs. Independent review checked raw frames,
+digests, first failure and accounting. Total process counts are cumulative.
+
+Installed acceptance still needs the signed lab artifact, actual retained
+role contexts and pipes, continuous quiescence, and verified native
+retirement. The inert observer exit is a preserved refusal for the
+production receipt reader. Positive ordinary-user profile and installed
+SCM evidence remain open. The caller must include launch and idle waiting
+in its common cutoffs. Each native process starts its own clock at entry.
+
+| Record under `~/.local/share/nevrotick/prestart-role-admission.X3Vb2LgJ/` | SHA-256 |
+| --- | --- |
+| `verified-cohort.json` | `6d13e5733b80638e2274e8e0a10e0bdbdc751e003509bd63bbca0e491d593d20` |
+| `role-entry.patch` | `494b6eb39a34d6e76b2a8eb05197448d8556880e8a91cfead603dcd507928d6f` |
+| `portable.log` | `c5074d7daf62d0f8b166ab686fb7be0131d1453dfd78a2ad072fb4fd12b412f2` |
+| `native-first.log` | `44a4aa19e43fb0686c6538ccfdd85f0ad15ee1ed44a9615e10fe0b69dc2a95be` |
+| `native-tail.log` | `e42783319a77bb26b4ab7801b5fcfd47bba6db80610329082fe6e3f3af89` |
+| `native-summary.json` | `ac3d4c307797710e9e14b3f39fca3fc542e2907456209a1bfa6a498744eaaf3c` |
+
+Staging preflight found one extra blank line at the end of the portable
+session supervisor. Removing it preserved the parsed Python tree,
+including source locations. Its staged SHA-256 is
+`5d4bd2cb28c0938943c4799d51075abd534fe914fd0ad7226328e8bd62fb3a9f`.
+The other 35 inputs matched the recorded cohort. The complete projected Git
+index tree `34a763f7066872db149c4bbf2bc2d99f043102c0` was materialized and
+all 2,377 paths, blobs and modes were checked before and after execution.
+The fixture's `python3 -I -B -m unittest discover -s tools/windows-service-fixture/msix`
+ran 110 portable tests in 17.005 seconds and exited zero. The live index
+matched the projection after adding the 22 verified pre-start paths. The
+Windows watchdog results above retain their original candidate.
+
+#### Bind startup admission to the first native exposure
+
+W11-W05/S3.1–S3.2 and CHECK-2/3/15/16/25/27. The service and contract
+review followed `ServiceInvocation::prepare` through the broker's actual
+`NativeBrokerEndpoint::acquire`. The protected empty-DACL reservation is
+created during `poll_prepare`, before the SCM acknowledgement and
+`Worker::activate`. A client-accessible DACL at this point would admit a
+pipe open before a worker activation guard. An authentication exchange on
+that same unopened management route would also depend on its own admission.
+Keep the current inert reservation for the staged lab fixture.
+
+After the signed and continuously quiescent installed-role observation,
+the next S3.1 child must own the minimum authenticated management route
+before enabling functional acquisition or IPC. Use the original connected
+client, SCM query, retained process and primary-token generation from
+`ObservedServicePeer`. Join the installed component, fixed role, effective
+mitigation and current-generation evidence. Check admission at management
+receive and functional exposure, with original cutoff and Stop handling at
+each boundary. Compare a current healthy generation against foreign peer,
+restart, stale generation and Stop. Observe client-open admission at the
+actual endpoint creation boundary as well as worker activation. Independent
+review confirmed this placement. The installed actor, executable profile
+and positive management journey remain prerequisites.
+
+Regression selection also checked the broker full-write confirmation and
+Engine KE association changes against their retained build receipts. All
+16 selected paths matched their checked bytes. The projected index tree
+`6e87a1aaf224ad6fbfb7e4bdfb4eeec4423e2539` passed eight timing comparison
+tests and the staging whitespace check. The broker receipt differs from
+this projection in nine README/MSIX inputs and the unselected native Engine
+TLS controls. The GNU measurement receipt differs only in those Windows-only
+controls. The facade retains its original build with two unrelated input
+differences, the additional measurement regression and the broker build
+roster. Each retained receipt keeps its original execution scope. Later runs
+in the admitted offline Windows guest completed the
+[broker wire controls](#prepare-the-native-control-for-confirmation-after-a-full-pipe-write)
+and the [protected timing pair](engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026)
+on the candidates identified in those records.

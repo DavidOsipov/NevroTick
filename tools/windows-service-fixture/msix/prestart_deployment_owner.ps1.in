@@ -1,0 +1,237 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#Requires -Version 5.1
+#Requires -PSEdition Desktop
+
+[CmdletBinding(PositionalBinding = $false)]
+param([Parameter(Mandatory)][guid]$RunId)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or ![Environment]::Is64BitProcess -or
+    $PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
+    [Console]::Error.WriteLine('nevrotick-deployment-owner failure=runtime')
+    exit 1
+}
+[Diagnostics.Stopwatch]$clock = [Diagnostics.Stopwatch]::StartNew()
+# PRESTART_DEPLOYMENT_BINDINGS
+
+function Assert-PrestartOwnerTime {
+    if ($clock.ElapsedMilliseconds -ge $workMilliseconds) {
+        throw [TimeoutException]::new('prestart-owner:deadline')
+    }
+}
+
+function Assert-PrestartOwnerModule {
+    param([IO.FileStream]$Stream, [string]$Path, [hashtable]$Pin)
+
+    if (([IO.File]::GetAttributes($Path) -band
+            ([IO.FileAttributes]::Directory -bor [IO.FileAttributes]::ReparsePoint)) -ne 0) {
+        throw [IO.InvalidDataException]::new('prestart-owner:module-file')
+    }
+    if ($Stream.Length -ne $Pin.Bytes) {
+        throw [IO.InvalidDataException]::new('prestart-owner:module-extent')
+    }
+    [Security.Cryptography.SHA256]$algorithm = [Security.Cryptography.SHA256CryptoServiceProvider]::new()
+    try {
+        [string]$digest = [BitConverter]::ToString($algorithm.ComputeHash($Stream)).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $algorithm.Dispose()
+    }
+    if ($Stream.Position -ne $Pin.Bytes -or $Stream.Length -ne $Pin.Bytes -or $digest -cne $Pin.Sha256) {
+        throw [IO.InvalidDataException]::new('prestart-owner:module-digest')
+    }
+    Assert-PrestartOwnerTime
+}
+
+# Project only the known typed cleanup facts; exception content stays private.
+function Add-PrestartAccessOwnerCleanup {
+    param([Exception]$Failure, [Collections.Generic.List[string]]$Cleanup)
+
+    [Collections.IDictionary]$data = $Failure.Data
+    [object]$retired = $data['PrestartObserverRetired']
+    [object]$released = $data['PrestartObserverReleased']
+    [object]$actorDisposal = $data['PrestartAccessActorDisposalFailure']
+    [hashtable]$reported = @{
+        'child-termination-failed' = $data['PrestartObserverTerminationFailure'] -is [Exception]
+        'child-retirement-unconfirmed' = (($retired -is [bool] -and !$retired) -or
+            $data['PrestartObserverRetirementFailure'] -is [Exception])
+        'child-release-unconfirmed' = (($released -is [bool] -and !$released) -or
+            $data['PrestartObserverDisposalFailure'] -is [Exception] -or
+            $data['PrestartObserverCleanupFailure'] -is [Management.Automation.ErrorRecord] -or
+            $data['PrestartObserverCleanupFailure'] -is [Exception])
+        'actor-dispose-failed' = ($actorDisposal -is [Exception] -or ($actorDisposal -is [bool] -and $actorDisposal))
+    }
+    [object]$pending = $data['PrestartChildPendingReads']
+    if ($pending -is [Array] -and $pending.Length -le 2) {
+        foreach ($read in $pending) {
+            if ($read -is [Threading.Tasks.Task] -and !$read.IsCompleted) {
+                $reported['child-read-unconfirmed'] = $true
+            }
+        }
+    }
+    foreach ($code in @('child-termination-failed', 'child-retirement-unconfirmed',
+            'child-release-unconfirmed', 'actor-dispose-failed', 'child-read-unconfirmed')) {
+        if ($reported[$code] -eq $true -and !$Cleanup.Contains($code)) { $Cleanup.Add($code) }
+    }
+}
+
+# Protect the checked module bytes through the session. The caller owns the
+# staging namespace, including the parent directories and fixed companion files.
+[IO.FileStream]$childModule = $null
+[IO.FileStream]$sessionModule = $null
+[Exception]$failure = $null
+[Collections.Generic.List[string]]$cleanup = [Collections.Generic.List[string]]::new()
+[string]$stage = 'bindings'
+try {
+    if ($RunId -eq [guid]::Empty -or $RunId -ne $expectedRunId) {
+        throw [ArgumentException]::new('prestart-owner:run')
+    }
+    if ($ownerRole -cnotin @('deployment', 'access', 'standard') -or
+        $expectedActorSid.Length -gt 183 -or
+        $expectedActorSid -cnotmatch '\AS-1-(?:0|[1-9][0-9]{0,9}|0x[0-9A-Fa-f]{12})(?:-(?:0|[1-9][0-9]{0,9})){1,15}\z' -or
+        $workMilliseconds -lt 1 -or $workMilliseconds -gt 120000) {
+        throw [ArgumentException]::new('prestart-owner:profile')
+    }
+    [hashtable]$limits = @{
+        child_module = 2097152; session_module = 2097152; deployment_helper = 2097152; observer = 16777216
+    }
+    if ($ownerRole -ceq 'deployment') {
+        if ($signerSha256 -cnotmatch '\A[0-9a-f]{64}\z' -or
+            $retirementMilliseconds -le $workMilliseconds -or $retirementMilliseconds -gt 120000 -or
+            $retirementMilliseconds - $workMilliseconds -gt 30000) {
+            throw [ArgumentException]::new('prestart-owner:profile')
+        }
+        $limits += @{
+            interpreter = 2097152; archive = 8388608; identity_entry = 2097152
+            identity_module = 2097152; identity_helper = 65536
+        }
+    }
+    if ($pins.Count -ne $limits.Count) {
+        throw [ArgumentException]::new('prestart-owner:pin-inventory')
+    }
+    foreach ($name in $limits.Keys) {
+        [object]$pin = $pins[$name]
+        if ($pin -isnot [hashtable] -or $pin.Count -ne 2 -or !$pin.ContainsKey('Bytes') -or
+            !$pin.ContainsKey('Sha256') -or $pin.Bytes -isnot [long] -or $pin.Bytes -lt 1 -or
+            $pin.Bytes -gt $limits[$name] -or $pin.Sha256 -isnot [string] -or
+            $pin.Sha256 -cnotmatch '\A[0-9a-f]{64}\z') {
+            throw [ArgumentException]::new('prestart-owner:pin')
+        }
+    }
+
+    $stage = 'child-module'
+    Assert-PrestartOwnerTime
+    [string]$childPath = [IO.Path]::Combine($PSScriptRoot, 'prestart_child.psm1')
+    $childModule = [IO.File]::Open($childPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    Assert-PrestartOwnerModule $childModule $childPath $pins.child_module
+    $stage = 'session-module'
+    Assert-PrestartOwnerTime
+    [string]$sessionPath = [IO.Path]::Combine($PSScriptRoot, 'prestart_deployment_session.psm1')
+    $sessionModule = [IO.File]::Open($sessionPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    Assert-PrestartOwnerModule $sessionModule $sessionPath $pins.session_module
+
+    $stage = 'import'
+    [string]$powerShellDirectory = [IO.Path]::Combine([Environment]::SystemDirectory, 'WindowsPowerShell\v1.0')
+    [string]$osModules = [IO.Path]::Combine($powerShellDirectory, 'Modules')
+    $env:PSModulePath = $osModules
+    $PSModuleAutoLoadingPreference = 'None'
+    Assert-PrestartOwnerTime
+    foreach ($name in @('Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility')) {
+        $null = Import-Module -Global -Name ([IO.Path]::Combine($osModules, $name, $name + '.psd1'))
+    }
+    Assert-PrestartOwnerTime
+    $null = Import-Module -Name $sessionPath -DisableNameChecking
+
+    $stage = 'session'
+    if ($ownerRole -ceq 'deployment') {
+        prestart_deployment_session\Invoke-PrestartDeploymentOwner -RunId $RunId -Clock $clock `
+            -WorkMilliseconds $workMilliseconds -RetirementMilliseconds $retirementMilliseconds `
+            -DeploymentSid $expectedActorSid -SignerSha256 $signerSha256 -Pins $pins -FullPrestart:$fullPrestart
+    } else {
+        [hashtable]$access = @{
+            Role = $ownerRole; RunId = $RunId; Clock = $clock
+            TimeoutMilliseconds = $workMilliseconds; ExpectedActorSid = $expectedActorSid
+            ObserverPath = [IO.Path]::Combine($PSScriptRoot, 'nevrotick-prestart-observer.exe')
+            ObserverBytes = $pins.observer.Bytes; ObserverSha256 = $pins.observer.Sha256
+            HelperPath = [IO.Path]::Combine($PSScriptRoot, 'prestart_deployment_helpers.dll')
+            HelperBytes = $pins.deployment_helper.Bytes; HelperSha256 = $pins.deployment_helper.Sha256
+        }
+        prestart_deployment_session\Invoke-PrestartAccessSession @access
+    }
+} catch {
+    $failure = $_.Exception
+} finally {
+    try { if ($null -ne $sessionModule) { $sessionModule.Dispose() } }
+    catch { $cleanup.Add('session-module-close') }
+    try { if ($null -ne $childModule) { $childModule.Dispose() } }
+    catch { $cleanup.Add('child-module-close') }
+}
+
+if ($null -ne $failure -or $cleanup.Count -ne 0) {
+    [string]$reason = 'none'
+    [string]$cause = 'none'
+    [string]$transport = ''
+    if ($null -ne $failure) {
+        $reason = $stage
+        if ($failure.Message -cmatch '\Aprestart-owner:([a-z-]{1,40})\z') {
+            $reason = $stage + '/' + $Matches[1]
+        }
+        [Exception]$original = $failure
+        for ([int]$depth = 0; $depth -le 6; $depth++) {
+            if ($ownerRole -cin @('access', 'standard')) {
+                Add-PrestartAccessOwnerCleanup $original $cleanup
+                if ($original.Data['PrestartAccessRefusalWriteFailure'] -is [Exception]) {
+                    $transport = ' transport=reply-transport'
+                }
+            }
+            if ($depth -eq 6 -or $null -eq $original.InnerException) { break }
+            $original = $original.InnerException
+        }
+        [object]$nativeError = $original.Data['NativeErrorCode']
+        if ($original -is [ComponentModel.Win32Exception]) { $nativeError = $original.NativeErrorCode }
+        if ($nativeError -is [int]) {
+            $cause = 'win32-' + $nativeError.ToString([Globalization.CultureInfo]::InvariantCulture)
+        } elseif ($original.Message -cmatch '\Aprestart-[a-z-]{1,32}:[a-z0-9-]{1,64}\z') {
+            $cause = $original.Message
+        }
+        if ($ownerRole -ceq 'deployment') {
+            foreach ($operation in @('window-retire', 'archive-close', 'actor-close')) {
+                if ($failure.Data.Contains('prestart-owner:' + $operation)) { $cleanup.Add($operation) }
+            }
+        }
+        [object]$sessionFailure = $failure.Data['PrestartDeploymentSessionFailure']
+        if ($ownerRole -ceq 'deployment' -and $sessionFailure -is [hashtable]) {
+            # The session module constructs these codes from its fixed operations
+            # and cleanup outcomes. Keep their extent and spelling bounded here.
+            $cause = 'none'
+            [object]$operationCode = $sessionFailure['Operation']
+            if ($operationCode -is [string] -and
+                $operationCode -cmatch '\A(?:sample|check|identity|observation|confirm|provisioning-check|standard-user-check)-[a-z0-9-]{1,60}\z') {
+                $cause = $operationCode
+            }
+            [object]$transportCodes = $sessionFailure['Transport']
+            if ($transportCodes -is [string[]] -and $transportCodes.Length -ge 1 -and $transportCodes.Length -le 2) {
+                [string[]]$permitted = @('trailing-command', 'request-read-failed', 'request-deadline',
+                    'unexpected-eof', 'unexpected-command', 'session-failed', 'reply-transport', 'reply-failed')
+                [string[]]$accepted = @(foreach ($code in $transportCodes) {
+                    if ($code -cin $permitted) { $code }
+                })
+                if ($accepted.Length -eq $transportCodes.Length) {
+                    $transport = ' transport=' + [string]::Join(',', $accepted)
+                }
+            }
+            [object]$sessionCleanup = $sessionFailure['Cleanup']
+            if ($sessionCleanup -is [string[]] -and $sessionCleanup.Length -le 8) {
+                [string[]]$accepted = @(foreach ($code in $sessionCleanup) {
+                    if ($code -cmatch '\A[a-z-]{1,48}\z') { $code }
+                })
+                $cleanup.InsertRange(0, $accepted)
+            }
+        }
+    }
+    [string]$release = if ($cleanup.Count -eq 0) { 'none' } else { [string]::Join(',', $cleanup) }
+    [Console]::Error.WriteLine('nevrotick-deployment-owner failure=' + $reason + ' cause=' + $cause + ' cleanup=' +
+        $release + $transport)
+    exit 1
+}
+exit 0

@@ -475,8 +475,13 @@ pub(super) fn prepare_first_read_fixture(
 pub(super) fn prepare_first_exchange_fixture(
     case: u32,
     peer: RetainedFixtureClient,
+    observe_full_write: Option<fn()>,
 ) -> Result<NativeBrokerEndpoint, NativeError> {
-    NativeBrokerEndpoint::for_first_exchange_fixture(first_exchange_server(case)?, peer)
+    NativeBrokerEndpoint::for_first_exchange_fixture(
+        first_exchange_server(case)?,
+        peer,
+        observe_full_write,
+    )
 }
 
 /// Create the sealed original server shared by both fixture modes.

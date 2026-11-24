@@ -210,6 +210,79 @@ fn exact_dyadic_results_ignore_the_wire_token() -> Result<(), MeasurementRefusal
     Ok(())
 }
 
+/// Compare modeled local-wall endpoints with separately specified UTC endpoints.
+/// True event offsets are [0, 5, 6, 11]/128 s with a correct peer. The local
+/// wall is 2/128 s behind throughout, so its endpoints are [-2, 9]/128 s.
+///
+/// # Errors
+/// Propagates fixture construction or unexpected measurement refusal.
+///
+/// # Panics
+/// Panics if substituting UTC erases anything besides the expected clock offset,
+/// or if either measurement changes the literal coordinates, RTT or age.
+#[test]
+fn local_wall_phase_requires_local_endpoints() -> Result<(), MeasurementRefusal> {
+    let start: Instant = Instant::now();
+    let processing: Instant = start
+        .checked_add(Duration::from_millis(100))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let profile: ExperimentalProfile = product_ok(
+        ExperimentalProfile::new(BASE - 1, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?;
+    let peer: RawHeader = header(BASE_BITS + (5 << 25), BASE_BITS + (6 << 25), 1)?;
+    let local: ExperimentalMeasurement = product_ok(
+        measure(
+            Some(profile),
+            capture(start, 0, BASE - 1, 984_375_000)?,
+            capture(start, 7_812_500, BASE - 1, 992_187_500)?,
+            capture(start, 85_937_500, BASE, 70_312_500)?,
+            processing,
+            peer,
+        ),
+        "coherent local-wall measurement was refused",
+    )?;
+    let substituted: ExperimentalMeasurement = product_ok(
+        measure(
+            Some(profile),
+            capture(start, 0, BASE, 0)?,
+            capture(start, 7_812_500, BASE, 7_812_500)?,
+            capture(start, 85_937_500, BASE, 85_937_500)?,
+            processing,
+            peer,
+        ),
+        "coherent UTC substitution control was refused",
+    )?;
+    assert_eq!(
+        local.coordinates().map(UtcCoordinateQ32::ticks),
+        [
+            17_179_869_183_932_891_136,
+            17_179_869_184_167_772_160,
+            17_179_869_184_201_326_592,
+            17_179_869_184_301_989_888,
+        ],
+    );
+    assert_eq!(
+        substituted.coordinates().map(UtcCoordinateQ32::ticks),
+        [
+            17_179_869_184_000_000_000,
+            17_179_869_184_167_772_160,
+            17_179_869_184_201_326_592,
+            17_179_869_184_369_098_752,
+        ],
+    );
+    assert_eq!(local.arithmetic().offset().numerator(), 134_217_728);
+    assert_eq!(substituted.arithmetic().offset().numerator(), 0);
+    let measurements: [ExperimentalMeasurement; 2] = [local, substituted];
+    for measured in measurements {
+        assert_eq!(measured.arithmetic().round_trip().numerator(), 335_544_320);
+        assert_eq!(measured.local_fractional_remainders(), [0, 0]);
+        assert_eq!(measured.observed_residual_ns(), 0);
+        assert_eq!(measured.acquisition_age(), Duration::from_nanos(14_062_500));
+    }
+    Ok(())
+}
+
 /// Later processing ages the captured exchange without retiming its events.
 /// T1=0, T2=1/16, T3=1/8 and T4=1/4 second independently give
 /// -1/32-second phase and 3/16-second RTT, regardless of post-receive work.

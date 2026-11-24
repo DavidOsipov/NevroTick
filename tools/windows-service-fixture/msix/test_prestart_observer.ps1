@@ -213,6 +213,7 @@ function Invoke-ObserverControl {
         [string]$ImagePath,
         [string]$Selector,
         [string]$StandardUserSid,
+        [string]$ProvisioningUserSid,
         [string]$Digest = $imageDigest,
         [int]$ExitCode = 23,
         [byte[]]$Stdout = [byte[]]::new(0),
@@ -227,7 +228,9 @@ function Invoke-ObserverControl {
         [switch]$RequireNoNativeCreation,
         [switch]$RefuseBeforeEntry,
         [switch]$RequireSettledPipeReads,
-        [switch]$RefuseDescendant
+        [switch]$RefuseDescendant,
+        [switch]$DirectLauncher,
+        [switch]$RestartAfterLaunch
     )
 
     $directory = Split-Path -LiteralPath $ImagePath
@@ -236,7 +239,9 @@ function Invoke-ObserverControl {
     $records = [Collections.Generic.List[object]]::new()
     $refusal = $null
     $expectsRefusal = ![string]::IsNullOrEmpty($RefusalMessage) -or ![string]::IsNullOrEmpty($DisposedObjectName)
-    $clock = [Diagnostics.Stopwatch]::StartNew()
+    [Diagnostics.Stopwatch]$originalClock = [Diagnostics.Stopwatch]::StartNew()
+    [Diagnostics.Stopwatch]$clock = $originalClock
+    if ($RestartAfterLaunch) { $clock = [Diagnostics.Stopwatch]::StartNew() }
     if ($ClockAgeMilliseconds -gt 0) { Start-Sleep -Milliseconds $ClockAgeMilliseconds }
     if ($AlreadyExpired -and $clock.ElapsedMilliseconds -lt $TimeoutMilliseconds) {
         throw "$Label clock is still live"
@@ -245,10 +250,29 @@ function Invoke-ObserverControl {
     if ($PSBoundParameters.ContainsKey('StandardUserSid')) {
         $subject.ExpectedStandardUserSid = $StandardUserSid
     }
+    if ($PSBoundParameters.ContainsKey('ProvisioningUserSid')) {
+        $subject.ExpectedProvisioningUserSid = $ProvisioningUserSid
+    }
     try {
-        Invoke-PrestartObserver -Actor $Actor -ImagePath $ImagePath -ExpectedBytes $imageBytes -ExpectedSha256 $Digest `
-            -Selector $Selector -Clock $clock -TimeoutMilliseconds $TimeoutMilliseconds @subject |
-            ForEach-Object { $records.Add($_) }
+        & {
+            if ($DirectLauncher -or $RestartAfterLaunch) {
+                if ($subject.ContainsKey('ExpectedProvisioningUserSid')) {
+                    $child = [NevroTick.PrestartObserverChild]::Start($ImagePath, $imageBytes, $Digest, $Selector,
+                        $Actor, $clock, $TimeoutMilliseconds, $StandardUserSid, $ProvisioningUserSid)
+                } else {
+                    $child = [NevroTick.PrestartObserverChild]::Start($ImagePath, $imageBytes, $Digest, $Selector,
+                        $Actor, $clock, $TimeoutMilliseconds, $StandardUserSid)
+                }
+                if ($RestartAfterLaunch) { $clock.Restart() }
+                & $module {
+                    param($Child)
+                    Receive-OwnedPrestartChild $Child
+                } $child
+            } else {
+                Invoke-PrestartObserver -Actor $Actor -ImagePath $ImagePath -ExpectedBytes $imageBytes -ExpectedSha256 $Digest `
+                    -Selector $Selector -Clock $clock -TimeoutMilliseconds $TimeoutMilliseconds @subject
+            }
+        } | ForEach-Object { $records.Add($_) }
     } catch {
         $refusal = $_.Exception
         $cause = $refusal
@@ -304,7 +328,8 @@ function Invoke-ObserverControl {
         } else {
             $released = Get-RefusalFact $refusal 'PrestartObserverReleased'
             if ($refusedPid -isnot [int] -or $refusedPid -ne (Read-FixturePid $marker) -or
-                $released -isnot [bool] -or !$released) {
+                $released -isnot [bool] -or !$released -or
+                ($RestartAfterLaunch -and (Get-RefusalFact $refusal 'PrestartObserverRetired') -ne $true)) {
                 throw "$Label did not confirm retirement of the process that entered the fixture"
             }
             if ($null -ne (Get-RefusalFact $refusal 'PrestartObserverCleanupFailure') -or
@@ -313,7 +338,8 @@ function Invoke-ObserverControl {
             }
         }
         if (![string]::IsNullOrEmpty($WaitingState)) {
-            if ($clock.ElapsedMilliseconds -lt $TimeoutMilliseconds -or
+            if ($originalClock.ElapsedMilliseconds -lt $TimeoutMilliseconds -or
+                ($RestartAfterLaunch -and $clock.ElapsedMilliseconds -ge $TimeoutMilliseconds) -or
                 [IO.File]::ReadAllText((Join-Path $directory 'waiting')) -cne $WaitingState) {
                 throw "$Label did not reach the required pipe state before its original cutoff"
             }
@@ -370,12 +396,46 @@ try {
         return
     }
 
-    $labels = @('observation-raw', 'access-raw')
-    for ($index = 0; $index -lt $labels.Length; $index++) {
-        $image = New-FixtureCopy (Join-Path $fixtureRoot $labels[$index])
-        $selectorByte = $index + 1
-        Invoke-ObserverControl -Actor $actor -Label $labels[$index] -ImagePath $image -Selector $selectors[$index] `
-            -Stdout @(0, 255, 13, 10, 128, $selectorByte, 0) -Stderr @(254, 0, 10, $selectorByte)
+    $image = New-FixtureCopy (Join-Path $fixtureRoot 'observation-raw')
+    Invoke-ObserverControl -Actor $actor -Label 'observation-raw' -ImagePath $image -Selector $selectors[0] `
+        -Stdout @(0, 255, 13, 10, 128, 1, 0) -Stderr @(254, 0, 10, 1)
+
+    # Observe the current subject independently of the launcher's token code.
+    [Security.Principal.WindowsIdentity]$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    try { [string]$currentSid = $identity.User.Value } finally { $identity.Dispose() }
+    $wrongDigest = '0' * 64
+    if ($imageDigest -ceq $wrongDigest) { $wrongDigest = '1' * 64 }
+    $accessRefusals = @(
+        @{ Label = 'access-missing-sid' }
+        @{ Label = 'access-malformed-sid'; ProvisioningUserSid = 'invalid SID' }
+        @{ Label = 'access-noncanonical-sid'; ProvisioningUserSid = $currentSid.ToLowerInvariant() }
+        @{ Label = 'access-foreign-sid'; ProvisioningUserSid = 'S-1-0-0' }
+        @{ Label = 'access-standard-slot-sid'; StandardUserSid = $currentSid }
+    )
+    foreach ($direct in @($false, $true)) {
+        $prefix = ''
+        if ($direct) { $prefix = 'direct-' }
+        $label = $prefix + 'access-raw'
+        $image = New-FixtureCopy (Join-Path $fixtureRoot $label)
+        Invoke-ObserverControl -Actor $actor -Label $label -ImagePath $image -Selector $selectors[1] `
+            -ProvisioningUserSid $currentSid -DirectLauncher:$direct `
+            -Stdout @(0, 255, 13, 10, 128, 2, 0) -Stderr @(254, 0, 10, 2)
+        $controls++
+        foreach ($accessRefusal in $accessRefusals) {
+            $control = $accessRefusal.Clone()
+            $control.Label = $prefix + $control.Label
+            $image = New-FixtureCopy (Join-Path $fixtureRoot $control.Label)
+            Invoke-ObserverControl -Actor $actor -ImagePath $image -Selector $selectors[1] `
+                -DirectLauncher:$direct -RefusalMessage 'prestart-observer:provisioning-subject-actor' `
+                -RequireNoNativeCreation @control
+            $controls++
+        }
+        $label = $prefix + 'access-wrong-digest'
+        $image = New-FixtureCopy (Join-Path $fixtureRoot $label)
+        Invoke-ObserverControl -Actor $actor -Label $label -ImagePath $image -Selector $selectors[1] `
+            -DirectLauncher:$direct -Digest $wrongDigest -RefusalMessage 'prestart-observer:image-digest' `
+            -RequireNoNativeCreation
+        $controls++
     }
 
     [string]$standardSelector = $selectors[2]
@@ -387,8 +447,6 @@ try {
         -StandardUserSid 'S-1-0-0' -RefusalMessage 'prestart-observer:standard-user-subject-actor' `
         -RequireNoNativeCreation
 
-    [Security.Principal.WindowsIdentity]$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    try { [string]$currentSid = $identity.User.Value } finally { $identity.Dispose() }
     $image = New-FixtureCopy (Join-Path $fixtureRoot 'standard-noncanonical-sid')
     Invoke-ObserverControl -Actor $actor -Label 'standard-noncanonical-sid' -ImagePath $image -Selector $standardSelector `
         -StandardUserSid $currentSid.ToLowerInvariant() -RefusalMessage 'prestart-observer:standard-user-subject-actor' `
@@ -425,8 +483,6 @@ try {
     }
 
     $selector = $selectors[0]
-    $wrongDigest = '0' * 64
-    if ($imageDigest -ceq $wrongDigest) { $wrongDigest = '1' * 64 }
     $image = New-FixtureCopy (Join-Path $fixtureRoot 'wrong-digest')
     Invoke-ObserverControl -Actor $actor -Label 'wrong-digest' -ImagePath $image -Selector $selector -Digest $wrongDigest `
         -RefusalMessage 'prestart-observer:image-digest' -RefuseBeforeLaunch
@@ -458,6 +514,12 @@ try {
     Invoke-ObserverControl -Actor $actor -Label 'eof-before-exit' -ImagePath $image -Selector $selector `
         -RefusalMessage 'prestart-child:collection-deadline' -TimeoutMilliseconds 11000 -ClockAgeMilliseconds 7000 `
         -WaitingState 'closed'
+    $image = New-FixtureCopy (Join-Path (Join-Path $fixtureRoot 'restarted') 'eof-before-exit')
+    # Restart the same clock after native launch. Only the original cutoff
+    # can expire before the entered observer reaches its natural exit.
+    Invoke-ObserverControl -Actor $actor -Label 'restarted-eof-before-exit' -ImagePath $image -Selector $selector `
+        -RefusalMessage 'prestart-child:collection-deadline' -TimeoutMilliseconds 11000 -ClockAgeMilliseconds 7000 `
+        -WaitingState 'closed' -RestartAfterLaunch
 
     $directDirectory = Join-Path (Join-Path $fixtureRoot 'direct') 'self-spawn'
     $directImage = New-FixtureCopy $directDirectory

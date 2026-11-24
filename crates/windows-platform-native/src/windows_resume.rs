@@ -217,11 +217,91 @@ mod fault_tests;
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
+    use std::io;
     use std::ptr::null;
-    use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Weak};
 
-    use super::{Action, PARAMETERS, ResumeRegistrationError, ResumeWatch, SLOT};
+    use super::{
+        Action, PARAMETERS, ResumeEvent, ResumeRegistrationError, ResumeUnregistrationError,
+        ResumeWatch, SLOT,
+    };
+
+    /// Observe native registration, active capture and explicit close in a fresh process.
+    ///
+    /// Direct calls to the registered callback exercise its Rust dispatch.
+    /// The inert action records only direct calls on the test thread so ambient
+    /// notifications cannot supply the expected event classes.
+    ///
+    /// # Errors
+    /// Preserve the registration or unregistration refusal, or report a lost capture.
+    ///
+    /// # Panics
+    /// Fail if dispatch loses an event class, close retains the capture or the slot
+    /// permits a second registration.
+    #[test]
+    #[ignore = "requires an admitted ordinary Windows host and a fresh exact-selector process"]
+    fn native_persistent_close_disarms_and_releases_capture() -> io::Result<()> {
+        thread_local! {
+            static DIRECT_CALL: Cell<bool> = const { Cell::new(false) };
+        }
+        const SUSPEND_SEEN: usize = 1;
+        const AUTOMATIC_RESUME_SEEN: usize = 2;
+
+        let seen: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        let retained: Weak<AtomicUsize> = Arc::downgrade(&seen);
+        let watch: ResumeWatch = ResumeWatch::subscribe_persistent(move |event: ResumeEvent| {
+            if !DIRECT_CALL.try_with(Cell::get).unwrap_or(false) {
+                return Ok(());
+            }
+            let bit: usize = match event {
+                ResumeEvent::Suspending => SUSPEND_SEEN,
+                ResumeEvent::AutomaticResume => AUTOMATIC_RESUME_SEEN,
+            };
+            let _previous: usize = seen.fetch_or(bit, Ordering::Relaxed);
+            Ok(())
+        })
+        .map_err(|error: ResumeRegistrationError| {
+            io::Error::other(format!("native persistent registration refused: {error:?}"))
+        })?;
+        assert!(matches!(
+            ResumeWatch::subscribe(|| Ok(())),
+            Err(ResumeRegistrationError::AlreadyUsed)
+        ));
+        {
+            let seen: Arc<AtomicUsize> = retained
+                .upgrade()
+                .ok_or_else(|| io::Error::other("live watch lost its callback capture"))?;
+            DIRECT_CALL.with(|direct: &Cell<bool>| {
+                direct.set(true);
+                assert_eq!((PARAMETERS.callback)(null(), 4, null()), 0);
+                assert_eq!(seen.load(Ordering::Relaxed), SUSPEND_SEEN);
+                assert_eq!((PARAMETERS.callback)(null(), 18, null()), 0);
+                assert_eq!(
+                    seen.load(Ordering::Relaxed),
+                    SUSPEND_SEEN | AUTOMATIC_RESUME_SEEN
+                );
+                direct.set(false);
+            });
+        }
+        watch.close().map_err(|error: ResumeUnregistrationError| {
+            io::Error::other(format!(
+                "native persistent unregistration refused: {error:?}"
+            ))
+        })?;
+        assert!(
+            retained.upgrade().is_none(),
+            "closed watch retained its capture"
+        );
+        assert_eq!((PARAMETERS.callback)(null(), 4, null()), 0);
+        assert_eq!((PARAMETERS.callback)(null(), 18, null()), 0);
+        assert!(matches!(
+            ResumeWatch::subscribe_persistent(|_| Ok(())),
+            Err(ResumeRegistrationError::AlreadyUsed)
+        ));
+        Ok(())
+    }
 
     /// Exercise the production callback in a fresh process without OS registration.
     ///

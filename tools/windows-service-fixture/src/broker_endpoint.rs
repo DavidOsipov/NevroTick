@@ -4,7 +4,7 @@
 use std::{mem, task::Poll, time::Instant};
 
 #[cfg(test)]
-use crate::broker_clock_change::ClockRevision;
+use crate::broker_clock_change::ReplyRevision;
 #[cfg(windows)]
 use crate::native_broker_wait::PendingCompletionWake;
 
@@ -195,7 +195,7 @@ pub(super) trait Reservation: Sized {
         _bytes: &[u8],
         _connection: &mut RunningConnection<'_, C>,
         _cutoff: Instant,
-        _positive_revision: Option<&ClockRevision<'_>>,
+        _positive_revision: Option<ReplyRevision>,
     ) -> Result<FirstReplyStart, NativeError> {
         Ok(FirstReplyStart::Unarmed)
     }
@@ -246,12 +246,22 @@ enum Operation {
     QueuedRead,
     /// `ReadFile` reported inline success. The result still requires collection.
     InlineRead,
-    /// The exact reply remains queued under the original connection cutoff.
+    /// The exact queued reply retains the original connection cutoff and decision.
     #[cfg(test)]
-    QueuedReply(Instant),
+    QueuedReply(ReplyContext),
     /// The inline reply count still requires collection.
     #[cfg(test)]
-    InlineReply(Instant),
+    InlineReply(ReplyContext),
+}
+
+/// The original context a terminal write must satisfy to confirm the reply.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+struct ReplyContext {
+    /// The unchanged cutoff of this connection.
+    cutoff: Instant,
+    /// The exact awake revision behind a positive decision.
+    positive_revision: Option<ReplyRevision>,
 }
 
 /// Poll outcome after a native operation's resources have settled.
@@ -555,7 +565,7 @@ where
         connection: &mut RunningConnection<'_, C>,
         bytes: &[u8],
         cutoff: Instant,
-        positive_revision: Option<&ClockRevision<'_>>,
+        positive_revision: Option<ReplyRevision>,
     ) -> Result<ConnectionWait, WorkerFailure> {
         let State::Running(endpoint, state @ Running::ReadSettled) = &mut self.state else {
             return Ok(ConnectionWait::Service);
@@ -569,6 +579,10 @@ where
         }
         let start: Result<FirstReplyStart, NativeError> =
             endpoint.begin_first_reply(bytes, connection, cutoff, positive_revision);
+        let reply: ReplyContext = ReplyContext {
+            cutoff,
+            positive_revision,
+        };
         match start {
             Ok(FirstReplyStart::Refused) => Ok(ConnectionWait::Service),
             Ok(FirstReplyStart::Unarmed) => {
@@ -576,15 +590,15 @@ where
                 Ok(ConnectionWait::Service)
             }
             Ok(FirstReplyStart::Queued) => {
-                let operation: Operation = Operation::QueuedReply(cutoff);
+                let operation: Operation = Operation::QueuedReply(reply);
                 *state = Running::Queued(operation);
                 let after: ConnectionEdge = Self::reply_edge(endpoint, connection, cutoff);
                 Self::pending(endpoint, state, operation, &after)
             }
             Ok(FirstReplyStart::Immediate) => {
-                let operation: Operation = Operation::InlineReply(cutoff);
+                let operation: Operation = Operation::InlineReply(reply);
                 *state = Running::Queued(operation);
-                Self::poll_reply(endpoint, state, connection, operation, cutoff)
+                Self::poll_reply(endpoint, state, connection, operation, reply)
             }
             Err(error) => {
                 let _edge: ConnectionEdge = connection.reply_edge(cutoff);
@@ -605,8 +619,9 @@ where
         state: &mut Running,
         connection: &mut RunningConnection<'_, C>,
         operation: Operation,
-        cutoff: Instant,
+        reply: ReplyContext,
     ) -> Result<ConnectionWait, WorkerFailure> {
+        let cutoff: Instant = reply.cutoff;
         // An inline completion is already terminal. Always collect its original slot.
         if matches!(operation, Operation::QueuedReply(_)) {
             let edge: ConnectionEdge = Self::reply_edge(endpoint, connection, cutoff);
@@ -615,13 +630,14 @@ where
             }
         }
         let result: Result<Poll<FirstReplyCompletion>, NativeError> = endpoint.poll_first_reply();
-        let after: ConnectionEdge = if matches!(
-            result,
-            Ok(Poll::Pending | Poll::Ready(FirstReplyCompletion::Written))
-        ) {
-            Self::reply_edge(endpoint, connection, cutoff)
-        } else {
-            connection.reply_edge(cutoff)
+        let after: ConnectionEdge = match result {
+            Ok(Poll::Ready(FirstReplyCompletion::Written)) => {
+                connection.reply_edge_with_revision(cutoff, reply.positive_revision, || {
+                    endpoint.reply_peer_current()
+                })
+            }
+            Ok(Poll::Pending) => Self::reply_edge(endpoint, connection, cutoff),
+            _ => connection.reply_edge(cutoff),
         };
         match result {
             Ok(Poll::Pending) => Self::pending(endpoint, state, operation, &after),
@@ -753,33 +769,19 @@ where
                     }
                 }
             }
-            Running::Queued(Operation::Accept) => Self::poll_accept(endpoint, state, connection),
-            Running::Queued(operation @ (Operation::QueuedRead | Operation::InlineRead)) => {
+            Running::Queued(operation) => {
                 let operation: Operation = *operation;
-                let edge: ConnectionEdge = connection.edge();
-                Self::poll_read(endpoint, state, connection, operation, &edge)
-            }
-            #[cfg(test)]
-            Running::Queued(Operation::QueuedReply(cutoff)) => {
-                let cutoff: Instant = *cutoff;
-                Self::poll_reply(
-                    endpoint,
-                    state,
-                    connection,
-                    Operation::QueuedReply(cutoff),
-                    cutoff,
-                )
-            }
-            #[cfg(test)]
-            Running::Queued(Operation::InlineReply(cutoff)) => {
-                let cutoff: Instant = *cutoff;
-                Self::poll_reply(
-                    endpoint,
-                    state,
-                    connection,
-                    Operation::InlineReply(cutoff),
-                    cutoff,
-                )
+                match operation {
+                    Operation::Accept => Self::poll_accept(endpoint, state, connection),
+                    Operation::QueuedRead | Operation::InlineRead => {
+                        let edge: ConnectionEdge = connection.edge();
+                        Self::poll_read(endpoint, state, connection, operation, &edge)
+                    }
+                    #[cfg(test)]
+                    Operation::QueuedReply(reply) | Operation::InlineReply(reply) => {
+                        Self::poll_reply(endpoint, state, connection, operation, reply)
+                    }
+                }
             }
             Running::Retiring(operation, cleanup) => match operation.poll(endpoint) {
                 Ok(Poll::Pending) => Ok(ConnectionWait::Drain),

@@ -127,6 +127,90 @@ function Assert-ArchiveOpenRefusal {
     throw "Archive opened despite expected refusal: $Reason"
 }
 
+function Start-ControlIdentity {
+    param([hashtable]$Request)
+
+    return [NevroTick.PrestartObserverChild]::StartIdentity(
+        $Request.PowerShellPath, $Request.PowerShellBytes, $Request.PowerShellSha256,
+        $Request.InputDirectory, $Request.EntryBytes, $Request.EntrySha256,
+        $Request.ModuleBytes, $Request.ModuleSha256, $Request.HelperBytes, $Request.HelperSha256,
+        $Request.RunId, $Request.Archive, $Request.ExpectedUserSid, $Request.ExpectedArchiveSha256,
+        $Request.Actor, $Request.Clock, $Request.TimeoutMilliseconds)
+}
+
+function Assert-ArchivePublicationRefusal {
+    param([hashtable]$Request)
+
+    $script:retainInputDirectory = $true
+    [object]$child = Start-ControlIdentity $Request
+    [int]$childId = $child.ProcessId
+    [pscustomobject]$proxy = [pscustomobject]@{
+        Child = $child; Archive = $Request.Archive; ProcessId = $childId
+        Stdout = $child.Stdout; Stderr = $child.Stderr
+        ConfirmedImage = $null; ExitBeforeRelease = $null; PublicationChecks = 0
+    }
+    $proxy | Add-Member ScriptProperty HasExited { $this.Child.HasExited }
+    $proxy | Add-Member ScriptProperty ExitCode { $this.Child.ExitCode }
+    $proxy | Add-Member ScriptProperty IsJobEmpty { $this.Child.IsJobEmpty }
+    $proxy | Add-Member ScriptProperty DisposalStarted { $this.Child.DisposalStarted }
+    $proxy | Add-Member ScriptProperty ReleaseConfirmed { $this.Child.ReleaseConfirmed }
+    $proxy | Add-Member ScriptMethod RequireCollectionTime { $this.Child.RequireCollectionTime() }
+    $proxy | Add-Member ScriptMethod ObserveRetirement { $this.Child.ObserveRetirement() }
+    $proxy | Add-Member ScriptMethod Terminate { $this.Child.Terminate() }
+    $proxy | Add-Member ScriptMethod ConfirmImage {
+        $this.ConfirmedImage = $this.Child.ConfirmImage()
+        $this.ExitBeforeRelease = $this.Child.ExitCode
+        return $this.ConfirmedImage
+    }
+    $proxy | Add-Member ScriptMethod Dispose {
+        try {
+            if ($null -ne $this.ConfirmedImage) { $this.Archive.Dispose() }
+        } finally {
+            $this.Child.Dispose()
+        }
+    }
+    $proxy | Add-Member ScriptMethod ConfirmPublication {
+        $this.PublicationChecks++
+        $this.Child.ConfirmPublication()
+    }
+
+    [Collections.Generic.List[object]]$records = [Collections.Generic.List[object]]::new()
+    [Management.Automation.ErrorRecord]$failure = $null
+    [bool]$archiveRetired = $false
+    try {
+        & $module { param($Child) Receive-OwnedPrestartChild $Child } $proxy |
+            ForEach-Object { $records.Add($_) }
+        $script:retainInputDirectory = $false
+    } catch {
+        $failure = $_
+        for ([Exception]$cause = $_.Exception; $null -ne $cause; $cause = $cause.InnerException) {
+            if ($cause -is [InvalidOperationException] -and $cause.Message -ceq 'prestart-observer:archive-retired') {
+                $archiveRetired = $true
+            }
+            if ($cause.Data['PrestartObserverProcessId'] -eq $childId -and
+                $cause.Data['PrestartObserverRetired'] -eq $true -and
+                $cause.Data['PrestartObserverReleased'] -eq $true -and
+                !$cause.Data.Contains('PrestartObserverCleanupFailure')) {
+                $script:retainInputDirectory = $false
+            }
+        }
+        if ($retainInputDirectory -and !$child.DisposalStarted) {
+            $_.Exception.Data['PrestartArchiveControlChild'] = [object[]]@($child)
+        }
+    }
+    if ($records.Count -ne 0) {
+        throw "Identity published $($records.Count) capture(s) after archive retirement (PID $childId)"
+    }
+    if ($retainInputDirectory -or !$archiveRetired -or !$child.ReleaseConfirmed -or $proxy.PublicationChecks -ne 1 -or
+        $null -eq $proxy.ConfirmedImage -or $proxy.ExitBeforeRelease -ne 0 -or
+        $proxy.ConfirmedImage.Before -cne $Request.ModuleSha256 -or
+        $proxy.ConfirmedImage.After -cne $Request.ModuleSha256) {
+        if ($null -ne $failure) { throw $failure }
+        throw 'Identity did not refuse at publication after confirming the original inputs'
+    }
+    Assert-InputsReleased $Request.InputDirectory
+}
+
 function Invoke-Control {
     param([hashtable]$Request, [switch]$DirectVerified)
     try {
@@ -138,9 +222,9 @@ function Invoke-Control {
                 $Request.RunId, $Request.Archive, $Request.ExpectedUserSid, $Request.ExpectedArchiveSha256,
                 $Request.ExpectedSignerSha256, $Request.Actor, $Request.Clock, $Request.TimeoutMilliseconds)
             $capture = & $module {
-                param($Child, $Clock, $Budget)
-                Receive-OwnedPrestartChild $Child $Clock $Budget
-            } $child $Request.Clock $Request.TimeoutMilliseconds
+                param($Child)
+                Receive-OwnedPrestartChild $Child
+            } $child
         } else {
             $capture = Invoke-PrestartIdentity @Request
         }
@@ -353,16 +437,29 @@ try {
     } ([InvalidOperationException]) 'prestart-observer:archive-scope'
 
     [Diagnostics.Stopwatch]$expiryClock = [Diagnostics.Stopwatch]::StartNew()
-    [int]$expiryBudget = 3000
+    [int]$expiryBudget = 5000
+    Start-Sleep -Milliseconds 2000
+    [Diagnostics.Stopwatch]$ageSinceOpen = [Diagnostics.Stopwatch]::StartNew()
     [IDisposable]$expiryLease = Open-PrestartArchive -ArchivePath $currentPath `
         -ExpectedArchiveBytes $reference.current.ArchiveBytes -ExpectedArchiveSha256 $reference.current.ArchiveSha256 `
         -Clock $expiryClock -TimeoutMilliseconds $expiryBudget
     try {
         Start-Sleep -Milliseconds ([int][Math]::Max(0, $expiryBudget - $expiryClock.ElapsedMilliseconds + 25))
+        if ($expiryClock.ElapsedMilliseconds -lt $expiryBudget -or
+            $ageSinceOpen.ElapsedMilliseconds -ge $expiryBudget) {
+            throw 'Control did not reach the original cutoff within the shorter lease lifetime'
+        }
+        # Restart before observing expiry so a cached refusal cannot satisfy the control.
+        $expiryClock.Restart()
         Assert-SignatureRefusal {
-            $expiryLease.VerifySignature($reference.current.ArchiveSha256, $testSigner, $actor, $expiryClock,
+            $expiryLease.VerifySignature($reference.current.ArchiveSha256, 'invalid', $actor, $expiryClock,
                 $expiryBudget)
         } ([TimeoutException]) 'prestart-observer:archive-deadline'
+        [hashtable]$expiredRequest = $verifiedRequest.Clone()
+        $expiredRequest.Archive = $expiryLease
+        $expiredRequest.Clock = $expiryClock
+        $expiredRequest.TimeoutMilliseconds = $expiryBudget
+        Assert-LaunchRefusal $expiredRequest 'prestart-observer:archive-deadline' -DirectVerified
     } finally {
         $expiryLease.Dispose()
     }
@@ -469,8 +566,6 @@ Export-ModuleMember -Function Write-S06InstalledIdentity
 
         $request.Archive = $current
         $request.ExpectedArchiveSha256 = $reference.current.ArchiveSha256
-        Assert-ControlArchive $request $reference.current
-        's06-owned-identity archive-restored=observed'
 
         [hashtable]$wrongScope = $request.Clone()
         $wrongScope.Clock = [Diagnostics.Stopwatch]::StartNew()
@@ -483,15 +578,23 @@ Export-ModuleMember -Function Write-S06InstalledIdentity
         Assert-ArchiveHeld $currentPath $reference.current.ArchiveSha256
         Assert-ArchiveHeld $previousPath $reference.previous.ArchiveSha256
 
+        # Retire the archive between actual image confirmation and final publication.
+        Assert-ArchivePublicationRefusal $request
+        Assert-ArchiveReleased $currentPath
+        's06-owned-identity archive-publication-retirement=refused'
+
+        $current = Open-PrestartArchive -ArchivePath $currentPath `
+            -ExpectedArchiveBytes $reference.current.ArchiveBytes `
+            -ExpectedArchiveSha256 $reference.current.ArchiveSha256 -Clock $clock -TimeoutMilliseconds $budget
+        $request.Archive = $current
+        Assert-ControlArchive $request $reference.current
+        's06-owned-identity archive-publication-fresh=observed'
+        's06-owned-identity archive-restored=observed'
+
         # Hand the real child to its original collector after retiring the
         # caller's archive lease. The child's borrow must hold the file until disposal.
         $retainInputDirectory = $true
-        [object]$child = [NevroTick.PrestartObserverChild]::StartIdentity(
-            $request.PowerShellPath, $request.PowerShellBytes, $request.PowerShellSha256,
-            $request.InputDirectory, $request.EntryBytes, $request.EntrySha256,
-            $request.ModuleBytes, $request.ModuleSha256, $request.HelperBytes, $request.HelperSha256,
-            $request.RunId, $request.Archive, $request.ExpectedUserSid, $request.ExpectedArchiveSha256,
-            $request.Actor, $request.Clock, $request.TimeoutMilliseconds)
+        [object]$child = Start-ControlIdentity $request
         [int]$childId = $child.ProcessId
         $probeFailure = $null
         try {
@@ -506,9 +609,9 @@ Export-ModuleMember -Function Write-S06InstalledIdentity
         [bool]$archiveRetired = $false
         try {
             $null = & $module {
-                param($Child, $Clock, $Budget)
-                Receive-OwnedPrestartChild $Child $Clock $Budget
-            } $child $clock $budget
+                param($Child)
+                Receive-OwnedPrestartChild $Child
+            } $child
             $retainInputDirectory = $false
         } catch {
             $collectionFailure = $_

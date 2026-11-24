@@ -1299,6 +1299,73 @@ fn joined_refresh_changes_membership_after_original_udp_round_exhausts() -> Chec
     Ok(())
 }
 
+/// Preserve the original reply and membership when a changed answer is precredited.
+/// # Errors
+/// Preserve fixture, policy, driver and peer observation failures.
+/// # Panics
+/// Reject a lost reply, successor send, changed membership or pending resolver.
+#[test]
+fn joined_refresh_discards_changed_answer_when_original_udp_round_replies() -> Check<()> {
+    use crate::{SourceAddressSet, SourcePolicyError, SourcePolicyLimits};
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 3, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: crate::SourceHandle = authority.source(0)?;
+    let replying: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let remaining: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let successor: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let first: SocketAddr = replying.local_addr()?;
+    let second: SocketAddr = remaining.local_addr()?;
+    let resolved: SocketAddr = successor.local_addr()?;
+    let installed: crate::SourceConfigurationSnapshot = authority.install_source_configuration(
+        &source,
+        SourceAddressSet::new(&[first, second, resolved])?,
+    )?;
+    authority
+        .select_initial_round_membership(&installed, SourceAddressSet::new(&[first, second])?)?;
+    let (prepared, _): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round_refresh(checked_config(&[first, second])?, &[resolved])?;
+
+    let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+    let peer: ReplyPeer = ReplyPeer::spawn(replying, ReplyKind::Ordinary)?;
+    let report: AddressRoundReport = execute_round_with_reply(prepared, &schedule, peer)?;
+    assert_eq!(report.round_end(), AddressRoundEnd::Reply);
+    assert_eq!(report.end(), AddressRoundEnd::Reply);
+    assert!(matches!(
+        report.refresh(),
+        Some(AddressRoundRefreshOutcome::NotNeeded)
+    ));
+    assert!(!report.native_refresh_pending());
+    let [accepted]: &[AddressAttempt] = report.attempts() else {
+        return Err(io::Error::other("the first reply must leave one actual attempt").into());
+    };
+    assert_eq!(accepted.peer(), first);
+    assert_eq!(accepted.report().status(), Status::Header);
+    let facts: &crate::TransportFacts =
+        accepted.report().facts().ok_or(PilotError::InternalState)?;
+    assert!(facts.source_configuration().is_some_and(
+        |actual: &crate::SourceConfigurationSnapshot| actual.same_configuration(&installed)
+    ));
+    assert_eq!(observe_queries(&remaining)?.0, 0);
+    assert_eq!(observe_queries(&successor)?.0, 0);
+
+    assert!(matches!(
+        source.policy_snapshot(resolved),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert!(
+        source
+            .address_round_for_configuration(&installed, checked_config(&[first, second])?)
+            .is_ok()
+    );
+    assert!(matches!(
+        source.address_round_for_configuration(&installed, checked_config(&[resolved])?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    Ok(())
+}
+
 /// Same-set answers preserve order and allow the original issued plan to run.
 /// # Errors
 /// Preserve fixture, policy, driver and peer observation failures.

@@ -63,13 +63,13 @@ class Member:
 
 
 @dataclass(frozen=True)
-class Run:
-    """Independent supervisor inputs, never constructed from child output.
+class DeploymentRun:
+    """Independent package and deployment facts supplied by the retained owner.
 
-    The supervisor owns final signed-package verification and the exact observer
-    executable/module inputs. Each actor reference identifies an independently
-    admitted effective-token context in this run. Equality of SID text, a wire
-    PID, or a child-supplied claim cannot produce such a reference.
+    The owner verifies the signed package and the exact observer executable and
+    module inputs. The actor reference identifies its independently admitted
+    effective-token context. The retained owner supplies these facts independently
+    of child output.
     """
 
     id: UUID
@@ -80,6 +80,12 @@ class Run:
     companion_sha256: str
     observer_sha256: str
     deployment_actor: object
+
+
+@dataclass(frozen=True)
+class Run(DeploymentRun):
+    """Full pre-start inputs including the independently admitted access actors."""
+
     provisioning_actor: object
     standard_actor: object
 
@@ -105,13 +111,26 @@ class Capture:
     stderr: bytes
 
 
+@dataclass(frozen=True, slots=True)
+class ScmTypeSample:
+    """Original raw (configuration, status) DWORDs from the retained SCM handles.
+
+    The live window supplies these ordered fields independently of child output.
+    They bind a point observation to the window's initial sample.
+    """
+
+    engine: tuple[int, int]
+    broker: tuple[int, int]
+
+
 @dataclass(frozen=True)
-class PrestartObservation:
-    """Joined samples for the fixed Engine/Broker order, with raw SCM types.
+class DeploymentObservation:
+    """Consistent identity and raw SCM samples for the fixed Engine/Broker order.
 
     Each triple is configured type, before type, and after type. This result
-    attests transcript consistency only. Exact descriptors, continuous
-    inactivity, and supported provisioning remain outside these samples.
+    records checked observations. The native owner separately establishes
+    currentness and retirement. Exact descriptors, continuous inactivity,
+    and supported provisioning require separate evidence.
     """
 
     run_id: UUID
@@ -119,17 +138,22 @@ class PrestartObservation:
     service_types: tuple[tuple[int, int, int], ...]
 
 
+@dataclass(frozen=True)
+class PrestartObservation(DeploymentObservation):
+    """Deployment samples correlated with both fixed access observations."""
+
+
 def require(condition: bool, reason: str) -> None:
     if not condition:
         raise ReceiptRefused(reason)
 
 
-def is_dword(value: int) -> bool:
+def is_dword(value: object) -> bool:
     return type(value) is int and 0 <= value <= 0xFFFFFFFF
 
 
-def require_run(run: Run) -> None:
-    """Reject incomplete or out-of-profile supervisor inputs before parsing."""
+def _require_deployment_run(run: DeploymentRun) -> None:
+    """Reject incomplete or out-of-profile deployment inputs before capture."""
     require(type(run.id) is UUID and run.id.int != 0, "invalid supervisor run")
     require(type(run.package_full_name) is str and PACKAGE_NAME.fullmatch(run.package_full_name) is not None,
             "wrong S0.6 package identity")
@@ -138,11 +162,19 @@ def require_run(run: Run) -> None:
         require(type(digest) is str and SHA256.fullmatch(digest) is not None, "invalid supervisor digest")
     for member in (run.engine, run.broker):
         require(type(member.size) is int and 0 < member.size <= MAX_FILE, "invalid member extent")
-    require(all(actor is not None for actor in (run.deployment_actor, run.provisioning_actor, run.standard_actor))
-            and run.provisioning_actor is not run.standard_actor, "actor contexts are incomplete or conflated")
+    require(run.deployment_actor is not None, "actor contexts are incomplete or conflated")
 
 
-def read_capture(capture: Capture, run: Run, actor: object, expected_input: str) -> str:
+def require_run(run: Run) -> None:
+    """Require independent deployment and access contexts for the full run."""
+    _require_deployment_run(run)
+    require(isinstance(run, Run) and run.provisioning_actor is not None and run.standard_actor is not None
+            and run.provisioning_actor is not run.standard_actor
+            and run.deployment_actor is not run.provisioning_actor
+            and run.deployment_actor is not run.standard_actor, "actor contexts are incomplete or conflated")
+
+
+def read_capture(capture: Capture, run: DeploymentRun, actor: object, expected_input: str) -> str:
     """Require original run, actor and input custody before decoding a stream."""
     require(capture.run_id == run.id and capture.actor is actor, "foreign run or actor capture")
     require(is_dword(capture.pid) and capture.pid > 0, "missing observed process ID")
@@ -158,7 +190,7 @@ def read_capture(capture: Capture, run: Run, actor: object, expected_input: str)
         raise ReceiptRefused("malformed child output") from error
 
 
-def read_installed_identity(capture: Capture, run: Run) -> None:
+def read_installed_identity(capture: Capture, run: DeploymentRun) -> None:
     """Compare the companion's closed record with independent signed bytes."""
     output = read_capture(capture, run, run.deployment_actor, run.companion_sha256)
     try:
@@ -223,14 +255,56 @@ def read_role_rows(lines: list[str]) -> tuple[tuple[int, int, int], ...]:
     return tuple(types)
 
 
-def read_prestart(run: Run, collect: Callable[[PrestartProbe], Capture]) -> PrestartObservation:
-    """Validate each phase before asking the supervisor for another capture."""
-    require_run(run)
+def _opening_service_types(scm_types: ScmTypeSample) -> tuple[tuple[int, int, int], ...]:
+    """Require the independently retained opening sample before either capture."""
+    require(type(scm_types) is ScmTypeSample, "invalid original SCM type sample")
+    for pair in (scm_types.engine, scm_types.broker):
+        require(type(pair) is tuple and len(pair) == 2 and all(is_dword(value) for value in pair),
+                "invalid original SCM type sample")
+    return tuple(
+        (configuration, status, status) for configuration, status in (scm_types.engine, scm_types.broker)
+    )
+
+
+def read_deployment(run: DeploymentRun, collect: Callable[[PrestartProbe], Capture],
+                    scm_types: ScmTypeSample) -> DeploymentObservation:
+    """Check identity before requesting observation from the same retained window.
+
+    The caller supplies the opening SCM sample and process custody from its
+    native owner. This result establishes the deployment receipt checks.
+    """
+    expected_types: tuple[tuple[int, int, int], ...] = _opening_service_types(scm_types)
+    _require_deployment_run(run)
+    _, service_types = _read_deployment(run, collect, expected_types)
+    return DeploymentObservation(run.id, run.signed_package_sha256, service_types)
+
+
+def read_prestart(run: Run, collect: Callable[[PrestartProbe], Capture],
+                  scm_types: ScmTypeSample) -> PrestartObservation:
+    """Validate the live window's original SCM types before collecting access evidence."""
+    return _read_prestart(run, collect, _opening_service_types(scm_types))
+
+
+def _read_deployment(
+    run: DeploymentRun, collect: Callable[[PrestartProbe], Capture],
+    expected_types: tuple[tuple[int, int, int], ...] | None,
+) -> tuple[list[str], tuple[tuple[int, int, int], ...]]:
+    """Check the two common phases and retain the original observer rows."""
     read_installed_identity(collect(PrestartProbe.IDENTITY), run)
     observation = collect(PrestartProbe.OBSERVATION)
     observation_output = read_capture(observation, run, run.deployment_actor, run.observer_sha256)
     observation_rows = read_test(observation_output, OBSERVATION, 3)
-    service_types = read_role_rows(observation_rows)
+    service_types: tuple[tuple[int, int, int], ...] = read_role_rows(observation_rows)
+    if expected_types is not None:
+        require(service_types == expected_types, "SCM types differ from the original window")
+    return observation_rows, service_types
+
+
+def _read_prestart(run: Run, collect: Callable[[PrestartProbe], Capture],
+                   expected_types: tuple[tuple[int, int, int], ...] | None) -> PrestartObservation:
+    """Validate each phase before asking the supervisor for another capture."""
+    require_run(run)
+    observation_rows, service_types = _read_deployment(run, collect, expected_types)
     access = collect(PrestartProbe.ACCESS)
     access_output = read_capture(access, run, run.provisioning_actor, run.observer_sha256)
     access_rows = read_test(access_output, ACCESS, 17)
@@ -256,11 +330,11 @@ def read_prestart(run: Run, collect: Callable[[PrestartProbe], Capture]) -> Pres
 
 def join_prestart(run: Run, identity: Capture, observation: Capture, access: Capture,
                   standard: Capture) -> PrestartObservation:
-    """Join retained captures with the same checks used during supervision."""
+    """Compare retained transcripts with each other in the absence of a live SCM sample."""
     captures = {
         PrestartProbe.IDENTITY: identity,
         PrestartProbe.OBSERVATION: observation,
         PrestartProbe.ACCESS: access,
         PrestartProbe.STANDARD: standard,
     }
-    return read_prestart(run, captures.__getitem__)
+    return _read_prestart(run, captures.__getitem__, None)

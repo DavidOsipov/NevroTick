@@ -9,19 +9,28 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-public enum PrestartRetirementFault { None, AfterDisposalStart, Observation, BeforeDisposalStart, InitialObservation }
+public enum PrestartRetirementFault
+{
+    None, AfterDisposalStart, Observation, BeforeDisposalStart, InitialObservation,
+    CollectionEntry, CollectionAfterRead, PublicationExpiry, PublicationArchiveRetired
+}
 
 public sealed class PrestartRetirementControl : IDisposable
 {
     private sealed class ControlledStream : MemoryStream
     {
         private readonly Task<int> read;
+        public int Reads { get; private set; }
+        public Task<int> LastRead { get; private set; }
 
         public ControlledStream(Task<int> read) { this.read = read; }
+        public ControlledStream(byte value) : base(new byte[] { value }) { }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return read;
+            Reads++;
+            LastRead = read ?? base.ReadAsync(buffer, offset, count, cancellationToken);
+            return LastRead;
         }
     }
 
@@ -31,15 +40,24 @@ public sealed class PrestartRetirementControl : IDisposable
     public readonly Exception TerminationFailure = new InvalidOperationException("controlled termination failed");
     public readonly Exception ObservationFailure = new IOException("controlled job observation failed");
     public readonly Exception DisposalFailure = new InvalidOperationException("controlled disposal failed");
+    public readonly Exception ArchiveRetired = new InvalidOperationException("prestart-observer:archive-retired");
+    public readonly TimeoutException CollectionExpiry = new TimeoutException("prestart-child:collection-deadline");
     public readonly int ProcessId = 413;
     public readonly int ExitCode = 23;
     public readonly Stream Stdout;
     public readonly Stream Stderr;
+    public int StdoutReads { get { return ((ControlledStream)Stdout).Reads; } }
+    public int StderrReads { get { return ((ControlledStream)Stderr).Reads; } }
+    public Task<int> StdoutReadTask { get { return ((ControlledStream)Stdout).LastRead; } }
+    public int Confirms { get; private set; }
+    public int PublicationChecks { get; private set; }
+    public int Retirements { get; private set; }
     public int ExitChecks { get; private set; }
     public int JobChecks { get; private set; }
     public int Terminations { get; private set; }
     public int Disposals { get; private set; }
     public bool DisposalStarted { get; private set; }
+    public bool ReleaseConfirmed { get; private set; }
     public Task<int> PendingRead { get { return pending.Task; } }
 
     public PrestartRetirementControl(bool failCollection, PrestartRetirementFault fault)
@@ -55,8 +73,8 @@ public sealed class PrestartRetirementControl : IDisposable
         else
         {
             pending.SetResult(0);
-            Stdout = new MemoryStream(new byte[] { 255 });
-            Stderr = new MemoryStream(new byte[] { 128 });
+            Stdout = new ControlledStream((byte)255);
+            Stderr = new ControlledStream((byte)128);
         }
     }
 
@@ -85,9 +103,36 @@ public sealed class PrestartRetirementControl : IDisposable
         }
     }
 
-    public object ConfirmImage() { return new { Before = "held-before", After = "held-after" }; }
+    public void RequireCollectionTime()
+    {
+        if (fault == PrestartRetirementFault.CollectionEntry ||
+            (fault == PrestartRetirementFault.CollectionAfterRead && StdoutReads != 0) ||
+            (fault == PrestartRetirementFault.PublicationExpiry && ReleaseConfirmed))
+            throw CollectionExpiry;
+    }
 
-    public bool ObserveRetirement() { return HasExited && IsJobEmpty; }
+    public object ConfirmImage()
+    {
+        Confirms++;
+        return new { Before = "held-before", After = "held-after" };
+    }
+
+    public void ConfirmPublication()
+    {
+        PublicationChecks++;
+        if (!ReleaseConfirmed || Confirms != 1)
+            throw new InvalidOperationException("publication checked before confirmed image and release");
+        if (fault == PrestartRetirementFault.PublicationExpiry)
+            throw CollectionExpiry;
+        if (fault == PrestartRetirementFault.PublicationArchiveRetired)
+            throw ArchiveRetired;
+    }
+
+    public bool ObserveRetirement()
+    {
+        Retirements++;
+        return HasExited && IsJobEmpty;
+    }
 
     public void Terminate()
     {
@@ -104,6 +149,7 @@ public sealed class PrestartRetirementControl : IDisposable
         Stdout.Dispose();
         Stderr.Dispose();
         if (fault == PrestartRetirementFault.AfterDisposalStart) throw DisposalFailure;
+        ReleaseConfirmed = true;
     }
 }
 '@
@@ -119,13 +165,72 @@ function Test-ExceptionCause {
 
 $module = Import-Module (Join-Path $PSScriptRoot 'prestart_child.psm1') -Force -PassThru
 try {
+    [hashtable[]]$failures = @(
+        @{ Mode = [PrestartRetirementFault]::PublicationArchiveRetired; Stdout = 2; Stderr = 2
+            Failure = 'ArchiveRetired'; Confirms = 1; PublicationChecks = 1
+            Retirements = 1; Pending = $false }
+        @{ Mode = [PrestartRetirementFault]::CollectionEntry; Stdout = 0; Stderr = 0
+            Failure = 'CollectionExpiry'; Confirms = 0; PublicationChecks = 0
+            Retirements = 2; Pending = $false }
+        @{ Mode = [PrestartRetirementFault]::CollectionAfterRead; Stdout = 1; Stderr = 0
+            Failure = 'CollectionExpiry'; Confirms = 0; PublicationChecks = 0
+            Retirements = 2; Pending = $true }
+        @{ Mode = [PrestartRetirementFault]::PublicationExpiry; Stdout = 2; Stderr = 2
+            Failure = 'CollectionExpiry'; Confirms = 1; PublicationChecks = 1
+            Retirements = 1; Pending = $false }
+        @{ Mode = [PrestartRetirementFault]::AfterDisposalStart; Stdout = 2; Stderr = 2
+            Failure = 'DisposalFailure'; Confirms = 1; PublicationChecks = 0
+            Retirements = 1; Pending = $false }
+    )
+    foreach ($case in $failures) {
+        $fault = [PrestartRetirementControl]::new($false, $case.Mode)
+        $records = [Collections.Generic.List[object]]::new()
+        $failure = $null
+        try {
+            & $module { param($child) Receive-OwnedPrestartChild $child } $fault |
+                ForEach-Object { $records.Add($_) }
+        } catch {
+            $failure = $_.Exception
+        }
+        [Exception]$expectedFailure = $fault.PSObject.Properties[$case.Failure].Value
+        if ($records.Count -ne 0 -or !(Test-ExceptionCause $failure $expectedFailure)) {
+            throw "$($case.Mode) did not preserve the original failure without a capture (count=$($records.Count))"
+        }
+        if ($case.Failure -ceq 'CollectionExpiry' -and
+            ![object]::ReferenceEquals($failure, $fault.CollectionExpiry)) {
+            throw "$($case.Mode) did not preserve the typed cutoff"
+        }
+        [bool]$released = $case.Failure -cne 'DisposalFailure'
+        $data = $failure.Data
+        if ($data['PrestartObserverProcessId'] -ne 413 -or $data['PrestartObserverRetired'] -ne $true -or
+            $data['PrestartObserverReleased'] -ne $released -or
+            $data.Contains('PrestartObserverCleanupFailure') -or $data.Contains('PrestartObserverChild') -or
+            $fault.StdoutReads -ne $case.Stdout -or $fault.StderrReads -ne $case.Stderr -or
+            $fault.Confirms -ne $case.Confirms -or $fault.PublicationChecks -ne $case.PublicationChecks -or
+            $fault.Retirements -ne $case.Retirements -or $fault.Terminations -ne 0 -or
+            $fault.Disposals -ne 1 -or !$fault.DisposalStarted -or $fault.ReleaseConfirmed -ne $released) {
+            throw "$($case.Mode) misreported read, confirmation, or retirement effects"
+        }
+        $reads = $data['PrestartChildPendingReads']
+        if ($case.Pending) {
+            if ($null -eq $reads -or $reads.Count -ne 1 -or
+                ![object]::ReferenceEquals($reads[0], $fault.StdoutReadTask) -or !$reads[0].IsCompleted) {
+                throw "$($case.Mode) failed to preserve the original read through retirement"
+            }
+        } elseif ($null -ne $reads) {
+            throw "$($case.Mode) reported an unexpected pending read"
+        }
+        "s06-prestart-retirement $($case.Mode) passed"
+    }
+
     $healthy = [PrestartRetirementControl]::new($false, [PrestartRetirementFault]::None)
-    $capture = @(& $module { param($child) Receive-OwnedPrestartChild $child ([Diagnostics.Stopwatch]::StartNew()) 5000 } $healthy)
+    $capture = @(& $module { param($child) Receive-OwnedPrestartChild $child } $healthy)
     if ($capture.Count -ne 1 -or $capture[0].ProcessId -ne 413 -or $capture[0].ExitCode -ne 23 -or
         $capture[0].Stdout.Length -ne 1 -or $capture[0].Stdout[0] -ne 255 -or
         $capture[0].Stderr.Length -ne 1 -or $capture[0].Stderr[0] -ne 128 -or
         $capture[0].InputSha256Before -cne 'held-before' -or $capture[0].InputSha256After -cne 'held-after' -or
-        $healthy.Terminations -ne 0 -or $healthy.Disposals -ne 1 -or !$healthy.DisposalStarted) {
+        $healthy.Confirms -ne 1 -or $healthy.PublicationChecks -ne 1 -or $healthy.Retirements -ne 1 -or
+        $healthy.Terminations -ne 0 -or $healthy.Disposals -ne 1 -or !$healthy.ReleaseConfirmed) {
         throw 'healthy collector did not return one retired capture'
     }
     's06-prestart-retirement healthy passed'
@@ -154,7 +259,7 @@ try {
         $records = [Collections.Generic.List[object]]::new()
         $failure = $null
         try {
-            & $module { param($child) Receive-OwnedPrestartChild $child ([Diagnostics.Stopwatch]::StartNew()) 5000 } $fault |
+            & $module { param($child) Receive-OwnedPrestartChild $child } $fault |
                 ForEach-Object { $records.Add($_) }
         } catch {
             $failure = $_.Exception
@@ -174,7 +279,7 @@ try {
             $data['PrestartObserverProcessId'] -ne 413 -or $data['PrestartObserverRetired'] -ne $case.Retired -or
             $data['PrestartObserverReleased'] -ne $case.Released -or $fault.PendingRead.IsCompleted -ne $case.Retired -or
             $fault.Terminations -ne $case.Terminations -or $fault.Disposals -ne $case.Disposals -or
-            $fault.DisposalStarted -ne $case.Started) {
+            $fault.DisposalStarted -ne $case.Started -or $fault.PublicationChecks -ne 0) {
             throw 'collector misreported original process, job, read, or disposal state'
         }
         if ($case.Retired) {
@@ -208,4 +313,4 @@ try {
     Remove-Module $module
 }
 
-'s06-prestart-retirement controls=6'
+'s06-prestart-retirement controls=11'

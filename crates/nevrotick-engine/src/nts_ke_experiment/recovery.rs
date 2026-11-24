@@ -1761,6 +1761,10 @@ impl Producer for NativeManagedSuccessor {
     ) -> Result<AssociationOwner<'tx>, Failed> {
         let association: AssociationOwner<'tx> = Native.establish(config, control, provider)?;
         assert_eq!(association.cookie_population()?, (1, 12));
+        assert_eq!(
+            association.certificate_time_provenance(),
+            super::profile::CertificateTimeProvenance::WindowsLaboratoryLocalWall
+        );
         Ok(association)
     }
 

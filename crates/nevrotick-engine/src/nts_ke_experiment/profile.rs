@@ -6,6 +6,8 @@
 
 #[cfg(windows)]
 use super::Failure;
+#[cfg(windows)]
+use super::transport::ConfiguredCertificateTime;
 
 /// One of the three explicitly offered TLS-1.3 CNG suites.
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -27,20 +29,44 @@ enum FullHandshake {
     HelloRetry,
 }
 
+/// Classification of a protected receipt's original key establishment.
+/// The Windows dispositions record which wall input accompanied acceptance by
+/// the laboratory verifier. The classification carries no independent date,
+/// current trust, or sample authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CertificateTimeProvenance {
+    /// The Windows laboratory verifier accepted using ordinary local wall time.
+    #[cfg(windows)]
+    WindowsLaboratoryLocalWall,
+    /// The Windows laboratory verifier accepted using a fixed test wall reading.
+    #[cfg(all(windows, test))]
+    WindowsLaboratoryFixtureWall,
+    /// Component association material without a certificate verification.
+    #[cfg(test)]
+    Component,
+}
+
 /// Actual negotiated profile retained beside the same-connection material.
 pub(super) struct StrictProfile {
     /// Exact TLS-1.3 suite, captured from the completed connection.
     _suite: Suite,
     /// Full authentication form, with resumption excluded at the producer.
     _handshake: FullHandshake,
+    /// Original accepted verifier and time input, or explicit component origin.
+    certificate_time_provenance: CertificateTimeProvenance,
 }
 
 impl StrictProfile {
     /// Capture only completed TLS 1.3, exact ALPN and a full accepted handshake.
+    /// The transport supplies the provenance of the time provider installed on
+    /// this exact connection.
     /// # Errors
     /// Refuse absent/unsupported metadata, resumption, wrong ALPN or protocol.
     #[cfg(windows)]
-    pub(super) fn capture(connection: &rustls::ClientConnection) -> Result<Self, Failure> {
+    pub(super) fn capture(
+        connection: &rustls::ClientConnection,
+        certificate_time: ConfiguredCertificateTime,
+    ) -> Result<Self, Failure> {
         use rustls::{CipherSuite, HandshakeKind, ProtocolVersion};
         if connection.is_handshaking()
             || connection.protocol_version() != Some(ProtocolVersion::TLSv1_3)
@@ -65,6 +91,7 @@ impl StrictProfile {
         Ok(Self {
             _suite: suite,
             _handshake: handshake,
+            certificate_time_provenance: certificate_time.into_provenance(),
         })
     }
 
@@ -74,13 +101,19 @@ impl StrictProfile {
         Self {
             _suite: Suite::Aes128,
             _handshake: FullHandshake::Full,
+            certificate_time_provenance: CertificateTimeProvenance::Component,
         }
+    }
+
+    /// Preserve the original classification without reading time or trust again.
+    pub(super) const fn certificate_time_provenance(&self) -> CertificateTimeProvenance {
+        self.certificate_time_provenance
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{FullHandshake, StrictProfile, Suite};
+    use super::{CertificateTimeProvenance, FullHandshake, StrictProfile, Suite};
 
     /// Component metadata preserves every selected full-profile alternative.
     /// # Panics
@@ -92,10 +125,12 @@ mod tests {
                 let profile = StrictProfile {
                     _suite: suite,
                     _handshake: handshake,
+                    certificate_time_provenance: CertificateTimeProvenance::Component,
                 };
                 let StrictProfile {
                     _suite: retained_suite,
                     _handshake: retained_handshake,
+                    certificate_time_provenance,
                 } = profile;
                 assert!(matches!(
                     retained_suite,
@@ -105,6 +140,10 @@ mod tests {
                     retained_handshake,
                     FullHandshake::Full | FullHandshake::HelloRetry
                 ));
+                assert_eq!(
+                    certificate_time_provenance,
+                    CertificateTimeProvenance::Component
+                );
             }
         }
     }

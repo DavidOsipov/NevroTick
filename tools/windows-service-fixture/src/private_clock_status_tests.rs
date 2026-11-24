@@ -59,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 43;
+const BROKER_CASES: usize = 45;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -2410,7 +2410,17 @@ fn observed_first_status<const N: usize>(
 #[test]
 #[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
 fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Box<dyn Error>> {
-    observe_native_first_reply::<37>(None)
+    observe_native_first_reply::<37>(FirstReplyCase::Available)
+}
+
+/// Receive an unavailable status on the original connection after delivered Suspend.
+/// # Errors
+/// Returns a setup, suspension, native reply comparison or cleanup failure.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_read_returns_unavailable_after_suspend() -> Result<(), Box<dyn Error>> {
+    observe_native_first_reply::<43>(FirstReplyCase::Suspended)
 }
 
 /// Expire the original connection after reply construction and before native submission.
@@ -2420,7 +2430,7 @@ fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Bo
 #[test]
 #[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
 fn native_first_read_refuses_reply_at_submission_cutoff() -> Result<(), Box<dyn Error>> {
-    observe_native_first_reply::<41>(Some(FirstReplyRefusal::Cutoff))
+    observe_native_first_reply::<41>(FirstReplyCase::Refused(FirstReplyRefusal::Cutoff))
 }
 
 /// Retire the original positive revision after encoding and before the native write.
@@ -2430,7 +2440,48 @@ fn native_first_read_refuses_reply_at_submission_cutoff() -> Result<(), Box<dyn 
 #[test]
 #[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
 fn native_first_read_refuses_reply_after_revision_changes() -> Result<(), Box<dyn Error>> {
-    observe_native_first_reply::<42>(Some(FirstReplyRefusal::Revision))
+    observe_native_first_reply::<42>(FirstReplyCase::Refused(FirstReplyRefusal::Revision))
+}
+
+/// Withhold current confirmation after the full positive reply reaches the client.
+/// # Errors
+/// Returns setup, byte comparison, current confirmation or cleanup failure.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_reply_withholds_confirmation_at_completion() -> Result<(), Box<dyn Error>> {
+    observe_native_first_reply::<44>(FirstReplyCase::SuspendedAtCompletion)
+}
+
+/// Select the availability or final refusal expected on the original peer.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum FirstReplyCase {
+    /// Keep the original positive revision current.
+    Available,
+    /// Deliver Suspend after accept and before the request.
+    Suspended,
+    /// Deliver Suspend after collecting the full native write, before confirmation.
+    SuspendedAtCompletion,
+    /// Prepare a positive reply and refuse it at the final submission guard.
+    Refused(FirstReplyRefusal),
+}
+
+#[cfg(windows)]
+impl FirstReplyCase {
+    /// Expected complete wire frame for the request with ID 42.
+    const fn expected_reply(self) -> &'static [u8] {
+        const AVAILABLE: &[u8] =
+            b"\x01\x00\x02\x00\x12\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
+                                   {\"available\":true}";
+        const UNAVAILABLE: &[u8] =
+            b"\x01\x00\x02\x00\x13\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
+                                     {\"available\":false}";
+        match self {
+            Self::Available | Self::SuspendedAtCompletion | Self::Refused(_) => AVAILABLE,
+            Self::Suspended => UNAVAILABLE,
+        }
+    }
 }
 
 /// The independently scripted cause of a final positive reply refusal.
@@ -2448,14 +2499,13 @@ enum FirstReplyRefusal {
 /// Returns a refusal at setup, reply observation or cleanup.
 #[cfg(windows)]
 fn observe_native_first_reply<const CASE: usize>(
-    refusal: Option<FirstReplyRefusal>,
+    scenario: FirstReplyCase,
 ) -> Result<(), Box<dyn Error>> {
     use std::num::NonZeroU32;
     use windows_platform_native::PeerProcess;
 
     use crate::{
         broker_endpoint::BrokerEndpointWorker,
-        host::{PrivateStatusIssue, private_clock_status::NativeStatusOutcome},
         native_broker_endpoint::NativeBrokerEndpoint,
         native_pipe_identity::RetainedFixtureClient,
         native_pipe_pair::{
@@ -2465,13 +2515,16 @@ fn observe_native_first_reply<const CASE: usize>(
 
     const WAIT: Duration = Duration::from_secs(2);
     const REQUEST: &[u8] = b"\x01\x00\x01\x00\x02\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00{}";
-    const REPLY: &[u8] = b"\x01\x00\x02\x00\x12\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
-                           {\"available\":true}";
+    let reply: &[u8] = scenario.expected_reply();
     let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
     let peer: RetainedFixtureClient = RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
     let pipe_case: u32 = u32::try_from(CASE)?;
+    let observe_full_write: Option<fn()> = match scenario {
+        FirstReplyCase::SuspendedAtCompletion => Some(suspend_at_write_completion::<CASE>),
+        _ => None,
+    };
     let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-        prepare_first_exchange_fixture(pipe_case, peer)
+        prepare_first_exchange_fixture(pipe_case, peer, observe_full_write)
     };
     with_broker_worker_reads::<CASE, 1, _, _>(
         BrokerEndpointWorker::new(acquire),
@@ -2495,6 +2548,9 @@ fn observe_native_first_reply<const CASE: usize>(
                 if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
                     return Err("the broker replied before its client sent the request".into());
                 }
+                if matches!(scenario, FirstReplyCase::Suspended) {
+                    deliver_first_reply_suspend(clock, stop, cutoff)?;
+                }
                 native_fixture_result(client_write.write(REQUEST))?;
                 if waiter.observe(&control, WAIT, owner.worker.completion_wake())?
                     != WakeSource::Completion
@@ -2502,7 +2558,7 @@ fn observe_native_first_reply<const CASE: usize>(
                     return Err("the original broker request read did not wake".into());
                 }
 
-                if let Some(refusal) = refusal {
+                if let FirstReplyCase::Refused(refusal) = scenario {
                     observe_prepared_reply_refusal(owner, clock, stop, cutoff, refusal)?;
                 } else {
                     wait_for_first_reply_write(
@@ -2513,7 +2569,7 @@ fn observe_native_first_reply<const CASE: usize>(
                         &mut waiter,
                         Instant::now() + WAIT,
                     )?;
-                    observe_first_reply_bytes(&mut reader, REPLY, wait_for_native_read)?;
+                    observe_first_reply_bytes(&mut reader, reply, wait_for_native_read)?;
                     native_fixture_result(ensure_unimpersonated())?;
                     if clock.now >= cutoff {
                         return Err("the valid reply completed outside its original cutoff".into());
@@ -2527,18 +2583,7 @@ fn observe_native_first_reply<const CASE: usize>(
                         );
                     }
                 }
-                native_fixture_result(ensure_unimpersonated())?;
-                if !owner.native_status.capture_observed
-                    || !matches!(&owner.native_status.outcome,
-                        Some(NativeStatusOutcome::Reply(frame)) if frame.as_bytes() == REPLY)
-                    || owner.private_status_issue != PrivateStatusIssue::Issued
-                    || owner.connection_cutoff != Some(cutoff)
-                    || owner.outstanding_work() != 1
-                    || owner.worker.completion_wake().is_some()
-                {
-                    return Err("the admitted reply lost its original Running custody".into());
-                }
-                stop_after_pending_peer_read(owner, clock, stop, &mut reader)
+                finish_native_first_reply(owner, clock, stop, &mut reader, cutoff, scenario)
             })();
             if observed.is_err() {
                 retire_pending_peer_read(&mut reader);
@@ -2546,6 +2591,90 @@ fn observe_native_first_reply<const CASE: usize>(
             observed
         },
     )?
+}
+
+/// Deliver the registered Suspend control to the mailbox of this original write.
+#[cfg(windows)]
+fn suspend_at_write_completion<const CASE: usize>() {
+    let _disposition: ControlDisposition =
+        deliver(Some(&MAILBOXES[CASE]), &StopNotification::new(), 13, 4);
+}
+
+/// Check historical evidence and live custody, then observe the original Stop.
+/// # Errors
+/// Returns unexpected status, lost custody, cleanup or confirmation failure.
+#[cfg(windows)]
+fn finish_native_first_reply<P: Worker>(
+    owner: &mut ServiceInvocation<Reporter, P>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+    reader: &mut NativePipeRead,
+    cutoff: Instant,
+    scenario: FirstReplyCase,
+) -> Result<(), Box<dyn Error>> {
+    use crate::host::{PrivateStatusIssue, private_clock_status::NativeStatusOutcome};
+
+    native_fixture_result(ensure_unimpersonated())?;
+    if !owner.native_status.capture_observed
+        || !matches!(&owner.native_status.outcome,
+            Some(NativeStatusOutcome::Reply(frame)) if frame.as_bytes() == scenario.expected_reply())
+        || owner.private_status_issue != PrivateStatusIssue::Issued
+        || owner.connection_cutoff != Some(cutoff)
+        || owner.outstanding_work() != 1
+        || owner.worker.completion_wake().is_some()
+    {
+        return Err("the admitted reply lost its original Running custody".into());
+    }
+    if matches!(scenario, FirstReplyCase::SuspendedAtCompletion)
+        && (clock.mailbox.revision().is_some()
+            || !owner
+                .broker_clock_reader
+                .as_ref()
+                .is_some_and(NativeBrokerReader::status_source_open)
+            || stop.stop_requested())
+    {
+        return Err("the full write did not suspend the original live mailbox".into());
+    }
+    let confirmed: bool = owner.native_status.reply_written;
+    stop_after_pending_peer_read(owner, clock, stop, reader)?;
+    let expect_confirmation: bool = matches!(
+        scenario,
+        FirstReplyCase::Available | FirstReplyCase::Suspended
+    );
+    if confirmed != expect_confirmation {
+        return Err(
+            "the actual reply confirmation disagreed with the original clock revision".into(),
+        );
+    }
+    Ok(())
+}
+
+/// Withdraw the original awake revision while its connection remains admitted.
+/// # Errors
+/// Fails if Suspend cannot withdraw the awake revision before Stop or cutoff.
+#[cfg(windows)]
+fn deliver_first_reply_suspend(
+    clock: &ScriptClock<'_>,
+    stop: &StopNotification,
+    cutoff: Instant,
+) -> Result<(), Box<dyn Error>> {
+    let original: ClockRevision<'static> =
+        clock
+            .mailbox
+            .revision()
+            .filter(ClockRevision::admits)
+            .ok_or("the original awake revision was unavailable before Suspend")?;
+    let disposition: ControlDisposition = deliver(Some(clock.mailbox), stop, 13, 4);
+    if disposition.status != 0
+        || !disposition.wake
+        || original.admits()
+        || clock.mailbox.revision().is_some()
+        || stop.stop_requested()
+        || clock.now >= cutoff
+    {
+        return Err("Suspend did not withdraw the awake revision on the live connection".into());
+    }
+    Ok(())
 }
 
 /// Drive the existing write edge after the encoded positive decision is in custody.
@@ -2621,9 +2750,10 @@ fn stop_after_pending_peer_read<P: Worker>(
     Ok(())
 }
 
-/// Give the original broker owner bounded turns to collect its native write.
+/// Give the original broker owner bounded turns to settle its original reply operation.
+/// The caller independently checks the wire bytes and current confirmation.
 /// # Errors
-/// Refuses premature service retirement, a wrong wake or unconfirmed completion.
+/// Refuses premature service retirement, a wrong wake or unsettled work.
 #[cfg(windows)]
 fn wait_for_first_reply_write<P: Worker>(
     owner: &mut ServiceInvocation<Reporter, P>,
@@ -2635,24 +2765,24 @@ fn wait_for_first_reply_write<P: Worker>(
 ) -> Result<(), Box<dyn Error>> {
     loop {
         if Instant::now() >= deadline {
-            return Err("the broker never confirmed the original reply write".into());
+            return Err("the broker never settled the original reply operation".into());
         }
         if !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_)) {
-            return Err("the broker stopped before confirming the reply".into());
+            return Err("the broker stopped before settling the reply operation".into());
         }
         let remaining: Duration = deadline
             .checked_duration_since(Instant::now())
             .filter(|left: &Duration| !left.is_zero())
-            .ok_or("the broker never confirmed the original reply write")?;
-        if owner.native_status.reply_written {
-            return Ok(());
-        }
-        if let Some(wake) = owner.worker.completion_wake() {
-            if waiter.observe(control, remaining, Some(wake))? != WakeSource::Completion {
-                return Err("the original broker reply completion did not wake".into());
+            .ok_or("the broker never settled the original reply operation")?;
+        let Some(wake) = owner.worker.completion_wake() else {
+            if owner.native_status.outcome.is_some() {
+                return Ok(());
             }
-        } else {
             std::thread::sleep(Duration::from_millis(1).min(remaining));
+            continue;
+        };
+        if waiter.observe(control, remaining, Some(wake))? != WakeSource::Completion {
+            return Err("the original broker operation did not wake".into());
         }
     }
 }
@@ -3139,7 +3269,7 @@ mod distinct_peer {
         let mut child: FixtureChild = FixtureChild::spawn("exchange")?;
         let peer: RetainedFixtureClient = RetainedFixtureClient::new(child.process()?)?;
         let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-            prepare_first_exchange_fixture(CHILD_CASE, peer)
+            prepare_first_exchange_fixture(CHILD_CASE, peer, None)
         };
         let observed: Check<()> = with_broker_worker_reads::<38, 1, _, _>(
             BrokerEndpointWorker::new(acquire),
@@ -3153,6 +3283,7 @@ mod distinct_peer {
                 child.wait_ready(cutoff)?;
                 if !matches!(&owner.native_status.outcome,
                     Some(NativeStatusOutcome::Reply(frame)) if frame.as_bytes() == REPLY)
+                    || !owner.native_status.reply_written
                     || owner.private_status_issue != PrivateStatusIssue::Issued
                     || owner.connection_cutoff != Some(cutoff)
                     || owner.outstanding_work() != 1
@@ -3188,7 +3319,7 @@ mod distinct_peer {
             return Err("fixture foreign connector did not share the expected actor".into());
         }
         let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-            prepare_first_exchange_fixture(FOREIGN_CASE, peer)
+            prepare_first_exchange_fixture(FOREIGN_CASE, peer, None)
         };
         let observed: Check<()> = with_broker_worker_reads::<39, 1, _, _>(
             BrokerEndpointWorker::new(acquire),

@@ -85,6 +85,8 @@ MANUAL_NATIVE_TESTS = (
     "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
     "nts_ke_experiment::transport::certificate_time_fixture::above_range_certificate_handshake_preserves_local_clock_failure",
     "nts_ke_experiment::transport::certificate_time_fixture::far_future_certificate_handshake_preserves_local_clock_failure",
+    "nts_ke_experiment::transport::certificate_time_fixture::accepted_fixture_wall_ke_retains_certificate_time_provenance",
+    "nts_ke_experiment::transport::certificate_time_fixture::accepted_ordinary_wall_ke_retains_certificate_time_provenance",
     "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
     "nts_ke_experiment::transport::managed_close_fixture::managed_protected_public_probe_joins_one_authenticated_reply",
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join",
@@ -686,14 +688,14 @@ def validate_test_roster(value, candidate, extras, *, default_cohort=False, plac
             "Windows KE roster must be the complete exact selected library subset.")
     nested, manual = set(HELD_KE_TESTS), set(MANUAL_NATIVE_TESTS)
     require(len(HELD_KE_TESTS) == len(nested) == 3
-            and len(MANUAL_NATIVE_TESTS) == len(manual) == 7
+            and len(MANUAL_NATIVE_TESTS) == len(manual) == 9
             and nested.isdisjoint(manual)
             and (nested | manual).issubset(expected_ke)
             and value["held_ke_tests"] == list(HELD_KE_TESTS)
             and value["manual_native_tests"] == list(MANUAL_NATIVE_TESTS)
             and value["selected_ke_tests"] == [name for name in expected_ke if name not in nested | manual]
             and value["selected_ke_tests"],
-            "Windows KE selection must retain its exact three nested and seven separate manual native cases.")
+            "Windows KE selection must retain its exact three nested and nine separate manual native cases.")
     return value
 
 

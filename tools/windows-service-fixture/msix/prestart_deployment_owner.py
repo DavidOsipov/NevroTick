@@ -1,0 +1,188 @@
+# SPDX-License-Identifier: GPL-2.0-only
+"""Render the fixed S0.6 native owner entries from independently admitted pins."""
+
+from collections.abc import Mapping
+from hashlib import sha256
+from pathlib import Path
+import re
+from uuid import UUID
+
+from check_package import Refused, read_regular
+from prestart_receipts import DeploymentRun, Member, PrestartProbe, ReceiptRefused, SHA256, Run, require, require_run
+
+
+_PIN_LIMITS: dict[str, int] = {
+    "interpreter": 2 * 1024 * 1024,
+    "child_module": 2 * 1024 * 1024,
+    "session_module": 2 * 1024 * 1024,
+    "deployment_helper": 2 * 1024 * 1024,
+    "archive": 8 * 1024 * 1024,
+    "identity_entry": 2 * 1024 * 1024,
+    "identity_module": 2 * 1024 * 1024,
+    "identity_helper": 64 * 1024,
+    "observer": 16 * 1024 * 1024,
+}
+_ACCESS_PIN_LIMITS: dict[str, int] = {
+    label: _PIN_LIMITS[label]
+    for label in ("child_module", "session_module", "deployment_helper", "observer")
+}
+_TEMPLATE_LIMIT: int = 2 * 1024 * 1024
+_BINDINGS: bytes = b"# PRESTART_DEPLOYMENT_BINDINGS\n"
+_SID: re.Pattern[str] = re.compile(
+    r"S-1-(?:0|[1-9][0-9]{0,9}|0x[0-9A-Fa-f]{12})(?:-(?:0|[1-9][0-9]{0,9})){1,15}"
+)
+
+
+def render_deployment_owner(
+    template: Path,
+    template_pin: Member,
+    run: DeploymentRun,
+    deployment_sid: str,
+    signer_sha256: str,
+    pins: Mapping[str, Member],
+    work_milliseconds: int,
+    retirement_milliseconds: int,
+    *,
+    full_prestart: bool = False,
+) -> tuple[bytes, Member]:
+    """Bind a protected staging entry to one run, fixed member roster and finite budgets.
+
+    The retained owner supplies the reviewed template and independent inputs.
+    It protects all staged paths through use and independently establishes
+    actor eligibility, signed-package admission and continuous quiescence.
+    This function produces bytes and their pin for the original watchdog.
+    The Windows owner still checks and consumes the actual staged objects.
+    """
+    run_id: UUID = run.id
+    require(type(run_id) is UUID and run_id.int != 0, "invalid deployment owner run")
+    require(type(full_prestart) is bool, "invalid deployment owner mode")
+    if full_prestart:
+        require(isinstance(run, Run), "full pre-start requires both admitted access actors")
+        require_run(run)
+    require(
+        type(deployment_sid) is str and len(deployment_sid) <= 183
+        and _SID.fullmatch(deployment_sid) is not None,
+        "invalid deployment owner SID",
+    )
+    require(
+        type(signer_sha256) is str and SHA256.fullmatch(signer_sha256) is not None,
+        "invalid deployment owner signer digest",
+    )
+    require(
+        type(work_milliseconds) is int and type(retirement_milliseconds) is int
+        and 0 < work_milliseconds < retirement_milliseconds <= 120_000
+        and retirement_milliseconds - work_milliseconds <= 30_000,
+        "invalid deployment owner deadlines",
+    )
+    bound_pins: dict[str, Member] = _snapshot_pins(pins, _PIN_LIMITS)
+    require(
+        bound_pins["archive"].sha256 == run.signed_package_sha256
+        and bound_pins["identity_module"].sha256 == run.companion_sha256
+        and bound_pins["observer"].sha256 == run.observer_sha256,
+        "deployment owner pins differ from the admitted run",
+    )
+    bindings: list[str] = [
+        f"[guid]$expectedRunId = '{run_id}'",
+        "[string]$ownerRole = 'deployment'",
+        f"[string]$expectedActorSid = '{deployment_sid}'",
+        f"[string]$signerSha256 = '{signer_sha256}'",
+        f"[int]$workMilliseconds = {work_milliseconds}",
+        f"[int]$retirementMilliseconds = {retirement_milliseconds}",
+        "[bool]$fullPrestart = " + ("$true" if full_prestart else "$false"),
+    ]
+    return _render_owner(template, template_pin, bindings, bound_pins)
+
+
+def render_prestart_access_owner(
+    template: Path,
+    template_pin: Member,
+    run: DeploymentRun,
+    probe: PrestartProbe,
+    expected_actor_sid: str,
+    pins: Mapping[str, Member],
+    work_milliseconds: int,
+) -> tuple[bytes, Member]:
+    """Bind one fixed access owner entry to a separately admitted actor and run.
+
+    The launcher supplies the original primary token and protects the staging
+    namespace. An access entry accepts only its original run ID at startup.
+    The native session and enclosing watchdog keep the original cutoff and
+    independently observe child and process retirement.
+    """
+    require(isinstance(run, DeploymentRun), "invalid pre-start access owner run")
+    run_id: UUID = run.id
+    require(type(run_id) is UUID and run_id.int != 0, "invalid pre-start access owner run")
+    role: str
+    if probe is PrestartProbe.ACCESS:
+        role = "access"
+    elif probe is PrestartProbe.STANDARD:
+        role = "standard"
+    else:
+        raise ReceiptRefused("invalid pre-start access probe")
+    require(
+        type(expected_actor_sid) is str and len(expected_actor_sid) <= 183
+        and _SID.fullmatch(expected_actor_sid) is not None,
+        "invalid pre-start access owner SID",
+    )
+    require(type(work_milliseconds) is int and 0 < work_milliseconds <= 120_000,
+            "invalid pre-start access owner deadline")
+    bound_pins: dict[str, Member] = _snapshot_pins(pins, _ACCESS_PIN_LIMITS)
+    require(bound_pins["observer"].sha256 == run.observer_sha256,
+            "pre-start access observer pin differs from the admitted run")
+    bindings: list[str] = [
+        f"[guid]$expectedRunId = '{run_id}'",
+        f"[string]$ownerRole = '{role}'",
+        f"[string]$expectedActorSid = '{expected_actor_sid}'",
+        f"[int]$workMilliseconds = {work_milliseconds}",
+    ]
+    return _render_owner(template, template_pin, bindings, bound_pins)
+
+
+def _snapshot_pins(pins: Mapping[str, Member], limits: Mapping[str, int]) -> dict[str, Member]:
+    """Read each independent pin once and return the checked roster in order."""
+    bound_pins: dict[str, Member] = dict(pins)
+    require(bound_pins.keys() == limits.keys(), "invalid deployment owner pin roster")
+    for label, maximum in limits.items():
+        _check_pin(bound_pins[label], maximum, label)
+    return {label: bound_pins[label] for label in limits}
+
+
+def _render_owner(
+    template: Path, template_pin: Member, bindings: list[str], pins: Mapping[str, Member],
+) -> tuple[bytes, Member]:
+    """Render one closed binding block into the original verified template."""
+    _check_pin(template_pin, _TEMPLATE_LIMIT, "template")
+    require(
+        template.name == "prestart_deployment_owner.ps1.in" and template.is_absolute(),
+        "invalid deployment owner template path",
+    )
+    try:
+        source: bytes = read_regular(template, template_pin.size, "deployment owner template")
+    except (OSError, Refused) as error:
+        raise ReceiptRefused("deployment owner template read refused") from error
+    require(
+        len(source) == template_pin.size and sha256(source).hexdigest() == template_pin.sha256,
+        "deployment owner template differs",
+    )
+    lines: list[bytes] = source.splitlines(keepends=True)
+    require(source.isascii() and lines.count(_BINDINGS) == 1, "invalid deployment owner binding marker")
+    binding_lines: list[str] = [
+        *bindings,
+        "[hashtable]$pins = @{",
+        *(f"    {label} = @{{ Bytes = [long]{pin.size}; Sha256 = '{pin.sha256}' }}"
+          for label, pin in pins.items()),
+        "}",
+        "",
+    ]
+    block: bytes = "\n".join(binding_lines).encode("ascii")
+    entry: bytes = b"".join(block if line == _BINDINGS else line for line in lines)
+    require(len(entry) <= _TEMPLATE_LIMIT, "deployment owner entry size exceeds limit")
+    return entry, Member(len(entry), sha256(entry).hexdigest())
+
+
+def _check_pin(pin: Member, maximum: int, label: str) -> None:
+    require(
+        type(pin) is Member and type(pin.size) is int and 0 < pin.size <= maximum
+        and type(pin.sha256) is str and SHA256.fullmatch(pin.sha256) is not None,
+        "invalid deployment owner pin: " + label,
+    )

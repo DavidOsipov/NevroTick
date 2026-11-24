@@ -20,6 +20,7 @@ use crate::{
     native_pipe_pair::{
         LabIdentificationPipe, LabOverlappedWriter, LabPipeReader, open_lab_duplex_pipe,
     },
+    scm_access_probe::observe_prestart_pair,
 };
 
 /// Two fixed, existing services in the otherwise unmodified offline guest.
@@ -307,6 +308,15 @@ pub(super) struct PrestartObservation {
     after: ReportedServiceStatus,
 }
 
+/// Distinguish the fixed stages at which a pair's original status is rechecked.
+#[derive(Clone, Copy)]
+pub(super) enum PrestartReadback {
+    /// Both role observations have completed.
+    Observation,
+    /// The provisioner's final access handle has closed.
+    Access,
+}
+
 /// A fixed role's original status-only handle and the matching key for narrow reads.
 ///
 /// Under the Windows `DeleteService` contract this handle defers removal of
@@ -353,16 +363,31 @@ impl PrestartRoleStatus {
         })
     }
 
-    /// Sample the original object again after the final access handle has closed.
+    /// Sample the original object again after the selected pair operation completes.
     /// # Errors
     /// Refuse a non-Stopped report, changed raw service type or native query error.
-    pub(super) fn recheck(&self, observed_type: u32) -> Result<(), Box<dyn Error>> {
-        let final_status: ReportedServiceStatus =
-            self.stopped("status after access", "after access readback")?;
+    pub(super) fn recheck(
+        &self,
+        observed_type: u32,
+        readback: PrestartReadback,
+    ) -> Result<(), Box<dyn Error>> {
+        let (stage, sample, operation): (&str, &str, &str) = match readback {
+            PrestartReadback::Observation => (
+                "status after observation",
+                "after paired role readback",
+                "paired role readback",
+            ),
+            PrestartReadback::Access => (
+                "status after access",
+                "after access readback",
+                "access readback",
+            ),
+        };
+        let final_status: ReportedServiceStatus = self.stopped(stage, sample)?;
         let final_type: u32 = final_status.service_type();
         if final_type != observed_type {
             return Err(format!(
-                "pre-start role {} status type changed from {observed_type} to {final_type} during access readback",
+                "pre-start role {} status type changed from {observed_type} to {final_type} during {operation}",
                 self.role.name(),
             )
             .into());
@@ -456,15 +481,24 @@ impl PrestartObservation {
 /// reports sampled endpoints and redacted configuration/security shape.
 ///
 /// # Errors
-/// Stop after the first failed or non-disabled/non-Stopped role. Only two
-/// completed rows and the terminal marker constitute complete readback.
+/// Stop after the first failed or non-disabled/non-Stopped role. Publish
+/// both rows only after the pair's final samples and both status closes succeed.
 #[test]
 #[ignore = "requires the separately admitted installed S0.6 MSIX and its owned guest"]
 pub(super) fn native_installed_roles_prestart_observation() -> Result<(), Box<dyn Error>> {
-    for role in [LabRole::Engine, LabRole::ClockBroker] {
-        let status: PrestartRoleStatus = PrestartRoleStatus::open(role)?;
-        let observation: Result<PrestartObservation, Box<dyn Error>> = status.read_observation();
-        status.finish(observation)?.write();
+    let observations: [PrestartObservation; 2] = observe_prestart_pair(
+        PrestartRoleStatus::open,
+        PrestartRoleStatus::read_observation,
+        |status: &PrestartRoleStatus, observation: &PrestartObservation| {
+            status.recheck(
+                observation.status_service_type(),
+                PrestartReadback::Observation,
+            )
+        },
+        PrestartRoleStatus::finish,
+    )?;
+    for observation in observations {
+        observation.write();
     }
     println!("scm-prestart observed-rows=2");
     Ok(())

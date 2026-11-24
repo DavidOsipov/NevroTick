@@ -10,7 +10,7 @@ use zeroize::Zeroizing;
 
 use super::handoff::PreparedRequest;
 use super::process::ProviderScope;
-use super::profile::StrictProfile;
+use super::profile::{CertificateTimeProvenance, StrictProfile};
 use super::request::DirectionalKeys;
 use super::{COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Config, Control, Failure};
 
@@ -29,7 +29,7 @@ pub(super) struct AssociationCandidate<'a> {
     /// Original KE publication/ephemeral association cap, never renewed.
     expiry: Instant,
     /// Actual accepted TLS profile, preserved without an asserted-auth flag.
-    _profile: StrictProfile,
+    profile: StrictProfile,
     /// Both owned exporters from that same verified connection.
     keys: DirectionalKeys,
     /// Exact opaque bodies moved once out of the complete response.
@@ -54,7 +54,7 @@ impl<'a> AssociationCandidate<'a> {
             provider,
             udp,
             expiry: control.expiry,
-            _profile: profile,
+            profile,
             keys,
             cookies,
         }
@@ -178,6 +178,11 @@ impl<'a> AssociationOwner<'a> {
             preview_spent: false,
             ledger,
         })
+    }
+
+    /// Read the original profile's historical certificate time provenance.
+    pub(super) const fn certificate_time_provenance(&self) -> CertificateTimeProvenance {
+        self.material.profile.certificate_time_provenance()
     }
 
     /// Check the closed operation selection and borrow its original negotiated lease.

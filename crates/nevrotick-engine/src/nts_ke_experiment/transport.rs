@@ -15,7 +15,7 @@ use rustls::{CipherSuite, ClientConfig, ClientConnection, StreamOwned, Supported
 use rustls_pki_types::UnixTime;
 use zeroize::Zeroizing;
 
-use super::profile::StrictProfile;
+use super::profile::{CertificateTimeProvenance, StrictProfile};
 use super::transport_fault::{self, SetupStage, TlsIoStage, TransportIo};
 use super::{AssociationCandidate, AssociationOwner, ProviderScope, request::DirectionalKeys};
 use super::{Config, Control, Failed, Failure, SCRATCH_LIMIT, encode_offer, read_response};
@@ -222,18 +222,44 @@ fn client_config(wall_time: LocalWallTime) -> Result<ClientConfig, Failure> {
     Ok(tls)
 }
 
-/// Construct the actual ordinary TLS connection with fresh local wall reads.
+/// The selected verifier's wall input, issued only with its configured connection.
+pub(super) struct ConfiguredCertificateTime {
+    /// Code-owned classification of the installed provider, without its timestamp.
+    provenance: CertificateTimeProvenance,
+}
+
+impl ConfiguredCertificateTime {
+    /// Transfer the original configuration into the completed strict profile.
+    pub(super) const fn into_provenance(self) -> CertificateTimeProvenance {
+        self.provenance
+    }
+}
+
+/// Construct the connection together with the exact wall provider classification.
+/// The private preparation path consumes them together after the handshake.
 ///
 /// # Errors
 /// Preserve configuration or client-construction refusal.
-fn connection(config: &Config, wall_time: LocalWallTime) -> Result<ClientConnection, Failure> {
+fn connection(
+    config: &Config,
+    wall_time: LocalWallTime,
+) -> Result<(ClientConnection, ConfiguredCertificateTime), Failure> {
+    #[cfg(not(test))]
+    let provenance: CertificateTimeProvenance =
+        CertificateTimeProvenance::WindowsLaboratoryLocalWall;
+    #[cfg(test)]
+    let provenance: CertificateTimeProvenance = if wall_time.fixture_time.is_some() {
+        CertificateTimeProvenance::WindowsLaboratoryFixtureWall
+    } else {
+        CertificateTimeProvenance::WindowsLaboratoryLocalWall
+    };
     let tls: ClientConfig = client_config(wall_time)?;
     let mut connection: ClientConnection =
         ClientConnection::new(Arc::new(tls), config.server_name.clone())
             .map_err(|_| Failure::TlsSetup(SetupStage::ClientConnection))?;
     // This caps Rustls outgoing application buffering, not all TLS allocations.
     connection.set_buffer_limit(Some(SCRATCH_LIMIT));
-    Ok(connection)
+    Ok((connection, ConfiguredCertificateTime { provenance }))
 }
 
 /// Reject only already-buffered post-EOM plaintext; never initiate a socket read.
@@ -264,6 +290,7 @@ fn reject_buffered(connection: &mut ClientConnection) -> Result<(), Failure> {
 fn prepare<'a>(
     stream: &mut StreamOwned<ClientConnection, DeadlineStream<'a>>,
     peer: SocketAddr,
+    certificate_time: ConfiguredCertificateTime,
 ) -> Result<InternalCandidate<'a>, Failure> {
     let config: &'a Config = stream.sock.admission.config();
     let handshake = stream
@@ -275,7 +302,7 @@ fn prepare<'a>(
         .admission
         .resolve(handshake, Failure::Handshake)?;
     stream.sock.admission.current(Failure::Handshake)?;
-    let profile = StrictProfile::capture(&stream.conn)?;
+    let profile: StrictProfile = StrictProfile::capture(&stream.conn, certificate_time)?;
     stream.sock.admission.begin_exchange();
     let mut storage = [0_u8; 16];
     let offer = encode_offer(&mut storage)?;
@@ -391,9 +418,12 @@ fn establish_with_time<'a>(
     }
     admission.current(Failure::Handshake)?;
     let socket: DeadlineStream<'_> = DeadlineStream { socket, admission };
+    let (connection, certificate_time): (ClientConnection, ConfiguredCertificateTime) =
+        connection(config, wall_time)?;
     let mut stream: StreamOwned<ClientConnection, DeadlineStream<'_>> =
-        StreamOwned::new(connection(config, wall_time)?, socket);
-    let candidate: Result<InternalCandidate<'a>, Failure> = prepare(&mut stream, peer);
+        StreamOwned::new(connection, socket);
+    let candidate: Result<InternalCandidate<'a>, Failure> =
+        prepare(&mut stream, peer, certificate_time);
     let retained_fault: Option<Failure> = stream
         .sock
         .admission
@@ -420,10 +450,51 @@ fn establish_with_time<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{Failure, LocalWallTime, client_config};
-    use rustls::ClientConfig;
+    use super::{
+        CertificateTimeProvenance, Config, ConfiguredCertificateTime, Failure, LocalWallTime,
+        client_config, connection,
+    };
+    use rustls::{ClientConfig, ClientConnection};
     use rustls_pki_types::UnixTime;
+    use std::ffi::OsString;
     use std::time::{Duration, SystemTime};
+
+    /// Check the wall-input classification issued with each new TLS client.
+    ///
+    /// # Errors
+    /// Preserve fixture construction or TLS setup refusal.
+    /// # Panics
+    /// Fail if either new client has completed a handshake or carries the wrong
+    /// wall-input classification.
+    #[test]
+    fn connection_preserves_certificate_time_input_kind() -> Result<(), Failure> {
+        let config: Config = Config::new(
+            OsString::from("127.0.0.1:4460"),
+            OsString::from("Time.Example"),
+        )?;
+        let fixed_wall: SystemTime = SystemTime::UNIX_EPOCH
+            .checked_add(Duration::from_secs(1_700_000_000))
+            .ok_or(Failure::Control)?;
+        let cases: [(LocalWallTime, CertificateTimeProvenance); 2] = [
+            (
+                LocalWallTime::system(),
+                CertificateTimeProvenance::WindowsLaboratoryLocalWall,
+            ),
+            (
+                LocalWallTime {
+                    fixture_time: Some(fixed_wall),
+                },
+                CertificateTimeProvenance::WindowsLaboratoryFixtureWall,
+            ),
+        ];
+        for (wall_time, expected) in cases {
+            let (client, configured_time): (ClientConnection, ConfiguredCertificateTime) =
+                connection(&config, wall_time)?;
+            assert!(client.is_handshaking());
+            assert_eq!(configured_time.into_provenance(), expected);
+        }
+        Ok(())
+    }
 
     /// Reach the configured Rustls callback without changing the OS clock.
     ///
@@ -465,10 +536,76 @@ mod certificate_time_fixture {
     use std::time::{Duration, Instant, SystemTime};
 
     use super::super::{Config, Control, Failed, Failure, PROCESS_ADMISSION, Phase, ProviderScope};
-    use super::{LocalWallTime, establish_with_time};
+    use super::{AssociationOwner, CertificateTimeProvenance, LocalWallTime, establish_with_time};
 
     /// Server identity of the admitted offline fixture's synthetic certificate.
     const PEER_IDENTITY: &str = "ke-a7e40ec4eade477dbaba6ca9e9f975a4.invalid";
+
+    /// 2026-11-23 00:00:00 UTC, inside the pinned laboratory chain and CRL window.
+    const FIXTURE_WALL_SECONDS: u64 = 1_795_392_000;
+
+    /// Observe the association returned by real TLS, KE and TLS retirement.
+    /// The external controller owns the admitted peer and temporary guest trust.
+    /// Run one case per client process, using the original one-shot provider.
+    ///
+    /// # Errors
+    /// Preserve fixture input, provider, transport or observation refusal.
+    /// # Panics
+    /// Fail if the published phase, certificate-time class or cookie population differs.
+    fn assert_accepted_handshake(
+        wall_time: LocalWallTime,
+        case: &str,
+        expected: CertificateTimeProvenance,
+    ) -> Result<(), Failed> {
+        let peer: OsString = std::env::var_os("NV_TLS_CLOCK_PEER").ok_or(Failure::Arguments)?;
+        let config: Config = Config::new(peer, OsString::from(PEER_IDENTITY))?;
+        let control: Control = Control::new(Instant::now())?;
+        let provider: ProviderScope<'_> = ProviderScope::new(PROCESS_ADMISSION.claim()?)?;
+        let association: AssociationOwner<'_> =
+            establish_with_time(&config, &control, &provider, wall_time)?;
+        let actual: CertificateTimeProvenance = association.certificate_time_provenance();
+        let (cookies, cookie_bytes): (usize, usize) = association.cookie_population()?;
+
+        assert!(matches!(*control.guard()?.phase, Phase::Published));
+        assert_eq!(actual, expected);
+        assert_eq!((cookies, cookie_bytes), (1, 12));
+        println!(
+            "clock_case={case} negotiated=1 certificate_time={actual:?} cookies={cookies} cookie_bytes={cookie_bytes}"
+        );
+        Ok(())
+    }
+
+    /// Retain fixed test wall provenance after the admitted peer completes TLS and KE.
+    /// # Errors
+    /// Preserve fixture input, provider, transport or observation refusal.
+    #[test]
+    #[ignore = "requires the owned offline Windows NTS-KE peer and admitted laboratory trust"]
+    fn accepted_fixture_wall_ke_retains_certificate_time_provenance() -> Result<(), Failed> {
+        let fixed_wall: SystemTime = SystemTime::UNIX_EPOCH
+            .checked_add(Duration::from_secs(FIXTURE_WALL_SECONDS))
+            .ok_or(Failure::Control)?;
+        let wall_time: LocalWallTime = LocalWallTime {
+            fixture_time: Some(fixed_wall),
+        };
+        assert_accepted_handshake(
+            wall_time,
+            "fixture-wall",
+            CertificateTimeProvenance::WindowsLaboratoryFixtureWall,
+        )
+    }
+
+    /// Retain ordinary local wall provenance on the same accepted peer profile.
+    /// # Errors
+    /// Preserve fixture input, provider, transport or observation refusal.
+    #[test]
+    #[ignore = "requires the owned offline Windows NTS-KE peer and admitted laboratory trust"]
+    fn accepted_ordinary_wall_ke_retains_certificate_time_provenance() -> Result<(), Failed> {
+        assert_accepted_handshake(
+            LocalWallTime::system(),
+            "ordinary",
+            CertificateTimeProvenance::WindowsLaboratoryLocalWall,
+        )
+    }
 
     /// Observe the real refusal after the TLS stream and provider scope retire.
     /// The external controller owns the peer and must run one case per client

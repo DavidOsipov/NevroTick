@@ -49,6 +49,8 @@ use crate::{
 #[cfg(test)]
 use crate::broker_clock_change::ClockRevision;
 #[cfg(test)]
+use crate::broker_clock_change::ReplyRevision;
+#[cfg(test)]
 use crate::diagnostics::{UnconfirmedWriter, WriterClose};
 #[cfg(all(windows, test))]
 use crate::native_pipe_read::{AttributedStatusRead, IdentifiedReadError};
@@ -404,28 +406,25 @@ impl<C: Clock> RunningConnection<'_, C> {
         }
     }
 
-    /// Recheck the availability decision at the prepared write's final boundary.
+    /// Recheck the availability decision at the write or confirmation boundary.
     /// The original positive revision must still be awake after observing the peer.
     /// An unavailable decision conveys no positive revision authority.
     #[cfg(test)]
-    pub(super) fn reply_submission_edge(
+    pub(super) fn reply_edge_with_revision(
         &mut self,
         cutoff: Instant,
-        positive_revision: Option<&ClockRevision<'_>>,
+        positive_revision: Option<ReplyRevision>,
         observe_peer: impl FnOnce() -> bool,
     ) -> ConnectionEdge {
         match self.reply_edge_with_peer(cutoff, observe_peer) {
-            ConnectionEdge::Open(_)
-                if positive_revision
-                    .is_some_and(|revision: &ClockRevision<'_>| !revision.admits()) =>
-            {
+            ConnectionEdge::Open(_) if !positive_revision.is_none_or(ReplyRevision::is_current) => {
                 ConnectionEdge::Expired
             }
             edge => edge,
         }
     }
 
-    /// Remember the exact complete write count observed under a fresh reply edge.
+    /// Confirm the complete write count under the original live reply context.
     #[cfg(test)]
     pub(super) const fn record_reply_written(&mut self) {
         self.reply_written = true;

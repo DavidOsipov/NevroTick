@@ -2452,9 +2452,9 @@ with an independently reviewed, bounded JSON prediction bound to the complete
 current product, runner/helper hashes, MSVC target and explicit KE feature. The
 full sorted library/KE lists, selected KE list and exact code-owned held cases
 are frozen with the build; native discovery cannot supply its own expected list.
-The KE roster also retains the seven code-owned `manual_native_tests` requiring
+The KE roster also retains nine code-owned `manual_native_tests` requiring
 separate peer/trust/dedicated-process controllers. Its ordinary selection excludes
-exactly those seven and the three separately executed nested cases. The result
+exactly those nine and the three separately executed nested cases. The result
 lists the manual fixtures as unexecuted; future ignored cases are not automatically
 excluded. The complete library must still be discovered exactly, and every
 selected scripted case must succeed with zero ignored results.

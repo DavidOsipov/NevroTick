@@ -72,11 +72,11 @@ use std::{
 };
 
 use nevrotick_engine::{
-    KePreviewTarget, ManagedProtectedPairReport, ManagedProtectedPlan, ManagedProtectedReceipt,
-    ManagedProtectedReport, ManagedProtectedRestriction, ManagedProtectedTerminal,
-    ProtectedNativeClockObservation, SoftwareClock, SourceAddressSet, SourceConfigurationSnapshot,
-    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
-    SourcePolicySnapshot, SourceProtectedProbeFailure,
+    CertificateTimeProvenance, KePreviewTarget, ManagedProtectedPairReport, ManagedProtectedPlan,
+    ManagedProtectedReceipt, ManagedProtectedReport, ManagedProtectedRestriction,
+    ManagedProtectedTerminal, ProtectedNativeClockObservation, SoftwareClock, SourceAddressSet,
+    SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicyError,
+    SourcePolicyLimits, SourcePolicySnapshot, SourceProtectedProbeFailure,
 };
 
 /// Fixed program atom consumed by the Engine's actual CLI entrypoint.
@@ -941,7 +941,14 @@ fn write_successor_timing(
         return Err(SetupFailure::ManagedSuccessorTiming);
     };
     if !first.same_invocation(successor)
+        || !first.same_ke_association(successor)
         || first.same_exchange(successor)
+        || [first, successor]
+            .into_iter()
+            .any(|receipt: &ManagedProtectedReceipt| {
+                receipt.certificate_time_provenance()
+                    != CertificateTimeProvenance::WindowsLaboratoryLocalWall
+            })
         || report.first_nak_at().is_some()
         || report.power_unregistration_error().is_some()
         || (report.attempted_sends(), report.fully_submitted_sends()) != (2, 2)
@@ -1069,6 +1076,7 @@ fn checked_pair_receipts<'a>(
         return Err(SetupFailure::ManagedPairOutcome);
     };
     if !first.same_invocation(successor)
+        || !first.same_ke_association(successor)
         || first.same_exchange(successor)
         || report.first_nak_at().is_some()
         || report.power_unregistration_error().is_some()
@@ -1078,7 +1086,9 @@ fn checked_pair_receipts<'a>(
         || [first, successor]
             .into_iter()
             .any(|receipt: &ManagedProtectedReceipt| {
-                receipt.packet_bytes() != 252
+                receipt.certificate_time_provenance()
+                    != CertificateTimeProvenance::WindowsLaboratoryLocalWall
+                    || receipt.packet_bytes() != 252
                     || receipt.leap_indicator() != 0
                     || receipt.peer_endpoint() != expected_peer
                     || !receipt.local_endpoint().ip().is_loopback()
@@ -1164,6 +1174,7 @@ fn managed_protected_pair() -> Result<ExitCode, SetupFailure> {
         checked_pair_receipts(second_report, &second_expected, second_udp)?;
 
     if first_initial.same_invocation(second_initial)
+        || first_initial.same_ke_association(second_initial)
         || first_terminal.committed_at() >= cutoff
         || second_terminal.committed_at() >= cutoff
         || !pair_receipt_precedes(first_initial, first_terminal)

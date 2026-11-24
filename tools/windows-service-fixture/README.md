@@ -81,10 +81,13 @@ DER certificate. This selects Windows signature verification with the held
 archive handle and path, no interactive UI and cache-only URL retrieval.
 The current lab profile selects one primary signature with zero secondaries.
 The verification and child launch share the original actor, lease and
-deadline. The owning process must bound the synchronous verifier and retire
-on unconfirmed verifier cleanup. Use the unreset clock and keep the lease
-through collection and actual retirement. Early disposal revokes the capture
-and the child retains the file until retirement. Omitting the signer pin
+deadline. The archive retains the time remaining at admission on a private
+monotonic clock. Use the unreset original clock and keep the lease through
+collection and actual retirement. The owning process must bound the
+synchronous verifier and retire on unconfirmed verifier cleanup. Early disposal revokes the capture
+and the child retains the file until retirement. After release, the
+collector rechecks the original archive under the same lock as
+withdrawal before publishing the capture. Omitting the signer pin
 selects archive observation for inert controls. The installed window owner
 still owns role authorization, continuous quiescence and installed admission.
 Precompile
@@ -105,9 +108,142 @@ deployment window current and bind each capture to the retained child process
 and its independently observed effective token. The deployment context
 supplies identity and the two-role observation. The proposed provisioning
 actor and standard user supply their own access captures. The coordinator
-validates each receipt before the next selector can start. An invalid child
-receipt retains precedence over a later window refusal. The native window
-owner must still be wired before the installed probe can execute.
+validates each receipt before the next selector can start. Before either
+access capture, it checks the observation's raw SCM types against the
+ordered Engine and Broker baseline supplied by the original window. An invalid child
+receipt retains precedence over a later window refusal. After the last
+currentness check, the coordinator returns the observation only when the
+owner confirms retirement of that run. It preserves the first failure
+and any independent retirement failure. The native window owner must
+still be wired before the installed probe can execute.
+
+Use `supervise_deployment` for the two deployment captures alone. Its
+window supplies the original run and opening SCM sample without supplying
+access actors. The coordinator checks run identity before each dispatch
+and after receipt validation, and returns only after confirmed retirement.
+The full pre-start result still requires both access captures. The native
+adapter must keep the original window live through the final currentness
+check and settle the same attempt at retirement.
+
+The deployment owner can use `Open-PrestartScmWindow` to hold the two fixed
+lab service objects in one Windows process across point checks. Supply the
+retained `Actor`, the independently admitted canonical `ExpectedDeploymentSid`
+and the original running clock and timeout. The owner verifies that actor
+before each SCM operation and before returning a point sample. `Initial`
+retains the opening samples. `Check()` reads both original handles and
+permanently refuses the window after actor withdrawal or any failed observation.
+Inspect the result of `Retire()` before accepting the enclosing operation.
+It preserves an earlier failure and attaches later close errors. Complete
+native owner retirement before package cleanup if close is unconfirmed.
+The samples supplement the separate signed-artifact, actor and continuous
+quiescence evidence. [Paired SCM controls](msix/test_prestart_scm_window.ps1)
+
+Use `Invoke-PrestartIdentity -Window` with the original SCM window, held
+archive and independent archive and signer pins. The window supplies its
+actor, SID and clock, verifies the signature, and keeps the original lease
+and pins for the fixed observation. After the coordinator validates that
+identity receipt, use `Invoke-PrestartVerifiedScmObservation` with the same
+window and the independently pinned observer image. The window permits
+one attempt for each child and requires a successfully released identity
+capture before the second. The enclosing deployment owner supplies
+continuous quiescence, separate actor admissions and retirement of the
+full attempt, including children whose cleanup is unconfirmed.
+
+After validating both receipts, call `ConfirmDeployment()` on the original
+window before `Retire()`. Confirmation requires the original two successful
+child captures. It samples the same SCM handles and rechecks the archive
+and actor with the retained deadlines. The enclosing owner holds the window
+and archive through this check and explicitly confirms retirement before
+returning the joined result.
+
+For the paired private-pipe route, use
+[`supervise_deployment_session`](msix/prestart_deployment_session.py) with the
+admitted run and the original process owner's pipe ends. The dedicated
+Windows process invokes
+[`Invoke-PrestartDeploymentSession`](msix/prestart_deployment_session.psm1)
+as its final action with the original window, archive, actor and deadlines.
+The session requests native confirmation after both receipt checks. It
+returns only after a clean retirement reply, pipe EOF and independently
+observed process and job retirement. The outer launcher must supply that
+process and job custody and enforce its recovery deadline.
+
+The [Windows guardian](msix/prestart_deployment_guardian.ps1) launches the
+admitted `prestart_deployment_owner.ps1` inside its private job. Keep the
+entry and its transitive inputs in the admitted local staging directory.
+Provide its owned `prestart-temp` directory and load the pinned x64
+`prestart_deployment_helpers.dll` with `Import-PrestartDeploymentHelpers`
+before opening the actor or window. The guardian's first cutoff covers the
+entire cooperative owner lifetime, including wire retirement. Its second
+cutoff bounds forced recovery. The WSL caller supplies private stdin and
+stdout, retains separate diagnostics and observes the original guardian
+through `GuardedDeploymentProcess`.
+
+For an independent cutoff, build the x64
+[`prestart_deployment_watchdog.exe`](msix/prestart_deployment_watchdog.cs)
+from its entry source and the same five C# sources used by the guardian.
+The watchdog holds the original guardian in an outer Windows job and
+owns its work and retirement cutoffs. From WSL, call
+`launch_deployment_watchdog` with the independently pinned executable,
+guardian, interpreter and owner, then pass the original process through
+`GuardedDeploymentProcess` to the receipt supervisor. Keep the local
+staging paths and transitive inputs protected through use and direct
+diagnostics to a separate owned regular file. On expiry the watchdog
+requests termination and checks original exit and job accounting. An
+unconfirmed recovery withholds the result and requires the lab owner to
+retain recovery authority.
+
+Render the fixed `prestart_deployment_owner.ps1` with
+[`render_deployment_owner`](msix/prestart_deployment_owner.py) from the
+pinned [entry template](msix/prestart_deployment_owner.ps1.in). Stage the
+returned bytes under that filename and give their returned pin to
+`launch_deployment_watchdog`. Stage the pinned archive as
+`prestart_fixture.msix`. Keep the three installed-identity inputs in
+`identity/` and the two modules, deployment helper and observer beside
+the entry. Use the SID and launch token for the same independently
+admitted deployment context represented in the supervisor's run. Protect
+the staging namespace through retirement.
+
+The owner keeps the checked modules open, loads the pinned helper, and
+opens the actor, archive and original SCM window under one clock. It
+passes them to the existing typed session for both captures and cleanup.
+Signed-archive admission, continuous quiescence and the separate access
+actors remain prerequisites of the installed probe.
+
+For the full handle-only sequence, first use
+[`render_prestart_access_owner`](msix/prestart_deployment_owner.py) with
+the base `DeploymentRun` to render each fixed role entry. Stage each
+as `prestart_deployment_owner.ps1` in its own protected directory with
+the four pinned inputs and private `prestart-temp`. Use the existing
+watchdog from each independently admitted primary-token context. The
+native role entry checks the expected SID before the observer starts.
+The standard-user path also requires the standard token profile.
+
+Form the full `Run` after acquiring the original role owners. Render
+the deployment entry with `full_prestart=True`, then use
+[`supervise_prestart_session`](msix/prestart_deployment_session.py) with
+three independently admitted process owners and distinct private pipes.
+Use the original provisioning and standard-user owners as their actor
+references in `Run`. The deployment actor has its own separate reference.
+The enclosing owner retains the original processes and jobs through
+confirmed retirement. Include launch and idle waiting in the enclosing
+work and retirement budgets. The native clocks start at their respective
+process entries.
+
+The deployment window checks its original SCM objects before each access
+probe. Each role accepts its one fixed command followed by input EOF. The
+supervisor checks the resulting receipt and the original role's EOF and
+retirement before progressing. Final confirmation follows both valid
+captures. A refusal prevents later captures, closes the access pipes and
+settles the original deployment owner. The default paired path retains
+its two captures and final confirmation. The full installed run requires
+the actual eligible role processes, signed artifact and continuous
+quiescence.
+
+If the private pipe fails before retirement can be acknowledged, the fixed
+owner exits unsuccessfully and reports the first operation refusal, transport
+failure and cleanup codes on its separate diagnostic stream. The
+[PowerShell controls](msix/test_prestart_deployment_session.ps1) exercise the
+session with closed streams and controlled retirement outcomes.
 
 The [Windows child collector](msix/prestart_child.psm1) reads bounded raw
 stdout and stderr from the launch owner's original `Process`. It requires
@@ -129,12 +265,20 @@ real collector with controlled streams and child state.
 The collector also supplies `Invoke-PrestartObserver` for the three fixed
 SCM observers. Use a dedicated 64-bit Windows PowerShell process with
 serialized child launches and an exclusively owned local input directory.
+Each native observer launch captures its remaining time from the original
+clock. Job creation, suspended process creation, resume and capture
+publication after retirement each recheck that cutoff. Keep the original
+clock running and retain the enclosing window deadline across launches.
 Use `Open-PrestartObserverActor` to retain the launcher primary token and
 pass that actor as `-Actor`. Dispose the actor when its owner finishes
 observing that context. Role eligibility remains a separate input to the
 installed window.
 Supply the approved `nevrotick-prestart-observer.exe`, its exact length and
 SHA-256, the selector, and the original running Stopwatch and deadline.
+For the provisioning access selector, supply `-ExpectedProvisioningUserSid`
+from the window owner's independent account admission. Before creating a job
+or process, the launcher requires an exact match with the current primary
+token's user SID.
 For the standard-user denial selector, also supply `-ExpectedStandardUserSid`
 from the window owner's independent account admission. Before creating a job
 or process, the launcher requires that SID to match the current primary token,

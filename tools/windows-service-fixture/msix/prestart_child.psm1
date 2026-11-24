@@ -17,7 +17,7 @@ function Assert-PrestartDeadline {
 function Receive-PrestartStreams {
     param(
         [int]$ProcessId, [IO.Stream]$StdoutStream, [IO.Stream]$StderrStream,
-        [scriptblock]$ObserveExit, [Diagnostics.Stopwatch]$Clock, [int]$TimeoutMilliseconds
+        [scriptblock]$ObserveExit, [scriptblock]$RequireTime
     )
 
     $limit = 8192
@@ -29,9 +29,7 @@ function Receive-PrestartStreams {
 
     try {
         while ($true) {
-            if ($Clock.ElapsedMilliseconds -ge $TimeoutMilliseconds) {
-                throw [TimeoutException]::new('prestart-child:collection-deadline')
-            }
+            & $RequireTime
             $advanced = $false
             foreach ($channel in $channels) {
                 if ($channel.Eof) { continue }
@@ -47,7 +45,7 @@ function Receive-PrestartStreams {
                     }
                     $channel.Used += $count
                 }
-                Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+                & $RequireTime
                 if ($channel.Used -eq $limit) {
                     # Probe EOF in place. A returned byte refuses the entire capture.
                     $channel.Pending = $channel.Stream.ReadAsync($channel.Bytes, 0, 1)
@@ -57,7 +55,10 @@ function Receive-PrestartStreams {
                 }
             }
             $exitCode = $null
-            if ($stdout.Eof -and $stderr.Eof) { $exitCode = & $ObserveExit }
+            if ($stdout.Eof -and $stderr.Eof) {
+                & $RequireTime
+                $exitCode = & $ObserveExit
+            }
             if ($null -ne $exitCode) {
                 foreach ($channel in $channels) {
                     if ($channel.Used -eq $limit) { continue }
@@ -65,9 +66,7 @@ function Receive-PrestartStreams {
                     [Array]::Copy($channel.Bytes, $bytes, $channel.Used)
                     $channel.Bytes = $bytes
                 }
-                if ($Clock.ElapsedMilliseconds -ge $TimeoutMilliseconds) {
-                    throw [TimeoutException]::new('prestart-child:collection-deadline')
-                }
+                & $RequireTime
                 return [pscustomobject]@{ ProcessId = $processId; ExitCode = $exitCode;
                     Stdout = $stdout.Bytes; Stderr = $stderr.Bytes }
             }
@@ -97,7 +96,9 @@ function Receive-PrestartChild {
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
     Receive-PrestartStreams $Process.Id $Process.StandardOutput.BaseStream $Process.StandardError.BaseStream {
         if ($Process.WaitForExit(0)) { $Process.ExitCode }
-    } $Clock $TimeoutMilliseconds
+    } {
+        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+    }
 }
 
 # Preserve the original failure with its pending reads. On uncertainty the
@@ -132,24 +133,135 @@ function Wait-PrestartObserverRetirement {
 $script:PrestartObserverType = $null
 $script:PrestartActorType = $null
 $script:PrestartArchiveLeaseType = $null
+$script:PrestartScmWindowType = $null
+$script:PrestartDeploymentImportAttempted = $false
+$script:PrestartDeploymentAssemblyName = 'prestart_deployment_helpers'
+
 function Initialize-PrestartObserverTypes {
     if ($null -ne $script:PrestartObserverType) { return }
+    if ($script:PrestartDeploymentImportAttempted) { throw 'prestart-child:deployment-helper-unavailable' }
+    foreach ($loaded in [AppDomain]::CurrentDomain.GetAssemblies()) {
+        if ($loaded.GetName().Name -ieq $script:PrestartDeploymentAssemblyName) {
+            throw 'prestart-child:deployment-helper-unavailable'
+        }
+    }
     [string[]]$sources = @((Join-Path $PSScriptRoot 'prestart_actor_token.cs'),
         (Join-Path $PSScriptRoot 'prestart_observer_child.cs'),
         (Join-Path $PSScriptRoot 'prestart_archive_facts.cs'))
-    $types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') `
+    [string]$scmSource = Join-Path $PSScriptRoot 'prestart_scm_window.cs'
+    [bool]$hasScmWindow = Test-Path -LiteralPath $scmSource -PathType Leaf
+    if ($hasScmWindow) { $sources += $scmSource }
+    [type[]]$types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') `
         -PassThru -ErrorAction Stop)
-    $launchers = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartObserverChild' })
+    Set-PrestartObserverTypes $types $hasScmWindow
+}
+
+function Set-PrestartObserverTypes {
+    param([type[]]$Types, [bool]$HasScmWindow)
+
+    [type[]]$launchers = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartObserverChild' })
     $actors = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartActor' })
     [type[]]$archives = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartArchiveFacts' })
     if ($launchers.Count -ne 1 -or $actors.Count -ne 1 -or $archives.Count -ne 1) {
         throw 'prestart-observer:launcher-type'
     }
+    [type[]]$windows = @($types | Where-Object { $_.FullName -ceq 'NevroTick.PrestartScmWindow' })
+    if ($hasScmWindow -and $windows.Count -ne 1) { throw 'prestart-scm-window:owner-type' }
     [type]$lease = $launchers[0].GetNestedType('ArchiveLease')
     if ($null -eq $lease) { throw 'prestart-observer:archive-lease-type' }
+    if ($hasScmWindow) { $script:PrestartScmWindowType = $windows[0] }
     $script:PrestartArchiveLeaseType = $lease
     $script:PrestartActorType = $actors[0]
     $script:PrestartObserverType = $launchers[0]
+}
+
+# The dedicated deployment process loads its admitted sibling assembly
+# without starting a compiler inside the outer job. The private staging owner
+# supplies the independent pins and keeps control of the local namespace.
+function Import-PrestartDeploymentHelpers {
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 2097152)][int]$ExpectedBytes,
+        [Parameter(Mandatory = $true)][string]$ExpectedSha256
+    )
+
+    if ($script:PrestartDeploymentImportAttempted -or $null -ne $script:PrestartObserverType) {
+        throw 'prestart-child:deployment-helper-already-selected'
+    }
+    $script:PrestartDeploymentImportAttempted = $true
+
+    [string]$fileName = $script:PrestartDeploymentAssemblyName + '.dll'
+    if ($Path.Length -gt 512 -or $Path -cnotmatch '\A[A-Za-z]:\\[^\x00-\x1f"*/?<>|:]+\z' -or
+        ![string]::Equals([IO.Path]::GetFullPath($Path), $Path, [StringComparison]::Ordinal) -or
+        [IO.Path]::GetFileName($Path) -cne $fileName -or
+        [IO.DriveInfo]::new($Path.Substring(0, 3)).DriveType -ne [IO.DriveType]::Fixed) {
+        throw 'prestart-child:deployment-helper-path'
+    }
+    foreach ($component in $Path.Substring(3).Split('\')) {
+        if ($component.Length -eq 0 -or $component.Length -gt 255 -or
+            $component.EndsWith('.', [StringComparison]::Ordinal) -or
+            $component.EndsWith(' ', [StringComparison]::Ordinal)) {
+            throw 'prestart-child:deployment-helper-path'
+        }
+    }
+    if ($ExpectedSha256.Length -ne 64 -or $ExpectedSha256 -cnotmatch '\A[0-9a-f]{64}\z') {
+        throw 'prestart-child:deployment-helper-sha256'
+    }
+
+    [string[]]$helperNames = @('NevroTick.PrestartObserverChild', 'NevroTick.PrestartActor',
+        'NevroTick.PrestartArchiveFacts', 'NevroTick.PrestartScmWindow')
+    [string]$assemblyName = $script:PrestartDeploymentAssemblyName
+    foreach ($loaded in [AppDomain]::CurrentDomain.GetAssemblies()) {
+        if ($loaded.GetName().Name -ieq $assemblyName) {
+            throw 'prestart-child:deployment-helper-already-loaded'
+        }
+        foreach ($name in $helperNames) {
+            if ($null -ne $loaded.GetType($name, $false, $false)) {
+                throw 'prestart-child:deployment-helper-already-loaded'
+            }
+        }
+    }
+
+    [IO.FileStream]$stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try {
+        if ($stream.Length -ne $ExpectedBytes) { throw 'prestart-child:deployment-helper-length' }
+        [byte[]]$bytes = [byte[]]::new($ExpectedBytes)
+        [int]$offset = 0
+        while ($offset -lt $bytes.Length) {
+            [int]$count = $stream.Read($bytes, $offset, $bytes.Length - $offset)
+            if ($count -eq 0) { throw 'prestart-child:deployment-helper-length' }
+            $offset += $count
+        }
+        if ($stream.ReadByte() -ne -1 -or $stream.Length -ne $ExpectedBytes) {
+            throw 'prestart-child:deployment-helper-length'
+        }
+
+        [Security.Cryptography.SHA256]$sha256 = [Security.Cryptography.SHA256CryptoServiceProvider]::new()
+        try {
+            [string]$digest = [BitConverter]::ToString($sha256.ComputeHash($bytes)).Replace('-', '').ToLowerInvariant()
+        } finally {
+            $sha256.Dispose()
+        }
+        if ($digest -cne $ExpectedSha256) { throw 'prestart-child:deployment-helper-digest' }
+        [Reflection.Assembly]$assembly = [Reflection.Assembly]::Load($bytes)
+    } finally {
+        $stream.Dispose()
+    }
+    if ($assembly.GetName().Name -cne $assemblyName -or $assembly.GlobalAssemblyCache -or
+        $assembly.Location -cne '') {
+        throw 'prestart-child:deployment-helper-assembly'
+    }
+
+    [type[]]$types = foreach ($name in $helperNames) {
+        [type]$helper = $assembly.GetType($name, $false, $false)
+        if ($null -eq $helper -or ![object]::ReferenceEquals($helper.Assembly, $assembly) -or
+            !$helper.IsPublic -or !$helper.IsClass -or !$helper.IsSealed) {
+            throw 'prestart-child:deployment-helper-type'
+        }
+        $helper
+    }
+    Set-PrestartObserverTypes $types $true
 }
 
 # Observe the actual current primary token. The caller owns the query-only
@@ -168,8 +280,8 @@ function Open-PrestartObserverActor {
 }
 
 # Same-actor observation in a dedicated launcher process. The caller lends
-# the live actor, admitted image and unreset deadline. The standard-user
-# selector also requires an independently admitted ExpectedStandardUserSid.
+# the live actor, admitted image and unreset deadline. The provisioning and
+# standard-user selectors require their own independently admitted subject SIDs.
 # Child launches are serialized to keep the transient inheritable handles private.
 function Invoke-PrestartObserver {
     param(
@@ -180,7 +292,8 @@ function Invoke-PrestartObserver {
         [Parameter(Mandatory = $true)][object]$Actor,
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
         [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds,
-        [string]$ExpectedStandardUserSid
+        [string]$ExpectedStandardUserSid,
+        [string]$ExpectedProvisioningUserSid
     )
 
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
@@ -189,8 +302,8 @@ function Invoke-PrestartObserver {
     }
     $launcher = $script:PrestartObserverType
     $child = $launcher::Start($ImagePath, $ExpectedBytes, $ExpectedSha256, $Selector, $Actor, $Clock,
-        $TimeoutMilliseconds, $ExpectedStandardUserSid)
-    Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
+        $TimeoutMilliseconds, $ExpectedStandardUserSid, $ExpectedProvisioningUserSid)
+    Receive-OwnedPrestartChild $child
 }
 
 # Hold a read lease on one admitted archive. The coordinator owns its disposal
@@ -230,14 +343,34 @@ function Invoke-PrestartIdentity {
         [Parameter(Mandatory = $true)][string]$HelperSha256,
         [Parameter(Mandatory = $true)][guid]$RunId,
         [Parameter(Mandatory = $true)][object]$Archive,
-        [Parameter(Mandatory = $true)][string]$ExpectedUserSid,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ArchiveObservation')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')][string]$ExpectedUserSid,
         [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
         [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedWindow')]
         [string]$ExpectedSignerSha256,
-        [Parameter(Mandatory = $true)][object]$Actor,
-        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
-        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedWindow')][object]$Window,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ArchiveObservation')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')][object]$Actor,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ArchiveObservation')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ArchiveObservation')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
     )
+
+    if ($PSCmdlet.ParameterSetName -eq 'VerifiedWindow') {
+        if ($null -eq $script:PrestartScmWindowType -or !$script:PrestartScmWindowType.IsInstanceOfType($Window)) {
+            throw [ArgumentException]::new('prestart-scm-window:deployment-scope')
+        }
+        if (!$script:PrestartArchiveLeaseType.IsInstanceOfType($Archive)) {
+            throw [ArgumentException]::new('prestart-observer:archive-lease')
+        }
+        [object]$identityChild = $Window.StartVerifiedIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
+            $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
+            $RunId, $Archive, $ExpectedArchiveSha256, $ExpectedSignerSha256)
+        Receive-OwnedPrestartChild $identityChild
+        return
+    }
 
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:launch-deadline'
     if ($null -eq $script:PrestartActorType -or -not $script:PrestartActorType.IsInstanceOfType($Actor)) {
@@ -261,25 +394,35 @@ function Invoke-PrestartIdentity {
             $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
             $RunId, $Archive, $ExpectedUserSid, $ExpectedArchiveSha256, $Actor, $Clock, $TimeoutMilliseconds)
     }
-    Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
+    Receive-OwnedPrestartChild $child
 }
 
 function Receive-OwnedPrestartChild {
-    param([object]$Child, [Diagnostics.Stopwatch]$Clock, [int]$TimeoutMilliseconds)
+    param([object]$Child)
 
     $childId = $child.ProcessId
     $failure = $null
     $inputDigests = $null
+    $requireCollectionTime = {
+        try { $Child.RequireCollectionTime() } catch {
+            if ($_.Exception -is [Management.Automation.MethodInvocationException] -and
+                $_.Exception.InnerException -is [TimeoutException]) {
+                throw $_.Exception.InnerException
+            }
+            throw
+        }
+    }
     try {
-        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        & $requireCollectionTime
         $capture = Receive-PrestartStreams $childId $child.Stdout $child.Stderr {
             if ($child.HasExited) { $child.ExitCode }
-        } $Clock $TimeoutMilliseconds
-        while (-not $child.IsJobEmpty) {
-            Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        } $requireCollectionTime
+        while ($true) {
+            & $requireCollectionTime
+            if ($child.IsJobEmpty) { break }
             Start-Sleep -Milliseconds 5
         }
-        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        & $requireCollectionTime
         $inputDigests = $child.ConfirmImage()
     } catch {
         $failure = $_
@@ -309,12 +452,17 @@ function Receive-OwnedPrestartChild {
         throw $failure
     }
     try {
-        Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-child:collection-deadline'
+        $child.ConfirmPublication()
     } catch {
-        $_.Exception.Data['PrestartObserverProcessId'] = $childId
-        $_.Exception.Data['PrestartObserverRetired'] = $true
-        $_.Exception.Data['PrestartObserverReleased'] = $true
-        throw
+        [Exception]$publicationFailure = $_.Exception
+        if ($publicationFailure -is [Management.Automation.MethodInvocationException] -and
+            $null -ne $publicationFailure.InnerException) {
+            $publicationFailure = $publicationFailure.InnerException
+        }
+        $publicationFailure.Data['PrestartObserverProcessId'] = $childId
+        $publicationFailure.Data['PrestartObserverRetired'] = $true
+        $publicationFailure.Data['PrestartObserverReleased'] = $child.ReleaseConfirmed
+        throw $publicationFailure
     }
     return [pscustomobject]@{
         ProcessId = $capture.ProcessId; ExitCode = $capture.ExitCode;
@@ -323,5 +471,42 @@ function Receive-OwnedPrestartChild {
     }
 }
 
+# Acquire the two fixed SCM objects under the admitted deployment actor.
+# The caller owns the resulting lease and must inspect its retirement result.
+function Open-PrestartScmWindow {
+    param(
+        [Parameter(Mandatory = $true)][object]$Actor,
+        [Parameter(Mandatory = $true)][string]$ExpectedDeploymentSid,
+        [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
+    )
+
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-scm-window:open-deadline'
+    Initialize-PrestartObserverTypes
+    if ($null -eq $script:PrestartScmWindowType) { throw 'prestart-scm-window:owner-type' }
+    if (-not $script:PrestartActorType.IsInstanceOfType($Actor)) { throw 'prestart-scm-window:actor' }
+    Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-scm-window:open-deadline'
+    [type]$windowType = $script:PrestartScmWindowType
+    return $windowType::Open($Actor, $ExpectedDeploymentSid, $Clock, $TimeoutMilliseconds)
+}
+
+# Observe through the same window after the coordinator validates the identity receipt.
+function Invoke-PrestartVerifiedScmObservation {
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [Parameter(Mandatory = $true)][object]$Window,
+        [Parameter(Mandatory = $true)][string]$ImagePath,
+        [Parameter(Mandatory = $true)][long]$ExpectedBytes,
+        [Parameter(Mandatory = $true)][string]$ExpectedSha256
+    )
+
+    if ($null -eq $script:PrestartScmWindowType -or !$script:PrestartScmWindowType.IsInstanceOfType($Window)) {
+        throw [ArgumentException]::new('prestart-scm-window:deployment-scope')
+    }
+    [object]$child = $Window.StartVerifiedObservation($ImagePath, $ExpectedBytes, $ExpectedSha256)
+    Receive-OwnedPrestartChild $child
+}
+
 Export-ModuleMember -Function Receive-PrestartChild, Open-PrestartObserverActor, Invoke-PrestartObserver, `
-    Open-PrestartArchive, Invoke-PrestartIdentity
+    Open-PrestartArchive, Invoke-PrestartIdentity, Open-PrestartScmWindow, Invoke-PrestartVerifiedScmObservation, `
+    Import-PrestartDeploymentHelpers
