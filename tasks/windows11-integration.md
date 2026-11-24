@@ -17289,14 +17289,35 @@ The next attempt matched all twelve input files and the prepared
 dispatch. After staging the host-only copies, the immediate Windows
 memory observation reported 1,902 MiB. The runner stopped before any
 guest command, share creation or child launch. Independent readback
-matched the twelve files and `receipt.json` under
-`%LOCALAPPDATA%/NevroTick/s06-prestart-custody-a17d499/`. The refusal
-receipt SHA-256 is
+matched the twelve files and `receipt.json`. The refusal receipt
+SHA-256 is
 `57b914149ce2b025d5528a31a4bfe84e5f995e7b15d525c0f109b0ec58e5cdeb`.
-The next read-only memory observation was 1,548 MiB. On recovery above
-the unchanged floor, retain the complete host-only attempt under a fresh
-sibling name before using the same runner's exclusive output path.
-The three native cases remain due.
+The next read-only memory observation was 1,548 MiB. Recovery above
+the unchanged floor allowed the replay below.
+
+### Execute the held-archive pre-start controls in the offline Sandbox
+
+W11-W05/W11-W10, S0.6 and CHECK-18/26/27. The prepared capsule's nine
+tracked inputs matched both tree `811798c23aa4231cc77578d83c00bc3c5103fb40`
+and published commit `76df4412dab341f7e19f027cf9f11d82da53c740`. The two
+unsigned archives and expected observation also matched their pinned bytes.
+At 2,600 MiB available against the 2,048 MiB floor, the runner executed
+the compiler, identity and observer cases in the owned offline guest.
+All three exited zero with complete capture and reaped processes. The
+identity case observed actual archive custody and retirement, refusal of
+crossed pins, and a restored accepted fixture. The observer reported 17
+controls, including bounded output, EOF before exit, and contained child
+retirement. The guest removed its scratch directory and rechecked its
+inputs. Both attached directories were empty after collection.
+
+The new receipt under `%LOCALAPPDATA%/NevroTick/s06-prestart-custody-a17d499/`
+has SHA-256 `0e3b93a62645582b3ed90e6aa69807dbc27ab60492197bee2cc4d05db1b67188`.
+The earlier memory refusal is retained under the sibling
+`s06-prestart-custody-a17d499-memory-refusal-preserved-20261124-76df441/`.
+The six collector controls above remain the evidence for injected query
+and disposal failures. An independently admitted standard-user positive,
+directed native cleanup faults, signed archive verification and installed
+service identity and continuous quiescence remain open.
 
 ### Reobserve the original broker before request and reply acceptance — 24 November 2026
 
@@ -17544,6 +17565,31 @@ the actual Windows Engine test target. The combined cross-check receipt
 under `~/.local/share/nevrotick/verified-checkpoint-msvc.PSAoJD7K/publish-clippy/`
 hashes to `ab3ebb2dbe2e5fd00eaecedf68692d03c55187a695560a4e3d4c21db34b28815`.
 
-The new native pending-read selector remains open for actual Windows
-execution. Installed current publication, physical clock changes and
-affected 90%/95% qualification retain their existing owners and gates.
+The native pending-read selectors passed on published commit
+`76df4412dab341f7e19f027cf9f11d82da53c740`, tree
+`bac6ca855faefb42b89dd204ed4d5c092e5d0967`. The exact build matched all
+838 bound inputs. Six graph, twelve development and two MSVC x64-v3
+link/readback commands passed. The ordinary and optimized GNU runs each
+passed 195 service fixture and 70 platform tests, with 28 platform
+doctests passing separately.
+
+The offline Windows Sandbox on build 26100 ran each exact selector in
+its own process, using a same-process client on an actual named pipe.
+The healthy case received the expected reply on the original pending
+read. A scripted time-change delivery retired the original sample while
+Stop and cutoff were still open. The same client received no stale
+bytes, disconnected, and had zero outstanding fixture work after Stop.
+Both children exited zero and were reaped. The guest rechecked the inputs
+and removed scratch. Both attached directories were empty at retirement.
+
+| Record under `%LOCALAPPDATA%/NevroTick/broker-revision-76df441/` | SHA-256 |
+| --- | --- |
+| `broker-client-sample-graph-gen1.json` | `9f59b53b5a988e5e8dab6f29cb54ee989bd486754f1644ef99d4a62cd1e44164` |
+| `broker-client-sample-development-gen1.json` | `5ce96d18587b507a07159bfa862e5a2c89fe4dfbbacbe485a49871b86fe6ee17` |
+| `cross-broker-client-sample-libtest-gen1.json` | `c509e4807765c8f0929b34d6f07d7dd0b6f1ed385ba1a234c135791096553bec` |
+| `native-gen1/execution/native-verdict.json` | `557e97a0ad7ed52291c369a8327859e6cc992c00c1593a731ae42421e210d974` |
+
+Independent readback checked the exact image, selectors, source binding,
+child exits and retirement. Installed current publication, physical clock
+changes and affected 90%/95% qualification retain their existing owners
+and gates.

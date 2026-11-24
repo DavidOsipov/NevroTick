@@ -32944,3 +32944,28 @@ physical reference and production mapping are separate requirements.
 | Same stage `controls.log` | `8750d4b5acdce1e4d680a3a27eb5d68370ed8b7d37b619aa32e9e0049f881dae` |
 
 WSL records are under `~/.local/share/nevrotick/`.
+
+### Check the authenticated timing dispatch coordinator on the host
+
+S2.1/W11-W01 and CHECK-19/24/25/27. The staged coordinator binds the
+ordinary timing pair for tree `890e70f0a0f113045be1fd3e185bec9944cfcae9`,
+the exact loader and parser receipts, the rendered controller and the
+reader. Six host controls passed, including refusal of an unresolved
+attempt, exact typed retirement and refusal to dispatch when durable
+intent cannot be published. The integrated read-only check first found
+the shared execution lease occupied. It passed after the separate native
+owner retired.
+
+The coordinator records pending intent before the first guest command.
+It requires the two-child and four-stream retirement receipt and empty
+attached directories before clearing that intent. Keep historical
+lease-only entrypoints outside the active guest assignment. The next
+run still needs confirmation for the exact temporary lab root and its
+matching CRL, followed by independent restoration readback. The
+authenticated exchange and physical reference remain due.
+
+The staged source is `timing_coordinator.py` under
+`~/.local/share/nevrotick/s21-authenticated-timing-coordinator.aSBG8AUF/`,
+SHA-256 `499f68ff6dc8d5feafdc5ee376bd4bcd16ec5da451ea7369ec290b26b9bc5560`.
+The six controls' `controls.log` hashes to
+`8fc5859ee3c2dae5577f598d8c45dd3338a499558d4c608edfe3ca5603e7fee5`.

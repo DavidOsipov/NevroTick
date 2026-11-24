@@ -1333,13 +1333,16 @@ checks both producers' independently observed ports against each leg
 and the peer's owned UDP listener. Its current facade and peer passed
 paired readback and certificate-free Windows image preflight. The
 [rebound controller checkpoint](../../tasks/engine-transport-pilot.md#parse-the-rebound-timing-controller-in-the-owned-guest)
-adds the exact guest parser pass and host admission. Register and bind
-the authenticated retirement shape before the exact temporary laboratory
-root confirmation and exchange.
+adds the exact guest parser pass. The [ordinary timing coordinator](../../tasks/engine-transport-pilot.md#check-the-authenticated-timing-dispatch-coordinator-on-the-host)
+passed host admission and the pending-intent and retirement controls.
+Keep lease-only entrypoints outside the active guest assignment and obtain
+confirmation for the exact temporary laboratory root and CRL before the
+exchange.
 The [broker first-reply checkpoint](../../tasks/windows11-integration.md#revalidate-the-original-awake-revision-before-broker-reply-submission)
-checks the original awake revision at native submission. Its focused GNU
-regression and Windows-target test compilation passed. Native pending-read
-execution remains separate from those results.
+now includes two offline Windows pending-read results. The original pipe
+delivered the healthy reply and withheld the stale one after revision
+retirement. Installed current publication and physical clock changes
+remain separate exits.
 The [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
 still needs traceable calibration and event-placement evidence before the
 joined successor can enter production history. The
@@ -1422,7 +1425,10 @@ The [Windows child collector](../../tasks/windows11-integration.md#collect-raw-w
 passed seven native capture and retirement controls with fixed inert children.
 The [current cleanup checkpoint](../../tasks/windows11-integration.md#preserve-original-pre-start-child-custody-on-cleanup-failure--24-november-2026)
 verifies the original child transfer during cleanup failures in six
-controlled cases. Actual native retirement on the changed paths remains due.
+controlled cases. The [native held-archive replay](../../tasks/windows11-integration.md#execute-the-held-archive-pre-start-controls-in-the-offline-sandbox)
+also passed the compile, identity and observer cases, including actual
+child and archive retirement. The independently admitted standard-user
+positive, native directed cleanup faults and signed installed run remain due.
 The [installed image readback](../../tasks/windows11-integration.md#retain-both-role-image-handles-through-pre-start-readback--23-november-2026)
 now retains both original image handles through the final service and
 registration observations. The offline guest confirmed conflicting writes
