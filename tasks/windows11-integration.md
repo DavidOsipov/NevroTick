@@ -17949,6 +17949,69 @@ open.
 | `cross-broker-token-continuity-libtest-r2.json` | `1432a1935589c9af3fbd8b2cf5448d0878b2933efd83225f7a31bced0dabd5af` |
 | `native-verdict.json` | `259566cdb657e0e3f83b965620620e45cdb04c5710ea599473e0d41dad3ee268` |
 
+#### Bind broker-side client continuity to the original token generation
+
+W11-W05/S3.1–S3.2 and CHECK-2/25/27. The original client observation now
+retains both halves of the primary token's `ModifiedId` alongside the
+original kernel object, user SID and logon identity. Two complete
+`TOKEN_STATISTICS` reads on that same query-only token must agree on the
+generation across `TokenUser`. The observation refuses a change while
+the identity is being read. The broker's existing current-client check
+also compares every fresh generation to the original one, with permanent
+refusal once the check fails. The identity of the separately captured
+impersonation token still supplies request attribution by its own SID and
+logon checks. [Windows token statistics](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-token_statistics)
+
+The receiving path uses the original client's check at attribution of a
+completed read, the prepared reply admission and confirmation of the
+completed write. A mismatch withholds the corresponding admission or
+confirmation. A late refusal can follow byte delivery. The original
+native operation remains owned through terminal observation.
+
+The directed control opens a real local fixture pair and reuses the same
+live process and token. It first observes the original generation, then
+supplies a different saved high or low half to the current-client guard.
+The original value cannot reopen the refused client. This changes saved
+test observations while keeping the Windows token intact. Installed roles,
+physical token transitions and the phase's per-file gates remain open.
+
+The first scratch location under `/dev/shm` reached the configured
+runner's reserved-mount refusal before any Cargo command. The configured
+WSL scratch route used a separate owned worktree and preserved the 4 GiB
+checkout and scratch reserves. The first MSVC Clippy test build refused
+an assertion without panic documentation. The corrected control reports
+explicit fixture errors. The final candidate at `06ed67d` plus the retained
+overlay binds 858 inputs to
+`14fe96aa388807041afab3759d27f5defdab9b6cbd049b44e23182e75d6aef37`.
+All six graph and 12 development commands passed on Rust 1.100.0. The
+ordinary and optimized GNU lanes each passed 70 platform and 198 fixture
+cases. The platform also passed 28 doctests. MSVC-target Clippy compiled
+the Windows test path. These lanes preserve tool, input and output scope.
+
+The matching x64-v3 MSVC libtest linked and its PE/PDB pair passed
+readback. The owned offline Windows build-26100 guest passed all four
+exact selectors once. They covered the retained-child exchange, refusal
+of the foreign same-actor connector, the reply on the original pipe and
+the saved-generation control. Each selected process exited zero with
+one passed and 230 other tests filtered out. Both streams reached EOF,
+stderr stayed empty and the guest scratch and transfer files retired.
+Independent review checked the source maps, native image and raw results.
+
+| Record under `~/.local/share/nevrotick/s31-client-generation.w2lhagdR/` | SHA-256 |
+| --- | --- |
+| `final.patch` | `5221d0d818db0b764baddf0e4d20cbffea2131adcb157e2a007e5ca884c906c1` |
+| `checkpoint-r1.json` | `7dfe6eec750a083a084a06ca1bab8e697712cb48d54fb38d1b1142ba66d3767e` |
+| `graph-r2.json` | `07d1e4da9e9d045322ef108effd651b7766cef985dcc44b226730dbb78cf32f1` |
+| `checkpoint-r2.json` | `7cef1fd943808a4307c4f7cabe958798d146449eb3bd155bdd175e151038b8c4` |
+| `link.json` | `af0e2e9e0f2291bb61b0d2bbdb78b7a4cb2d9d0755193f95c902ea8381c8b735` |
+| `native/native-verdict.json` | `e7a6093a6c78ec9988da2c3ddc8bbcfc206b856794c3e86d9b223e16fa148345` |
+
+The 858-input identity has changed since the previous broker metric
+candidate. Its coverage and mutation receipts retain their original
+scope. WSL cleanup recovered 1.31 GiB from idle Cargo build and incremental
+caches. The distro still has about 2 GiB free, below the durable mutation
+runner's 6 GiB launch floor.
+
 ### Guard the native request and read the retained peer privileges — 24 November 2026
 
 W11-W05/S3.2 and CHECK-2/25/27. The supervised request checks the retained

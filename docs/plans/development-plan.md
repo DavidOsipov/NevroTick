@@ -1393,6 +1393,9 @@ peer observations. The [supervised fixture exchange](../../tasks/windows11-integ
 now samples the original pipe and retained process before the first request
 write and before publishing acceptance of the correlated reply. Installed
 peer identity and the installed request and reply guards retain their own exits.
+The [broker-side client continuity check](../../tasks/windows11-integration.md#bind-broker-side-client-continuity-to-the-original-token-generation)
+also retains the original primary-token generation for request attribution and
+reply admission and confirmation.
 The [native submission and token checkpoint](../../tasks/windows11-integration.md#guard-the-native-request-and-read-the-retained-peer-privileges--24-november-2026)
 places the request check on the exact writer after buffer preparation. It
 also captures the peer's complete privilege list at its acquisition generation.

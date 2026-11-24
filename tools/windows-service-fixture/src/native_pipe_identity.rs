@@ -71,6 +71,8 @@ pub(super) enum PipeIdentityError {
     InvalidSid,
     /// The user SID denotes anonymous logon.
     AnonymousUser,
+    /// A primary token changed during the identity read.
+    ChangedPrimaryToken,
 }
 
 impl fmt::Display for PipeIdentityError {
@@ -90,6 +92,9 @@ impl fmt::Display for PipeIdentityError {
             }
             Self::InvalidSid => formatter.write_str("invalid token user SID"),
             Self::AnonymousUser => formatter.write_str("anonymous token user"),
+            Self::ChangedPrimaryToken => {
+                formatter.write_str("primary token changed during identity observation")
+            }
         }
     }
 }
@@ -210,31 +215,64 @@ pub(super) fn own_process_identity() -> Result<PipeIdentity, PipeIdentityError> 
     query_identity(token.as_handle(), TokenPrimary)
 }
 
-/// A query-only primary token retained for object comparison in the fixture.
+/// Both halves of the Windows token's modification LUID.
+#[derive(Clone, Copy, Eq, PartialEq)]
+struct PrimaryTokenGeneration(i32, u32);
+
+impl PrimaryTokenGeneration {
+    /// Project the generation from a checked native statistics sample.
+    const fn from_statistics(statistics: &TOKEN_STATISTICS) -> Self {
+        Self(
+            statistics.ModifiedId.HighPart,
+            statistics.ModifiedId.LowPart,
+        )
+    }
+}
+
+/// A query-only primary token retained for object and generation comparison.
 pub(super) struct RetainedPrimaryToken {
     /// Noninherited handle to the original token object.
     handle: OwnedHandle,
     /// Identity read from this same token before admission.
     identity: PipeIdentity,
+    /// Generation shared by the statistics samples bracketing the SID read.
+    generation: PrimaryTokenGeneration,
 }
 
 impl RetainedPrimaryToken {
     /// Observe a primary token through an already retained process object.
     /// # Errors
-    /// Refuse impersonation, denied queries and unsuitable native token data.
+    /// Refuse impersonation, denied queries, unsuitable data or a changing token.
     pub(super) fn open(process: BorrowedHandle<'_>) -> Result<Self, PipeIdentityError> {
         ensure_unimpersonated()?;
         let token: OwnedHandle = open_primary_token(process.as_raw_handle())?;
-        let identity: PipeIdentity = query_identity(token.as_handle(), TokenPrimary)?;
+        let original: TOKEN_STATISTICS = query_statistics(token.as_handle(), TokenPrimary)?;
+        let generation: PrimaryTokenGeneration = PrimaryTokenGeneration::from_statistics(&original);
+        let identity: PipeIdentity = sample_identity(token.as_handle(), &original)?;
+        let confirmed: TOKEN_STATISTICS = query_statistics(token.as_handle(), TokenPrimary)?;
+        if PrimaryTokenGeneration::from_statistics(&confirmed) != generation {
+            return Err(PipeIdentityError::ChangedPrimaryToken);
+        }
         Ok(Self {
             handle: token,
             identity,
+            generation,
         })
     }
 
     /// Compare this checked identity token with the maintained process observation.
     pub(super) fn matches_observation(&self, observed: &PeerPrimaryToken) -> bool {
         observed.refers_to(self.handle.as_handle())
+    }
+
+    /// Require the same object, identity and modification generation at this sample.
+    fn matches_current(&self, current: &Self) -> bool {
+        self.identity == current.identity
+            && self.generation == current.generation
+            && crate::native_peer_process::same_kernel_object(
+                self.handle.as_handle(),
+                current.handle.as_handle(),
+            )
     }
 }
 
@@ -277,21 +315,14 @@ impl RetainedFixtureClient {
         self.current
     }
 
-    /// Observe the original process and token through the same connected server.
+    /// Observe the original process, token and generation through the same server.
     ///
     /// Any refusal irreversibly closes this fixture's reply authority. The
     /// process and token handles remain owned while an earlier write is charged.
     pub(super) fn observe(&mut self, server: BorrowedHandle<'_>) -> bool {
         self.current = self.observe_pipe(server)
-            && RetainedPrimaryToken::open(self.process.as_handle()).is_ok_and(
-                |current: RetainedPrimaryToken| {
-                    current.identity == self.token.identity
-                        && crate::native_peer_process::same_kernel_object(
-                            self.token.handle.as_handle(),
-                            current.handle.as_handle(),
-                        )
-                },
-            )
+            && RetainedPrimaryToken::open(self.process.as_handle())
+                .is_ok_and(|current: RetainedPrimaryToken| self.token.matches_current(&current))
             && self.process.check_live().is_ok();
         self.current
     }
@@ -368,6 +399,17 @@ fn query_identity(
     token: BorrowedHandle<'_>,
     expected_type: TOKEN_TYPE,
 ) -> Result<PipeIdentity, PipeIdentityError> {
+    let statistics: TOKEN_STATISTICS = query_statistics(token, expected_type)?;
+    sample_identity(token, &statistics)
+}
+
+/// Obtain one complete native statistics sample of the requested token type.
+/// # Errors
+/// Reject a denied query, invalid extent, unexpected type or identification level.
+fn query_statistics(
+    token: BorrowedHandle<'_>,
+    expected_type: TOKEN_TYPE,
+) -> Result<TOKEN_STATISTICS, PipeIdentityError> {
     let mut statistics: TOKEN_STATISTICS = TOKEN_STATISTICS::default();
     let capacity: u32 = u32::try_from(size_of::<TOKEN_STATISTICS>())
         .map_err(|_| PipeIdentityError::InvalidTokenInformation)?;
@@ -398,6 +440,16 @@ fn query_identity(
     {
         return Err(PipeIdentityError::UnexpectedImpersonationLevel);
     }
+    Ok(statistics)
+}
+
+/// Read the user SID on the same token that supplied the validated statistics.
+/// # Errors
+/// Preserve a native query or SID refusal.
+fn sample_identity(
+    token: BorrowedHandle<'_>,
+    statistics: &TOKEN_STATISTICS,
+) -> Result<PipeIdentity, PipeIdentityError> {
     Ok(PipeIdentity {
         user_sid: query_user_sid(token)?,
         authentication_id: (
@@ -495,4 +547,49 @@ fn query_user_sid(token: BorrowedHandle<'_>) -> Result<[u8; MAX_SID_BYTES], Pipe
         .ok_or(PipeIdentityError::InvalidSid)?
         .copy_from_slice(sid);
     Ok(identity)
+}
+
+#[cfg(test)]
+mod tests {
+    //! Exercise current-token checks on the original connected fixture pipe.
+
+    use std::num::NonZeroU32;
+
+    use super::{AsHandle, PeerProcess, PrimaryTokenGeneration, RetainedFixtureClient};
+    use crate::native_pipe_pair::{
+        LabClientContext, LabPipeReader, LabRequestWriter, open_lab_identification_pipe,
+    };
+
+    /// The same live pipe, process and token must refuse a stale generation.
+    /// # Errors
+    /// Preserve live fixture setup or native token query refusal.
+    #[test]
+    #[ignore = "requires the admitted offline Windows broker identity fixture"]
+    fn native_retained_client_rejects_a_different_primary_token_generation()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let (reader, _writer): (LabPipeReader, LabRequestWriter) =
+            open_lab_identification_pipe(0x4745_4e31, LabClientContext::Identification)?
+                .into_transport();
+        let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
+        for (high, low) in [(1_i32, 0_u32), (0, 1)] {
+            let mut client: RetainedFixtureClient =
+                RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
+            let original: PrimaryTokenGeneration = client.token.generation;
+            if !client.observe(reader.as_handle()) {
+                return Err("the original client generation was refused".into());
+            }
+
+            // Change only the saved observation. The kernel token, principal,
+            // process and connected server remain the healthy originals.
+            client.token.generation = PrimaryTokenGeneration(original.0 ^ high, original.1 ^ low);
+            if client.observe(reader.as_handle()) {
+                return Err("a different generation on the same token was accepted".into());
+            }
+            client.token.generation = original;
+            if client.observe(reader.as_handle()) {
+                return Err("restoring the sample reopened a refused client".into());
+            }
+        }
+        Ok(())
+    }
 }
