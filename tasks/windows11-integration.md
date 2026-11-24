@@ -4271,14 +4271,41 @@ An unseen forward step or unavailable clock presentation leaves an
 interval without established continuity. At the final history boundary,
 exercise replacement immediately before commit, an equal-valued foreign
 issuer, the declared expiry boundary and a span crossing validity by one
-tick. Freeze the exact validity endpoint rule before these checks.
+tick. Use the endpoint rule below for these checks.
 Refusals preserve the original age and charged work. Replay of an
 accepted receipt adds no row, and a fresh exchange under a qualified
 reissue adds exactly one.
 
+**Prepared receiver cases.** Use a half-open mapping window `[start, end)`
+in its admitted monotonic clock domain. Require the complete original
+pre-send, send-return and selected receive-return brackets and the full
+possible exchange span to lie in that window. Every earliest endpoint
+must be at or after `start` and every latest endpoint strictly before
+`end`. Check the issuer and generation and sample current monotonic time
+under the serialized history guard before publishing from the once-consumed
+completion. Require `start <= now < end` and preserve the original capture,
+transport commit and later history publication order. Date, era and scale
+still use the independently admitted true UTC interval.
+
+For the receiver control, use a declared window `[100, 200)` in exact
+fixture ticks and otherwise valid inputs. Accept the earliest endpoint at
+100 and the latest at 199 with transport commit and history `now` at 199.
+Move either the earliest endpoint to 99 or the latest to 200. Observe the
+span refusal during admission. A span ending at 200 cannot reach a valid
+commit before expiry. For the final expiry control, keep the healthy span
+and advance the commit clock to 200. Each refusal must leave history and
+freshness untouched and retain the original receipt age and charge. Keep
+the same numeric window in the foreign-issuer and just-before-commit
+replacement cases to isolate authority from the interval check. Replaying
+the accepted receipt adds zero rows. A refusal cannot reopen the original
+request or refund its spent allowance. A fresh receipt under a qualified
+reissue adds one. These are planned consumer controls. Their tick values
+establish no production bounds or calibration.
+
 Planning and acceptance used `plan-architecture` and `qa-test-planning`
 to trace the current raw reader, missing mapping declaration and
-future history boundary. Bench execution needs an actual lab reference,
+future history boundary. `qa-boundary-edge-cases` supplied the exact
+endpoint neighbors above. Bench execution needs an actual lab reference,
 calibration and transfer record, and measured placement bounds for the
 selected Windows path. Reference admission, issuance and production
 history acceptance remain open.
@@ -16962,3 +16989,561 @@ archive, with the separately admitted deployment actors and continuous
 quiescence. The unsigned archive controls leave signed admission,
 installed observations, native memory diagnostics and installed lifecycle
 qualification open.
+### Rebuild the MSIX authoring handoff with the current calendar graph — 24 November 2026
+
+W11-W10/P6 and CHECK-18/20/24/26. The configured default Windows lane
+built a detached archive of `a17d499412c0b4d6ec61b96e47bbcff1bac5d507`, tree
+`32fd19ae755a543185a26f40fd6a3c558c5848ba`. The archive matched 2,362 tracked
+paths. The 768-input Windows map has canonical SHA-256
+`53a315aff0e8e6f9e6f8d697c532bf3113a64a5e15a480c7a8cd7e33a7070f17`.
+The earlier Windows result has four differing inputs, including the added
+calendar test and the selected Slint dependency and validator changes.
+The new build retained the configured Rust 1.100.0, x64-v3 MSVC,
+SDK and version-resource tool identities and admitted vendor graph.
+Advisory freshness retains its separate configured dependency lane.
+
+All 35 configured lanes passed, including the UI and Observe release links,
+both independent VERSIONINFO and static import readbacks, and MSIX input
+inspection. The runner retained 61 files (88,310,911 bytes): two PE/PDB
+pairs, 51 artwork files, five checked authoring files and the build receipt.
+The Properties fragment retained `PackageIntegrity` and `TrustedLaunch`.
+The exact NTFS copy was reimported into an owner-private Linux directory.
+The configured handoff reader used the digest of the separate original
+Linux build receipt and reconciled every file length and hash. The reader
+refused the earlier artwork donor's stale Properties fragment and accepted
+the newer Trusted Launch control. Observe remains an excluded diagnostic
+image. The current handoff has `assembly_ready=false` and all four
+production roles remain unadmitted.
+
+Two setup attempts stopped before a compiler ran. The first could not use
+`/dev/null` in the outer namespace. The second had a private `/dev` but
+could not see the pinned vendor under `/dev/shm`. The corrected namespace
+passed a bounded Git archive and vendor visibility check before the build.
+The completed build used 452.772 seconds, retained the prior six-CPU and
+8 GiB cgroup limits, and confirmed the owned unit and scratch retirement.
+The Engine task's new retirement notes were outside the detached build.
+
+The machine-local inputs, driver and setup logs are under
+`~/.local/share/nevrotick/msix-default-a17d499.0bi4zrPK/`. The final records
+and exact handoff are under `%LOCALAPPDATA%/NevroTick/msix-default-a17d499/`.
+The two earlier attempts retain separate run leaves `-setup-01` and
+`-setup-02` under the same durable parent.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `run-windows-v3.py` | `d6a8ca8ca4c5820a848cd2ac32e1dbd71f1d147aeb8d8ef012ba633946925650` |
+| `cross-build.json` | `60a573d0cef8e99378611af70dd1be85f394b1fe3c914130c8bc5226cda6a666` |
+| `handoff-readback.json` | `5635ae6d73d2115c0c9f999175d89d74bf87f2314c25b451a058571fa7b38832` |
+| `build-summary.json` | `5ee6a7544a74e9fd77a4bbf7b375f54f581f873742fab1e6ead777ebbb9afc38` |
+
+The environment-preflight, package-artifact and checkpoint skills governed
+the frozen build and consumer readback. A fresh-context reviewer independently
+hashed all 61 retained files, parsed both actual PE/PDB pairs and checked the
+35 raw lane outcomes, resource tool identities and checked Properties.
+The existing installed probe still
+needs a lab signature observation bound to the held archive, independent
+actors and continuous observed quiescence. Final signing, installed
+provisioning and release qualification retain their existing gates.
+
+### Reconcile the full UI version resource in the MSIX handoff — 24 November 2026
+
+W11-W10/P6 and CHECK-18/20/24/26. The relocated handoff reader now
+compares the complete UI VERSIONINFO record decoded from the held PE
+bytes with the pinned build receipt. The string table, 13 fixed words
+and language/code-page pair must agree. Numeric arrays require JSON
+integers, including when a boolean or float compares equal in Python.
+The execution-manifest, import and PE/PDB custody checks still apply.
+
+The maintained CLI control pins each altered receipt while preserving the
+original image. The predecessor returned success for all six mismatches.
+The corrected reader refuses each at resource reconciliation, leaves the
+image bytes intact and accepts the restored receipt. The Linux Python
+3.12 suite passed 190 verifier, 23 VERSIONINFO and 18 PE tests. The same
+reader accepted the retained 61-file `a17d499` handoff built with the
+current Slint calendar graph. All file lengths and hashes reconciled and
+the readback matched the earlier output byte for byte. The receipt still
+reports `assembly_ready=false` and four unadmitted production roles.
+
+The package-artifact and regression-selection skills guided the real
+CLI control and receipt-only faults. Independent review checked the
+producer schema, held-byte consumer, six erroneous predecessor acceptances
+and corrected input hashes. The source and tests are the two-file reader
+change over `a17d499`. The retained build images were reused for the
+readback. The next installed admission still needs the signed lab
+archive and admitted actors under continuous observed quiescence.
+
+The local logs and input hashes are under
+`~/.local/share/nevrotick/msix-versioninfo-handoff-20261124.OYxVKEWk/`.
+
+| Record | SHA-256 |
+| --- | --- |
+| `red.log` | `23e9a244509e32f161b82894a81ea81d35c8c1c803307a4f203c0ee2630f681d` |
+| `green-tests.log` | `e08baefdbb18977a114ccf1a2a0a1d96934c49cbf8b2382716283c8e3783d11c` |
+| `green-inputs.sha256` | `8aaaac2f66299bd79a11c5a9eab35f3bc362c29e136852031818017d7cfc4e47` |
+| `retained-handoff-readback.json` | `5635ae6d73d2115c0c9f999175d89d74bf87f2314c25b451a058571fa7b38832` |
+
+The same reader now reconciles both complete PE declaration records against
+the held UI and Observe images. It uses the build producer's static decoder
+and requires exact field types and values. The repinned CLI controls changed
+the CFG flags, CET declaration, dependent-load flags and import count for
+each image, along with numerically equal float and boolean claims. All 12
+passed the predecessor and reached the role-specific refusal after repair.
+The original images stayed byte-identical and the restored receipt passed.
+
+The integrated reader, VERSIONINFO and PE suites passed 232 Python cases.
+Independent review rehashed the original receipt and every retained file,
+checked selected static fields directly against PE bytes, and confirmed the
+corrected 61-file readback still matches
+`5635ae6d73d2115c0c9f999175d89d74bf87f2314c25b451a058571fa7b38832`.
+The artifact still has four unadmitted production roles. Static declarations
+provide no additional installed mitigation evidence. Release signing and the
+actual deployment, provisioning and ordinary-user contexts remain open.
+
+The isolated package writer and independent reviewer used the existing
+package-artifact and regression-selection contracts. Raw RED and real
+handoff readback are under
+`~/.local/share/nevrotick/msix-handoff-pe-declarations.GbYkz2Zr/`.
+The integrated run is retained under
+`~/.local/share/nevrotick/msix-handoff-pe-integrated.X2Na6sAI/`.
+Its `tests.log` SHA-256 is
+`973ce99353f4d3e3f6f657e350d46925411486aa39c7a2b2ba80324c414e8fb3`.
+
+### Retain the token generation through service peer reobservation — 24 November 2026
+
+W11-W05/S0.3/S3.2 and CHECK-2/25/27. The existing service peer observer
+now binds its retained query-only token to the complete `ModifiedId`
+sampled during acquisition. Reobservation compares the fresh handle with
+the original kernel object, then checks the generation on the original
+handle before the remaining SCM and pipe samples. The role SID reader
+requires that acquisition generation before either list and after both
+lists. A mismatch or a statistics refusal ends the observation and leaves
+later stages uncalled. The internal native output borrows initialized,
+aligned storage and derives its DWORD extent from that slice. The public
+observations and diagnostics expose no raw modification identifier.
+[Microsoft TOKEN_STATISTICS](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-token_statistics)
+[Microsoft CompareObjectHandles](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-compareobjecthandles)
+
+The tested candidate is `a17d499412c0b4d6ec61b96e47bbcff1bac5d507` plus
+four changed Rust files. The complete 2,362-file snapshot includes the
+three pending documentation changes from the preceding checkpoints. Its
+SHA-256 is `55fc630198bc3f95490e46b56480dc08ef03ddbf9ac711fd7e2990c94d7e0df4`.
+The 754 admitted product inputs hash to
+`3b5a984ab37ac742badbe754697bb0ead0079628a599f5ebec9e71f2e4ba43c2`.
+Rust 1.100.0 passed 71 GNU cases in each build mode, four compile-fail
+doctests, rustdoc, formatting and GNU/MSVC Clippy. The MSVC x64-v3 test
+image linked and its PE/PDB CodeView identity matched. The initial source
+attempt stopped on a redundant `align_of` qualification before any test.
+The corrected run completed in 65.583 seconds, with 88.490 seconds across
+the two source attempts. The build owner retired its scratch and cgroup.
+
+The exact linked image then passed all three selected cases in an ordinary
+Windows build 26300 process. The actual token query sampled the test
+process's unchanged token and observed the foreign service SID's absence.
+The other two cases exercised stable evidence and scripted generation
+changes, wrong objects, failed queries and malformed extents. Each changed
+LUID half has a separate control. Selection and execution exited zero,
+all three launched processes were reaped, and staging retired. Independent
+review checked the exact four-file change, alignment, rights, ordering and
+the current consumers. The isolated writer's patch and the corrected patch
+were retained before retiring its worktree.
+
+The durable compiler receipts are under
+`%LOCALAPPDATA%/NevroTick/service-peer-generation-a17d499/`. The patch and
+Windows observation are under
+`~/.local/share/nevrotick/service-peer-generation-runner-20261124.2W2zLygP/`.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `verified-source.patch` | `601e0b2f888fcd28b03ba56d872a6782ab040cfcb166971cb9979c399af43adb` |
+| `sealed-source/summary.json` | `f68a2ac258875460299efcdf8c83bac6fc3a50ca1d66a67c459ee58171902285` |
+| `sealed-source-retry/summary.json` | `2e3a35a57970296f41b54dbe47f9a4242dadc1215a93e2673a7214347e853b54` |
+| `native-preparation/ordinary-windows-01/summary.json` | `239de29f5a9826a4c080d66fabb88139e12177af6ac1d11a52360b1699fbce20` |
+| `native-preparation/ordinary-windows-01/stdout.json` | `a3b91af17f0828f731a6aee7b0df892b6ae64c08f9490afdf340c743857bde24` |
+
+The Windows SCM fixture currently exercises the mismatched pipe and service
+PID before opening a token. A matching installed peer, the intended
+restricted Engine rights, native turnover and the serialized final request
+and reply guards still need their own observations. The token-generation
+sample establishes the observed value at that point in the sequence.
+Candidate-bound 90% coverage and 95% mutation qualification stay with the
+affected source owners.
+
+### Bind the lab signature check to the held MSIX — 24 November 2026
+
+W11-W10/W11-W05, S0.6 and CHECK-18/26/27. The owned identity command's
+`ExpectedSignerSha256` mode checks the original held archive with WinTrust
+and compares the selected leaf certificate's DER SHA-256 with the caller's
+independent pin. The lab mode requires a primary signature with zero
+secondaries. It supplies the held handle and path, checks the retained
+bytes around verification, and seals the observation after successful
+WinTrust state close. Launch, borrow and collection require that observation
+on the same lease, actor and deadline. The unsigned archive-observation
+controls keep their existing entry. The process owner bounds the synchronous
+verifier and must retire after unconfirmed verifier cleanup.
+[WinTrust file selection](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/ns-wintrust-wintrust_file_info) ·
+[WinTrust state and flags](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/ns-wintrust-wintrust_data)
+
+The native run bound nine selected sources and three artifacts to tree
+`1738938b17b6662be7acbe9464499fbc8b690b69`, based on `a17d499`. The current
+Slint calendar graph is present in the base. This run covers the separate
+C#/PowerShell harness and its held unsigned input archives.
+The offline guest compiled the helper and ran the identity and 17 observer
+controls. Both unsigned archives returned `0x800b0100` with no added
+WinTrust cleanup error. The new controls also rejected missing signature
+evidence, crossed archive pins, malformed signer pins, a different clock,
+a changed timeout and expiry. Both earlier archive-observation neighbors
+and the original child retirement checks passed. All three process exits
+were zero, streams were complete, the children were reaped and guest
+scratch was removed. The guest dispatch took 45.349 seconds and left
+empty mappings. The run performed no installation, signing or trust change.
+
+Package-artifact, build-security, lifecycle and negative-path QA checked the
+native boundary, the exact refusal and the healthy observation neighbors.
+Independent source review and x64 SDK ABI assertions checked the new
+declarations and lease ownership. Independent readback reconciled all 12
+input and seven output hashes, the ordered transcripts and child retirement.
+The writer also ran 46 portable MSIX tests for the existing artifact readers
+and payload preparation. The retained source patch has SHA-256
+`510b1e1d209ed40e8a4677cbd60d6bdbeb2a5950ffb97155141ba038f1638cd1` under
+`~/.local/share/nevrotick/s06-msix-signature-20261124.IhKhLhxD/`.
+The bounded native results are under
+`%LOCALAPPDATA%/NevroTick/s06-msix-signature-a17d499/`.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `receipt.json` | `4d682ca5bbc5124ed9b65faaba3a184cb5be75b25473f62ca749bfb67615e73c` |
+| `guest.json` | `2ebcb2364d0b3942c26e550534c4cd76b5433c5ae060e10f82c64ce95b02dea1` |
+| `identity.stdout` | `c8fe5df9f688d30c610d801add6b28a0ea933205d90e46d10a1864334cfd12f4` |
+| `observer.stdout` | `fd3c07ce9282e796da14de9d03b59cd7281d0bb91d71e39e71fb741b64a3bf37` |
+
+Next use an independently admitted signed lab MSIX to establish Appx
+provider handle/path binding, signer-pin mismatch and matched signer
+acceptance through actual child completion. A valid signature is needed
+to test crossed actors on the verified lease. Verifier close failure and
+native memory diagnostics retain separate evidence requirements. Installed
+roles, continuous quiescence, final signing policy and exact distribution
+remain with their existing owners.
+
+### Preserve original pre-start child custody on cleanup failure — 24 November 2026
+
+W11-W05/W11-W10, S0.6 and CHECK-24/27. Both owned pre-start collectors use
+the original child from the same-actor launcher. The PowerShell collector
+now retains the termination request error on the primary collection
+failure and still polls for actual retirement. Its explicit C# observation
+method checks the original process and job in that order. A query refusal
+propagates before disposal. If the first query fails, the collector returns
+the original child without requesting termination. The existing pending
+read checks and retirement allowance apply before release.
+
+The baseline control failed after the healthy capture. An instrumented
+replay located `Argument passed in is not serializable` at the scalar
+assignment of the live child into exception data. No retirement polls or
+disposal ran. The observer and the C# failed-launch path now retain one
+original reference in an exception array for same-process recovery. They
+also retain that reference when the release precheck fails before disposal
+begins. A failed release remains reported as such. The intermediate
+PowerShell property-getter control reached the bounded timeout instead of
+propagating the injected query exception. The explicit method closes that
+loss of the query cause.
+
+The integrated six-case run passed on x64 Windows PowerShell
+`5.1.26100.10068`. It exercised the actual collector with controlled child
+state and .NET stream tasks. The success, termination-error and separate
+disposal-error controls retained their expected results. The initial
+query, subsequent query and pre-disposal refusals retained the exact
+original reference, primary error and independent cleanup cause, without
+publishing a capture. The scalar and lost-precheck-reference derivatives
+each failed the intended assertion in the same test. The actual C# launcher
+compiled, its retirement method and property reflected at their expected
+types, and the identity control parsed.
+
+Fault-recovery and regression selection guided the controlled cases. The
+independent review checked the preimages and native release ordering, the
+two defect controls and the five-case production-owner result. The added
+initial-query case passed on the same integrated owner bytes. The test
+source, compiler inputs and raw exits are bound in
+`~/.local/share/nevrotick/prestart-custody-method-readback.VeTOZ0Xa/`.
+`integrated.stdout` SHA-256 is
+`2b284fecdd759b61e9bd4919bdafcc416c05bb03d0ffba7c7407d14a4f1c397e`.
+`compiler.stdout` SHA-256 is
+`9cc59a4de3d52a602dc86d3454298a3f9143b6a8a5450f961328cc11b3c5b8bb`.
+The directed failures and earlier diagnostic runs are retained. Native
+job, process and pipe retirement on the changed paths remain unexecuted.
+The signed archive, admitted launch actors and continuous quiescence
+remain prerequisites to the installed probe.
+
+The Sandbox runner replayed preparation for the three existing native
+cases against detached tree `811798c23aa4231cc77578d83c00bc3c5103fb40`.
+Only the collector, child implementation and identity test overlay the
+earlier 12-input capsule. The independent preparation checked the fixed
+dispatch, held unsigned archive inputs and staging capacity. Its
+`preflight.json` hashes to
+`49cff5a3a9bbe87d4e1ecf9e43fe2fb20b1b3a6cb85eebc2336d2f868aa1c478` under
+`~/.local/share/nevrotick/s06-prestart-custody-native-20261124.kilm1ya3/`.
+Dispatch remains pending. Windows reported 1,438 MiB available against
+the configured 2,048 MiB floor. The three native cases exercise actual
+retirement and its neighboring paths. The six controlled cases above
+retain the injected query and pre-disposal failure evidence.
+
+The next attempt matched all twelve input files and the prepared
+dispatch. After staging the host-only copies, the immediate Windows
+memory observation reported 1,902 MiB. The runner stopped before any
+guest command, share creation or child launch. Independent readback
+matched the twelve files and `receipt.json` under
+`%LOCALAPPDATA%/NevroTick/s06-prestart-custody-a17d499/`. The refusal
+receipt SHA-256 is
+`57b914149ce2b025d5528a31a4bfe84e5f995e7b15d525c0f109b0ec58e5cdeb`.
+The next read-only memory observation was 1,548 MiB. On recovery above
+the unchanged floor, retain the complete host-only attempt under a fresh
+sibling name before using the same runner's exclusive output path.
+The three native cases remain due.
+
+### Reobserve the original broker before request and reply acceptance — 24 November 2026
+
+W11-W05/S3.2 and CHECK-2/25/27. The distinct-process fixture child now
+samples liveness of the original retained supervisor around a PID read
+on its original connected client. Both the request writer and reply reader
+retain the same pipe handle. The child checks its fixed deadline before
+and after the peer observation at the first request write entry and the
+acceptance marker for the exact correlated reply. A refusal reaches the
+existing retirement path for the original pending read. The native writer
+still uses its separate bounded polling and cancellation-drain allowances.
+
+One deterministic control reaches the shared guard and observes no effect
+when the cutoff is reached during peer observation or a foreign observation
+is returned. The healthy neighbor reaches the effect after both time samples.
+The real child completes the native request and correlated reply through
+the new checks. The foreign same-actor native test exercises the other
+direction, where the broker refuses a different client process.
+
+Planning, Rust contracts, IPC security, lifecycle QA and regression selection
+used the actual child and original transport. The combined detached tree
+`caa1bb78680342523bb65030c9493c731dc75d66` from `a17d499` bound 837 selected
+inputs to `7a54b31a26c4aacbcffcc7f67e2ef2a7673d07d87ab0a0e15dfa127e68d7589b`.
+All six graph and 12 development commands passed under Rust 1.100.0,
+including format, GNU and MSVC-target Clippy, 195 fixture and 70 platform
+cases in each GNU test mode, and 28 platform doctests. The two MSVC
+x64-v3 link and artifact readback commands passed. The original 4 GiB
+disk floor admitted a detached source on tmpfs and separate writable
+scratch under the configured isolated runner. The graph, development
+and link ran for 23.106, 190.577 and 122.044 seconds respectively.
+
+The offline Windows build-26100 guest ran four exact selectors. The
+retained child, foreign client refusal, original-connection reply and
+deterministic guard cases each passed once with 222 filtered out. All
+four parents exited zero and were reaped with complete captures and
+empty stderr. Guest scratch was removed and both mapped directories
+were emptied. Independent review matched all 837 source hashes, the raw
+command and native results, the actual link options and PE/PDB identity,
+and the guest and staging retirement records.
+
+The build records and `verified-source.patch` are under
+`~/.local/share/nevrotick/broker-client-final-sample-20261124.4sf6tB/`.
+The PE/PDB pair and native evidence are under
+`%LOCALAPPDATA%/NevroTick/broker-client-final-sample-a17d499/`.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `verified-source.patch` | `f579f2e95b6bb925e5e4854670bd2f2b5b09a985b73c794385d73aa2671bb18b` |
+| `broker-client-sample-graph-r1.json` | `e339c1cf10f86837521a58b46aac15bfbb02811d3853af6fa97ec31b7a21e9e5` |
+| `broker-client-sample-development-r1.json` | `be93fc29f1d3cb51b8af0935d3bce00fb0f827fd26c84184e244b70f17fd8d66` |
+| `cross-broker-client-sample-libtest-r1.json` | `180a8c1d3e288d6f58c8cfa2ff5ffafa124db8894148bafcada500ec33716df0` |
+| `execution/native-verdict.json` | `a45b3dbe990c5beabd90f11dd2f7fe104097a3caadf5010d1ab978133ec22f2b` |
+
+Continue with the installed peer under §4.34.8 after the supported pre-start
+bridge. Direct native late or wrong-server observations at the child-side
+edges, fresh installed role/token/package evidence at the serialized effect,
+the installed syscall deadline and affected production 90%/95% gates remain open.
+
+### Guard the native request and read the retained peer privileges — 24 November 2026
+
+W11-W05/S3.2 and CHECK-2/25/27. The supervised request checks the retained
+process and original connected server PID on the exact writer handle after
+preparing the native slot and immediately before `WriteFile`. It samples
+the original cutoff on both sides of the peer check. A refusal leaves the
+slot idle. Normal collection uses the earlier of the original cutoff and
+the existing write allowance. It requires a timely observation of the
+exact terminal count. Pending operations keep their original slot through
+the separate bounded cancellation drain. The reply acceptance marker still
+requires the correlated reply and a current peer sample. The Windows
+control refuses one write and observes only the subsequent permitted bytes
+on the same pipe. [Windows overlapped write](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile)
+
+The retained service peer can now capture the complete bounded
+`TokenPrivileges` list from its original query-only token. The fixed
+aligned buffer holds up to 128 entries, and the successful extent must
+match the checked count exactly. Statistics on both sides must match the
+acquisition generation. The adapter preserves typed first refusal and
+exposes the exact capture to the existing complete-profile decoder.
+The native duplex fixture matches its retained observation with a separate
+native self-token query after checking reversion. Both captures pass
+through the same existing decoder. Independent x64 SDK layout assertions
+and Rust controls cover extent, allocation alignment, native query
+failure and stale or changed generation. [Token query](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-gettokeninformation) ·
+[Privilege layout](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-token_privileges)
+
+Rust 1.100.0 native leaf qualification passed 74 GNU tests per mode, four
+compile-fail doctests, GNU and MSVC Clippy, rustdoc, format and checked MSVC
+x64-v3 link. The exact image passed three selectors under an ordinary
+Windows build-26300 process. They exercised SID observation and the
+one-shot and typed slot callback controls. The full leaf snapshot binds
+2,362 paths, with 754 admitted inputs. Independent comparison matched all
+754 against the combined fixture tree. The two full-snapshot differences
+are the test-only consumer bridge and its duplex caller.
+
+The combined service tree `a3557cc78e0e9ac48ea9a0e8c50800787e0e953c`
+binds 837 selected inputs to
+`07e395c65f89413413703b6411665fa4ab744ab2585b8db72e5c964acdde0bf3`.
+All six graph, twelve development and two MSVC x64-v3 link/readback
+commands passed. Both GNU modes ran 195 fixture and 70 platform cases.
+The platform ran 28 doctests. The exact PE ran five selectors in the
+offline Windows build-26100 Sandbox. Each returned one pass. The duplex
+result contains both reversion and privilege-match observations. Each
+parent was reaped and the guest scratch and staged files were removed.
+Independent review matched exact source, actual compiler and linker
+arguments, PE/PDB custody and raw native and teardown evidence.
+
+The build receipts and `verified-source.patch` are under
+`~/.local/share/nevrotick/broker-native-submit-20261124.w9LRe0/`.
+The native files, PE/PDB and leaf qualification are under
+`%LOCALAPPDATA%/NevroTick/broker-native-submit-a17d499/`. The first leaf
+attempts retain the re-export format, sibling import and GNU test
+visibility refusals. The first service development attempt retains the
+test import refusal from reaching the native self-token observer. The
+corrected test-only bridge uses the original private observer.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `verified-source.patch` | `6b3da268921975f7dd1066fe431c4d84a5c7e28e87969ab5a9695cd485336266` |
+| `leaf-qualification/current-r4/summary.json` | `934e58a9c498f322f8d3e7fee2330ddc4e2f0699f3b360eb9f511946d5f311d7` |
+| `leaf-native/ordinary-windows-01/summary.json` | `43bfa0d87dc2e6224883a9bdb0644d83e87158ba02c623c53f37eb88497b0396` |
+| `broker-client-sample-graph-r2.json` | `3dc7b411d275a04e3127cb77d5fa7d48e67260abf91d70eaf3ebfd58be24e639` |
+| `broker-client-sample-development-r2.json` | `0afc4de70ad18364939d74834b17a8af10e587719f2cfc97a8547474397be34a` |
+| `cross-broker-client-sample-libtest-r2.json` | `69fafc9efcce409d99b838b4e6806538dbdf60fba1318061d94dbc1001c9c40c` |
+| `execution/native-verdict.json` | `9c6dbdedee25d6262747e3d1cef5fa98eaf82ed97a0ca784227bcc8aac6b797d` |
+
+Rust contracts, IPC security, lifecycle QA, environment preflight and
+independent review covered these selected source and execution paths.
+The supported pre-start bridge and independently verified installed role,
+token, image and effective Engine grants still govern installed admission.
+Native child-side peer loss, physical power, installed per-effect guards,
+and the candidate-bound 90%/95% obligations retain their owning exits.
+
+### Recheck the broker reply at native submission — 24 November 2026
+
+W11-W05/S3.2 and CHECK-2/25/27. The sealed first-reply fixture rechecks
+the original cutoff, Stop and live mailbox around reobservation of the
+retained client on the exact borrowed writer. It checks again after
+preparing the stable slot and before `WriteFile`. The endpoint spends its
+one reply before preparation. Final refusal leaves the write slot idle
+and the connection in ordinary retirement. A submitted write keeps the
+original slot through completion or cancellation drain. Native write
+failures retain their operation and error code. This is sampled admission
+at the calling boundary.
+
+The scripted second peer observation delivers Stop before submission in
+the corrected fixture. On predecessor tree
+`47fdb98e95e869b26747948602531dfe6e9c090c`, the new history failed with
+both a submission and a collection in its observed trace. The other 193
+library cases passed. The corrected history passes beside ordinary
+inline and queued completion, Stop after submission, and uncertain drain.
+The new Windows cutoff selector uses the original accepted pipe and
+literal request and reply. It expects the reply decision in custody but
+no bytes in the already pending client read, then disconnection and zero
+remaining work after Stop. The healthy same-pipe and retained-child
+selectors check actual reply delivery.
+
+Tree `3e2804796a03f6de59c4bee084ff6072dcb9cf87` over `a17d499` binds
+837 selected inputs to
+`b506422a62fcef56f33e41c4e1e6e881bba1d82215e1c0a21b417cb26860a961`.
+All six graph, twelve development and two MSVC x64-v3 link/readback
+commands passed. GNU ordinary and optimized each passed 195 service
+fixture and 70 platform tests. All 28 platform doctests passed. Earlier
+development attempts retain the GNU import, assertion lint and Windows
+test import refusals. Rust contracts, IPC security, deterministic lifecycle
+QA and independent review checked the changed owner, source map and
+actual PE/PDB. The wire representation and resource limits are unchanged.
+
+The first native attempt stopped at the existing 2,048 MiB Windows
+memory floor before staging a share or launching a test. A fresh probe
+after retiring the archived predecessor worktree reported 1,698 MiB.
+The last host sample before retry preparation reported 1,606 MiB.
+The first attempt remains a pre-dispatch resource refusal.
+
+After a host probe reported 2,613 MiB, `reply4-retry2` reused the same
+verified PE/PDB in a fresh output directory. The offline Windows Sandbox
+on build 26100 passed all three exact selectors. The healthy same-pipe
+case delivered the original reply. The cutoff case observed no reply
+bytes, a disconnect and zero outstanding work after Stop. The retained
+child case completed an exchange with the original client. Each selected
+child exited zero and was reaped. The guest recorded descendant
+settlement, input recheck and scratch removal. The runner emptied the two
+attached directories and kept the guest running. Independent readback
+checked the original image and symbol digests, exact test outputs and
+cleanup observations.
+
+The original native verdict still binds the 837-input build. A read-only
+comparison with the current checkout finds one differing path,
+`scripts/verify.py`, for the separate MSIX reader change. The broker
+source, test, and dependency inputs in that map match. Installed identity,
+live per-effect admission and affected 90%/95% qualification remain open.
+
+The WSL index is under `~/.local/share/nevrotick/broker-final-reply-20261124.LKCSCIGw/`.
+The linked PE/PDB and refused attempt are retained under
+`%LOCALAPPDATA%/NevroTick/broker-final-reply-a17d499/reply4/`.
+The successful retry's raw results and verdict are in the sibling
+`reply4-retry2/execution/`. Its `native-verdict.json` SHA-256 is
+`0183c74a39691a536bd3fd589b25597e73b70fa8a4daffb94ac870c2f3218eea`.
+
+| WSL record | SHA-256 |
+| --- | --- |
+| `red/final-reply-red.json` | `5d09aea4ca3de8e580ef1c666560a128884674aa9919ee9b824b0f82e3f8ff34` |
+| `final/reply-source.patch` | `f1de5d63c8ac9675ec786e0f7c8be72430886891d22fecd1f1780ca4437b7201` |
+| `final/broker-client-sample-graph-reply4.json` | `9426a404d584c0d283427ecb151367554c7128598daef1636a4ef2fbe6d4c045` |
+| `final/broker-client-sample-development-reply4.json` | `836d0326e3ebca861c3584a8ef8fc3109c70d0efb249103d30336fff2100be59` |
+| `final/cross-broker-client-sample-libtest-reply4.json` | `f730db94e2350cd95d130b82931baec9bcea6b20e7d7933c52387b7ee09ebf2f` |
+
+### Revalidate the original awake revision before broker reply submission
+
+W11-W05/S3.2 and CHECK-2/25/27. The sealed first-reply fixture carries the
+original awake revision for an encoded positive status through the
+prepared writer. The final call-boundary sample revalidates that revision
+after reobserving peer identity, Stop and cutoff. If a delivered time-change
+has retired it, the fixture spends the one reply opportunity and leaves the
+idle writer with its original owner for normal Stop and retirement.
+The sample orders submission against changes already delivered at that
+point. Asynchronous delivery and current consumer publication retain their
+separate ownership checks.
+
+The deterministic GNU history delivers a time-change during the final peer
+observation. Omitting only the final revision check confirmed the stale
+write and failed the expected assertion after ordinary Stop retired the
+fixture. Its healthy neighbor passed. With the check restored, both tests
+and GNU Clippy passed. Both variants revalidated six actual graph results
+and the exact selected test names. Candidate
+`18db92111c3408d915db98f0523a90df892e4c565224376c1803877c21c85c5f`
+binds the repaired service inputs.
+
+The first harness attempt omitted three pinned manifests needed for root
+dependency admission. The second serialized the vendor identity
+inconsistently with its reader. Neither ran the history. The first
+execution with the omitted check aborted while unwinding an assertion
+through a still-owned invocation. Relocating that assertion after fixture
+retirement exposed the exact history and true/false mismatch on the next
+execution. The previous setup and abort results are preserved.
+
+| Verification under `~/.local/share/nevrotick/broker-final-reply-verified.UB3kn9Jp/replay-04/` | SHA-256 |
+| --- | --- |
+| `summary.json` | `fe8ef82bf46710791ab41bcd88886cad39faaa8f225932968e0fe143809544d7` |
+| `red-tests.json` | `c058833918c10f47b4e3f9e1e74575088236482c584a04bde1308bcedfbbbb77` |
+| `green-tests.json` | `6a7617b71813d79f1ec7a20a2fc9765802d8e4fbdbadbb4125fcc31684edeb5e` |
+
+On the same candidate, Windows-target Clippy passed for the service
+fixture test scope and the Engine EP1 test scope. The compiler reported
+the actual Windows Engine test target. The combined cross-check receipt
+under `~/.local/share/nevrotick/verified-checkpoint-msvc.PSAoJD7K/publish-clippy/`
+hashes to `ab3ebb2dbe2e5fd00eaecedf68692d03c55187a695560a4e3d4c21db34b28815`.
+
+The new native pending-read selector remains open for actual Windows
+execution. Installed current publication, physical clock changes and
+affected 90%/95% qualification retain their existing owners and gates.

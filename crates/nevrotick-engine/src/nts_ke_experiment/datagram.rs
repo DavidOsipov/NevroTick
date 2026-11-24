@@ -673,7 +673,7 @@ mod reached {
         /// Identity of the exact committed Control instance, without authority.
         control_identity: Arc<()>,
         /// Original managed first receipt with its pre-exchange population.
-        history: Box<ManagedProtectedHistory>,
+        history: Arc<ManagedProtectedHistory>,
     }
 
     impl BoundFirstHistory {
@@ -683,7 +683,7 @@ mod reached {
         pub(in super::super) fn into_worker_history(
             self,
             control_identity: &Arc<()>,
-        ) -> Result<Box<ManagedProtectedHistory>, Failure> {
+        ) -> Result<Arc<ManagedProtectedHistory>, Failure> {
             if !Arc::ptr_eq(&self.control_identity, control_identity) {
                 return Err(Failure::Control);
             }
@@ -784,7 +784,7 @@ mod reached {
     /// The selected bounded path's normal retirement, original first history and work.
     pub(in super::super) struct ReceivedManagedSuccessor {
         /// Present only after a genuine first commit.
-        first: Option<Box<ManagedProtectedHistory>>,
+        first: Option<Arc<ManagedProtectedHistory>>,
         /// Actual terminal result with the original NAK mark.
         terminal: ManagedSuccessorTerminal,
         /// Attempted sends, full sends, and the original driver's remaining work.
@@ -833,7 +833,7 @@ mod reached {
         pub(in super::super) fn into_parts(
             self,
         ) -> (
-            Option<Box<ManagedProtectedHistory>>,
+            Option<Arc<ManagedProtectedHistory>>,
             ManagedSuccessorTerminal,
             (usize, usize, usize),
         ) {
@@ -883,7 +883,7 @@ mod reached {
 
     impl ReceivedCompletion {
         /// Preserve the existing CLI projection without publishing numerical authority.
-        pub(in super::super) const fn summary(&self) -> &Summary {
+        pub(in super::super) fn summary(&self) -> &Summary {
             match &self.inner {
                 ReceivedState::Preview(summary) => summary,
                 ReceivedState::ManagedPreview(history) => history.summary(),
@@ -921,12 +921,9 @@ mod reached {
             let JoinedProtectedHistory::Managed(managed) = received.history else {
                 return Err(Failure::Control);
             };
-            let ManagedProtectedHistory {
-                history,
-                configuration,
-            }: ManagedProtectedHistory = *managed;
+            let history: &ProtectedHistory = managed.history();
             Ok((
-                configuration,
+                managed.configuration().clone(),
                 *history.summary(),
                 history.receipt.fields().header().leap_indicator(),
                 history.committed_at(),
@@ -951,12 +948,12 @@ mod reached {
         /// Original diagnostic protected operation.
         Diagnostic(Box<ProtectedHistory>),
         /// Explicit source-issued operation with an exact committed revision.
-        Managed(Box<ManagedProtectedHistory>),
+        Managed(Arc<ManagedProtectedHistory>),
     }
 
     impl JoinedProtectedHistory {
         /// Borrow the original captures and packet facts for either protected mode.
-        const fn observation(&self) -> &ProtectedHistory {
+        fn observation(&self) -> &ProtectedHistory {
             match self {
                 Self::Diagnostic(history) => history,
                 Self::Managed(managed) => &managed.history,
@@ -973,7 +970,7 @@ mod reached {
 
     impl CompletionProjection<'_> {
         /// Borrow the original mode-specific counts without changing their meaning.
-        pub(in super::super) const fn summary(&self) -> &Summary {
+        pub(in super::super) fn summary(&self) -> &Summary {
             self.completion.summary()
         }
 
@@ -1021,14 +1018,14 @@ mod reached {
     #[cfg(test)]
     impl ReceivedProtectedNumerics {
         /// Borrow unchanged genuine history; never split off or rebind its provenance.
-        pub(in super::super) const fn history(&self) -> &ProtectedHistory {
+        pub(in super::super) fn history(&self) -> &ProtectedHistory {
             self.history.observation()
         }
 
         /// Borrow the source-issued history only from a genuine joined result.
-        pub(in super::super) fn managed_history(&self) -> Option<&ManagedProtectedHistory> {
+        pub(in super::super) fn managed_history(&self) -> Option<&Arc<ManagedProtectedHistory>> {
             match &self.history {
-                JoinedProtectedHistory::Managed(managed) => Some(managed.as_ref()),
+                JoinedProtectedHistory::Managed(managed) => Some(managed),
                 JoinedProtectedHistory::Diagnostic(_) => None,
             }
         }
@@ -1196,7 +1193,6 @@ mod reached {
         }
 
         /// Inspect actual historical endpoints without reissuing socket custody.
-        #[cfg(test)]
         pub(in super::super) const fn endpoints(&self) -> (SocketAddr, SocketAddr) {
             (self.local, self.remote)
         }
@@ -1474,7 +1470,7 @@ mod reached {
             };
             Ok(match self.configuration {
                 Some(configuration) => {
-                    InvocationCompletion::ManagedProtected(Box::new(ManagedProtectedHistory {
+                    InvocationCompletion::ManagedProtected(Arc::new(ManagedProtectedHistory {
                         history,
                         configuration,
                     }))

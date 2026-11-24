@@ -3,6 +3,8 @@
 
 use std::{mem, task::Poll, time::Instant};
 
+#[cfg(test)]
+use crate::broker_clock_change::ClockRevision;
 #[cfg(windows)]
 use crate::native_broker_wait::PendingCompletionWake;
 
@@ -90,6 +92,8 @@ pub(super) enum FirstReadCompletion {
 pub(super) enum FirstReplyStart {
     /// This endpoint reads only.
     Unarmed,
+    /// Final admission closed after preparation without submitting a write.
+    Refused,
     /// Windows still owns the physical operation.
     Queued,
     /// Windows already completed the write. The count still needs collection.
@@ -186,7 +190,13 @@ pub(super) trait Reservation: Sized {
     /// # Errors
     /// Refuses native submission without acquiring new work.
     #[cfg(test)]
-    fn begin_first_reply(&mut self, _bytes: &[u8]) -> Result<FirstReplyStart, NativeError> {
+    fn begin_first_reply<C: Clock>(
+        &mut self,
+        _bytes: &[u8],
+        _connection: &mut RunningConnection<'_, C>,
+        _cutoff: Instant,
+        _positive_revision: Option<&ClockRevision<'_>>,
+    ) -> Result<FirstReplyStart, NativeError> {
         Ok(FirstReplyStart::Unarmed)
     }
 
@@ -532,15 +542,7 @@ where
         connection: &mut RunningConnection<'_, C>,
         cutoff: Instant,
     ) -> ConnectionEdge {
-        let edge: ConnectionEdge = connection.reply_edge(cutoff);
-        if !matches!(edge, ConnectionEdge::Open(_)) {
-            return edge;
-        }
-        let peer_current: bool = endpoint.reply_peer_current();
-        match connection.reply_edge(cutoff) {
-            ConnectionEdge::Open(_) if !peer_current => ConnectionEdge::Expired,
-            edge => edge,
-        }
+        connection.reply_edge_with_peer(cutoff, || endpoint.reply_peer_current())
     }
 
     /// Start the serialized fixture reply on the worker whose original read settled.
@@ -553,6 +555,7 @@ where
         connection: &mut RunningConnection<'_, C>,
         bytes: &[u8],
         cutoff: Instant,
+        positive_revision: Option<&ClockRevision<'_>>,
     ) -> Result<ConnectionWait, WorkerFailure> {
         let State::Running(endpoint, state @ Running::ReadSettled) = &mut self.state else {
             return Ok(ConnectionWait::Service);
@@ -564,8 +567,10 @@ where
         ) {
             return Ok(ConnectionWait::Service);
         }
-        let start: Result<FirstReplyStart, NativeError> = endpoint.begin_first_reply(bytes);
+        let start: Result<FirstReplyStart, NativeError> =
+            endpoint.begin_first_reply(bytes, connection, cutoff, positive_revision);
         match start {
+            Ok(FirstReplyStart::Refused) => Ok(ConnectionWait::Service),
             Ok(FirstReplyStart::Unarmed) => {
                 let _edge: ConnectionEdge = connection.reply_edge(cutoff);
                 Ok(ConnectionWait::Service)
@@ -811,7 +816,12 @@ where
         connection: &mut RunningConnection<'_, C>,
         reply: &crate::host::NativeStatusReply,
     ) -> Result<ConnectionWait, WorkerFailure> {
-        self.begin_reply(connection, reply.frame().as_bytes(), reply.cutoff())
+        self.begin_reply(
+            connection,
+            reply.frame().as_bytes(),
+            reply.cutoff(),
+            reply.positive_revision(),
+        )
     }
 
     /// Fence preparation and activation, cancel an outstanding operation once,

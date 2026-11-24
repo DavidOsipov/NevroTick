@@ -900,14 +900,39 @@ fn write_successor_work(sink: &mut impl Write, report: &ManagedProtectedReport) 
     Ok(())
 }
 
-/// Export both original native triplets from a checked, joined ordinary exchange.
+/// Project the validated loopback tuple from the original joined receipt.
+/// # Errors
+/// Refuse an unassigned port, a nonfixture local address or an unexpected peer.
+fn successor_timing_ports(
+    receipt: &ManagedProtectedReceipt,
+    expected_peer: SocketAddr,
+) -> Result<(NonZeroU16, NonZeroU16), SetupFailure> {
+    let local: SocketAddr = receipt.local_endpoint();
+    let peer: SocketAddr = receipt.peer_endpoint();
+    if local.ip() != Ipv4Addr::LOCALHOST
+        || peer.ip() != Ipv4Addr::LOCALHOST
+        || peer != expected_peer
+    {
+        return Err(SetupFailure::ManagedSuccessorTiming);
+    }
+    let client_port: NonZeroU16 =
+        NonZeroU16::new(local.port()).ok_or(SetupFailure::ManagedSuccessorTiming)?;
+    let peer_port: NonZeroU16 =
+        NonZeroU16::new(peer.port()).ok_or(SetupFailure::ManagedSuccessorTiming)?;
+    Ok((client_port, peer_port))
+}
+
+/// Export both original native triplets and their loopback tuples from the joined job.
 ///
-/// The six rows carry local application-boundary coordinates for the lab reader.
+/// The six rows carry loopback ports and application-boundary coordinates for the lab reader.
 /// They grant no calibrated mapping, sample eligibility or clock authority.
 ///
 /// # Errors
-/// Refuse an incomplete exchange, a mismatched clock sequence or a failed write.
-fn write_successor_timing(report: &ManagedProtectedReport) -> Result<(), SetupFailure> {
+/// Refuse incomplete or mismatched history, a wrong endpoint, or a failed write.
+fn write_successor_timing(
+    report: &ManagedProtectedReport,
+    expected_peer: SocketAddr,
+) -> Result<(), SetupFailure> {
     use ProtectedNativeClockObservation::Recorded;
 
     let (Some(first), ManagedProtectedTerminal::Ordinary(successor)) =
@@ -915,12 +940,16 @@ fn write_successor_timing(report: &ManagedProtectedReport) -> Result<(), SetupFa
     else {
         return Err(SetupFailure::ManagedSuccessorTiming);
     };
-    if report.first_nak_at().is_some()
+    if !first.same_invocation(successor)
+        || first.same_exchange(successor)
+        || report.first_nak_at().is_some()
         || report.power_unregistration_error().is_some()
         || (report.attempted_sends(), report.fully_submitted_sends()) != (2, 2)
     {
         return Err(SetupFailure::ManagedSuccessorTiming);
     }
+    let first_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(first, expected_peer)?;
+    let next_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(successor, expected_peer)?;
     let [
         [
             Some(Recorded(first_before)),
@@ -945,9 +974,17 @@ fn write_successor_timing(report: &ManagedProtectedReport) -> Result<(), SetupFa
         return Err(SetupFailure::ManagedSuccessorTiming);
     }
     let mut sink: io::StdoutLock<'_> = io::stdout().lock();
-    for (leg, captures) in [
-        ("first", [first_before, first_after, first_receive]),
-        ("successor", [next_before, next_after, next_receive]),
+    for (leg, (client_port, peer_port), captures) in [
+        (
+            "first",
+            first_ports,
+            [first_before, first_after, first_receive],
+        ),
+        (
+            "successor",
+            next_ports,
+            [next_before, next_after, next_receive],
+        ),
     ] {
         for (point, coordinates) in ["pre-send", "send-return", "receive-return"]
             .into_iter()
@@ -956,6 +993,7 @@ fn write_successor_timing(report: &ManagedProtectedReport) -> Result<(), SetupFa
             writeln!(
                 sink,
                 "scope=managed-protected-successor-timing leg={leg} point={point} \
+                 client_port={client_port} peer_port={peer_port} \
                  qpc_before={} filetime_100ns={} qpc_after={} frequency_hz={}",
                 coordinates.qpc_before(),
                 coordinates.filetime_100ns(),
@@ -1010,7 +1048,7 @@ fn managed_protected_successor(witness: SuccessorWitness) -> Result<ExitCode, Se
         let report: &ManagedProtectedReport = outcome
             .as_ref()
             .map_err(|_| SetupFailure::ManagedSuccessorTiming)?;
-        write_successor_timing(report)?;
+        write_successor_timing(report, udp_peer)?;
     }
     Ok(code)
 }
@@ -1022,6 +1060,7 @@ fn managed_protected_successor(witness: SuccessorWitness) -> Result<ExitCode, Se
 fn checked_pair_receipts<'a>(
     report: &'a ManagedProtectedReport,
     expected: &SourceConfigurationSnapshot,
+    expected_peer: SocketAddr,
 ) -> Result<[&'a ManagedProtectedReceipt; 2], SetupFailure> {
     let (Some(first), ManagedProtectedTerminal::Ordinary(successor)): (
         Option<&ManagedProtectedReceipt>,
@@ -1030,6 +1069,7 @@ fn checked_pair_receipts<'a>(
         return Err(SetupFailure::ManagedPairOutcome);
     };
     if !first.same_invocation(successor)
+        || first.same_exchange(successor)
         || report.first_nak_at().is_some()
         || report.power_unregistration_error().is_some()
         || (report.attempted_sends(), report.fully_submitted_sends()) != (2, 2)
@@ -1040,6 +1080,9 @@ fn checked_pair_receipts<'a>(
             .any(|receipt: &ManagedProtectedReceipt| {
                 receipt.packet_bytes() != 252
                     || receipt.leap_indicator() != 0
+                    || receipt.peer_endpoint() != expected_peer
+                    || !receipt.local_endpoint().ip().is_loopback()
+                    || receipt.local_endpoint().port() == 0
                     || !successor_receipt_matches(receipt, expected)
             })
     {
@@ -1116,9 +1159,9 @@ fn managed_protected_pair() -> Result<ExitCode, SetupFailure> {
         .ok_or(SetupFailure::ManagedPairOutcome)?
         .map_err(|_| SetupFailure::ManagedPairOutcome)?;
     let [first_initial, first_terminal]: [&ManagedProtectedReceipt; 2] =
-        checked_pair_receipts(pair.first(), &first_expected)?;
+        checked_pair_receipts(pair.first(), &first_expected, first_udp)?;
     let [second_initial, second_terminal]: [&ManagedProtectedReceipt; 2] =
-        checked_pair_receipts(second_report, &second_expected)?;
+        checked_pair_receipts(second_report, &second_expected, second_udp)?;
 
     if first_initial.same_invocation(second_initial)
         || first_terminal.committed_at() >= cutoff

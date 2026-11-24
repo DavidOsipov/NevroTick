@@ -129,6 +129,212 @@ generated mutation credit. The receipt is
 `~/.local/share/nevrotick/coverage-later-module-20261123.b34g0sfp/verification.json`,
 SHA-256 `ff7efd9811af3eb219641938025633585f024d414166a1b8fbd4c4654ec594f6`.
 
+## Re-admit current portable metadata inputs — 24 November 2026
+
+W11-W10, MD-P1–MD-P3 and CHECK-18/20/23/26/27. The previous coverage
+binding and mutation baseline predate changes to the delivery reader,
+its test and workspace manifest. The coverage driver and reporter also
+changed. Current work uses the clean metadata projection of commit
+`a17d499412c0b4d6ec61b96e47bbcff1bac5d507`, tree
+`32fd19ae755a543185a26f40fd6a3c558c5848ba`. The 59-file freeze and the
+dependency on unchanged shared worktree inputs are recorded separately.
+The durable evidence root is `/mnt/d/nevrotick-md-p3-a17d499.SrQvdezI/`.
+Private Linux scratch retains POSIX FIFO, symlink and directory semantics.
+
+The existing strict typing runner admitted the same pinned mypy 2.4.1
+tool before and after execution. Eight production modules and the legal
+consumer passed. Five negative consumers failed at their intended
+diagnostics. `typing/result.json` SHA-256 is
+`7b99c21d985ec9837212e4a7cd888141b408060f32e40035e9a0fbbb8e40d497`.
+
+The isolated CLI ran validate, generate, check and inspect through both
+the default and an explicit alternate in-root source. Independent readback
+matched all 14 files in each tree, their source and tool digests, and the
+alternate description in the descriptor, display XML and MSIX authoring
+input. Checking the alternate tree against the default source and checking
+the default tree at release stage each returned the bounded refusal.
+The inspection binds three authoring inputs and retains six pending fields,
+a null package identity and four unadmitted product roles. The first
+probe also exposed its alternate source through a writable mount alias.
+The qualifying replay uses disjoint read-only input and writable output
+mounts. `cli-exact/readback.json` SHA-256 is
+`dffaa2ba45ac6a5e1ec360632ec75ea1950b7603daebb7820c34d42642d4efa9`.
+
+Coverage.py 7.17.2 passed all **263** tests and reconciled all **344**
+expected CLI subprocesses. The five required line gates passed with
+`__main__` at 46/49, `contract` 611/666, `delivery` 294/315, `generate`
+345/362 and `text_policy` 39/39. `fields` reached 19/20, and the two
+package markers contributed zero executable lines. The independent SQLite
+readback matched the baseline test identities and excluded 28 altered-source
+observations. Its first comparison treated line-list order as significant.
+The corrected comparison enforces unique integer membership. All 211,324
+test/module/line observations matched the producer map. Both attempts
+and the first diagnostic are retained. The coverage producer took 772.804
+seconds, including 766.821 seconds of test execution. The readback and
+exact archive of 696 raw members are under
+`independent-coverage-evidence._skesiu5/`. `readback.json` SHA-256 is
+`ab67c0a85708efb2e09a825b518f66a61dc883a3dfb0c3d3261a935fadee794c`.
+
+The admitted Cosmic Ray 8.7.0 driver regenerated **9,244** descriptors,
+including **110** for `metadata/pipeline/__main__.py`, and the ordinary
+baseline passed all **263** tests. Independent review found that the
+post-rename uncertainty test copies the worker entrypoint and adds its
+fault seam. Healthy coverage excludes those altered bytes. A separate
+full-suite selection ran the four affected numeric descriptors. The
+existing test caught both changes to the schema version and both changes
+to exit `3` through the actual CLI. The run exited `1` because most of the
+complete inventory was outside that selection. The baseline, inventory,
+four per-variant outcomes and their raw logs are retained in
+`mutation-baseline-and-uncertainty.tar.gz` with SHA-256
+`e34a596b8194cea2c08af773541528c8c8a7966ba0a7cb9d911f13a0e9934b9f`.
+These four outcomes do not establish a file score. The remaining 106 CLI
+descriptors completed against the exact coverage context and baseline in
+172.009 seconds with matching input bookends. The independent union found
+**58 assertion kills, 29 behavioral errors, 11 syntax refusals, 8 startup
+outcomes requiring review and 4 survivors** across the 110 exact IDs. No
+final file score was assigned. The 29 errors reached changed status,
+command dispatch or annotation behavior. The two `allow_nan` survivors
+have exact-source equivalence arguments pending application through the
+review reader. The two output-order survivors remain visible. The raw
+contextual archive and independent union are
+`raw-contextual-cli-mutation.tar.gz` and `cli-mutation-readback.json`.
+
+The startup gap concerns two actual roles. Three variants leave package
+import legal but break the isolated script's package lookup. Three script
+guard variants exit without their required JSON. Two variants parse
+arguments during library import. One original probe could only provide
+the reader's expected assertion via a Python warning. The revised control
+exercises valid script output and inert import separately with compiler
+warnings suppressed. Its first isolated repair candidate passed a fresh
+264-case baseline and produced a meaningful probe assertion on each of
+the eight exact IDs. Final reader review additionally requires normal
+exit `1`, the exact method and the same CLI startup role on review and
+replay. It preserves an original failure if its supplemental probe
+cannot complete. The final derivative runs the selected file cohort with
+the new baseline and the exact unchanged production coverage
+memberships. Full acceptance remains open pending its raw readback and
+review. Other files and native and installed package qualification retain
+their separate exits.
+
+The startup repair's configured review accepted five named startup
+failures and two equivalents. The other three bootstrap variants failed
+direct runtime assertions in that run. Independent raw review withheld
+six apparent kills that only saw `SyntaxWarning` before the unchanged
+runtime diagnostic. The repaired source fixture's 264-case baseline
+passed. Five of the six variants then failed at changed dispatch, status
+or response shape. The separate omitted-root subprocess still saw only
+a warning. The next derivative shares the functional test's Python flags
+with that subprocess and the other direct entrypoint controls. It keeps
+all runtime assertions and the separate syntax classification.
+
+The three-file repair is integrated in the checkout and matches the
+frozen `runtime-flags` derivative. The fresh ordinary baseline passed
+**264** tests. The selected 106 ran with the unchanged production context
+map, and the four uncertainty variants ran with the full suite. Those
+runs took 275.014 and 73.587 seconds. The same-candidate replay admitted
+three remaining bootstrap reviews in 7.498 seconds. The former
+warning-only construct now fails because a malformed `generate` request
+returns `valid-source` and exits zero instead of rejecting. The independent
+readback also verified the other five runtime failures. The review reader
+refused timed-out, abnormal-exit, foreign-test and role-mismatched probes
+and preserved the original classification on supplemental I/O failure.
+
+The CLI file's **95% mutation gate passed** on this derivative. Of the
+110 exact generated variants, **95 were caught**, **11 were syntax-unviable**,
+**2 were independently reviewed equivalents** and **2 survived** by
+changing stdout key order. None remain unresolved. The unadjusted score
+is 95/99 (95.96%) and the adjusted score is 95/97 (97.94%). The independent
+reader initially found an ambiguous bootstrap statement marker. The
+corrected check binds the full insertion statement and the original
+refusal remains archived.
+
+The readback is `runtime-flags/independent-readback-retry.json`, SHA-256
+`6c10428924fd1a11543155a084de9cfed06d68fea312c5adc2689749eecf0959`.
+`runtime-flags/raw-cli-qualification.tar.gz` preserves 753 tested-source,
+baseline, inventory and raw outcome members. Its SHA-256 is
+`29b00ade80437598554ad396f4eb36563dd4a8e557ebcb41a63a7d6a14e80ded`.
+The raw archives were read back before the owned scratch was retired.
+`cleanup.json` records the observed 202,153,984-byte tmpfs reclaim and the
+unchanged 1,810-file and four-symlink mutation tool store.
+The 9,244-variant campaign remains incomplete. The 263-case instrumented
+predecessor served as source-bound selection evidence for this replay.
+The 264-case baseline above is ordinary execution.
+
+### Complete the field registry and probe delivery discrimination
+
+W11-W10, MD-P3. The checkpoint and mutation-testing skills bound the
+264-test baseline and the 9,244-entry inventory to the same admitted
+Cosmic Ray 8.7.0 tool, 59-file freeze and three-file repair. The raw
+evidence directory is `/mnt/d/nevrotick-md-p3-runtime-flags.F565OSYo/`.
+
+Coverage.py 7.17.2 ran all **264** tests on that freeze and observed all
+**346** expected CLI children. All five required 90% executable-line
+gates passed.
+
+| Module | Executed lines | Covered branches |
+| --- | ---: | ---: |
+| `__main__.py` | 46/49 | 12/12 |
+| `contract.py` | 611/666 | 320/372 |
+| `delivery.py` | 294/315 | 160/180 |
+| `generate.py` | 345/362 | 101/116 |
+| `text_policy.py` | 39/39 | 20/20 |
+
+`fields.py` reached 19/20 lines and 1/2 branches. The two package
+markers have zero executable statements. The independent SQLite
+readback excluded 28 altered-source observations and reconciled 347
+raw process stores. The first readback omitted `metadata/product.toml`
+from its independent set of manifest inputs. The corrected reader
+verified the full inventory and raw archive from the same execution.
+Both readback attempts remain recorded. The 700-member archive and
+`readback.json` are in `independent-coverage-evidence.97xb1f5j/`.
+The readback SHA-256 is
+`54784050c73e0feb076e54419d1da9291b12b7d3f119bf917c369deb47bea7da`.
+
+The `fields.py` **95% per-file mutation gate passed**. All 12 exact
+variants completed. Five failed the selected registry/CLI assertions,
+and six stopped valid-source CLI startup at the expected registry or
+constructor error. One reviewed equivalent replaces the registry length
+inequality with less-than. Each field entry contributes at most one
+dictionary key, so a larger dictionary is impossible. The unadjusted
+score is 11/12 (91.67%) and the adjusted score is 11/11 (100%).
+An independent readback verified every diff, the startup causes and
+the restored worker files.
+
+A separate `delivery.py` pilot completed nine of its 2,008 variants.
+Four dropped the required logo-field key and five reached the delivery
+reader's JSON facts comparison. These were actual producer-to-reader
+errors during setup, before the selected test assertions. They exercise
+the composition path. The pilot assigns no full-file score.
+Both commands exited 1 at the full-inventory gate because the selections
+were partial. Both retained matching input bookends and no stop reason.
+`raw-fields-and-delivery.tar.gz` contains 255 independently read-back
+members and hashes to
+`fd31663ce19549c4f022e173759887ec0ffa89ee59b324e950f2338a7662c054`.
+
+The negative-path control now passes bare `NaN`, `Infinity` and
+`-Infinity` through the real delivery reader. Each produces the original
+redacted public error, with the nonfinite-JSON error as its direct cause.
+The original valid output passes, and the supplied bytes remain intact.
+Removing only the JSON parser's `parse_constant` callback caused all
+three assertions to fail at the expected cause comparison. The restored
+control and all 34 delivery tests passed in the isolated Python 3.12 run.
+This test-only edit adds one method. The directed control earns no
+generated-mutation credit. Its command and log hashes are in
+`nonfinite-result.json` and `nonfinite-delivery-suite-exit.json`.
+
+All **265** ordinary tests passed with this test integrated. The final
+readback matched the original 264 test IDs plus this one control and
+all 59 frozen input hashes. The first readback addressed the archived
+roster at the wrong JSON level. The test execution exited zero and the
+first reader error remains recorded. `ordinary-265-readback.json` SHA-256
+is `b7c6ba3e467c69b06324310b135904aa6f89237879f33de0f9c55176c911c5c3`.
+The line and mutation receipts bind the preceding 264-test roster.
+Use the 265-test roster at the next integrated qualification exit.
+
+The 95% exits for `contract.py`, `delivery.py`, `generate.py` and
+`text_policy.py` remain open, along with native, installed and signed
+MSIX qualification.
+
 ## Completed finite repair — 8 November 2026
 
 David explicitly requested fixing the seven-quote metadata defect. The finite

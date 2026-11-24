@@ -386,6 +386,45 @@ impl<C: Clock> RunningConnection<'_, C> {
         }
     }
 
+    /// Check that the original reply is current on both sides of a peer observation.
+    #[cfg(test)]
+    pub(super) fn reply_edge_with_peer(
+        &mut self,
+        cutoff: Instant,
+        observe_peer: impl FnOnce() -> bool,
+    ) -> ConnectionEdge {
+        let edge: ConnectionEdge = self.reply_edge(cutoff);
+        if !matches!(edge, ConnectionEdge::Open(_)) {
+            return edge;
+        }
+        let peer_current: bool = observe_peer();
+        match self.reply_edge(cutoff) {
+            ConnectionEdge::Open(_) if !peer_current => ConnectionEdge::Expired,
+            edge => edge,
+        }
+    }
+
+    /// Recheck the availability decision at the prepared write's final boundary.
+    /// The original positive revision must still be awake after observing the peer.
+    /// An unavailable decision conveys no positive revision authority.
+    #[cfg(test)]
+    pub(super) fn reply_submission_edge(
+        &mut self,
+        cutoff: Instant,
+        positive_revision: Option<&ClockRevision<'_>>,
+        observe_peer: impl FnOnce() -> bool,
+    ) -> ConnectionEdge {
+        match self.reply_edge_with_peer(cutoff, observe_peer) {
+            ConnectionEdge::Open(_)
+                if positive_revision
+                    .is_some_and(|revision: &ClockRevision<'_>| !revision.admits()) =>
+            {
+                ConnectionEdge::Expired
+            }
+            edge => edge,
+        }
+    }
+
     /// Remember the exact complete write count observed under a fresh reply edge.
     #[cfg(test)]
     pub(super) const fn record_reply_written(&mut self) {
@@ -1546,30 +1585,32 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         clock: &mut impl Clock,
         notification: &StopNotification,
     ) -> BrokerAvailability {
-        self.broker_availability_before(clock, notification, None)
-            .unwrap_or(BrokerAvailability::Unavailable)
+        match self.broker_available_revision_before(clock, notification, None) {
+            Ok(Some(_revision)) => BrokerAvailability::Available,
+            Ok(None) | Err(_) => BrokerAvailability::Unavailable,
+        }
     }
 
-    /// Decide once under the original invocation and an optional earlier connection cutoff.
+    /// Decide once and retain the exact awake revision behind positive availability.
     /// # Errors
     /// Refuses a closed service or an expired connection without emitting a reply.
     #[cfg(test)]
-    fn broker_availability_before(
+    fn broker_available_revision_before(
         &mut self,
         clock: &mut impl Clock,
         notification: &StopNotification,
         session_cutoff: Option<Instant>,
-    ) -> Result<BrokerAvailability, BrokerQueryFault> {
+    ) -> Result<Option<ClockRevision<'static>>, BrokerQueryFault> {
         let revision: Option<ClockRevision<'static>> = self
             .broker_clock_reader
             .as_ref()
             .and_then(NativeBrokerReader::observed_awake_revision);
         self.broker_status_edge(clock, notification, session_cutoff)?;
-        if revision.is_some_and(|revision: ClockRevision<'static>| revision.admits()) {
-            return Ok(BrokerAvailability::Available);
+        let available: Option<ClockRevision<'static>> = revision.filter(ClockRevision::admits);
+        if available.is_none() {
+            self.require_broker_status_open(notification)?;
         }
-        self.require_broker_status_open(notification)?;
-        Ok(BrokerAvailability::Unavailable)
+        Ok(available)
     }
 
     /// Admit a live broker status observation and sample the trusted owner time.

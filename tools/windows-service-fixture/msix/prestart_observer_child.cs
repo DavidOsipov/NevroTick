@@ -33,8 +33,8 @@ namespace NevroTick
         }
 
         // The coordinator keeps this original lease through identity collection
-        // and retirement. Its facts describe the held bytes, pending independent
-        // signature and deployment-window admission.
+        // and retirement. Its facts describe the held bytes. Signature admission
+        // additionally requires the observer and independent pins below.
         public sealed class ArchiveLease : IDisposable
         {
             private readonly PrestartArchiveFacts facts;
@@ -42,6 +42,8 @@ namespace NevroTick
             private readonly int timeoutMilliseconds;
             private readonly object gate = new object();
             private HeldFile file;
+            private string verifiedSignerSha256;
+            private PrestartActor verifiedActor;
             private bool retired;
             private bool borrowed;
 
@@ -79,29 +81,67 @@ namespace NevroTick
                 }
             }
 
-            internal PrestartArchiveFacts Confirm(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            // The enclosing process owner must bound and retire the synchronous
+            // Windows call. This deadline governs admission before and after it.
+            public string VerifySignature(string expectedArchiveSha256, string expectedSignerSha256,
+                PrestartActor actor, Stopwatch observedClock, int observedTimeoutMilliseconds)
             {
                 lock (gate)
-                    return ConfirmHeld(observedClock, observedTimeoutMilliseconds);
+                {
+                    ConfirmHeld(observedClock, observedTimeoutMilliseconds, null, null);
+                    if (!string.Equals(facts.ArchiveSha256, expectedArchiveSha256, StringComparison.Ordinal))
+                        throw new InvalidDataException("prestart-observer:identity-archive-digest");
+                    RequireSignerPin(expectedSignerSha256);
+                    if (actor == null)
+                        throw new ArgumentNullException("actor");
+                    if (borrowed)
+                        throw new InvalidOperationException("prestart-observer:archive-busy");
+
+                    verifiedSignerSha256 = null;
+                    verifiedActor = null;
+                    string observedSigner = file.VerifyArchiveSignature(actor, clock, timeoutMilliseconds);
+                    ConfirmHeld(observedClock, observedTimeoutMilliseconds, null, null);
+                    if (!string.Equals(observedSigner, expectedSignerSha256, StringComparison.Ordinal))
+                        throw new InvalidDataException("prestart-observer:archive-signer-mismatch");
+                    verifiedActor = actor;
+                    verifiedSignerSha256 = observedSigner;
+                    return observedSigner;
+                }
             }
 
-            private PrestartArchiveFacts ConfirmHeld(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            internal PrestartArchiveFacts Confirm(Stopwatch observedClock, int observedTimeoutMilliseconds,
+                string expectedSignerSha256, PrestartActor actor)
+            {
+                lock (gate)
+                    return ConfirmHeld(observedClock, observedTimeoutMilliseconds, expectedSignerSha256, actor);
+            }
+
+            private PrestartArchiveFacts ConfirmHeld(Stopwatch observedClock, int observedTimeoutMilliseconds,
+                string expectedSignerSha256, PrestartActor actor)
             {
                 if (retired)
                     throw new InvalidOperationException("prestart-observer:archive-retired");
                 if (!ReferenceEquals(clock, observedClock) || timeoutMilliseconds != observedTimeoutMilliseconds)
                     throw new InvalidOperationException("prestart-observer:archive-scope");
                 CheckDeadline(clock, timeoutMilliseconds, "archive");
+                if (expectedSignerSha256 != null)
+                {
+                    if (!string.Equals(verifiedSignerSha256, expectedSignerSha256, StringComparison.Ordinal))
+                        throw new InvalidDataException("prestart-observer:archive-signature-required");
+                    if (!ReferenceEquals(verifiedActor, actor))
+                        throw new InvalidOperationException("prestart-observer:archive-signature-actor");
+                }
                 file.ConfirmPath();
                 CheckDeadline(clock, timeoutMilliseconds, "archive");
                 return facts;
             }
 
-            internal void BorrowForChild(Stopwatch observedClock, int observedTimeoutMilliseconds)
+            internal void BorrowForChild(Stopwatch observedClock, int observedTimeoutMilliseconds,
+                string expectedSignerSha256, PrestartActor actor)
             {
                 lock (gate)
                 {
-                    ConfirmHeld(observedClock, observedTimeoutMilliseconds);
+                    ConfirmHeld(observedClock, observedTimeoutMilliseconds, expectedSignerSha256, actor);
                     if (borrowed)
                         throw new InvalidOperationException("prestart-observer:archive-busy");
                     borrowed = true;
@@ -125,6 +165,8 @@ namespace NevroTick
                 lock (gate)
                 {
                     retired = true;
+                    verifiedSignerSha256 = null;
+                    verifiedActor = null;
                     if (!borrowed)
                         Close();
                 }
@@ -176,11 +218,24 @@ namespace NevroTick
         private const uint WaitObject0 = 0;
         private const uint WaitTimeout = 258;
         private const uint WaitFailed = 0xffffffff;
+        private const uint WtdUiNone = 2;
+        private const uint WtdRevokeWholeChain = 1;
+        private const uint WtdChoiceFile = 1;
+        private const uint WtdStateActionVerify = 1;
+        private const uint WtdStateActionClose = 2;
+        private const uint WtdRevocationCheckChainExcludeRoot = 0x80;
+        private const uint WtdCacheOnlyUrlRetrieval = 0x1000;
+        private const uint WssVerifySpecific = 1;
+        private const uint WssGetSecondarySignatureCount = 2;
+        private const uint SignerTypeTimestamp = 0x10;
+        private const uint X509AsnEncoding = 1;
+        private const int MaxSignerCertificateBytes = 64 * 1024;
 
         private readonly HeldFile image;
         private readonly HeldFile[] inputs;
         private readonly HeldFile receiptInput;
         private readonly ArchiveLease archive;
+        private readonly string expectedArchiveSignerSha256;
         private readonly PrestartActor actor;
         private readonly Stopwatch clock;
         private readonly int timeoutMilliseconds;
@@ -196,12 +251,14 @@ namespace NevroTick
         private bool disposed;
 
         private PrestartObserverChild(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
-            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds, ArchiveLease archive)
+            PrestartActor actor, Stopwatch clock, int timeoutMilliseconds, ArchiveLease archive,
+            string expectedArchiveSignerSha256)
         {
             this.image = image;
             this.inputs = inputs;
             this.receiptInput = receiptInput;
             this.archive = archive;
+            this.expectedArchiveSignerSha256 = expectedArchiveSignerSha256;
             this.actor = actor;
             this.clock = clock;
             this.timeoutMilliseconds = timeoutMilliseconds;
@@ -241,13 +298,39 @@ namespace NevroTick
             return ArchiveLease.Open(path, expectedBytes, expectedSha256, clock, timeoutMilliseconds);
         }
 
-        // The lease stays with the coordinator. The launcher confirms its original
-        // file before creating the child and before reporting the completed capture.
+        // Inert identity observation, including the unsigned archive controls.
         public static PrestartObserverChild StartIdentity(
             string powershellPath, long expectedBytes, string expectedSha256, string inputDirectory,
             long entryBytes, string entrySha256, long moduleBytes, string moduleSha256,
             long helperBytes, string helperSha256, Guid runId, ArchiveLease archive, string subjectSid,
             string expectedArchiveSha256, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+        {
+            return StartIdentityCore(powershellPath, expectedBytes, expectedSha256, inputDirectory,
+                entryBytes, entrySha256, moduleBytes, moduleSha256, helperBytes, helperSha256, runId, archive,
+                subjectSid, expectedArchiveSha256, null, actor, clock, timeoutMilliseconds);
+        }
+
+        // Requires a Windows signature observation on the same held archive at
+        // launch and collection. Deployment authority stays with its own owner.
+        public static PrestartObserverChild StartVerifiedIdentity(
+            string powershellPath, long expectedBytes, string expectedSha256, string inputDirectory,
+            long entryBytes, string entrySha256, long moduleBytes, string moduleSha256,
+            long helperBytes, string helperSha256, Guid runId, ArchiveLease archive, string subjectSid,
+            string expectedArchiveSha256, string expectedSignerSha256, PrestartActor actor,
+            Stopwatch clock, int timeoutMilliseconds)
+        {
+            RequireSignerPin(expectedSignerSha256);
+            return StartIdentityCore(powershellPath, expectedBytes, expectedSha256, inputDirectory,
+                entryBytes, entrySha256, moduleBytes, moduleSha256, helperBytes, helperSha256, runId, archive,
+                subjectSid, expectedArchiveSha256, expectedSignerSha256, actor, clock, timeoutMilliseconds);
+        }
+
+        private static PrestartObserverChild StartIdentityCore(
+            string powershellPath, long expectedBytes, string expectedSha256, string inputDirectory,
+            long entryBytes, string entrySha256, long moduleBytes, string moduleSha256,
+            long helperBytes, string helperSha256, Guid runId, ArchiveLease archive, string subjectSid,
+            string expectedArchiveSha256, string expectedSignerSha256, PrestartActor actor, Stopwatch clock,
+            int timeoutMilliseconds)
         {
             CheckDeadline(clock, timeoutMilliseconds, "launch");
             CheckFileExpectation(expectedBytes, expectedSha256, MaxIdentityFileBytes, "image");
@@ -259,7 +342,7 @@ namespace NevroTick
             {
                 if (archive == null || !IsDigest(expectedArchiveSha256))
                     throw new InvalidDataException("prestart-observer:identity-archive-digest");
-                archiveFacts = archive.Confirm(clock, timeoutMilliseconds);
+                archiveFacts = archive.Confirm(clock, timeoutMilliseconds, expectedSignerSha256, actor);
                 if (!string.Equals(archiveFacts.ArchiveSha256, expectedArchiveSha256, StringComparison.Ordinal))
                     throw new InvalidDataException("prestart-observer:identity-archive-digest");
             }
@@ -313,19 +396,21 @@ namespace NevroTick
                 new HeldFile(helperPath, helperBytes, helperSha256)
             };
             return StartFixed(new HeldFile(powershellPath, expectedBytes, expectedSha256, resolveSystemSpelling: true), inputs,
-                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds, subjectSid, archive: archive);
+                module, arguments, environmentBlock, actor, clock, timeoutMilliseconds, subjectSid, archive: archive,
+                expectedArchiveSignerSha256: expectedSignerSha256);
         }
 
         private static PrestartObserverChild StartFixed(HeldFile image, HeldFile[] inputs, HeldFile receiptInput,
             string arguments, string environmentBlock, PrestartActor actor, Stopwatch clock, int timeoutMilliseconds,
             string identitySubjectSid = null, bool requireStandardUser = false, string expectedStandardUserSid = null,
-            ArchiveLease archive = null)
+            ArchiveLease archive = null, string expectedArchiveSignerSha256 = null)
         {
             if (actor == null)
                 throw new ArgumentNullException("actor");
             actor.VerifyCurrent(clock, timeoutMilliseconds);
 
-            var child = new PrestartObserverChild(image, inputs, receiptInput, actor, clock, timeoutMilliseconds, archive);
+            var child = new PrestartObserverChild(image, inputs, receiptInput, actor, clock, timeoutMilliseconds,
+                archive, expectedArchiveSignerSha256);
             try
             {
                 image.Admit(clock, timeoutMilliseconds);
@@ -339,7 +424,7 @@ namespace NevroTick
                     actor.VerifyStandardUser(clock, timeoutMilliseconds, expectedStandardUserSid);
                 if (archive != null)
                 {
-                    archive.BorrowForChild(clock, timeoutMilliseconds);
+                    archive.BorrowForChild(clock, timeoutMilliseconds, expectedArchiveSignerSha256, actor);
                     child.archiveBorrowed = true;
                 }
                 child.CreateChild(arguments, environmentBlock);
@@ -355,6 +440,12 @@ namespace NevroTick
         public int ProcessId
         {
             get { RequireOpen(); return processId; }
+        }
+
+        // Reading this state has no native effects and remains valid after disposal starts.
+        public bool DisposalStarted
+        {
+            get { return disposed; }
         }
 
         public Stream Stdout
@@ -409,6 +500,12 @@ namespace NevroTick
             }
         }
 
+        // Give the PowerShell collector one observation whose query failure propagates.
+        public bool ObserveRetirement()
+        {
+            return HasExited && IsJobEmpty;
+        }
+
         // The caller waits for actual process/reader completion after requesting termination.
         public void Terminate()
         {
@@ -453,7 +550,7 @@ namespace NevroTick
             foreach (HeldFile input in inputs)
                 input.Confirm(clock, timeoutMilliseconds);
             if (archive != null)
-                archive.Confirm(clock, timeoutMilliseconds);
+                archive.Confirm(clock, timeoutMilliseconds, expectedArchiveSignerSha256, actor);
             CheckDeadline(clock, timeoutMilliseconds, "collection");
             return new ReceiptInputDigests(receiptInput.AdmittedSha256, receiptInput.ConfirmedSha256);
         }
@@ -485,7 +582,8 @@ namespace NevroTick
                     primary.Data["PrestartObserverRetirementFailure"] = failure;
                     primary.Data["PrestartObserverRetired"] = false;
                     primary.Data["PrestartObserverReleased"] = false;
-                    primary.Data["PrestartObserverChild"] = this;
+                    // Keep the original live reference for recovery in this process.
+                    primary.Data["PrestartObserverChild"] = new object[] { this };
                     return;
                 }
             }
@@ -499,6 +597,8 @@ namespace NevroTick
             {
                 primary.Data["PrestartObserverReleased"] = false;
                 primary.Data["PrestartObserverDisposalFailure"] = failure;
+                if (!DisposalStarted)
+                    primary.Data["PrestartObserverChild"] = new object[] { this };
             }
         }
 
@@ -579,6 +679,12 @@ namespace NevroTick
             return digest != null && digest.Length == 64 && Regex.IsMatch(digest, @"\A[0-9a-f]{64}\z");
         }
 
+        private static void RequireSignerPin(string digest)
+        {
+            if (!IsDigest(digest))
+                throw new ArgumentException("prestart-observer:archive-signer-sha256");
+        }
+
         private static void CheckFileExpectation(long bytes, string digest, long maximum, string input)
         {
             if (bytes <= 0 || bytes > maximum)
@@ -647,6 +753,144 @@ namespace NevroTick
             return identity;
         }
 
+        private static string ObserveArchiveSigner(SafeFileHandle handle, string path,
+            Stopwatch clock, int timeoutMilliseconds)
+        {
+            IntPtr nativePath = IntPtr.Zero;
+            IntPtr nativeFile = IntPtr.Zero;
+            IntPtr nativeSignature = IntPtr.Zero;
+            bool addedReference = false;
+            try
+            {
+                handle.DangerousAddRef(ref addedReference);
+                nativePath = Marshal.StringToHGlobalUni(path);
+                var file = new WinTrustFileInfo
+                {
+                    Size = (uint)Marshal.SizeOf(typeof(WinTrustFileInfo)),
+                    Path = nativePath,
+                    File = handle.DangerousGetHandle()
+                };
+                nativeFile = Marshal.AllocHGlobal((int)file.Size);
+                Marshal.StructureToPtr(file, nativeFile, false);
+
+                var signature = new WinTrustSignatureSettings
+                {
+                    Size = (uint)Marshal.SizeOf(typeof(WinTrustSignatureSettings)),
+                    Flags = WssVerifySpecific | WssGetSecondarySignatureCount,
+                    SecondarySignatureCount = uint.MaxValue,
+                    VerifiedIndex = uint.MaxValue
+                };
+                nativeSignature = Marshal.AllocHGlobal((int)signature.Size);
+                Marshal.StructureToPtr(signature, nativeSignature, false);
+
+                Guid action = new Guid("00aac56b-cd44-11d0-8cc2-00c04fc295ee"); // WINTRUST_ACTION_GENERIC_VERIFY_V2
+                var data = new WinTrustData
+                {
+                    Size = (uint)Marshal.SizeOf(typeof(WinTrustData)),
+                    UiChoice = WtdUiNone,
+                    RevocationChecks = WtdRevokeWholeChain,
+                    UnionChoice = WtdChoiceFile,
+                    FileInfo = nativeFile,
+                    StateAction = WtdStateActionVerify,
+                    ProviderFlags = WtdRevocationCheckChainExcludeRoot | WtdCacheOnlyUrlRetrieval,
+                    SignatureSettings = nativeSignature
+                };
+                IntPtr noWindow = new IntPtr(-1);
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
+                Exception primary = null;
+                try
+                {
+                    int status = WinVerifyTrust(noWindow, ref action, ref data);
+                    if (status != 0)
+                        throw TrustFailure("verify", status);
+                    CheckDeadline(clock, timeoutMilliseconds, "archive");
+
+                    var verified = (WinTrustSignatureSettings)Marshal.PtrToStructure(nativeSignature,
+                        typeof(WinTrustSignatureSettings));
+                    if (verified.VerifiedIndex != 0 || verified.SecondarySignatureCount != 0)
+                        throw new InvalidDataException("prestart-observer:archive-signature-selection");
+                    return ReadVerifiedLeafDigest(data.StateData);
+                }
+                catch (Exception failure)
+                {
+                    primary = failure;
+                    throw;
+                }
+                finally
+                {
+                    try
+                    {
+                        data.StateAction = WtdStateActionClose;
+                        int status = WinVerifyTrust(noWindow, ref action, ref data);
+                        if (status != 0)
+                            throw TrustFailure("close", status);
+                    }
+                    catch (Exception cleanup)
+                    {
+                        if (primary == null)
+                            throw;
+                        primary.Data["PrestartArchiveTrustCleanupFailure"] = cleanup;
+                    }
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(nativeSignature);
+                Marshal.FreeHGlobal(nativeFile);
+                Marshal.FreeHGlobal(nativePath);
+                if (addedReference)
+                    handle.DangerousRelease();
+            }
+        }
+
+        private static InvalidDataException TrustFailure(string operation, int status)
+        {
+            return new InvalidDataException("prestart-observer:archive-signature-" + operation + "-0x" +
+                unchecked((uint)status).ToString("x8", CultureInfo.InvariantCulture));
+        }
+
+        private static string ReadVerifiedLeafDigest(IntPtr state)
+        {
+            var invalid = new InvalidDataException("prestart-observer:archive-signature-provider-state");
+            if (state == IntPtr.Zero)
+                throw invalid;
+            IntPtr providerPointer = WTHelperProvDataFromStateData(state);
+            if (!HasNativePrefix<TrustProviderData>(providerPointer))
+                throw invalid;
+            var provider = (TrustProviderData)Marshal.PtrToStructure(providerPointer, typeof(TrustProviderData));
+            if (provider.Error != 0 || provider.SignerCount != 1)
+                throw invalid;
+
+            IntPtr signerPointer = WTHelperGetProvSignerFromChain(providerPointer, 0, false, 0);
+            if (signerPointer != provider.Signers || !HasNativePrefix<TrustProviderSigner>(signerPointer))
+                throw invalid;
+            var signer = (TrustProviderSigner)Marshal.PtrToStructure(signerPointer, typeof(TrustProviderSigner));
+            if (signer.Error != 0 || (signer.SignerType & SignerTypeTimestamp) != 0 || signer.CertificateCount == 0)
+                throw invalid;
+
+            IntPtr leafPointer = WTHelperGetProvCertFromChain(signerPointer, 0);
+            if (leafPointer != signer.Certificates || !HasNativePrefix<TrustProviderCertificate>(leafPointer))
+                throw invalid;
+            var leaf = (TrustProviderCertificate)Marshal.PtrToStructure(leafPointer, typeof(TrustProviderCertificate));
+            if (leaf.Error != 0 || leaf.Certificate == IntPtr.Zero)
+                throw invalid;
+
+            // CERT_CONTEXT and its DER remain owned by the live WinTrust state.
+            var certificate = (CertificateContext)Marshal.PtrToStructure(leaf.Certificate, typeof(CertificateContext));
+            if ((certificate.Encoding & X509AsnEncoding) == 0 || certificate.Encoded == IntPtr.Zero ||
+                certificate.EncodedBytes == 0 || certificate.EncodedBytes > MaxSignerCertificateBytes)
+                throw invalid;
+            byte[] der = new byte[(int)certificate.EncodedBytes];
+            Marshal.Copy(certificate.Encoded, der, 0, der.Length);
+            using (SHA256 hash = new SHA256CryptoServiceProvider())
+                return BitConverter.ToString(hash.ComputeHash(der)).Replace("-", string.Empty).ToLowerInvariant();
+        }
+
+        private static bool HasNativePrefix<T>(IntPtr pointer) where T : struct
+        {
+            return pointer != IntPtr.Zero && unchecked((uint)Marshal.ReadInt32(pointer)) >= Marshal.SizeOf(typeof(T));
+        }
+
         private sealed class HeldFile : IDisposable
         {
             internal string Path { get; private set; }
@@ -704,6 +948,18 @@ namespace NevroTick
                     throw new InvalidDataException("prestart-archive:archive-size");
                 CheckDeadline(clock, timeoutMilliseconds, "archive");
                 return bytes;
+            }
+
+            internal string VerifyArchiveSignature(PrestartActor actor, Stopwatch clock, int timeoutMilliseconds)
+            {
+                // The original file is already pinned and held with read sharing only.
+                CheckBytes(clock, timeoutMilliseconds, "archive");
+                stream.Position = 0;
+                actor.VerifyCurrent(clock, timeoutMilliseconds);
+                string signer = ObserveArchiveSigner(stream.SafeFileHandle, Path, clock, timeoutMilliseconds);
+                actor.VerifyCurrent(clock, timeoutMilliseconds);
+                CheckBytes(clock, timeoutMilliseconds, "archive");
+                return signer;
             }
 
             internal void ConfirmPath()
@@ -1088,6 +1344,122 @@ namespace NevroTick
                     FileIdLow == other.FileIdLow && FileIdHigh == other.FileIdHigh;
             }
         }
+
+        // Windows SDK wintrust.h and wincrypt.h layouts. The provider structures
+        // contain only the prefixes used while the WinVerifyTrust state is open.
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WinTrustFileInfo
+        {
+            internal uint Size;
+            internal IntPtr Path;
+            internal IntPtr File;
+            internal IntPtr KnownSubject;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WinTrustSignatureSettings
+        {
+            internal uint Size;
+            internal uint Index;
+            internal uint Flags;
+            internal uint SecondarySignatureCount;
+            internal uint VerifiedIndex;
+            internal IntPtr CryptoPolicy;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WinTrustData
+        {
+            internal uint Size;
+            internal IntPtr PolicyCallbackData;
+            internal IntPtr SipClientData;
+            internal uint UiChoice;
+            internal uint RevocationChecks;
+            internal uint UnionChoice;
+            internal IntPtr FileInfo;
+            internal uint StateAction;
+            internal IntPtr StateData;
+            internal IntPtr UrlReference;
+            internal uint ProviderFlags;
+            internal uint UiContext;
+            internal IntPtr SignatureSettings;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TrustProviderData
+        {
+            internal uint Size;
+            internal IntPtr TrustData;
+            internal int OpenedFile;
+            internal IntPtr ParentWindow;
+            internal IntPtr Action;
+            internal IntPtr CryptoProvider;
+            internal uint Error;
+            internal uint RegistrySecuritySettings;
+            internal uint RegistryPolicySettings;
+            internal IntPtr ProviderFunctions;
+            internal uint TrustStepErrorCount;
+            internal IntPtr TrustStepErrors;
+            internal uint StoreCount;
+            internal IntPtr Stores;
+            internal uint Encoding;
+            internal IntPtr Message;
+            internal uint SignerCount;
+            internal IntPtr Signers;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TrustProviderSigner
+        {
+            internal uint Size;
+            internal System.Runtime.InteropServices.ComTypes.FILETIME VerifyAsOf;
+            internal uint CertificateCount;
+            internal IntPtr Certificates;
+            internal uint SignerType;
+            internal IntPtr SignerInfo;
+            internal uint Error;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TrustProviderCertificate
+        {
+            internal uint Size;
+            internal IntPtr Certificate;
+            internal int Commercial;
+            internal int TrustedRoot;
+            internal int SelfSigned;
+            internal int TestCertificate;
+            internal uint RevokedReason;
+            internal uint Confidence;
+            internal uint Error;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CertificateContext
+        {
+            internal uint Encoding;
+            internal IntPtr Encoded;
+            internal uint EncodedBytes;
+            internal IntPtr CertificateInfo;
+            internal IntPtr Store;
+        }
+
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("wintrust.dll", ExactSpelling = true)]
+        private static extern int WinVerifyTrust(IntPtr window, ref Guid action, ref WinTrustData data);
+
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("wintrust.dll", ExactSpelling = true)]
+        private static extern IntPtr WTHelperProvDataFromStateData(IntPtr state);
+
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("wintrust.dll", ExactSpelling = true)]
+        private static extern IntPtr WTHelperGetProvSignerFromChain(IntPtr provider, uint index,
+            [MarshalAs(UnmanagedType.Bool)] bool counterSigner, uint counterSignerIndex);
+
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("wintrust.dll", ExactSpelling = true)]
+        private static extern IntPtr WTHelperGetProvCertFromChain(IntPtr signer, uint index);
 
         [DllImport("kernel32.dll", ExactSpelling = true)]
         private static extern IntPtr GetCurrentProcess();

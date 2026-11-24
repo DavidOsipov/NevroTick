@@ -1255,10 +1255,38 @@ same independently pinned bytes. The [owned identity launch](../../tasks/windows
 supplies all child package arguments from those same facts and refuses a
 crossed carrier pin before creation. The [held archive lease](../../tasks/windows11-integration.md#hold-the-inspected-msix-archive-through-identity-retirement--23-november-2026)
 keeps that carrier through actual child retirement, including early caller
-disposal. Bind a qualified signature observation to that same archive before
-installed admission. Optional storage and packet
+disposal. The [signature-gated lab capture](../../tasks/windows11-integration.md#bind-the-lab-signature-check-to-the-held-msix--24-november-2026)
+passed the Windows unsigned refusal and lease controls. An admitted signed
+lab package must establish same-archive verification and successful guarded
+launch before installed admission. Optional storage and packet
 adapters, later SOCKS and post-V1 formal work retain their separate
 dispositions.
+
+The [current MSIX authoring handoff](../../tasks/windows11-integration.md#rebuild-the-msix-authoring-handoff-with-the-current-calendar-graph--24-november-2026)
+matches the current default Windows graph, its two linked fixture images,
+and the checked authoring and artwork. The [artifact resource and declaration readback](../../tasks/windows11-integration.md#reconcile-the-full-ui-version-resource-in-the-msix-handoff--24-november-2026)
+accepts the retained handoff and refuses contradictory UI version records or
+PE declarations for either image.
+The handle-only installed probe
+still needs the exact signed lab fixture, admitted actors and continuous
+quiescence.
+
+The [retained token generation checkpoint](../../tasks/windows11-integration.md#retain-the-token-generation-through-service-peer-reobservation--24-november-2026)
+keeps the original token and its modification generation together across
+peer observations. The [supervised fixture exchange](../../tasks/windows11-integration.md#reobserve-the-original-broker-before-request-and-reply-acceptance--24-november-2026)
+now samples the original pipe and retained process before the first request
+write and before publishing acceptance of the correlated reply. Installed
+peer identity and the installed request and reply guards retain their own exits.
+The [native submission and token checkpoint](../../tasks/windows11-integration.md#guard-the-native-request-and-read-the-retained-peer-privileges--24-november-2026)
+places the request check on the exact writer after buffer preparation. It
+also captures the peer's complete privilege list at its acquisition generation.
+The Windows fixture now observes refused submission beside valid bytes on
+the same pipe and compares the retained capture with a separate self query.
+The [broker reply submission checkpoint](../../tasks/windows11-integration.md#recheck-the-broker-reply-at-native-submission--24-november-2026)
+puts the original peer and cutoff check on the prepared reply writer. GNU
+regression, MSVC-target build checks and three exact offline Windows Sandbox
+cases passed on the bound fixture. Installed identity and affected-file
+qualification remain open.
 
 The [earlier Main-based laboratory pair](../../tasks/engine-transport-pilot.md#rebind-the-laboratory-timing-pair-to-main--23-november-2026)
 passed its offline Windows exchange and established relative ordering on
@@ -1275,13 +1303,44 @@ layout gate refused export at reserved MSF blocks. The
 [two-peer witness preparation](../../tasks/engine-transport-pilot.md#prepare-the-two-peer-windows-witness-and-read-back-the-linker-diagnosis--23-november-2026)
 checks a private diagnostic symbol copy and the host receipt reader. The
 [explicit larger-page facade](../../tasks/engine-transport-pilot.md#export-the-two-peer-facade-with-a-fixed-larger-symbol-layout--23-november-2026)
-now exports four verified raw pairs. Rebuild the matching peer from the same
-current graph, reconcile the paired reader and run the admitted two-peer
-Windows case.
+now exports four verified raw pairs. The
+[Main rebind and paired readback](../../tasks/engine-transport-pilot.md#rebind-the-two-peer-build-after-the-session-and-dependency-changes--24-november-2026)
+built the facade and matching peer from `a17d499` and verified all five
+PE/PDB pairs. The [native certificate-free preflight](../../tasks/engine-transport-pilot.md#pass-the-two-peer-certificate-free-windows-preflight--24-november-2026)
+loaded the exact images in the owned offline guest. The next native action
+for that exact candidate uses its preflight receipt and temporary lab-root
+admission. The [managed power event fix](../../tasks/engine-transport-pilot.md#keep-delivered-suspension-closed-until-automatic-resume--24-november-2026)
+now fences the current pair between a delivered suspend and automatic resume.
+The [rebuilt timing pair](../../tasks/engine-transport-pilot.md#rebuild-and-preflight-the-protected-timing-pair-after-the-power-fix--24-november-2026)
+passed the current facade and peer builds, paired readback and certificate-free
+Windows preflight. The [witness binding](../../tasks/engine-transport-pilot.md#bind-the-retained-preflight-to-the-authenticated-timing-witness--24-november-2026)
+admits that exact preflight locally. The next native check awaits host
+capacity and the temporary lab-root confirmation. It must observe the
+authenticated pair and trust restoration.
+The separate [Windows certificate-date checkpoint](../../tasks/engine-transport-pilot.md#preserve-the-typed-refusal-of-an-unsupported-windows-certificate-date--24-november-2026)
+passed the three certificate-bearing refusals in the offline guest,
+with the laboratory root absent and physical trust inventories unchanged.
+The exact patch is integrated. The [combined timing pair](../../tasks/engine-transport-pilot.md#rebind-the-timing-pair-after-integrating-the-certificate-date-fix)
+passed the facade and peer builds, independent paired readback and
+host-only dispatch binding on its original candidate.
 The [joined protected receipt](../../tasks/engine-transport-pilot.md#retain-the-original-chart-on-joined-protected-receipts--23-november-2026)
 now retains its original invocation chart with an exact nominal midpoint.
-The
-[independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
+The [joined receipt endpoint checkpoint](../../tasks/engine-transport-pilot.md#preserve-original-udp-endpoints-and-exchange-identity-on-joined-receipts)
+also carries the exact original UDP endpoints and exchange identity. Its
+facade and peer builds, paired readback and host-only dispatch binding
+passed on the same candidate. The [current timing socket pairing checkpoint](../../tasks/engine-transport-pilot.md#pair-the-protected-timing-rows-with-the-observed-loopback-sockets)
+checks both producers' independently observed ports against each leg
+and the peer's owned UDP listener. Its current facade and peer passed
+paired readback and certificate-free Windows image preflight. The
+[rebound controller checkpoint](../../tasks/engine-transport-pilot.md#parse-the-rebound-timing-controller-in-the-owned-guest)
+adds the exact guest parser pass and host admission. Register and bind
+the authenticated retirement shape before the exact temporary laboratory
+root confirmation and exchange.
+The [broker first-reply checkpoint](../../tasks/windows11-integration.md#revalidate-the-original-awake-revision-before-broker-reply-submission)
+checks the original awake revision at native submission. Its focused GNU
+regression and Windows-target test compilation passed. Native pending-read
+execution remains separate from those results.
+The [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026)
 still needs traceable calibration and event-placement evidence before the
 joined successor can enter production history. The
 [Engine process observation](../../tasks/engine-transport-pilot.md#retain-the-engine-process-presentation-around-each-joined-job--23-november-2026)
@@ -1361,6 +1420,9 @@ early refusal and a final window check. The concrete Windows window
 owner and exact signed lab inputs remain required for the installed run.
 The [Windows child collector](../../tasks/windows11-integration.md#collect-raw-windows-child-results-for-the-s06-pre-start-probe--23-november-2026)
 passed seven native capture and retirement controls with fixed inert children.
+The [current cleanup checkpoint](../../tasks/windows11-integration.md#preserve-original-pre-start-child-custody-on-cleanup-failure--24-november-2026)
+verifies the original child transfer during cleanup failures in six
+controlled cases. Actual native retirement on the changed paths remains due.
 The [installed image readback](../../tasks/windows11-integration.md#retain-both-role-image-handles-through-pre-start-readback--23-november-2026)
 now retains both original image handles through the final service and
 registration observations. The offline guest confirmed conflicting writes

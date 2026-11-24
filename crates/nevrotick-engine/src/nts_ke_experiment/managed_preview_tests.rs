@@ -978,6 +978,20 @@ fn run(
     run_with_hooks(slot, admission, scenario, Hooks::none(), None)
 }
 
+/// Project a genuine joined component receipt for independent accessor controls.
+/// # Errors
+/// Preserve worker failure or refuse a missing protected receipt.
+pub(super) fn component_protected_receipt(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+) -> Result<ManagedProtectedReceipt, Failure> {
+    let run: Run = run(slot, admission, Scenario::ProtectedPlacementAfterCommit)?;
+    let joined: ReceivedCompletion = run
+        .outcome
+        .map_err(|failure: RunFailed| operation_primary(&failure))?;
+    protected_receipt(&joined).ok_or(Failure::Control)
+}
+
 /// Install the selected worker hook while exercising the real source and joined result.
 /// # Errors
 /// Preserve source, worker, observation and output refusal.

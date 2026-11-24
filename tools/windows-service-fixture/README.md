@@ -75,10 +75,19 @@ archive with `Open-PrestartArchive` using its independently admitted length
 and SHA-256. Pass the returned `Archive` lease, the original clock and timeout,
 and the independently admitted carrier digest as `ExpectedArchiveSha256`.
 The launcher derives both role arguments and the child identity from the
-held archive. Use the unreset clock and keep the lease through collection
-and actual retirement. Early disposal revokes the capture and the child
-retains the file until retirement. Signature, role authorization and
-deployment-window checks still belong to the caller. Precompile
+held archive. For the signature-gated lab capture, also supply
+`ExpectedSignerSha256`, the independently admitted SHA-256 of the signer's
+DER certificate. This selects Windows signature verification with the held
+archive handle and path, no interactive UI and cache-only URL retrieval.
+The current lab profile selects one primary signature with zero secondaries.
+The verification and child launch share the original actor, lease and
+deadline. The owning process must bound the synchronous verifier and retire
+on unconfirmed verifier cleanup. Use the unreset clock and keep the lease
+through collection and actual retirement. Early disposal revokes the capture
+and the child retains the file until retirement. Omitting the signer pin
+selects archive observation for inert controls. The installed window owner
+still owns role authorization, continuous quiescence and installed admission.
+Precompile
 [`prestart_image_path.cs`](msix/prestart_image_path.cs) as the x64 .NET
 Framework library `prestart_image_path.dll` before launching the identity
 child. Supply the approved original System32 PowerShell path and the lengths
@@ -107,6 +116,15 @@ retains process containment and must settle any outstanding reads attached
 to the caught exception. The control script exercises this component with
 fixed inert children in 64-bit Windows PowerShell. It performs no package
 installation or service operation. [Native controls](msix/test_prestart_child.ps1)
+
+On refusal the owned collector records a termination request error separately
+from the primary collection error. It observes the original process, job and
+pending reads before disposal. A failed observation or a refusal before release
+begins retains the original child for recovery in this process. The
+`PrestartObserverChild` exception entry is a one-element reference array.
+`DisposalStarted` describes entry into release and does not confirm release.
+The [controlled retirement cases](msix/test_prestart_retirement.ps1) use the
+real collector with controlled streams and child state.
 
 The collector also supplies `Invoke-PrestartObserver` for the three fixed
 SCM observers. Use a dedicated 64-bit Windows PowerShell process with

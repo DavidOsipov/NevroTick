@@ -15,16 +15,19 @@ use super::{
 };
 use crate::{
     FixtureError, LabRole, NativeError, NativeOperation,
-    broker_clock_change::{BrokerClockChanges, NativeBrokerReader},
+    broker_clock_change::{
+        BrokerClockChanges, ClockRevision, ControlDisposition, NativeBrokerReader, deliver,
+    },
     broker_endpoint::{
         AcceptCompletion, AcceptStart, BrokerEndpointWorker, FirstReadCompletion, FirstReadStart,
         FirstReplyCompletion, FirstReplyStart, Reservation,
     },
     error::WorkerError,
     host::{
-        ConnectionWait, HostReceipt, InvocationPoll, ObservedClock, RunningConnection,
-        ServiceInvocation, Worker, WorkerCompletion, WorkerFailure, WorkerFinish, WorkerWake,
-        run_broker_service_with_worker, start_broker_worker, start_invocation,
+        Clock, ConnectionEdge, ConnectionWait, HostReceipt, InvocationPoll, ObservedClock,
+        RunningConnection, ServiceInvocation, Worker, WorkerCompletion, WorkerFailure,
+        WorkerFinish, WorkerWake, run_broker_service_with_worker, start_broker_worker,
+        start_invocation,
     },
 };
 use std::time::{Duration, Instant};
@@ -1368,8 +1371,10 @@ struct ReplyScript<'a> {
     immediate: bool,
     /// Control delivered synchronously during submission.
     stop_on_submit: Option<&'a StopNotification>,
-    /// Control delivered once after the peer observation samples current authority.
-    stop_on_peer_check: Option<&'a StopNotification>,
+    /// Control delivered once after the selected peer observation samples current authority.
+    stop_on_peer_check: Option<(&'a StopNotification, usize)>,
+    /// A time-change notice delivered by the second peer observation.
+    change_on_final_peer_check: Option<(&'static BrokerClockChanges, &'a StopNotification)>,
     /// Authority of the original peer, independent of the mailbox, cutoff and pipe.
     peer_current: &'a Cell<bool>,
     /// Withdraw during the physical terminal observation, before publication.
@@ -1466,12 +1471,23 @@ impl Reservation for ArmedEndpoint<'_> {
             .reply
             .as_ref()
             .is_some_and(|reply: &ReplyScript<'_>| reply.peer_current.get());
-        if let Some(stop) = self
-            .reply
-            .as_mut()
-            .and_then(|reply: &mut ReplyScript<'_>| reply.stop_on_peer_check.take())
-        {
+        let prior_checks: usize = self.endpoint.endpoints.borrow().reply_peer_checks.len();
+        if let Some((stop, _)) = self.reply.as_mut().and_then(|reply: &mut ReplyScript<'_>| {
+            reply
+                .stop_on_peer_check
+                .take_if(|(_, previous): &mut (&StopNotification, usize)| *previous == prior_checks)
+        }) {
             assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        }
+        if prior_checks == 1
+            && let Some((changes, stop)) = self
+                .reply
+                .as_mut()
+                .and_then(|reply: &mut ReplyScript<'_>| reply.change_on_final_peer_check.take())
+        {
+            let disposition: ControlDisposition = deliver(Some(changes), stop, 0x10, 0);
+            assert_eq!(disposition.status, 0);
+            assert!(disposition.wake);
         }
         self.endpoint
             .endpoints
@@ -1481,13 +1497,26 @@ impl Reservation for ArmedEndpoint<'_> {
         current
     }
 
-    /// Record the write on the same endpoint and check its exact admitted bytes.
+    /// Recheck after preparing the slot, then record the write and its exact bytes.
     ///
     /// # Panics
     /// Panics if the worker substitutes different reply bytes.
-    fn begin_first_reply(&mut self, bytes: &[u8]) -> Result<FirstReplyStart, NativeError> {
-        self.endpoint.record(EndpointCall::BeginReply);
+    fn begin_first_reply<C: Clock>(
+        &mut self,
+        bytes: &[u8],
+        connection: &mut RunningConnection<'_, C>,
+        cutoff: Instant,
+        positive_revision: Option<&ClockRevision<'_>>,
+    ) -> Result<FirstReplyStart, NativeError> {
         assert_eq!(bytes, SCRIPTED_REPLY);
+        if !matches!(
+            connection
+                .reply_submission_edge(cutoff, positive_revision, || self.reply_peer_current()),
+            ConnectionEdge::Open(_)
+        ) {
+            return Ok(FirstReplyStart::Refused);
+        }
+        self.endpoint.record(EndpointCall::BeginReply);
         let Some(reply) = &self.reply else {
             return Ok(FirstReplyStart::Unarmed);
         };
@@ -1883,6 +1912,10 @@ enum ReplyHistory {
     InlineStop,
     /// The peer returns current after delivering Stop, before any write is submitted.
     StopDuringPeerCheck,
+    /// The initial peer observation succeeds and Stop arrives during final admission.
+    StopDuringFinalPeerCheck,
+    /// The mailbox stays live but the original positive revision retires before submission.
+    RevisionChangedDuringFinalPeerCheck,
     /// Stop cancels a queued write without freeing the permit.
     QueuedStop,
     /// Windows confirms cancellation of the original write after Stop.
@@ -1903,6 +1936,7 @@ impl ReplyHistory {
         self,
         stop: &'a StopNotification,
         peer_current: &'a Cell<bool>,
+        changes: &'static BrokerClockChanges,
     ) -> ReplyScript<'a> {
         let immediate: bool = matches!(
             self,
@@ -1912,6 +1946,8 @@ impl ReplyHistory {
                 | Self::LiveInline
                 | Self::InlineStop
                 | Self::StopDuringPeerCheck
+                | Self::StopDuringFinalPeerCheck
+                | Self::RevisionChangedDuringFinalPeerCheck
         );
         let first: Result<Poll<FirstReplyCompletion>, NativeError> = match self {
             Self::QueuedCancelFailure => Err(REPLY_OBSERVATION_REFUSED),
@@ -1929,7 +1965,13 @@ impl ReplyHistory {
         ReplyScript {
             immediate,
             stop_on_submit: (self == Self::InlineStop).then_some(stop),
-            stop_on_peer_check: (self == Self::StopDuringPeerCheck).then_some(stop),
+            stop_on_peer_check: match self {
+                Self::StopDuringPeerCheck => Some((stop, 0)),
+                Self::StopDuringFinalPeerCheck => Some((stop, 1)),
+                _ => None,
+            },
+            change_on_final_peer_check: (self == Self::RevisionChangedDuringFinalPeerCheck)
+                .then_some((changes, stop)),
             peer_current,
             withdraw_on_completion: self == Self::PeerWithdrawnOnCompletion,
             cancel: if self == Self::QueuedCancelFailure {
@@ -1957,8 +1999,8 @@ impl ReplyHistory {
 #[test]
 fn broker_reply_keeps_the_original_cutoff_and_drains_exactly_one_write() -> Result<(), FixtureError>
 {
-    static CHANGES: [BrokerClockChanges; 14] = [const { BrokerClockChanges::new() }; 14];
-    let histories: [ReplyHistory; 14] = [
+    static CHANGES: [BrokerClockChanges; 16] = [const { BrokerClockChanges::new() }; 16];
+    let histories: [ReplyHistory; 16] = [
         ReplyHistory::ExpiredBeforeSubmit,
         ReplyHistory::MailboxClosedBeforeSubmit,
         ReplyHistory::InvalidInlineCount,
@@ -1973,6 +2015,8 @@ fn broker_reply_keeps_the_original_cutoff_and_drains_exactly_one_write() -> Resu
         ReplyHistory::PeerWithdrawnQueued,
         ReplyHistory::PeerWithdrawnOnCompletion,
         ReplyHistory::StopDuringPeerCheck,
+        ReplyHistory::StopDuringFinalPeerCheck,
+        ReplyHistory::RevisionChangedDuringFinalPeerCheck,
     ];
     for (history, changes) in histories.into_iter().zip(CHANGES.iter()) {
         check_reply_history(history, changes)?;
@@ -2003,7 +2047,7 @@ fn check_reply_history(
     };
     let acquire = || {
         Ok(ArmedEndpoint {
-            reply: Some(history.script(&stop, &peer_current)),
+            reply: Some(history.script(&stop, &peer_current, changes)),
             ..ArmedEndpoint::new(
                 &observations,
                 &trace,
@@ -2031,14 +2075,12 @@ fn check_reply_history(
             BrokerEndpointWorker::new(acquire),
         )
         .map_err(startup_error)?;
-    assert!(matches!(
-        invocation.poll(&mut clock, &stop),
-        InvocationPoll::Pending(_)
-    ));
-    assert!(matches!(
-        invocation.poll(&mut clock, &stop),
-        InvocationPoll::Pending(_)
-    ));
+    for _ in 0..2 {
+        assert!(matches!(
+            invocation.poll(&mut clock, &stop),
+            InvocationPoll::Pending(_)
+        ));
+    }
     let cutoff: Instant = invocation
         .connection_cutoff
         .ok_or(FixtureError::OutcomeUnavailable)?;
@@ -2062,7 +2104,8 @@ fn check_reply_history(
         deadline,
         cutoff,
         history,
-    );
+        changes,
+    )?;
     if matches!(
         history,
         ReplyHistory::LiveQueued
@@ -2081,8 +2124,8 @@ fn check_reply_history(
     }
     let expected_confirmation: bool =
         matches!(history, ReplyHistory::LiveInline | ReplyHistory::LiveQueued);
-    assert_eq!(write_confirmed, expected_confirmation);
     stop_after_scripted_reply(&mut invocation, &mut clock, &stop, history, cutoff)?;
+    assert_eq!(write_confirmed, expected_confirmation, "{history:?}");
     #[cfg(windows)]
     assert_eq!(
         invocation.native_status.reply_written,
@@ -2106,6 +2149,8 @@ fn check_reply_trace(history: ReplyHistory, trace: &EndpointTrace) {
 }
 
 /// Pass the same bytes twice through the host seam to observe the one-write bound.
+/// # Errors
+/// Returns an absent original or replacement fixture revision.
 /// # Panics
 /// Fails if the original admission yields an unexpected wait.
 fn submit_scripted_reply<'a, A: FnOnce() -> Result<ArmedEndpoint<'a>, NativeError>>(
@@ -2115,7 +2160,8 @@ fn submit_scripted_reply<'a, A: FnOnce() -> Result<ArmedEndpoint<'a>, NativeErro
     deadline: Instant,
     cutoff: Instant,
     history: ReplyHistory,
-) -> bool {
+    changes: &'static BrokerClockChanges,
+) -> Result<bool, FixtureError> {
     let expected: ConnectionWait = match history {
         ReplyHistory::ExpiredBeforeSubmit
         | ReplyHistory::MailboxClosedBeforeSubmit
@@ -2123,22 +2169,47 @@ fn submit_scripted_reply<'a, A: FnOnce() -> Result<ArmedEndpoint<'a>, NativeErro
         | ReplyHistory::InvalidInlineCount
         | ReplyHistory::LiveInline
         | ReplyHistory::InlineStop
-        | ReplyHistory::StopDuringPeerCheck => ConnectionWait::Service,
+        | ReplyHistory::StopDuringPeerCheck
+        | ReplyHistory::StopDuringFinalPeerCheck
+        | ReplyHistory::RevisionChangedDuringFinalPeerCheck => ConnectionWait::Service,
         _ => ConnectionWait::Cutoff(cutoff),
+    };
+    let positive_revision: Option<ClockRevision<'static>> = match history {
+        ReplyHistory::LiveInline | ReplyHistory::RevisionChangedDuringFinalPeerCheck => {
+            Some(changes.revision().ok_or(FixtureError::OutcomeUnavailable)?)
+        }
+        _ => None,
     };
     let mut write_confirmed: bool = false;
     for wait in [expected, ConnectionWait::Service] {
         assert_eq!(
             invocation.drive_running_connection(clock, stop, deadline, |worker, _, connection| {
-                let result: Result<ConnectionWait, WorkerFailure> =
-                    worker.begin_reply(connection, SCRIPTED_REPLY, cutoff);
+                let result: Result<ConnectionWait, WorkerFailure> = worker.begin_reply(
+                    connection,
+                    SCRIPTED_REPLY,
+                    cutoff,
+                    positive_revision.as_ref(),
+                );
                 write_confirmed |= connection.reply_written;
                 result
             }),
             wait
         );
     }
-    write_confirmed
+    if history == ReplyHistory::RevisionChangedDuringFinalPeerCheck {
+        let original: &ClockRevision<'static> = positive_revision
+            .as_ref()
+            .ok_or(FixtureError::OutcomeUnavailable)?;
+        let current: ClockRevision<'static> =
+            changes.revision().ok_or(FixtureError::OutcomeUnavailable)?;
+        assert_eq!(original.number().get(), 1);
+        assert_eq!(current.number().get(), 2);
+        assert!(!original.admits());
+        assert!(current.admits());
+        assert!(!stop.stop_requested());
+        assert!(clock.0.borrow().current < cutoff);
+    }
+    Ok(write_confirmed)
 }
 
 /// Drive queued progress and withdrawal through the actual Running owner.
@@ -2201,12 +2272,13 @@ fn collect_scripted_reply<P: Worker>(
 /// # Panics
 /// Fails if a guard did not reach the selected authority state or misobserved a write.
 fn check_peer_reply_observations(history: ReplyHistory, trace: &EndpointTrace) {
+    const NO_RESULTS: [Result<Poll<FirstReplyCompletion>, NativeError>; 0] = [];
     let pending: Result<Poll<FirstReplyCompletion>, NativeError> = Ok(Poll::Pending);
     let written: Result<Poll<FirstReplyCompletion>, NativeError> =
         Ok(Poll::Ready(FirstReplyCompletion::Written));
     match history {
         ReplyHistory::LiveQueued => {
-            assert_eq!(trace.reply_peer_checks, [true; 6]);
+            assert_eq!(trace.reply_peer_checks, [true; 7]);
             assert_eq!(trace.reply_results, [pending, written]);
         }
         ReplyHistory::PeerWithdrawnBeforeSubmit | ReplyHistory::StopDuringPeerCheck => {
@@ -2214,17 +2286,24 @@ fn check_peer_reply_observations(history: ReplyHistory, trace: &EndpointTrace) {
                 trace.reply_peer_checks,
                 [history == ReplyHistory::StopDuringPeerCheck]
             );
-            let none: [Result<Poll<FirstReplyCompletion>, NativeError>; 0] = [];
-            assert_eq!(trace.reply_results, none);
+            assert_eq!(trace.reply_results, NO_RESULTS);
+        }
+        ReplyHistory::StopDuringFinalPeerCheck
+        | ReplyHistory::RevisionChangedDuringFinalPeerCheck => {
+            assert_eq!(trace.reply_peer_checks, [true, true]);
+            assert_eq!(trace.reply_results, NO_RESULTS);
         }
         ReplyHistory::PeerWithdrawnQueued => {
-            assert_eq!(trace.reply_peer_checks, [true, true, true, true, false]);
+            assert_eq!(
+                trace.reply_peer_checks,
+                [true, true, true, true, true, false]
+            );
             assert_eq!(trace.reply_results, [pending, pending, written]);
         }
         ReplyHistory::PeerWithdrawnOnCompletion => {
             assert_eq!(
                 trace.reply_peer_checks,
-                [true, true, true, true, true, false]
+                [true, true, true, true, true, true, false]
             );
             assert_eq!(trace.reply_results, [pending, written]);
         }
@@ -2257,7 +2336,9 @@ fn stop_after_scripted_reply(
     assert_eq!(invocation.outstanding_work(), 1);
     if matches!(
         history,
-        ReplyHistory::InlineStop | ReplyHistory::StopDuringPeerCheck
+        ReplyHistory::InlineStop
+            | ReplyHistory::StopDuringPeerCheck
+            | ReplyHistory::StopDuringFinalPeerCheck
     ) {
         assert!(stop.stop_requested());
     } else {
@@ -2283,7 +2364,10 @@ fn stop_after_scripted_reply(
     }
     assert_eq!(invocation.poll(clock, stop), InvocationPoll::Finished);
     assert_eq!(invocation.outstanding_work(), 0);
-    if history == ReplyHistory::StopDuringPeerCheck {
+    if matches!(
+        history,
+        ReplyHistory::StopDuringPeerCheck | ReplyHistory::StopDuringFinalPeerCheck
+    ) {
         assert_eq!(invocation.state(), Some(ServiceState::Stopped));
     }
     assert_eq!(
@@ -2300,7 +2384,10 @@ fn stop_after_scripted_reply(
     let receipt: HostReceipt = invocation
         .take_receipt()
         .ok_or(FixtureError::OutcomeUnavailable)?;
-    if history == ReplyHistory::StopDuringPeerCheck {
+    if matches!(
+        history,
+        ReplyHistory::StopDuringPeerCheck | ReplyHistory::StopDuringFinalPeerCheck
+    ) {
         assert!(receipt.result().is_ok());
     }
     let records: super::DiagnosticRouteView =
@@ -2337,7 +2424,9 @@ fn match_reply_calls(history: ReplyHistory, calls: &[EndpointCall]) -> bool {
         ReplyHistory::ExpiredBeforeSubmit
         | ReplyHistory::MailboxClosedBeforeSubmit
         | ReplyHistory::PeerWithdrawnBeforeSubmit
-        | ReplyHistory::StopDuringPeerCheck => reply.is_empty(),
+        | ReplyHistory::StopDuringPeerCheck
+        | ReplyHistory::StopDuringFinalPeerCheck
+        | ReplyHistory::RevisionChangedDuringFinalPeerCheck => reply.is_empty(),
         ReplyHistory::LiveInline | ReplyHistory::InvalidInlineCount => matches!(
             reply,
             [

@@ -371,7 +371,12 @@ class PreviewContractTests(unittest.TestCase):
             ('#![doc = "#![allow(unused_must_use)]"]', None),
             ("/* #![allow(unused_must_use)] */", None),
             ("#![allow(unused_imports)]", None),
+            ("#![allow(clippy::style)]", None),
+            ("#![allow(other::suspicious)]", None),
             ('#![allow(unused_imports, reason = "context,unused_must_use, continuation")]', None),
+            ('#![allow(unused_imports, reason = "default, clippy::let_underscore_drop")]', None),
+            ('#![doc = "#![allow(let_underscore_future)]"]', None),
+            ("/* #![allow(restriction)] */", None),
             ("#![cfg_attr(any(), inert(allow(unused_must_use)))]", None),
         ):
             with self.subTest(attribute=attribute):
@@ -380,6 +385,21 @@ class PreviewContractTests(unittest.TestCase):
                 self.assertEqual(code, int(expected is not None))
                 self.assertEqual([(row["rule"], row["occurrence"]) for row in report["findings"]],
                                  [("preview-inner-outcome-suppression", expected)] if expected else [])
+
+    def test_inner_outcome_suppression_recognizes_clippy_alternative_spellings(self):
+        carrier = self.root / FIXTURE
+        original = carrier.read_text(encoding="utf-8")
+        for spelling in ("clippy::let_underscore_drop", "unused_result_ok",
+                         "let_underscore_must_use", "let_underscore_future",
+                         "all", "default", "suspicious", "restriction"):
+            override = f'allow(renamed_and_removed_lints, unknown_lints, {spelling}, reason = "control")'
+            for inner in (override, f"cfg_attr(test, cfg_attr(unix, {override}))"):
+                with self.subTest(spelling=spelling, inner=inner):
+                    carrier.write_text(f"#![{inner}]\n{original}", encoding="utf-8")
+                    code, report = self.run_report(self.original)
+                    findings = [(row["rule"], row["occurrence"]) for row in report["findings"]]
+                    self.assertEqual((code, findings), (
+                        1, [("preview-inner-outcome-suppression", spelling)]))
 
     def test_scanner_distinguishes_typed_skip_from_forbidden_option(self):
         # Use the real Core declaration as a lexical specimen outside the

@@ -4,7 +4,13 @@
 use core::num::NonZeroU32;
 use std::{cell::RefCell, collections::VecDeque};
 
-use super::{check_process, observe_between_pipe_samples, observe_process, observe_service_peer};
+use super::{
+    check_process, check_token_generation, observe_between_pipe_samples, observe_process,
+    observe_service_peer,
+};
+use crate::service_role_sid::{
+    TokenInformation, TokenInformationBuffer, TokenModifiedId, read_modified_id,
+};
 use crate::{ReportedServiceStatus, RunningServiceRefusal};
 
 /// Observed calls, including the PID supplied to the open and liveness operations.
@@ -14,6 +20,10 @@ enum Call {
     Pipe,
     /// Observe the primary token.
     Token,
+    /// Compare the freshly acquired object with the retained token.
+    CompareToken,
+    /// Sample the retained token's modification identifier.
+    TokenStatistics,
     /// Read the retained service.
     Status,
     /// Open the reported PID.
@@ -29,8 +39,14 @@ enum Fault {
     PipeQuery(u32),
     /// Pipe server and service process disagreement.
     WrongPipe,
-    /// The fresh primary token differed from the original object.
+    /// The fresh primary-token object or retained generation differed.
     ChangedToken,
+    /// Querying the current primary token failed.
+    TokenQuery,
+    /// The original token refused its statistics query.
+    TokenStatistics(u32),
+    /// The successful statistics response reported an invalid extent.
+    MalformedTokenStatistics,
     /// Status query refusal.
     Status,
     /// Native process open refusal.
@@ -341,6 +357,124 @@ fn token_and_service_turnover_prevent_peer_observation() {
         replaced.calls.borrow().as_slice(),
         [Call::Pipe, Call::Token, Call::Live(FIRST), Call::Status]
     );
+}
+
+/// Build a modification sample from independently arranged x64 SDK output.
+/// # Errors
+/// Preserve the scripted statistics refusal or reject any extent other than 56 bytes.
+/// # Panics
+/// Fail if the statistics read requests the wrong information class, alignment or capacity.
+fn observed_token_generation(
+    modified_id: [u8; 8],
+    extent: Result<u32, u32>,
+) -> Result<TokenModifiedId, Fault> {
+    read_modified_id(
+        &mut |information: TokenInformation, buffer: TokenInformationBuffer<'_>| {
+            let (output, capacity): (&mut [u8], u32) = buffer.into_parts();
+            assert_eq!(information, TokenInformation::Statistics);
+            assert_eq!(output.len(), 56);
+            assert_eq!(output.as_ptr().addr() % 8, 0);
+            assert_eq!(capacity, 56);
+            output[48..56].copy_from_slice(&modified_id);
+            extent
+        },
+        Fault::TokenStatistics,
+        Fault::MalformedTokenStatistics,
+    )
+}
+
+/// Check object and generation before the remaining SCM and pipe observations.
+/// # Errors
+/// Return an unexpected refusal of the acquisition statistics fixture.
+/// # Panics
+/// Fail on a skipped/disordered check, an altered refusal or use of the fresh handle for statistics.
+#[test]
+fn requires_the_original_token_generation_before_later_peer_observations() -> Result<(), Fault> {
+    let unchanged: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+    let changed_low: [u8; 8] = [1, 3, 3, 4, 5, 6, 7, 8];
+    let changed_high: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 9];
+    let generation: TokenModifiedId = observed_token_generation(unchanged, Ok(56))?;
+    let original: u32 = 81;
+    let fresh: u32 = 23;
+    let healthy: [Call; 8] = [
+        Call::Pipe,
+        Call::Token,
+        Call::CompareToken,
+        Call::TokenStatistics,
+        Call::Live(FIRST),
+        Call::Status,
+        Call::Live(FIRST),
+        Call::Pipe,
+    ];
+    for (object, current_id, extent, outcome, count) in [
+        (Ok(true), unchanged, Ok(56), Ok(()), 8),
+        (Ok(true), changed_low, Ok(56), Err(Fault::ChangedToken), 4),
+        (Ok(true), changed_high, Ok(56), Err(Fault::ChangedToken), 4),
+        (Ok(false), unchanged, Err(5), Err(Fault::ChangedToken), 3),
+        (
+            Err(Fault::TokenQuery),
+            unchanged,
+            Err(5),
+            Err(Fault::TokenQuery),
+            2,
+        ),
+        (
+            Ok(true),
+            unchanged,
+            Err(5),
+            Err(Fault::TokenStatistics(5)),
+            4,
+        ),
+        (
+            Ok(true),
+            unchanged,
+            Ok(55),
+            Err(Fault::MalformedTokenStatistics),
+            4,
+        ),
+        (
+            Ok(true),
+            unchanged,
+            Ok(57),
+            Err(Fault::MalformedTokenStatistics),
+            4,
+        ),
+    ] {
+        let probe: Probe = Probe::new([Ok(RUNNING)], Err(Fault::Open), [Ok(()); 2]);
+        let observed: Result<(), Fault> = observe_between_pipe_samples(
+            FIRST,
+            || {
+                probe.calls.borrow_mut().push(Call::Pipe);
+                Ok(FIRST)
+            },
+            || {
+                check_token_generation(
+                    &original,
+                    generation,
+                    || {
+                        probe.calls.borrow_mut().push(Call::Token);
+                        object.map(|_: bool| fresh)
+                    },
+                    |retained: &u32, current: &u32| {
+                        probe.calls.borrow_mut().push(Call::CompareToken);
+                        assert_eq!((*retained, *current), (original, fresh));
+                        object == Ok(true)
+                    },
+                    |token: &u32| {
+                        probe.calls.borrow_mut().push(Call::TokenStatistics);
+                        assert_eq!(*token, original);
+                        observed_token_generation(current_id, extent)
+                    },
+                    Fault::ChangedToken,
+                )
+            },
+            || probe.reobserve(FIRST),
+            Fault::WrongPipe,
+        );
+        assert_eq!(observed, outcome);
+        assert_eq!(probe.calls.borrow().as_slice(), &healthy[..count]);
+    }
+    Ok(())
 }
 
 /// Retain one open process through initial and later checks.

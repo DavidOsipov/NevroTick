@@ -17,6 +17,7 @@ use super::{
 };
 use crate::{
     LabRole, NativeError,
+    broker_clock_change::ClockRevision,
     diagnostics::EventWriter,
     private_clock_wire::{
         AssemblyProgress, Frame, FrameAssembly, FrameError, ReplyWrite, RequestId, decode_reply,
@@ -71,6 +72,9 @@ struct Reply {
     connection: Connection,
     /// The immutable bounded response.
     frame: Frame,
+    /// Original awake revision behind a positive native reply.
+    #[cfg(windows)]
+    positive_revision: Option<ClockRevision<'static>>,
 }
 
 /// Fixed Engine sender for one in-memory private connection.
@@ -149,7 +153,9 @@ impl PendingStatus<'_> {
     /// # Errors
     /// Refuses foreign, closed, malformed or miscorrelated replies.
     fn resolve(self, reply: Reply) -> Result<bool, SessionFault> {
-        let Reply { connection, frame } = reply;
+        let Reply {
+            connection, frame, ..
+        } = reply;
         self.resolve_delivery(Delivery {
             connection: &connection,
             bytes: frame.as_bytes(),
@@ -321,7 +327,9 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWr
             return Err(SessionFault::ForeignConnection);
         }
         self.check_receive_edge()?;
-        let Reply { connection, frame } = reply;
+        let Reply {
+            connection, frame, ..
+        } = reply;
         Ok(OutboundStatus {
             receiver: self,
             connection,
@@ -338,20 +346,21 @@ impl<'a, R: StatusReporter<Error = NativeError>, C: Clock, P: Worker, W: EventWr
             return Err(SessionFault::Replayed);
         }
         self.last = Some(id);
-        let availability: BrokerAvailability =
-            match self
-                .owner
-                .broker_availability_before(self.clock, self.stop, Some(self.cutoff))
-            {
-                Ok(availability) => availability,
-                Err(fault) => {
-                    self.close();
-                    return Err(Self::owner_fault(fault));
-                }
-            };
+        let positive_revision: Option<ClockRevision<'static>> = match self
+            .owner
+            .broker_available_revision_before(self.clock, self.stop, Some(self.cutoff))
+        {
+            Ok(availability) => availability,
+            Err(fault) => {
+                self.close();
+                return Err(Self::owner_fault(fault));
+            }
+        };
         Ok(Reply {
             connection: Rc::clone(&self.connection),
-            frame: encode_reply(id, availability == BrokerAvailability::Available),
+            frame: encode_reply(id, positive_revision.is_some()),
+            #[cfg(windows)]
+            positive_revision,
         })
     }
 
@@ -589,6 +598,8 @@ pub(crate) struct NativeStatusReply {
     frame: Frame,
     /// Original connection cutoff, even if Stop or local expiry arrives next.
     cutoff: Instant,
+    /// The exact revision behind a positive reply. An unavailable reply carries none.
+    positive_revision: Option<ClockRevision<'static>>,
 }
 
 #[cfg(windows)]
@@ -601,6 +612,11 @@ impl NativeStatusReply {
     /// The absolute cutoff selected once at the original accept.
     pub(crate) const fn cutoff(&self) -> Instant {
         self.cutoff
+    }
+
+    /// Borrow the producer's original positive revision for the write guard.
+    pub(crate) const fn positive_revision(&self) -> Option<&ClockRevision<'static>> {
+        self.positive_revision.as_ref()
     }
 }
 
@@ -656,6 +672,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         Ok(NativeStatusReply {
             frame: reply.frame,
             cutoff,
+            positive_revision: reply.positive_revision,
         })
     }
 }

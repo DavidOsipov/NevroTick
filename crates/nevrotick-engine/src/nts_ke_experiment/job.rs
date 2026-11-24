@@ -118,7 +118,7 @@ struct Facts {
     /// Permanently set before retirement; only the actual joined collector moves its payload.
     operation: OnceLock<Mutex<Option<Operation>>>,
     /// Genuine first committed history, written before the worker enters its successor.
-    first_receipt: OnceLock<Mutex<Option<Box<ManagedProtectedHistory>>>>,
+    first_receipt: OnceLock<Mutex<Option<Arc<ManagedProtectedHistory>>>>,
     /// Exact work for the selected bounded operation, read only after actual join.
     datagram_work: OnceLock<Arc<ProtectedDatagramWork>>,
     /// True after retiring the prepared input and any acquired provider custody.
@@ -167,7 +167,7 @@ impl FirstReceiptWriter<'_> {
     /// # Errors
     /// Refuse a foreign or duplicate checkpoint without replacing the original.
     pub(super) fn record(self, bound: BoundFirstHistory) -> Result<(), Failure> {
-        let history: Box<ManagedProtectedHistory> =
+        let history: Arc<ManagedProtectedHistory> =
             bound.into_worker_history(&self.control_identity)?;
         self.facts
             .first_receipt
@@ -231,7 +231,7 @@ pub(super) struct JoinedOutcome {
     /// Historical result, if genuinely recorded before termination/retirement.
     pub(super) operation: Option<Operation>,
     /// First receipt available even when the operation unwound before recording.
-    first_receipt: Option<Box<ManagedProtectedHistory>>,
+    first_receipt: Option<Arc<ManagedProtectedHistory>>,
     /// The actual adapter's now-retired observations, including an admitted NAK.
     datagram_work: Option<Arc<ProtectedDatagramWork>>,
     /// Actual joined termination, never inferred from a timer or stop acknowledgement.
@@ -242,8 +242,8 @@ pub(super) struct JoinedOutcome {
 
 impl JoinedOutcome {
     /// Read genuine historical first receipt after actual join.
-    pub(super) fn first_receipt(&self) -> Option<&ManagedProtectedHistory> {
-        self.first_receipt.as_deref()
+    pub(super) fn first_receipt(&self) -> Option<&Arc<ManagedProtectedHistory>> {
+        self.first_receipt.as_ref()
     }
 
     /// Observe the first admitted NAK after an actual join.
@@ -259,7 +259,7 @@ pub(super) struct NormalOperation {
     /// Actual typed terminal operation result under the original invocation.
     pub(super) operation: Operation,
     /// Genuine earlier success, if the worker selected a protected successor.
-    pub(super) first_receipt: Option<Box<ManagedProtectedHistory>>,
+    pub(super) first_receipt: Option<Arc<ManagedProtectedHistory>>,
     /// Final accounting as observed by the selected adapter, if admitted.
     pub(super) datagram_work: Option<(usize, usize, usize)>,
 }
@@ -700,7 +700,7 @@ impl WorkerSlot {
         // Recover poison solely to preserve the original owned operation; never heal it.
         let (operation, facts_poisoned): (Option<Operation>, bool) =
             take_recorded(&facts.operation);
-        let (first_receipt, first_receipt_poisoned): (Option<Box<ManagedProtectedHistory>>, bool) =
+        let (first_receipt, first_receipt_poisoned): (Option<Arc<ManagedProtectedHistory>>, bool) =
             take_recorded(&facts.first_receipt);
         let facts_poisoned: bool = facts_poisoned || first_receipt_poisoned;
         let datagram_work: Option<Arc<ProtectedDatagramWork>> = facts.datagram_work.get().cloned();

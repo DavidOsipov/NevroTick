@@ -15,10 +15,14 @@ use crate::package_full_name::{
     PACKAGE_NAME_BUFFER, UNWRITTEN_NAME_UNIT, decode_package_full_name,
 };
 use crate::process_image_name::{PROCESS_IMAGE_NAME_BUFFER, read_process_image_name};
-use crate::service_role_sid::{SidList, TokenSidInformation, observe_role_sid};
+use crate::service_role_sid::{
+    SidList, TokenInformation, TokenInformationBuffer, TokenModifiedId, observe_privileges,
+    observe_role_sid, read_modified_id,
+};
 use crate::{
     PackageFullNameError, ProcessImageNameError, ReportedPackageFullName, ReportedProcessImageName,
     ServiceRoleSid, ServiceRoleSidObservation, ServiceRoleSidObservationError,
+    TokenPrivilegeObservation, TokenPrivilegeObservationError,
 };
 
 /// The Win32 process right needed to observe process metadata and query the primary token.
@@ -29,6 +33,8 @@ const PROCESS_SYNCHRONIZE: u32 = 0x0010_0000;
 const TOKEN_QUERY: u32 = 0x0008;
 /// Token information class for normal groups.
 const TOKEN_GROUPS_CLASS: i32 = 2;
+/// Token information class for the complete list of present privileges.
+const TOKEN_PRIVILEGES_CLASS: i32 = 3;
 /// Token information class containing the modification identifier.
 const TOKEN_STATISTICS_CLASS: i32 = 10;
 /// Token information class for the list of restricting SIDs.
@@ -179,7 +185,7 @@ pub fn read_connected_pipe_server_pid(
     NonZeroU32::new(pid).ok_or(PipeServerPidError::ZeroPid)
 }
 
-/// Bounded refusal while acquiring a query-only primary token.
+/// Bounded refusal while acquiring or sampling a query-only primary token.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum PeerPrimaryTokenError {
@@ -191,6 +197,10 @@ pub enum PeerPrimaryTokenError {
     ProcessTokenQuery(u32),
     /// A successful token query did not return a valid owned handle.
     InvalidHandle,
+    /// The retained token's statistics query failed with the immediate Win32 error.
+    StatisticsQuery(u32),
+    /// The retained token's successful statistics response had an invalid extent.
+    MalformedStatistics,
 }
 
 impl fmt::Display for PeerPrimaryTokenError {
@@ -201,6 +211,10 @@ impl fmt::Display for PeerPrimaryTokenError {
             Self::AmbientThreadToken => formatter.write_str("thread already has a token"),
             Self::ProcessTokenQuery(code) => write!(formatter, "OpenProcessToken failed ({code})"),
             Self::InvalidHandle => formatter.write_str("invalid acquired token handle"),
+            Self::StatisticsQuery(code) => {
+                write!(formatter, "query primary token statistics failed ({code})")
+            }
+            Self::MalformedStatistics => formatter.write_str("malformed primary token statistics"),
         }
     }
 }
@@ -209,8 +223,8 @@ impl std::error::Error for PeerPrimaryTokenError {}
 
 /// Retain one noninherited, query-only primary-token handle.
 ///
-/// Matching objects establish token continuity for the observations compared.
-/// The receiving caller checks token attributes, role, process liveness and cutoff.
+/// The receiving caller checks the object and its modification generation, token
+/// attributes, role, process liveness and cutoff.
 #[must_use = "retain the token object through the comparison that depends on it"]
 pub struct PeerPrimaryToken {
     /// The original process-token query handle, closed once by its owner.
@@ -232,45 +246,85 @@ impl PeerPrimaryToken {
         same != 0
     }
 
-    /// Observe the expected SID within one generation of this query-only token.
+    /// Sample the modification generation of this query-only token.
+    /// # Errors
+    /// Preserve a native query failure or refuse a malformed statistics extent.
+    pub(super) fn generation(&self) -> Result<TokenModifiedId, PeerPrimaryTokenError> {
+        read_modified_id(
+            &mut self.token_information_query(),
+            PeerPrimaryTokenError::StatisticsQuery,
+            PeerPrimaryTokenError::MalformedStatistics,
+        )
+    }
+
+    /// Observe the expected SID at the supplied acquisition generation of this token.
     ///
     /// # Errors
     /// Preserve a native query failure or refuse malformed output or a changed token.
-    pub(crate) fn observe_role_sid<'sid>(
+    pub(super) fn observe_role_sid<'sid>(
         &self,
         expected: ServiceRoleSid<'sid>,
+        generation: TokenModifiedId,
     ) -> Result<ServiceRoleSidObservation<'sid>, ServiceRoleSidObservationError> {
-        observe_role_sid(
-            expected,
-            |information: TokenSidInformation, output: &mut [u8], capacity: u32| {
-                let class: i32 = match information {
-                    TokenSidInformation::Statistics => TOKEN_STATISTICS_CLASS,
-                    TokenSidInformation::List(SidList::Groups) => TOKEN_GROUPS_CLASS,
-                    TokenSidInformation::List(SidList::Restricting) => TOKEN_RESTRICTED_SIDS_CLASS,
-                };
-                let mut written: u32 = 0;
-                #[expect(
-                    unsafe_code,
-                    reason = "query the retained token's statistics and SID lists"
-                )]
-                // SAFETY: This token handle remains live with TOKEN_QUERY. The slice
-                // is the initialized, SDK-aligned output owned by the bounded
-                // observer. The separate writable DWORD receives the result extent.
-                let found: i32 = unsafe {
-                    GetTokenInformation(
-                        self.handle.as_raw_handle(),
-                        class,
-                        output.as_mut_ptr().cast(),
-                        capacity,
-                        &raw mut written,
-                    )
-                };
-                if found == 0 {
-                    return Err(last_error());
-                }
-                Ok(written)
-            },
-        )
+        observe_role_sid(expected, generation, self.token_information_query())
+    }
+
+    /// Observe the complete bounded privilege list on this retained token.
+    /// Both statistics samples must agree. The installed peer owner uses its
+    /// acquisition generation separately when the observation must match it.
+    /// # Errors
+    /// Preserve the first query or extent refusal, or report a changed generation.
+    pub fn observe_privileges(
+        &self,
+    ) -> Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> {
+        observe_privileges(None, self.token_information_query())
+    }
+
+    /// Bind the privilege observation to this peer token's acquisition generation.
+    /// # Errors
+    /// Preserve the first query or extent refusal, or report a changed generation.
+    pub(super) fn observe_privileges_at(
+        &self,
+        generation: TokenModifiedId,
+    ) -> Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> {
+        observe_privileges(Some(generation), self.token_information_query())
+    }
+
+    /// Supply bounded observations through the same retained query-only handle.
+    /// The query reports the returned extent or the immediate Win32 failure.
+    fn token_information_query(
+        &self,
+    ) -> impl FnMut(TokenInformation, TokenInformationBuffer<'_>) -> Result<u32, u32> + '_ {
+        |information: TokenInformation, buffer: TokenInformationBuffer<'_>| {
+            let class: i32 = match information {
+                TokenInformation::Statistics => TOKEN_STATISTICS_CLASS,
+                TokenInformation::List(SidList::Groups) => TOKEN_GROUPS_CLASS,
+                TokenInformation::List(SidList::Restricting) => TOKEN_RESTRICTED_SIDS_CLASS,
+                TokenInformation::Privileges => TOKEN_PRIVILEGES_CLASS,
+            };
+            let (output, capacity): (&mut [u8], u32) = buffer.into_parts();
+            let mut written: u32 = 0;
+            #[expect(
+                unsafe_code,
+                reason = "read bounded statistics, SID lists and privileges from the retained token"
+            )]
+            // SAFETY: This token handle remains live with TOKEN_QUERY. The checked
+            // buffer supplies initialized, SDK-aligned output and its exact native
+            // capacity. The separate writable DWORD receives the result extent.
+            let found: i32 = unsafe {
+                GetTokenInformation(
+                    self.handle.as_raw_handle(),
+                    class,
+                    output.as_mut_ptr().cast::<c_void>(),
+                    capacity,
+                    &raw mut written,
+                )
+            };
+            if found == 0 {
+                return Err(last_error());
+            }
+            Ok(written)
+        }
     }
 
     /// Compare two retained observations without exposing either token handle.

@@ -11,10 +11,48 @@ import shutil
 import subprocess
 import sys
 
-from test_pipeline import REPOSITORY, SourceFixture
+from test_pipeline import CLI_RUNTIME_FLAGS, REPOSITORY, SourceFixture
 
 
 class CliContractTests(SourceFixture):
+    def test_script_and_import_entrypoint_roles(self) -> None:
+        """Direct script launch validates, and package import leaves ambient argv inert."""
+        python: tuple[str, ...] = (sys.executable, *CLI_RUNTIME_FLAGS)
+        validation: subprocess.CompletedProcess[str] = subprocess.run(
+            [*python, str(self.entrypoint), "validate", "--root", str(self.root)],
+            cwd=self.base, capture_output=True, text=True, encoding="utf-8", timeout=15, check=False,
+        )
+        self.assertEqual(validation.returncode, 0, f"isolated metadata script: {validation.stderr}")
+        self.assertEqual(validation.stderr, "", "isolated metadata script must run quietly")
+        try:
+            report: object = json.loads(validation.stdout)
+        except json.JSONDecodeError as error:
+            self.fail(f"isolated metadata script must print a JSON object ({error.msg})")
+        if not isinstance(report, dict):
+            self.fail("isolated metadata script must print a JSON object")
+        self.assertEqual(report.get("status"), "valid-source", "isolated metadata script status")
+        self.assertEqual(report.get("component_count"), 5, "isolated metadata script component count")
+
+        script: str = (
+            "import importlib, sys\n"
+            "from pathlib import Path\n"
+            "sys.path.insert(0, sys.argv[1])\n"
+            "expected = Path(sys.argv[2])\n"
+            "sys.argv[:] = ['metadata-consumer', '--ambient-option']\n"
+            "entrypoint = importlib.import_module('metadata.pipeline.__main__')\n"
+            "assert Path(entrypoint.__file__) == expected\n"
+            "assert callable(entrypoint.main)\n"
+            "print('metadata entrypoint imported')\n"
+        )
+        imported: subprocess.CompletedProcess[str] = subprocess.run(
+            [*python, "-c", script, str(REPOSITORY), str(self.entrypoint)],
+            cwd=self.base, capture_output=True, text=True, encoding="utf-8", timeout=15, check=False,
+        )
+        self.assertEqual(imported.returncode, 0, f"metadata package import: {imported.stderr}")
+        self.assertEqual(imported.stdout, "metadata entrypoint imported\n", "metadata package import stdout")
+        self.assertEqual(imported.stderr, "", "metadata package import must run quietly")
+        self.assertFalse(self.output.exists(), "metadata package import must not produce output")
+
     def test_imported_entrypoint_does_not_run_the_command_parser(self) -> None:
         """Standard runpy import aliases retain an inert module lifecycle."""
         script = (
@@ -26,7 +64,7 @@ class CliContractTests(SourceFixture):
         )
         for name in ("<run_path>", "__a", "metadata.pipeline.__main__"):
             with self.subTest(name=name):
-                result = subprocess.run([sys.executable, "-I", "-B", "-Wignore::SyntaxWarning",
+                result = subprocess.run([sys.executable, *CLI_RUNTIME_FLAGS,
                                          "-c", script, str(REPOSITORY), str(self.entrypoint), name],
                                         capture_output=True, text=True, timeout=15, check=False)
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -49,7 +87,7 @@ class CliContractTests(SourceFixture):
             "namespace=runpy.run_path(sys.argv[2],run_name='__a')\n"
             "assert callable(namespace['main'])\n"
         )
-        result = subprocess.run([sys.executable, "-I", "-B", "-Wignore::SyntaxWarning",
+        result = subprocess.run([sys.executable, *CLI_RUNTIME_FLAGS,
                                  "-c", script, str(decoy), str(self.entrypoint)],
                                 capture_output=True, text=True, timeout=15, check=False)
         self.assertFalse(marker.exists(), "the entrypoint imported the decoy package")
@@ -63,9 +101,10 @@ class CliContractTests(SourceFixture):
         shutil.copytree(REPOSITORY / "metadata/pipeline", self.root / "metadata/pipeline",
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         entry = self.root / "metadata/pipeline/__main__.py"
-        result = subprocess.run([sys.executable, "-I", "-B", str(entry), "validate"],
-                                cwd=self.base, capture_output=True, text=True, timeout=15,
-                                check=False)
+        result: subprocess.CompletedProcess[str] = subprocess.run(
+            [sys.executable, *CLI_RUNTIME_FLAGS, str(entry), "validate"],
+            cwd=self.base, capture_output=True, text=True, timeout=15, check=False,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
         report = json.loads(result.stdout)
@@ -78,7 +117,7 @@ class CliContractTests(SourceFixture):
         for command, extra in (("validate", ["--output", str(self.output)]),
                                ("generate", []), ("check", []), ("inspect-msix", [])):
             with self.subTest(command=command):
-                result = subprocess.run([sys.executable, "-I", "-B", str(self.entrypoint),
+                result = subprocess.run([sys.executable, *CLI_RUNTIME_FLAGS, str(self.entrypoint),
                                          command, "--root", str(self.root), *extra],
                                         capture_output=True, text=True, timeout=15, check=False)
                 self.assertEqual(result.returncode, 2, result.stderr)

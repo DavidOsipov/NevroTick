@@ -43,6 +43,8 @@ def emit_windows_fixture(path: Path, *, pdb_page_size: int = 4096) -> None:
 MANUAL_NATIVE_EXPECTATIONS = (
     "nts_ke_experiment::transport::certificate_time_fixture::pre_epoch_certificate_handshake_preserves_local_clock_failure",
     "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
+    "nts_ke_experiment::transport::certificate_time_fixture::above_range_certificate_handshake_preserves_local_clock_failure",
+    "nts_ke_experiment::transport::certificate_time_fixture::far_future_certificate_handshake_preserves_local_clock_failure",
     "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
     "nts_ke_experiment::transport::managed_close_fixture::managed_protected_public_probe_joins_one_authenticated_reply",
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join",
@@ -1362,23 +1364,23 @@ class TestRosterAdmission(unittest.TestCase):
         value = self.roster()
         names_only = "\n".join(name + ": test" for name in value["tests"]) + "\n"
         self.assertEqual(NATIVE.validate_test_listing(names_only, value), value["tests"])
-        output = names_only + "\n11 tests, 0 benchmarks\n"
+        output = names_only + "\n13 tests, 0 benchmarks\n"
         self.assertEqual(NATIVE.validate_test_listing(output, value), value["tests"])
         for bad in (output.replace("common::neighbor", "common::same_count_substitute"),
                     output.replace("nts_ke_experiment::second", "nts_ke_experiment::first"),
-                    output.replace("11 tests", "10 tests"), output + "unattributed output\n",
-                    output + "11 tests, 0 benchmarks\n", output.replace("0 benchmarks", "1 benchmark")):
+                    output.replace("13 tests", "12 tests"), output + "unattributed output\n",
+                    output + "13 tests, 0 benchmarks\n", output.replace("0 benchmarks", "1 benchmark")):
             with self.subTest(output=bad[:100]), self.assertRaises(NATIVE.Incomplete):
                 NATIVE.validate_test_listing(bad, value)
 
     def test_selected_results_require_exact_successes_and_filtered_count(self):
         value = self.roster()
         output = "running 2 tests\n" + "\n".join("test " + name + " ... ok" for name in value["selected_ke_tests"])
-        output += "\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s\n"
+        output += "\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.01s\n"
         NATIVE.validate_ke_execution(output, value)
         NATIVE.validate_ke_execution(output.replace("\n", "\r\n"), value)
         for bad in (output.replace("::second", "::first"), output.replace("::second", "::unexpected"),
-                    output.replace("9 filtered", "8 filtered"), output.replace("0 ignored", "1 ignored"),
+                    output.replace("11 filtered", "10 filtered"), output.replace("0 ignored", "1 ignored"),
                     output.replace("second ... ok", "second ... ignored"),
                     output + "test common::unexpected ... ok\n", output + output,
                     output.replace("2 passed", "0 passed")):
@@ -1445,7 +1447,7 @@ class ManualNativePartitionAdmission(unittest.TestCase):
     def test_manual_partition_refuses_omissions_substitutions_promotions_and_overlap(self):
         good = self.explicit_roster()
         self.assertEqual(NATIVE.MANUAL_NATIVE_TESTS, MANUAL_NATIVE_EXPECTATIONS)
-        self.assertEqual(len(set(MANUAL_NATIVE_EXPECTATIONS)), 5)
+        self.assertEqual(len(set(MANUAL_NATIVE_EXPECTATIONS)), 7)
         for name in MANUAL_NATIVE_EXPECTATIONS:
             for field in ("manual_native_tests", "ke_tests", "tests"):
                 value = json.loads(json.dumps(good))
@@ -1528,12 +1530,12 @@ class ManualNativePartitionAdmission(unittest.TestCase):
 
     def test_manual_source_owners_remain_explicitly_ignored_with_specific_controller_contracts(self):
         owners = (
-            ("transport.rs", MANUAL_NATIVE_EXPECTATIONS[:2], "certificate-bearing NTS-KE peer"),
-            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[2:3],
+            ("transport.rs", MANUAL_NATIVE_EXPECTATIONS[:4], "certificate-bearing NTS-KE peer"),
+            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[4:5],
              "dedicated Windows process for native managed KE retirement"),
-            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[3:4],
+            ("transport/managed_close_fixture.rs", MANUAL_NATIVE_EXPECTATIONS[5:6],
              "one-leg TLS and UDP peer"),
-            ("recovery/worker_tests.rs", MANUAL_NATIVE_EXPECTATIONS[4:], "TLS and UDP successor peer"),
+            ("recovery/worker_tests.rs", MANUAL_NATIVE_EXPECTATIONS[6:], "TLS and UDP successor peer"),
         )
         directory = ROOT / "crates/nevrotick-engine/src/nts_ke_experiment"
         for relative, names, reason in owners:

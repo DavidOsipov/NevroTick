@@ -13,7 +13,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use windows_platform_native::{PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess};
+use windows_platform_native::{
+    PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess, TokenPrivilegeObservation,
+};
 
 use super::{
     LabDuplexPipe, LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader,
@@ -22,6 +24,7 @@ use super::{
 use crate::{
     NativeError,
     broker_endpoint::{AcceptCompletion, Reservation},
+    native::retained_privileges_match_self,
     native_broker_endpoint::{FixtureConnectionError, NativeBrokerEndpoint},
     native_pipe_identity::{
         RetainedPrimaryToken, ensure_unimpersonated, observe_peer_token_during_identification,
@@ -128,7 +131,7 @@ fn identified_request_and_reply_share_one_duplex_pipe() -> Check<()> {
 ///
 /// # Errors
 /// Preserve a setup or native query failure, or refuse the wrong ambient-token
-/// outcome or a changed process token after reversion.
+/// outcome, changed token or differing complete privilege capture after reversion.
 fn check_peer_token_refusal_and_reversion(server: BorrowedHandle<'_>) -> Check<()> {
     let pid: NonZeroU32 =
         NonZeroU32::new(std::process::id()).ok_or("fixture process has no PID")?;
@@ -147,8 +150,13 @@ fn check_peer_token_refusal_and_reversion(server: BorrowedHandle<'_>) -> Check<(
     if !expected.matches_observation(&recovered) {
         return Err("peer token changed across the ambient refusal and reversion".into());
     }
+    let retained: TokenPrivilegeObservation = recovered.observe_privileges()?;
+    if !retained_privileges_match_self(&retained)? {
+        return Err("retained token privileges differ from the independent self capture".into());
+    }
     peer.check_live()?;
     println!("peer-primary-token ambient=refused post-reversion=matched");
+    println!("peer-primary-token complete-privileges=matched");
     Ok(())
 }
 

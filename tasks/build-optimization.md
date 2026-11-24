@@ -2732,3 +2732,76 @@ The receipt is
 `~/.local/share/nevrotick/calendar-audit-followup.8mg5JKHD/result.json`
 with SHA-256
 `84fe032236c21e3edbd0d4bede475aa71b54e9857e9f0a25a4836040aab0fa2a`.
+
+The dependency-updates and preflight skills guided a fresh frozen replay
+from `a17d499412c0b4d6ec61b96e47bbcff1bac5d507` with the existing worktree
+overlays. The selected preview, strict-policy and graph suites passed 155
+Python controls. Both configured `--lane dependencies` profiles, `default`
+and `engine-ke-association`, passed all 30 lanes each. GNU and MSVC both
+passed Cargo metadata and feature-tree admission, followed by cargo-deny
+advisory, bans, licence and source checks. The verifier rechecked the
+admitted advisory snapshot and its age. It used the existing lock and
+vendor without fetching. Both receipts match the current 754 product and
+checker inputs. The canonical source map SHA-256 is
+`cbd1386df292416b40b43dacb36fa19df6347f881d440ab3704ea115b87ad7e2`.
+Scratch was removed after both runs exited zero.
+
+| Receipt under `~/.local/share/nevrotick/calendar-current-graphs-20261124.hAoE6BwZ/` | SHA-256 |
+| --- | --- |
+| `default.json` | `54d812a0baad0c4a6bc7cec843cb0eda58302e33b9d844879ee1c61fef643cf2` |
+| `engine-ke-association.json` | `a9d2b83bc6c8065a26fc2242f3c417ea4ec65012edb212347c27de0367a1bbe8` |
+
+Independent readback located the separate default MSVC build for the
+committed `a17d499` calendar candidate. It passed 35 lanes including
+compiler and Clippy checks, both release links and PE readback. The
+`cross-build.json` under `%LOCALAPPDATA%/NevroTick/msix-default-a17d499/`
+hashes to `60a573d0cef8e99378611af70dd1be85f394b1fe3c914130c8bc5226cda6a666`.
+The Windows build was reused for that candidate. Native local-date
+behavior and installed-package qualification remain open.
+
+### Close alternate outcome lint spellings
+
+Audit `R-A17-01` reproduced 16 missed findings against the
+`a17d499` scanner by adding inner lint attributes to copies of
+`presentation.rs`. The checker now derives the bare spellings from its
+protected Clippy names and recognizes `clippy::let_underscore_drop` as
+the moved Rust lint. Findings retain the spelling used in the source.
+
+Metadata-only Clippy 1.100.0 probes produced each of the eight expected
+denials, then confirmed that the direct and nested overrides each change
+the intended level when the renamed-lint and unknown-lint diagnostics
+are allowed. All 16 scanner regressions now return 1 with the exact
+`preview-inner-outcome-suppression` finding. The unrelated lint, other
+tool namespace, quoted reason, documentation and comment controls pass.
+
+The 77 selected Python tests and eight workflow routing controls passed.
+The preview CLI returned zero findings on the repository sources. Evidence
+is in `~/.local/share/nevrotick/a17-lint-alias-followup/`. The scanner
+SHA-256 is `7ca2e6e95b0e08c5f68b795fca2542047565ae105564ce54d8239f46ad61b120`.
+
+### Correct Sunday-based weekday formatting in Slint
+
+Audit `SEC-CAL-01` reproduced Sunday `"1"` instead of `"0"` through
+the real Slint export in the default GNU UI Nextest lane. The `a17d499`
+snapshot with only the new tests ran 207 cases with exactly the new
+`%w` test failing. Its `%u` and literal `%%w` controls passed.
+
+The adapter now sets zero indexing on the parsed Sunday weekday
+component before formatting. The two UI tests check all seven weekday
+values, ISO numbering, literal `%%w`, and a mixed date and weekday format.
+The first fixed build stopped during an unrelated UI binary link with
+`Resource temporarily unavailable`. The four-CPU-affinity retry passed
+all 20 selected default GNU lanes on Rust 1.100.0, including all 207 UI
+tests and targeted Clippy. The two calendar files in the integrated checkout
+match the tested bytes. The combined source-policy admission covered 754
+inputs and the three dependency admission suites passed 92 tests.
+
+Receipts are in `~/.local/share/nevrotick/calendar-weekday-audit.ECSEzGvc/`.
+The failing `red.json` hashes to
+`d4dd22df7014be69ca5589db9472c057a2ee7d3f630e332636e80b441517f880`.
+The passing `green-affinity.json` hashes to
+`409a9f35e83522ce5f8825d045a20f6df325bc2c0b2e4bb69ab353961ad5b19b`.
+That receipt binds the isolated audit snapshot. The separately admitted
+integrated policy includes existing rustls-platform-verifier edits and
+uses canonical SHA-256
+`47204cbff0a0790b36ae69c12d1c573c4f8f768df454290fc2ac5b1ccf168ed3`.

@@ -2359,6 +2359,13 @@ fn run_managed_loopback_observing<T: Send>(
             "the actual collector must retain the managed provider until join"
         );
         assert_eq!(provider_lifetime.get().map(Weak::strong_count), Some(0));
+        let first_endpoints: Result<(std::net::SocketAddr, std::net::SocketAddr), Failure> =
+            peer_result
+                .as_ref()
+                .map(|[first, _]: &[LoopbackPeerLeg<T>; 2]| {
+                    (first.client_endpoint, first.peer_endpoint)
+                })
+                .map_err(|failure: &Failure| *failure);
         let report: Option<ManagedProtectedReport> = assert_joined_loopback_successor(
             result,
             successor,
@@ -2366,6 +2373,7 @@ fn run_managed_loopback_observing<T: Send>(
             remote,
             &expected,
             &(original_origin..=before_successor_commit),
+            first_endpoints,
         )?;
         verify(report.as_ref(), peer_result?)
     })?;
@@ -2480,7 +2488,7 @@ fn pair_loopback_peer(
 /// # Errors
 /// Refuse a missing receipt or a nonordinary terminal.
 /// # Panics
-/// Fail if source custody, worker identity, cutoff, or completed work differs.
+/// Fail if source custody, exchange identity, observed endpoints, cutoff or completed work differs.
 #[cfg(any(windows, target_os = "linux"))]
 fn assert_pair_loopback_report(
     report: &ManagedProtectedReport,
@@ -2493,11 +2501,14 @@ fn assert_pair_loopback_report(
         return Err(Failure::Control);
     };
     assert!(first.same_invocation(terminal));
+    assert!(!first.same_exchange(terminal));
     assert!(first.configuration().same_configuration(expected));
     assert!(terminal.configuration().same_configuration(expected));
     assert!(first.committed_at() <= terminal.committed_at());
     assert!(terminal.committed_at() < cutoff);
     for (leg, receipt) in peer.into_iter().zip([first, terminal]) {
+        assert_eq!(receipt.local_endpoint(), leg.client_endpoint);
+        assert_eq!(receipt.peer_endpoint(), leg.peer_endpoint);
         assert!(leg.received <= leg.sending);
         assert!(leg.sending <= receipt.received_at());
     }
@@ -2629,7 +2640,7 @@ fn assert_pair_presentation(
 /// Refuse if either job lost its first ordinary receipt.
 ///
 /// # Panics
-/// Fail if the second job's receive precedes the first commit or they share a chart.
+/// Fail if the second job's receive precedes the first commit or the jobs share identity.
 #[cfg(any(windows, target_os = "linux"))]
 fn assert_pair_invocation_order(
     first: &ManagedProtectedReport,
@@ -2639,6 +2650,7 @@ fn assert_pair_invocation_order(
     let second_receipt: &crate::ManagedProtectedReceipt = second.first().ok_or(Failure::Control)?;
     assert!(first_receipt.committed_at() <= second_receipt.received_at());
     assert!(!first_receipt.same_invocation(second_receipt));
+    assert!(!first_receipt.same_exchange(second_receipt));
     Ok(())
 }
 
@@ -2752,6 +2764,97 @@ fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), 
         (2, 1, 1)
     );
     assert_eq!(pair.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
+}
+
+/// Keep an already joined first job and refuse the second after a delivered suspend.
+/// # Errors
+/// Preserve the actual first job and independent peer refusals.
+/// # Panics
+/// Fail if the suspended attempt reserves or submits another worker or loses first history.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_pair_delivered_suspend_between_jobs_refuses_second_submission() -> Result<(), Failure> {
+    use std::cell::OnceCell;
+
+    use crate::nts_ke_experiment::managed_preview::{
+        ManagedProtectedPairReport, run_managed_pair_with,
+    };
+    use crate::nts_ke_experiment::power_target::{PowerEvent, PowerTarget};
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let mut authority: crate::SourcePolicyAuthority = pair_loopback_authority()?;
+    let first: PairLoopbackPeer = pair_loopback_peer(&mut authority, 0)?;
+    let second: PairLoopbackPeer = pair_loopback_peer(&mut authority, 1)?;
+    let config: Config = pair_loopback_config(&authority, &first.expected)?;
+    let provider: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
+    let observer: OnceCell<Arc<PowerTarget>> = OnceCell::new();
+    let submissions: Cell<usize> = Cell::new(0);
+    let cutoff: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let preparation_refusal = |cause: Failure| {
+        SourceProtectedProbeFailure::from_run_failure(RunFailed::Preparation(Failed::from(cause)))
+    };
+
+    let report: ManagedProtectedPairReport =
+        std::thread::scope(|scope: &std::thread::Scope<'_, '_>| {
+            let peer: PairPeerJoin<'_> =
+                spawn_pair_loopback_peer(scope, &first.socket, LoopbackSuccessor::ApplyOrdinary)?;
+            let report: ManagedProtectedPairReport = run_managed_pair_with(
+                config,
+                || {
+                    assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                    let target: &Arc<PowerTarget> = observer
+                        .get()
+                        .ok_or_else(|| preparation_refusal(Failure::Control))?;
+                    target
+                        .deliver(PowerEvent::Suspending)
+                        .map_err(preparation_refusal)?;
+                    pair_loopback_config(&authority, &second.expected).map_err(preparation_refusal)
+                },
+                cutoff,
+                &SLOT,
+                |target: Arc<PowerTarget>| {
+                    observer.set(Arc::clone(&target)).map_err(|_| ())?;
+                    Ok(move || {
+                        assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
+                        drop(target);
+                        Ok(())
+                    })
+                },
+                |reservation: SubmissionReservation| {
+                    let index: usize = submissions.replace(submissions.get() + 1);
+                    if index != 0 {
+                        return Err(SubmitError::Control);
+                    }
+                    submit_pair_loopback(
+                        reservation,
+                        &ADMISSION,
+                        Arc::clone(&provider),
+                        cutoff,
+                        first.remote,
+                    )
+                },
+                #[cfg(windows)]
+                None,
+            )
+            .map_err(|_| Failure::Control)?;
+            let observations: [LoopbackPeerLeg<Instant>; 2] =
+                peer.join().map_err(|_| Failure::Control)??;
+            assert_pair_loopback_report(report.first(), &first.expected, cutoff, observations)?;
+            Ok::<ManagedProtectedPairReport, Failure>(report)
+        })?;
+
+    let refused: &SourceProtectedProbeFailure = report
+        .second()
+        .ok_or(Failure::Control)?
+        .err()
+        .ok_or(Failure::Control)?;
+    assert_eq!(refused.labels(), ("currentness", "control"));
+    assert_eq!(submissions.get(), 1);
+    assert_eq!(provider.get().map(Weak::strong_count), Some(0));
+    assert_eq!(report.power_unregistration_error(), None);
     assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
     Ok(())
 }
@@ -2905,7 +3008,9 @@ fn managed_pair_joined_stop_refusal_suppresses_second_job() -> Result<(), Failur
         cutoff,
         &SLOT,
         |target: Arc<PowerTarget>| {
-            target.deliver().map_err(|_| ())?;
+            target
+                .deliver(crate::nts_ke_experiment::power_target::PowerEvent::AutomaticResume)
+                .map_err(|_| ())?;
             let closes: &Cell<usize> = &closes;
             Ok(move || {
                 assert_eq!(SLOT.observer().poll_until(cutoff), Observation::Taken);
@@ -3139,6 +3244,7 @@ fn assert_joined_loopback_successor(
     remote: std::net::SocketAddr,
     expected: &crate::SourceConfigurationSnapshot,
     first_commit_window: &std::ops::RangeInclusive<Instant>,
+    first_endpoints: Result<(std::net::SocketAddr, std::net::SocketAddr), Failure>,
 ) -> Result<Option<ManagedProtectedReport>, Failure> {
     match (successor, result) {
         (
@@ -3195,10 +3301,9 @@ fn assert_joined_loopback_successor(
             assert_eq!(report.power_unregistration_error(), None);
             match (successor, report.terminal()) {
                 (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
-                    assert_eq!(projected.leap_indicator(), 0);
                     let timing: ReceiptTiming = terminal_timing.ok_or(Failure::Control)?;
-                    assert!(projected.same_invocation(receipt));
                     assert_ordinary_loopback_receipt(
+                        projected,
                         receipt,
                         expected,
                         nak.unwrap_or(committed_at),
@@ -3230,8 +3335,14 @@ fn assert_joined_loopback_successor(
             Ok(Some(report))
         }
         (LoopbackSuccessor::Unwind, Err(RunFailed::Abnormal(joined))) => {
-            assert_abnormal_loopback_successor(joined, remote, expected, first_commit_window)?;
-            Ok(None)
+            assert_abnormal_loopback_successor(
+                joined,
+                remote,
+                expected,
+                first_commit_window,
+                first_endpoints,
+            )
+            .map(|()| None)
         }
         (_, Err(RunFailed::Operation(failure))) => Err(failure.primary),
         _ => Err(Failure::Control),
@@ -3369,16 +3480,19 @@ fn original_receipt_timing(
     })
 }
 
-/// Compare the ordinary terminal receipt with its own original history.
+/// Compare the ordinary terminal receipt with its original history and first receipt.
 /// # Panics
-/// Fail if the receipt loses exact timing, configuration or packet facts.
+/// Fail if either receipt loses invocation, timing, configuration or packet facts.
 #[cfg(any(windows, target_os = "linux"))]
 fn assert_ordinary_loopback_receipt(
+    first: &crate::ManagedProtectedReceipt,
     receipt: &crate::ManagedProtectedReceipt,
     expected: &crate::SourceConfigurationSnapshot,
     earliest_arrival: Instant,
     timing: &ReceiptTiming,
 ) {
+    assert_eq!(first.leap_indicator(), 0);
+    assert!(first.same_invocation(receipt));
     assert!(receipt.configuration().same_configuration(expected));
     assert!(earliest_arrival <= receipt.received_at());
     assert!(receipt.received_at() <= receipt.committed_at());
@@ -3414,7 +3528,7 @@ fn assert_joined_restriction_debug(report: &ManagedProtectedReport) {
 
 /// Compare the public failure with genuine first-reply custody after abnormal join.
 /// # Errors
-/// Preserve wrong-mode refusal and a missing first receipt or NAK observation.
+/// Preserve wrong-mode refusal, missing history or independent peer failure.
 /// # Panics
 /// Fail if retirement changes the first receipt or manufactures terminal history.
 #[cfg(any(windows, target_os = "linux"))]
@@ -3423,6 +3537,7 @@ fn assert_abnormal_loopback_successor(
     remote: std::net::SocketAddr,
     expected: &crate::SourceConfigurationSnapshot,
     first_commit_window: &std::ops::RangeInclusive<Instant>,
+    first_endpoints: Result<(std::net::SocketAddr, std::net::SocketAddr), Failure>,
 ) -> Result<(), Failure> {
     assert_eq!(joined.termination, Termination::Panicked);
     assert!(!joined.retired);
@@ -3455,6 +3570,12 @@ fn assert_abnormal_loopback_successor(
     assert_peer_timestamps(&retained, FIRST_PEER_TIMESTAMPS);
     assert_peer_quality(&retained, FIRST_DELETION_QUALITY);
     first_timing.assert_projection(&retained);
+    let projected_again: crate::ManagedProtectedReceipt =
+        failure.retained_first().ok_or(Failure::Control)?;
+    assert!(retained.same_exchange(&projected_again));
+    let (client, peer): (std::net::SocketAddr, std::net::SocketAddr) = first_endpoints?;
+    assert_eq!(retained.local_endpoint(), client);
+    assert_eq!(retained.peer_endpoint(), peer);
     assert!(committed_at <= nak_at && first_commit_window.contains(&nak_at));
     Ok(())
 }
@@ -3642,7 +3763,8 @@ fn managed_loopback_ordinary_legs_preserve_native_capture_placement() -> Result<
 /// # Errors
 /// Refuse absent first/ordinary terminal history or a missing native observation.
 /// # Panics
-/// Fail if either leg lacks independent placement evidence, or the legs overlap.
+/// Fail if either leg lacks independent placement evidence, repeats the first
+/// exchange, or overlaps the other leg.
 #[cfg(windows)]
 fn verify_native_loopback_timing(
     report: Option<&ManagedProtectedReport>,
@@ -3653,6 +3775,8 @@ fn verify_native_loopback_timing(
     let crate::ManagedProtectedTerminal::Ordinary(second) = report.terminal() else {
         return Err(Failure::Control);
     };
+    assert!(first.same_invocation(second));
+    assert!(!first.same_exchange(second));
     let first_points: [ClockCoordinates; 3] =
         verify_native_loopback_leg("first", first, peer_first)?;
     let second_points: [ClockCoordinates; 3] =
@@ -3672,8 +3796,8 @@ fn verify_native_loopback_timing(
 /// # Errors
 /// Refuse absent, refused or unrepresentable native history at any Engine point.
 /// # Panics
-/// Fail on different frequencies, reversed same-thread intervals, or an ambiguous
-/// or reversed comparison between the two threads.
+/// Fail on different socket endpoints or frequencies, reversed same-thread
+/// intervals, or an ambiguous or reversed comparison between the two threads.
 #[cfg(windows)]
 fn verify_native_loopback_leg(
     leg: &str,
@@ -3690,6 +3814,8 @@ fn verify_native_loopback_leg(
     else {
         return Err(Failure::Control);
     };
+    assert_eq!(receipt.local_endpoint(), peer.client_endpoint, "{leg}");
+    assert_eq!(receipt.peer_endpoint(), peer.peer_endpoint, "{leg}");
     let points: [(&str, ClockCoordinates); 5] = [
         ("engine-pre-send", pre_send),
         ("engine-send-return", send_return),

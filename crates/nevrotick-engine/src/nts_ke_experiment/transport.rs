@@ -528,6 +528,38 @@ mod certificate_time_fixture {
         )
     }
 
+    /// The first whole second outside the verifier's range remains a local-clock failure.
+    /// # Errors
+    /// Preserve fixture or native provider admission failure.
+    #[test]
+    #[ignore = "requires the owned offline Windows certificate-bearing NTS-KE peer"]
+    fn above_range_certificate_handshake_preserves_local_clock_failure() -> Result<(), Failure> {
+        let wall_time: LocalWallTime = LocalWallTime {
+            fixture_time: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(4_102_444_801)),
+        };
+        assert_refused_handshake(
+            wall_time,
+            "above-range",
+            "Tls(TlsFailure { stage: Handshake, cause: LocalClock })",
+        )
+    }
+
+    /// The formerly overflowing conversion date refuses with the same typed cause.
+    /// # Errors
+    /// Preserve fixture or native provider admission failure.
+    #[test]
+    #[ignore = "requires the owned offline Windows certificate-bearing NTS-KE peer"]
+    fn far_future_certificate_handshake_preserves_local_clock_failure() -> Result<(), Failure> {
+        let wall_time: LocalWallTime = LocalWallTime {
+            fixture_time: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(6_802_270_474)),
+        };
+        assert_refused_handshake(
+            wall_time,
+            "far-future",
+            "Tls(TlsFailure { stage: Handshake, cause: LocalClock })",
+        )
+    }
+
     /// The ordinary local clock reaches the verifier and refuses the untrusted issuer.
     ///
     /// # Errors

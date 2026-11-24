@@ -60,9 +60,19 @@ pub fn format_date(format: &str, day: u32, month: u32, year: i32) -> SharedStrin
     let Some(date) = calendar_date(day, month, year) else {
         return SharedString::default();
     };
-    parse_strftime_borrowed(format)
+    let Some(mut description): Option<alloc::vec::Vec<BorrowedFormatItem<'_>>> =
+        parse_strftime_borrowed(format).ok()
+    else {
+        return SharedString::default();
+    };
+    // The pinned parser represents %w as one-indexed, while strftime starts at zero.
+    for item in &mut description {
+        if let BorrowedFormatItem::Component(Component::WeekdaySunday(modifier)) = item {
+            *modifier = modifier.with_one_indexed(false);
+        }
+    }
+    date.format(&description)
         .ok()
-        .and_then(|description| date.format(&description).ok())
         .map_or_else(SharedString::default, SharedString::from)
 }
 

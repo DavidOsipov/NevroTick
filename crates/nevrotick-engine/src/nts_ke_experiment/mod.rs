@@ -1088,7 +1088,7 @@ enum InvocationCompletion {
     /// One genuine committed exchange, detached from all live native/secret owners.
     Protected(Box<datagram::ProtectedHistory>),
     /// The actual managed protected result and its original committed source revision.
-    ManagedProtected(Box<datagram::ManagedProtectedHistory>),
+    ManagedProtected(Arc<datagram::ManagedProtectedHistory>),
     /// A committed, control-only historical effect from the private scripted worker.
     #[cfg(test)]
     ManagedProtectedControl(association::ledger::AppliedProtectedControl),
@@ -1099,7 +1099,7 @@ enum InvocationCompletion {
 /// Terminal historical effect issued after the second adapter retires.
 enum ManagedSuccessorEffect {
     /// Genuine authenticated ordinary commit.
-    Ordinary(Box<datagram::ManagedProtectedHistory>),
+    Ordinary(Arc<datagram::ManagedProtectedHistory>),
     /// The exact restriction committed by the source and endpoint policy owner.
     Restriction(association::ledger::AppliedProtectedControl),
 }
@@ -1370,8 +1370,18 @@ fn subscribe_managed_power(
     target: Arc<power_target::PowerTarget>,
 ) -> Result<impl FnOnce() -> Result<(), NonZeroU32>, ()> {
     let watch: ResumeWatch =
-        ResumeWatch::subscribe_persistent(move || target.deliver().map_err(|_| ()))
-            .map_err(|_| ())?;
+        ResumeWatch::subscribe_persistent(move |event: windows_platform_native::ResumeEvent| {
+            let observed: power_target::PowerEvent = match event {
+                windows_platform_native::ResumeEvent::Suspending => {
+                    power_target::PowerEvent::Suspending
+                }
+                windows_platform_native::ResumeEvent::AutomaticResume => {
+                    power_target::PowerEvent::AutomaticResume
+                }
+            };
+            target.deliver(observed).map_err(|_| ())
+        })
+        .map_err(|_| ())?;
     Ok(move || watch.close().map_err(ResumeUnregistrationError::code))
 }
 

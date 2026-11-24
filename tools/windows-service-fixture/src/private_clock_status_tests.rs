@@ -37,6 +37,7 @@ use crate::{
 
 #[cfg(windows)]
 use crate::{
+    broker_clock_change::ClockRevision,
     native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
     native_pipe_identity::{
         PipeIdentity, PipeIdentityError, ensure_unimpersonated, own_process_identity,
@@ -58,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 41;
+const BROKER_CASES: usize = 43;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -1539,6 +1540,7 @@ fn native_anonymous_request_refuses_before_dispatch() -> Result<(), Box<dyn Erro
         let refused: Result<bool, SessionFault> = pending.resolve(Reply {
             connection: std::rc::Rc::clone(&session.connection),
             frame: late,
+            positive_revision: None,
         });
         assert_eq!(start, NativeReadStart::Queued);
         assert!(
@@ -2408,11 +2410,52 @@ fn observed_first_status<const N: usize>(
 #[test]
 #[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
 fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Box<dyn Error>> {
+    observe_native_first_reply::<37>(None)
+}
+
+/// Expire the original connection after reply construction and before native submission.
+/// # Errors
+/// Returns a setup, unexpected reply transfer or cleanup failure.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_read_refuses_reply_at_submission_cutoff() -> Result<(), Box<dyn Error>> {
+    observe_native_first_reply::<41>(Some(FirstReplyRefusal::Cutoff))
+}
+
+/// Retire the original positive revision after encoding and before the native write.
+/// # Errors
+/// Returns a setup, unexpected reply transfer or cleanup failure.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_read_refuses_reply_after_revision_changes() -> Result<(), Box<dyn Error>> {
+    observe_native_first_reply::<42>(Some(FirstReplyRefusal::Revision))
+}
+
+/// The independently scripted cause of a final positive reply refusal.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum FirstReplyRefusal {
+    /// The original connection cutoff is reached.
+    Cutoff,
+    /// The original awake revision retires, without closing the mailbox or pipe.
+    Revision,
+}
+
+/// Observe the original client read before Stop and again after pipe retirement.
+/// # Errors
+/// Returns a refusal at setup, reply observation or cleanup.
+#[cfg(windows)]
+fn observe_native_first_reply<const CASE: usize>(
+    refusal: Option<FirstReplyRefusal>,
+) -> Result<(), Box<dyn Error>> {
     use std::num::NonZeroU32;
     use windows_platform_native::PeerProcess;
 
     use crate::{
         broker_endpoint::BrokerEndpointWorker,
+        host::{PrivateStatusIssue, private_clock_status::NativeStatusOutcome},
         native_broker_endpoint::NativeBrokerEndpoint,
         native_pipe_identity::RetainedFixtureClient,
         native_pipe_pair::{
@@ -2420,22 +2463,22 @@ fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Bo
         },
     };
 
-    const CASE: u32 = 37;
     const WAIT: Duration = Duration::from_secs(2);
     const REQUEST: &[u8] = b"\x01\x00\x01\x00\x02\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00{}";
     const REPLY: &[u8] = b"\x01\x00\x02\x00\x12\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
                            {\"available\":true}";
     let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
     let peer: RetainedFixtureClient = RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
+    let pipe_case: u32 = u32::try_from(CASE)?;
     let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-        prepare_first_exchange_fixture(CASE, peer)
+        prepare_first_exchange_fixture(pipe_case, peer)
     };
-    with_broker_worker_reads::<37, 1, _, _>(
+    with_broker_worker_reads::<CASE, 1, _, _>(
         BrokerEndpointWorker::new(acquire),
         |owner, clock, stop| {
             let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
             let (client_read, mut client_write): (LabPipeReader, LabRequestWriter) =
-                native_fixture_result(open_first_exchange_client(CASE))?;
+                native_fixture_result(open_first_exchange_client(pipe_case))?;
             let mut reader: NativePipeRead =
                 native_fixture_result(NativePipeRead::new(client_read))?;
             let control: BrokerControlWake = BrokerControlWake::new()?;
@@ -2459,49 +2502,43 @@ fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Bo
                     return Err("the original broker request read did not wake".into());
                 }
 
-                wait_for_first_reply_write(
-                    owner,
-                    clock,
-                    stop,
-                    &control,
-                    &mut waiter,
-                    Instant::now() + WAIT,
-                )?;
-                observe_first_reply_bytes(&mut reader, REPLY, wait_for_native_read)?;
+                if let Some(refusal) = refusal {
+                    observe_prepared_reply_refusal(owner, clock, stop, cutoff, refusal)?;
+                } else {
+                    wait_for_first_reply_write(
+                        owner,
+                        clock,
+                        stop,
+                        &control,
+                        &mut waiter,
+                        Instant::now() + WAIT,
+                    )?;
+                    observe_first_reply_bytes(&mut reader, REPLY, wait_for_native_read)?;
+                    native_fixture_result(ensure_unimpersonated())?;
+                    if clock.now >= cutoff {
+                        return Err("the valid reply completed outside its original cutoff".into());
+                    }
+                    if native_fixture_result(reader.begin(MAX_FRAME_LEN))?
+                        != NativeReadStart::Queued
+                        || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+                    {
+                        return Err(
+                            "the settled exchange produced a second reply or operation".into()
+                        );
+                    }
+                }
                 native_fixture_result(ensure_unimpersonated())?;
                 if !owner.native_status.capture_observed
+                    || !matches!(&owner.native_status.outcome,
+                        Some(NativeStatusOutcome::Reply(frame)) if frame.as_bytes() == REPLY)
+                    || owner.private_status_issue != PrivateStatusIssue::Issued
                     || owner.connection_cutoff != Some(cutoff)
-                    || clock.now >= cutoff
                     || owner.outstanding_work() != 1
                     || owner.worker.completion_wake().is_some()
                 {
-                    return Err("the completed reply lost its original Running custody".into());
+                    return Err("the admitted reply lost its original Running custody".into());
                 }
-                if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued
-                    || !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
-                    || !matches!(
-                        native_fixture_result(reader.poll())?,
-                        NativeReadPoll::Pending
-                    )
-                    || owner.worker.completion_wake().is_some()
-                {
-                    return Err("the settled exchange produced a second reply or operation".into());
-                }
-                let _stop_disposition = deliver(Some(clock.mailbox), stop, 1, 0);
-                if owner.poll(clock, stop) != InvocationPoll::Finished
-                    || owner.outstanding_work() != 0
-                {
-                    return Err("Stop did not retire the settled broker connection".into());
-                }
-                if !matches!(
-                    wait_for_native_read(&mut reader)?,
-                    NativeReadPoll::Disconnected
-                ) {
-                    return Err(
-                        "the original client saw extra bytes or no disconnect on Stop".into(),
-                    );
-                }
-                Ok(())
+                stop_after_pending_peer_read(owner, clock, stop, &mut reader)
             })();
             if observed.is_err() {
                 retire_pending_peer_read(&mut reader);
@@ -2509,6 +2546,79 @@ fn native_first_read_returns_reply_on_the_original_connection() -> Result<(), Bo
             observed
         },
     )?
+}
+
+/// Drive the existing write edge after the encoded positive decision is in custody.
+/// # Errors
+/// Fails if the selected control misses its edge or a write is confirmed.
+#[cfg(windows)]
+fn observe_prepared_reply_refusal<P: Worker>(
+    owner: &mut ServiceInvocation<Reporter, P>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+    cutoff: Instant,
+    refusal: FirstReplyRefusal,
+) -> Result<(), Box<dyn Error>> {
+    let original: ClockRevision<'static> = clock
+        .mailbox
+        .revision()
+        .ok_or("the original awake revision was unavailable")?;
+    let action: DecisionAction = match refusal {
+        FirstReplyRefusal::Cutoff => DecisionAction::Advance(cutoff),
+        FirstReplyRefusal::Revision => DecisionAction::Deliver(0x10),
+    };
+    // Read attribution, receiver admission and the original preflight take
+    // eleven clock observations before the prepared write's final guard.
+    clock.final_action = Some((11, action));
+    if !matches!(owner.poll(clock, stop), InvocationPoll::Pending(_))
+        || !clock.reached
+        || owner.native_status.reply_written
+    {
+        return Err("the prepared reply did not reach submission refusal".into());
+    }
+    match refusal {
+        FirstReplyRefusal::Cutoff if clock.now == cutoff => Ok(()),
+        FirstReplyRefusal::Revision
+            if clock.now < cutoff
+                && !stop.stop_requested()
+                && !original.admits()
+                && clock
+                    .mailbox
+                    .revision()
+                    .is_some_and(|current: ClockRevision<'_>| {
+                        current.number().get() == 2 && current.admits()
+                    }) =>
+        {
+            Ok(())
+        }
+        _ => Err("the selected final refusal did not preserve its independent observations".into()),
+    }
+}
+
+/// Require the original read to remain pending until a clean Stop disconnects it.
+/// # Errors
+/// Returns unexpected bytes, a native observation failure or unconfirmed retirement.
+#[cfg(windows)]
+fn stop_after_pending_peer_read<P: Worker>(
+    owner: &mut ServiceInvocation<Reporter, P>,
+    clock: &mut ScriptClock<'_>,
+    stop: &StopNotification,
+    reader: &mut NativePipeRead,
+) -> Result<(), Box<dyn Error>> {
+    if !matches!(
+        native_fixture_result(reader.poll())?,
+        NativeReadPoll::Pending
+    ) {
+        return Err("the original client received unadmitted reply bytes".into());
+    }
+    let _stop_disposition: ControlDisposition = deliver(Some(clock.mailbox), stop, 1, 0);
+    if owner.poll(clock, stop) != InvocationPoll::Finished || owner.outstanding_work() != 0 {
+        return Err("Stop did not retire the settled broker connection".into());
+    }
+    if !matches!(wait_for_native_read(reader)?, NativeReadPoll::Disconnected) {
+        return Err("the original client saw extra bytes or no disconnect on Stop".into());
+    }
+    Ok(())
 }
 
 /// Give the original broker owner bounded turns to collect its native write.
@@ -2579,11 +2689,12 @@ mod distinct_peer {
     //! Run one actual first exchange with the independently retained child.
 
     use std::{
+        cell::{Cell, RefCell},
         env,
         ffi::OsString,
         io::{self, Read as _, Write as _},
         num::NonZeroU32,
-        os::windows::io::AsHandle,
+        os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, RawHandle},
         path::PathBuf,
         process::{self, Child, ChildStderr, Command, ExitStatus, Stdio},
         sync::mpsc,
@@ -2608,9 +2719,12 @@ mod distinct_peer {
         native_peer_process::same_kernel_object,
         native_pipe_identity::RetainedFixtureClient,
         native_pipe_pair::{
-            LabRequestWriter, open_first_exchange_client, open_supervised_first_exchange_client,
-            peek_fixture_child_stderr, prepare_first_exchange_fixture,
+            LabOverlappedWriter, LabRequestWriter, check_fixture_peer_before_cutoff,
+            check_supervised_first_exchange_peer, open_first_exchange_client, open_lab_reply_pipe,
+            open_supervised_first_exchange_client, peek_fixture_child_stderr,
+            prepare_first_exchange_fixture,
         },
+        native_pipe_write::{NativePipeWrite, NativeWritePoll, confirm_fixture_write},
     };
 
     /// The only exact libtest function the supervisor spawns.
@@ -2624,6 +2738,8 @@ mod distinct_peer {
     const CHILD_CASE: u32 = 38;
     /// Unique pipe and broker clock slot for the refused connector.
     const FOREIGN_CASE: u32 = 39;
+    /// Unique pipe slot for the deterministic submission control.
+    const GUARD_CASE: u32 = 40;
     /// Allowance before the idle child acknowledges its private hold.
     const SETUP_WAIT: Duration = Duration::from_secs(5);
     /// Limit on the isolated child exchange or private hold.
@@ -2759,10 +2875,153 @@ mod distinct_peer {
     /// # Errors
     /// Refuse an elapsed original deadline.
     fn remaining(deadline: Instant) -> Check<Duration> {
+        remaining_at(deadline, Instant::now())
+    }
+
+    /// Check the fixed cutoff at one clock observation.
+    /// # Errors
+    /// Refuse elapsed time, including equality with the cutoff.
+    fn remaining_at(deadline: Instant, observed: Instant) -> Check<Duration> {
         deadline
-            .checked_duration_since(Instant::now())
+            .checked_duration_since(observed)
             .filter(|time: &Duration| !time.is_zero())
-            .ok_or_else(|| "fixture deadline elapsed".into())
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::TimedOut, "fixture deadline elapsed").into()
+            })
+    }
+
+    /// Bound each fixture effect by a fresh supervisor sample on the original client.
+    /// # Errors
+    /// Preserve a clock, peer or effect failure without attempting a successor.
+    fn after_current_supervisor_observation(
+        deadline: Instant,
+        now: impl FnMut() -> Instant,
+        observe: impl FnOnce() -> Result<(), LabPipeError>,
+        effect: impl FnOnce() -> Check<()>,
+    ) -> Check<()> {
+        check_fixture_peer_before_cutoff(deadline, now, observe)?;
+        effect()
+    }
+
+    /// Exercise the guard used at both the request and the correlated reply edge.
+    /// # Errors
+    /// Fail if a refusal was missing or the healthy neighbor failed.
+    /// # Panics
+    /// Fail if the clock, peer and effect sequence differs from the expected one.
+    #[test]
+    fn supervised_fixture_rechecks_after_peer_observation() -> Check<()> {
+        let before: Instant = Instant::now();
+        let cutoff: Instant = before
+            .checked_add(Duration::from_nanos(1))
+            .ok_or("fixture cutoff unrepresentable")?;
+        let at: Cell<Instant> = Cell::new(before);
+        let steps: RefCell<Vec<&'static str>> = RefCell::new(Vec::new());
+        let attempt = |after: Instant, observed: Result<(), LabPipeError>| -> Check<()> {
+            after_current_supervisor_observation(
+                cutoff,
+                || {
+                    steps.borrow_mut().push("clock");
+                    at.get()
+                },
+                || {
+                    steps.borrow_mut().push("peer");
+                    at.set(after);
+                    observed
+                },
+                || {
+                    steps.borrow_mut().push("effect");
+                    Ok(())
+                },
+            )
+        };
+        let late: Box<dyn Error> = attempt(cutoff, Ok(()))
+            .err()
+            .ok_or("fixture effect was admitted at its cutoff")?;
+        assert!(matches!(
+            late.downcast_ref::<LabPipeError>(),
+            Some(LabPipeError::SupervisorCutoff)
+        ));
+        assert_eq!(steps.borrow().as_slice(), ["clock", "peer", "clock"]);
+
+        at.set(before);
+        steps.borrow_mut().clear();
+        let foreign: Box<dyn Error> = attempt(before, Err(LabPipeError::ForeignPeer))
+            .err()
+            .ok_or("fixture effect was admitted for a foreign peer")?;
+        assert!(matches!(
+            foreign.downcast_ref::<LabPipeError>(),
+            Some(LabPipeError::ForeignPeer)
+        ));
+        assert_eq!(steps.borrow().as_slice(), ["clock", "peer"]);
+
+        steps.borrow_mut().clear();
+        attempt(before, Ok(()))?;
+        assert_eq!(
+            steps.borrow().as_slice(),
+            ["clock", "peer", "clock", "effect"]
+        );
+
+        assert!(matches!(
+            confirm_fixture_write(NativeWritePoll::Written(2), 2, Some(cutoff), || cutoff),
+            Err(LabPipeError::WriteTimeout)
+        ));
+        confirm_fixture_write(NativeWritePoll::Written(2), 2, Some(cutoff), || before)?;
+        assert!(matches!(
+            confirm_fixture_write(NativeWritePoll::Written(1), 2, Some(cutoff), || cutoff),
+            Err(LabPipeError::ShortWrite {
+                expected: 2,
+                written: 1
+            })
+        ));
+        supervise_write_refusal_and_reuse()
+    }
+
+    /// Refuse one write on its exact guarded handle, then observe only the healthy bytes.
+    /// # Errors
+    /// Preserves native setup, submission, retirement and byte-oracle failures.
+    fn supervise_write_refusal_and_reuse() -> Check<()> {
+        let (client, pipe): (LabPipeReader, LabOverlappedWriter) = open_lab_reply_pipe(GUARD_CASE)?;
+        let handle: RawHandle = pipe.as_handle().as_raw_handle();
+        let mut writer: NativePipeWrite = native_fixture_result(NativePipeWrite::new(pipe))?;
+        let mut reader: NativePipeRead = native_fixture_result(NativePipeRead::new(client))?;
+        let deadline: Instant = Instant::now() + SETUP_WAIT;
+        let result: Check<()> = (|| {
+            if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                return Err("write control's empty pipe did not queue a read".into());
+            }
+            let refusal: Result<(), LabPipeError> = writer.write_fixture_fragment_before(
+                b"refused",
+                deadline,
+                |observed: BorrowedHandle<'_>| {
+                    if observed.as_raw_handle() == handle {
+                        Err(LabPipeError::ForeignPeer)
+                    } else {
+                        Err(LabPipeError::ForeignReplyPair)
+                    }
+                },
+            );
+            if !matches!(refusal, Err(LabPipeError::ForeignPeer)) || writer.is_pending() {
+                return Err("the guard did not refuse while keeping the write slot idle".into());
+            }
+            writer.write_fixture_fragment_before(
+                b"accepted",
+                deadline,
+                |observed: BorrowedHandle<'_>| {
+                    if observed.as_raw_handle() == handle {
+                        Ok(())
+                    } else {
+                        Err(LabPipeError::ForeignReplyPair)
+                    }
+                },
+            )?;
+            observe_first_reply_bytes(&mut reader, b"accepted", |reader: &mut NativePipeRead| {
+                read_until(reader, deadline)
+            })
+        })();
+        if result.is_err() {
+            retire_pending_peer_read(&mut reader);
+        }
+        result
     }
 
     /// Collect the exact client read without starting a fresh observation allowance.
@@ -2824,14 +3083,19 @@ mod distinct_peer {
             if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
                 return Err("reply was available before the original request".into());
             }
-            writer.write(REQUEST)?;
+            writer.write_supervised_first_exchange(REQUEST, parent, deadline)?;
             observe_first_reply_bytes(&mut reader, REPLY, |reader: &mut NativePipeRead| {
                 read_until(reader, deadline)
             })?;
             if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
                 return Err("the original client already received a second reply".into());
             }
-            io::stderr().lock().write_all(&[READY])?;
+            after_current_supervisor_observation(
+                deadline,
+                Instant::now,
+                || check_supervised_first_exchange_peer(parent, reader.pipe()),
+                || Ok(io::stderr().lock().write_all(&[READY])?),
+            )?;
             if !matches!(
                 read_until(&mut reader, deadline)?,
                 NativeReadPoll::Disconnected

@@ -5,7 +5,7 @@ use std::ffi::c_void;
 use std::num::NonZeroU32;
 use std::ptr::{NonNull, null_mut};
 
-use crate::resume_slot::{Action, ResumeSlot};
+use crate::resume_slot::{Action, ResumeEvent, ResumeSlot};
 
 /// Register a function callback through the exact `PowrProf` selector.
 const DEVICE_NOTIFY_CALLBACK: u32 = 2;
@@ -138,14 +138,15 @@ impl ResumeWatch {
 
     /// Deliver each suspend or automatic-resume callback until the original watch is disarmed.
     ///
-    /// Delivery is serialized and may start during registration. The action must be bounded,
-    /// non-panicking and independent of this watch's retirement. An action failure is reported
-    /// to Windows for that delivery, and the action remains available for a later notification.
+    /// Delivery preserves the event kind, is serialized and may start during registration.
+    /// The action must be bounded, non-panicking and independent of this watch's retirement.
+    /// An action failure is reported to Windows for that delivery, and the action remains
+    /// available for a later notification.
     ///
     /// # Errors
     /// Refuse repeated registration attempts, a nonzero native status or a missing handle.
     pub fn subscribe_persistent(
-        action: impl FnMut() -> Result<(), ()> + Send + 'static,
+        action: impl FnMut(ResumeEvent) -> Result<(), ()> + Send + 'static,
     ) -> Result<Self, ResumeRegistrationError> {
         Self::register(Action::Persistent(Box::new(action)))
     }
@@ -245,7 +246,7 @@ mod tests {
         assert_eq!((PARAMETERS.callback)(null(), 4, null()), 0);
         assert_eq!(deliveries.load(Ordering::Relaxed), 1);
         assert!(matches!(
-            ResumeWatch::subscribe_persistent(|| Ok(())),
+            ResumeWatch::subscribe_persistent(|_| Ok(())),
             Err(ResumeRegistrationError::AlreadyUsed)
         ));
     }

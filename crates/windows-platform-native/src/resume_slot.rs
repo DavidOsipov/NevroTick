@@ -8,7 +8,7 @@ pub(super) enum Action {
     /// Consume the action on the first relevant event, even if delivery fails.
     Once(Box<dyn FnOnce() -> Result<(), ()> + Send>),
     /// Keep the action until disarm, including after a reported delivery failure.
-    Persistent(Box<dyn FnMut() -> Result<(), ()> + Send>),
+    Persistent(Box<dyn FnMut(ResumeEvent) -> Result<(), ()> + Send>),
 }
 
 impl Action {
@@ -23,6 +23,15 @@ const SUSPEND: u32 = 0x04;
 
 /// Automatic resume, including wake without interactive user activity.
 pub(super) const AUTOMATIC_RESUME: u32 = 0x12;
+
+/// One relevant notification delivered by Windows to the registered observer.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ResumeEvent {
+    /// Windows has reported that it is about to suspend.
+    Suspending,
+    /// Windows has reported an automatic resume.
+    AutomaticResume,
+}
 
 /// Own one registration's delivery state for the entire lifetime of the process.
 pub(super) struct ResumeSlot {
@@ -48,9 +57,11 @@ impl ResumeSlot {
     /// # Errors
     /// Return the observer's failure or a poisoned slot as a callback refusal.
     pub(super) fn notify(&self, event: u32) -> Result<(), ()> {
-        if !matches!(event, SUSPEND | AUTOMATIC_RESUME) {
-            return Ok(());
-        }
+        let event: ResumeEvent = match event {
+            SUSPEND => ResumeEvent::Suspending,
+            AUTOMATIC_RESUME => ResumeEvent::AutomaticResume,
+            _ => return Ok(()),
+        };
         let Some(action) = self.action.get() else {
             return Ok(());
         };
@@ -59,7 +70,7 @@ impl ResumeSlot {
         let result: Result<(), ()> = match pending.take() {
             Some(Action::Once(deliver)) => deliver(),
             Some(Action::Persistent(mut deliver)) => {
-                let result: Result<(), ()> = deliver();
+                let result: Result<(), ()> = deliver(event);
                 *pending = Some(Action::Persistent(deliver));
                 result
             }
@@ -84,7 +95,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex, TryLockError, Weak};
 
-    use super::{Action, ResumeSlot};
+    use super::{Action, ResumeEvent, ResumeSlot};
 
     /// Startup notifications have no delivery target and do not spend admission.
     ///
@@ -180,7 +191,7 @@ mod tests {
                 let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
                 Ok(())
             })));
-            assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
+            assert!(!slot.bind(Action::Persistent(Box::new(|_| Ok(())))));
             assert_eq!(slot.notify(7), Ok(()));
             assert_eq!(slot.notify(u32::MAX), Ok(()));
             assert_eq!(delivered.load(Ordering::Relaxed), 0);
@@ -206,17 +217,25 @@ mod tests {
         let delivered: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
         let observed: Arc<AtomicUsize> = Arc::clone(&delivered);
         let mut first: bool = true;
-        assert!(slot.bind(Action::Persistent(Box::new(move || {
-            let slot: Arc<ResumeSlot> = callback_slot.upgrade().ok_or(())?;
-            let action: &Mutex<Option<Action>> = slot.action.get().ok_or(())?;
-            assert!(matches!(action.try_lock(), Err(TryLockError::WouldBlock)));
-            let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
-            if std::mem::replace(&mut first, false) {
-                Err(())
-            } else {
-                Ok(())
-            }
-        }))));
+        assert!(
+            slot.bind(Action::Persistent(Box::new(move |event: ResumeEvent| {
+                let slot: Arc<ResumeSlot> = callback_slot.upgrade().ok_or(())?;
+                let action: &Mutex<Option<Action>> = slot.action.get().ok_or(())?;
+                assert!(matches!(action.try_lock(), Err(TryLockError::WouldBlock)));
+                let index: usize = observed.fetch_add(1, Ordering::Relaxed);
+                let expected: [ResumeEvent; 3] = [
+                    ResumeEvent::Suspending,
+                    ResumeEvent::AutomaticResume,
+                    ResumeEvent::Suspending,
+                ];
+                assert_eq!(expected.get(index), Some(&event));
+                if std::mem::replace(&mut first, false) {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            })))
+        );
         assert!(!slot.bind(Action::once(|| Ok(()))));
         assert_eq!(slot.notify(7), Ok(()));
         assert_eq!(slot.notify(u32::MAX), Ok(()));
@@ -237,7 +256,7 @@ mod tests {
         drop(retired);
         assert_eq!(Arc::strong_count(&delivered), 1);
         assert!(!slot.bind(Action::once(|| Ok(()))));
-        assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
+        assert!(!slot.bind(Action::Persistent(Box::new(|_| Ok(())))));
         Ok(())
     }
 

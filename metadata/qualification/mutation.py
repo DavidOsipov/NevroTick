@@ -53,6 +53,10 @@ ANNOTATION_TEST = (
     "test_typing_contracts.AnnotationContractTests."
     "test_owned_annotations_are_resolved_and_public_interfaces_are_present"
 )
+CLI_ENTRYPOINT = "metadata/pipeline/__main__.py"
+CLI_STARTUP_TEST = "test_cli_contracts.CliContractTests.test_script_and_import_entrypoint_roles"
+CLI_STARTUP_ROLES = ("isolated metadata script", "metadata package import")
+SOURCE_STAGE_TEST = "test_pipeline.MetadataCliTests.test_source_stage_is_the_default"
 
 
 def digest(raw: bytes) -> str:
@@ -357,6 +361,40 @@ def fixture_anchor_failure(result: dict[str, Any]) -> bool:
                 and "self.assertEqual(text.count(marker), 1)" in trace))
 
 
+def startup_test_name(source: str) -> str:
+    """Select the observer of the startup roles owned by the mutated source."""
+    return CLI_STARTUP_TEST if source == CLI_ENTRYPOINT else SOURCE_STAGE_TEST
+
+
+def record_startup_probe(record: dict[str, Any], python: Path, worker: Path,
+                         directory: Path, timeout: float) -> None:
+    """Keep a supplemental startup observation beside the original failure."""
+    try:
+        probe: dict[str, Any] = execute_tests(
+            python, worker, [startup_test_name(record["file"])],
+            directory / "startup-cli-positive", timeout)
+    except (OSError, ValueError) as error:
+        record["startup_probe_failure"] = repr(error)
+    else:
+        record["startup_cli_positive"] = probe
+        record["startup_probe_classification"] = classify(probe)
+
+
+def require_startup_failure(record: dict[str, Any], test_name: str) -> str:
+    """Require a normally completed, selected startup assertion and retain its trace."""
+    execution: dict[str, Any] = record.get("startup_cli_positive", {})
+    probe: dict[str, Any] = execution.get("report") or {}
+    failures: list[dict[str, str]] = probe.get("failures", [])
+    if (record["outcome"] != "startup-review-required"
+            or execution.get("timeout") is not False
+            or type(execution.get("exit")) is not int or execution["exit"] != 1
+            or probe.get("run") != 1 or probe.get("executed_ids") != [test_name]
+            or [failure["test"] for failure in failures] != [test_name]
+            or probe.get("errors") or probe.get("skipped")):
+        raise ValueError("A semantic startup kill needs its actual CLI positive assertion")
+    return failures[0]["traceback"]
+
+
 def apply_reviews(results: list[dict[str, Any]], sources: dict[str, bytes],
                   paths: list[Path]) -> list[dict[str, Any]]:
     """Apply only independently reviewed, exact-source/exact-mutant evidence.
@@ -397,10 +435,16 @@ def apply_reviews(results: list[dict[str, Any]], sources: dict[str, bytes],
                     if observed["outcome"] != "survived" or not entry.get("invalidation"):
                         raise ValueError("Only a source-bound reviewed survivor can be equivalent")
                 else:
-                    probe = observed.get("startup_cli_positive", {}).get("report", {})
-                    if (observed["outcome"] != "startup-review-required" or probe.get("run") != 1
-                            or len(probe.get("failures", [])) != 1 or probe.get("errors")):
-                        raise ValueError("A semantic startup kill needs its actual CLI positive assertion")
+                    test_name: str = startup_test_name(observed["file"])
+                    current_trace: str = require_startup_failure(observed, test_name)
+                    if observed["file"] == CLI_ENTRYPOINT:
+                        previous_trace: str = require_startup_failure(prior, test_name)
+                        previous_roles: tuple[str, ...] = tuple(
+                            role for role in CLI_STARTUP_ROLES if role in previous_trace)
+                        current_roles: tuple[str, ...] = tuple(
+                            role for role in CLI_STARTUP_ROLES if role in current_trace)
+                        if len(previous_roles) != 1 or previous_roles != current_roles:
+                            raise ValueError("The reviewed and replayed CLI startup failure roles differ")
                 observed["reviewed_outcome"] = target
                 accepted.append({"id": identity, "decision": target, "review": str(path),
                                  "review_sha256": digest(path.read_bytes()), "argument": entry["argument"]})
@@ -644,15 +688,10 @@ def main() -> int:
                 return record
             if imported["exit"] != 0:
                 # Collection/import failure alone supplies no behavioral kill.
-                # Probe the external entrypoint with a known valid source using
-                # a test module that does not import the production package.
+                # Exercise the actual startup role using a known valid source.
                 # The causal source/diff/trace needs independent disposition.
-                probe = execute_tests(args.python, worker,
-                                      ["test_pipeline.MetadataCliTests.test_source_stage_is_the_default"],
-                                      directory / "startup-cli-positive", args.timeout)
-                record["startup_cli_positive"] = probe
-                record["startup_probe_classification"] = classify(probe)
                 record["outcome"] = "startup-review-required"
+                record_startup_probe(record, args.python, worker, directory, args.timeout)
                 return record
             remaining = row["tests"]
             executions = []
@@ -679,9 +718,15 @@ def main() -> int:
                     break
             record["executions"] = executions
             record["fixture_anchor_failures"] = fixture_failures
+            if row["file"] == CLI_ENTRYPOINT and record["outcome"] == "startup-review-required":
+                startup_budget: float = args.timeout - (time.monotonic() - test_started)
+                if startup_budget > 0:
+                    # A successful package import can coexist with a broken
+                    # isolated script bootstrap. Preserve the original result.
+                    record_startup_probe(record, args.python, worker, directory, startup_budget)
             if record["outcome"].startswith("unviable-test-"):
                 record["setup_cli_positive"] = execute_tests(
-                    args.python, worker, ["test_pipeline.MetadataCliTests.test_source_stage_is_the_default"],
+                    args.python, worker, [SOURCE_STAGE_TEST],
                     directory / "setup-cli-positive", args.timeout)
                 record["outcome"] = "setup-review-required"
             return record

@@ -111,9 +111,16 @@ function Wait-PrestartObserverRetirement {
         if ($Failure.Exception.Data.Contains('PrestartChildPendingReads')) {
             $pending = @($Failure.Exception.Data['PrestartChildPendingReads'])
         }
-        if (-not $Child.HasExited -or -not $Child.IsJobEmpty) { $Child.Terminate() }
+        if (-not $Child.ObserveRetirement()) {
+            try {
+                $Child.Terminate()
+            } catch {
+                # An unsuccessful termination request does not establish that the child is still live.
+                $Failure.Exception.Data['PrestartObserverTerminationFailure'] = $_.Exception
+            }
+        }
     }
-    while (-not $Child.HasExited -or -not $Child.IsJobEmpty -or
+    while (-not $Child.ObserveRetirement() -or
         @($pending | Where-Object { -not $_.IsCompleted }).Count -ne 0) {
         if ($retirementClock.ElapsedMilliseconds -ge 5000) {
             throw [TimeoutException]::new('prestart-observer:retirement-deadline')
@@ -209,7 +216,7 @@ function Open-PrestartArchive {
 # Keep the identity launch within the original actor and deadline. The native
 # launcher derives every package argument from the same inspected archive.
 function Invoke-PrestartIdentity {
-    [CmdletBinding(PositionalBinding = $false)]
+    [CmdletBinding(DefaultParameterSetName = 'ArchiveObservation', PositionalBinding = $false)]
     param(
         [Parameter(Mandatory = $true)][string]$PowerShellPath,
         [Parameter(Mandatory = $true)][long]$PowerShellBytes,
@@ -225,6 +232,8 @@ function Invoke-PrestartIdentity {
         [Parameter(Mandatory = $true)][object]$Archive,
         [Parameter(Mandatory = $true)][string]$ExpectedUserSid,
         [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
+        [Parameter(Mandatory = $true, ParameterSetName = 'VerifiedArchive')]
+        [string]$ExpectedSignerSha256,
         [Parameter(Mandatory = $true)][object]$Actor,
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
         [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
@@ -238,9 +247,20 @@ function Invoke-PrestartIdentity {
         throw [ArgumentException]::new('prestart-observer:archive-lease')
     }
     [type]$launcher = $script:PrestartObserverType
-    [object]$child = $launcher::StartIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
-        $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
-        $RunId, $Archive, $ExpectedUserSid, $ExpectedArchiveSha256, $Actor, $Clock, $TimeoutMilliseconds)
+    [object]$child = $null
+    if ($PSCmdlet.ParameterSetName -eq 'VerifiedArchive') {
+        # The enclosing laboratory process owns the deadline through the return of native verification.
+        [void]$Archive.VerifySignature($ExpectedArchiveSha256, $ExpectedSignerSha256, $Actor, $Clock, $TimeoutMilliseconds)
+        $child = $launcher::StartVerifiedIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
+            $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
+            $RunId, $Archive, $ExpectedUserSid, $ExpectedArchiveSha256, $ExpectedSignerSha256,
+            $Actor, $Clock, $TimeoutMilliseconds)
+    } else {
+        # Existing inert observation controls use the archive facts alone.
+        $child = $launcher::StartIdentity($PowerShellPath, $PowerShellBytes, $PowerShellSha256,
+            $InputDirectory, $EntryBytes, $EntrySha256, $ModuleBytes, $ModuleSha256, $HelperBytes, $HelperSha256,
+            $RunId, $Archive, $ExpectedUserSid, $ExpectedArchiveSha256, $Actor, $Clock, $TimeoutMilliseconds)
+    }
     Receive-OwnedPrestartChild $child $Clock $TimeoutMilliseconds
 }
 
@@ -275,7 +295,10 @@ function Receive-OwnedPrestartChild {
             $failure.Exception.Data['PrestartObserverProcessId'] = $childId
             $failure.Exception.Data['PrestartObserverRetired'] = $retired
             $failure.Exception.Data['PrestartObserverReleased'] = $false
-            if (-not $retired) { $failure.Exception.Data['PrestartObserverChild'] = $child }
+            if (-not $retired -or -not $child.DisposalStarted) {
+                # Keep the original live reference for recovery in this process.
+                $failure.Exception.Data['PrestartObserverChild'] = [object[]]@($child)
+            }
             throw $failure
         }
     }

@@ -37,6 +37,33 @@ fn widget_calendar_and_default_formats() {
     assert_eq!(parse_date("2024-02-29", "%F"), Some([29, 2, 2024]));
 }
 
+/// Sunday-based weekday numbering starts at zero, including in a mixed format.
+///
+/// # Panics
+/// Fails if the calendar export disagrees with the fixed week or mixed format.
+#[test]
+fn calendar_formats_sunday_based_weekday_numbers() {
+    for (day, weekday) in (1_u32..=7).zip(["0", "1", "2", "3", "4", "5", "6"]) {
+        assert_eq!(format_date("%w", day, 9, 2024).as_str(), weekday);
+    }
+    assert_eq!(
+        format_date("%Y-%m-%d (%w, %u) %%w", 1, 9, 2024).as_str(),
+        "2024-09-01 (0, 7) %w"
+    );
+}
+
+/// ISO numbering and escaped directives keep their own meanings.
+///
+/// # Panics
+/// Fails if ISO weekday numbering or literal percent output changes.
+#[test]
+fn calendar_preserves_iso_weekday_and_escaped_w() {
+    assert_eq!(format_date("%u", 1, 9, 2024).as_str(), "7");
+    assert_eq!(format_date("%u", 2, 9, 2024).as_str(), "1");
+    assert_eq!(format_date("%u", 7, 9, 2024).as_str(), "6");
+    assert_eq!(format_date("%%w", 1, 9, 2024).as_str(), "%w");
+}
+
 /// Preserve the accepted year interval and reject invalid or conflicting inputs.
 ///
 /// # Panics

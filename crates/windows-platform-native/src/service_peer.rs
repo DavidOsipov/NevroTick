@@ -6,11 +6,14 @@ use core::num::NonZeroU32;
 #[cfg(windows)]
 use std::os::windows::io::BorrowedHandle;
 
+#[cfg(any(windows, test))]
+use crate::service_role_sid::TokenModifiedId;
 #[cfg(windows)]
 use crate::{
     PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess, PeerProcessError, PipeServerPidError,
     RunningServiceRefusal, ServiceQueryError, ServiceRoleSid, ServiceRoleSidObservation,
-    ServiceRoleSidObservationError, ServiceStatusQuery, read_connected_pipe_server_pid,
+    ServiceRoleSidObservationError, ServiceStatusQuery, TokenPrivilegeObservation,
+    TokenPrivilegeObservationError, read_connected_pipe_server_pid,
 };
 
 /// Refusal while binding or reobserving one reported service process.
@@ -139,7 +142,7 @@ pub enum ServicePeerObservationError {
     PipeProcessMismatch,
     /// A query-only primary-token observation failed.
     Token(PeerPrimaryTokenError),
-    /// A fresh token observation did not match the retained kernel object.
+    /// A fresh token observation did not match the retained object or its original generation.
     ChangedToken,
 }
 
@@ -173,6 +176,7 @@ impl std::error::Error for ServicePeerObservationError {}
 /// The caller supplies the original connected client and fixed service query.
 /// The sampled relation cannot exclude the pre-open PID race or establish
 /// installed component identity, token attributes, current pipe I/O or authority.
+/// Token continuity describes the observed samples only.
 /// The receiving owner enforces its absolute cutoff and effect guards separately.
 #[cfg(windows)]
 #[must_use = "retain the original pipe, service, process and token for reobservation"]
@@ -181,8 +185,10 @@ pub struct ObservedServicePeer<'query, 'pipe> {
     client: BorrowedHandle<'pipe>,
     /// Original query and query-only process handle.
     service: ObservedServiceProcess<'query>,
-    /// Original primary-token object, held only for continuity comparison.
+    /// Original primary-token object, held for continuity and role observation.
     token: PeerPrimaryToken,
+    /// Modification generation observed on the original token at acquisition.
+    token_generation: TokenModifiedId,
 }
 
 #[cfg(windows)]
@@ -195,30 +201,36 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         query: &'query ServiceStatusQuery,
         client: BorrowedHandle<'pipe>,
     ) -> Result<Self, ServicePeerObservationError> {
-        let (service, token): (ObservedServiceProcess<'query>, PeerPrimaryToken) =
-            observe_service_peer(
-                || {
-                    read_connected_pipe_server_pid(client)
-                        .map_err(ServicePeerObservationError::Pipe)
-                },
-                |pid: NonZeroU32| {
-                    ObservedServiceProcess::observe_from_query(
-                        query,
-                        Some((pid, ServicePeerObservationError::PipeProcessMismatch)),
-                    )
-                },
-                read_peer_token,
-                |service: &ObservedServiceProcess<'query>| {
-                    service
-                        .check_current()
-                        .map_err(ServicePeerObservationError::Service)
-                },
-                ServicePeerObservationError::PipeProcessMismatch,
-            )?;
+        let (service, (token, token_generation)): (
+            ObservedServiceProcess<'query>,
+            (PeerPrimaryToken, TokenModifiedId),
+        ) = observe_service_peer(
+            || read_connected_pipe_server_pid(client).map_err(ServicePeerObservationError::Pipe),
+            |pid: NonZeroU32| {
+                ObservedServiceProcess::observe_from_query(
+                    query,
+                    Some((pid, ServicePeerObservationError::PipeProcessMismatch)),
+                )
+            },
+            |service: &ObservedServiceProcess<'query>| {
+                let token: PeerPrimaryToken = read_peer_token(service)?;
+                let generation: TokenModifiedId = token
+                    .generation()
+                    .map_err(ServicePeerObservationError::Token)?;
+                Ok((token, generation))
+            },
+            |service: &ObservedServiceProcess<'query>| {
+                service
+                    .check_current()
+                    .map_err(ServicePeerObservationError::Service)
+            },
+            ServicePeerObservationError::PipeProcessMismatch,
+        )?;
         Ok(Self {
             client,
             service,
             token,
+            token_generation,
         })
     }
 
@@ -228,7 +240,7 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         self.service.process()
     }
 
-    /// Read the independently expected role SID on the original primary token.
+    /// Read the expected role SID on the original primary token at its acquired generation.
     ///
     /// The receiving owner still reobserves the peer at its admission cutoffs
     /// and binds these samples to current installed component and actor policy.
@@ -239,10 +251,22 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         &self,
         expected: ServiceRoleSid<'sid>,
     ) -> Result<ServiceRoleSidObservation<'sid>, ServiceRoleSidObservationError> {
-        self.token.observe_role_sid(expected)
+        self.token.observe_role_sid(expected, self.token_generation)
     }
 
-    /// Reobserve the original pipe, service, process and primary-token object.
+    /// Capture the original peer token's privileges at its acquisition generation.
+    ///
+    /// The receiving owner decodes and compares the complete profile, binds the
+    /// installed component evidence and reobserves the peer at the effect boundary.
+    /// # Errors
+    /// Preserve the first query or extent refusal, or report a changed generation.
+    pub fn observe_privileges(
+        &self,
+    ) -> Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> {
+        self.token.observe_privileges_at(self.token_generation)
+    }
+
+    /// Reobserve the original pipe, service, process, primary-token object and generation.
     ///
     /// Refusal consumes the observation. This call never reopens a process or
     /// service, reconnects a pipe or substitutes the freshly queried token.
@@ -257,12 +281,18 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
                     .map_err(ServicePeerObservationError::Pipe)
             },
             || {
-                let current: PeerPrimaryToken = read_peer_token(&self.service)?;
-                if self.token.same_object(&current) {
-                    Ok(())
-                } else {
-                    Err(ServicePeerObservationError::ChangedToken)
-                }
+                check_token_generation(
+                    &self.token,
+                    self.token_generation,
+                    || read_peer_token(&self.service),
+                    PeerPrimaryToken::same_object,
+                    |token: &PeerPrimaryToken| {
+                        token
+                            .generation()
+                            .map_err(ServicePeerObservationError::Token)
+                    },
+                    ServicePeerObservationError::ChangedToken,
+                )
             },
             || {
                 self.service
@@ -273,6 +303,25 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         )?;
         Ok(self)
     }
+}
+
+/// Require a fresh reference to the same object, then sample the original token's generation.
+/// # Errors
+/// Preserve acquisition or statistics failure, or reject a changed object or generation.
+#[cfg(any(windows, test))]
+fn check_token_generation<T, E>(
+    original: &T,
+    generation: TokenModifiedId,
+    acquire_current: impl FnOnce() -> Result<T, E>,
+    same_object: impl FnOnce(&T, &T) -> bool,
+    sample_generation: impl FnOnce(&T) -> Result<TokenModifiedId, E>,
+    changed: E,
+) -> Result<(), E> {
+    let current: T = acquire_current()?;
+    if !same_object(original, &current) || sample_generation(original)? != generation {
+        return Err(changed);
+    }
+    Ok(())
 }
 
 /// Acquire limited query and synchronization access to the reported process.

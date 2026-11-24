@@ -191,31 +191,25 @@ fn laboratory_policy_status() -> Result<CERT_CHAIN_POLICY_STATUS, TlsError> {
     })
 }
 
-/// Return a bounded date refusal without retaining the supplied timestamp.
-fn laboratory_time_error() -> TlsError {
-    TlsError::General(String::from(
-        "unsupported laboratory certificate verification time",
-    ))
-}
-
 /// Convert one supported Unix-second reading to exact Windows 100-ns ticks.
 ///
 /// This does not supply the time for Windows' separate current-time CRL/root
 /// checks, does not clamp a date and grants no bootstrap or clock authority.
 /// # Errors
-/// Reject the laboratory envelope or any checked epoch/unit/word conversion.
+/// Unusable local certificate time returns Rustls' typed clock error.
 fn laboratory_filetime(unix_seconds: u64) -> Result<FILETIME, TlsError> {
     if unix_seconds > LABORATORY_MAX_UNIX_SECONDS {
-        return Err(laboratory_time_error());
+        return Err(TlsError::FailedToGetCurrentTime);
     }
-    let windows_seconds = unix_seconds
+    let windows_seconds: u64 = unix_seconds
         .checked_add(11_644_473_600)
-        .ok_or_else(laboratory_time_error)?;
-    let ticks = windows_seconds
+        .ok_or(TlsError::FailedToGetCurrentTime)?;
+    let ticks: u64 = windows_seconds
         .checked_mul(10_000_000)
-        .ok_or_else(laboratory_time_error)?;
-    let low = u32::try_from(ticks & u64::from(u32::MAX)).map_err(|_| laboratory_time_error())?;
-    let high = u32::try_from(ticks >> 32).map_err(|_| laboratory_time_error())?;
+        .ok_or(TlsError::FailedToGetCurrentTime)?;
+    let low: u32 =
+        u32::try_from(ticks & u64::from(u32::MAX)).map_err(|_| TlsError::FailedToGetCurrentTime)?;
+    let high: u32 = u32::try_from(ticks >> 32).map_err(|_| TlsError::FailedToGetCurrentTime)?;
     Ok(FILETIME {
         dwLowDateTime: low,
         dwHighDateTime: high,

@@ -125,7 +125,7 @@ fn check_idle_power_between_jobs(
     let reservation: super::SubmissionReservation = owner
         .try_reserve(managed_prepared()?.0)
         .map_err(|_| Failure::Control)?;
-    target.deliver()?;
+    target.deliver(crate::nts_ke_experiment::power_target::PowerEvent::AutomaticResume)?;
     let refusal: Failed = stale.activate(&reservation).err().ok_or(Failure::Control)?;
     assert_eq!(refusal.primary, Failure::Control);
     drop(reservation);
@@ -186,7 +186,7 @@ fn managed_worker_reissues_after_normal_take_with_one_provider() -> Result<(), F
             assert_eq!(previous.request_stop(), Ok(StopDisposition::Latched));
         }
         if stop_before_start {
-            target.deliver()?;
+            target.deliver(crate::nts_ke_experiment::power_target::PowerEvent::AutomaticResume)?;
         }
         let observed_provider: Arc<OnceLock<Weak<()>>> = Arc::clone(&lifetime);
         let submitted: super::SubmittedJob = reservation

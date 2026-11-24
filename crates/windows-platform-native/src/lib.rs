@@ -93,6 +93,8 @@ pub use package_full_name::{PackageFullNameError, ReportedPackageFullName};
 #[cfg(any(windows, test))]
 pub use process_image_name::{ProcessImageNameError, ReportedProcessImageName};
 #[cfg(any(windows, test))]
+pub use resume_slot::ResumeEvent;
+#[cfg(any(windows, test))]
 pub use service_configuration::ConfigurationStringError;
 #[cfg(windows)]
 pub use service_peer::{
@@ -102,7 +104,8 @@ pub use service_peer::{
 #[cfg(any(windows, test))]
 pub use service_role_sid::{
     InvalidServiceRoleSid, ServiceRoleSid, ServiceRoleSidGroup, ServiceRoleSidObservation,
-    ServiceRoleSidObservationError, ServiceRoleSidRestriction,
+    ServiceRoleSidObservationError, ServiceRoleSidRestriction, TokenPrivilegeObservation,
+    TokenPrivilegeObservationError,
 };
 #[cfg(any(windows, test))]
 pub use service_security::{ReportedDacl, ReportedServiceSecurity, ServiceSecurityError};

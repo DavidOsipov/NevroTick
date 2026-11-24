@@ -2674,10 +2674,18 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
             imports: dict[str, list[str]] = pe.static_import_modules(image_record[0], subsystem=subsystem)
         except ValueError as error:
             raise ENV.Incomplete(f"Windows MSIX handoff {role} static import readback refused: {error}") from error
-        claimed_imports: object = report[role + "_versioninfo"].get("static_imports")
+        claimed_versioninfo: dict[str, Any] = report[role + "_versioninfo"]
+        claimed_imports: object = claimed_versioninfo.get("static_imports")
         if imports != claimed_imports:
             raise ENV.Incomplete(f"Windows MSIX handoff {role} static imports differ from the pinned receipt.")
         observed_imports[role] = imports
+        declarations: dict[str, str | int] = pe.pe_image_declarations(
+            image_record[0], anchor / image, subsystem=subsystem, imports=True)
+        claimed_declarations: object = claimed_versioninfo.get("pe_declarations")
+        if (type(claimed_declarations) is not dict or claimed_declarations != declarations
+                or any(type(claimed_declarations[key]) is not type(value)
+                       for key, value in declarations.items())):
+            raise ENV.Incomplete(f"Windows MSIX handoff {role} PE declarations differ from the pinned receipt.")
         if image == ui:
             reader: ModuleType = windows_versioninfo_reader(source)
             version: VersionInfo
@@ -2686,11 +2694,17 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
                 version, manifest = reader.decode_ui_resource_payloads(*pe.ui_resource_payloads(image_record[0]))
             except ValueError as error:
                 raise ENV.Incomplete(f"Windows MSIX handoff UI resource readback refused: {error}") from error
-            claimed_ui: dict[str, Any] = report["ui_versioninfo"]
+            claimed_ui: dict[str, Any] = claimed_versioninfo
             claimed_manifest: object = claimed_ui["execution_manifest"]
+            claimed_fixed: object = claimed_ui.get("fixed")
+            claimed_translation: object = claimed_ui.get("translation")
             if (type(claimed_manifest) is not dict or claimed_manifest != manifest
                     or claimed_manifest["ui_access"] is not manifest["ui_access"]
-                    or version["strings"].get("OriginalFilename") != claimed_ui["strings"]["OriginalFilename"]):
+                    or version["strings"] != claimed_ui["strings"]
+                    or type(claimed_fixed) is not list or claimed_fixed != list(version["fixed"])
+                    or any(type(word) is not int for word in claimed_fixed)
+                    or type(claimed_translation) is not list or claimed_translation != list(version["translation"])
+                    or any(type(word) is not int for word in claimed_translation)):
                 raise ENV.Incomplete("Windows MSIX handoff UI resources differ from the pinned receipt.")
             observed_ui = {"generation_sha256": claimed_ui["generation_sha256"],
                            "strings": version["strings"], "execution_manifest": manifest}

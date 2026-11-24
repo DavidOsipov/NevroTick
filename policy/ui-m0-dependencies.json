@@ -5988,11 +5988,11 @@
       "upstream_checksum": "ed2ea15059d70bc31b1a8b1eb4c34f2c5df04cb7e53f36179b43c0261231d646",
       "upstream_files_sha256": "08e4188eecfd2720e5482440e0a22c16864016c15aa391cdd533edf398616abd",
       "upstream_revision": "372cf0ee5577c3dfec309a45e7b778ba4e81b734",
-      "files_sha256": "8ed20bf4f83a9dd973142839392ae3e10927a6d1389a15db7addcc445a249dc4",
+      "files_sha256": "e9fc6143275a3e132d2ae5660179822994038c6e341a99829c88e0449366bd55",
       "modified_files_sha256": {
         "Cargo.toml": "6ff63cb3d67f7ab1cddac7b89d4fb04c67ee79036f55f172464cafb9c6961cf9",
         "NEVROTICK-PATCH.md": "7aad7ef5f48b08b69ef4f477d737664482edf9eabb3219377898d8a8adba86c1",
-        "date_time.rs": "0faa9416289a86f51ba2e1815cd8fd2f798fc83a1bb7059aa13e490805db4ee0"
+        "date_time.rs": "b9580b749fae80b5d4755e5a04081abea35b63c21a1c40b199d425c81aed7865"
       }
     },
     {
@@ -6021,13 +6021,13 @@
     },
     {
       "build_script": false,
-      "files_sha256": "d1f7dc48c345ae52e96182236b73f1ef23013faac4ef119d2244eaeb50ad5471",
+      "files_sha256": "d7067ea2b133f507571229110c394578211e33c6eba1e67c256ad520d2b32bca",
       "license": "MIT OR Apache-2.0",
       "links": null,
       "modified_files_sha256": {
         "Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
-        "NOTICE": "01f4d2c7989c62f833df4ac0c6ea2576dde27cfccad3238168bbb8c7fae742a4",
-        "src/verification/windows.rs": "8d1944f8a0fbdb23b102538eeb390cde3b84cd503a2548e752f90a34654a8a2b"
+        "NOTICE": "9793594763df5ea8572ad1ec48dc6b61c8637746180232416f95734c38f7596f",
+        "src/verification/windows.rs": "fb8e3f734f1e6ad46bb12e0c0a4f9d57316bc4e5710a0b8b72b885cbd62da8c3"
       },
       "name": "rustls-platform-verifier",
       "path": "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier",

@@ -36,6 +36,9 @@ use windows_sys::{
     core::BOOL,
 };
 
+#[cfg(test)]
+use std::time::Instant;
+
 use crate::{
     NativeError, NativeOperation,
     broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
@@ -44,6 +47,7 @@ use crate::{
 
 #[cfg(test)]
 use crate::{
+    broker_clock_change::ClockRevision,
     broker_endpoint::{FirstReadCompletion, FirstReadStart, FirstReplyCompletion, FirstReplyStart},
     host::{Clock, ConnectionEdge, RunningConnection},
     native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
@@ -140,6 +144,22 @@ enum FirstReplyState {
     Pending(usize),
     /// No further write is authorized on this connection.
     Retired,
+}
+
+/// Separate deliberate final refusal from a failed native or slot operation.
+#[cfg(test)]
+enum ReplySubmitError {
+    /// Admission closed before Windows acquired the prepared write.
+    Refused,
+    /// Slot preparation or native submission failed.
+    Write(NativeWriteError),
+}
+
+#[cfg(test)]
+impl From<NativeWriteError> for ReplySubmitError {
+    fn from(error: NativeWriteError) -> Self {
+        Self::Write(error)
+    }
 }
 
 /// The write and read records are bound to the same original server owner.
@@ -655,11 +675,17 @@ impl Reservation for NativeBrokerEndpoint {
         exchange.peer.observe(exchange.write.pipe())
     }
 
-    /// Spend the attributed pipe's one reply right before submitting its encoded bytes.
+    /// Spend the reply right and revalidate the peer, cutoff and positive revision at submission.
     /// # Errors
     /// Refuse a repeated submission or preserve the native submission failure.
     #[cfg(test)]
-    fn begin_first_reply(&mut self, bytes: &[u8]) -> Result<FirstReplyStart, NativeError> {
+    fn begin_first_reply<C: Clock>(
+        &mut self,
+        bytes: &[u8],
+        connection: &mut RunningConnection<'_, C>,
+        cutoff: Instant,
+        positive_revision: Option<&ClockRevision<'_>>,
+    ) -> Result<FirstReplyStart, NativeError> {
         let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
             return Ok(FirstReplyStart::Unarmed);
         };
@@ -668,10 +694,24 @@ impl Reservation for NativeBrokerEndpoint {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         }
         exchange.reply = FirstReplyState::Retired;
-        let start: NativeWriteStart = exchange
-            .write
-            .begin(bytes)
-            .map_err(|error| write_error(operation, error))?;
+        let submission: Result<NativeWriteStart, ReplySubmitError> =
+            exchange
+                .write
+                .begin_guarded(bytes, |pipe: BorrowedHandle<'_>| {
+                    match connection.reply_submission_edge(cutoff, positive_revision, || {
+                        exchange.peer.observe(pipe)
+                    }) {
+                        ConnectionEdge::Open(_) => Ok(()),
+                        ConnectionEdge::Closed | ConnectionEdge::Expired => {
+                            Err(ReplySubmitError::Refused)
+                        }
+                    }
+                });
+        let start: NativeWriteStart = match submission {
+            Ok(start) => start,
+            Err(ReplySubmitError::Refused) => return Ok(FirstReplyStart::Refused),
+            Err(ReplySubmitError::Write(error)) => return Err(write_error(operation, error)),
+        };
         exchange.reply = FirstReplyState::Pending(bytes.len());
         Ok(match start {
             NativeWriteStart::Queued => FirstReplyStart::Queued,

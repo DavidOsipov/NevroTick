@@ -451,6 +451,15 @@ GitHub CodeQL default setup ran separately and passed its Rust job. The
 repository workflows and their strict-fixtures step still require execution
 on the intended candidate. [Default setup run](https://github.com/DavidOsipov/NevroTick/actions/runs/45275725088)
 
+The Rust and Security push runs for `a17d499` and its scheduled Security
+run again report startup refusals for the same pinned external actions.
+Each run recorded zero jobs and the repository API still reported `local_only`
+with mandatory SHA pinning. The separate GitHub default setup run
+completed its Rust job. [Rust push](https://github.com/DavidOsipov/NevroTick/actions/runs/45282749422) ·
+[Security push](https://github.com/DavidOsipov/NevroTick/actions/runs/45282747154) ·
+[Scheduled Security](https://github.com/DavidOsipov/NevroTick/actions/runs/45326689696) ·
+[Default setup Rust job](https://github.com/DavidOsipov/NevroTick/actions/runs/45282745777/job/138071151247)
+
 ### 6.5 KoD source lifecycle — 15 November 2026
 
 **Decision:** NV-DEC-001 §6.5 / S2.1–S2.2, REQ-8/BND-2,

@@ -465,6 +465,31 @@ class DeliveryObservationTests(SourceFixture):
         self.reject(outputs)
         self.reject(self.json_change("metadata.json", lambda data: data.__setitem__("schema_version", True)))
 
+    def test_nonfinite_json_constants_are_refused_by_the_delivery_reader(self) -> None:
+        name: str = "metadata.json"
+        valid_outputs: dict[str, bytes] = self.outputs.copy()
+        schema_version: bytes = b'"schema_version": 1,'
+        self.assertEqual(valid_outputs[name].count(schema_version), 1)
+
+        constant: bytes
+        for constant in (b"NaN", b"Infinity", b"-Infinity"):
+            with self.subTest(constant=constant):
+                altered: bytes = valid_outputs[name].replace(
+                    schema_version, b'"schema_version": ' + constant + b",", 1
+                )
+                expected: dict[str, bytes] = {**valid_outputs, name: altered}
+                supplied: dict[str, bytes] = expected.copy()
+                with self.assertRaises(self.contract.MetadataError) as refused:
+                    self.delivery.verify_delivery(self.model, supplied)
+                self.assertEqual(str(refused.exception), "delivery-invalid-source-projection")
+                cause: BaseException | None = refused.exception.__cause__
+                self.assertIs(type(cause), self.contract.MetadataError)
+                self.assertEqual(str(cause), "delivery-nonfinite-json")
+                self.assertEqual(supplied, expected)
+
+        self.delivery.verify_delivery(self.model, self.outputs)
+        self.assertEqual(self.outputs, valid_outputs)
+
     def test_internal_register_omissions_and_duplicate_rows_are_refused(self) -> None:
         self.reject(self.json_change("field-register.json", lambda data: data["fields"].pop()))
         self.reject(self.json_change("authoring/project-inputs.json", lambda data: data["fields"].__setitem__(

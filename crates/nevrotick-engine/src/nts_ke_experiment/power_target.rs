@@ -17,10 +17,21 @@ pub(super) struct PowerTarget {
     state: Mutex<TargetState>,
 }
 
+/// Relevant event delivered to the original managed acquisition observer.
+#[derive(Clone, Copy)]
+pub(super) enum PowerEvent {
+    /// A delivered notification of impending suspension.
+    Suspending,
+    /// A delivered notification of automatic resume.
+    AutomaticResume,
+}
+
 /// Current power epoch and, independently, the one retained active binding.
 struct TargetState {
     /// Advance on every delivery and successful activation. Exhaustion is final.
     epoch: Option<u64>,
+    /// A delivered suspension still awaits automatic resume; absence establishes no continuity.
+    suspended: bool,
     /// The one original Stop scope held until its own lease retires.
     binding: Option<Binding>,
 }
@@ -56,6 +67,7 @@ impl PowerTarget {
         Self {
             state: Mutex::new(TargetState {
                 epoch: Some(0),
+                suspended: false,
                 binding: None,
             }),
         }
@@ -64,10 +76,10 @@ impl PowerTarget {
     /// Observe the idle epoch before constructing the acquisition's Control.
     ///
     /// # Errors
-    /// Refuse an active, exhausted or poisoned target without changing it.
+    /// Refuse a suspended, active, exhausted or poisoned target without changing it.
     pub(super) fn prepare(&self) -> Result<PreparedPower<'_>, Failure> {
         let state: MutexGuard<'_, TargetState> = self.state.lock().map_err(|_| Failure::Control)?;
-        if state.binding.is_some() {
+        if state.suspended || state.binding.is_some() {
             return Err(Failure::Control);
         }
         let epoch: u64 = state.epoch.ok_or(Failure::Control)?;
@@ -79,13 +91,14 @@ impl PowerTarget {
 
     /// Apply one delivered event at the serialized current Stop scope.
     ///
-    /// An idle delivery invalidates any earlier preparation. The active route
-    /// stays attached for later events until its lease retires.
+    /// An idle delivery invalidates any earlier preparation. A delivered suspension
+    /// also refuses fresh preparation until automatic resume. The active route stays
+    /// attached for later events until its lease retires.
     ///
     /// # Errors
     /// Refuse exhausted or poisoned authority and retain the Stop attempt on a
     /// still-active binding. A failed Stop closes further admission.
-    pub(super) fn deliver(&self) -> Result<(), Failure> {
+    pub(super) fn deliver(&self, event: PowerEvent) -> Result<(), Failure> {
         let locked: LockResult<MutexGuard<'_, TargetState>> = self.state.lock();
         let poisoned: bool = locked.is_err();
         let mut state: MutexGuard<'_, TargetState> = locked.unwrap_or_else(PoisonError::into_inner);
@@ -93,6 +106,10 @@ impl PowerTarget {
             .binding
             .as_ref()
             .is_some_and(|binding: &Binding| binding.stop.request_stop().is_err());
+        state.suspended = match event {
+            PowerEvent::Suspending => true,
+            PowerEvent::AutomaticResume => false,
+        };
         state.epoch = if poisoned || stop_failed {
             None
         } else {
@@ -163,7 +180,9 @@ mod tests {
     use std::thread::{self, Scope, ScopedJoinHandle};
 
     use super::super::{StopDisposition, StopScope};
-    use super::{ActivePower, Failure, PowerTarget, PreparedPower, StopHandle, TargetState};
+    use super::{
+        ActivePower, Failure, PowerEvent, PowerTarget, PreparedPower, StopHandle, TargetState,
+    };
 
     /// Create the original latch used by the actual cooperative Stop path.
     fn original_stop() -> StopHandle {
@@ -179,7 +198,7 @@ mod tests {
     fn deliver_from_producer(target: &PowerTarget) -> Result<(), Failure> {
         thread::scope(|scope: &Scope<'_, '_>| -> Result<(), Failure> {
             let callback: ScopedJoinHandle<'_, Result<(), Failure>> = thread::Builder::new()
-                .spawn_scoped(scope, || target.deliver())
+                .spawn_scoped(scope, || target.deliver(PowerEvent::AutomaticResume))
                 .map_err(|_| Failure::Control)?;
             callback.join().map_err(|_| Failure::Control)?
         })
@@ -229,6 +248,37 @@ mod tests {
         Ok(())
     }
 
+    /// Refuse a fresh binding between delivered suspend and resume notifications.
+    /// # Errors
+    /// Preserve attachment or delivery refusal.
+    /// # Panics
+    /// Fail if a delivered suspend misses the active Stop or permits fresh preparation,
+    /// or if the automatic resume reuses the preceding preparation or Stop scope.
+    #[test]
+    fn observed_suspend_refuses_preparation_until_automatic_resume() -> Result<(), Failure> {
+        let target: PowerTarget = PowerTarget::new();
+        let stale: PreparedPower<'_> = target.prepare()?;
+        let original: StopHandle = original_stop();
+        let active: ActivePower<'_> = target.prepare()?.activate_scope(original.clone())?;
+
+        target.deliver(PowerEvent::Suspending)?;
+        assert_eq!(original.request_stop(), Ok(StopDisposition::AlreadyLatched));
+        drop(active);
+        assert!(matches!(target.prepare(), Err(Failure::Control)));
+        target.deliver(PowerEvent::Suspending)?;
+        assert!(matches!(target.prepare(), Err(Failure::Control)));
+
+        target.deliver(PowerEvent::AutomaticResume)?;
+        let successor: StopHandle = original_stop();
+        assert!(matches!(
+            stale.activate_scope(successor.clone()),
+            Err(Failure::Control)
+        ));
+        let _active: ActivePower<'_> = target.prepare()?.activate_scope(successor.clone())?;
+        assert!(!successor.scope.lock()?.is_stopped());
+        Ok(())
+    }
+
     /// Keep the first binding exclusive and only Stop the successor after its attachment.
     /// # Errors
     /// Propagate target, binding, or callback-thread refusal.
@@ -275,11 +325,17 @@ mod tests {
         let original: StopHandle = original_stop();
         let active: ActivePower<'_> = target.prepare()?.activate_scope(original.clone())?;
         assert!(!original.scope.lock()?.is_stopped());
-        assert_eq!(target.deliver(), Err(Failure::Control));
+        assert_eq!(
+            target.deliver(PowerEvent::AutomaticResume),
+            Err(Failure::Control)
+        );
         assert_eq!(original.request_stop(), Ok(StopDisposition::AlreadyLatched));
         drop(active);
         assert!(matches!(target.prepare(), Err(Failure::Control)));
-        assert_eq!(target.deliver(), Err(Failure::Control));
+        assert_eq!(
+            target.deliver(PowerEvent::AutomaticResume),
+            Err(Failure::Control)
+        );
         Ok(())
     }
 
@@ -294,7 +350,10 @@ mod tests {
         let original: StopHandle = original_stop();
         let active: ActivePower<'_> = target.prepare()?.activate_scope(original.clone())?;
         poison(&target.state)?;
-        assert_eq!(target.deliver(), Err(Failure::Control));
+        assert_eq!(
+            target.deliver(PowerEvent::AutomaticResume),
+            Err(Failure::Control)
+        );
         assert_eq!(original.request_stop(), Ok(StopDisposition::AlreadyLatched));
         drop(active);
         let state: MutexGuard<'_, TargetState> = target
@@ -320,7 +379,10 @@ mod tests {
         let original: StopHandle = original_stop();
         let active: ActivePower<'_> = target.prepare()?.activate_scope(original.clone())?;
         poison(&original.scope.stopped)?;
-        assert_eq!(target.deliver(), Err(Failure::Control));
+        assert_eq!(
+            target.deliver(PowerEvent::AutomaticResume),
+            Err(Failure::Control)
+        );
         drop(active);
         assert!(matches!(target.prepare(), Err(Failure::Control)));
         Ok(())

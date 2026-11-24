@@ -73,8 +73,8 @@ def pe_readback(path: Path, *, subsystem: str, imports: bool = False) -> dict[st
     section. The optional LLD import-table shape check binds a subsequent
     reader's descriptor inventory. These are static image declarations.
     """
-    return _pe_declarations(_read_artifact(path, maximum=MAX_PE_BYTES, kind="PE"), path, subsystem,
-                            imports=imports)
+    return pe_image_declarations(_read_artifact(path, maximum=MAX_PE_BYTES, kind="PE"),
+                                 path, subsystem=subsystem, imports=imports)
 
 
 def _pe_layout(data: bytes, subsystem: str) -> tuple[int, int, int, list[_Section]]:
@@ -280,9 +280,11 @@ def ui_resource_payloads(data: bytes) -> tuple[bytes, bytes]:
     return version, manifest
 
 
-def _pe_declarations(data: bytes, path: Path, subsystem: str, *,
-                     imports: bool = False) -> dict[str, str | int]:
-    """Read one immutable image and its matching RSDS identity."""
+def pe_image_declarations(data: bytes, path: Path, *, subsystem: str,
+                          imports: bool = False) -> dict[str, str | int]:
+    """Read the declarations and RSDS identity from already held image bytes."""
+    _require(type(data) is bytes and 0 < len(data) <= MAX_PE_BYTES,
+             "PE declaration readback requires bounded immutable image bytes.")
     optional: int
     characteristics: int
     dll: int
@@ -417,7 +419,7 @@ def read_export_pair(image: Path, symbols: Path, *, subsystem: str,
                      expected_pdb_page_size: int = _MSF_BLOCK_SIZE):
     """Admit a matching pair and return the exact snapshots to publish."""
     image_bytes = _read_artifact(image, maximum=MAX_PE_BYTES, kind="PE")
-    pe = _pe_declarations(image_bytes, image, subsystem)
+    pe = pe_image_declarations(image_bytes, image, subsystem=subsystem)
     basename = str(pe["codeview_path"]).replace("\\", "/").split("/")[-1]
     _require(symbols.name == basename, "Windows symbol filename differs from the inspected CodeView basename.")
     pdb_bytes = _read_artifact(symbols, maximum=MAX_PDB_BYTES, kind="PDB")

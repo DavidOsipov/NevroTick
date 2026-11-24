@@ -23,7 +23,7 @@ published files retain their original bytes. The Windows module original SHA256 
 6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2;
 upstream/windows.rs preserves those exact original bytes separately. The owned
 Windows source SHA256 is
-8d1944f8a0fbdb23b102538eeb390cde3b84cd503a2548e752f90a34654a8a2b.
+fb8e3f734f1e6ad46bb12e0c0a4f9d57316bc4e5710a0b8b72b885cbd62da8c3.
 
 Dependency binding: the owned normalized manifest narrows the Windows windows-sys
 requirement from >=0.52.0,<0.62.0 to exactly 0.61.2. Actual offline resolution otherwise
@@ -47,8 +47,9 @@ Windows delta:
   nonzero policy error. Initial zero fields themselves establish no authentication.
 - Admit Unix seconds only from 0 through 4102444800 inclusive. Checked epoch
   addition (+11644473600), 100-ns scaling (*10000000) and checked low/high FILETIME
-  words replace unchecked nanosecond scaling/casts. Unsupported dates refuse with
-  a bounded message; no clamping, wrapping, bootstrap or clock correction occurs.
+  words replace unchecked nanosecond scaling/casts. Unsupported dates return
+  Rustls FailedToGetCurrentTime so Engine retains the LocalClock cause. The error
+  carries no raw date. No clamping, wrapping, bootstrap or clock correction occurs.
 
 These API cache flags constrain the requested direct retrieval behavior; they do
 not prove absence of all delegated OS network activity or change machine-wide
@@ -61,7 +62,7 @@ permission to select weaker trust.
 
 Four pure Windows regression tests are added in
 src/verification/windows/laboratory_tests.rs, SHA256
-136a343fc625b00aa07be5a8534845d007f16f1a2915aa5035c88bda9b12c1a5:
+c05f7c92d23991a1b81cca292490fbca0280f213973cffb47a304fd8b75f72cb:
 laboratory_filetime_matches_literal_ticks_and_words;
 laboratory_filetime_refuses_outside_dates_with_bounded_errors;
 laboratory_chain_settings_match_the_call_site_contract;

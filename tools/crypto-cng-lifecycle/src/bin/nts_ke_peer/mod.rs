@@ -429,8 +429,8 @@ fn write_completion(
     match completion {
         CompletedExchange::Untimed => writeln!(output, "{}", completion_line(mode))?,
         CompletedExchange::Timed(timing) => {
-            // One fixed summary and four records of bounded-width decimal values.
-            let mut retained: Vec<u8> = Vec::with_capacity(1024);
+            // One fixed summary and four rows of bounded-width ports and clock coordinates.
+            let mut retained: Vec<u8> = Vec::with_capacity(1152);
             writeln!(retained, "{}", completion_line(mode))?;
             timing.write_rows(&mut retained)?;
             output.write_all(&retained)?;

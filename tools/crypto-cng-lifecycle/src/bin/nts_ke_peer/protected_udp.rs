@@ -45,6 +45,15 @@ enum CapturePoint {
     PreSend,
 }
 
+/// The actual sender and the original listener ports for a single IPv4 loopback leg.
+#[cfg(windows)]
+struct ObservedPorts {
+    /// Request sender port returned by the successful receive.
+    client_port: NonZeroU16,
+    /// Bound port of the same socket used for receive and send.
+    peer_port: NonZeroU16,
+}
+
 /// Captures for one leg, private until both exchanges and exit observation complete.
 enum LegTiming {
     /// This leg performs no extra clock reads.
@@ -59,6 +68,8 @@ enum LegTiming {
         receive_return: Option<ClockCoordinates>,
         /// Observation preceding the original send attempt.
         pre_send: Option<ClockCoordinates>,
+        /// Endpoint facts of the same receive that supplied the first bracket.
+        ports: Option<ObservedPorts>,
     },
 }
 
@@ -70,6 +81,7 @@ impl LegTiming {
             SuccessorReply::OrdinaryTiming => Self::Enabled {
                 receive_return: None,
                 pre_send: None,
+                ports: None,
             },
             #[cfg(not(windows))]
             SuccessorReply::OrdinaryTiming => Self::Unsupported,
@@ -91,6 +103,7 @@ impl LegTiming {
                 Self::Enabled {
                     receive_return,
                     pre_send,
+                    ports: _,
                 },
                 point,
             ) => {
@@ -107,17 +120,38 @@ impl LegTiming {
         }
     }
 
-    /// Yield the complete pair after the owning exchange has finished.
+    /// Retain the checked sender of the only receive captured for this timed leg.
     ///
     /// # Errors
-    /// Refuse if either original observation is absent.
+    /// Refuse a zero sender port without constructing an observation.
     #[cfg(windows)]
-    fn finish(self) -> Result<[ClockCoordinates; 2], Failure> {
+    fn retain_ports(&mut self, sender: SocketAddrV4, peer_port: NonZeroU16) -> Result<(), Failure> {
+        if let Self::Enabled { ports, .. } = self {
+            let client_port: NonZeroU16 =
+                NonZeroU16::new(sender.port()).ok_or(Failure::Arguments)?;
+            *ports = Some(ObservedPorts {
+                client_port,
+                peer_port,
+            });
+        }
+        Ok(())
+    }
+
+    /// Yield the endpoints and both brackets after the owning exchange has finished.
+    ///
+    /// # Errors
+    /// Refuse if an original observation is absent.
+    #[cfg(windows)]
+    fn finish(self) -> Result<CompletedLegTiming, Failure> {
         match self {
             Self::Enabled {
                 receive_return: Some(receive_return),
                 pre_send: Some(pre_send),
-            } => Ok([receive_return, pre_send]),
+                ports: Some(ports),
+            } => Ok(CompletedLegTiming {
+                ports,
+                captures: [receive_return, pre_send],
+            }),
             _ => Err(Failure::IncompleteTiming),
         }
     }
@@ -133,13 +167,22 @@ pub(super) enum CompletedExchange {
     Timed(CompletedTiming),
 }
 
-/// Four observations in socket-call order, with no packet or session material.
+/// The endpoint pair and two completed clock observations for one original leg.
+#[cfg(windows)]
+struct CompletedLegTiming {
+    /// Actual checked sender port and bound listener port.
+    ports: ObservedPorts,
+    /// Original receive-return and pre-send brackets in socket-call order.
+    captures: [ClockCoordinates; 2],
+}
+
+/// Observations in socket-call order, with no packet or session material.
 #[cfg(windows)]
 pub(super) struct CompletedTiming {
-    /// Receive-return and pre-send brackets for the first leg.
-    first: [ClockCoordinates; 2],
-    /// Receive-return and pre-send brackets for the successor leg.
-    successor: [ClockCoordinates; 2],
+    /// First authenticated leg.
+    first: CompletedLegTiming,
+    /// Successor authenticated leg.
+    successor: CompletedLegTiming,
 }
 
 #[cfg(windows)]
@@ -149,13 +192,16 @@ impl CompletedTiming {
     /// # Errors
     /// Preserve an output write failure.
     pub(super) fn write_rows(self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        for (leg, [receive_return, pre_send]) in
-            [("first", self.first), ("successor", self.successor)]
-        {
+        for (leg, observation) in [("first", self.first), ("successor", self.successor)] {
+            let [receive_return, pre_send]: [ClockCoordinates; 2] = observation.captures;
+            let ObservedPorts {
+                client_port,
+                peer_port,
+            } = observation.ports;
             for (point, raw) in [("receive-return", receive_return), ("pre-send", pre_send)] {
                 writeln!(
                     output,
-                    "scope=managed-protected-peer-timing leg={leg} point={point} qpc_before={} filetime_100ns={} qpc_after={} frequency_hz={}",
+                    "scope=managed-protected-peer-timing leg={leg} point={point} client_port={client_port} peer_port={peer_port} qpc_before={} filetime_100ns={} qpc_after={} frequency_hz={}",
                     raw.qpc_before(),
                     raw.filetime_100ns(),
                     raw.qpc_after(),
@@ -556,6 +602,8 @@ impl ProtectedUdp {
         if length != REQUEST_BYTES {
             return Err(Failure::Datagram(PacketFailure::Length));
         }
+        #[cfg(windows)]
+        timing.retain_ports(sender, self.port)?;
 
         Ok((request, sender))
     }

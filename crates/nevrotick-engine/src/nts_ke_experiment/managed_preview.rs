@@ -435,6 +435,8 @@ pub enum ManagedProtectedPlan {
 pub struct ManagedProtectedReceipt {
     /// Immutable configuration checked by the actual send and final commit.
     configuration: SourceConfigurationSnapshot,
+    /// The original historical exchange and its bound endpoints.
+    history: Arc<ManagedProtectedHistory>,
     /// Actual complete local request length.
     packet_bytes: usize,
     /// Checked population before the operation's first checkout.
@@ -468,13 +470,14 @@ pub struct ManagedProtectedReceipt {
 
 impl ManagedProtectedReceipt {
     /// Copy only the bounded public facts from genuine joined history.
-    fn from_history(managed: &ManagedProtectedHistory) -> Self {
+    fn from_history(managed: &Arc<ManagedProtectedHistory>) -> Self {
         let history: &super::datagram::ProtectedHistory = managed.history();
         let receipt: Receipt = history.receipt();
         let header: RawHeader = receipt.fields().header();
         let summary: &super::Summary = managed.summary();
         Self {
             configuration: managed.configuration().clone(),
+            history: Arc::clone(managed),
             packet_bytes: summary.packet_bytes,
             initial_cookie_population: (summary.cookies, summary.cookie_bytes),
             leap_indicator: header.leap_indicator(),
@@ -497,6 +500,27 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub const fn configuration(&self) -> &SourceConfigurationSnapshot {
         &self.configuration
+    }
+
+    /// Return the original local endpoint for pairing with an independent packet observation.
+    #[must_use]
+    pub fn local_endpoint(&self) -> SocketAddr {
+        self.history.history().endpoints().0
+    }
+
+    /// Return the peer endpoint checked for this original authenticated reply.
+    #[must_use]
+    pub fn peer_endpoint(&self) -> SocketAddr {
+        self.history.history().endpoints().1
+    }
+
+    /// Compare the allocation created for the original committed exchange.
+    ///
+    /// The same endpoint pair may occur in separate exchanges. This comparison
+    /// identifies historical receipt custody and supplies no admission authority.
+    #[must_use]
+    pub fn same_exchange(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.history, &other.history)
     }
 
     /// Return the complete locally submitted protected request length in bytes.
@@ -771,7 +795,7 @@ impl ManagedProtectedReport {
         let process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]> =
             received.process_leap_presentation();
         let (first, terminal, (attempted_sends, fully_submitted_sends, remaining_driver_work)): (
-            Option<Box<ManagedProtectedHistory>>,
+            Option<Arc<ManagedProtectedHistory>>,
             super::ManagedSuccessorTerminal,
             (usize, usize, usize),
         ) = received.into_parts();
@@ -792,7 +816,7 @@ impl ManagedProtectedReport {
             ),
         };
         Ok(Self {
-            first: first.as_deref().map(ManagedProtectedReceipt::from_history),
+            first: first.as_ref().map(ManagedProtectedReceipt::from_history),
             terminal,
             first_nak_at,
             power_unregistration_error: cleanup.unregistration_error,
@@ -1330,15 +1354,14 @@ mod nominal_reference_tests {
 
     use std::time::UNIX_EPOCH;
 
-    use ntp_wire::decode_fixed_header;
-
     use super::{
         Arc, Duration, ExperimentalReferenceNs, Failure, Instant, ManagedProtectedReceipt,
-        RawHeader, RelativeMeasurementRefusal, RunClockContext, SoftwareClock,
-        SourceConfigurationSnapshot,
+        RelativeMeasurementRefusal, RunClockContext, SoftwareClock,
     };
-    use crate::nts_ke_experiment::{Config, datagram::tests::managed_attempt_config};
-    use crate::{SourceHandle, SourcePolicyAuthority};
+    use crate::nts_ke_experiment::{
+        job::WorkerSlot, managed_preview_tests::component_protected_receipt,
+        process::ProcessAdmission,
+    };
 
     /// Check a literal odd midpoint, equal-valued foreign chart, and reversed endpoints.
     /// # Errors
@@ -1348,14 +1371,15 @@ mod nominal_reference_tests {
     #[test]
     fn protected_nominal_reference_rejects_reversal_and_distinguishes_chart_identity()
     -> Result<(), Failure> {
+        static SELECTED_SLOT: WorkerSlot = WorkerSlot::new();
+        static SELECTED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+        static FOREIGN_SLOT: WorkerSlot = WorkerSlot::new();
+        static FOREIGN_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+        let mut selected: ManagedProtectedReceipt =
+            component_protected_receipt(&SELECTED_SLOT, &SELECTED_ADMISSION)?;
+        let mut foreign: ManagedProtectedReceipt =
+            component_protected_receipt(&FOREIGN_SLOT, &FOREIGN_ADMISSION)?;
         let origin: Instant = Instant::now();
-        let (_config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
-            managed_attempt_config(origin, Duration::from_millis(1), Duration::from_millis(4))?;
-        let configuration: SourceConfigurationSnapshot = source
-            .configuration_snapshot()
-            .map_err(Failure::SourcePolicy)?
-            .ok_or(Failure::Control)?;
-        let header: RawHeader = decode_fixed_header(&[0_u8; 48]).map_err(|_| Failure::Control)?;
         let send: Instant = origin
             .checked_add(Duration::from_nanos(10))
             .ok_or(Failure::Control)?;
@@ -1382,34 +1406,25 @@ mod nominal_reference_tests {
                 mono_after: trailing,
             },
         ];
-        // Only this private fixture constructs raw receipts. The normal and failed
-        // worker cases separately check the actual producer's chart allocation.
-        let receipt = |run_context: Arc<RunClockContext>| ManagedProtectedReceipt {
-            configuration: configuration.clone(),
-            packet_bytes: 192,
-            initial_cookie_population: (1, 12),
-            leap_indicator: 0,
-            peer_stratum: 0,
-            peer_precision_exponent: 0,
-            peer_root_delay_bits: 0,
-            peer_root_dispersion_bits: 0,
-            peer_timestamps: [header.receive_timestamp(), header.transmit_timestamp()],
-            committed_at: trailing,
-            received_at: trailing,
-            application_clock_captures: captures,
-            run_context,
-            #[cfg(windows)]
-            application_native_clock_captures: [None; 3],
-            application_wall_elapsed_bounds: None,
-        };
-        let mut selected: ManagedProtectedReceipt = receipt(Arc::new(RunClockContext { origin }));
-        let foreign: ManagedProtectedReceipt = receipt(Arc::new(RunClockContext { origin }));
+        // Change only the test projections' chart and software readings to
+        // exercise the independent midpoint and historical identity boundaries.
+        selected.application_clock_captures = captures;
+        foreign.application_clock_captures = captures;
+        selected.run_context = Arc::new(RunClockContext { origin });
+        foreign.run_context = Arc::new(RunClockContext { origin });
         let parts = |value: ExperimentalReferenceNs| {
             (value.whole_nanoseconds(), value.has_half_nanosecond())
         };
         assert_eq!(selected.nominal_reference().map(parts), Ok((10, true)));
         assert_eq!(foreign.nominal_reference().map(parts), Ok((10, true)));
         assert!(!selected.same_invocation(&foreign));
+        assert_eq!(selected.local_endpoint(), foreign.local_endpoint());
+        assert_eq!(selected.peer_endpoint(), foreign.peer_endpoint());
+        assert!(!selected.same_exchange(&foreign));
+
+        foreign.run_context = Arc::clone(&selected.run_context);
+        assert!(selected.same_invocation(&foreign));
+        assert!(!selected.same_exchange(&foreign));
 
         selected.application_clock_captures.swap(0, 2);
         assert_eq!(

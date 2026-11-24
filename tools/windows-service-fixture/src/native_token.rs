@@ -239,6 +239,18 @@ fn resolve_ids() -> Result<ServicePrivilegeIds, TokenObservationCause> {
     ServicePrivilegeIds::new(values).map_err(TokenObservationCause::Capture)
 }
 
+/// Decode the retained fixture peer's privilege observation with the existing
+/// local privilege-name resolution and complete snapshot decoder.
+/// # Errors
+/// Preserve local name resolution or checked snapshot refusal.
+#[cfg(test)]
+pub(super) fn decode_retained_privileges(
+    observed: &windows_platform_native::TokenPrivilegeObservation,
+) -> Result<PrivilegeSnapshot, TokenObservationCause> {
+    PrivilegeSnapshot::decode(observed.as_bytes(), resolve_ids()?)
+        .map_err(TokenObservationCause::Capture)
+}
+
 /// Capture once into initialized, correctly aligned fixed storage; never retry.
 /// Failed API output, including a zeroed buffer, never reaches the pure decoder.
 ///

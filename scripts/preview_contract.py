@@ -38,6 +38,7 @@ OUTCOME_LINTS = {
     "warnings", "unused", "unused_must_use", "let_underscore", "let_underscore_drop",
     "clippy::all", "clippy::default", "clippy::suspicious", "clippy::restriction",
     "clippy::unused_result_ok", "clippy::let_underscore_must_use", "clippy::let_underscore_future",
+    "clippy::let_underscore_drop",
     # Rust 1.100 still applies these levels when the renamed-lint diagnostic is allowed.
     "clippy_all", "clippy_suspicious", "clippy_restriction",
 }
@@ -226,7 +227,11 @@ def inner_outcome_suppressions(tokens: list[Token]) -> Iterator[tuple[Token, Tok
                 pending.extend(reversed(arguments[1:]))
             else:
                 lints = {"".join(values[begin:finish]) for begin, finish in arguments}
-                matched = sorted(OUTCOME_LINTS & lints)
+                # Clippy also applies levels from bare names through its tool namespace.
+                matched = sorted(
+                    lint for lint in lints
+                    if lint in OUTCOME_LINTS or f"clippy::{lint}" in OUTCOME_LINTS
+                )
                 if matched:
                     yield tokens[start], tokens[end], matched
 

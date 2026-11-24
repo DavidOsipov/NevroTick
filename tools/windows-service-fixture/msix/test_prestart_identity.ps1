@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Run in the owned offline lab with an absent S0.6 package and a precompiled
 # prestart_image_path.dll beside these exact source inputs. Both archives are
-# unsigned controls for archive custody and argument ownership. No package is installed.
+# unsigned controls for archive custody, signature refusal and argument ownership.
+# No package is installed.
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [Parameter(Mandatory = $true)][string]$CurrentArchive,
@@ -127,9 +128,22 @@ function Assert-ArchiveOpenRefusal {
 }
 
 function Invoke-Control {
-    param([hashtable]$Request)
+    param([hashtable]$Request, [switch]$DirectVerified)
     try {
-        $capture = Invoke-PrestartIdentity @Request
+        if ($DirectVerified) {
+            [object]$child = [NevroTick.PrestartObserverChild]::StartVerifiedIdentity(
+                $Request.PowerShellPath, $Request.PowerShellBytes, $Request.PowerShellSha256,
+                $Request.InputDirectory, $Request.EntryBytes, $Request.EntrySha256,
+                $Request.ModuleBytes, $Request.ModuleSha256, $Request.HelperBytes, $Request.HelperSha256,
+                $Request.RunId, $Request.Archive, $Request.ExpectedUserSid, $Request.ExpectedArchiveSha256,
+                $Request.ExpectedSignerSha256, $Request.Actor, $Request.Clock, $Request.TimeoutMilliseconds)
+            $capture = & $module {
+                param($Child, $Clock, $Budget)
+                Receive-OwnedPrestartChild $Child $Clock $Budget
+            } $child $Request.Clock $Request.TimeoutMilliseconds
+        } else {
+            $capture = Invoke-PrestartIdentity @Request
+        }
     } catch {
         [Exception]$cause = $_.Exception
         while ($null -ne $cause) {
@@ -160,9 +174,9 @@ function Assert-ChildRefusal {
 }
 
 function Assert-LaunchRefusal {
-    param([hashtable]$Request, [string]$Reason)
+    param([hashtable]$Request, [string]$Reason, [switch]$DirectVerified)
     $cause = $null
-    try { $null = Invoke-Control $Request } catch {
+    try { $null = Invoke-Control $Request -DirectVerified:$DirectVerified } catch {
         if ($retainInputDirectory) { throw }
         $cause = $_.Exception
     }
@@ -177,6 +191,24 @@ function Assert-LaunchRefusal {
         throw "Identity launch did not refuse before process creation: expected=$Reason"
     }
     Assert-InputsReleased $Request.InputDirectory
+}
+
+function Assert-SignatureRefusal {
+    param([scriptblock]$Operation, [type]$ExceptionType, [string]$Reason)
+
+    try {
+        $null = & $Operation
+    } catch {
+        if ($retainInputDirectory) { throw }
+        [Exception]$cause = $_.Exception
+        while ($null -ne $cause -and $cause.Message -cne $Reason) {
+            $cause = $cause.InnerException
+        }
+        if ($null -eq $cause -or !$ExceptionType.IsInstanceOfType($cause) -or
+            $cause.Data.Contains('PrestartArchiveTrustCleanupFailure')) { throw }
+        return
+    }
+    throw "Archive signature admitted despite expected refusal: $Reason"
 }
 
 # Consume the actual fixed entry's bounded binary prefix and independently
@@ -289,6 +321,53 @@ try {
         Clock = $clock
         TimeoutMilliseconds = $budget
     }
+    [hashtable]$verifiedRequest = $request.Clone()
+    [string]$testSigner = '0' * 64
+    $verifiedRequest.ExpectedSignerSha256 = $testSigner
+    Assert-LaunchRefusal $verifiedRequest 'prestart-observer:archive-signature-required' -DirectVerified
+    [string]$unsignedReason = 'prestart-observer:archive-signature-verify-0x800b0100'
+    Assert-SignatureRefusal {
+        Invoke-Control $verifiedRequest
+    } ([IO.InvalidDataException]) $unsignedReason
+    Assert-SignatureRefusal {
+        $previous.VerifySignature($reference.previous.ArchiveSha256, $testSigner, $actor, $clock, $budget)
+    } ([IO.InvalidDataException]) $unsignedReason
+    Assert-ArchiveHeld $currentPath $reference.current.ArchiveSha256
+    Assert-ArchiveHeld $previousPath $reference.previous.ArchiveSha256
+    's06-owned-identity archive-signature-unsigned=observed'
+    Assert-LaunchRefusal $verifiedRequest 'prestart-observer:archive-signature-required' -DirectVerified
+    's06-owned-identity archive-signature-required=observed'
+
+    Assert-SignatureRefusal {
+        $current.VerifySignature($reference.previous.ArchiveSha256, $testSigner, $actor, $clock, $budget)
+    } ([IO.InvalidDataException]) 'prestart-observer:identity-archive-digest'
+    Assert-SignatureRefusal {
+        $current.VerifySignature($reference.current.ArchiveSha256, 'invalid', $actor, $clock, $budget)
+    } ([ArgumentException]) 'prestart-observer:archive-signer-sha256'
+    Assert-SignatureRefusal {
+        $current.VerifySignature($reference.current.ArchiveSha256, $testSigner, $actor,
+            [Diagnostics.Stopwatch]::StartNew(), $budget)
+    } ([InvalidOperationException]) 'prestart-observer:archive-scope'
+    Assert-SignatureRefusal {
+        $current.VerifySignature($reference.current.ArchiveSha256, $testSigner, $actor, $clock, ($budget + 1))
+    } ([InvalidOperationException]) 'prestart-observer:archive-scope'
+
+    [Diagnostics.Stopwatch]$expiryClock = [Diagnostics.Stopwatch]::StartNew()
+    [int]$expiryBudget = 3000
+    [IDisposable]$expiryLease = Open-PrestartArchive -ArchivePath $currentPath `
+        -ExpectedArchiveBytes $reference.current.ArchiveBytes -ExpectedArchiveSha256 $reference.current.ArchiveSha256 `
+        -Clock $expiryClock -TimeoutMilliseconds $expiryBudget
+    try {
+        Start-Sleep -Milliseconds ([int][Math]::Max(0, $expiryBudget - $expiryClock.ElapsedMilliseconds + 25))
+        Assert-SignatureRefusal {
+            $expiryLease.VerifySignature($reference.current.ArchiveSha256, $testSigner, $actor, $expiryClock,
+                $expiryBudget)
+        } ([TimeoutException]) 'prestart-observer:archive-deadline'
+    } finally {
+        $expiryLease.Dispose()
+    }
+    's06-owned-identity archive-signature-pins-and-scope=observed'
+
     Assert-ChildRefusal $request 'Expected exactly one S0.6 registration in the current user profile'
     's06-owned-identity absent-registration=observed'
 
@@ -443,7 +522,10 @@ Export-ModuleMember -Function Write-S06InstalledIdentity
                 }
                 $cause = $cause.InnerException
             }
-            if ($retainInputDirectory) { $_.Exception.Data['PrestartArchiveControlChild'] = $child }
+            if ($retainInputDirectory -and -not $child.DisposalStarted) {
+                # Keep the original live reference for recovery in this process.
+                $_.Exception.Data['PrestartArchiveControlChild'] = [object[]]@($child)
+            }
         }
         if ($null -ne $probeFailure) {
             if ($null -ne $collectionFailure) {
@@ -458,6 +540,9 @@ Export-ModuleMember -Function Write-S06InstalledIdentity
         Assert-ArchiveReleased $currentPath
         's06-owned-identity archive-retained-by-child=observed'
         Assert-LaunchRefusal $request 'prestart-observer:archive-retired'
+        Assert-SignatureRefusal {
+            $request.Archive.VerifySignature($request.ExpectedArchiveSha256, $testSigner, $actor, $clock, $budget)
+        } ([InvalidOperationException]) 'prestart-observer:archive-retired'
         $previous.Dispose()
         $previous = $null
         Assert-ArchiveReleased $previousPath

@@ -376,7 +376,7 @@ impl Mode {
                 ("engine-facade-consumer.exe", &["managed-protected-eof"])
             }
             // The three nested cases execute in separate supervised modes. The
-            // five manual native fixtures retain their own isolated controllers;
+            // seven manual native fixtures retain their own isolated controllers;
             // the ordinary scripted selection keeps its existing process cap.
             Self::Ke => (
                 "engine-tests.exe",
@@ -393,6 +393,10 @@ impl Mode {
                     "nts_ke_experiment::transport::certificate_time_fixture::pre_epoch_certificate_handshake_preserves_local_clock_failure",
                     "--skip",
                     "nts_ke_experiment::transport::certificate_time_fixture::ordinary_certificate_handshake_preserves_certificate_failure",
+                    "--skip",
+                    "nts_ke_experiment::transport::certificate_time_fixture::above_range_certificate_handshake_preserves_local_clock_failure",
+                    "--skip",
+                    "nts_ke_experiment::transport::certificate_time_fixture::far_future_certificate_handshake_preserves_local_clock_failure",
                     "--skip",
                     "nts_ke_experiment::transport::managed_close_fixture::managed_protected_native_read_keeps_stale_revision_as_its_only_tls_failure",
                     "--skip",

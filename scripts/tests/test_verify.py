@@ -2572,7 +2572,7 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def complete_msix_handoff_fixture(self):
         """Publish the maintained export with checked metadata and controlled PE and PNG bytes."""
-        from test_windows_versioninfo import _MANIFEST, version_resource
+        from test_windows_versioninfo import _DESCRIPTION, _FIXED, _MANIFEST, version_resource
 
         modules: dict[str, dict[str, tuple[str, ...]]] = {
             "ui": {"direct": ("KERNEL32.dll",), "delay": ("USER32.dll",)},
@@ -2601,14 +2601,21 @@ class ExecutionAccountingTests(unittest.TestCase):
             VERIFY, "MSIX_VARIANT_ARTWORK", controlled_pins(VERIFY.MSIX_VARIANT_ARTWORK)))
         release = self.work / "target/x86_64-pc-windows-msvc/release"
         records = {}
+        pe = VERIFY.windows_pe_reader(ROOT)
         for role, name in (("ui", "nevrotick-ui.exe"), ("observe", "nevrotick-observe.exe")):
+            image: Path = release / name
             records[role + "_versioninfo"] = {
-                "image_sha256": digest((release / name).read_bytes()),
+                "image_sha256": digest(image.read_bytes()),
                 "generation_sha256": inspection["generation_receipt_sha256"],
                 "strings": {"OriginalFilename": name},
+                "pe_declarations": pe.pe_readback(
+                    image, subsystem="gui" if role == "ui" else "console", imports=True),
                 "static_imports": {kind: [name.lower() for name in names]
                                    for kind, names in modules[role].items()},
             }
+        records["ui_versioninfo"]["fixed"] = list(_FIXED)
+        records["ui_versioninfo"]["strings"]["FileDescription"] = _DESCRIPTION
+        records["ui_versioninfo"]["translation"] = [1033, 1200]
         records["ui_versioninfo"]["execution_manifest"] = {
             "level": "asInvoker", "ui_access": False, "sha256": digest(_MANIFEST),
         }
@@ -2683,6 +2690,40 @@ class ExecutionAccountingTests(unittest.TestCase):
             "observe": {"direct": ["ws2_32.dll"], "delay": []},
         })
 
+    def test_msix_handoff_reconciles_both_pe_declaration_records(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        original: bytes = receipt.read_bytes()
+        original_pin: str = digest(original)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+        image_pins: dict[str, str] = {name: digest((output / name).read_bytes())
+                                      for name in ("nevrotick-ui.exe", "nevrotick-observe.exe")}
+        for role in ("ui", "observe"):
+            baseline: dict[str, Any] = json.loads(original)[role + "_versioninfo"]["pe_declarations"]
+            changes: dict[str, int | float | bool] = {
+                "guard_flags": 0,
+                "extended_dll_characteristics": 0,
+                "dependent_load_flags": 0,
+                "direct_import_descriptors": baseline["direct_import_descriptors"] + 1,
+                "guard_function_count": float(baseline["guard_function_count"]),
+                "codeview_age": bool(baseline["codeview_age"]),
+            }
+            for field, value in changes.items():
+                with self.subTest(role=role, field=field):
+                    altered: dict[str, Any] = json.loads(original)
+                    altered[role + "_versioninfo"]["pe_declarations"][field] = value
+                    receipt.write_text(json.dumps(altered), encoding="utf-8")
+                    result: int
+                    stdout: str
+                    stderr: str
+                    result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+                    self.assertEqual((result, stdout), (1, ""))
+                    self.assertIn(f"{role} PE declarations differ from the pinned receipt", stderr)
+        for name, expected in image_pins.items():
+            self.assertEqual(digest((output / name).read_bytes()), expected)
+        receipt.write_bytes(original)
+        self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
+
     def test_msix_handoff_checks_embedded_ui_activation_even_with_matching_image_pins(self) -> None:
         output: Path = self.complete_msix_handoff_fixture()
         receipt: Path = output / "verification.json"
@@ -2704,8 +2745,10 @@ class ExecutionAccountingTests(unittest.TestCase):
                 self.assertEqual(len(changed_image), len(original_image))
                 image.write_bytes(changed_image)
                 report: dict[str, Any] = json.loads(original_receipt)
-                report["artifact"]["sha256"] = digest(changed_image)
-                report["ui_versioninfo"]["image_sha256"] = digest(changed_image)
+                changed_digest: str = digest(changed_image)
+                report["artifact"]["sha256"] = changed_digest
+                report["ui_versioninfo"]["image_sha256"] = changed_digest
+                report["ui_versioninfo"]["pe_declarations"]["image_sha256"] = changed_digest
                 receipt.write_text(json.dumps(report))
                 result: int
                 stdout: str
@@ -2734,6 +2777,36 @@ class ExecutionAccountingTests(unittest.TestCase):
                 self.assertIn("UI resources differ from the pinned receipt", stderr)
         self.assertEqual((output / "nevrotick-ui.exe").read_bytes(),
                          (self.work / "target/x86_64-pc-windows-msvc/release/nevrotick-ui.exe").read_bytes())
+        receipt.write_bytes(original)
+        self.assertEqual(self.run_msix_handoff(output, digest(original))[0], 0)
+
+    def test_msix_handoff_reconciles_embedded_ui_versioninfo_with_the_full_claim(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        image: Path = output / "nevrotick-ui.exe"
+        original: bytes = receipt.read_bytes()
+        original_image: bytes = image.read_bytes()
+        self.assertEqual(self.run_msix_handoff(output, digest(original))[0], 0)
+        for field, member, value in (
+            ("fixed", 2, 0x10003),
+            ("fixed", 9, True),
+            ("strings", "FileDescription", "A different component description"),
+            ("strings", "CompanyName", "An unobserved publisher"),
+            ("translation", 0, 1031),
+            ("translation", 1, 1200.0),
+        ):
+            with self.subTest(field=field, member=member):
+                report: dict[str, Any] = json.loads(original)
+                report["ui_versioninfo"][field][member] = value
+                # Re-pin only the receipt so that the original image reaches the comparison.
+                receipt.write_text(json.dumps(report))
+                result: int
+                stdout: str
+                stderr: str
+                result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+                self.assertEqual((result, stdout), (1, ""))
+                self.assertIn("UI resources differ from the pinned receipt", stderr)
+        self.assertEqual(image.read_bytes(), original_image)
         receipt.write_bytes(original)
         self.assertEqual(self.run_msix_handoff(output, digest(original))[0], 0)
 

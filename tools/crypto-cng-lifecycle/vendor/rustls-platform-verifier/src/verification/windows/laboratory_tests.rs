@@ -56,17 +56,14 @@ fn laboratory_filetime_matches_literal_ticks_and_words() -> TestResult {
 
 /// Out-of-envelope values refuse rather than clamp, wrap or substitute a date.
 /// # Panics
-/// Reject acceptance or diagnostic disclosure of an unsupported raw timestamp.
+/// Reject acceptance or loss of the typed cause for an unsupported timestamp.
 #[test]
 fn laboratory_filetime_refuses_outside_dates_with_bounded_errors() {
     for seconds in [4_102_444_801, 6_802_270_474, u64::MAX] {
-        match laboratory_filetime(seconds) {
-            Err(rustls::Error::General(message)) => {
-                assert!(message.len() <= 80);
-                assert!(!message.contains(&seconds.to_string()));
-            }
-            _ => panic!("unsupported laboratory date did not produce its bounded refusal"),
-        }
+        assert!(matches!(
+            laboratory_filetime(seconds),
+            Err(rustls::Error::FailedToGetCurrentTime)
+        ));
     }
 }
 

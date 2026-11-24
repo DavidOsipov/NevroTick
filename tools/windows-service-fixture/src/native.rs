@@ -38,6 +38,21 @@ use crate::{
 #[path = "native_token.rs"]
 mod token;
 
+/// Compare the retained peer's decoded capture with a separate native self capture.
+/// # Errors
+/// Preserve the decoder or independent token observer's original refusal.
+#[cfg(test)]
+pub(super) fn retained_privileges_match_self(
+    observed: &windows_platform_native::TokenPrivilegeObservation,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    use crate::host::TokenObserver as _;
+    use windows_platform::privilege_observation::PrivilegeSnapshot;
+
+    let retained: PrivilegeSnapshot = token::decode_retained_privileges(observed)?;
+    let independent: PrivilegeSnapshot = token::NativeTokenObserver.observe()?;
+    Ok(retained == independent)
+}
+
 /// One irreversible dispatcher-attempt flag per executable process.
 static DISPATCH_ATTEMPTED: AtomicBool = AtomicBool::new(false);
 /// Static bounded Stop custody remains valid through process termination.

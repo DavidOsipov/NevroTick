@@ -12,7 +12,9 @@ use std::task::Poll;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use windows_platform_native::{PeerProcess, PipeServerPidError, read_connected_pipe_server_pid};
+use windows_platform_native::{
+    PeerProcess, PeerProcessError, PipeServerPidError, read_connected_pipe_server_pid,
+};
 use windows_sys::Win32::Foundation::{
     ERROR_INVALID_DATA, ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE,
     INVALID_HANDLE_VALUE, LocalFree,
@@ -148,6 +150,25 @@ impl LabRequestWriter {
             RequestWriter::Overlapped(writer) => writer.write_fixture_fragment(bytes),
             RequestWriter::FirstExchange(writer) => writer.write_fixture_fragment(bytes),
         }
+    }
+
+    /// Submit one supervised request on the retained first-exchange client.
+    /// # Errors
+    /// Refuses a different writer mode, an invalidated peer or an expired write.
+    pub(super) fn write_supervised_first_exchange(
+        &mut self,
+        bytes: &[u8],
+        parent: &PeerProcess,
+        cutoff: Instant,
+    ) -> Result<(), LabPipeError> {
+        let RequestWriter::FirstExchange(writer) = &mut self.0 else {
+            return Err(LabPipeError::WriteSlot);
+        };
+        writer.write_fixture_fragment_before(bytes, cutoff, |pipe: BorrowedHandle<'_>| {
+            check_fixture_peer_before_cutoff(cutoff, Instant::now, || {
+                check_supervised_first_exchange_peer(parent, pipe)
+            })
+        })
     }
 }
 
@@ -308,6 +329,10 @@ pub(super) enum LabPipeError {
     SecurityAttributesSize,
     /// At least one connected endpoint reported another process.
     ForeignPeer,
+    /// Observing the retained supervising process failed.
+    Supervisor(PeerProcessError),
+    /// The supervised exchange reached its cutoff at a peer guard.
+    SupervisorCutoff,
     /// The physical reply belongs to a different laboratory connection.
     ForeignReplyPair,
     /// The proposed write was empty or exceeded the fixture's byte cap.
@@ -341,6 +366,8 @@ impl fmt::Display for LabPipeError {
             Self::ForeignPeer => {
                 formatter.write_str("fixture pipe endpoint belongs to another process")
             }
+            Self::Supervisor(cause) => write!(formatter, "fixture pipe supervisor: {cause}"),
+            Self::SupervisorCutoff => formatter.write_str("fixture supervisor cutoff elapsed"),
             Self::ForeignReplyPair => {
                 formatter.write_str("fixture reply belongs to a different pipe pair")
             }
@@ -373,6 +400,13 @@ impl fmt::Display for LabPipeError {
 }
 
 impl std::error::Error for LabPipeError {}
+
+impl From<NativeWriteError> for LabPipeError {
+    /// Retain the exact native write outcome.
+    fn from(cause: NativeWriteError) -> Self {
+        Self::OverlappedWrite(cause)
+    }
+}
 
 /// Open one same-process fixture pair for a fixed-width case number.
 ///
@@ -501,15 +535,43 @@ pub(super) fn open_supervised_first_exchange_client(
     case: u32,
     parent: &PeerProcess,
 ) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
-    if parent.check_live().is_err() {
-        return Err(LabPipeError::ForeignPeer);
-    }
+    parent.check_live().map_err(LabPipeError::Supervisor)?;
     let name: LabPipeName = LabPipeName::for_process(parent.pid().get(), case);
     let client: OwnedHandle = open_client(&name, ServerMode::Duplex)?;
-    if server_process_id(&client)? != parent.pid().get() || parent.check_live().is_err() {
+    check_supervised_first_exchange_peer(parent, client.as_handle())?;
+    first_exchange_client(client)
+}
+
+/// Sample the original retained supervisor around the connected client's PID.
+/// # Errors
+/// Preserve a failed pipe query or refuse an exited or different fixture peer.
+pub(super) fn check_supervised_first_exchange_peer(
+    parent: &PeerProcess,
+    client: BorrowedHandle<'_>,
+) -> Result<(), LabPipeError> {
+    parent.check_live().map_err(LabPipeError::Supervisor)?;
+    if server_process_id(client)? != parent.pid().get() {
         return Err(LabPipeError::ForeignPeer);
     }
-    first_exchange_client(client)
+    parent.check_live().map_err(LabPipeError::Supervisor)
+}
+
+/// Bracket one fixture peer observation by the original cutoff.
+/// # Errors
+/// Refuses at or after the cutoff and preserves the first observation failure.
+pub(super) fn check_fixture_peer_before_cutoff(
+    cutoff: Instant,
+    mut now: impl FnMut() -> Instant,
+    observe: impl FnOnce() -> Result<(), LabPipeError>,
+) -> Result<(), LabPipeError> {
+    if now() >= cutoff {
+        return Err(LabPipeError::SupervisorCutoff);
+    }
+    observe()?;
+    if now() >= cutoff {
+        return Err(LabPipeError::SupervisorCutoff);
+    }
+    Ok(())
 }
 
 /// Observe at most one byte from the original fixture child's piped stderr.
@@ -969,7 +1031,7 @@ fn check_peers(
     process: u32,
 ) -> Result<(), LabPipeError> {
     let peer_client: u32 = read_connected_pipe_client_pid(server.as_handle())?;
-    let peer_server: u32 = server_process_id(client)?;
+    let peer_server: u32 = server_process_id(client.as_handle())?;
     if peer_client != process || peer_server != process {
         return Err(LabPipeError::ForeignPeer);
     }
@@ -1001,8 +1063,8 @@ pub(super) fn read_connected_pipe_client_pid(
 ///
 /// # Errors
 /// Retain the native query failure or reject an unusable server PID.
-fn server_process_id(client: &OwnedHandle) -> Result<u32, LabPipeError> {
-    match read_connected_pipe_server_pid(client.as_handle()) {
+fn server_process_id(client: BorrowedHandle<'_>) -> Result<u32, LabPipeError> {
+    match read_connected_pipe_server_pid(client) {
         Ok(pid) => Ok(pid.get()),
         Err(PipeServerPidError::Native(code)) => Err(LabPipeError::Native {
             operation: "GetNamedPipeServerProcessId",
@@ -1357,7 +1419,7 @@ mod tests {
         client: &OwnedHandle,
         process: &PeerProcess,
     ) -> Result<(), LabPipeError> {
-        if server_process_id(client)? != process.pid().get() {
+        if server_process_id(client.as_handle())? != process.pid().get() {
             return Err(LabPipeError::ForeignPeer);
         }
         Ok(())

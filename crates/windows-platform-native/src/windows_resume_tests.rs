@@ -26,7 +26,7 @@ fn bind_action(slot: &ResumeSlot, persistent: bool) -> Arc<AtomicBool> {
         Ok(())
     };
     let action: Action = if persistent {
-        Action::Persistent(Box::new(record))
+        Action::Persistent(Box::new(move |_| record()))
     } else {
         Action::once(record)
     };
@@ -73,7 +73,7 @@ fn registration_failures_disarm_without_reopening_slot() -> Result<(), ()> {
         assert_eq!(slot.notify(18), Ok(()));
         assert!(!delivered.load(Ordering::Relaxed));
         assert!(!slot.bind(Action::once(|| Ok(()))));
-        assert!(!slot.bind(Action::Persistent(Box::new(|| Ok(())))));
+        assert!(!slot.bind(Action::Persistent(Box::new(|_| Ok(())))));
     }
     Ok(())
 }

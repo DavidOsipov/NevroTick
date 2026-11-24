@@ -3051,6 +3051,10 @@ pub(in crate::nts_ke_experiment) fn loopback_native_managed_successor<'control>(
 #[cfg(any(windows, target_os = "linux"))]
 #[derive(Clone, Copy)]
 pub(in crate::nts_ke_experiment) struct LoopbackPeerLeg<T> {
+    /// Actual client endpoint observed by the peer's request receive.
+    pub(in crate::nts_ke_experiment) client_endpoint: SocketAddr,
+    /// Actual local address of the independently bound peer.
+    pub(in crate::nts_ke_experiment) peer_endpoint: SocketAddr,
     /// Peer observation immediately after the successful request receive.
     pub(in crate::nts_ke_experiment) received: T,
     /// Peer observation immediately before the selected response send.
@@ -3133,6 +3137,7 @@ pub(in crate::nts_ke_experiment) fn serve_managed_loopback<T>(
     sends_nak: bool,
     mut observe: impl FnMut() -> Result<T, Failure>,
 ) -> Result<[LoopbackPeerLeg<T>; 2], Failure> {
+    let peer_endpoint: SocketAddr = peer.local_addr().map_err(|_| Failure::Endpoint)?;
     let (first, first_received): (SocketAddr, T) =
         loopback_request(peer, WIRE, &C2S, &[0x11; 12], 7, &mut observe)?;
     let first_sending: T = send_loopback_reply(peer, first, first_reply, &mut observe)?;
@@ -3160,10 +3165,14 @@ pub(in crate::nts_ke_experiment) fn serve_managed_loopback<T>(
     let second_sending: T = send_loopback_reply(peer, second, terminal, observe)?;
     Ok([
         LoopbackPeerLeg {
+            client_endpoint: first,
+            peer_endpoint,
             received: first_received,
             sending: first_sending,
         },
         LoopbackPeerLeg {
+            client_endpoint: second,
+            peer_endpoint,
             received: second_received,
             sending: second_sending,
         },

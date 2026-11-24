@@ -20,6 +20,8 @@ import xml.etree.ElementTree as ET
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 ENTRYPOINT = REPOSITORY / "metadata/pipeline/__main__.py"
+# Keep compiler warnings from generated faults out of runtime assertions.
+CLI_RUNTIME_FLAGS: tuple[str, ...] = ("-I", "-B", "-Wignore::SyntaxWarning")
 EXPECTED_FILES = frozenset(
     {
         "metadata.json",
@@ -143,10 +145,9 @@ class SourceFixture(unittest.TestCase):
         self.entrypoint = ENTRYPOINT
 
     def cli(self, command: str, *extra: str, output: Path | None = None) -> subprocess.CompletedProcess:
-        args = [
+        args: list[str] = [
             sys.executable,
-            "-I",
-            "-B",
+            *CLI_RUNTIME_FLAGS,
             str(self.entrypoint),
             command,
             "--root",

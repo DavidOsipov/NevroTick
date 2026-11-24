@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Retained primary-token evidence for one independently selected service SID.
+//! Bounded role SID and privilege evidence from a retained primary token.
 
 use core::{ffi::c_void, fmt, mem};
 
@@ -132,7 +132,7 @@ pub enum ServiceRoleSidObservationError {
     MalformedRestrictingSids,
     /// The final token statistics response had an invalid extent.
     MalformedFinalStatistics,
-    /// The token's modification identifier changed during observation.
+    /// The token's modification identifier differed from the acquisition generation.
     TokenChanged,
 }
 
@@ -169,12 +169,103 @@ impl fmt::Display for ServiceRoleSidObservationError {
             Self::MalformedFinalStatistics => {
                 formatter.write_str("malformed final peer token statistics")
             }
-            Self::TokenChanged => formatter.write_str("peer token changed during SID observation"),
+            Self::TokenChanged => {
+                formatter.write_str("peer token generation differed during SID observation")
+            }
         }
     }
 }
 
 impl core::error::Error for ServiceRoleSidObservationError {}
+
+/// The original native privilege bytes in one bounded, exactly sized observation.
+///
+/// The service policy owner decodes the entries and checks the complete role
+/// profile. This value preserves token facts at capture time.
+#[must_use = "use the captured privilege bytes through the complete profile decoder"]
+pub struct TokenPrivilegeObservation {
+    /// Owned storage from the initialized native output buffer.
+    bytes: [u8; TOKEN_PRIVILEGE_CAPACITY],
+    /// Exact validated extent of the reported count and entries.
+    len: usize,
+}
+
+impl TokenPrivilegeObservation {
+    /// Borrow precisely the count and entries reported by the successful query.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+}
+
+/// Bounded refusal of a retained token privilege observation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum TokenPrivilegeObservationError {
+    /// Native statistics query failed before reading the privilege list.
+    InitialStatisticsQuery(u32),
+    /// The initial statistics output had an incorrect extent.
+    MalformedInitialStatistics,
+    /// Native privilege query failed, including insufficient fixed storage.
+    PrivilegeQuery(u32),
+    /// The reported privilege extent differs from its bounded declared count.
+    MalformedPrivileges,
+    /// Native statistics query failed after reading the privilege list.
+    FinalStatisticsQuery(u32),
+    /// The final statistics output had an incorrect extent.
+    MalformedFinalStatistics,
+    /// The token generation differed from the required observation generation.
+    TokenChanged,
+}
+
+impl fmt::Display for TokenPrivilegeObservationError {
+    /// Report only a fixed stage and optional immediate Win32 error code.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InitialStatisticsQuery(code) => {
+                write!(
+                    formatter,
+                    "initial peer token statistics query failed ({code})"
+                )
+            }
+            Self::MalformedInitialStatistics => {
+                formatter.write_str("malformed initial peer token statistics")
+            }
+            Self::PrivilegeQuery(code) => {
+                write!(formatter, "peer token privilege query failed ({code})")
+            }
+            Self::MalformedPrivileges => formatter.write_str("malformed peer token privileges"),
+            Self::FinalStatisticsQuery(code) => {
+                write!(
+                    formatter,
+                    "final peer token statistics query failed ({code})"
+                )
+            }
+            Self::MalformedFinalStatistics => {
+                formatter.write_str("malformed final peer token statistics")
+            }
+            Self::TokenChanged => {
+                formatter.write_str("peer token generation differed during privilege observation")
+            }
+        }
+    }
+}
+
+impl core::error::Error for TokenPrivilegeObservationError {}
+
+/// Native x64 `TOKEN_PRIVILEGES` has a DWORD count then `LUID_AND_ATTRIBUTES` entries.
+const TOKEN_PRIVILEGE_HEADER: usize = 4;
+/// SDK stride of one LUID and its attribute bits.
+const TOKEN_PRIVILEGE_ENTRY: usize = 12;
+/// Keep the complete-profile decoder's established 128-entry resource bound.
+const MAX_TOKEN_PRIVILEGES: usize = 128;
+/// Full fixed output capacity offered without a native size-probe retry.
+const TOKEN_PRIVILEGE_CAPACITY: usize =
+    TOKEN_PRIVILEGE_HEADER + MAX_TOKEN_PRIVILEGES * TOKEN_PRIVILEGE_ENTRY;
+
+/// Initialized storage meeting the shared token query's alignment constraint.
+#[repr(C, align(8))]
+struct TokenPrivilegeBuffer([u8; TOKEN_PRIVILEGE_CAPACITY]);
 
 /// Each query has one fixed buffer. Oversize results preserve the native refusal.
 const SID_LIST_CAPACITY: usize = 16_384;
@@ -212,17 +303,45 @@ const TOKEN_STATISTICS_BYTES: usize = 56;
 #[repr(C, align(8))]
 struct TokenStatisticsBuffer([u8; TOKEN_STATISTICS_BYTES]);
 
+/// A borrowed, SDK-aligned output with a native extent derived from its slice.
+pub(super) struct TokenInformationBuffer<'buffer> {
+    /// Initialized output exclusive to this query.
+    bytes: &'buffer mut [u8],
+    /// Exact slice length as a native DWORD.
+    capacity: u32,
+}
+
+impl<'buffer> TokenInformationBuffer<'buffer> {
+    /// Admit an aligned slice with a representable native extent.
+    fn new(bytes: &'buffer mut [u8]) -> Option<Self> {
+        let capacity: u32 = u32::try_from(bytes.len()).ok()?;
+        bytes
+            .as_ptr()
+            .addr()
+            .is_multiple_of(align_of::<TokenStatisticsBuffer>())
+            .then_some(Self { bytes, capacity })
+    }
+
+    /// Unpack the borrowed output and its checked native length for one query.
+    pub(super) fn into_parts(self) -> (&'buffer mut [u8], u32) {
+        (self.bytes, self.capacity)
+    }
+}
+
 /// The full opaque byte representation of the SDK's `ModifiedId` LUID.
-type TokenModifiedId = [u8; 8];
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(super) struct TokenModifiedId([u8; 8]);
 
 /// Token information queried from the same retained handle.
 #[derive(Clone, Copy)]
 #[cfg_attr(test, derive(Debug, Eq, PartialEq))]
-pub(super) enum TokenSidInformation {
+pub(super) enum TokenInformation {
     /// Token statistics containing the current modification identifier.
     Statistics,
     /// One of the two native token SID lists.
     List(SidList),
+    /// The complete native list of present token privileges.
+    Privileges,
 }
 
 /// The two native SID lists accepted by the list parser.
@@ -247,19 +366,23 @@ struct SidListMatch {
 ///
 /// The query writes into the initialized, aligned slice and returns its
 /// successful byte extent or the immediate Win32 error. Both complete lists
-/// must be valid and both modification identifiers must agree before publication.
+/// must be valid and bracketed by the modification identifier retained at acquisition.
 ///
 /// # Errors
 /// Retain the precise query stage or reject malformed output or a changed token.
 pub(super) fn observe_role_sid(
     expected: ServiceRoleSid<'_>,
-    mut query: impl FnMut(TokenSidInformation, &mut [u8], u32) -> Result<u32, u32>,
+    generation: TokenModifiedId,
+    mut query: impl FnMut(TokenInformation, TokenInformationBuffer<'_>) -> Result<u32, u32>,
 ) -> Result<ServiceRoleSidObservation<'_>, ServiceRoleSidObservationError> {
     let initial_id: TokenModifiedId = read_modified_id(
         &mut query,
         ServiceRoleSidObservationError::InitialStatisticsQuery,
         ServiceRoleSidObservationError::MalformedInitialStatistics,
     )?;
+    if initial_id != generation {
+        return Err(ServiceRoleSidObservationError::TokenChanged);
+    }
     let groups: SidListMatch = read_list(
         expected,
         SidList::Groups,
@@ -307,19 +430,76 @@ pub(super) fn observe_role_sid(
 /// Read the full modification identifier from one complete fixed-size statistics record.
 /// # Errors
 /// Preserve the native refusal or reject an incorrect successful extent.
-fn read_modified_id(
-    query: &mut impl FnMut(TokenSidInformation, &mut [u8], u32) -> Result<u32, u32>,
-    rejected_query: fn(u32) -> ServiceRoleSidObservationError,
-    malformed: ServiceRoleSidObservationError,
-) -> Result<TokenModifiedId, ServiceRoleSidObservationError> {
+pub(super) fn read_modified_id<E: Copy>(
+    query: &mut impl FnMut(TokenInformation, TokenInformationBuffer<'_>) -> Result<u32, u32>,
+    rejected_query: fn(u32) -> E,
+    malformed: E,
+) -> Result<TokenModifiedId, E> {
     let mut buffer: TokenStatisticsBuffer = TokenStatisticsBuffer([0; TOKEN_STATISTICS_BYTES]);
-    let capacity: u32 = u32::try_from(buffer.0.len()).map_err(|_| malformed)?;
-    let written: u32 =
-        query(TokenSidInformation::Statistics, &mut buffer.0, capacity).map_err(rejected_query)?;
+    let output: TokenInformationBuffer<'_> =
+        TokenInformationBuffer::new(&mut buffer.0).ok_or(malformed)?;
+    let capacity: u32 = output.capacity;
+    let written: u32 = query(TokenInformation::Statistics, output).map_err(rejected_query)?;
     if written != capacity {
         return Err(malformed);
     }
-    buffer.0.last_chunk().copied().ok_or(malformed)
+    buffer
+        .0
+        .last_chunk()
+        .copied()
+        .map(TokenModifiedId)
+        .ok_or(malformed)
+}
+
+/// Observe the complete bounded list on the same token between statistics queries.
+///
+/// A retained service peer supplies its acquisition generation. The bare token
+/// observer instead ties the observation to the generation it first samples.
+/// # Errors
+/// Preserve the first query refusal, malformed extent or generation change.
+pub(super) fn observe_privileges(
+    acquired: Option<TokenModifiedId>,
+    mut query: impl FnMut(TokenInformation, TokenInformationBuffer<'_>) -> Result<u32, u32>,
+) -> Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> {
+    use TokenPrivilegeObservationError as Refusal;
+
+    let initial_id: TokenModifiedId = read_modified_id(
+        &mut query,
+        Refusal::InitialStatisticsQuery,
+        Refusal::MalformedInitialStatistics,
+    )?;
+    if acquired.is_some_and(|generation: TokenModifiedId| generation != initial_id) {
+        return Err(Refusal::TokenChanged);
+    }
+
+    let mut buffer: TokenPrivilegeBuffer = TokenPrivilegeBuffer([0; TOKEN_PRIVILEGE_CAPACITY]);
+    let output: TokenInformationBuffer<'_> =
+        TokenInformationBuffer::new(&mut buffer.0).ok_or(Refusal::MalformedPrivileges)?;
+    let written: u32 =
+        query(TokenInformation::Privileges, output).map_err(Refusal::PrivilegeQuery)?;
+    let len: usize = usize::try_from(written).map_err(|_| Refusal::MalformedPrivileges)?;
+    let bytes: &[u8] = buffer.0.get(..len).ok_or(Refusal::MalformedPrivileges)?;
+    let header: &[u8; TOKEN_PRIVILEGE_HEADER] =
+        bytes.first_chunk().ok_or(Refusal::MalformedPrivileges)?;
+    let count: usize =
+        usize::try_from(u32::from_le_bytes(*header)).map_err(|_| Refusal::MalformedPrivileges)?;
+    if count > MAX_TOKEN_PRIVILEGES || len != TOKEN_PRIVILEGE_HEADER + count * TOKEN_PRIVILEGE_ENTRY
+    {
+        return Err(Refusal::MalformedPrivileges);
+    }
+
+    let final_id: TokenModifiedId = read_modified_id(
+        &mut query,
+        Refusal::FinalStatisticsQuery,
+        Refusal::MalformedFinalStatistics,
+    )?;
+    if final_id != initial_id {
+        return Err(Refusal::TokenChanged);
+    }
+    Ok(TokenPrivilegeObservation {
+        bytes: buffer.0,
+        len,
+    })
 }
 
 /// Read one list into an aligned buffer and admit only its reported extent.
@@ -329,14 +509,14 @@ fn read_modified_id(
 fn read_list(
     expected: ServiceRoleSid<'_>,
     list: SidList,
-    query: &mut impl FnMut(TokenSidInformation, &mut [u8], u32) -> Result<u32, u32>,
+    query: &mut impl FnMut(TokenInformation, TokenInformationBuffer<'_>) -> Result<u32, u32>,
     rejected_query: fn(u32) -> ServiceRoleSidObservationError,
     malformed: ServiceRoleSidObservationError,
 ) -> Result<SidListMatch, ServiceRoleSidObservationError> {
     let mut buffer: SidListBuffer = SidListBuffer([0; SID_LIST_CAPACITY]);
-    let capacity: u32 = u32::try_from(buffer.0.len()).map_err(|_| malformed)?;
-    let written: u32 =
-        query(TokenSidInformation::List(list), &mut buffer.0, capacity).map_err(rejected_query)?;
+    let output: TokenInformationBuffer<'_> =
+        TokenInformationBuffer::new(&mut buffer.0).ok_or(malformed)?;
+    let written: u32 = query(TokenInformation::List(list), output).map_err(rejected_query)?;
     let written: usize = usize::try_from(written).map_err(|_| malformed)?;
     let bytes: &[u8] = buffer.0.get(..written).ok_or(malformed)?;
     match_sid_list(bytes, expected, list).ok_or(malformed)
@@ -405,9 +585,27 @@ mod tests {
 
     use super::{
         ServiceRoleSid, ServiceRoleSidGroup, ServiceRoleSidObservation,
-        ServiceRoleSidObservationError, ServiceRoleSidRestriction, SidList, TokenSidInformation,
-        observe_role_sid,
+        ServiceRoleSidObservationError, ServiceRoleSidRestriction, SidList, TokenInformation,
+        TokenInformationBuffer, TokenModifiedId, TokenPrivilegeObservation,
+        TokenPrivilegeObservationError, observe_privileges,
     };
+
+    /// Exercise the production reader at the fixture's acquisition generation.
+    /// # Errors
+    /// Preserve any query or generation refusal from the real observer.
+    fn observe_role_sid(
+        expected: ServiceRoleSid<'_>,
+        mut query: impl FnMut(TokenInformation, &mut [u8], u32) -> Result<u32, u32>,
+    ) -> Result<ServiceRoleSidObservation<'_>, ServiceRoleSidObservationError> {
+        super::observe_role_sid(
+            expected,
+            TokenModifiedId(MODIFIED_ID),
+            |information: TokenInformation, buffer: TokenInformationBuffer<'_>| {
+                let (output, capacity): (&mut [u8], u32) = buffer.into_parts();
+                query(information, output, capacity)
+            },
+        )
+    }
 
     /// One structurally valid role SID used as the expected fixture SID.
     const EXPECTED: [u8; 32] = [
@@ -424,11 +622,11 @@ mod tests {
     /// Initial token modification identifier, with distinct nonzero halves.
     const MODIFIED_ID: [u8; 8] = [0x42, 1, 2, 3, 0x81, 4, 5, 6];
     /// Native queries expected on the retained handle, in order.
-    const QUERY_ORDER: [TokenSidInformation; 4] = [
-        TokenSidInformation::Statistics,
-        TokenSidInformation::List(SidList::Groups),
-        TokenSidInformation::List(SidList::Restricting),
-        TokenSidInformation::Statistics,
+    const QUERY_ORDER: [TokenInformation; 4] = [
+        TokenInformation::Statistics,
+        TokenInformation::List(SidList::Groups),
+        TokenInformation::List(SidList::Restricting),
+        TokenInformation::Statistics,
     ];
 
     /// Write an independent SDK-shaped statistics record with both LUID halves.
@@ -439,6 +637,170 @@ mod tests {
         assert_eq!(output.as_ptr().addr() % 8, 0);
         output[48..56].copy_from_slice(&modified_id);
         56
+    }
+
+    /// Independently ordered native query stages for one privilege capture.
+    const PRIVILEGE_QUERY_ORDER: [TokenInformation; 3] = [
+        TokenInformation::Statistics,
+        TokenInformation::Privileges,
+        TokenInformation::Statistics,
+    ];
+
+    /// Independent Windows-shaped outputs for the three capture stages.
+    struct PrivilegeScript {
+        initial: [u8; 8],
+        final_id: [u8; 8],
+        count: u32,
+        override_at: Option<(usize, Result<u32, u32>)>,
+    }
+
+    const ONE_PRIVILEGE: PrivilegeScript = PrivilegeScript {
+        initial: MODIFIED_ID,
+        final_id: MODIFIED_ID,
+        count: 1,
+        override_at: None,
+    };
+
+    impl PrivilegeScript {
+        /// Send initialized SDK-shaped bytes and remember which stages were reached.
+        /// # Panics
+        /// Fail on a different query order, capacity or alignment.
+        fn capture(
+            &self,
+            acquired: Option<TokenModifiedId>,
+        ) -> (
+            Result<TokenPrivilegeObservation, TokenPrivilegeObservationError>,
+            Vec<TokenInformation>,
+        ) {
+            let mut calls: Vec<TokenInformation> = Vec::new();
+            let result: Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> =
+                observe_privileges(
+                    acquired,
+                    |information: TokenInformation, buffer: TokenInformationBuffer<'_>| {
+                        let stage: usize = calls.len();
+                        assert_eq!(PRIVILEGE_QUERY_ORDER.get(stage), Some(&information));
+                        calls.push(information);
+                        let (output, capacity): (&mut [u8], u32) = buffer.into_parts();
+                        let written: u32 = if information == TokenInformation::Privileges {
+                            assert_eq!(capacity, 1540);
+                            assert_eq!(output.len(), 1540);
+                            assert_eq!(output.as_ptr().addr() % 4, 0);
+                            output[..4].copy_from_slice(&self.count.to_le_bytes());
+                            output[4..].fill(0x5A);
+                            4 + 12 * self.count
+                        } else {
+                            let id: [u8; 8] = if stage == 0 {
+                                self.initial
+                            } else {
+                                self.final_id
+                            };
+                            write_statistics(output, id)
+                        };
+                        match self.override_at {
+                            Some((step, result)) if step == stage => result,
+                            _ => Ok(written),
+                        }
+                    },
+                );
+            (result, calls)
+        }
+    }
+
+    /// Publish only the exact successful native prefix at the acquired generation.
+    /// # Errors
+    /// Preserve an unexpected refusal of the valid controls.
+    /// # Panics
+    /// Fail on a missing query, truncated observation or exposed buffer tail.
+    #[test]
+    fn retained_privileges_use_exact_aligned_report_extent() -> Result<(), Box<dyn Error>> {
+        let cases: [(u32, usize); 3] = [(0, 4), (1, 16), (128, 1540)];
+        for (count, len) in cases {
+            let script: PrivilegeScript = PrivilegeScript {
+                count,
+                ..ONE_PRIVILEGE
+            };
+            let (result, calls): (
+                Result<TokenPrivilegeObservation, TokenPrivilegeObservationError>,
+                Vec<TokenInformation>,
+            ) = script.capture(Some(TokenModifiedId(MODIFIED_ID)));
+            let observed: TokenPrivilegeObservation = result?;
+            let bytes: &[u8] = observed.as_bytes();
+            assert_eq!(calls, PRIVILEGE_QUERY_ORDER);
+            assert_eq!(bytes.len(), len);
+            assert_eq!(bytes[..4], count.to_le_bytes());
+            assert!(bytes[4..].iter().all(|byte: &u8| *byte == 0x5A));
+        }
+        Ok(())
+    }
+
+    /// Require both halves of the original and final modification identifiers.
+    /// # Panics
+    /// Fail if a stale token reaches the list or a changed capture is published.
+    #[test]
+    fn retained_privileges_refuse_older_or_changed_generation() {
+        use TokenPrivilegeObservationError::TokenChanged;
+
+        for changed in [0_usize, 4_usize] {
+            let mut new_id: [u8; 8] = MODIFIED_ID;
+            new_id[changed] ^= 0xff;
+            let stale: PrivilegeScript = PrivilegeScript {
+                initial: new_id,
+                final_id: new_id,
+                ..ONE_PRIVILEGE
+            };
+            let (result, calls): (
+                Result<TokenPrivilegeObservation, TokenPrivilegeObservationError>,
+                Vec<TokenInformation>,
+            ) = stale.capture(Some(TokenModifiedId(MODIFIED_ID)));
+            assert_eq!(result.err(), Some(TokenChanged));
+            assert_eq!(calls, [TokenInformation::Statistics]);
+
+            let changed_during_capture: PrivilegeScript = PrivilegeScript {
+                final_id: new_id,
+                ..ONE_PRIVILEGE
+            };
+            let (result, calls): (
+                Result<TokenPrivilegeObservation, TokenPrivilegeObservationError>,
+                Vec<TokenInformation>,
+            ) = changed_during_capture.capture(Some(TokenModifiedId(MODIFIED_ID)));
+            assert_eq!(result.err(), Some(TokenChanged));
+            assert_eq!(calls, PRIVILEGE_QUERY_ORDER);
+        }
+    }
+
+    /// Stop at the first failing or malformed stage with no published bytes.
+    /// # Panics
+    /// Fail on an incorrect refusal, accepted malformed output or successor query.
+    #[test]
+    fn retained_privileges_refuse_native_failure_and_malformed_reports() {
+        use TokenPrivilegeObservationError as Refusal;
+
+        let cases: [(u32, usize, Result<u32, u32>, Refusal); 11] = [
+            (1, 0, Err(5), Refusal::InitialStatisticsQuery(5)),
+            (1, 0, Ok(55), Refusal::MalformedInitialStatistics),
+            (1, 1, Err(122), Refusal::PrivilegeQuery(122)),
+            (1, 1, Ok(3), Refusal::MalformedPrivileges),
+            (1, 1, Ok(4), Refusal::MalformedPrivileges),
+            (1, 1, Ok(17), Refusal::MalformedPrivileges),
+            (1, 1, Ok(1541), Refusal::MalformedPrivileges),
+            (0, 1, Ok(16), Refusal::MalformedPrivileges),
+            (129, 1, Ok(1540), Refusal::MalformedPrivileges),
+            (1, 2, Err(5), Refusal::FinalStatisticsQuery(5)),
+            (1, 2, Ok(57), Refusal::MalformedFinalStatistics),
+        ];
+        for (count, stage, reported, refusal) in cases {
+            let script: PrivilegeScript = PrivilegeScript {
+                count,
+                override_at: Some((stage, reported)),
+                ..ONE_PRIVILEGE
+            };
+            let (result, calls): (
+                Result<TokenPrivilegeObservation, TokenPrivilegeObservationError>,
+                Vec<TokenInformation>,
+            ) = script.capture(Some(TokenModifiedId(MODIFIED_ID)));
+            assert_eq!(result.err(), Some(refusal));
+            assert_eq!(calls, PRIVILEGE_QUERY_ORDER[..=stage]);
+        }
     }
 
     /// Write an independent x64 SDK-shaped output, including original buffer addresses.
@@ -481,9 +843,10 @@ mod tests {
         observe_role_sid(expected, |information, output, capacity| {
             assert_eq!(Some(output.len()), usize::try_from(capacity).ok());
             match information {
-                TokenSidInformation::Statistics => Ok(write_statistics(output, MODIFIED_ID)),
-                TokenSidInformation::List(SidList::Groups) => write_list(output, groups),
-                TokenSidInformation::List(SidList::Restricting) => write_list(output, restricting),
+                TokenInformation::Statistics => Ok(write_statistics(output, MODIFIED_ID)),
+                TokenInformation::List(SidList::Groups) => write_list(output, groups),
+                TokenInformation::List(SidList::Restricting) => write_list(output, restricting),
+                TokenInformation::Privileges => Err(13),
             }
         })
     }
@@ -594,16 +957,17 @@ mod tests {
                 observe_role_sid(expected, |information, output, capacity| {
                     assert_eq!(QUERY_ORDER.get(call), Some(&information));
                     let result: Result<u32, u32> = match information {
-                        TokenSidInformation::Statistics => {
+                        TokenInformation::Statistics => {
                             assert_eq!(capacity, 56);
                             Ok(write_statistics(output, modified_id))
                         }
-                        TokenSidInformation::List(SidList::Groups) => {
+                        TokenInformation::List(SidList::Groups) => {
                             write_list(output, &[(&EXPECTED, 4)])
                         }
-                        TokenSidInformation::List(SidList::Restricting) => {
+                        TokenInformation::List(SidList::Restricting) => {
                             write_list(output, &[(&EXPECTED, 0)])
                         }
+                        TokenInformation::Privileges => Err(13),
                     };
                     if let Some((read, changed_byte)) = change_after
                         && call == read
@@ -626,6 +990,50 @@ mod tests {
                 assert_eq!(observed, Err(ServiceRoleSidObservationError::TokenChanged));
             }
         }
+        Ok(())
+    }
+
+    /// Refuse a token that changed since acquisition even when its current lists are stable.
+    /// # Errors
+    /// Return an unexpected fixture construction failure.
+    /// # Panics
+    /// Fail unless the first statistics sample stops both SID list reads.
+    #[test]
+    fn refuses_role_sid_samples_from_a_newer_generation() -> Result<(), Box<dyn Error>> {
+        let expected: ServiceRoleSid<'_> = ServiceRoleSid::new(&EXPECTED)?;
+        for changed_byte in [0_usize, 4_usize] {
+            let mut changed_id: [u8; 8] = MODIFIED_ID;
+            changed_id[changed_byte] ^= 0xff;
+            let mut calls: Vec<TokenInformation> = Vec::new();
+            let observed: Result<ServiceRoleSidObservation<'_>, ServiceRoleSidObservationError> =
+                observe_role_sid(
+                    expected,
+                    |information: TokenInformation, output: &mut [u8], _: u32| {
+                        calls.push(information);
+                        match information {
+                            TokenInformation::Statistics => {
+                                Ok(write_statistics(output, changed_id))
+                            }
+                            TokenInformation::List(SidList::Groups) => {
+                                write_list(output, &[(&EXPECTED, 4)])
+                            }
+                            TokenInformation::List(SidList::Restricting) => {
+                                write_list(output, &[(&EXPECTED, 0)])
+                            }
+                            TokenInformation::Privileges => Err(13),
+                        }
+                    },
+                );
+            assert_eq!(observed, Err(ServiceRoleSidObservationError::TokenChanged));
+            assert_eq!(calls, [TokenInformation::Statistics]);
+        }
+        let observed: ServiceRoleSidObservation<'_> =
+            read(expected, &[(&EXPECTED, 4)], &[(&EXPECTED, 0)])?;
+        assert_eq!(observed.group(), ServiceRoleSidGroup::Enabled(4));
+        assert_eq!(
+            observed.restriction(),
+            ServiceRoleSidRestriction::Present(0)
+        );
         Ok(())
     }
 
@@ -685,13 +1093,12 @@ mod tests {
                         return refusal;
                     }
                     match information {
-                        TokenSidInformation::Statistics => {
-                            Ok(write_statistics(output, MODIFIED_ID))
-                        }
-                        TokenSidInformation::List(SidList::Groups) => {
+                        TokenInformation::Statistics => Ok(write_statistics(output, MODIFIED_ID)),
+                        TokenInformation::List(SidList::Groups) => {
                             write_list(output, &[(&EXPECTED, 4)])
                         }
-                        TokenSidInformation::List(SidList::Restricting) => write_list(output, &[]),
+                        TokenInformation::List(SidList::Restricting) => write_list(output, &[]),
+                        TokenInformation::Privileges => Err(13),
                     }
                 });
             assert_eq!(observed, Err(outcome));
@@ -711,10 +1118,10 @@ mod tests {
         for malformed in 0..9 {
             let result: Result<ServiceRoleSidObservation<'_>, ServiceRoleSidObservationError> =
                 observe_role_sid(expected, |information, output, capacity| {
-                    if matches!(information, TokenSidInformation::Statistics) {
+                    if matches!(information, TokenInformation::Statistics) {
                         return Ok(write_statistics(output, MODIFIED_ID));
                     }
-                    assert_eq!(information, TokenSidInformation::List(SidList::Groups));
+                    assert_eq!(information, TokenInformation::List(SidList::Groups));
                     let written: u32 = write_list(output, &[(&EXPECTED, 4), (&OTHER, 4)])?;
                     let base: usize = output.as_ptr().addr();
                     let second_entry: Range<usize> = 24..32;
@@ -779,7 +1186,9 @@ mod tests {
         let process: PeerProcess = PeerProcess::open(pid)?;
         let token: PeerPrimaryToken = process.retain_primary_token()?;
         let expected: ServiceRoleSid<'_> = ServiceRoleSid::new(&EXPECTED)?;
-        let observed: ServiceRoleSidObservation<'_> = token.observe_role_sid(expected)?;
+        let generation: TokenModifiedId = token.generation()?;
+        let observed: ServiceRoleSidObservation<'_> =
+            token.observe_role_sid(expected, generation)?;
         assert_eq!(observed.group(), ServiceRoleSidGroup::Missing);
         assert!(matches!(
             observed.restriction(),

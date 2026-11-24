@@ -264,16 +264,27 @@ impl<W: AsHandle> NativePipeWrite<W> {
     /// The caller's original bytes are free for reuse after return.
     /// # Errors
     /// Refuses invalid extent, occupied custody or a native submission failure.
+    pub(super) fn begin(&mut self, bytes: &[u8]) -> Result<NativeWriteStart, NativeWriteError> {
+        self.begin_guarded(bytes, |_| Ok(()))
+    }
+
+    /// Revalidate the exact borrowed writer after preparing its stable slot.
+    /// # Errors
+    /// Retains extent, custody, guard and native failures. A guard refusal leaves the slot idle.
     #[expect(
         unsafe_code,
         reason = "Submit a bounded write with stable owned input, record and event"
     )]
-    pub(super) fn begin(&mut self, bytes: &[u8]) -> Result<NativeWriteStart, NativeWriteError> {
+    pub(super) fn begin_guarded<E: From<NativeWriteError>>(
+        &mut self,
+        bytes: &[u8],
+        guard: impl FnOnce(BorrowedHandle<'_>) -> Result<(), E>,
+    ) -> Result<NativeWriteStart, E> {
         if self.record.outstanding.is_some() {
-            return Err(NativeWriteError::Busy);
+            return Err(NativeWriteError::Busy.into());
         }
         if !(1..=MAX_FRAME_LEN).contains(&bytes.len()) {
-            return Err(NativeWriteError::Size);
+            return Err(NativeWriteError::Size.into());
         }
         let span: u32 = u32::try_from(bytes.len()).map_err(|_| NativeWriteError::Size)?;
         let mut owned_bytes: [u8; MAX_FRAME_LEN] = [0; MAX_FRAME_LEN];
@@ -289,17 +300,21 @@ impl<W: AsHandle> NativePipeWrite<W> {
             });
         };
         self.record.wake = CompletionWakeState::new();
+        let pipe: BorrowedHandle<'_> = self.writer.as_handle();
+        let buffer: *const u8 = slot.bytes.as_ptr().cast_const().cast::<u8>();
+        let overlapped: *mut OVERLAPPED = slot.overlapped.get();
+        guard(pipe)?;
         self.record.outstanding = Some(span);
         // SAFETY: The private constructors own an overlapped pipe. The slot
         // pins its initialized input and operation record and holds the exact
         // event and pipe owner. begin cannot replace occupied storage.
         let result: i32 = unsafe {
             WriteFile(
-                self.writer.as_handle().as_raw_handle(),
-                slot.bytes.as_ptr().cast_const().cast(),
+                pipe.as_raw_handle(),
+                buffer,
                 span,
                 std::ptr::null_mut(),
-                slot.overlapped.get(),
+                overlapped,
             )
         };
         if result != 0 {
@@ -310,7 +325,7 @@ impl<W: AsHandle> NativePipeWrite<W> {
             return Ok(NativeWriteStart::Queued);
         }
         self.record.outstanding = None;
-        Err(NativeWriteError::Submit(code))
+        Err(NativeWriteError::Submit(code).into())
     }
 
     /// Observe native completion without waiting or releasing pending storage.
@@ -406,17 +421,40 @@ impl<W: AsHandle> NativePipeWrite<W> {
     /// Return the original failure after collecting the terminal result. An
     /// unresolved drain aborts the isolated fixture while it still owns the slot.
     pub(super) fn write_fixture_fragment(&mut self, bytes: &[u8]) -> Result<(), LabPipeError> {
+        self.write_fixture_fragment_checked(bytes, None, |_| Ok(()))
+    }
+
+    /// Recheck the retained peer at submission and bound normal collection by the cutoff.
+    /// # Errors
+    /// Retains the typed guard, write or observation refusal through the separate drain.
+    pub(super) fn write_fixture_fragment_before(
+        &mut self,
+        bytes: &[u8],
+        cutoff: Instant,
+        guard: impl FnOnce(BorrowedHandle<'_>) -> Result<(), LabPipeError>,
+    ) -> Result<(), LabPipeError> {
+        self.write_fixture_fragment_checked(bytes, Some(cutoff), guard)
+    }
+
+    /// Collect one fixture submission, draining its original slot after a timeout.
+    /// # Errors
+    /// Preserves the first refusal. Terminal cleanup remains separately bounded.
+    fn write_fixture_fragment_checked(
+        &mut self,
+        bytes: &[u8],
+        cutoff: Option<Instant>,
+        guard: impl FnOnce(BorrowedHandle<'_>) -> Result<(), LabPipeError>,
+    ) -> Result<(), LabPipeError> {
         let expected: u32 = u32::try_from(bytes.len()).map_err(|_| LabPipeError::WriteSize)?;
-        let _submitted: NativeWriteStart =
-            self.begin(bytes).map_err(LabPipeError::OverlappedWrite)?;
-        let terminal: NativeWritePoll = match self.wait_for_fixture_write() {
+        let _submitted: NativeWriteStart = self.begin_guarded(bytes, guard)?;
+        let terminal: NativeWritePoll = match self.wait_for_fixture_write(cutoff) {
             Ok(outcome) => outcome,
             Err(error) => {
                 if self.is_pending() {
                     let cancellation: Result<NativeCancel, NativeWriteError> =
                         self.request_cancel();
                     let drained: Result<NativeWritePoll, LabPipeError> =
-                        self.wait_for_fixture_write();
+                        self.wait_for_fixture_write(None);
                     if self.is_pending() {
                         use std::io::Write;
                         let _diagnostic: std::io::Result<()> = writeln!(
@@ -429,23 +467,24 @@ impl<W: AsHandle> NativePipeWrite<W> {
                 return Err(error);
             }
         };
-        let NativeWritePoll::Written(count) = terminal else {
-            return Err(LabPipeError::WriteTerminated(terminal));
-        };
-        let written: u32 = u32::try_from(count).map_err(|_| LabPipeError::WriteSize)?;
-        if written != expected {
-            return Err(LabPipeError::ShortWrite { expected, written });
-        }
-        Ok(())
+        confirm_fixture_write(terminal, expected, cutoff, Instant::now)
     }
 
-    /// Collect the exact slot's terminal result within one fixed real-time allowance.
+    /// Collect the exact slot using the tighter absolute or relative observation bound.
     /// # Errors
     /// Preserve a native observation failure or expiry with the slot still owned.
-    fn wait_for_fixture_write(&mut self) -> Result<NativeWritePoll, LabPipeError> {
+    fn wait_for_fixture_write(
+        &mut self,
+        cutoff: Option<Instant>,
+    ) -> Result<NativeWritePoll, LabPipeError> {
         let started: Instant = Instant::now();
         loop {
-            let remaining: Duration = FIXTURE_WRITE_WAIT.saturating_sub(started.elapsed());
+            let now: Instant = Instant::now();
+            let mut remaining: Duration =
+                FIXTURE_WRITE_WAIT.saturating_sub(now.saturating_duration_since(started));
+            if let Some(cutoff) = cutoff {
+                remaining = remaining.min(cutoff.saturating_duration_since(now));
+            }
             if remaining.is_zero() {
                 return Err(LabPipeError::WriteTimeout);
             }
@@ -456,6 +495,28 @@ impl<W: AsHandle> NativePipeWrite<W> {
             std::thread::sleep(remaining.min(Duration::from_millis(1)));
         }
     }
+}
+
+/// Check physical count before admitting timely completion.
+/// # Errors
+/// Keeps terminal byte-count/transfer failures, or refuses a late exact count.
+pub(super) fn confirm_fixture_write(
+    terminal: NativeWritePoll,
+    expected: u32,
+    cutoff: Option<Instant>,
+    now: impl FnOnce() -> Instant,
+) -> Result<(), LabPipeError> {
+    let NativeWritePoll::Written(count) = terminal else {
+        return Err(LabPipeError::WriteTerminated(terminal));
+    };
+    let written: u32 = u32::try_from(count).map_err(|_| LabPipeError::WriteSize)?;
+    if written != expected {
+        return Err(LabPipeError::ShortWrite { expected, written });
+    }
+    if cutoff.is_some_and(|cutoff: Instant| now() >= cutoff) {
+        return Err(LabPipeError::WriteTimeout);
+    }
+    Ok(())
 }
 
 impl Drop for WriteRecord {
