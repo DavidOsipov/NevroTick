@@ -5,15 +5,18 @@ from contextlib import ExitStack
 from hashlib import sha256
 import json
 from pathlib import Path
+from subprocess import Popen, TimeoutExpired
 from tempfile import TemporaryDirectory
 import time
-from typing import BinaryIO
+from typing import BinaryIO, Callable
 import unittest
 from unittest.mock import patch
 from uuid import UUID
 
 import prestart_deployment_session as session
-from prestart_access_process import AccessWatchdogInputs, PrestartAccessAttempt, _limited_budgets, _windows_path
+from prestart_access_process import (
+    AccessWatchdogInputs, PrestartAccessAttempt, _limited_budgets, _remaining, _windows_path,
+)
 from prestart_receipts import DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, Run
 import test_prestart_deployment_session as fixtures
 
@@ -25,7 +28,10 @@ _PARENT: bytes = b"""#!/usr/bin/python3
 from hashlib import sha256
 from pathlib import Path
 import json, sys
-watchdog, size, pin, role, nonce, diagnostic, guardian, gs, gh, ps, ph, owner, osz, oh, run, *budgets = sys.argv[1:]
+mode, parent, parent_size, parent_pin, watchdog, size, pin, role, nonce, diagnostic, guardian, gs, gh, ps, ph, owner, osz, oh, run, *budgets = sys.argv[1:]
+assert mode == '--supervise-access-parent' and parent == sys.argv[0]
+parent_bytes = Path(parent).read_bytes()
+assert int(parent_size) == len(parent_bytes) and parent_pin == sha256(parent_bytes).hexdigest()
 root = Path(diagnostic).parent
 case = json.loads((root / 'case.json').read_bytes())
 assert Path(watchdog).name == 'prestart_deployment_watchdog.exe'
@@ -33,6 +39,7 @@ assert Path(guardian).name == 'prestart_deployment_guardian.ps1'
 assert Path(owner).name == 'prestart_deployment_owner.ps1'
 assert 0 < int(budgets[0]) < int(budgets[1]) <= 4000
 assert 0 < int(budgets[2]) < int(budgets[3]) <= 4000
+assert int(budgets[3]) - int(budgets[2]) >= 4
 command = sys.stdin.buffer.read(2)
 assert command == case['command'].encode()
 if command:
@@ -208,6 +215,215 @@ class NativeAccessProcessTests(unittest.TestCase):
                                                 captures=session.PrestartCaptures())
             self.full.deployment.assert_requests(window, b"SCICOA")
 
+    def test_complete_success_bytes_cannot_survive_outer_owner_refusal(self) -> None:
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("outer-refusal", command="A", response=self.full.access, parent_exit=1)
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaisesRegex(ReceiptRefused, "^native access parent refused settlement$"):
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        with self.assertRaisesRegex(ReceiptRefused, "native access diagnostics not settled"):
+            access.private_diagnostic()
+
+    def test_oversized_status_refuses_capture_and_reaps_original_relay(self) -> None:
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("oversized", command="A", response=self.full.access, fault="extra-record")
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaisesRegex(ReceiptRefused, "^oversized native access settlement$"):
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        process: Popen[bytes] | None = access._process
+        assert process is not None
+        # Do not poll or wait here. Observe the exit already collected by the
+        # supervisor, before the test custodian can reap the original relay.
+        self.assertEqual(process.returncode, 0)
+
+    def test_oversized_status_preserves_refusal_when_original_relay_exceeds_retirement(self) -> None:
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("late-status", command="A", response=self.full.access, fault="extra-record")
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        original_wait: Callable[[Popen[bytes], float | None], int] = Popen.wait
+        budgets: list[tuple[float, float]] = []
+        waits: list[float] = []
+
+        def remaining(deadline: float) -> float:
+            budget: float = _remaining(deadline)
+            budgets.append((deadline, budget))
+            return budget
+
+        def wait(process: Popen[bytes], timeout: float | None = None) -> int:
+            if process is access._process:
+                deadline: float
+                budget: float
+                deadline, budget = budgets[-1]
+                self.assertEqual(budget, timeout)
+                waits.append(deadline)
+                raise TimeoutExpired(process.args, timeout)
+            return original_wait(process, timeout)
+
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with (patch.object(Popen, "wait", wait), patch("prestart_access_process._remaining", remaining),
+                  self.assertRaises(ExceptionGroup) as refused):
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        primary: BaseException
+        retirement: BaseException
+        primary, retirement = refused.exception.exceptions
+        self.assertIsInstance(primary, ReceiptRefused)
+        self.assertEqual(str(primary), "oversized native access settlement")
+        self.assertIsInstance(retirement, TimeoutExpired)
+        self.assertEqual(waits, [self.retire])
+        process: Popen[bytes] | None = access._process
+        assert process is not None and process.stderr is not None
+        self.assertIsNone(process.returncode)
+        self.assertFalse(process.stderr.closed)
+
+    def test_oversized_status_and_distinct_cleanup_refusal_each_report_once(self) -> None:
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("oversized", command="A", response=self.full.access, fault="extra-record")
+        ordinary, _, _ = self.prepare("refused", probe=PrestartProbe.STANDARD, parent_exit=1)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaises(ExceptionGroup) as refused:
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        primary: BaseException
+        retirement: BaseException
+        primary, retirement = refused.exception.exceptions
+        self.assertIsInstance(primary, ReceiptRefused)
+        self.assertEqual(str(primary), "oversized native access settlement")
+        self.assertIsInstance(retirement, ReceiptRefused)
+        self.assertEqual(str(retirement), "native access parent refused settlement")
+        process: Popen[bytes] | None = access._process
+        other: Popen[bytes] | None = ordinary._process
+        assert process is not None and other is not None
+        self.assertEqual((process.returncode, other.returncode), (0, 1))
+
+    def test_oversized_status_first_seen_during_cleanup_is_reported(self) -> None:
+        response: bytes = self.full.deployment.reply("refused", code="actor-close", cleanup=[])
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("refused", command="A", response=response, fault="extra-record")
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaises(ExceptionGroup) as refused:
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        primary: BaseException
+        retirement: BaseException
+        primary, retirement = refused.exception.exceptions
+        self.assertIsInstance(primary, ReceiptRefused)
+        self.assertEqual(str(primary), "native access refused actor-close")
+        self.assertIsInstance(retirement, ReceiptRefused)
+        self.assertEqual(str(retirement), "oversized native access settlement")
+        process: Popen[bytes] | None = access._process
+        assert process is not None
+        self.assertEqual(process.returncode, 0)
+
+    def test_cleanup_status_overflow_survives_an_independent_relay_exit_failure(self) -> None:
+        response: bytes = self.full.deployment.reply("refused", code="actor-close", cleanup=[])
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("refused", command="A", response=response, fault="extra-record", parent_exit=1)
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaises(ExceptionGroup) as refused:
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        primary: BaseException
+        retirement: BaseException
+        primary, retirement = refused.exception.exceptions
+        self.assertEqual(str(primary), "native access refused actor-close")
+        self.assertIsInstance(retirement, ExceptionGroup)
+        assert isinstance(retirement, ExceptionGroup)
+        self.assertEqual(tuple(map(str, retirement.exceptions)), (
+            "oversized native access settlement", "native access parent refused settlement",
+        ))
+        process: Popen[bytes] | None = access._process
+        assert process is not None
+        self.assertEqual(process.returncode, 1)
+
+    def test_exhausted_output_drain_refuses_observation_and_reaps_original_relay(self) -> None:
+        response: bytes = bytes(4) + bytes(session.MAX_FRAME + 5)
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("excess-wire", command="A", response=response)
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with self.assertRaises(ExceptionGroup) as refused:
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        self.assertEqual(tuple(map(str, refused.exception.exceptions)), (
+            "invalid deployment frame length", "excess native access output during retirement",
+        ))
+        process: Popen[bytes] | None = access._process
+        assert process is not None and process.stdout is not None and process.stderr is not None
+        self.assertEqual(process.returncode, 0)
+        self.assertTrue(process.stdout.closed and process.stderr.closed)
+
+    def test_exhausted_output_drain_retains_unconfirmed_original_relay(self) -> None:
+        response: bytes = bytes(4) + bytes(session.MAX_FRAME + 5)
+        access: PrestartAccessAttempt
+        ordinary: PrestartAccessAttempt
+        access, _, _ = self.prepare("excess-wire", command="A", response=response)
+        ordinary, _, _ = self.prepare("unused", probe=PrestartProbe.STANDARD)
+        original_wait: Callable[[Popen[bytes], float | None], int] = Popen.wait
+        deadlines: list[float] = []
+        waits: list[float] = []
+
+        def remaining(deadline: float) -> float:
+            deadlines.append(deadline)
+            return _remaining(deadline)
+
+        def wait(process: Popen[bytes], timeout: float | None = None) -> int:
+            if process is access._process:
+                waits.append(deadlines[-1])
+                raise TimeoutExpired(process.args, timeout)
+            return original_wait(process, timeout)
+
+        with fixtures.ScriptedProcess(self.full.script[:6], self.full.deployment.retired) as window:
+            deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", [], window)
+            with (patch.object(Popen, "wait", wait), patch("prestart_access_process._remaining", remaining),
+                  self.assertRaises(ExceptionGroup) as refused):
+                session.launch_prestart_session(self.run, access, ordinary, deployment, self.work, self.retire,
+                                                captures=session.PrestartCaptures())
+            self.full.deployment.assert_requests(window, b"SCICOA")
+        primary: BaseException
+        retirement: BaseException
+        primary, retirement = refused.exception.exceptions
+        self.assertEqual(str(primary), "invalid deployment frame length")
+        self.assertIsInstance(retirement, ExceptionGroup)
+        assert isinstance(retirement, ExceptionGroup)
+        drain: BaseException
+        reap: BaseException
+        drain, reap = retirement.exceptions
+        self.assertEqual(str(drain), "excess native access output during retirement")
+        self.assertIsInstance(reap, TimeoutExpired)
+        self.assertEqual(waits, [self.retire])
+        process: Popen[bytes] | None = access._process
+        assert process is not None and process.stdout is not None and process.stderr is not None
+        self.assertIsNone(process.returncode)
+        self.assertFalse(process.stdout.closed or process.stderr.closed)
+
     def test_rollback_closes_original_pipes_after_late_launch_return(self) -> None:
         attempt, _, _ = self.prepare("late")
         now: float = time.monotonic()
@@ -227,10 +443,10 @@ class NativeAccessProcessTests(unittest.TestCase):
                 _windows_path(Path(bad))
 
     def test_host_clipping_preserves_positive_cooperative_and_recovery_allowances(self) -> None:
-        self.assertEqual(_limited_budgets((8, 20), 0.0, 0.002, 0.004, minimum_grace_ms=2), (2, 4))
+        self.assertEqual(_limited_budgets((8, 20), 0.0, 0.002, 0.006, minimum_grace_ms=4), (2, 6))
         self.assertEqual(_limited_budgets((8, 20), 0.0, 0.002, 0.003), (2, 3))
         with self.assertRaisesRegex(ReceiptRefused, "insufficient pre-start access launch allowance"):
-            _limited_budgets((8, 20), 0.0, 0.002, 0.003, minimum_grace_ms=2)
+            _limited_budgets((8, 20), 0.0, 0.002, 0.005, minimum_grace_ms=4)
 
 
 if __name__ == "__main__":

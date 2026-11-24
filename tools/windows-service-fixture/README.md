@@ -283,22 +283,29 @@ to establish the native exit `3`.
 existing pre-start launch interface for one independently admitted access
 actor. Build [`prestart_access_parent.exe`](msix/prestart_access_parent.cs)
 with the same shared x64 sources as the deployment watchdog and select
-`NevroTick.PrestartAccessParent` as its entry. The native parent runs the
-pinned watchdog in the same primary-token context and passes through the
-original protocol pipes. The watchdog writes diagnostics to the original
-staged `prestart-access-diagnostics.log`. Reserve the parent's original
-stderr for its fixed native exit record. The host owner holds the empty
-diagnostic file from before launch and admits its staging directory and
-transitive inputs independently.
+`NevroTick.PrestartAccessParent` as its entry. The access attempt selects
+the fixed supervision mode and pins the running parent image. The outer
+process creates the original inner parent suspended in its own job. It
+verifies the held image, job membership, x64 process and actor before
+resume. The inner parent runs the pinned watchdog in the same primary-token
+context and passes through the original protocol pipes. The watchdog
+writes diagnostics to the original staged `prestart-access-diagnostics.log`.
+The host owner holds the empty file from before launch and independently
+admits its staging directory and transitive inputs.
 
-The adapter requires the original parent and its status stream to settle.
-It validates the exact full exit and matching diagnostic bytes. A settled
-exit `3` preserves refusal and permits `private_diagnostic()` after
-retirement. Only exit `0` can complete a successful access capture.
-Rollback closes input first and drains a bounded remainder of the original
-output before accepting settlement. The Sandbox exercised Windows process
-pipes. Actual WSL relay settlement, original launch recovery for the
-installed actor contexts, and installed pre-start admission remain open.
+The outer owner keeps the inner exit record on a private pipe until the
+original inner process has exited zero, the outer job is empty and the
+private stream reaches EOF. It reserves time to terminate and observe its
+job when the inner parent stalls. Failed or forced retirement withholds
+the native record. The host checks the original relay exit, full watchdog
+exit and matching diagnostic bytes. A settled watchdog exit `3` preserves
+refusal and permits `private_diagnostic()` after retirement. Only watchdog
+exit `0` can complete a successful access capture. Rollback closes input
+first and drains a bounded remainder of the original output. If the drain
+refuses, the host retains the refusal while observing the original relay
+within its remaining deadline. Windows process-pipe checks and the WSL
+portable fixture have separate evidence. Actual WSL relay settlement and
+installed actor contexts remain open.
 
 If the private pipe fails before retirement can be acknowledged, the fixed
 owner exits unsuccessfully and reports the first operation refusal, transport

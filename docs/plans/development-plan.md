@@ -1356,8 +1356,12 @@ now carry a full Windows status and settled diagnostic bytes for one admitted
 actor. Windows process-pipe cases and portable coordinator cases passed.
 The [native access recovery reserve](../../tasks/windows11-integration.md#reserve-native-retirement-time-for-the-original-access-job)
 retired a hung watchdog and its descendant before the unchanged cutoff
-with no success receipt. Actual WSL relay, hung-parent recovery and
-cross-context launch custody remain open before installed readback.
+with no success receipt. The [portable relay retirement controls](../../tasks/windows11-integration.md#reap-the-original-access-relay-after-a-bounded-output-refusal)
+now preserve output refusals while observing the original relay. The
+[native outer access owner](../../tasks/windows11-integration.md#retire-a-stalled-windows-access-parent-from-its-original-outer-job)
+retired a stalled parent and its descendants in the offline guest and
+withheld a complete premature status. Live WSL relay and cross-context
+launch custody remain open.
 The installed run still needs the admitted signed package, effective
 actors, continuous quiescence and the actual installed observations.
 The [native archive

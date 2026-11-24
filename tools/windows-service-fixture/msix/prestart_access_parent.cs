@@ -37,11 +37,17 @@ namespace NevroTick
     public sealed partial class PrestartObserverChild
     {
         private const string AccessWatchdogName = "prestart_deployment_watchdog.exe";
+        private const string AccessParentName = "prestart_access_parent.exe";
+        private const string AccessParentSupervisionMode = "--supervise-access-parent";
         private const string AccessDiagnosticName = "prestart-access-diagnostics.log";
         private const string AccessSettlementMode = "--observe-access-settlement";
         private const string AccessExitVersion = "nevrotick-prestart-access-exit-v1";
         private const int AccessDiagnosticLimit = 32 * 1024;
+        // Keep the forwarded record within the host reader's single-line bound.
+        private const int AccessStatusRecordLimit = 271;
+        private const int AccessStatusPipeClosed = 109;
         private const uint AccessWatchdogProcessLimit = 1 + DeploymentGuardianActiveProcessLimit;
+        private const uint AccessParentProcessLimit = 1 + AccessWatchdogProcessLimit;
         private const uint AccessGenericWrite = 0x40000000;
         private const uint AccessFileWriteData = 0x0002;
         private const uint AccessSynchronize = 0x00100000;
@@ -64,6 +70,7 @@ namespace NevroTick
             private readonly int work;
             private readonly int cooperativeEnd;
             private readonly int retirement;
+            private readonly bool supervisesParent;
             private readonly string diagnosticPath;
             private readonly HeldFile image;
             private readonly KernelHandle process = new KernelHandle();
@@ -81,20 +88,32 @@ namespace NevroTick
             private bool contained;
             private bool jobEmpty;
 
-            internal AccessWatchdog(string[] args, Stopwatch clock)
+            internal AccessWatchdog(string[] arguments, Stopwatch clock)
             {
-                this.args = args;
+                const int innerLength = Forwarded + 13;
+                const int supervisionFields = 4;
+                supervisesParent = arguments.Length == innerLength + supervisionFields &&
+                    arguments[0] == AccessParentSupervisionMode;
+                if (supervisesParent)
+                {
+                    args = new string[innerLength];
+                    Array.Copy(arguments, supervisionFields, args, 0, args.Length);
+                }
+                else
+                {
+                    args = arguments;
+                }
                 this.clock = clock;
                 int guardianWork;
                 int guardianRetirement;
-                if (args.Length != Forwarded + 13 ||
+                if (args.Length != innerLength ||
                     (args[3] != "access" && args[3] != "standard") ||
                     args[4].Length != 32 || !Regex.IsMatch(args[4], @"\A[0-9a-f]{32}\z") ||
                     !Guid.TryParseExact(args[Forwarded + 8], "D", out run) || run == Guid.Empty ||
                     !String.Equals(run.ToString("D"), args[Forwarded + 8], StringComparison.Ordinal) ||
                     !AccessBudget(args[Forwarded + 9], args[Forwarded + 10], out guardianWork, out guardianRetirement) ||
                     !AccessBudget(args[Forwarded + 11], args[Forwarded + 12], out work, out retirement) ||
-                    retirement - work < 2)
+                    retirement - work < (supervisesParent ? 4 : 2))
                     throw new ArgumentException("prestart-access-parent:input");
 
                 // Leave part of the existing native allowance for the parent to
@@ -113,19 +132,30 @@ namespace NevroTick
                     "deployment-owner");
                 long imageBytes = AccessLength(args[1]);
                 CheckFileExpectation(imageBytes, args[2], MaxImageBytes, "access-watchdog");
-                image = new HeldFile(args[0], imageBytes, args[2]);
+                if (supervisesParent)
+                {
+                    string parentPath = arguments[1];
+                    CheckLocalPath(parentPath, AccessParentName);
+                    long parentBytes = AccessLength(arguments[2]);
+                    CheckFileExpectation(parentBytes, arguments[3], MaxImageBytes, "access-parent");
+                    image = new HeldFile(parentPath, parentBytes, arguments[3]);
+                }
+                else
+                {
+                    image = new HeldFile(args[0], imageBytes, args[2]);
+                }
             }
 
             internal void Run()
             {
-                // Borrow this original private pipe for the single small receipt.
-                // A separate, write-only disk handle is the child's standard error.
+                // Only this process owns the outward status writer. The outer
+                // owner receives the inner parent's record through a private pipe.
                 IntPtr status = GetStdHandle(StdErrorHandle);
                 if (GetFileType(status) != FileTypePipe || status == GetStdHandle(StdInputHandle) ||
                     status == GetStdHandle(StdOutputHandle))
                     throw new InvalidDataException("prestart-access-parent:status-pipe");
 
-                string line;
+                byte[] bytes = null;
                 using (image)
                 using (actor = PrestartActor.CaptureCurrent(clock, work))
                 using (process)
@@ -133,11 +163,20 @@ namespace NevroTick
                 using (input)
                 using (output)
                 using (error)
+                using (PipeEnds privateStatus = supervisesParent ? new PipeEnds() : null)
                 {
                     try
                     {
                         image.Admit(clock, work);
-                        OpenDiagnostic();
+                        if (supervisesParent)
+                        {
+                            ConfirmSupervisorImage();
+                            PreparePrivateStatusWriter(privateStatus);
+                        }
+                        else
+                        {
+                            OpenDiagnostic();
+                        }
                         DuplicateStandardHandle(StdInputHandle, input, false, "stdin");
                         DuplicateStandardHandle(StdOutputHandle, output, false, "stdout");
                         PrepareJob();
@@ -147,6 +186,7 @@ namespace NevroTick
                         CloseOwnedHandle(error, "close-access-stderr");
                         using (childToken = ConfirmSuspended())
                         {
+                            CheckDeadline(clock, work, "access-resume");
                             uint suspendCount = ResumeThread(thread);
                             if (suspendCount == uint.MaxValue)
                                 throw DeploymentNativeError("resume-access-watchdog");
@@ -159,18 +199,28 @@ namespace NevroTick
                             WaitForWatchdog(cooperativeEnd);
                             uint exit = ReadWatchdogExit();
                             ObserveEmptyJob(cooperativeEnd);
-                            if (exit == 0)
+                            if (supervisesParent && exit != 0)
+                                throw new InvalidDataException("prestart-access-parent:inner-exit");
+                            if (!supervisesParent && exit == 0)
                                 CheckDeadline(clock, work, "access-work");
                             childToken.VerifyUnchanged(clock, retirement);
                             actor.VerifyCurrent(clock, retirement);
                             image.Confirm(clock, retirement);
 
-                            int size;
-                            string digest = ReadDiagnostic(out size);
-                            line = String.Format(CultureInfo.InvariantCulture, "{0} {1:D} {2} {3} {4} {5} {6} {7} {8}\n",
-                                AccessExitVersion, run, args[3], args[4], image.ConfirmedSha256, pid, exit, size, digest);
+                            if (!supervisesParent)
+                            {
+                                int size;
+                                string digest = ReadDiagnostic(out size);
+                                string line = String.Format(CultureInfo.InvariantCulture,
+                                    "{0} {1:D} {2} {3} {4} {5} {6} {7} {8}\n", AccessExitVersion, run, args[3],
+                                    args[4], image.ConfirmedSha256, pid, exit, size, digest);
+                                bytes = Encoding.ASCII.GetBytes(line);
+                            }
                         }
                         CloseRetiredHandles();
+                        if (supervisesParent)
+                            bytes = ReadRetiredParentStatus(privateStatus);
+                        CheckDeadline(clock, retirement, "access-release");
                     }
                     catch (Exception primary)
                     {
@@ -192,13 +242,64 @@ namespace NevroTick
                     }
                 }
 
-                byte[] bytes = Encoding.ASCII.GetBytes(line);
                 CheckDeadline(clock, retirement, "access-publication");
                 uint written;
                 if (!WriteAccessStatus(status, bytes, (uint)bytes.Length, out written, IntPtr.Zero) ||
                     written != bytes.Length)
                     throw new IOException("prestart-access-parent:status-write");
                 CheckDeadline(clock, retirement, "access-publication");
+            }
+
+            private void PreparePrivateStatusWriter(PipeEnds status)
+            {
+                IntPtr current = GetCurrentProcess();
+                IntPtr duplicate;
+                if (!DuplicateHandle(current, status.Write.DangerousGetHandle(), current, out duplicate,
+                    0, true, DuplicateSameAccess))
+                    throw DeploymentNativeError("duplicate-access-status");
+                error.Take(duplicate);
+                CloseOwnedHandle(status.Write, "close-access-private-status-writer");
+            }
+
+            private byte[] ReadRetiredParentStatus(PipeEnds status)
+            {
+                // Only the inner parent inherited this writer. We read it
+                // after the original process and every job member have exited.
+                using (MemoryStream bytes = new MemoryStream(AccessStatusRecordLimit))
+                {
+                    byte[] chunk = new byte[AccessStatusRecordLimit + 1];
+                    while (true)
+                    {
+                        CheckDeadline(clock, retirement, "access-parent-status");
+                        uint limit = checked((uint)(chunk.Length - bytes.Length));
+                        uint read;
+                        if (!ReadAccessBytes(status.Read, chunk, limit, out read, IntPtr.Zero))
+                        {
+                            int errorCode = Marshal.GetLastWin32Error();
+                            if (errorCode != AccessStatusPipeClosed)
+                                throw new System.ComponentModel.Win32Exception(errorCode, "prestart-access-parent:read-status");
+                            break;
+                        }
+                        if (read == 0 || read > limit || bytes.Length + read > AccessStatusRecordLimit)
+                            throw new InvalidDataException("prestart-access-parent:status-size");
+                        bytes.Write(chunk, 0, checked((int)read));
+                    }
+                    if (bytes.Length == 0)
+                        throw new InvalidDataException("prestart-access-parent:status-missing");
+                    CloseOwnedHandle(status.Read, "close-access-private-status-reader");
+                    return bytes.ToArray();
+                }
+            }
+
+            private void ConfirmSupervisorImage()
+            {
+                StringBuilder observed = new StringBuilder(MaxImagePath + 1);
+                uint count = (uint)observed.Capacity;
+                if (!QueryAccessSupervisorImage(GetCurrentProcess(), 0, observed, ref count))
+                    throw DeploymentNativeError("access-supervisor-image");
+                if (count != observed.Length || !String.Equals(observed.ToString(), image.Path, StringComparison.Ordinal))
+                    throw new InvalidDataException("prestart-access-parent:supervisor-image");
+                image.ConfirmPath();
             }
 
             private void OpenDiagnostic()
@@ -234,15 +335,16 @@ namespace NevroTick
                 if (job.IsInvalid)
                     throw DeploymentNativeError("create-access-job");
                 const uint flags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
+                uint processLimit = supervisesParent ? AccessParentProcessLimit : AccessWatchdogProcessLimit;
                 JobExtendedLimits limits = new JobExtendedLimits();
                 limits.Basic.LimitFlags = flags;
-                limits.Basic.ActiveProcessLimit = AccessWatchdogProcessLimit;
+                limits.Basic.ActiveProcessLimit = processLimit;
                 uint size = (uint)Marshal.SizeOf(typeof(JobExtendedLimits));
                 if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref limits, size))
                     throw DeploymentNativeError("configure-access-job");
                 if (!QueryJobLimits(job, JobObjectExtendedLimitInformation, out limits, size, IntPtr.Zero))
                     throw DeploymentNativeError("query-access-job-limits");
-                if (limits.Basic.LimitFlags != flags || limits.Basic.ActiveProcessLimit != AccessWatchdogProcessLimit)
+                if (limits.Basic.LimitFlags != flags || limits.Basic.ActiveProcessLimit != processLimit)
                     throw new InvalidDataException("prestart-access-parent:job-limits");
             }
 
@@ -290,15 +392,17 @@ namespace NevroTick
                     // bounded digit strings or lowercase hex.
                     StringBuilder command = new StringBuilder();
                     command.Append('"').Append(image.Path).Append('"');
-                    for (int index = Forwarded; index < Forwarded + 11; index++)
+                    int firstArgument = supervisesParent ? 0 : Forwarded;
+                    for (int index = firstArgument; index < Forwarded + 11; index++)
                         command.Append(" \"").Append(args[index]).Append('"');
                     actor.VerifyCurrent(clock, work);
                     int elapsed = checked((int)Math.Ceiling(clock.Elapsed.TotalMilliseconds));
                     if (elapsed >= work)
                         throw new TimeoutException("prestart-access-parent:handoff-deadline");
                     command.Append(' ').Append((work - elapsed).ToString(CultureInfo.InvariantCulture))
-                        .Append(' ').Append((cooperativeEnd - elapsed).ToString(CultureInfo.InvariantCulture))
-                        .Append(' ').Append(AccessSettlementMode);
+                        .Append(' ').Append((cooperativeEnd - elapsed).ToString(CultureInfo.InvariantCulture));
+                    if (!supervisesParent)
+                        command.Append(' ').Append(AccessSettlementMode);
 
                     uint flags = ExtendedStartupInfoPresent | CreateUnicodeEnvironment | CreateNoWindow | CreateSuspended;
                     ProcessInformation created;
@@ -462,7 +566,7 @@ namespace NevroTick
                 if (size != 0)
                 {
                     uint read;
-                    if (!ReadAccessDiagnostic(diagnostic, bytes, (uint)size, out read, IntPtr.Zero))
+                    if (!ReadAccessBytes(diagnostic, bytes, (uint)size, out read, IntPtr.Zero))
                         throw DeploymentNativeError("read-access-diagnostic");
                     if (read != size)
                         throw new InvalidDataException("prestart-access-parent:diagnostic-read");
@@ -523,11 +627,16 @@ namespace NevroTick
         private static extern bool SeekAccessDiagnostic(SafeFileHandle file, long distance, out long position, uint origin);
 
         [DllImport("kernel32.dll", EntryPoint = "ReadFile", ExactSpelling = true, SetLastError = true)]
-        private static extern bool ReadAccessDiagnostic(SafeFileHandle file, [Out] byte[] buffer, uint count,
+        private static extern bool ReadAccessBytes(SafeFileHandle file, [Out] byte[] buffer, uint count,
             out uint read, IntPtr overlapped);
 
         [DllImport("kernel32.dll", EntryPoint = "WriteFile", ExactSpelling = true, SetLastError = true)]
         private static extern bool WriteAccessStatus(IntPtr status, byte[] buffer, uint count,
             out uint written, IntPtr overlapped);
+
+        [DllImport("kernel32.dll", EntryPoint = "QueryFullProcessImageNameW", ExactSpelling = true, SetLastError = true,
+            CharSet = CharSet.Unicode)]
+        private static extern bool QueryAccessSupervisorImage(IntPtr process, uint flags, StringBuilder path,
+            ref uint size);
     }
 }

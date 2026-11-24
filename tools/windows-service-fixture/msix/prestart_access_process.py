@@ -14,7 +14,8 @@ from typing import BinaryIO
 
 from check_package import Refused, read_regular
 from prestart_deployment_session import (
-    MAX_FRAME, PrivateAccessDiagnostic, _decode_private_access_diagnostic, _read, _remaining, _require_deadlines,
+    MAX_FRAME, AccessStatusOverflow, PrivateAccessDiagnostic, _combined_failure, _decode_private_access_diagnostic,
+    _read, _remaining, _require_deadlines,
 )
 from prestart_receipts import DeploymentRun, Member, PrestartProbe, ReceiptRefused, SHA256, require, require_deployment_run
 
@@ -136,17 +137,45 @@ class _AccessProcess:
     _retirement_deadline: float
     _buffer: bytearray = field(default_factory=bytearray, init=False, repr=False)
     _status_eof: bool = field(default=False, init=False)
+    _status_refusal: AccessStatusOverflow | None = field(default=None, init=False)
     _settlement: _Settlement | None = field(default=None, init=False)
     _discarded_wire_bytes: int = field(default=0, init=False)
 
-    def _wait_settlement(self, deadline: float) -> _Settlement:
-        """Wait for the original WSL pipe EOF and parent exit, then verify native bytes."""
+    def _wait_relay(self, deadline: float) -> None:
+        """Collect the original host process under the remaining allowance."""
+        status: int = self._process.wait(timeout=_remaining(deadline))
+        _remaining(deadline)
+        require(status == 0, "native access parent refused settlement")
+
+    def _retire_refused_relay(self, deadline: float, refusal: ReceiptRefused | None) -> None:
+        """Keep the refusal while collecting host exit independently of native settlement."""
+        failures: list[BaseException] = [] if refusal is None else [refusal]
+        try:
+            self._wait_relay(deadline)
+        except BaseException as error:
+            failures.append(error)
+        if self._process.returncode is not None:
+            # An exited relay can no longer write. Abandon its remaining
+            # bytes without treating closed streams as native EOF evidence.
+            pipe: BinaryIO
+            for pipe in (self.stdout, self._status):
+                try:
+                    pipe.close()
+                except BaseException as error:
+                    failures.append(error)
+        failure: BaseException | None = _combined_failure("native access transport and relay retirement failed", failures)
+        if failure is not None:
+            raise failure from None
+
+    def _wait_settlement(self, deadline: float, *, retiring: bool) -> _Settlement:
+        """Bound the status read and account for the original relay separately from its witness."""
         require(self.stdin.closed and self.stdout.closed, "native access pipes still owned by supervisor")
         _require_deadlines(deadline, self._retirement_deadline)
         _remaining(deadline)
         if self._settlement is not None:
             return self._settlement
-        while not self._status_eof:
+        reported_status: bool = self._status_refusal is not None
+        while not self._status_eof and self._status_refusal is None:
             chunk: bytes = _read(self._status.fileno(), _MAX_STATUS + 1 - len(self._buffer), deadline)
             if not chunk:
                 self._status_eof = True
@@ -154,12 +183,14 @@ class _AccessProcess:
                 break
             self._buffer.extend(chunk)
             if len(self._buffer) > _MAX_STATUS:
-                self._status_eof = True
-                self._status.close()
-            require(len(self._buffer) <= _MAX_STATUS, "oversized native access settlement")
-        status: int = self._process.wait(timeout=_remaining(deadline))
-        _remaining(deadline)
-        require(status == 0, "native access parent refused settlement")
+                self._status_refusal = AccessStatusOverflow("oversized native access settlement")
+        if self._status_refusal is not None:
+            if retiring:
+                self._retire_refused_relay(deadline, refusal=None if reported_status else self._status_refusal)
+            # During capture, let the supervisor signal the other owners
+            # before waiting again. The invalid witness always refuses.
+            raise self._status_refusal
+        self._wait_relay(deadline)
         observed: _Settlement = _decode_status(bytes(self._buffer), self._run, self._role, self._nonce, self._watchdog)
         self._check_diagnostics(observed)
         _remaining(deadline)
@@ -179,7 +210,7 @@ class _AccessProcess:
 
     def wait_retired(self, deadline: float) -> None:
         """Require native success. Exact exit 3 permits separate diagnostic readback only."""
-        status: _Settlement = self._wait_settlement(deadline)
+        status: _Settlement = self._wait_settlement(deadline, retiring=False)
         require(status.native_exit == 0, "native access watchdog refused operation")
 
     def wait_access_settled(self, deadline: float) -> None:
@@ -191,12 +222,13 @@ class _AccessProcess:
             # sentinel byte. Closing a still-written POSIX relay could affect
             # the independent Windows status channel.
             limit: int = MAX_FRAME + 4
-            require(self._discarded_wire_bytes <= limit, "excess native access output during retirement")
+            if self._discarded_wire_bytes > limit:
+                self._retire_refused_relay(deadline, ReceiptRefused("excess native access output during retirement"))
             chunk: bytes = _read(self.stdout.fileno(), min(4096, limit + 1 - self._discarded_wire_bytes), deadline)
             if not chunk:
                 self.stdout.close()
             self._discarded_wire_bytes += len(chunk)
-        status: _Settlement = self._wait_settlement(deadline)
+        status: _Settlement = self._wait_settlement(deadline, retiring=True)
         require(status.native_exit in {0, 3}, "native access retirement unconfirmed")
 
     def private_diagnostic(self) -> PrivateAccessDiagnostic | None:
@@ -231,7 +263,7 @@ class PrestartAccessAttempt:
                 and all(path.parent == inputs.parent.parent for path in
                         (inputs.watchdog, inputs.guardian, inputs.entry, diagnostic_path)),
                 "invalid fixed native access staging")
-        require(_valid_budgets(guardian_cutoffs) and _valid_budgets(watchdog_cutoffs, minimum_grace_ms=2),
+        require(_valid_budgets(guardian_cutoffs) and _valid_budgets(watchdog_cutoffs, minimum_grace_ms=4),
                 "invalid native access budgets")
         self._inputs: AccessWatchdogInputs = inputs
         self._probe: PrestartProbe = probe
@@ -247,7 +279,7 @@ class PrestartAccessAttempt:
         self._retirement_deadline: float | None = None
 
     def start(self, run: DeploymentRun, deadline: float, retirement_deadline: float) -> _AccessProcess:
-        """Start the fixed watchdog parent once, keeping its original Popen on return."""
+        """Start the fixed outer owner once, keeping its original relay on return."""
         require(not self._spent, "native access attempt already used")
         self._spent = True
         self._retirement_deadline = retirement_deadline
@@ -255,7 +287,7 @@ class PrestartAccessAttempt:
         _require_deadlines(deadline, retirement_deadline)
         _remaining(deadline)
         inputs: AccessWatchdogInputs = self._inputs
-        _windows_path(inputs.parent)
+        parent_path: str = _windows_path(inputs.parent)
         _pinned_image(inputs.parent, inputs.parent_pin)
         _pinned_image(inputs.watchdog, inputs.watchdog_pin)
         initial: os.stat_result = _diagnostic_identity(self._diagnostic_path, self._diagnostics)
@@ -263,7 +295,8 @@ class PrestartAccessAttempt:
                 "native access requires an empty held diagnostic file")
         nonce: str = token_hex(16)
         arguments: list[str] = [
-            str(inputs.parent), _windows_path(inputs.watchdog), str(inputs.watchdog_pin.size),
+            str(inputs.parent), "--supervise-access-parent", parent_path, str(inputs.parent_pin.size),
+            inputs.parent_pin.sha256, _windows_path(inputs.watchdog), str(inputs.watchdog_pin.size),
             inputs.watchdog_pin.sha256, self._role, nonce, _windows_path(self._diagnostic_path),
             _windows_path(inputs.guardian), str(inputs.guardian_pin.size), inputs.guardian_pin.sha256,
             str(inputs.powershell_pin.size), inputs.powershell_pin.sha256, _windows_path(inputs.entry),
@@ -271,9 +304,9 @@ class PrestartAccessAttempt:
         ]
         now: float = time.monotonic()
         guardian: tuple[int, int] = _limited_budgets(self._guardian_cutoffs, now, deadline, retirement_deadline)
-        # The parent must be able to reserve time for both cooperative exit and forced recovery.
+        # The outer and inner native owners each need a cooperative and a forced allowance.
         watchdog: tuple[int, int] = _limited_budgets(
-            self._watchdog_cutoffs, now, deadline, retirement_deadline, minimum_grace_ms=2)
+            self._watchdog_cutoffs, now, deadline, retirement_deadline, minimum_grace_ms=4)
         arguments.extend(str(value) for value in (*guardian, *watchdog))
         self._attempted = True
         self._process = Popen(arguments, stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)

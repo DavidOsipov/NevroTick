@@ -70,6 +70,10 @@ class AccessWriterSettlement(Protocol):
         ...
 
 
+class AccessStatusOverflow(ReceiptRefused):
+    """Refuse a bounded status read while the original relay still needs retirement."""
+
+
 @dataclass(frozen=True, slots=True)
 class CapturedProbe:
     """Original bounded capture associated with its fixed probe and pipe owner."""
@@ -611,6 +615,7 @@ class _AccessPipe(_ProcessPipe[Run]):
         self._input_close_attempted: bool = False
         self._output_close_attempted: bool = False
         self._retirement_attempted: bool = False
+        self._capture_status_refusal: AccessStatusOverflow | None = None
 
     def capture(self, actor: object) -> Capture:
         require(actor is self._owner and not self._retirement_attempted, "access owner is foreign or retired")
@@ -633,10 +638,12 @@ class _AccessPipe(_ProcessPipe[Run]):
         self._retirement_attempted = True
         try:
             observed: None = self._owner.wait_retired(self._deadline)
-        except (TimeoutError, TimeoutExpired):
+        except (TimeoutError, TimeoutExpired, AccessStatusOverflow) as error:
             # The one original process remains owned. Retry only the observation
             # after all other owners have received retirement, under its later cutoff.
             self._retirement_attempted = False
+            if isinstance(error, AccessStatusOverflow):
+                self._capture_status_refusal = error
             raise
         require(observed is None, "invalid native owner retirement result")
         _remaining(self._deadline)
@@ -669,8 +676,15 @@ class _AccessPipe(_ProcessPipe[Run]):
             return
         self._retirement_attempted = True
         if isinstance(self._owner, AccessWriterSettlement):
-            observed: None = self._owner.wait_access_settled(self._retirement_deadline)
-            require(observed is None, "invalid native access writer retirement result")
+            try:
+                observed: None = self._owner.wait_access_settled(self._retirement_deadline)
+            except AccessStatusOverflow as error:
+                # The relay has exited. The original capture refusal still
+                # records the missing native witness, even if another owner fails.
+                if error is not self._capture_status_refusal:
+                    raise
+            else:
+                require(observed is None, "invalid native access writer retirement result")
             _remaining(self._retirement_deadline)
         else:
             self._wait_retired()

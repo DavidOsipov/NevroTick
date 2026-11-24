@@ -19911,6 +19911,126 @@ actor custody. Signed installed and broader qualification remain open.
 | `native-final/verification.json` | `ae139bde2dc6ad1580cbd17dce27ff26c51167f479599a86ef86f58bdcd3f313` |
 | `native-final/guest.json` | `bbddb281df537ae8bb2feb14ddeb420a278f818c0bb4d7d33cdeafefbdaf2e5b` |
 
+##### Reap the original access relay after a bounded output refusal
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/27. An oversized status during
+capture now leaves the original relay eligible for retirement observation.
+The supervisor signals the other owners before waiting under its original
+retirement cutoff. An oversized status first seen during cleanup stays
+visible beside a separate wait or exit failure. The primary refusal is
+reported once even if multiple owners fail. A consumed stdout drain
+sentinel stops further reads and still permits a bounded wait on the
+original host relay. The refused transport pipes remain held while exit
+is unconfirmed. After exit the host may abandon the remaining bytes.
+The malformed status or output still refuses the capture, and only the
+original valid native witness can confirm native settlement.
+
+Planning and fault-recovery review traced the actual `launch_prestart_session`
+consumer. The original capture control preserved the refusal while leaving
+the original `Popen.returncode` unset before fixture teardown. A separate
+control reproduced a duplicated primary inside the combined cleanup group.
+Three more controls against the intermediate repair exposed a masked
+cleanup-first status overflow, a skipped wait after the stdout sentinel,
+and a missing distinction between drain refusal and unconfirmed wait.
+Independent review identified one more early release in the status pipe.
+Its directed timeout control observed the closed pipe before teardown.
+The healthy two-role control passed on both intermediate candidates. The
+final candidate reaped the original POSIX relay, retained the cutoff and
+the relevant open pipes in the injected timeouts, and kept each distinct
+error once. Independent review checked the final source and raw results.
+The healthy joined route and the settled native-3 diagnostic control
+continued to pass through their existing consumers.
+
+Python 3.12.3 passed all 161 portable MSIX fixture tests in 18.265 s on a
+read-only snapshot of `b229013e05bb9d09ff25c9ba0e51651058d0a80e` and the
+exact overlay. The 65 s launcher used an isolated network namespace, an
+empty inherited environment and `python3 -I -B -X dev -Werror -m unittest
+discover -s tools/windows-service-fixture/msix -p 'test*.py' -v`. Input
+hashes matched both the frozen snapshot after the run and the worktree.
+The fixture uses real POSIX pipes and inert processes. The timeout is
+directed at the original process wait. These results leave live WSL
+interop and native job settlement open.
+
+| Record under `~/.local/share/nevrotick/p6-prestart-relay-tc3nlp0h/` | SHA-256 |
+| --- | --- |
+| `red.log` | `ad31c6c54d8825d048b1f11b129bf80e159112ab48f2942c0cdde0e767ac9083` |
+| `red-composition.log` | `1865618dc46c53295ea281b577bdd73e6ed1bf7764d15c18cb678470953d10a8` |
+| `combined-refusals-red-final.log` | `8b7bc0c28c5d601e85feb3910c165825f0cdcdaf74db3666e3913f7c482cb5ae` |
+| `status-custody-red.log` | `dae92f786a0df9b17f1ea4494e130384ed3f1d854d8b71aaeb46fd92b66625b2` |
+| `final-relay.patch` | `4c67e7dc20542cf772013299f3c4cb6aea00f3580077884542a188817a8b2fe4` |
+| `final-relay-inputs.sha256` | `eac0a25f226766a4e77668291c9aabb53ede4ac9d05f9bbdd524bb91d39fc789` |
+| `final-relay.log` | `558c71066f0d0a66cb69e5a3817b5dc1f985993762a3cdf289fc2783fed6cdc1` |
+
+The earlier broker metrics remain bound to their original fixture input
+digest. Native parent recovery has the separate checkpoint below.
+
+##### Retire a stalled Windows access parent from its original outer job
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/27. The access provider now selects a
+fixed outer mode of the pinned native parent image. The outer owner admits
+its own image and creates the original inner parent suspended in an
+unnamed kill-on-close job. It checks image identity, job membership, x64
+architecture and actor before the single resume. The child inherits the
+two protocol ends and one private status writer. The outer job handle and
+the outward status writer stay with the outer owner. Existing inner
+watchdog and diagnostic custody remain in the inner parent.
+
+The outer owner reserves part of its retirement interval for termination
+and confirmation. It forwards at most one bounded status record after the
+original inner process signals with exit zero, actual job accounting is
+empty, checked handle release succeeds and the private status stream
+reaches EOF. If the inner process stalls or refuses, the outer owner
+withholds the native record. The host still checks its own absolute
+deadlines, the relay exit, the full watchdog status and matching diagnostic
+bytes. WSL startup and native entry use separate clock origins, so these
+relative launch budgets do not establish a shared native deadline.
+
+Windows service and lifecycle review covered the fixed launch, inheritance,
+cutoff and publication checks. The integrated read-only Linux snapshot at
+`b229013e05bb9d09ff25c9ba0e51651058d0a80e` plus the retained overlay passed
+162 portable fixture tests in 18.859 s. The fixed inert relay checked the
+actual outer argv and image pin. A complete appearance of success paired
+with a refused outer exit reached the launch consumer and withheld the
+admitted capture and private diagnostic.
+
+In the owned offline Windows build 26100 guest, x64 .NET Framework `csc`
+compiled the exact parent and watchdog with `/warnaserror+ /warn:4`. Native
+controls preserved full watchdog status `0`, `3` and `65539`, the expected
+output and diagnostic bytes, and both stream EOFs. Those controls used the
+retained inert observation fixture. The separate parent-stall derivative
+stopped only the inner parent after its watchdog was resumed. The observer
+retained the original inner parent, watchdog and writer process handles.
+All three exited `1223`, the outer exit was `1`, and its accounting showed
+zero active and six total processes. Both streams reached EOF with no
+status record in 8,119 ms against the original 12,000 ms native cutoff.
+
+A second derivative wrote a complete, matching 250-byte success record
+into the private status pipe before the stall. Both original streams
+reached EOF, the outward status was empty and the diagnostic file could be
+reopened exclusively. The original processes exited `1223` and the outer
+job reported zero active in 8,147 ms. The controller retained a failed
+host verification after applying the three healthy-case roster to this
+one-case run. A separate readback checked the retained guest dispatch,
+input and output hashes, exact record, original process exits and empty
+outer stream without rerunning the guest. Both runs recorded offline and
+mapping controls and cleaned up their guest scratch and staging files.
+
+| Record under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `s06-access-outer.8e9sUayP/integration.patch` | `209a0a2f40a4b126a19f706a2219f6276cb1c504c9a7e2cfbd6735bda7797614` |
+| `s06-access-outer.8e9sUayP/inputs.sha256` | `10939daaf336cf88a953dd6c9a5e2dc146d6b55e64a2c7b486d364da1fe0acf5` |
+| `s06-access-outer.8e9sUayP/portable.log` | `3fef22761ab10a307cf205ba0f6db820fd45c6323f473feec8c2b6555f1f9bd3` |
+| `s06-access-outer.8e9sUayP/native-r1/verification.json` | `ff1b67daa41df8dbc7d2493f876e6a1a84d66858140f0cbde16a3607c000e867` |
+| `s06-access-outer.8e9sUayP/native-r1/guest.json` | `ccd1d103c34a645905dcf6a78714768213e8641ff77f09e7bfa33f7cfd741413` |
+| `s06-access-outer-status.8102gjgz/native-r1/verification.json` | `410f2fb548f311d9e6a1a0d669bd5ba4cbb5053cfb13a352bc7ae99754cdc4a3` |
+| `s06-access-outer-status.8102gjgz/readback.json` | `fb7a26d6fae9e61e230651c3629ae7a7ce94a52681a533778e2a24e5e4da2d9d` |
+
+The native controls establish observed termination of the original job
+in this guest. Live WSL-to-Windows relay settlement, cross-context actor
+launch and the signed installed path remain open. A nonzero WSL relay
+exit with no native record must continue to refuse admission. The host
+does not use that condition as a native cleanup witness.
+
 #### Bind startup admission to the first native exposure
 
 W11-W05/S3.1–S3.2 and CHECK-2/3/15/16/25/27. The service and contract
