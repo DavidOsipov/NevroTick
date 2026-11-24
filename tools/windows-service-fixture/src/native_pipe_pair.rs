@@ -13,7 +13,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use windows_platform_native::{
-    PeerProcess, PeerProcessError, PipeServerPidError, read_connected_pipe_server_pid,
+    ObservedProcessPrimaryToken, PeerProcess, PeerProcessError, PipeServerPidError,
+    ProcessPrimaryTokenObservationError, read_connected_pipe_server_pid,
 };
 use windows_sys::Win32::Foundation::{
     ERROR_INVALID_DATA, ERROR_PIPE_CONNECTED, GENERIC_READ, GetLastError, HANDLE,
@@ -151,24 +152,42 @@ impl LabRequestWriter {
             RequestWriter::FirstExchange(writer) => writer.write_fixture_fragment(bytes),
         }
     }
+}
 
+/// First-exchange writer bound to its initial supervisor and absolute cutoff.
+pub(super) struct LabSupervisedFirstExchangeWriter<'peer> {
+    /// The original client's native write slot, kept private to require the guard.
+    writer: NativePipeWrite<LabFirstExchangeWriter>,
+    /// Original process and token observation shared with reply acceptance.
+    supervisor: &'peer ObservedProcessPrimaryToken<'peer>,
+    /// The original deadline, shared with the original reply reader.
+    cutoff: Instant,
+}
+
+impl LabSupervisedFirstExchangeWriter<'_> {
     /// Submit one supervised request on the retained first-exchange client.
     /// # Errors
-    /// Refuses a different writer mode, an invalidated peer or an expired write.
-    pub(super) fn write_supervised_first_exchange(
-        &mut self,
-        bytes: &[u8],
-        parent: &PeerProcess,
-        cutoff: Instant,
-    ) -> Result<(), LabPipeError> {
-        let RequestWriter::FirstExchange(writer) = &mut self.0 else {
-            return Err(LabPipeError::WriteSlot);
-        };
-        writer.write_fixture_fragment_before(bytes, cutoff, |pipe: BorrowedHandle<'_>| {
-            check_fixture_peer_before_cutoff(cutoff, Instant::now, || {
-                check_supervised_first_exchange_peer(parent, pipe)
+    /// Preserve the first peer, deadline or native write refusal.
+    pub(super) fn write(&mut self, bytes: &[u8]) -> Result<(), LabPipeError> {
+        let cutoff: Instant = self.cutoff;
+        let supervisor: &ObservedProcessPrimaryToken<'_> = self.supervisor;
+        self.writer
+            .write_fixture_fragment_before(bytes, cutoff, |pipe: BorrowedHandle<'_>| {
+                check_fixture_peer_before_cutoff(cutoff, Instant::now, || {
+                    check_supervised_first_exchange_peer(supervisor, pipe)
+                })
             })
-        })
+    }
+
+    /// Check the supervisor on the exact client from which a reply was collected.
+    /// The reply owner brackets this sample and its acceptance by the original cutoff.
+    /// # Errors
+    /// Reject another client handle, a failed observation or changed peer.
+    pub(super) fn check_reply_peer(&self, client: BorrowedHandle<'_>) -> Result<(), LabPipeError> {
+        if client.as_raw_handle() != self.writer.client().as_raw_handle() {
+            return Err(LabPipeError::ForeignReplyPair);
+        }
+        check_supervised_first_exchange_peer(self.supervisor, client)
     }
 }
 
@@ -331,6 +350,8 @@ pub(super) enum LabPipeError {
     ForeignPeer,
     /// Observing the retained supervising process failed.
     Supervisor(PeerProcessError),
+    /// The original supervisor's primary-token observation refused.
+    SupervisorToken(ProcessPrimaryTokenObservationError),
     /// The supervised exchange reached its cutoff at a peer guard.
     SupervisorCutoff,
     /// The physical reply belongs to a different laboratory connection.
@@ -367,6 +388,7 @@ impl fmt::Display for LabPipeError {
                 formatter.write_str("fixture pipe endpoint belongs to another process")
             }
             Self::Supervisor(cause) => write!(formatter, "fixture pipe supervisor: {cause}"),
+            Self::SupervisorToken(cause) => write!(formatter, "fixture supervisor token: {cause}"),
             Self::SupervisorCutoff => formatter.write_str("fixture supervisor cutoff elapsed"),
             Self::ForeignReplyPair => {
                 formatter.write_str("fixture reply belongs to a different pipe pair")
@@ -530,31 +552,59 @@ pub(super) fn open_first_exchange_client(
     case: u32,
 ) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
     let name: LabPipeName = LabPipeName::for_process(std::process::id(), case);
-    first_exchange_client(open_client(&name, ServerMode::Duplex)?)
+    let (reader, writer): (LabPipeReader, NativePipeWrite<LabFirstExchangeWriter>) =
+        first_exchange_slots(open_client(&name, ServerMode::Duplex)?)?;
+    Ok((
+        reader,
+        LabRequestWriter(RequestWriter::FirstExchange(writer)),
+    ))
 }
 
 /// Open only the fixture case of the retained supervising process.
 /// # Errors
-/// Refuse an open or setup failure, an exited supervisor or a different server.
-pub(super) fn open_supervised_first_exchange_client(
+/// Refuse an expired cutoff, open or setup failure, or an unconfirmed supervisor.
+pub(super) fn open_supervised_first_exchange_client<'peer>(
     case: u32,
-    parent: &PeerProcess,
-) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
+    supervisor: &'peer ObservedProcessPrimaryToken<'peer>,
+    cutoff: Instant,
+) -> Result<(LabPipeReader, LabSupervisedFirstExchangeWriter<'peer>), LabPipeError> {
+    if Instant::now() >= cutoff {
+        return Err(LabPipeError::SupervisorCutoff);
+    }
+    let parent: &PeerProcess = supervisor.process();
     parent.check_live().map_err(LabPipeError::Supervisor)?;
     let name: LabPipeName = LabPipeName::for_process(parent.pid().get(), case);
     let client: OwnedHandle = open_client(&name, ServerMode::Duplex)?;
-    check_supervised_first_exchange_peer(parent, client.as_handle())?;
-    first_exchange_client(client)
+    check_fixture_peer_before_cutoff(cutoff, Instant::now, || {
+        check_supervised_first_exchange_peer(supervisor, client.as_handle())
+    })?;
+    let (reader, writer): (LabPipeReader, NativePipeWrite<LabFirstExchangeWriter>) =
+        first_exchange_slots(client)?;
+    Ok((
+        reader,
+        LabSupervisedFirstExchangeWriter {
+            writer,
+            supervisor,
+            cutoff,
+        },
+    ))
 }
 
-/// Sample the original retained supervisor around the connected client's PID.
+/// Sample the original supervisor's process and token across original pipe reads.
 /// # Errors
-/// Preserve a failed pipe query or refuse an exited or different fixture peer.
-pub(super) fn check_supervised_first_exchange_peer(
-    parent: &PeerProcess,
+/// Preserve the earliest observation refusal or a different fixture peer.
+fn check_supervised_first_exchange_peer(
+    supervisor: &ObservedProcessPrimaryToken<'_>,
     client: BorrowedHandle<'_>,
 ) -> Result<(), LabPipeError> {
+    let parent: &PeerProcess = supervisor.process();
     parent.check_live().map_err(LabPipeError::Supervisor)?;
+    if server_process_id(client)? != parent.pid().get() {
+        return Err(LabPipeError::ForeignPeer);
+    }
+    supervisor
+        .reobserve()
+        .map_err(LabPipeError::SupervisorToken)?;
     if server_process_id(client)? != parent.pid().get() {
         return Err(LabPipeError::ForeignPeer);
     }
@@ -619,9 +669,9 @@ pub(super) fn peek_fixture_child_stderr(stderr: &ChildStderr) -> io::Result<Opti
 /// Split only the original admitted handle into its read and write owners.
 /// # Errors
 /// Preserve the write-event setup failure.
-fn first_exchange_client(
+fn first_exchange_slots(
     client: OwnedHandle,
-) -> Result<(LabPipeReader, LabRequestWriter), LabPipeError> {
+) -> Result<(LabPipeReader, NativePipeWrite<LabFirstExchangeWriter>), LabPipeError> {
     let handle: Rc<OwnedHandle> = Rc::new(client);
     let reader: LabPipeReader = LabPipeReader {
         handle: Rc::clone(&handle),
@@ -630,10 +680,7 @@ fn first_exchange_client(
     let writer: NativePipeWrite<LabFirstExchangeWriter> =
         NativePipeWrite::for_first_exchange_client(LabFirstExchangeWriter(handle))
             .map_err(LabPipeError::OverlappedWrite)?;
-    Ok((
-        reader,
-        LabRequestWriter(RequestWriter::FirstExchange(writer)),
-    ))
+    Ok((reader, writer))
 }
 
 /// Open one test-only, per-process duplex pipe with a fixed identification client.

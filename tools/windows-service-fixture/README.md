@@ -35,8 +35,9 @@ python3 -I -B tools/windows-service-fixture/msix/prepare_payload.py \
 The output has `payload/`, `sdk/` and `input-set.json`. The JSON printed by
 the command includes the inventory digest consumed by the existing offline
 packer. Omitting `--sdk-source` emits just the payload tree and its file
-digests. Exit 3 means the tree was published and the final directory flush
-failed. Read back its contents before attempting another output.
+digests. Exit 3 means rename completed with unconfirmed durability, path
+or descriptor cleanup. Reconcile the retained tree before attempting
+another output.
 The [S0.6 task](../../tasks/windows11-integration.md#publish-the-disabled-service-pack-inputs-as-one-tree--22-november-2026)
 records the pinned inputs, independent archive controls and Windows gates.
 

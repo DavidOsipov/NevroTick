@@ -410,7 +410,7 @@ fn assert_original(observed: &Observed, peer_times: (u64, u64)) -> Result<(), Fa
 /// Refuse nonrepresentable fixture arithmetic rather than weakening the model.
 /// # Panics
 /// Refuse a host date outside this explicitly bounded Era0 control.
-fn ntp_nanoseconds(wall: SystemTime) -> Result<i128, Failure> {
+pub(super) fn ntp_nanoseconds(wall: SystemTime) -> Result<i128, Failure> {
     let unix = match wall.duration_since(UNIX_EPOCH) {
         Ok(value) => i128::try_from(value.as_nanos()).map_err(|_| Failure::Control)?,
         Err(value) => -i128::try_from(value.duration().as_nanos()).map_err(|_| Failure::Control)?,

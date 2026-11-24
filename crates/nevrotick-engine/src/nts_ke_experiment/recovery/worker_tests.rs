@@ -45,7 +45,10 @@ use crate::nts_ke_experiment::{
     write_observed_run,
 };
 #[cfg(any(windows, target_os = "linux"))]
-use crate::{ExperimentalReferenceNs, RelativeMeasurementRefusal};
+use crate::{
+    ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
+    RelativeMeasurementRefusal, SourceScale,
+};
 use crate::{
     ManagedProtectedReport, RunClockContext, SoftwareClock, SourceProtectedProbeFailure,
     SourceProtectedProbeReport,
@@ -2189,6 +2192,7 @@ fn loopback_successor_hook(
                         target,
                     )
                     .map_err(Failure::SourcePolicy)?;
+                assert_eq!(replacement.declared_scale(), original.declared_scale());
                 assert!(!replacement.same_configuration(&original));
             }
             LoopbackSuccessor::Unwind => std::panic::resume_unwind(Box::new(Payload {
@@ -2229,11 +2233,22 @@ fn run_managed_loopback_control(
     successor: LoopbackSuccessor,
 ) -> Result<(), Failure> {
     let mut point: u8 = 0;
+    let measurement: Option<LoopbackMeasurement> = match successor {
+        LoopbackSuccessor::ApplyDeny | LoopbackSuccessor::ReplaceConfiguration => {
+            Some(LoopbackMeasurement {
+                profile: valid_loopback_measurement_profile()?,
+                // Keep the original scale equal to the replacement's default.
+                scale: SourceScale::Unknown,
+            })
+        }
+        LoopbackSuccessor::ApplyOrdinary | LoopbackSuccessor::Unwind => None,
+    };
     run_managed_loopback_observing(
         slot,
         admission,
         successor,
         true,
+        measurement,
         move || {
             point = point.checked_add(1).ok_or(Failure::Control)?;
             Ok(point)
@@ -2270,28 +2285,49 @@ fn bind_managed_loopback_peer() -> Result<(std::net::UdpSocket, std::net::Socket
     Ok((peer, remote))
 }
 
-/// Run the bounded worker while a separate peer owns its socket observations.
-/// Pass actual peer and Engine observations to the verifier after both joins.
-/// # Errors
-/// Preserve fixture setup, worker, peer and verifier failures.
-/// # Panics
-/// Fail if the actual worker or policy state differs from the selected scenario.
+/// Explicit checked assumptions for one component observation.
 #[cfg(any(windows, target_os = "linux"))]
-fn run_managed_loopback_observing<T: Send>(
-    slot: &'static WorkerSlot,
-    admission: &'static ProcessAdmission,
-    successor: LoopbackSuccessor,
-    sends_nak: bool,
-    peer_clock: impl FnMut() -> Result<T, Failure> + Send,
-    verify: impl FnOnce(Option<&ManagedProtectedReport>, [LoopbackPeerLeg<T>; 2]) -> Result<(), Failure>,
-) -> Result<(), Failure> {
-    use crate::nts_ke_experiment::receive_submitted;
+struct LoopbackMeasurement {
+    profile: ExperimentalProfile,
+    scale: SourceScale,
+}
+
+/// Finite coherence allowance for the experimental loopback calculation.
+#[cfg(any(windows, target_os = "linux"))]
+const LOOPBACK_MEASUREMENT_ALLOWANCE_NS: u64 = 30_000_000_000;
+
+/// Construct the same fixture model for ordinary and control successors.
+/// # Errors
+/// Refuse a date window or allowance rejected by the checked constructor.
+#[cfg(any(windows, target_os = "linux"))]
+fn valid_loopback_measurement_profile() -> Result<ExperimentalProfile, Failure> {
+    ExperimentalProfile::new(0, u64::from(u32::MAX), LOOPBACK_MEASUREMENT_ALLOWANCE_NS)
+        .map_err(|_| Failure::Control)
+}
+
+/// The installed source and its alias under one fixture policy authority.
+#[cfg(any(windows, target_os = "linux"))]
+struct LoopbackSource {
+    authority: crate::SourcePolicyAuthority,
+    source: crate::SourceHandle,
+    alias: crate::SourceHandle,
+    expected: crate::SourceConfigurationSnapshot,
+    target: crate::KePreviewTarget,
+}
+
+/// Install the exact loopback configuration with an optional scale declaration.
+/// # Errors
+/// Preserve source, address, target and configuration refusals.
+#[cfg(any(windows, target_os = "linux"))]
+fn prepare_loopback_source(
+    remote: std::net::SocketAddr,
+    scale: Option<SourceScale>,
+) -> Result<LoopbackSource, Failure> {
     use crate::{
         KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
         SourcePolicyAuthority, SourcePolicyLimits,
     };
 
-    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
     let limits: SourcePolicyLimits =
         SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))
             .map_err(Failure::SourcePolicy)?;
@@ -2309,6 +2345,52 @@ fn run_managed_loopback_observing<T: Send>(
     let expected: SourceConfigurationSnapshot = authority
         .install_ke_preview_configuration(&source, addresses, target.clone())
         .map_err(Failure::SourcePolicy)?;
+    let expected: SourceConfigurationSnapshot = if let Some(scale) = scale {
+        authority
+            .replace_source_scale(&expected, scale)
+            .map_err(Failure::SourcePolicy)?
+    } else {
+        expected
+    };
+    Ok(LoopbackSource {
+        authority,
+        source,
+        alias,
+        expected,
+        target,
+    })
+}
+
+/// Run the bounded worker while a separate peer owns its socket observations.
+/// Pass actual peer and Engine observations to the verifier after both joins.
+/// # Errors
+/// Preserve fixture setup, worker, peer and verifier failures.
+/// # Panics
+/// Fail if the actual worker or policy state differs from the selected scenario.
+#[cfg(any(windows, target_os = "linux"))]
+fn run_managed_loopback_observing<T: Send>(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    successor: LoopbackSuccessor,
+    sends_nak: bool,
+    measurement: Option<LoopbackMeasurement>,
+    peer_clock: impl FnMut() -> Result<T, Failure> + Send,
+    verify: impl FnOnce(Option<&ManagedProtectedReport>, [LoopbackPeerLeg<T>; 2]) -> Result<(), Failure>,
+) -> Result<(), Failure> {
+    use crate::nts_ke_experiment::receive_submitted;
+    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
+    let scale: Option<SourceScale> = measurement
+        .as_ref()
+        .map(|input: &LoopbackMeasurement| input.scale);
+    let profile: Option<ExperimentalProfile> =
+        measurement.map(|input: LoopbackMeasurement| input.profile);
+    let LoopbackSource {
+        authority,
+        source,
+        alias,
+        expected,
+        target,
+    }: LoopbackSource = prepare_loopback_source(remote, scale)?;
     let config: Config = Config::from_managed_protected(
         authority
             .authorize_protected_ke(&expected)
@@ -2352,7 +2434,7 @@ fn run_managed_loopback_observing<T: Send>(
             Err(CollectError::NotReady)
         ));
         let provider_before_join: Option<usize> = provider_lifetime.get().map(Weak::strong_count);
-        let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, None);
+        let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, profile);
         let peer_result: Result<[LoopbackPeerLeg<T>; 2], Failure> =
             peer_worker.join().unwrap_or(Err(Failure::Control));
         assert_eq!(
@@ -3384,7 +3466,6 @@ fn assert_joined_loopback_successor(
             let first: &ManagedProtectedHistory = joined.first_history().ok_or(Failure::Control)?;
             let ordinary: bool = matches!(successor, LoopbackSuccessor::ApplyOrdinary);
             assert_loopback_first_receipt(first, remote, expected, first_commit_window, ordinary);
-            let committed_at: Instant = first.history().committed_at();
             let first_timing: ReceiptTiming = original_receipt_timing(first)?;
             let terminal_timing: Option<ReceiptTiming> = joined
                 .terminal_history()
@@ -3396,34 +3477,24 @@ fn assert_joined_loopback_successor(
                     cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
                 }))
                 .map_err(|_| Failure::Control)?;
-            let projected: &crate::ManagedProtectedReceipt =
-                report.first().ok_or(Failure::Control)?;
+            let projected: &crate::ManagedProtectedReceipt = assert_first_loopback_projection(
+                &report,
+                &first_timing,
+                expected,
+                successor,
+                sends_nak,
+                first_commit_window,
+            )?;
             let nak: Option<Instant> = report.first_nak_at();
-            assert_eq!(nak.is_some(), sends_nak);
-            assert_eq!(projected.committed_at(), committed_at);
-            assert_eq!(projected.packet_bytes(), 252);
-            assert_eq!(projected.initial_cookie_population(), (1, 12));
-            assert_peer_timestamps(projected, FIRST_PEER_TIMESTAMPS);
-            let first_quality: (u8, i8, u32, u32) = match successor {
-                LoopbackSuccessor::ApplyOrdinary => (5, -23, 0x8123_4567, 0xf102_0304),
-                LoopbackSuccessor::ApplyDeny => (2, 0, 0, 0),
-                LoopbackSuccessor::ReplaceConfiguration | LoopbackSuccessor::Unwind => {
-                    FIRST_DELETION_QUALITY
-                }
-            };
-            assert_peer_quality(projected, first_quality);
-            first_timing.assert_projection(projected);
-            assert!(projected.configuration().same_configuration(expected));
-            assert!(projected.received_at() <= committed_at);
-            if let Some(nak) = nak {
-                assert!(committed_at <= nak && first_commit_window.contains(&nak));
-            }
             assert_loopback_work(&report, ordinary, sends_nak);
             assert_eq!(
                 report.recovery_unavailable(),
                 matches!(successor, LoopbackSuccessor::ReplaceConfiguration),
             );
             assert_eq!(report.power_unregistration_error(), None);
+            if !ordinary {
+                assert_eq!(report.terminal_measurement(), None);
+            }
             match (successor, report.terminal()) {
                 (LoopbackSuccessor::ApplyOrdinary, ManagedProtectedTerminal::Ordinary(receipt)) => {
                     let timing: ReceiptTiming = terminal_timing.ok_or(Failure::Control)?;
@@ -3431,9 +3502,11 @@ fn assert_joined_loopback_successor(
                         projected,
                         receipt,
                         expected,
-                        nak.unwrap_or(committed_at),
+                        nak.unwrap_or(first_timing.committed_at),
                         &timing,
-                    );
+                        *first_commit_window.end(),
+                        report.terminal_measurement(),
+                    )?;
                 }
                 (LoopbackSuccessor::ApplyDeny, ManagedProtectedTerminal::Restriction(history)) => {
                     assert_eq!(projected.leap_indicator(), 1);
@@ -3474,6 +3547,60 @@ fn assert_joined_loopback_successor(
     }
 }
 
+/// Inspect the original first receipt independently of the terminal disposition.
+/// # Errors
+/// Refuse a missing first receipt or failed independent measurement oracle.
+/// # Panics
+/// Fail if receipt custody, original numerics or first NAK chronology changes.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_first_loopback_projection<'a>(
+    report: &'a ManagedProtectedReport,
+    first_timing: &ReceiptTiming,
+    expected: &crate::SourceConfigurationSnapshot,
+    successor: LoopbackSuccessor,
+    sends_nak: bool,
+    first_commit_window: &std::ops::RangeInclusive<Instant>,
+) -> Result<&'a crate::ManagedProtectedReceipt, Failure> {
+    let committed_at: Instant = first_timing.committed_at;
+    let projected: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    let nak: Option<Instant> = report.first_nak_at();
+    assert_eq!(nak.is_some(), sends_nak);
+    assert_eq!(projected.committed_at(), committed_at);
+    assert_eq!(projected.packet_bytes(), 252);
+    assert_eq!(projected.initial_cookie_population(), (1, 12));
+    assert_peer_timestamps(projected, FIRST_PEER_TIMESTAMPS);
+    let first_quality: (u8, i8, u32, u32) = match successor {
+        LoopbackSuccessor::ApplyOrdinary => (5, -23, 0x8123_4567, 0xf102_0304),
+        LoopbackSuccessor::ApplyDeny => (2, 0, 0, 0),
+        LoopbackSuccessor::ReplaceConfiguration | LoopbackSuccessor::Unwind => {
+            FIRST_DELETION_QUALITY
+        }
+    };
+    assert_peer_quality(projected, first_quality);
+    first_timing.assert_projection(projected);
+    let first_measurement: Option<Result<ExperimentalMeasurement, MeasurementRefusal>> =
+        report.first_measurement();
+    if matches!(
+        successor,
+        LoopbackSuccessor::ApplyDeny | LoopbackSuccessor::ReplaceConfiguration
+    ) {
+        assert!(
+            matches!(first_measurement, Some(Ok(measurement)) if
+                measurement.declared_limit_ns() == LOOPBACK_MEASUREMENT_ALLOWANCE_NS),
+            "first receipt lost its original measurement: {first_measurement:?}"
+        );
+    }
+    if let Some(Ok(measurement)) = first_measurement {
+        first_timing.assert_measurement(measurement, FIRST_PEER_TIMESTAMPS)?;
+    }
+    assert!(projected.configuration().same_configuration(expected));
+    assert!(projected.received_at() <= committed_at);
+    if let Some(nak) = nak {
+        assert!(committed_at <= nak && first_commit_window.contains(&nak));
+    }
+    Ok(projected)
+}
+
 /// Debit exactly two real requests and each prescribed peer reply.
 /// # Panics
 /// Fail on a missing full send or a refunded receive frame, byte or readiness debit.
@@ -3512,6 +3639,8 @@ struct ReceiptTiming {
     reference_half_ns: u128,
     /// Independently paired bounds from the original local brackets.
     bounds: [Duration; 2],
+    /// Original authenticated acceptance, before the final commit and join.
+    accepted_at: Instant,
     /// Original guard observation, distinct from the receive and midpoint references.
     committed_at: Instant,
     /// Exact original native dispositions, retained before projecting the receipt.
@@ -3521,6 +3650,51 @@ struct ReceiptTiming {
 
 #[cfg(any(windows, target_os = "linux"))]
 impl ReceiptTiming {
+    /// Compare with independent fixed-point arithmetic over original captures and peer bits.
+    /// # Errors
+    /// Preserve a wall conversion or original receipt order failure.
+    /// # Panics
+    /// Fail if a joined measurement uses the wrong leg, bracket, age, or units.
+    fn assert_measurement(
+        &self,
+        measurement: ExperimentalMeasurement,
+        [receive, transmit]: [u64; 2],
+    ) -> Result<(), Failure> {
+        const NANOSECONDS: i128 = 1_000_000_000;
+        const Q32: i128 = 1_i128 << 32;
+        let t1: i128 = numerics_tests::ntp_nanoseconds(self.captures[0].1)?;
+        let send_return_wall: i128 = numerics_tests::ntp_nanoseconds(self.captures[1].1)?;
+        let t4: i128 = numerics_tests::ntp_nanoseconds(self.captures[2].1)?;
+        let (t2, t3): (i128, i128) = (i128::from(receive), i128::from(transmit));
+        let q1: i128 = (t1 * Q32) / NANOSECONDS;
+        let q4: i128 = (t4 * Q32) / NANOSECONDS;
+        let send_return_q32: i128 = (send_return_wall * Q32) / NANOSECONDS;
+        assert_eq!(
+            measurement
+                .coordinates()
+                .map(time_domain::UtcCoordinateQ32::ticks),
+            [q1, t2, t3, q4],
+        );
+        let coordinates: [i128; 5] = [q1, send_return_q32, t2, t3, q4];
+        let window: time_domain::EraWindow = measurement.software_window();
+        assert_eq!(Some(&window.earliest().ticks()), coordinates.iter().min());
+        assert_eq!(Some(&window.latest().ticks()), coordinates.iter().max());
+        assert_eq!(
+            measurement.nominal_phase().numerator(),
+            NANOSECONDS * (t2 + t3) - Q32 * (t1 + t4),
+        );
+        assert_eq!(
+            measurement.nominal_round_trip().numerator(),
+            Q32 * (t4 - t1) - NANOSECONDS * (t3 - t2),
+        );
+        let age: Duration = self
+            .accepted_at
+            .checked_duration_since(self.captures[2].2)
+            .ok_or(Failure::Control)?;
+        assert_eq!(measurement.acquisition_age(), age);
+        Ok(())
+    }
+
     /// Require public receipt accessors to preserve the original timing facts.
     /// # Panics
     /// Fail if the projection changes or discards an original timing value.
@@ -3599,6 +3773,7 @@ fn original_receipt_timing(
         run_context: Arc::clone(run_context),
         reference_half_ns,
         bounds: [minimum, maximum],
+        accepted_at: original.history().receipt().accepted_at(),
         committed_at: original.history().committed_at(),
         #[cfg(windows)]
         native: original.history().native_captures(),
@@ -3606,6 +3781,8 @@ fn original_receipt_timing(
 }
 
 /// Compare the ordinary terminal receipt with its original history and first receipt.
+/// # Errors
+/// Preserve independent numerical and original age check failures.
 /// # Panics
 /// Fail if either receipt loses invocation, timing, configuration or packet facts.
 #[cfg(any(windows, target_os = "linux"))]
@@ -3615,7 +3792,9 @@ fn assert_ordinary_loopback_receipt(
     expected: &crate::SourceConfigurationSnapshot,
     earliest_arrival: Instant,
     timing: &ReceiptTiming,
-) {
+    before_commit: Instant,
+    measurement: Option<Result<ExperimentalMeasurement, MeasurementRefusal>>,
+) -> Result<(), Failure> {
     assert_eq!(first.leap_indicator(), 0);
     assert!(first.same_invocation(receipt));
     assert!(receipt.configuration().same_configuration(expected));
@@ -3627,6 +3806,12 @@ fn assert_ordinary_loopback_receipt(
     assert_peer_timestamps(receipt, [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc]);
     assert_peer_quality(receipt, (7, -19, 0xcafe_4321, 0xa0b0_9080));
     timing.assert_projection(receipt);
+    if let Some(Ok(measurement)) = measurement {
+        assert!(timing.accepted_at <= before_commit);
+        assert!(before_commit < timing.committed_at);
+        timing.assert_measurement(measurement, [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc])?;
+    }
+    Ok(())
 }
 
 /// Compare joined DENY diagnostics with the permitted summary fields.
@@ -3843,7 +4028,7 @@ fn successor_writer_refuses_equal_value_foreign_control_before_producer() -> Res
     Ok(())
 }
 
-/// First protected reply earns one real-socket successor and joined exact DENY.
+/// Joined exact DENY preserves the first real-socket receipt's measurement.
 /// # Errors
 /// Preserve fixture or actual worker failure.
 #[cfg(any(windows, target_os = "linux"))]
@@ -3865,6 +4050,89 @@ fn managed_loopback_successor_preserves_nak_and_ordinary_reply_after_join() -> R
     run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyOrdinary)
 }
 
+/// Compare both original ordinary exchanges through the joined numerical consumer.
+/// # Errors
+/// Preserve checked fixture, worker and numerical failures.
+/// # Panics
+/// Fail on dropped declarations, numerical fabrication or a lost original refusal.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_loopback_measures_both_joined_ordinary_receipts() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 4] = [const { WorkerSlot::new() }; 4];
+    static ADMISSIONS: [ProcessAdmission; 4] = [const { ProcessAdmission::new() }; 4];
+    struct Scenario {
+        measurement: Option<LoopbackMeasurement>,
+        refusal: Option<MeasurementRefusal>,
+    }
+    let valid: ExperimentalProfile = valid_loopback_measurement_profile()?;
+    let wrong_date: ExperimentalProfile =
+        ExperimentalProfile::new(0, 0, LOOPBACK_MEASUREMENT_ALLOWANCE_NS)
+            .map_err(|_| Failure::Control)?;
+    let scenarios: [Scenario; 4] = [
+        Scenario {
+            measurement: None,
+            refusal: Some(MeasurementRefusal::Unavailable),
+        },
+        Scenario {
+            measurement: Some(LoopbackMeasurement {
+                profile: wrong_date,
+                scale: SourceScale::UnsmearedUtc,
+            }),
+            refusal: Some(MeasurementRefusal::DateScope),
+        },
+        Scenario {
+            measurement: Some(LoopbackMeasurement {
+                profile: valid,
+                scale: SourceScale::Smeared,
+            }),
+            refusal: Some(MeasurementRefusal::SourceScaleConflict),
+        },
+        Scenario {
+            measurement: Some(LoopbackMeasurement {
+                profile: valid,
+                scale: SourceScale::UnsmearedUtc,
+            }),
+            refusal: None,
+        },
+    ];
+    for (
+        (slot, admission),
+        Scenario {
+            measurement,
+            refusal,
+        },
+    ) in SLOTS.iter().zip(&ADMISSIONS).zip(scenarios)
+    {
+        run_managed_loopback_observing(
+            slot,
+            admission,
+            LoopbackSuccessor::ApplyOrdinary,
+            true,
+            measurement,
+            || Ok(()),
+            |report, _: [LoopbackPeerLeg<()>; 2]| {
+                let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
+                for result in [report.first_measurement(), report.terminal_measurement()] {
+                    let result: Result<ExperimentalMeasurement, MeasurementRefusal> =
+                        result.ok_or(Failure::Control)?;
+                    if let Some(expected) = refusal {
+                        assert_eq!(result, Err(expected));
+                    } else {
+                        let measurement: ExperimentalMeasurement =
+                            result.map_err(|_| Failure::Control)?;
+                        assert_eq!(
+                            measurement.declared_limit_ns(),
+                            LOOPBACK_MEASUREMENT_ALLOWANCE_NS
+                        );
+                    }
+                }
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
 /// Pair the genuine joined application captures with an independently timed peer.
 /// Both authenticated replies cross the real Windows UDP adapter.
 /// # Errors
@@ -3879,6 +4147,7 @@ fn managed_loopback_ordinary_legs_preserve_native_capture_placement() -> Result<
         &ADMISSION,
         LoopbackSuccessor::ApplyOrdinary,
         false,
+        None,
         || {
             read_clock_coordinates().map_err(|error: ClockReadError| {
                 eprintln!("native loopback peer clock read failed: {error:?}");
@@ -4015,7 +4284,7 @@ fn assert_cross_thread_qpc_order(leg: &str, interval: &str, earlier: i64, later:
     );
 }
 
-/// Equal-value replacement after real retirement refuses the exact staged control.
+/// Equal-value replacement refuses the retired control and preserves first measurement.
 /// # Errors
 /// Preserve fixture failure or unexpected typed refusal.
 #[cfg(any(windows, target_os = "linux"))]

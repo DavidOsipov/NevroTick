@@ -30661,6 +30661,46 @@ Coverage-guided fuzzing, native memory-detector campaigns and
 affected-file coverage/mutation qualification remain separate. The
 manual guard fault earns no generated-mutant credit.
 
+##### Run the native local DNS result through Engine adoption — 24 November 2026
+
+S2.2, W11-W03 DNS-3 and CHECK-21/24/25/27. Two Windows-only tests use
+the real `WinDNS` refresh on `localhost.` with owned IPv4 loopback UDP
+peers. Each original round has one sent request, times out, and returns
+without pending native refresh. The admitted port receives exactly one
+successor request with a fresh token and returns an ordinary reply. The
+joined report retains the original source configuration, and the source's
+selected membership moves to that port. A different port outside the
+source envelope reaches the typed `Foreign` refusal, retains the original
+membership and receives zero datagrams. This exercises the final joined
+outcomes of the actual route and policy owner.
+
+The independent integration review checked the live resolver and source
+adoption path against the wire and membership assertions. Both exact cases
+were discovered and passed in separate processes in the owned offline
+Windows Sandbox, build 26100. All four discovery and execution processes
+exited zero, were reaped and reached stream EOF. The scratch copy retired
+and both transfer directories were empty. The controller's seven refusal
+controls included a wrong case, zero tests, a wrong exit and an unretired
+process. No trust, service or clock change was needed.
+
+Rust 1.100.0 MSVC Clippy, x64-v3 link and PE/PDB readback passed on
+`5a142812b260c33493f8ec970e68d2d223333dbc` plus the selected test file.
+The first preflight rejected the older vendor selection. The retry rebuilt
+the 588-directory vendor set from reviewed copies and nine pinned local
+archives, and reached the test-only `doc_markdown` diagnostic. The final
+documented helper rendered and linked on the 754-input candidate
+`71df8339191e91436e98f45de3dcc97bb73a9ce8fdfab11bbd709438bac9d779`.
+Both failed attempts retain their original dispositions. The selected
+native scope is local IPv4. Ordinary Answer routing, live callback and
+cancellation overlap, other machine profiles, and affected-file native
+qualification remain open. This exchange supplies no Core-eligible sample.
+
+| Record under `~/.local/share/nevrotick/s22-dns-main.lbltCHLi/` | SHA-256 |
+| --- | --- |
+| `cross-built-v3/verification.json` | `e7b333e48673ea0a511b54f69d893d9da03f88d14d2c5ba330c9d83459da9d36` |
+| `cross-built-v3/ordinary/engine-tests.exe` | `f96e8d4f94dfe3860ef95dce4fabfe25eaf02ffc61733fe13fb4a26cc0863256` |
+| `native-recipe/dns_7c328ba9d750/verification.json` | `d856b71040a03a5c98cb23185010ebaec255f86e1c6289d6afcfc5b564187119` |
+
 ##### Protected KE membership at issuance and effects
 
 REQ-8/BND-1 and CHECK-6/21/25/27. Three Engine regressions isolate membership
@@ -31333,10 +31373,13 @@ result qualifies its selected fixture scope.
 
 **Joined successor source boundary.** The ordinary two-leg path in
 `datagram::receive_joined` returns `ReceivedInvocation::ManagedSuccessor`
-before the single-probe `measure_for_source` call. A declaration supplied
-to `receive_submitted` alone would leave the pair unmeasured. The joining
-owner can consume the genuine first and terminal ordinary histories
-before `ManagedProtectedReport::from_observed` projects them for reporting.
+before the single-probe `measure_for_source` call. The [joined measurement
+projection](#calculate-each-original-joined-ordinary-receipt) now retains
+the supplied experimental declaration on this route and measures each
+original ordinary receipt independently. The Windows facade still supplies
+no declaration. The future admitted history owner needs the genuine receipt
+and current authorities before `ManagedProtectedReport::from_observed`
+projects the history for reporting.
 The future receiver must enforce at most one history append per admitted
 exchange, including repeats across reporting or reconnect. Keep the
 existing authenticated transport commit, cookie history and charged work
@@ -31369,6 +31412,94 @@ Later Core proposal, broker effect and acknowledged settlement stay P3/P4.
 Reference admission, positive history integration and their exact-candidate
 results remain open. The plan update schedules no builds, native execution
 or formal work.
+
+###### Calculate each original joined ordinary receipt
+
+S2.1/W11-W01 and CHECK-7/11/21/24/25/27. The normally retired managed
+join retains the optional checked `ExperimentalProfile`. The two report
+accessors call the existing measurement owner with the original source
+configuration, three captures, authenticated header and acceptance time
+of the selected receipt. Calculation reuses immutable facts with no clock
+read or change to worker and packet custody. A present receipt without a
+declaration returns `Unavailable`. A restriction or failed terminal
+operation yields no terminal measurement, while an earlier ordinary
+receipt remains available. Abnormal retirement keeps its existing path.
+
+The Engine integration and Rust contract checks paired literal peer
+timestamps with independent integer arithmetic over each original leg's
+captures. They checked signed phase and RTT numerators, the software
+window and age from authenticated acceptance. The terminal gate separates
+acceptance from the later commit, and the joined consumer distinguishes
+missing, out-of-date, smeared-source and valid experimental inputs.
+The DENY and configuration-replacement neighbors retain the first receipt
+with a missing declaration. Those neighbors do not exercise a valid
+first measurement alongside a refused terminal. Independent review found
+no source blocker for the selected ordinary-leg scope.
+
+Rust 1.100.0 ran five GNU EP1 joined-worker cases and passed GNU and MSVC
+Clippy, x64-v3 MSVC cross-link and PE/PDB readback on `5a14281` plus the
+five Engine source and test files. The selected product digest was
+`497a3fa085df523461314c0629150c921db71735d9140a5ecb08c90140cb0446`.
+The first two host attempts selected zero cases because of the nested
+test module path. The corrected selection ran five cases and reached
+three test structure lints. The final fixture refactor passed both
+targets with the behavior controls intact. The exact ordinary and DENY
+selectors then passed separately in the owned offline Windows guest
+build 26100. The observer refused seven incorrect records before dispatch.
+All four discovery and execution processes exited zero, were reaped
+and reached EOF. The original scratch copy retired and both mappings
+were empty. The runner used a component provider and local UDP peers.
+
+The facade still supplies `None` in its current call. Independently
+qualified reference, mapping validity, uncertainty, date and scale
+authority, current consume-once Core history admission and affected
+coverage and mutation gates remain open.
+
+| Record under `~/.local/share/nevrotick/s21-joined-measurements.jbU01HZd/` | SHA-256 |
+| --- | --- |
+| `validation-04/verification.json` | `59a4d6ecda32924c40664edcd1304d6abb8e4c9c8e518c3e0d353f1a7a6a8e1f` |
+| `validation-04/gnu-joined-behavior.json` | `16a6ed22cbfadb0ba06ad3ab027d11bcf7afdccf6a9b916570ef83e662b6534c` |
+| `validation-04/engine-tests.exe` | `f11aab80092739913bd0623081e7110ac4cb093cef330ad535935999ed12f12e` |
+| `native-recipe/join_14e1e7a4e522/verification.json` | `ca968791961a654b8bf52398ca2be53106a1e6ab47d5ffe70f804bb58b6d677a` |
+
+###### Retain a valid first measurement after a refused successor
+
+S2.1/W11-W01 and CHECK-7/11/25/27. The joined worker tests now supply the
+original first leg with a valid experimental profile in the authenticated
+DENY and equal-valued replacement histories. Both use the original
+captures and literal peer timestamps to check nominal phase, signed RTT
+and age. They require the original configuration identity and no terminal
+measurement. DENY still applies its exact restriction. Replacement
+increments the revision, retains the same configuration values and
+refuses the pending effect without applying that restriction.
+
+Rust 1.100.0 passed five selected GNU EP1 cases, format, GNU and MSVC
+Clippy, x64-v3 MSVC link and PE readback on `1b1dc6b` plus the
+local Engine and platform changes. The product digest is
+`b97369299c3b9d744eaabe0bfbbdd5c432ed5d1be9e72ffab3dfbfd635497072`.
+Fresh-context review matched all 754 product input hashes and checked the
+real worker/UDP join and arithmetic expectations. The staged WSL
+dependency tree reused the previously admitted exact archive bytes.
+
+The exact x64-v3 binary then passed ordinary, DENY and revision
+replacement cases in the owned offline Windows Sandbox. All six
+discovery and test processes exited zero and were reaped with their
+output closed. The observer refused seven invalid evidence controls
+before dispatch. The guest scratch was removed and both mappings were
+empty. The run used component crypto and loopback and took 32.946 seconds
+including host controls. It required no certificate or clock changes.
+
+The Windows facade's production declaration remains absent. Physical
+reference, current mapping, positive production admission to Core history
+and the affected qualification gates remain open.
+
+| Record under `~/.local/share/nevrotick/s21-valid-first.tCvJ2gAV/` | SHA-256 |
+| --- | --- |
+| `validation-01/verification.json` | `b98d2eb90aa9baeec1c467c3b389e21f9590d1340dacfb03cab4784a45508785` |
+| `validation-01/gnu-joined-behavior.json` | `7f6e894a93c51d2b15877968a3385c293e86925b66e81d1082951e89c40d4cd8` |
+| `validation-01/engine-tests.exe` | `1a28eb77d6058a306f407ac95bd64b8693eea19b4bfebe1549bb2cc58e44880d` |
+| `native-recipe/join_4d9810f20647/verification.json` | `9a89d8c286549d3cedf458049a3e018345fe5b398e84e05fd542c9f49a003dc0` |
+| `native-recipe/join_4d9810f20647/guest.json` | `9e74317daab351f8dbad5846fd761bf420d3965aeea244b81d4a059011e5bf7d` |
 
 ###### Retain the original chart on joined protected receipts — 23 November 2026
 

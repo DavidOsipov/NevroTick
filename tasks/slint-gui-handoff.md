@@ -1179,6 +1179,54 @@ delivery, and packaged activation remain open. The selected local Low-label
 case is recorded below. The other process profiles, signing and release retain
 their existing owners.
 
+### Configure the default DLL search before Slint backend selection
+
+W11-W10/S6.1, WIN-3/WIN-4 and CHECK-16/18/20. The actual Windows
+`create_native()` applies the existing image policy first and then sets
+the current process's default DLL search to Application Directory and
+System32. The setter uses the existing pinned Windows binding.
+Failure preserves the original Win32 code and returns before Slint
+backend selection. The portable fixture constructor has no process
+policy calls.
+[Microsoft loader contract](https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-setdefaultdlldirectories)
+
+The DLL search and UI-source controls exercise the fixed `0x0A00` mask,
+successful setter, exact failure code, and omitted, ignored or late
+startup calls. All 16 source controls and nine portable policy tests
+passed. The exact startup module also linked as an x64-v3 MSVC policy
+fixture. Fresh-context review checked the actual entry point and pinned
+Windows binding.
+
+| Record under `~/.local/share/nevrotick/s61-runtime-dll.8hEu7nr1/` | SHA-256 |
+| --- | --- |
+| `ui-runtime-dll-search.patch` | `e0e25cd5a70ed1532b3f60c1b36dca424e33953ebd83948990a3ac7e9402ff1b` |
+| `source-tests.log` | `f25fd27cba8306d54ab9de8227c10d9192a7e2f19c4e069f3673281de6aba4a6` |
+| `leaf/receipt.json` | `991ccda41cafc988cf14a16ee38cac138018d36fc1d4fb2bc22c5e9a399bda2a` |
+
+The configured Windows release build passed all 35 lanes on the isolated
+tree `cbc20ef868c432e0492820a178dc0f242632699e`. All 768 build source
+pins matched Main after integration. Independent PE readback located
+`SetDefaultDllDirectories` and the existing image-policy imports in
+the actual Slint fixture. The linked image and PDB were rehashed against
+the checked export. The build verification receipt is
+`4a6cc97fbfbc282620deb9aef4c90d21818855f9ad4e146aec8ceb5310075d4d`
+under `%LOCALAPPDATA%/NevroTick/ui-runtime-dll-policy.B8HBaWlH/`.
+
+The exact release fixture opened its sample window and exited cleanly
+after a Close request in the offline Windows build-26100 guest. The observer
+matched the window to the launched process, observed exit zero and both stream
+completions, and confirmed reaping and staged-file retirement.
+The guest ran the elevated unpackaged profile. Ordinary-user
+and installed activation retain their own checkpoints. The native
+`receipt.json` SHA-256 is
+`5589c8baeaa185bf23d011dbbd9cf2deb3486f0c212ae07a611ff8a00d4ea868`
+under that directory's `native/`.
+
+The default applies to later DLL searches without explicit loader flags.
+Pre-entry imports, explicit loads, the installed dependency closure,
+loaded-path observations and affected-file qualification retain their
+own checks.
+
 ### Observe the Low-integrity image boundary — 23 November 2026
 
 W11-W10, WIN-3/WIN-4 and CHECK-16/26. The security-boundary, integration and

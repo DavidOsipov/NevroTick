@@ -2,11 +2,14 @@
 //! Independent ordered examples for the shared observation kernel.
 
 use core::num::NonZeroU32;
-use std::{cell::RefCell, collections::VecDeque};
+use std::{
+    cell::{Cell, RefCell},
+    collections::VecDeque,
+};
 
 use super::{
-    check_process, check_token_generation, observe_between_pipe_samples, observe_process,
-    observe_service_peer,
+    check_process, check_token_generation, observe_between_pipe_samples,
+    observe_component_between_peer_checks, observe_process, observe_service_peer,
 };
 use crate::service_role_sid::{
     TokenInformation, TokenInformationBuffer, TokenModifiedId, read_modified_id,
@@ -30,6 +33,12 @@ enum Call {
     Open(NonZeroU32),
     /// Poll the process already opened.
     Live(NonZeroU32),
+    /// Recheck the original peer around component reads.
+    ComponentPeer(NonZeroU32),
+    /// Read the image name on the given retained process.
+    ImageName(NonZeroU32),
+    /// Read the package full name on the given retained process.
+    PackageFullName(NonZeroU32),
 }
 
 /// Distinct source faults and refusals for deterministic controls.
@@ -57,6 +66,10 @@ enum Fault {
     Ineligible(RunningServiceRefusal),
     /// Different eligible PID was observed.
     Changed,
+    /// The retained process's image-name query failed.
+    ImageQuery(u32),
+    /// The retained process's package-name query failed.
+    PackageQuery(i32),
     /// An unplanned call exhausted its fixture input.
     Unexpected,
 }
@@ -157,6 +170,150 @@ const RUNNING: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 4, FIRST
 const STOPPED: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 1, FIRST.get());
 /// A Running report for a different eligible PID.
 const REPLACED: ReportedServiceStatus = ReportedServiceStatus::new(0x10, 4, 2);
+
+/// The fixture's noncopyable peer with observable release.
+struct ComponentPeer<'probe> {
+    /// Original observed process identifier.
+    pid: NonZeroU32,
+    /// Count release of the original owner.
+    releases: &'probe Cell<usize>,
+}
+
+impl Drop for ComponentPeer<'_> {
+    fn drop(&mut self) {
+        self.releases.set(self.releases.get() + 1);
+    }
+}
+
+/// Literal independent image-name response.
+const IMAGE: &str = "NevroTickBroker.exe";
+/// Literal independent package-name response.
+const PACKAGE: &str = "NevroTick_1.0.0.0_x64__0123456789abc";
+/// Complete healthy call sequence, including both original peer checks.
+const COMPONENT_CALLS: [Call; 4] = [
+    Call::ComponentPeer(FIRST),
+    Call::ImageName(FIRST),
+    Call::PackageFullName(FIRST),
+    Call::ComponentPeer(FIRST),
+];
+/// The same owned peer and the two distinct query results.
+type ComponentReadback<'probe> = (ComponentPeer<'probe>, &'static str, Option<&'static str>);
+
+/// Exercise the production sequence against instrumented, inert operations.
+/// # Errors
+/// Return the first scripted refusal or an unexpected-call error.
+fn sample_component<'probe>(
+    calls: &RefCell<Vec<Call>>,
+    releases: &'probe Cell<usize>,
+    reobservations: [Result<(), Fault>; 2],
+    image: Result<&'static str, Fault>,
+    package: Result<Option<&'static str>, Fault>,
+) -> Result<ComponentReadback<'probe>, Fault> {
+    let original: ComponentPeer<'probe> = ComponentPeer {
+        pid: FIRST,
+        releases,
+    };
+    let mut checks: std::array::IntoIter<Result<(), Fault>, 2> = reobservations.into_iter();
+    observe_component_between_peer_checks(
+        original,
+        |peer: ComponentPeer<'probe>| {
+            calls.borrow_mut().push(Call::ComponentPeer(peer.pid));
+            checks.next().ok_or(Fault::Unexpected)??;
+            Ok(peer)
+        },
+        |peer: &ComponentPeer<'probe>| {
+            calls.borrow_mut().push(Call::ImageName(peer.pid));
+            image
+        },
+        |peer: &ComponentPeer<'probe>| {
+            calls.borrow_mut().push(Call::PackageFullName(peer.pid));
+            package
+        },
+    )
+}
+
+/// Publish exact observations and the original live owner for either package state.
+/// # Errors
+/// Propagate any unexpected refusal of the healthy fixtures.
+/// # Panics
+/// Fail on a changed call sequence, substituted result or premature owner release.
+#[test]
+fn component_readback_retains_original_peer_and_package_absence() -> Result<(), Fault> {
+    for expected in [Some(PACKAGE), None] {
+        let calls: RefCell<Vec<Call>> = RefCell::new(Vec::new());
+        let releases: Cell<usize> = Cell::new(0);
+        let (peer, image, package): ComponentReadback<'_> =
+            sample_component(&calls, &releases, [Ok(()); 2], Ok(IMAGE), Ok(expected))?;
+        assert_eq!(calls.borrow().as_slice(), COMPONENT_CALLS);
+        assert_eq!((peer.pid, image, package), (FIRST, IMAGE, expected));
+        assert!(core::ptr::eq(
+            core::ptr::from_ref(peer.releases),
+            &raw const releases
+        ));
+        assert_eq!(releases.get(), 0);
+        drop(peer);
+        assert_eq!(releases.get(), 1);
+    }
+    Ok(())
+}
+
+/// Preserve the earliest failure and release the original owner at that stage.
+/// # Panics
+/// Fail on extra native calls, replaced causes or publication after refusal.
+#[test]
+fn component_readback_stops_on_the_first_refusal() {
+    let stages: [Fault; 3] = [
+        Fault::WrongPipe,
+        Fault::ImageQuery(6),
+        Fault::PackageQuery(5),
+    ];
+    let initial_checks: [Result<(), Fault>; 3] = [Err(Fault::WrongPipe), Ok(()), Ok(())];
+    let images: [Result<&str, Fault>; 3] = [
+        Err(Fault::ImageQuery(6)),
+        Err(Fault::ImageQuery(6)),
+        Ok(IMAGE),
+    ];
+    for (index, ((initial_check, image), expected)) in initial_checks
+        .into_iter()
+        .zip(images)
+        .zip(stages)
+        .enumerate()
+    {
+        let calls: RefCell<Vec<Call>> = RefCell::new(Vec::new());
+        let releases: Cell<usize> = Cell::new(0);
+        let observed: Result<ComponentReadback<'_>, Fault> = sample_component(
+            &calls,
+            &releases,
+            [initial_check, Err(Fault::ChangedToken)],
+            image,
+            Err(Fault::PackageQuery(5)),
+        );
+        assert_eq!(observed.err(), Some(expected));
+        assert_eq!(calls.borrow().as_slice(), &COMPONENT_CALLS[..=index]);
+        assert_eq!(releases.get(), 1);
+    }
+}
+
+/// Withhold both completed reads after a separate late process or token rollover.
+/// # Panics
+/// Fail if a changed peer can return either component name or retain the owner.
+#[test]
+fn component_readback_withholds_both_names_after_late_rollover() {
+    for turnover in [Fault::Changed, Fault::ChangedToken] {
+        let calls: RefCell<Vec<Call>> = RefCell::new(Vec::new());
+        let releases: Cell<usize> = Cell::new(0);
+        let observed: Result<ComponentReadback<'_>, Fault> = sample_component(
+            &calls,
+            &releases,
+            [Ok(()), Err(turnover)],
+            Ok(IMAGE),
+            Ok(Some(PACKAGE)),
+        );
+        assert_eq!(observed.err(), Some(turnover));
+        assert_eq!(calls.borrow().as_slice(), COMPONENT_CALLS);
+        assert_eq!(releases.get(), 1);
+    }
+}
 
 /// Refuse a wrong initial pipe PID before any candidate process open.
 /// # Panics

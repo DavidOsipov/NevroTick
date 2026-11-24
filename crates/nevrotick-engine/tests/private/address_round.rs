@@ -1366,6 +1366,186 @@ fn joined_refresh_discards_changed_answer_when_original_udp_round_replies() -> C
     Ok(())
 }
 
+/// Prepare the real `WinDNS` refresh for the fixed local IPv4 name and owned peer port.
+/// # Errors
+/// Preserve checked configuration, resolver input and source-policy refusals.
+/// # Panics
+/// Reject an invalid checked fixture configuration.
+#[cfg(windows)]
+fn prepare_windows_local_dns_round(
+    authority: &crate::SourcePolicyAuthority,
+    source: &crate::SourceHandle,
+    initial: SocketAddr,
+    resolved: SocketAddr,
+) -> Check<PreparedAddressRound> {
+    use std::num::NonZeroU16;
+    use windows_platform_native::{DnsAddressFamily, DnsQueryName};
+
+    let port: NonZeroU16 = NonZeroU16::new(resolved.port())
+        .ok_or_else(|| io::Error::other("Windows DNS fixture requires a bound UDP port"))?;
+    let name: DnsQueryName = DnsQueryName::new("localhost.")?;
+    let (prepared, _): (PreparedAddressRound, ControlHandle) = authority
+        .prepare_windows_address_round_refresh(
+            source,
+            checked_config(&[initial])?,
+            name,
+            DnsAddressFamily::V4,
+            port,
+        )?;
+    Ok(prepared)
+}
+
+/// Check the original blackhole's timeout and observed UDP request after native settlement.
+/// # Errors
+/// Preserve socket observation failure or missing attempt history.
+/// # Panics
+/// Reject changed completion, duplicate traffic, or an unretired DNS worker.
+#[cfg(windows)]
+fn require_windows_dns_original(
+    report: &AddressRoundReport,
+    blackhole: &UdpSocket,
+) -> Check<[u8; 8]> {
+    assert_eq!(report.end(), AddressRoundEnd::Exhausted);
+    assert!(report.primary_error().is_none());
+    assert!(report.policy_refusals().is_empty());
+    assert!(!report.native_refresh_pending());
+    let [attempt]: &[AddressAttempt] = report.attempts() else {
+        return Err(io::Error::other("Windows DNS round must retain one original attempt").into());
+    };
+    assert_eq!(attempt.peer(), blackhole.local_addr()?);
+    assert_eq!(attempt.report().status(), Status::Timeout);
+    assert!(attempt.report().sent());
+    let (count, token): (u16, [u8; 8]) = observe_queries(blackhole)?;
+    assert_eq!(count, 1);
+    assert_ne!(token, [0; 8]);
+    Ok(token)
+}
+
+/// Adopt the native localhost result only after the actual original round exhausts.
+/// # Errors
+/// Preserve fixture, policy, resolver and peer failures.
+/// # Panics
+/// Reject missing or extra traffic, lost source provenance or incorrect membership.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires an isolated offline Windows process for native DNS custody"]
+fn windows_local_dns_refresh_reaches_joined_successor() -> Check<()> {
+    use crate::{
+        SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
+        SourcePolicyError, SourcePolicyLimits,
+    };
+
+    let mut authority: SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: SourceHandle = authority.source(0)?;
+    let blackhole: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let successor: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let initial: SocketAddr = blackhole.local_addr()?;
+    let resolved: SocketAddr = successor.local_addr()?;
+    let installed: SourceConfigurationSnapshot = authority
+        .install_source_configuration(&source, SourceAddressSet::new(&[initial, resolved])?)?;
+    authority.select_initial_round_membership(&installed, SourceAddressSet::new(&[initial])?)?;
+    let prepared: PreparedAddressRound =
+        prepare_windows_local_dns_round(&authority, &source, initial, resolved)?;
+    let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+    let responder: ReplyPeer = ReplyPeer::spawn(successor.try_clone()?, ReplyKind::Ordinary)?;
+    let result: Result<AddressRoundReport, PilotError> = execute_address_round(prepared, &schedule);
+    let (report, seen): (AddressRoundReport, Option<SeenQuery>) =
+        joined_result(result, responder.finish())?;
+    let original_token: [u8; 8] = require_windows_dns_original(&report, &blackhole)?;
+    let later: &AddressRoundReport = match report.refresh() {
+        Some(AddressRoundRefreshOutcome::Successor(later)) => later,
+        Some(AddressRoundRefreshOutcome::Failed(error)) => return Err((*error).into()),
+        _ => {
+            return Err(io::Error::other(
+                "the joined Windows DNS result did not reach its successor",
+            )
+            .into());
+        }
+    };
+    classify_native_report(later)?;
+    let query: SeenQuery = require_query(seen)?;
+    check_query(&query);
+    assert_ne!(&original_token, &query.bytes[40..48]);
+    assert_eq!(later.end(), AddressRoundEnd::Reply);
+    assert!(later.refresh().is_none());
+    let [accepted]: &[AddressAttempt] = later.attempts() else {
+        return Err(io::Error::other("Windows DNS successor must retain one attempt").into());
+    };
+    assert_eq!(accepted.peer(), resolved);
+    assert_eq!(accepted.report().status(), Status::Header);
+    assert!(accepted.report().sent());
+    let facts: &crate::TransportFacts =
+        accepted.report().facts().ok_or(PilotError::InternalState)?;
+    assert!(
+        facts.source_configuration().is_some_and(
+            |actual: &SourceConfigurationSnapshot| actual.same_configuration(&installed)
+        )
+    );
+    assert!(
+        source
+            .address_round_for_configuration(&installed, checked_config(&[resolved])?)
+            .is_ok()
+    );
+    assert!(matches!(
+        source.address_round_for_configuration(&installed, checked_config(&[initial])?),
+        Err(SourcePolicyError::Foreign)
+    ));
+    assert_eq!(observe_queries(&successor)?.0, 0);
+    Ok(())
+}
+
+/// Refuse the same native localhost result when its UDP port is outside the source envelope.
+/// # Errors
+/// Preserve fixture, policy, resolver and wire-observation failures.
+/// # Panics
+/// Reject any outsider send or change to the original membership.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires an isolated offline Windows process for native DNS custody"]
+fn windows_local_dns_refresh_refuses_outside_envelope() -> Check<()> {
+    use crate::{
+        SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
+        SourcePolicyError, SourcePolicyLimits,
+    };
+
+    let mut authority: SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let source: SourceHandle = authority.source(0)?;
+    let blackhole: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let outsider: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let initial: SocketAddr = blackhole.local_addr()?;
+    let resolved: SocketAddr = outsider.local_addr()?;
+    let installed: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&[initial])?)?;
+    authority.select_initial_round_membership(&installed, SourceAddressSet::new(&[initial])?)?;
+    let prepared: PreparedAddressRound =
+        prepare_windows_local_dns_round(&authority, &source, initial, resolved)?;
+    let schedule: ControlSchedule = ControlSchedule::new(None, None)?;
+    let report: AddressRoundReport = execute_address_round(prepared, &schedule)?;
+    classify_native_report(&report)?;
+    let _original_token: [u8; 8] = require_windows_dns_original(&report, &blackhole)?;
+    assert!(matches!(
+        report.refresh(),
+        Some(AddressRoundRefreshOutcome::Failed(
+            PilotError::SourcePolicy(SourcePolicyError::Foreign)
+        ))
+    ));
+    assert!(
+        source
+            .address_round_for_configuration(&installed, checked_config(&[initial])?)
+            .is_ok()
+    );
+    assert!(matches!(
+        source.policy_snapshot(resolved),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert_eq!(observe_queries(&outsider)?.0, 0);
+    Ok(())
+}
+
 /// Same-set answers preserve order and allow the original issued plan to run.
 /// # Errors
 /// Preserve fixture, policy, driver and peer observation failures.

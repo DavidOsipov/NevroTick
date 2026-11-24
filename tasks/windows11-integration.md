@@ -823,10 +823,12 @@ now invokes this producer from a retained worker and consumes its copied
 answer through current membership admission. The
 [retirement continuation](engine-transport-pilot.md#request-cancellation-from-the-retired-windows-dns-worker)
 adds one best-effort request on that worker and retains custody through
-actual completion. Qualify actual Windows immediate and pending callback
-paths, the cancel/callback overlap, routing, resource retention, coverage
-and generated mutation under the existing Windows DNS execution and
-snapshot owners.
+actual completion. The [native local IPv4 cases](engine-transport-pilot.md#run-the-native-local-dns-result-through-engine-adoption--24-november-2026)
+now observe the admitted localhost successor and exact excluded-port
+refusal through the Engine consumer in the offline guest. Ordinary
+Answer and pending callback paths, cancel/callback overlap, wider
+routing, resource retention, coverage and generated mutation remain
+with the existing Windows DNS execution and snapshot owners.
 
 ### W11-W04 Qualify service-scoped network restrictions
 
@@ -4551,6 +4553,32 @@ remain open. No native acquisition or new output eligibility was exercised.
 
 The host logs and their drivers are retained under
 `~/.local/share/nevrotick/timing-complete-exchange.yY0kIKGc/`.
+
+##### Bind the two timing legs to the original bench records
+
+S2.1/W11-W01, TQ-09 and CHECK-7/11/25. The
+[pinned reader](../tools/windows-sandbox/timing_reference_trial.py) checks a
+bounded version-1 JSON pairing against its separately supplied SHA-256.
+It matches the chosen original exchange, receipt, ports and QPC frequency.
+The wire and residual bytes must match the pairing's original digests.
+Transmit and receive labels, the declared closed span and both comparison
+bounds reach the existing whole-exchange check. The local model, validity
+window and error budgets come from the bench owner outside the pairing.
+
+CPython 3.12.3 passed 28 focused tests, including eight new controls for
+the pins, roles, identity, bounds and refusal after the first leg passes.
+Both retained Windows exchanges passed with synthetic reference records
+and produced transmit/receive disagreements of 3 and 11 ns. Starting one
+tick later or ending one tick sooner refused each exchange. The focused
+log and retained-row replay are under
+`~/.local/share/nevrotick/w11-bench-reference.Qp0sRIdT/`.
+Independent review checked the original receipt and six application rows
+against their pins and followed the exact exchange and both comparison
+legs. The reader SHA-256 is
+`37791ccfe07af9808714eb98781955b42e2860739a33f77e111b6157149715b5`.
+The reader checks the original reference bytes as opaque records. The
+bench owner still needs to qualify the physical pairing, uncertainty,
+traceable UTC and mapping validity before Core history admission.
 
 ### 4.27 Address-family admission routing — 5 November 2026
 
@@ -15357,6 +15385,76 @@ Native MakeAppx evidence belongs to the byte-matched earlier input set.
 Current product manifest identity and the final role, signed catalog and
 installed enforcement obligations continue under this task.
 
+###### Verify the maintained ArtworkLab staging and unsigned package
+
+W11-W10/P6 and CHECK-18/23/26. The maintained
+[staging command](../tools/windows-service-fixture/msix/prepare_artwork_payload.py)
+rechecks the selected artwork, checked Properties fragment, independent
+native PRI readback and fixed reviewed inert executable. The final
+source staged the 61-file handoff into 54 lab payload files and produced
+the same receipt and bytes supplied to MakeAppx. CPython 3.12.3 passed
+150 MSIX fixture tests, including eight new staging controls. Independent
+review caught a missing secondary cleanup diagnostic. The prior command
+failed the combined write/cleanup fault control. The current command
+reports both causes, returns failure and leaves the final slot absent.
+The existing shared stager requires an owned private output parent kept
+at the same path during publication.
+
+In offline guest run `0a6c76f2ae76`, authenticated MakeAppx
+10.0.28000.2705 packed the complete unsigned fixture and refused the
+same manifest with an invalid Trusted Launch Boolean at line 12.
+Both processes were reaped and owned scratch and mappings retired.
+Separate readback checked all 56 archive members, exact payload bytes,
+ZIP layout, block map, content types, Trusted Launch, integrity and
+the single inert role. Raw records are under
+`~/.local/share/nevrotick/p6-artwork-consumer.b1yf_j_j/`.
+
+| Input or result | SHA-256 |
+| --- | --- |
+| `prepare_artwork_payload.py` | `8fc3dceaca5a86bf10e44c73603f764803a9b33b37d59b9321c7abd3a6ae0142` |
+| `stage-final.json` | `24fb5a0d17db5197b4cb4c9edee98762b52dc81b81aaeb89ba41a058dde264f7` |
+| Native pack input set | `c8d99c1bb5152e61fa370693a14c4e13eff96f30373585681f1c3a64665c3be5` |
+| `NevroTick-ArtworkLab-unsigned.msix` | `db98fc3448f52d2ea165d30e10be16787c427609e1db709ae13111e48b94b0e7` |
+| `native-readback.json` | `89a7c0a6730dec8af58b70ccba69a23899f803038155c791733a2b23b61a79f2` |
+
+The package is the unsigned inert lab profile. Product manifest
+assembly, signing, installed role admission and enforcement remain open.
+
+###### Confirm the original staged tree at the requested package path
+
+W11-W10 and CHECK-18/23/26. After the no-replace rename and parent
+flush, the staging owner now checks the requested parent and matches
+the published slot to the original staged directory descriptor. A
+failed check returns exit 3 without a success receipt. The
+original complete tree and any replacement remain untouched for
+reconciliation. The caller still owns the private staging parent and
+keeps it stable through use.
+
+The predecessor reported success with the complete tree under a moved
+parent and an absent requested slot. The repair also distinguishes a
+replaced final slot, a late competing slot and a failed parent flush.
+Independent review reproduced a second failure in which a close
+exception replaced publication uncertainty. Both descriptor closes
+are attempted, and close errors remain visible beside the original
+failure. The ArtworkLab control now verifies exit 3, empty stdout and
+the close diagnostic even when the final slot changes. All 154
+portable fixture and package tests passed on `1b1dc6b` plus the local
+source changes. A fresh reviewer matched the source and log pins.
+The exact 61-file handoff restaged successfully. Its 54 payload files
+and receipt matched the already archived MakeAppx input bytes, and the
+independent reader rechecked that same unsigned archive. No new native
+pack invocation was required. Product role and signing admissions
+remain open.
+
+| Input or result under `~/.local/share/nevrotick/msix-publish-path.cpTNWPlz/` | SHA-256 |
+| --- | --- |
+| Repository `prepare_payload.py` | `2a77c3b44986049dc2dfa8bb26b261d2b8b7fd0286e86124985cf2513b42fa6f` |
+| Repository `prepare_artwork_payload.py` | `1a95e50bd4e820975adfe6acdeb912462dd30429a40363e1edbe51f117887150` |
+| `predecessor.log` | `f4c3c1e8515d7d1df721db4336dfc254106688ba62a3a924cc3fdcf3839a1d0a` |
+| `close-predecessor.log` | `e79238867607ff16d1806534a8f91fb4a44f0df2aeab910c2cf0cac8258f6984` |
+| `final.json` | `7bbee351eebc171f9cf18c2c30d2005ea0de3e9104b635e6b1e20d2fee005ef7` |
+| `final-stage.json` | `24fb5a0d17db5197b4cb4c9edee98762b52dc81b81aaeb89ba41a058dde264f7` |
+
 ##### Probe the executable icon resource before GUI linkage — 23 November 2026
 
 W11-W10/P6 and CHECK-20/22/23/24/25. The executable resource requirement
@@ -17650,6 +17748,52 @@ bridge. Direct native late or wrong-server observations at the child-side
 edges, fresh installed role/token/package evidence at the serialized effect,
 the installed syscall deadline and affected production 90%/95% gates remain open.
 
+#### Retain the supervisor primary token through the first exchange
+
+W11-W05/S3.1–S3.2 and CHECK-2/25/27. The supervised child acquires a
+query-only primary token on the independently retained process and keeps
+its original modification generation through connection, request and
+reply. The Windows leaf shares the same object and generation check with
+`ObservedServicePeer`. The writer exposes only a guarded submission on
+its original pipe. Before `WriteFile` and the reply acceptance marker, the
+owner samples the original process and pipe, compares the current token
+with the retained object and generation, and checks the original cutoff.
+The reply must come from that writer's exact client handle.
+
+The IPC and Rust contract review followed the guarded submission and
+the reply's `READY` marker. Wrong-handle and changed-token controls
+withhold acceptance. The changed-token control supplies the typed
+refusal and the underlying portable controls cover object and generation
+comparison. No native supervisor token was changed. The fixture retains
+its cleanup path and does not confer installed role authority.
+
+The isolated `1b1dc6b` service candidate bound 856 inputs to
+`34672ef0e6db89483cad1ef798578582cbc941790e59600f0e7cc26091e4914c`.
+Rust 1.100.0 passed six graph commands, 12 development commands, the
+x64-v3 MSVC libtest link and PE/PDB readback. The first MSVC Clippy
+attempt rejected an undocumented assertion in the wrong-handle control.
+The corrected control returns an explicit fixture error. The separate UI
+DLL-policy and Python source-check changes follow this service snapshot.
+
+The exact linked image passed all four selectors in the offline Windows
+build-26100 guest. They covered the retained-child exchange, foreign
+same-actor client refusal, original-connection reply, and cutoff and
+peer-refusal effect guard. The observer confirmed complete output,
+process retirement and empty staging directories. Independent readback
+matched all 856 source hashes, both linked files and all four exact
+native outcomes. The receipt's `tested_tree` field identifies the
+detached index, and its complete source digest identifies the compiled
+working inputs. Installed peer
+admission, native token turnover and affected-file qualification remain
+open.
+
+| Record under `~/.local/share/nevrotick/s31-supervisor-token.pptHAwCj/` | SHA-256 |
+| --- | --- |
+| `broker-token-continuity-development-r1.json` | `97291a68a40865bbc23c6f7442f120a7ef398c150d431a0e263806a6eebee7a4` |
+| `broker-token-continuity-development-r2.json` | `22566635d9ea47efe95eade4793ccca240b4b9bceec040f7c90fdfa09311cd49` |
+| `cross-broker-token-continuity-libtest-r2.json` | `1432a1935589c9af3fbd8b2cf5448d0878b2933efd83225f7a31bced0dabd5af` |
+| `native-verdict.json` | `259566cdb657e0e3f83b965620620e45cdb04c5710ea599473e0d41dad3ee268` |
+
 ### Guard the native request and read the retained peer privileges — 24 November 2026
 
 W11-W05/S3.2 and CHECK-2/25/27. The supervised request checks the retained
@@ -19627,7 +19771,8 @@ After the signed and continuously quiescent installed-role observation,
 the next S3.1 child must own the minimum authenticated management route
 before enabling functional acquisition or IPC. Use the original connected
 client, SCM query, retained process and primary-token generation from
-`ObservedServicePeer`. Join the installed component, fixed role, effective
+`ObservedServicePeer` and its [paired component readback](#observe-both-component-names-on-the-original-service-peer).
+Join the installed component, fixed role, effective
 mitigation and current-generation evidence. Check admission at management
 receive and functional exposure, with original cutoff and Stop handling at
 each boundary. Compare a current healthy generation against foreign peer,
@@ -19650,3 +19795,50 @@ in the admitted offline Windows guest completed the
 [broker wire controls](#prepare-the-native-control-for-confirmation-after-a-full-pipe-write)
 and the [protected timing pair](engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026)
 on the candidates identified in those records.
+
+##### Observe both component names on the original service peer
+
+W11-W05/S0.3 to S3.1 and CHECK-2/25/27. `ObservedServicePeer` consumes the
+original peer, checks its connected pipe, fixed SCM query, retained process
+and primary-token object and generation, then reads the executable name
+and package full name on that same process. It checks the original peer
+again before returning it with both observations. An unpackaged process
+retains explicit package absence. An earlier continuity or query failure
+keeps its typed cause, releases the owned process and token and yields no
+partial observations. The borrowed caller handles retain their owners.
+
+The service, local IPC and Rust contract reviews traced the existing query
+rights and exact retained handles. The portable integration controls pair
+complete and absent package observations with ordered calls, exactly one
+owner release, the first refusal at each stage and late process or token
+replacement. The independent source review confirmed this scope. The
+receiving owner still pairs the raw observations with the returned peer
+and compares the approved installed component and fixed role. Its live
+effect guards still own the original cutoff, Stop and current generation.
+
+Rust 1.100.0 passed 77 GNU tests in each ordinary and optimized mode, four
+doctests, formatting, rustdoc, GNU and MSVC Clippy, and the MSVC x64-v3 link
+and PE/PDB readback. The first run caught a test-only implicit conversion
+in the original-owner pointer comparison. The explicit pointer check
+passed on the combined 754-input candidate
+`efb26b970dcd9815f8b3276892600685294099d8b355e5a4f22bd51f72ee9b2d`, based
+on `5a14281` with the existing Engine changes and the new native leaf.
+The checked worktree matched the tested content and Git executable bits.
+The first refusal record is retained.
+
+The separate GNU LLVM coverage run passed the 90% per-file gate for its
+11 reported files. `service_peer.rs` covered 93 of 94 GNU executable lines.
+The matching native SCM and connected endpoint, installed package and
+effective process protections, Windows-only coverage and affected mutation
+qualification remain open. Existing guest evidence covers foreign pipe
+refusal and the lower-level process name queries in separate fixtures.
+The current broker reservation uses an empty DACL, so that fixture cannot
+supply the matching connected service journey. No service or clock effects
+were exercised for this checkpoint.
+
+| Record under `~/.local/share/nevrotick/w11-peer-component.eZdJ6kUO/` | SHA-256 |
+| --- | --- |
+| `records/combined-02/summary.json` | `0880a9209e2a104448160f214c53128e3bc9446966de456151c502008b2858b0` |
+| `records/combined-02/service-peer-tests.exe` | `0639fb57f440c3f6cf5305a1ce7084d8b09c512bb1e634737a6153a7b05adcf3` |
+| `records/coverage-01/summary.json` | `ff686936c1143a7561338d735f466a95b29a30f90713e862f84efbc0617461c1` |
+| `records/coverage-01/coverage.json` | `b8155c3ec4a35afdd20e2e0d7f7e85b9ccf051d9813e5a50bd0585041496f195` |

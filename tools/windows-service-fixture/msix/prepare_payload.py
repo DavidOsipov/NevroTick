@@ -35,7 +35,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
 from metadata.event_resource_events import verify_event_resources
 from metadata.event_resource_pe import read_resource_dll
-from metadata.pipeline.contract import EventProvider, Metadata
+from metadata.pipeline.contract import EventProvider, Metadata, MetadataError
 from metadata.pipeline.delivery import _equal, _json
 from metadata.pipeline.generate import (
     PublicationUncertainError, _new_staging_directory, _open_directory,
@@ -209,12 +209,14 @@ def stage_payload(
 ) -> dict[str, str | dict[str, str]]:
     """Commit a complete payload or pack-input tree in an owned external parent.
 
-    A precommit error leaves the final slot intact. After rename, a parent-flush
-    failure retains the complete tree and reports uncertain durability.
+    A precommit error leaves the final slot intact. After rename, failed
+    durability or final path confirmation preserves the tree for reconciliation.
     """
     output = _outside_source(ROOT, output)
-    parent = _open_directory(output.parent, private=True)
-    temporary = staging = None
+    parent: int = _open_directory(output.parent, private=True)
+    temporary: str | None = None
+    staging: int | None = None
+    failure: BaseException | None = None
     try:
         try:
             os.stat(output.name, dir_fd=parent, follow_symlinks=False)
@@ -245,10 +247,15 @@ def stage_payload(
         temporary = None
         try:
             os.fsync(parent)
-        except OSError as error:
+            _parent_unchanged(output.parent, parent)
+            published: os.stat_result = os.stat(output.name, dir_fd=parent, follow_symlinks=False)
+            if not os.path.samestat(os.fstat(staging), published):
+                raise MetadataError("payload-final-slot-changed")
+        except (OSError, MetadataError) as error:
             raise PublicationUncertainError() from error
         return report
     except BaseException as error:
+        failure = error
         if temporary is not None and staging is not None:
             try:
                 _remove_staging(parent, temporary, staging)
@@ -256,11 +263,20 @@ def stage_payload(
                 error.add_note(f"Private staging cleanup failed: {cleanup}")
         raise
     finally:
-        try:
-            if staging is not None:
-                os.close(staging)
-        finally:
-            os.close(parent)
+        release_failure: PublicationUncertainError | None = None
+        descriptor: int | None
+        for descriptor in (staging, parent):
+            if descriptor is None:
+                continue
+            try:
+                os.close(descriptor)
+            except OSError as error:
+                if failure is None:
+                    release_failure = PublicationUncertainError()
+                    failure = release_failure
+                failure.add_note(f"Payload directory close failed: {error}")
+        if release_failure is not None:
+            raise release_failure
 
 
 def main() -> None:
@@ -311,8 +327,12 @@ def main() -> None:
             payload[EVENT_RESOURCE_FILE] = event_resource_image(*event_inputs, event_source)
         sdk_source = args.sdk_source.absolute() if args.sdk_source is not None else None
         report = stage_payload(args.output, payload, sdk_source)
-    except PublicationUncertainError:
-        parser.exit(3, "Pack input publication durability unconfirmed. Check the existing output before retrying.\n")
+    except PublicationUncertainError as error:
+        messages: tuple[str, ...] = (
+            "Pack input rename completed. Publication durability, path or cleanup is unconfirmed.",
+            *getattr(error, "__notes__", ()),
+        )
+        parser.exit(3, "\n".join(messages) + "\n")
     except (OSError, KeyError, TypeError, ValueError) as error:
         messages = (str(error), *getattr(error, "__notes__", ()))
         parser.exit(1, "\n".join(messages) + "\n")

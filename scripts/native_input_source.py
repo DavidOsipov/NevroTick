@@ -116,6 +116,7 @@ def check(files: dict[str, str]) -> list[str]:
         exact(HOST, "run_native", "create_native()?.run().map_err(HostError::Platform)", windows=True)
         exact(HOST, "create_native", '''
             startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
+            startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;
             slint::BackendSelector::new()
                 .backend_name("winit".into())
                 .renderer_name("software".into())

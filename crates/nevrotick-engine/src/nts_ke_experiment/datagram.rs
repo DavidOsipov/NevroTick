@@ -795,6 +795,8 @@ mod reached {
         first: Option<Arc<ManagedProtectedHistory>>,
         /// Actual terminal result with the original NAK mark.
         terminal: ManagedSuccessorTerminal,
+        /// Original checked declaration shared by the two distinct ordinary receipts.
+        profile: Option<ExperimentalProfile>,
         /// Attempted sends, full sends, and the original driver's remaining work.
         work: (usize, usize, usize),
         /// Process presentation around this original submission and joined take.
@@ -835,6 +837,11 @@ mod reached {
                 Ok(ManagedSuccessorEffect::Ordinary(history)) => Some(history),
                 Ok(ManagedSuccessorEffect::Restriction(_)) | Err(_) => None,
             }
+        }
+
+        /// Return the declaration received with the joined operation.
+        pub(in super::super) const fn profile(&self) -> Option<ExperimentalProfile> {
+            self.profile
         }
 
         /// Move the normally retired facts together, with no renewed permission.
@@ -1080,6 +1087,7 @@ mod reached {
                 ReceivedManagedSuccessor {
                     first: first_receipt,
                     terminal,
+                    profile,
                     work,
                     #[cfg(windows)]
                     process_leap_presentation: None,

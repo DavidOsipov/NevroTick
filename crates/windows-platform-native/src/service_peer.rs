@@ -10,7 +10,8 @@ use std::os::windows::io::BorrowedHandle;
 use crate::service_role_sid::TokenModifiedId;
 #[cfg(windows)]
 use crate::{
-    PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess, PeerProcessError, PipeServerPidError,
+    PackageFullNameError, PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess, PeerProcessError,
+    PipeServerPidError, ProcessImageNameError, ReportedPackageFullName, ReportedProcessImageName,
     RunningServiceRefusal, ServiceQueryError, ServiceRoleSid, ServiceRoleSidObservation,
     ServiceRoleSidObservationError, ServiceStatusQuery, TokenPrivilegeObservation,
     TokenPrivilegeObservationError, read_connected_pipe_server_pid,
@@ -129,6 +130,135 @@ impl<'query> ObservedServiceProcess<'query> {
     }
 }
 
+/// Refusal while observing the primary token of one retained process.
+#[cfg(windows)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ProcessPrimaryTokenObservationError {
+    /// The retained process exited or its liveness could not be sampled.
+    Process(PeerProcessError),
+    /// The query-only token or its statistics could not be observed.
+    Token(PeerPrimaryTokenError),
+    /// The primary-token object or its original modification generation changed.
+    ChangedToken,
+}
+
+#[cfg(windows)]
+impl core::fmt::Display for ProcessPrimaryTokenObservationError {
+    /// Report the stage without including process or token identifiers.
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Process(cause) => write!(formatter, "observe retained process: {cause}"),
+            Self::Token(cause) => write!(formatter, "observe primary token: {cause}"),
+            Self::ChangedToken => formatter.write_str("retained process primary token changed"),
+        }
+    }
+}
+
+#[cfg(windows)]
+impl std::error::Error for ProcessPrimaryTokenObservationError {}
+
+/// Original query-only token and modification generation on the retained process.
+#[cfg(windows)]
+struct RetainedPrimaryToken {
+    /// Kernel token object observed at acquisition.
+    token: PeerPrimaryToken,
+    /// Modification generation observed on the original token.
+    generation: TokenModifiedId,
+}
+
+#[cfg(windows)]
+impl RetainedPrimaryToken {
+    /// Sample the original token and its modification generation.
+    /// # Errors
+    /// Preserve the first process or token refusal.
+    fn observe(process: &PeerProcess) -> Result<Self, ProcessPrimaryTokenObservationError> {
+        let token: PeerPrimaryToken = Self::open(process)?;
+        let generation: TokenModifiedId = token
+            .generation()
+            .map_err(ProcessPrimaryTokenObservationError::Token)?;
+        Ok(Self { token, generation })
+    }
+
+    /// Compare the current token with the retained object and generation.
+    /// # Errors
+    /// Preserve a query or liveness failure, or report changed token evidence.
+    fn check(&self, process: &PeerProcess) -> Result<(), ProcessPrimaryTokenObservationError> {
+        check_token_generation(
+            &self.token,
+            self.generation,
+            || Self::open(process),
+            PeerPrimaryToken::same_object,
+            |token: &PeerPrimaryToken| {
+                token
+                    .generation()
+                    .map_err(ProcessPrimaryTokenObservationError::Token)
+            },
+            ProcessPrimaryTokenObservationError::ChangedToken,
+        )
+    }
+
+    /// Check the original process before acquiring only query rights on its token.
+    /// # Errors
+    /// Preserve a liveness or native token query refusal.
+    fn open(
+        process: &PeerProcess,
+    ) -> Result<PeerPrimaryToken, ProcessPrimaryTokenObservationError> {
+        process
+            .check_live()
+            .map_err(ProcessPrimaryTokenObservationError::Process)?;
+        process
+            .retain_primary_token()
+            .map_err(ProcessPrimaryTokenObservationError::Token)
+    }
+}
+
+/// A retained token sample tied to one independently selected process handle.
+///
+/// A successful recheck compares samples taken during that call. The receiving
+/// owner must independently bind the process to the original connection and
+/// enforce its deadline, role, installed identity and current authorization.
+#[cfg(windows)]
+#[must_use = "keep the original token generation for checks at the receiving boundary"]
+pub struct ObservedProcessPrimaryToken<'process> {
+    /// Original process, never reopened by this observation.
+    process: &'process PeerProcess,
+    /// Original kernel token and its initial generation.
+    primary: RetainedPrimaryToken,
+}
+
+#[cfg(windows)]
+impl<'process> ObservedProcessPrimaryToken<'process> {
+    /// Retain the query-only primary token on the original live process.
+    /// # Errors
+    /// Preserve the first process or token refusal.
+    pub fn observe(
+        process: &'process PeerProcess,
+    ) -> Result<Self, ProcessPrimaryTokenObservationError> {
+        let primary: RetainedPrimaryToken = RetainedPrimaryToken::observe(process)?;
+        process
+            .check_live()
+            .map_err(ProcessPrimaryTokenObservationError::Process)?;
+        Ok(Self { process, primary })
+    }
+
+    /// Borrow the original process for independent connection checks.
+    #[must_use]
+    pub const fn process(&self) -> &PeerProcess {
+        self.process
+    }
+
+    /// Resample the original process's primary-token object and generation.
+    /// # Errors
+    /// Preserve a query or liveness refusal, or reject changed token evidence.
+    pub fn reobserve(&self) -> Result<(), ProcessPrimaryTokenObservationError> {
+        self.primary.check(self.process)?;
+        self.process
+            .check_live()
+            .map_err(ProcessPrimaryTokenObservationError::Process)
+    }
+}
+
 /// Refusal while relating a connected pipe to a retained service process and token.
 #[cfg(windows)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -155,6 +285,20 @@ impl From<ServiceProcessObservationError> for ServicePeerObservationError {
 }
 
 #[cfg(windows)]
+impl From<ProcessPrimaryTokenObservationError> for ServicePeerObservationError {
+    /// Retain the original process, token query or continuity refusal.
+    fn from(error: ProcessPrimaryTokenObservationError) -> Self {
+        match error {
+            ProcessPrimaryTokenObservationError::Process(cause) => {
+                Self::Service(ServiceProcessObservationError::Process(cause))
+            }
+            ProcessPrimaryTokenObservationError::Token(cause) => Self::Token(cause),
+            ProcessPrimaryTokenObservationError::ChangedToken => Self::ChangedToken,
+        }
+    }
+}
+
+#[cfg(windows)]
 impl core::fmt::Display for ServicePeerObservationError {
     /// Report the stage and cause without including observed identifiers.
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -171,6 +315,62 @@ impl core::fmt::Display for ServicePeerObservationError {
 #[cfg(windows)]
 impl std::error::Error for ServicePeerObservationError {}
 
+/// Refusal while observing component names on a retained service peer.
+#[cfg(windows)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ServicePeerComponentObservationError {
+    /// A peer continuity check refused before or after the component reads.
+    Peer(ServicePeerObservationError),
+    /// The retained process's image name could not be read.
+    Image(ProcessImageNameError),
+    /// The retained process's package identity could not be read.
+    Package(PackageFullNameError),
+}
+
+#[cfg(windows)]
+impl core::fmt::Display for ServicePeerComponentObservationError {
+    /// Format the bounded failure without including a reported component name.
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Peer(cause) => write!(formatter, "check service peer continuity: {cause}"),
+            Self::Image(cause) => write!(formatter, "observe the peer image name: {cause}"),
+            Self::Package(cause) => write!(formatter, "observe the peer package identity: {cause}"),
+        }
+    }
+}
+
+#[cfg(windows)]
+impl std::error::Error for ServicePeerComponentObservationError {}
+
+/// Raw image and package names sampled on one retained service process.
+///
+/// These observations convey no installed component admission or effect
+/// authority. The receiver still checks the approved component, role and
+/// effective protections and reobserves the peer at its original cutoff.
+#[cfg(windows)]
+#[must_use = "check the observed component names against the intended installed component"]
+pub struct ServicePeerComponentObservation {
+    /// Bounded native image name from the retained process.
+    image_name: ReportedProcessImageName,
+    /// The bounded native package full name, or absence for an unpackaged process.
+    package_full_name: Option<ReportedPackageFullName>,
+}
+
+#[cfg(windows)]
+impl ServicePeerComponentObservation {
+    /// Borrow the literal reported image name.
+    #[must_use]
+    pub const fn image_name(&self) -> &ReportedProcessImageName {
+        &self.image_name
+    }
+
+    /// Borrow the literal package full name if Windows reported one.
+    #[must_use]
+    pub const fn package_full_name(&self) -> Option<&ReportedPackageFullName> {
+        self.package_full_name.as_ref()
+    }
+}
+
 /// An observation of matching pipe, SCM and retained process identifiers and token.
 ///
 /// The caller supplies the original connected client and fixed service query.
@@ -185,10 +385,8 @@ pub struct ObservedServicePeer<'query, 'pipe> {
     client: BorrowedHandle<'pipe>,
     /// Original query and query-only process handle.
     service: ObservedServiceProcess<'query>,
-    /// Original primary-token object, held for continuity and role observation.
-    token: PeerPrimaryToken,
-    /// Modification generation observed on the original token at acquisition.
-    token_generation: TokenModifiedId,
+    /// Original token and acquired generation, held for continuity and role observation.
+    primary: RetainedPrimaryToken,
 }
 
 #[cfg(windows)]
@@ -201,36 +399,33 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         query: &'query ServiceStatusQuery,
         client: BorrowedHandle<'pipe>,
     ) -> Result<Self, ServicePeerObservationError> {
-        let (service, (token, token_generation)): (
-            ObservedServiceProcess<'query>,
-            (PeerPrimaryToken, TokenModifiedId),
-        ) = observe_service_peer(
-            || read_connected_pipe_server_pid(client).map_err(ServicePeerObservationError::Pipe),
-            |pid: NonZeroU32| {
-                ObservedServiceProcess::observe_from_query(
-                    query,
-                    Some((pid, ServicePeerObservationError::PipeProcessMismatch)),
-                )
-            },
-            |service: &ObservedServiceProcess<'query>| {
-                let token: PeerPrimaryToken = read_peer_token(service)?;
-                let generation: TokenModifiedId = token
-                    .generation()
-                    .map_err(ServicePeerObservationError::Token)?;
-                Ok((token, generation))
-            },
-            |service: &ObservedServiceProcess<'query>| {
-                service
-                    .check_current()
-                    .map_err(ServicePeerObservationError::Service)
-            },
-            ServicePeerObservationError::PipeProcessMismatch,
-        )?;
+        let (service, primary): (ObservedServiceProcess<'query>, RetainedPrimaryToken) =
+            observe_service_peer(
+                || {
+                    read_connected_pipe_server_pid(client)
+                        .map_err(ServicePeerObservationError::Pipe)
+                },
+                |pid: NonZeroU32| {
+                    ObservedServiceProcess::observe_from_query(
+                        query,
+                        Some((pid, ServicePeerObservationError::PipeProcessMismatch)),
+                    )
+                },
+                |service: &ObservedServiceProcess<'query>| {
+                    RetainedPrimaryToken::observe(service.process())
+                        .map_err(ServicePeerObservationError::from)
+                },
+                |service: &ObservedServiceProcess<'query>| {
+                    service
+                        .check_current()
+                        .map_err(ServicePeerObservationError::Service)
+                },
+                ServicePeerObservationError::PipeProcessMismatch,
+            )?;
         Ok(Self {
             client,
             service,
-            token,
-            token_generation,
+            primary,
         })
     }
 
@@ -238,6 +433,49 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
     #[must_use]
     pub const fn process(&self) -> &PeerProcess {
         self.service.process()
+    }
+
+    /// Read both component names on the original process between peer checks.
+    ///
+    /// Success retains the original pipe, SCM query, process and token. A
+    /// missing package name records an unpackaged process. The caller applies
+    /// its original cutoff and independently checks installed identity and
+    /// current authority before any effect.
+    ///
+    /// # Errors
+    /// Preserve the first peer, image or package refusal. Refusal consumes the
+    /// peer and yields no partial observations.
+    pub fn observe_component(
+        self,
+    ) -> Result<(Self, ServicePeerComponentObservation), ServicePeerComponentObservationError> {
+        let (peer, image_name, package_full_name): (
+            Self,
+            ReportedProcessImageName,
+            Option<ReportedPackageFullName>,
+        ) = observe_component_between_peer_checks(
+            self,
+            |peer: Self| {
+                peer.reobserve()
+                    .map_err(ServicePeerComponentObservationError::Peer)
+            },
+            |peer: &Self| {
+                peer.process()
+                    .image_name()
+                    .map_err(ServicePeerComponentObservationError::Image)
+            },
+            |peer: &Self| {
+                peer.process()
+                    .package_full_name()
+                    .map_err(ServicePeerComponentObservationError::Package)
+            },
+        )?;
+        Ok((
+            peer,
+            ServicePeerComponentObservation {
+                image_name,
+                package_full_name,
+            },
+        ))
     }
 
     /// Read the expected role SID on the original primary token at its acquired generation.
@@ -251,7 +489,9 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         &self,
         expected: ServiceRoleSid<'sid>,
     ) -> Result<ServiceRoleSidObservation<'sid>, ServiceRoleSidObservationError> {
-        self.token.observe_role_sid(expected, self.token_generation)
+        self.primary
+            .token
+            .observe_role_sid(expected, self.primary.generation)
     }
 
     /// Capture the original peer token's privileges at its acquisition generation.
@@ -263,7 +503,9 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
     pub fn observe_privileges(
         &self,
     ) -> Result<TokenPrivilegeObservation, TokenPrivilegeObservationError> {
-        self.token.observe_privileges_at(self.token_generation)
+        self.primary
+            .token
+            .observe_privileges_at(self.primary.generation)
     }
 
     /// Reobserve the original pipe, service, process, primary-token object and generation.
@@ -281,18 +523,9 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
                     .map_err(ServicePeerObservationError::Pipe)
             },
             || {
-                check_token_generation(
-                    &self.token,
-                    self.token_generation,
-                    || read_peer_token(&self.service),
-                    PeerPrimaryToken::same_object,
-                    |token: &PeerPrimaryToken| {
-                        token
-                            .generation()
-                            .map_err(ServicePeerObservationError::Token)
-                    },
-                    ServicePeerObservationError::ChangedToken,
-                )
+                self.primary
+                    .check(self.process())
+                    .map_err(ServicePeerObservationError::from)
             },
             || {
                 self.service
@@ -303,6 +536,23 @@ impl<'query, 'pipe> ObservedServicePeer<'query, 'pipe> {
         )?;
         Ok(self)
     }
+}
+
+/// Publish both checked name reads only after a second check on the owned peer.
+/// # Errors
+/// Preserve the first refusal and consume the original peer and any names read.
+#[cfg(any(windows, test))]
+fn observe_component_between_peer_checks<P, I, N, E>(
+    peer: P,
+    mut reobserve: impl FnMut(P) -> Result<P, E>,
+    read_image: impl FnOnce(&P) -> Result<I, E>,
+    read_package: impl FnOnce(&P) -> Result<Option<N>, E>,
+) -> Result<(P, I, Option<N>), E> {
+    let peer: P = reobserve(peer)?;
+    let image: I = read_image(&peer)?;
+    let package: Option<N> = read_package(&peer)?;
+    let current: P = reobserve(peer)?;
+    Ok((current, image, package))
 }
 
 /// Require a fresh reference to the same object, then sample the original token's generation.
@@ -340,20 +590,6 @@ fn check_service_process_live(process: &PeerProcess) -> Result<(), ServiceProces
     process
         .check_live()
         .map_err(ServiceProcessObservationError::Process)
-}
-
-/// Observe the primary token only after an immediate liveness sample.
-/// # Errors
-/// Preserve exit, wait or the exact token query refusal.
-#[cfg(windows)]
-fn read_peer_token(
-    service: &ObservedServiceProcess<'_>,
-) -> Result<PeerPrimaryToken, ServicePeerObservationError> {
-    check_service_process_live(service.process())?;
-    service
-        .process()
-        .retain_primary_token()
-        .map_err(ServicePeerObservationError::Token)
 }
 
 /// Require agreement with the originally observed server PID.

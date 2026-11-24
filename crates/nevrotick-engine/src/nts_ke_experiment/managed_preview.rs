@@ -22,7 +22,7 @@ use super::{
     response::{ControlProtection, ProtectedControlKind},
 };
 use crate::{
-    ExperimentalMeasurement, ExperimentalReferenceNs, MeasurementRefusal,
+    ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
     RelativeMeasurementRefusal, RunClockContext, SoftwareClock, SourceConfigurationSnapshot,
     SourcePolicyError, relative::reference_from_instants,
 };
@@ -497,6 +497,28 @@ impl ManagedProtectedReceipt {
         }
     }
 
+    /// Calculate conditional numerics solely from this original committed receipt.
+    /// No clock reading, current authority, retry or packet effect follows.
+    /// # Errors
+    /// Preserve the shared measurement owner's checked refusal, including missing declarations.
+    fn conditional_measurement(
+        &self,
+        profile: Option<ExperimentalProfile>,
+    ) -> Result<ExperimentalMeasurement, MeasurementRefusal> {
+        let history: &super::datagram::ProtectedHistory = self.history.history();
+        let [send_before, send_return, receive_return]: [SoftwareClock; 3] = history.captures();
+        let receipt: Receipt = history.receipt();
+        crate::measurement::measure_for_source(
+            profile,
+            Some(self.history.configuration()),
+            send_before,
+            send_return,
+            receive_return,
+            receipt.accepted_at(),
+            receipt.fields().header(),
+        )
+    }
+
     /// Borrow the original source configuration used by send and commit.
     #[must_use]
     pub const fn configuration(&self) -> &SourceConfigurationSnapshot {
@@ -774,6 +796,8 @@ pub struct ManagedProtectedReport {
     first: Option<ManagedProtectedReceipt>,
     /// The actual normally joined outcome, independent of earlier receipt custody.
     terminal: ManagedProtectedTerminal,
+    /// Original checked experimental declaration retained by the joined receiver.
+    profile: Option<ExperimentalProfile>,
     /// First admitted correlated NTS NAK from the pending successor request.
     first_nak_at: Option<Instant>,
     /// A failed observer close is retained independently of normal retirement.
@@ -813,6 +837,7 @@ impl ManagedProtectedReport {
         #[cfg(windows)]
         let process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]> =
             received.process_leap_presentation();
+        let profile: Option<ExperimentalProfile> = received.profile();
         let (first, terminal, (attempted_sends, fully_submitted_sends, remaining_driver_work)): (
             Option<Arc<ManagedProtectedHistory>>,
             super::ManagedSuccessorTerminal,
@@ -837,6 +862,7 @@ impl ManagedProtectedReport {
         Ok(Self {
             first: first.as_ref().map(ManagedProtectedReceipt::from_history),
             terminal,
+            profile,
             first_nak_at,
             power_unregistration_error: cleanup.unregistration_error,
             attempted_sends,
@@ -876,6 +902,33 @@ impl ManagedProtectedReport {
     #[must_use]
     pub const fn terminal(&self) -> &ManagedProtectedTerminal {
         &self.terminal
+    }
+
+    /// Calculate nominal arithmetic for the original first receipt, if present.
+    /// Uses the retained declaration and preserves that exchange's original age.
+    /// A present receipt with no declaration returns `Some(Err(Unavailable))`.
+    /// The calculation supplies no calibrated mapping, freshness or eligibility.
+    #[must_use]
+    pub fn first_measurement(&self) -> Option<Result<ExperimentalMeasurement, MeasurementRefusal>> {
+        self.first
+            .as_ref()
+            .map(|receipt: &ManagedProtectedReceipt| receipt.conditional_measurement(self.profile))
+    }
+
+    /// Calculate nominal arithmetic for an ordinary terminal receipt.
+    /// Uses the retained declaration and preserves that exchange's original age.
+    /// A restriction or operation refusal returns no terminal measurement.
+    /// The calculation supplies no calibrated mapping, freshness or eligibility.
+    #[must_use]
+    pub fn terminal_measurement(
+        &self,
+    ) -> Option<Result<ExperimentalMeasurement, MeasurementRefusal>> {
+        match &self.terminal {
+            ManagedProtectedTerminal::Ordinary(receipt) => {
+                Some(receipt.conditional_measurement(self.profile))
+            }
+            ManagedProtectedTerminal::Restriction(_) | ManagedProtectedTerminal::Refused(_) => None,
+        }
     }
 
     /// Return the first admitted NTS NAK's original monotonic arrival.

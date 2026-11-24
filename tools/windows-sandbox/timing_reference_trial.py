@@ -20,6 +20,8 @@ _MAX_U64: int = (1 << 64) - 1
 _SHA256: re.Pattern[str] = re.compile(r"[0-9a-f]{64}")
 _RECEIPT_LIMIT: int = 64 * 1024
 _STREAM_LIMIT: int = 4096
+_PAIRING_LIMIT: int = 8192
+_REFERENCE_RECORD_LIMIT: int = 64 * 1024
 _CAPTURE_STREAM: str = "healthy-ke-managed-successor-facade-client-stdout.txt"
 _CAPTURE_POINTS: tuple[str, str, str] = ("pre-send", "send-return", "receive-return")
 _CAPTURE_FIELDS: re.Pattern[bytes] = re.compile(
@@ -105,6 +107,15 @@ class HeldOutComparison:
 
 
 @dataclass(frozen=True, slots=True)
+class ComparisonBounds:
+    """Locally modeled interval and predeclared limits, outside the pairing."""
+
+    local_wall: Nanoseconds
+    declared_error_ns: int
+    leg_budget_ns: int
+
+
+@dataclass(frozen=True, slots=True)
 class QpcValidityWindow:
     """Bench validity on the chart identified by the original timing receipt."""
 
@@ -182,14 +193,14 @@ class RetainedExchange:
         return ModeledLeg(TrialEvent(self.exchange_sha256, event), capture.row_sha256, local_wall)
 
 
-def _receipt_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    """Decode one receipt object without collapsing duplicated keys."""
+def _unique_object(pairs: list[tuple[str, object]], duplicate_error: str) -> dict[str, object]:
+    """Decode one object without collapsing duplicated keys."""
     result: dict[str, object] = {}
     key: str
     value: object
     for key, value in pairs:
         if key in result:
-            raise TrialRefused("duplicate timing receipt field")
+            raise TrialRefused(duplicate_error)
         result[key] = value
     return result
 
@@ -203,7 +214,9 @@ def _receipt_frequency(receipt: bytes, pin: str, stream: bytes) -> int:
     if type(pin) is not str or _SHA256.fullmatch(pin) is None or sha256(receipt).hexdigest() != pin:
         raise TrialRefused("timing receipt digest differs from pin")
     try:
-        metadata: object = json.loads(receipt.decode("utf-8"), object_pairs_hook=_receipt_object)
+        metadata: object = json.loads(receipt.decode("utf-8"), object_pairs_hook=lambda pairs: _unique_object(
+            pairs, "duplicate timing receipt field",
+        ))
     except TrialRefused:
         raise
     except (ValueError, RecursionError) as error:
@@ -354,13 +367,26 @@ def compare_held_out_exchange(
     if validity.receipt_sha256 != receipt_sha256 or span.receipt_sha256 != receipt_sha256:
         raise TrialRefused("exchange validity chart differs from receipt")
     exchanges: tuple[RetainedExchange, RetainedExchange] = read_retained_captures(receipt, receipt_sha256, stream)
+    exchange: RetainedExchange = _select_retained_exchange(exchanges, span.exchange_sha256)
+    return _compare_retained_exchange(exchange, exchanges, sha256(stream).hexdigest(), validity, span,
+                                      pre_send=pre_send, receive_return=receive_return)
+
+
+def _select_retained_exchange(
+    exchanges: tuple[RetainedExchange, RetainedExchange], exchange_sha256: str,
+) -> RetainedExchange:
     exchange: RetainedExchange
     for exchange in exchanges:
-        if exchange.exchange_sha256 == span.exchange_sha256:
-            break
-    else:
-        raise TrialRefused("paired span exchange differs from receipt")
+        if exchange.exchange_sha256 == exchange_sha256:
+            return exchange
+    raise TrialRefused("paired span exchange differs from receipt")
 
+
+def _compare_retained_exchange(
+    exchange: RetainedExchange, exchanges: tuple[RetainedExchange, RetainedExchange], stream_sha256: str,
+    validity: QpcValidityWindow, span: PairedExchangeSpan, *,
+    pre_send: HeldOutComparison, receive_return: HeldOutComparison,
+) -> tuple[int, int]:
     captures: tuple[ApplicationCapture, ApplicationCapture, ApplicationCapture] = (
         exchange.pre_send, exchange.send_return, exchange.receive_return,
     )
@@ -370,7 +396,7 @@ def compare_held_out_exchange(
     if not validity.start_tick <= span.earliest_tick <= span.latest_tick < validity.end_tick_exclusive:
         raise TrialRefused("paired span crosses validity window")
 
-    app_only_pins: tuple[str, ...] = (receipt_sha256, sha256(stream).hexdigest()) + tuple(
+    app_only_pins: tuple[str, ...] = (exchange.receipt_sha256, stream_sha256) + tuple(
         capture.row_sha256 for retained in exchanges
         for capture in (retained.pre_send, retained.send_return, retained.receive_return)
     )
@@ -388,3 +414,126 @@ def compare_held_out_exchange(
             declared_error_ns=comparison.declared_error_ns, leg_budget_ns=comparison.leg_budget_ns,
         ))
     return results[0], results[1]
+
+
+def _check_reference_pin(data: bytes, pin: object, limit: int, label: str) -> str:
+    """Check the exact supplied bytes before using their digest as evidence identity."""
+    if type(data) is not bytes or not 0 < len(data) <= limit:
+        raise TrialRefused(f"{label} exceeds input bounds or is empty")
+    if type(pin) is not str or _SHA256.fullmatch(pin) is None or sha256(data).hexdigest() != pin:
+        raise TrialRefused(f"{label} digest differs from pin")
+    return pin
+
+
+def _pairing_integer(token: str) -> int:
+    """Decode canonical signed integer spelling with bounded decimal conversion."""
+    if token == "-0" or len(token.removeprefix("-")) > 19:
+        raise TrialRefused("invalid reference pairing integer")
+    return int(token)
+
+
+def _refuse_pairing_number(_token: str) -> None:
+    raise TrialRefused("invalid reference pairing integer")
+
+
+def _read_reference_pairing(data: bytes, pin: str) -> dict[str, object]:
+    _check_reference_pin(data, pin, _PAIRING_LIMIT, "reference pairing")
+    try:
+        pairing: object = json.loads(
+            data.decode("utf-8"), parse_int=_pairing_integer, parse_float=_refuse_pairing_number,
+            parse_constant=_refuse_pairing_number,
+            object_pairs_hook=lambda pairs: _unique_object(pairs, "duplicate reference pairing field"),
+        )
+    except TrialRefused:
+        raise
+    except (ValueError, RecursionError) as error:
+        raise TrialRefused("invalid reference pairing JSON") from error
+    if type(pairing) is not dict or pairing.keys() != {
+        "schema_version", "receipt_sha256", "exchange_sha256", "client_port", "peer_port",
+        "frequency_hz", "span_qpc_ticks", "wire_record_sha256", "residual_record_sha256",
+        "pre_send", "receive_return",
+    } or type(pairing["schema_version"]) is not int or pairing["schema_version"] != 1:
+        raise TrialRefused("invalid reference pairing fields or version")
+    return pairing
+
+
+def _pairing_coordinates(value: object) -> tuple[int, int]:
+    """Extract two exact signed integer coordinates before domain-specific checks."""
+    if type(value) is not list or len(value) != 2 or type(value[0]) is not int or type(value[1]) is not int:
+        raise TrialRefused("invalid reference pairing coordinates")
+    return value[0], value[1]
+
+
+def _paired_leg(
+    raw: object, event: TrialEvent, direction: str, wire_pin: str, residual_pin: str, bounds: ComparisonBounds,
+) -> HeldOutComparison:
+    if type(raw) is not dict or raw.keys() != {
+        "event", "wire_direction", "wire_utc_ns", "application_minus_wire_ns", "local_wall_minus_utc_ns",
+    }:
+        raise TrialRefused("invalid reference leg fields")
+    if raw["event"] != event.event.value or raw["wire_direction"] != direction:
+        raise TrialRefused("reference leg role differs")
+    if type(bounds) is not ComparisonBounds:
+        raise TrialRefused("invalid local comparison bounds")
+    reference: HeldOutLeg = HeldOutLeg(
+        event, wire_pin, residual_pin, Nanoseconds(*_pairing_coordinates(raw["wire_utc_ns"])),
+        Nanoseconds(*_pairing_coordinates(raw["application_minus_wire_ns"])),
+        Nanoseconds(*_pairing_coordinates(raw["local_wall_minus_utc_ns"])),
+    )
+    return HeldOutComparison(bounds.local_wall, reference, bounds.declared_error_ns, bounds.leg_budget_ns)
+
+
+def compare_pinned_reference_exchange(
+    receipt: bytes, receipt_sha256: str, stream: bytes, validity: QpcValidityWindow,
+    *, exchange_sha256: str, pairing: bytes, pairing_sha256: str, wire_record: bytes, residual_record: bytes,
+    pre_send: ComparisonBounds, receive_return: ComparisonBounds,
+) -> tuple[int, int]:
+    """Compare one selected exchange with a separately pinned normalized bench record.
+
+    The UTF-8 version-1 JSON includes the receipt and exchange digests, original
+    ports and QPC frequency, a closed tick span, and SHA-256 digests of the two
+    original external artifacts. Its pre-send (tx) and receive-return (rx)
+    legs each contain the event label and three closed nanosecond intervals.
+    Modeled wall, validity and budgets are supplied separately by the caller.
+    Both returned disagreements are in nanoseconds, in transmit/receive order.
+
+    The bench owner supplies the pairing pin and remains responsible for the
+    physical acquisition, chart, calibration, evidence independence and complete
+    exchange span. The artifact bytes are hash-checked as opaque records.
+    """
+    if type(validity) is not QpcValidityWindow:
+        raise TrialRefused("invalid exchange validity inputs")
+    if validity.receipt_sha256 != receipt_sha256:
+        raise TrialRefused("exchange validity chart differs from receipt")
+    metadata: dict[str, object] = _read_reference_pairing(pairing, pairing_sha256)
+    if metadata["receipt_sha256"] != receipt_sha256 or metadata["exchange_sha256"] != exchange_sha256:
+        raise TrialRefused("reference pairing receipt or exchange differs")
+    span: PairedExchangeSpan = PairedExchangeSpan(
+        receipt_sha256, exchange_sha256, *_pairing_coordinates(metadata["span_qpc_ticks"]),
+    )
+    wire_pin: str = _check_reference_pin(
+        wire_record, metadata["wire_record_sha256"], _REFERENCE_RECORD_LIMIT, "wire record",
+    )
+    residual_pin: str = _check_reference_pin(
+        residual_record, metadata["residual_record_sha256"], _REFERENCE_RECORD_LIMIT, "residual record",
+    )
+    exchanges: tuple[RetainedExchange, RetainedExchange] = read_retained_captures(receipt, receipt_sha256, stream)
+    exchange: RetainedExchange = _select_retained_exchange(exchanges, exchange_sha256)
+    field: str
+    expected: int
+    for field, expected in (
+        ("client_port", exchange.client_port), ("peer_port", exchange.peer_port), ("frequency_hz", exchange.frequency_hz),
+    ):
+        actual: object = metadata[field]
+        if type(actual) is not int or actual != expected:
+            raise TrialRefused("reference pairing ports or QPC frequency differ from original capture")
+    pre: HeldOutComparison = _paired_leg(
+        metadata["pre_send"], TrialEvent(exchange_sha256, ApplicationEvent.PRE_SEND), "tx",
+        wire_pin, residual_pin, pre_send,
+    )
+    receive: HeldOutComparison = _paired_leg(
+        metadata["receive_return"], TrialEvent(exchange_sha256, ApplicationEvent.RECEIVE_RETURN), "rx",
+        wire_pin, residual_pin, receive_return,
+    )
+    return _compare_retained_exchange(exchange, exchanges, sha256(stream).hexdigest(), validity, span,
+                                      pre_send=pre, receive_return=receive)

@@ -106,6 +106,19 @@ class NativeInputSourceControls(unittest.TestCase):
         self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
         self.assertEqual(n.check(files), ['native input closed create_native body'])
 
+    def test_fixed_dll_search_precedes_backend_and_propagates_refusal(self):
+        guard = ('    startup_image_policy::configure_default_dll_search()'
+                 '.map_err(HostError::DllSearchPolicy)?;')
+        for replacement in ('', '    let _ = startup_image_policy::configure_default_dll_search();'):
+            files = copy.deepcopy(self.files)
+            self.change(files, n.HOST, guard, replacement)
+            with self.subTest(replacement=replacement):
+                self.assertEqual(n.check(files), ['native input closed create_native body'])
+        files = copy.deepcopy(self.files)
+        self.change(files, n.HOST, guard, '')
+        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
+        self.assertEqual(n.check(files), ['native input closed create_native body'])
+
     def test_hook_must_install_on_same_host_before_observers_and_show(self):
         hook = '    native_input::install(host.window.window());'
         observer = '    native_workflow::install(&host.window, &host.state).map_err(HostError::Native)?;'
@@ -128,6 +141,7 @@ class NativeInputSourceControls(unittest.TestCase):
         anchor = '    let sources = SourceDrafts::fixture().map_err(HostError::Fixture)?;'
         for call in ('native_input::install(window.window());', 'native_workflow::install(&window, &state)?;',
                      'startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;',
+                     'startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;',
                      'slint::BackendSelector::new().select()?;', 'window.show()?;'):
             with self.subTest(call=call):
                 self.rejected(n.HOST, anchor, '    ' + call + '\n' + anchor)

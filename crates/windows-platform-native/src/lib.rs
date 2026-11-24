@@ -98,7 +98,9 @@ pub use resume_slot::ResumeEvent;
 pub use service_configuration::ConfigurationStringError;
 #[cfg(windows)]
 pub use service_peer::{
-    ObservedServicePeer, ObservedServiceProcess, ServicePeerObservationError,
+    ObservedProcessPrimaryToken, ObservedServicePeer, ObservedServiceProcess,
+    ProcessPrimaryTokenObservationError, ServicePeerComponentObservation,
+    ServicePeerComponentObservationError, ServicePeerObservationError,
     ServiceProcessObservationError,
 };
 #[cfg(any(windows, test))]

@@ -156,6 +156,11 @@ impl NativePipeWrite<LabFirstExchangeWriter> {
     ) -> Result<Self, NativeWriteError> {
         Self::prepare(client)
     }
+
+    /// Borrow the original first-exchange client for reply attribution.
+    pub(super) fn client(&self) -> BorrowedHandle<'_> {
+        self.writer.as_handle()
+    }
 }
 
 impl NativePipeWrite<NativePipeRead> {

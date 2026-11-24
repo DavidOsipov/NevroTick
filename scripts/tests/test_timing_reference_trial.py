@@ -388,5 +388,156 @@ class HeldOutExchangeTests(unittest.TestCase):
         self.assertEqual((singleton.earliest_tick, singleton.latest_tick), (100, 100))
 
 
+class PinnedReferenceExchangeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.app: HeldOutExchangeTests = HeldOutExchangeTests()
+        self.app.setUp()
+        self.tx: dict[str, object] = {
+            "event": "pre-send", "wire_direction": "tx", "wire_utc_ns": [10000, 10240],
+            "application_minus_wire_ns": [-20, -20], "local_wall_minus_utc_ns": [-200, -180],
+        }
+        self.rx: dict[str, object] = {
+            "event": "receive-return", "wire_direction": "rx", "wire_utc_ns": [20000, 20020],
+            "application_minus_wire_ns": [5, 8], "local_wall_minus_utc_ns": [-200, -180],
+        }
+        self.pre: TRIAL.ComparisonBounds = TRIAL.ComparisonBounds(TRIAL.Nanoseconds(9810, 10000), 230, 230)
+        self.receive: TRIAL.ComparisonBounds = TRIAL.ComparisonBounds(TRIAL.Nanoseconds(19800, 19802), 48, 48)
+        self.wire: bytes = b"separately acquired wire events"
+        self.residual: bytes = b"independent local wall residuals"
+        self.first: str = sha256(f"{self.app.pin}:first".encode("ascii")).hexdigest()
+        self.record: dict[str, object] = {
+            "schema_version": 1, "receipt_sha256": self.app.pin, "exchange_sha256": self.first,
+            "client_port": 49000, "peer_port": 45000, "frequency_hz": 10000000,
+            "span_qpc_ticks": [101, 198], "wire_record_sha256": sha256(self.wire).hexdigest(),
+            "residual_record_sha256": sha256(self.residual).hexdigest(),
+            "pre_send": self.tx, "receive_return": self.rx,
+        }
+
+    def compare(
+        self, pairing: bytes, *, pairing_pin: str | None = None, wire: bytes | None = None,
+        residual: bytes | None = None, exchange: str | None = None, window: TRIAL.QpcValidityWindow | None = None,
+        receive: TRIAL.ComparisonBounds | None = None, stream: bytes | None = None,
+    ) -> tuple[int, int]:
+        return TRIAL.compare_pinned_reference_exchange(
+            self.app.receipt, self.app.pin, self.app.stream if stream is None else stream,
+            self.app.window if window is None else window, exchange_sha256=self.first if exchange is None else exchange,
+            pairing=pairing, pairing_sha256=sha256(pairing).hexdigest() if pairing_pin is None else pairing_pin,
+            wire_record=self.wire if wire is None else wire, residual_record=self.residual if residual is None else residual,
+            pre_send=self.pre, receive_return=self.receive if receive is None else receive,
+        )
+
+    def encoded(self, **changes: object) -> bytes:
+        return json.dumps({**self.record, **changes}).encode("utf-8")
+
+    def test_both_events_compare_against_independent_limits(self) -> None:
+        pairing: bytes = self.encoded()
+        self.assertEqual(self.compare(pairing), (230, 48))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "worst-case disagreement"):
+            self.compare(pairing, receive=replace(self.receive, declared_error_ns=47))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "declared error exceeds leg budget"):
+            self.compare(pairing, receive=replace(self.receive, leg_budget_ns=47))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "stream differs from receipt"):
+            self.compare(pairing, stream=self.app.stream.replace(b"qpc_before=100", b"qpc_before=99", 1))
+
+    def test_pairing_and_original_artifact_pins_are_checked(self) -> None:
+        pairing: bytes = self.encoded()
+        pin: str = sha256(pairing).hexdigest()
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "pairing digest differs"):
+            self.compare(pairing + b" ", pairing_pin=pin)
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "wire record digest differs"):
+            self.compare(pairing, wire=self.residual)
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "residual record digest differs"):
+            self.compare(pairing, residual=self.residual + b" ")
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "residual record digest differs"):
+            self.compare(self.encoded(residual_record_sha256="Z" * 64))
+
+    def test_pairing_cannot_choose_a_different_exchange_inside_the_same_chart(self) -> None:
+        wide: TRIAL.QpcValidityWindow = replace(self.app.window, end_tick_exclusive=260)
+        successor: str = sha256(f"{self.app.pin}:successor".encode("ascii")).hexdigest()
+        pairing: bytes = self.encoded(exchange_sha256=successor, client_port=49001, span_qpc_ticks=[200, 249])
+        self.assertEqual(self.compare(pairing, exchange=successor, window=wide), (230, 48))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "pairing receipt or exchange differs"):
+            self.compare(pairing, window=wide)
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "pairing receipt or exchange differs"):
+            self.compare(self.encoded(receipt_sha256="a" * 64))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "validity chart differs"):
+            self.compare(self.encoded(), window=replace(wide, receipt_sha256="b" * 64))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "paired span exchange differs"):
+            self.compare(self.encoded(exchange_sha256="c" * 64), exchange="c" * 64)
+
+    def test_pairing_roles_socket_and_clock_chart_match_original(self) -> None:
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "reference leg role differs"):
+            self.compare(self.encoded(pre_send=self.rx, receive_return=self.tx))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "reference leg role differs"):
+            self.compare(self.encoded(receive_return={**self.rx, "wire_direction": "tx"}))
+        field: str
+        value: object
+        for field, value in (("client_port", 49001), ("peer_port", "45000"), ("frequency_hz", True),
+                             ("frequency_hz", 10_000_001)):
+            with self.subTest(field=field, value=value), self.assertRaisesRegex(
+                TRIAL.TrialRefused, "ports or QPC frequency differ",
+            ):
+                self.compare(self.encoded(**{field: value}))
+
+    def test_reference_cannot_be_the_application_stream_or_sibling_row(self) -> None:
+        row: bytes = self.app.stream.splitlines(keepends=True)[-1]
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "application capture reused"):
+            self.compare(self.encoded(wire_record_sha256=sha256(row).hexdigest()), wire=row)
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "application capture reused"):
+            self.compare(self.encoded(residual_record_sha256=sha256(self.app.stream).hexdigest()),
+                         residual=self.app.stream)
+
+    def test_original_brackets_and_supplied_span_fit_half_open_window(self) -> None:
+        pairing: bytes = self.encoded(span_qpc_ticks=[100, 199])
+        self.assertEqual(self.compare(pairing), (230, 48))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "paired span crosses"):
+            self.compare(self.encoded(span_qpc_ticks=[100, 200]))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "application bracket crosses"):
+            self.compare(pairing, window=replace(self.app.window, start_tick=101))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid paired QPC span"):
+            self.compare(self.encoded(span_qpc_ticks=[101, 100]))
+
+    def test_incomplete_extra_or_duplicate_pairing_fields_are_refused(self) -> None:
+        missing: dict[str, object] = dict(self.record)
+        del missing["receive_return"]
+        pairings: tuple[tuple[bytes, str], ...] = (
+            (json.dumps(missing).encode("utf-8"), "pairing fields or version"),
+            (self.encoded(schema_version=True), "pairing fields or version"),
+            (self.encoded(leg_budget_ns=1000), "pairing fields or version"),
+            (self.encoded(receive_return={"event": "receive-return"}), "leg fields"),
+            (self.encoded(receive_return={**self.rx, "local_wall_ns": [0, 0]}), "leg fields"),
+            (rb'{"\u0073chema_version": 1, ' + self.encoded()[1:], "duplicate reference pairing field"),
+            (self.encoded().replace(b'"event": "pre-send"', rb'"event": "pre-send", "\u0065vent": "pre-send"'),
+             "duplicate reference pairing field"),
+        )
+        pairing: bytes
+        reason: str
+        for pairing, reason in pairings:
+            with self.subTest(reason=reason), self.assertRaisesRegex(TRIAL.TrialRefused, reason):
+                self.compare(pairing)
+
+    def test_pairing_numbers_are_exact_and_input_sizes_bounded(self) -> None:
+        pairing: bytes = self.encoded()
+        self.assertEqual(self.compare(pairing.ljust(8192, b" ")), (230, 48))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "pairing exceeds input bounds"):
+            self.compare(pairing.ljust(8193, b" "))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid reference pairing JSON"):
+            self.compare(pairing + b"\xff")
+        wire: bytes = b"w" * 65_536
+        self.assertEqual(self.compare(self.encoded(wire_record_sha256=sha256(wire).hexdigest()), wire=wire), (230, 48))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "wire record exceeds input bounds"):
+            self.compare(pairing, wire=wire + b"w")
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "residual record exceeds input bounds"):
+            self.compare(pairing, residual=b"")
+        token: bytes
+        for token in (b"-0", b"1.01", b"1e2", b"NaN", b"12345678901234567890"):
+            with self.subTest(token=token), self.assertRaisesRegex(TRIAL.TrialRefused, "invalid reference pairing integer"):
+                self.compare(pairing.replace(b"[101, 198]", b"[" + token + b", 198]"))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid reference pairing coordinates"):
+            self.compare(self.encoded(span_qpc_ticks=[True, 198]))
+        with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid nanosecond interval"):
+            self.compare(self.encoded(receive_return={**self.rx, "wire_utc_ns": [0, 9_223_372_036_854_775_808]}))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2831,7 +2831,9 @@ mod distinct_peer {
         thread,
     };
 
-    use windows_platform_native::PeerProcess;
+    use windows_platform_native::{
+        ObservedProcessPrimaryToken, PeerProcess, ProcessPrimaryTokenObservationError,
+    };
     use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 
     use super::{
@@ -2849,8 +2851,8 @@ mod distinct_peer {
         native_peer_process::same_kernel_object,
         native_pipe_identity::RetainedFixtureClient,
         native_pipe_pair::{
-            LabOverlappedWriter, LabRequestWriter, check_fixture_peer_before_cutoff,
-            check_supervised_first_exchange_peer, open_first_exchange_client, open_lab_reply_pipe,
+            LabOverlappedWriter, LabRequestWriter, LabSupervisedFirstExchangeWriter,
+            check_fixture_peer_before_cutoff, open_first_exchange_client, open_lab_reply_pipe,
             open_supervised_first_exchange_client, peek_fixture_child_stderr,
             prepare_first_exchange_fixture,
         },
@@ -3085,6 +3087,23 @@ mod distinct_peer {
         assert_eq!(steps.borrow().as_slice(), ["clock", "peer"]);
 
         steps.borrow_mut().clear();
+        let changed: Box<dyn Error> = attempt(
+            before,
+            Err(LabPipeError::SupervisorToken(
+                ProcessPrimaryTokenObservationError::ChangedToken,
+            )),
+        )
+        .err()
+        .ok_or("fixture effect was admitted after the supervisor token changed")?;
+        assert!(matches!(
+            changed.downcast_ref::<LabPipeError>(),
+            Some(LabPipeError::SupervisorToken(
+                ProcessPrimaryTokenObservationError::ChangedToken
+            ))
+        ));
+        assert_eq!(steps.borrow().as_slice(), ["clock", "peer"]);
+
+        steps.borrow_mut().clear();
         attempt(before, Ok(()))?;
         assert_eq!(
             steps.borrow().as_slice(),
@@ -3196,8 +3215,10 @@ mod distinct_peer {
     /// Preserve open, I/O, byte-oracle or Stop-disconnect failure.
     fn exchange_as_child(parent: &PeerProcess) -> Check<()> {
         let deadline: Instant = Instant::now() + CHILD_WAIT;
-        let (client, mut writer): (LabPipeReader, LabRequestWriter) = loop {
-            match open_supervised_first_exchange_client(CHILD_CASE, parent) {
+        let supervisor: ObservedProcessPrimaryToken<'_> =
+            ObservedProcessPrimaryToken::observe(parent).map_err(LabPipeError::SupervisorToken)?;
+        let (client, mut writer): (LabPipeReader, LabSupervisedFirstExchangeWriter<'_>) = loop {
+            match open_supervised_first_exchange_client(CHILD_CASE, &supervisor, deadline) {
                 Ok(pair) => break pair,
                 Err(LabPipeError::Native {
                     operation: "CreateFileW",
@@ -3208,12 +3229,18 @@ mod distinct_peer {
                 Err(error) => return Err(error.into()),
             }
         };
+        if !matches!(
+            writer.check_reply_peer(io::stderr().as_handle()),
+            Err(LabPipeError::ForeignReplyPair)
+        ) {
+            return Err("fixture accepted another handle for reply attribution".into());
+        }
         let mut reader: NativePipeRead = native_fixture_result(NativePipeRead::new(client))?;
         let observed: Check<()> = (|| {
             if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
                 return Err("reply was available before the original request".into());
             }
-            writer.write_supervised_first_exchange(REQUEST, parent, deadline)?;
+            writer.write(REQUEST)?;
             observe_first_reply_bytes(&mut reader, REPLY, |reader: &mut NativePipeRead| {
                 read_until(reader, deadline)
             })?;
@@ -3223,7 +3250,7 @@ mod distinct_peer {
             after_current_supervisor_observation(
                 deadline,
                 Instant::now,
-                || check_supervised_first_exchange_peer(parent, reader.pipe()),
+                || writer.check_reply_peer(reader.pipe()),
                 || Ok(io::stderr().lock().write_all(&[READY])?),
             )?;
             if !matches!(

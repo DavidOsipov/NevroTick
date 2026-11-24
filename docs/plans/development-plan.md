@@ -1241,11 +1241,32 @@ schedule execution while a hold applies.
 | **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
 | **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
 
-The [whole-exchange comparison](../../tasks/windows11-integration.md#check-both-held-out-legs-inside-one-exchange-validity-window)
-now joins both held-out comparisons and all retained application
-brackets within the declared QPC validity. Its controls used the original
+The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
+checks both held-out legs and their original wire and residual record
+digests within the declared QPC validity. Its controls used the original
 Windows application bytes with synthetic reference values. The wired
 reference and its admitted calibration and pairing remain required.
+The [joined measurement projection](../../tasks/engine-transport-pilot.md#calculate-each-original-joined-ordinary-receipt)
+now checks conditional nominal arithmetic for both original ordinary
+receipts through the actual Engine join. The Windows facade still supplies
+no measurement declaration and production Core admission remains open.
+The [successor refusal controls](../../tasks/engine-transport-pilot.md#retain-a-valid-first-measurement-after-a-refused-successor)
+also check that authenticated DENY or an equal-valued configuration
+replacement preserves the first receipt's nominal result without
+publishing a measurement for the terminal outcome.
+
+The [native local DNS route](../../tasks/engine-transport-pilot.md#run-the-native-local-dns-result-through-engine-adoption--24-november-2026)
+now exercises actual Engine membership adoption and the excluded-port
+refusal in the offline Windows guest. Ordinary Answer routing and live
+callback cancellation remain open under W11-W03.
+
+The [retained service-peer readback](../../tasks/windows11-integration.md#observe-both-component-names-on-the-original-service-peer)
+now joins the bounded executable and package names on the original peer
+for the W11-W05/S3.1 source path. The
+[supervised exchange](../../tasks/windows11-integration.md#retain-the-supervisor-primary-token-through-the-first-exchange)
+uses the shared token continuity check at the actual write and reply
+acceptance. The signed installed role, effective protections and current
+authenticated management journey remain required.
 
 Keep the [S0.6/W11 service and direct-package handoff](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
 independent of later production signer selection. The [pre-start ordinary-user
@@ -2032,9 +2053,17 @@ retains the original checked inputs and generation receipt next to both
 linked images. It passed the full Windows cross-build and the exact export
 readback. The [relocated handoff readback](../../tasks/windows11-integration.md#verify-the-relocated-direct-msix-build-handoff--23-november-2026)
 checks all 61 real exported files and keeps all production roles unadmitted.
-The [ArtworkLab input readback](../../tasks/windows11-integration.md#stage-the-exact-artworklab-inputs-from-the-retained-handoff)
-uses that exact handoff to stage 54 lab payload files. All matched the
-retained MakeAppx archive, including the authored manifest and native PRI.
+The [ArtworkLab stage and pack](../../tasks/windows11-integration.md#verify-the-maintained-artworklab-staging-and-unsigned-package)
+uses that exact handoff to stage 54 lab payload files. Separate readback
+matched every file in the unsigned native package. The malformed
+Trusted Launch control failed at the expected manifest field.
+The [publication check](../../tasks/windows11-integration.md#confirm-the-original-staged-tree-at-the-requested-package-path)
+requires the requested path to name the original staged tree and
+retains uncertainty and cleanup diagnostics after rename.
+The [UI startup DLL search](../../tasks/slint-gui-handoff.md#configure-the-default-dll-search-before-slint-backend-selection)
+sets the fixed Application Directory and System32 default before Slint
+backend selection. Exact loaded paths and installed dependency admission
+stay under WIN-3/WIN-4 and CHECK-16.
 The [UI execution manifest](../../tasks/windows11-integration.md#embed-and-verify-the-ordinary-ui-execution-manifest)
 now reads back `asInvoker` and `uiAccess=false` from the linked image.
 The [Windows handoff publication](../../tasks/windows11-integration.md#publish-the-checked-windows-build-handoff-as-a-single-tree)

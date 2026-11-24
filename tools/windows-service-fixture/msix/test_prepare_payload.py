@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Exercise the real publication boundary in an owned temporary directory."""
 
+from collections.abc import Callable
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import errno
 from hashlib import sha256
@@ -92,6 +93,80 @@ class PublicationTests(unittest.TestCase):
         self.assert_complete()
         with self.assertRaises(FileExistsError):
             producer.stage_payload(self.output, {"different": b"new"}, None)
+        self.assert_complete()
+
+    def test_parent_moved_at_rename_preserves_committed_tree_and_reports_uncertainty(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root: Path = Path(directory)
+            parent_path: Path = root / "requested"
+            moved_path: Path = root / "moved"
+            output: Path = parent_path / "payload"
+            parent_path.mkdir()
+            publish: Callable[[int, str, str], None] = producer.publish_new
+
+            def move_then_publish(parent: int, temporary: str, name: str) -> None:
+                parent_path.rename(moved_path)
+                parent_path.mkdir()
+                (parent_path / "sentinel").write_bytes(b"keep")
+                publish(parent, temporary, name)
+
+            with patch.object(producer, "publish_new", move_then_publish):
+                with self.assertRaises(producer.PublicationUncertainError):
+                    producer.stage_payload(output, self.payload, None)
+
+            self.assertEqual({item.name for item in parent_path.iterdir()}, {"sentinel"})
+            self.assertEqual((parent_path / "sentinel").read_bytes(), b"keep")
+            committed: Path = moved_path / output.name
+            self.assertEqual(list(moved_path.iterdir()), [committed])
+            self.assertEqual({
+                item.relative_to(committed).as_posix(): item.read_bytes()
+                for item in committed.rglob("*") if item.is_file()
+            }, self.payload)
+
+    def test_replaced_final_slot_preserves_both_objects_and_reports_uncertainty(self) -> None:
+        publish: Callable[[int, str, str], None] = producer.publish_new
+        committed: Path = self.parent / "moved"
+
+        def publish_then_replace(parent: int, temporary: str, name: str) -> None:
+            publish(parent, temporary, name)
+            self.output.rename(committed)
+            self.output.mkdir()
+            (self.output / "sentinel").write_bytes(b"keep")
+
+        with patch.object(producer, "publish_new", publish_then_replace):
+            with self.assertRaises(producer.PublicationUncertainError):
+                producer.stage_payload(self.output, self.payload, None)
+
+        self.assertEqual(list(self.output.iterdir()), [self.output / "sentinel"])
+        self.assertEqual((self.output / "sentinel").read_bytes(), b"keep")
+        self.assertEqual({
+            item.relative_to(committed).as_posix(): item.read_bytes()
+            for item in committed.rglob("*") if item.is_file()
+        }, self.payload)
+
+    def test_close_error_after_confirmed_path_preserves_complete_output(self) -> None:
+        close: Callable[[int], None] = os.close
+        publish: Callable[[int, str, str], None] = producer.publish_new
+        original_parent: int | None = None
+
+        def retain_parent_and_publish(parent: int, temporary: str, name: str) -> None:
+            nonlocal original_parent
+            original_parent = parent
+            publish(parent, temporary, name)
+
+        def close_then_fail(descriptor: int) -> None:
+            close(descriptor)
+            if descriptor == original_parent:
+                self.assertTrue(self.output.is_dir())
+                raise OSError(errno.EIO, "fixture parent release refusal")
+
+        with (
+            patch.object(producer, "publish_new", retain_parent_and_publish),
+            patch.object(os, "close", close_then_fail),
+        ):
+            with self.assertRaises(producer.PublicationUncertainError) as failure:
+                producer.stage_payload(self.output, self.payload, None)
+        self.assertIn("fixture parent release refusal", " ".join(failure.exception.__notes__))
         self.assert_complete()
 
     def test_pack_group_flush_covers_nested_entries_before_rename(self):

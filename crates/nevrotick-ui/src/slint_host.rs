@@ -50,13 +50,13 @@ mod raw_workflow;
 mod recovery_workflow;
 /// Guarded UI exit and shared Settings destinations; native ports stay unavailable.
 mod shell_workflow;
-/// Fixed early-runtime policy for images loaded by the Windows UI process.
+/// Fixed early-runtime image and DLL search policy for the Windows UI process.
 #[cfg(any(windows, test))]
 mod startup_image_policy;
 #[cfg(windows)]
 pub use native_workflow::NativeHostError;
 #[cfg(any(windows, test))]
-pub use startup_image_policy::ImageLoadPolicyError;
+pub use startup_image_policy::{DllSearchPolicyError, ImageLoadPolicyError};
 /// Source/editor projection and callbacks; no backend effect paths.
 mod source_workflow;
 /// Explicit disconnected status input and guarded contextual navigation.
@@ -135,6 +135,9 @@ pub enum HostError {
     /// The Windows process could not establish its required image-load policy.
     #[cfg(windows)]
     ImageLoadPolicy(ImageLoadPolicyError),
+    /// The Windows process could not configure its required default DLL search.
+    #[cfg(windows)]
+    DllSearchPolicy(DllSearchPolicyError),
 }
 
 impl fmt::Display for HostError {
@@ -148,6 +151,8 @@ impl fmt::Display for HostError {
             Self::Native(error) => fmt::Display::fmt(error, formatter),
             #[cfg(windows)]
             Self::ImageLoadPolicy(error) => fmt::Display::fmt(error, formatter),
+            #[cfg(windows)]
+            Self::DllSearchPolicy(error) => fmt::Display::fmt(error, formatter),
         }
     }
 }
@@ -163,6 +168,8 @@ impl std::error::Error for HostError {
             Self::Native(error) => Some(error),
             #[cfg(windows)]
             Self::ImageLoadPolicy(error) => Some(error),
+            #[cfg(windows)]
+            Self::DllSearchPolicy(error) => Some(error),
         }
     }
 }
@@ -552,12 +559,13 @@ pub fn create() -> Result<SlintHost, HostError> {
 /// Ordinary `create()` remains free of workers, timers and native ports.
 ///
 /// # Errors
-/// Returns an image-policy, checked fixture, backend selection, toolkit or
-/// native-host installation failure. The process policy must pass before
+/// Returns a startup policy, checked fixture, backend selection, toolkit or
+/// native-host installation failure. Both startup policies must pass before
 /// backend selection and installation of observers.
 #[cfg(windows)]
 pub fn create_native() -> Result<SlintHost, HostError> {
     startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
+    startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;
     slint::BackendSelector::new()
         .backend_name("winit".into())
         .renderer_name("software".into())
@@ -572,7 +580,7 @@ pub fn create_native() -> Result<SlintHost, HostError> {
 /// Run the Windows fixture observer owner until its acknowledged UI-only exit.
 ///
 /// # Errors
-/// Returns fixture/platform errors without claiming successful native cleanup.
+/// Returns a startup policy, fixture, platform or native-host error.
 #[cfg(windows)]
 pub fn run_native() -> Result<(), HostError> {
     create_native()?.run().map_err(HostError::Platform)
