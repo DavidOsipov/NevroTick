@@ -602,6 +602,20 @@ de-elevation mechanism. [S139]
 
 The UI may invoke the approved installed elevated helper through a supported UAC flow for a specific operation. The direct MSIX profile must bind installed package/publisher identity, approved release and actual protected payload to helper/IPC authorization under sections 19.4–19.5; an unrelated validly signed executable is not authorized. Exact capability and activation requirements outside the Store remain unqualified. Retained MSI profiles have their own installed-file trust requirements; missing signatures cannot become successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
 
+**Profile-separated elevation, 24 November 2026:** the elevated helper's actor
+and profile need not be those of the initiating UI. Do not infer that user's
+preferences, paths, HKCU or credentials from the helper's current-user context.
+Keep personal preferences in the ordinary UI user's context and machine policy
+under section 12's existing service owner. Authenticate the actual connected
+actor, admitted component and current operation under section 4.2.1; a
+caller-supplied original-user/profile field supplies no authority. Elevation
+alone does not admit an unrelated program to normal protected IPC, while direct
+Windows-object access and deliberate administrative recovery retain their
+separate rights and threat scope. The [dated Microsoft source review](plans/windows11-integration-follow-up.md#profile-separated-elevation--24-november-2026)
+and [W11-W05 qualification card](../tasks/windows11-integration.md#configuration-and-elevation-review--24-november-2026)
+cover supported activation modes and profile compatibility. This introduces no
+interactive-login or Windows Hello dependency for unattended service startup.
+
 #### 4.2.1 Service management admission and administrative recovery
 
 **7 November 2026 owner-requested hardening:** normal protected management must

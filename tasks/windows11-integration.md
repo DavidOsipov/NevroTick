@@ -1034,6 +1034,69 @@ lifecycle traces precede disposable native/service/package observations; no righ
 grant is dismissed because a harmless child-launch test passed. **Mapping:**
 CHECK-1/12/13/15/16/23/27; ST-T03/10/12/17 for affected storage owners.
 
+#### Configuration and elevation review — 24 November 2026
+
+**Scope and source:** documentation-only review of
+`5845260fc1adf4bf84a28f23e7f9d39378ea53e1`; initially clean checkout.
+`admin_docs_contract_review` and `admin_docs_windows_review` completed separate
+read-only reviews with inherited conversation context. Fresh-context
+`admin_docs_judge` first assessed the canonical sources before receiving their
+reports, then independently read the cited Microsoft evidence and adjudicated
+the edits. This is source/documentation evidence, not native qualification.
+
+**Judge comprehension before proposals:** the current production design keeps
+machine policy with the broker, personal preferences with the user, and normal
+protected management behind actor, installed-component and current-effect
+checks. Deliberate elevated recovery remains supported; hostile-admin prevention
+is excluded. Existing F-06 and §12 already specify draft/revision handling,
+known-precommit refusal and uncertain-result reconciliation.
+
+The inspected UI owners remain narrower: [preferences](../crates/nevrotick-ui/src/preferences.rs)
+hold process-local values, while [policy drafts](../crates/nevrotick-ui/src/policy.rs)
+and their [Slint callbacks](../crates/nevrotick-ui/src/slint_host/policy_workflow.rs)
+only retain a fixture comparison/preview. They supply neither durable preferences
+nor a real Apply port. Production configuration and native evidence remain open;
+this review does not activate UI-M0's deferred D2 work.
+
+| Reviewed proposal | Judge disposition and reason |
+| --- | --- |
+| Document Administrator protection/profile-separated elevation | **Accepted with qualification.** Add the missing UI/helper identity transition in architecture §4.2 and dated Microsoft facts in the [existing follow-up](../docs/plans/windows11-integration-follow-up.md#profile-separated-elevation--24-november-2026). The newer release note's non-formal-boundary classification governs the conflicting older wording; actual availability and compatibility remain profile-specific. |
+| Clarify unrelated elevated applications versus a hostile administrator | **Accepted narrowly.** Normal protected IPC still requires installed-component admission; direct file/SCM rights and deliberate elevated recovery are separate. No claim that all administrator processes are denied every product object. |
+| Rewrite configuration, feature or protected-storage contracts | **Not needed.** §§12/14, F-06 and the storage plan already own the guarantees and limits. Preserve strict machine-policy JSON and separate per-user preferences; no benchmark establishes a superior format, and no filename or preferences format is selected here. |
+| Adopt full enclaves, signed App Control, an external signer or mandatory Hello | **Rejected as scope expansion.** Research/documentation authorization selects none of these mechanisms and changes no hostile-admin guarantee, default, privilege, dependency or execution hold. |
+
+**Owner/readiness:** W11-W05 with W11-W10 for installed activation/helper/package
+identity and P5/D2 for real configuration/result presentation. Source refinement
+is ready when those existing stages are reached; native cases remain held and
+unqualified. Use the [two-family matrix](#432-two-family-windows-qualification-matrix--5-november-2026)
+with exact build/servicing, account, effective elevation policy and current
+compatibility preflight. A currently unavailable client feature is not a new
+mandatory Server dependency. No host-policy change or native probe is authorized.
+
+| Existing owner / checks | Planned useful and adverse observations |
+| --- | --- |
+| W11-W05/W11-W10 and P5; CHECK-1/18 | Ordinary supported UI activation reads status/edits personal preferences with the intended unelevated token. Observe an elevated-parent/explicitly elevated launch separately; `asInvoker` or a manifest readback cannot make that an unelevated pass. |
+| W11-W05/S0.3/S3.2; CHECK-1/2/3/25/27 | An admitted helper under the actual supported elevation mode completes a permitted bounded request through normal protected IPC. Wrong actor/application, unrelated elevated caller, forged original-user/profile fields and identity-query failure produce no protected effect through that route; keep useful public operations available under their existing policy. |
+| W11-W05/P3 and P5/D2; CHECK-15/25 | Personal preferences remain associated with the ordinary UI user; machine policy uses the existing service-owned destination. Missing, inaccessible or redirected helper-profile data neither creates another policy store nor authorizes a user-writable fallback. |
+| Existing policy owner and P5/D2; CHECK-2/3/15/25 | A fresh authorized revision commits once and reports saved/effective state accurately. Cancellation, stale input and proven precommit refusal preserve prior policy; lost acknowledgement or postcommit activation failure requires reconciliation, not assumed rollback or blind retry. |
+| W11-W05/W11-W10/P6; CHECK-13/18/23/27 | Services start/recover before interactive login, and deliberate authorized recovery works with UI/normal IPC unavailable. Neither the UI profile nor an interactive Hello prompt becomes a service prerequisite. Client feature-on/off observations and Server's actual available authority model keep separate results and existing recovery/ownership guards. |
+
+**Bounded application and checks:** `plan-code-change` and independent-review
+guidance supplied the frozen scope, pre-proposal comprehension and disposition;
+`plan-threat-model`/`security-windows-privileges` separated product-route authority
+from host control; `qa-test-planning`, `qa-security-boundaries` and
+`qa-regression-selection` routed the paired cases above. Judge self-checks pass:
+`git diff --check`, 11 added relative links/anchors and five unique cited source
+definitions; exactly these three Markdown files changed and the index stayed
+unchanged. No `docs/SHA256SUMS.txt` is present. The coordinator independently
+reviewed the combined diff, source claims and structural checks with no material
+content defect found. Publication and native qualification remain separate;
+these checks establish no native result. No product
+code, target script, build, test, service, key, package or host-policy operation
+was performed for this edit. The next implementation action is the existing
+owner's activation/identity card when its prerequisites are ready;
+current Core/Engine order, UI-M0 deferrals and all execution holds remain.
+
 ### W11-W06 Make optional cache work resource-aware
 
 **Owner/stage:** DNS scheduler/resource owner; DNS-4 shadow inputs, DNS-5 refresh.

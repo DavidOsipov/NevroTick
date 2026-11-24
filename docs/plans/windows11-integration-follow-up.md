@@ -2,7 +2,7 @@
 
 **Document:** NV-WIN11-RESEARCH-002, revision 1.2<br>
 **Date:** 3 November 2026 (Asia/Tbilisi)<br>
-**Updated:** 18 November 2026; additional packet-timestamp qualification<br>
+**Updated:** 24 November 2026; profile-separated elevation; packet-timestamp refinement retained from 18 November<br>
 **Owner:** David Osipov<br>
 **Status:** Source research and future qualification guidance; no implementation or native result.
 
@@ -46,10 +46,13 @@ Windows enforcement.
 The [current next-task plan](development-plan.md#7-next-executable-task-for-a-development-agent)
 continues to control portable Core work. Its broad Windows execution stop,
 separate fuzz-runner no-retry hold and the storage-experiment pause remain in force.
-The one complete MSI, least-privilege service separation, DoQ-only upstream with
-leaf/intermediate pins, separate mandatory clock continuity and UI-M0/D1–D3
-deferrals remain unchanged. No dependency, provider, optional API, privilege,
-process, release channel or new acceptance gate is selected here. “High priority”
+The current delivery follows [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026):
+one complete hardened MSIX for direct distribution. The original MSI research
+below remains conditional reference. Least-privilege service separation,
+DoQ-only upstream with leaf/intermediate pins, separate mandatory clock
+continuity and UI-M0/D1–D3 deferrals remain unchanged. No dependency, provider,
+optional API, privilege, process, release channel or new acceptance gate is
+selected here. “High priority”
 below means important when its existing adapter stage is reached.
 
 All proposed checks are future work in the authorized environment. No SDK binding,
@@ -446,6 +449,61 @@ sample timeouts or a blanket ban on system calls in ServiceMain. The current
 Core task and all native/fuzz/storage/UI holds remain; formal execution remains
 post-V1. Source preparation is ready at the existing stage, native cases held.
 
+### Profile-separated elevation — 24 November 2026
+
+**Current source facts, retrieved 24 November 2026.** Administrator protection
+uses a system-managed account/profile for elevation. Microsoft's developer
+guidance identifies a different SID, HKCU and user directories; personal
+settings do not automatically carry across. Current Learn also notes that SSO
+credentials and mapped resources from the ordinary session may be unavailable
+to the elevated session. [L16] [L17]
+
+Microsoft currently lists supported Windows 11 devices, with Windows Server
+editions, Windows 365 Cloud PCs and Azure Virtual Desktop session hosts still
+outside current support. Learn distinguishes the ordinary off-by-default
+setting from security-baseline
+enablement and lists compatibility cautions for Hyper-V-dependent devices,
+LAPS-managed devices and applications sharing data across profiles. Record
+actual build/servicing, account, policy and observed mode; neither an OS name nor
+a configured toggle establishes compatibility. The Hyper-V caveat does not
+establish that all VBS configurations are incompatible. [L16]
+
+**Source conflict and claim limit.** The May 2025 developer article describes a
+new security boundary. The later 27 August 2026 KB5120998 release note explicitly
+does not classify Administrator protection as a formal security boundary.
+Use that narrower current classification: elevation hardening and compatibility
+work, with no new NevroTick promise against a deliberately hostile administrator.
+The older article remains useful for the profile transition, not for overriding
+the later boundary qualification. [L17] [L18]
+
+**Engineering application of existing contracts.** [Architecture §4.2](../windows-time-architecture.md#42-operation-authorization)
+keeps the ordinary UI and its preferences separate from the helper's effective
+identity. Re-admit actor, installed component, bounded request and current policy
+at the actual receiving owner; do not bridge the profiles with trusted
+caller-supplied identity fields or a user-writable command/configuration file.
+The broker-owned machine-policy JSON and its revision, durability and uncertain
+outcome rules remain in [§12](../windows-time-architecture.md#12-configuration-persistence-and-diagnostics).
+No new preference format, policy filename, storage backend or format-performance
+claim follows from this Windows feature.
+
+Normal protected-IPC denial and direct host-object authority are separate
+questions. Windows service access depends on the requested rights and security
+descriptor, and privileged ownership/DACL changes can alter file access.
+Preserve deliberate administrative recovery and the existing hostile-admin
+exclusion; do not turn rejection of an unrelated elevated IPC caller into a claim
+that every elevated program is prevented from changing every product object.
+[L19] [L20]
+
+[W11-W05's existing qualification owner](../../tasks/windows11-integration.md#configuration-and-elevation-review--24-november-2026),
+with W11-W10 and the P5/D2 configuration receiver, carries the paired cases.
+Qualify available ordinary-UAC and supported Administrator-protection paths
+separately, including no-login service startup. Check the exact environment's
+current applicability before any later authorized native work. This review
+does not enable/disable host policy, prescribe Windows Hello, convert the
+current Sandbox/WSL host into a test fixture, or impose a client-only feature on
+Server. Required authorization, current development order and native/storage/UI
+holds retain their existing owners.
+
 ## 4. Diagnostics, replacement and protected storage
 
 ### ETW interest is separate from diagnostic authorization
@@ -676,7 +734,7 @@ They add source details and cases, not acceptance IDs or a parallel backlog.
 | W11-W02 | Actual I/O-wait timeout and unattended/hibernate resume cases alongside the existing sleep model. |
 | W11-W03 | DNS immediate/pending completion, NRPT precedence and exact field preservation. Keep private-name routing and DoQ pins. |
 | W11-W04 | COM ownership if WSH is selected; existing identity and network-confinement evidence remains. |
-| W11-W05 | Compare declarative MSI ACLs only for a later selected MSI alternative, managed service state and an SCM observer's actual callback lifetime. Apply the 7 November argument/error/mutex/environment refinements and conditional startup-wait cases before their dependent adapters. |
+| W11-W05 | Compare declarative MSI ACLs only for a later selected MSI alternative, managed service state and an SCM observer's actual callback lifetime. Apply the 7 November argument/error/mutex/environment refinements and conditional startup-wait cases before their dependent adapters. Carry the 24 November profile-separated elevation cases with W11-W10 and P5/D2. |
 | W11-W06 | Compare native global/interface hints with destination-aware COM information for the selected optional workload. |
 | W11-W07 | No new hashing/provider requirement; the prior eligible-workload and measured batching gates remain. |
 | W11-W08 | ETW emission authorization versus session/file access, collector-specific crash privacy and useful diagnostics alongside effective unattended error behavior. |
@@ -731,6 +789,8 @@ Core priority and all native/fuzz/storage holds remain in force.
 
 Retrieved through Windows Learn MCP during the 3 November 2026 investigation.
 T19–T26 were fetched in full for the 18 November packet-timestamp refinement.
+L16–L20 were retrieved from Microsoft on 24 November 2026 for elevation/profile
+compatibility and the distinction between product IPC and host-object authority.
 These are Microsoft documentation links, not pinned SDK headers or executed
 platform evidence. Exact supported flags, bindings, build/provider/account and
 effective behavior must be qualified when an adapter is selected. Citations in
@@ -777,6 +837,11 @@ the relevant sections preserve each source's purpose and known conflicts.
 [L13]: https://learn.microsoft.com/windows/win32/services/subscribeservicechangenotifications
 [L14]: https://learn.microsoft.com/windows/win32/services/unsubscribeservicechangenotifications
 [L15]: https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-notifyservicestatuschangew
+[L16]: https://learn.microsoft.com/en-us/windows/security/application-security/application-control/administrator-protection/
+[L17]: https://blogs.windows.com/windowsdeveloper/2025/05/19/enhance-your-application-security-with-administrator-protection/
+[L18]: https://support.microsoft.com/en-us/servicing/os/windows-11/2026/08/kb5120998-windows-11-24h2-25h2-update
+[L19]: https://learn.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights
+[L20]: https://learn.microsoft.com/en-us/windows/win32/secauthz/taking-object-ownership-in-c--
 [D1]: https://learn.microsoft.com/windows/win32/api/evntprov/nc-evntprov-penablecallback
 [D2]: https://learn.microsoft.com/windows/win32/api/evntprov/nf-evntprov-eventwrite
 [D3]: https://learn.microsoft.com/windows/win32/api/evntcons/nf-evntcons-eventaccesscontrol
