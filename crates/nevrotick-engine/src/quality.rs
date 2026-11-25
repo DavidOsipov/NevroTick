@@ -32,11 +32,11 @@
 //! Explicit caller limits replace upstream constants; no startup zero-skew
 //! assumption, interleaved mode, admission authority or source history is ported.
 //!
-//! One immutable result borrows the actual terminal facts and checked declared
-//! assumptions. Exact intervals are formed before once-rounded conversion. All
-//! subsequent binary64 operations are separate, checked computed values, with
-//! gradual underflow and canonical positive zero. Conversion bounds remain
-//! separate; they are not propagated into a total arithmetic or physical bound.
+//! One immutable result borrows the actual transport facts or a joined protected
+//! receipt and the checked declared assumptions. Exact intervals are formed before
+//! once-rounded conversion. All subsequent binary64 operations are separate, checked
+//! computed values with gradual underflow and canonical positive zero. Conversion
+//! bounds remain separate; they are not propagated into a total arithmetic or physical bound.
 //! There are no clock reads, I/O, mutations, callbacks or freshness updates.
 //! Successful work uses fixed scalar storage; rejected Garde reports are bounded
 //! temporaries. This supplies no calibrated uncertainty, eligibility or vote.
@@ -45,9 +45,12 @@
 use std::{error::Error, fmt, num::NonZeroU64};
 
 use garde::Validate;
+use ntp_wire::RawHeader;
 use time_domain::{RationalSecondsError, RationalSign, RoundedRationalSeconds};
 
-use super::{MeasurementRefusal, TransportFacts};
+use super::{ExperimentalMeasurement, MeasurementRefusal, TransportFacts};
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+use super::{ManagedProtectedReceipt, ManagedProtectedReport, ManagedProtectedTerminal};
 
 /// Decimal scale in the exact local-interval and corrected-RTT numerators.
 const NANOS_PER_SECOND: i128 = 1_000_000_000;
@@ -530,21 +533,22 @@ fn interval_seconds(
         .map_err(|source| QualityRefusal::Rational { interval, source })
 }
 
-/// Derive exact differences exclusively from the same successful terminal measurement.
+/// Derive exact differences exclusively from a successful exchange measurement.
 /// # Errors
-/// Preserve original measurement refusal, checked exact failure or actual conversion cause.
-fn exact_intervals(facts: &TransportFacts) -> Result<ExactQualityIntervals, QualityRefusal> {
-    let measurement = facts.measurement().map_err(QualityRefusal::Measurement)?;
-    let [t1, t2, t3, t4] = measurement.coordinates();
-    let [r1, r4] = measurement.local_fractional_remainders().map(i128::from);
-    let local = t4
+/// Preserve the checked exact arithmetic failure or actual conversion cause.
+fn exact_intervals(
+    measurement: &ExperimentalMeasurement,
+) -> Result<ExactQualityIntervals, QualityRefusal> {
+    let [t1, t2, t3, t4]: [time_domain::UtcCoordinateQ32; 4] = measurement.coordinates();
+    let [r1, r4]: [i128; 2] = measurement.local_fractional_remainders().map(i128::from);
+    let local: i128 = t4
         .ticks()
         .checked_sub(t1.ticks())
         .and_then(|ticks| ticks.checked_mul(NANOS_PER_SECOND))
         .and_then(|value| value.checked_add(r4))
         .and_then(|value| value.checked_sub(r1))
         .ok_or(QualityRefusal::ExactArithmetic(QualityInterval::Local))?;
-    let server = t3
+    let server: i128 = t3
         .ticks()
         .checked_sub(t2.ticks())
         .ok_or(QualityRefusal::ExactArithmetic(QualityInterval::Server))?;
@@ -651,16 +655,37 @@ struct ComputedQuality {
     delay_minus_dispersion: f64,
 }
 
+/// Advertised quality claims from the header of the same measured exchange.
+#[derive(Clone, Copy)]
+struct QualityClaims {
+    /// Signed advertised base-two precision exponent.
+    precision: i8,
+    /// Original unsigned 16.16 root-delay bits.
+    root_delay: u32,
+    /// Original unsigned 16.16 root-dispersion bits.
+    root_dispersion: u32,
+}
+
+impl QualityClaims {
+    /// Retain the original quality claims of an ordinary transport header.
+    const fn from_header(header: RawHeader) -> Self {
+        Self {
+            precision: header.precision(),
+            root_delay: header.root_delay_bits(),
+            root_dispersion: header.root_dispersion_bits(),
+        }
+    }
+}
+
 /// Evaluate separate binary64 primitives only after exact conversions/admission.
 /// # Errors
 /// Reject the first nonfinite intermediate or final transformed-output invariant.
 fn compute_quality(
-    facts: &TransportFacts,
+    claims: QualityClaims,
     assumptions: &DeclaredQualityAssumptions,
     intervals: &ExactQualityIntervals,
 ) -> Result<ComputedQuality, QualityRefusal> {
-    let header = facts.header();
-    let exponent = i32::from(header.precision()).clamp(-31, 31);
+    let exponent: i32 = i32::from(claims.precision).clamp(-31, 31);
     let biased = u64::try_from(exponent + 1023).map_err(|_| QualityRefusal::OutputInvariant)?;
     let peer_precision = f64::from_bits(biased << 52);
     let combined_precision = finite(
@@ -689,11 +714,11 @@ fn compute_quality(
     )?;
     let advertised_root_delay = finite(
         QualityStage::AdvertisedRootDelay,
-        f64::from(header.root_delay_bits()) / 65_536.0,
+        f64::from(claims.root_delay) / 65_536.0,
     )?;
     let advertised_root_dispersion = finite(
         QualityStage::AdvertisedRootDispersion,
-        f64::from(header.root_dispersion_bits()) / 65_536.0,
+        f64::from(claims.root_dispersion) / 65_536.0,
     )?;
     let advertised_half_delay = finite(
         QualityStage::AdvertisedDistance,
@@ -765,9 +790,9 @@ fn compute_quality(
 ///     evaluate_conditional_quality(facts, assumptions)
 /// }
 /// ```
-pub struct ConditionalQuality<'a> {
-    /// Actual terminal producer, retained with all captures, identities and original age.
-    facts: &'a TransportFacts,
+pub struct ConditionalQuality<'a, Facts = TransportFacts> {
+    /// Original transport facts or joined receipt with captures, identities and age.
+    facts: &'a Facts,
     /// Original checked declarations, retained without physical-truth assertion.
     assumptions: &'a DeclaredQualityAssumptions,
     /// Checked exact tuples, once-rounded values and separate arithmetic bounds.
@@ -776,7 +801,7 @@ pub struct ConditionalQuality<'a> {
     computed: ComputedQuality,
 }
 
-impl fmt::Debug for ConditionalQuality<'_> {
+impl<Facts> fmt::Debug for ConditionalQuality<'_, Facts> {
     /// Redact facts, assumptions, intervals, quality values and original age.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("ConditionalQuality { .. }")
@@ -789,6 +814,18 @@ impl<'a> ConditionalQuality<'a> {
     pub const fn original_facts(&self) -> &'a TransportFacts {
         self.facts
     }
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl<'a> ConditionalQuality<'a, ManagedProtectedReceipt> {
+    /// Borrow the original receipt for this measured authenticated exchange.
+    #[must_use]
+    pub const fn original_receipt(&self) -> &'a ManagedProtectedReceipt {
+        self.facts
+    }
+}
+
+impl<'a, Facts> ConditionalQuality<'a, Facts> {
     /// Borrow the exact original declared assumptions without a current-truth claim.
     #[must_use]
     pub const fn declared_assumptions(&self) -> &'a DeclaredQualityAssumptions {
@@ -889,8 +926,96 @@ pub fn evaluate_conditional_quality<'a>(
     facts: &'a TransportFacts,
     assumptions: &'a DeclaredQualityAssumptions,
 ) -> Result<ConditionalQuality<'a>, QualityRefusal> {
-    let intervals = exact_intervals(facts)?;
-    let computed = compute_quality(facts, assumptions, &intervals)?;
+    let measurement: &ExperimentalMeasurement =
+        facts.measurement().map_err(QualityRefusal::Measurement)?;
+    evaluate_quality(
+        facts,
+        measurement,
+        QualityClaims::from_header(facts.header()),
+        assumptions,
+    )
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ManagedProtectedReport {
+    /// Evaluate conditional quality for the first committed receipt, when present.
+    ///
+    /// Both the receipt and its measurement come from this normally joined report.
+    /// The measurement uses the original declaration. Evaluation does not read a
+    /// clock or establish a physical bound, freshness or sample eligibility.
+    ///
+    /// # Errors
+    /// Preserve the original measurement refusal, including an absent declaration,
+    /// and the shared exact arithmetic or quality limit refusal.
+    #[must_use]
+    pub fn first_quality<'a>(
+        &'a self,
+        assumptions: &'a DeclaredQualityAssumptions,
+    ) -> Option<Result<ConditionalQuality<'a, ManagedProtectedReceipt>, QualityRefusal>> {
+        let receipt: &ManagedProtectedReceipt = self.first()?;
+        let measurement: Result<ExperimentalMeasurement, MeasurementRefusal> =
+            self.first_measurement()?;
+        Some(evaluate_protected_quality(
+            receipt,
+            measurement,
+            assumptions,
+        ))
+    }
+
+    /// Evaluate conditional quality for the ordinary terminal receipt, when present.
+    ///
+    /// A terminal restriction or operation refusal has no quality result. The
+    /// calculation uses only this normally joined report and the supplied assumptions.
+    ///
+    /// # Errors
+    /// Preserve the original measurement refusal and the shared exact arithmetic
+    /// or quality limit refusal.
+    #[must_use]
+    pub fn terminal_quality<'a>(
+        &'a self,
+        assumptions: &'a DeclaredQualityAssumptions,
+    ) -> Option<Result<ConditionalQuality<'a, ManagedProtectedReceipt>, QualityRefusal>> {
+        match self.terminal() {
+            ManagedProtectedTerminal::Ordinary(receipt) => self.terminal_measurement().map(
+                |measurement: Result<ExperimentalMeasurement, MeasurementRefusal>| {
+                    evaluate_protected_quality(receipt, measurement, assumptions)
+                },
+            ),
+            ManagedProtectedTerminal::Restriction(_) | ManagedProtectedTerminal::Refused(_) => None,
+        }
+    }
+}
+
+/// Evaluate only the ordinary receipt and measurement paired by the original report.
+/// # Errors
+/// Preserve the original measurement refusal before reaching the shared quality checks.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+fn evaluate_protected_quality<'a>(
+    receipt: &'a ManagedProtectedReceipt,
+    measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
+    assumptions: &'a DeclaredQualityAssumptions,
+) -> Result<ConditionalQuality<'a, ManagedProtectedReceipt>, QualityRefusal> {
+    let measurement: ExperimentalMeasurement = measurement.map_err(QualityRefusal::Measurement)?;
+    let claims: QualityClaims = QualityClaims {
+        precision: receipt.peer_precision_exponent(),
+        root_delay: receipt.peer_root_delay_bits(),
+        root_dispersion: receipt.peer_root_dispersion_bits(),
+    };
+    evaluate_quality(receipt, &measurement, claims, assumptions)
+}
+
+/// Compute one result bound to its original exchange and checked declared assumptions.
+/// Internal callers pair both the measurement and claims with this same exchange.
+/// # Errors
+/// Preserve exact conversion and computation failures before applying limits in order.
+fn evaluate_quality<'a, Facts>(
+    facts: &'a Facts,
+    measurement: &ExperimentalMeasurement,
+    claims: QualityClaims,
+    assumptions: &'a DeclaredQualityAssumptions,
+) -> Result<ConditionalQuality<'a, Facts>, QualityRefusal> {
+    let intervals: ExactQualityIntervals = exact_intervals(measurement)?;
+    let computed: ComputedQuality = compute_quality(claims, assumptions, &intervals)?;
     if computed.advertised_distance >= assumptions.limits.advertised_distance {
         return Err(QualityRefusal::AdvertisedDistance);
     }

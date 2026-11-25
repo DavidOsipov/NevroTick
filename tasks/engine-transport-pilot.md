@@ -31568,6 +31568,44 @@ Windows execution and affected-file coverage and mutation remain open.
 Positive Core admission still requires independent date, scale, mapping
 and uncertainty evidence.
 
+###### Compute declared nominal quality on joined protected receipts — 25 November 2026
+
+S2.1/Q1 and REQ-8/BND-1/CHECK-6/7/8/11/14/25/27. The managed report
+evaluates the original first or ordinary terminal receipt with that
+receipt's own conditional measurement. The result borrows the receipt
+and checked assumptions. It uses the same exact interval conversion,
+arithmetic and limit order as the plain report. The terminal restriction
+and refusal states have no quality result. Missing or unsuitable profile
+data preserves the original measurement refusal.
+
+Rust contract and lifecycle review followed the actual joined UDP
+consumer. The controls check exact interval arithmetic and retained
+owner identity, both ordinary legs, strict distance refusal, and
+preservation of the first result across DENY and stale replacement.
+Independent review also caught a test-only Debug spelling change and
+an attribute that would have altered existing plain callers' lint
+behavior. Both were corrected before verification.
+
+Rust 1.100.0 on tree `4eb9ead9029cc00ec74e8841a3b8b7396f0bc918` passed
+formatting, four tests in the public quality integration target,
+eight doctests and 17 EP1 quality tests. The three joined UDP selectors
+passed in GNU debug and release. Default and EP1 GNU Clippy and EP1
+MSVC-target Clippy passed. The runners rejected misnamed selectors
+that executed zero tests. The first optimized compiler was killed
+before test execution under the bootstrap resource limits. The
+existing isolated development runner used the discovered selectors
+and the same source and vendor inputs for the successful retry.
+
+| Record under `~/.local/share/nevrotick/w11-quality-startup.UHCnu9C9/` | SHA-256 |
+| --- | --- |
+| `engine-r4/verification.json` | `4e6490c06f3dbbe1ca70b8a7ddc7331e389f0b529815b8eeadd9a14f1c2edcd6` |
+| `engine-optimized-exact.json` | `58b644ea988689e63f9a779aa2267ec9c92f1e1796b96afa16ea57e00cb5a06f` |
+
+Computed quality remains conditional on declared inputs. The production
+Windows receive path still lacks its qualified measurement declaration.
+Calibration, mapping and invalidation, date and scale evidence, positive
+Core admission, and affected-file coverage and mutation remain open.
+
 ###### Run joined jobs with one held provider scope in the component fixture — 23 November 2026
 
 S2.2 and CHECK-8/9/25/26/27. The existing worker now calls a shared

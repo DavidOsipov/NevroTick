@@ -4742,6 +4742,28 @@ finite calibrated bounds and mapping validity remain open.
 | `sensitivity.json` | `9322f1006173b25f59e1a0cf2f611184c00cb3056bd4cb4ca837ff6b4a5a4b07` |
 | `retained-placement.json` | `7ba563c13f4d3ba71b6e4d64146df4c957782d394b8b2b73dc8b9ffb58435ae9` |
 
+##### Bind the paired QPC span to the original exchange
+
+S2.1/W11-W01, TQ-09 and CHECK-7/11/25. Both reference comparison entry
+points now refuse a paired span wholly outside the original pre-send to
+receive-return interval. The closed spans may touch or overlap. The bench
+owner still supplies the physical pairing and its full uncertainty bounds.
+
+Boundary and negative-path QA held the exact exchange identity, validity,
+and wall comparison fixed. The predecessor accepted four disjoint span
+cases across the two entry points. The combined candidate passed all 33
+CPython 3.12.3 tests in a read-only network namespace. With synthetic wire
+and residual data and the two original Windows capture triplets, the
+repaired reader preserved 16 valid comparisons and refused 12 disjoint
+spans, including the other exchange's span in the same validity window.
+Independent review traced both callers, verified the input pins and
+checked the closed-interval boundary. The reader SHA-256 is
+`1b9a9edbc2f30aa78ae9aceeef9b9476fc26e71e1cd05c63bacc2b1f0ef08d9e`.
+The replay under `~/.local/share/nevrotick/w11-receiver-guards.Rv1aoX8y/timing/`
+has SHA-256 `75edd1675309ed5059db7819bd4a11a286e73afffee80faf676bd9e2c13ad175`
+for `retained-green.json`. Calibration, physical event pairing, valid
+mapping and positive Core history admission remain open.
+
 ### 4.27 Address-family admission routing — 5 November 2026
 
 **Owner/stage:** engine/protocol with the platform adapter owner, before dependent
@@ -21026,6 +21048,80 @@ admitted inert startup scope.
 | `native-result-r2.json` | `50af6dcb0ae242d6fd0b87e9ad5795ef5c578be66556497a93adfe5913c6807a` |
 | `native-retry` | `4a98a4a80d3b1971a2a7c96d87d9304c595f8b4038fc4340021ac8d095799c00` |
 
+##### Retain the first dispatcher refusal with its required diagnostic
+
+W11-W05/S3.1 and CHECK-16/25/27. Both laboratory entries now seal the
+first typed dispatcher refusal beside one required local diagnostic.
+The shared router owns the role, cause, sequence and unavailable lifecycle
+time. The returned error retains its original typed policy fields or
+native code. The in-process reader borrows this original snapshot. A
+duplicate attempt neither reaches the dispatcher nor changes the receipt.
+The `ServiceMain` result and diagnostic history retain separate custody.
+
+Service implementation, diagnostic privacy and contract QA exercised
+successful, failed and absent owner receipts, verified the consumed event
+and checked the duplicate attempt against the original address. Fresh
+source review checked failure ownership, scope and the role projection.
+The first GNU Clippy run refused test imports that made earlier type paths
+redundant and an implicit pointer conversion. The corrected candidate
+`34274f6455557b13014bb7aee79e903706ce17f2b9ffd3117e4fe56a2ce1db9f`
+passed all six graph and twelve development commands, including formatting,
+GNU and MSVC Clippy, 268 ordinary and 268 optimized GNU tests, and 28
+doctests. Tests decoded the actual shared event. The change creates no
+diagnostic writer or native resource.
+
+The exact combined candidate linked the MSVC fixture libtest and verified
+its PE and matching PDB. In the owned offline Windows Sandbox on build
+26100, both standalone role selectors observed SCM refusal 1063, decoded
+the original role's single required record, and checked that the duplicate
+attempt left that receipt in place. Independent queries observed the image
+restrictions and extension-point disable; the already set critical-error
+bit remained set. Each selector ran in a separate process and passed with
+exit zero, both streams at EOF, and empty stderr. Input and offline
+bookends passed. Guest staging and the host transfer files were retired.
+The existing input and output mappings point to the emptied run directories.
+
+| Record under `~/.local/share/nevrotick/w11-receiver-guards.Rv1aoX8y/service/` | SHA-256 |
+| --- | --- |
+| `combined-retry.patch` | `9f1ece402b9a10d06c0c9a2abf10ef9deb971a325d73c45d87b62009dc37d44c` |
+| `first-development.json` | `a91f09027d3576ad431f76dbad57b60fa490b3cdd177d4cd9fc29c51f50cf258` |
+| `current-graph.json` | `1f6bf3d5c7a013fb4d89df09e3eedf415b44cca904fd337dec663deea200dff3` |
+| `current-development.json` | `4dddb8aa2c2a5cb4822740c914359e12f57d89d4d1626e21c35fda92aa6a811b` |
+| `cross-link.json` | `3815a4f9d4b0de6b729d1c1348bfdf8c058d7ccfa3534b421c0e0225228534be` |
+| `native/native-result.json` | `e1412cfd0e3cd0bf2a2207b4ba9ca816cb0fcb85f712e9a2f0e5b0a4d40409d6` |
+
+The policy-specific structured fields and external startup diagnostic
+delivery remain open. Installed service behavior and the affected
+coverage and mutation gates retain their original requirements.
+
+##### Expose the original typed startup detail from the dispatch receipt
+
+W11-W05/W11-W08 and CHECK-16/25/27. The local accessor now borrows the
+fixed role and policy or native failure detail from the same first
+refusal that sealed the required v2 record. A duplicate call cannot
+replace the receipt. The ServiceMain result retains its separate owner.
+
+Service contract and diagnostic review checked the actual accessor and
+its source fields, including a native zero, a distinct unsuccessful
+policy readback, and the original SCM error. Windows scripted cases
+exercise representative typed policy failures. Missing fields remain
+unavailable where the native adapter does not carry their observations.
+
+The exact combined source passed six frozen GNU/MSVC graph commands
+and twelve development commands. These include GNU and MSVC-target
+Clippy, 268 ordinary and 268 optimized GNU tests, and 28 doctests.
+The preceding native SCM refusal controls retain their original
+candidate scope.
+
+| Record under `~/.local/share/nevrotick/w11-quality-startup.UHCnu9C9/` | SHA-256 |
+| --- | --- |
+| `startup-detail-r3-graph.json` | `8ef2ce69213b7007dcdeb32939e2ee3dc7d1a36831ecf0ed2c3f3de1cefc1cfe` |
+| `startup-detail-r3-dev.json` | `aebc49f17e509844e28474401dbed59fad4f9e6ca1c8768ccc366c095693703f` |
+
+The typed scripted controls require Windows execution. External
+diagnostic delivery, startup failures before Rust entry, and installed
+service behavior retain their existing owners and qualification gates.
+
 #### Bind startup admission to the first native exposure
 
 W11-W05/S3.1–S3.2 and CHECK-2/3/15/16/25/27. The service and contract
@@ -22209,6 +22305,29 @@ installed lifecycle retain their existing exits.
 | `native/NevroTick-ArtworkLab-UI-DisabledServices-unsigned.msix` | `680aff298f202704c32cd218af6adf9525441db5fcaa2e21cd0bb5eb4d8e29c2` |
 | `portable/archive-check.json` | `c65e2ee0bdcb4d0abd64ce6ff8fe45a1f074828ab1f4af85c7166dabe35d59c1` |
 | `portable/archive-crossed-ui.stderr` | `11b9ddf2b41a0c146e4d8bc980e556b5afb059ec139e713e79ac29735c7f6bd5` |
+
+##### Reconcile the service linker maps again at guarded staging
+
+W11-W10/P6 and CHECK-16/18/26/27. The guarded ArtworkLab stager passes each
+held service image and its digest-bound map to the shared link reader. It
+compares all observed startup facts with the independently pinned link
+receipt before adding the exact image bytes to the output. The in-image
+file-backed gate and CRT addresses must agree with their map offsets.
+
+Package-artifact and negative-path QA kept the healthy images and PDBs
+fixed and supplied a new map and matching receipt that placed the CRT
+outside the image. The predecessor CLI staged the candidate. The repaired
+CLI refused it before publication, and the valid neighbor preserved both
+images. All 194 portable MSIX tests passed on the combined candidate in
+a read-only network namespace. The portable replay matched the two earlier
+staging and archive readback digests above. Independent review rechecked
+the selected role inputs and their actual PE addresses and offsets. The
+stager SHA-256 is
+`4055067afc7562cff97822cad3687d751b1d3d29315c3b01723c73f8be3cd554`.
+The CLI controls and replay are under
+`~/.local/share/nevrotick/w11-receiver-guards.Rv1aoX8y/package/`.
+The archive remains the original unsigned fixture. Signing and installed
+lifecycle evidence remain open.
 
 #### Separate the recovery census from confirmed job retirement
 

@@ -44,7 +44,7 @@ from metadata.pipeline.generate import (
     _outside_source, _parent_unchanged, _read_checked_generation, _read_regular,
     _remove_staging, _write_payload,
 )
-from windows_pe import read_export_pair, service_preentry_declarations
+from windows_pe import read_export_pair, service_link_preentry_declarations
 
 
 def require(condition, message):
@@ -100,24 +100,21 @@ def _checked_role_sidecar(directory: int, name: str, pin: object, maximum: int) 
 
 
 def _check_role_preentry(directory: int, stem: str, row: dict[str, object], payload: bytes) -> None:
-    """Recheck the held PE facts and map identity from the guarded link producer.
-
-    The independently pinned link receipt supplies its gate and CRT symbol
-    reconciliation. This checks the same map and PE bytes at staging.
-    """
+    """Reconcile the held role map and PE with the pinned producer's startup facts."""
     raw_pe: object = row.get("raw_pe")
     guard: object = raw_pe.get("baseline_entry") if type(raw_pe) is dict else None
     require(type(guard) is dict, f"The guarded link receipt lacks {stem} baseline entry facts.")
-    observed: dict[str, object] = service_preentry_declarations(payload)
-    crt: object = guard.get("crt_startup_rva")
-    require(guard.keys() == observed.keys() | {"crt_startup_rva", "map_sha256"}
-            and type(crt) is int and 0 < crt < 2**32 and crt != observed["entry_rva"]
-            and all(type(guard[key]) is type(value) and guard[key] == value for key, value in observed.items()),
-            f"Guarded link facts differ from the held {stem} PE.")
     map_stem: str = stem.replace("-", "_")
-    map_data: bytes = _checked_role_sidecar(directory, map_stem + ".map", guard["map_sha256"], 2 * 1024**2)
+    map_data: bytes = _checked_role_sidecar(directory, map_stem + ".map", guard.get("map_sha256"), 2 * 1024**2)
     require(map_data.partition(b"\n")[0].strip() == map_stem.encode("ascii"),
             f"Guarded link map names a different role: {stem}.")
+    try:
+        observed: dict[str, object] = service_link_preentry_declarations(payload, map_data.decode("utf-8"))
+    except ValueError as error:
+        raise ValueError(f"Guarded link PE/map readback refused for {stem}: {error}") from error
+    require(guard.keys() == observed.keys() | {"map_sha256"}
+            and all(type(guard[key]) is type(value) and guard[key] == value for key, value in observed.items()),
+            f"Guarded link facts differ from the held {stem} PE.")
 
 
 def _read_roles(rows: dict[str, object], directory: int, anchor: Path, logical: Path, *,

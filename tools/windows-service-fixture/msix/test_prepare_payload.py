@@ -40,7 +40,14 @@ class GuardedRoleTests(unittest.TestCase):
             struct.pack_into("<I", pe, 0x98 + 16, 0x1010)
             image: bytes = bytes(pe)
             pdb: bytes = bytes(_pdb(guid=guid))
-            mapping: bytes = f" {map_stem}\n\n entry point at 0001:00000010\n".encode("ascii")
+            mapping: bytes = (
+                f" {map_stem}\n\n"
+                " Preferred load address is 0000000140000000\n\n"
+                "  Address         Publics by Value              Rva+Base               Lib:Object\n\n"
+                " 0001:00000010 nevrotick_service_entry 0000000140001010 service-entry.obj\n"
+                " 0001:00000030 mainCRTStartup 0000000140001030 msvcrt:exe_main.obj\n"
+                "\n entry point at         0001:00000010\n"
+            ).encode("ascii")
             (self.linked / image_name).write_bytes(image)
             (self.linked / pdb_name).write_bytes(pdb)
             (self.linked / (map_stem + ".map")).write_bytes(mapping)
@@ -100,6 +107,24 @@ class GuardedRoleTests(unittest.TestCase):
         guard["entry_rva"] = 0x1010
         guard["crt_startup_rva"] = 0x1030
         self.assertEqual(producer.role_images(self.receipt, self.pin(), require_baseline_entry=True), self.images)
+
+    def test_guarded_staging_rejects_a_repinned_map_with_crt_outside_the_image(self) -> None:
+        engine: str = producer.BINS[0]
+        map_path: Path = self.linked / (engine.replace("-", "_") + ".map")
+        original: bytes = map_path.read_bytes()
+        self.assertEqual(producer.role_images(self.receipt, self.pin(), require_baseline_entry=True), self.images)
+
+        # Keep the role name, gate, PE and PDB. Change the held map and the
+        # receipt together so both digest checks succeed and the PE must decide.
+        relocated: bytes = original.replace(b"0001:00000030 mainCRTStartup 0000000140001030",
+                                            b"0001:00001000 mainCRTStartup 0000000140002000")
+        self.assertNotEqual(relocated, original)
+        map_path.write_bytes(relocated)
+        guard: dict[str, object] = self.rows[engine]["raw_pe"]["baseline_entry"]
+        guard["map_sha256"] = sha256(relocated).hexdigest()
+        guard["crt_startup_rva"] = 0x2000
+        with self.assertRaisesRegex(ValueError, "mainCRTStartup lies outside the image"):
+            producer.role_images(self.receipt, self.pin(), require_baseline_entry=True)
 
 
 class PublicationTests(unittest.TestCase):

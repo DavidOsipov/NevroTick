@@ -3,6 +3,10 @@
 
 use std::{error::Error, ffi::c_void, mem::size_of};
 
+use windows_platform::{
+    diagnostics::{DecodedRecord, DiagnosticSnapshot, LifecycleObservationClaim},
+    service::ServiceRole,
+};
 use windows_sys::Win32::{
     Foundation::{ERROR_FAILED_SERVICE_CONTROLLER_CONNECT, GetLastError, HANDLE},
     System::Threading::{
@@ -11,7 +15,11 @@ use windows_sys::Win32::{
     },
 };
 
-use crate::{FixtureError, NativeOperation, broker_entry, engine_entry};
+use crate::{
+    DispatchDiagnostic, DispatchFailureDetail, FixtureError, NativeOperation, broker_entry,
+    engine_entry, retained_diagnostics, retained_dispatch_diagnostic,
+    retained_dispatch_diagnostics,
+};
 
 /// The only two four-byte mitigation layouts observed by this test.
 #[derive(Clone, Copy)]
@@ -73,14 +81,21 @@ fn observed_process_error_mode() -> u32 {
 /// # Errors
 /// Refuse an already protected setup, unexpected SCM result, incomplete
 /// image, error-mode or extension policy readback, or an accepted duplicate entry.
+///
+/// # Panics
+/// Fails if the required diagnostic contradicts the original dispatcher refusal.
 fn verify_console_entry(
     enter: fn() -> Result<(), &'static FixtureError>,
+    expected_role: ServiceRole,
+    expected_role_code: u8,
 ) -> Result<(), Box<dyn Error>> {
     let required: u32 = 0x07;
     let before: u32 = observed_policy_flags(ObservedPolicy::ImageLoad)?;
     if before & required == required {
         return Err("fixture needs a fresh process with an incomplete image-load policy".into());
     }
+    assert!(retained_dispatch_diagnostics().is_none());
+    assert!(retained_dispatch_diagnostic().is_none());
     let error_mode_before: u32 = observed_process_error_mode();
     let extension_before: u32 = observed_policy_flags(ObservedPolicy::ExtensionPointDisable)?;
     let original: Result<(), &'static FixtureError> = enter();
@@ -117,9 +132,41 @@ fn verify_console_entry(
     println!(
         "service_extension_points_before={extension_before:#010x} service_extension_points_after={extension_after:#010x}"
     );
+    let dispatch_diagnostic: &DispatchDiagnostic = retained_dispatch_diagnostic()
+        .ok_or("missing diagnostic from the original dispatcher refusal")?;
+    assert_eq!(dispatch_diagnostic.role(), expected_role);
+    assert!(matches!(
+        dispatch_diagnostic.detail(),
+        DispatchFailureDetail::Native(error)
+            if error.operation() == NativeOperation::Dispatch && error.code() == 1063
+    ));
+    let diagnostic: &DiagnosticSnapshot = dispatch_diagnostic.snapshot();
+    assert!(retained_dispatch_diagnostics().is_some_and(|legacy| std::ptr::eq(legacy, diagnostic)));
+    let raw: &[u8; 128] = diagnostic
+        .required()
+        .history()
+        .records()
+        .next()
+        .ok_or("missing required record")?;
+    let decoded: DecodedRecord = DecodedRecord::decode(raw).map_err(|_| "invalid diagnostic")?;
+    assert_eq!(decoded.component().code(), expected_role_code);
+    assert_eq!((decoded.event().id(), decoded.event().cause_code()), (4, 9));
+    assert_eq!(decoded.sequence(), 1);
+    assert_eq!(
+        decoded.observation(),
+        LifecycleObservationClaim::Unavailable
+    );
+    assert_eq!(diagnostic.required().history().len(), 1);
+    assert_eq!(diagnostic.optional().history().len(), 0);
+    assert!(retained_diagnostics().is_none());
     if !matches!(enter(), Err(FixtureError::AlreadyDispatched)) {
         return Err("fixture accepted reuse of the dispatcher attempt".into());
     }
+    assert!(retained_dispatch_diagnostics().is_some_and(|after| std::ptr::eq(after, diagnostic)));
+    assert!(
+        retained_dispatch_diagnostic()
+            .is_some_and(|after| std::ptr::eq(after, dispatch_diagnostic))
+    );
     Ok(())
 }
 
@@ -130,7 +177,7 @@ fn verify_console_entry(
 #[test]
 #[ignore = "run alone in a fresh Windows process outside an installed service"]
 fn engine_console_entry_enforces_image_load_policy() -> Result<(), Box<dyn Error>> {
-    verify_console_entry(engine_entry)
+    verify_console_entry(engine_entry, ServiceRole::Engine, 1)
 }
 
 /// The broker entry establishes the selected startup policies before its SCM attempt.
@@ -140,5 +187,5 @@ fn engine_console_entry_enforces_image_load_policy() -> Result<(), Box<dyn Error
 #[test]
 #[ignore = "run alone in a fresh Windows process outside an installed service"]
 fn broker_console_entry_enforces_image_load_policy() -> Result<(), Box<dyn Error>> {
-    verify_console_entry(broker_entry)
+    verify_console_entry(broker_entry, ServiceRole::ClockBroker, 2)
 }

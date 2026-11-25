@@ -52,8 +52,9 @@ use crate::nts_ke_experiment::{
 };
 #[cfg(any(windows, target_os = "linux"))]
 use crate::{
-    ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
-    RelativeMeasurementRefusal, SourceScale,
+    ConditionalQuality, DeclaredFrequencyInterval, DeclaredQualityAssumptions,
+    DeclaredQualityLimits, ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs,
+    MeasurementRefusal, QualityRefusal, RelativeMeasurementRefusal, SourceScale,
 };
 use crate::{
     ManagedProtectedReport, RunClockContext, SoftwareClock, SourceProtectedProbeFailure,
@@ -3760,6 +3761,19 @@ fn assert_first_loopback_projection<'a>(
                 measurement.declared_limit_ns() == LOOPBACK_MEASUREMENT_ALLOWANCE_NS),
             "first receipt lost its original measurement: {first_measurement:?}"
         );
+        let assumptions: DeclaredQualityAssumptions = loopback_quality_assumptions(131_072.0)?;
+        let quality: ConditionalQuality<'_, crate::ManagedProtectedReceipt> = report
+            .first_quality(&assumptions)
+            .ok_or(Failure::Control)?
+            .map_err(|_| Failure::Control)?;
+        assert_joined_quality(
+            &quality,
+            projected,
+            &assumptions,
+            first_quality,
+            FIRST_PEER_TIMESTAMPS,
+        )?;
+        assert!(report.terminal_quality(&assumptions).is_none());
     }
     if let Some(Ok(measurement)) = first_measurement {
         first_timing.assert_measurement(measurement, FIRST_PEER_TIMESTAMPS)?;
@@ -4297,10 +4311,129 @@ fn managed_loopback_measures_both_joined_ordinary_receipts() -> Result<(), Failu
                         );
                     }
                 }
-                Ok(())
+                assert_ordinary_joined_quality(report, refusal)
             },
         )?;
     }
+    Ok(())
+}
+
+/// Declare broad test-only time limits so the literal peer timestamps reach the Q1 checks.
+/// # Errors
+/// Preserve a refusal from the real checked quality declaration.
+#[cfg(any(windows, target_os = "linux"))]
+fn loopback_quality_assumptions(
+    maximum_advertised_distance: f64,
+) -> Result<DeclaredQualityAssumptions, Failure> {
+    let frequency: DeclaredFrequencyInterval =
+        DeclaredFrequencyInterval::new(-1.0 / 64.0, 1.0 / 64.0).map_err(|_| Failure::Control)?;
+    let limits: DeclaredQualityLimits = DeclaredQualityLimits::new(
+        maximum_advertised_distance,
+        1_073_741_824.0,
+        1_073_741_824.0,
+    )
+    .map_err(|_| Failure::Control)?;
+    DeclaredQualityAssumptions::new(1.0 / 1_024.0, 1.0 / 256.0, 1.0 / 512.0, frequency, limits)
+        .map_err(|_| Failure::Control)
+}
+
+/// Check both actual joined receipts and each original measurement refusal.
+/// # Errors
+/// Preserve missing receipt, numeric refusal and independent timing-oracle failure.
+/// # Panics
+/// Fail on a wrong measurement error or a root-limit comparison that is not strict.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_ordinary_joined_quality(
+    report: &ManagedProtectedReport,
+    refusal: Option<MeasurementRefusal>,
+) -> Result<(), Failure> {
+    use crate::ManagedProtectedTerminal;
+
+    let assumptions: DeclaredQualityAssumptions = loopback_quality_assumptions(131_072.0)?;
+    let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    let ManagedProtectedTerminal::Ordinary(terminal) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    for (receipt, outcome, claims, timestamps) in [
+        (
+            first,
+            report.first_quality(&assumptions),
+            (5, -23, 0x8123_4567, 0xf102_0304),
+            FIRST_PEER_TIMESTAMPS,
+        ),
+        (
+            terminal,
+            report.terminal_quality(&assumptions),
+            (7, -19, 0xcafe_4321, 0xa0b0_9080),
+            [0x4455_6677_8899_aabb, 0x5566_7788_99aa_bbcc],
+        ),
+    ] {
+        let outcome: Result<
+            ConditionalQuality<'_, crate::ManagedProtectedReceipt>,
+            QualityRefusal,
+        > = outcome.ok_or(Failure::Control)?;
+        if let Some(expected) = refusal {
+            assert!(
+                matches!(outcome, Err(QualityRefusal::Measurement(actual)) if actual == expected)
+            );
+        } else {
+            let quality: ConditionalQuality<'_, crate::ManagedProtectedReceipt> =
+                outcome.map_err(|_| Failure::Control)?;
+            assert_joined_quality(&quality, receipt, &assumptions, claims, timestamps)?;
+        }
+    }
+    if refusal.is_none() {
+        // First distance equals the limit exactly. The terminal uses smaller claims.
+        let boundary: f64 =
+            f64::from(0x8123_4567_u32) / 131_072.0 + f64::from(0xf102_0304_u32) / 65_536.0;
+        let assumptions: DeclaredQualityAssumptions = loopback_quality_assumptions(boundary)?;
+        assert!(matches!(
+            report.first_quality(&assumptions),
+            Some(Err(QualityRefusal::AdvertisedDistance))
+        ));
+        assert!(matches!(report.terminal_quality(&assumptions), Some(Ok(_))));
+    }
+    Ok(())
+}
+
+/// Compare receipt identity and computed quality with literal wire fields and brackets.
+/// # Errors
+/// Preserve a failed independent wall conversion from the original joined receipt.
+/// # Panics
+/// Fail on cross-leg substitution, rounded-first RTT or changed signed wire interpretation.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_joined_quality(
+    quality: &ConditionalQuality<'_, crate::ManagedProtectedReceipt>,
+    receipt: &crate::ManagedProtectedReceipt,
+    assumptions: &DeclaredQualityAssumptions,
+    (_, precision, root_delay_bits, root_dispersion_bits): (u8, i8, u32, u32),
+    [receive, transmit]: [u64; 2],
+) -> Result<(), Failure> {
+    assert!(std::ptr::eq(quality.original_receipt(), receipt));
+    assert!(std::ptr::eq(quality.declared_assumptions(), assumptions));
+    assert_eq!(
+        quality.peer_precision_seconds().to_bits(),
+        2.0_f64.powi(i32::from(precision)).to_bits()
+    );
+    assert_eq!(
+        quality.advertised_root_delay_seconds().to_bits(),
+        (f64::from(root_delay_bits) / 65_536.0).to_bits()
+    );
+    assert_eq!(
+        quality.advertised_root_dispersion_seconds().to_bits(),
+        (f64::from(root_dispersion_bits) / 65_536.0).to_bits()
+    );
+
+    let [send, _, read]: [SoftwareClock; 3] = receipt.application_clock_captures();
+    let local_ns: i128 =
+        numerics_tests::ntp_nanoseconds(read.utc())? - numerics_tests::ntp_nanoseconds(send.utc())?;
+    let server_q32: i128 = i128::from(transmit) - i128::from(receive);
+    let raw_numerator: i128 = (local_ns << 32) - 1_000_000_000 * server_q32;
+    let raw: time_domain::RoundedRationalSeconds = quality.raw_round_trip();
+    assert!(raw_numerator < 0);
+    assert_eq!(raw.sign(), time_domain::RationalSign::Negative);
+    assert_eq!(raw.numerator_magnitude(), raw_numerator.unsigned_abs());
+    assert_eq!(raw.denominator().get(), 4_294_967_296_000_000_000);
     Ok(())
 }
 

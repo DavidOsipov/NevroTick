@@ -28,9 +28,10 @@ use windows_sys::Win32::{
 };
 
 use crate::{
-    FixtureError, LabRole, NativeBrokerClockRead, NativeError, NativeOperation, SampledClockBreak,
+    DispatchDiagnostic, FixtureError, LabRole, NativeBrokerClockRead, NativeError, NativeOperation,
+    SampledClockBreak,
     broker_clock_change::{self, BrokerClockChanges, ControlDisposition, sampled_native_reader},
-    host::{self, Clock, Dispatcher, HostReceipt, StatusFactory, Wait},
+    host::{self, Clock, DispatchFailure, Dispatcher, HostReceipt, StatusFactory, Wait},
     native_broker_wait::{BrokerControlWake, BrokerWait, PendingCompletionWake, WakeSource},
 };
 
@@ -69,7 +70,7 @@ static OWNER: OnceLock<Thread> = OnceLock::new();
 static OUTCOME: OnceLock<HostReceipt> = OnceLock::new();
 /// Separately owned original dispatcher failure; never replaces the owner receipt.
 /// Initially empty, written only after this process's sole dispatch attempt fails.
-static DISPATCH_FAILURE: OnceLock<FixtureError> = OnceLock::new();
+static DISPATCH_FAILURE: OnceLock<DispatchFailure> = OnceLock::new();
 
 /// Real effect adapter, containing no caller-selected name or raw callback input.
 struct NativeDispatcher;
@@ -374,6 +375,11 @@ fn handle_control(control: u32, event_type: u32, changes: Option<&BrokerClockCha
 pub(super) fn retained_diagnostics()
 -> Option<&'static windows_platform::diagnostics::DiagnosticSnapshot> {
     OUTCOME.get().map(HostReceipt::diagnostics)
+}
+
+/// Borrow the exact first dispatch diagnostic without observing the owner again.
+pub(super) fn retained_dispatch_diagnostic() -> Option<&'static DispatchDiagnostic> {
+    DISPATCH_FAILURE.get().map(DispatchFailure::diagnostic)
 }
 
 /// Read the actual broker receipt's last historical attempt, when available.

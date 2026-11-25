@@ -23,12 +23,12 @@ use windows_platform::{
 #[cfg(target_os = "linux")]
 use super::guard_service_main;
 use super::{
-    Clock, Dispatcher, StatusFactory, TokenObserver, Wait, dispatch_once, dispatch_with_outcome,
-    run_service,
+    Clock, DispatchFailure, Dispatcher, StatusFactory, TokenObserver, Wait, dispatch_once,
+    dispatch_with_outcome, run_service,
 };
 use crate::{
-    FixtureError, LabRole, NativeError, NativeOperation, TokenCleanupOutcome,
-    TokenObservationCause, TokenObservationFailure,
+    DispatchDiagnostic, DispatchFailureDetail, FixtureError, LabRole, NativeError, NativeOperation,
+    TokenCleanupOutcome, TokenObservationCause, TokenObservationFailure,
 };
 
 #[path = "broker_clock_change_tests.rs"]
@@ -1950,20 +1950,28 @@ fn receipt_fixture(actual_result: Result<(), FixtureError>) -> super::HostReceip
 
 /// Dispatcher failure must remain visible beside a previously successful owner.
 ///
+/// # Errors
+/// Fails if no first-dispatch diagnostic survives or its record cannot decode.
+///
 /// # Panics
 /// Fails if the actual production combiner replaces native failure with clean success.
 #[test]
-fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
-    let once = AtomicBool::new(false);
-    let outcome = OnceLock::new();
-    let dispatch_failure = OnceLock::new();
+fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() -> Result<(), Box<dyn Error>>
+{
+    use windows_platform::diagnostics::{
+        DecodedRecord, DiagnosticSnapshot, LifecycleObservationClaim,
+    };
+
+    let once: AtomicBool = AtomicBool::new(false);
+    let outcome: OnceLock<super::HostReceipt> = OnceLock::new();
+    let dispatch_failure: OnceLock<DispatchFailure> = OnceLock::new();
     assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
-    let failure = NativeError::new(NativeOperation::Dispatch, 17);
-    let mut driver = Driver {
+    let failure: NativeError = NativeError::new(NativeOperation::Dispatch, 17);
+    let mut driver: Driver = Driver {
         roles: vec![],
         failure: Some(failure),
     };
-    let result = dispatch_with_outcome(
+    let result: Result<(), &FixtureError> = dispatch_with_outcome(
         LabRole::Engine,
         &once,
         &mut driver,
@@ -1972,7 +1980,38 @@ fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
     );
     assert!(matches!(result, Err(FixtureError::Native(actual)) if *actual == failure));
     assert_eq!(outcome.get().map(super::HostReceipt::result), Some(&Ok(())));
-    assert_eq!(dispatch_failure.get(), Some(&FixtureError::Native(failure)));
+    let retained: &DispatchFailure = dispatch_failure.get().ok_or("missing dispatcher refusal")?;
+    assert!(result.is_err_and(|actual| std::ptr::eq(actual, &raw const retained.error)));
+    let dispatch_diagnostic: &DispatchDiagnostic = retained.diagnostic();
+    assert_eq!(
+        dispatch_diagnostic.role(),
+        windows_platform::service::ServiceRole::Engine
+    );
+    assert!(matches!(
+        dispatch_diagnostic.detail(),
+        DispatchFailureDetail::Native(code)
+            if code.operation() == NativeOperation::Dispatch && code.code() == 17
+    ));
+    let diagnostic: &DiagnosticSnapshot = dispatch_diagnostic.snapshot();
+    let raw: &[u8; 128] = diagnostic
+        .required()
+        .history()
+        .records()
+        .next()
+        .ok_or("missing required dispatcher failure record")?;
+    let record: DecodedRecord = DecodedRecord::decode(raw).map_err(|_| "invalid failure record")?;
+    assert_eq!(
+        (
+            record.component().code(),
+            record.event().id(),
+            record.event().cause_code()
+        ),
+        (1, 4, 9)
+    );
+    assert_eq!(record.sequence(), 1);
+    assert_eq!(record.observation(), LifecycleObservationClaim::Unavailable);
+    assert_eq!(diagnostic.required().history().len(), 1);
+    assert_eq!(diagnostic.optional().history().len(), 0);
     assert_eq!(
         dispatch_with_outcome(
             LabRole::ClockBroker,
@@ -1984,6 +2023,13 @@ fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
         Err(&FixtureError::AlreadyDispatched)
     );
     assert_eq!(driver.roles, [LabRole::Engine]);
+    assert!(
+        dispatch_failure
+            .get()
+            .is_some_and(|after| std::ptr::eq(retained, after))
+    );
+    assert_eq!(dispatch_diagnostic.snapshot().required().history().len(), 1);
+    Ok(())
 }
 
 /// Keep the original process-mode refusal in the actual startup result owner.
@@ -2018,13 +2064,22 @@ fn process_mode_refusal_consumes_the_original_dispatch_attempt() {
     let mut driver: ModeRefusal = ModeRefusal { calls: 0, failure };
     let once: AtomicBool = AtomicBool::new(false);
     let outcome: OnceLock<super::HostReceipt> = OnceLock::new();
-    let retained: OnceLock<FixtureError> = OnceLock::new();
+    let retained: OnceLock<DispatchFailure> = OnceLock::new();
     assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
 
     let first: Result<(), &FixtureError> =
         dispatch_with_outcome(LabRole::Engine, &once, &mut driver, &outcome, &retained);
     assert_eq!(first, Err(&FixtureError::ServiceErrorMode(failure)));
-    assert_eq!(first.err(), retained.get());
+    assert_eq!(first.err(), retained.get().map(|receipt| &receipt.error));
+    assert_eq!(
+        retained.get().map(|receipt| receipt.diagnostic().detail()),
+        Some(DispatchFailureDetail::CriticalErrorMode(
+            ServiceErrorModeError::IncompleteReadback {
+                required: 0x8001,
+                observed: 0x8000,
+            }
+        ))
+    );
     assert_eq!(outcome.get().map(super::HostReceipt::result), Some(&Ok(())));
     assert_eq!(
         dispatch_with_outcome(
@@ -2037,6 +2092,112 @@ fn process_mode_refusal_consumes_the_original_dispatch_attempt() {
         Err(&FixtureError::AlreadyDispatched)
     );
     assert_eq!(driver.calls, 1);
+}
+
+/// Preserve representative policy failures without inventing missing observations.
+///
+/// # Errors
+/// Fails if the original dispatch receipt or its local v2 record is missing or invalid.
+///
+/// # Panics
+/// Fails if policy details, role, record identity or the actual error change.
+#[cfg(windows)]
+#[test]
+fn dispatch_policy_diagnostic_preserves_original_typed_details() -> Result<(), &'static str> {
+    use windows_platform::diagnostics::{DecodedRecord, LifecycleObservationClaim};
+    use windows_platform_native::{
+        ExtensionPointPolicyError, ImageLoadPolicyError, ServiceErrorModeError,
+    };
+
+    /// Returns one scripted policy refusal through the actual receipt owner.
+    struct RefusingDriver(Option<FixtureError>);
+
+    impl Dispatcher for RefusingDriver {
+        /// Refuse the first attempt with the original typed policy error.
+        fn dispatch(&mut self, _role: LabRole) -> Result<(), FixtureError> {
+            self.0.take().map_or(Ok(()), Err)
+        }
+    }
+
+    let cases: [(FixtureError, DispatchFailureDetail); 5] = [
+        (
+            FixtureError::ImageLoadPolicy(ImageLoadPolicyError::MissingEffectiveFlags {
+                requested: 0x1f,
+                observed: 0x17,
+            }),
+            DispatchFailureDetail::ImageLoad(ImageLoadPolicyError::MissingEffectiveFlags {
+                requested: 0x1f,
+                observed: 0x17,
+            }),
+        ),
+        (
+            FixtureError::ImageLoadPolicy(ImageLoadPolicyError::ReadEffective(0)),
+            DispatchFailureDetail::ImageLoad(ImageLoadPolicyError::ReadEffective(0)),
+        ),
+        (
+            FixtureError::ServiceErrorMode(ServiceErrorModeError::ChangedBeforeSet {
+                sampled: 0x8000,
+                previous: 0x0002,
+            }),
+            DispatchFailureDetail::CriticalErrorMode(ServiceErrorModeError::ChangedBeforeSet {
+                sampled: 0x8000,
+                previous: 0x0002,
+            }),
+        ),
+        (
+            FixtureError::ExtensionPointPolicy(ExtensionPointPolicyError::UnknownInitialFlags(3)),
+            DispatchFailureDetail::ExtensionPoint(ExtensionPointPolicyError::UnknownInitialFlags(
+                3,
+            )),
+        ),
+        (
+            FixtureError::ExtensionPointPolicy(ExtensionPointPolicyError::NotEffective),
+            DispatchFailureDetail::ExtensionPoint(ExtensionPointPolicyError::NotEffective),
+        ),
+    ];
+    for (error, expected) in cases {
+        let once: AtomicBool = AtomicBool::new(false);
+        let outcome: OnceLock<super::HostReceipt> = OnceLock::new();
+        let dispatch_failure: OnceLock<DispatchFailure> = OnceLock::new();
+        let mut driver: RefusingDriver = RefusingDriver(Some(error));
+        let result: Result<(), &FixtureError> = dispatch_with_outcome(
+            LabRole::ClockBroker,
+            &once,
+            &mut driver,
+            &outcome,
+            &dispatch_failure,
+        );
+        let retained: &DispatchFailure = dispatch_failure.get().ok_or("missing policy refusal")?;
+        assert!(result.is_err_and(|actual| std::ptr::eq(actual, &raw const retained.error)));
+        assert!(outcome.get().is_none());
+        let diagnostic: &DispatchDiagnostic = retained.diagnostic();
+        assert_eq!(
+            diagnostic.role(),
+            windows_platform::service::ServiceRole::ClockBroker
+        );
+        assert_eq!(diagnostic.detail(), expected);
+        let raw: &[u8; 128] = diagnostic
+            .snapshot()
+            .required()
+            .history()
+            .records()
+            .next()
+            .ok_or("missing required policy record")?;
+        let record: DecodedRecord =
+            DecodedRecord::decode(raw).map_err(|_| "invalid policy record")?;
+        assert_eq!(
+            (
+                record.component().code(),
+                record.event().id(),
+                record.event().cause_code()
+            ),
+            (2, 4, 9)
+        );
+        assert_eq!(record.sequence(), 1);
+        assert_eq!(record.observation(), LifecycleObservationClaim::Unavailable);
+        assert_eq!(diagnostic.snapshot().required().history().len(), 1);
+    }
+    Ok(())
 }
 
 /// Failure custody neither manufactures a missing owner nor replaces a failed one.
@@ -2079,7 +2240,16 @@ fn dispatcher_failure_leaves_failed_or_missing_owner_receipts_unchanged() {
             outcome.get().map(super::HostReceipt::result),
             expected_owner.as_ref()
         );
-        assert_eq!(dispatch_failure.get(), Some(&FixtureError::Native(failure)));
+        assert_eq!(
+            dispatch_failure.get().map(|receipt| &receipt.error),
+            Some(&FixtureError::Native(failure)),
+        );
+        assert_eq!(
+            dispatch_failure
+                .get()
+                .map(|receipt| receipt.diagnostic().detail()),
+            Some(DispatchFailureDetail::Native(failure)),
+        );
         assert_eq!(driver.roles, [LabRole::Engine]);
     }
 }

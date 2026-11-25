@@ -832,8 +832,10 @@ fn generated_garde_dispatch_covers_nested_and_computed_fields() -> Result<(), Bo
     let mut bad_limits = declared;
     bad_limits.limits.delay = f64::NAN;
     assert!(bad_limits.validate().is_err());
-    let intervals = product_ok(
-        exact_intervals(&facts),
+    let measurement: &ExperimentalMeasurement =
+        product_ok(facts.measurement(), "known valid measurement was refused")?;
+    let intervals: ExactQualityIntervals = product_ok(
+        exact_intervals(measurement),
         "known valid quality interval extraction was refused",
     )?;
     for (value, positive, nonnegative, signed) in [
@@ -848,7 +850,11 @@ fn generated_garde_dispatch_covers_nested_and_computed_fields() -> Result<(), Bo
     ] {
         for index in 0..13 {
             let mut candidate = product_ok(
-                compute_quality(&facts, &declared, &intervals),
+                compute_quality(
+                    QualityClaims::from_header(facts.header()),
+                    &declared,
+                    &intervals,
+                ),
                 "known valid quality computation was refused",
             )?;
             assert!(candidate.validate().is_ok());

@@ -18,7 +18,23 @@ use windows_platform::{
 
 pub(super) use windows_platform::diagnostics::ServiceEvent as Event;
 
-use crate::{FixtureError, LabRole, NativeError, error::WorkerError, host::WorkerWake};
+use crate::{
+    DispatchFailureDetail, FixtureError, LabRole, NativeError, error::WorkerError, host::WorkerWake,
+};
+
+/// Retain only typed fields available from the original dispatcher's refusal.
+pub(super) const fn dispatch_failure_detail(error: &FixtureError) -> DispatchFailureDetail {
+    match error {
+        FixtureError::Native(error) => DispatchFailureDetail::Native(*error),
+        #[cfg(windows)]
+        FixtureError::ImageLoadPolicy(error) => DispatchFailureDetail::ImageLoad(*error),
+        #[cfg(windows)]
+        FixtureError::ServiceErrorMode(error) => DispatchFailureDetail::CriticalErrorMode(*error),
+        #[cfg(windows)]
+        FixtureError::ExtensionPointPolicy(error) => DispatchFailureDetail::ExtensionPoint(*error),
+        error => DispatchFailureDetail::Other(primary_cause(error)),
+    }
+}
 
 /// Project the complete original error once without inspecting nested payloads.
 pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
@@ -183,6 +199,15 @@ impl Diagnostics {
     /// Seal production and consume at most sixteen remaining originals per route.
     pub(super) fn finish(&mut self) -> DiagnosticSnapshot {
         self.router.finish()
+    }
+
+    /// Seal a failure before any lifecycle time or started invocation exists.
+    pub(super) fn finish_startup_failure(&mut self, error: &FixtureError) -> DiagnosticSnapshot {
+        self.emit(
+            Event::PrimaryFailure(primary_cause(error)),
+            DiagnosticObservation::unavailable(),
+        );
+        self.finish()
     }
 }
 

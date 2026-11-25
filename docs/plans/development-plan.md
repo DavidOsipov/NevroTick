@@ -1268,6 +1268,10 @@ and the certificate-free loader and held-file parser in the same
 Windows guest. The [authenticated replay](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
 captured both exchanges and verified guest trust restoration. It supplies
 the rebuilt pair's original application brackets for the bench reader.
+The [paired QPC span guard](../../tasks/windows11-integration.md#bind-the-paired-qpc-span-to-the-original-exchange)
+now refuses a timing span wholly outside the selected exchange. The
+retained replay used synthetic reference inputs. Independent calibration
+and the read-side validity issuer remain the next reference prerequisites.
 The [protected socket bind check](../../tasks/engine-transport-pilot.md#verify-the-original-local-bind-before-protected-socket-registration)
 now verifies the exact requested local address before registration. Both
 loopback families passed on Windows. The wired interface still needs its
@@ -1473,6 +1477,16 @@ The [guarded UI debugger observation](../../tasks/slint-gui-handoff.md#observe-b
 recorded the same 28 images at the initial breakpoint and the entry
 instruction of the exact unsigned ArtworkLab UI. It leaves DLL
 initializer CPU compatibility and installed activation open.
+The [guarded package stager](../../tasks/windows11-integration.md#reconcile-the-service-linker-maps-again-at-guarded-staging)
+now reconciles both retained service maps against the exact PE bytes it
+stages and refuses incompatible CRT addresses. The original unsigned
+ArtworkLab carrier retained its existing scope.
+The [dispatcher refusal receipt](../../tasks/windows11-integration.md#retain-the-first-dispatcher-refusal-with-its-required-diagnostic)
+keeps the first typed refusal and its required local record, including
+failures before a service invocation can publish its own receipt.
+The [typed startup detail](../../tasks/windows11-integration.md#expose-the-original-typed-startup-detail-from-the-dispatch-receipt)
+exposes the fields carried by the original error. Full policy observation
+and external startup diagnostic delivery remain open.
 The [complete payload binding](../../tasks/windows11-integration.md#bind-the-complete-authored-payload-to-the-original-pre-start-archive)
 also joins the expected manifest and all authored bytes to the original
 archive lease before the installed window can verify its signer or launch
@@ -2955,7 +2969,8 @@ mode differs across successive captures. The
 [failed-getter guard](../../tasks/windows11-integration.md#withdraw-the-sampled-broker-revision-on-a-failed-getter--23-november-2026)
 withdraws the previously observed raw revision when a required read fails.
 The [joined protected receipt](../../tasks/engine-transport-pilot.md#retain-authenticated-peer-quality-claims-on-joined-receipts--23-november-2026)
-retains the original peer quality claims for the future receiving check.
+retains the original peer quality claims. The [conditional quality calculation](../../tasks/engine-transport-pilot.md#compute-declared-nominal-quality-on-joined-protected-receipts--25-november-2026)
+uses those claims with the same receipt's conditional measurement.
 The physical reference and full-exchange validity still gate positive
 Engine-to-Core admission.
 The earlier four generated fixture replay outcomes retain their own

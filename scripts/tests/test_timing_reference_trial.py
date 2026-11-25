@@ -314,6 +314,19 @@ class HeldOutExchangeTests(unittest.TestCase):
         with self.assertRaisesRegex(TRIAL.TrialRefused, "paired span crosses"):
             self.compare(self.window, replace(self.span, latest_tick=200))
 
+    def test_paired_qpc_span_must_overlap_original_exchange(self) -> None:
+        window: TRIAL.QpcValidityWindow = replace(self.window, start_tick=90, end_tick_exclusive=210)
+        for earliest, latest in ((95, 100), (199, 205), (95, 205)):
+            with self.subTest(earliest=earliest, latest=latest):
+                span: TRIAL.PairedExchangeSpan = replace(self.span, earliest_tick=earliest, latest_tick=latest)
+                self.assertEqual(self.compare(window, span), (230, 48))
+        for earliest, latest in ((95, 99), (200, 205)):
+            with (
+                self.subTest(earliest=earliest, latest=latest),
+                self.assertRaisesRegex(TRIAL.TrialRefused, "paired QPC span is disjoint from original exchange"),
+            ):
+                self.compare(window, replace(self.span, earliest_tick=earliest, latest_tick=latest))
+
     def test_complete_small_grid_matches_explicit_point_membership(self) -> None:
         original_ticks: set[int] = set(range(100, 119)) | set(range(190, 200))
         cases = product((99, 100, 101), (199, 200, 201), (99, 100, 101), (198, 199, 200))
@@ -576,6 +589,20 @@ class PinnedReferenceExchangeTests(unittest.TestCase):
             self.compare(pairing, window=replace(self.app.window, start_tick=101))
         with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid paired QPC span"):
             self.compare(self.encoded(span_qpc_ticks=[101, 100]))
+
+    def test_pinned_span_must_overlap_original_exchange(self) -> None:
+        window: TRIAL.QpcValidityWindow = replace(self.app.window, start_tick=90, end_tick_exclusive=260)
+        for ticks in ([95, 100], [199, 205], [95, 205]):
+            with self.subTest(ticks=ticks):
+                self.assertEqual(self.compare(self.encoded(span_qpc_ticks=ticks), window=window), (230, 48))
+        # All identifiers and wall comparisons still identify the first exchange.
+        # The later case uses the successor's ticks within the same validity window.
+        for ticks in ([95, 99], [201, 249]):
+            with (
+                self.subTest(ticks=ticks),
+                self.assertRaisesRegex(TRIAL.TrialRefused, "paired QPC span is disjoint from original exchange"),
+            ):
+                self.compare(self.encoded(span_qpc_ticks=ticks), window=window)
 
     def test_incomplete_extra_or_duplicate_pairing_fields_are_refused(self) -> None:
         missing: dict[str, object] = dict(self.record)

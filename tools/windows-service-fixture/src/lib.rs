@@ -58,6 +58,60 @@ pub use error::{
     TokenObservationFailure,
 };
 
+/// Bounded detail from the original dispatcher or pre-SCM policy refusal.
+///
+/// The variant and its typed payload identify the failing stage and the values
+/// available at that stage. Fields absent from that payload were not recorded.
+/// A native code of zero is still an observed code.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DispatchFailureDetail {
+    /// The original native operation and its captured error code.
+    Native(NativeError),
+    /// DLL search or image-load refusal, with its original stage and known facts.
+    #[cfg(windows)]
+    ImageLoad(windows_platform_native::ImageLoadPolicyError),
+    /// Critical-error mode refusal, with the exact pair of reported mode words.
+    #[cfg(windows)]
+    CriticalErrorMode(windows_platform_native::ServiceErrorModeError),
+    /// Extension-point refusal, with its original stage and known facts.
+    #[cfg(windows)]
+    ExtensionPoint(windows_platform_native::ExtensionPointPolicyError),
+    /// The dispatcher returned a different cause with no startup-policy detail.
+    Other(windows_platform::diagnostics::PrimaryCause),
+}
+
+/// The first retained dispatch refusal's fixed role, detail and local routing result.
+/// This historical view grants no service, policy or diagnostic delivery authority.
+#[must_use = "the dispatch diagnostic is the historical result of the first refusal"]
+pub struct DispatchDiagnostic {
+    /// Role that selected the original dispatcher and required diagnostic route.
+    role: windows_platform::service::ServiceRole,
+    /// Bounded fields taken from that same original error.
+    detail: DispatchFailureDetail,
+    /// The original sealed required route and its independently bounded health.
+    snapshot: windows_platform::diagnostics::DiagnosticSnapshot,
+}
+
+impl DispatchDiagnostic {
+    /// Read the original fixed role, without granting any of its privileges.
+    #[must_use]
+    pub const fn role(&self) -> windows_platform::service::ServiceRole {
+        self.role
+    }
+
+    /// Read the exact refusal fields available at the original failing stage.
+    #[must_use]
+    pub const fn detail(&self) -> DispatchFailureDetail {
+        self.detail
+    }
+
+    /// Borrow the same sealed local route returned by `retained_dispatch_diagnostics`.
+    #[must_use]
+    pub const fn snapshot(&self) -> &windows_platform::diagnostics::DiagnosticSnapshot {
+        &self.snapshot
+    }
+}
+
 #[cfg(any(windows, test))]
 pub use broker_clock_change::{
     BrokerClockRead, ClockReadRetirement, SampledClockBreak, SampledClockDiscontinuity,
@@ -163,6 +217,33 @@ pub fn retained_diagnostics() -> Option<&'static windows_platform::diagnostics::
     #[cfg(windows)]
     {
         native::retained_diagnostics()
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
+/// Borrow the original dispatch failure diagnostic for either fixed role.
+///
+/// Returns `None` before a failure is retained, after successful dispatch, and
+/// on non-Windows hosts. A duplicate entry cannot replace the first record.
+/// This in-process snapshot is separate from `retained_diagnostics` and adds
+/// no native delivery, lifecycle acknowledgement or protected effects.
+#[must_use]
+pub fn retained_dispatch_diagnostics()
+-> Option<&'static windows_platform::diagnostics::DiagnosticSnapshot> {
+    retained_dispatch_diagnostic().map(DispatchDiagnostic::snapshot)
+}
+
+/// Borrow the first dispatch refusal's typed detail and its original local route.
+/// Returns `None` on non-Windows hosts or when no dispatcher failure was retained.
+/// This observation neither reroutes the event nor reads the `ServiceMain` receipt.
+#[must_use]
+pub fn retained_dispatch_diagnostic() -> Option<&'static DispatchDiagnostic> {
+    #[cfg(windows)]
+    {
+        native::retained_dispatch_diagnostic()
     }
     #[cfg(not(windows))]
     {

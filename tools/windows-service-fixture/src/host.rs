@@ -38,10 +38,10 @@ use windows_platform::{
 #[cfg(windows)]
 use crate::native_broker_wait::PendingCompletionWake;
 use crate::{
-    FixtureError, LabRole, NativeError, TokenObservationFailure,
+    DispatchDiagnostic, FixtureError, LabRole, NativeError, TokenObservationFailure,
     diagnostics::{
-        CloseMode, Delivery, Diagnostics, Event, EventWriter, Sinks, lifecycle_cause,
-        primary_cause, worker_cause,
+        CloseMode, Delivery, Diagnostics, Event, EventWriter, Sinks, dispatch_failure_detail,
+        lifecycle_cause, primary_cause, worker_cause,
     },
     error::{ServiceFailure, WorkerError},
 };
@@ -570,6 +570,21 @@ pub(super) fn dispatch_once<D: Dispatcher>(
     driver.dispatch(role)
 }
 
+/// The first dispatcher refusal and its independent, sealed required record.
+pub(super) struct DispatchFailure {
+    /// The original typed policy or native error, retained without reformatting.
+    error: FixtureError,
+    /// Bounded typed detail joined to the original required route.
+    diagnostic: DispatchDiagnostic,
+}
+
+impl DispatchFailure {
+    /// Borrow the original failure's typed detail and immutable in-process history.
+    pub(super) const fn diagnostic(&self) -> &DispatchDiagnostic {
+        &self.diagnostic
+    }
+}
+
 /// Connect once and project the immutable owner-result receipt.
 /// The attempt flag and failure cell belong to one process, initially false and
 /// empty. Only this helper writes that failure cell; only the service owner writes
@@ -583,13 +598,27 @@ pub(super) fn dispatch_with_outcome<'a, D: Dispatcher>(
     attempted: &AtomicBool,
     driver: &mut D,
     outcome: &'a OnceLock<HostReceipt>,
-    dispatch_failure: &'a OnceLock<FixtureError>,
+    dispatch_failure: &'a OnceLock<DispatchFailure>,
 ) -> Result<(), &'a FixtureError> {
     if let Err(error) = dispatch_once(role, attempted, driver) {
         if error == FixtureError::AlreadyDispatched {
             return Err(&FixtureError::AlreadyDispatched);
         }
-        return Err(dispatch_failure.get_or_init(|| error));
+        let retained: &DispatchFailure = dispatch_failure.get_or_init(|| {
+            let mut diagnostics: Diagnostics = Diagnostics::new(
+                role,
+                Sinks::new(MemoryConsumer::new(ConsumerState::Available), None),
+            );
+            DispatchFailure {
+                diagnostic: DispatchDiagnostic {
+                    role: role.service_role(),
+                    detail: dispatch_failure_detail(&error),
+                    snapshot: diagnostics.finish_startup_failure(&error),
+                },
+                error,
+            }
+        });
+        return Err(&retained.error);
     }
     match outcome.get() {
         Some(receipt) => match receipt.result() {
@@ -674,13 +703,9 @@ impl HostReceipt {
 
     /// Finalize an honest failure before an invocation or lifecycle observation exists.
     fn startup_failure(error: FixtureError, mut diagnostics: Diagnostics) -> Self {
-        diagnostics.emit(
-            Event::PrimaryFailure(primary_cause(&error)),
-            DiagnosticObservation::unavailable(),
-        );
         Self {
+            diagnostics: diagnostics.finish_startup_failure(&error),
             actual_result: Err(error),
-            diagnostics: diagnostics.finish(),
             #[cfg(any(windows, test))]
             broker_clock_read: None,
             #[cfg(any(windows, test))]
