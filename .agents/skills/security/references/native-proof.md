@@ -14,3 +14,18 @@ Read only for Windows enforcement claims. Architecture sections 14.9 and 20 defi
 Clock experiments require disposable Windows VMs under canonical bounded plan: known initial controller/ownership, maximum raw API value/phase/rate, count/duration, independent clock observations and stop/recovery. Never explore on user's workstation. Unknown ownership forbids global reset. Preserve administrator/host races and precise-adjustment crash limits.
 
 Pair denials with passing valid neighbors; reject-all must fail. Prove intended native boundary reached before interpreting failures. Separate source hypotheses from actual causal observations. Record skipped/unavailable boundaries; pure/source/pack work remains useful without becoming native qualification.
+
+## Qualify pipe rights per principal
+
+Evaluate effective rights for each intended client/server token; a server-creation
+ACE is not an ordinary-client grant. Use the actual wrapper's requested mask.
+For the prohibited pipe-instance right, an ordinary client must explicitly
+request it beside a successful permitted data-access control; an intended server
+must still create a legitimate additional instance. Preserve the same pipe family
+and compatible mode/flags, with spare instance capacity. Capacity exhaustion,
+first-instance collision or parameter mismatch cannot prove access denial.
+Keep a deliberately single-instance product's limit; qualify this rights claim
+using the same descriptor/role tokens in an admitted isolated fixture with spare
+capacity, without treating it as the product's complete endpoint qualification.
+Follow the [effective pipe-client rights cases](../../../../docs/windows-time-development-hardening.md#effective-pipe-client-rights);
+descriptor inspection and modelled masks remain separate from native enforcement.

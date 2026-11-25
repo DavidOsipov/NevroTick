@@ -86,6 +86,11 @@ illustrates wiring, not NevroTick error, authorization or resource policy.
 
 ## Qualify optional tray recovery
 
+Resolve the actually selected backend before applying version-bound observations.
+For product-owned tray recovery and toast lifetimes, apply
+[desktop delivery](../../implement-native-ui/references/desktop-delivery.md);
+downstream wake coalescing does not bound earlier native Shell calls.
+
 At the optional-tray stage, test show/hide/restore, icon replacement, quit,
 repeated cycles and Explorer restart in the admitted Windows fixture. Observe
 recovery with the main window both visible and hidden; retain a usable exit.

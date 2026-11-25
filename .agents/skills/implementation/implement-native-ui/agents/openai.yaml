@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Slint UI"
-  short_description: "Implement or review Slint UI and Windows presentation"
-  default_prompt: "Use $implement-native-ui to implement or review NevroTick Slint UI, narrow Windows adapters, status presentation, keyboard and focus behavior, accessibility and localization."
+  short_description: "Implement native UI, tray and notification behavior"
+  default_prompt: "Use $implement-native-ui to implement or review NevroTick Slint UI, narrow Windows adapters, status, tray and notifications, keyboard and focus behavior, accessibility and localization."

@@ -81,6 +81,17 @@ need separate admission under architecture section 18.6.
    or treat export success as permission to clear a channel. See
    [EvtExportLog](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtexportlog).
 
+At production integration, retain bounded operation identity and the actual
+returned [EventRegister](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventregister)/[EventWrite](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventwrite)
+status. Keep local refusal, no invocation, registration availability, native
+success and retained/readable history distinct. These APIs return status directly;
+do not substitute GetLastError, arbitrary formatted error text or invented native
+codes for portable outcomes. EventWrite may succeed with no recording session.
+Pair healthy capture with native failure and no-session controls; health reporting
+must stay bounded without recursive logging, unbounded retry or blocked cleanup.
+The existing integration checkpoint owns this refinement; no early test-only
+fixture API rewrite or reinterpretation of portable booleans is required.
+
 ## Optional ETW
 
 Keep optional profiling/diagnostic ETW disabled until measured need. ETW does not
@@ -104,6 +115,17 @@ Check trace-file ACLs separately from real-time consume/control rights using
 [EventAccessControl](https://learn.microsoft.com/en-us/windows/win32/api/evntcons/nf-evntcons-eventaccesscontrol).
 Clean up only the task's owned session and artifacts; preserve pre-existing
 traces and any evidence the task requires retaining.
+
+If one provider is enabled in operational and optional sessions, compare useful
+operational capture alone with capture beside a stalled/full optional session.
+Retain actual call status separately from each session's observed history/loss.
+Assess [independent-session mode](https://learn.microsoft.com/en-us/windows/win32/etw/logging-mode-constants)
+only for compatible supported product-owned sessions; it is incompatible with
+private-logger mode. Do not reconfigure Event Log or administrator-owned sessions
+to obtain isolation. Where ownership/modes cannot isolate delivery, retain actual
+coupling/loss and bounded health; required routing promises a bounded attempt,
+not lossless delivery. Use [W11-W08's existing cases](../../../../tasks/windows11-integration.md#native-delivery-refinements--25-november-2026)
+and original drain/cleanup deadlines, without adding a session or execution grant.
 
 ## Firewall and WFP
 

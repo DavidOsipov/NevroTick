@@ -72,9 +72,11 @@ additional owner needed for the changed guarantee:
    Use [architecture §4.1.1's exact service privilege profiles](../../../../docs/windows-time-architecture.md#411-service-privilege-profiles)
    for both runtime services. Configuration needs explicit nonempty names;
    admission needs full present-set observation, not only enabled privileges or
-   a familiar forbidden subset. Route the current laboratory observer's missing
-   full-profile behavior through
-   [W11 §4.38](../../../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026).
+   a familiar forbidden subset. Reconcile reached source/laboratory observations
+   and remaining installed qualification through
+   [W11 §4.38](../../../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+   and the [current service/IPC handoff](../../../../tasks/windows11-integration.md#service-and-ipc-qualification--25-november-2026);
+   historical missing-implementation notes do not override later evidence.
    Preserve startup activation and supported package provisioning; do not add
    token/SCM rights or retain a powerful duplicate merely to make a wrapper,
    child-launch, memory or diagnostic convenience succeed. UI/helper tokens

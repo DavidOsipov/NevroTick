@@ -15,6 +15,21 @@ capture in the platform adapter and log the outcome once at its decision owner.
 
 For Windows Event Log providers/channels or optional ETW, read relevant [Windows host integration](../references/windows-host-integration.md#event-log) sections: installer-owned resources, effective access, wrong-clock event ordering, runtime lifecycle and native evidence.
 
+For a reached diagnostic Copy adapter, follow the
+[support-data contract](../../../../docs/windows-time-architecture.md#1234-privacy-sinks-and-resource-limits).
+After explicit current user action, publish only the bounded redacted preview.
+Before readable text, establish `ExcludeClipboardContentFromMonitorProcessing`
+or both `CanIncludeInClipboardHistory` and `CanUploadToCloudClipboard` as DWORD
+zero, as documented in [clipboard formats](https://learn.microsoft.com/en-us/windows/win32/dataxchg/clipboard-formats#cloud-clipboard-and-clipboard-history-formats).
+Keep exclusions on the same published item; no later helper may empty/replace
+the clipboard and discard them. Exclusion failure means no diagnostic text
+publication. Report partial effects, including lost previous content, honestly;
+no transactional rollback, clipboard confidentiality or old-copy erasure promise.
+Pair useful paste with busy/publication/exclusion failures and actual supported
+history controls; record cloud-policy/facility scope separately. Markers do not
+replace redaction or authorize automatic upload; unavailable UI actions remain
+disconnected until their existing integration stage.
+
 1. State each field's purpose, sensitivity, owner, recipients and retention. Exclude keys, NTS cookies, approval tokens, raw secret-bearing packets, unnecessary user identifiers and private paths from logs/exports. Prefer bounded codes/counters plus selected context; never serialize whole wire/domain objects on rejection.
 2. Inspect derived `Debug`, error-source chains, panic reports, tracing macros and enabled features. `tracing::instrument` records arguments by default; apply explicit field policy/skip controls at real owner. Redacted `Debug` cannot protect separate explicit fields, formatted inner values or downstream sinks.
 3. Bound record/field size, aggregate queues, disk retention, rotation and repeated-denial rates. Preserve first relevant cause/counters without flood-driven resource exhaustion. Use correlation/monotonic sequence for event ordering: repaired wall time may move backward; timestamps alone prove no freshness/causality.

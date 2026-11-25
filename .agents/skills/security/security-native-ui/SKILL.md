@@ -1,6 +1,6 @@
 ---
 name: "security-native-ui"
-description: "Implement or review NevroTick normal-user native UI trust presentation, bounded service commands, narrow elevated helper requests, safe text/actions and diagnostic exports."
+description: "Implement or review normal-user UI trust, tray/toast actions, bounded service commands, narrow elevated helper requests, safe text and diagnostic exports."
 ---
 
 # Keep presentation and privileged authority separate
@@ -8,6 +8,13 @@ description: "Implement or review NevroTick normal-user native UI trust presenta
 Read [the security contract](../CONTRACT.md), architecture sections 4.2, 5, 8.3, 12 and 16. Use [implement-native-ui](../../implementation/implement-native-ui/SKILL.md) for native control/accessibility implementation.
 
 Apply architecture section 16.5 first: UI-M0 remains fixture-only, with D1/D2/D3 deferred. The production IPC/effect requirements below apply when their integrations exist; this skill adds no input surface or milestone blocker.
+
+For tray/toast boundaries, apply [desktop delivery](../../implementation/implement-native-ui/references/desktop-delivery.md):
+budget before native work, establish the selected mirroring policy before Show,
+and distinguish callback/banner/history cleanup with current observer ownership.
+For diagnostic Copy, apply [privacy/logging](../security-privacy-logging/SKILL.md)
+before clipboard publication. These mechanisms preserve the canonical feature
+scope; they do not add native adapters or qualify unavailable behavior.
 
 For localization, apply the [hostile-catalog boundary](../../../../docs/plans/ui-localization.md#hostile-catalogs-security-amendment--6-november-2026-asiatbilisi).
 All JSON/CBOR, including English/generated/signed bytes, is untrusted input.
@@ -29,3 +36,8 @@ success and the HTML design establish no truthful wording or native UIA result.
 6. UI generates diagnostic exports from bounded redacted service snapshots/pages. Service endpoints receive no arbitrary output path. Review clipboard, links, drag/drop, file dialogs and error details only where features exist; require no speculative surfaces.
 
 Use applicable real native UI/service paths for changed claims: direct handler requests bypassing control restrictions, malformed and valid-shaped unauthorized/stale inputs, repeated requests against aggregate budgets and useful accepted neighbors. Verify bounded redacted errors, preserved valid state and no forbidden effects. At the relevant post-UI-M0 integration gates, cover allowed/denied identities, UAC cancellation, stale snapshots, keyboard/assistive-technology behavior and service continuity after UI close. UI Automation/accessibility support requires no broad UIAccess or elevation. Report actual actions/sinks, authority owner, visible trust behavior and evidence limits.
+
+Qualify actual GUI token elevation/integrity/privileges for selected launch paths,
+including an elevated-parent control; `asInvoker` alone proves no unelevated token.
+Keep effective image/DLL policy and establishment phase separate from manifest or
+setter presence, under the existing per-role/native/package owners.

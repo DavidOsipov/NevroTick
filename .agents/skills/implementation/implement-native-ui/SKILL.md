@@ -1,6 +1,6 @@
 ---
 name: "implement-native-ui"
-description: "Implement or review native UI behavior in Slint and Windows adapters: status, keyboard, focus, accessibility and localization."
+description: "Implement or review Slint and Windows UI behavior: status, tray, notifications, keyboard, focus, accessibility and localization."
 ---
 
 # Implement native UI
@@ -68,6 +68,10 @@ Read [native interaction and accessibility](references/interaction.md) for contr
 dialog, status, DPI or locale changes. Preserve UI-thread and handle ownership in
 [Rust adapters](../implement-rust/references/rust-windows.md). Route wire/state
 changes to [contracts](../implement-rust-contracts/SKILL.md).
+
+For tray recovery or notification submission, activation and cleanup, apply
+[desktop delivery](references/desktop-delivery.md). Diagnostic Copy/Export also
+uses [privacy/logging](../../security/security-privacy-logging/SKILL.md).
 
 For changed window/control, native buffer, callback or handle lifetimes, select
 [Windows memory diagnostics](../../testing/references/windows-memory.md) and
