@@ -17,8 +17,12 @@ the exact offered target, without separate routine Download/Install decisions.
 owns protected admission; [W11 §4.40](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
 and the [GUI handoff](../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
 own phased work. Both qualified trust/time/storage and surviving Windows recovery
-precede live Apply. Exact client/keys/provider/native mechanisms remain open;
-no production updater, signing or hosting is created by the documentation change.
+precede live Apply. Exact client/keys/provider/native mechanisms remain open.
+The [v0.4 HTML updater sample](nevrotick-design-v0.4/README.md) now demonstrates
+the journey offline in memory; its
+[GUI handoff checkpoint](../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records the executed checks and incomplete current browser verification.
+The sample supplies no native updater, signing, hosting or installation.
 
 **URL security update — 24 November 2026.**
 The guarded update selects `url 2.5.9` and `form_urlencoded 1.2.3`
@@ -1225,7 +1229,7 @@ artwork and variants. Design v0.2 remains historical with its original scene IDs
 Apply the references within the current UI-M0 scope and D1–D3 deferrals. HTML
 validators, dependencies and mock outcomes do not define the Rust/Slint
 implementation selected under OD-13. Imported Win32 descriptions reflect the
-pre-migration baseline. Simulated service, ownership and notification flows in v0.4 do
+pre-migration baseline. Simulated service, ownership, notification and updater flows in v0.4 do
 not implement or qualify native behavior. The live canonical architecture and accepted owner
 decisions retain precedence over archived copies in the design bundle.
 

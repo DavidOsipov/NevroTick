@@ -23005,10 +23005,14 @@ retain the predecessor comparison, independent readback and exact input pins.
 
 **Owner decision:** [OD-05 §7.10](../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026).
 **Contract:** [architecture §19.8](../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater).
-**Status:** adopted design and planned work; no updater implementation or executed
-updater/native qualification. This extends W11-W10/W11-W05 and P5/P6/P7 ownership,
+**Status:** adopted design and planned work; no production/native updater
+implementation or executed production-updater qualification. This extends W11-W10/W11-W05 and P5/P6/P7 ownership,
 not the current Core task or a parallel plan tree. Current native/fuzz/storage
 holds and post-V1 formal deferral remain.
+The [offline HTML checkpoint](slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records the presentation sample and open browser review; Rust/Slint and live
+updater gates remain separate. Existing laboratory package/signature/deployment
+receipts retain their own completed scopes and do not qualify the TUF updater.
 
 #### Scope, owners and prerequisites
 
@@ -23038,7 +23042,7 @@ Restore D2 before live checking/status/commands, D1/D3 at their existing trigger
 
 | Existing phase / work | Current disposition and next bounded action | Required exit |
 | --- | --- | --- |
-| S0.5/P5 contracts and inert UI | Ready to scope a source-only child under current priority. Define private validated target/intent/status records, worker/helper boundaries, budgets, consent invalidation, cancellation and reconciliation. Fixture inputs only until live prerequisites pass. | Independent healthy one-consent journey and receiver-bypass/stale/decline controls; typed localized copy and actual source ownership. No network or install evidence implied. |
+| S0.5/P5 contracts and inert Rust/Slint UI | Ready to scope a Rust/Slint source-only child under current priority. Define private validated target/intent/status records, worker/helper boundaries, budgets, consent invalidation, cancellation and reconciliation. The HTML reference does not implement these Rust/Slint owners; fixture inputs only until live prerequisites pass. | Independent healthy one-consent journey and receiver-bypass/stale/decline controls; typed localized copy and actual source ownership. No network or install evidence implied. |
 | W11-W10/maintenance, time/security and ST-W03 filesystem support: trust/time feasibility | Open before live apply. Select exact maintained TUF client/publisher/algorithm and per-process graph; qualify time/storage seams and separately identify production time-evidence provenance. Define protected enrollment, root reconstruction, protocol-progress writes, locks, installed/floor commits and repair/Reset/uninstall retention. | Future-clock/backward-repair, root rotation, failure after accepted metadata, corrupt established state and concurrent-user controls beside useful valid neighbors. Supplied-time fixtures do not qualify production UTC evidence. Actual runtime/license/provider admission remains required; no helper/UI Tokio expansion by convenience. |
 | W11-W05/W11-W10 Windows feasibility | Open under the [existing provisioning order](#service-provisioning-and-direct-msix-order--23-november-2026) and current execution holds. Freeze one inert complete N → N+1 candidate and bounded fault/observation/restoration matrix. Establish supported stage/register/provision semantics and recovery invocable without the old helper or logged-in UI. | Protected bytes remain actual Windows input; intended user/machine installation, quiescence and single controller survive helper termination, failed successor, reboot and lost acknowledgement. Local/test signing qualifies only declared mechanics. No live W32Time takeover follows. |
 | P5/P6 live integration join | Held until BOTH trust/time/storage and Windows lifecycle/recovery exits pass, with selected Windows signature/trust prerequisites and D2 restored. Integrate ordinary worker and narrow maintenance helper through fixed authenticated operations. | Yes for the exact current target reaches useful download/verification/deployment; invalid metadata/signature/hash/identity, stale authority, cancellation or unmet prerequisites cause no forbidden effect. No UI Boolean or worker-supplied verified type substitutes for helper admission. |
@@ -23052,7 +23056,7 @@ or expand into an indefinite updater campaign.
 
 #### Acceptance and adversarial cases
 
-All cases are **planned/unexecuted** until the owning candidate records results.
+The production-updater cases below are **planned/unexecuted** until the owning candidate records results.
 Use independent expected outcomes and healthy neighbors; challenge actual
 receiving handlers rather than only widget-enabled state.
 

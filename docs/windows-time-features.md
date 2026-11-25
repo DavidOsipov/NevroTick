@@ -498,7 +498,7 @@ Use the product's one Installed apps entry → supported Windows-authorized remo
 
 ### Manual update journey — 25 November 2026
 
-**Accepted interaction, implementation pending:** open **About → Check for
+**Accepted interaction; native implementation pending:** open **About → Check for
 updates**. The ordinary-user worker retrieves and validates bounded metadata
 under the current trust/time/policy rules. It transfers no MSIX package bytes,
 changes no machine installation and establishes no new machine-wide trust
@@ -565,8 +565,12 @@ events and separate log-loss status. Logs are not the UI state authority.
 The [GUI handoff and acceptance cases](../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
 own the source seam and P5 integration. UI-M0 remains fixture-only; D2 returns
 before live checking or update commands, and D1/D3 return at their existing
-display/accessibility preview and release gates. This journey records accepted
-behavior, not a working updater or native pass.
+display/accessibility preview and release gates. The
+[v0.4 HTML sample](nevrotick-design-v0.4/README.md) demonstrates this journey
+offline with in-memory data. Its
+[prototype checkpoint](../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records executed presentation checks and incomplete current browser verification.
+Native implementation and UP-UI-01–12 acceptance remain open.
 
 ## 7. Visibility when the window is closed
 

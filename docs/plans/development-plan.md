@@ -972,6 +972,9 @@ The [GUI handoff](../../tasks/slint-gui-handoff.md#manual-updater-contract-and-a
 owns fixture/receiver/text work; [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
 owns the trust/time and Windows recovery joins. D2 precedes live checking/status
 and commands; fixture source does not enable networking or privileged Apply.
+The [HTML updater checkpoint](../../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records delivered offline presentation with browser review still open; the
+Rust/Slint fixture and production UP-UI acceptance remain separate pending work.
 
 **Default toolkit — 5 November 2026:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Rust/Slint and incorporates the accepted local fixture migration and
@@ -4918,7 +4921,7 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
-| UI/dependency/licence, [current S0.5 goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui) and [GUI handoff](../../tasks/slint-gui-handoff.md) | Reconcile the implemented v0.4 fixture GUI and original GUI GPL3 graph against the combined candidate. Retain exact branch receipts, main's pilots/reaffirmation and the planned P3/P5/P6 hardening handoff; native/backend/critical-text approval and release gaps remain. No additional toolkit selection or legacy Win32 instrumentation prerequisite; live P5 and D1–D3 retain their triggers. Serialize shared graph/schema changes; native/fuzz/storage holds remain. |
+| UI/dependency/licence, [current S0.5 goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui) and [GUI handoff](../../tasks/slint-gui-handoff.md) | Reconcile the implemented v0.4 fixture GUI and original GUI GPL3 graph against the combined candidate. The later [HTML updater checkpoint](../../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026) has separate open browser review and pending Rust/Slint fixture work; HTML delivery supplies no Slint implementation credit. Retain exact branch receipts, main's pilots/reaffirmation and the planned P3/P5/P6 hardening handoff; native/backend/critical-text approval and release gaps remain. No additional toolkit selection or legacy Win32 instrumentation prerequisite; live P5 and D1–D3 retain their triggers. Serialize shared graph/schema changes; native/fuzz/storage holds remain. |
 | Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation have completed their recorded final host qualification; preserve those receipts and route the current product continuation through section 7. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | The Windows target and exact checker now select the required x86-64-v3 floor under the 6 November owner clarification. Qualify affected artifacts and prepare lower-baseline-compatible launch admission; native CPU/OS/VM compatibility and measured optional-kernel benefits remain open. Coordinate shared inputs with the lint/Core owner and preserve historical receipts. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | The [10 November ST-W01 card](../../tasks/windows-protected-storage.md#7-st-w01-documentary-card--10-november-2026) completes the bounded documentary handoff with one proposed row, outcomes, ownership, eight planned traces and exact engineering blockers. No executable construction, ST-W02 admission or native pass follows. Other contracts apply before dependent adapters; implementation admission and the storage pause retain their separate gates. |
@@ -5306,6 +5309,12 @@ their ready/open/held dispositions before dependent P5/P6/P7 work. Both trust/ti
 storage and surviving Windows recovery exits precede live Apply. Current §7 order,
 UI-M0/D2 re-entry, exact dependency/signing admission and execution holds remain;
 this planning integration grants no runtime, key or hosting operation.
+The [HTML checkpoint](../../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+is complete within its recorded source/model/structure scope. Import its
+[open browser review](../../tasks/slint-gui-handoff.md#remaining-html-browser-review)
+and the [pending Rust/Slint fixture](../../tasks/s0.5-ui-comparison.md#manual-updater-ui-handoff--25-november-2026)
+as separate S0.5/P5 actions; neither changes the current Core dependency order
+or supplies native updater qualification.
 
 **9 November service privileges:** consume
 [architecture §4.1.1](../windows-time-architecture.md#411-service-privilege-profiles)

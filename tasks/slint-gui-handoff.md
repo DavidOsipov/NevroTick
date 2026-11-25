@@ -138,10 +138,66 @@ change. UP-UI-01–12 and their actual effect/receiver/native gates below remain
 planned. D1–D3, critical-text approval, current product priority and existing
 execution holds retain their owners and re-entry conditions.
 
+#### Remaining HTML browser review
+
+**Owner/status:** the existing S0.5/P5 UI and accessibility/QA owners retain this
+bounded, open prototype checkpoint. Start from the published HTML source in
+[`da8d0e3`](https://github.com/DavidOsipov/NevroTick/commit/da8d0e3b52ecb0dd49dd0564bd81e360b4ff268d)
+and the artifact identity above; bind any later changed candidate separately.
+Resume when a permitted working browser environment is available. This is not
+a new Core prerequisite, native D1–D3 re-entry or production UP-UI completion gate.
+
+Use one bounded browser pass and record browser/version, candidate, entry point,
+actual observations and any unavailable case. Inspect these behaviors:
+
+1. Both standalone and multi-file entries, Simple/Power About and tray → About;
+   one Update now reaches the sample result without another product confirmation.
+2. Real keyboard/focus behavior: Check to status, initial Later focus, Tab/Escape,
+   offer dismissal and focus restoration, plus reachable cancel/error/reconcile
+   actions. An unaccepted offer starts no simulated download or installation
+   progression.
+3. All 14 result choices at a desktop width, with representative offer, progress,
+   failure and unknown/restart states at a narrow width and enlarged text.
+   Required facts/actions remain visible; inspect overflow, labels and status text.
+4. Cancel during Check/Download/Verify, navigation and mode changes during work,
+   retained-offer reopening, and cancel-versus-confirm reset during Installing
+   and Outcome unknown. Late callbacks must not resume cancelled/reset work.
+5. Actual persisted-page restoration where supported: current work resumes once,
+   cancelled work stays stopped and stale results cannot replace a newer operation.
+   A synthetic `pageshow` call alone does not close this browser observation.
+6. Both unknown-result reconciliation outcomes, separate installed/running
+   versions and the Windows-restart requirement. Observe browser errors and
+   unexpected requests; the sample makes no updater network requests, package
+   transfer or native effects. Local CSS/JS/AVIF loads in the multi-file preview
+   are expected.
+
+Keep unavailable browser observations open. A defect gets
+a focused source repair and affected rerun; absent evidence does not justify
+repeating unrelated suites or changing browser/host policy. Attach the bounded
+result here, preserving the existing source/Node/structure receipt. Neither this
+HTML pass nor its current gap qualifies or blocks unrelated native product work.
+
+**Documentation routing follow-up — 25 November 2026:** based on
+`a4a3bb043fdb09126d3659595d3ff8b20cdc8198`, the existing indexes, feature/update
+assessment, S0.5/UI-M0/P5 queue and W11 task now distinguish delivered HTML,
+open browser review and pending Rust/Slint work. `plan-code-change` preserved the
+existing owners/order; `qa-regression-selection` selected documentation and
+unchanged-artifact checks rather than rerunning code suites. The coordinator
+verified 23 added local links/anchors, all 185 unchanged prototype-manifest
+entries and preservation of the upstream W11 receipts before §4.40; no root
+`docs/SHA256SUMS.txt` exists. Product/prototype source, skills and AGENTS remain
+unchanged. Fresh-context `updater_doc_judge` established expectations before
+scout conclusions, reviewed the ten-file delta and independently passed
+`git diff --check`. JD-01/JD-02 were corrected: browser decline observes no
+simulated progression, and local preview assets are distinguished from forbidden
+updater traffic/effects. No unresolved material documentation finding remained;
+no code, browser or native qualification was executed by that review.
+
 ### Current source and next boundary
 
-Readback at `59838326655cd8272e0c3ced593e43c44d99d2b8` establishes these existing
-owners, without executing them:
+Rust/Slint readback at `59838326655cd8272e0c3ced593e43c44d99d2b8` establishes these
+existing owners, without executing them; the later HTML sample adds none of
+these native updater paths:
 
 | Existing source | Current fact and updater work still needed |
 | --- | --- |
@@ -150,13 +206,14 @@ owners, without executing them:
 | [`src/main.rs`](../crates/nevrotick-ui/src/main.rs) and [`Cargo.toml`](../crates/nevrotick-ui/Cargo.toml) | The Windows entry calls the Slint host; the UI package is `0.0.0` and described as fixture-only. The UI has no Tokio dependency. Neither the Cargo version nor a running GUI identifies the currently installed complete product. No updater client, privileged updater endpoint or package-apply implementation is supplied by this source review. |
 | Existing catalog and [`native_notifications_windows.rs`](../crates/nevrotick-ui/src/native_notifications_windows.rs) | Typed catalog publication and sample notification lifecycle exist. `Package::Current()` guards notification identity; it does not supply an updater's actual installed-product/version reconciliation. The updater still needs code-owned messages, independent critical-content approval and current typed result producers. Sample toast/portable receipts supply no live updater or native delivery pass. |
 
-The first future UI source slice is a bounded in-memory operation model and
+The next Rust/Slint source slice is a bounded in-memory operation model and
 About fixture using that established ownership, with sample labels and disabled
 live/protected effects. Freeze its typed states, exact-target intent, finite
 work/text budgets, independent cases and message-contract changes first. Keep
 one graph/schema owner. Do not insert a hidden live adapter, actual DNS/download,
-UAC or package action into UI-M0. Preserve the normal development queue; this
-documentation work changed no source or dependency.
+UAC or package action into UI-M0. Preserve the normal development queue. The
+earlier adoption-documentation stage changed no source or dependency; the later
+HTML implementation above changes no Rust/Slint source or dependency.
 
 ### One consent, independently checked effects
 

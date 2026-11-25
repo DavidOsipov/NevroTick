@@ -876,7 +876,10 @@ results without inferring native, fuzz, semantic approval or combined-tree succe
 
 Before each relevant S5 child, read the
 current [design v0.4](../docs/nevrotick-design-v0.4/README.md) and
-[latest HTML audit](../docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md).
+[current HTML updater checkpoint](slint-gui-handoff.md#html-updater-prototype--25-november-2026),
+including its open browser review and separate pending Rust/Slint integration.
+The retained [tray audit](../docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md)
+qualifies only its historical candidate.
 Use the retained v0.2
 [UI specification](../docs/nevrotick-design-v0.2/docs/02-ui-spec.md),
 [source editor contract](../docs/nevrotick-design-v0.2/docs/03-server-configuration.md),

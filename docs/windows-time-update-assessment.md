@@ -364,8 +364,11 @@ retain separate authority; none is automatic fallback after TUF denial.
 
 Use the [existing W11 updater assignment](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
 and existing P5/P6/P7 owners, not a parallel updater project. First freeze the
-state/intent/target contract and independent accepted/refused observations;
-GUI fixture preparation stays within its existing scope. Then qualify the
+state/intent/target contract and independent accepted/refused observations.
+The [HTML updater checkpoint](../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records the completed offline, in-memory presentation sample and its current
+browser-verification gap. Native UI integration and UP-UI-01–12 remain planned
+within the existing GUI handoff. Then qualify the
 trust/time/client/state track and an inert complete MSIX N → N+1 deployment with
 surviving recovery. They may proceed independently within current authorization;
 their successful join, publisher/trust prerequisites and applicable holds govern

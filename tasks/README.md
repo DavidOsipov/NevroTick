@@ -12,6 +12,15 @@ the [development plan](../docs/plans/development-plan.md). Architecture §21 own
 P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
+**HTML updater reference — 25 November 2026:** the
+[GUI handoff checkpoint](slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+records the implemented offline About update journey and its scoped checks.
+The [remaining browser review](slint-gui-handoff.md#remaining-html-browser-review)
+is open; the [S0.5 updater handoff](s0.5-ui-comparison.md#manual-updater-ui-handoff--25-november-2026)
+owns the separate pending Rust/Slint fixture. Production trust, installation and
+UP-UI acceptance remain open under the existing P5/W11 owners. This reference
+update does not change the product dependency order below.
+
 **Current dependency order — 23 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
 puts the [canonical timing pair and independent reference preparation](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
 ahead of the first real Engine-to-Core history admission. The

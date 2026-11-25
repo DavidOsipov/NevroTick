@@ -43,6 +43,16 @@ corresponding claim; D2 returns before live status and real settings/commands.
 The pilot's omitted accessibility feature is no product exemption. Existing
 native/fuzz/storage holds and scoped Sandbox admission remain binding.
 
+**HTML updater design extension — 25 November 2026:** the current v0.4
+reference now demonstrates About → Check for updates → exact offer →
+Update now/Later → simulated progress/result. The
+[GUI handoff checkpoint](slint-gui-handoff.md#html-updater-prototype--25-november-2026)
+owns the detailed evidence and open browser review; this is an M0-08 design-custody
+update. Rust/Slint implementation remains with
+[S0.5/P5](s0.5-ui-comparison.md#manual-updater-ui-handoff--25-november-2026).
+No native M0/P5 acceptance, UP-UI effect qualification or D1–D3 re-entry follows
+from the HTML sample; the historical import/tray receipts below retain their scope.
+
 ## Scope and custody
 
 Authorized by David's “Do it” after the agent-readiness recommendations on
