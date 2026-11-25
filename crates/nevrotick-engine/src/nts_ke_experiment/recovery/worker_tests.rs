@@ -23,8 +23,6 @@ use super::{
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
     StopHandle, SyncSender, Weak, failed, runtime, sync_channel,
 };
-#[cfg(windows)]
-use crate::ProtectedNativeClockObservation;
 use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::datagram::tests::{LoopbackPeerLeg, serve_managed_loopback};
@@ -60,6 +58,8 @@ use crate::{
     ManagedProtectedReport, RunClockContext, SoftwareClock, SourceProtectedProbeFailure,
     SourceProtectedProbeReport,
 };
+#[cfg(windows)]
+use crate::{ProtectedNativeClockObservation, ProtectedTimingObservationRefusal};
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -2822,15 +2822,27 @@ fn pair_presentation_read(
     }
 }
 
-/// Check unmodified mode outcomes carried to their own job's report.
+/// Check the original modes and timing export decisions on both joined reports.
 /// # Panics
-/// Fail if the two jobs share readings or lose an observed mode change.
+/// Fail if the jobs share readings, lose an observed mode change, or admit invalidated timing.
 #[cfg(windows)]
-fn assert_pair_presentation(
+fn assert_pair_timing_observations(
     first: &ManagedProtectedReport,
     second: &ManagedProtectedReport,
     reads: usize,
+    resume_delivery: PairResumeDelivery,
 ) {
+    let expected: Result<(), ProtectedTimingObservationRefusal> = match resume_delivery {
+        PairResumeDelivery::None => Ok(()),
+        PairResumeDelivery::BeforeWorkerRetirement | PairResumeDelivery::DuringClosingRead => {
+            Err(ProtectedTimingObservationRefusal::PowerInvalidated)
+        }
+    };
+    assert_eq!(first.check_timing_observations(), expected);
+    assert_eq!(
+        second.check_timing_observations(),
+        Err(ProtectedTimingObservationRefusal::UnsupportedPresentation),
+    );
     assert_eq!(reads, 4);
     assert_eq!(
         first.process_leap_presentation(),
@@ -2914,7 +2926,7 @@ fn assert_pair_loopback_reports(
         assert_eq!(report.power_observation(), Some(power));
     }
     #[cfg(windows)]
-    assert_pair_presentation(first, second, presentation_reads);
+    assert_pair_timing_observations(first, second, presentation_reads, resume_delivery);
     assert_pair_invocation_order(first, second, configurations)
 }
 
@@ -3221,6 +3233,11 @@ fn managed_pair_delivered_suspend_between_jobs_refuses_second_submission() -> Re
             let observations: [LoopbackPeerLeg<Instant>; 2] =
                 peer.join().map_err(|_| Failure::Control)??;
             assert_pair_loopback_report(report.first(), &first.expected, cutoff, observations)?;
+            #[cfg(windows)]
+            assert_eq!(
+                report.first().check_timing_observations(),
+                Err(ProtectedTimingObservationRefusal::PresentationUnavailable),
+            );
             Ok::<ManagedProtectedPairReport, Failure>(report)
         })?;
 
@@ -3303,16 +3320,7 @@ fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Fa
         )
         .map_err(|_| Failure::Control)?;
         #[cfg(windows)]
-        assert_eq!(
-            report.first().process_leap_presentation(),
-            Some([
-                Err(LeapPresentationError::QueryFailed(5)),
-                Err(LeapPresentationError::InvalidReply {
-                    flags: 1,
-                    reserved: 4
-                }),
-            ])
-        );
+        assert_unavailable_pair_presentation(report.first());
         let [ordinary, deny]: [LoopbackPeerLeg<Instant>; 2] =
             peer.join().map_err(|_| Failure::Control)??;
         let receipt: &crate::ManagedProtectedReceipt =
@@ -3347,6 +3355,27 @@ fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Fa
     assert_eq!(report.power_unregistration_error(), None);
     assert_eq!(provider.get().map(Weak::strong_count), Some(0));
     Ok(())
+}
+
+/// Refuse timing export after a presentation query failure and preserve both raw errors.
+/// # Panics
+/// Fail if an unsupported query supplies timing evidence or changes either error.
+#[cfg(windows)]
+fn assert_unavailable_pair_presentation(report: &ManagedProtectedReport) {
+    assert_eq!(
+        report.check_timing_observations(),
+        Err(ProtectedTimingObservationRefusal::PresentationReadFailed),
+    );
+    assert_eq!(
+        report.process_leap_presentation(),
+        Some([
+            Err(LeapPresentationError::QueryFailed(5)),
+            Err(LeapPresentationError::InvalidReply {
+                flags: 1,
+                reserved: 4,
+            }),
+        ]),
+    );
 }
 
 /// Stop the original active binding during subscription and collect its refusal.
@@ -4491,6 +4520,11 @@ fn verify_native_loopback_timing(
     assert!(
         first_points[2].qpc_after() <= second_points[0].qpc_before(),
         "first receive-return must complete before the worker's successor pre-send"
+    );
+    assert_eq!(report.power_observation(), None);
+    assert_eq!(
+        report.check_timing_observations(),
+        Err(ProtectedTimingObservationRefusal::PowerUnavailable),
     );
     Ok(())
 }

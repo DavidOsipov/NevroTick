@@ -34076,6 +34076,86 @@ affected coverage/mutation qualification remain open.
 | `native-recipe/join_1d1698a6ec05/verification.json` | `dca4e4b0aba9f5798c54a2025c22b5f4c010811fccd9b21e2505ee65c4ca808b` |
 | `native-recipe/join_094cd3e42081/verification.json` | `19f8abc3febd4df3d2dd6aaf41480f875fe4edb18c2ab0714f09d6adcb4dad60` |
 
+###### Require available joined observations for the relative timing export
+
+S2.1/W11-W01, TQ-07/09 and CHECK-7/11/25/27. The timing facade
+checks the original joined report before writing a timing row. The
+report check requires an available power binding with no recorded
+delivery and two successful Compatibility presentation queries.
+It distinguishes power invalidation, missing observations, query
+failure and an unsupported observed mode. Historical receipts,
+charged work and the existing stderr report retain their original
+owners. The accepted six-row stdout representation is unchanged.
+
+Rust contract and lifecycle review followed the original binding
+through the closing query and retirement into the timing writer.
+Fresh review verified that the guard precedes the first timing row.
+The joined test controls independently observe a healthy first
+report, a changed closing mode on the second report, a delivered
+resume during closing read, a missing presentation pair, two
+retained query errors and a report without a power observation.
+
+The exact frozen source on `1016c57` plus the four changed paths passed
+all 20 configured MSVC facade build and readback steps. The separate
+MSVC test Clippy, libtest link and PE/PDB checks used the same source
+and helper bytes. The first symbol readback refused the exported
+renamed basenames. Reconstructing the original emitted filenames in
+private scratch matched the same PE and PDB bytes, GUID and age.
+
+The owned offline Windows build-26100 guest discovered and executed all
+five exact selectors in separate processes. The original process exits,
+both output streams, input and offline bookends, and cleanup passed.
+The host-side reader refused seven malformed observer controls.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-timing-veto.QF9DJMg1/build/verification.json` | `7b8c44514189a9c49e58d8328ca1773bc819d7bd2bbcb38c87280ec66af30d2d` |
+| `%LOCALAPPDATA%/NevroTick/s21-timing-veto.QF9DJMg1/engine-r2/verification.json` | `e833ccb5e662c783296706495064e69ac459e4651c152778c5fce7751243934c` |
+| `~/.local/share/nevrotick/s21-timing-veto.QF9DJMg1/libtest-symbol-check.json` | `993afe11f33ab0df6f36e03bd56a77a72f60775b51a6e0de671cc538171c2189` |
+| `~/.local/share/nevrotick/s21-timing-veto.QF9DJMg1/native-recipe/join_b47c111477c0/verification.json` | `9db01497aaf2bd553295888820a188a0f209a7424da31d94562626347744dc19` |
+
+The component controls exercise the original joined reports and guard.
+The authenticated replay below exercises the healthy timing export.
+Injected CLI refusal controls, reference calibration, physical event
+delivery, mapping authority, production history and affected-file
+coverage and mutation remain open.
+
+###### Replay protected timing with the joined observation guard
+
+S2.1/W11-W01, TQ-01/07/09 and CHECK-19/25/26/27. The pair reader
+matched the 758 product and 17 facade-helper inputs and the 112
+standalone peer inputs in frozen tree
+`773e62186dac23cfe123f2d44351c86252c735a4` on `1016c57`.
+Although the standalone peer inputs were unchanged, the previous peer
+receipt bound a different Engine candidate. Its exact bytes refused
+when offered to the current facade. The rebuilt peer passed all 12
+lanes, including both 31-case GNU profiles, with two earlier failures
+at isolation preflight retained within the same 300-second allowance.
+Independent readback matched the 20 facade and 12 peer results and
+five executable/PDB pairs. All ten refusal controls passed.
+
+The same offline Windows build-26100 guest passed 17 loader and 11
+controller-parser observations. After the temporary root confirmation,
+the authenticated exchange and ordinary successor passed with the
+original association. The reader matched six Engine and four peer rows
+at 10 MHz and the original endpoints. It observed exactly two peer
+receives and two sends, both child exits, four stream EOFs, guest trust
+store restoration and empty transfer shelves.
+
+The Engine reported `mapping-unavailable eligible=0 fresh_sync=0`.
+This qualifies the selected relative capture points and the healthy
+export through the new guard. Physical continuity, the independent
+reference and calibrated mapping, positive admission to Core history,
+and the affected 90% line and 95% mutation gates remain open.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-veto-peer.3OpNnkCS/build/verification.json` | `05201ad596bcabaf295c90a8d5a5c645b6ddcbc2643ac22b5394993b34067e0e` |
+| `~/.local/share/nevrotick/s21-veto-peer.1u6s0UdU/readback/paired-readback.json` | `adea47c46d8215983fc528d3e4d282e270d31f0d61bf8dea8635bc5cb6834b3f` |
+| `~/.local/share/nevrotick/s21-veto-peer.1u6s0UdU/timing-loader/kepre_c2426a32e77d/verification.json` | `f14ccd90f724121de06e1bba14755a20bf3efb18d74e5f42c343579fc6d46bb3` |
+| `~/.local/share/nevrotick/s21-veto-peer.1u6s0UdU/timing-loader/keparse_2f829fc47fb8/verification.json` | `75fc77c0211a64a6452f8d5329fec5c0a71e444a4c3369f68f9ef95be11d744e` |
+| `~/.local/share/nevrotick/s21-veto-authenticated.dFTVzj6n/ketiming_7198f4a75199/verification.json` | `df4e9eaa242fbeca0aed305c59832355ea06441bec5e737a1eb437f9c9dfaf96` |
+
 ##### Rebuild the current protected timing facade
 
 S2.1/W11-W01 and CHECK-19/26. The configured offline facade build

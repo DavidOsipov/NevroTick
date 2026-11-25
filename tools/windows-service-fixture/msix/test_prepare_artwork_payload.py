@@ -74,14 +74,44 @@ class ArtworkPayloadInputs(unittest.TestCase):
             "files": files, "generation_receipt_sha256": "7" * 64,
         }
         self.pri: bytes = b"complete native PRI fixture"
-        dump: bytes = b"<PriInfo/>"
+        root: ET.Element = ET.Element("PriInfo")
+        mapping: ET.Element = ET.SubElement(root, "ResourceMap", {
+            "name": "NevroTick.S06.ArtworkLab", "primary": "true",
+            "uniqueName": "ms-appx://NevroTick.S06.ArtworkLab/",
+        })
+        files_tree: ET.Element = ET.SubElement(mapping, "ResourceMapSubtree", {"name": "Files"})
+        assets_tree: ET.Element = ET.SubElement(files_tree, "ResourceMapSubtree", {"name": "Assets"})
+        resource_nodes: dict[str, ET.Element] = {}
+        name: str
+        for name in ("PackageLogo.png", "Square150x150Logo.png", "Square44x44Logo.png"):
+            resource_nodes[name] = ET.SubElement(assets_tree, "NamedResource", {
+                "name": name, "uri": "ms-resource://NevroTick.S06.ArtworkLab/Files/Assets/" + name,
+            })
+        qualifiers_by_path: dict[str, dict[str, str]] = {}
+        for name in sorted(self.artwork):
+            parts: list[str] = Path(name).stem.split(".")
+            candidate: ET.Element = ET.SubElement(resource_nodes[parts[0] + ".png"], "Candidate", {"type": "Path"})
+            qualifiers: dict[str, str] = {}
+            if len(parts) == 2:
+                qualifier_set: ET.Element = ET.SubElement(candidate, "QualifierSet")
+                part: str
+                for part in parts[1].split("_"):
+                    key: str
+                    value: str
+                    key, value = part.split("-", 1)
+                    key = "AlternateForm" if key == "altform" else key.title()
+                    qualifiers[key.lower()] = value
+                    ET.SubElement(qualifier_set, "Qualifier", {"name": key, "value": value.upper()})
+            ET.SubElement(candidate, "Value").text = name.replace("/", "\\")
+            qualifiers_by_path[name] = qualifiers
+        dump: bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)
         (self.pri_dir / "complete.pri").write_bytes(self.pri)
         (self.pri_dir / "complete.xml").write_bytes(dump)
         self.pri_report: dict = {
             "status": "passed", "map": "NevroTick.S06.ArtworkLab", "candidate_count": 51,
             "groups": {"PackageLogo.png": 3, "Square150x150Logo.png": 3, "Square44x44Logo.png": 45},
             "rows": {
-                name: {"bytes": len(data), "sha256": sha256(data).hexdigest()}
+                name: {"bytes": len(data), "sha256": sha256(data).hexdigest(), "qualifiers": qualifiers_by_path[name]}
                 for name, data in self.artwork.items()
             },
             "pri_sha256": sha256(self.pri).hexdigest(), "dump_sha256": sha256(dump).hexdigest(),
@@ -199,6 +229,44 @@ class ArtworkPayloadTests(ArtworkPayloadInputs):
                 path.write_bytes(b"different native output")
                 self.assert_refused("PRI or detailed dump differs from the pinned readback")
                 path.write_bytes(original)
+
+    def assert_refuses_pri_dump_byte_change(self, original: bytes, replacement: bytes, diagnostic: str) -> None:
+        path: Path = self.pri_dir / "complete.xml"
+        dump: bytes = path.read_bytes()
+        changed: bytes = dump.replace(original, replacement, 1)
+        self.assertNotEqual(changed, dump)
+        path.write_bytes(changed)
+        self.pri_report["dump_sha256"] = sha256(changed).hexdigest()
+        self.pri_pin = self.write_pri_receipt()
+        self.assert_refused(diagnostic)
+
+    def test_rejects_pri_dump_wrong_alternate_form_under_matching_pins(self) -> None:
+        self.assert_refuses_pri_dump_byte_change(
+            b'value="LIGHTUNPLATED"', b'value="UNPLATED"', "PRI candidate qualifiers differ",
+        )
+
+    def test_rejects_pri_dump_wrong_path_under_matching_pins(self) -> None:
+        self.assert_refuses_pri_dump_byte_change(
+            b"Assets\\PackageLogo.scale-200.png", b"Assets\\Extra.scale-200.png", "PRI candidate path differs",
+        )
+
+    def test_rejects_pri_dump_encoding_mismatch_under_matching_pins(self) -> None:
+        self.assert_refuses_pri_dump_byte_change(
+            b"encoding='utf-8'", b"encoding='utf-16'", "PRI dump must use UTF-8 XML encoding",
+        )
+
+    def test_rejects_pri_receipt_qualifiers_conflicting_with_dump(self) -> None:
+        self.pri_report["rows"]["Assets/PackageLogo.scale-200.png"]["qualifiers"] = {"scale": "400"}
+        self.pri_pin = self.write_pri_receipt()
+        self.assert_refused("PRI candidate qualifiers differ")
+
+    def test_rejects_pri_observations_agreeing_on_wrong_scale(self) -> None:
+        self.pri_report["rows"]["Assets/PackageLogo.scale-200.png"]["qualifiers"] = {"scale": "400"}
+        self.assert_refuses_pri_dump_byte_change(
+            b'<Qualifier name="Scale" value="200" /></QualifierSet><Value>Assets\\PackageLogo.scale-200.png',
+            b'<Qualifier name="Scale" value="400" /></QualifierSet><Value>Assets\\PackageLogo.scale-200.png',
+            "PRI candidate qualifiers differ",
+        )
 
     def test_rejects_substituted_inert_bytes_even_with_their_own_pin(self) -> None:
         other: bytes = b"different executable"

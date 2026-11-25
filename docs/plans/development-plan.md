@@ -1272,6 +1272,12 @@ The [paired QPC span guard](../../tasks/windows11-integration.md#bind-the-paired
 now refuses a timing span wholly outside the selected exchange. The
 retained replay used synthetic reference inputs. Independent calibration
 and the read-side validity issuer remain the next reference prerequisites.
+The [joined observation guard](../../tasks/engine-transport-pilot.md#require-available-joined-observations-for-the-relative-timing-export)
+requires the original power and process-presentation observations before
+publishing timing rows. Five exact Windows component tests passed on the
+same source as the rebuilt facade. The [matched authenticated pair](../../tasks/engine-transport-pilot.md#replay-protected-timing-with-the-joined-observation-guard)
+passed on these inputs with guest trust restored. The independent
+reference and production sample admission remain open.
 The [protected socket bind check](../../tasks/engine-transport-pilot.md#verify-the-original-local-bind-before-protected-socket-registration)
 now verifies the exact requested local address before registration. Both
 loopback families passed on Windows. The wired interface still needs its
@@ -1473,6 +1479,10 @@ The [two-stop debugger observation](../../tasks/windows11-integration.md#observe
 sampled the same ten dependencies for each unpackaged lab role before
 its entry instruction. DLL initializer behavior, cold refusal and
 installed activation retain their own exits.
+The [held-file observation](../../tasks/windows11-integration.md#bound-the-windows-sandbox-loader-backing-file-observation)
+refused the difference between the Sandbox mapped name and the local
+held file name. Backing-file qualification needs independent evidence
+of that relationship or the intended full Windows profile.
 The [guarded UI debugger observation](../../tasks/slint-gui-handoff.md#observe-both-pre-entry-module-snapshots-on-the-guarded-slint-image)
 recorded the same 28 images at the initial breakpoint and the entry
 instruction of the exact unsigned ArtworkLab UI. It leaves DLL
@@ -1485,8 +1495,10 @@ The [dispatcher refusal receipt](../../tasks/windows11-integration.md#retain-the
 keeps the first typed refusal and its required local record, including
 failures before a service invocation can publish its own receipt.
 The [typed startup detail](../../tasks/windows11-integration.md#expose-the-original-typed-startup-detail-from-the-dispatch-receipt)
-exposes the fields carried by the original error. Full policy observation
-and external startup diagnostic delivery remain open.
+exposes the fields carried by the original error. The
+[Windows controls](../../tasks/windows11-integration.md#run-the-typed-dispatch-receipt-controls-in-the-owned-windows-guest)
+passed both standalone SCM refusals and the scripted typed policy cases.
+Full policy observation and external startup diagnostic delivery remain open.
 The [complete payload binding](../../tasks/windows11-integration.md#bind-the-complete-authored-payload-to-the-original-pre-start-archive)
 also joins the expected manifest and all authored bytes to the original
 archive lease before the installed window can verify its signer or launch

@@ -929,8 +929,9 @@ fn successor_timing_ports(
 /// They grant no calibrated mapping, sample eligibility or clock authority.
 ///
 /// # Errors
-/// Refuse incomplete or mismatched history, invalid native capture spans,
-/// mismatched frequencies, overlapping or reversed legs, a wrong endpoint, or a failed write.
+/// Refuse incomplete or mismatched history, missing or incompatible timing observations,
+/// invalid native capture spans, mismatched frequencies, overlapping or reversed legs,
+/// a wrong endpoint, or a failed write.
 fn write_successor_timing(
     report: &ManagedProtectedReport,
     expected_peer: SocketAddr,
@@ -955,6 +956,9 @@ fn write_successor_timing(
     {
         return Err(SetupFailure::ManagedSuccessorTiming);
     }
+    report
+        .check_timing_observations()
+        .map_err(|_| SetupFailure::ManagedSuccessorTiming)?;
     let first_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(first, expected_peer)?;
     let next_ports: (NonZeroU16, NonZeroU16) = successor_timing_ports(successor, expected_peer)?;
     let first_span: ProtectedNativeCaptureSpan = first

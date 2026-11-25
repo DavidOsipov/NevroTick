@@ -801,6 +801,24 @@ const MAX_INLINE_MANAGED_TERMINAL_BYTES: usize = 512;
 /// Require renewed layout review before a terminal result exceeds its fixed budget.
 const _: () = assert!(size_of::<ManagedProtectedTerminal>() <= MAX_INLINE_MANAGED_TERMINAL_BYTES);
 
+/// A joined Windows report lacks the observations required by the timing export.
+/// The original report retains both the transport facts and raw observations.
+#[cfg(windows)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "handle the historical timing observation refusal"]
+pub enum ProtectedTimingObservationRefusal {
+    /// The original power binding did not supply an observable result.
+    PowerUnavailable,
+    /// The original binding received a power event before retirement.
+    PowerInvalidated,
+    /// The job supplied no pair of process presentation queries.
+    PresentationUnavailable,
+    /// At least one presentation query failed and its raw result is retained.
+    PresentationReadFailed,
+    /// At least one successful query reported a mode other than Compatibility.
+    UnsupportedPresentation,
+}
+
 /// Joined historical results for the explicit managed protected invocation.
 ///
 /// A refused terminal operation can accompany an earlier committed receipt.
@@ -978,6 +996,40 @@ impl ManagedProtectedReport {
     #[must_use]
     pub const fn power_observation(&self) -> Option<ManagedPowerObservation> {
         self.power_observation
+    }
+
+    /// Check the original power and presentation observations for relative timing export.
+    ///
+    /// Success confirms no delivery to the available original binding before
+    /// retirement and two successful Compatibility reads.
+    /// It grants no clock continuity, calibrated mapping or sample authority.
+    /// This check reads only this report and preserves all historical outcomes.
+    ///
+    /// # Errors
+    /// Refuse a missing or invalidated power observation before checking the original
+    /// presentation reads. Absent, failed and unsupported presentations stay distinct.
+    #[cfg(windows)]
+    pub const fn check_timing_observations(&self) -> Result<(), ProtectedTimingObservationRefusal> {
+        use windows_platform_native::LeapPresentation::Compatibility;
+
+        match self.power_observation() {
+            Some(ManagedPowerObservation::NoEventObserved) => (),
+            Some(ManagedPowerObservation::Invalidated) => {
+                return Err(ProtectedTimingObservationRefusal::PowerInvalidated);
+            }
+            Some(ManagedPowerObservation::Unavailable) | None => {
+                return Err(ProtectedTimingObservationRefusal::PowerUnavailable);
+            }
+        }
+
+        match self.process_leap_presentation() {
+            Some([Ok(Compatibility), Ok(Compatibility)]) => Ok(()),
+            Some([Ok(_), Ok(_)]) => Err(ProtectedTimingObservationRefusal::UnsupportedPresentation),
+            Some([Err(_), _] | [_, Err(_)]) => {
+                Err(ProtectedTimingObservationRefusal::PresentationReadFailed)
+            }
+            None => Err(ProtectedTimingObservationRefusal::PresentationUnavailable),
+        }
     }
 
     /// Return the total number of actual local send calls across both operations.

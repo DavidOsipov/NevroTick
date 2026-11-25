@@ -21118,9 +21118,35 @@ candidate scope.
 | `startup-detail-r3-graph.json` | `8ef2ce69213b7007dcdeb32939e2ee3dc7d1a36831ecf0ed2c3f3de1cefc1cfe` |
 | `startup-detail-r3-dev.json` | `aebc49f17e509844e28474401dbed59fad4f9e6ca1c8768ccc366c095693703f` |
 
-The typed scripted controls require Windows execution. External
-diagnostic delivery, startup failures before Rust entry, and installed
-service behavior retain their existing owners and qualification gates.
+##### Run the typed dispatch receipt controls in the owned Windows guest
+
+W11-W05/W11-W08 and CHECK-16/26/27. The existing graph and development
+receipts admitted the MSVC release libtest link on the frozen source
+tree `4eb9ead9029cc00ec74e8841a3b8b7396f0bc918`. All bound link inputs
+matched the committed source at `1016c57`. Both cross-link commands
+passed, including PE and matching PDB readback. The linked image SHA-256
+was `6f33022d6cbca6a7172939d045b17af3cefb187869dcc24cf712a217e83d75ec`.
+
+The owned offline Windows build-26100 guest ran the Engine and Broker
+standalone dispatch selectors and
+`host::tests::dispatch_policy_diagnostic_preserves_original_typed_details`
+in three separate original processes. Both fixed roles retained native
+SCM refusal 1063 and its first local diagnostic. The scripted selector
+checked the exact typed policy refusals through the same receipt owner.
+Every selection ran one named test, exited zero and reached both stream
+EOFs with empty stderr. The controller verified the input and offline
+bookends, guest scratch removal and empty host transfer folders.
+
+| Record under `~/.local/share/nevrotick/w11-native-typed-startup.fefvyopr/` | SHA-256 |
+| --- | --- |
+| `cross-link.json` | `0838279af1b6e27f062cfe064209d73cbf4ad9603e88a68a5501595da7c2c481` |
+| `native-result.json` | `bb7cec0ab531a713655e42e09e69fd850eef4e4d6a337051ee7e20f8202205fc` |
+| `guest.json` | `da4dbb30438be34600351eb42ffc9bc1ed8cedf7f47dc3f2cb40402d9eccd7c8` |
+
+Native startup observation and scripted policy refusal have separate
+coverage. Actual native policy API failures, external diagnostic
+delivery, startup failures before Rust entry, installed behavior, and
+affected-file metrics retain their existing gates.
 
 #### Bind startup admission to the first native exposure
 
@@ -22060,6 +22086,41 @@ activation and the production startup paths retain their own exits.
 | `observed-01-broker/verification.json` | `aa4dd2b2ae12ea512eed66bc461fe19bdffbde77a0d067c6d6b8f2af5191471c` |
 | `observed-01-broker/readback.json` | `481bb797cf70cd9def733a1309800bc70be95863be4d197c27790e7550056bd6` |
 
+###### Bound the Windows Sandbox loader backing-file observation
+
+W11-W05/W11-W10, S0.6 and CHECK-16/26/27. After the host resource
+preflight passed, the extended observer reached the initial debugger
+stop twice on the exact 218,624-byte Broker member of the same unsigned
+ArtworkLab archive. The observer used the original process handle to
+obtain the mapped name and compared it with the name of the locally
+held file. Both guest runs exited 1 at `different-mapped-file-path`
+before the entry stop. Both restored the debugger configuration,
+confirmed no owned process remained and removed scratch and transfer
+files. Neither run observed normal debugger and target retirement exits.
+
+The diagnostic version kept the same gate and recorded the refused
+`apphelp.dll` path forms. The mapped name used the Sandbox `vmsmb`
+namespace, and both normalized and opened names from the held handle
+used the local `HarddiskVolume2` namespace. Microsoft documents the
+Sandbox's shared base image and direct mapping of OS pages. The observed
+names leave backing-file identity and mapped-byte custody unresolved
+for this module. [Windows Sandbox architecture](https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-architecture)
+
+The independent file-table reader passed ten controls, including
+rejecting a consistently wrong target digest in both tables. It also
+refused the incomplete native receipt. Fresh review reconstructed
+both input and output digests and confirmed the earlier two-stop
+inventory retains its scope. Resume backing-file qualification with
+independent evidence for the actual backing objects or a disposable
+full Windows installation of the intended profile. The original
+identity requirement remains in force.
+
+| Record under `~/.local/share/nevrotick/s06-loader-path-custody.bsfz7wqa/` | SHA-256 |
+| --- | --- |
+| `observed-02-broker/verification.json` | `7cfefaa2a087a28d9e04b642b3c2525ad1048f5be0fa9e7168a4a87daf146c70` |
+| `observed-03-broker/verification.json` | `16851de0d8eacfc2f7a162e509ff414742c78c45dbee153e857506286d62528f` |
+| `file-readback-qa-01/controls.log` | `1100ef323ec66b0525d6aeb70ab11c8f46c80489602454004c3a8893c2d5b86e` |
+
 ##### Observe both packaged role policies before the SCM call
 
 W11-W05/W11-W10, S0.6 and CHECK-16/18/26/27. Package and Sandbox QA
@@ -22328,6 +22389,33 @@ The CLI controls and replay are under
 `~/.local/share/nevrotick/w11-receiver-guards.Rv1aoX8y/package/`.
 The archive remains the original unsigned fixture. Signing and installed
 lifecycle evidence remain open.
+
+##### Check the held MakePri dump before staging ArtworkLab
+
+W11-W10/P6 and CHECK-16/18/26/27. The stager now reads the bounded XML
+bytes from the original held PRI directory and compares the fixed
+resource map, all 51 candidate paths and the qualifiers with the
+checked artwork and the pinned native receipt before writing a payload.
+The candidate filenames determine the expected qualifiers independently.
+The XML parser also checks the byte encoding before reading the map.
+
+Package and negative-path QA changed the alternate form of an actual
+MakePri candidate and recomputed both affected pins. The predecessor
+published a payload. The repaired CLI exited 1 with the qualifier
+refusal, empty stdout and no output tree. An independent readback
+matched all 54 staged files of the healthy replay byte for byte. The
+separate staging receipt matched SHA-256
+`24fb5a0d17db5197b4cb4c9edee98762b52dc81b81aaeb89ba41a058dde264f7`.
+The combined candidate passed all 199 portable MSIX tests in a
+read-only offline namespace. They include the case where both
+observations agree on an incorrect scale for an unchanged filename.
+
+The stager and test SHA-256 values are
+`bc5c93f8e4f13053b6952b24f8158884726e3c8dc875ed371260288c607745ef`
+and `5a13ebb31701ff5a2534ba94da254a0bdf9f37af6b09bec27c14a83e1623f15f`.
+The independent receipt still binds the PRI to its detailed dump.
+Native ranking, installed selection and signed lifecycle retain their
+existing exits.
 
 #### Separate the recovery census from confirmed job retirement
 

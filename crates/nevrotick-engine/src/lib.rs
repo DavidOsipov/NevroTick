@@ -34,6 +34,8 @@ pub use clock_capture::ProtectedNativeCaptureRefusal;
 pub use clock_capture::ProtectedNativeCaptureSpan;
 #[cfg(feature = "ke-association-prototype")]
 pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
+#[cfg(all(feature = "ke-association-prototype", windows))]
+pub use nts_ke_experiment::managed_preview::ProtectedTimingObservationRefusal;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
     CertificateTimeProvenance, ManagedPowerObservation, ManagedProtectedPairReport,

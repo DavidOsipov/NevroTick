@@ -5,10 +5,12 @@ import argparse
 import json
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, cast
+from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prepare_payload as stage
+from check_package import parse_xml
 import verify
 from windows_pe import MAX_PE_BYTES, read_export_pair, ui_preentry_declarations, ui_resource_payloads
 
@@ -136,6 +138,71 @@ def guarded_ui_snapshot(
         return data
 
 
+def _check_pri_dump(dump: bytes, artwork: dict[str, bytes], rows: dict[str, dict[str, object]]) -> None:
+    """Match retained MakePri resource paths and qualifiers to checked artwork."""
+    root: ET.Element = parse_xml(dump, "ArtworkLab PRI dump")
+    maps: list[ET.Element] = root.findall("ResourceMap")
+    stage.require(root.tag == "PriInfo" and len(maps) == 1 and maps == list(root.iter("ResourceMap")),
+                  "ArtworkLab PRI map inventory differs.")
+    mapping: ET.Element = maps[0]
+    stage.require(mapping.get("name") == IDENTITY and mapping.get("primary") == "true"
+                  and mapping.get("uniqueName") == f"ms-appx://{IDENTITY}/",
+                  "ArtworkLab PRI map identity differs.")
+    files: list[ET.Element] = mapping.findall("ResourceMapSubtree[@name='Files']")
+    stage.require(len(files) == 1, "ArtworkLab PRI Files subtree differs.")
+    assets: list[ET.Element] = files[0].findall("ResourceMapSubtree[@name='Assets']")
+    stage.require(len(assets) == 1, "ArtworkLab PRI Assets subtree differs.")
+    resources: list[ET.Element] = assets[0].findall("NamedResource")
+    stage.require(resources == list(root.iter("NamedResource")) and len(resources) == len(GROUPS)
+                  and {resource.get("name") for resource in resources} == GROUPS.keys(),
+                  "ArtworkLab PRI named resource inventory differs.")
+    paths: set[str] = set()
+    resource: ET.Element
+    for resource in resources:
+        name: str = resource.attrib["name"]
+        stage.require(resource.get("uri") == f"ms-resource://{IDENTITY}/Files/Assets/{name}",
+                      "ArtworkLab PRI named resource URI differs.")
+        candidates: list[ET.Element] = resource.findall("Candidate")
+        stage.require(len(candidates) == GROUPS[name], "ArtworkLab PRI candidate inventory differs.")
+        candidate: ET.Element
+        for candidate in candidates:
+            values: list[ET.Element] = candidate.findall("Value")
+            sets: list[ET.Element] = candidate.findall("QualifierSet")
+            stage.require(candidate.get("type") == "Path" and len(values) == 1 and len(sets) <= 1
+                          and len(candidate) == len(values) + len(sets)
+                          and not values[0].attrib and len(values[0]) == 0,
+                          "ArtworkLab PRI candidate shape differs.")
+            path: str = (values[0].text or "").replace("\\", "/")
+            stage.require(path in artwork and path not in paths, "ArtworkLab PRI candidate path differs.")
+            base: str
+            suffix: str
+            base, _, suffix = path.removeprefix("Assets/").removesuffix(".png").partition(".")
+            stage.require(name == base + ".png", "ArtworkLab PRI candidate resource differs.")
+
+            # Qualifiers follow the checked filenames, independent of both observations.
+            expected: dict[str, str] = {}
+            if suffix:
+                part: str
+                for part in suffix.split("_"):
+                    key: str
+                    value: str
+                    key, _, value = part.partition("-")
+                    expected["alternateform" if key == "altform" else key] = value
+            observed: dict[str, str] = {}
+            qualifier: ET.Element
+            for qualifier in sets[0] if sets else ():
+                key = qualifier.get("name", "").lower()
+                stage.require(qualifier.tag == "Qualifier" and len(qualifier) == 0
+                              and key in expected and key not in observed,
+                              "ArtworkLab PRI candidate qualifiers differ.")
+                observed[key] = qualifier.get("value", "").lower()
+            stage.require(observed == expected and rows[path].get("qualifiers") == expected,
+                          "ArtworkLab PRI candidate qualifiers differ.")
+            paths.add(path)
+    stage.require(paths == artwork.keys() and len(list(root.iter("Candidate"))) == len(paths),
+                  "ArtworkLab PRI candidate inventory differs.")
+
+
 def pri_snapshot(path: Path, pin: str, artwork: dict[str, bytes]) -> bytes:
     """Reconcile the independently pinned native readback with the selected art."""
     descriptor: int
@@ -155,14 +222,16 @@ def pri_snapshot(path: Path, pin: str, artwork: dict[str, bytes]) -> bytes:
             "Native PRI readback differs from the exact ArtworkLab cohort.",
         )
         try:
-            verify.read_bound_msix_leaf(
+            dump: bytes = verify.read_bound_msix_leaf(
                 anchor / "complete.xml", report["dump_sha256"], staging_descriptor=descriptor, maximum=64 * 1024,
             )
-            return verify.read_bound_msix_leaf(
+            pri: bytes = verify.read_bound_msix_leaf(
                 anchor / "complete.pri", report["pri_sha256"], staging_descriptor=descriptor, maximum=64 * 1024,
             )
         except verify.ENV.Incomplete as error:
             raise ValueError("ArtworkLab PRI or detailed dump differs from the pinned readback.") from error
+        _check_pri_dump(dump, artwork, cast(dict[str, dict[str, object]], rows))
+        return pri
 
 
 def _manifest_properties(properties: bytes) -> bytes:
