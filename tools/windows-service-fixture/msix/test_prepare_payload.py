@@ -244,7 +244,7 @@ class EventResourceTests(SourceFixture):
 
     def run_pack(self, options, *, exit_code=None, output=None, synthetic_readback=True):
         args = [str(producer.HERE / "prepare_payload.py"),
-                "--receipt", str(self.base / "unused.json"), "--receipt-sha256", "0" * 64,
+                "--receipt", str(self.base / "roles/unused.json"), "--receipt-sha256", "0" * 64,
                 "--inert", str(self.inert), "--inert-sha256", sha256(self.inert.read_bytes()).hexdigest(),
                 "--output", str(output or self.pack), *options]
         stdout, stderr = io.StringIO(), io.StringIO()

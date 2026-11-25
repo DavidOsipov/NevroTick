@@ -1280,10 +1280,10 @@ struct Driver {
 
 impl Dispatcher for Driver {
     /// Record one dispatcher operation and return the selected original native result.
-    fn dispatch(&mut self, role: LabRole) -> Result<(), NativeError> {
+    fn dispatch(&mut self, role: LabRole) -> Result<(), FixtureError> {
         self.roles.push(role);
         match self.failure {
-            Some(error) => Err(error),
+            Some(error) => Err(FixtureError::Native(error)),
             None => Ok(()),
         }
     }
@@ -1984,6 +1984,59 @@ fn dispatcher_failure_cannot_be_hidden_by_a_successful_owner_receipt() {
         Err(&FixtureError::AlreadyDispatched)
     );
     assert_eq!(driver.roles, [LabRole::Engine]);
+}
+
+/// Keep the original process-mode refusal in the actual startup result owner.
+///
+/// # Panics
+/// Reject lost pre-SCM failure custody, masked failure or a second driver call.
+#[cfg(windows)]
+#[test]
+fn process_mode_refusal_consumes_the_original_dispatch_attempt() {
+    use windows_platform_native::ServiceErrorModeError;
+
+    /// Driver induced to refuse the process-mode check before connecting to SCM.
+    struct ModeRefusal {
+        /// Number of original dispatcher admissions.
+        calls: u32,
+        /// Exact process-mode failure supplied by the driver.
+        failure: ServiceErrorModeError,
+    }
+
+    impl Dispatcher for ModeRefusal {
+        /// Preserve the injected readback refusal without any native calls.
+        fn dispatch(&mut self, _role: LabRole) -> Result<(), FixtureError> {
+            self.calls += 1;
+            Err(FixtureError::ServiceErrorMode(self.failure))
+        }
+    }
+
+    let failure: ServiceErrorModeError = ServiceErrorModeError::IncompleteReadback {
+        required: 0x8001,
+        observed: 0x8000,
+    };
+    let mut driver: ModeRefusal = ModeRefusal { calls: 0, failure };
+    let once: AtomicBool = AtomicBool::new(false);
+    let outcome: OnceLock<super::HostReceipt> = OnceLock::new();
+    let retained: OnceLock<FixtureError> = OnceLock::new();
+    assert!(outcome.set(receipt_fixture(Ok(()))).is_ok());
+
+    let first: Result<(), &FixtureError> =
+        dispatch_with_outcome(LabRole::Engine, &once, &mut driver, &outcome, &retained);
+    assert_eq!(first, Err(&FixtureError::ServiceErrorMode(failure)));
+    assert_eq!(first.err(), retained.get());
+    assert_eq!(outcome.get().map(super::HostReceipt::result), Some(&Ok(())));
+    assert_eq!(
+        dispatch_with_outcome(
+            LabRole::ClockBroker,
+            &once,
+            &mut driver,
+            &outcome,
+            &retained,
+        ),
+        Err(&FixtureError::AlreadyDispatched)
+    );
+    assert_eq!(driver.calls, 1);
 }
 
 /// Failure custody neither manufactures a missing owner nor replaces a failed one.

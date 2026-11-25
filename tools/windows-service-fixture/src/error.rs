@@ -172,6 +172,15 @@ pub enum FixtureError {
     Lifecycle(LifecycleError<NativeError>),
     /// The exact dispatcher or registration API failed.
     Native(NativeError),
+    /// The process could not establish the required image-load policy before SCM entry.
+    #[cfg(windows)]
+    ImageLoadPolicy(windows_platform_native::ImageLoadPolicyError),
+    /// The process critical-error mode could not be confirmed before SCM entry.
+    #[cfg(windows)]
+    ServiceErrorMode(windows_platform_native::ServiceErrorModeError),
+    /// The required legacy extension-point restriction was not confirmed.
+    #[cfg(windows)]
+    ExtensionPointPolicy(windows_platform_native::ExtensionPointPolicyError),
     /// Complete token capture/context/cleanup could not establish known facts.
     TokenObservation(TokenObservationFailure),
     /// A complete observation did not match the fixed service role's exact profile.
@@ -200,6 +209,12 @@ impl fmt::Display for FixtureError {
             Self::Budget(_) => "laboratory pending budget was rejected",
             Self::Lifecycle(_) => "laboratory service lifecycle failed",
             Self::Native(_) => "laboratory native service operation failed",
+            #[cfg(windows)]
+            Self::ImageLoadPolicy(_) => "laboratory service image-load policy refused",
+            #[cfg(windows)]
+            Self::ServiceErrorMode(_) => "laboratory service critical-error mode refused",
+            #[cfg(windows)]
+            Self::ExtensionPointPolicy(_) => "laboratory service extension-point policy refused",
             Self::TokenObservation(_) => "laboratory token observation failed",
             Self::PrivilegeAdmission(_) => "laboratory service privilege admission failed",
             Self::ServiceFailed => "laboratory service did not finish cleanly",
@@ -217,6 +232,12 @@ impl Error for FixtureError {
             Self::Budget(error) => Some(error),
             Self::Lifecycle(error) => Some(error),
             Self::Native(error) => Some(error),
+            #[cfg(windows)]
+            Self::ImageLoadPolicy(error) => Some(error),
+            #[cfg(windows)]
+            Self::ServiceErrorMode(error) => Some(error),
+            #[cfg(windows)]
+            Self::ExtensionPointPolicy(error) => Some(error),
             Self::TokenObservation(error) => Some(error),
             Self::PrivilegeAdmission(error) => Some(error),
             Self::Worker(error) => Some(error),

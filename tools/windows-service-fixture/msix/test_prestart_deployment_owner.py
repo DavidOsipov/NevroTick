@@ -2,14 +2,14 @@
 """Independent literal and refusal controls for the fixed deployment renderer."""
 
 from collections.abc import Iterator, Mapping
-from dataclasses import replace
+from dataclasses import FrozenInstanceError, replace
 from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from uuid import UUID
 
-from prestart_deployment_owner import render_deployment_owner, render_prestart_access_owner
+from prestart_deployment_owner import RenderedAccessOwner, render_deployment_owner, render_prestart_access_owner
 from prestart_receipts import DeploymentRun, Member, PrestartProbe, ReceiptRefused, Run
 
 
@@ -40,6 +40,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
     def setUp(self) -> None:
         self.directory: TemporaryDirectory[str] = TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
+        self.access_stage: Path = Path(self.directory.name) / "access-stage"
         self.template: Path = Path(self.directory.name) / "prestart_deployment_owner.ps1.in"
         self.original: bytes = Path(__file__).with_name(self.template.name).read_bytes()
         self.template.write_bytes(self.original)
@@ -128,9 +129,20 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         for probe, role in ((PrestartProbe.ACCESS, "access"), (PrestartProbe.STANDARD, "standard")):
             with self.subTest(probe=probe):
                 pins: dict[str, Member] = self.access_pins()
-                entry, pin = render_prestart_access_owner(
-                    self.template, self.template_pin, self.run, probe, self.sid, pins, 8000,
+                stage: Path = self.access_stage / role
+                rendered: RenderedAccessOwner = render_prestart_access_owner(
+                    self.template, self.template_pin, self.run, probe, self.sid, pins, 8000, stage=stage,
                 )
+                self.assertIs(rendered.run, self.run)
+                self.assertIs(rendered.probe, probe)
+                self.assertEqual(rendered.expected_actor_sid, self.sid)
+                self.assertEqual(rendered.path, stage / "prestart_deployment_owner.ps1")
+                self.assertFalse(stage.exists())
+                self.assertNotIn(self.sid, repr(rendered))
+                self.assertNotIn("contents=", repr(rendered))
+                with self.assertRaises(FrozenInstanceError):
+                    setattr(rendered, "path", self.access_stage)
+                entry: bytes = rendered.contents
                 self.assertTrue(entry.startswith(prefix))
                 self.assertTrue(entry.endswith(suffix))
                 middle: str = entry[len(prefix):len(entry) - len(suffix)].decode("ascii")
@@ -145,25 +157,24 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
                 for key, member in pins.items():
                     expected.append(f"    {key} = @{{ Bytes = [long]{member.size}; Sha256 = '{member.sha256}' }}")
                 self.assertEqual(middle.splitlines(), [*expected, "}"])
-                self.assertEqual(pin, Member(len(entry), sha256(entry).hexdigest()))
+                self.assertEqual(rendered.pin, Member(len(entry), sha256(entry).hexdigest()))
                 self.assertEqual(render_prestart_access_owner(
                     self.template, self.template_pin, self.run, probe, self.sid,
-                    dict(reversed(tuple(pins.items()))), 8000,
-                ), (entry, pin))
+                    dict(reversed(tuple(pins.items()))), 8000, stage=stage,
+                ), rendered)
         self.assertEqual(self.template.read_bytes(), self.original)
 
     def test_private_capture_diagnostics_must_be_selected_in_the_pinned_access_entry(self) -> None:
-        entry: bytes
-        pin: Member
-        entry, pin = render_prestart_access_owner(
+        rendered: RenderedAccessOwner = render_prestart_access_owner(
             self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
-            private_capture_diagnostics=True,
+            stage=self.access_stage, private_capture_diagnostics=True,
         )
-        self.assertEqual(entry.count(b"[bool]$privateCaptureDiagnostics = $true\n"), 1)
-        self.assertEqual(pin, Member(len(entry), sha256(entry).hexdigest()))
+        self.assertEqual(rendered.contents.count(b"[bool]$privateCaptureDiagnostics = $true\n"), 1)
+        self.assertEqual(rendered.pin, Member(len(rendered.contents), sha256(rendered.contents).hexdigest()))
         with self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access capture diagnostics selection"):
             render_prestart_access_owner(
                 self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
+                stage=self.access_stage,
                 private_capture_diagnostics=1,
             )
 
@@ -173,6 +184,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
             with self.subTest(probe=probe), self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access probe"):
                 render_prestart_access_owner(
                     self.template, self.template_pin, self.run, probe, self.sid, self.access_pins(), 8000,
+                    stage=self.access_stage,
                 )
 
     def test_access_role_refuses_foreign_run_sid_and_deadline_literals(self) -> None:
@@ -180,24 +192,28 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
             render_prestart_access_owner(
                 self.template, self.template_pin, replace(self.run, id=UUID(int=0)),
                 PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
+                stage=self.access_stage,
             )
         for sid in ("S-1-5-21-1'; throw 'injected", "S-1-05-1", "S-1-5" + "-1" * 16):
             with self.subTest(sid=sid), self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access owner SID"):
                 render_prestart_access_owner(
                     self.template, self.template_pin, self.run, PrestartProbe.STANDARD, sid,
                     self.access_pins(), 8000,
+                    stage=self.access_stage,
                 )
         for work in (True, 0, -1, 120001):
             with self.subTest(work=work), self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access owner deadline"):
                 render_prestart_access_owner(
                     self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid,
                     self.access_pins(), work,
+                    stage=self.access_stage,
                 )
         for work in (1, 120000):
-            entry, _ = render_prestart_access_owner(
+            rendered: RenderedAccessOwner = render_prestart_access_owner(
                 self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), work,
+                stage=self.access_stage,
             )
-            self.assertIn(f"[int]$workMilliseconds = {work}\n".encode("ascii"), entry)
+            self.assertIn(f"[int]$workMilliseconds = {work}\n".encode("ascii"), rendered.contents)
 
     def test_access_role_checks_exact_pin_roster_observer_and_one_snapshot(self) -> None:
         pins: dict[str, Member] = self.access_pins()
@@ -205,23 +221,41 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
             with self.assertRaisesRegex(ReceiptRefused, "pin roster"):
                 render_prestart_access_owner(
                     self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, foreign, 8000,
+                    stage=self.access_stage,
                 )
         with self.assertRaisesRegex(ReceiptRefused, "observer pin differs from the admitted run"):
             render_prestart_access_owner(
                 self.template, self.template_pin, self.run, PrestartProbe.STANDARD, self.sid,
                 {**pins, "observer": Member(119, "d" * 64)}, 8000,
+                stage=self.access_stage,
             )
         with self.assertRaisesRegex(ReceiptRefused, "pin: deployment_helper"):
             render_prestart_access_owner(
                 self.template, self.template_pin, self.run, PrestartProbe.STANDARD, self.sid,
                 {**pins, "deployment_helper": Member(2097153, "4" * 64)}, 8000,
+                stage=self.access_stage,
             )
         changing: ChangedPin = ChangedPin(pins, "observer")
-        entry, _ = render_prestart_access_owner(
+        rendered: RenderedAccessOwner = render_prestart_access_owner(
             self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, changing, 8000,
+            stage=self.access_stage,
         )
         self.assertEqual(changing.reads, 1)
-        self.assertIn(b"observer = @{ Bytes = [long]119; Sha256 = '" + b"9" * 64 + b"'", entry)
+        self.assertIn(b"observer = @{ Bytes = [long]119; Sha256 = '" + b"9" * 64 + b"'", rendered.contents)
+
+    def test_access_owner_requires_an_absolute_stage(self) -> None:
+        with self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access staging directory"):
+            render_prestart_access_owner(
+                self.template, self.template_pin, self.run, PrestartProbe.ACCESS, self.sid, self.access_pins(), 8000,
+                stage=Path("relative/stage"),
+            )
+
+    def test_access_owner_requires_the_independent_template_pin(self) -> None:
+        with self.assertRaisesRegex(ReceiptRefused, "deployment owner template differs"):
+            render_prestart_access_owner(
+                self.template, Member(len(self.original), "0" * 64), self.run, PrestartProbe.ACCESS,
+                self.sid, self.access_pins(), 8000, stage=self.access_stage,
+            )
 
     def test_crossed_pins_refuse_even_if_individually_well_formed(self) -> None:
         original: dict[str, Member] = self.pins.copy()

@@ -451,6 +451,185 @@ mod tests {
         Ok(())
     }
 
+    /// Reject an original native answer at adoption after equal-valued definition replacement.
+    /// # Errors
+    /// Preserve native setup, original-round, resolver and authority failures.
+    /// # Panics
+    /// Reject wrong answer or replacement identity, or stale membership publication.
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "requires an isolated offline Windows process for native DNS custody"]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "keep the original resolver and UDP round ownership through the final adoption case"
+    )]
+    fn windows_joined_dns_answer_refuses_equal_valued_source_replacement()
+    -> Result<(), Box<dyn Error>> {
+        use crate::{SourceConfigurationSnapshot, SourcePolicyAuthority};
+        use std::{
+            io,
+            net::{Ipv4Addr, UdpSocket},
+            num::NonZeroU16,
+        };
+        use windows_platform_native::{DnsAddressFamily, DnsQueryName};
+
+        let mut authority: SourcePolicyAuthority = isolated_authority(SourcePolicyLimits::new(
+            1,
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(4),
+        )?)?;
+        let source: SourceHandle = authority.source(0)?;
+        let blackhole: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))?;
+        let candidate: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))?;
+        let initial: SocketAddr = blackhole.local_addr()?;
+        let resolved: SocketAddr = candidate.local_addr()?;
+        let installed: SourceConfigurationSnapshot = authority
+            .install_source_configuration(&source, SourceAddressSet::new(&[initial, resolved])?)?;
+        authority
+            .select_initial_round_membership(&installed, SourceAddressSet::new(&[initial])?)?;
+        let request_timeout: Duration = Duration::from_millis(200);
+        let round_timeout: Duration = Duration::from_secs(2);
+        let (mut prepared, handle): (PreparedAddressRound, ControlHandle) = authority
+            .prepare_windows_address_round_refresh(
+                &source,
+                AddressRoundConfig::new(&[initial], request_timeout, round_timeout)?,
+                DnsQueryName::new("localhost.")?,
+                DnsAddressFamily::V4,
+                NonZeroU16::new(resolved.port()).ok_or(PilotError::InternalState)?,
+            )?;
+        let original_packet: [u8; PACKET_BYTES] = prepared.packets[0];
+        let original: RoundBindings = prepared
+            .source_policy
+            .clone()
+            .ok_or(PilotError::InternalState)?;
+        let permit: OwnedSemaphorePermit = original
+            .reserve_resolution_driver()?
+            .ok_or(PilotError::InternalState)?;
+        let mut changes: watch::Receiver<()> = original.resolution_changes()?;
+        let mut control: watch::Receiver<Control> = prepared.control.clone();
+        let Some(QueryPlan::Windows(plan)) = prepared.refresh.take() else {
+            return Err(PilotError::InternalState.into());
+        };
+        let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()?;
+        let origin: Instant = Instant::now();
+        let deadline: Instant = origin
+            .checked_add(round_timeout)
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let (report, replacement): (AddressRoundReport, SourceConfigurationSnapshot) = runtime
+            .block_on(async {
+                let job: RefreshJob = RefreshJob::Native(windows::start(
+                    *plan,
+                    original.clone(),
+                    control.clone(),
+                    deadline,
+                )?);
+                let mut report: AddressRoundReport = run_round(prepared, origin, deadline).await;
+                if report.round_end() != AddressRoundEnd::Exhausted {
+                    let retired: RetiredRefresh =
+                        retire(job, AddressRoundRefreshOutcome::NotNeeded).await;
+                    if let Some(error) = report.primary_error() {
+                        return Err::<_, Box<dyn Error>>(error.into());
+                    }
+                    return Err(io::Error::other(format!(
+                        "original round did not exhaust: {:?}; native pending: {}",
+                        report.round_end(),
+                        retired.native_pending,
+                    ))
+                    .into());
+                }
+                let answer: RefreshPlan =
+                    match collect(job, &original, &mut changes, &mut control, deadline).await {
+                        Ok(answer) => answer,
+                        Err(RetiredRefresh {
+                            outcome: AddressRoundRefreshOutcome::Failed(error),
+                            ..
+                        }) => return Err(error.into()),
+                        Err(_) => return Err(io::Error::other("native result did not join").into()),
+                    };
+                assert_eq!(answer.config.peers, [resolved]);
+                let replacement: SourceConfigurationSnapshot =
+                    authority.replace_source_scale(&installed, installed.declared_scale())?;
+                assert!(!installed.same_configuration(&replacement));
+                report.refresh = Some(
+                    successor(
+                        &original, &permit, answer, control, handle, origin, deadline,
+                    )
+                    .await,
+                );
+                Ok((report, replacement))
+            })?;
+
+        assert!(matches!(
+            source.policy_snapshot(resolved),
+            Err(SourcePolicyError::UnknownEndpoint)
+        ));
+        assert!(
+            source
+                .address_round_for_configuration(
+                    &replacement,
+                    AddressRoundConfig::new(&[initial], request_timeout, round_timeout)?,
+                )
+                .is_ok()
+        );
+
+        assert!(source.bind_round_for_refresh(&[initial]).is_ok());
+
+        require_stale_native_dns_outcome(&report, &blackhole, &candidate, &original_packet)
+    }
+
+    /// Independently observe the original timeout and both owned UDP sockets.
+    /// # Errors
+    /// Preserve missing history, unexpected traffic and native socket errors.
+    /// # Panics
+    /// Reject altered original completion, request bytes or resolver disposition.
+    #[cfg(windows)]
+    fn require_stale_native_dns_outcome(
+        report: &AddressRoundReport,
+        blackhole: &std::net::UdpSocket,
+        candidate: &std::net::UdpSocket,
+        original_packet: &[u8; PACKET_BYTES],
+    ) -> Result<(), Box<dyn Error>> {
+        use crate::{AddressAttempt, Status};
+        use std::io;
+
+        assert_eq!(report.end(), AddressRoundEnd::Exhausted);
+        assert!(report.primary_error().is_none());
+        assert!(report.policy_refusals().is_empty());
+        assert!(matches!(
+            report.refresh(),
+            Some(AddressRoundRefreshOutcome::Retired(AddressRoundEnd::Stale))
+        ));
+        let [attempt]: &[AddressAttempt] = report.attempts() else {
+            return Err(io::Error::other("expected one original attempt").into());
+        };
+        assert_eq!(attempt.peer(), blackhole.local_addr()?);
+        assert_eq!(attempt.report().status(), Status::Timeout);
+        assert!(attempt.report().sent());
+        blackhole.set_read_timeout(Some(Duration::from_millis(200)))?;
+        let mut wire: [u8; PACKET_BYTES + 1] = [0; PACKET_BYTES + 1];
+        let (length, sender): (usize, SocketAddr) = blackhole.recv_from(&mut wire)?;
+        assert_eq!(length, PACKET_BYTES);
+        assert_eq!(&wire[..length], original_packet);
+        assert!(sender.ip().is_loopback());
+        for socket in [blackhole, candidate] {
+            socket.set_nonblocking(true)?;
+            match socket.recv_from(&mut wire) {
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {}
+                Err(error) => return Err(error.into()),
+                Ok(_) => {
+                    return Err(
+                        io::Error::other("unexpected original or successor UDP traffic").into(),
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Verify that rejected publication preserves both membership and capacity.
     /// # Errors
     /// Return genuine ownership, setup or positive control failure.

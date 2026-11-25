@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Native observation adapters linked into their owning Windows process.
+//! Narrow native adapters linked into their owning Windows process.
 //!
 //! The portable platform crate retains its separate service lifecycle contract.
 
@@ -66,6 +66,7 @@ mod windows_adjustment;
 mod windows_clock;
 #[cfg(windows)]
 mod windows_dns;
+mod windows_image_load_policy;
 #[cfg(windows)]
 mod windows_leap_presentation;
 #[cfg(windows)]
@@ -74,6 +75,8 @@ mod windows_peer_process;
 mod windows_resume;
 #[cfg(windows)]
 mod windows_service_configuration;
+#[cfg(any(windows, test))]
+mod windows_service_error_mode;
 #[cfg(windows)]
 mod windows_service_security;
 #[cfg(windows)]
@@ -121,6 +124,13 @@ pub use windows_adjustment::{ClockAdjustment, read_clock_adjustment};
 pub use windows_clock::read_clock_coordinates;
 #[cfg(windows)]
 pub use windows_dns::{DnsAddressQuery, dns_worker_thread_exited};
+#[cfg(any(windows, test))]
+pub use windows_image_load_policy::ExtensionPointPolicyError;
+pub use windows_image_load_policy::ImageLoadPolicyError;
+#[cfg(windows)]
+pub use windows_image_load_policy::{
+    enforce_current_extension_point_policy, enforce_current_image_load_policy,
+};
 #[cfg(windows)]
 pub use windows_leap_presentation::read_leap_presentation;
 #[cfg(windows)]
@@ -132,6 +142,10 @@ pub use windows_peer_process::{
 pub use windows_resume::{ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch};
 #[cfg(windows)]
 pub use windows_service_configuration::{ReportedServiceConfiguration, ServiceConfigurationQuery};
+#[cfg(any(windows, test))]
+pub use windows_service_error_mode::ServiceErrorModeError;
+#[cfg(windows)]
+pub use windows_service_error_mode::enforce_service_critical_error_mode;
 #[cfg(windows)]
 pub use windows_service_security::ServiceSecurityQuery;
 #[cfg(windows)]

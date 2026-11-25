@@ -14901,7 +14901,7 @@ execution holds and current Core/Engine work remain with their existing owners.
 #### Service provisioning and direct MSIX order — 23 November 2026
 
 W11-W05/W11-W10 and S0.3/S0.6/S3.1–S3.4/S6.1–S6.4. Use the
-[current unsigned disabled-service fixture](#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
+[current unsigned disabled-service fixture](#restrict-the-default-dll-search-before-both-service-entries-connect)
 for the latest authored mechanics. The linked observer and read-only
 signature controls retain their own inputs. Installed rights and supported
 provisioning remain open.
@@ -20264,6 +20264,443 @@ launch and the signed installed path remain open. A nonzero WSL relay
 exit with no native record must continue to refuse admission. The host
 does not use that condition as a native cleanup witness.
 
+##### Settle the original access relay through WSL
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. Integration and lifecycle QA
+joined the actual `launch_prestart_session` consumer, WSL provider, pinned
+x64 Windows parent and native watchdog. The ordinary Windows owner produced
+inert receipt bytes. The deployment and standard-user peers used maintained
+scripted pipes. The run used the current Windows actor in a private stage on
+Windows x64 `26300.10075` and WSL `3.0.5.0`, with kernel `6.18.58.1`.
+
+Negative-path QA confirmed a descriptor admission defect. A bounded Windows
+open with read/write access and read sharing succeeded while WSL held `rb`
+and returned sharing error `32` while WSL held `r+b`. The original provider
+started with the writable descriptor. Its relay exited `1` with an empty
+status stream and the supervisor withheld admission. The provider now checks
+the OS access mode and refuses a writable descriptor before `Popen`. The
+regression wraps an `O_RDWR` descriptor as `rb`. It reached the launch sentinel
+on the predecessor and passed after the fix. It also checks that the caller's
+original descriptor and empty file remain available after refusal. The earlier
+direct-watchdog launcher still attaches its separate write-capable descriptor
+as stderr.
+
+The corrected candidate is `7b63ecd452e72b6557610f0dad15d3a32f7b626c`
+plus `descriptor-current.patch`. All 167 portable MSIX fixture tests passed.
+The live WSL run used the earlier `descriptor-fixed-r1/candidate.patch`. The
+final overlay changes only a portable test that the native harness does not
+load. All other 40 bound source files match. The live run used the original
+28 s work and 33 s retirement cutoffs. The launch arguments set guardian
+budgets of 10 s and 15 s and watchdog budgets of 18 s and 22 s. The original
+relay exited `0` and all of its streams closed in the three parent-backed
+cases.
+
+| Case | Observed disposition |
+| --- | --- |
+| Healthy, 4.782 s | Full native exit `0`, four admitted captures and the independent service-type matrix. |
+| Settled refusal, 4.642 s | Full native exit `3`, original `actor-close` refusal, 27 trailing bytes drained and private diagnostic readback from the held file without moving its offset. No standard-user command or final observation. |
+| Wide status, 0.666 s | Full native exit `65539` retained. Invalid frame and unconfirmed retirement refusals preserved. Private diagnostic readback refused. The unchanged raw-wide producer exposed POSIX exit `3`. |
+| Writable host descriptor | Typed refusal, no relay launch and the file remained empty. |
+
+The first two harness runs failed their own expectations about the native
+failure classifiers and the oversized frame header. The original observations
+and failed-control records are retained. Independent readback checked the
+corrected three native status and diagnostic pairs, the four dispositions
+and all 41 bound inputs. Before retiring the stage, the controller found no
+remaining scoped process or reparse point and reopened all ten diagnostic
+files exclusively. It retained one copy of the bound build inputs and images.
+
+| Record under `~/.local/share/nevrotick/s06-wsl-relay.U918mXHf/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `ec5574a5fb6415e3eadcac2db7d8f8b86ae9be9099d492f74cda3b7e0b3b72c4` |
+| `descriptor-current.patch` | `bf54538331f43702b095f669909377e6011ea336eb1f0089be59b22b4834239b` |
+| `descriptor-fixed-r1/result.json` | `3a4964ec156185959c542ddc9f2bcf4d803078fcc1bc912e2ca60725fc08db5c` |
+| `descriptor-predecessor-r2.log` | `56a445afe66e4020cb552e06dfa65e8bdea03d9d2046aed0b3382e4cd22efd43` |
+| `descriptor-current-portable-r2.log` | `01ae82a5f5d78f4bfa7084e28c6e3e430b698d7374aca9d696ed0486f347857f` |
+| `retired.json` | `9452562d4647e991726ce0fada6ec1fa9bb9c2ff227438ae6cd86d55b2c63741` |
+
+The descriptor check changes Python admission and keeps the native handle
+implementation intact. No new native heap instrumentation, fuzz, generated
+mutation or executable-line campaign ran. This checkpoint establishes the
+same-actor relay cases. WSL and Windows still use separate deadline origins.
+Cross-context launch, live stalled-child accounting and recovery latency,
+full native resource qualification, signed installation and production
+admission remain with their existing owners.
+The next source child binds each deployment, provisioning and ordinary-user
+attempt to its independently admitted original actor and staging. The common
+supervisor must keep the captured actors, processes, distinct pipes and
+original rollback cutoff together through partial launch and retirement.
+
+##### Check the access subject before creating the native child
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. Planning and Windows
+privilege review traced the existing launcher from the externally admitted
+role through WSL `Popen` to the Windows parent and its suspended child.
+The fixed outer invocation now requires the independent subject SID alongside
+the parent image pin. The host checks bounded spelling with the owner
+renderer’s existing grammar. The native parent checks the actual retained
+primary token against that subject and the ordinary-user profile where
+required. The check precedes the private status pipe, pinned-image admission,
+and native child creation. The original parent token generation, suspended
+child context and post-collection rechecks remain in force. The separate
+19-field inner invocation remains the outer owner's same-context child path.
+
+On `7b63ecd452e72b6557610f0dad15d3a32f7b626c` plus the recorded MSIX
+source overlay, CPython 3.12 passed 168 portable tests. Contract QA checked
+missing or malformed subject values and pinned subject forwarding for both
+roles through the original POSIX-pipe fixture. The guarded x64 .NET build
+completed with warnings as errors against the pinned compiler and shared
+sources. Native negative-path controls on the current Windows actor used
+the exact compiled parent with an inert owner. The matching provisioning
+subject completed with the expected frame, diagnostic and full native exit
+`0`. The foreign subject and the current account presented in the standard
+role both returned relay exit `1` with closed streams, no status or ordinary
+output, and unchanged empty diagnostics. Independent token observation found
+the Administrators group on that account.
+
+Integration and lifecycle QA reran the actual Python provider and supervisor
+over WSL with the same pinned parent. Healthy completion, settled refusal,
+full status `65539`, and the raw relay projection to `3` passed using inert
+peers. A fresh-context reviewer matched all 41 source pins and checked the
+actual launch arguments, images and original status and diagnostic records.
+Retirement found no scoped process or reparse point, reopened all six
+diagnostic files exclusively and removed the test stage. These runs use one
+effective actor and preserve prior production holds. They
+establish the new pre-child refusal and same-context custody. Cross-context
+launch with independently enrolled actors, ordinary-user native success,
+actual provisioning rights, signed installation and final installed-role
+validation remain due. The native memory and affected line and mutation gates
+remain open. No fuzz campaign ran for this fixed role and token check.
+
+| Record under `~/.local/share/nevrotick/s06-access-actor.5dLsNyNS/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `f9c0b23cae09d51a3a74d254a8ce83d98ba79703cde5553d9b6151a4a06620b1` |
+| `tested-source.patch` | `5b906d34fce697c473ffed12da4ca96e49c8e478d2598e97ad4828ae261f5ca3` |
+| `tested-source.json` | `1b289e9cd6c07f34453af2b160fb647fad7fa842db1b30ae436d2d29544e2fa0` |
+| `build.json` | `169328f9e2b2534caa2c9d5e6b82b95058bdb9a6aaaaffc0c0a7abef314c3783` |
+| `portable-final.log` | `5a6c6b37ab52aa8a37a5d680437fef4459703a9152119e93873076903a6408ef` |
+| `native-roles/result.json` | `f0e14d76bd6646e18b2d744dff32c8aebafde5ad61e49f895b138ca9621e641d` |
+| `native-join/result.json` | `243554bf153e6bec869e4975e595ca66f42d126bced7e65ee30a8a136ba4e6c9` |
+| `retired.json` | `8af8801ec415a510f7d512f7067f2a6dd4912dbaec7f275475859c4a0cf1ee95` |
+
+##### Retain the original access actor across the command wait
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. The access session now
+loads the pinned helper and acquires the original query-only actor before
+either command read. It passes that instance to the existing native
+currentness and role checks. The access session disposes the original actor
+once before writing any frame and also retires it on unused EOF or malformed
+input. An earlier read, capture or protocol refusal controls the outcome.
+An independent disposal or refusal-write failure remains attached to it.
+If disposal is the first failure, the owner withholds the success frame.
+
+Windows service, lifecycle and fault-recovery QA exercised 26 session and
+13 retirement controls on x64 Windows PowerShell 5.1. The access controls
+observe the actual input and output boundaries with controlled streams.
+They cover opening before read, generation change during the wait, exact
+actor reuse and disposal before publication. They also cover unused EOF,
+crossed and trailing commands, primary failure with disposal failure,
+and broken success and refusal frames. Moving acquisition to after the
+two reads in an isolated control restored a stale admission in the synthetic
+history and failed the maintained assertion. The accepted source passed.
+
+The rendered owner also ran through the live WSL provider, pre-start parent,
+watchdog and real pinned helper with an inert observer. On identical unused
+EOF and a mismatched helper pin, the exact predecessor settled with native
+exit `0`. The replacement refused at helper admission with native exit `3`
+and no frame. The matched unused case settled silently. The matched access
+case retained the inert observer's exit `73`, exact PID output and original
+image pin in one frame. A crossed command produced no frame. A foreign
+nested subject produced the bounded provisioning refusal. All six retained
+the original relay and native job settlement. Before removing the exact
+owned stage, the controller found no scoped process or reparse point and
+reopened all six diagnostic files exclusively.
+
+A fresh-context reviewer matched both PowerShell selector inputs and all six
+raw native dispositions. The code and portable controls establish lifetime
+and failure ordering. The native run establishes the same-actor custody path
+with actual process pipes and a pinned inert image. Actual token transitions,
+cross-context launch, positive ordinary-user admission, signed installation
+and affected native resource and metric gates remain open. No wire grammar
+changed. The directed order control supplies no generated mutation score or
+fuzz result.
+
+| Record under `~/.local/share/nevrotick/s06-access-lifetime.mdVMdWfv/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `da6a89b315729587323b4b1642a7f15bcb042435ebdc152122def93ef5e23410` |
+| `tested-source.patch` | `daebd76999bb69425af43688556c24ec279bfd5c59272252aeadf7244a0ed501` |
+| `used-source.json` | `1b005679a295575f5de2ea69ee0eaf39f29e95756106a96970af90f4c2ff5fa2` |
+| `session-qa.json` | `3c7a67feb46bef20393ced9ae5a4cdbd6b1327ac479d8259391c3ef8cd4fb004` |
+| `native-owner-result.json` | `b43125ccca2b85203faafae84312035bdf202f01964f29049d27beccfef5d702` |
+| `order-control.json` | `c92a827867b4048653ac8447f27fe6b0a864048dfcc02c271a9067f9947a7ee6` |
+| `retired.json` | `8f70184252fb758c539f52b722d1cdbd4f6d1dbf7999c837e43e9822090564a2` |
+
+##### Bind the rendered access entry before launching either role
+
+S0.6/W11-W05/W11-W10 and CHECK-18/24/25/27. The renderer retains the
+original run object, selected probe, independently admitted SID, intended
+absolute stage and the fixed entry bytes and pin together. The two access
+attempts supply these bindings to the existing coordinator. It checks each
+staged entry against its original role, run and pin before launching either
+role. The actual WSL provider rechecks the original run and entry at its
+own launch boundary and forwards the same pin to native held-file admission.
+The lab owner admits the renderer inputs and protects staging throughout
+use. The binding preserves those inputs and gives no Windows authorization.
+
+Planning, contract, negative-path and integration QA used the actual
+renderer, provider and supervisor. The combined 41-file candidate based on
+`7b63ecd452e72b6557610f0dad15d3a32f7b626c` passed 175 portable tests.
+The original and current renderers produced identical bytes on 12 sampled
+role, diagnostic and deadline inputs. The controls refuse crossed roles,
+a value-equal foreign run, shared stage paths and a different valid entry
+staged for the second role before any launch. Replacement after preflight
+also refuses at the direct launch boundary. Directed copies omitting either
+entry check reached the inert launch sentinel and failed the selected test.
+
+The live WSL journey used the actual rendered provisioning owner, guarded
+Windows parent, pinned helper and a new x64 inert observer that verified its
+arguments and emitted a fixed synthetic transcript. The deployment and
+standard-role peers were scripted. The original supervisor joined all
+four captures and produced the expected `528/528/528` and `528/16/16`
+triples in 6.059 s. The provisioning capture binds its actual observer
+PID, pinned image and zero exit. The original relay and Windows watchdog
+exited zero with status EOF and matching held diagnostics. The job records
+show both native jobs empty. The first driver stopped before compilation
+because of a missing harness import. The corrected driver completed and
+preserved the tested input bookends. A fresh-context reviewer reconciled
+all 41 source pins and the raw provisioning records. Retirement found no
+remaining process in the exact stage and reopened the original diagnostic
+file exclusively before removing the stage.
+
+A read-only check of the retained Sandbox `ExistingLogin` observed
+Administrators group membership. That profile supplies no ordinary-user
+positive. Enrollment of independently eligible actors and cross-context
+process, pipe and job custody remain prerequisites for the actual signed,
+quiescent installed window. This result covers the native provisioning
+transport and fixture receipt join. Production service rights, live token
+changes and affected native resource and metric gates remain open. The
+directed tests supply no generated mutation score or fuzz result.
+
+| Record under `~/.local/share/nevrotick/s06-rendered-access.ZCTuqW2d/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `bc644fc2974c45c9fc77b5d2f2fb0dcd108147e81954b5edfca42a90cb0a6521` |
+| `tested-source.patch` | `702de486d808f2dadf27a329827f9a70802e80bddbccf74f41d03827140afdab` |
+| `tested-source.json` | `6d7c6dc877a35ea2887e985eef787ee4a98059387f57cdb5f91c3a88fb38092d` |
+| `portable.log` | `99b51c87f8fd188c3a132105b2c1b3f1c95cf71b20c2d0cf0f85d56755b60d59` |
+| `native-result.json` | `c0ff75e79fcf7fd6987b685270e96c093a0d151ae214651231ccb9ee87412974` |
+| `native-observed.json` | `9429da93f269d7a0c161af55890b32d91985fdad1de767d50f84d5497ae82a55` |
+| `sandbox-actor.json` | `ed2146a0e725d9d387a00fdf7289cf3950dc655d57caaa2fce9c68dfc8ad2b19` |
+| `retired.json` | `33b8dfd66116beec6dc07367f12fa01ac4bedf31326146d98ecc7d41fa4b694f` |
+
+##### Admit the native observer under an independently enrolled standard user
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/26/27. The owned offline x64 Windows
+Sandbox on build 26100 used its existing administrator for guest-local setup.
+The setup owner enrolled a temporary local account in Users, retained its
+issued SID independently, and started a fresh Windows PowerShell 5.1 process
+under that account. The ordinary process could read and execute the pinned
+inputs and write to a separate scratch directory. Both directory ACLs were
+read back.
+
+The ordinary process imported the maintained `prestart_child.psm1` and
+reused its pinned C# helper DLL. The module and all four helper source files
+match `7b63ecd`. The process passed the original enrolled SID to the actual
+standard-user selector. The native guard admitted the exact SID and default
+non-elevated token profile. Independent group readback found Users, Medium
+integrity and no Administrators entry, including deny-only membership. The
+original observer exited zero with both exact binary streams, matching before
+and after image hashes, and successful exclusive reopen after retirement.
+The newly compiled x64 observer was inert and performed no SCM operation.
+
+Sandbox management, Windows privileges, contract and security-boundary QA
+covered the exact guest, pinned inputs, original actor and owned effect.
+The first run refused input sharing with host exit 5 before enrollment. The
+corrected attempt used an owner-and-SYSTEM transport, verified both mappings
+and parsed the guest scripts. The guest invocation completed in 8.699 s.
+Both network bookends passed. The guest owner observed zero remaining
+fixture processes and profiles. It removed the temporary account by SID and
+both guest directories. A separate guest check confirmed their absence.
+All host transfer files were removed. The active Sandbox still holds the two
+empty mapping directories.
+
+Fresh independent review matched both CLI receipts, the two process
+identities, group records, source and image pins and raw bytes. Four directed
+readback controls refused crossed actor identity, deny-only Administrators
+membership, changed stdout and incomplete account retirement. This closes
+the inert native ordinary-user selector control. The Windows integration
+owner still needs the integrated cross-context deployment route and the
+signed, continuously quiescent installed journey. Physical token changes
+and affected coverage, mutation and native resource gates remain open.
+
+| Record under `~/.local/share/nevrotick/s06-ordinary-actor.LjzN4Ybn/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `5a59e442bd17f2251950e49d1bfbd8c7a2e0464d8e4dd6b8a598c2585fa2b635` |
+| `observer-source.sha256` | `6c4a7eb74a6487a952c203a355c7546e07afbef316a6da44cb627d97ab9996d1` |
+| `native-build.json` | `2458fc88bd63ac5d7da666f3798b241bb3d4705830c33512e72d442d0764b04d` |
+| `attempt-2be309d49108/verification.json` | `5f2a080d97a33efcefd36068c31f0152a28a3e7a999840dfa30ecee090d7b6f5` |
+| `attempt-c6e7aa943ec5/verification.json` | `65e54cf70ae926984ceeb545f4990eabcd03be49155ac3f9e44ec0b93c3210d1` |
+| `attempt-c6e7aa943ec5/readback.json` | `1ed85d48fd5769d55d1bf299327c17c3f8497e0670261a57d1089f9be94d35ba` |
+| `readback-controls.json` | `8aca3b2308e97bba278642b80eb8b570ed1bd3700c53a1552d7bb59ce41a6747` |
+| `retirement-closeout.json` | `155d202e96a607a62a8e27fb3e4340f7ade9b95b27e2900552762fe5940e1749` |
+
+##### Carry the standard-user request through the native access parent
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/25/27. The native access parent,
+watchdog, guardian, rendered standard entry and observer ran under a
+guest-local Users account on the existing offline x64 Windows build
+26100 Sandbox. The setup owner enrolled the account and inserted its
+independently obtained SID at the single actor binding of the rendered
+entry. It held the result of the credentialed launch and kept the
+original directed stdin, stdout and native status streams. The entry and
+original diagnostic file were bound before each launch. The parent and
+observer each checked the real role using their retained actor.
+
+The native runs reused both bound x64 parent images and the helper DLL.
+The fresh inert observer validated the standard selector and emitted a
+fixed receipt with its actual PID. The 39-file build and caller inventory
+binds the current `7b63ecd` overlay. The guardian compiled its five pinned
+local sources in the disposable guest. The fixture used the original
+bounded work and retirement checks, exact input and output mappings, and
+a separate writable diagnostic file accessible to the admitted actor.
+
+| Request on the original input followed by EOF | Observed result |
+| --- | --- |
+| Standard `U` | Exactly one 947-byte frame with the original observer PID, both expected image hashes and exit zero. Full watchdog exit 0. |
+| Provisioning `A` on the standard pipe | The owner recorded `unexpected-command`. No frame. Full watchdog exit 3 with the original diagnostic. |
+
+The controller observed original parent exit 0 and output/status EOF for
+both cases. Both nested jobs reported empty and both native settlements
+matched the original held diagnostic lengths and hashes. Each file
+reopened exclusively after settlement. The maintained Python pipe decoder
+and receipt reader accepted the archived standard frame joined with
+scripted other-role receipts. That replay establishes receiver
+compatibility for the exact bytes. The integrated live WSL-to-guest
+deployment route and installed authority remain open.
+
+Sandbox, privilege, lifecycle, positive/negative and integration QA
+preserved two setup failures. The first launch stopped during input
+admission before process creation. A separate probe observed the
+three-byte input preamble. The corrected launcher used preamble-free
+encoding in its owned process and restored the original setting. The
+second launch reached both native parents, but the guardian lacked
+its local compile-source roster. It reported
+`FileNotFoundException` for both requests. The final launch supplied
+those five exact inputs and completed the guest command in 18.300 s.
+The first Python readback used the wrong settlement field name. The
+corrected readback used the retained native bytes without another run.
+
+The three attempts each removed the enrolled account and guest staging.
+After the final run the controller checked the guest again, then removed
+all host transfer files. The Sandbox remains open with empty transfer
+mappings. A fresh-context review reconciled the initial refusals, the
+passing native records and caller pins. The installed package requires
+the separately admitted signer/trust, cross-context deployment, and
+continuous quiescence. Physical token transitions and affected resource,
+coverage and mutation qualification retain their existing scopes.
+
+| Record under `~/.local/share/nevrotick/s06-cross-context.z6dHRob7/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `8694a266312f8767c40eac8d7750c03794fde4ec774067b9777e871e528268e3` |
+| `build.json` | `360b201edf19f7dc7213dcccfd216791c5ebbfc14a4489d95d9ea3941f346b7f` |
+| `attempt-776fb850b8c0/verification.json` | `c6fc78b1b03184e80b3b1b200e595bfc6eaf1ecca098fd409f6cbade0f5ca70b` |
+| `attempt-d3bac36e9245/verification.json` | `95fe5d063fab9080a5bffe5d509c85d87e68891c6ff9e2792cb1a6d158b2deac` |
+| `attempt-c9e63e1a3382/verification.json` | `0ed022da29ee08845f8052deefb6d877cad71664595d91ba6c9e10ff8ccf9ccf` |
+| `readback.json` | `0ef8fa8d8709c4844b407895acf2f9f6c1e6662c159b1c6ce2fbfc2506942e05` |
+| `retired.json` | `c388489c5bf09ca531b9060f498b87fc6ea38a956b45735c65d111dc04331b21` |
+
+##### Join the live Windows standard actor through the WSL supervisor
+
+S0.6/W11-W05/W11-W10 and CHECK-1/2/25/27. The maintained
+`supervise_prestart_session` used live POSIX pipes to one Windows standard
+role in the owned offline build-26100 Sandbox. The provisioning and
+deployment peers were scripted. The relay waited for the guest to retain
+the original credentialed parent and its pipes before giving that
+parent's readiness to the supervisor. The ready record carries the
+original parent PID, run, nonce, enrolled SID and pinned rendered entry.
+
+The relay sent only the original supervisor command followed by EOF.
+Host rename and hard-link attempts initially refused with access denied
+inside the active input mapping. The original guest reached the command
+phase and then retired with an unsuccessful result and no capture.
+The corrected relay closes the bounded payload before creating the empty
+commit marker. The guest consumes the payload only after that marker.
+The guest checks the original diagnostic file before releasing its
+length, bytes and native status. The WSL settlement reader checks the
+transferred copy on its own held descriptor.
+
+| Control | Observed result |
+| --- | --- |
+| Current standard role | Original `U` and EOF. One 947-byte frame from the inert native observer. Watchdog and relay exits 0, exact diagnostic match, then the deployment peer received final confirmation and retirement. |
+| Earlier provisioning input refusal | The supervisor refused the crossed image pin. It closed the original standard input without a command. The guest observed empty EOF, supplied no capture, and retired the same parent. Watchdog and relay exits 0. The deployment peer received retirement. |
+
+The original WSL deadlines bounded the supervisor and the host observer.
+Guest launch, work and retirement retained separate stopwatch bounds.
+Fresh independent review reconciled the live frames, command publication,
+raw exits, original source pins and rollback. The owner observed removal
+of all three temporary guest accounts and staging directories and removed
+61 host transfer files. The Sandbox remains active with empty mappings.
+This checkpoint exercises the live standard-role journey and recovery
+through the maintained supervisor. Joined live deployment and provisioning
+roles, common physical deadline qualification, signed installation and
+affected metric gates remain open.
+
+| Record under `~/.local/share/nevrotick/s06-live-guest-access/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `351669139ee01220d315448c9e4e8bca56813ca6e340df176d9dd688e8ef0b00` |
+| `attempt-ae9b6561b4ef/verification.json` | `bab49630c35443665fe5b276cae08e69ded5f68514027c740a85c588396dc032` |
+| `attempt-95b0a64a9f1b/live-result.json` | `21a898b4078a033b020f5718600c0f0935dbbdd8cfaf172b881438ea2803317c` |
+| `attempt-2b04e6a349c1/live-result.json` | `ba0a7d356c97275dfc289e41cf6c70e164040aadae648d739750b1c0a6cace80` |
+| `retired.json` | `725cecc52747efd4a5ec14f68457aa6f2bf4ab25aa6f3228f353ce5af2b66c5b` |
+
+#### Enforce image-load restrictions at both service fixture entries
+
+W11-W05/S3.1 and CHECK-16. Both fixed-role library entries pass through
+the one-shot dispatcher admission before calling SCM. The GPL-2.0-only
+native leaf reads the actual current-process image flags. It requires
+remote-image and low-label-image restrictions and System32 preference,
+preserves admitted audit bits and refuses unrecognized flags. If the
+policy already meets the profile it performs no image-mitigation setter call. Otherwise
+it applies the missing bits and reads back the effective word. An
+admission refusal consumes the original dispatcher attempt, keeps the
+typed error and prevents SCM connection and subsequent fixture work.
+[Microsoft policy definition](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-process_mitigation_image_load_policy)
+
+The portable leaf passed 82 tests, including five ordered policy controls,
+and four compile-fail doctests. The GNU fixture passed 197 tests. The
+first fixture runs lacked the exact one-byte inherited core limit required
+by the observed WSL pipe collector. Both leaf and fixture passed MSVC
+Clippy, and the MSVC fixture libtest linked against the admitted 529
+SDK libraries. The original offline target check stopped at the missing
+locked `windows-sys` archive. Dependency selection stayed fixed.
+
+Two exact native selectors passed in separate fresh Windows Sandbox
+processes. Each verified incomplete initial flags, used the real
+fixed-role library entry and observed the expected standalone SCM
+refusal 1063. The independent Windows binding then observed all three
+effective policy bits and the repeated entry refused. The pre-SCM
+ordering is also enforced by the actual dispatcher source. The first
+native harness collected the engine test's passing output but returned
+an unavailable child exit and stopped before the broker. The corrected
+harness observed both original process exits and retired its staging.
+Independent review checked the exact image and all nine selected source
+and policy pins. The verification manifest registers the native leaf
+under the existing 90% line and 95% per-file mutation rules.
+
+Installed SCM startup and earlier image loading, real image-denial
+controls, structured pre-SCM diagnostics, and the affected metric gates
+remain open under their existing owners. The fixture remains in its
+admitted inert startup scope.
+
+| Record under `~/.local/share/nevrotick/w11-service-image-load.R6Ax76w4/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `d9385d3db9024072d2bb617f79c32aeb6871335ebf1f8d18d45248e0475a6d6e` |
+| `final-source.sha256` | `51b7c7b47a5b3a7ab315a906dd52eb8a8afada044bcd54df3dbf87fce0db8ab9` |
+| `fixture-gnu-r3.log` | `a53e2d6d783e05fd828a467c6fabfd596a64ee78709a852f37527927c0c38fa2` |
+| `linked-artifact.json` | `cf45cd65aa17e83ea07c8e53b1996c5d0bd8cf1f02e65f140c1415e58dbc2fd3` |
+| `native-result.json` | `1c190af6ca97218175ed0029d279af2d2ca216673139f1ae78e8fed96ea325bb` |
+| `native-result-r2.json` | `50af6dcb0ae242d6fd0b87e9ad5795ef5c578be66556497a93adfe5913c6807a` |
+| `native-retry` | `4a98a4a80d3b1971a2a7c96d87d9304c595f8b4038fc4340021ac8d095799c00` |
+
 #### Bind startup admission to the first native exposure
 
 W11-W05/S3.1–S3.2 and CHECK-2/3/15/16/25/27. The service and contract
@@ -20350,3 +20787,697 @@ were exercised for this checkpoint.
 | `records/combined-02/service-peer-tests.exe` | `0639fb57f440c3f6cf5305a1ce7084d8b09c512bb1e634737a6153a7b05adcf3` |
 | `records/coverage-01/summary.json` | `ff686936c1143a7561338d735f466a95b29a30f90713e862f84efbc0617461c1` |
 | `records/coverage-01/coverage.json` | `b8155c3ec4a35afdd20e2e0d7f7e85b9ccf051d9813e5a50bd0585041496f195` |
+
+#### Replace the unsigned service fixture with the guarded role images
+
+W11-W05/W11-W10, S0.6 and CHECK-16/18/26/27. The previous unsigned fixture
+predated the [pre-SCM image-load guard](#enforce-image-load-restrictions-at-both-service-fixture-entries).
+The environment preflight and configured graph, development and link workflows
+ran from an owned WSL copy of `7b63ecd` with the existing worktree changes.
+All 2,390 recorded source paths matched the live checkout at both bookends.
+The first vendor preparation refused an absent locked archive. The first graph
+attempt stopped at the retired temporary vendor path before running Cargo. The
+retry reconstructed the exact 588-package cohort from retained vendor and
+registry files and passed complete checksum admission. The relocated copy
+kept the configured 4 GiB free-space floor.
+
+The six graph commands and twelve privilege checkpoint commands passed on
+861 bound inputs with digest
+`991e9120e2cf25fd9594e2f409e0712c8dfc2da296fc5b9c77a5b9764cd6a791`.
+Each GNU mode passed 197 fixture unit tests, one binary-entry refusal
+integration test and 70 platform unit and integration tests. The platform passed
+28 doctests. Formatting, Clippy and rustdoc passed in the selected lanes.
+The two fixed-role MSVC links and matching observer libtest link passed with
+the same source binding. All three emitted x64-v3 PE/PDB pairs passed
+readback. The declarations and imports were inspected on the role images.
+The current observer receipt covers linking and artifact readback.
+
+Package-artifact and Sandbox verification consumed the two linked role
+images through the maintained payload preparer. The prior manifest, inert
+launcher, three artwork files and six SDK bytesets matched their pins.
+MakeAppx 10.0.28000.2705 assembled the 213,117-byte unsigned archive in
+the owned offline build-26100 guest. MakeAppx exited zero for the exact
+inputs and refused the missing-logo control with exit 1 and `0x80080204`.
+The controller observed both original exits, the SDK signatures, the
+input bookends and the offline guest before and after packing. Guest
+scratch and host transfer files were removed. The guest and empty
+mapping directories were retained.
+
+The maintained reader accepted both exact input/archive pairs and refused
+each crossed pair at the broker bytes with the supplied archive's correct
+digest. All 36 portable package-preparer and reader tests passed. Fresh
+independent review reconciled the source pins, emitted pairs, role bytes,
+nine archive members, 13 block hashes and both Disabled LocalService
+declarations. The coordinator verified the retained source overlay and
+artifact copies and retired the 2,023,112,704-byte WSL RAM-backed scratch.
+
+| Record under `~/.local/share/nevrotick/s06-hardened-role-pack.r6hIv0CJ/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `63f7906cc2e6ff57ac30830ac9673d7ffe891118fc3f6360fdb95b3dde55bb1f` |
+| `source-final-bookend.json` | `cea195dbccd5ae27a9e1397d6af6ed9837d519df4279bfbc85f052a3606442df` |
+| `qualification/s06-image-guard-graph-r2.json` | `5004da2aa02d3aa8b144e64134d4c415aa76b44c43f8409e075b4e1c181e5f19` |
+| `qualification/s06-image-guard-development.json` | `2e63c9d712bebbbedbbbbf33afdc2cc4a3ae8e8f06f33c15a4fc2f687a9724df` |
+| `qualification/cross-s06-image-guard-roles.json` | `01169a97e7757664cf90d2cd16655372912189087a473a418badacd560476f65` |
+| `qualification/cross-s06-image-guard-observer.json` | `ca0fd7dd4388405a9bcc538df97cc4c76879c3bca54306c8d770f4092a609c6b` |
+| `pack/input-set.json` | `253b55657a1bc175565cc8fc0cea946b549670bb746283ff44481e130d5fd6c2` |
+| `pack/pack-receipt.json` | `49456dca25590c39b3052e2fd0090702f5cc93e8de9be8f42812e447f52a3143` |
+| `pack/archive-readback.json` | `69af7726f8dd2147b92bdffad40dee6fae5fb8890717c12f19ceefae4379ffdd` |
+| `pack/NevroTick-S06-SCM-Fixture-unsigned.msix` | `8020e85da90c89c2a90373c3491c230dbdac40bb519c72ac249c7264d3fcf588` |
+
+This checkpoint supplies the unsigned archive for the [S0.6 installed
+fixture sequence](#service-provisioning-and-direct-msix-order--23-november-2026).
+The package owner still needs the admitted laboratory signer and exact signed
+artifact, supported installation, distinct actor contexts and continuous
+quiescence through native observation and retirement. The installed loader
+dependency closure, effective runtime mitigations and the affected 90% line
+and 95% per-file mutation gates retain their existing owners and status.
+
+#### Prepare separate settlement for both live access roles
+
+W11-W05/W11-W10 and CHECK-1/2/25/27. The next lab case extends the
+[live standard-role checkpoint](#join-the-live-windows-standard-actor-through-the-wsl-supervisor).
+Provisioning has to settle on its own original process and streams so the
+supervisor can issue the standard-role request without waiting for the whole
+guest dispatch. The lifecycle and fault-recovery controls exercise the
+maintained supervisor over two POSIX relay subprocesses with scripted guest
+records and deployment. They check provisioning settlement before the
+standard request, both settlements before final confirmation, and empty
+standard input after an earlier provisioning refusal.
+
+All ten portable controls passed. They also check conflicting identities,
+partial result publication, changed frame bytes after the commit marker,
+full-width watchdog status, and refusal to publish work observed after the
+cutoff. Independent review verified the checks and their scope. The
+prototype, source pins and test logs are in
+`~/.local/share/nevrotick/s06-dual-role-offline.y9IS7hMe/` with
+`evidence.sha256` digest
+`a9c55856097ac9c1c98af394a8978f6ff9e1e147302ea65dfd55b2f2559baa78`.
+
+The native lab controller still owns original process and stream custody,
+exclusive fresh output directories, bounded publication and retirement
+under the original cutoffs. Wire those duties into the single guest
+dispatch before claiming live provisioning and standard-role settlement.
+The resulting inert fixture still needs separate installed-role evidence.
+
+#### Join both live Windows access roles through WSL
+
+W11-W05/W11-W10, S0.6 and CHECK-1/2/25/27. The maintained pre-start
+supervisor joined the original Provisioning and Standard parents in one
+owned offline build-26100 Sandbox. Deployment used the scripted peer.
+The Sandbox, lifecycle and fault-recovery controls bound each parent to
+its own admitted role, SID, rendered entry, streams and host relay. Both
+roles used the same pinned inert x64 observer. The Sandbox preflight ran
+both exact selectors and observed exit zero, matching output and EOF.
+An extra argument returned 74 with empty streams.
+
+The first attempt refused the output mapping before launching either
+parent because role directories were created before the freshness check.
+The next attempt launched both parents but the host could not open a
+readiness marker while the Windows writer held it exclusively. No role
+command was sent. Both parents eventually exited and both stream pairs
+reached EOF. The watchdog reported deadline recovery, and a private
+compiler scratch directory remained. A separate recovery preserved the
+original diagnostics and verified and removed the exact settled residue.
+The corrected harness checks the empty mapping before adding its role
+directories. Only empty commit markers use concurrent read sharing. The
+host retries original marker contention within the same cutoff. The
+portable supervisor tests and bounded marker controls passed. The guest
+cleanup now checks the original exit, both EOFs, scope and exact empty
+compiler directory before removing it.
+
+| Control | Observed result |
+| --- | --- |
+| Healthy | `S C I C O A U F R` and EOF. Access delivered a 2,589-byte frame and settled before Standard received `U`. The 947-byte Standard frame settled before `F`. Both watchdogs exited zero with independently checked diagnostics. |
+| Earlier Provisioning refusal | `S C I C O A R` and EOF. Only the scripted deployment path-length row changed from 135 to 136. The original 2,589-byte Access frame settled and the maintained consumer refused its comparison. Standard received empty EOF and retired with zero frame bytes and no observer capture. Both watchdogs exited zero. |
+
+Both case receipts confirm original guest dispatch exit, raw native status,
+stream EOFs, role directory and temporary account removal, and zero
+remaining profiles or scoped processes. Offline bookends and transfer
+file retirement passed. Empty mapped directories remain in the running
+Sandbox. Independent review matched the capture and watchdog identities,
+native exit codes, receipt digests and cleanup. The host and guest each
+enforced its original allowance. A measured relationship between their
+clocks, actual SCM access rights and signed installed-role qualification
+remain open under their existing owners.
+
+| Record under `~/.local/share/nevrotick/s06-dual-role-live.5Y6rOSQM/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `7970e8999cff71e65fb619779bd4d1805d3fa1c2d0ac53743239629426b241a2` |
+| `observer-preflight-46f4586d0396/result.json` | `6bca0c4444c720bbd960438cdbe3a4e536d8703c3fe45b8a2395695724a2ebde` |
+| `attempt-e35ebdc259ed/result.json` | `172d9348af1b7cb6f487db7854865a9a7ed1feddd3dd48615a5b7d152049635d` |
+| `attempt-e35ebdc259ed/refused-cleanup-r3/result.json` | `2cf11d4f0b22012c3b2de5ad6477835a01f26b1bbc4aca382529a972aa596f23` |
+| `attempt-cec49147dee0/result.json` | `5190f67d5689564c0138495d38434360da5ca3491fb3582390a50020d14ecf52` |
+| `attempt-85c89e460b14/result.json` | `75d27adfc74d10a24a6efd40312fbfc0009e477df43247223f9f8f4d262ae32e` |
+
+The corrected guest producer manifest is
+`~/.local/share/nevrotick/s06-dual-role-guest-fix.DnXRW1TX/evidence.sha256`
+at `be17421e8a83134cbed3b362c276ef63c5212608002533db21eed6f66a5f2aba`.
+The fixed observer build receipt is
+`~/.local/share/nevrotick/s06-dual-access.FEPDJdLT/build.json`
+at `4a671373f6ccc03b6813311d8d5397cff1a9b9072707dad38608cd4ecb01390e`.
+
+#### Restrict the default DLL search before both service entries connect
+
+W11-W05/W11-W10, S3.1/S0.6 and CHECK-16/18/26/27. The real
+`NativeDispatcher` now sets `LOAD_LIBRARY_SEARCH_SYSTEM32` before its
+existing image-mitigation queries and before connecting either fixed role
+to SCM. The adapter preserves the first Win32 error and returns through
+the existing one-shot dispatcher failure path. The two audited role PEs
+include the Rust backtrace library's default-search call for `dbghelp.dll`.
+The per-process setting applies to later default directory searches.
+Early imports, explicitly selected load mechanisms and the installed CRT
+retain their separate qualification.
+[Microsoft loader contract](https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-setdefaultdlldirectories)
+
+The Rust, Windows service and regression checks worked from the owned
+copy of `7b63ecd` plus the current edits. The first configured attempt
+stopped before tool execution because the new checkout lacked its
+receipt directory. The retry verified the locked graph and passed all
+12 development lanes on 861 inputs, digest
+`f5dac70cee26072258124fccff7a9cdbae4fcb50dc23959c57e0ff6896130d1d`.
+The separately selected native leaf passed 83 tests in each GNU mode,
+four doctests, formatting, and GNU/MSVC Clippy. The ordered controls
+require the exact narrow flag and preserve the original setter refusal
+without a mitigation call. A widened-mask copy and a late-setter copy
+failed their intended assertions. The restored source passed. Those
+two checks carry no generated mutation credit.
+
+Both x64-v3 role links and the matching libtest passed. PE/PDB readback
+found the new Kernel32 import in both fixture roles. The native
+libtest ran the two existing standalone selectors in fresh processes in
+the offline build-26100 Sandbox. They reached the expected SCM refusal
+1063 after the startup guards and verified the three effective image
+mitigation bits. This observes successful native setter return through
+the real entry and the existing mitigation readback. Effective directory
+selection and search-exclusion controls retain their own exit.
+
+MakeAppx produced a fresh 213,144-byte unsigned MSIX. The missing-logo
+control still refused. The reader accepted both exact unsigned archive
+pairs and refused both crossed pairs at the broker bytes. Only the two
+relinked role executables changed in the authored payload. Fresh review
+matched the exact source, linked role and observer symbols, archive
+contents and raw native results. Retained artifacts were checked before
+retiring 2,109,034,496 bytes of owned WSL scratch. The signed installed test
+remains held for the admitted signer, exact signed carrier, separate actors and
+continuous quiescence. The 90% line and 95% per-file mutation obligations
+retain their existing scope.
+
+| Record under `~/.local/share/nevrotick/w11-service-default-dll.3qENFRAX/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `f6ebf8d72507426da3192d246b652440899bfda375cde0cf7213c52d801e48ee` |
+| `source-bookend.json` | `fc722141d29b852dbceaaeb7fee04124cd73604e861a51939bb3e7fc758a3b1b` |
+| `qualification/s06-system32-graph.json` | `d6e49322077021ec08af73f974616d38bc58867ca11325d1b33f223f962dcc8c` |
+| `qualification/s06-system32-development.json` | `7e498205946ed94adda42afe9d0c764bf2ac45c40724448a5437321fdec10237` |
+| `qualification/cross-s06-system32-roles.json` | `925126f1e520356164475be4b742d87e954980abe39373573168f1ef6b995deb` |
+| `qualification/cross-s06-system32-observer.json` | `54e6806e051133b01ee454fa2c577d9e6429b34eb1285905bad913b9c5e98db3` |
+| `leaf.json` | `fd4f433fc2277e596f40ef75f7a77f7adbc5fdc74bb03b2c492a3dd5eda20f63` |
+| `focused-controls.json` | `cc784e32745f8ec052d8d919655f9bae7d6fe21c1f5862808d2c5f17f77a51b6` |
+| `native/native-result.json` | `97a2fa9aa014422493d04e9c623a04a437b4bb18ed4d95ede2dc5fb091382895` |
+| `pack/pack-receipt.json` | `5381211c517109f10df58bc9d319e7ee2e27417b17b064c4e792835372289c1d` |
+| `pack/archive-readback.json` | `b9d89d31bf56172a499969ff07b1074dcac76b14817f6bf470e037d8021af0ef` |
+| `pack/NevroTick-S06-SCM-Fixture-unsigned.msix` | `74f40270c9f6d4df6c1163981db31ef0427fad300940717674ebe627f3c0c18f` |
+
+#### Bind the available inputs for the signed installed trial
+
+W11-W05/W11-W10 and S0.6. The read-only package and artifact checks matched
+the current unsigned archive to its exact authored payload, both service PE/PDB
+pairs, and the real observer with all three installed selectors. They also
+identified the retained launcher, session, and companion DLL inputs. Both exact
+unsigned archive pairs passed and both crossed pairs refused at the broker
+bytes. The maintained access renderer accepted its available inputs. The
+deployment renderer refused the incomplete signed roster.
+
+The installed trial still requires a candidate-specific signed archive and
+independently pinned signer DER, the owned guest and its exact interpreter,
+separate authorized actor contexts, and continuous quiescence. No installation
+or installed-role execution occurred during the input checks. The existing
+package, native and release exits apply.
+
+| Record under `~/.local/share/nevrotick/s06-installed-inputs.wi6nlOTE/` | SHA-256 |
+| --- | --- |
+| `input-inventory.json` | `369c7b8ccab04919f9c6cc11c2816c24b6bc14d18224a38c4397d03db7fc92b1` |
+| `evidence.sha256` | `2c7824e785077f00cf54a437f2df9f8e1aabfef9722e82fb7791e242893f7394` |
+
+#### Pack the combined ArtworkLab with the retained hardened roles
+
+W11-W10/P6 and CHECK-18/23/26. The fixed-role reader now accepts the
+original link receipt and its adjacent exported artifacts after a byte-exact
+relocation. It opens the receipt and export directories under held
+descriptors, checks the producer's original logical role paths, and
+preserves independent receipt and PE/PDB digests and CodeView identity.
+The same reader serves the combined and standalone fixtures. Both callers
+keep their output outside the input tree.
+
+Planning, metadata, package-artifact, regression and negative-path skills
+selected the actual staging command and the retained source inputs. The
+predecessor refused the moved export. Independent review caught an output
+overlap in the first standalone derivative. Its direct CLI control failed
+before the overlap guard and passed after it. The actual ArtworkLab path
+refuses a freshly pinned crossed role map and crossed symbol bytes, preserves
+an existing payload, and accepts the restored pair. The final isolated
+Python run passed 176 MSIX fixture tests. The actual combined stage reproduced
+56 files and its report byte for byte after the standalone repair.
+
+The same admitted offline MakeAppx recipe received 63 pinned inputs. Only
+the latest Engine and Broker executables differ from the earlier combined
+pack input inventory. The healthy pack exited zero. The invalid
+`StartupType` control exited one and produced no archive. Both processes
+were reaped, and the guest scratch and transfer files were retired. The
+read-only archive reader checked 58 exact members, three image declarations,
+the manifest, block map, and content types. It independently pinned the
+two role binaries from their link receipt and the other 53 non-manifest
+members from the previously verified payload. Crossing the old healthy
+archive with the new member pins refused at the broker image. Fresh review
+also matched both original PDB identities and the disabled service rows.
+
+The unsigned archive in `pack-851f15bc7fc5/` has 11,313,482 bytes and SHA-256
+`0553fef16daf83d6e65fd10ca5e941bc559cd8f16fa52adb4f9290ab6ccc3dec`.
+This fixture retains separate producer identities for the UI and roles.
+The final product helper, runtime and pre-v3 activation, final signing,
+installed lifecycle, and production qualification retain their own exits.
+
+| Record under `~/.local/share/nevrotick/p6-relocated-role-stage.lKT1fuWU/` | SHA-256 |
+| --- | --- |
+| `adopted.patch` | `630ec92e8efa5d598a2e9a0763be5050e42d293787cc84bc0ea3493c2436f194` |
+| `fixture-tests-final.log` | `ad415c47ca846c9e5a47280b6bbc010a43531232c299cf6406d4c86e72b36ef9` |
+| `combined-stage-final.json` | `c75b122b06856b02fd4e04f527351d7696e9b75ccd927f65a47a627c122a12b9` |
+| `pack-input-set.json` | `cd53e21b825598d67f2ef7d2a1d0cab3d29839880a5f353097fa04a60152c30e` |
+| `pack-851f15bc7fc5/dispatch.json` | `d8fd08e722d4fa91720a1ca808bf392f41444121157f6e975917c5f42cc53dec` |
+| `archive-readback.json` | `a5f78fae03098a785dbab0e3db0a6eb13ab7d5d3f18e3319f3dc625dcf688585` |
+| `crossed-prior-package.stderr` | `cfeed0980734539391028842751b91be447f1f8331269eaa55fb24837506d941` |
+
+The maintained standalone command also accepted the same relocated role
+receipt. Its seven staged files matched all payload members of the retained
+unsigned ScmFixture. The `standalone-replay.json` SHA-256 is
+`406d3284a496c7c662b8eddf1889e42fc20b49d3b13784d3f7daa0a14622e0cb`.
+
+#### Preserve noninteractive critical-error handling at the fixed service entries
+
+W11-W05/W11-W08/ST-W07, S3.1 and CHECK-16/17/21/27. Both fixed fixture
+entries check the calling process mode after their existing image-load
+guard and before SCM connection. When needed, the sole startup owner
+requests the inherited mode plus `SEM_FAILCRITICALERRORS` and reads it
+back. A changed previous word or missing required bit refuses the
+original dispatcher attempt with its typed cause. The previous word is
+the setter's return value and can be zero. A refusal after the setter
+retains the possibility that the mode changed. Startup issues no retry
+or reset. The adapter makes only process-mode calls and keeps the
+existing WER and thread policy owners separate.
+[Microsoft SetErrorMode](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-seterrormode)
+
+Rust contract, service startup, negative-path, lifecycle and Sandbox
+skills scoped the selected native leaf and real fixture entry. Independent
+review checked the sole-writer sequence and the distinction between an
+inherited mode and an observed change. The first GNU Clippy attempt
+refused an unreachable test-only export. Matching the existing target
+visibility pattern resolved it. The final 862-input candidate
+`56b2b3ceffe78c3ade6afa0960c2b687545f3a841786fefb54e7217ef8b866fb`
+passed six graph and 12 configured service lanes, both role links and
+the linked test image. The leaf passed 87 ordinary and 87 optimized
+tests, four doctests, formatting and GNU/MSVC Clippy. Two directed fault
+copies failed their intended inherited-flag assertions, with a passing
+restored control. They carry no generated mutation credit.
+
+The first guest dispatch stopped at 963 MiB of Windows host headroom.
+After retiring the checked build scratch, the exact final observer
+passed preflight at 4,067 MiB and ran three exact selectors in separate
+processes. Both roles retained `0x00008001` across the actual standalone
+entry and expected SCM refusal. The injected refusal retained the
+original failure and consumed its only dispatch attempt. All exits were
+zero, stderr was empty, and owned files were retired. The host collector
+refused its old one-line output pattern after the new mode diagnostic
+split the success line. The separate readback matched the exact
+retained streams, selectors, image pins, results and cleanup.
+
+The native results establish preservation of an inherited flag. A
+native change from a missing bit, installed service worker/thread mode,
+bounded behavior during actual critical errors, diagnostics delivery,
+and the per-file coverage and mutation exits remain open. The
+ArtworkLab archive above retains its earlier checked role-link receipt.
+
+| Record under `~/.local/share/nevrotick/w11-service-mode-integrated.ZmjsWcaP/` | SHA-256 |
+| --- | --- |
+| `adopted.patch` | `173f5b2f4af6a2ff64396b5c9e52c0bbaf645c2a5734ee986fe3c9e3ce58c8ce` |
+| `leaf.json` | `15c867df758b02c8e04a57a5d925d504d5be5ada331b84e8b11edec5c75432ff` |
+| `leaf-r2.json` | `d31923717b8db849b1031fa3664725b51a40cfdb643e3484acc368de2b6ebb81` |
+| `focused-controls.json` | `b87bd010a48f9e033c029b9079fe42e2b1c25a05fdbdb2942814b2c1b71acd2b` |
+| `qualification-r2/s06-service-mode-r2-graph.json` | `6344e4e8282a530350dee5950e49ffea190fd25e57db043b93bebdd2527b779a` |
+| `qualification-r2/s06-service-mode-r2-development.json` | `7c1422b1d97239856ee3b98658a422d4235042d29be264cf3950f35628a8ff36` |
+| `qualification-r2/cross-s06-service-mode-r2-roles.json` | `ea19668221b3b99618ee094584cee1293bfceb6584232bbafb8ccf27805a84ec` |
+| `qualification-r2/cross-s06-service-mode-r2-observer.json` | `b4d216f00a506c067452adda48dd5ee9081a2a0dc47d315ebcc74f49e5079780` |
+| `native/native-result.json` | `f445414bdf04f4c9ebf5364ff85fd8e84b33840fee0bd968bc6a5e3972b21a18` |
+| `native-r2/native-result.json` | `6f6e35b853e9e69afb3374de654319673ed274d84f94db76b22e9814b0f4e6c3` |
+| `native-r2/mode-readback.json` | `7bd983d7684970be99624ff50636e906d6cdbd53513fe695fa068d1957e6cf7d` |
+| `scratch-retirement.json` | `60c2630945dce5f9a6d6785008016f2ac405fd387079e4c1b3cca194d1087e38` |
+
+#### Observe the fixed service entries add the missing critical-error bit
+
+W11-W05/W11-W08/ST-W07, S3.1 and CHECK-16/17/21/27. Windows Sandbox and
+negative-path QA reused the exact earlier linked observer in the same
+admitted offline guest. A separate guest-only controller set its own mode
+to `0x8000` for each fixed-role child launch, checked the previous word,
+and restored and verified its original `0x8001` before collecting the child.
+The child measured the actual inherited mode before calling the original
+fixture entry. Neither role replaced the supervisor or launched another
+worker.
+
+Both exact role tests observed `0x8000` before entry and `0x8001` after
+the expected standalone SCM refusal. The separate injected failure selector
+also passed. Each selector ran alone, exited zero, and closed both output
+streams. The test preserves an existing unrelated flag while observing a
+native transition from the required bit's absence. The original reader's
+split-output classification was repaired before acceptance.
+
+The first two controller attempts stopped before selectors while trying
+to remove compiler scratch too early. The first receipt was absent.
+The second preserved the nonempty-directory failure. Separate retirement
+checks found the original processes gone and retired both scratch roots
+and their transfer files. The successful run retained the compiler scratch
+until the controller exited. Its separate retirement pass verified zero
+matching live processes, an empty directory and verified removal. Exact
+source, image, observer outputs, scope and cleanup received independent
+readback.
+[Microsoft SetErrorMode](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-seterrormode)
+
+This closes the selected standalone transition. Installed SCM and
+worker-thread behavior, actual critical-error progress and diagnostics,
+and the per-file metric exits remain open.
+
+| Record under `~/.local/share/nevrotick/w11-service-mode-integrated.ZmjsWcaP/` | SHA-256 |
+| --- | --- |
+| `native-transition/native-result.json` | `37d28595cad4eb815bacf3eb8b5b56724d20acfcf569adc7d9d3b09794762021` |
+| `native-transition/recovery-retired.json` | `59c7fd67abc56a0451a963df81ce31b4772fa538cd992cba45bca3ec9fe70ca6` |
+| `native-transition-r2/native-result.json` | `faa352cc3df62fac92f5ef0e0cf5dbd999907e461aa282edbb48ec47bb391de3` |
+| `native-transition-r2/recovery-retired.json` | `a7e599579b43de9ae72d7a6f6107ad1018e331eccd1ff63127d3e5563a567865` |
+| `native-transition-r3/native-result.json` | `f4b2e4cb19a70df9ad822f97e89ae833c4e4423e009813cc5431205ab834e882` |
+| `native-transition-r3/guest.json` | `1ae7f432bea07c3ce8e9daa47e4f997d1428f1ca0bae65fede71df7c67b681d6` |
+
+#### Enforce legacy extension-point policy at both fixed service entries
+
+W11-W05/S3.1, W11-W10/S6.1, ST-W05 and CHECK-16/26/27. Both fixed fixture
+entries now require the documented `DisableExtensionPoints` policy before
+SCM, after their existing DLL, image-load and critical-error checks. The
+fixed Kernel32 adapter reads the one-DWORD policy, adds its documented bit
+when missing, and checks the effective word. Refusals preserve the original
+stage and typed cause through the one-shot dispatcher. Unknown or
+unsupported results refuse without a weaker retry. The private selector
+shares the native read/set path for the two fixed DWORD policies.
+[Microsoft extension-point policy](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-process_mitigation_extension_point_disable_policy)
+
+Rust contract, service, Sandbox, regression and artifact QA scoped the
+adapter and its actual receiver. Independent review matched the ABI
+against the SDK and pinned binding. The first Windows service lint run
+refused an observer enum passed by value. Giving that small readback
+selector value semantics fixed the lint. The final candidate covers
+862 inputs and hashes to
+`09016a3d11635b434d050114af509b1ea275ab16f3f2277b315250d0d3cc12dc`. It passed six graph
+and 12 service lanes and all three Windows links. The first native-leaf run
+passed 90 ordinary tests, 90 optimized tests, four doctests, formatting and
+GNU/MSVC Clippy. Its evidence is reused after checking that the only
+changed source was the service observer outside that leaf. Ordered controls
+cover compliant, malformed, rejected setter and missing readback outcomes.
+
+The same offline guest ran the exact final observer. The Engine and Broker
+both read extension-point flags `0x00000000 → 0x00000001` at the actual
+fixture library entries and reached the expected standalone SCM refusal.
+Both also observed the seeded critical-error transition. The third selector
+retained the injected dispatcher refusal. All three original processes
+exited zero, both streams closed, and the separate compiler-scratch
+retirement and transfer bookends passed. Source review establishes the
+order before SCM. The native observations establish the new effective
+flag by return.
+
+The combined ArtworkLab now contains the two exact newly linked images.
+The maintained offline stage checked 56 authored members. Only the two
+role images changed among 63 MakeAppx inputs. The healthy pack exited
+zero and the invalid startup control exited one without a package.
+The independent reader checked all 58 archive members and refused the
+earlier package crossed with the final role pins. The unsigned archive is
+`11,313,993` bytes and hashes to `b204b5fcc7c3466c7007a53b69d9e61e3b1b2befec34b0f85d014a0504683676`.
+The installed ScmFixture trial has a separate identity and signer gate.
+Effective exclusion at actual legacy extension points, installed
+role, runtime and pre-v3 activation, final signing, and per-file
+qualification remain open.
+
+| Record under `~/.local/share/nevrotick/w11-extension-integrated.Dm5HLonf/` | SHA-256 |
+| --- | --- |
+| `final.patch` | `e05b71e122fd7552cd6e49d54396ba4cd50511ca1505aecd3d3aae00477a2433` |
+| `first-development.json` | `00909955d97badbc0e0c253894a2d247b9ca92d234f3a5f6299b32f1152f1569` |
+| `leaf.json` | `3f567acdedd35ee613583fe65fa71b3ee88f98ad6b6867746f25397b96d0ebe6` |
+| `leaf-reuse.json` | `e3cd5b3cd8ffff4f455875e4c56e29f1824d50a44c62df63a12195de314ffd6f` |
+| `qualification-final/s06-extension-r2-graph.json` | `3e5d1e7c8f8ca89e2aff8fb944ff0601b17192da10d7f28da3c622a809396197` |
+| `qualification-final/s06-extension-r2-development.json` | `2d9105c62b77167dc93233cce23e0213d1a03d3e6daa7e0e9e0420221546f124` |
+| `qualification-final/cross-s06-extension-r2-roles.json` | `be9adc63aa4e1acf4c9403a5e001ef846b91d0bfdebb24647e917d6a3e81e051` |
+| `qualification-final/cross-s06-extension-r2-observer.json` | `9be497b9adcd414d388f3cc2c4c06dfb2fa1a1724b196aac3e4766ed93cb48c8` |
+| `native/native-result.json` | `ab4a5ca682e5d9366e9b6db648eab408300be5992652c7c5b2df0e6fb4340b5e` |
+| `scratch-retirement.json` | `6d454d02b16f6afc4b73298a266374c4c66f3ce880f60f3a362140b3a612f7e8` |
+
+| Record under `~/.local/share/nevrotick/p6-extension-pack-prep.OCjG8JzX/work/` | SHA-256 |
+| --- | --- |
+| `handoff-summary.json` | `f751941e3ac01bae4818f3685f65d751ff661da1120a9955840466abc61005be` |
+| `stage.json` | `6d571e3f98edc6fe34c897880c4dc3e3a4f19d00d8e4ae64bc8e22a4efc5f24a` |
+| `pack-input-set.json` | `508bad5b850b407db318a3cb8737faf135053d0cf19137a7d5fc2b5673a4b246` |
+| `pack-15db78ae8a2b/dispatch.json` | `64b533d8c482ba6e8cfa5f8ce121fb20cd15721947291a7f74a33d7cedd79ef9` |
+| `archive-readback.json` | `a4347771c6008519ae59b6bbe8f7d85d2149ef53f53eea600e04e2fa0552556f` |
+| `crossed-prior.stderr` | `cfeed0980734539391028842751b91be447f1f8331269eaa55fb24837506d941` |
+
+#### Verify startup policy diagnostics and enumerate target-specific mutations
+
+W11-W05/S3.1 and CHECK-16/25/27. The existing ordered policy tests reached
+the typed refusals. The GNU coverage run showed that none reached their
+public `Display` implementations. Three leaf tests now check all 15 stage
+and value combinations with literal expectations. This checks error text
+retrievable through the fixture's typed error source. The executable exit
+code and the structured `Native` diagnostic classification have separate
+contracts. Fresh-context review matched all 862 bound inputs and recovered
+both predecessor files byte for byte by removing only the three tests.
+
+The coverage-gap, regression-selection, unit and negative-path skills
+selected these leaf controls and retained the existing ordered healthy and
+refused histories. The first source reconstruction lacked the standalone
+manifest context required by cooldown admission. Adding the committed
+context restored admission. The first Clippy run identified missing panic
+documentation on the added tests. The corrected candidate
+`7b9b00105de3dead703ee973c6bdae43123f3fdfaa5908578f8365f64a9684ee`
+passed the six graph observations, formatting, GNU/MSVC Clippy, 93
+instrumented GNU tests, 93 optimized GNU tests and four doctests.
+
+The pinned LLVM raw GNU file summaries rose from 198/244 to 302/311
+for image load (including extension points) and from 70/83 to 95/99 for
+critical-error mode. These figures include inline tests and omit the
+Win32 wrappers. There was no branch instrumentation. The Windows
+implementation denominator is measured separately below.
+
+Mutation testing used the complete per-file generated inventories. The
+first replay stopped at the baseline because both the driver and the
+configured tool supplied `--frozen`. The retry inherited the configured
+argument once. Both baselines passed 93 tests and four doctests. A
+fresh-context reviewer matched all descriptors and independently read
+the build and test outcomes.
+
+| Owner | Generated | Caught | Build-unviable | GNU-active misses | Windows-only misses | Timeouts |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `windows_image_load_policy.rs` | 49 | 22 | 4 | 5 | 18 | 0 |
+| `windows_service_error_mode.rs` | 14 | 7 | 2 | 0 | 5 | 0 |
+
+The 29 behavioral catches reached the named startup assertions after
+successful builds. The six build refusals, including all three generated
+`Display` body replacements, earn no kill credit. The five GNU-active
+misses are proposed equivalents. A shift by zero preserves `1` and four
+OR-to-XOR replacements combine disjoint constant masks, preserving `0x07`,
+`0x18`, and `0x1f`. No equivalence was admitted. The 23 Windows-only misses
+still need classification and replay on the active target. System32-only
+search, actual loader or extension denial, native failure mapping and
+installed use retain separate evidence obligations. The 95% per-file
+threshold is unchanged. Fuzzing and generated schedules did not address
+these fixed diagnostic and ordered startup checks. Existing phase holds
+and native qualification remain in force.
+
+| Record under `~/.local/share/nevrotick/w11-startup-metrics.qcxdrwv9/` | SHA-256 |
+| --- | --- |
+| `graph-final.json` | `616c72fafaa556c292abe7d000851554eeeb10f7c4bdc1c6a7f3f958763d9b1f` |
+| `gnu-metrics-current.json` | `34cd92a7ac7b0a7debb76fc4e445d0ac73fbabdef3c504061d4dcfb12a3778b1` |
+| `gnu-metrics-final.json` | `bfb97761fb80890038fdbd0f25d530d51f439b1280c451dfd0eb748ec2758f4e` |
+| `coverage-final.json` | `68be003ebd481c60ea7f8579b255b2acb01ea72e1dc9e84f94d0af14dda108cc` |
+| `gnu-mutation-final.json` | `481121a41ce684df00314ae9c520a56f0eeb850c631d362bcae414727f91c290` |
+| `gnu-mutation-r2.json` | `c20f86d4aa06bf8e1df165dda7d00ea30d8d23e4468caef54507f8a584d1b80d` |
+| `gnu-mutation-r2-windows_image_load_policy/outcomes.json` | `8578322edab4301a463c9fca365a34e0f2f2630287fdb7547cd53aaf2d477957` |
+| `gnu-mutation-r2-windows_service_error_mode/outcomes.json` | `812b7fa81414442f64da23bd83387107b53645981677e069d7edc7f9aae9c84f` |
+
+The Windows Sandbox skill reused the admitted offline guest for two
+instrumented MSVC test images. The cross-link retained the full v3 and
+hardening flags plus coverage instrumentation. The first linked leaf
+needed a reader correction for Cargo's relocated test path. Two reader
+retries stopped on the retained read-only linker and `OUT` option casing.
+The successful reader verified that original leaf link and the separate
+fixture link, including both emitted PE/PDB pairs.
+
+One exact Engine entry and one exact Broker entry each passed, observing
+critical-error mode `0x8000 → 0x8001`, extension-point policy `0 → 1`,
+and expected standalone SCM refusal `1063`. Two leaf selectors passed
+11 image/extension and five critical-error tests, including the three
+diagnostic tests. Four independent processes exited zero. The controller
+retained four bounded raw profiles, observed original process exit and
+stream EOF, then verified retirement of guest scratch and host transfers.
+An independent readback matched the executable, symbol, profile and
+control-stream bytes.
+
+LLVM accepted all raw profile inputs. The paired report emitted a
+45-function profile mismatch warning. The per-image retry isolated it
+to the fixture image and retained a clean leaf-only readout. LLVM's
+detailed output named all 45 missing profile records. They belong to
+Engine and external dependencies, outside both selected startup owners.
+The final readout keeps that diagnostic, pairs profiles only with the
+originating image, and matches the annotated lines to the frozen source.
+The union counts each executable implementation line once and excludes
+the inline test modules. Image load reached 139/142 lines (97.89%) and
+critical-error mode reached 37/37 (100%). Both pass the selected 90%
+MSVC production-line threshold. The three unexecuted image lines read
+`GetLastError` after failed native calls. Actual native failure handling,
+loader denial and installed behavior still need their own controls. The
+full-target mutation gates require active-target replay and equivalence
+admission.
+
+| Additional record under the same evidence root | SHA-256 |
+| --- | --- |
+| `gnu-coverage-profile-inputs.tar.gz` | `f283f9e6ba39939dcbe82e393b4a904926c05e9bf6dd8ce520dcd500927ae182` |
+| `msvc-coverage-link-r4.json` | `401df0866d93f29ad72d3c3af86104d2e084308aa2fa731716b1dc80541859d3` |
+| `msvc-native/native-result.json` | `b2e1af5592f543be779ac092840a310204ceee3757282b1d1514f15204a097ef` |
+| `msvc-coverage-readout.json` | `d6ee089fca407bfd03f2e9a9099ef1b865afa0bd1cab18bb4ccd9c179779feec` |
+| `msvc-coverage-readout-r2.json` | `27a84d8de7dfe268b3f1cb1457bd92bfd442e952bfeee907116f015ee9501247` |
+| `msvc-coverage-readout-r3.json` | `d11ee13df02f5fc00cc35a351fc7df5c3e5737c37064fa77f0ad3a031bef6fff` |
+| `retired-scratch.json` | `95f24858bde0d13e3a9f0a1c670a169aa032a687ca8343909eb56b2aa0b5af1a` |
+
+#### Complete the generated startup mutation replay on the active Windows target
+
+W11-W05/S3.1 and CHECK-16/25/27. Mutation, regression selection and
+independent review used the same 862-input `7b9b0010…` candidate and the
+complete two-file GNU inventory above. Every Windows-only descriptor was
+reconstructed from its original span and reproduced its exact generated
+diff. The first compiler preparation encountered a constant descriptor
+with no function. The next completed its healthy compile but the reader
+expected the standalone fixture's Cargo package-ID spelling. The corrected
+screen verified the actual native leaf identity and fresh original and
+restored release-library metadata. It observed all 23 overlays and recorded
+13 strict-lint refusals. All five critical-error-mode variants were refused
+by the compiler. Compiler failures receive no behavioral credit.
+
+The remaining ten image-load variants linked through the actual service
+fixture test library with its ordinary MSVC profile and complete v3 and
+hardening flags. Twelve fresh PE/PDB pairs include both healthy bookends.
+The first offline Sandbox attempt stopped before launch when the guest
+controller lacked the assumed inherited mode. Its files and compiler scratch
+were retired. The next attempt set and restored the fixed test mode, then
+stopped in the recorder after the first child retired. Separate guest and
+host variable collisions were corrected. Both failures stay in the record.
+
+The third run retained 14 child results. Original and restored Engine and
+Broker selectors passed, with critical-error mode `0x8000 → 0x8001` and
+extension points `0 → 1`. The ten variants each ran the exact Engine
+selector and failed at the changed behavior. Wrong selectors reached image
+query refusal (`08`, `10`) or extension reserved flags (`09`). Inverted
+success checks returned typed DLL-search, image-query or image-set refusals
+(`12`, `15`, `17`). The two fabricated image readbacks produced exact
+missing-effective-flag outcomes (`18`, `19`). The extension readback cases
+returned `NotEffective` (`21`) or left the independently observed effective
+word zero (`22`). The host initially rejected the last transcript's
+interleaved mode diagnostic. Readback of the same raw streams recovered the
+exact selector, outcome and specific assertion. All original processes,
+streams, guest scratch and transfer payloads were retired. A fresh-context
+review independently checked all twelve artifact pairs, all fourteen test
+transcripts, and the staged script and control-stream identities.
+
+The five exact GNU-active survivor descriptors are admitted as equivalents
+for this candidate after independent review. Image-load lines 350:36,
+350:42 and 350:53 preserve the mask `0x07` through a zero shift or XOR on
+disjoint operands under Rust's precedence. Lines 352:39 and 354:50
+preserve `0x18` and `0x1f` through the same disjoint-mask identity. The
+exact `u32` constants are equal for every raw observation and callback
+result. Call order, arguments, effects and outcome payloads are therefore
+identical for each individual overlay. Changing expression bytes, types or
+grouping requires re-review.
+
+| Critical file | Generated | Behavioral catches | Compiler-unviable | Reviewed equivalents | Raw | Adjusted |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `windows_image_load_policy.rs` | 49 | 32 | 12 | 5 | 32/37 (86.49%) | 32/32 (100%) |
+| `windows_service_error_mode.rs` | 14 | 7 | 7 | 0 | 7/7 (100%) | 7/7 (100%) |
+
+Both selected files meet the 95% adjusted gate, with zero unresolved
+survivors, timeouts or unexecuted variants. Ordered leaf transcripts cover
+the inherited-state fast paths, exact arguments, first failure, malformed
+or incomplete readback, and status preservation. The native entry tests
+add observed effective state and one-shot refusal. The extension-point
+decision body replacement itself was compiler-unviable, so credit for
+its decision behavior comes from the independent tests. Native API
+declarations and the immediate last-error capture need separate evidence.
+The inverted-success cases establish refusal at the correct stage. Actual
+native API failures, default loader denial, installed scope and final
+package qualification remain open. This slice has no parser or generated
+input domain. No new fuzz or formal execution was selected.
+
+| Record under `~/.local/share/nevrotick/w11-startup-windows-replay.hqit604k/` | SHA-256 |
+| --- | --- |
+| `msvc-screen-r3.json` | `dd6e94cbe809d201ac2daffb554afcb879f659323a7b2737c0eed3716c3beff2` |
+| `msvc-replay-links.json` | `f9c059af04a70ab7b57704af70a2ea0dd2fbf7ab08548d114839eafe8bd69207` |
+| `native-recover/retirement.json` | `d0d729ff5ab649597da2fc5beb229e5d03adf947376b1887d48a5565792d7388` |
+| `native-r3/native-result.json` | `59357ed08d1c700c652378bc495502d3b5562d6c16d14871020782ea0dd2a3c7` |
+| `native-replay-readback.json` | `23529d345a8b159d63f231699266853fb03b9ddc47737879592bcbf76ed3e8f9` |
+| `selected-images.tar.gz` | `c4830497d80f40745f145ae09919650f60ac7412214a0ae6942630198031cc9b` |
+| `selected-images.json` | `8166992291e59842bb18d42195380b181088376e3d1c17d60978deb1e208958a` |
+| `retired-derivatives.json` | `4b4f5cca21f7ff16465ee17817077809d0d2b8c951e17ca41973be2897369bcb` |
+
+The archive retains every replay image and symbol file. Its 24 member
+hashes matched the original artifacts before the unpacked copies and the
+owned WSL build tree were retired.
+
+#### Gate the inert MSIX application before v3 code
+
+W11-W10/S0.6 and CHECK-19/20/23/26. Planning and independent review
+selected the existing inert application entry. The separately compiled
+baseline code observes the CPUID bounds, cumulative feature masks and
+XCR0 before the only edge into its v3 body. Refusal exits 1 before any
+v3 instruction. The admitted body executes AVX2 and returns 0 after
+checking its result, or 2 on an unexpected result. The fixed-role service
+entries keep their separate launch paths.
+
+The baseline and v3 objects used Clang 18.1.3 with LTO disabled across
+their boundary. The 28 ordered controls exercised the same decision with
+independent providers, including every missing feature bit, exact leaf
+bounds, incomplete XCR0 and a payload failure. They checked that the
+refusal path issues neither later queries nor the payload call. The
+existing Rust CPU diagnostic remains a separate probe.
+
+The first strict link refused the missing load configuration. The final
+link uses the admitted `libcmt.lib` archive for load configuration and
+guard support, keeping the explicit entry and avoiding CRT startup.
+Independent PE inspection matched the entry and guarded tail edge, sole
+`KERNEL32.dll!ExitProcess` import, unwind and relocation records, CFG
+table, dependent-load flags `0xA00` and extended CET flags `0x3`. The
+image has no TLS callbacks, delay imports or exports. Both XSAVE and
+OSXSAVE checks dominate the sole `XGETBV(0)` and the XCR0 test dominates
+the one direct edge to the AVX2 body.
+
+The exact 4,096-byte candidate ran in the owned offline Windows Sandbox.
+The independent probe observed supported CPU/OS state, the original
+`Inert.exe` process exited 0, and the scope's files were retired. The
+direct-launch check leaves the physically masked/unsupported row,
+new unsigned archive readback, installed activation and the product
+Engine/Broker/UI/helper topology open. The current disabled-service
+stager accepts the new executable through its separate digest input.
+The retained earlier archives and ArtworkLab launcher pin retain their
+original identities.
+
+| Record under `~/.local/share/nevrotick/w11-inert-activation.BtwPnt8Q/` | SHA-256 |
+| --- | --- |
+| `build-r4.sh` | `07cda0a27697bef3a0f129818816b75cf889daa0e8ac5351e340b65ef2dda2cd` |
+| `build-r4.log` | `eeee90620273bf5c54c60b6566ffb8a814d315c1a2a6d28eb37ef27896e23242` |
+| `inert.obj` | `4107c3c483ec51f777ea689d83a8e11820f632fe2532b7ade8299496376b4d27` |
+| `inert_v3.obj` | `8af0e07e7e98eb6da5c70c5d439df491b8972907a4c730cbd4209150d9d09831` |
+| `Inert.exe` | `806ba67a29ed8bedf74ad3f14e7b505ef06532fd506928e24c6dd6a37bf29ef5` |
+| `pe.txt` | `b4a486b05d4d98eaa152a3f1d772e0f410c1c039cbf255c43aba0cb32e17f6c9` |
+| `disassembly.txt` | `c5ecc61c51bf608727b7c50df04d91fb008ef27a48f4a5c8b299ff9fd2456be9` |
+| `native/native-result.json` | `4e6bb0622572da8e03eacf32bfc0816fb675f56b3bef524a28f1f6b7cb8ecf2d` |
+
+The admitted xwin `libcmt.lib` and `kernel32.lib` hashes are respectively
+`d4cc4c224455825dec1669f9ad6a9872a4f5b37ed1daae1fd0b9044d7650d908`
+and `8ba8dab9adec752047d4f136852e8136d01836bff39bbb56a20ac5f2d56415d8`.

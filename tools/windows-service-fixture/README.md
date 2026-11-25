@@ -281,17 +281,34 @@ to establish the native exit `3`.
 
 [`PrestartAccessAttempt`](msix/prestart_access_process.py) implements the
 existing pre-start launch interface for one independently admitted access
-actor. Build [`prestart_access_parent.exe`](msix/prestart_access_parent.cs)
+actor. Render the role with `render_prestart_access_owner` from the original
+run, admitted SID and intended protected stage. Stage its exact `contents`
+at the returned `path`, and supply that same rendered owner to the attempt.
+The coordinator checks the two original role entries before either launch.
+Each attempt checks its entry again at launch. The lab owner supplies the
+trusted renderer inputs and protects the staging directory throughout use.
+
+Build [`prestart_access_parent.exe`](msix/prestart_access_parent.cs)
 with the same shared x64 sources as the deployment watchdog and select
 `NevroTick.PrestartAccessParent` as its entry. The access attempt selects
-the fixed supervision mode and pins the running parent image. The outer
-process creates the original inner parent suspended in its own job. It
+the fixed supervision mode and supplies the pinned parent image and the
+independently admitted subject SID. The outer process compares that SID
+with its retained primary token and checks the ordinary-user profile for
+the standard role before starting any child. It creates the original inner
+parent suspended in its own job and then
 verifies the held image, job membership, x64 process and actor before
 resume. The inner parent runs the pinned watchdog in the same primary-token
 context and passes through the original protocol pipes. The watchdog
 writes diagnostics to the original staged `prestart-access-diagnostics.log`.
-The host owner holds the empty file from before launch and independently
-admits its staging directory and transitive inputs.
+The fixed PowerShell access owner acquires its query-only primary-token
+reference before reading the request. It lends that same actor to the native
+observer for currentness and role checks at launch. It disposes the actor
+before a capture or refusal frame, including cleanup after unused EOF or
+malformed input.
+The host owner holds the empty file on a read-only descriptor from before
+launch and independently admits its staging directory and transitive inputs.
+The provider checks the descriptor's OS access mode. The native parent owns
+the writer and opens the file with read sharing.
 
 The outer owner keeps the inner exit record on a private pipe until the
 original inner process has exited zero, the outer job is empty and the
@@ -303,9 +320,9 @@ refusal and permits `private_diagnostic()` after retirement. Only watchdog
 exit `0` can complete a successful access capture. Rollback closes input
 first and drains a bounded remainder of the original output. If the drain
 refuses, the host retains the refusal while observing the original relay
-within its remaining deadline. Windows process-pipe checks and the WSL
-portable fixture have separate evidence. Actual WSL relay settlement and
-installed actor contexts remain open.
+within its remaining deadline. The [live WSL fixture](../../tasks/windows11-integration.md#settle-the-original-access-relay-through-wsl)
+exercises native settlement under the current actor with inert receipts.
+Cross-context actor launch and signed installed execution remain open.
 
 If the private pipe fails before retirement can be acknowledged, the fixed
 owner exits unsuccessfully and reports the first operation refusal, transport

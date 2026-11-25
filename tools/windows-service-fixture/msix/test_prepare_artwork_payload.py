@@ -15,6 +15,9 @@ import xml.etree.ElementTree as ET
 
 import prepare_artwork_payload as producer
 
+sys.path.insert(0, str(producer.stage.ROOT / "scripts/tests"))
+from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
+
 FOUNDATION: str = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
 TRUSTED_LAUNCH: str = "http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"
 UAP: str = "http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -427,6 +430,79 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         self.assertEqual(set(self.root.iterdir()), {
             self.handoff, self.pri_dir, self.inert, self.role_directory,
         })
+
+    def test_stages_a_relocated_role_export_and_refuses_crossed_inputs(self) -> None:
+        linked: Path = self.role_directory / (self.role_receipt.stem + "-artifacts")
+        linked.mkdir(mode=0o700)
+        logical: Path = producer.stage.RECEIPTS.relative_to(producer.stage.ROOT) / linked.name
+        engine: str
+        broker: str
+        engine, broker = producer.stage.BINS
+        images: dict[str, bytes] = {}
+        symbols: dict[str, bytes] = {}
+        rows: dict[str, dict[str, str]] = {}
+        for role, guid in ((engine, _UI_GUID), (broker, _OBSERVE_GUID)):
+            image: str = role + ".exe"
+            pdb: str = role.replace("-", "_") + ".pdb"
+            images[image] = bytes(_image(3, pdb_path=pdb, guid=guid))
+            symbols[pdb] = bytes(_pdb(guid=guid))
+            (linked / image).write_bytes(images[image])
+            (linked / pdb).write_bytes(symbols[pdb])
+            rows[role] = {"image": str(logical / image), "pdb": str(logical / pdb),
+                          "image_sha256": sha256(images[image]).hexdigest(),
+                          "pdb_sha256": sha256(symbols[pdb]).hexdigest()}
+        report: dict[str, object] = {"status": "passed", "lane": "link", "bookends_passed": True,
+                                     "index_bytes_unchanged": True, "artifacts": rows}
+        healthy: bytes = json.dumps(report).encode("utf-8")
+        self.role_receipt.write_bytes(healthy)
+        arguments: tuple[str, ...] = (*self.role_args[:-1], sha256(healthy).hexdigest())
+
+        status, stdout, stderr = self.invoke(arguments)
+        self.assertEqual(status, 0, stderr)
+        self.assertEqual(stderr, "")
+        produced: dict[str, object] = json.loads(stdout)
+        self.assertFalse(produced["assembly_ready"])
+        for name, expected in images.items():
+            self.assertEqual((self.output / name).read_bytes(), expected)
+        self.assertFalse(any((self.output / name).exists() for name in symbols))
+        prior: dict[Path, bytes] = {path: path.read_bytes() for path in self.output.rglob("*") if path.is_file()}
+
+        standalone_output: Path = linked / "payload"
+        standalone: list[str] = [
+            "prepare_payload", "--receipt", str(self.role_receipt), "--receipt-sha256", arguments[-1],
+            "--inert", str(self.inert), "--inert-sha256", self.inert_pin, "--output", str(standalone_output),
+        ]
+        out: io.StringIO = io.StringIO()
+        err: io.StringIO = io.StringIO()
+        with (patch.object(sys, "argv", standalone), redirect_stdout(out), redirect_stderr(err),
+              self.assertRaises(SystemExit) as failure):
+            producer.stage.main()
+        self.assertEqual((failure.exception.code, out.getvalue()), (1, ""))
+        self.assertIn("output-overlaps-source", err.getvalue())
+        self.assertFalse(standalone_output.exists())
+
+        image_path: str = rows[engine]["image"]
+        rows[engine]["image"] = rows[broker]["image"]
+        crossed: bytes = json.dumps(report).encode("utf-8")
+        self.role_receipt.write_bytes(crossed)
+        status, stdout, stderr = self.invoke((*arguments[:-1], sha256(crossed).hexdigest()))
+        self.assertEqual((status, stdout), (1, ""))
+        self.assertIn("maps a role to a different image or symbol file", stderr)
+        rows[engine]["image"] = image_path
+        self.role_receipt.write_bytes(healthy)
+
+        engine_pdb: str = Path(rows[engine]["pdb"]).name
+        broker_pdb: str = Path(rows[broker]["pdb"]).name
+        (linked / engine_pdb).write_bytes(symbols[broker_pdb])
+        status, stdout, stderr = self.invoke(arguments)
+        self.assertEqual((status, stdout), (1, ""))
+        self.assertIn("PDB GUID or age differs", stderr)
+        self.assertEqual({path: path.read_bytes() for path in self.output.rglob("*") if path.is_file()}, prior)
+        (linked / engine_pdb).write_bytes(symbols[engine_pdb])
+        self.output = self.root / "restored-payload"
+        status, stdout, stderr = self.invoke(arguments)
+        self.assertEqual((status, stderr), (0, ""))
+        self.assertEqual(produced, json.loads(stdout))
 
 
 if __name__ == "__main__":

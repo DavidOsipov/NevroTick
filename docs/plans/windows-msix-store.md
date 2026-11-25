@@ -848,7 +848,7 @@ usable AVX state. [Identity](https://learn.microsoft.com/en-us/uwp/schemas/appxp
 
 | Entry path | First execution edge and evidence status |
 | --- | --- |
-| S0.6 laboratory application | Packaged activation would load `Inert.exe`, built with v3. Its observed entry body calls only `ExitProcess(0)`. It supplies no prerequisite check or service activation. |
+| S0.6 laboratory application | The earlier archive contains the immediate-exit `Inert.exe`. A [baseline-entry replacement](../../tasks/windows11-integration.md#gate-the-inert-msix-application-before-v3-code) now checks CPUID and XCR0 before its in-image AVX2 body. Its direct supported-CPU launch passed. Archive readback for those new bytes, cold refusal and installed activation remain open. |
 | S0.6 laboratory engine and broker | SCM would load each v3 service executable independently from its `windows.service` declaration. Both start types are Disabled. Only packaging and readback are recorded. This fixture has no helper. |
 | Product UI | Packaged application activation would load its UI image and startup dependencies. The fixture Slint UI supplies no qualified pre-entry path for the product. |
 | Product engine and broker | Each own-process SCM image must have a compatible path before its first v3 execution. `ServiceMain` follows process creation and startup. Production service images and their prerequisite paths remain open. |
@@ -1290,8 +1290,8 @@ prepares the separate required-right acquisition/close observations
 and the step-4 standard-user status-access/configuration-denial control.
 The [22 November link and input set](../../tasks/windows11-integration.md#link-the-current-pre-start-probe-and-inert-service-roles--22-november-2026)
 retain their exact PE/PDB and packer identities. The
-[23 November relink and unsigned lab MSIX](../../tasks/windows11-integration.md#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
-now supply the matched observer, both inert roles and current checked archive.
+[current DLL-search checkpoint](../../tasks/windows11-integration.md#restrict-the-default-dll-search-before-both-service-entries-connect)
+supplies the matched observer, both inert roles and checked unsigned archive.
 Follow the [service-provisioning order](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026).
 The selectors remain unexecuted pending the exact admitted signed lab fixture,
 independently bound actor contexts and common quiescent observation window.

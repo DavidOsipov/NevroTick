@@ -2,10 +2,7 @@
 """Stage the fixed unsigned ArtworkLab payload from independently pinned inputs."""
 
 import argparse
-from collections.abc import Iterator
-from contextlib import contextmanager
 import json
-import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -51,24 +48,13 @@ MANIFEST_BOTTOM: bytes = br'''  <Dependencies><TargetDeviceFamily Name="Windows.
 '''
 
 
-@contextmanager
-def held_directory(path: Path) -> Iterator[tuple[int, Path]]:
-    """Keep subsequent leaf reads on the same directory admitted by the owner."""
-    descriptor: int = stage._open_directory(path, private=True)
-    try:
-        yield descriptor, Path(f"/proc/self/fd/{descriptor}")
-        stage._parent_unchanged(path, descriptor)
-    finally:
-        os.close(descriptor)
-
-
 def handoff_snapshot(
     path: Path, pin: str, *, include_ui: bool = False,
 ) -> tuple[dict[str, bytes], bytes, str]:
     """Recheck the selected art, Properties and optional UI on one held export."""
     descriptor: int
     anchor: Path
-    with held_directory(path) as (descriptor, anchor):
+    with stage.held_directory(path) as (descriptor, anchor):
         observed: dict[str, Any] = verify.inspect_msix_handoff(stage.ROOT, path, pin)
         stage._parent_unchanged(path, descriptor)
         files: dict[str, dict[str, Any]] = observed["files"]
@@ -109,7 +95,7 @@ def pri_snapshot(path: Path, pin: str, artwork: dict[str, bytes]) -> bytes:
     """Reconcile the independently pinned native readback with the selected art."""
     descriptor: int
     anchor: Path
-    with held_directory(path) as (descriptor, anchor):
+    with stage.held_directory(path) as (descriptor, anchor):
         raw: bytes = verify.read_bound_msix_leaf(
             anchor / "readback.json", pin, staging_descriptor=descriptor, maximum=32 * 1024,
         )

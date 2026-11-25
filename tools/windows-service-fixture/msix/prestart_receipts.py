@@ -24,6 +24,9 @@ STANDARD = "scm_access_probe::windows::native_standard_user_prestart_change_conf
 RIGHTS = ("0x4", "0x1", "0x20000", "0x2", "0x10", "0x20")
 PACKAGE_NAME = re.compile(r"NevroTick\.S06\.ScmFixture_1\.0\.0\.0_x64__[0-9a-z]{13}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
+_SID: re.Pattern[str] = re.compile(
+    r"S-1-(?:0|[1-9][0-9]{0,9}|0x[0-9A-Fa-f]{12})(?:-(?:0|[1-9][0-9]{0,9})){1,15}"
+)
 MAX_OUTPUT = 8192
 DWORD = r"(?:0|[1-9][0-9]{0,9})"
 NONZERO_DWORD = r"[1-9][0-9]{0,9}"
@@ -150,6 +153,11 @@ def require(condition: bool, reason: str) -> None:
 
 def is_dword(value: object) -> bool:
     return type(value) is int and 0 <= value <= 0xFFFFFFFF
+
+
+def is_prestart_sid_text(value: object) -> bool:
+    """Recognize bounded SID spelling for fixed Windows arguments."""
+    return type(value) is str and len(value) <= 183 and _SID.fullmatch(value) is not None
 
 
 def require_deployment_run(run: DeploymentRun) -> None:

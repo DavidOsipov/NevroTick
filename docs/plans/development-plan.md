@@ -1241,6 +1241,13 @@ schedule execution while a hold applies.
 | **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
 | **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
 
+The [joined DNS adoption controls](../../tasks/engine-transport-pilot.md#refuse-a-joined-windows-dns-answer-after-source-replacement)
+exercise W11-W03/S2.2 in parallel. The Windows loopback answer can reach a
+successor. Replacing the source after the resolver joins leaves the original
+membership selected and sends no successor packet. Ordinary WinDNS callback
+routing and cancel retirement still need a controlled resolver that receives
+the query in the admitted native lab.
+
 The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
 checks both held-out legs and their original wire and residual record
 digests within the declared QPC validity. Its controls used the original
@@ -1285,8 +1292,8 @@ authenticated management journey remain required.
 Keep the [S0.6/W11 service and direct-package handoff](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026)
 independent of later production signer selection. The [pre-start ordinary-user
 selector](../../tasks/windows11-integration.md#bind-the-pre-start-ordinary-user-selector-to-its-actor--23-november-2026)
-now rejects a matching administrator token before launch. An independently
-admitted ordinary account and the signed installed window are still needed.
+now rejects a matching administrator token before launch. The signed installed
+window still needs an independently admitted ordinary account in that route.
 The [provisioning access selector](../../tasks/windows11-integration.md#retain-both-original-scm-status-handles-through-pre-start-access)
 keeps both original status handles through the full access sequence, final
 observations and retirement. The [paired SCM observation](../../tasks/windows11-integration.md#hold-both-original-scm-status-objects-through-pre-start-observation)
@@ -1366,10 +1373,61 @@ with no success receipt. The [portable relay retirement controls](../../tasks/wi
 now preserve output refusals while observing the original relay. The
 [native outer access owner](../../tasks/windows11-integration.md#retire-a-stalled-windows-access-parent-from-its-original-outer-job)
 retired a stalled parent and its descendants in the offline guest and
-withheld a complete premature status. Live WSL relay and cross-context
-launch custody remain open.
+withheld a complete premature status. The [live WSL relay](../../tasks/windows11-integration.md#settle-the-original-access-relay-through-wsl)
+joined an inert access receipt and distinguished settled refusal from a
+full native exit whose low byte is also `3`. The provider refuses a writable
+diagnostic descriptor before launching. The [native access actor check](../../tasks/windows11-integration.md#check-the-access-subject-before-creating-the-native-child)
+matches the admitted SID before creating the inner parent and refuses an
+administrator in the standard role. The [access owner retains the original actor](../../tasks/windows11-integration.md#retain-the-original-access-actor-across-the-command-wait)
+from before the command wait through the native observer's currentness check
+and releases it before the reply. The [staged-role binding](../../tasks/windows11-integration.md#bind-the-rendered-access-entry-before-launching-either-role)
+checks both role entries before launch and rechecks each at activation. The
+rendered provisioning entry reached the full fixture receipt join with one
+effective actor. A separate [native ordinary-user observation](../../tasks/windows11-integration.md#admit-the-native-observer-under-an-independently-enrolled-standard-user)
+admitted the independently enrolled guest-local Users actor and retired the
+inert observer. The [native standard-role access parent](../../tasks/windows11-integration.md#carry-the-standard-user-request-through-the-native-access-parent)
+then carried a real cross-account request and both settled exits through
+its original Windows pipes. The [live WSL supervisor](../../tasks/windows11-integration.md#join-the-live-windows-standard-actor-through-the-wsl-supervisor)
+now reaches that actor and its rollback over the live relay, with scripted
+provisioning and deployment peers. The
+[two-role Windows/WSL checkpoint](../../tasks/windows11-integration.md#join-both-live-windows-access-roles-through-wsl)
+joins both original access parents with a scripted deployment peer. The
+healthy run confirms both settlements. The rollback retires Standard with
+empty input after the earlier Provisioning refusal. Coupled deadline and
+installed-role qualification remain open. The [service startup
+guard](../../tasks/windows11-integration.md#restrict-the-default-dll-search-before-both-service-entries-connect)
+requires System32 default DLL search and effective image restrictions
+before the fixture attempts SCM connection. Both standalone entries
+passed their exact native controls.
+The [critical-error startup checkpoint](../../tasks/windows11-integration.md#preserve-noninteractive-critical-error-handling-at-the-fixed-service-entries)
+also keeps inherited process flags at both entries and refuses unconfirmed
+configuration before SCM. The [native transition controls](../../tasks/windows11-integration.md#observe-the-fixed-service-entries-add-the-missing-critical-error-bit)
+observed both entries set the initially missing bit while preserving
+the other inherited flag. Installed worker-thread and critical-error
+progress remain open.
 The installed run still needs the admitted signed package, effective
 actors, continuous quiescence and the actual installed observations.
+The [installed-trial input inventory](../../tasks/windows11-integration.md#bind-the-available-inputs-for-the-signed-installed-trial)
+pins the current unsigned payload, both service images and the real
+observer for that handoff.
+The [relocated role assembly](../../tasks/windows11-integration.md#pack-the-combined-artworklab-with-the-retained-hardened-roles)
+also combined those service images with the retained Slint and PRI inputs in
+a separate unsigned ArtworkLab package. Its exact archive and failure control
+passed readback. The signed installed trial still uses its own ScmFixture.
+The [extension-point startup checkpoint](../../tasks/windows11-integration.md#enforce-legacy-extension-point-policy-at-both-fixed-service-entries)
+observed both standalone entries enable the new mitigation from an initially
+clear flag. It rebuilt and checked the unsigned ArtworkLab with the matching
+role images. Installed behavior and final signing retain their existing gates.
+The [startup diagnostic and mutation checkpoint](../../tasks/windows11-integration.md#verify-startup-policy-diagnostics-and-enumerate-target-specific-mutations)
+checks the 15 typed refusal messages and runs the complete generated
+inventories on GNU. The matching instrumented MSVC images also passed
+the leaf and both standalone entry controls. After attributing the
+fixture's missing profile records to other modules, both selected
+implementation files passed their 90% Windows line gates. The
+[active-target replay](../../tasks/windows11-integration.md#complete-the-generated-startup-mutation-replay-on-the-active-windows-target)
+accounts for the remaining 23 overlays and five exact equivalents. Both
+files meet the 95% adjusted mutation gate. Native failure, effective
+loader denial and installed-role checks remain with the adapter owner.
 The [native archive
 reader](../../tasks/windows11-integration.md#read-package-identity-and-both-service-members-from-one-msix-snapshot)
 now derives the package full name and both service-member hashes from the
@@ -1605,12 +1663,13 @@ entry, module and precompiled helper through retirement. The
 [subject binding](../../tasks/windows11-integration.md#bind-the-pre-start-identity-subject-before-child-creation--23-november-2026)
 now refuses a mismatched deployment SID before child creation. The exact
 predecessor and corrected controls ran in the owned Windows Sandbox.
-The [current unsigned fixture](../../tasks/windows11-integration.md#relink-and-pack-the-current-disabled-service-fixture--23-november-2026)
-now binds both relinked roles to a freshly packed and checked archive.
-The matching Windows pre-start observer also linked. The SDK signer
-images passed the read-only native signature check, and the exact SDK
-SignTool accepted the timestamped signed PE and refused the altered PE
-and unsigned fixture package in the owned guest. The installed sequence
+The [current unsigned fixture](../../tasks/windows11-integration.md#restrict-the-default-dll-search-before-both-service-entries-connect)
+contains both relinked roles with the pre-SCM DLL search and image-load guards.
+The archive passed native MakeAppx assembly and byte readback. The matching Windows
+pre-start libtest also linked. In the earlier [signature checkpoint](../../tasks/windows11-integration.md#bind-the-lab-signature-check-to-the-held-msix--24-november-2026),
+the SDK signer images passed read-only native signature checks. SignTool
+accepted the timestamped PE and refused the altered PE and earlier unsigned
+fixture in the owned guest. The installed sequence
 still requires independently admitted actor contexts, the signed package,
 and the common native window owner that supplies the first receipt and the
 three SCM observations. The [broker's sampled continuity check](../../tasks/windows11-integration.md#withdraw-a-sampled-broker-revision-after-a-known-leap-presentation-change--23-november-2026)

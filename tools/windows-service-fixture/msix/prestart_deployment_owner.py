@@ -2,13 +2,15 @@
 """Render the fixed S0.6 native owner entries from independently admitted pins."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
-import re
 from uuid import UUID
 
 from check_package import Refused, read_regular
-from prestart_receipts import DeploymentRun, Member, PrestartProbe, ReceiptRefused, SHA256, Run, require, require_run
+from prestart_receipts import (
+    DeploymentRun, Member, PrestartProbe, ReceiptRefused, SHA256, Run, is_prestart_sid_text, require, require_run,
+)
 
 
 _PIN_LIMITS: dict[str, int] = {
@@ -28,9 +30,18 @@ _ACCESS_PIN_LIMITS: dict[str, int] = {
 }
 _TEMPLATE_LIMIT: int = 2 * 1024 * 1024
 _BINDINGS: bytes = b"# PRESTART_DEPLOYMENT_BINDINGS\n"
-_SID: re.Pattern[str] = re.compile(
-    r"S-1-(?:0|[1-9][0-9]{0,9}|0x[0-9A-Fa-f]{12})(?:-(?:0|[1-9][0-9]{0,9})){1,15}"
-)
+
+
+@dataclass(frozen=True, slots=True)
+class RenderedAccessOwner:
+    """The fixed entry and the independently supplied inputs it renders."""
+
+    run: DeploymentRun
+    probe: PrestartProbe
+    expected_actor_sid: str = field(repr=False)
+    path: Path
+    contents: bytes = field(repr=False)
+    pin: Member
 
 
 def render_deployment_owner(
@@ -59,11 +70,7 @@ def render_deployment_owner(
     if full_prestart:
         require(isinstance(run, Run), "full pre-start requires both admitted access actors")
         require_run(run)
-    require(
-        type(deployment_sid) is str and len(deployment_sid) <= 183
-        and _SID.fullmatch(deployment_sid) is not None,
-        "invalid deployment owner SID",
-    )
+    require(is_prestart_sid_text(deployment_sid), "invalid deployment owner SID")
     require(
         type(signer_sha256) is str and SHA256.fullmatch(signer_sha256) is not None,
         "invalid deployment owner signer digest",
@@ -102,12 +109,14 @@ def render_prestart_access_owner(
     pins: Mapping[str, Member],
     work_milliseconds: int,
     *,
+    stage: Path,
     private_capture_diagnostics: bool = False,
-) -> tuple[bytes, Member]:
-    """Bind one fixed access owner entry to a separately admitted actor and run.
+) -> RenderedAccessOwner:
+    """Bind one fixed access owner entry to an admitted actor, run and stage.
 
-    The launcher supplies the original primary token and protects the staging
-    namespace. An access entry accepts only its original run ID at startup.
+    The launcher supplies the original primary token and the protected absolute
+    stage. This function renders the entry without creating or modifying the
+    stage. An access entry accepts only its original run ID at startup.
     The native session and enclosing watchdog keep the original cutoff and
     independently observe child and process retirement.
     Capture diagnostics require the launcher to retain the original private
@@ -123,11 +132,7 @@ def render_prestart_access_owner(
         role = "standard"
     else:
         raise ReceiptRefused("invalid pre-start access probe")
-    require(
-        type(expected_actor_sid) is str and len(expected_actor_sid) <= 183
-        and _SID.fullmatch(expected_actor_sid) is not None,
-        "invalid pre-start access owner SID",
-    )
+    require(is_prestart_sid_text(expected_actor_sid), "invalid pre-start access owner SID")
     require(type(work_milliseconds) is int and 0 < work_milliseconds <= 120_000,
             "invalid pre-start access owner deadline")
     require(type(private_capture_diagnostics) is bool, "invalid pre-start access capture diagnostics selection")
@@ -141,7 +146,11 @@ def render_prestart_access_owner(
         f"[int]$workMilliseconds = {work_milliseconds}",
         "[bool]$privateCaptureDiagnostics = " + ("$true" if private_capture_diagnostics else "$false"),
     ]
-    return _render_owner(template, template_pin, bindings, bound_pins)
+    require(isinstance(stage, Path) and stage.is_absolute(), "invalid pre-start access staging directory")
+    contents: bytes
+    pin: Member
+    contents, pin = _render_owner(template, template_pin, bindings, bound_pins)
+    return RenderedAccessOwner(run, probe, expected_actor_sid, stage / "prestart_deployment_owner.ps1", contents, pin)
 
 
 def _snapshot_pins(pins: Mapping[str, Member], limits: Mapping[str, int]) -> dict[str, Member]:

@@ -2,8 +2,10 @@
 """Use real POSIX pipes to exercise the watchdog-parent consumer and fixed supervisor."""
 
 from contextlib import ExitStack
+from dataclasses import replace
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 from subprocess import Popen, TimeoutExpired
 from tempfile import TemporaryDirectory
@@ -17,6 +19,7 @@ import prestart_deployment_session as session
 from prestart_access_process import (
     AccessWatchdogInputs, PrestartAccessAttempt, _limited_budgets, _remaining, _windows_path,
 )
+from prestart_deployment_owner import RenderedAccessOwner, render_prestart_access_owner
 from prestart_receipts import DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, Run
 import test_prestart_deployment_session as fixtures
 
@@ -28,8 +31,9 @@ _PARENT: bytes = b"""#!/usr/bin/python3
 from hashlib import sha256
 from pathlib import Path
 import json, sys
-mode, parent, parent_size, parent_pin, watchdog, size, pin, role, nonce, diagnostic, guardian, gs, gh, ps, ph, owner, osz, oh, run, *budgets = sys.argv[1:]
+mode, parent, parent_size, parent_pin, actor_sid, watchdog, size, pin, role, nonce, diagnostic, guardian, gs, gh, ps, ph, owner, osz, oh, run, *budgets = sys.argv[1:]
 assert mode == '--supervise-access-parent' and parent == sys.argv[0]
+assert actor_sid == {'access': 'S-1-5-21-123-456-789-1001', 'standard': 'S-1-5-21-123-456-789-1002'}[role]
 parent_bytes = Path(parent).read_bytes()
 assert int(parent_size) == len(parent_bytes) and parent_pin == sha256(parent_bytes).hexdigest()
 root = Path(diagnostic).parent
@@ -37,6 +41,8 @@ case = json.loads((root / 'case.json').read_bytes())
 assert Path(watchdog).name == 'prestart_deployment_watchdog.exe'
 assert Path(guardian).name == 'prestart_deployment_guardian.ps1'
 assert Path(owner).name == 'prestart_deployment_owner.ps1'
+owner_bytes = Path(owner).read_bytes()
+assert int(osz) == len(owner_bytes) and oh == sha256(owner_bytes).hexdigest()
 assert 0 < int(budgets[0]) < int(budgets[1]) <= 4000
 assert 0 < int(budgets[2]) < int(budgets[3]) <= 4000
 assert int(budgets[3]) - int(budgets[2]) >= 4
@@ -83,31 +89,49 @@ class NativeAccessProcessTests(unittest.TestCase):
 
     def prepare(self, name: str, *, probe: PrestartProbe = PrestartProbe.ACCESS,
                 command: str = "", response: bytes = b"", diagnostics: bytes = b"",
-                native_exit: int = 0, parent_exit: int = 0, fault: str = "") -> tuple[PrestartAccessAttempt, Path, BinaryIO]:
+                native_exit: int = 0, parent_exit: int = 0, fault: str = "",
+                diagnostic_access: int = os.O_RDONLY,
+                expected_actor_sid: str | None = None) -> tuple[PrestartAccessAttempt, Path, BinaryIO]:
         shelf: Path = self.root / name
         shelf.mkdir()
         parent: Path = shelf / "prestart_access_parent.exe"
         watchdog: Path = shelf / "prestart_deployment_watchdog.exe"
         guardian: Path = shelf / "prestart_deployment_guardian.ps1"
-        entry: Path = shelf / "prestart_deployment_owner.ps1"
         parent.write_bytes(_PARENT)
         parent.chmod(0o700)
         watchdog.write_bytes(b"fixed watchdog bytes checked by the launch consumer")
+        guardian_bytes: bytes = b"inert guardian"
+        guardian.write_bytes(guardian_bytes)
         diag: Path = shelf / "prestart-access-diagnostics.log"
         diag.touch(mode=0o600)
-        stream: BinaryIO = self.files.enter_context(diag.open("rb", buffering=0))
+        stream: BinaryIO = self.files.enter_context(os.fdopen(os.open(diag, diagnostic_access), "rb", buffering=0))
         (shelf / "wire.bin").write_bytes(response)
         (shelf / "diagnostics.bin").write_bytes(diagnostics)
         (shelf / "case.json").write_text(json.dumps({
             "command": command, "native_exit": native_exit, "parent_exit": parent_exit, "fault": fault,
         }), encoding="ascii")
+        if expected_actor_sid is None:
+            expected_actor_sid = "S-1-5-21-123-456-789-1001" if probe is PrestartProbe.ACCESS else "S-1-5-21-123-456-789-1002"
+        template: Path = Path(__file__).with_name("prestart_deployment_owner.ps1.in")
+        template_bytes: bytes = template.read_bytes()
+        pins: dict[str, Member] = {
+            "child_module": Member(1, "6" * 64),
+            "session_module": Member(1, "7" * 64),
+            "deployment_helper": Member(1, "8" * 64),
+            "observer": Member(1, self.run.observer_sha256),
+        }
+        owner: RenderedAccessOwner = render_prestart_access_owner(
+            template, Member(len(template_bytes), sha256(template_bytes).hexdigest()),
+            self.run, probe, expected_actor_sid, pins, 1800, stage=shelf,
+        )
+        owner.path.write_bytes(owner.contents)
         inputs: AccessWatchdogInputs = AccessWatchdogInputs(
             parent, Member(len(_PARENT), sha256(_PARENT).hexdigest()),
             watchdog, Member(watchdog.stat().st_size, sha256(watchdog.read_bytes()).hexdigest()),
-            guardian, Member(1, "1" * 64), Member(2, "2" * 64), entry, Member(3, "3" * 64),
+            guardian, Member(len(guardian_bytes), sha256(guardian_bytes).hexdigest()), Member(2, "2" * 64), owner,
         )
         result: PrestartAccessAttempt = PrestartAccessAttempt(
-            inputs, probe, diag, stream, (1800, 2300), (2600, 3400))
+            inputs, diag, stream, (1800, 2300), (2600, 3400))
 
         def reap_control() -> None:
             process = result._process
@@ -119,6 +143,30 @@ class NativeAccessProcessTests(unittest.TestCase):
 
         self.files.callback(reap_control)
         return result, diag, stream
+
+    def test_requires_bounded_actor_sid_before_native_access_launch(self) -> None:
+        index: int
+        sid: str
+        for index, sid in enumerate(("", "s-1-5-18", "S-1-5-018", 'S-1-5-18"', "S-1-5" + "-1" * 16)):
+            with self.subTest(sid=sid):
+                with self.assertRaisesRegex(ReceiptRefused, "invalid pre-start access owner SID"):
+                    self.prepare(f"invalid-actor-{index}", expected_actor_sid=sid)
+
+    def test_diagnostic_descriptor_with_write_access_refuses_before_relay_launch(self) -> None:
+        access: PrestartAccessAttempt
+        diagnostics: Path
+        stream: BinaryIO
+        access, diagnostics, stream = self.prepare("writable-descriptor", diagnostic_access=os.O_RDWR)
+        self.assertTrue(stream.readable())
+        self.assertFalse(stream.writable())
+        with patch("prestart_access_process.Popen", side_effect=AssertionError("launched native access relay")):
+            with self.assertRaisesRegex(ReceiptRefused, "native access requires a read-only diagnostic descriptor"):
+                access.start(self.run, self.work, self.retire)
+        access.request_retirement(self.retire)
+        access.wait_retired(self.retire)
+        self.assertIsNone(access._process)
+        self.assertFalse(stream.closed)
+        self.assertEqual(diagnostics.read_bytes(), b"")
 
     def test_both_original_access_pipes_through_real_prestart_launch_consumer(self) -> None:
         access, _, _ = self.prepare("access", command="A", response=self.full.access)
@@ -136,6 +184,72 @@ class NativeAccessProcessTests(unittest.TestCase):
                          (PrestartProbe.IDENTITY, PrestartProbe.OBSERVATION, PrestartProbe.ACCESS, PrestartProbe.STANDARD))
         with self.assertRaisesRegex(ReceiptRefused, "already used"):
             access.start(self.run, self.work, self.retire)
+
+    def assert_refuses_before_any_launch(
+        self, run: DeploymentRun, access: PrestartAccessAttempt, standard: PrestartAccessAttempt,
+        expected: str,
+    ) -> None:
+        events: list[fixtures.LaunchEvent] = []
+        deployment: fixtures.ScriptedOwnerAttempt[Run] = fixtures.ScriptedOwnerAttempt("deployment", events)
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        with patch("prestart_access_process.Popen", side_effect=AssertionError("launched native access relay")):
+            with self.assertRaisesRegex(ReceiptRefused, expected):
+                session.launch_prestart_session(
+                    run, access, standard, deployment, self.work, self.retire, captures=captures,
+                )
+        self.assertEqual(events, [])
+        self.assertEqual(captures.records, ())
+
+    def test_preflight_refuses_swapped_valid_access_roles_before_launch(self) -> None:
+        access: PrestartAccessAttempt
+        standard: PrestartAccessAttempt
+        access, _, _ = self.prepare("access")
+        standard, _, _ = self.prepare("standard", probe=PrestartProbe.STANDARD)
+        self.assert_refuses_before_any_launch(self.run, standard, access, "^wrong native access launch role$")
+
+    def test_preflight_refuses_an_equal_valued_different_run_before_launch(self) -> None:
+        access: PrestartAccessAttempt
+        standard: PrestartAccessAttempt
+        access, _, _ = self.prepare("access")
+        standard, _, _ = self.prepare("standard", probe=PrestartProbe.STANDARD)
+        other_run: DeploymentRun = replace(self.run)
+        self.assertEqual(other_run, self.run)
+        self.assertIsNot(other_run, self.run)
+        self.assert_refuses_before_any_launch(other_run, access, standard, "^foreign native access launch run$")
+
+    def test_preflight_checks_the_second_staged_entry_before_launching_the_first(self) -> None:
+        access: PrestartAccessAttempt
+        access_diagnostic: Path
+        standard: PrestartAccessAttempt
+        diagnostic: Path
+        foreign_diagnostic: Path
+        access, access_diagnostic, _ = self.prepare("access")
+        standard, diagnostic, _ = self.prepare("standard", probe=PrestartProbe.STANDARD)
+        _, foreign_diagnostic, _ = self.prepare(
+            "foreign-standard", probe=PrestartProbe.STANDARD, expected_actor_sid="S-1-5-21-123-456-789-9002",
+        )
+        self.assertEqual(access.check_launch(self.run, PrestartProbe.ACCESS), access_diagnostic.parent)
+        entry: Path = diagnostic.with_name("prestart_deployment_owner.ps1")
+        crossed: bytes = foreign_diagnostic.with_name(entry.name).read_bytes()
+        self.assertEqual(entry.stat().st_size, len(crossed))
+        self.assertNotEqual(entry.read_bytes(), crossed)
+        entry.write_bytes(crossed)
+        self.assert_refuses_before_any_launch(self.run, access, standard, "^pre-start access owner entry differs$")
+
+    def test_start_rechecks_the_entry_after_successful_preflight(self) -> None:
+        access: PrestartAccessAttempt
+        diagnostic: Path
+        access, diagnostic, _ = self.prepare("access")
+        self.assertEqual(access.check_launch(self.run, PrestartProbe.ACCESS), diagnostic.parent)
+        entry: Path = diagnostic.with_name("prestart_deployment_owner.ps1")
+        original: bytes = entry.read_bytes()
+        changed: bytes = original.replace(b"$ownerRole = 'access'", b"$ownerRole = 'broken'", 1)
+        self.assertEqual(len(original), len(changed))
+        self.assertNotEqual(original, changed)
+        entry.write_bytes(changed)
+        with patch("prestart_access_process.Popen", side_effect=AssertionError("launched native access relay")):
+            with self.assertRaisesRegex(ReceiptRefused, "^pre-start access owner entry differs$"):
+                access.start(self.run, self.work, self.retire)
 
     def test_settled_native_three_retains_private_bytes_and_remains_refusal(self) -> None:
         line: bytes = b"nevrotick-deployment-owner failure=session cause=none cleanup=actor-close\r\n"

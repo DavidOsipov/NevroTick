@@ -3,6 +3,7 @@
 
 import argparse
 from collections.abc import Iterator
+from contextlib import contextmanager
 import ctypes
 import errno
 import hashlib
@@ -77,25 +78,30 @@ def read_bound(path, ceiling, expected):
     return data
 
 
-def role_images(receipt, receipt_hash):
-    """Bind exact fixed-role images and their symbols to the admitted link stage."""
-    require(receipt.parent == RECEIPTS and receipt.name.startswith("cross-")
-            and receipt.suffix == ".json", "Use a configured cross-link receipt.")
-    data = json.loads(read_bound(receipt, 4 * 1024**2, receipt_hash))
-    require(data["status"] == "passed" and data["lane"] == "link"
-            and data["bookends_passed"] is True and data["index_bytes_unchanged"] is True,
-            "Expected a passed, complete two-role link receipt.")
-    rows = data["artifacts"]
-    require(set(rows) == set(BINS), "The exact two service roles are required.")
-    linked = receipt.parent / (receipt.stem + "-artifacts")
-    require(linked.resolve(strict=True) == linked, "The export directory must be canonical.")
-    images = {}
+@contextmanager
+def held_directory(path: Path) -> Iterator[tuple[int, Path]]:
+    """Read leaves from one owned directory and confirm its path before returning."""
+    descriptor: int = _open_directory(path, private=True)
+    try:
+        yield descriptor, Path(f"/proc/self/fd/{descriptor}")
+        _parent_unchanged(path, descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _read_roles(rows: dict[str, object], anchor: Path, logical: Path) -> dict[str, bytes]:
+    """Check the producer's fixed logical paths and read the matching held pairs."""
+    images: dict[str, bytes] = {}
     for stem in BINS:
-        row = rows[stem]
-        image = linked / (stem + ".exe")
-        symbols = linked / (stem.replace("-", "_") + ".pdb")
-        require(ROOT / row["image"] == image and ROOT / row["pdb"] == symbols,
+        row: object = rows[stem]
+        image: Path = anchor / (stem + ".exe")
+        symbols: Path = anchor / (stem.replace("-", "_") + ".pdb")
+        require(type(row) is dict and row.get("image") == (logical / image.name).as_posix()
+                and row.get("pdb") == (logical / symbols.name).as_posix(),
                 "The receipt maps a role to a different image or symbol file.")
+        payload: bytes
+        image_hash: str
+        symbol_hash: str
         (payload, image_hash), (_, symbol_hash), _ = read_export_pair(
             image, symbols, subsystem="console",
         )
@@ -105,6 +111,28 @@ def role_images(receipt, receipt_hash):
     require(len({digest(payload) for payload in images.values()}) == len(BINS),
             "Each service requires a distinct image.")
     return images
+
+
+def role_images(receipt: Path, receipt_hash: str) -> dict[str, bytes]:
+    """Recheck the fixed link export in place or after a byte-exact relocation."""
+    require(receipt.name.startswith("cross-") and receipt.suffix == ".json",
+            "Use a configured cross-link receipt.")
+    linked: Path = receipt.parent / (receipt.stem + "-artifacts")
+    logical: Path = RECEIPTS.relative_to(ROOT) / linked.name
+    with held_directory(receipt.parent) as (parent, _):
+        raw: bytes = _read_regular(parent, receipt.name, 4 * 1024**2)
+        require(digest(raw) == receipt_hash, "Cross-link receipt hash differs.")
+        data: object = _json(raw)
+        require(type(data) is dict and data.get("status") == "passed" and data.get("lane") == "link"
+                and data.get("bookends_passed") is True and data.get("index_bytes_unchanged") is True,
+                "Expected a passed, complete two-role link receipt.")
+        rows: object = data["artifacts"]
+        require(type(rows) is dict and rows.keys() == set(BINS), "The exact two service roles are required.")
+        with held_directory(linked) as (descriptor, anchor):
+            # Compare with the child in the original receipt directory before readback.
+            current: os.stat_result = os.stat(linked.name, dir_fd=parent, follow_symlinks=False)
+            require(os.path.samestat(current, os.fstat(descriptor)), "The link export directory changed.")
+            return _read_roles(rows, anchor, logical)
 
 
 def event_resource_image(
@@ -315,7 +343,9 @@ def main() -> None:
                          "--event-resource-generation, and --event-resource-source-root together")
         event_inputs = (event_build, event_receipt_hash, event_generation, event_root)
     try:
-        payload: dict[str, bytes] = role_images(args.receipt.absolute(), args.receipt_sha256)
+        receipt: Path = args.receipt.absolute()
+        _outside_source(receipt.parent, args.output)
+        payload: dict[str, bytes] = role_images(receipt, args.receipt_sha256)
         payload["AppxManifest.xml"] = (HERE / "AppxManifest.xml").read_bytes()
         payload["Inert.exe"] = read_bound(args.inert.absolute(), 64 * 1024, args.inert_sha256)
         for name, size in (("PackageLogo", 50), ("Square44x44Logo", 44), ("Square150x150Logo", 150)):

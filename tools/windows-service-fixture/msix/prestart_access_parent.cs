@@ -71,6 +71,7 @@ namespace NevroTick
             private readonly int cooperativeEnd;
             private readonly int retirement;
             private readonly bool supervisesParent;
+            private readonly string expectedActorSid;
             private readonly string diagnosticPath;
             private readonly HeldFile image;
             private readonly KernelHandle process = new KernelHandle();
@@ -91,11 +92,12 @@ namespace NevroTick
             internal AccessWatchdog(string[] arguments, Stopwatch clock)
             {
                 const int innerLength = Forwarded + 13;
-                const int supervisionFields = 4;
+                const int supervisionFields = 5;
                 supervisesParent = arguments.Length == innerLength + supervisionFields &&
                     arguments[0] == AccessParentSupervisionMode;
                 if (supervisesParent)
                 {
+                    expectedActorSid = arguments[4];
                     args = new string[innerLength];
                     Array.Copy(arguments, supervisionFields, args, 0, args.Length);
                 }
@@ -163,7 +165,7 @@ namespace NevroTick
                 using (input)
                 using (output)
                 using (error)
-                using (PipeEnds privateStatus = supervisesParent ? new PipeEnds() : null)
+                using (PipeEnds privateStatus = supervisesParent ? AdmitActorAndOpenPrivateStatus() : null)
                 {
                     try
                     {
@@ -248,6 +250,17 @@ namespace NevroTick
                     written != bytes.Length)
                     throw new IOException("prestart-access-parent:status-write");
                 CheckDeadline(clock, retirement, "access-publication");
+            }
+
+            private PipeEnds AdmitActorAndOpenPrivateStatus()
+            {
+                // The actor is already owned by the enclosing scope. Refuse a
+                // foreign subject or profile before opening the private pipe.
+                if (args[3] == "access")
+                    actor.VerifyProvisioningUser(clock, work, expectedActorSid);
+                else
+                    actor.VerifyStandardUser(clock, work, expectedActorSid);
+                return new PipeEnds();
             }
 
             private void PreparePrivateStatusWriter(PipeEnds status)

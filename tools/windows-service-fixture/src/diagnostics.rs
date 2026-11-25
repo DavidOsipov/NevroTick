@@ -32,6 +32,10 @@ pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
         FixtureError::RunLimitElapsed => PrimaryCause::RunLimitElapsed,
         FixtureError::Budget(_) => PrimaryCause::Budget,
         FixtureError::Native(_) => PrimaryCause::Native,
+        #[cfg(windows)]
+        FixtureError::ImageLoadPolicy(_)
+        | FixtureError::ServiceErrorMode(_)
+        | FixtureError::ExtensionPointPolicy(_) => PrimaryCause::Native,
         FixtureError::Lifecycle(error) => match error {
             LifecycleError::Report(_) => PrimaryCause::LifecycleReport,
             LifecycleError::DeadlineElapsed => PrimaryCause::LifecycleDeadlineElapsed,

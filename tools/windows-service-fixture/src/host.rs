@@ -268,8 +268,8 @@ pub(super) trait Dispatcher {
     /// Connect the fixed-role process or return its immediately captured error.
     ///
     /// # Errors
-    /// Preserve the actual dispatcher failure, without falling back to a console.
-    fn dispatch(&mut self, role: LabRole) -> Result<(), NativeError>;
+    /// Preserve startup admission and actual dispatcher failures without a console fallback.
+    fn dispatch(&mut self, role: LabRole) -> Result<(), FixtureError>;
 }
 
 /// Handler registration returns a privately constructed reporter, never a raw token.
@@ -558,7 +558,7 @@ pub(super) trait Wait {
 /// Attempt dispatcher connection once even if the first call fails.
 ///
 /// # Errors
-/// Reject repeated invocation; propagate the original native dispatcher failure.
+/// Reject repeated invocation and propagate the original startup or connection failure.
 pub(super) fn dispatch_once<D: Dispatcher>(
     role: LabRole,
     attempted: &AtomicBool,
@@ -567,7 +567,7 @@ pub(super) fn dispatch_once<D: Dispatcher>(
     if attempted.swap(true, Ordering::AcqRel) {
         return Err(FixtureError::AlreadyDispatched);
     }
-    driver.dispatch(role).map_err(FixtureError::Native)
+    driver.dispatch(role)
 }
 
 /// Connect once and project the immutable owner-result receipt.

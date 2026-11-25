@@ -239,6 +239,14 @@ class PrestartOwnerAttempt(Protocol[LaunchRunT]):
         ...
 
 
+class PrestartAccessLaunchAttempt(PrestartOwnerAttempt[DeploymentRun], Protocol):
+    """One fixed access attempt with a separately staged role entry."""
+
+    def check_launch(self, run: DeploymentRun, probe: PrestartProbe) -> Path:
+        """Check the exact run, role and staged entry before starting a process."""
+        ...
+
+
 def launch_deployment_watchdog(
     run: DeploymentRun, executable: Path, executable_pin: Member,
     guardian_path: str, guardian_pin: Member, power_shell_pin: Member,
@@ -321,7 +329,7 @@ def supervise_prestart_session(
 
 
 def launch_prestart_session(
-    run: DeploymentRun, provisioning: PrestartOwnerAttempt[DeploymentRun], standard: PrestartOwnerAttempt[DeploymentRun],
+    run: DeploymentRun, provisioning: PrestartAccessLaunchAttempt, standard: PrestartAccessLaunchAttempt,
     deployment: PrestartOwnerAttempt[Run], deadline: float, retirement_deadline: float,
     *, captures: PrestartCaptures,
 ) -> PrestartObservation:
@@ -330,9 +338,10 @@ def launch_prestart_session(
     The lab owner supplies the signed-artifact run and its one-shot role
     providers after actor admission and under a continuously held quiescent
     window. Both cutoffs are absolute host monotonic seconds from before the
-    first launch. No capture command is sent until all owners and their private
-    pipes are admitted. An observed acquisition or admission failure attempts
-    to signal and confirm settlement of every attempted owner under the
+    first launch. Both access entries must match their original role, run and
+    separate staging before the first launch. The coordinator checks the owners
+    and their private pipes before sending any command. On a launch or handoff
+    failure, it signals and observes settlement of every attempted owner under the
     original retirement cutoff. The external custodian keeps recovery
     authority across handoff and interruption of this coordinator. The caller
     owns the capture collection, including when result admission fails.
@@ -343,6 +352,11 @@ def launch_prestart_session(
     require(provisioning is not standard and provisioning is not deployment and standard is not deployment,
             "pre-start roles require distinct launch attempts")
     captures._claim()
+    _remaining(deadline)
+    access_stage: Path = provisioning.check_launch(run, PrestartProbe.ACCESS)
+    _remaining(deadline)
+    standard_stage: Path = standard.check_launch(run, PrestartProbe.STANDARD)
+    require(access_stage != standard_stage, "pre-start access roles require distinct staging")
     attempted: list[PrestartOwnerAttempt[Run]] = []
     try:
         _remaining(deadline)

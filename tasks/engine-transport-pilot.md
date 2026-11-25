@@ -33996,3 +33996,71 @@ No native handle or FFI ownership model changed.
 | `windows-symbol-readback.json` | `6c375a366704a16e6004f0ed8eb54b50bc5d2427ec792436d6c152afa8ede88f` |
 | `native-recipe/join_5e48fa50925f/verification.json` | `265c1124c9ecf6768380c29fd2825d36a0c7ea40051c18091ccb25a770d5ec36` |
 | `native-scope-readback.json` | `7b377760ccba9865bf8f101756eac720601d63254a15c2e59a8df52a04f80cc5` |
+
+#### Refuse a joined Windows DNS answer after source replacement
+
+W11-W03/S2.2 and CHECK-25/27. The controlled Windows test lets the original
+round expire after sending once, joins the native `localhost.` IPv4 result,
+then publishes a new source revision with the same scale and address
+envelope. It presents the joined answer to the actual successor owner. The
+test observes `Retired(Stale)`, the original ordered membership still selected,
+no new endpoint slot and no successor datagram. The existing public healthy
+case observes the joined answer reaching a successor. The directed test
+exposes the boundary between the join and adoption using existing private
+functions. It exercises the inline local DNS route and changes only test code.
+
+Rust implementation, regression selection, lifecycle QA and Windows Sandbox
+preflight guided the source and execution. Independent review added a strict
+membership readback, then the corrected candidate passed pinned formatting,
+MSVC test Clippy, x64-v3 link and PE/PDB readback. The build binds 755 product
+inputs on `7b63ecd` plus the tested overlay, digest
+`5c9db8536be2a3b1df371d7aade64f6f6df32565513003f21234a124880f8b49`.
+The two exact selectors passed in separate processes in offline Windows
+build 26100. Both exited zero with empty stderr and checked retirement,
+offline and input-byte bookends, and transfer-file cleanup. The preliminary
+image passed both cases before the additional membership assertion. Its build
+and execution records retain that narrower scope.
+
+The 90% executable-line and 95% per-file mutation obligations remain open.
+This control exercises a specific boundary without changing the decoder or
+scheduler. No new fuzz or metrics campaign ran. The independent physical
+reference and Core sample admission remain separate.
+
+| Record under `~/.local/share/nevrotick/w11-dns-live.x3Or7Xht/` | SHA-256 |
+| --- | --- |
+| `reviewed-engine.patch` | `51e853d6cfb7c4e8f2d950a0fbe237d07d85ac6c1c608cd6e51ea30ee0e4a9cc` |
+| `engine-reviewed-link/verification.json` | `406a6a7a37c5ae2bf725b4f0eb01cb79f04198b40909fed0b479e195146790fb` |
+| `engine-reviewed-native/native-result.json` | `02cc581252b4a218b010509b31cd7fce423d0f352fbf383e99b4ae4e7a731648` |
+
+##### Bound the ordinary WinDNS callback experiment in the offline guest
+
+The private Windows leaf fixture supplied an exclusive IPv4 loopback listener
+and a fixed per-query server list. Its expected native question had to arrive
+before either returning one A record or requesting cancellation. The private
+derivatives passed the GNU leaf checks and pinned MSVC link and readback.
+The ordinary profile returned `DNS_REQUEST_PENDING` in both selectors, then
+both listeners reported Winsock timeout 10060. Adding the observed loopback
+interface and wire-only option returned 87 at submission. The wire-only
+profile with automatic interface selection initially stopped at the Windows
+memory floor. After reclaiming owned scratch, the same image passed preflight.
+Both listeners still timed out after pending submission. Each retained one
+native callback with terminal error 87. Each dispatched experiment exited
+with two libtest refusals, and the processes and transferred files retired.
+
+These observations leave successful ordinary Answer delivery and native
+cancellation open. The candidate never received the packet required to
+drive either action. A successful continuation needs an independently
+observed controlled DNS route in the admitted lab. Its cancellation control
+must distinguish a cancel result from ordinary expiry, and overlap claims
+need a separate permit observation while retirement is pending. Both routing
+changes stayed in the private test fixture. The adopted Engine test uses the
+normal local resolver route. [WinDNS request](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_request)
+[Cancellation contract](https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnscancelquery)
+
+| Record under `~/.local/share/nevrotick/w11-dns-live.x3Or7Xht/` | SHA-256 |
+| --- | --- |
+| `leaf-native/native-result.json` | `d9bda0a4d77d4979500b82fb353a90afbed9ff20fb897b4a752553b34ae8ca39` |
+| `leaf-interface-native/native-result.json` | `844e78e1adda137d28e2a377b4c715c860c56b9f07b2d37f22dff82b9e6a23d3` |
+| `leaf-wire-native/native-result.json` | `c87566ac785fc3a018920df95604e4fdf3599cb18e52c8fe57a77dc11503bd0b` |
+| `leaf-wire-native-retry/native-result.json` | `5e4deb0651425b66658ea495e80e6a0872dc8bce05d7e9bd0f44cce2d681a9d1` |
+| `scratch-retirement.json` | `619e4372c3e0e3afe9e6339dce245c539be541df237d62cbe8a3bb20ee86e6f6` |

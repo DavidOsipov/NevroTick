@@ -495,6 +495,7 @@ function Invoke-PrestartAccessSessionCore {
         [string]$ExpectedActorSid,
         [IO.Stream]$InputStream,
         [IO.Stream]$OutputStream,
+        [scriptblock]$OpenActor,
         [scriptblock]$Capture
     )
 
@@ -507,34 +508,59 @@ function Invoke-PrestartAccessSessionCore {
     if ($null -eq $InputStream) { $InputStream = [Console]::OpenStandardInput() }
     if ($null -eq $OutputStream) { $OutputStream = [Console]::OpenStandardOutput() }
 
-    [byte[]]$buffer = [byte[]]::new(1)
-    [int]$command = Read-PrestartDeploymentCommand $InputStream $buffer $Clock $TimeoutMilliseconds
-    if ($command -eq -1) { return }
-    [bool]$provisioning = $Role -ceq 'access'
-    [int]$expected = if ($provisioning) { 65 } else { 85 }
-    if ($command -ne $expected) {
-        throw [IO.InvalidDataException]::new('prestart-access-session:unexpected-command')
-    }
-    if ((Read-PrestartDeploymentCommand $InputStream $buffer $Clock $TimeoutMilliseconds) -ne -1) {
-        throw [IO.InvalidDataException]::new('prestart-access-session:trailing-command')
-    }
-
-    [hashtable]$observerInputs = if ($provisioning) {
-        @{
-            Selector = 'scm_access_probe::windows::native_installed_roles_prestart_access'
-            ExpectedProvisioningUserSid = $ExpectedActorSid
-        }
-    } else {
-        @{
-            Selector = 'scm_access_probe::windows::native_standard_user_prestart_change_config_refused'
-            ExpectedStandardUserSid = $ExpectedActorSid
-        }
-    }
-    [hashtable]$reply = @{ run = $RunId.ToString('D'); kind = $Role }
+    [object]$actor = $null
+    [Exception]$failure = $null
+    [hashtable]$reply = $null
     try {
-        Set-PrestartDeploymentCapture $reply (& $Capture $observerInputs)
+        try {
+            # Bind the original actor before waiting on either request read.
+            # The native capture revalidates this same actor at child admission.
+            $actor = & $OpenActor
+            if ($null -eq $actor) {
+                throw [InvalidOperationException]::new('prestart-access-session:actor-unavailable')
+            }
+            [byte[]]$buffer = [byte[]]::new(1)
+            [int]$command = Read-PrestartDeploymentCommand $InputStream $buffer $Clock $TimeoutMilliseconds
+            if ($command -eq -1) { return }
+            [bool]$provisioning = $Role -ceq 'access'
+            [int]$expected = if ($provisioning) { 65 } else { 85 }
+            if ($command -ne $expected) {
+                throw [IO.InvalidDataException]::new('prestart-access-session:unexpected-command')
+            }
+            if ((Read-PrestartDeploymentCommand $InputStream $buffer $Clock $TimeoutMilliseconds) -ne -1) {
+                throw [IO.InvalidDataException]::new('prestart-access-session:trailing-command')
+            }
+
+            [hashtable]$observerInputs = if ($provisioning) {
+                @{
+                    Selector = 'scm_access_probe::windows::native_installed_roles_prestart_access'
+                    ExpectedProvisioningUserSid = $ExpectedActorSid
+                }
+            } else {
+                @{
+                    Selector = 'scm_access_probe::windows::native_standard_user_prestart_change_config_refused'
+                    ExpectedStandardUserSid = $ExpectedActorSid
+                }
+            }
+            $reply = @{ run = $RunId.ToString('D'); kind = $Role }
+            Set-PrestartDeploymentCapture $reply (& $Capture $observerInputs $actor)
+        } catch {
+            $failure = $_.Exception
+            throw
+        } finally {
+            if ($null -ne $actor) {
+                try { $actor.Dispose() } catch {
+                    if ($null -eq $failure) {
+                        $_.Exception.Data['PrestartAccessActorDisposalFailure'] = $true
+                        throw
+                    }
+                    $failure.Data['PrestartAccessActorDisposalFailure'] = $_.Exception
+                }
+            }
+        }
         Assert-PrestartDeploymentTime $Clock $TimeoutMilliseconds
     } catch {
+        if ($null -eq $reply) { throw }
         [Exception]$first = $_.Exception
         [string]$code = Get-PrestartDeploymentRefusalCode $Role $first
         [Collections.Generic.List[string]]$cleanup = [Collections.Generic.List[string]]::new()
@@ -574,40 +600,22 @@ function Invoke-PrestartAccessSession {
         Role = $Role; RunId = $RunId; Clock = $Clock; TimeoutMilliseconds = $TimeoutMilliseconds
         ExpectedActorSid = $ExpectedActorSid; InputStream = $InputStream; OutputStream = $OutputStream
     }
-    Invoke-PrestartAccessSessionCore @session -Capture {
-        param([hashtable]$ObserverInputs)
-
-        [object]$actor = $null
-        [Exception]$failure = $null
-        [object]$capture = $null
-        try {
-            Assert-PrestartDeploymentTime $Clock $TimeoutMilliseconds
-            [hashtable]$helper = @{
-                Path = $HelperPath; ExpectedBytes = $HelperBytes; ExpectedSha256 = $HelperSha256
-            }
-            prestart_child\Import-PrestartDeploymentHelpers @helper
-            $actor = prestart_child\Open-PrestartObserverActor -Clock $Clock -TimeoutMilliseconds $TimeoutMilliseconds
-            [hashtable]$pinnedImage = @{
-                ImagePath = $ObserverPath; ExpectedBytes = $ObserverBytes; ExpectedSha256 = $ObserverSha256
-                Actor = $actor; Clock = $Clock; TimeoutMilliseconds = $TimeoutMilliseconds
-            }
-            if ($null -ne $CollectedCapture) { $pinnedImage.CollectedCapture = $CollectedCapture }
-            $capture = prestart_child\Invoke-PrestartObserver @ObserverInputs @pinnedImage
-        } catch {
-            $failure = $_.Exception
-            throw
-        } finally {
-            if ($null -ne $actor) {
-                try { $actor.Dispose() } catch {
-                    if ($null -eq $failure) {
-                        $_.Exception.Data['PrestartAccessActorDisposalFailure'] = $true
-                        throw
-                    }
-                    $failure.Data['PrestartAccessActorDisposalFailure'] = $_.Exception
-                }
-            }
+    Invoke-PrestartAccessSessionCore @session -OpenActor {
+        Assert-PrestartDeploymentTime $Clock $TimeoutMilliseconds
+        [hashtable]$helper = @{
+            Path = $HelperPath; ExpectedBytes = $HelperBytes; ExpectedSha256 = $HelperSha256
         }
-        return $capture
+        prestart_child\Import-PrestartDeploymentHelpers @helper
+        prestart_child\Open-PrestartObserverActor -Clock $Clock -TimeoutMilliseconds $TimeoutMilliseconds
+    } -Capture {
+        param([hashtable]$ObserverInputs, [object]$Actor)
+
+        [hashtable]$pinnedImage = @{
+            ImagePath = $ObserverPath; ExpectedBytes = $ObserverBytes; ExpectedSha256 = $ObserverSha256
+            Actor = $Actor; Clock = $Clock; TimeoutMilliseconds = $TimeoutMilliseconds
+        }
+        if ($null -ne $CollectedCapture) { $pinnedImage.CollectedCapture = $CollectedCapture }
+        prestart_child\Invoke-PrestartObserver @ObserverInputs @pinnedImage
     }
 }
 

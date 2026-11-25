@@ -78,8 +78,15 @@ impl Dispatcher for NativeDispatcher {
     /// Connect the process using one fixed entry and the mandatory null terminator.
     ///
     /// # Errors
-    /// Capture dispatcher failure immediately, without a console-mode retry.
-    fn dispatch(&mut self, role: LabRole) -> Result<(), NativeError> {
+    /// Require the image-load, critical-error and extension-point policies before connecting to SCM.
+    /// Preserve an admission or dispatcher failure without a console-mode retry.
+    fn dispatch(&mut self, role: LabRole) -> Result<(), FixtureError> {
+        windows_platform_native::enforce_current_image_load_policy()
+            .map_err(FixtureError::ImageLoadPolicy)?;
+        windows_platform_native::enforce_service_critical_error_mode()
+            .map_err(FixtureError::ServiceErrorMode)?;
+        windows_platform_native::enforce_current_extension_point_policy()
+            .map_err(FixtureError::ExtensionPointPolicy)?;
         let service_main = match role {
             LabRole::Engine => engine_service_main,
             LabRole::ClockBroker => broker_service_main,
@@ -107,7 +114,10 @@ impl Dispatcher for NativeDispatcher {
             // SAFETY: GetLastError has no pointer preconditions and is read on the
             // failing thread immediately before any cleanup or other native call.
             let code = unsafe { GetLastError() };
-            return Err(NativeError::new(NativeOperation::Dispatch, code));
+            return Err(FixtureError::Native(NativeError::new(
+                NativeOperation::Dispatch,
+                code,
+            )));
         }
         Ok(())
     }
@@ -389,3 +399,7 @@ pub(super) fn entry(role: LabRole) -> Result<(), &'static FixtureError> {
         &DISPATCH_FAILURE,
     )
 }
+
+#[cfg(test)]
+#[path = "native_image_load_tests.rs"]
+mod image_load_tests;

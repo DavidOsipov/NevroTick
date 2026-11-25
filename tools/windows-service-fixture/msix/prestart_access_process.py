@@ -13,6 +13,7 @@ import time
 from typing import BinaryIO
 
 from check_package import Refused, read_regular
+from prestart_deployment_owner import RenderedAccessOwner
 from prestart_deployment_session import (
     MAX_FRAME, AccessStatusOverflow, PrivateAccessDiagnostic, _combined_failure, _decode_private_access_diagnostic,
     _read, _remaining, _require_deadlines,
@@ -32,7 +33,7 @@ _STATUS: re.Pattern[bytes] = re.compile(
 
 @dataclass(frozen=True, slots=True)
 class AccessWatchdogInputs:
-    """Fixed files in one protected native staging directory and original pins."""
+    """Protected native files and the independently admitted role subject."""
 
     parent: Path
     parent_pin: Member
@@ -41,8 +42,7 @@ class AccessWatchdogInputs:
     guardian: Path
     guardian_pin: Member
     powershell_pin: Member
-    entry: Path
-    entry_pin: Member
+    owner: RenderedAccessOwner
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,17 +66,16 @@ def _windows_path(path: Path) -> str:
     return components[2].upper() + ":\\" + "\\".join(components[3:])
 
 
-def _pinned_image(path: Path, pin: Member) -> None:
-    """Check a fixed executable before the admitted caller activates it by path."""
+def _check_pinned_file(path: Path, pin: Member, label: str) -> None:
+    """Check a fixed launch input against its independently supplied pin."""
     require(type(pin.size) is int and 0 < pin.size <= 2097152
             and type(pin.sha256) is str and SHA256.fullmatch(pin.sha256) is not None,
-            "invalid access watchdog image pin")
+            f"invalid {label} pin")
     try:
-        image: bytes = read_regular(path, pin.size, "pre-start access image")
+        contents: bytes = read_regular(path, pin.size, label)
     except (OSError, Refused) as error:
-        raise ReceiptRefused("pre-start access image read refused") from error
-    require(len(image) == pin.size and sha256(image).hexdigest() == pin.sha256,
-            "pre-start access image differs")
+        raise ReceiptRefused(f"{label} read refused") from error
+    require(len(contents) == pin.size and sha256(contents).hexdigest() == pin.sha256, f"{label} differs")
 
 
 def _valid_budgets(budgets: tuple[int, int], *, minimum_grace_ms: int = 1) -> bool:
@@ -244,24 +243,24 @@ class PrestartAccessAttempt:
     """One admitted actor's one-shot launch provider for launch_prestart_session.
 
     The caller owns the primary-token context, protected Windows staging and
-    original diagnostic descriptor for the lifetime of the attempt. The
+    original read-only diagnostic descriptor for the lifetime of the attempt. The
     Windows parent enforces its finite native allowance independently. Host
     observation still uses the original absolute deadlines. This provider
     remains the recovery owner if start or settlement is interrupted.
     """
 
-    def __init__(self, inputs: AccessWatchdogInputs, probe: PrestartProbe,
-                 diagnostic_path: Path, diagnostics: BinaryIO,
+    def __init__(self, inputs: AccessWatchdogInputs, diagnostic_path: Path, diagnostics: BinaryIO,
                  guardian_cutoffs: tuple[int, int], watchdog_cutoffs: tuple[int, int]):
+        probe: PrestartProbe = inputs.owner.probe
         require(probe is PrestartProbe.ACCESS or probe is PrestartProbe.STANDARD,
                 "invalid native access role")
         require(inputs.parent.name == "prestart_access_parent.exe"
                 and inputs.watchdog.name == "prestart_deployment_watchdog.exe"
                 and inputs.guardian.name == "prestart_deployment_guardian.ps1"
-                and inputs.entry.name == "prestart_deployment_owner.ps1"
+                and inputs.owner.path.name == "prestart_deployment_owner.ps1"
                 and diagnostic_path.name == "prestart-access-diagnostics.log"
                 and all(path.parent == inputs.parent.parent for path in
-                        (inputs.watchdog, inputs.guardian, inputs.entry, diagnostic_path)),
+                        (inputs.watchdog, inputs.guardian, inputs.owner.path, diagnostic_path)),
                 "invalid fixed native access staging")
         require(_valid_budgets(guardian_cutoffs) and _valid_budgets(watchdog_cutoffs, minimum_grace_ms=4),
                 "invalid native access budgets")
@@ -278,8 +277,19 @@ class PrestartAccessAttempt:
         self._owner: _AccessProcess | None = None
         self._retirement_deadline: float | None = None
 
+    def check_launch(self, run: DeploymentRun, probe: PrestartProbe) -> Path:
+        """Check the original run, role and staged renderer bytes without launching."""
+        entry: RenderedAccessOwner = self._inputs.owner
+        require(entry.run is run, "foreign native access launch run")
+        require(entry.probe is probe, "wrong native access launch role")
+        _windows_path(entry.path)
+        _check_pinned_file(entry.path, entry.pin, "pre-start access owner entry")
+        return entry.path.parent
+
     def start(self, run: DeploymentRun, deadline: float, retirement_deadline: float) -> _AccessProcess:
         """Start the fixed outer owner once, keeping its original relay on return."""
+        from fcntl import F_GETFL, fcntl
+
         require(not self._spent, "native access attempt already used")
         self._spent = True
         self._retirement_deadline = retirement_deadline
@@ -288,19 +298,24 @@ class PrestartAccessAttempt:
         _remaining(deadline)
         inputs: AccessWatchdogInputs = self._inputs
         parent_path: str = _windows_path(inputs.parent)
-        _pinned_image(inputs.parent, inputs.parent_pin)
-        _pinned_image(inputs.watchdog, inputs.watchdog_pin)
+        _check_pinned_file(inputs.parent, inputs.parent_pin, "pre-start access image")
+        _check_pinned_file(inputs.watchdog, inputs.watchdog_pin, "pre-start access image")
         initial: os.stat_result = _diagnostic_identity(self._diagnostic_path, self._diagnostics)
         require(self._diagnostics.readable() and initial.st_size == 0 and self._diagnostics.tell() == 0,
                 "native access requires an empty held diagnostic file")
+        # The native owner allows other readers while excluding foreign writers.
+        access_mode: int = fcntl(self._diagnostics.fileno(), F_GETFL) & os.O_ACCMODE
+        require(access_mode == os.O_RDONLY, "native access requires a read-only diagnostic descriptor")
+        self.check_launch(run, self._probe)
+        entry: RenderedAccessOwner = inputs.owner
         nonce: str = token_hex(16)
         arguments: list[str] = [
             str(inputs.parent), "--supervise-access-parent", parent_path, str(inputs.parent_pin.size),
-            inputs.parent_pin.sha256, _windows_path(inputs.watchdog), str(inputs.watchdog_pin.size),
+            inputs.parent_pin.sha256, entry.expected_actor_sid, _windows_path(inputs.watchdog), str(inputs.watchdog_pin.size),
             inputs.watchdog_pin.sha256, self._role, nonce, _windows_path(self._diagnostic_path),
             _windows_path(inputs.guardian), str(inputs.guardian_pin.size), inputs.guardian_pin.sha256,
-            str(inputs.powershell_pin.size), inputs.powershell_pin.sha256, _windows_path(inputs.entry),
-            str(inputs.entry_pin.size), inputs.entry_pin.sha256, str(run.id),
+            str(inputs.powershell_pin.size), inputs.powershell_pin.sha256, _windows_path(entry.path),
+            str(entry.pin.size), entry.pin.sha256, str(run.id),
         ]
         now: float = time.monotonic()
         guardian: tuple[int, int] = _limited_budgets(self._guardian_cutoffs, now, deadline, retirement_deadline)

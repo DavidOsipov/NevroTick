@@ -152,14 +152,108 @@ function Invoke-SessionControl([hashtable]$Case) {
     }
 }
 
+# Observe the actual memory-stream boundaries without using a timer or SCM.
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace NevroTick.SessionControl
+{
+    public sealed class AccessInput : MemoryStream
+    {
+        private readonly List<string> trace;
+        private readonly bool changeActor;
+
+        public AccessInput(byte[] input, List<string> trace, bool changeActor) : base(input, false)
+        {
+            this.trace = trace;
+            this.changeActor = changeActor;
+            Generation = 41;
+        }
+
+        public int Generation { get; private set; }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            trace.Add("read");
+            if (changeActor)
+                Generation++;
+            return base.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+    }
+
+    public sealed class AccessOutput : MemoryStream
+    {
+        private readonly List<string> trace;
+        private readonly bool broken;
+
+        public AccessOutput(List<string> trace, bool broken)
+        {
+            this.trace = trace;
+            this.broken = broken;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            trace.Add("write");
+            if (broken)
+                throw new IOException("fixture access reply write");
+            base.Write(buffer, offset, count);
+        }
+    }
+
+    public sealed class AccessActor : IDisposable
+    {
+        private readonly List<string> trace;
+        private readonly IOException failure;
+
+        public AccessActor(List<string> trace, int generation, IOException failure)
+        {
+            this.trace = trace;
+            this.failure = failure;
+            Generation = generation;
+        }
+
+        public int Generation { get; private set; }
+
+        public void Dispose()
+        {
+            trace.Add("dispose");
+            if (failure != null)
+                throw failure;
+        }
+    }
+}
+'@
+
+function Get-ControlExceptionChain([Exception]$Failure) {
+    for ([int]$depth = 0; $depth -lt 8 -and $null -ne $Failure; $depth++) {
+        $Failure
+        $Failure = $Failure.InnerException
+    }
+}
+
 function Invoke-AccessSessionControl([hashtable]$Case) {
     [guid]$run = 'bd312a9e-8dce-4bd8-a73f-666b43b3296c'
     [string]$sid = 'S-1-5-21-11-22-33-1001'
+    [Collections.Generic.List[string]]$trace = [Collections.Generic.List[string]]::new()
+    [IO.IOException]$disposal = if ($Case['DisposeFailure']) {
+        [IO.IOException]::new('fixture actor close')
+    } else { $null }
+    [IO.IOException]$observerFailure = [IO.IOException]::new('fixture observer refused')
+    if ($Case['ChildCleanup']) {
+        $observerFailure.Data['PrestartObserverTerminationFailure'] = [IO.IOException]::new('fixture child terminate')
+    }
     [hashtable]$probe = @{
+        Trace = $trace
+        Actor = $null
+        Disposal = $disposal
         Calls = [Collections.Generic.List[hashtable]]::new()
-        Failure = $Case.CaptureFailure
-        Cleanup = $Case['ChildCleanup']
-        ActorOnly = $Case['ActorCleanupOnly']
+        Failure = $(if ($Case.CaptureFailure) { $observerFailure } else { $null })
+        GenerationFailure = [IO.IOException]::new('fixture actor changed while awaiting command')
         Result = [pscustomobject]@{
             ProcessId = 43; ExitCode = $Case.ExitCode
             InputSha256Before = ('b' * 64); InputSha256After = ('b' * 64)
@@ -167,10 +261,11 @@ function Invoke-AccessSessionControl([hashtable]$Case) {
             Stderr = [Text.Encoding]::ASCII.GetBytes('observer stderr')
         }
     }
-    [IO.MemoryStream]$inputStream = [IO.MemoryStream]::new([Text.Encoding]::ASCII.GetBytes($Case.Input), $false)
-    [IO.MemoryStream]$outputStream = [IO.MemoryStream]::new()
+    [IO.MemoryStream]$inputStream = [NevroTick.SessionControl.AccessInput]::new(
+        [Text.Encoding]::ASCII.GetBytes($Case.Input), $trace, [bool]$Case['ChangeActor'])
+    [IO.MemoryStream]$outputStream = [NevroTick.SessionControl.AccessOutput]::new($trace, [bool]$Case['Broken'])
     [Diagnostics.Stopwatch]$clock = [Diagnostics.Stopwatch]::StartNew()
-    [string]$caught = ''
+    [Exception]$caught = $null
     try {
         & $session {
             param($Role, $InputStream, $OutputStream, $Run, $Clock, $Sid, $Probe)
@@ -178,30 +273,36 @@ function Invoke-AccessSessionControl([hashtable]$Case) {
                 Role = $Role; RunId = $Run; Clock = $Clock; TimeoutMilliseconds = 1000
                 ExpectedActorSid = $Sid; InputStream = $InputStream; OutputStream = $OutputStream
             }
-            Invoke-PrestartAccessSessionCore @parameters -Capture {
-                param([hashtable]$ObserverInputs)
+            Invoke-PrestartAccessSessionCore @parameters -OpenActor {
+                $Probe.Trace.Add('open')
+                $Probe.Actor = [NevroTick.SessionControl.AccessActor]::new(
+                    $Probe.Trace, $InputStream.Generation, $Probe.Disposal)
+                return $Probe.Actor
+            } -Capture {
+                param([hashtable]$ObserverInputs, [object]$Actor)
+                $Probe.Trace.Add('capture')
                 $Probe.Calls.Add($ObserverInputs)
-                if ($Probe.Failure) {
-                    [IO.IOException]$failure = [IO.IOException]::new('fixture observer refused')
-                    if ($Probe.Cleanup) {
-                        $failure.Data['PrestartObserverTerminationFailure'] = [IO.IOException]::new('fixture child terminate')
-                        $failure.Data['PrestartAccessActorDisposalFailure'] = [IO.IOException]::new('fixture actor close')
-                    } elseif ($Probe.ActorOnly) {
-                        $failure.Data['PrestartAccessActorDisposalFailure'] = $true
-                    }
-                    throw $failure
-                }
+                if (![object]::ReferenceEquals($Actor, $Probe.Actor)) { throw 'fixture received a different actor' }
+                if ($Actor.Generation -ne $InputStream.Generation) { throw $Probe.GenerationFailure }
+                if ($null -ne $Probe.Failure) { throw $Probe.Failure }
                 return $Probe.Result
             }
         } $Case.Role $inputStream $outputStream $run $clock $sid $probe
     } catch {
-        $caught = $_.Exception.Message
+        $caught = $_.Exception
     } finally {
         [byte[]]$bytes = $outputStream.ToArray()
         $outputStream.Dispose()
         $inputStream.Dispose()
     }
-    if ($caught -cne $Case.Error) { throw ('wrong access session failure: ' + $caught) }
+    [Exception[]]$chain = @(Get-ControlExceptionChain $caught)
+    if ($Case.Error -ceq '') {
+        if ($null -ne $caught) { throw $caught }
+    } elseif (!(@($chain | ForEach-Object { $_.Message }) -ccontains $Case.Error)) {
+        throw ('wrong access session failure: ' + [string]::Join(' / ', [string[]]@($chain | ForEach-Object { $_.Message })))
+    }
+    [string]$history = [string]::Join(',', $trace)
+    if ($history -cne $Case.Trace) { throw ('wrong access actor history: ' + $history) }
     if ($probe.Calls.Count -ne $Case.Calls) { throw 'wrong access session launch count' }
     if ($probe.Calls.Count -ne 0) {
         [hashtable]$observed = $probe.Calls[0]
@@ -210,11 +311,36 @@ function Invoke-AccessSessionControl([hashtable]$Case) {
             throw 'access session selected the wrong observer or actor'
         }
     }
-    if ($Case.CaptureFailure) {
+    if ($Case.CaptureFailure -and !($chain | Where-Object { [object]::ReferenceEquals($_, $observerFailure) })) {
+        throw 'access session replaced the original observer failure'
+    }
+    [string]$disposalKey = 'PrestartAccessActorDisposalFailure'
+    [object[]]$disposition = @($chain | Where-Object { $_.Data.Contains($disposalKey) } |
+        ForEach-Object { $_.Data[$disposalKey] })
+    if ($Case['DisposeFailure']) {
+        if ($disposition.Count -ne 1) { throw 'access session lost or duplicated the actor disposal failure' }
+        if ($Case.Error -ceq 'fixture actor close') {
+            if ($disposition[0] -isnot [bool] -or !$disposition[0]) { throw 'actor disposal was not marked primary' }
+        } elseif ($disposition[0] -isnot [Exception] -or
+            !(@(Get-ControlExceptionChain $disposition[0]) | Where-Object { [object]::ReferenceEquals($_, $disposal) })) {
+            throw 'actor disposal was not retained with the original primary failure'
+        }
+    } elseif ($disposition.Count -ne 0) { throw 'access session invented an actor disposal failure' }
+
+    [string]$transportKey = 'PrestartAccessRefusalWriteFailure'
+    [Exception[]]$transport = @($chain | Where-Object { $_.Data.Contains($transportKey) } |
+        ForEach-Object { $_.Data[$transportKey] })
+    if ($Case['RefusalWriteFailure']) {
+        if ($transport.Count -ne 1 -or $transport[0].Message -cne 'prestart-deployment-session:reply-transport') {
+            throw 'access session lost the refusal write failure'
+        }
+    } elseif ($transport.Count -ne 0) { throw 'access session invented a refusal write failure' }
+
+    if ($Case['RefusedFrame']) {
         [object[]]$refusals = @(Read-ReplyRows $bytes)
         [string]$expectedCleanup = if ($Case['ChildCleanup']) {
             'child-termination-failed,actor-dispose-failed'
-        } elseif ($Case['ActorCleanupOnly']) {
+        } elseif ($Case['DisposeFailure']) {
             'actor-dispose-failed'
         } else { '' }
         if ($refusals.Count -ne 1 -or $refusals[0].kind -cne 'refused' -or
@@ -226,7 +352,7 @@ function Invoke-AccessSessionControl([hashtable]$Case) {
         return
     }
     if (!$Case.Reply) {
-        if ($bytes.Length -ne 0) { throw 'access session emitted a reply without a capture' }
+        if ($bytes.Length -ne 0) { throw 'access session emitted an unexpected reply' }
         return
     }
     [object[]]$rows = @(Read-ReplyRows $bytes)
@@ -245,42 +371,73 @@ function Invoke-AccessSessionControl([hashtable]$Case) {
 
 $accessSelector = 'scm_access_probe::windows::native_installed_roles_prestart_access'
 $standardSelector = 'scm_access_probe::windows::native_standard_user_prestart_change_config_refused'
+$accessTrace = 'open,read,read,capture,dispose,write,write'
 [hashtable[]]$accessCases = @(
     @{
         Name = 'access-producer-captures-provisioning'; Role = 'access'; Input = 'A'; Calls = 1; Reply = $true
-        CaptureFailure = $false; ExitCode = 0; Error = ''
+        CaptureFailure = $false; ExitCode = 0; Error = ''; Trace = $accessTrace
         Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
     }
     @{
         Name = 'access-producer-preserves-standard-child-refusal'; Role = 'standard'; Input = 'U'; Calls = 1; Reply = $true
-        CaptureFailure = $false; ExitCode = 5; Error = ''
+        CaptureFailure = $false; ExitCode = 5; Error = ''; Trace = $accessTrace
         Selector = $standardSelector; SidKey = 'ExpectedStandardUserSid'
     }
     @{
         Name = 'access-producer-accepts-unused-eof'; Role = 'access'; Input = ''; Calls = 0; Reply = $false
-        CaptureFailure = $false; ExitCode = 0; Error = ''
+        CaptureFailure = $false; ExitCode = 0; Error = ''; Trace = 'open,read,dispose'
     }
     @{
         Name = 'access-producer-refuses-crossed-role-before-launch'; Role = 'standard'; Input = 'A'; Calls = 0; Reply = $false
-        CaptureFailure = $false; ExitCode = 0; Error = 'prestart-access-session:unexpected-command'
+        CaptureFailure = $false; ExitCode = 0; Error = 'prestart-access-session:unexpected-command'; Trace = 'open,read,dispose'
     }
     @{
         Name = 'access-producer-refuses-trailing-before-launch'; Role = 'access'; Input = 'AA'; Calls = 0; Reply = $false
-        CaptureFailure = $false; ExitCode = 0; Error = 'prestart-access-session:trailing-command'
+        CaptureFailure = $false; ExitCode = 0; Error = 'prestart-access-session:trailing-command'; Trace = 'open,read,read,dispose'
     }
     @{
         Name = 'access-producer-preserves-native-capture-failure'; Role = 'access'; Input = 'A'; Calls = 1; Reply = $false
-        CaptureFailure = $true; ExitCode = 0; Error = 'fixture observer refused'
+        CaptureFailure = $true; ExitCode = 0; Error = 'fixture observer refused'; Trace = $accessTrace; RefusedFrame = $true
         Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
     }
     @{
         Name = 'access-producer-preserves-capture-and-cleanup-failures'; Role = 'access'; Input = 'A'; Calls = 1
-        Reply = $false; CaptureFailure = $true; ChildCleanup = $true; ExitCode = 0; Error = 'fixture observer refused'
+        Reply = $false; CaptureFailure = $true; ChildCleanup = $true; DisposeFailure = $true; ExitCode = 0
+        Error = 'fixture observer refused'; Trace = $accessTrace; RefusedFrame = $true
         Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
     }
     @{
         Name = 'access-producer-preserves-a-sole-actor-disposal-failure'; Role = 'access'; Input = 'A'; Calls = 1
-        Reply = $false; CaptureFailure = $true; ActorCleanupOnly = $true; ExitCode = 0; Error = 'fixture observer refused'
+        Reply = $false; CaptureFailure = $false; DisposeFailure = $true; ExitCode = 0
+        Error = 'fixture actor close'; Trace = $accessTrace; RefusedFrame = $true
+        Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
+    }
+    @{
+        Name = 'access-producer-keeps-actor-from-before-command-read'; Role = 'access'; Input = 'A'; Calls = 1
+        Reply = $false; CaptureFailure = $false; ChangeActor = $true; ExitCode = 0
+        Error = 'fixture actor changed while awaiting command'; Trace = $accessTrace; RefusedFrame = $true
+        Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
+    }
+    @{
+        Name = 'access-producer-keeps-protocol-refusal-with-disposal-failure'; Role = 'standard'; Input = 'A'; Calls = 0
+        Reply = $false; CaptureFailure = $false; DisposeFailure = $true; ExitCode = 0; Trace = 'open,read,dispose'
+        Error = 'prestart-access-session:unexpected-command'
+    }
+    @{
+        Name = 'access-producer-reports-unused-actor-disposal-failure'; Role = 'access'; Input = ''; Calls = 0
+        Reply = $false; CaptureFailure = $false; DisposeFailure = $true; ExitCode = 0; Trace = 'open,read,dispose'
+        Error = 'fixture actor close'
+    }
+    @{
+        Name = 'access-producer-keeps-primary-disposal-and-refusal-write-errors'; Role = 'access'; Input = 'A'; Calls = 1
+        Reply = $false; CaptureFailure = $true; DisposeFailure = $true; Broken = $true; ExitCode = 0
+        Error = 'fixture observer refused'; Trace = 'open,read,read,capture,dispose,write'; RefusalWriteFailure = $true
+        Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
+    }
+    @{
+        Name = 'access-producer-does-not-rewrite-a-broken-success-frame'; Role = 'access'; Input = 'A'; Calls = 1
+        Reply = $false; CaptureFailure = $false; Broken = $true; ExitCode = 0
+        Error = 'prestart-deployment-session:reply-transport'; Trace = 'open,read,read,capture,dispose,write'
         Selector = $accessSelector; SidKey = 'ExpectedProvisioningUserSid'
     }
 )

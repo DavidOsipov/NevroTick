@@ -878,13 +878,23 @@ class ScriptedOwnerAttempt(Generic[LaunchRunT]):
 
     def __init__(self, role: str, events: list[LaunchEvent], process: ScriptedProcess | None = None, *,
                  result: session.OwnedDeploymentProcess | None = None,
-                 on_start: Callable[[], None] | None = None) -> None:
+                 on_start: Callable[[], None] | None = None,
+                 stage: Path | None = None) -> None:
         self.role: str = role
         self.events: list[LaunchEvent] = events
         self.process: ScriptedProcess | None = process
         self.result: session.OwnedDeploymentProcess | None = result
         self.on_start: Callable[[], None] | None = on_start
+        self.stage: Path = Path("/mnt/c/scripted-prestart") / role if stage is None else stage
         self.starts: list[tuple[LaunchRunT, float, float]] = []
+
+    def check_launch(self, run: DeploymentRun, probe: PrestartProbe) -> Path:
+        expected: PrestartProbe | None = {
+            "provisioning": PrestartProbe.ACCESS, "standard": PrestartProbe.STANDARD,
+        }.get(self.role)
+        if expected is not probe:
+            raise AssertionError("scripted access attempt was checked for the wrong role")
+        return self.stage
 
     def start(self, run: LaunchRunT, deadline: float, retirement_deadline: float) -> session.OwnedDeploymentProcess:
         self.events.append(("start", self.role, deadline))
@@ -1094,6 +1104,19 @@ class FullPrestartLaunchTests(unittest.TestCase):
         deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
         with self.assertRaises(ReceiptRefused):
             self.launch(shared, shared, deployment)
+        self.assertEqual(self.events, [])
+
+    def test_shared_access_staging_is_refused_without_launching(self) -> None:
+        shared: Path = Path("/mnt/c/scripted-prestart/shared")
+        provisioning: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+            "provisioning", self.events, stage=shared,
+        )
+        standard: ScriptedOwnerAttempt[DeploymentRun] = ScriptedOwnerAttempt(
+            "standard", self.events, stage=shared,
+        )
+        deployment: ScriptedOwnerAttempt[Run] = ScriptedOwnerAttempt("deployment", self.events)
+        with self.assertRaisesRegex(ReceiptRefused, "^pre-start access roles require distinct staging$"):
+            self.launch(provisioning, standard, deployment)
         self.assertEqual(self.events, [])
 
     def test_unavailable_retirement_observer_does_not_prevent_other_signals_or_waits(self) -> None:
