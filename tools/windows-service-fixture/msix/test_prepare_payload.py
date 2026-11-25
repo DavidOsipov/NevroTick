@@ -126,6 +126,36 @@ class GuardedRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "mainCRTStartup lies outside the image"):
             producer.role_images(self.receipt, self.pin(), require_baseline_entry=True)
 
+    def test_guarded_roles_require_a_complete_public_symbol_row(self) -> None:
+        engine: str = producer.BINS[0]
+        map_path: Path = self.linked / (engine.replace("-", "_") + ".map")
+        original: bytes = map_path.read_bytes()
+        crt: bytes = b" 0001:00000030 mainCRTStartup 0000000140001030"
+        valid: bytes = crt + b" msvcrt:exe_main.obj"
+        incomplete: bytes = crt + b" \t"
+        malformed_ending: bytes = valid + b"\r\r\n"
+        wide_separator: bytes = crt + b" \t" * 8192 + b"msvcrt:exe_main.obj"
+        self.assertIn(valid, original)
+        guard: dict[str, object] = self.rows[engine]["raw_pe"]["baseline_entry"]
+
+        changed: bytes
+        valid_crt_present: bool
+        for changed, valid_crt_present in (
+            (original.replace(valid, incomplete + b"\r\n" + wide_separator), True),
+            (original.replace(valid, incomplete), False),
+            (original.replace(valid, malformed_ending + valid), True),
+            (original.replace(valid + b"\n", malformed_ending), False),
+        ):
+            with self.subTest(map_bytes=len(changed), valid_crt_present=valid_crt_present):
+                map_path.write_bytes(changed)
+                guard["map_sha256"] = sha256(changed).hexdigest()
+                pin: str = self.pin()
+                if valid_crt_present:
+                    self.assertEqual(producer.role_images(self.receipt, pin, require_baseline_entry=True), self.images)
+                else:
+                    with self.assertRaisesRegex(ValueError, "mainCRTStartup public symbol is absent or ambiguous"):
+                        producer.role_images(self.receipt, pin, require_baseline_entry=True)
+
 
 class PublicationTests(unittest.TestCase):
     def setUp(self):

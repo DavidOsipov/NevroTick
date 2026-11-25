@@ -343,9 +343,10 @@ def _linked_preentry_declarations(
 
     rvas: dict[str, int] = {}
     for name in (gate_name, "mainCRTStartup"):
+        # The origin starts after the full horizontal separator, so only one split is possible.
         matches: list[tuple[str, str, str, str]] = re.findall(
             rf"(?m)^[ \t]+([0-9A-Fa-f]{{4}}):([0-9A-Fa-f]{{8}})[ \t]+{name}"
-            r"[ \t]+([0-9A-Fa-f]{16})[ \t]+([^\r\n]+)\r?$", public_rows)
+            r"[ \t]+([0-9A-Fa-f]{16})[ \t]+([^ \t\r\n][^\r\n]*)\r?$", public_rows)
         _require(len(matches) == 1, f"Linked {role} {name} public symbol is absent or ambiguous.")
         segment: str
         offset: str

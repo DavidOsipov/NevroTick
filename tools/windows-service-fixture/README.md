@@ -64,6 +64,11 @@ resource bytes before substituting the guarded UI. It separately checks
 both service image pairs, the retained baseline object and role maps.
 The staging receipt retains both original handoff pins.
 
+For the guarded MakeAppx handoff, add `--sdk-source "$makeappx_inputs"`
+to stage `payload/`, `sdk/` and `input-set.json` together. Use the
+returned inventory digest and the original independent member pins.
+Pass the staged `payload/` directory to the archive reader below.
+
 Run the [combined reader](msix/check_artwork_package.py) with the complete
 authored directory, the original unsigned MakeAppx archive, the independent
 55-member digest map and the independently pinned authored manifest.

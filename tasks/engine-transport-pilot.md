@@ -34156,6 +34156,119 @@ and the affected 90% line and 95% mutation gates remain open.
 | `~/.local/share/nevrotick/s21-veto-peer.1u6s0UdU/timing-loader/keparse_2f829fc47fb8/verification.json` | `75fc77c0211a64a6452f8d5329fec5c0a71e444a4c3369f68f9ef95be11d744e` |
 | `~/.local/share/nevrotick/s21-veto-authenticated.dFTVzj6n/ketiming_7198f4a75199/verification.json` | `df4e9eaa242fbeca0aed305c59832355ea06441bec5e737a1eb437f9c9dfaf96` |
 
+###### Retain the original adjustment reads through the managed join
+
+S2.1/W11-W01, TQ-07/09 and CHECK-7/11/25/27. The single and paired
+successor paths now retain the result of the native read-only
+adjustment getter alongside each original presentation read. The
+opening read follows power binding and precedes submission. The
+closing read follows actual joined take and precedes retirement of
+that same binding. Abnormal returns keep their original failures.
+
+The exporter uses the joined report's existing guard before the first
+timing row. Power and presentation refusals keep precedence. After
+those checks, a failed read or a different raw adjustment, increment
+or disabled flag refuses export. The report retains both typed
+outcomes, including a native failure code of zero. Original receipts,
+terminal status, ages and work charges stay with the joined worker.
+Equal settings establish only the two endpoint observations.
+[Windows adjustment getter](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise)
+
+Rust contracts and lifecycle QA kept the existing joined loopback
+fixture and checked opening and closing failures separately beside
+equal-setting observations. Delivery during closing now competes
+with a failed adjustment read and must keep the power refusal first.
+The fixture uses one real read-only adjustment value for its
+successful scripted reads. Fresh review checked the guard, original
+bindings and output ordering.
+
+The focused MSVC lane on frozen tree
+`5622384ef8cccb54fc0cc1f2b413638295ecdf7b` on `2258863` passed
+tool and boundary admission, format, test Clippy, libtest link, and
+PE/PDB readback. Two earlier Clippy attempts refused missing field
+contracts and an overlong test helper with a similar local name.
+The corrected helper preserved the same joined test path. The three
+attempts used 307.347 seconds of the original 420-second allowance.
+
+The owned offline Windows build-26100 guest passed all six exact
+discoveries and six selected tests. Each original process exited zero
+with both streams closed. The reader verified seven refusal controls,
+the matched image and source bookends, guest cleanup and empty
+mappings. The native checks exercise the joined report and its guard.
+A directed control for unequal successful raw settings, exact facade
+replay, physical continuity, reference calibration, mapping authority,
+Core admission and affected coverage/mutation remain open.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-managed-adjustment.CDRe3zoz/engine-r1/verification.json` | `ee74c78891134910969f644c5f7cdf2180ea6c893c20c4eabaace2a5d40794c2` |
+| `%LOCALAPPDATA%/NevroTick/s21-managed-adjustment.CDRe3zoz/engine-r2/verification.json` | `5000647e06d8b33f6b6f815a41dde0fecd8e8ec137d10c74799b72648c3b63d6` |
+| `%LOCALAPPDATA%/NevroTick/s21-managed-adjustment.CDRe3zoz/engine-r3/verification.json` | `c4fd9fd1612831ec3d193502563390b6e0765e16e5325ff59956912b8c584cae` |
+| `~/.local/share/nevrotick/s21-managed-adjustment.CDRe3zoz/native-recipe/join_ae4602e2078e/verification.json` | `049f095b154106c540536c1154a5054aa3828aeff11ec1da2c70f058740d9404` |
+
+###### Verify the GNU joined-worker lifecycle on the adjustment candidate
+
+S2.1/W11-W01 and CHECK-25/27. On frozen tree
+`5622384ef8cccb54fc0cc1f2b413638295ecdf7b`, the isolated GNU
+development commands passed the boundary probe, Rust 1.100.0
+admission, formatting and feature-enabled Engine test Clippy
+with warnings denied. The actual libtest lane passed all six
+expected `managed_pair_` cases with zero failures or ignored tests.
+It exercised healthy reissue, delivered power events, denied
+successors and joined Stop using the GNU build.
+
+The outer runner stopped while reading the successful test result.
+It treated the returned stdout string as a dictionary. The original
+aggregate retains its incomplete status. Separate readback verified
+the five raw command receipts, exact test roster, both input maps,
+compiler and tool identities and the admitted vendor inventory.
+A fresh-context reviewer independently confirmed the raw results
+and the exact binding to the successful MSVC build's source.
+The original build scratch had retired.
+
+The raw GNU aggregate SHA-256 is
+`e459c20ddc068210a1cbef03488ac717c2418e1358c90585b92e5f3e8877f027`.
+The separate `~/.local/share/nevrotick/s21-adjustment-gnu.Hble0KUx/reconciled-gnu.json`
+has SHA-256 `86224dedc47cc95ab1afdaa6d7e6b3a80e838f87d2fac66f91486691ecf25920`.
+This is selected GNU lifecycle evidence with the Windows-only reads
+compiled out. The affected critical-file metrics still need admitted
+Windows-sensitive evidence. The existing public campaign remains
+closed.
+
+###### Rebuild the authenticated timing pair with the adjustment guard
+
+S2.1/W11-W01 and CHECK-19/25/26. The configured facade build passed
+all 20 lanes on the same 758 product and 17 helper inputs as the
+managed adjustment libtests. The standalone peer retained all 112
+inputs but was rebuilt because its receipt binds the Engine
+candidate. On frozen tree `1ca5e8193c418763f8c6fe77874ce33385ad2e51`,
+the peer passed all 12 lanes with both 31-case GNU profiles. The
+unchanged graph and still-valid advisory inputs retained their
+original admissions. The facade took 82.634 seconds. The peer and
+preflight used 195 of their 300 seconds.
+
+Independent paired readback matched all 32 raw lane receipts and
+five linked PE/PDB pairs. Its ten refusal controls included offering
+the last genuinely built peer to the new facade. The existing
+controller template retained its behavior and took the two newly
+verified image digests.
+
+In the same owned offline Windows build-26100 guest, the loader
+passed 17 observations and the held-file parser passed 11. Both
+transfer shelves were empty at retirement. The read-only authenticated
+admission passed with those exact observations. The live authenticated
+exchange still requires the operator's temporary guest trust window.
+Physical reference, calibrated mapping and positive Core admission
+remain separate requirements.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-facade.tkODMWrt/build/verification.json` | `677979da480b760bdb55664a266a7c988cf81bc022718db5c35e5e450dacead2` |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-peer.P64R900i/build/verification.json` | `06e637f705fa3b31f750379fe50236ac3d467b56bca8eeb0030a93c1a14637bf` |
+| `~/.local/share/nevrotick/s21-adjustment-peer.P64R900i/readback/paired-readback.json` | `d6622503526613357323a55b1de7086c114960d8fae73a13688bd54820b0bf3e` |
+| `~/.local/share/nevrotick/s21-adjustment-peer.P64R900i/timing-loader/kepre_30275955da13/verification.json` | `4e65ead24f29b0eeb972718c85ffb5c92d8d848f7f9dde2c1eba6387555387b3` |
+| `~/.local/share/nevrotick/s21-adjustment-peer.P64R900i/timing-loader/keparse_10f4a5bf0b22/verification.json` | `50370f0ddfa9ce96490c82d3c1b1a232004857250a57e7b513cccf3e96da815b` |
+
 ##### Rebuild the current protected timing facade
 
 S2.1/W11-W01 and CHECK-19/26. The configured offline facade build

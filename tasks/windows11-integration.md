@@ -4764,6 +4764,22 @@ has SHA-256 `75edd1675309ed5059db7819bd4a11a286e73afffee80faf676bd9e2c13ad175`
 for `retained-green.json`. Calibration, physical event pairing, valid
 mapping and positive Core history admission remain open.
 
+##### Rebind the reference trial to the guarded timing replay
+
+S2.1/W11-W01 and TQ-09. The unchanged bench reader accepted the two
+original application spans from the rebuilt authenticated run
+`ketiming_7198f4a75199`. The replay substituted only the new pinned
+receipt in the existing driver. Both synthetic ordered and zero
+placement cases passed, and each independently reversed direction
+refused for the original reason. The raw Engine stream and receipt
+retain their previous custody.
+
+The host result `~/.local/share/nevrotick/w11-current-timing-reference.Ie94s7zA/retained-placement.json`
+has SHA-256 `40a574d9e63b6909d4d9739a4697babf20606359f09dd7a4512d5497fbc649ba`.
+This rebinds the bench comparison to the latest retained application
+data. A calibrated physical reference, full-span validity and the
+independent date, era and scale inputs remain required.
+
 ### 4.27 Address-family admission routing — 5 November 2026
 
 **Owner/stage:** engine/protocol with the platform adapter owner, before dependent
@@ -22390,6 +22406,53 @@ The CLI controls and replay are under
 The archive remains the original unsigned fixture. Signing and installed
 lifecycle evidence remain open.
 
+##### Bound the shared linker-map symbol reader
+
+W11-W05/W11-W10, P6 and CHECK-16/26/27. The public-symbol matcher now
+requires each origin to start with a character outside the horizontal
+separator and line ending. Only one split can start an origin, so a
+failed row has work linear in its length. The fixed gate and CRT scans
+retain the existing map-size limits, symbol uniqueness, PE address and
+sidecar checks. The finding affected both the guarded service and UI
+paths through their shared reader.
+
+The guarded service test re-pins the held map and receipt while keeping
+the PE and PDB fixed. The predecessor accepted a whitespace-only CRT
+origin when it was the sole row and refused the valid CRT as ambiguous
+when both rows were present. The corrected consumer skips the incomplete
+row, requires the valid CRT, and returns the original images. UI readback
+also refuses a blank origin and preserves mixed horizontal separators,
+CRLF and the admitted gate path. CPython 3.12.3 passed 25 PE-reader and
+200 portable MSIX tests in a read-only offline namespace. The focused
+service control passed again after renaming its Boolean binding.
+
+Fresh review checked the matching work and independently replayed the
+original Engine, Broker and Slint UI map, image and symbol sets.
+The corrected reader reproduced the original startup facts. The first
+coordinator UI readback compared integers with hexadecimal strings in
+the retained report. Converting those strings in the replay check
+completed the comparison. The reader SHA-256 is
+`d11a271a1e5a63d0b9ecec7189f5bf20a11460e1137ab4d767adaa29684c6af5`.
+The replay result is
+`~/.local/share/nevrotick/w11-linkmap-replay.1rvAjXU0/retained-readback.json`,
+SHA-256 `b2089410034f33d9f3f151babc6022dd52fd73229b948810733e94292fa916ab`.
+The work bound follows from the matcher structure. The replay inspected
+retained bytes on the host. Installed and signed-package gates remain open.
+
+The ART-1016-01 follow-up exercises the guarded role reader with a missing
+origin and a malformed line ending, each with and without a valid CRT row.
+The valid neighbors preserve both original images, including a CRT row with
+a 16 KiB legal separator. Each case supplies current map and receipt pins.
+The host suite completed under process limits in a read-only offline
+namespace. CPython 3.12.3 passed 25 PE-reader, 28 service-link, two guarded
+UI handoff and 202 portable MSIX tests. The first PE-reader run hit the
+harness file-size limit in two sparse-file fixtures. Raising that limit to
+128 MiB admitted those fixtures on the same source. The input hashes and
+both run outcomes are in
+`~/.local/share/nevrotick/w11-linkmap-controls.fpRVZSxD/`.
+The tests cover row acceptance and refusal. The work bound comes from the
+matcher structure, without a machine-specific timing assertion.
+
 ##### Check the held MakePri dump before staging ArtworkLab
 
 W11-W10/P6 and CHECK-16/18/26/27. The stager now reads the bounded XML
@@ -22416,6 +22479,73 @@ and `5a13ebb31701ff5a2534ba94da254a0bdf9f37af6b09bec27c14a83e1623f15f`.
 The independent receipt still binds the PRI to its detailed dump.
 Native ranking, installed selection and signed lifecycle retain their
 existing exits.
+
+##### Stage the pinned guarded ArtworkLab pack inputs together
+
+W11-W10/P6 and CHECK-16/18/23/26/27. The guarded ArtworkLab command
+now accepts the existing `--sdk-source` selection. It uses the shared
+publisher to stage the exact six MakeAppx inputs with the 56 checked
+package leaves. The inventoried digests bind the two trees in one
+atomic publication. The guarded role selection and the unselected
+payload-only output retain their existing contracts.
+
+Package and negative-path QA replayed the actual retained UI, service,
+artwork, PRI and SDK inputs. All 62 files matched the previous guarded
+pack input bytes. The maintained reader reproduced the original
+unsigned archive receipt using the new staged payload. A changed SDK
+leaf refused with no new tree, and an occupied output slot preserved
+its original bytes. Fresh review checked the exact scoped patch and
+the guarded-only input rule. All 25 focused tests passed, and the
+integrated candidate passed all 202 portable MSIX tests with the
+linker-map repair in the same read-only offline namespace. The
+integrated staging replay also reproduced all 63 files, including
+the input inventory, and the exact staging receipt.
+
+| Record under `~/.local/share/nevrotick/w11-artwork-pack-inputs.plwzIY7v/` | SHA-256 |
+| --- | --- |
+| `retained-stage.json` | `45c5375f29759a685fc6b9a7f4dea5352f3e56fa5586d8ddb246575b8d5630a5` |
+| `byte-readback.json` | `f284ce40a0958109276cf834fe55f88f0cb5dfcbdef0828462c13fbba355596a` |
+| `archive-check.json` | `c65e2ee0bdcb4d0abd64ce6ff8fe45a1f074828ab1f4af85c7166dabe35d59c1` |
+| `integrated.stderr` | `91c8e58a7da9b3b85b0cc4215886cee5a9d1b2b65ed97dd0ed11a65a63ad0a1f` |
+
+This advances the actual pack-input producer. Fresh packing, Windows
+installed and signed lifecycle and effective mitigations remain open.
+
+###### Reconcile the staged SDK inventory at the guarded pack receiver
+
+W11-W10/P6 and CHECK-18/26/27. The existing private pack recipe now
+reads the current staging inventory and both exact file trees under
+held descriptors. It also requires the original independent member,
+manifest and SDK pins. The 62 staged leaves and the separately
+derived startup-fault manifest reproduced the 63 transfer records
+and the original native template and driver byte for byte.
+
+Portable package and recovery QA refused a changed SDK leaf and a
+consistently re-pinned inventory crossing the two service roles.
+Both refusals left the output absent. An occupied output preserved
+its original directory and marker. Independent readback compared the
+actual transfer lengths, hashes and retained recipe bytes.
+
+Fresh review identified an acknowledgement gap after rename. The
+predecessor returned exit 1 after an injected staging-descriptor
+release failure with the complete recipe already present. The
+reviewed receiver returned exit 3 with an empty stdout and the same
+complete 67-file output as its healthy neighbor. A separate
+prepublication fault preserved the initiating error and left the
+output empty after a final release failure. Its first control matched
+an inode and interrupted a cleanup-owned descriptor. The corrected
+control selected the original staging descriptor.
+
+| Record under `~/.local/share/nevrotick/w11-guarded-pack-receiver.4Luiwy6b/` | SHA-256 |
+| --- | --- |
+| `prepare-reviewed.py` | `4d953b949365a8eb8f6cba68b5a9b80d304d461a65cffeb6a62a2ede937cddf1` |
+| `verification.json` | `fce9ef4b599a4c7c5fa87b94be426b7f3eec1fc4825188a0bad251edc390f0b6` |
+| `occupied.UGf4CzfP/verification.json` | `00522e74664fb90be48bba5a3022625c549c87da7b7710b4df991d2422ec3427` |
+| `release.aREBATDE/verification.json` | `b035594da4df69520ceaccb4ffba8d9ac61b1bd0ca287117a88d6bc6f071c6d7` |
+
+The isolated CPython replay reuses the prior unsigned archive within
+its exact input scope. New packing and the signed installed journey
+retain their own exits.
 
 #### Separate the recovery census from confirmed job retirement
 

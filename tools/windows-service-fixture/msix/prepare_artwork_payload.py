@@ -299,6 +299,8 @@ def main() -> int:
     parser.add_argument("--guarded-ui-export", type=Path, help="separately retained guarded UI link export")
     parser.add_argument("--guarded-ui-receipt-sha256")
     parser.add_argument("--guarded-ui-link-map", type=Path)
+    parser.add_argument("--sdk-source", type=Path,
+                        help="stage the six pinned MakeAppx inputs with the guarded payload")
     parser.add_argument("--output", type=Path, required=True)
     args: argparse.Namespace = parser.parse_args()
     handoff: Path = args.handoff.absolute()
@@ -317,9 +319,15 @@ def main() -> int:
         not combined or guarded_export is None or guarded_pin is None or guarded_map is None
     ):
         parser.error("the guarded UI selection requires combined roles, its export, receipt digest and link map")
+    sdk_source: Path | None = args.sdk_source
+    if sdk_source is not None and guarded_export is None:
+        parser.error("SDK handoff requires guarded UI and service roles")
     try:
         stage._outside_source(handoff, output)
         stage._outside_source(pri_dir, output)
+        if sdk_source is not None:
+            sdk_source = sdk_source.absolute()
+            stage._outside_source(sdk_source, output)
         if role_receipt is not None:
             role_receipt = role_receipt.absolute()
             stage._outside_source(role_receipt.parent, output)
@@ -356,7 +364,7 @@ def main() -> int:
         payload: dict[str, bytes] = {
             **selected, **images, "AppxManifest.xml": manifest, "resources.pri": pri,
         }
-        files: dict[str, str | dict[str, str]] = stage.stage_payload(output, payload, None)
+        files: dict[str, str | dict[str, str]] = stage.stage_payload(output, payload, sdk_source)
     except stage.PublicationUncertainError as error:
         messages: tuple[str, ...] = (
             "ArtworkLab payload rename completed. Publication durability, path or cleanup is unconfirmed.",
@@ -373,12 +381,16 @@ def main() -> int:
         "assembly_ready": False,
         "lab_identity": IDENTITY, "handoff_receipt_sha256": args.handoff_receipt_sha256,
         "generation_receipt_sha256": generation, "pri_readback_sha256": args.pri_receipt_sha256,
-        "properties_sha256": stage.digest(properties), "payload": files,
+        "properties_sha256": stage.digest(properties),
+        "payload": files if sdk_source is None else files["payload"],
     }
     if combined:
         report["role_link_receipt_sha256"] = role_pin
     if guarded_pin is not None:
         report["guarded_ui_receipt_sha256"] = guarded_pin
+    if sdk_source is not None:
+        report["sdk"] = files["sdk"]
+        report["input_set_sha256"] = files["input_set_sha256"]
     print(json.dumps(report, sort_keys=True))
     return 0
 

@@ -11,7 +11,7 @@ use std::sync::atomic::AtomicUsize;
 #[cfg(windows)]
 use windows_platform_native::{
     ClockCoordinates, ClockReadError, LeapPresentation, LeapPresentationError,
-    read_clock_coordinates,
+    read_clock_adjustment, read_clock_coordinates,
 };
 
 /// Actual joined protected-history adaptation, with independent numerical expectations.
@@ -42,6 +42,8 @@ use crate::nts_ke_experiment::power_target::{PowerEvent, PowerTarget};
 use crate::nts_ke_experiment::process::ProcessClaim;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
+#[cfg(windows)]
+use crate::nts_ke_experiment::{ClockAdjustmentRead, ManagedClockRead};
 use crate::nts_ke_experiment::{
     InvocationCompletion, ObservedInvocation, ObserverStartError, ProtectedControlKind, RunFailed,
     Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
@@ -2780,24 +2782,19 @@ fn spawn_pair_loopback_peer<'scope, 'env>(
         .map_err(|_| Failure::Control)
 }
 
-/// Observe the independently scripted mode around each actual worker take.
-/// # Errors
-/// This successful script uses the real native result type for production dispatch.
+/// Observe the independently scripted clock reads around each actual worker take.
 /// # Panics
 /// Fail if a reading moves across the actual submission or joined take.
 #[cfg(windows)]
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "The shared reader requires its exact fallible native query signature."
-)]
-fn pair_presentation_read(
+fn pair_clock_read(
     reads: &Cell<usize>,
     submissions: &Cell<usize>,
     slot: &'static WorkerSlot,
     cutoff: Instant,
     observer: Option<&Weak<PowerTarget>>,
     resume_delivery: PairResumeDelivery,
-) -> crate::nts_ke_experiment::ProcessLeapPresentationRead {
+    adjustments: [ClockAdjustmentRead; 4],
+) -> ManagedClockRead {
     let index: usize = reads.get();
     reads.set(index + 1);
     let job: usize = index / 2;
@@ -2815,11 +2812,28 @@ fn pair_presentation_read(
             "the first closing read must deliver to the original target"
         );
     }
-    if index == 3 {
-        Ok(LeapPresentation::SixtySecond)
+    let presentation: LeapPresentation = if index == 3 {
+        LeapPresentation::SixtySecond
     } else {
-        Ok(LeapPresentation::Compatibility)
+        LeapPresentation::Compatibility
+    };
+    ManagedClockRead {
+        presentation: Ok(presentation),
+        adjustment: adjustments[index],
     }
+}
+
+/// Supply one successful native value and replace only the selected scripted read.
+/// # Errors
+/// Refuse if the healthy fixture cannot obtain an original adjustment value.
+#[cfg(windows)]
+fn pair_adjustment_script(failed_read: Option<usize>) -> Result<[ClockAdjustmentRead; 4], Failure> {
+    let reference: ClockAdjustmentRead = Ok(read_clock_adjustment().map_err(|_| Failure::Control)?);
+    let mut script: [ClockAdjustmentRead; 4] = [reference; 4];
+    if let Some(index) = failed_read {
+        script[index] = Err(0);
+    }
+    Ok(script)
 }
 
 /// Check the original modes and timing export decisions on both joined reports.
@@ -2831,8 +2845,14 @@ fn assert_pair_timing_observations(
     second: &ManagedProtectedReport,
     reads: usize,
     resume_delivery: PairResumeDelivery,
+    adjustments: [ClockAdjustmentRead; 4],
 ) {
+    let [first_open, first_close, second_open, second_close]: [ClockAdjustmentRead; 4] =
+        adjustments;
     let expected: Result<(), ProtectedTimingObservationRefusal> = match resume_delivery {
+        PairResumeDelivery::None if first_open.is_err() || first_close.is_err() => {
+            Err(ProtectedTimingObservationRefusal::AdjustmentReadFailed)
+        }
         PairResumeDelivery::None => Ok(()),
         PairResumeDelivery::BeforeWorkerRetirement | PairResumeDelivery::DuringClosingRead => {
             Err(ProtectedTimingObservationRefusal::PowerInvalidated)
@@ -2844,6 +2864,14 @@ fn assert_pair_timing_observations(
         Err(ProtectedTimingObservationRefusal::UnsupportedPresentation),
     );
     assert_eq!(reads, 4);
+    assert_eq!(
+        first.clock_adjustment_reads(),
+        Some([first_open, first_close])
+    );
+    assert_eq!(
+        second.clock_adjustment_reads(),
+        Some([second_open, second_close])
+    );
     assert_eq!(
         first.process_leap_presentation(),
         Some([Ok(LeapPresentation::Compatibility); 2])
@@ -2898,6 +2926,7 @@ fn assert_pair_loopback_reports(
     configurations: PairConfigurations,
     resume_delivery: PairResumeDelivery,
     #[cfg(windows)] presentation_reads: usize,
+    #[cfg(windows)] adjustments: [ClockAdjustmentRead; 4],
 ) -> Result<(), Failure> {
     let [(first_peer, first_expected), (second_peer, second_expected)] = peers;
     let first: &ManagedProtectedReport = pair.first();
@@ -2926,7 +2955,13 @@ fn assert_pair_loopback_reports(
         assert_eq!(report.power_observation(), Some(power));
     }
     #[cfg(windows)]
-    assert_pair_timing_observations(first, second, presentation_reads, resume_delivery);
+    assert_pair_timing_observations(
+        first,
+        second,
+        presentation_reads,
+        resume_delivery,
+        adjustments,
+    );
     assert_pair_invocation_order(first, second, configurations)
 }
 
@@ -2947,6 +2982,8 @@ fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), 
         PairConfigurations::Shared,
         PairResumeDelivery::None,
         |_| Ok(()),
+        #[cfg(windows)]
+        None,
     )
 }
 
@@ -2968,6 +3005,8 @@ fn managed_pair_late_power_event_invalidates_only_first_joined_observation() -> 
         PairConfigurations::Shared,
         PairResumeDelivery::BeforeWorkerRetirement,
         |_| Ok(()),
+        #[cfg(windows)]
+        None,
     )
 }
 
@@ -2988,7 +3027,31 @@ fn managed_pair_closing_read_resume_invalidates_only_first_joined_observation()
         PairConfigurations::Shared,
         PairResumeDelivery::DuringClosingRead,
         |_| Ok(()),
+        Some(1),
     )
+}
+
+/// Refuse either adjustment query failure without losing the joined receipts.
+/// # Errors
+/// Preserve native fixture preparation or independently checked peer refusal.
+/// # Panics
+/// Fail if either scripted query is lost or timing accepts the failed read.
+#[cfg(windows)]
+#[test]
+fn managed_pair_refuses_a_failed_opening_or_closing_adjustment_read() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    for index in 0..2_usize {
+        assert_managed_pair_reissue(
+            &SLOTS[index],
+            &ADMISSIONS[index],
+            PairConfigurations::Shared,
+            PairResumeDelivery::None,
+            |_| Ok(()),
+            Some(index),
+        )?;
+    }
+    Ok(())
 }
 
 /// Reissue the actual joined pair after delivered suspend and automatic resume.
@@ -3012,6 +3075,8 @@ fn managed_pair_reissues_after_delivered_suspend_and_automatic_resume() -> Resul
             assert!(matches!(target.prepare(), Err(Failure::Control)));
             target.deliver(PowerEvent::AutomaticResume)
         },
+        #[cfg(windows)]
+        None,
     )
 }
 
@@ -3038,6 +3103,30 @@ fn pair_first_taken(
     assert_eq!(provider.get().map(Weak::strong_count), Some(1));
 }
 
+/// Retain the original target and verify provider retirement at observer close.
+/// # Errors
+/// Refuse a duplicate subscription and return the original scripted close failure.
+/// # Panics
+/// Fail if the original last worker or provider has yet to retire.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_subscription<'a>(
+    target: Arc<PowerTarget>,
+    observer: &std::cell::OnceCell<Weak<PowerTarget>>,
+    provider: &'a OnceLock<Weak<()>>,
+    closes: &'a Cell<usize>,
+    slot: &'static WorkerSlot,
+    cutoff: Instant,
+) -> Result<impl FnOnce() -> Result<(), NonZeroU32> + use<'a>, ()> {
+    observer.set(Arc::downgrade(&target)).map_err(|_| ())?;
+    Ok(move || {
+        assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
+        assert_eq!(provider.get().map(Weak::strong_count), Some(0));
+        closes.set(closes.get() + 1);
+        drop(target);
+        Err(NonZeroU32::MIN)
+    })
+}
+
 /// Join both original worker jobs and observe selected power delivery boundaries.
 /// # Errors
 /// Preserve the transition, admission, worker result and independent peer refusal.
@@ -3051,6 +3140,7 @@ fn assert_managed_pair_reissue(
     configurations: PairConfigurations,
     delivery: PairResumeDelivery,
     after_first_take: impl FnOnce(&PowerTarget) -> Result<(), Failure>,
+    #[cfg(windows)] failed_adjustment_read: Option<usize>,
 ) -> Result<(), Failure> {
     use std::cell::OnceCell;
 
@@ -3067,6 +3157,8 @@ fn assert_managed_pair_reissue(
     let closes: Cell<usize> = Cell::new(0);
     #[cfg(windows)]
     let presentation_reads: Cell<usize> = Cell::new(0);
+    #[cfg(windows)]
+    let adjustments: [ClockAdjustmentRead; 4] = pair_adjustment_script(failed_adjustment_read)?;
 
     let pair: ManagedProtectedPairReport =
         std::thread::scope(|scope: &std::thread::Scope<'_, '_>| {
@@ -3094,16 +3186,7 @@ fn assert_managed_pair_reissue(
                 cutoff,
                 slot,
                 |target: Arc<PowerTarget>| {
-                    observer.set(Arc::downgrade(&target)).map_err(|_| ())?;
-                    let provider: &OnceLock<Weak<()>> = &provider;
-                    let closes: &Cell<usize> = &closes;
-                    Ok(move || {
-                        assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
-                        assert_eq!(provider.get().map(Weak::strong_count), Some(0));
-                        closes.set(closes.get() + 1);
-                        drop(target);
-                        Err(NonZeroU32::MIN)
-                    })
+                    pair_subscription(target, &observer, &provider, &closes, slot, cutoff)
                 },
                 |reservation: SubmissionReservation| {
                     let index: usize = submissions.get();
@@ -3124,13 +3207,14 @@ fn assert_managed_pair_reissue(
                 },
                 #[cfg(windows)]
                 Some(&mut || {
-                    pair_presentation_read(
+                    pair_clock_read(
                         &presentation_reads,
                         &submissions,
                         slot,
                         cutoff,
                         observer.get(),
                         delivery,
+                        adjustments,
                     )
                 }),
             )
@@ -3146,6 +3230,8 @@ fn assert_managed_pair_reissue(
                 delivery,
                 #[cfg(windows)]
                 presentation_reads.get(),
+                #[cfg(windows)]
+                adjustments,
             )?;
             Ok::<ManagedProtectedPairReport, Failure>(pair)
         })?;
@@ -3308,13 +3394,18 @@ fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Fa
             },
             #[cfg(windows)]
             Some(&mut || {
-                if submissions.get() == 0 {
-                    Err(LeapPresentationError::QueryFailed(5))
-                } else {
-                    Err(LeapPresentationError::InvalidReply {
-                        flags: 1,
-                        reserved: 4,
-                    })
+                let presentation: crate::nts_ke_experiment::ProcessLeapPresentationRead =
+                    if submissions.get() == 0 {
+                        Err(LeapPresentationError::QueryFailed(5))
+                    } else {
+                        Err(LeapPresentationError::InvalidReply {
+                            flags: 1,
+                            reserved: 4,
+                        })
+                    };
+                ManagedClockRead {
+                    presentation,
+                    adjustment: Err(5),
                 }
             }),
         )
@@ -3376,6 +3467,7 @@ fn assert_unavailable_pair_presentation(report: &ManagedProtectedReport) {
             }),
         ]),
     );
+    assert_eq!(report.clock_adjustment_reads(), Some([Err(5); 2]));
 }
 
 /// Stop the original active binding during subscription and collect its refusal.
@@ -3524,7 +3616,10 @@ fn managed_pair_abnormal_join_omits_closing_process_observation() -> Result<(), 
             },
             Some(&mut || {
                 reads.set(reads.get() + 1);
-                Ok(LeapPresentation::Compatibility)
+                ManagedClockRead {
+                    presentation: Ok(LeapPresentation::Compatibility),
+                    adjustment: Err(0),
+                }
             }),
         );
     let Err(failure) = result else {

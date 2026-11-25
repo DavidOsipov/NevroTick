@@ -1278,6 +1278,15 @@ publishing timing rows. Five exact Windows component tests passed on the
 same source as the rebuilt facade. The [matched authenticated pair](../../tasks/engine-transport-pilot.md#replay-protected-timing-with-the-joined-observation-guard)
 passed on these inputs with guest trust restored. The independent
 reference and production sample admission remain open.
+The [managed adjustment guard](../../tasks/engine-transport-pilot.md#retain-the-original-adjustment-reads-through-the-managed-join)
+adds raw opening and closing reads to the same worker lifetime. Six
+native component selectors passed, including both query-failure edges.
+Its [rebuilt timing pair](../../tasks/engine-transport-pilot.md#rebuild-the-authenticated-timing-pair-with-the-adjustment-guard)
+passed the matched link readback and the same-session Sandbox loader
+and parser. The authenticated action awaits the temporary trust window.
+The bench reader [replayed the retained spans](../../tasks/windows11-integration.md#rebind-the-reference-trial-to-the-guarded-timing-replay)
+with synthetic inputs. It still needs the physical reference and the
+read-side validity issuer to support production admission.
 The [protected socket bind check](../../tasks/engine-transport-pilot.md#verify-the-original-local-bind-before-protected-socket-registration)
 now verifies the exact requested local address before registration. Both
 loopback families passed on Windows. The wired interface still needs its
@@ -1491,6 +1500,17 @@ The [guarded package stager](../../tasks/windows11-integration.md#reconcile-the-
 now reconciles both retained service maps against the exact PE bytes it
 stages and refuses incompatible CRT addresses. The original unsigned
 ArtworkLab carrier retained its existing scope.
+The [shared linker-map repair](../../tasks/windows11-integration.md#bound-the-shared-linker-map-symbol-reader)
+bounds symbol-row matching in the service and UI readers while retaining
+the receipt pins and PE address checks.
+The [guarded ArtworkLab pack-input producer](../../tasks/windows11-integration.md#stage-the-pinned-guarded-artworklab-pack-inputs-together)
+now publishes the exact pinned SDK and payload trees together. The
+portable replay reproduced the previous guarded inputs and archive
+readback. Fresh packing and installed qualification remain separate.
+The [guarded pack receiver](../../tasks/windows11-integration.md#reconcile-the-staged-sdk-inventory-at-the-guarded-pack-receiver)
+now consumes that pinned tree with the original independent member
+pins. It reproduced the prior transfer recipe and retained whether
+publication had already occurred when cleanup failed.
 The [dispatcher refusal receipt](../../tasks/windows11-integration.md#retain-the-first-dispatcher-refusal-with-its-required-diagnostic)
 keeps the first typed refusal and its required local record, including
 failures before a service invocation can publish its own receipt.

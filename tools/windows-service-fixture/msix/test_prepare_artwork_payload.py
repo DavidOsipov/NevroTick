@@ -11,7 +11,7 @@ import struct
 import sys
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 import xml.etree.ElementTree as ET
 
 import prepare_artwork_payload as producer
@@ -550,6 +550,88 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
                 self.assertEqual((status, stdout), (2, ""))
                 self.assertIn("error:", stderr)
                 self.assertFalse(self.output.exists())
+
+    def test_guarded_sdk_handoff_binds_pack_inputs_to_the_atomic_publication(self) -> None:
+        options: tuple[str, ...]
+        guarded: bytes
+        options, guarded = self.guarded_fixture()
+        sdk: Path = self.root / "sdk"
+        sdk_inputs: dict[str, bytes] = {
+            name: f"inert fixture leaf {name}".encode("ascii") for name in (
+                "Microsoft.Windows.Build.Appx.AppxPackaging.dll.manifest",
+                "Microsoft.Windows.Build.Appx.OpcServices.dll.manifest",
+                "appxpackaging.dll",
+                "en-US/AppxPackaging.dll.mui",
+                "makeappx.exe",
+                "opcservices.dll",
+            )
+        }
+        name: str
+        data: bytes
+        for name, data in sdk_inputs.items():
+            leaf: Path = sdk / name
+            leaf.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            leaf.write_bytes(data)
+        sdk_pins: dict[str, str] = {name: sha256(data).hexdigest() for name, data in sdk_inputs.items()}
+        role_images: dict[str, bytes] = {
+            "nevrotick-lab-s02-engine.exe": b"linked engine fixture",
+            "nevrotick-lab-s02-broker.exe": b"linked broker fixture",
+        }
+        args: tuple[str, ...] = self.role_args + options + ("--sdk-source", str(sdk))
+        tampered: Path = sdk / "en-US/AppxPackaging.dll.mui"
+        original: bytes = tampered.read_bytes()
+        with (patch.object(producer.stage, "SDK_SHA256", sdk_pins),
+              patch.object(producer.stage, "role_images", return_value=role_images) as read_roles):
+            tampered.write_bytes(b"!" + original[1:])
+            status, stdout, stderr = self.invoke(args)
+            self.assertEqual((status, stdout), (1, ""))
+            self.assertIn("Fixture input hash or size differs", stderr)
+            self.assertFalse(self.output.exists())
+            self.assertEqual(list(self.root.glob(".nevrotick-metadata-*")), [])
+
+            tampered.write_bytes(original)
+            status, stdout, stderr = self.invoke(args)
+            self.assertEqual((status, stderr), (0, ""))
+            report: dict[str, object] = json.loads(stdout)
+            inventory: bytes = (self.output / "input-set.json").read_bytes()
+            expected_payload: dict[str, bytes] = {
+                **self.artwork, **role_images, self.ui_path.name: guarded, "resources.pri": self.pri,
+                "AppxManifest.xml": producer.combined_manifest(self.properties),
+            }
+            expected: dict[str, bytes] = {
+                **{f"sdk/{name}": data for name, data in sdk_inputs.items()},
+                **{f"payload/{name}": data for name, data in expected_payload.items()},
+                "input-set.json": inventory,
+            }
+            payload_pins: dict[str, str] = {
+                name: sha256(data).hexdigest() for name, data in expected_payload.items()
+            }
+            self.assertEqual(json.loads(inventory), {"sdk": sdk_pins, "payload": payload_pins})
+            self.assertEqual(report["sdk"], sdk_pins)
+            self.assertEqual(report["payload"], payload_pins)
+            self.assertEqual(report["input_set_sha256"], sha256(inventory).hexdigest())
+            self.assertIs(report["assembly_ready"], False)
+            self.assertEqual(len(expected), 63)
+
+            status, stdout, stderr = self.invoke(args)
+            self.assertEqual((status, stdout), (1, ""))
+            self.assertIn("File exists", stderr)
+            self.assertEqual(read_roles.call_args_list, [
+                call(self.role_receipt, self.role_pin, require_baseline_entry=True),
+            ] * 3)
+        actual: dict[str, bytes] = {
+            path.relative_to(self.output).as_posix(): path.read_bytes()
+            for path in self.output.rglob("*") if path.is_file()
+        }
+        self.assertEqual(actual, expected)
+
+    def test_sdk_handoff_requires_the_guarded_profile(self) -> None:
+        status, stdout, stderr = self.invoke(
+            self.role_args + ("--sdk-source", str(self.root / "unused-sdk")), parsed=False,
+        )
+        self.assertEqual((status, stdout), (2, ""))
+        self.assertIn("SDK handoff requires guarded UI and service roles", stderr)
+        self.assertFalse(self.output.exists())
 
     def test_guarded_ui_refuses_crossed_evidence_without_publishing(self) -> None:
         options: tuple[str, ...]

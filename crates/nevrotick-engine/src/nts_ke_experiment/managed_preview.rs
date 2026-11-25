@@ -817,6 +817,10 @@ pub enum ProtectedTimingObservationRefusal {
     PresentationReadFailed,
     /// At least one successful query reported a mode other than Compatibility.
     UnsupportedPresentation,
+    /// At least one adjustment query failed and both raw results are retained.
+    AdjustmentReadFailed,
+    /// The two successful adjustment observations differ.
+    AdjustmentChanged,
 }
 
 /// Joined historical results for the explicit managed protected invocation.
@@ -845,9 +849,9 @@ pub struct ManagedProtectedReport {
     remaining_driver_work: usize,
     /// Remaining checkout, frame and byte allowance of the admitted association.
     remaining_association_work: Option<(usize, usize, usize)>,
-    /// Raw current-process observations enclosing the original job, if read.
+    /// Raw clock observations enclosing the original job, if read.
     #[cfg(windows)]
-    process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]>,
+    clock_reads: Option<[super::ManagedClockRead; 2]>,
 }
 
 impl ManagedProtectedReport {
@@ -870,8 +874,7 @@ impl ManagedProtectedReport {
             ));
         };
         #[cfg(windows)]
-        let process_leap_presentation: Option<[super::ProcessLeapPresentationRead; 2]> =
-            received.process_leap_presentation();
+        let clock_reads: Option<[super::ManagedClockRead; 2]> = received.clock_reads();
         let profile: Option<ExperimentalProfile> = received.profile();
         let (first, terminal, (attempted_sends, fully_submitted_sends, remaining_driver_work)): (
             Option<Arc<ManagedProtectedHistory>>,
@@ -906,7 +909,7 @@ impl ManagedProtectedReport {
             remaining_driver_work,
             remaining_association_work,
             #[cfg(windows)]
-            process_leap_presentation,
+            clock_reads,
         })
     }
 
@@ -925,7 +928,25 @@ impl ManagedProtectedReport {
             windows_platform_native::LeapPresentationError,
         >; 2],
     > {
-        self.process_leap_presentation
+        match self.clock_reads {
+            Some([before, after]) => Some([before.presentation, after.presentation]),
+            None => None,
+        }
+    }
+
+    /// Return the original adjustment results before submission and after joined take.
+    ///
+    /// Each result is the raw Windows setting or original Win32 error. Agreement
+    /// describes the two reads and grants no clock continuity or mapping authority.
+    #[cfg(windows)]
+    #[must_use]
+    pub const fn clock_adjustment_reads(
+        &self,
+    ) -> Option<[Result<windows_platform_native::ClockAdjustment, u32>; 2]> {
+        match self.clock_reads {
+            Some([before, after]) => Some([before.adjustment, after.adjustment]),
+            None => None,
+        }
     }
 
     /// Borrow the genuine first committed receipt, when the worker recorded it.
@@ -998,18 +1019,19 @@ impl ManagedProtectedReport {
         self.power_observation
     }
 
-    /// Check the original power and presentation observations for relative timing export.
+    /// Check the original power, presentation and adjustment observations for timing export.
     ///
     /// Success confirms no delivery to the available original binding before
-    /// retirement and two successful Compatibility reads.
+    /// retirement, two successful Compatibility reads and two equal adjustment reads.
     /// It grants no clock continuity, calibrated mapping or sample authority.
     /// This check reads only this report and preserves all historical outcomes.
     ///
     /// # Errors
     /// Refuse a missing or invalidated power observation before checking the original
     /// presentation reads. Absent, failed and unsupported presentations stay distinct.
+    /// After successful presentation reads, refuse a failed or changed adjustment observation.
     #[cfg(windows)]
-    pub const fn check_timing_observations(&self) -> Result<(), ProtectedTimingObservationRefusal> {
+    pub fn check_timing_observations(&self) -> Result<(), ProtectedTimingObservationRefusal> {
         use windows_platform_native::LeapPresentation::Compatibility;
 
         match self.power_observation() {
@@ -1022,13 +1044,24 @@ impl ManagedProtectedReport {
             }
         }
 
-        match self.process_leap_presentation() {
-            Some([Ok(Compatibility), Ok(Compatibility)]) => Ok(()),
-            Some([Ok(_), Ok(_)]) => Err(ProtectedTimingObservationRefusal::UnsupportedPresentation),
-            Some([Err(_), _] | [_, Err(_)]) => {
-                Err(ProtectedTimingObservationRefusal::PresentationReadFailed)
+        let Some([before, after]) = self.clock_reads else {
+            return Err(ProtectedTimingObservationRefusal::PresentationUnavailable);
+        };
+        match (before.presentation, after.presentation) {
+            (Ok(Compatibility), Ok(Compatibility)) => (),
+            (Ok(_), Ok(_)) => {
+                return Err(ProtectedTimingObservationRefusal::UnsupportedPresentation);
             }
-            None => Err(ProtectedTimingObservationRefusal::PresentationUnavailable),
+            (Err(_), _) | (_, Err(_)) => {
+                return Err(ProtectedTimingObservationRefusal::PresentationReadFailed);
+            }
+        }
+        match (before.adjustment, after.adjustment) {
+            (Ok(opening), Ok(closing)) if opening == closing => Ok(()),
+            (Ok(_), Ok(_)) => Err(ProtectedTimingObservationRefusal::AdjustmentChanged),
+            (Err(_), _) | (_, Err(_)) => {
+                Err(ProtectedTimingObservationRefusal::AdjustmentReadFailed)
+            }
         }
     }
 
@@ -1110,9 +1143,7 @@ impl ManagedProtectedPairReport {
 fn run_pair_member(
     job: super::ManagedObservedJob<'_>,
     submit: &mut impl FnMut(job::SubmissionReservation) -> Result<job::SubmittedJob, job::SubmitError>,
-    #[cfg(windows)] read_presentation: &mut Option<
-        &mut dyn FnMut() -> super::ProcessLeapPresentationRead,
-    >,
+    #[cfg(windows)] read_clock: &mut Option<&mut dyn FnMut() -> super::ManagedClockRead>,
 ) -> Result<ManagedProtectedReport, SourceProtectedProbeFailure> {
     let super::ManagedObservedJob {
         reservation,
@@ -1122,7 +1153,7 @@ fn run_pair_member(
     let result: Result<ReceivedInvocation, RunFailed> = super::receive_managed_submission(
         || submit(reservation),
         #[cfg(windows)]
-        read_presentation,
+        read_clock,
     );
     ManagedProtectedReport::from_observed(Ok(super::finish_observing(
         result,
@@ -1148,9 +1179,7 @@ pub(super) fn run_managed_pair_with<Close: FnOnce() -> Result<(), NonZeroU32>>(
     slot: &'static job::WorkerSlot,
     subscribe: impl FnOnce(Arc<super::power_target::PowerTarget>) -> Result<Close, ()>,
     mut submit: impl FnMut(job::SubmissionReservation) -> Result<job::SubmittedJob, job::SubmitError>,
-    #[cfg(windows)] mut read_presentation: Option<
-        &mut dyn FnMut() -> super::ProcessLeapPresentationRead,
-    >,
+    #[cfg(windows)] mut read_clock: Option<&mut dyn FnMut() -> super::ManagedClockRead>,
 ) -> Result<ManagedProtectedPairReport, SourceProtectedProbeFailure> {
     let worker: job::ManagedWorker = job::ManagedWorker::new(slot);
     let target: Arc<super::power_target::PowerTarget> =
@@ -1166,7 +1195,7 @@ pub(super) fn run_managed_pair_with<Close: FnOnce() -> Result<(), NonZeroU32>>(
             first_job,
             &mut submit,
             #[cfg(windows)]
-            &mut read_presentation,
+            &mut read_clock,
         )
         .map(|first: ManagedProtectedReport| {
             let second: Option<Result<ManagedProtectedReport, SourceProtectedProbeFailure>> =
@@ -1181,7 +1210,7 @@ pub(super) fn run_managed_pair_with<Close: FnOnce() -> Result<(), NonZeroU32>>(
                         job,
                         &mut submit,
                         #[cfg(windows)]
-                        &mut read_presentation,
+                        &mut read_clock,
                     )
                 });
             ManagedProtectedPairReport {
@@ -1405,7 +1434,7 @@ impl crate::SourcePolicyAuthority {
             &super::PROCESS_WORKER,
             super::subscribe_managed_power,
             job::SubmissionReservation::try_submit_successor,
-            Some(&mut windows_platform_native::read_leap_presentation),
+            Some(&mut super::read_managed_clock),
         )
     }
 

@@ -1296,7 +1296,30 @@ type ProcessLeapPresentationRead = Result<
     windows_platform_native::LeapPresentationError,
 >;
 
-/// Enclose the original submission and normal joined take in process-local reads.
+/// One exact result from the Windows adjustment getter.
+#[cfg(windows)]
+type ClockAdjustmentRead = Result<windows_platform_native::ClockAdjustment, u32>;
+
+/// The independent raw read results at one boundary of the original managed job.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+struct ManagedClockRead {
+    /// Original read of this process's leap-second presentation.
+    presentation: ProcessLeapPresentationRead,
+    /// Original setting or refusal from the system clock adjustment getter.
+    adjustment: ClockAdjustmentRead,
+}
+
+/// Take both read-only observations, retaining either refusal independently.
+#[cfg(windows)]
+fn read_managed_clock() -> ManagedClockRead {
+    ManagedClockRead {
+        presentation: windows_platform_native::read_leap_presentation(),
+        adjustment: windows_platform_native::read_clock_adjustment(),
+    }
+}
+
+/// Enclose the original submission and normal joined take in raw clock reads.
 /// Callers retain the original power owner across this operation. An alternate
 /// backend can omit the reads. The observations grant no mapping or continuity.
 /// # Errors
@@ -1305,11 +1328,11 @@ type ProcessLeapPresentationRead = Result<
 #[cfg(any(windows, test))]
 fn receive_managed_submission(
     submit: impl FnOnce() -> Result<job::SubmittedJob, job::SubmitError>,
-    #[cfg(windows)] read_presentation: &mut Option<&mut dyn FnMut() -> ProcessLeapPresentationRead>,
+    #[cfg(windows)] read_clock: &mut Option<&mut dyn FnMut() -> ManagedClockRead>,
 ) -> Result<datagram::ReceivedInvocation, RunFailed> {
     #[cfg(windows)]
-    let finish_presentation = read_presentation.as_mut().map(|read| {
-        let before: ProcessLeapPresentationRead = read();
+    let finish_clock_read = read_clock.as_mut().map(|read| {
+        let before: ManagedClockRead = read();
         move || [before, read()]
     });
     let joined: job::ReceivingOutcome = submit()
@@ -1318,10 +1341,9 @@ fn receive_managed_submission(
         .map_err(RunFailed::Collection)?;
     let received: datagram::ReceivedInvocation = datagram::receive_joined(joined, None)?;
     #[cfg(windows)]
-    let received: datagram::ReceivedInvocation = match (received, finish_presentation) {
+    let received: datagram::ReceivedInvocation = match (received, finish_clock_read) {
         (datagram::ReceivedInvocation::ManagedSuccessor(mut result), Some(mut finish)) => {
-            let reads: [ProcessLeapPresentationRead; 2] = finish();
-            result.retain_process_leap_presentation(reads);
+            result.retain_clock_reads(finish());
             datagram::ReceivedInvocation::ManagedSuccessor(result)
         }
         (other, _) => other,
@@ -1354,7 +1376,7 @@ fn run_managed_successor_with_power_observer(
             drop(worker);
             submitted
         },
-        &mut Some(&mut windows_platform_native::read_leap_presentation),
+        &mut Some(&mut read_managed_clock),
     );
     Ok(finish_observing(result, &stop, Some(active), close))
 }

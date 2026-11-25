@@ -806,27 +806,27 @@ mod reached {
         profile: Option<ExperimentalProfile>,
         /// Attempted sends, full sends, and the original driver's remaining work.
         work: (usize, usize, usize),
-        /// Process presentation around this original submission and joined take.
+        /// Raw clock reads around this original submission and joined take.
         #[cfg(windows)]
-        process_leap_presentation: Option<[super::super::ProcessLeapPresentationRead; 2]>,
+        clock_reads: Option<[super::super::ManagedClockRead; 2]>,
     }
 
     impl ReceivedManagedSuccessor {
         /// Retain the private observation enclosing this worker submission and take.
         #[cfg(windows)]
-        pub(in super::super) const fn retain_process_leap_presentation(
+        pub(in super::super) const fn retain_clock_reads(
             &mut self,
-            reads: [super::super::ProcessLeapPresentationRead; 2],
+            reads: [super::super::ManagedClockRead; 2],
         ) {
-            self.process_leap_presentation = Some(reads);
+            self.clock_reads = Some(reads);
         }
 
         /// Return the exact optional pair without querying the process again.
         #[cfg(windows)]
-        pub(in super::super) const fn process_leap_presentation(
+        pub(in super::super) const fn clock_reads(
             &self,
-        ) -> Option<[super::super::ProcessLeapPresentationRead; 2]> {
-            self.process_leap_presentation
+        ) -> Option<[super::super::ManagedClockRead; 2]> {
+            self.clock_reads
         }
 
         /// Observe the exact first packet history in joined component assertions.
@@ -1097,7 +1097,7 @@ mod reached {
                     profile,
                     work,
                     #[cfg(windows)]
-                    process_leap_presentation: None,
+                    clock_reads: None,
                 },
             )));
         }

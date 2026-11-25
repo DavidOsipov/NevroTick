@@ -360,7 +360,7 @@ class WindowsPeTests(unittest.TestCase):
             "tls_callback_table_rva": 0, "direct_import_modules": ["kernel32.dll"],
         }
         self.assertEqual(PE.ui_preentry_declarations(bytes(image), map_text, object_sha256=gate_digest), expected)
-        mapped_path: str = map_text.replace(gate_name, "/work/metadata/" + gate_name).replace("\n", "\r\n")
+        mapped_path: str = map_text.replace(" " + gate_name, "\t /work/metadata/" + gate_name).replace("\n", "\r\n")
         self.assertEqual(PE.ui_preentry_declarations(bytes(image), mapped_path, object_sha256=gate_digest), expected)
         for faulty_map, reason in (
             (map_text.replace(gate_name, "foreign.obj"), "gate object differs"),
@@ -369,6 +369,8 @@ class WindowsPeTests(unittest.TestCase):
             (map_text.replace("140000000", "150000000"), "preferred address differs"),
             (map_text.replace(gate_row, gate_row + "\n" + gate_row), "public symbol is absent or ambiguous"),
             (map_text.replace(crt_row, ""), "mainCRTStartup public symbol is absent"),
+            (map_text.replace(crt_row, crt_row.removesuffix("msvcrt:exe_main.obj") + "\t"),
+             "mainCRTStartup public symbol is absent"),
             (map_text.replace("00000050 mainCRTStartup", "00000060 mainCRTStartup"), "segment and preferred"),
             (map_text.replace("00000050 mainCRTStartup 0000000140001050",
                               "00000400 mainCRTStartup 0000000140001400"), "no unique file-backed section"),
