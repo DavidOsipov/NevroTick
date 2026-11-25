@@ -1388,6 +1388,14 @@ It performs no Apply/Retry/Start/Stop or clock effect and grants no administrato
 authority. Fresh resolution retires only owned obsolete notices; native cleanup
 failure remains explicit, and retained stale activation is still safely checked.
 
+Before production delivery, freeze bounded per-user/session observer coordination:
+concurrent UI launches, replacement and an old observer's late callback/cleanup
+cannot create duplicate eligible delivery or remove a successor's current notice.
+This selects no new single-instance product policy. Keep the reached running
+callback entry separate from any later packaged/cold activation registration;
+qualify each selected entry with current and invalid input. An unimplemented
+closed-app entry remains unavailable and grants no new background presenter.
+
 **Windows-specific admission.** [Toast priority](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotificationpriority)
 is a presentation/power hint, not NevroTick importance or a suppression bypass.
 The [urgent scenario](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/app-notifications/app-notifications-content#scenarios)
@@ -1400,6 +1408,27 @@ uses a date/time; it cannot replace current-generation/elapsed validity checks
 through clock correction, suspend or restart. Selected tag/group/history APIs
 must operate only on owned notices; Windows history is not the incident authority.
 
+**Desktop privacy/lifecycle refinement — 25 November 2026.** For the selected
+local WinRT path, establish per-toast
+[NotificationMirroring](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotification.notificationmirroring)
+`Disabled` before `Show`. Failure to establish that policy is preparation failure
+with no submission; ordinary GUI/status and required logging continue. The
+[enum contract](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.notificationmirroring)
+supports this choice but does not establish the property's default or actual
+cross-device delivery on a particular host. Qualify the selected bindings/build;
+this controls the named mirroring mechanism, not every external capture or sync
+path. Public-safe text remains required, including for the engineering example.
+
+Keep callback detachment, banner hiding and exact owned history retirement as
+distinct outcomes. [Hide](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotifier.hide)
+success does not establish current desktop Notification Center removal. If the
+selected history adapter uses [Remove](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotificationhistory.remove),
+freeze bounded nonsecret code-owned tag/group/app identity and generation ownership
+before integration. Automatic obsolete-notice cleanup must not fall back to
+clearing every notification for the app. An old instance cannot retire a current
+successor or unrelated same-app notice. API success and observed history removal
+remain separate; retain uncertain cleanup and safe stale-activation checks.
+
 | Acceptance pair at the reached stage | Required independent observation |
 | --- | --- |
 | Real Critical and High cases beside healthy/transient/expected-operation cases | Actual producer/observation reaches the incident owner and bounded request consumer; quiet neighbors stay quiet. Missing real producers remain incomplete, even when labelled synthetic controls pass. |
@@ -1408,6 +1437,9 @@ must operate only on owned notices; Windows history is not the incident authorit
 | Reconnect/restart, stale generation, historical severe event and unknown service observation | Current evidence determines eligibility; no invented service failure, historical problem resurgence or false healthy state. State and replay work stay bounded. |
 | Current activation beside forged/expired/resolved/cross-user input, including clock changes | Only fixed current navigation succeeds; no protected operation or leaked detail. Native expiration or a successful Show cannot grant action authority. |
 | Permitted Windows presentation beside suppression, unsupported optional urgency and native failure | Submission, acceptance/uncertainty and observed display remain distinct. Useful fallback/status survives; native API success is not evidence of user reading. |
+| Mirroring policy established beside policy-establishment failure | The chosen property precedes submission; failure performs no Show and leaves ordinary status useful. Observe supported local presentation separately from any actually available mirroring facility; no default/leakage inference or replay of an attempted notice. |
+| Running/selected packaged activation, duplicate observer and replacement | Current fixed navigation remains useful. Invalid input, old-instance callbacks and concurrent launches cannot gain protected authority or duplicate one eligible delivery; absent cold activation stays unavailable. |
+| Banner versus history-only entry; foreground/background cleanup; owned versus unrelated/successor notice | Callback detachment, hiding and owned retirement have separate actual outcomes. No blanket clear or cross-generation deletion; native failure/restart retains bounded ownership and truthful uncertainty. |
 | Finite flood, shutdown/callback race, privacy and actual keyboard/Narrator controls | Independent resource/lifetime observations show bounded work and completed owned cleanup; safe text and accessible navigation remain usable. No fixture/API-return substitution for actual Windows behavior. |
 
 **Controls/exit:** meaningful current loss/recovery or optional-cache status is
@@ -8003,6 +8035,36 @@ bounds include descriptor count, field order/types, transformed encoding,
 terminators and relevant header/metadata/session-buffer limits. Reject a field
 that cannot retain its admitted meaning; upstream/API ceilings are not selected
 NevroTick allocations. Use the corresponding healthy/fault cases in §9.8.
+
+##### Native delivery refinements — 25 November 2026
+
+Source at `6701df99fc6a34e0aa21d6f0258d220decf9d2f0` includes the bounded
+test-only native writer and later private-ETW evidence below; it is not an
+installed production channel. Its `FixturePublisher::register/write` collapses
+the native returned status to a boolean, while provider close retains its exact
+failure code. At production integration, preserve the bounded operation identity
+and actual returned [EventRegister](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventregister)/[EventWrite](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventwrite)
+status in native health. Do not substitute `GetLastError`, raw error text or an
+invented native code for local refusal/no invocation. Registration, native write
+success and independently retained history remain distinct: EventWrite can
+succeed with no recording session. Pair healthy publication with known native
+failure and no-session controls, without recursive failure logging, unbounded
+retry or blocked service cleanup. This does not relabel every portable boolean
+as a native result or require an early fixture API rewrite.
+
+If the selected composition enables one provider in operational and optional
+sessions, qualify failure coupling: useful operational capture alone versus the
+same capture with a stalled/full optional session, retaining each session's
+history/loss and actual native results. Microsoft's
+[logging-mode contract](https://learn.microsoft.com/en-us/windows/win32/etw/logging-mode-constants)
+documents cross-session publication failure without independent-session mode.
+Assess `EVENT_TRACE_INDEPENDENT_SESSION_MODE` only for a compatible supported
+product-owned session; it is incompatible with `EVENT_TRACE_PRIVATE_LOGGER_MODE`.
+Do not silently reconfigure Event Log or administrator-owned sessions. If selected
+ownership/modes cannot isolate delivery, retain the measured coupling/loss and
+bounded health rather than claim independent or lossless delivery. W11-W08 and
+CHECK-17/21/27 own these cases; the original drain cutoff, safe clock cleanup and
+existing native execution holds remain.
 
 If the selected native path provisions provider/session ACLs, compare the complete
 resulting policy with the intended identity/operation matrix.

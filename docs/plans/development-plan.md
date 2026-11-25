@@ -5291,6 +5291,16 @@ default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
 
+**Desktop delivery hardening — 25 November 2026:** the
+[GUI handoff](../../tasks/slint-gui-handoff.md#desktop-delivery-hardening--25-november-2026)
+routes the focused GUI/tray/notification/diagnostic review into existing owners:
+bounded native tray recovery, explicit toast mirroring and owned-history
+lifecycle, future diagnostic Copy exclusions, and precise native ETW status plus
+conditional concurrent-session failure evidence. W11-W08/W09, S0.5 and S5.3/ST-W07
+retain their implementation and acceptance work. Current source protections and
+test-only native evidence are not installed production qualification. Section 7's
+order, UI-M0/D2 boundaries, rich-toast deferral and all execution holds remain.
+
 **Service/IPC qualification — 25 November 2026:** the
 [W11-W05 continuation](../../tasks/windows11-integration.md#service-and-ipc-qualification--25-november-2026)
 credits implemented laboratory privilege admission and retains the production

@@ -95,3 +95,33 @@ That receipt covers text contract1 before these adapters. The current native/
 text-2 cohort requires its own integrated configured and native evidence; this
 record transfers no historical pass. The production semantic approval ledger
 remains empty, and technical/source checks grant no human language approval.
+
+### Tray recovery admission — 25 November 2026
+
+Source review at `6701df99fc6a34e0aa21d6f0258d220decf9d2f0` found that the active
+`TaskbarCreated` path calls `publish_icon(false)` for each sequential message,
+allowing fresh native Add/SetVersion attempts. The publication guard prevents reentrancy; the bounded
+downstream event slot and coalesced UI wake do not bound those earlier Shell calls.
+This is an unqualified resilience seam, not measured exhaustion or a demonstrated
+privilege bypass. The [Shell contract](https://learn.microsoft.com/en-us/windows/win32/shell/taskbar#taskbar-creation-notification)
+requires useful recovery when the taskbar is recreated, while a
+[registered message name](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerwindowmessagew)
+does not authenticate its sender.
+
+At the next applicable tray-source checkpoint, treat the message as an untrusted
+recovery hint. Freeze finite native attempt/rate/work budgets per recovery window,
+at most one pending recovery intent and a locally owned retry cutoff before Shell
+registration calls. Repeated hints cannot renew those bounds. Preserve prompt
+legitimate recovery, truthful registration/loss state and the reachable ordinary
+window on failure; a burst must not consume a permanent lifetime allowance that
+prevents later legitimate recovery. Keep stop/cleanup independent of recovery
+pressure, with actual completion distinct from timeout or unresolved work.
+
+Reuse S0.5/native qualification and CHECK-21/27: pair real Explorer recreation
+(and reached display-change behavior) with repeated/forged messages, failed Shell
+registration with later useful recovery, and a storm with disable/UI Quit.
+Observe native call counts/work and cleanup before harness teardown; a portable
+call-count seam is separate evidence. Raw control/icon messages or unsolicited
+WM_COMMAND must not manufacture stop intent, a protected action or UI-exit
+authority. The [GUI handoff](../tasks/slint-gui-handoff.md#desktop-delivery-hardening--25-november-2026)
+owns this follow-up; existing native holds remain.

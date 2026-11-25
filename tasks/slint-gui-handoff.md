@@ -318,6 +318,24 @@ caught-payload fault policy, and narrow unwind assertions during a natural edit.
 Their controls remain proposed; they add no current defect, release gate or
 execution exception and do not displace S2.2.
 
+### Desktop delivery hardening — 25 November 2026
+
+A focused source/plan review at `6701df99fc6a34e0aa21d6f0258d220decf9d2f0`
+retains the existing process-mitigation/token gates and finds the following narrow
+follow-ups. These are planned source/evidence refinements, not runtime changes,
+observed exploits or native qualification. Existing section 7 priorities,
+UI-M0/D1–D3 triggers and the basic-release rich-toast deferral remain.
+
+| Reached owner / checkpoint | Bounded follow-up and exit |
+| --- | --- |
+| Next applicable tray-source checkpoint; S0.5, CHECK-21/27 | Apply the [TaskbarCreated recovery budget](../docs/nevrotick-gui-native-input-residuals.md#tray-recovery-admission--25-november-2026) before native registration work. Pair legitimate later Explorer recovery with repeated hints and stop/cleanup pressure; downstream wake coalescing alone is insufficient. |
+| Next selected native-notification boundary edit | Establish the [explicit mirroring policy](windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage) before sample submission, preserving no-Show preparation failure and ordinary GUI usability. Carry existing H10's type-level CloseOutcome must-use follow-up through wrappers in the same natural boundary edit; no new history/cold-start adapter is implied. |
+| Production incident/delivery join; W11-W09, P5/package owners | Freeze bounded observer coordination and selected activation entry; qualify exact owned history retirement separately from Hide/callback detachment. Late old-instance cleanup must preserve successor/unrelated notices. Existing rich-toast sequencing remains. |
+| Windows logger and future diagnostic Copy; W11-W08/S5.3/ST-W07 | Retain [actual native status and conditional cross-session evidence](windows11-integration.md#native-delivery-refinements--25-november-2026). At the future Copy adapter, establish [history/cloud exclusions](../docs/windows-time-architecture.md#1234-privacy-sinks-and-resource-limits) before redacted text publication and report partial failures honestly. Current diagnostic actions remain unavailable. |
+
+The existing dependency sequence continues below; this amendment starts no held
+native, service, package or production-UI execution.
+
 1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
    current S2.2 laboratory handoff qualification in development section 7 and reconcile
    only subsequent deltas. Preserve the canonical decision identities. Keep

@@ -2772,6 +2772,21 @@ adds no resident telemetry service or replacement for mandatory journals.
 
 The UI obtains bounded redacted support data, previews it and writes the user-selected export. Redact private endpoints, usernames and private paths by default; caller filenames never become arbitrary privileged writes. No telemetry or remote crash upload is enabled by default. A local file alone does not satisfy ASVS's logically separate analysis/alerting requirement. Assess the actual Windows/managed-forwarding boundary and retain any desktop-profile gap without silently enabling telemetry.
 
+When S5.3 implements **Copy summary**, require explicit current user action and
+publish only the bounded redacted preview. Exclude the diagnostic payload from
+Windows clipboard history and cloud synchronization using the documented
+[clipboard formats](https://learn.microsoft.com/en-us/windows/win32/dataxchg/clipboard-formats#cloud-clipboard-and-clipboard-history-formats):
+`ExcludeClipboardContentFromMonitorProcessing`, or both
+`CanIncludeInClipboardHistory` and `CanUploadToCloudClipboard` with serialized
+DWORD zero values. Establish the selected exclusion format(s) before publishing
+readable diagnostic text; exclusion failure means no diagnostic text publication.
+Preserve actual partial effects, including a previously emptied clipboard, rather
+than claiming transactional rollback. These controls do not make the
+[shared clipboard confidential](https://learn.microsoft.com/en-us/windows/win32/dataxchg/clipboard)
+or erase prior copies; redaction remains mandatory. S5.3/ST-W07 and CHECK-17/22/27
+own useful paste, busy/failing clipboard, exclusion failure and actual supported
+history/cloud behavior. UI-M0's unavailable actions remain disconnected.
+
 #### 12.3.5 Qualification
 
 Extend CHECK-17 with the matrix in [development hardening section 9.8](windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). CHECK-2 covers actual diagnostic-control authorization; CHECK-14 covers partial/stale status; CHECK-27 covers cancellation and native lifetimes; CHECK-21 measures normal/debug overhead; CHECK-26 verifies the selected feature/dependency closure. P0 freezes limits and filter/sink design, P3 proves service control and required events, and P5 implements preview/export. UI-M0 remains fixture-only and gains no live diagnostic control, production IPC or persistence.
