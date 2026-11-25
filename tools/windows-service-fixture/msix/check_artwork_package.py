@@ -38,6 +38,8 @@ ARCHIVE_NAMES: set[str] = PAYLOAD_NAMES | {reader.BLOCK_MAP_FILE, reader.CONTENT
 MAX_ARCHIVE: int = 32 * 1024 * 1024
 MAX_EXPANDED: int = 32 * 1024 * 1024
 MAX_UI: int = 24 * 1024 * 1024
+PNG_SIGNATURE: bytes = b"\x89PNG\r\n\x1a\n"
+PRI_SIGNATURE: bytes = b"mrm_pri2"
 FOOTPRINT_NS: dict[str, str] = {
     "": reader.FOUNDATION[1:-1],
     "uap": reader.UAP[1:-1],
@@ -188,6 +190,31 @@ def check_pe(name: str, raw: bytes) -> None:
     reader.require(machine == 0x8664 and magic == 0x20B, f"{name} is not AMD64 PE32+")
 
 
+def payload_signing_inventory(members: dict[str, reader.PackageMember]) -> dict[str, dict[str, str]]:
+    """Derive signing obligations for the pinned payload and checked XML manifest."""
+    inventory: dict[str, dict[str, str]] = {}
+    for name in sorted(PAYLOAD_NAMES):
+        raw: bytes = members[name].data
+        signature_requirement: str = "package-signature"
+        artifact_format: str
+        if name == UI or name in ROLES:
+            check_pe(name, raw)
+            artifact_format = "pe32+"
+            signature_requirement = "embedded-authenticode"
+        elif name in ART:
+            reader.require(raw.startswith(PNG_SIGNATURE), f"{name} PNG signature differs")
+            artifact_format = "png"
+        elif name == PRI:
+            reader.require(raw.startswith(PRI_SIGNATURE), f"{name} PRI signature differs")
+            artifact_format = "pri"
+        elif name == MANIFEST:
+            artifact_format = "xml"
+        else:
+            raise reader.Refused("no signing policy for an authored member")
+        inventory[name] = {"format": artifact_format, "signature_requirement": signature_requirement}
+    return inventory
+
+
 def check_content_types(raw: bytes) -> None:
     tag: str = reader.CONTENT_TYPES
     node: ET.Element = reader.parse_xml(raw, reader.CONTENT_TYPES_FILE)
@@ -243,9 +270,8 @@ def main() -> int:
             reader.require(emitted == payload[name], f"archive/authored member differs: {name}")
             reader.require(sha256(emitted).hexdigest() == pins[name],
                            f"member differs from independent source pin: {name}")
-        for name in (UI, *ROLES):
-            check_pe(name, members[name].data)
         check_manifest(members[MANIFEST].data)
+        signing: dict[str, dict[str, str]] = payload_signing_inventory(members)
         reader.check_block_map(members, PAYLOAD_NAMES)
         check_content_types(members[reader.CONTENT_TYPES_FILE].data)
     except reader.Refused as error:
@@ -265,6 +291,11 @@ def main() -> int:
         "payload_count": len(PAYLOAD_NAMES), "artwork_count": len(ART),
         "members": {name: {"bytes": len(member.data), "sha256": sha256(member.data).hexdigest()}
                     for name, member in sorted(members.items())},
+        "signing_inventory": {
+            "verification": "not-run",
+            "package": {"format": "msix", "signature_requirement": "package-signature"},
+            "payload": signing,
+        },
     }, indent=2))
     return 0
 

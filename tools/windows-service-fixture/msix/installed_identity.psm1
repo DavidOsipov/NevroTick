@@ -36,14 +36,31 @@ $ErrorActionPreference = 'Stop'
 }
 
 function Resolve-S06ImagePath {
-    param([string]$Root, [string]$Member, [string]$StoredPath)
+    param([string]$Root, [string]$Member, [string]$StoredPath, [string]$PackageFullName)
 
     # Compare the admitted literal shapes. The SCM string never becomes a file input.
-    $expected = [IO.Path]::Combine($Root, $Member)
-    if (![string]::Equals($StoredPath, $expected, [StringComparison]::Ordinal) -and
-        ![string]::Equals($StoredPath, ('"' + $expected + '"'), [StringComparison]::Ordinal)) {
+    [string]$expected = [IO.Path]::Combine($Root, $Member)
+    if ([string]::Equals($StoredPath, $expected, [StringComparison]::Ordinal) -or
+        [string]::Equals($StoredPath, ('"' + $expected + '"'), [StringComparison]::Ordinal)) {
+        return $expected
+    }
+    if ([string]::IsNullOrEmpty($PackageFullName) -or
+        ![string]::Equals([IO.Path]::GetFileName($Root), $PackageFullName, [StringComparison]::OrdinalIgnoreCase)) {
         throw 'SCM path differs from the fixed installed member'
     }
+
+    # Appx can report the directory in lowercase while SCM quotes the full
+    # package identity spelling. Prove that this derived alias resolves to
+    # the registered member even on a case-sensitive volume.
+    [string]$identityRoot = [IO.Path]::Combine([IO.Path]::GetDirectoryName($Root), $PackageFullName)
+    [string]$identityMember = [IO.Path]::Combine($identityRoot, $Member)
+    if (![string]::Equals($StoredPath, ('"' + $identityMember + '"'), [StringComparison]::Ordinal)) {
+        throw 'SCM path differs from the fixed installed member'
+    }
+    [IO.FileStream]$aliasFile = [IO.File]::Open($identityMember, [IO.FileMode]::Open,
+        [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try { Confirm-S06ImagePath $aliasFile $expected }
+    finally { $aliasFile.Dispose() }
     return $expected
 }
 
@@ -81,7 +98,7 @@ function Read-S06Registration {
 }
 
 function Confirm-S06StoppedService {
-    param([object[]]$Services, [string]$Key, [string]$Root, [string]$Member)
+    param([object[]]$Services, [string]$Key, [string]$Root, [string]$Member, [string]$PackageFullName)
 
     if ($Services.Count -ne 1 -or ![string]::Equals($Services[0].Name, $Key, [StringComparison]::Ordinal)) {
         throw 'Expected one service at the fixed S0.6 SCM key'
@@ -92,16 +109,16 @@ function Confirm-S06StoppedService {
         $service.ProcessId -ne 0) {
         throw 'S0.6 service must be disabled and stopped at this observation'
     }
-    return (Resolve-S06ImagePath $Root $Member $service.PathName)
+    return (Resolve-S06ImagePath $Root $Member $service.PathName $PackageFullName)
 }
 
 function Read-S06StoppedService {
-    param([string]$Key, [string]$Root, [string]$Member)
+    param([string]$Key, [string]$Root, [string]$Member, [string]$PackageFullName)
 
     # Key originates in the two fixed source literals below.
     $services = @(CimCmdlets\Get-CimInstance -ClassName Win32_Service -Filter "Name='$Key'" |
         Select-Object -First 2)
-    return (Confirm-S06StoppedService $services $Key $Root $Member)
+    return (Confirm-S06StoppedService $services $Key $Root $Member $PackageFullName)
 }
 
 function Read-S06ImageFinalPath {
@@ -175,14 +192,14 @@ function Read-S06InstalledIdentity {
     try {
         for ($index = 0; $index -lt $roles.Count; $index++) {
             $role = $roles[$index]
-            $paths[$index] = Read-S06StoppedService $role.key $root $role.member
+            $paths[$index] = Read-S06StoppedService $role.key $root $role.member $PackageFullName
             # Exclude writes and deletion through both service and registration rechecks.
             $files[$index] = [IO.File]::Open($paths[$index], [IO.FileMode]::Open,
                 [IO.FileAccess]::Read, [IO.FileShare]::Read)
             Confirm-S06Image $files[$index] $paths[$index] $role.bytes $role.sha256
         }
         foreach ($role in $roles) {
-            $null = Read-S06StoppedService $role.key $root $role.member
+            $null = Read-S06StoppedService $role.key $root $role.member $PackageFullName
         }
         if (![string]::Equals((Read-S06Registration $PackageFullName), $root, [StringComparison]::Ordinal)) {
             throw 'Installed registration root changed during readback'

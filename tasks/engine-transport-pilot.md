@@ -34206,6 +34206,185 @@ Core admission and affected coverage/mutation remain open.
 | `%LOCALAPPDATA%/NevroTick/s21-managed-adjustment.CDRe3zoz/engine-r3/verification.json` | `c4fd9fd1612831ec3d193502563390b6e0765e16e5325ff59956912b8c584cae` |
 | `~/.local/share/nevrotick/s21-managed-adjustment.CDRe3zoz/native-recipe/join_ae4602e2078e/verification.json` | `049f095b154106c540536c1154a5054aa3828aeff11ec1da2c70f058740d9404` |
 
+###### Refuse each changed adjustment field on the joined report
+
+S2.1/W11-W01, TQ-07/09 and CHECK-7/11/25/27. Rust-contract and
+lifecycle QA annotated the guard's clock-read binding and added private
+scripted field values to the existing Windows joined-worker fixture.
+The native and scripted inputs use the same raw setting comparison.
+Production continues to retain and return the two original native
+outcomes through `clock_adjustment_reads()`. The fixture proves the
+projection of each native getter independently. The scripted inputs
+are compiled only in tests and have no native getter result.
+
+The new selector drives the actual two-job loopback pair with equal
+settings and with separate changes to adjustment, increment and the
+disabled flag. The numeric controls change the high bits. Each changed
+case refuses with `AdjustmentChanged` and preserves both ordered
+observations, original receipts and work accounting. In all four cases,
+the second job has compatible presentation and different, internally
+equal settings. It passes the guard with its own history. Existing
+mode, power and native read-failure controls retain their precedence.
+
+Frozen tree `b9540fb9f1d349e2a1d16de087e875769840a2d8` on `5983832`
+passed the admitted boundary and compiler checks, formatting, MSVC
+Clippy, libtest linking and PE/PDB readback. The first development
+attempt refused the non-`Copy` fixture argument under Clippy. Both
+attempts used 239.713 seconds of the existing 420-second allowance.
+All 758 product and 17 helper inputs match the integrated source.
+
+The first Sandbox preflight stopped with 1,954 MiB available against
+the 2,048 MiB host floor. It started no test. Retirement of the completed
+writer's private analyzer and scratch released its resources. A separate
+measurement reported 3,936 MiB before the retry. The same owned
+build-26100 Sandbox passed seven exact discoveries and seven selected
+tests, including the field-change selector. All fourteen original
+processes exited zero with both streams closed. Input bookends,
+original guest identity, cleanup and empty transfer directories passed.
+Independent readback reconstructed the frozen tree and checked the
+native results, retained artifact pair and unchanged source bindings.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-fields.lk5lcrvO/engine-r1/verification.json` | `a1c3e6d3f0de0d4ecd0b10046ea108aed55d8fd7d89a6d5b51288d83dfdb6438` |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-fields.lk5lcrvO/engine-r2/verification.json` | `0c4138477751d2b669f6e5c4ac9753bd6a98d0a6a39352a8cc5af8a6a3259261` |
+| `~/.local/share/nevrotick/s21-adjustment-fields.lk5lcrvO/native-recipe/join_ba8467fae126/verification.json` | `6e5bc129a2d34b9cee34a41c39428db8331fbf6b1b3bf82187bbab1aebb5a97d` |
+| `~/.local/share/nevrotick/s21-adjustment-fields.lk5lcrvO/native-recipe/join_043390a1cd61/verification.json` | `68f3c47d1f9c52c05f8e6618f17a3d286f8a1d05e12179b5085080d3142e03fb` |
+
+The production exporter still checks the guard before its first stdout
+write. Its provenance prerequisite excludes these component reports.
+The authenticated refusal with zero timing rows and the matched
+six-row healthy replay remain separate native obligations. Physical
+calibration, mapping and affected coverage and mutation remain open.
+
+###### Link the timing exporter on the field-specific candidate
+
+S2.1/W11-W01, TQ-07/09 and CHECK-19/25/26/27. The configured facade
+build reused the exact component tree `b9540fb9f1d349e2a1d16de087e875769840a2d8`
+on `5983832`. Environment preflight and regression selection kept the
+existing resource stops and selected build profile. An initial local
+preparation typo and a second staged-diff pin refusal reached no build.
+The corrected driver checked the staged tree and full-index diff before
+and after executing all 20 configured lanes in 100.744 seconds.
+
+Independent readback matched all 758 product and 17 helper inputs to
+the component build, all 20 raw lane receipts, and all 29 retained
+copies. Each of the four PE/PDB pairs matched its original CodeView
+name, GUID and age. The timing facade retains the 8,192-byte PDB page
+layout. The first pin-refused build receipt remains incomplete.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `~/.local/share/nevrotick/s21-adjustment-field-facade.dUMf8p7n/build-summary.json` | `73f13b65223c7e3e866ac5c17d5a686814eda12ed81c1ceecfc168dd3fa7f392` |
+| `~/.local/share/nevrotick/s21-adjustment-field-facade.pLuK1jrZ/build-summary.json` | `22a6e079a93094e8df049ed97fdf867139b96102a3a3f0dfe368d2d23ae8751b` |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-field-facade.pLuK1jrZ/build/verification.json` | `0e3a9631588f16fcb900b12015fc308c20de78780dcc9b8f00ae3aa5d452c2ca` |
+
+The directed negative fixture is prepared under
+`~/.local/share/nevrotick/s21-private-adjustment-refusal._8uo6_zg/`.
+The checked patch SHA-256 is
+`3424b6a18f86e0a741d0acddd011ee1798c87d4c30e181dd4dc42dc70f5070da`.
+It substitutes a fixture error after the successful closing getter in
+one private build. Its planned native exit requires the original two
+authenticated exchanges, the exact typed refusal marker, empty Engine
+stdout, Engine exit 124 and successful peer and guest restoration.
+The maintained component suite supplies unequal-success evidence for
+each field. The prepared overlay has patch-admission evidence only.
+
+The matching standalone peer build reused the admitted graph and
+advisory inputs while binding the same 2,401-file tree and the new
+facade receipt. All twelve peer lanes passed. Both GNU profiles
+ran the same 31 cases. The build took 213.584 seconds after
+the five-second preflight charge. The paired reader matched the
+32 lane records and five PE/PDB pairs. Its ten refusal controls
+included a genuinely built predecessor peer offered to this facade.
+The controller renderer substituted only the two image pins.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-adjustment-field-peer.2PK4XPN7/build/verification.json` | `2ab65a9ca2378383557fd8bb5c2eb380078e31bb88f581b94277149bcc3b7a73` |
+| `~/.local/share/nevrotick/s21-adjustment-field-peer.2PK4XPN7/readback/paired-readback.json` | `f2fe77ee84c3b33117375184af8065755a3c09d354734ae4bd9a82135b980868` |
+| `~/.local/share/nevrotick/s21-adjustment-field-peer.2PK4XPN7/controller/host-render.json` | `bc4ee832a3ed6291f9cc6b9a9cb5b0f7c928c4ddb29c149f22a2fbae28199fc0` |
+
+###### Replay the field-specific timing exporter in Windows
+
+S2.1/W11-W01, TQ-01/07/09 and CHECK-19/25/26/27. The exact
+`b9540fb9` pair passed 17 loader and 11 held-file parser observations
+in the same offline Windows 26100 guest. The read-only dispatch
+admission bound both original retirements to the rendered controller.
+David confirmed the temporary guest trust window before execution.
+
+The real facade authenticated the first reply and ordinary successor
+through the original association. It emitted six Engine timing rows.
+The peer emitted four capture rows at the same 10 MHz frequency and
+counted two receives, two sends and no extra receive. The first and
+successor request gaps at the application capture points were 2,280 and
+1,560 ticks. The corresponding reply gaps were 612 and 435 ticks.
+Both original processes exited zero and the four streams reached EOF.
+The runner observed the original client exit acknowledgement, restored
+the certificate and CRL stores, and verified both transfer shelves empty.
+Independent readback rehashed all 17 retained outputs, derived the
+four gaps from the raw timing rows and checked the PID and start-time
+acknowledgement and eleven trust journal entries.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `s21-adjustment-field-peer.2PK4XPN7/timing-loader/kepre_1174bc8f1463/verification.json` | `1f306964ea887042e640ad18234e98816d90b8d36eeccfbad274db7ccdd06d8f` |
+| `s21-adjustment-field-peer.2PK4XPN7/timing-loader/keparse_68333935e0b1/verification.json` | `084450de8af947c5462427cb5e972f194dd430cdf8d6ef90b54acea54333024f` |
+| `s21-adjustment-field-authenticated.ouBUF35S/ketiming_9624b4f59b43/healthy-ke.json` | `598e12451aac4642c417a4adb10d0cc96c6daf240bd2e89cca7f403b72c4edcd` |
+| `s21-adjustment-field-authenticated.ouBUF35S/ketiming_9624b4f59b43/verification.json` | `be38bee2741b4b194a30ab2420594e8023f0a9572993e56d3d2379b41dfc1957` |
+| `s21-adjustment-field-authenticated.ouBUF35S/ketiming_9624b4f59b43/dispatch-retired.json` | `f55713a53016e818b7eedf0a4d03e7645b21cd3e47256c8e54014ac7c21c060b` |
+
+Records are under `~/.local/share/nevrotick/`. The Engine still reports
+`mapping-unavailable eligible=0 fresh_sync=0`.
+
+###### Verify the authenticated adjustment refusal emits no timing rows
+
+S2.1/W11-W01, TQ-07/09 and CHECK-19/25/26/27. Negative-path and
+black-box QA paired the healthy replay above with a separately pinned
+private tree `006a075b4c7c73fc325fda54b5af3711001fd906`. Its two changes
+from the healthy tree were the injected closing getter status and the
+exact typed marker inside the existing exporter refusal. Both configured
+builds passed all 20 facade and twelve peer lanes. Readback matched
+the two source maps, 32 lane records and five PE/PDB pairs. Five host
+controls checked transcript and retirement discrimination, including
+unexpected Engine output, exit zero and missing EOF.
+
+The first native preflight refused at 1,886 MiB available against the
+2,048 MiB floor. It completed only the three read-only host observations.
+After retiring verified volatile copies, the retry admitted 2,799 MiB
+and passed 17 loader and 11 parser observations. The first read-only
+authenticated binder refused on an attempted update to the immutable
+history set. The corrected set union preserved all predecessor checks.
+David confirmed the separate temporary trust window.
+
+In the same offline Windows 26100 guest the original two authenticated
+exchanges completed. The original joined report retained both ordinary
+receipts and two attempted and submitted sends. The exporter reached
+`AdjustmentReadFailed` with the successful opening reading and injected
+closing status. The Engine exited 124 with zero stdout bytes. Its stderr
+preserved the original report and the exact typed refusal and timing
+stage diagnostics. The peer exited zero with four timing rows, two
+receives, two sends and no extra receive. Both processes were reaped,
+all four streams reached EOF, and certificate, CRL and shelf restoration
+passed. The shared pending marker retired only after terminal readback.
+Independent readback matched all 17 retained outputs, the original
+process acknowledgement and the eleven trust journal entries.
+
+| Retained private record | SHA-256 |
+| --- | --- |
+| `s21-adjustment-refusal-facade.sJAuYKNv/complete-overlay.patch` | `e5d6e872b4cd651481bb1a765416868587bc14969d7413fb4160e4e89ecedefc` |
+| `s21-adjustment-refusal-peer.7wIkox2l/readback/paired-readback.json` | `de39700ca731c0540cf8ab466b40fce8da08e44ecc13a614c5e851493df604e3` |
+| `s21-adjustment-refusal-peer.7wIkox2l/timing-loader/kepre_31a8db47566f/verification.json` | `cf54db2944e85a37bb825fd1c94fc43055cc66ebe15b9944f18be39a524ac916` |
+| `s21-adjustment-refusal-authenticated.jAx3KrOE/ketiming_97ce0e2a9df4/healthy-ke.json` | `72286ebb55025ff6c92bc3f46f4c195c488cf3f03d2fcab8a154c8e7d354c8e7` |
+| `s21-adjustment-refusal-authenticated.jAx3KrOE/ketiming_97ce0e2a9df4/verification.json` | `bb38e7254b43ae08b46402ad78a6d8f07c0860f79b2af7da847f73c71f8d64a2` |
+| `s21-adjustment-refusal-authenticated.jAx3KrOE/ketiming_97ce0e2a9df4/dispatch-retired.json` | `5df3de690ed0a4b1324f76c2e248bc866581d7445f46716f5ba0a5422f81afed` |
+
+Records are under `~/.local/share/nevrotick/`. The synthetic status
+exercises the exporter refusal. The field-specific unequal-success
+controls remain joined-component evidence. Physical reference, mapping,
+positive Core admission and the affected coverage and mutation gates
+remain open.
+
 ###### Verify the GNU joined-worker lifecycle on the adjustment candidate
 
 S2.1/W11-W01 and CHECK-25/27. On frozen tree

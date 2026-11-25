@@ -1005,7 +1005,10 @@ namespace NevroTick
 
                     var verified = (WinTrustSignatureSettings)Marshal.PtrToStructure(nativeSignature,
                         typeof(WinTrustSignatureSettings));
-                    if (verified.VerifiedIndex != 0 || verified.SecondarySignatureCount != 0)
+                    // The ScmFixture provider can leave the index unset. The
+                    // original archive's single CMS signer is checked separately.
+                    if (verified.SecondarySignatureCount != 0 ||
+                        (verified.VerifiedIndex != 0 && verified.VerifiedIndex != uint.MaxValue))
                         throw new InvalidDataException("prestart-observer:archive-signature-selection");
                     return ReadVerifiedLeafDigest(data.StateData);
                 }
@@ -1130,8 +1133,15 @@ namespace NevroTick
             internal byte[] AdmitArchiveBytes(Stopwatch clock, int timeoutMilliseconds)
             {
                 Open(clock, timeoutMilliseconds, "archive");
+                return ReadArchiveBytes(clock, timeoutMilliseconds);
+            }
+
+            private byte[] ReadArchiveBytes(Stopwatch clock, int timeoutMilliseconds)
+            {
+                CheckDeadline(clock, timeoutMilliseconds, "archive");
                 if (stream.Length != expectedBytes)
                     throw new InvalidDataException("prestart-archive:archive-size");
+                stream.Position = 0;
                 byte[] bytes = new byte[checked((int)expectedBytes)];
                 int offset = 0;
                 while (offset < bytes.Length)
@@ -1156,6 +1166,12 @@ namespace NevroTick
                 stream.Position = 0;
                 actor.VerifyCurrent(clock, timeoutMilliseconds);
                 string signer = ObserveArchiveSigner(stream.SafeFileHandle, Path, requireTime);
+                requireTime();
+                string footprintSigner = PrestartArchiveFacts.InspectSignatureSigner(
+                    ReadArchiveBytes(clock, timeoutMilliseconds), expectedSha256);
+                requireTime();
+                if (!string.Equals(signer, footprintSigner, StringComparison.Ordinal))
+                    throw new InvalidDataException("prestart-observer:archive-signer-footprint-mismatch");
                 actor.VerifyCurrent(clock, timeoutMilliseconds);
                 CheckBytes(clock, timeoutMilliseconds, "archive");
                 return signer;

@@ -81,7 +81,7 @@ if ($ExpectWrapperAbsent) {
     (Join-Path $PSScriptRoot 'prestart_scm_window.cs'),
     (Join-Path $PSScriptRoot 'test_prestart_scm_window.cs')
 )
-Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll')
+Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll', 'System.Security.dll')
 
 if ($ExpectAbsent) {
     [NevroTick.PrestartScmWindowControls]::ExpectAbsent($expectedSid)

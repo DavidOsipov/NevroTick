@@ -1,24 +1,29 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# CHECK-18/26/27. Read two exact unsigned laboratory archives without installation.
-[CmdletBinding(PositionalBinding = $false)]
+# CHECK-18/26/27. Read exact laboratory archives and optional signature footprints without installation.
+[CmdletBinding(PositionalBinding = $false, DefaultParameterSetName = 'Archive')]
 param(
     [Parameter(Mandatory = $true)][string]$CurrentArchive,
     [Parameter(Mandatory = $true)][string]$CurrentSha256,
     [Parameter(Mandatory = $true)][string]$PreviousArchive,
     [Parameter(Mandatory = $true)][string]$PreviousSha256,
     [string]$CurrentPayloadSha256,
-    [string]$CrossedPayloadSha256
+    [string]$CrossedPayloadSha256,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Signature')][string]$SignatureFootprint,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Signature')][string]$SignatureFootprintSha256,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Signature')][string]$ExpectedSignerSha256,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Signature')][string]$SignatureProfileRefusal,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Signature')][string]$SignatureProfileRefusalSha256
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Add-Type -Path (Join-Path $PSScriptRoot 'prestart_archive_facts.cs')
+Add-Type -Path (Join-Path $PSScriptRoot 'prestart_archive_facts.cs') -ReferencedAssemblies @('System.dll', 'System.Security.dll')
 
-function Read-FixtureBytes([string]$Path) {
+function Read-FixtureBytes([string]$Path, [long]$MaximumBytes = 8MB) {
     [IO.FileStream]$stream = [IO.File]::Open($Path, 'Open', 'Read', 'Read')
     try {
         [long]$length = $stream.Length
-        if ($length -lt 1 -or $length -gt 8MB) { throw 'archive-control:input-size' }
+        if ($length -lt 1 -or $length -gt $MaximumBytes) { throw 'archive-control:input-size' }
         [byte[]]$bytes = [byte[]]::new([int]$length)
         [int]$offset = 0
         while ($offset -lt $bytes.Length) {
@@ -103,5 +108,63 @@ if ($PSBoundParameters.ContainsKey('CurrentPayloadSha256') -or $PSBoundParameter
         throw 'archive-control:payload-binding'
     }
     $observation.payload = @{ current = $bound.PayloadSha256; crossedRefused = $crossedRefused; restored = $boundRestored.PayloadSha256 }
+}
+if ($PSCmdlet.ParameterSetName -ceq 'Signature') {
+    foreach ($pin in @($SignatureFootprintSha256, $ExpectedSignerSha256, $SignatureProfileRefusalSha256)) {
+        if ($pin -cnotmatch '\A[0-9a-f]{64}\z') { throw 'archive-control:signature-pins' }
+    }
+    [byte[]]$footprint = Read-FixtureBytes $SignatureFootprint 64KB
+    [byte[]]$wrongProfile = Read-FixtureBytes $SignatureProfileRefusal 64KB
+    if ($footprint.Length -lt 6 -or (Get-Sha256 $footprint) -cne $SignatureFootprintSha256 -or
+        (Get-Sha256 $wrongProfile) -cne $SignatureProfileRefusalSha256 -or
+        $SignatureFootprintSha256 -ceq $SignatureProfileRefusalSha256) {
+        throw 'archive-control:signature-fixture'
+    }
+
+    [Reflection.MethodInfo]$readSignature = [NevroTick.PrestartArchiveFacts].GetMethod('ReadSignatureLeaf',
+        [Reflection.BindingFlags]'Static,NonPublic', $null, [type[]]@([byte[]]), $null)
+    if ($null -eq $readSignature -or $readSignature.ReturnType -ne [string]) {
+        throw 'archive-control:signature-reader'
+    }
+    function Read-SignatureControl([byte[]]$Bytes) {
+        [object[]]$arguments = @($null)
+        $arguments[0] = $Bytes
+        return $readSignature.Invoke($null, $arguments)
+    }
+    function Assert-SignatureControlRefusal([byte[]]$Bytes, [string]$Reason) {
+        try { [void](Read-SignatureControl $Bytes) }
+        catch {
+            [Exception]$cause = $_.Exception
+            while ($null -ne $cause) {
+                if ($cause -is [IO.InvalidDataException] -and $cause.Message -ceq $Reason) { return }
+                $cause = $cause.InnerException
+            }
+            throw
+        }
+        throw ('archive-control:missing-signature-refusal:' + $Reason)
+    }
+
+    if ((Read-SignatureControl $footprint) -cne $ExpectedSignerSha256) {
+        throw 'archive-control:signature-leaf'
+    }
+    [byte[]]$wrongPrefix = $footprint.Clone()
+    $wrongPrefix[0] = 0x58
+    [byte[]]$trailing = $footprint + [byte]0
+    [byte[]]$incomplete = [byte[]]::new($footprint.Length - 1)
+    [Array]::Copy($footprint, $incomplete, $incomplete.Length)
+    [string]$badFootprint = 'prestart-archive:signature-footprint'
+    Assert-SignatureControlRefusal $wrongPrefix $badFootprint
+    Assert-SignatureControlRefusal $trailing $badFootprint
+    Assert-SignatureControlRefusal $incomplete $badFootprint
+    Assert-SignatureControlRefusal $wrongProfile 'prestart-archive:signature-profile'
+    if ((Read-SignatureControl $footprint) -cne $ExpectedSignerSha256) {
+        throw 'archive-control:signature-leaf-restored'
+    }
+    $observation.signature = @{
+        signerSha256 = $ExpectedSignerSha256
+        footprintSha256 = $SignatureFootprintSha256
+        profileRefusalSha256 = $SignatureProfileRefusalSha256
+        refused = @('wrong-prefix', 'trailing', 'incomplete', 'signer-profile')
+    }
 }
 ConvertTo-Json -InputObject $observation -Compress -Depth 3

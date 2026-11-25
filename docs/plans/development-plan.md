@@ -1301,9 +1301,16 @@ reference and production sample admission remain open.
 The [managed adjustment guard](../../tasks/engine-transport-pilot.md#retain-the-original-adjustment-reads-through-the-managed-join)
 adds raw opening and closing reads to the same worker lifetime. Six
 native component selectors passed, including both query-failure edges.
-Its [rebuilt timing pair](../../tasks/engine-transport-pilot.md#rebuild-the-authenticated-timing-pair-with-the-adjustment-guard)
-passed the matched link readback and the same-session Sandbox loader
-and parser. The authenticated action awaits the temporary trust window.
+The [field-specific joined controls](../../tasks/engine-transport-pilot.md#refuse-each-changed-adjustment-field-on-the-joined-report)
+now exercise equal settings and a separate successful change to each
+field. The current native component cohort passed seven selected tests.
+The [field-specific native replay](../../tasks/engine-transport-pilot.md#replay-the-field-specific-timing-exporter-in-windows)
+passed the same-session loader, parser and real authenticated exchange.
+The six-row healthy export and guest restoration apply to the exact
+component candidate. The [directed authenticated refusal](../../tasks/engine-transport-pilot.md#verify-the-authenticated-adjustment-refusal-emits-no-timing-rows)
+preserved both authentic receipts and emitted zero timing rows after
+the injected closing read. The next reference work still requires an
+independent calibrated physical path and a read-side validity issuer.
 The bench reader [replayed the retained spans](../../tasks/windows11-integration.md#rebind-the-reference-trial-to-the-guarded-timing-replay)
 with synthetic inputs. It still needs the physical reference and the
 read-side validity issuer to support production admission.
@@ -1457,6 +1464,10 @@ guard](../../tasks/windows11-integration.md#restrict-the-default-dll-search-befo
 requires System32 default DLL search and effective image restrictions
 before the fixture attempts SCM connection. Both standalone entries
 passed their exact native controls.
+The [effective default-search controls](../../tasks/windows11-integration.md#exercise-default-dll-search-across-the-fixed-console-entries)
+observed both entries exclude the application and working directories
+for the selected data-file lookups while preserving the System32 lookup.
+Installed startup and executable loading retain their existing checks.
 The [critical-error startup checkpoint](../../tasks/windows11-integration.md#preserve-noninteractive-critical-error-handling-at-the-fixed-service-entries)
 also keeps inherited process flags at both entries and refuses unconfirmed
 configuration before SCM. The [native transition controls](../../tasks/windows11-integration.md#observe-the-fixed-service-entries-add-the-missing-critical-error-bit)
@@ -1531,6 +1542,16 @@ The [guarded pack receiver](../../tasks/windows11-integration.md#reconcile-the-s
 now consumes that pinned tree with the original independent member
 pins. It reproduced the prior transfer recipe and retained whether
 publication had already occurred when cleanup failed.
+The [fresh unsigned pack](../../tasks/windows11-integration.md#pack-the-guarded-artworklab-from-the-committed-stager)
+exercised that receiver with the committed stager and the original lab
+link inputs. MakeAppx produced the expected payload and refused the bad
+startup declaration. The independent archive check matched all 56 authored
+files and refused the earlier UI pin. The signed installed journey remains open.
+The [signing-obligation readback](../../tasks/windows11-integration.md#derive-signing-obligations-from-the-guarded-artworklab-archive)
+now classifies the exact authored bytes. It identifies the three images
+requiring embedded signatures and the 53 data files requiring package
+coverage. The final production inventory, signer and verified signatures
+retain their existing gates.
 The [dispatcher refusal receipt](../../tasks/windows11-integration.md#retain-the-first-dispatcher-refusal-with-its-required-diagnostic)
 keeps the first typed refusal and its required local record, including
 failures before a service invocation can publish its own receipt.
@@ -1569,9 +1590,18 @@ matches the current default Windows graph, its two linked fixture images,
 and the checked authoring and artwork. The [artifact resource and declaration readback](../../tasks/windows11-integration.md#reconcile-the-full-ui-version-resource-in-the-msix-handoff--24-november-2026)
 accepts the retained handoff and refuses contradictory UI version records or
 PE declarations for either image.
-The handle-only installed probe
-still needs the exact signed lab fixture, admitted actors and continuous
-quiescence.
+The [current test-signed ScmFixture](../../tasks/windows11-integration.md#rebind-and-test-sign-the-current-scmfixture-for-the-owned-lab)
+binds the signed archive, its original authored payload and the disposable
+signer DER. The [held signer check](../../tasks/windows11-integration.md#bind-the-windows-verified-signer-to-the-held-msix-footprint)
+now verifies the exact archive and signer in the owned offline guest. It
+also refuses wrong, unsigned and untrusted inputs. The
+[paired installed ScmFixture observation](../../tasks/windows11-integration.md#complete-the-paired-installed-scmfixture-observation)
+verified the two installed images and their Disabled and Stopped states,
+accepted the original paired receipts, and observed removal of the
+package, services and test certificate. The full handle-only trial now
+needs separate admission of the proposed provisioning and standard
+actors, their actual access results, and the continuous-quiescence
+evidence required by the existing plan.
 
 The [retained token generation checkpoint](../../tasks/windows11-integration.md#retain-the-token-generation-through-service-peer-reobservation--24-november-2026)
 keeps the original token and its modification generation together across

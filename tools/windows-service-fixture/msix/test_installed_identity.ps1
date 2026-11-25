@@ -77,11 +77,11 @@ try {
             Name = $key; State = 'Stopped'; StartMode = 'Disabled'; ProcessId = 0
             PathName = '"' + $expectedPath + '"'
         }
-        if ((Confirm-S06StoppedService @($service) $key $root $member) -cne $expectedPath) {
+        if ((Confirm-S06StoppedService @($service) $key $root $member $name) -cne $expectedPath) {
             throw 'Quoted SCM path lost the exact registered role'
         }
         $service.PathName = $expectedPath
-        if ((Confirm-S06StoppedService @($service) $key $root $member) -cne $expectedPath) {
+        if ((Confirm-S06StoppedService @($service) $key $root $member $name) -cne $expectedPath) {
             throw 'Unquoted SCM path lost the exact registered role'
         }
         foreach ($path in @(
@@ -92,11 +92,11 @@ try {
             "%ProgramFiles%\$name\$member"
         )) {
             $service.PathName = $path
-            Assert-Refused { Confirm-S06StoppedService @($service) $key $root $member } 'SCM path differs from the fixed installed member'
+            Assert-Refused { Confirm-S06StoppedService @($service) $key $root $member $name } 'SCM path differs from the fixed installed member'
         }
         $service.PathName = $expectedPath
         $service.State = 'Running'
-        Assert-Refused { Confirm-S06StoppedService @($service) $key $root $member } 'S0.6 service must be disabled and stopped at this observation'
+        Assert-Refused { Confirm-S06StoppedService @($service) $key $root $member $name } 'S0.6 service must be disabled and stopped at this observation'
 
         $private = Join-Path ([IO.Path]::GetTempPath()) ('NevroTick-s06-image-control-' + [guid]::NewGuid().ToString('N'))
         $null = [IO.Directory]::CreateDirectory($private)
@@ -121,7 +121,9 @@ try {
 
             # Replace only the module's external observations. Readback, hashing,
             # identity checks and Windows sharing still act on owned native files.
-            $imageRoot = Join-Path $private $name
+            [string]$lowerName = $name.ToLowerInvariant()
+            [string]$imageRoot = Join-Path $private $lowerName
+            [string]$scmRoot = Join-Path $private $name
             $null = [IO.Directory]::CreateDirectory($imageRoot)
             $engine = Join-Path $imageRoot $member
             $broker = Join-Path $imageRoot 'nevrotick-lab-s02-broker.exe'
@@ -131,11 +133,39 @@ try {
             [IO.File]::WriteAllBytes($engine, [byte[]](97,98,99))
             [IO.File]::WriteAllBytes($broker, [byte[]](100,101,102))
             $registered.InstallLocation = $imageRoot
+            if (![string]::Equals((Confirm-S06Registration @($registered) $name),
+                    $imageRoot, [StringComparison]::Ordinal)) {
+                throw 'Registration lost the observed package directory spelling'
+            }
+            [string]$engineAlias = Join-Path $scmRoot $member
+            [string]$brokerAlias = Join-Path $scmRoot 'nevrotick-lab-s02-broker.exe'
+            [string]$quotedEngine = '"' + $engineAlias + '"'
+            [string]$quotedBroker = '"' + $brokerAlias + '"'
+            $service.State = 'Stopped'
+            $service.PathName = $quotedEngine
+            if (![string]::Equals((Confirm-S06StoppedService @($service) $key $imageRoot $member $name),
+                    $engine, [StringComparison]::Ordinal)) {
+                throw 'Exact quoted SCM alternate lost the original package member'
+            }
+            [string]$thirdCase = Join-Path (Join-Path $private ($name.ToUpperInvariant())) $member
+            [string]$outside = Join-Path (Join-Path $private 'outside') $name
+            foreach ($wrongPath in @(
+                $engineAlias,
+                ('"' + $thirdCase + '"'),
+                ('"' + (Join-Path $outside $member) + '"'),
+                $quotedBroker,
+                ($quotedEngine + ' --extra')
+            )) {
+                $service.PathName = $wrongPath
+                Assert-Refused { Confirm-S06StoppedService @($service) $key $imageRoot $member $name } 'SCM path differs from the fixed installed member'
+            }
             $reads = [Collections.Generic.List[string]]::new()
             $script:s06ImageControl = [pscustomobject]@{
                 Registration = $registered; Reads = $reads; ChangeRoot = $false
                 AlternateRoot = Join-Path (Join-Path $private 'successor') $name
                 Paths = @{ $engineKey = $engine; $brokerKey = $broker }
+                StoredPaths = @{ $engineKey = $quotedEngine; $brokerKey = $quotedBroker }
+                RefuseAlternatePath = $false; RefusedHandle = $null
             }
             function script:Assert-S06WritersDenied {
                 foreach ($roleKey in @('NevroTick-Lab-S02-Engine', 'NevroTick-Lab-S02-Broker')) {
@@ -169,15 +199,29 @@ try {
                 }
                 Confirm-S06Registration @($control.Registration) $FullName
             }
-            function script:Read-S06StoppedService([string]$Key, [string]$Root, [string]$Member) {
+            function script:Read-S06StoppedService([string]$Key, [string]$Root, [string]$Member, [string]$FullName) {
                 $control = $script:s06ImageControl
                 $control.Reads.Add($Key)
                 if ($control.Reads.Count -eq 4) { Assert-S06WritersDenied }
                 $row = [pscustomobject]@{
                     Name = $Key; State = 'Stopped'; StartMode = 'Disabled'; ProcessId = 0
-                    PathName = $control.Paths[$Key]
+                    PathName = $control.StoredPaths[$Key]
                 }
-                Confirm-S06StoppedService @($row) $Key $Root $Member
+                Confirm-S06StoppedService @($row) $Key $Root $Member $FullName
+            }
+            function script:Read-S06ImageFinalPath([Microsoft.Win32.SafeHandles.SafeFileHandle]$Handle) {
+                [type]$reader = $script:s06ImagePathType
+                [string]$observed = $reader::Read($Handle)
+                $control = $script:s06ImageControl
+                if ($control.RefuseAlternatePath -and $null -eq $control.RefusedHandle) {
+                    if (![string]::Equals($observed, ('\\?\' + $control.Paths['NevroTick-Lab-S02-Engine']),
+                            [StringComparison]::Ordinal)) {
+                        throw 'The alternate final-path control reached a different native file'
+                    }
+                    $control.RefusedHandle = $Handle
+                    return ('\\?\' + $control.Paths['NevroTick-Lab-S02-Broker'])
+                }
+                return $observed
             }
 
             $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -256,6 +300,16 @@ try {
 
             $reads.Clear()
             $inputs.BrokerSha256 = $brokerDigest
+            $script:s06ImageControl.RefuseAlternatePath = $true
+            Assert-S06WriteRefused $inputs 'Opened image does not resolve to the registered package member'
+            [Microsoft.Win32.SafeHandles.SafeFileHandle]$refusedHandle = $script:s06ImageControl.RefusedHandle
+            if (($reads -join ',') -cne "registration,$engineKey" -or
+                $null -eq $refusedHandle -or !$refusedHandle.IsClosed) {
+                throw 'Alternate path refusal continued or retained its original file handle'
+            }
+            $script:s06ImageControl.RefuseAlternatePath = $false
+
+            $reads.Clear()
             $script:s06ImageControl.ChangeRoot = $true
             Assert-S06WriteRefused $inputs 'Installed registration root changed during readback'
             [IO.File]::WriteAllBytes($engine, [byte[]](97,98,99))

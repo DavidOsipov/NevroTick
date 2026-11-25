@@ -43,7 +43,9 @@ use crate::nts_ke_experiment::process::ProcessClaim;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
 #[cfg(windows)]
-use crate::nts_ke_experiment::{ClockAdjustmentRead, ManagedClockRead};
+use crate::nts_ke_experiment::{
+    ClockAdjustmentRead, ManagedAdjustmentRead, ManagedClockRead, RawClockAdjustment,
+};
 use crate::nts_ke_experiment::{
     InvocationCompletion, ObservedInvocation, ObserverStartError, ProtectedControlKind, RunFailed,
     Summary, drive_invocation_with, drive_successor_fixture, output, run_joined_with,
@@ -2793,7 +2795,7 @@ fn pair_clock_read(
     cutoff: Instant,
     observer: Option<&Weak<PowerTarget>>,
     resume_delivery: PairResumeDelivery,
-    adjustments: [ClockAdjustmentRead; 4],
+    script: &PairClockScript,
 ) -> ManagedClockRead {
     let index: usize = reads.get();
     reads.set(index + 1);
@@ -2812,28 +2814,109 @@ fn pair_clock_read(
             "the first closing read must deliver to the original target"
         );
     }
-    let presentation: LeapPresentation = if index == 3 {
-        LeapPresentation::SixtySecond
-    } else {
-        LeapPresentation::Compatibility
-    };
-    ManagedClockRead {
-        presentation: Ok(presentation),
-        adjustment: adjustments[index],
-    }
+    script.reads[index]
 }
 
-/// Supply one successful native value and replace only the selected scripted read.
+/// Choose original native observations or four literal successful test observations.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum PairAdjustmentCase {
+    /// Repeat one native value, optionally refusing the designated first-job read.
+    Native(Option<usize>),
+    /// Give both jobs compatible presentations and independently specified settings.
+    Scripted {
+        /// The opening and closing settings for the first and second jobs in order.
+        settings: [RawClockAdjustment; 4],
+        /// The exact expected outcome of the first job's timing guard.
+        first_timing: Result<(), ProtectedTimingObservationRefusal>,
+    },
+}
+
+/// All private clock observations and the expected no-event decisions for two jobs.
+#[cfg(windows)]
+struct PairClockScript {
+    /// The four original read values, in expected callback order.
+    reads: [ManagedClockRead; 4],
+    /// Each job's expected timing decision in the absence of power invalidation.
+    timing: [Result<(), ProtectedTimingObservationRefusal>; 2],
+}
+
+/// Build the fixture independently of the managed report's observation projections.
 /// # Errors
 /// Refuse if the healthy fixture cannot obtain an original adjustment value.
 #[cfg(windows)]
-fn pair_adjustment_script(failed_read: Option<usize>) -> Result<[ClockAdjustmentRead; 4], Failure> {
-    let reference: ClockAdjustmentRead = Ok(read_clock_adjustment().map_err(|_| Failure::Control)?);
-    let mut script: [ClockAdjustmentRead; 4] = [reference; 4];
-    if let Some(index) = failed_read {
-        script[index] = Err(0);
-    }
-    Ok(script)
+fn pair_clock_script(case: PairAdjustmentCase) -> Result<PairClockScript, Failure> {
+    use ProtectedTimingObservationRefusal::{AdjustmentReadFailed, UnsupportedPresentation};
+
+    let (adjustments, timing, second_close): (
+        [ManagedAdjustmentRead; 4],
+        [Result<(), ProtectedTimingObservationRefusal>; 2],
+        LeapPresentation,
+    ) = match case {
+        PairAdjustmentCase::Native(failed_read) => {
+            let native: ClockAdjustmentRead =
+                Ok(read_clock_adjustment().map_err(|_| Failure::Control)?);
+            let mut adjustments: [ManagedAdjustmentRead; 4] =
+                [ManagedAdjustmentRead::Native(native); 4];
+            let first_timing: Result<(), ProtectedTimingObservationRefusal> = match failed_read {
+                Some(index) => {
+                    adjustments[index] = ManagedAdjustmentRead::Native(Err(0));
+                    Err(AdjustmentReadFailed)
+                }
+                None => Ok(()),
+            };
+            (
+                adjustments,
+                [first_timing, Err(UnsupportedPresentation)],
+                LeapPresentation::SixtySecond,
+            )
+        }
+        PairAdjustmentCase::Scripted {
+            settings,
+            first_timing,
+        } => (
+            settings.map(ManagedAdjustmentRead::Scripted),
+            [first_timing, Ok(())],
+            LeapPresentation::Compatibility,
+        ),
+    };
+    let mut reads: [ManagedClockRead; 4] =
+        adjustments.map(|adjustment: ManagedAdjustmentRead| ManagedClockRead {
+            presentation: Ok(LeapPresentation::Compatibility),
+            adjustment,
+        });
+    reads[3].presentation = Ok(second_close);
+    Ok(PairClockScript { reads, timing })
+}
+
+/// Check both projections from this job's actual joined report using the input script.
+/// # Panics
+/// Fail if the report mixes boundaries or jobs, loses fields or treats scripted values as native.
+#[cfg(windows)]
+fn assert_joined_clock_reads(report: &ManagedProtectedReport, reads: [ManagedClockRead; 2]) {
+    let settings: [Result<RawClockAdjustment, u32>; 2] =
+        reads.map(|read: ManagedClockRead| match read.adjustment {
+            ManagedAdjustmentRead::Native(Ok(native)) => Ok(RawClockAdjustment {
+                adjustment: native.adjustment(),
+                increment: native.increment(),
+                periodic_adjustment_disabled: native.periodic_adjustment_disabled(),
+            }),
+            ManagedAdjustmentRead::Native(Err(code)) => Err(code),
+            ManagedAdjustmentRead::Scripted(raw) => Ok(raw),
+        });
+    let [opening, closing]: [ManagedClockRead; 2] = reads;
+    let native: Option<[ClockAdjustmentRead; 2]> = match (opening.adjustment, closing.adjustment) {
+        (ManagedAdjustmentRead::Native(before), ManagedAdjustmentRead::Native(after)) => {
+            Some([before, after])
+        }
+        _ => None,
+    };
+    assert_eq!(report.clock_adjustment_settings(), Some(settings));
+    assert_eq!(report.clock_adjustment_reads(), native);
+    assert_eq!(
+        report.process_leap_presentation(),
+        Some([opening.presentation, closing.presentation])
+    );
 }
 
 /// Check the original modes and timing export decisions on both joined reports.
@@ -2845,44 +2928,20 @@ fn assert_pair_timing_observations(
     second: &ManagedProtectedReport,
     reads: usize,
     resume_delivery: PairResumeDelivery,
-    adjustments: [ClockAdjustmentRead; 4],
+    script: &PairClockScript,
 ) {
-    let [first_open, first_close, second_open, second_close]: [ClockAdjustmentRead; 4] =
-        adjustments;
+    let [first_open, first_close, second_open, second_close]: [ManagedClockRead; 4] = script.reads;
     let expected: Result<(), ProtectedTimingObservationRefusal> = match resume_delivery {
-        PairResumeDelivery::None if first_open.is_err() || first_close.is_err() => {
-            Err(ProtectedTimingObservationRefusal::AdjustmentReadFailed)
-        }
-        PairResumeDelivery::None => Ok(()),
+        PairResumeDelivery::None => script.timing[0],
         PairResumeDelivery::BeforeWorkerRetirement | PairResumeDelivery::DuringClosingRead => {
             Err(ProtectedTimingObservationRefusal::PowerInvalidated)
         }
     };
     assert_eq!(first.check_timing_observations(), expected);
-    assert_eq!(
-        second.check_timing_observations(),
-        Err(ProtectedTimingObservationRefusal::UnsupportedPresentation),
-    );
+    assert_eq!(second.check_timing_observations(), script.timing[1]);
     assert_eq!(reads, 4);
-    assert_eq!(
-        first.clock_adjustment_reads(),
-        Some([first_open, first_close])
-    );
-    assert_eq!(
-        second.clock_adjustment_reads(),
-        Some([second_open, second_close])
-    );
-    assert_eq!(
-        first.process_leap_presentation(),
-        Some([Ok(LeapPresentation::Compatibility); 2])
-    );
-    assert_eq!(
-        second.process_leap_presentation(),
-        Some([
-            Ok(LeapPresentation::Compatibility),
-            Ok(LeapPresentation::SixtySecond),
-        ])
-    );
+    assert_joined_clock_reads(first, [first_open, first_close]);
+    assert_joined_clock_reads(second, [second_open, second_close]);
 }
 
 /// Compare the original first receipts across the two actual joined jobs.
@@ -2926,7 +2985,7 @@ fn assert_pair_loopback_reports(
     configurations: PairConfigurations,
     resume_delivery: PairResumeDelivery,
     #[cfg(windows)] presentation_reads: usize,
-    #[cfg(windows)] adjustments: [ClockAdjustmentRead; 4],
+    #[cfg(windows)] clock_script: &PairClockScript,
 ) -> Result<(), Failure> {
     let [(first_peer, first_expected), (second_peer, second_expected)] = peers;
     let first: &ManagedProtectedReport = pair.first();
@@ -2960,7 +3019,7 @@ fn assert_pair_loopback_reports(
         second,
         presentation_reads,
         resume_delivery,
-        adjustments,
+        clock_script,
     );
     assert_pair_invocation_order(first, second, configurations)
 }
@@ -2983,7 +3042,7 @@ fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), 
         PairResumeDelivery::None,
         |_| Ok(()),
         #[cfg(windows)]
-        None,
+        PairAdjustmentCase::Native(None),
     )
 }
 
@@ -3006,7 +3065,7 @@ fn managed_pair_late_power_event_invalidates_only_first_joined_observation() -> 
         PairResumeDelivery::BeforeWorkerRetirement,
         |_| Ok(()),
         #[cfg(windows)]
-        None,
+        PairAdjustmentCase::Native(None),
     )
 }
 
@@ -3027,7 +3086,7 @@ fn managed_pair_closing_read_resume_invalidates_only_first_joined_observation()
         PairConfigurations::Shared,
         PairResumeDelivery::DuringClosingRead,
         |_| Ok(()),
-        Some(1),
+        PairAdjustmentCase::Native(Some(1)),
     )
 }
 
@@ -3048,7 +3107,73 @@ fn managed_pair_refuses_a_failed_opening_or_closing_adjustment_read() -> Result<
             PairConfigurations::Shared,
             PairResumeDelivery::None,
             |_| Ok(()),
-            Some(index),
+            PairAdjustmentCase::Native(Some(index)),
+        )?;
+    }
+    Ok(())
+}
+
+/// Retain both successful adjustment reads while refusing each independent change.
+/// # Errors
+/// Preserve original worker admission, collection or peer failure.
+/// # Panics
+/// Fail if the first report loses a field or accepts a change, or if a healthy
+/// invocation loses original receipt custody, timing guard acceptance or work accounting.
+#[cfg(windows)]
+#[test]
+fn managed_pair_retains_unequal_successful_adjustment_reads() -> Result<(), Failure> {
+    use ProtectedTimingObservationRefusal::AdjustmentChanged;
+
+    static SLOTS: [WorkerSlot; 4] = [const { WorkerSlot::new() }; 4];
+    static ADMISSIONS: [ProcessAdmission; 4] = [const { ProcessAdmission::new() }; 4];
+    let opening: RawClockAdjustment = RawClockAdjustment {
+        adjustment: 0x1_0000_0011,
+        increment: 0x2_0000_0023,
+        periodic_adjustment_disabled: false,
+    };
+    let second: RawClockAdjustment = RawClockAdjustment {
+        adjustment: 0x5_0000_0041,
+        increment: 0x6_0000_0047,
+        periodic_adjustment_disabled: true,
+    };
+    let cases: [(
+        RawClockAdjustment,
+        Result<(), ProtectedTimingObservationRefusal>,
+    ); 4] = [
+        (opening, Ok(())),
+        (
+            RawClockAdjustment {
+                adjustment: 0x3_0000_0011,
+                ..opening
+            },
+            Err(AdjustmentChanged),
+        ),
+        (
+            RawClockAdjustment {
+                increment: 0x4_0000_0023,
+                ..opening
+            },
+            Err(AdjustmentChanged),
+        ),
+        (
+            RawClockAdjustment {
+                periodic_adjustment_disabled: true,
+                ..opening
+            },
+            Err(AdjustmentChanged),
+        ),
+    ];
+    for (index, (closing, first_timing)) in cases.into_iter().enumerate() {
+        assert_managed_pair_reissue(
+            &SLOTS[index],
+            &ADMISSIONS[index],
+            PairConfigurations::Shared,
+            PairResumeDelivery::None,
+            |_| Ok(()),
+            PairAdjustmentCase::Scripted {
+                settings: [opening, closing, second, second],
+                first_timing,
+            },
         )?;
     }
     Ok(())
@@ -3076,7 +3201,7 @@ fn managed_pair_reissues_after_delivered_suspend_and_automatic_resume() -> Resul
             target.deliver(PowerEvent::AutomaticResume)
         },
         #[cfg(windows)]
-        None,
+        PairAdjustmentCase::Native(None),
     )
 }
 
@@ -3140,7 +3265,7 @@ fn assert_managed_pair_reissue(
     configurations: PairConfigurations,
     delivery: PairResumeDelivery,
     after_first_take: impl FnOnce(&PowerTarget) -> Result<(), Failure>,
-    #[cfg(windows)] failed_adjustment_read: Option<usize>,
+    #[cfg(windows)] adjustment_case: PairAdjustmentCase,
 ) -> Result<(), Failure> {
     use std::cell::OnceCell;
 
@@ -3158,7 +3283,7 @@ fn assert_managed_pair_reissue(
     #[cfg(windows)]
     let presentation_reads: Cell<usize> = Cell::new(0);
     #[cfg(windows)]
-    let adjustments: [ClockAdjustmentRead; 4] = pair_adjustment_script(failed_adjustment_read)?;
+    let clock_script: PairClockScript = pair_clock_script(adjustment_case)?;
 
     let pair: ManagedProtectedPairReport =
         std::thread::scope(|scope: &std::thread::Scope<'_, '_>| {
@@ -3214,7 +3339,7 @@ fn assert_managed_pair_reissue(
                         cutoff,
                         observer.get(),
                         delivery,
-                        adjustments,
+                        &clock_script,
                     )
                 }),
             )
@@ -3231,7 +3356,7 @@ fn assert_managed_pair_reissue(
                 #[cfg(windows)]
                 presentation_reads.get(),
                 #[cfg(windows)]
-                adjustments,
+                &clock_script,
             )?;
             Ok::<ManagedProtectedPairReport, Failure>(pair)
         })?;
@@ -3405,7 +3530,7 @@ fn managed_pair_terminal_deny_suppresses_second_authorization() -> Result<(), Fa
                     };
                 ManagedClockRead {
                     presentation,
-                    adjustment: Err(5),
+                    adjustment: ManagedAdjustmentRead::Native(Err(5)),
                 }
             }),
         )
@@ -3618,7 +3743,7 @@ fn managed_pair_abnormal_join_omits_closing_process_observation() -> Result<(), 
                 reads.set(reads.get() + 1);
                 ManagedClockRead {
                     presentation: Ok(LeapPresentation::Compatibility),
-                    adjustment: Err(0),
+                    adjustment: ManagedAdjustmentRead::Native(Err(0)),
                 }
             }),
         );

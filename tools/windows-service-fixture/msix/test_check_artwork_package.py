@@ -23,6 +23,8 @@ PRI: str = "resources.pri"
 UI: str = "nevrotick-ui.exe"
 ENGINE: str = "nevrotick-lab-s02-engine.exe"
 BROKER: str = "nevrotick-lab-s02-broker.exe"
+PNG_SIGNATURE: bytes = b"\x89PNG\r\n\x1a\n"
+PRI_SIGNATURE: bytes = b"mrm_pri2"
 XML: bytes = rb"""<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -88,18 +90,18 @@ def header(marker: bytes) -> bytes:
 def authored_payload() -> dict[str, bytes]:
     """Independently build the expected carrier's closed lab roster."""
     payload: dict[str, bytes] = {
-        MANIFEST: XML, PRI: b"synthetic-resource-index", UI: header(b"ui"),
+        MANIFEST: XML, PRI: PRI_SIGNATURE + b"synthetic-resource-index", UI: header(b"ui"),
         ENGINE: header(b"engine"), BROKER: header(b"broker"),
     }
     for stem in ("PackageLogo", "Square150x150Logo", "Square44x44Logo"):
         for qualifier in ("", ".scale-200", ".scale-400"):
             name: str = f"Assets/{stem}{qualifier}.png"
-            payload[name] = name.encode("ascii")
+            payload[name] = PNG_SIGNATURE + name.encode("ascii")
     for size in (16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256):
         target_stem: str = f"Assets/Square44x44Logo.targetsize-{size}"
         for qualifier in ("", "_altform-lightunplated", "_altform-unplated"):
             name: str = f"{target_stem}{qualifier}.png"
-            payload[name] = name.encode("ascii")
+            payload[name] = PNG_SIGNATURE + name.encode("ascii")
     return payload
 
 
@@ -170,6 +172,29 @@ class CombinedPackageTests(unittest.TestCase):
             catalog += f"{name}\t{len(value)}\t{observed}\n".encode("ascii")
         self.assertEqual(receipt["payload_sha256"], sha256(catalog).hexdigest())
 
+        image_names: tuple[str, str, str] = (UI, ENGINE, BROKER)
+        artwork_names: set[str] = set(self.data) - {MANIFEST, PRI, *image_names}
+        self.assertEqual(len(artwork_names), 51)
+        expected_formats: dict[str, str] = {
+            MANIFEST: "xml",
+            PRI: "pri",
+            **{name: "pe32+" for name in image_names},
+            **{name: "png" for name in artwork_names},
+        }
+        self.assertEqual(receipt["signing_inventory"], {
+            "verification": "not-run",
+            "package": {"format": "msix", "signature_requirement": "package-signature"},
+            "payload": {
+                name: {
+                    "format": kind,
+                    "signature_requirement": (
+                        "embedded-authenticode" if name in image_names else "package-signature"
+                    ),
+                }
+                for name, kind in expected_formats.items()
+            },
+        })
+
     def test_same_count_substituted_archive_member_refuses(self) -> None:
         altered: dict[str, bytes] = self.data.copy()
         altered["Assets/Unexpected.png"] = altered.pop("Assets/Square44x44Logo.targetsize-24.png")
@@ -197,13 +222,21 @@ class CombinedPackageTests(unittest.TestCase):
         self.assert_refusal(self.run_reader(manifest_sha=sha256(XML).hexdigest()),
                             b"member differs from independent source pin: AppxManifest.xml")
 
+    def test_rebuilt_artwork_with_pe_header_refuses_after_all_pins_match(self) -> None:
+        self.data["Assets/PackageLogo.png"] = header(b"artwork-header-control")
+        self.assert_refusal(self.run_reader(), b"Assets/PackageLogo.png PNG signature differs")
+
+    def test_rebuilt_pri_with_wrong_signature_refuses_after_all_pins_match(self) -> None:
+        self.data[PRI] = b"wrongpri" + self.data[PRI][len(PRI_SIGNATURE):]
+        self.assert_refusal(self.run_reader(), b"resources.pri PRI signature differs")
+
     def test_fresh_pins_and_archive_cannot_extend_pri_limit(self) -> None:
         self.data[PRI] = b"x" * (65_536 + 1)
         self.assert_refusal(self.run_reader(), b"resources.pri must be a bounded regular file")
 
     def test_rebuilt_pri_cannot_substitute_for_original_pin(self) -> None:
         pinned: dict[str, bytes] = self.data.copy()
-        self.data[PRI] = b"changed-resource-index"
+        self.data[PRI] = PRI_SIGNATURE + b"changed-resource-index"
         self.assert_refusal(self.run_reader(pinned_payload=pinned),
                             b"member differs from independent source pin: resources.pri")
 

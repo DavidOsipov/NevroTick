@@ -1300,6 +1300,49 @@ type ProcessLeapPresentationRead = Result<
 #[cfg(windows)]
 type ClockAdjustmentRead = Result<windows_platform_native::ClockAdjustment, u32>;
 
+/// The three independently compared values of one adjustment setting.
+#[cfg(windows)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct RawClockAdjustment {
+    /// Raw Windows adjustment word.
+    adjustment: u64,
+    /// Raw Windows increment word.
+    increment: u64,
+    /// Windows' periodic programmed adjustment disabled status.
+    periodic_adjustment_disabled: bool,
+}
+
+/// A native observation, or field values local to joined-worker tests.
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum ManagedAdjustmentRead {
+    /// The original outcome of the native getter.
+    Native(ClockAdjustmentRead),
+    /// Scripted successful settings cannot be reported as a native read.
+    #[cfg(test)]
+    Scripted(RawClockAdjustment),
+}
+
+#[cfg(windows)]
+impl ManagedAdjustmentRead {
+    /// Compare the same three raw fields for native and scripted input.
+    ///
+    /// # Errors
+    /// Return the original Win32 code on a failed native read.
+    const fn settings(self) -> Result<RawClockAdjustment, u32> {
+        match self {
+            Self::Native(Ok(read)) => Ok(RawClockAdjustment {
+                adjustment: read.adjustment(),
+                increment: read.increment(),
+                periodic_adjustment_disabled: read.periodic_adjustment_disabled(),
+            }),
+            Self::Native(Err(code)) => Err(code),
+            #[cfg(test)]
+            Self::Scripted(settings) => Ok(settings),
+        }
+    }
+}
+
 /// The independent raw read results at one boundary of the original managed job.
 #[cfg(windows)]
 #[derive(Clone, Copy)]
@@ -1307,7 +1350,7 @@ struct ManagedClockRead {
     /// Original read of this process's leap-second presentation.
     presentation: ProcessLeapPresentationRead,
     /// Original setting or refusal from the system clock adjustment getter.
-    adjustment: ClockAdjustmentRead,
+    adjustment: ManagedAdjustmentRead,
 }
 
 /// Take both read-only observations, retaining either refusal independently.
@@ -1315,7 +1358,7 @@ struct ManagedClockRead {
 fn read_managed_clock() -> ManagedClockRead {
     ManagedClockRead {
         presentation: windows_platform_native::read_leap_presentation(),
-        adjustment: windows_platform_native::read_clock_adjustment(),
+        adjustment: ManagedAdjustmentRead::Native(windows_platform_native::read_clock_adjustment()),
     }
 }
 

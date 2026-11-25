@@ -5,6 +5,8 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 
@@ -17,8 +19,10 @@ namespace NevroTick
         private const int MaximumExpandedBytes = 8 * 1024 * 1024;
         private const int MaximumMemberBytes = 2 * 1024 * 1024;
         private const int MaximumManifestBytes = 64 * 1024;
+        private const int MaximumSignatureBytes = 64 * 1024;
         private const int MaximumIdentityUnits = 256;
         private const int ManifestFootprint = 0;
+        private const int SignatureFootprint = 2;
         private const uint InProcessServer = 1;
         private const uint MultiThreaded = 0;
         private const uint ApartmentThreaded = 2;
@@ -28,6 +32,8 @@ namespace NevroTick
         private const string PackagePublisher = "CN=NevroTick S06 Laboratory";
         private const string FullNamePrefix = PackageName + "_1.0.0.0_x64__";
         private const string ManifestMember = "AppxManifest.xml";
+        private const string SignatureMember = "AppxSignature.p7x";
+        private const string IndirectDataContentType = "1.3.6.1.4.1.311.2.1.4";
         private const string EngineMember = "nevrotick-lab-s02-engine.exe";
         private const string BrokerMember = "nevrotick-lab-s02-broker.exe";
         private static readonly string[] PayloadMembers = {
@@ -82,6 +88,22 @@ namespace NevroTick
         private static PrestartArchiveFacts InspectArchive(byte[] archive, string expectedSha256,
             string expectedPayloadSha256)
         {
+            byte[] snapshot = PinSnapshot(archive, expectedSha256);
+            using (SHA256 sha = SHA256.Create())
+                return ReadPackage(snapshot, reader => ReadFacts(
+                    reader, snapshot.Length, expectedSha256, sha, expectedPayloadSha256));
+        }
+
+        // A footprint observation is used only alongside Windows trust of the
+        // original held ScmFixture. The pin binds that file to this snapshot.
+        internal static string InspectSignatureSigner(byte[] archive, string expectedSha256)
+        {
+            byte[] snapshot = PinSnapshot(archive, expectedSha256);
+            return ReadPackage(snapshot, ReadSignatureFootprint);
+        }
+
+        private static byte[] PinSnapshot(byte[] archive, string expectedSha256)
+        {
             if (archive == null || archive.Length == 0 || archive.Length > MaximumArchiveBytes)
             {
                 throw new InvalidDataException("prestart-archive:archive-size");
@@ -99,8 +121,8 @@ namespace NevroTick
                 {
                     throw new InvalidDataException("prestart-archive:archive-digest");
                 }
-                return ReadPackage(snapshot, digest, sha, expectedPayloadSha256);
             }
+            return snapshot;
         }
 
         private static bool IsSha256(string digest)
@@ -124,8 +146,7 @@ namespace NevroTick
             return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", string.Empty).ToLowerInvariant();
         }
 
-        private static PrestartArchiveFacts ReadPackage(byte[] snapshot, string digest, SHA256 sha,
-            string expectedPayloadSha256)
+        private static T ReadPackage<T>(byte[] snapshot, Func<IAppxPackageReader, T> observe)
         {
             uint apartment = Thread.CurrentThread.GetApartmentState() == ApartmentState.STA
                 ? ApartmentThreaded : MultiThreaded;
@@ -144,7 +165,7 @@ namespace NevroTick
                 }
                 try
                 {
-                    return ReadStream(stream, snapshot.Length, digest, sha, expectedPayloadSha256);
+                    return ReadStream(stream, observe);
                 }
                 finally
                 {
@@ -157,8 +178,7 @@ namespace NevroTick
             }
         }
 
-        private static PrestartArchiveFacts ReadStream(IArchiveStream stream, int size, string digest, SHA256 sha,
-            string expectedPayloadSha256)
+        private static T ReadStream<T>(IArchiveStream stream, Func<IAppxPackageReader, T> observe)
         {
             Guid classId = new Guid("5842a140-ff9f-4166-8f5c-62f5b7b0c781");
             Guid interfaceId = typeof(IAppxFactory).GUID;
@@ -172,21 +192,7 @@ namespace NevroTick
                 try
                 {
                     RequireObject(opened, reader, "package-reader");
-                    string fullName = ReadIdentity(reader);
-                    if (expectedPayloadSha256 != null)
-                    {
-                        SortedDictionary<string, Member> members = ReadAuthoredMembers(reader, sha);
-                        string payloadSha256 = DigestMembers(members, sha);
-                        if (!string.Equals(payloadSha256, expectedPayloadSha256, StringComparison.Ordinal))
-                        {
-                            throw new InvalidDataException("prestart-archive:payload-digest");
-                        }
-                        return new PrestartArchiveFacts(fullName, size, digest, members[EngineMember],
-                            members[BrokerMember], payloadSha256);
-                    }
-                    Member engine = ReadMember(reader, EngineMember, sha);
-                    Member broker = ReadMember(reader, BrokerMember, sha);
-                    return new PrestartArchiveFacts(fullName, size, digest, engine, broker, null);
+                    return observe(reader);
                 }
                 finally
                 {
@@ -197,6 +203,26 @@ namespace NevroTick
             {
                 Release(factory);
             }
+        }
+
+        private static PrestartArchiveFacts ReadFacts(IAppxPackageReader reader, int size, string digest,
+            SHA256 sha, string expectedPayloadSha256)
+        {
+            string fullName = ReadIdentity(reader);
+            if (expectedPayloadSha256 != null)
+            {
+                SortedDictionary<string, Member> members = ReadAuthoredMembers(reader, sha);
+                string payloadSha256 = DigestMembers(members, sha);
+                if (!string.Equals(payloadSha256, expectedPayloadSha256, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException("prestart-archive:payload-digest");
+                }
+                return new PrestartArchiveFacts(fullName, size, digest, members[EngineMember],
+                    members[BrokerMember], payloadSha256);
+            }
+            Member engine = ReadMember(reader, EngineMember, sha);
+            Member broker = ReadMember(reader, BrokerMember, sha);
+            return new PrestartArchiveFacts(fullName, size, digest, engine, broker, null);
         }
 
         private static string ReadIdentity(IAppxPackageReader reader)
@@ -349,6 +375,83 @@ namespace NevroTick
             }
         }
 
+        private static string ReadSignatureFootprint(IAppxPackageReader reader)
+        {
+            IAppxFile file;
+            int found = reader.GetFootprintFile(SignatureFootprint, out file);
+            try
+            {
+                RequireObject(found, file, "signature-footprint");
+                if (!string.Equals(ReadMemberName(file), SignatureMember, StringComparison.Ordinal))
+                    throw new InvalidDataException("prestart-archive:signature-footprint");
+                return ReadSignatureLeaf(ReadMemberBytes(file, MaximumSignatureBytes));
+            }
+            finally
+            {
+                Release(file);
+            }
+        }
+
+        private static string ReadSignatureLeaf(byte[] footprint)
+        {
+            if (footprint == null || footprint.Length < 6 || footprint.Length > MaximumSignatureBytes ||
+                footprint[0] != 'P' || footprint[1] != 'K' || footprint[2] != 'C' || footprint[3] != 'X' ||
+                !HasCompleteSignatureSequence(footprint))
+            {
+                throw new InvalidDataException("prestart-archive:signature-footprint");
+            }
+            byte[] encoded = new byte[footprint.Length - 4];
+            Buffer.BlockCopy(footprint, 4, encoded, 0, encoded.Length);
+            try
+            {
+                SignedCms cms = new SignedCms();
+                cms.Decode(encoded);
+                SignerInfoCollection signers = cms.SignerInfos;
+                if (cms.Detached || cms.ContentInfo.ContentType.Value != IndirectDataContentType ||
+                    cms.ContentInfo.Content.Length == 0 || signers.Count != 1)
+                {
+                    throw new InvalidDataException("prestart-archive:signature-profile");
+                }
+                SignerInfo signer = signers[0];
+                if (signer.UnsignedAttributes.Count != 0 || signer.CounterSignerInfos.Count != 0)
+                    throw new InvalidDataException("prestart-archive:signature-profile");
+                using (X509Certificate2 certificate = signer.Certificate)
+                {
+                    if (certificate == null)
+                        throw new InvalidDataException("prestart-archive:signature-profile");
+                    cms.CheckSignature(true);
+                    using (SHA256 sha = SHA256.Create())
+                        return Digest(sha, certificate.RawData);
+                }
+            }
+            catch (CryptographicException error)
+            {
+                throw new InvalidDataException("prestart-archive:signature-footprint", error);
+            }
+        }
+
+        // Require one complete, definite-length outer DER sequence after PKCX.
+        // SignedCms owns the decoding and verification of the sequence body.
+        private static bool HasCompleteSignatureSequence(byte[] footprint)
+        {
+            if (footprint[4] != 0x30)
+                return false;
+            int length = footprint[5];
+            int offset = 6;
+            if (length < 0x80)
+                return length == footprint.Length - offset;
+            int lengthBytes = length & 0x7f;
+            if (lengthBytes < 1 || lengthBytes > 2 || footprint.Length < offset + lengthBytes ||
+                footprint[offset] == 0)
+            {
+                return false;
+            }
+            length = 0;
+            for (int index = 0; index < lengthBytes; ++index)
+                length = (length << 8) | footprint[offset++];
+            return length >= 0x80 && length == footprint.Length - offset;
+        }
+
         private static string DigestMembers(SortedDictionary<string, Member> members, SHA256 sha)
         {
             StringBuilder catalog = new StringBuilder();
@@ -370,6 +473,12 @@ namespace NevroTick
 
         private static Member ReadMemberContents(IAppxFile file, int maximumBytes, SHA256 sha)
         {
+            byte[] bytes = ReadMemberBytes(file, maximumBytes);
+            return new Member(bytes.Length, Digest(sha, bytes));
+        }
+
+        private static byte[] ReadMemberBytes(IAppxFile file, int maximumBytes)
+        {
             ulong size;
             RequireSuccess(file.GetSize(out size), "payload-size");
             if (size == 0 || size > (ulong)maximumBytes)
@@ -382,7 +491,7 @@ namespace NevroTick
             try
             {
                 RequireObject(opened, stream, "payload-stream");
-                return ReadMemberStream(stream, boundedSize, sha);
+                return ReadMemberStream(stream, boundedSize);
             }
             finally
             {
@@ -390,7 +499,7 @@ namespace NevroTick
             }
         }
 
-        private static Member ReadMemberStream(IArchiveStream stream, int size, SHA256 sha)
+        private static byte[] ReadMemberStream(IArchiveStream stream, int size)
         {
             byte[] bytes = new byte[size];
             uint read;
@@ -414,7 +523,7 @@ namespace NevroTick
             {
                 throw new InvalidDataException("prestart-archive:member-length");
             }
-            return new Member(size, Digest(sha, bytes));
+            return bytes;
         }
 
         // Success strings are NUL-terminated allocations owned by the caller per AppxPackaging.h.

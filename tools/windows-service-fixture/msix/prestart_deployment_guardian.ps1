@@ -45,7 +45,7 @@ try {
     [string[]]$names = @('prestart_actor_token.cs', 'prestart_archive_facts.cs',
         'prestart_observer_child.cs', 'prestart_scm_window.cs', 'prestart_deployment_job.cs')
     [string[]]$sources = @($names | ForEach-Object { Join-Path $PSScriptRoot $_ })
-    Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') -WarningAction Stop
+    Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll', 'System.Security.dll') -WarningAction Stop
     [object]$report = [NevroTick.PrestartObserverChild]::RunDeploymentOwnerJob($EntryPath, $EntryBytes, $EntrySha256,
         $PowerShellBytes, $PowerShellSha256, $RunId, $WorkMilliseconds, $RetirementMilliseconds)
     $record.owner_pid = $report.Pid

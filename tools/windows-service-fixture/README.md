@@ -85,6 +85,12 @@ The reader checks the fixed ArtworkLab 1.0.1.0 profile, including the
 51 artwork files, PRI, UI, two disabled LocalService declarations and
 original authored manifest. It verifies both package metadata parts and
 returns the carrier and independently checked authored-payload digests.
+The `signing_inventory` lists the format and signature requirement for
+each authored member, keyed by the same name used in `members`. It checks
+the selected PNG and PRI headers, the AMD64 PE32+ declarations and the
+manifest structure before assigning coverage. The three image rows require
+embedded Authenticode. The data rows and outer MSIX require package-signature
+coverage. Signature verification is recorded as `not-run`.
 Keep the expected pins from the original authoring and link inputs.
 This unsigned profile has separate installed and signing gates.
 
@@ -120,6 +126,12 @@ BOM-free UTF-8 schema-2 line to raw stdout after both role and registration
 checks and both image handles have been released. Retain native errors
 privately. [Identity controls](msix/test_installed_identity.ps1)
 
+The fixed SCM path may quote the package identity's spelling while Appx
+reports a lowercase installed directory. The checker opens only the
+alternate derived from the admitted identity and requires that handle to
+resolve to the exact registered member. It retains the original member
+handles through digest and registration readback.
+
 For owned capture, `Invoke-PrestartIdentity` in
 [the child module](msix/prestart_child.psm1) uses the same suspended process,
 token, deadline, job, and retirement checks as the fixed observers. Open the
@@ -131,7 +143,12 @@ held archive. For the signature-gated lab capture, also supply
 `ExpectedSignerSha256`, the independently admitted SHA-256 of the signer's
 DER certificate. This selects Windows signature verification with the held
 archive handle and path, no interactive UI and cache-only URL retrieval.
-The current lab profile selects one primary signature with zero secondaries.
+The ScmFixture lab profile requires Windows package trust, an observed zero
+secondary count, and a single CMS signer in the original archive's bounded
+signature footprint. It rejects unsigned attributes. The CMS certificate,
+Windows-verified leaf, and independent signer pin must agree before the
+held lease can admit an observer. This profile permits an unavailable
+Windows signature index only with that independent signer evidence.
 The verification and child launch share the original actor, lease and
 deadline. The archive retains the time remaining at admission on a private
 monotonic clock. Use the unreset original clock and keep the lease through

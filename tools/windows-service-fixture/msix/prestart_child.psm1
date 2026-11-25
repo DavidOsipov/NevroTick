@@ -157,7 +157,7 @@ function Initialize-PrestartObserverTypes {
     [string]$scmSource = Join-Path $PSScriptRoot 'prestart_scm_window.cs'
     [bool]$hasScmWindow = Test-Path -LiteralPath $scmSource -PathType Leaf
     if ($hasScmWindow) { $sources += $scmSource }
-    [type[]]$types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll') `
+    [type[]]$types = @(Add-Type -LiteralPath $sources -ReferencedAssemblies @('System.dll', 'System.Core.dll', 'System.Security.dll') `
         -PassThru -ErrorAction Stop)
     Set-PrestartObserverTypes $types $hasScmWindow
 }

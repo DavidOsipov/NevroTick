@@ -4397,6 +4397,17 @@ existing loopback limits and its redacted transcript.
 [Laboratory backend](../crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs)
 [Laboratory peer](../tools/crypto-cng-lifecycle/src/bin/nts_ke_peer/protected_udp.rs)
 
+**Wired link preflight — 25 November 2026.** The read-only
+`Get-NetAdapter -Physical` query on Windows build 26300 found two physical
+hardware adapters. One reported 802.3 and was disconnected. The other
+reported a different physical medium. The trial still needs a connected
+admitted interface and independent calibration and packet event pairing.
+The redacted counts are in
+`~/.local/share/nevrotick/w11-reference-link.KGJ2nwEq/net-adapter.json`,
+SHA-256 `0c82bd40e5fc24c8c907a26ea01155ffc4cd6db6c3852e9d7696bde3d421ef32`.
+[Physical adapter query](https://learn.microsoft.com/powershell/module/netadapter/get-netadapter?view=windowsserver2025-ps)
+[Native adapter properties](https://learn.microsoft.com/windows/win32/fwp/wmi/netadaptercimprov/msft-netadapter)
+
 For each held-out leg, compare the modeled Windows local-wall coordinate
 with an independent interval for the UTC event time plus the independently
 observed residual `local_wall(event) - UTC(event)`. This residual is
@@ -21460,6 +21471,75 @@ retain their existing scope.
 | `pack/archive-readback.json` | `b9d89d31bf56172a499969ff07b1074dcac76b14817f6bf470e037d8021af0ef` |
 | `pack/NevroTick-S06-SCM-Fixture-unsigned.msix` | `74f40270c9f6d4df6c1163981db31ef0427fad300940717674ebe627f3c0c18f` |
 
+##### Exercise default DLL search across the fixed console entries
+
+W11-W05/S3.1 and CHECK-16/26/27. Windows-service and regression QA added
+separate ignored Engine and Broker selectors over `5983832`. Each fresh
+process uses the admitted resource-only PE under distinct names in its
+private application and working directories. Lookups use only
+`LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE`. Each successful call checks the
+data-file tag and releases its original handle. The fixture holds the
+canary files read-only through the actual fixed role entry. It requires
+both basenames to resolve before entry, both to return a file-not-found or
+module-not-found status after entry, and both absolute paths to remain
+readable. The System32 neighbor uses an unloaded `version.dll` and compares
+the guarded basename with the backing path of the fully qualified lookup.
+[Microsoft data-file and default search contract](https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw)
+
+The first runner refused the reserved `/dev` path. A separate private
+mount reached the ordinary-user check and was refused as namespace UID 0.
+The corrected private tmpfs run preserved the 4 GiB floor under UID 1000
+with zero effective capabilities. The first MSVC Clippy run found an
+import that made three existing `std::ptr` qualifications redundant.
+Removing the import restored the configured development lanes.
+
+The linked predecessor stopped before the Engine entry and left Broker
+unstarted. In build 26100 Sandbox, the `version.dll` data mapping reported
+a VSMB device path for the file opened under System32. The corrected
+observer pins the positive comparison to the exact mapping of the fully
+qualified lookup. Both writable-location canaries retain the held-file
+path comparison. The first native failure, exit 101 for the Engine
+selector, and confirmed scratch cleanup remain under
+`~/.local/share/nevrotick/w11-native-search.FFTDC4jw/native/`.
+
+The next image reached the Engine role entry and its retained SCM refusal.
+The subsequent data-file lookup returned `ERROR_FILE_NOT_FOUND` (2).
+The observation was held as a failure because the test expected only
+`ERROR_MOD_NOT_FOUND` (126). The revised check preserves the original status
+and recognizes both specific absence codes. It still requires the two
+absolute path controls and the separate successful System32 lookup.
+The first two native receipts remain under `native/` and `native-r5/` in
+the same evidence directory. [Windows error codes](https://learn.microsoft.com/windows/win32/debug/system-error-codes--0-499-)
+
+The final observer passed six graph, twelve development and two cross-link
+commands. The linked PE and PDB match the 871-input cross-link receipt.
+The same build-26100 offline guest ran one exact selector per role in
+distinct fresh processes. Both exited 0 with one test passed. Each
+excluded both canary basenames with status 2, mapped their original
+absolute paths and matched the System32 baseline. Both processes exited,
+both streams reached EOF and the guest scratch and host transfer files
+were removed.
+
+The host controller refused the final transcript check because `--nocapture`
+split libtest's selector and `ok` across lines. Its original incomplete
+record remains intact. Independent readback matched both selectors, native exit codes,
+raw pass and lookup markers, image and PDB pins, cleanup and offline
+bookends. It executed no new native command.
+
+| Record under `~/.local/share/nevrotick/w11-native-search.FFTDC4jw/` | SHA-256 |
+| --- | --- |
+| `qualification/s06-default-search-graph-r6.json` | `4a27c8d25026a8e2920ef13469bb610cc7de6dbc287f9edb67738a54ccfbcedb` |
+| `qualification/s06-default-search-development-r6.json` | `973ea6bd543507bda77f182a1500d06e84f1c41a8f82e436c7e696465ef31049` |
+| `qualification/cross-s06-default-search-observer-r6.json` | `34fdf996e4c045b197f93b01078018c3aa9f6ae116c125a815e2af31753cd512` |
+| `native-r6/native-result.json` | `9249247ff051fb1423871bb12abe77b36397a40b0086985413f0e34c222ec475` |
+| `readback-r6.json` | `cedeaa891c4f2830d6f3f523c55d557533fac8febeaffdb42cf11a9e7139fa9c` |
+
+This qualifies the selected data-file default searches in the two
+standalone console roles. The test uses one mapping at a time and checks
+the release before moving on. Executable DLL loading, early imports,
+installed service startup and current required-file metrics retain their
+existing exits.
+
 #### Bind the available inputs for the signed installed trial
 
 W11-W05/W11-W10 and S0.6. The read-only package and artifact checks matched
@@ -22336,6 +22416,260 @@ limit qualification open.
 | `owner-b98a817eff98/guest.json` | `88cb0f929efa9ab15a79f33ebcbdf54e4515caa5d7337db27d48cf8e6b4c25d4` |
 | `phase-result.json` | `02d20bece368b4cc1576d7d2dca212bf27e1044d10f74673dd62f950fc77fb46` |
 
+##### Rebind and test-sign the current ScmFixture for the owned lab
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. The package and Sandbox
+preflight checked the current 213,144-byte unsigned carrier against its
+original role links, symbols, observer and authored payload. Both service
+declarations are Disabled. Twelve of the earlier installed-trial source
+pins have advanced. The offline build-26100 guest compiled four AMD64
+helpers from nine files on `59838326655cd8272e0c3ced593e43c44d99d2b8`.
+The compiler and source pins matched before and after compilation. All
+four processes exited zero and their streams retired. Independent
+readback matched the four emitted binaries and nine input hashes.
+
+The unsigned current-owner replay used the real observer image and the
+new watchdog and deployment helper. The crossed authored-payload pin
+refused at `session/archive`. The matching pin reached `session/window`
+and observed `win32-1060`. Both original jobs reported empty and the
+fixed services were absent before and after the controls. The guest
+retired both child processes and streams, the staged files reopened
+exclusively, and the transport retired the transfer files. This is
+negative-path and lifecycle evidence through the original owners.
+
+David authorized a disposable test signature and a handle-only installed
+trial in this guest. The pinned SDK SignTool signed a private copy. Its
+first signature readback refused because PowerShell had not loaded the
+CMS assembly. With the assembly loaded, the guest verified the CMS
+signature and exact signer DER. The temporary certificate and signing key
+were deleted in each attempt. Host readback initially refused the extra
+signing metadata. A read-only comparison of the same bytes then confirmed
+the original nine members, with a content-types rewrite limited to the
+two signing rows, unchanged authored payload and block map, and the
+added signature and code-integrity catalog. The resulting 216,265-byte
+archive and public leaf are lab inputs. The signing steps made no guest
+trust or registration change.
+
+The current held verifier opened the signed archive with the exact
+authored payload pin. It returned `0x800b0109` before the disposable
+leaf was trusted. With that leaf present in guest `TrustedPeople`,
+Windows trust returned zero and the original selector refused at
+`prestart-observer:archive-signature-selection`. The diagnostic build
+changed only the refusal detail. The combined selection/count request
+reported `dwVerifiedSigIndex = 0xffffffff` and `cSecondarySigs = 0`.
+The selection-only request left both fields at `0xffffffff`. Both
+diagnostic runs then removed the leaf, reproduced the untrusted
+refusal and reopened the original archive exclusively. No installation
+was attempted. These observations apply to this archive and guest.
+[Windows signature-selection fields](https://learn.microsoft.com/windows/win32/api/wintrust/ns-wintrust-wintrust_signature_settings)
+
+A separate restoration readback confirmed the package absent for all guest
+users, both fixed services absent through SCM error `1060`, and the exact
+lab leaf absent from the guest trust and signing stores. It retired the
+two original scratch directories left by the refused attempts and cleared
+the three settled transfer copies. The original failed receipts and
+independent retained artifacts remain available.
+
+The paired deployment-only relay now has two portable supervisor
+controls. Its healthy case reached both captures and retirement. Its
+crossed-identity case stopped before the observation request and
+retired the original owner. Native dispatch remains open at the signer
+guard. Evaluate a documented signature profile that establishes exactly
+one verified signature and the same pinned DER on the held archive
+before any installation. An unchanged selection sentinel supplies no
+signature identity. After that gate passes, execute the paired
+deployment-only observation before the independently admitted access
+roles. Installed custody, continuous quiescence and all affected
+coverage/mutation gates retain their existing owners.
+
+| Record under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `s06-prestart-carrier-current.sQJbhECE/carrier-readback.json` | `66fcc7ced939fc450fc563c54d1b1c4f58b67f3dbf80507b20768be8d2b17b05` |
+| `s06-current-prestart-capsule.N1UsK4Jc/capsule-summary.json` | `9eaf389f74773b731dff26d0f56520ca2c78a26976a5ba3904be1051c1512962` |
+| `s06-current-owner-replay-review.ki67h1wq/owner-replay-result.json` | `3eea9c6a7cf60df23c6b9dfcf418f17fe8353c68912f722cdfb20d1819d3b052` |
+| `s06-lab-signing.MYg3OAjy/sign-7a4e29a37dc7/ScmFixture-test-signed.msix` | `dea1f9313da627b56b20bf1983a173a15df5e87dc52cf9a7c33abc3291cadcd9` |
+| `s06-lab-signing.MYg3OAjy/sign-7a4e29a37dc7/scmfixture-lab.cer` | `f5d226f1d2a766d907906a94d3152d2a797b10981ad820111efcdf4dee3200cb` |
+| `s06-lab-signing.MYg3OAjy/signed-retained-readback.json` | `c47612986021af8f57347ba8cf309c69b5715907306ddef7caf76bd9d48ced80` |
+| `s06-lab-trust.IjFzFWgm/verify-6e793c18a8d3/guest.json` | `136edadd4d7371fecb5beda39cc409996d70869fcfab44d80c2c0a643035b48e` |
+| `s06-lab-trust.IjFzFWgm/diagnose-3e5a07ad85ea/guest.json` | `628a0588040df0b4f1c2949e8a27ba154df37746030b92775c04ab410cc19969` |
+| `s06-lab-trust.IjFzFWgm/specific-only-45f9f82f7881/guest.json` | `5768311fdebe310370665171156e166e6ac51a8e8065f67b79312debe744f23d` |
+| `s06-lab-trust.IjFzFWgm/restoration.json` | `b2ae17785bc47ff5a2b7e00cf3f21ebe25a332cfb3d945d3d8b81fa75fb10133` |
+
+##### Bind the Windows-verified signer to the held MSIX footprint
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. The supported lab profile
+retains the existing cache-only Windows package trust and state close. It
+requires the observed native secondary count to be zero and rejects any
+explicit nonzero verified index. On the same pinned file handle, the Appx
+reader supplies the bounded signature footprint. It must contain one
+complete PKCX-wrapped CMS envelope, one embedded signer and no unsigned
+attributes. The CMS signature must verify, and its certificate must match
+both the verified Windows leaf and the independent SHA-256 pin. An unset
+index alone contributes no signer evidence. Archive digest, actor,
+deadline, and payload checks still guard the original lease and observer.
+The untimestamped lab profile is separate from final MSIX signing.
+
+The planning, deployment-security and contract review traced the
+ScmFixture from the original file to the guarded observer. The source
+change uses the inbox Framework security assembly and reuses the existing
+Appx reader and closers. The owned build-26100 guest compiled the changed
+helper, watchdog and access parent with its pinned x64 compiler and
+framework assembly. All three compilers exited zero and retired. The
+archive, scripted SCM and wrapper-absence regression selectors passed.
+The first local regression setup refused a source extent before dispatch.
+
+The original and changed native controls distinguish unsupported index
+readback from actual signer authority. The first changed attempt accepted
+the matching leaf and refused the wrong pin, then stopped at the harness's
+PowerShell exception classification. A repeat that inspected the exact
+inner error passed matching acceptance, wrong-DER refusal, withdrawal on
+the same lease, successful matching retry, and untrusted refusal before
+and after temporary trust. The unsigned package refused with `0x800b0100`.
+The guest observed no registration or observer in these controls and
+confirmed leaf removal and release of the held archive.
+
+Eleven footprint observations on the changed helper matched their expected
+outcomes. They include the exact signed footprint and refusals for bad
+framing, trailing and incomplete input, detached data, missing certificate,
+multiple or missing signers, unsigned attributes, and a bad signature.
+The maintained archive entry's optional signature selection separately
+passed the exact leaf, four refused neighbors and a healthy retry.
+Reconstruction matched the staged fixture and helper pins. A fresh source
+and receipt review confirmed the signer, payload and cleanup boundaries.
+The separate restoration run cleared the first attempt's settled scratch
+and transfer copies. It confirmed absence of the package, both services
+and the trial leaf.
+
+| Record under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `s06-held-signer-build.DxLI6zNB/candidate.json` | `a4b025305661cf25c789083f3913a70be8ed3aaeae1a18441bccc4896f9ad314` |
+| `s06-held-signer-build.DxLI6zNB/evidence.sha256` | `536f776f37d40bec9e1cdf1d6b1078943dc9f563b70359720db97924fb194305` |
+| `s06-held-signer-build.DxLI6zNB/test-evidence.sha256` | `e3bd743e96d5e3d37c3e20248f10bec30e02bb38dee010a9d7b7b3ead5b58d5f` |
+| `s06-held-signature-qa.ouy_g3id/verify-047a3ab71faf/guest.json` | `7021173ee03f3ae1b7bea4827926316b072cc4a6551b31c513c7832f278efde5` |
+| `s06-held-signature-qa.ouy_g3id/verify-ba97f68504e1/guest.json` | `3e869bdc2730836a46a7d568ba08f051d031843eb9f64824cf74250f6b8b0435` |
+| `s06-held-signature-qa.ouy_g3id/parser-2bf8750b5498/guest.json` | `d62358cd28a6c8969615bf4cf396cc1fe72073edcff220d3249ac2c24c4f4c4e` |
+
+##### Register and remove the two disabled lab services in the offline guest
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. The owned deployment
+transaction used the accepted 216,265-byte signed carrier, the first
+verified leaf and the original payload and actor pins. An initial native
+parser check refused a typed assignment to PowerShell's automatic
+`args` variable before dispatch. The corrected trial refused the empty
+adapted status of both absent services before changing trust. The
+independent Windows query and reflected SCM status read both returned
+`1060` for each fixed name. The transaction now requires a defined
+service status or the exact absence error.
+
+The next attempt verified the held archive and admitted its exact signer
+before `Add-AppxPackage`. The original add completed under the deployment
+actor. The installed identity matched the fixed package and both services
+reported Stopped. The observation watchdog refused `open-scratch` before
+creating the job or guardian. Its original exit and both streams were
+captured. The paired observation remains incomplete.
+
+Separate recovery confirmed the original watchdog and scoped processes
+absent, then independently observed both services Disabled and Stopped
+with PID 0. Removal of the exact registration completed. All-user package
+readback and both SCM queries confirmed absence before removal of the lab
+certificate. The recovery re-read the guest store to confirm the leaf was
+gone. No service start, configuration write, or production role
+qualification occurred. The next paired attempt must admit its own empty
+private scratch directory before registration. The independently bound
+access probes and delivered signing profile retain their separate gates.
+
+The fresh paired attempt admitted that scratch directory and reached
+the installed window. The initial and currentness requests succeeded.
+The configuration and status type values were both `528` for each role.
+The identity request refused at the 11-second work cutoff. The retirement
+reply separately reported `window-retirement-deadline`. Both job owners
+returned, the watchdog returned zero, and both streams reached EOF.
+The exact package registration and leaf were removed. The host refused
+the partial observation despite the guest transaction's success label.
+`SCIR` is a retired partial exchange. A positive paired record requires
+`SCICOFR` plus the maintained reader's accepted captures and retirement.
+
+The fresh cold-start window used a fixed 24-second identity/observation
+work allowance and 30-second retirement allowance inside the unchanged
+host budget. The actual identity child reached its installed-image check
+and refused the SCM path spelling. Both job owners and streams retired.
+The transaction removed the package and leaf and reported refusal.
+Readback of both roles found the lowercase directory from Appx alongside
+the exact quoted package-identity spelling from SCM. Opening both
+independently derived paths resolved to the same physical lowercase
+member and exact pinned bytes. The handle diagnostic removed the package
+and leaf before its process could release the loaded scratch DLL.
+
+The installed identity owner now checks only that exact quoted alternate.
+It derives the alternate from the admitted package identity, opens its
+handle and verifies the final path against the registered member. It
+continues to read and hash the original registered member, and repeats
+the service checks with both original image handles held. The native
+file controls passed the exact alternate and refused wrong spelling,
+outside and crossed paths, arguments, and a different final target.
+The final-target control observed release of the rejected alias handle.
+
+The next installed identity child exited zero and emitted the exact
+schema-2 receipt for both package members. The supervisor accepted it
+and issued the following currentness and observation requests. The
+observation expired, after which both job owners and streams retired.
+Removal and leaf restoration passed. The measured mapped intervals from
+readiness through the five replies were about 5.7, 4.7, 10.0, 5.0 and
+5.1 seconds. They include delivery and guest work. A fresh paired run
+can allocate that work before launch within the host's original limits.
+The expired attempt remains a refusal.
+
+| Record under `~/.local/share/nevrotick/s06-paired-registered.caazSYpp/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `1fe14620cf1ab3acbe07899b2b41e50769efd0532aff8abd937529ebeb01ab47` |
+| `registration/guest.json` | `4f567601cdf2286240cbdcdbef2787fb87aae633c9044d9685e076cf00352b95` |
+| `recovery/guest.json` | `3d16760be88cae204f099f86ce4941352d60eccd2e6d149cec25ca872dc6aa5d` |
+| `installed-identity-timeout/evidence.sha256` | `8f9bd68540ed3d4d0783a324cf860dd863eb1bdad548f60b856e8764e72ece4c` |
+| `installed-identity-refused/evidence.sha256` | `1dd9f011c2a02974ecea7e1d02ad5fbb8e28b909a7abe3cde1945ae0ab868e83` |
+| `case-readback/evidence.sha256` | `f6010fff9b16ba362a4e74cc7e3ec8d8f54cc85515b9c392db2e7f19e1da75ce` |
+| `identity-accepted/evidence.sha256` | `7badac2041256d712086a1a745d4278720c87bed4c5413f3871222b394c54907` |
+
+##### Complete the paired installed ScmFixture observation
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. The fresh measured run used
+the same signed archive and held signer gate, the current path verifier,
+and fixed owner work and retirement allowances of 44 and 50 seconds
+within the original 60 and 85 second host cutoffs. Every nested owner
+had a distinct, unextended allowance. The seven-command protocol
+`SCICOFR` completed under the original signed deployment run.
+
+Both observer children exited zero with empty stderr and matching input
+bookends. The identity receipt bound the exact package and both installed
+217,600-byte images to the independent PE pins. The SCM observer reported
+both roles Disabled and Stopped, with raw configuration and status type
+`528` at the required observations. The host accepted both records,
+the final currentness response, and the empty retirement response.
+The owner, guardian, and watchdog settled with exit zero. Both jobs
+reported empty and both native streams reached EOF. Fresh independent
+review rehashed the raw frames and matched the staged signer, path module,
+service images, and original process outputs.
+
+The exact package registration and disposable guest leaf were removed.
+Both fixed service queries returned `1060`. The archive and actor
+leases, scratch directory and bounded transfer files were released.
+The separate final readback confirmed the package absent for all guest
+users, both roles absent, and the exact leaf absent from the guest
+Trusted People, Root and personal signing stores.
+This qualifies paired deployment observation for the named lab profile.
+Separate access actors, continuous quiescence beyond the observed points,
+product provisioning, production signatures and final installed release
+qualification remain open.
+
+| Record under `~/.local/share/nevrotick/s06-paired-registered.caazSYpp/paired-completed/` | SHA-256 |
+| --- | --- |
+| `evidence.sha256` | `79f559647709268f16b720b395a179b37b58fa7e19013a13aa5294f8fb70675e` |
+| `guest.json` | `1fab5da8a39231f1a39fd3c48abbf5992eb00ed073afa77f55160202454e3688` |
+| `verification.json` | `a85d4ae206ef956d4adbca0651601101df9b86cdd82231f606601a4aed481810` |
+
+The separate `paired-final-absence/guest.json` receipt under
+`s06-paired-registered.caazSYpp/` hashes to
+`be8cce21ba3b54afec477c8660ff2e5a9ab76f8686a3a5a9e27ba6a32500ae69`.
+
 #### Pack and verify the guarded Slint and service combination
 
 W11-W10/P6 and CHECK-16/18/20/23/26/27. The package and metadata
@@ -22546,6 +22880,105 @@ control selected the original staging descriptor.
 The isolated CPython replay reuses the prior unsigned archive within
 its exact input scope. New packing and the signed installed journey
 retain their own exits.
+
+###### Pack the guarded ArtworkLab from the committed stager
+
+W11-W10/P6 and CHECK-18/26/27. On clean `59838326655cd8272e0c3ced593e43c44d99d2b8`,
+package-artifact QA ran the committed stager with the retained pinned UI,
+service, resource and SDK inputs. The reviewed receiver consumed the 62
+staged leaves and reproduced the 63-row native recipe, including its
+separately authored invalid-StartupType control. The retained native
+template and driver hashes matched before dispatch.
+
+The existing build-26100 offline Sandbox passed the resource and isolation
+bookends. The three SDK binaries had valid timestamped Authenticode
+signatures. The healthy MakeAppx 10.0.28000.2705 run exited 0. The invalid manifest run
+exited 1 with `C00CE169` and left no archive. Both processes were reaped,
+the guest scratch was removed, and both host transfer directories were
+empty after collection.
+
+The maintained reader checked 58 members against the 56 authored files
+and the original independent pins. The earlier UI pin refused the same
+new archive at `nevrotick-ui.exe` with exit 1 and empty stdout. The first
+collector assertion expected the historical exit annotation of 2. The
+current CLI returns exit 1 for this refusal. The archive hash differs
+from the earlier lab pack. All authored bytes and content-types bytes
+match. ZIP entry order changed. The only changed uncompressed member
+is `AppxBlockMap.xml`, whose file rows appear in a different order.
+The per-file and per-block records match after joining by filename.
+The reader validated the new block map against the new archive before
+that comparison. Independent review rehashed both archives, checked
+the native and reader records and confirmed the empty transfer directories.
+
+| Record under `~/.local/share/nevrotick/w11-native-pack-main.5wQqacU5/` | SHA-256 |
+| --- | --- |
+| `stage.json` | `45c5375f29759a685fc6b9a7f4dea5352f3e56fa5586d8ddb246575b8d5630a5` |
+| `prepare.json` | `7817eedd54b1da61a5d2b2320355934ec750db023817334d6d23d5c5f0af240c` |
+| `dispatch.json` | `1f051986466363174f2b2bb77e6f9b7128a740e9c632421ae3e5fd6b78b8e003` |
+| `archive-check.json` | `06d2fb753feaeec1411c39bce3e07450ed074f4a9cd0b504201fd0c2d2b340fc` |
+| `member-comparison.json` | `a532c73a954e3fb155d9958c006780052fbe81dfebcbd7c7c4444cb1ebaed1ba` |
+| `retired.json` | `71a52a4e2f1cfb8aa148d1d58a42b0e0b6cb1028faa13cb11a146d61de58d953` |
+
+`retained-package.txt` locates the 11,315,754-byte unsigned lab archive
+in the Windows evidence directory. Its verified SHA-256 is
+`3e960cf2974e3a9c6387796b3b3968f002413cb2ba02d4a6255bffd542c1c3c7`.
+The owned Linux staging scratch was removed after rechecking the durable
+copy. The retained PE/PDB inputs keep their original link candidate. The
+new result qualifies the current staging-to-pack path for this fixture.
+The final signer, installed actors, effective role protections and
+install/repair/update/Reset/removal journey remain open.
+
+###### Derive signing obligations from the guarded ArtworkLab archive
+
+W11-W10/S6.4 and CHECK-18/23/26. The package-artifact and metadata
+workflows extended the maintained combined reader at the original
+archive-to-authored-bytes comparison. The fixed fixture checks the
+AMD64 PE32+ declarations, PNG and selected PRI headers, and parsed
+manifest before projecting the per-member signature requirements.
+Each row uses the same member name as the existing byte length and
+SHA-256. Signature verification remains `not-run`.
+
+The reader replayed the retained MakeAppx archive at
+`3e960cf2974e3a9c6387796b3b3968f002413cb2ba02d4a6255bffd542c1c3c7`
+against the independently staged authored directory, 55 member pins and
+original manifest pin. It found three PE images requiring embedded
+Authenticode, 51 PNG files, one PRI and one XML manifest requiring
+package-signature coverage, and the outer MSIX signature requirement.
+The two generated footprint parts retain their original validation.
+SDK tools and fault-control inputs were never archive members. The
+projection of every prior receipt field matched the previous readback.
+No archive, signer or trust store was changed.
+
+Fresh-context review rehashed all 58 archive members and checked the
+three PE certificate-directory entries, which were zero on this fixture.
+The PNG and PRI checks classify the selected headers. Resource decoding
+and native signature verification retain their existing owners.
+
+Contract and negative-path QA passed the actual CLI. The baseline
+accepted both a repinned inert PE header in a PNG slot and a repinned
+wrong PRI header, and omitted the inventory on the healthy fixture.
+The repaired reader refused both at the intended format check, kept
+empty stdout and accepted all 56 healthy members. The first full
+portable run stopped on one test module's missing isolated account
+lookup. The corrected runner mounted one inert account record whose
+home is private scratch. It retained read-only inputs, network isolation
+and finite resource limits. CPython 3.12.3 passed all 204 tests in
+22.758 seconds with matching source bookends.
+
+| Record under `~/.local/share/nevrotick/w11-signing-inventory.b9FRO6Db/` | SHA-256 |
+| --- | --- |
+| `checked.diff` | `abb7b0518266aadf235ebdc7e9193e0141c35ee2d2daae2d1aa87bd3b52e7da9` |
+| `source-before.json` | `73597b382e09d42501dad7a4fba14a68cd84a2ee274124e79cd48dc0add6346c` |
+| `baseline-red.log` | `a4b50907078bc9735ad5cf1372cb6ae64f0fffd6c55e1584bfab50f9de1d5289` |
+| `portable.stderr` | `b8fe8c8928ce4a25bb497c33fc900987e359af2ec58a11b42418489e26d2f1ad` |
+| `portable-retry.stderr` | `2add0b38ca4c33e03cc8f084a4ed18b52b19942cfa649529b8f6a01bdc2013f8` |
+| `archive-inventory.json` | `047bfa4ab046281950d3efe2117301e731d140f1df7891e4cb27cac45d9e4e27` |
+
+The complete production role and dependency inventory, expected
+signer identities and actual inner and outer signatures remain open.
+The separate [paired installed ScmFixture trial](#complete-the-paired-installed-scmfixture-observation)
+has completed its deployment-only observation. The provisioning and
+standard-user access roles and continuous quiescence remain open.
 
 #### Separate the recovery census from confirmed job retirement
 

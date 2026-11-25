@@ -943,8 +943,28 @@ impl ManagedProtectedReport {
     pub const fn clock_adjustment_reads(
         &self,
     ) -> Option<[Result<windows_platform_native::ClockAdjustment, u32>; 2]> {
+        let Some([before, after]): Option<[super::ManagedClockRead; 2]> = self.clock_reads else {
+            return None;
+        };
+        match (before.adjustment, after.adjustment) {
+            (
+                super::ManagedAdjustmentRead::Native(before),
+                super::ManagedAdjustmentRead::Native(after),
+            ) => Some([before, after]),
+            #[cfg(test)]
+            _ => None,
+        }
+    }
+
+    /// Observe the settings consumed by the timing guard in joined-worker controls.
+    #[cfg(all(windows, test))]
+    pub(super) const fn clock_adjustment_settings(
+        &self,
+    ) -> Option<[Result<super::RawClockAdjustment, u32>; 2]> {
         match self.clock_reads {
-            Some([before, after]) => Some([before.adjustment, after.adjustment]),
+            Some([before, after]) => {
+                Some([before.adjustment.settings(), after.adjustment.settings()])
+            }
             None => None,
         }
     }
@@ -1044,7 +1064,7 @@ impl ManagedProtectedReport {
             }
         }
 
-        let Some([before, after]) = self.clock_reads else {
+        let Some([before, after]): Option<[super::ManagedClockRead; 2]> = self.clock_reads else {
             return Err(ProtectedTimingObservationRefusal::PresentationUnavailable);
         };
         match (before.presentation, after.presentation) {
@@ -1056,7 +1076,7 @@ impl ManagedProtectedReport {
                 return Err(ProtectedTimingObservationRefusal::PresentationReadFailed);
             }
         }
-        match (before.adjustment, after.adjustment) {
+        match (before.adjustment.settings(), after.adjustment.settings()) {
             (Ok(opening), Ok(closing)) if opening == closing => Ok(()),
             (Ok(_), Ok(_)) => Err(ProtectedTimingObservationRefusal::AdjustmentChanged),
             (Err(_), _) | (_, Err(_)) => {
