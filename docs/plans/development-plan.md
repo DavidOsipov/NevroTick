@@ -5291,6 +5291,16 @@ default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
 
+**Service/IPC qualification — 25 November 2026:** the
+[W11-W05 continuation](../../tasks/windows11-integration.md#service-and-ipc-qualification--25-november-2026)
+credits implemented laboratory privilege admission and retains the production
+receiving/installed-peer gap. Before dependent S3.1/S3.2 work, apply the refined
+[pipe-rights evidence](../windows-time-development-hardening.md#effective-pipe-client-rights)
+and existing first-exposure/provisioning gates. Close the positive installed
+management journey before functional exposure; the real app/status join remains
+P3/S-2 with D2 restored. Reuse exact-candidate fixture evidence without promoting
+it to installed qualification. Section 7's order and all existing holds remain.
+
 **Timestamp qualification — 18 November 2026:**
 [W11-W01 TQ-01–10](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 refine the existing S2.1/P2 capture/mapping work and conditional packet adapters.
@@ -5315,8 +5325,9 @@ remain distinct. The active Core/Engine queue and all execution holds remain.
 [API rationale](windows11-integration.md#service-privilege-source-review--9-november-2026)
 and [implementation handoff](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
 replace open-ended runtime privilege selection with explicit role policy.
-Complete caller/native qualification of the implemented observer/admission owners;
-preserve identification-only IPC,
+Reuse the completed portable/standalone caller checks on their recorded candidates;
+complete production receiving integration and installed native qualification.
+Preserve identification-only IPC,
 same-account object isolation and bounded clock privilege cleanup. Full installed
 token/provider/package compatibility remains unqualified under existing CHECK
 owners; no new service, helper authority, dependency or execution permission.

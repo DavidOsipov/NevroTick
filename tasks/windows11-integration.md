@@ -872,10 +872,14 @@ retrieval; DNS-C14/17 when the DNS service participates.
 **Service privileges, 9 November 2026:** consume
 [architecture §4.1.1](../docs/windows-time-architecture.md#411-service-privilege-profiles)
 and [the bounded continuation in §4.38](#438-service-privilege-profile-handoff--9-november-2026)
-before dependent token/admission or package integration. Exact role sets are now
-selected; full-profile observation/enforcement, supported provisioning and native
-compatibility remain open. This refines the current service task, not §7's
-executable Core queue or the Windows/fuzz/storage/UI/post-V1-proof holds.
+before dependent token/admission or package integration. Exact role sets and
+complete laboratory startup rejection are implemented. Supported provisioning
+and qualification of the final installed account, token, service/restricted SIDs
+and object permissions remain open; laboratory enforcement does not establish
+production service admission. The [25 November continuation](#service-and-ipc-qualification--25-november-2026)
+binds these distinctions to the actual service/IPC consumers. This refines the
+current service task, not §7's executable Core queue or the
+Windows/fuzz/storage/UI/post-V1-proof holds.
 
 **Service metadata refinement, 7 November 2026:** consume [metadata §12.2](../docs/plans/windows-package-metadata.md#122-scm-labels-localization-and-installed-propagation)
 with W11-W10 before dependent service authoring/provisioning. Source preparation
@@ -1035,6 +1039,63 @@ MSI route. Delayed cleanup must not fabricate Stopped. Pure
 lifecycle traces precede disposable native/service/package observations; no rights
 grant is dismissed because a harmless child-launch test passed. **Mapping:**
 CHECK-1/12/13/15/16/23/27; ST-T03/10/12/17 for affected storage owners.
+
+#### Service and IPC qualification — 25 November 2026
+
+**Source and status:** review of `a281ec3b254be76a079bfe66a4623c06684c1119`.
+The [laboratory startup caller](../tools/windows-service-fixture/src/host.rs)
+enforces the complete role privilege set. The reached UI still constructs
+[`FixtureStatusPort`](../crates/nevrotick-ui/src/status_ui.rs), and the richer
+pipe identity/read/write and private wire modules remain
+[test-gated](../tools/windows-service-fixture/src/lib.rs).
+[`ObservedServicePeer`](../crates/windows-platform-native/src/service_peer.rs)
+returns continuity/component/SID/privilege observations for a receiving owner to
+admit; it does not itself authorize a product operation. These implemented pieces
+and their retained fixture results do not establish a production app/service
+channel. This is a documentation refinement, not a new executed native result.
+
+**Next action and exit:** W11-W05/S0.3/S3.1–S3.2 and W11-W10 retain their
+existing CHECK-1/2/3/15/16/25/26/27 owners. Follow the
+[provisioning order](#service-provisioning-and-direct-msix-order--23-november-2026)
+and [first-exposure admission](#bind-startup-admission-to-the-first-native-exposure).
+Supported provisioning, installed role/object isolation, W11-W04 broker network
+denial and the required per-role mitigation profile keep their existing exits.
+
+1. Qualify the production descriptor under the actual endpoint-role tokens using
+   [effective client-rights controls](../docs/windows-time-development-hardening.md#effective-pipe-client-rights).
+   The same-owner fixture's `D:P(A;;GA;;;OW)` and precise client open masks in
+   [`native_pipe_pair.rs`](../tools/windows-service-fixture/src/native_pipe_pair.rs)
+   do not prove that production clients lack instance-creation or descriptor
+   mutation rights. Preserve the inert broker's separate empty-DACL reservation
+   until its existing admission prerequisites are met.
+2. Close the positive installed management journey through the real receiver:
+   original connection and retained process/token, admitted installed component,
+   role-appropriate SID/privilege policy, effective protections and current
+   generation must reach the operation's current actor/state guard. Apply the existing
+   [paired component continuation](#observe-both-component-names-on-the-original-service-peer)
+   and [§9.9 controls](../docs/windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification)
+   to a permitted protected inert operation and its rejected neighbors. Observe
+   the actual result and absence of forbidden effects; identity-query success or
+   a foreign-peer-only test cannot close this journey.
+3. At the existing P3/S-2 join, exercise the real ordinary-user app request and
+   response consumer against the installed endpoint. Restore D2 freshness,
+   connection and generation rules before any live UI status, including read-only.
+   Preserve public redacted status/argument-free refresh policy; it does not gain
+   an application-only caller restriction. Full protected handlers keep their
+   separate actor, payload, replay/budget and final-effect checks.
+
+Reuse the closed [scripted Suspend selectors](#receive-a-normal-unavailable-reply-after-suspend)
+and [selected startup mutation results](#complete-the-generated-startup-mutation-replay-on-the-active-windows-target)
+within their exact candidates and scope. Physical suspend, actual native failure
+and loader-denial controls, installed service behavior and the final package
+remain distinct evidence. Development §7 ordering, UI-M0 deferrals and existing
+execution holds remain unchanged; this continuation adds no new CHECK identifiers.
+
+**Documentation validation:** planning and Windows privilege/local IPC review
+mapped the amendment to the existing owners above. Specialist and independent
+diff reviews found no material issues; all 17 added local file/heading links and
+the whitespace check passed. No product build, Windows probe or service operation
+was executed for this amendment.
 
 #### Configuration and elevation review — 24 November 2026
 
@@ -14228,7 +14289,9 @@ Dates here use Asia/Tbilisi.
 **Current disposition:** the platform primitive and standalone caller checks,
 including all six selected files' 90%/95% gates, are independently accepted in
 their Linux fixture scope. See [final qualification](#portable-service-privilege-checkpoint-final-qualification--9-november-2026).
-Native token enforcement, provisioning and production adoption remain open.
+Native installed-token qualification, supported provisioning and production
+adoption remain open; the laboratory startup's native capture and full-profile
+rejection are implemented. See the [current service/IPC continuation](#service-and-ipc-qualification--25-november-2026).
 
 **Decision owner:** [architecture §4.1.1](../docs/windows-time-architecture.md#411-service-privilege-profiles).
 The engine's exact set is `{SeChangeNotifyPrivilege}`; the broker's exact set is

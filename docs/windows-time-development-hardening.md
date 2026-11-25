@@ -1258,6 +1258,33 @@ Apply [architecture section 5.4](windows-time-architecture.md#54-native-ipc-impl
 | Reached remote boundary — CHECK-2 | Controlled remote client with otherwise sufficient credentials is rejected by local-only pipe enforcement; firewall rejection or an unreachable peer alone is not evidence | Intended local request with matching product permissions succeeds |
 | Compromised authorized engine — CHECK-3/25 | Actual engine identity submits oversize/truncated frames, wrong verbs, stale/replayed and overbudget proposals; bounds apply before forbidden allocation/effect | Current bounded engine request still receives the proper acknowledgement |
 
+#### Effective pipe client rights
+
+For the wrapper/listener rows, record the actual principal/token, pipe owner and
+DACL, requested access mask and native outcome separately. A cooperative client's
+precise data-only open does not prove that its principal lacks broader rights.
+Under the approved endpoint access matrix, use the same intended ordinary client
+token for permitted data access and separate requests for each prohibited
+`FILE_CREATE_PIPE_INSTANCE`, `WRITE_DAC` and `WRITE_OWNER` right, plus a
+generic-write request. Keep the intended service's server-instance rights and
+deliberate administrative recovery distinct from ordinary client permissions.
+
+An additional-instance denial must isolate access control: use matching pipe
+type/access/count/timeout, spare instance capacity and no repeated
+`FILE_FLAG_FIRST_PIPE_INSTANCE`, with a successful intended-server control under
+the same conditions and continuous original namespace ownership. Creation needs
+other rights too; its refusal alone does not establish which right was denied.
+A full single-instance fixture, first-instance collision or
+parameter mismatch is not proof that the DACL denied server creation; even
+`ERROR_ACCESS_DENIED` is not sufficient by itself. If the production endpoint is
+deliberately single-instance, retain that availability check and qualify the
+same descriptor and relevant role tokens separately in an admitted isolated
+fixture with spare capacity; do not change the product's instance limit. Microsoft
+documents both the [generic-write/instance-creation alias](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights)
+and these [creation-parameter failure conditions](https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew).
+The [current service/IPC handoff](../tasks/windows11-integration.md#service-and-ipc-qualification--25-november-2026)
+records the owner-only fixture limitation and production continuation.
+
 Pure tests can establish framing progress, strict decoding and substituted-token decisions. Tokens/DACLs, actual pipe peer attribution, pending-instance ownership, native cancellation and fatal reversion need isolated Windows fixtures. Real clock/fatal-broker cases obey section 14.9's disposable-VM limits and external observation/restoration plan; no experiments on the user's workstation or public services. Keep exact source/configuration, reached boundary, native outcomes, valid controls and remaining P0/native gaps. Do not call IPC hardened until the affected proofs pass; UI-M0 remains fixture-only.
 
 ### 9.10 Contract-review qualification matrix
