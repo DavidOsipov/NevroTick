@@ -67,8 +67,13 @@ entrypoint now selects Slint; retained Win32 source and receipts are historical.
 The original GUI uses David's approved GPL-3.0-only direction; Chrony-derived
 Core/engine retains GPL-2.0-only. Exact graph/composition, native and package
 qualification remain distinct. Prototype crates require dependency qualification.
-Retained TUF research adopts no updater or second release. Future-version work
-must name changed architecture decisions.
+Apply [OD-05 §7.10](../../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and [architecture §19.8](../../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+for the adopted TUF complete-MSIX updater. One target-bound Update now consent
+continues download/verification/installation; independent helper admission and
+both trust/time/storage and Windows recovery gates remain required. Client,
+keys/provider and native qualification are unresolved. No second product or
+resident privileged updater follows; dated research remains historical.
 
 The current [OD-05 §7.9 delivery decision](../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects one complete hardened MSIX for direct distribution, including services,

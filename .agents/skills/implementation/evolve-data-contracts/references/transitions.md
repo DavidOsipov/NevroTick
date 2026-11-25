@@ -37,7 +37,11 @@ durability; flushing alone proves no durable rename/metadata on every filesystem
 Use valid neighboring state/fault-hit observations to reach each publication boundary;
 early schema/path rejection cannot test late recovery.
 
-Rehearse interrupted updates/rollback and mixed generations in proper isolated
-Windows lane before lifecycle qualification. Automatic TUF updating remains
-unadopted research; routine schema migration must add no updater state/authority.
-Future updater needs separate design decision and threat-model/applicability update.
+Rehearse interrupted updates/rollback and mixed generations in the proper isolated
+Windows lane before lifecycle qualification. For the [adopted TUF updater](../../../../../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater),
+preserve protocol-required metadata progress independently of installed identity,
+security-floor commits and consumed clock authority. Define enrollment versus
+damaged state and repair/Reset/reinstall/full-removal retention explicitly; no
+silent embedded-root reset. Require protected writer/lock/crash-recovery evidence
+and a permitted recovery version before floor advancement. Routine migrations
+gain no additional updater authority; keep the exact graph/time/native gates.

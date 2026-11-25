@@ -1,6 +1,6 @@
 # NevroTick development and acceptance plan
 
-**Distribution amendment — 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. Signing, publisher trust, hosting and updates remain for later resolution. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
+**Distribution amendments — 21 and 25 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts the TUF-authenticated complete-MSIX updater with one Update now decision. Exact client/signing/trust/hosting, time/state and native deployment/recovery qualification remain open. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
 
 **Created:** 29 October 2026; **documentation reconciliation:** 12 November 2026
 
@@ -142,7 +142,7 @@ rerun for this documentation assessment.
 | P3 services and secured state | Lifecycle/SCM foundation, exact-role privilege admission and bounded fixture diagnostics exist; selected platform/caller portable gates are complete. | Adopt real product workers, final identities/provisioning, secured IPC/state and actual native lifecycle/security behavior. |
 | P4 clock integration | Pure proposal/accounting and modeled acknowledged-delivery mechanisms exist in Core. | Implement and qualify the real broker, clock authority, W32Time handover/restoration and recovery in admitted Windows environments. |
 | P5 UI | Slint v0.4 fixture workflows and presentation/localization source exist; later AccessKit repairs have bounded controls. | Independent critical-text approval, live backend integration, triggered D1–D3 work and exact native/accessibility/resource/security qualification. |
-| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) emits checked partial direct-MSIX inputs and retires the Store CSV. The [Windows verifier](../../tasks/windows11-integration.md#direct-msix-inputs-bound-to-linked-windows-images--22-november-2026) binds the inspected assembly inputs to the generation used for both version resources. All four production payload slots remain open. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. Signing/trust/hosting/update choices remain deferred without blocking source preparation. MSI remains unselected. |
+| P6 delivery | Complete direct MSIX, all-file signing, metadata and non-Store WinGet work have selected owners and contracts under OD-05 §7.9. The [source CLI](../../tasks/windows11-integration.md#direct-msix-source-projection-checkpoint--22-november-2026) emits checked partial direct-MSIX inputs and retires the Store CSV. The [Windows verifier](../../tasks/windows11-integration.md#direct-msix-inputs-bound-to-linked-windows-images--22-november-2026) binds the inspected assembly inputs to the generation used for both version resources. All four production payload slots remain open. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. OD-05 §7.10 adopts the TUF updater/one-consent design; exact client/signing/trust/hosting/time/state/native qualification remains open without blocking source preparation. MSI remains unselected. |
 | P7 final qualification | Acceptance, support/incident and release procedures are documented. | An integrated exact candidate, required native/package/security/operational evidence, support decisions and David's release approval. |
 
 The software still does not synchronize the user's clock. Completed subcomponents
@@ -964,6 +964,15 @@ performance/lifetime evidence includes the applicable CHECK-21 measurements.
 
 ### P5 — truthful, accessible production UI
 
+**25 November updater integration:** [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adds the About Check → Update now/Later journey. Yes continues download,
+verification and installation for the exact consented target without a separate
+routine Download or Install decision; OS/UAC consent remains where required.
+The [GUI handoff](../../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
+owns fixture/receiver/text work; [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+owns the trust/time and Windows recovery joins. D2 precedes live checking/status
+and commands; fixture source does not enable networking or privileged Apply.
+
 **Default toolkit — 5 November 2026:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Rust/Slint and incorporates the accepted local fixture migration and
 separate original GUI GPL-3.0-only scope. The measured winit/software/Fluent
@@ -1130,7 +1139,7 @@ application enclave needs its separate admission only if later selected.
 
 Reconcile exact Cargo/runtime/build/proc-macro/native graph, source grants/notices,
 generated code, SBOM and **complete package payload**, including non-Cargo files.
-Qualify the direct MSIX package/publisher trust profile with tamper/wrong-package/manifest/payload controls and installed-file trust, retaining built, signed and actually downloaded identities separately. A supported public production candidate must work without developer roots or disabled protections. Signing, publisher trust, hosting and update delivery remain deferred under OD-05 §7.9; this does not block source/package preparation or declare a public release qualified. Any later update mechanism must meet the complete-product lifecycle contract. No bespoke privileged updater, separate UI package or automatic MSI fallback is added. Retain OD-05 §7.7 signature coverage; no signing provider is selected here.
+Qualify the direct MSIX package/publisher trust profile with tamper/wrong-package/manifest/payload controls and installed-file trust, retaining built, signed and actually downloaded identities separately. A supported public production candidate must work without developer roots or disabled protections. OD-05 §7.10 now adopts the TUF-authenticated complete-package updater; exact signing/provider/trust/hosting and native implementation remain unresolved and do not block independent source/package preparation. Follow [architecture §19.8](../windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater) and [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026): independent protected admission, final-byte custody, durable history and surviving recovery precede live Apply. No resident privileged updater service, split UI package or automatic MSI fallback is added. Retain §7.7 signature coverage; no signing provider or key is selected here.
 
 Use the [release policy](../release-policy.md) for the proposed support baseline,
 exact release/status record, containment and compatible corrective releases.
@@ -1159,11 +1168,22 @@ profile-specific signing/lifecycle evidence on supported clean Windows machines
 and the applicable [operational evidence](../release-policy.md#9-qualification-matrix-and-remaining-decisions)
 under existing CHECK-17/18/23/24/26 owners.
 
+The adopted updater adds the [§4.40 acceptance families](../../tasks/windows11-integration.md#acceptance-and-adversarial-cases)
+to these same exits: one target-bound consent, independent helper verification,
+qualified time plus Windows PKI, protected trust/floor commits, actual staged-byte
+custody, surviving maintenance recovery and separate external installation routes.
+Both trust/time/storage and Windows provisioning/recovery feasibility must pass
+before any live Apply integration. Supplied-time fixtures, ordinary download/hash
+success and successful MSIX request submission cannot close that join.
+
 ### P7 — final integrated acceptance
 
 Freeze source, lockfile, tools/SDK, feature/target rows, policy, fixtures and exact
 packaged/installed bytes. Reconcile all applicable CHECK-1–CHECK-27 and
-AC-01–AC-22, phase receipts, changed contracts and open findings. For AC-21/22,
+AC-01–AC-26, phase receipts, changed contracts and open findings. AC-23–26 cover
+the adopted updater's consent, independent admission, lifecycle and truthful
+presentation under W11 §4.40; every case remains planned until actually observed.
+For AC-21/22,
 retain the [OD-11 scope split](../windows-time-features.md#8-acceptance-scenarios-and-evidence):
 direct-family/interface, path-history and shared Apply/reconciliation cases apply
 to first delivery; proxy-specific cases retain their later SOCKS owners and
@@ -5248,6 +5268,15 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**25 November adopted updater:** [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+route source-only contracts/GUI into S0.5/P5 and trust/storage/package/lifecycle
+work into W11-W10/W11-W05 with ST-W03, time/security and release owners. Import
+their ready/open/held dispositions before dependent P5/P6/P7 work. Both trust/time/
+storage and surviving Windows recovery exits precede live Apply. Current §7 order,
+UI-M0/D2 re-entry, exact dependency/signing admission and execution holds remain;
+this planning integration grants no runtime, key or hosting operation.
+
 **9 November service privileges:** consume
 [architecture §4.1.1](../windows-time-architecture.md#411-service-privilege-profiles)
 and [W11 §4.38](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
@@ -5394,6 +5423,15 @@ default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
 
+**TUF-authenticated updater — 25 November 2026:** [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+implements the planning handoff for accepted OD-05 §7.10: metadata-only Check,
+one Update now/Later decision, then automatic download/verification/installation
+for the current consented target. Use the existing helper, durable machine trust
+and whole-package Windows lifecycle; no clock-broker updater verbs or new resident
+privileged service. Source fixtures, trust/time feasibility, inert Windows servicing,
+live integration and exact release qualification have separate exits. Both
+feasibility branches must pass before live Apply; all existing holds remain.
+
 **Desktop delivery hardening — 25 November 2026:** the
 [GUI handoff](../../tasks/slint-gui-handoff.md#desktop-delivery-hardening--25-november-2026)
 routes the focused GUI/tray/notification/diagnostic review into existing owners:
@@ -5499,7 +5537,7 @@ intervening implementation, import queue and current stops. The
 owns this reconciliation and the new candidate's review/validation separately
 from the earlier source and publication receipts.
 
-The [existing MSIX plan](windows-msix-store.md) retains the research based on `070927855ed99e1a0683d9f291d3462d33343118` and the historical 3 November Store direction. [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) supersedes that direction with direct distribution of one complete MSIX and rejects Store publication. The [same W11 task](../../tasks/windows11-integration.md) keeps W11-W10/W11-W05 ownership of package integrity, sealed executable content, direct-artifact image admission, supported provisioning and recovery. Signing, trust, hosting and updates remain deferred. Continue source/package preparation and the current Core checkpoint without Store preapproval, submission, certification or a refusal-triggered fallback. No actual direct-release qualification is asserted.
+The [existing MSIX plan](windows-msix-store.md) retains the research based on `070927855ed99e1a0683d9f291d3462d33343118` and the historical 3 November Store direction. [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) supersedes that direction with direct distribution of one complete MSIX and rejects Store publication. The [same W11 task](../../tasks/windows11-integration.md) keeps W11-W10/W11-W05 ownership of package integrity, sealed executable content, direct-artifact image admission, supported provisioning and recovery. OD-05 §7.10 and architecture §19.8 now adopt the TUF updater and one-consent flow; exact client/signing/trust/hosting/time/state/native mechanisms remain unqualified. Continue source/package preparation and the current Core checkpoint without Store preapproval, submission, certification or a refusal-triggered fallback. No actual direct-release qualification is asserted.
 
 **Release operations, 4 November 2026:** the [release policy](../release-policy.md)
 and [W11 task §4.21](../../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
@@ -5605,7 +5643,7 @@ conditional candidates remain open until their own evidence gates are met.
 | DNS-2; DNSSEC/crypto/performance | W11-W07: evaluate CNG SIMD hash batches only for an evidenced workload, with independent result parity and latency/cost comparisons. Provider handles and multicore scheduling retain separate ownership; no implicit graph selection or storage-root qualification. | DNS-C04/12/16; applicable CHECK-20/21/25/26/27 |
 | Affected native phase; diagnostics/QA | W11-W08: correlate bounded redacted WPR/WPA events and record loss. Separate local diagnostic authorization/expiry from aggregate ETW controller interest, provider/session/file access and retained data; test two controllers and each selected dump collector. Admit one exact low-resource profile with healthy/fault controls before use. PerfLib V2 remains optional. | CHECK-1/17/21/27, with CHECK-1 limited to diagnostic access; applicable ST-T14/16 and DNS-C12/14 |
 | P5 after existing D2/D3 triggers; UI/accessibility | [W11-W09](../../tasks/windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage): bind the W11-W08 Critical/High catalogue to real incident eligibility, then qualify the reached portable request and selected native presentation separately. Adopt existing incident design, finite deduplication and safe activation; UIA and toast evidence remain separate. Preserve the rich-toast release deferral; review any new deployment/dependency need before selection. | CHECK-14/17/21/22/25/27 at reached scopes; CHECK-23/26 for deployment/graph; applicable ST-T01/14; UI-M0 D1/D2/D3 remain Deferred |
-| S0.6/P6 packaging/security; other reserves conditional | W11-W10: prepare one complete direct MSIX under OD-05 §7.9 and the existing plan; record per-role integrity/mitigation, provisioning and recovery, then qualify local mechanics and actual directly distributed artifacts. Signing/trust/hosting/update choices are deferred; source preparation continues. Requalify Store-dependent image admission; Store submission/certification is excluded. Native work remains within its existing scope. Job Objects/triggers, LPAC/isolation, identity/WinGet or W32Time-provider changes retain separate need/compatibility gates; [custom-enclave source planning](windows-vbs-enclave.md#7-one-next-stage-and-phased-integration) now has an owned card, with product adoption/build/native/signing still conditional. Strict CET/EHCONT is evaluated within the per-role profile. VBS claim extensions remain prerelease, side-channel fields need a threat/role, UDP batching a bottleneck and VM Generation ID a privilege-compatible design. PPL remains excluded for an ordinary utility. | Existing architecture/storage/package owners; CHECK-1/2/5/12/13/15/16/18/20/23/24/26/27 and §19.4. No new acceptance IDs or signature-based security waiver |
+| S0.6/P6 packaging/security; other reserves conditional | W11-W10: prepare one complete direct MSIX under OD-05 §7.9 and the existing plan; record per-role integrity/mitigation, provisioning and recovery, then qualify local mechanics and actual directly distributed artifacts. OD-05 §7.10 adopts the TUF updater/one-consent design; exact client/signing/trust/hosting/time/state/native qualification remains open, and source preparation continues. Requalify Store-dependent image admission; Store submission/certification is excluded. Native work remains within its existing scope. Job Objects/triggers, LPAC/isolation, identity/WinGet or W32Time-provider changes retain separate need/compatibility gates; [custom-enclave source planning](windows-vbs-enclave.md#7-one-next-stage-and-phased-integration) now has an owned card, with product adoption/build/native/signing still conditional. Strict CET/EHCONT is evaluated within the per-role profile. VBS claim extensions remain prerelease, side-channel fields need a threat/role, UDP batching a bottleneck and VM Generation ID a privilege-compatible design. PPL remains excluded for an ordinary utility. | Existing architecture/storage/package owners; CHECK-1/2/5/12/13/15/16/18/20/23/24/26/27 and §19.4. No new acceptance IDs or signature-based security waiver |
 
 Preserve DoQ-only upstream and leaf/intermediate pinning, the least-privilege
 service boundary, one complete MSIX and the independent mandatory-state owner. Native DNS

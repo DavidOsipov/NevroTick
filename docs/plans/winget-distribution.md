@@ -2,6 +2,11 @@
 
 **Distribution amendment — 21 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication and selects direct MSIX distribution. WGT-0 remains pre-V1; qualify the non-Store Community route for the complete package. Signing/trust/hosting and actual publication remain unresolved, while source/metadata preparation continues. The former `msstore`-first direction and Store ProductId prerequisite are superseded; historical research/review below is retained as such.
 
+**Updater amendment — 25 November 2026:** [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts a separate in-app TUF-authenticated complete-MSIX route. [Section 5.3](#53-relationship-to-the-adopted-in-app-updater--25-november-2026)
+preserves WinGet's pre-V1 capability and explicit route authority; no WinGet
+invocation is inserted into the clock service or used to bypass TUF rejection.
+
 **Document:** NV-WGT-001, revision 1.2<br>
 **Owner instruction / research date:** David Osipov, 7 November 2026  
 **Roadmap stage:** WGT-0, within the existing pre-V1 P6/P7 delivery work  
@@ -202,6 +207,46 @@ Defender, required mitigations or service controls to satisfy distribution tests
 Acquisition itself needs working network/TLS/trust conditions; an uninstalled
 time client cannot promise to repair the clock that prevents its download.
 
+### 5.3 Relationship to the adopted in-app updater — 25 November 2026
+
+The [canonical updater contract](../windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+uses **Check for updates → verified eligible target → “Update now?” → Yes** to
+download, independently verify and install the complete MSIX automatically.
+It has no separate routine Download or Install click, while UAC/OS prompts and
+renewed consent for changed/stale intent remain. That contract governs the
+in-app route; a WinGet catalog entry is not TUF metadata or another UI approval.
+
+Declare one supported update owner per admitted route. Community WinGet acquisition
+and upgrades retain their exact source/identifier/package/scope, Windows trust,
+policy and native lifecycle qualification. The presence of WinGet, catalog
+correlation or a guessed original install channel does not itself mean the
+installation is externally managed. That status requires admitted management
+policy; if external management owns updates, the UI explains the state and does
+not compete with it. No public identifier or management integration is invented.
+
+The same approved final signed MSIX may be offered through TUF and WinGet, but
+the authority proofs differ. Do not claim every direct installation or WinGet/
+enterprise repair/update has passed the in-app TUF gate. Conversely, a TUF
+expiry/signature/policy refusal never automatically launches WinGet or App
+Installer as fallback. Any separately authorized maintenance/recovery route has
+its own trust, version, state and current-actor policy; it cannot silently reset
+protected updater metadata, lower security floors or refund clock authority.
+
+Qualify interleavings: external update between in-app check and consent, between
+consent and privileged effect, or while reconciliation is pending. The current
+installed identity/maintenance generation invalidates stale work; two owners
+must not deploy competing generations. A changed target/material operation
+requires a new in-app consent, while a newer externally installed version is
+reported from actual installation evidence. Preserve required recovery across
+both paths; source correlation or OS request acceptance is not installed health.
+
+WGT-C01/C02 and WGT-W01–WGT-W06 retain their original pre-V1 owners and exits.
+The updater's trust/time and surviving Windows recovery tracks both must qualify
+before live in-app apply; that new design does not satisfy any WinGet native or
+public-availability gate. Reuse WGT-T01/T06–T10 and CHECK-12/13/15/18/23 for
+route/identity/state races beside valid upgrades. Existing Core order, native/
+fuzz/storage holds and UI-M0 boundaries remain.
+
 ## 6. Release automation design
 
 For the selected direct MSIX, reuse the existing protected release process and prepare Community-source discovery/installation receipts. The signing/trust/hosting arrangement remains deferred; actual catalog publication follows the approved complete public artifact. Do not create a secret-bearing workflow while its producer, identities and external effects are unresolved. No Store submission or Store refusal belongs in this sequence.
@@ -339,7 +384,7 @@ WGT-T labels are local navigation, not another general acceptance catalog.
 | WGT-T07 — upgrade and detection | N→N+1, skipped-version and already-installed cases preserve configuration, identity and one controller. Detect actual installed versions; pins/user policy remain respected. |
 | WGT-T08 — busy/interrupted servicing | In-use files, stop delays, cancellation, reboot-required and interrupted update report correct outcomes and preserve mandatory state/current ownership. No automatic uncontrolled reboot. |
 | WGT-T09 — removal and recovery | Supported uninstall/Reset/repair and last-user paths preserve recovery until W32Time/clock ownership is safely settled. Retained data and cleanup match the declared policy. |
-| WGT-T10 — source/channel isolation | Explicit ID/source selects the intended product. A similarly named package, wrong source, preview event or unsupported cross-format route is refused by the release operation. |
+| WGT-T10 — source/channel isolation | Explicit ID/source selects the intended product. A similarly named package, wrong source, preview event or unsupported cross-format route is refused by the release operation. Section 5.3 qualifies external-management ownership and concurrent in-app/external updates; TUF denial never invokes WinGet as automatic fallback. |
 | WGT-T11 — automation and credentials | Authorized frozen release produces a reviewable result; draft/missing assets, wrong hash, untrusted PR, token expiry, duplicate PR and conflicting version stop safely. Test actual trigger propagation. |
 | WGT-T12 — external publication and withdrawal | Observe Community PR outcome, catalog visibility and source-specific acquisition separately. A rejected/delayed/withdrawn release does not produce a false availability claim or pretend to recall installed copies. |
 

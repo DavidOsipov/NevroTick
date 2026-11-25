@@ -1,6 +1,6 @@
 # Signing the Windows time client: a practical package guide
 
-**Revision:** 1.0 with owner-decision, trust-lifecycle and release-operations amendments; direct-MSIX/no-Store decision and signing deferral recorded 21 November 2026
+**Revision:** 1.0 with owner-decision, trust-lifecycle and release-operations amendments; direct-MSIX/no-Store decision 21 November and TUF updater/signing-boundary amendment 25 November 2026
 
 **Research date:** 28 October 2026  
 **Status:** Preparation guide; Microsoft Store publication rejected. Signing is deferred and unresolved; production signing/trust and native qualification are **not completed**.
@@ -20,8 +20,11 @@ account, submission, certification or rejection is not a prerequisite.
 preparation without selecting a provider, buying a certificate or initiating
 onboarding. This decision does not establish public publisher trust or approve
 an unsigned release. Final required signatures and target-device trust remain
-unresolved distribution work. No hosting or automatic-update mechanism is
-selected, and SDK/runtime licences remain separate from the rejected Store terms.
+unresolved distribution work. [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+now selects the TUF-authenticated, user-initiated complete-MSIX updater design;
+[section 10](#10-updater-signing-and-key-operations) distinguishes its metadata
+keys from Windows package signing. Actual client/provider/keys and hosting remain
+unqualified, and SDK/runtime licences remain separate from the rejected Store terms.
 
 The [MSIX plan](plans/windows-msix-store.md) retains sealed package content,
 per-role strongest-compatible protections and native qualification. Reconcile
@@ -294,7 +297,7 @@ The release evidence must establish:
 5. **Negative controls:** a tampered package, substituted payload, unexpected publisher and unapproved version are rejected for the intended reason; a valid neighboring candidate succeeds.
 6. **Publication identity:** checksums and release metadata describe the actual final signed bytes at the identified stage. Bind each published version's prepared, validated SBOM assets to the selected complete release and final checksums. Reconcile Rust, native/generated/resources and actual delivered-package inventory against the exact version/source candidate and signed hashes before broad publication; see [the repository SBOM tooling and handoff](../TOOLING.md#release-sbom-tooling). An SBOM and optional attestations supplement that record; they do not replace required signatures.
 
-Clock-dependent verification is particularly relevant for this application. Qualify the architecture's extreme-date, certificate-time and revocation behavior using controlled fixtures and disposable machines. Do not weaken TLS or executable-signature validation to get through a test with a wrong system clock. TUF is still a separate, unadopted update proposal; this guide does not add an automatic updater or accept a new time-bootstrap exception.
+Clock-dependent verification is particularly relevant for this application. Qualify the architecture's extreme-date, certificate-time and revocation behavior using controlled fixtures and disposable machines. Do not weaken TLS or executable-signature validation to get through a test with a wrong system clock. [Architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater) now adopts TUF for the in-app updater, but its qualified freshness basis and Windows PKI are separate gates. A TUF verification time does not cause Windows to use that time, and no new time-bootstrap exception follows.
 
 ### 5.1 Wrong-clock and offline activation matrix
 
@@ -412,7 +415,8 @@ record its real source-to-effect path or justified non-applicability. Use harmle
 markers and inert effect sinks, not malware or execution of the altered PE.
 Consumer evidence is separate from native signature-verifier evidence. Do not
 create a downloader, custom verifier or redundant runtime file scanner for this
-test; the current complete-package/no-runtime-downloaded-code contract remains.
+test. The complete-package contract remains; the separately adopted §10 updater
+acquires an approved whole MSIX, not independent runtime code or a new scanner.
 
 The strict lab setting is not evidence about provider hosts or customer systems,
 and this qualification does not authorize an installer to change customers'
@@ -492,17 +496,19 @@ separate qualification owners:
   artifact. CHECK-16/18/23/26 keep their existing owners.
 - **Bundled data:** pinned leap/calendar/catalogue input, generator, normalized
   revision/digest and supported coverage travel in the same complete release.
-  A checksum alone is not authentication. No runtime downloader, hot update or
-  TUF authority is selected; correction preserves protected floors and spent
-  authority.
+  A checksum alone is not authentication. Section 10's TUF authority applies to
+  the whole complete package, with no data-only downloader or hot update;
+  correction preserves protected floors and spent authority.
 - **Wrong-clock/offline behavior:** section 5.1 still applies to installation,
   pre-login startup, helper activation, update, repair and removal. Signing and
   timestamping alone do not settle availability or safe refusal.
 
 Use [release-policy §4](release-policy.md#4-distribution-containment-choose-the-actual-store-operation)
 for the chosen direct channel's controlled availability, withdrawal and correction.
-Hosting, access control and an optional `.appinstaller` update feed remain
-unselected; none can be assumed to recall installed copies. Store flights,
+Actual hosting and access control remain unqualified. Section 10's in-app TUF
+route is selected; a competing automatic `.appinstaller` association is not.
+External routes retain their own declared update authority and must not become
+an automatic fallback after TUF denial. None can be assumed to recall installed copies. Store flights,
 Partner Center visibility and Store rollback are historical research only.
 David retains exact-candidate release authority; the existing W11-W10/W11-W05
 chain owns native and final-artifact evidence. A genuine protection failure is
@@ -528,8 +534,8 @@ That experiment does not satisfy the public publisher-trust portion of CHECK-18 
 with an owner-controlled generated certificate while public-trust signing is
 unavailable. This is not limited to a lab build and does not require buying a
 certificate. It is an available profile for a later selected complete MSI,
-subject to its actual qualification and exact-candidate approval; Store MSIX
-remains selected. No key generation, signing or publication has occurred here.
+subject to its actual qualification and exact-candidate approval; direct MSIX
+remains selected under OD-05 §7.9. No key generation, signing or publication has occurred here.
 
 The useful guarantee is signature correctness against an **independently
 approved project key**, within the format's authenticated coverage. Record the
@@ -636,11 +642,12 @@ self-signatures, not unsigned installers supplemented only by detached signature
 | Every shipped signable artifact, including nonbinary files, plus outer package | Build/package/security verifier | Section 4.1 defines inventory, signing order and expected identities; production provider capability, complete coverage and final delivered-signature preservation are open |
 | Embedded PE padding checks and complete final-byte binding | Release/security verifier | Every shipped PE requires its embedded result; section 5.2's strict-policy readback and behavioral cases are not executed |
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final direct-artifact evidence required before broad release |
-| Exact-candidate direct availability and broad release | David Osipov | Signing/delivery selection deferred; no publication or released artifact established |
+| Exact-candidate direct availability and broad release | David Osipov | Direct MSIX and in-app TUF design selected; actual signer/trust/hosting and qualification unresolved; no publication or released artifact established |
 | Per-format native signing capability and SignPath eligibility if pursued | Maintainer / provider / verifier | Required inner-file capability also applies to MSIX; missing capability blocks release, not independent source preparation. MSI delivery remains conditional; the OpenPGP-only exception is superseded |
 | Interim self-signed MSI, if MSI delivery is later selected | Owner / release / Windows verifier | OD-05 §7.8 accepts the profile; section 7.1 requires approved-key coverage, truthful public-trust failure, actual channel/installed-code qualification and later signer migration. No key or signed artifact is established |
 | Stable-support and transition commitment | David Osipov / release owner | [Release-policy §2](release-policy.md#2-support-status-and-proposed-baseline) is proposed; no stable series, support lifetime, backport schedule or response deadline approved |
 | Renewal, revocation, access removal and recovery | Release/security owner | [Operational procedures are written](release-policy.md#7-compromised-publisher-repository-or-build-authority); actual private inventory and applicable renewal/access/recovery rehearsals remain pending and required before public release |
+| TUF role keys and exact final target authorization | David / release/security owner | Section 10 and architecture §19.8 adopt role-separated release authentication; actual keys, algorithms/provider, thresholds/custody implementation, renewal and compromise recovery remain unqualified. No OpenPGP substitute or key-generation action is established |
 
 **OPEN-11 tracks the selected direct-MSIX route's unresolved signing/trust and qualification.** Signing selection is deferred; source and package preparation continue. MSI remains a later owner choice, and no unsigned/OpenPGP-only exception is introduced. Eventual public distribution requires actual delivered-artifact coverage, installed trust, protection and lifecycle evidence with David's exact-candidate decision. No Store submission or refusal is required. A provider account, certificate screenshot or this guide alone supplies no signing or release pass.
 
@@ -720,3 +727,129 @@ Primary provider and Microsoft pages were checked on 28 October 2026. Eligibilit
 Companion documents: [architecture revision 1.4](windows-time-architecture.md), [development-environment hardening](windows-time-development-hardening.md), and [update-system assessment](windows-time-update-assessment.md). This guide is independently readable; the architecture remains authoritative for product scope, authority boundaries and unresolved design gates.
 
 - **S35:** [Direct MSIX distribution and trusted certificates](https://learn.microsoft.com/en-us/windows/msix/app-installer/installing-windows10-apps-web). Public trust, laboratory certificate substitution and package creation are separate; no signing provider is selected by this reference.
+
+## 10. Updater signing and key operations
+
+**Adopted design, 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+select TUF-authenticated complete-MSIX updates. **Check for updates → a verified
+eligible target → “Update now?” → Yes** automatically downloads, verifies and
+installs that target. Windows UAC/unavoidable OS prompts remain. Signing is an
+internal release/admission mechanism, not a separate consumer Download,
+detached-signature or routine Install-now step.
+
+David's suggestion that a “PGP key or similar” may be needed expresses an open
+signing-design question. It authorizes no creation/export of private keys,
+provider account, certificate purchase, signing or publication. The correct
+design has two independent cryptographic trust purposes:
+
+| Purpose | Required authority and limit |
+| --- | --- |
+| TUF metadata/release authorization | Bootstrap and retained TUF root authorize roles/keys; targets bind approved final MSIX bytes and release policy. The client's public root is not a signing secret. HTTPS/DNSSEC/hosting access cannot replace these signatures. |
+| Windows package and supported-file signing | The complete MSIX and §4.1's supported shipped files retain their required native signatures and expected identities. Target devices must trust the package signer under the qualified profile. TUF or OpenPGP signatures alone do not satisfy this Windows requirement. |
+
+Microsoft documents required MSIX code signing and device trust separately from
+package creation; timestamping does not remove identity/revocation or wrong-clock
+qualification. Use the [MSIX signing overview](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview)
+and §5.1's actual verifier matrix. No customer certificate import, protection
+bypass, self-signed-MSI transfer to MSIX or manual detached verification is
+introduced. The earlier unsigned-MSI/OpenPGP exception stays superseded.
+
+### 10.1 Role separation and custody decision
+
+The accepted design separates bootstrap/key administration, release approval and
+freshness publication. The preceding concrete recommendation is separate
+**2-of-3 root** and **2-of-3 targets/release** thresholds with independently
+protected custody/failure domains; exact provisioned keys, algorithm/provider,
+operational threshold configuration and absence/recovery arrangements still need
+admission. David remains the human release approver. Multiple keys in one CI job
+or on one compromised everyday device do not provide independent custody or a
+second human approval.
+
+| Role | Planned custody and permitted use |
+| --- | --- |
+| Root | Offline or hardware-protected independently recoverable custody; authorize role/key/threshold transitions. Ordinary build/publication jobs possess no root private key. |
+| Targets/release | Separately protected release signing under David's exact-candidate authority; authorize only the complete final qualified package and its policy. Build CI must not hold the release threshold. |
+| Snapshot | Restricted online role for metadata consistency; not independent permission to add approved package targets. |
+| Timestamp | Separate restricted online freshness publication; bounded expiry/renewal and monitoring owner, without root/targets authority. |
+| Windows signer | Separately admitted certificate/service and approval/custody lifecycle for §4.1's inventory; neither its credential nor TUF keys enter untrusted build/test jobs. |
+
+Before creating keys, freeze the maintained publisher/client interoperability
+profile, supported algorithms/key formats, exact metadata schema, protected
+storage/hardware/provider, independent backups and access/rotation/recovery
+operators. Keep private inventory and recovery material outside source, packages,
+logs and support exports. Select expiry/renewal periods and the supported
+offline/maintainer-absence window from an actual sustainable procedure; this
+document chooses no production TTL, provider or personal existing key.
+
+### 10.2 Final-byte release and publication order
+
+Use §4.1 and §5.2 inside-out signing and custody. Finish all metadata/resources;
+sign/verify each supported inner file and preserve approved upstream signatures;
+assemble, sign and timestamp the complete MSIX. Only **after the final authorized
+byte transformation** compute target SHA-256 and exact byte length and bind them
+to product/package/publisher identity, architecture, channel, version, signed
+release sequence/security floor and compatibility policy. An earlier hash or a
+fresh checksum read from the delivery host supplies no target authorization.
+
+Approve that exact candidate and sign its TUF target metadata through the
+qualified roles. Publish immutable artifacts first, then the required roots and
+consistent targets/snapshot dependencies, and publish the current timestamp last
+after checking that its referenced objects are obtainable. Retain all numbered
+roots needed by long-offline clients; never overwrite a versioned approved
+artifact with different bytes. Use the [TUF repository operations](https://theupdateframework.github.io/specification/latest/#repository-operations)
+for protocol ordering and the [release policy](release-policy.md) for real
+promotion/containment authority.
+
+Versioned objects may use immutable delivery caching; mutable timestamp renewal
+needs a compatible bounded cache policy. Host access controls, object retention
+and mirror consistency are defense in depth, not release authentication. A
+static custom-domain/R2 layout and exact-byte GitHub mirror remain proposals to
+qualify. Hosting setup, DNSSEC configuration and immutability have not been
+independently observed or performed by this amendment.
+
+The privileged maintenance owner rechecks raw metadata, current protected trust,
+time/intent/policy and complete bytes independently, then enforces Windows trust
+and protected staging under architecture §19.8. A valid TUF target with the wrong
+Windows publisher, or a valid Windows package without eligible TUF authority,
+must fail the in-app route. Cross-route Windows/WinGet administration has its own
+declared authority and is not a TUF rejection fallback.
+
+### 10.3 Renewal, loss and compromise qualification
+
+Reuse the [release incident owner](release-policy.md#7-compromised-publisher-repository-or-build-authority)
+and existing W11-W10 evidence. Qualify normal rotation/renewal and the following
+failure cases before relying on their recovery:
+
+- Renew timestamp/snapshot and release metadata without requiring a new binary
+  release, with actual scheduled operational ownership and bounded expiry alerts.
+  A dormant release still needs metadata maintenance; no monitoring is claimed
+  to exist merely because the procedure is written.
+- Exercise sequential old/new-threshold root rotation, permitted expired
+  intermediates, specified history resets and long-offline catch-up using the
+  actual client/provider and retained root chain. Preserve protocol-accepted
+  metadata progress even if later download/deployment fails.
+- Distinguish lost/inaccessible key material from suspected key compromise.
+  Prove backup recovery and replacement with the still-valid authorized
+  threshold. Loss of enough root custody may make ordinary in-band rotation
+  impossible; define explicit trusted out-of-band recovery rather than silently
+  trusting a new downloaded root or reinstalling to reset history.
+- For timestamp/snapshot compromise, revoke or rotate through the qualified
+  parent/root procedure, bound the affected metadata and restore valid renewal.
+  For targets/root compromise, stop promotion, assess unauthorized targets,
+  recover authority independently and qualify client recovery against malicious
+  version/expiry/root history. Do not promise that sufficient root compromise
+  is always repairable in band.
+- For Windows signing compromise/expiry, use the actual provider's revocation
+  and renewal procedure; qualify publisher/identity transition, trust caches,
+  timestamps and affected long-offline clients separately. A request to revoke
+  a certificate is not instant universal refusal or recall of installed code.
+- Preserve installed-state and host-compromise distinctions. Enough valid TUF
+  and Windows authorization can still approve malicious code; keys do not prove
+  benign builds. Existing private custody, required SBOM/licence/artifact/native
+  gates remain, while optional enhanced provenance stays optional.
+
+All cases above remain **planned/unexecuted** here. This design adopts no key,
+library, signer or online service. Trust/time/client/state and surviving Windows
+deployment/recovery must both qualify before live apply; signing/native/release
+claims require their own exact-artifact evidence afterward.

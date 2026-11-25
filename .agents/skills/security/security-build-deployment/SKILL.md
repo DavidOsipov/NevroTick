@@ -69,7 +69,17 @@ proves no parser safety or truthful wording. This adds no workflow or execution.
 4. Keep one product/version/Installed apps entry and one UI/engine/broker/helper lifecycle. No service prerequisite, UI-only package, user provisioning script or hidden orphan services. Downloaders yielding separately managed products violate architecture's single-product contract.
 5. Establish supported pre-start provisioning and bounded lifecycle transactions: effective identities/rights/ACLs/IPC/backend, protected durable journal, original W32Time state, attributable quiescence and single ownership handover. No first-UI provisioning, broad LocalSystem substitution or self-granted service configuration rights. Unavailable required recovery blocks takeover before mutation. Repair/Reset and last-user removal cannot erase the only recovery mechanism. If the retained MSI route is later selected, its custom-action conditions, paired rollback, properties/transforms and disabled-rollback controls additionally apply.
 6. Inject failures at meaningful reached stages/reboot interruptions. Separate package publication, installed state, journal progress and acknowledgement. Package replacement/service stop is not proof of recovery or uninstall. Old-version removal cannot restore W32Time under its successor; uninstall respects later administrator/GPO changes. Neither NTS outage nor packaging convenience permits automatic weak-authentication clock-controller fallback.
-7. Direct-release trust needs exact package/publisher/release identity, catalog/content and actual loaded-image evidence, protected signing/publication authority and incident/version policy. Checksums alone provide no independent release authentication. Reconcile build/signing/distribution changes and final lifecycle/mitigation evidence before release. A successful signature or download cannot waive a technical blocker. Retained TUF research adopts no bespoke privileged updater.
+7. Direct-release trust needs exact package/publisher/release identity, catalog/content and actual loaded-image evidence, protected signing/publication authority and incident/version policy. Checksums alone provide no independent release authentication. Reconcile build/signing/distribution changes and final lifecycle/mitigation evidence before release. A successful signature or download cannot waive a technical blocker. Apply the adopted updater contract below.
+
+For [TUF-authenticated updating](../../../../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater),
+bind one Update now consent to the exact target; independently admit metadata,
+protected history/time, Windows signatures and complete final bytes at the helper.
+Maintain staged-object custody through the actual OS read and helper termination.
+Separate metadata progress, installed identity, security-floor commits and spent
+clock authority. Qualify both trust/time/storage and surviving Windows recovery
+before live Apply. OpenPGP cannot replace Windows MSIX trust; no expiry bypass,
+silent trust reset, external-installer fallback or resident privileged updater.
+Exact client/provider/runtime and release-key custody remain separate admission.
 
 For a later-selected MSI route, treat
 [`SecureCustomProperties`](https://learn.microsoft.com/en-us/windows/win32/msi/securecustomproperties)

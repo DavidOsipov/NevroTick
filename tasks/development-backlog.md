@@ -839,6 +839,17 @@ earlier corresponding qualification claim. **Exit:** [plan §6/P5](../docs/plans
 
 ### Production UI contract handoff
 
+**Adopted About updater, 25 November 2026:** S5.2 and the
+[GUI handoff](slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
+own Check → Update now/Later → download/verify/install after one target-bound Yes.
+Later starts no package transfer; stale/changed intent requires a fresh offer,
+and UAC remains an OS boundary. [W11-W10/W11-W05 §4.40](windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+owns prerequisite trust/time/storage and surviving Windows deployment/recovery
+exits, joined before live Apply. Fixture work remains inert; D2, current Core
+order and actual dependency/signing/native gates are unchanged. CHECK-14/25 and
+AC-23–26 cover consent, independent admission, lifecycle and truthful status;
+AC-15 retains complete-product maintenance/recovery coverage.
+
 [W11-W09](windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage)
 separately owns real Critical/High notification admission and delivery, using the
 W11-W08 catalogue and existing incident design. Its release/stage deferrals remain;
@@ -916,7 +927,7 @@ black-box observation. **Exit:** [plan §6/P7](../docs/plans/development-plan.md
 Independent valid journeys must match admitted inputs, actual status/effects,
 persisted state and installed payload. Malformed/unauthorized/stale/tampered
 neighbors must fail without protected effects while valid controls remain usable.
-Reconcile CHECK-1–27, applicable AC-01–22, applicable ST-T cases, critical-file
+Reconcile CHECK-1–27, applicable AC-01–26, applicable ST-T cases, critical-file
 gates, native accessibility/authority/lifecycle and baseline/soak evidence.
 AC-21/22 retain their [OD-11 scope split](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence):
 current direct-path/shared cases remain required; proxy-specific cases keep

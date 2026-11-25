@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.28<br>
+**Document:** NV-DEC-001, revision 1.29<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -15,6 +15,13 @@ publication because David rejects its broad publisher indemnity requirements.
 Signing and certificate-trust decisions are deferred; continue permitted product
 development and package preparation. Earlier Store-attempt, rejection-first,
 Partner Center and Store-delivered qualification directions are superseded.
+
+**Updater decision — 25 November 2026:** [OD-05 §7.10](#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the TUF-authenticated complete-MSIX updater design. About checks metadata
+and asks **Update now?** for an eligible release; Yes continues through download,
+independent verification and installation without separate routine Download or
+Install confirmations. Dependency, time, storage, Windows recovery and signing
+qualification remain open; this is an accepted plan, not an implemented updater.
 
 **Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) keeps mathematical estimation experiments first after actual V1 release. [OD-20, 14 November](#24-od-20--supplementary-certificate-distrust-after-v1) defers OneCRL/CRLite integration until after V1 and places TRUST-0 second under the delegated ordering choice, followed by multithreading, Khronos/Ananke, GeoIP and Android. Existing V1 certificate qualification remains required; this adds no V1 feed-integration gate.
 
@@ -63,7 +70,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; add a future Roughtime bootstrap stage for a badly wrong initial date | **Accepted behavior goal and future bootstrap direction** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-0 protocol/provider/trust qualification. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
-| OD-05 | Prepare one complete hardened MSIX for direct distribution; no Microsoft Store publication. Preserve approved upstream signatures, the required signing scope and David's release authority | **Accepted direct-distribution decision, 21 November 2026; signing resolution deferred** | Later signer/certificate-trust decision, complete per-file/package evidence, least-privilege provisioning/recovery and native mitigations; no Store submission or refusal prerequisite, no unsigned-release or trust-bypass approval |
+| OD-05 | Prepare one complete hardened MSIX for direct distribution; no Microsoft Store publication. Add the TUF-authenticated About updater with one target-bound Update now decision; preserve approved upstream signatures, required signing scope and David's release authority | **Direct distribution accepted 21 November; updater design accepted 25 November 2026; signing implementation unresolved** | §7.10 assigns the updater plan and phase joins. Exact client/provider/key custody, trustworthy update time, durable trust, supported provisioning/recovery and final native/signature evidence remain open; no unsigned-release or trust-bypass approval |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
 | OD-07 | Require x86-64-v3 as the Windows product minimum and configure it now; retain runtime-selected higher-feature optimizations | **Accepted 30 October; implementation correction explicitly required 6 November 2026** | The target config and exact admission controls select v3. Qualify CPU/OS/VM startup admission, final artifacts, exact-feature dispatch, numerical equivalence and measured benefit; historical generic receipts do not qualify this configuration |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
@@ -922,6 +929,77 @@ terms for SDK tools, generated code, Microsoft runtime inputs or a later signing
 provider. This decision accepts none of those agreements and changes no existing
 source or asset licence. It establishes no installable package, native pass or
 release approval and leaves unrelated execution holds intact.
+
+### 7.10 TUF-authenticated direct-MSIX updater — 25 November 2026
+
+**Accepted owner instruction, 25 November 2026, Asia/Tbilisi:** David approved
+the independently reviewed TUF-authenticated complete-MSIX updater design and
+requested its integration into repository documents/tasks, with one UX change:
+when a user checks and an eligible update exists, ask whether to update now;
+Yes must carry the operation through download, verification and installation.
+
+**Accepted first scope:** About → **Check for updates** → verified eligible
+release → **Update now / Later**. The offer identifies installed and target
+versions, authenticated package size, relevant network-cost/policy implications,
+expected interruption and applicable elevation/restart consequences. Yes grants
+bounded intent for that exact release, then code downloads, verifies and installs
+without another ordinary Download or Install-now decision. Later starts no
+package transfer or maintenance. Required Windows/UAC consent remains; new
+target bytes/version, materially changed terms or invalidated/expired intent
+require a fresh offer. Cancellation withdraws future-effect permission while
+already admitted native work retains its completion/recovery owner.
+
+Use one stable channel and complete packages. The ordinary worker owns retrieval
+and preview; the existing narrow privileged maintenance owner independently
+verifies raw metadata, protected machine history, time evidence, application
+policy, complete final bytes and Windows identity/signatures before installation.
+The UI's Yes or worker's verified type is not installation authority. No new
+resident privileged updater, clock-broker download/install verb, split-component
+update, automatic startup check or background installation is selected.
+
+**Signing clarification:** David's suggestion of a PGP key expresses the need
+for authenticated packages, not selection or creation of a particular key.
+Use TUF release-signing roles plus independent Windows-compatible package and
+supported per-file signatures under §7.7. OpenPGP cannot replace MSIX publisher
+trust or the TUF freshness/rotation/rollback contract; no detached-signature user
+step or unsigned fallback is adopted. Separate 2-of-3 root and targets custody
+remains the recommended initial profile to qualify; exact keys, algorithm,
+provider, renewal durations and target-device trust remain unresolved. No key
+generation, signing, certificate-store change or hosting operation occurred here.
+
+**Delivery design:** use David's `david-osipov.vision` domain with a proposed R2
+custom-domain metadata/artifact endpoint and GitHub immutable-release mirror of
+identical final bytes. DNSSEC is owner-reported configuration, not an independently
+audited release-authentication result. Hosts and transport do not authorize a
+release; actual endpoint configuration, publication and account/key operations
+remain separate work under David's release authority.
+
+**Non-negotiable implementation joins:** qualify both (a) independent update-time
+evidence, exact per-process client/crypto/runtime graph and durable machine trust,
+and (b) supported Windows staging/registration/provisioning plus recovery invocable
+after old-helper termination, failed successor, reboot and no-login operation,
+before enabling live Apply. TUF's time input does not establish Windows PKI
+behavior under a wrong clock. Preserve accepted metadata history, separately
+commit installed identity/security floors, and never refund clock authority.
+Ordinary repair/Reset/reinstall cannot reset established trust; full removal and
+reenrollment need an explicit protected-state retention/decommission policy.
+
+WinGet remains required before V1. Direct administrative installation, WinGet,
+enterprise deployment and repair are separate authority routes, never automatic
+fallbacks after TUF rejection. An admitted management policy determines exclusive
+external management; installation-origin guesses do not. Prefer forward corrective
+releases; no generic downgrade, weaker verification or remote runtime kill switch.
+
+**Ownership/evidence:** [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+owns the contract; [the assessment's current disposition](windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
+retains research and open choices. [W11-W10/W11-W05 §4.40](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+owns phased work within P5/P6/P7, with ST-W03/time/security/release owners and
+the [GUI handoff](../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026).
+Restore D2 before live UI integration and D1/D3 at their existing triggers.
+Keep current Core priority, scoped native/fuzz/storage holds and post-V1 formal
+deferral. Adoption supersedes current 'TUF/updater unadopted' routing, while dated
+research remains historical. It proves no implementation, executed updater test,
+Windows qualification, provider acceptance or release readiness.
 
 ## 8. OD-06 — future research and decision queue
 

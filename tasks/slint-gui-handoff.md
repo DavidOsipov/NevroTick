@@ -31,6 +31,186 @@ midnight, timezone changes and daylight-saving behavior.
 [OD-13 calendar decision](../docs/nevrotick-owner-decisions.md#slint-calendar-dependency--24-november-2026)
 [Build evidence](build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
 
+## Manual updater contract and acceptance — 25 November 2026
+
+**Status: accepted product/design handoff; updater source and execution absent.**
+Use [OD-05 §7.10](../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026),
+[architecture §19.8](../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater),
+the [adopted update assessment](../docs/windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
+and [W11 §4.40](windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+for trust, signing, privileged storage/deployment and surviving recovery. This
+section owns the UI seam and observable cases within existing S0.5/P5, not a
+second updater plan. The [product journey](../docs/windows-time-features.md#manual-update-journey--25-november-2026)
+and [critical-copy contract](../docs/plans/ui-localization.md#updater-consent-and-result-copy--25-november-2026)
+describe the same one-consent behavior. Earlier proposal text with separate
+Check, Download and Install decisions is superseded by David's correction.
+
+### Current source and next boundary
+
+Readback at `59838326655cd8272e0c3ced593e43c44d99d2b8` establishes these existing
+owners, without executing them:
+
+| Existing source | Current fact and updater work still needed |
+| --- | --- |
+| [`ui/about.slint`](../crates/nevrotick-ui/ui/about.slint), [`ui/app.slint`](../crates/nevrotick-ui/ui/app.slint) and [`ui/fixture-copy.slint`](../crates/nevrotick-ui/ui/fixture-copy.slint) | About exists in the shared Simple/Power shell and has a fixed repository action. Version status is development/fixture wording; GUI build and text-contract numbers are separate rows. No Check-for-updates callback, live installed-product/version query, updater offer or progress/result consumer exists in this surface. Extend it and the existing tray About destination. |
+| [`src/slint_host.rs`](../crates/nevrotick-ui/src/slint_host.rs) and its workflow modules | Rust `BindingState`, `Rc<RefCell<…>>`, bounded models, weak window callbacks and one Slint event loop own fixture state/projections. Add a separately checked update-operation/intent projection at the admitted stage; generated widget values and `host_ready` cannot become updater authority. Existing source-editor “Update preview” callbacks are unrelated to software updates. |
+| [`src/main.rs`](../crates/nevrotick-ui/src/main.rs) and [`Cargo.toml`](../crates/nevrotick-ui/Cargo.toml) | The Windows entry calls the Slint host; the UI package is `0.0.0` and described as fixture-only. The UI has no Tokio dependency. Neither the Cargo version nor a running GUI identifies the currently installed complete product. No updater client, privileged updater endpoint or package-apply implementation is supplied by this source review. |
+| Existing catalog and [`native_notifications_windows.rs`](../crates/nevrotick-ui/src/native_notifications_windows.rs) | Typed catalog publication and sample notification lifecycle exist. `Package::Current()` guards notification identity; it does not supply an updater's actual installed-product/version reconciliation. The updater still needs code-owned messages, independent critical-content approval and current typed result producers. Sample toast/portable receipts supply no live updater or native delivery pass. |
+
+The first future UI source slice is a bounded in-memory operation model and
+About fixture using that established ownership, with sample labels and disabled
+live/protected effects. Freeze its typed states, exact-target intent, finite
+work/text budgets, independent cases and message-contract changes first. Keep
+one graph/schema owner. Do not insert a hidden live adapter, actual DNS/download,
+UAC or package action into UI-M0. Preserve the normal development queue; this
+documentation work changed no source or dependency.
+
+### One consent, independently checked effects
+
+1. **Check for updates** starts on-demand, ordinary-user metadata retrieval and
+   bounded verification. It transfers zero MSIX package bytes, advances no
+   machine trust history and grants no installation intent. Offer only a target
+   eligible under the admitted preview trust/time/policy contract. Failure or
+   uncertain time is a failed/blocked check, not “Up to date.” Initial scope is
+   one stable channel and complete packages, without scheduled checking.
+2. **Update to {version} now?** shows actual installed identity, exact offered
+   version/channel, complete download size, bounded literal notes and material
+   consequences. Explain known service interruption, app closure/restart, UAC/OS
+   prompts, possible/known OS restart and current metered/roaming/management
+   restrictions before **Yes, update now**. Unknown required eligibility is a
+   block; unknown unavoidable consequences must be stated, not hidden by a
+   reassuring default. **Not now**, Escape or dismissing the unaccepted offer
+   authorizes no package transfer or install.
+3. One **Yes** creates intent for that operation/target and disclosed terms. It
+   automatically drives **Downloading → Verifying → Installing**, subject to
+   every independent gate. Do not insert a separate Download button, a routine
+   Install-now button or another pre-install confirmation. Mandatory UAC/Windows
+   prompts remain possible. At offer time only metadata is verified; full-file
+   hash/length, expected package/publisher identity and Windows signatures are
+   verified after transfer and again at their trusted admission boundary.
+4. The privileged lifecycle receiver independently consumes bounded raw input,
+   revalidates current TUF/time/policy/installed state and exact protected package
+   bytes, and serializes effects under architecture §19.8. A UI Boolean,
+   serialized “verified” target or Yes is neither cryptographic proof nor
+   receiver authorization. The GUI supplies no arbitrary path, URL, command,
+   installer argument or new clock-broker verb. TUF and Windows MSIX verification
+   are the selected trust layers; there is no automatic PGP key generation or
+   extra detached-signature user workflow.
+5. A different target or changed material consequences, stale/expired intent or
+   invalid current authority ends the automatic sequence. Present the refreshed
+   admissible offer and obtain a new Yes before a new attempt. Refreshing the
+   same still-valid target/terms is not a reason for routine duplicate consent.
+   Required policy denial cannot be bypassed by requesting another Yes.
+
+Bind intent to the operation/observer generation, exact target version, channel,
+package identity, digest and length, current installed identity, reviewed material
+terms and the applicable trust/policy/time/maintenance revisions. Define expiry
+and invalidation with the trusted owners before implementation. A changed
+installed product in another user session invalidates the stale intent. UI
+presentation generations also bind catalog revision and the selected view;
+neither controls machine trust. The privileged check repeats current guards at
+apply and never installs “whatever is latest” under an earlier Yes.
+
+### Threads, results and actual completion
+
+Keep callbacks short and all Slint components, `Rc` models and mutations on their
+owning UI thread. On-demand work receives owned bounded data; network, parsing,
+hashing, certificate verification and deployment do not run inside callbacks.
+Use the existing reviewed weak-handle/event-loop delivery mechanism, checking
+operation/observer generation and current intent again before publication. Bound
+queued bytes/results and coalesce replaceable progress. A queued callback is not
+an applied result. No new UI/helper Tokio runtime, nested executor or unsafe
+`Send`/`Sync` workaround follows from adopting an updater library.
+
+Cancel revokes future publication/effect admission. The native operation owner
+keeps buffers, staging, handles, permits and charged resources until actual
+completion or durable recovery; dropping a future or closing the window proves
+no cancellation. Before maintenance effects, the owner must confirm cancellation
+before promising an unchanged installation. During irreversible/committed work,
+show truthful pending/unknown status and supported actions, never a misleading
+Cancel guarantee. UI shutdown must not orphan maintenance or a late privileged
+effect. The qualified surviving lifecycle owner, not an in-memory UI task, owns
+reconciliation after UI/helper termination or reboot.
+
+The closed presentation states are **Not checked, Checking, No eligible update,
+Available, Downloading, Verifying, Installing, Restart required, Installed,
+Failed, Cancelled before effects, Outcome unknown, Reconciling, Recovery required,
+Managed externally** with bounded typed reasons. Preserve these distinctions:
+
+- A failed check is not a successful no-update result. Last successful check,
+  latest failed attempt and age quality are separate; a bad wall clock cannot
+  produce a reassuring freshness label.
+- Installed package identity, running GUI identity, pending restart, service
+  readiness and completed maintenance are separate observations. OS request
+  acceptance alone proves none of the later outcomes.
+- A lost acknowledgement requires read-only reconciliation with the durable
+  operation/actual package state before retry; never automatically repeat install,
+  claim rollback, lower a security floor or refund clock authority. A definite
+  pre-effect denial may state no installation; uncertainty may not.
+- Closing/reopening the observer or reconnecting never replays a cached Yes.
+  Late results may support the owning operation's reconciliation but cannot
+  overwrite a newer offer, silently retry or recreate an expired intent.
+- Managed-externally status needs admitted policy; merely finding WinGet is
+  insufficient. No WinGet, release-page or App Installer fallback follows from
+  a failed in-app verification.
+
+Use in-window About/Diagnostics and the existing tray About navigation. No new
+background watcher or rich update-toast release scope is admitted. If update
+notifications are adopted later, their fixed action only opens current status
+after session/generation checks; it cannot choose a target or grant consent.
+Keep observer lifetime, OS permission, submission and actual display distinct.
+Emit bounded typed, redacted progress/refusal/outcome events through the existing
+logging owner; no raw metadata/notes/headers/tokens, arbitrary paths or remote
+error strings. Logs do not supply authoritative UI state; log loss cannot change
+a denial into acceptance.
+
+### Planned acceptance and evidence routing
+
+All cases below are **planned, not executed**. Pair each refusal with a useful
+valid neighbor at the actual receiving boundary. Freeze finite scenario/work
+budgets and candidate/graph identity before execution. Portable fixture checks
+cover only their model and callbacks; privileged and Windows observations require
+the admitted integration/lab and do not follow from a screenshot or cross-build.
+
+| Case / requirement | Action and independently observable expected result | Owner / cheapest adequate layer and later gate |
+| --- | --- | --- |
+| UP-UI-01 — healthy one-consent journey; AC-23 | A qualified metadata result offers a complete target. Count one affirmative product decision; it drives real download, full verification and installation without a second routine prompt. Observe exact admitted bytes/identity and authoritative installed/maintenance result; account separately for UAC/OS prompts. | UI model/callback cases first; updater/helper/package integration and Windows lifecycle for effects. CHECK-3/13/14/18/22/23/27. |
+| UP-UI-02 — decline/no prefetch; AC-23 | Observe Check, then Not now, Escape and unaccepted-offer close. Metadata reads may occur; package bytes, installer invocation and privileged effects remain zero. A fresh subsequent Check/Yes still works. | UI/transport admission counters and controlled retrieval seam; actual native/request observations at integration. CHECK-3/14/18/25. |
+| UP-UI-03 — independent helper refusal; AC-24 | Bypass widgets and submit a forged UI “verified” flag with a hash/length mismatch, then invalid/wrong-publisher package signature. The actual privileged receiver refuses before maintenance; a valid same-policy neighbor succeeds. Do not count rejection by an unrelated earlier guard as signature evidence. | Security/helper owner; source contract controls followed by actual verifier/protected-stage/native caller tests. CHECK-3/16/18/23/25/26. |
+| UP-UI-04 — stale selection and exact intent; AC-24 | Replace the offered target or relevant policy/time/installed identity after Yes, including another user's update. The old intent cannot install the new target or proceed stale. New material terms/target require a new offer/Yes; unchanged still-valid revalidation adds no routine prompt. | Deterministic UI/helper transition cases, then serialized multi-user Windows route. CHECK-3/14/18/23/27. |
+| UP-UI-05 — cancellation and late delivery; AC-25 | Cancel/replace the operation, close its view and deliver older check/download/verification callbacks. No current view overwrite, re-enabled action or future apply occurs. Pending native work keeps charged resources until observed completion; the new operation remains useful. | UI/lifecycle owner; deterministic barriers and actual callback/resource completion at Windows gate. CHECK-14/21/25/27. |
+| UP-UI-06 — UAC denial; AC-25 | Deny/cancel UAC before privileged dispatch. Show the confirmed denial, preserve installation and return keyboard focus; do not claim installation or auto-repeat elevation. A later deliberate current attempt succeeds. | UI/helper owner; native ordinary-user and alternate-admin scenarios, with keyboard/Narrator. CHECK-3/14/22/23. |
+| UP-UI-07 — lost acknowledgement; AC-25 | Let deployment be accepted, lose the acknowledgement and reconnect/reopen. Show outcome unknown/reconciling, prevent automatic reinstallation and query durable/actual state. Resolve both completed and definite no-effect controls honestly; an old running GUI cannot overwrite new installed identity. | Helper/package owner with UI projection; fault-controlled Windows lifecycle. CHECK-12/13/14/18/23/27. |
+| UP-UI-08 — surviving recovery; AC-15/25 | Terminate UI/helper, fail new-helper activation or reboot during maintenance. The qualified owner retains staging/trust history/recovery and establishes one coherent installed state or explicit recovery block, with current clock ownership and consumed authority preserved. Reopening UI observes that result. | W11-W05/W10 and P6, UI consumer; owned disposable Windows recovery scenarios. CHECK-5/12/13/18/23/27. |
+| UP-UI-09 — unavailable eligibility/management; AC-26 | Offline retrieval, expired metadata, insufficient trusted time, unknown installed identity and admitted external policy yield their distinct failure/block/managed states; none says Up to date or falls back to another updater. Pair with a successful current no-eligible-update result. | Updater/time/policy and UI owners; deterministic inputs plus actual qualified provider/management path. CHECK-3/14/18/25/27. |
+| UP-UI-10 — disclosed consequences; AC-23/26 | Before Yes, inspect exact size, service/app/OS consequences and metered/roaming/policy restrictions. Change a material condition after Yes; stop and refresh consent or report policy denial. No silent direct/proxy-policy escape, unexpected substituted target or hidden additional product confirmation. | UI/transport/lifecycle owners; model and controlled networking, then Windows consequence observations. CHECK-3/13/14/18/22/25/27. |
+| UP-UI-11 — hostile notes and critical copy; AC-26 | Signed oversized/control/markup/link notes remain bounded literal data or reject with safe text; they cause no fetch/action. A missing/lying/mixed translated offer falls back to the entire approved English group or remains unavailable. Language change and stale prepared text cannot change accepted terms. Retain boundary-sized healthy notes and approved complete groups. | Catalog/security/UI owner; actual decode/formatter/Slint consumers, native sink budgets later. CHECK-14/17/21/22/25/26. |
+| UP-UI-12 — accessible, private result flow; AC-17/26 | At D1/D3 re-entry, complete Check/Yes/decline/Cancel/UAC/refusal/unknown/recovery using keyboard and actual Narrator/UIA, with long text, contrast and scaling. Meaningful progress is rate-limited; required terms/actions stay reachable. Inspect bounded redacted diagnostics; any later notice only navigates to current status within observer/permission scope. | P5 UI/accessibility, W11-W08/W09, native supported profiles; no current rich-toast or accessibility pass. CHECK-14/17/21/22. |
+
+### Readiness, skill application and retained gates
+
+The documentation stage applied `plan-code-change` to reconcile the accepted
+decision against current About/host/manifests; `implement-native-ui` and
+`implement-slint` to preserve UI-thread/model/weak-callback ownership and UI-M0;
+`security-native-ui` to separate intent from trusted effects and literal sinks;
+`qa-test-planning` and `qa-state-concurrency-lifecycle` to define direct-receiver,
+stale/late/unknown and real-completion controls; and `qa-i18n-localization` plus
+`qa-accessibility` to route critical copy and native evidence. The concrete
+outputs are the source map, behavior contract and UP-UI cases above. Reading or
+writing these requirements proves no executed acceptance.
+
+**Next owner/action:** S0.5/P5 freezes the bounded fixture contract and affected
+catalog messages within the [existing updater handoff](s0.5-ui-comparison.md#manual-updater-ui-handoff--25-november-2026),
+following the normal queue. D2 freshness/currentness returns before live metadata
+status and D2 policy/result/receiver rules before update commands. The live-apply
+join needs both qualified trust/time/protected storage and a surviving native
+deployment/recovery route, with signing/Windows trust prerequisites met. D1/D3
+return before general-user preview/release or earlier claims under architecture §16.5.
+Unresolved client/dependency, publisher/key operations, time, installed identity,
+native route, recovery, critical-text approval, resources and release checks
+remain open with their existing owners. Existing native, scoped fuzz and storage
+holds remain; this amendment runs no Cargo, Windows, signing or deployment work.
+
 ## Branch and integration state
 
 **Merged continuation — 6 November 2026:** PR10 merged as

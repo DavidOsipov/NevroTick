@@ -22567,3 +22567,125 @@ establish no live application-process ceiling.
 
 The [native recovery census controls](#read-back-the-original-job-limits-and-measure-watchdog-retirement)
 retain the predecessor comparison, independent readback and exact input pins.
+
+### 4.40 TUF-authenticated updater integration — 25 November 2026
+
+**Owner decision:** [OD-05 §7.10](../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026).
+**Contract:** [architecture §19.8](../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater).
+**Status:** adopted design and planned work; no updater implementation or executed
+updater/native qualification. This extends W11-W10/W11-W05 and P5/P6/P7 ownership,
+not the current Core task or a parallel plan tree. Current native/fuzz/storage
+holds and post-V1 formal deferral remain.
+
+#### Scope, owners and prerequisites
+
+About **Check for updates** retrieves metadata. An eligible verified release
+produces **Update now / Later**, identifying the exact target, size and material
+network/interruption/elevation/restart implications. Yes proceeds through download,
+independent verification and installation without a separate Download or routine
+second Install confirmation. Later transfers no package and begins no maintenance.
+OS/UAC consent remains where required. Invalidated/expired intent, changed target
+or materially changed terms require renewed consent; metadata refresh cannot
+silently substitute a new target. Valid current intent can survive ordinary
+progress through the same admitted operation. Unknown deployment outcome requires
+reconciliation before retry.
+
+W11-W10 owns package admission/deployment and release evidence; W11-W05 owns
+service quiescence, provisioning and recovery. ST-W03 supplies protected directory/
+object custody and filesystem-adapter evidence. The narrow privileged maintenance
+owner owns updater trust-state schema, durability, commits and recovery, with
+storage specialists supplying evidence; existing clock mandatory-state owners
+remain separate. Time/security and R-05 owners
+qualify update-time provenance separately from Windows wrong-clock PKI. S0.5/S5.2
+owns the [About receiver/intent flow](slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026),
+W11-W08 owns bounded diagnostics, W11-W09 retains later notification delivery.
+Restore D2 before live checking/status/commands, D1/D3 at their existing triggers.
+
+#### Bounded work and exit order
+
+| Existing phase / work | Current disposition and next bounded action | Required exit |
+| --- | --- | --- |
+| S0.5/P5 contracts and inert UI | Ready to scope a source-only child under current priority. Define private validated target/intent/status records, worker/helper boundaries, budgets, consent invalidation, cancellation and reconciliation. Fixture inputs only until live prerequisites pass. | Independent healthy one-consent journey and receiver-bypass/stale/decline controls; typed localized copy and actual source ownership. No network or install evidence implied. |
+| W11-W10/maintenance, time/security and ST-W03 filesystem support: trust/time feasibility | Open before live apply. Select exact maintained TUF client/publisher/algorithm and per-process graph; qualify time/storage seams and separately identify production time-evidence provenance. Define protected enrollment, root reconstruction, protocol-progress writes, locks, installed/floor commits and repair/Reset/uninstall retention. | Future-clock/backward-repair, root rotation, failure after accepted metadata, corrupt established state and concurrent-user controls beside useful valid neighbors. Supplied-time fixtures do not qualify production UTC evidence. Actual runtime/license/provider admission remains required; no helper/UI Tokio expansion by convenience. |
+| W11-W05/W11-W10 Windows feasibility | Open under the [existing provisioning order](#service-provisioning-and-direct-msix-order--23-november-2026) and current execution holds. Freeze one inert complete N → N+1 candidate and bounded fault/observation/restoration matrix. Establish supported stage/register/provision semantics and recovery invocable without the old helper or logged-in UI. | Protected bytes remain actual Windows input; intended user/machine installation, quiescence and single controller survive helper termination, failed successor, reboot and lost acknowledgement. Local/test signing qualifies only declared mechanics. No live W32Time takeover follows. |
+| P5/P6 live integration join | Held until BOTH trust/time/storage and Windows lifecycle/recovery exits pass, with selected Windows signature/trust prerequisites and D2 restored. Integrate ordinary worker and narrow maintenance helper through fixed authenticated operations. | Yes for the exact current target reaches useful download/verification/deployment; invalid metadata/signature/hash/identity, stale authority, cancellation or unmet prerequisites cause no forbidden effect. No UI Boolean or worker-supplied verified type substitutes for helper admission. |
+| P6/P7 exact artifact and release operations | Later exact-candidate qualification under David's release authority. Resolve signing/custody/renewal and actual hosting; bind required per-file signatures, package signature and final TUF target identity. | Final downloaded/installed bytes, mitigations, state continuity, native Client/Server behavior, recovery and independently reviewed direct/WinGet routes pass; publishing, expiry renewal, key-loss/compromise and forward-corrective rehearsals have actual outcomes. No release follows from this plan. |
+
+Trust/time and Windows feasibility may proceed independently where admitted.
+Passing one alone cannot enable manual or automatic live Apply. If a bounded
+investigation cannot meet its exit, retain concrete evidence and return that
+mechanism to its existing decision owner; do not silently weaken the requirement
+or expand into an indefinite updater campaign.
+
+#### Acceptance and adversarial cases
+
+All cases are **planned/unexecuted** until the owning candidate records results.
+Use independent expected outcomes and healthy neighbors; challenge actual
+receiving handlers rather than only widget-enabled state.
+
+The [feature catalogue](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence)
+adds AC-23–26 for consent, independent admission, lifecycle and truthful/private
+presentation; AC-15 remains the complete-product maintenance/recovery scenario.
+The GUI handoff's local UP-UI-01–12 cases refine these existing phase owners.
+
+| Case family | Required observation / forbidden effect | Existing checks |
+| --- | --- | --- |
+| Offer and one consent | Eligible target gives one Update now/Later decision. Yes alone advances healthy download/verify/install; no extra routine Download/Install click. Later starts no package transfer or maintenance. | CHECK-14/22/25; AC-23–26, AC-15 lifecycle |
+| Intent and generations | Changed target/version/digest, material cost/interruption changes, expired intent, old observer, cancellation and late completion cannot reuse approval. Ordinary unchanged progress remains usable. | CHECK-12/14/25/27 |
+| Metadata and policy | Forged, expired, replayed, inconsistent, over-budget or wrong-product/channel/architecture metadata cannot reach install. Authenticated root rollover and permitted long-offline recovery work. | CHECK-9/18/20/25/26 |
+| Time and PKI | Wrong future time, backward repair, suspend/reboot and evidence-generation change cannot manufacture freshness. TUF time and Windows chain/timestamp/revocation behavior have separate observations; no expiry/chain bypass or updater-driven clock write. | CHECK-9/12/18/26/27 |
+| Protected trust and floors | Crash/partial write, missing established state, concurrent users and repair/Reset/reinstall cannot reset accepted history. Install failure preserves required metadata progress and consumed clock authority; floor advancement preserves eligible recovery. | CHECK-12/13/15/23/25 |
+| Exact bytes and identity | Invalid/wrong Windows signer, changed final bytes, wrong package family, partial file and post-preview substitution fail before maintenance. Protected staging remains identical through the OS read, even after helper death. | CHECK-18/23/25/26/27 |
+| Service/deployment recovery | UAC denial, disk-full/preflight failure, pending SCM restart, helper termination, no-login reboot and failed successor cannot yield false success or competing controllers. Accepted-but-unacknowledged deployment is reconciled before retry. | CHECK-2/3/12/13/23/27 |
+| Network and resources | Enforce admitted origins/destinations/redirects, proxy/family policy, network-cost constraints and finite bytes/work/retries/queues; no silent direct or weaker-verification fallback. | CHECK-9/15/21/25/27 |
+| Notes, logs and usability | Bounded authenticated notes remain literal, without remote command/link/action authority. Typed diagnostics exclude secrets/private paths and are non-authoritative. Keyboard/UIA/Narrator, long text and native resources have distinct observations. | CHECK-14/17/21/22/25/27 |
+| External routes and operations | WinGet/direct/enterprise repair remain separate authority, never automatic fallback after TUF rejection. Prove renewal/key/certificate transition with exact client compatibility and useful corrective delivery. | CHECK-13/18/23/24/26 |
+
+Apply the [targeted ASVS reassessment](../docs/asvs-5.0.0-applicability.md#common-provenance-fields)
+before new HTTP/metadata/storage/privileged consumers; design adoption supplies no
+worksheet/security-conformance result. Preserve 90% security-primitive coverage
+and 95% per-critical-file mutation when source exists, plus applicable property/
+model/fuzz, resources, native and final-package evidence. Structured/state-guided
+fuzz execution still requires its actual admitted lane.
+
+#### Documentation review and handoff
+
+Baseline: 59838326655cd8272e0c3ced593e43c44d99d2b8. Two writers own separate
+trust/package and GUI surfaces; the coordinator owns decision/phase/task/routing
+integration. A fresh judge read baseline source and full relevant skills before
+writer changes/conclusions. Its independent initial comprehension was:
+
+> The approved change adopts an on-demand update journey in which Check for updates discovers an eligible complete package and asks whether to update now; a Yes authorizes the bounded download/verification/deployment workflow, subject to normal administrative authorization, rather than creating an extra Download → Install consent ladder. The expected design is TUF release authorization for one direct MSIX, with ordinary preview/acquisition, independent privileged admission, protected persistent update trust and a qualified freshness basis. My coverage questions are whether consent is bound to the offered target/release, whether Later/cancel/failure preserves healthy synchronization, whether all state transitions have honest statuses, and whether About/feature acceptance/task routing agree on this journey.
+>
+> The baseline at 59838326655cd8272e0c3ced593e43c44d99d2b8 already mandates one complete directly distributed MSIX, per-file signatures where supported, independent clock/service authority, preserved mandatory state and surviving recovery; it does not yet adopt TUF or a live updater. Signing provider, exact metadata client/crypto graph, verification-time mechanism and native MSIX/service/recovery mechanisms are unqualified. I read baseline AGENTS, the documentation routing, relevant owner/architecture sections, full planning/review/security/QA leaves and contracts. The main review question is whether adoption changes normative direction and phase ownership without presenting design as implementation evidence, admitting a dependency/provider, weakening Windows signature or recovery obligations, adding clock authority, or lifting existing execution holds. Stale 'TUF unadopted' skill routing must be reconciled while preserving historical research scope.
+
+**Completed documentation review, 25 November 2026:** the initial local candidate
+tree was `6e513afbfbaa76f38a87c31e64b5a898d3ef55bc`. The independent judge reviewed
+the combined change, relevant unchanged consumers, actual GUI/source boundaries
+and the limited primary-source claims. It found two documentation issues:
+
+| Finding | Correction and verification |
+| --- | --- |
+| J-01 — current decision routing still called updates deferred | Architecture introduction/DEC-9, development-plan entry/state/queue, roadmap, package-metadata and hardening introductions now distinguish the adopted TUF/one-consent design from unresolved exact mechanisms. Dated research and receipts remain historical. |
+| J-02 — updater mandatory-state ownership was assigned too broadly | ST-W03 supplies filesystem/object-custody evidence; the narrow privileged maintenance owner owns updater trust-state schema, durability, commits and recovery. Existing clock mandatory-state owners remain separate. |
+
+The judge verified both findings closed on corrected local body tree
+`ab8aa6504f964c1ffa78b79cab5f433ba1902609` and found no remaining blocker to this
+documentation publication. The W11/backlog acceptance mapping also now points
+directly to AC-23–26 while retaining AC-15's complete-product lifecycle coverage.
+
+Coordinator validation of the corrected body: **31 Markdown files**, clean
+`git diff --cached --check`, **67 skills passed** with
+`python3 -B .agents/skills/scripts/check_skills.py`, **151 added local links and
+anchors passed**, and `AGENTS.md` measured **32,701 UTF-8 bytes**, below 32,768.
+The judge independently confirmed the whitespace and skill checks, byte limit,
+source boundaries and current-routing correction. The final receipt is a
+documentation-only addition to that reviewed body and requires final readback.
+No main `docs/SHA256SUMS.txt` manifest exists; covered historical design bundles
+and their manifests were not modified.
+
+These checks qualify documentation only. No updater package, signing key, live
+update, Windows experiment, dependency admission or production qualification is
+produced by this amendment. The exact client/time/state and surviving Windows
+recovery work, required signing/native/release gates and existing execution
+holds remain open at the named owners.

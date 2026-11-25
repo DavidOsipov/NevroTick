@@ -43,8 +43,12 @@ authorizes adding or replacing a package.
 
 Before resolution, decide cohort and visible holds. Re-evaluate affected Serde/parser
 behavior, TLS provider/trust/licensing, NTS packet AEAD and Win32/service boundaries.
-Preserve held/optional candidates. Neither replace selected validation model nor
-admit TUF from research without concrete design decision.
+Preserve held/optional candidates and the selected validation model. The
+[adopted TUF design](../../../../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+does not admit a library: qualify its exact per-process runtime, complete crypto/
+license graph, time injection, retained-root reconstruction, durable storage and
+publisher interoperability. Engine-only Tokio remains; no helper/UI expansion
+or native-crypto exception follows from protocol adoption.
 
 Apply [OD-19's accepted 14-day registry cooldown](../../../../docs/nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
 before graph approval, including new transitives and imported locks. Follow the

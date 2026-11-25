@@ -9,6 +9,17 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**TUF-authenticated updater — 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the complete direct-MSIX updater. About checks metadata and offers
+**Update now / Later**; Yes continues download, verification and installation for
+the exact offered target, without separate routine Download/Install decisions.
+[Architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+owns protected admission; [W11 §4.40](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+and the [GUI handoff](../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
+own phased work. Both qualified trust/time/storage and surviving Windows recovery
+precede live Apply. Exact client/keys/provider/native mechanisms remain open;
+no production updater, signing or hosting is created by the documentation change.
+
 **URL security update — 24 November 2026.**
 The guarded update selects `url 2.5.9` and `form_urlencoded 1.2.3`
 under the exact owner-approved cooldown exception. Both configured
@@ -593,7 +604,7 @@ authenticated client, native clock synchronization or release readiness.
 | What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) retain its prerequisites and finite bounds. The [selected pure checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) now qualifies history/coverage/rule construction, interpretation and atomic replacement, with exact receipt reconciliation. Full acquisition and native integration remain separate. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
-| What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-22, mapped to technical checks. |
+| What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-26, mapped to technical checks; AC-23–26 cover the adopted updater. |
 | What technical/security result is required? | [Architecture §20.2](windows-time-architecture.md#202-acceptance-catalog): CHECK-1–CHECK-27, independent expected results, protected effects, valid controls and stage/owner. |
 | How should hardening reviews and test-completeness follow-ups be interpreted? | [Independent review](../.agents/skills/testing/qa-independent-review/SKILL.md) distinguishes source, attributed results, inspected raw evidence and reruns. The [18 November reconciliation](../.agents/plans/2026-10-30-skill-quality.md#hardening-review-reconciliation--18-november-2026) retains current product owners. [Shared-verifier case identities](../tasks/build-optimization.md#shared-verifier-case-identity-follow-up--18-november-2026) remain planned for the next substantive verifier edit; existing package/sentinel and stronger Engine roster checks retain their scope. |
 | What is in scope for the current UI prototype? | [Architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): M0-01–M0-08 and D1–D3 deferrals/re-entry gates; [UI-M0 task](../tasks/ui-m0.md) for implementation ownership and evidence. |
@@ -1186,13 +1197,13 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 | A | [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) | Owner instructions of 29 October; accepted choices, recommendations and unresolved policy distinguished. |
 | B | [nevrotick-research-handoff.md](nevrotick-research-handoff.md) | Bounded future research, NTS operator candidates, evidence requirements and owner decision cards. |
 | C | [release-policy.md](release-policy.md) | Current support status and proposed stable-maintenance model; exact-candidate promotion, withdrawal, corrective recovery and publishing-authority incidents. Required operational rehearsals and product qualification remain open. |
-| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, AC-01–AC-22 acceptance scenarios and staged delivery. |
+| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, AC-01–AC-26 acceptance scenarios and staged delivery. |
 | 2 | [windows-time-architecture.md](windows-time-architecture.md) | Canonical creation specification, revision 1.4: technical contracts, threat model, NTP/NTS, Windows authority and release gates. |
 | 3 | [windows-time-diagrams.md](windows-time-diagrams.md) | Editable Mermaid architecture views aligned with revision 1.4. |
 | 4 | [windows-time-development-hardening.md](windows-time-development-hardening.md) | Strict Rust/Windows agentic development policy, CI, auditors, tool qualification and evidence requirements. See the current tooling record for adopted bootstrap checks; application/native/release qualification remains pending. |
 | 5 | [asvs-5.0.0-applicability.md](asvs-5.0.0-applicability.md) | All 345 ASVS 5.0.0 requirements mapped to proposed applicability/verification; not completed compliance. |
 | 6 | [windows-time-signing-guide.md](windows-time-signing-guide.md) | Selected direct MSIX trust/workflow and retained MSI alternatives; signing resolution is deferred and final artifact qualification remains open. |
-| 7 | [windows-time-update-assessment.md](windows-time-update-assessment.md) | TUF/update research and constraints; no automatic updater or TUF architecture has been adopted. |
+| 7 | [windows-time-update-assessment.md](windows-time-update-assessment.md) | Historical TUF research plus §12's adopted direct-MSIX updater disposition; exact client/time/storage/signing/native qualification remains open. |
 | 8 | [windows-time-review.md](windows-time-review.md) | Independent architecture review and revision 1.4 reconciliation. Its earlier reviewed-baseline label is intentional. |
 
 Accepted owner decisions govern their stated scope; recommendations and open questions remain proposals. The architecture controls the corresponding technical/security contracts. The feature plan supplies proposed presentation and product scope; unresolved provider, numerical, Windows, licensing and signing decisions retain their gates. The selected target under OD-05 §7.9 is one complete hardened MSIX for direct distribution with services; Microsoft Store publication is rejected and signing resolution is deferred while preparation continues. [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026) requires the signed package and every supported individual artifact signature, including nonbinary files; use [architecture §19.7](windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory) and [signing guide §4.1](windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory). MSI delivery remains a later owner choice; the unsigned-MSI/OpenPGP exception is superseded. None of these routes is qualified by documentation. Historical reviews/receipts retain their original candidate scope.

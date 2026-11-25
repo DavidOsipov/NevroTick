@@ -1,6 +1,6 @@
 # Direct MSIX distribution: hardening and delivery plan
 
-**Status, amended 21 November 2026:** complete MSIX for direct distribution; Microsoft Store publication rejected. Signing remains deferred and unresolved; implementation and native qualification remain open.<br>
+**Status, amended 25 November 2026:** complete MSIX for direct distribution; Microsoft Store publication rejected. TUF-authenticated, user-initiated complete-package updater design adopted in §7.7. Signing, client/time/trust integration and surviving Windows deployment/recovery remain unresolved; implementation and native qualification remain open.<br>
 **Recorded:** 3 November 2026 (UTC+04:00); sources checked 2 November 2026 UTC.  
 **Repository basis:** `070927855ed99e1a0683d9f291d3462d33343118`.  
 **Hardening amendment:** 3 November 2026, against `661281ad0e6504338d352b943154522b800974fa`; new Microsoft Learn sources checked on that date.<br>
@@ -33,8 +33,11 @@ signing approval step. This deferral does not establish a signed artifact,
 public Windows trust, an unsigned-release exception or native/release readiness.
 The existing supported-file signature requirements in
 [OD-05 §7.7](../nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
-remain for eventual distribution. No hosting, updater or signing provider is
-selected by this amendment. Direct MSIX distribution is documented by Microsoft;
+remain for eventual distribution. The 21 November decision selected no hosting,
+updater or signing provider; the later [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+now adopts [§7.7's TUF-authenticated updater design](#77-tuf-authenticated-complete-package-updates--25-november-2026),
+while concrete hosting/signing and native mechanisms remain unqualified.
+Direct MSIX distribution is documented by Microsoft;
 SDK tools and redistributed runtimes retain their separate licence obligations.
 Rejecting Store terms does not clear those components. [S123, S124]
 
@@ -625,12 +628,15 @@ native result.
 
 ## 6. Delivery, controlled audiences and alternatives
 
-**Current direct-distribution direction, 21 November 2026:** retain the
-complete MSIX and David's exact-candidate publication authority. Hosting,
-controlled-preview access and any update mechanism are future selections.
+**Current direct-distribution direction, amended 25 November 2026:** retain the
+complete MSIX and David's exact-candidate publication authority. [Section 7.7](#77-tuf-authenticated-complete-package-updates--25-november-2026)
+adopts the TUF-authenticated in-app route. Actual hosting, controlled-preview
+access, client/trust/time and supported Windows invocation remain to qualify.
 Microsoft documents direct MSIX delivery and optional `.appinstaller` updates;
-this plan does not adopt an updater, establish a working channel or promise
-public installation before signing/trust and native qualification. [S123, S124]
+this plan adds no competing automatic App Installer association or claim that
+the in-app TUF check governs every external route. It establishes no working
+channel or public installation before signing/trust and native qualification.
+[S123, S124]
 
 The pre-V1 [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
 requirement remains, but its former `msstore`/ProductId-first selection is
@@ -1533,6 +1539,83 @@ stays blocked before mutation. Complete hardened MSIX, Core priority, scoped
 Sandbox disposition, S134/general native restrictions, fuzz/storage holds,
 UI-M0 D1–D3 deferrals and optional enhanced-provenance policy remain. No new
 topology, privilege grant, external/embedded MSI or mandatory UI setup follows.
+
+### 7.7 TUF-authenticated complete-package updates — 25 November 2026
+
+[OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts [architecture §19.8](../windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater).
+The UX is **Check for updates → verified eligible offer → “Update now?” → Yes
+automatically downloads, independently verifies and installs the exact target**.
+Check retrieves metadata only. There is no separate routine Download/Install
+click; normal UAC/OS prompts remain, and changed target/material terms or stale
+intent require renewed consent. This is an adopted design with unresolved
+feasibility and implementation, not a functioning MSIX updater.
+
+Reuse one ordinary on-demand retrieval worker and one narrow privileged
+maintenance/trust owner. The broker receives no updater or arbitrary execution
+command; no new resident privileged updater service, copied-out helper, task or
+off-package watchdog is selected. Engine-only Tokio, complete-product service
+isolation, PackageIntegrity, per-role mitigations and all-file signing remain.
+
+**Two required qualifications join before live apply:**
+
+| Track | Owner and observable exit |
+| --- | --- |
+| TUF trust/time/client/state | Existing release/security/storage owners qualify independent freshness evidence, exact client/provider/licence/runtime graph, retained root/metadata progression, durable cross-process ownership and target/security-floor policy. A worker preview cannot authorize the machine or replace independent privileged verification. |
+| Surviving Windows deployment/recovery | W11-W10/W11-W05 qualify a supported inert N → N+1 complete-MSIX invocation and compatible recovery when the old helper/UI dies, no user is logged in, successor launch fails, or interruption/reboot occurs. Compatible trusted code, protected data, current authority and supported invocation must survive together. |
+
+Trust/time success cannot fill the surviving-invoker gap; a working package
+transaction cannot fill the freshness/authorization gap. Existing native holds
+govern both investigations. Only their successful join plus the selected Windows
+trust/caller prerequisites admits real product apply; exact final-artifact and
+release qualification follows. Sections 7.4–7.6 remain unresolved where their
+evidence is missing, including independent removal/Reset with recovery pending.
+
+Freeze the actual API/overload/options, caller identity and registration scope.
+Microsoft's [AddPackageAsync](https://learn.microsoft.com/en-us/uwp/api/windows.management.deployment.packagemanager.addpackageasync)
+describes current-user registration from a URI; this alone establishes neither
+machine provisioning nor alternate-administrator/multi-user correctness. Its
+applicability and [capability requirements](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations)
+depend on the caller. Qualify standard-user initiation, denied/approved UAC,
+alternate credentials, other sessions and Server independently. Do not claim
+that every service-bearing MSIX universally lacks automatic-update support.
+
+The stage holds exact final **post-signing/timestamping** bytes. The privileged
+owner copies into a new protected local object, independently verifies the whole
+package and expected publisher/identity, and retains custody through the native
+API's path reopen and actual completion. Reject user/remote/UNC execution paths,
+reparse/alias/hardlink substitution and arbitrary installation options. Do not
+erase staging merely because an old helper exits; the next authorized owner must
+be able to reconcile the operation and its exact target.
+
+Before quiescence, qualify trust/time/intent, space/permissions, current policy,
+state compatibility and usable eligible recovery. Then durably inhibit restarts,
+quiesce original native work and deploy one complete generation. Observe actual
+installed identity, service rights/configuration, effective protections and one
+current controller before success. Public NTS availability is not the sole local
+health oracle. An accepted request or lost reply remains uncertain until
+reconciliation; no retry may refund clock authority or restore obsolete TUF state.
+
+Prefer higher-version correction. Any exceptional lower-version recovery needs
+narrow separately signed authority and compatible current state. Security-floor
+advancement has its own commit rule and must preserve an eligible recovery path;
+an update policy is not a remote runtime kill switch. Ordinary repair/reinstall
+preserves established trust; deliberate trust decommission/reenrollment needs
+its own authorized lifecycle rule.
+
+Pre-V1 [WinGet capability](winget-distribution.md) remains required. Direct,
+WinGet, an explicitly admitted future App Installer association and enterprise
+management declare distinct update owners. External management is an admitted
+policy state, not inferred from WinGet being present or a guessed installation
+origin. These routes cannot become automatic fallback after TUF denial.
+
+Use [signing §10](../windows-time-signing-guide.md#10-updater-signing-and-key-operations)
+for separate TUF/Windows keys, final-byte publication, renewal and compromise
+operations, and [release policy](../release-policy.md) for promotion/correction.
+The [existing W11 §4.40 assignment](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+records stage owners, paired checks and outstanding evidence under existing
+CHECK-9/12/13/15/18/20/21/23/24/25/26/27. No provider, keys, numeric TTL/work budget,
+storage mechanism, surviving invoker or release pass is created by this plan.
 
 ## 8. Primary source register
 

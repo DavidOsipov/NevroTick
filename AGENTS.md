@@ -37,7 +37,7 @@ NevroTick: chrony-derived Rust NTP/NTS client/native GUI. Intended initial scope
 | [ASVS applicability](docs/asvs-5.0.0-applicability.md) | Applicability/planned verification; no completed compliance. |
 | [Signing guide](docs/windows-time-signing-guide.md) | Provider/signing/complete-package workflow; evidence required for eligibility/native checks. |
 | [Release policy](docs/release-policy.md) | Support status/proposed first-stable terms/promotion/withdrawal/publication-authority recovery. W11 owns rehearsals/results; docs grant no support/release approval. |
-| [Update assessment](docs/windows-time-update-assessment.md) | Retained research; TUF/automatic updater unadopted. |
+| [Update assessment](docs/windows-time-update-assessment.md) | OD-05 §7.10 adopts TUF + complete MSIX; one Update now decision. Client/time/Windows/signing gates open. |
 
 Accepted owner decisions govern stated scope; recommendations remain proposals. Reviews explain decisions/corrections, never replace current contracts or prove impl. Keep REQ/BND/DEC/THR/CHECK identities.
 

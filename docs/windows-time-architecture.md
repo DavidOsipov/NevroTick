@@ -62,7 +62,7 @@ Section 10.5 owns the contract; [S1.4's task](../tasks/s1.4-leap-policy.md) owns
 implementation and evidence. This is a design selection under OD-09, not a native
 pass or a change to the current Core checkpoint, correction authority or execution holds.
 
-**Current owner delivery decision, 21 November 2026:** prepare **one complete hardened MSIX for direct distribution**, including UI, engine, broker, administration helper and all required payloads. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication because David rejects the publisher indemnity requirements; it supersedes the 3 November Store-submission direction. Signing, publisher trust, hosting and update delivery remain for later resolution. Source/package preparation continues without a Store submission, certification, refusal or signing-provider prerequisite. Sections 19.4–19.5 retain supported provisioning, actual artifact/native qualification and one-product ownership. Requalify Store-dependent image-loading assumptions for the direct artifact; do not silently weaken protections. MSI remains an unselected reference. Current Core priority and execution holds retain their scope.
+**Current owner delivery decisions, 21 and 25 November 2026:** prepare **one complete hardened MSIX for direct distribution**, including UI, engine, broker, administration helper and all required payloads. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication because David rejects the publisher indemnity requirements; it supersedes the 3 November Store-submission direction. [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts §19.8's TUF-authenticated updater with one Update now decision. Exact client, signing/provider/trust, hosting, time/state and native deployment/recovery mechanisms remain unqualified. Source/package preparation continues without a Store submission, certification, refusal or signing-provider prerequisite. Sections 19.4–19.5 retain supported provisioning, actual artifact/native qualification and one-product ownership. Requalify Store-dependent image-loading assumptions for the direct artifact; do not silently weaken protections. MSI remains an unselected reference. Current Core priority and execution holds retain their scope.
 
 **Revision 1.4 changes:** reconciles a fresh independent review of all maintained Markdown documents and all 345 ASVS clauses. It corrects 16 worksheet records, including seven draft classification changes; makes conditional native HTTP retrieval and legacy NTP entropy decisions explicit; aligns JSON/status wording; and adds a source-derived extreme-date verifier qualification case. Original verification text and prior additions remain traceable. At that planning review, all controls remained unimplemented/unexecuted. See the [full review report](windows-time-review.md).
 
@@ -274,7 +274,7 @@ The following choices form the implementation baseline. A gated choice is select
 | DEC-6 | Prefer cached NTS associations before any bootstrap hint | Fresh authenticated UDP replies can avoid certificate-time circularity | State is absent, rejected, expired under policy or cryptographically invalid |
 | DEC-7 | Plain NTP bootstrap is opt-in and affects only a provisional TLS verification clock | Repairs gross date errors without writing globally untrusted time | An independent trusted time anchor becomes available; do not add accept-all TLS |
 | DEC-8 | Preserve majority selection and configured minimum agreement | No single-peer fallback after disagreement; availability is traded for correct trust reporting | A deliberate single-source profile is approved and labelled |
-| DEC-9 | One complete hardened MSIX is the direct-distribution target, including both services, UI and helper | OD-05 §7.9 rejects Store publication; retain one-product ownership, least privilege and reversible W32Time handover | Signing/trust/hosting/update choices remain deferred; no automatic MSI fallback, split product or weaker privilege boundary |
+| DEC-9 | One complete hardened MSIX is the direct-distribution target, including both services, UI and helper | OD-05 §7.9 rejects Store publication; retain one-product ownership, least privilege and reversible W32Time handover | OD-05 §7.10 adopts §19.8's TUF updater and one-consent flow; exact client/signing/trust/hosting/time/state/native mechanisms remain open. No automatic MSI fallback, split product or weaker privilege boundary |
 | DEC-10 | Native, bounded local protocols and files; no embedded web server/WebView | Removes unnecessary network/browser surfaces and runtime overhead | A concrete user need justifies a new threat model and applicability review |
 | DEC-11 | Only broker-acknowledged applied corrections update the engine model | Avoids assuming requested frequency/phase equals actual Windows behavior | Never relaxed; a changed backend must meet the same contract |
 | DEC-12 | Fail to visible holdover/conflict/blocked states when trust is lost | Avoids reporting false synchronization or invoking W32Time as an implicit downgrade | An administrator selects a different explicit profile |
@@ -400,7 +400,7 @@ Use the existing `windows-platform` boundary for reusable Windows integration. A
 | `windows-platform` | Reviewed native resource ownership, error capture, service hosting, clock observations, pipe/identity mechanics, notifications, protected storage and Windows diagnostic sinks | Narrow role-specific adapters; no source selection, generic command executor or global `WindowsManager` |
 | `ipc-contract` | Portable versioned message types, bounded framing/strict decoding and checked conversions | No Windows handles, ambient OS access or claim that decoded identity/approval fields authorize an operation |
 | `diagnostics` | Event IDs/fields, privacy rules, finite verbosity profiles, bounds and sink interfaces | Platform-neutral; no clock policy, service lifecycle control, log upload or subscriber installation by a library |
-| Executable composition | Select its adapters, install its diagnostic subscriber/sinks and own their shutdown | Engine owns networking; broker owns current authorization and clock writes; helper/installer owns elevated lifecycle; UI owns Slint view state, widgets and UI-thread rules |
+| Executable composition | Select its adapters, install its diagnostic subscriber/sinks and own their shutdown | Engine owns NTP/NTS networking; §19.8's ordinary worker owns update retrieval; broker owns current authorization and clock writes; helper/installer owns elevated lifecycle; UI owns Slint view state, widgets and UI-thread rules |
 
 Separate clock observation from actuation: only the broker composition exposes the clock-write adapter, after its serialized current-state guard. Keep SCM service-host callbacks distinct from installer/helper service-registration and W32Time lifecycle operations. Common persistence mechanics preserve the separate engine-secret, broker-policy and journal writers/ACLs in section 12.1. Common pipe mechanics preserve the three independently authorized command surfaces in section 5. Native GUI bindings stay UI-owned so headless services do not acquire GUI dependencies.
 
@@ -2152,6 +2152,8 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 | Bundled leap history and UTC rules | Reviewed complete release | Public immutable data with source/revision/digest bound to package provenance; not optional encrypted cache. Unknown future coverage differs from corrupt package content; update/rollback never resets protected correction continuity (§10.5) |
 | Machine security/source policy | Broker after authorized helper request | Protected ProgramData path, strict schema, revision compare-and-swap, atomic durable replacement |
 | Broker journal and boot/step state | Broker/installer with explicit ownership | Separate ACL and schema; corruption blocks unsafe writes, not a reset to permissive defaults |
+| Authoritative updater metadata trust | Narrow privileged maintenance owner under §19.8 | Protected retained root and protocol-required metadata progress; a per-user check/cache cannot write or reset machine history |
+| Installed release identity and updater security floor | Same maintenance owner, with distinct commit rules under §19.8 | Actual reconciled installation, approved recovery eligibility and monotonic security policy remain separate from metadata acceptance and clock authority |
 | Current path preference and recovery state | Existing engine scheduler | Bounded RAM under DATA-08/09/10/17; disposable hints, no independent database or authority; §12.1.3 |
 | Optional source-quality summaries/history | Existing engine quality/storage owner | Advisory Q/H allocation and format decision remain with the catalogue/statistics plan; never required for live path selection; §12.1.3 |
 | Drift/statistical prior | Engine | Bounded validated values; corruption discards optional prior and enters acquisition |
@@ -2857,7 +2859,7 @@ The method follows OWASP's decomposition, threat, response and review approach a
 
 The source basis is the architecture specification, chrony 4.9 source pin `8df4f1263e206585e6c4e61352d042c2dd12916a`, ASVS 5.0.0 release pin `5cf9b032440be53ce345ab3c130fda46ba1ce7a2`, and the Windows/RFC primary sources listed in the architecture's Appendix A. These establish upstream behavior and platform contracts. They do not establish that a future Rust port enforces them.
 
-In scope: native UI; public status/refresh IPC; administrative and engine IPC; DNS, NTP and NTS-KE; selected numerical algorithms; Windows clock adapter; service accounts and process isolation; files, registry, cookies, logs and exports; signing/build/release; one-package install, upgrade, repair, rollback and uninstall; sleep/resume and other clock owners. There is no remote administration server, NTP server, plugin system, embedded browser, general script runner or bespoke privileged auto-updater in version 1.
+In scope: native UI; public status/refresh IPC; administrative and engine IPC; DNS, NTP and NTS-KE; selected numerical algorithms; Windows clock adapter; service accounts and process isolation; files, registry, cookies, logs and exports; signing/build/release; one-package install, upgrade, repair, rollback and uninstall; sleep/resume and other clock owners. The 25 November owner amendment additionally adopts §19.8's explicitly initiated TUF-authenticated complete-MSIX updater design. There is no remote administration server, NTP server, plugin system, embedded browser, general script runner or new resident privileged updater service. Design adoption establishes no implemented updater or native qualification.
 
 The operating system, kernel, SCM and cryptographic platform are trusted components. A malicious administrator, compromised kernel, offline disk owner, hostile firmware or controlling VM host is outside the prevention boundary. Their accidental actions, policy changes and time discontinuities still require safe detection/recovery. An attacker who begins without administrative privileges and gains them through this product is fully in scope.
 
@@ -3106,7 +3108,13 @@ Apply [section 19.6](#196-authenticated-artifact-content-and-consumer-trust)
 to post-signing substitution and partial signature coverage: a valid carrier
 signature alone cannot authorize excluded application data or a downstream payload.
 
-**Residual and owner:** Compromised authorized maintainers, signing provider or toolchain remain meaningful risks. Release/security owner defines recovery and rotation. **Verification:** CHECK-18/19/20/24, P0/P6/P7: wrong-source/wrong-publisher/tampered artifacts and untrusted workflow attempts fail; approved reproducible candidate signs/installs normally.
+Section 19.8's adopted in-app route requires TUF release authorization separately
+from delivery and Windows publisher signing. A compromised host alone cannot
+supply that authorization; compromise of sufficient trusted release/root roles
+or an admitted external installation route remains a distinct risk. Qualify the
+implemented boundary and role recovery before claiming this defense.
+
+**Residual and owner:** Compromised authorized maintainers, signing provider or toolchain remain meaningful risks. Release/security owner defines recovery and rotation. **Verification:** CHECK-18/19/20/24, P0/P6/P7: wrong-source/wrong-publisher/tampered artifacts and untrusted workflow attempts fail; the approved exact candidate signs/installs normally. Independent reproducible builds remain optional under OD-05 §7.5.
 
 #### THR-16 — Lifecycle interruption leaves no valid time owner
 
@@ -3198,6 +3206,8 @@ authority merely because its containing executable passes a signature check.
 **Path:** Old engine/UI/helper still running, downgrade/rollback state, delayed correction → new broker/installer → incompatible or formerly valid action applied.
 
 **Control and failure:** One product transaction quiesces the old engine/broker, binds protocol compatibility to product/policy/clock/engine generation, starts a single current owner, migrates state explicitly and refuses unsupported major versions. Rollback restores a compatible binary/state set without reopening consumed step authority. UI displays unavailable/updating rather than treating incompatible replies as fresh status. Never run old and new brokers simultaneously to maintain apparent availability.
+
+For the adopted in-app route, apply [§19.8](#198-tuf-authenticated-direct-msix-updater): bind the user's one update intent to the exact eligible target, independently reverify at the privileged owner, retain accepted metadata progression across deployment failure and qualify recovery after the old packaged helper terminates. A stale UI result, package-signature success, OS request acceptance or loss of the old process cannot commit installation or refund authority. CHECK-9/12/13/15/18/23/25/27 cover the associated trust, time, custody and lifecycle cases.
 
 **Residual and owner:** Administrator-launched copied binaries remain possible; mutual service identity and generation checks must make them ineffective at privileged boundaries. Installer/platform owner defines allowed version transitions. **Verification:** CHECK-3/12/13/23, P3/P6: delayed old proposal, live old UI, supported upgrade/rollback, unsupported downgrade, reboot between replacement stages; only one current owner can act and valid post-update use recovers.
 
@@ -4271,7 +4281,7 @@ This is a distribution and lifecycle decision. Keeping separate runtime processe
 | --- | --- | --- |
 | Install | One setup explains background synchronization and W32Time takeover, requests the normal installation elevation, then reports readiness | Preflight tokens/ACLs/IPC, journal prior state, activate one broker generation; no clock write before ownership |
 | Everyday use | Open a normal-user UI; closing it leaves synchronization running | No inherited installer elevation; privileged settings invoke a specific UAC helper operation |
-| Update | One complete package updates the entire product; show any required restart | Quiesce effects, stage a compatible generation, reconcile state and resume only after validation; do not silently reboot |
+| Update | Check for updates; when a verified eligible target exists, ask “Update now?”; Yes downloads, verifies and installs that complete package, with normal UAC/OS prompts and any required restart shown | §19.8 binds consent to the exact target; independently admit before quiescence, stage a compatible generation, reconcile state and resume only after validation; no separate routine Download/Install click or silent reboot |
 | Repair | One repair restores installation integrity while preserving configuration | Validate all privileged inputs; preserve trust policy, consumed correction budgets and ownership journal; do not revert to permissive defaults |
 | Uninstall | One removal removes UI, helper and both services and explains the restoration outcome | Cancel only currently owned corrections, restore prior W32Time state if still applicable, remove product-only rights/rules/secrets; preserve recoverability if restoration fails |
 | Failed or interrupted operation | A clear incomplete/failed state with a bounded recovery route | Durable transaction stages; no success solely because files were copied or removed; later admin/GPO choices are respected |
@@ -4344,7 +4354,7 @@ Repair and downgrade are separate from rollback. Repair cannot silently reset so
 
 ### 19.4 Future complete MSIX gate
 
-**Selected delivery direction, qualification outstanding:** one complete hardened MSIX distributed directly; Microsoft Store publication is rejected under [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026). The [existing MSIX plan](plans/windows-msix-store.md) retains supported package, service, recovery and hardening work. Signing, trust, hosting and updates remain for later resolution; no Store submission or refusal is a prerequisite. Source/package preparation continues, while native work retains its existing scope and execution requirements. No tool, signer, provisioner or public-release qualification is asserted.
+**Selected delivery direction, qualification outstanding:** one complete hardened MSIX distributed directly; Microsoft Store publication is rejected under [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026). The [existing MSIX plan](plans/windows-msix-store.md) retains supported package, service, recovery and hardening work. The 25 November [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts the in-app TUF-authenticated updater design in §19.8; signing/provider, qualified trust/time/client integration, actual hosting and surviving Windows deployment/recovery remain unresolved. No Store submission or refusal is a prerequisite. Source/package preparation continues, while native work retains its existing scope and execution requirements. No tool, signer, provisioner or public-release qualification is asserted.
 
 Windows supports packaged services and requires administrator installation for them. The declared service account choices are LocalService, NetworkService and LocalSystem; the reference virtual-account broker is not a direct manifest fit. A different account mapping must prove equivalent isolation. The package format never justifies broadening the broker to LocalSystem by default. [S43, S44]
 
@@ -4427,7 +4437,7 @@ changes no full-MSIX gate or one-product contract.
 
 ### 19.5 Free signing plan
 
-**Selected route:** prepare one complete direct-distribution MSIX under OD-05 §7.9. Signing provider, publisher trust, hosting and updates are deferred for later resolution; this section's retained free-signing research is not a provider selection. Continue source/package preparation. Before public installation claims, qualify package/publisher identity, approved release and installed content together, plus the required per-file signatures under section 19.7. Keep source/build, signed package and actually downloaded/installed identities distinct, with protected release authority and a reconciled SBOM. Store acceptance, certification and Store-delivered artifacts are no longer release gates. The [signing guide](windows-time-signing-guide.md) and [MSIX plan](plans/windows-msix-store.md) own the direct-route continuation.
+**Selected route:** prepare one complete direct-distribution MSIX under OD-05 §7.9, with §19.8's adopted TUF-authenticated in-app update design. Signing provider, publisher trust, actual hosting and implementation qualification remain open; this section's retained free-signing research is not a provider selection. Continue source/package preparation. Before public installation claims, qualify package/publisher identity, approved release and installed content together, plus the required per-file signatures under section 19.7. Keep source/build, signed package and actually downloaded/installed identities distinct, with protected release authority and a reconciled SBOM. Store acceptance, certification and Store-delivered artifacts are no longer release gates. The [signing guide](windows-time-signing-guide.md) and [MSIX plan](plans/windows-msix-store.md) own the direct-route continuation.
 
 Qualify the [signing guide's broken-clock lifecycle matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
 for installed startup/helper activation, first installation, update/repair and
@@ -4468,18 +4478,20 @@ Use [signing guide §4.1](windows-time-signing-guide.md#41-required-signatures-f
 for scope, timestamp/identity policy, upstream signatures and exact-byte custody.
 Separate signing approval from untrusted build/test jobs.
 
-Direct MSIX delivery must preserve the complete-package update lifecycle. Hosting and the delivery/update mechanism remain to be selected; no Store-managed update path is assumed. Any chosen mechanism must preserve quiescence, state migration and recovery under sections 11 and 19.4, including higher-version corrective releases and compromised-release response. No bespoke privileged auto-updater or TUF integration is adopted.
+Direct MSIX delivery preserves the complete-package update lifecycle. [Section 19.8](#198-tuf-authenticated-direct-msix-updater) now selects TUF release authentication and a user-initiated download/verify/install transaction through one narrow privileged maintenance owner. Actual hosting, client/provider integration and the supported Windows invocation remain to qualify. No Store-managed update path or new resident privileged updater service is adopted. Preserve quiescence, state migration, higher-version correction and compromise recovery under sections 11 and 19.4.
 
 The [release policy](release-policy.md) owns current support status, the proposed
 first-stable maintenance commitment, release records, containment and publishing-
 authority recovery. Its [qualification matrix](release-policy.md#9-qualification-matrix-and-remaining-decisions)
 adds operational cases to existing CHECK owners. Documented procedures still
 need their actual rehearsals and exact-candidate evidence before public release.
-A valid same-product package published through compromised publishing or signing authority can
-replace the enforcement boundary; no independent on-device rejection mechanism
-has been established. Retain [THR-15](#thr-15--build-or-signing-pipeline-publishes-trusted-malware)
-and OPEN-11's explicit risk/evidence decision instead of treating signer-category
-admission or a release-status table as that mechanism.
+A package authorized by compromised sufficient release-signing authority can
+replace the enforcement boundary. Section 19.8's TUF design separates delivery
+compromise from release authorization on its own route; it is not implemented
+evidence or a guarantee against sufficiently authorized malicious code or every
+external installation path. Retain [THR-15](#thr-15--build-or-signing-pipeline-publishes-trusted-malware)
+and OPEN-11's explicit risk/evidence decision; signer-category admission and a
+release-status table do not supply that guarantee.
 
 ### 19.6 Authenticated artifact content and consumer trust
 
@@ -4504,8 +4516,10 @@ component/release identity and applicable content authentication, through the
 qualified package/catalog mechanism or its other admitted profile. Preserve the
 verified object's identity and protection through actual consumption/loading;
 replacing it invalidates admission. A downloader's signature alone does not
-authenticate its later download. The current complete-package contract permits
-no hidden or runtime-downloaded native code and adopts no new downloader or updater.
+authenticate its later download. The complete-package contract permits no hidden
+or independently hot-replaced native code. Section 19.8 separately authorizes
+acquisition of an approved complete signed MSIX; this content-trust refinement
+itself creates no additional download or executable-loading channel.
 
 Apply [signing guide section 5.2](windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
 for complete-file SHA-256/length bound to protected approved records, stage
@@ -4537,8 +4551,9 @@ streams/custom actions and nonstandard extensions. Already admitted signable
 script/data/container formats require their own supported signature; remaining
 data stays authenticated by the complete signed package. Determine signability
 from the real format and compatible admitted consumer, not key/provider
-availability. This requirement creates no new script host, data envelope,
-bespoke verifier, updater or runtime download channel.
+availability. This requirement creates no new script host, data envelope or
+bespoke verifier. The complete-package updater is separately adopted in §19.8;
+there is no independent per-file runtime download channel.
 
 Preserve acceptable verified signatures of approved upstream components; do not
 mass replace them or falsely attribute their authorship. Resolve unsigned inputs
@@ -4582,6 +4597,281 @@ This is documentary integration: no implemented signing pipeline, native result,
 provider approval or direct-distribution qualification is asserted, and all execution holds remain.
 
 ---
+
+### 19.8 TUF-authenticated direct-MSIX updater
+
+**Adopted design, 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+selects TUF authentication for a user-initiated update of the complete directly
+distributed MSIX. It supersedes current “TUF/updater unadopted” routing and the
+preceding proposal's separate Check → Download → Install interactions. The
+[assessment §12](windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
+preserves historical research and the unresolved feasibility choices;
+[W11-W10/W11-W05](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+own implementation and qualification. This is an accepted contract, not an
+implemented client, existing keys, deployed host, signed package or native pass.
+
+#### 19.8.1 Scope and one update intent
+
+The first scope is one stable channel and full complete-package downloads.
+Reuse About and its existing tray entry in Simple and Power modes under the
+[manual update journey](windows-time-features.md#manual-update-journey--25-november-2026):
+
+1. **Check for updates** performs bounded metadata retrieval and verification
+   without elevation or package-byte download. Offer an update only when its
+   metadata, freshness basis and application policy establish an eligible target.
+2. Ask **“Update now?”** for that target, showing its version/channel, relevant
+   interruption/restart implications and other material terms. No or dismissal
+   starts neither package transfer nor installation.
+3. **Yes** creates one bounded update intent and automatically proceeds through
+   download, complete verification and installation of that exact target. There
+   is no separate Download action or second routine Install-now confirmation.
+   Normal Windows UAC, credential and unavoidable OS prompts remain; denying
+   them is not permission to bypass authorization or report success.
+
+The intent binds product/package identity, channel, version, authorized release
+sequence/security policy, exact final SHA-256 and byte length, current installed
+identity, operation generation and the disclosed material terms. A changed
+target, changed material terms or expired/stale intent requires renewed consent.
+A metadata refresh may continue without another routine click only when the
+same target remains eligible, intent remains current and the disclosed terms
+remain unchanged. A UI Boolean, arbitrary command line or saved consent is not
+privileged authority: qualify its operation-specific handoff, authenticated
+actor, current policy and effect guard at the maintenance owner.
+
+Cancellation before the protected effect revokes admission. Native work and
+resources remain owned until actual completion; a cancelled waiter is not a
+completed operation. After deployment begins, expose the actual bounded outcome
+or reconciliation state rather than promising rollback/cancellation that the OS
+cannot supply. Never silently reboot, substitute a newer target or resume a
+stale intent after restart. Required recovery of an already-started transaction
+is distinct from permission to initiate a new update.
+
+Scheduled/background checking, unattended installation, delta/component updates
+and rich update notifications are outside this first scope. UI-M0 stays
+fixture-only; real worker/service/administrative-result integration requires
+the existing D2 re-entry. Live network, hashing, certificate and deployment work
+does not run in Slint callbacks or introduce Tokio into the UI. Use typed bounded
+projections, observer/operation generations and current-target receiver guards.
+Authenticated release notes are bounded literal text; code/catalog-owned consent
+and action wording cannot come from remote notes. Freeze byte, Unicode,
+rendering/speech and aggregate-work limits before implementation.
+
+#### 19.8.2 Authority and separate durable state
+
+Use an ordinary on-demand retrieval/preview worker and the existing narrow
+privileged maintenance role. There is one privileged updater trust writer and
+lifecycle admission owner; no permanent privileged updater service is added.
+The clock broker accepts no updater HTTP, TUF, arbitrary URL/path, execution or
+package-install command. Engine clock observations do not grant update authority.
+Tokio remains Engine-only under §18.6.1; any proposed client/runtime/crypto graph
+must meet the actual process's dependency, licence and resource gates.
+
+| State | Writer and meaning |
+| --- | --- |
+| Per-user preview and download cache | Ordinary worker; disposable candidate metadata/bytes and UI status, never machine trust or installation authority |
+| `UpdateTrustState` | Privileged maintenance owner; authenticated root and protocol-required retained metadata progress, with explicit schema, revisions, protected location and cross-process lock |
+| Installed product identity | Maintenance owner after actual deployment/reconciliation establishes the installed package and component state; metadata discovery is not installed success |
+| Security floor and recovery eligibility | Protected application-policy state with its own commit/recovery rules; neither a metadata version nor an installation acknowledgement alone advances it |
+| Clock policy, floors, reservations and lifecycle journal | Existing clock/lifecycle owners; update, repair and recovery never refund consumed/uncertain correction authority or restore an obsolete ownership snapshot |
+
+The ordinary worker may read an admitted protected-trust snapshot for preview;
+its Check cannot advance machine-wide highest-observed metadata history. Each
+privileged attempt independently loads current protected state and bounded raw
+metadata, verifies TUF and product policy, and validates the final package.
+Do not deserialize an ordinary worker's `VerifiedTarget`, cached digest or
+success flag as authoritative. Missing metadata requires bounded refetch through
+the ordinary owner or safe failure, not an arbitrary privileged downloader.
+
+Bootstrap the root and expected application identity through the initial approved
+installer. Retain authenticated progress in the protocol's required order even
+when a later role, download or deployment fails. Sequential root rotation uses
+the old and new root thresholds and the actual expiry/history-reset rules; no
+remote root becomes trusted through a trusted-state constructor. Do not roll all
+TUF state back with the MSIX transaction or replace it with an invented universal
+never-reset counter. [The TUF workflow](https://theupdateframework.github.io/specification/latest/#detailed-client-workflow)
+is the protocol authority; the application supplies durable storage and policy.
+
+Bound and strictly validate stored records; qualify atomic replacement/journaling,
+flush/order, cross-process ownership, interrupted publication and acknowledgement.
+Previously established missing, corrupt, incompatible or unwritable trust blocks
+update admission; it does not silently rebootstrap from the executable. Repair,
+Reset and ordinary reinstall must preserve established trust and required clock
+state. Full uninstall and later reenrollment need an explicit authorized
+decommission/bootstrap policy before implementation. Ordinary ACLs cannot defeat
+a malicious administrator or full disk/VM snapshot rollback; no hardware-backed
+irreversibility is claimed.
+
+Cryptographic validity precedes strict fallible application-domain admission.
+Bind complete-MSIX format, product/package name/family/publisher, architecture,
+OS/x86-64-v3 profile, channel, exact version, signed release sequence, security
+epoch/minimum eligibility, schema compatibility, final SHA-256 and exact length.
+Preserve raw TUF representation for the admitted signature verifier; do not
+normalize it through a generic JSON map first. Authentic data remains potentially
+malicious parser input and may still be ineligible under current policy.
+
+#### 19.8.3 Trustworthy time and client admission
+
+TUF freshness needs independently qualified updater time evidence. A compromised
+Engine is within the threat model: its `trusted_time` flag, an unchecked interval,
+the current wall clock, HTTP Date, a release date or NTS transport authentication
+alone cannot authorize privileged freshness. The exact evidence producer,
+bootstrap, source independence, uncertainty and continuity policy remain open.
+If a qualified model supplies current UTC in `[L,U]`, conservative expiry
+admission requires `E > U`; this is application interval reasoning, not a TUF
+secure-time guarantee. A saved historical lower bound gives no present upper
+bound after unknown offline time.
+
+Use one owner-captured fixed start time for each TUF verification workflow, as
+the specification requires. Separately bind a finite admission lease to evidence,
+policy and operation generations and recheck it immediately before protected
+effect. Suspend, invalidating evidence/generation change or excessive duration
+requires a fresh verification workflow; stale consent also requires renewed
+consent under §19.8.1. Do not replace the fixed-start protocol with ad hoc moving
+wall-time checks. If freshness cannot be established, decline the update while
+the installed client continues under its existing clock-safety rules. The update
+host never supplies a privileged “set Windows time to unblock updates” command.
+
+An updater-owned UTC interval does not cause Windows certificate/deployment APIs
+to use that interval. Qualify actual Windows package/publisher, timestamp,
+revocation, wrong-clock/offline and delegated-retrieval behavior independently
+under [signing §5.1](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix).
+Recovery when the installed Engine cannot acquire acceptable time needs a
+separately qualified authenticated maintenance/time route. It is not automatic
+fallback after expiry, signature or policy rejection.
+
+No Rust TUF client is admitted. The [assessment's source evidence](windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
+records `tough`'s wall-time high-water/persistence mismatch and mandatory
+metadata-crypto/runtime graph, and corrects the earlier incomplete `rust-tuf`
+comparison: explicit-time trusted construction plus `Client::from_database`
+exists, but proves no compatible maintained product integration. Choose a
+qualified maintained client or constrained reviewed integration; do not write
+cryptographic primitives, casually fork TUF or expand Tokio/crypto dependencies
+to another process by analogy with the Engine.
+
+#### 19.8.4 Final-byte custody, installation and surviving recovery
+
+TUF target authorization and Windows package/publisher trust are independently
+required. Sign supported inner files, then assemble/sign/timestamp the complete
+MSIX, then compute its TUF target SHA-256 and exact length. Never authorize an
+unsigned/pre-signing digest or bytes changed after approval. Expected package
+and signer identity, chain/use, timestamp, revocation and publisher-transition
+policy are separate from a display name or permanently pinned leaf thumbprint.
+OpenPGP does not supply Windows MSIX trust and adds no detached-signature user step.
+
+At privileged admission, copy the complete candidate into newly created objects
+in an owned protected local stage. Validate ancestors, final object identity,
+ACLs, reparse/alias/hardlink and open-handle substitution risks, then independently
+verify the complete copied bytes, length, TUF target and Windows trust. Retain
+custody through actual deployment completion/reconciliation. The selected Windows
+API may reopen a URI/path rather than use the verifier's handle; native evidence
+must establish continuity. Allow only the fixed local package and admitted
+options, without remote/UNC/user-selected execution paths or arbitrary flags.
+[Microsoft's AddPackageAsync contract](https://learn.microsoft.com/en-us/uwp/api/windows.management.deployment.packagemanager.addpackageasync)
+illustrates current-user registration and URI input; it is not a selected
+machine-provisioning mechanism or proof of product compatibility.
+
+Before disturbing synchronization, establish trust/time/intent, disk space,
+permissions, stage, compatible state and an eligible usable recovery path.
+Persist required accepted metadata progress. Then enter the existing durable
+maintenance generation, inhibit uncoordinated restarts, quiesce actual original
+work and preserve charged uncertainty. Deploy the complete package; observe
+installed identity, service configuration/rights, schema, effective protections
+and one current controller. Bounded local health checks establish product
+readiness; public time-source availability alone is not a binary-regression
+oracle. Commit installation only after the actual result is reconciled. An OS
+accepted request, progress event or lost acknowledgement is not success.
+
+**Surviving recovery is a live-apply gate.** The helper is itself in the package
+being replaced; the selected deployment may terminate old package processes.
+An in-memory future, destructor, restart registration or healthy next-version
+helper is not durable recovery ownership. Qualify supported invocation that
+survives old-helper/UI termination, failed successor launch, no logged-in user,
+interruption and reboot, retaining compatible trusted code, protected data and
+current authority together. Existing [independent-removal work](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+remains open. No copied-out helper, scheduled task, off-package watchdog or new
+resident privileged service is adopted as the solution. API documentation alone
+does not establish the chosen invoker's lifecycle. [DeploymentOptions](https://learn.microsoft.com/en-us/uwp/api/windows.management.deployment.deploymentoptions)
+documents a force-shutdown option, not safe NevroTick recovery.
+
+Prefer a higher-version forward corrective release. Lower-version emergency
+recovery needs separately signed narrow authority and compatible-state policy;
+no generic force-downgrade flag, trust-history rollback, security-floor reduction
+or clock-budget refund follows. Define security-floor advancement separately
+from metadata acceptance and installed success: prove an eligible recovery path
+before a floor change can exclude the previous installation. A minimum-install
+policy does not authorize a remote runtime kill switch. Once maintenance starts,
+unknown outcome requires reconciliation before another attempt.
+
+#### 19.8.5 Delivery, external authority and resource boundaries
+
+TUF authenticates the in-app update route; DNSSEC, HTTPS, an allowed host,
+GitHub's latest label and adjacent checksums do not authorize a release. The
+delivery direction uses David's `david-osipov.vision` domain; the proposed
+`updates.david-osipov.vision` endpoint, static `/metadata/` and `/targets/` layout,
+Cloudflare R2 configuration and exact-byte GitHub immutable-release mirror remain
+deployment choices to qualify, not configured infrastructure. DNSSEC is
+owner-reported configuration, not an independent audit or release authority.
+Bootstrap trust never comes from an unauthenticated fresh root
+download. The client requires no host API secret, remote script or installation
+identifier. [Signing §10](windows-time-signing-guide.md#10-updater-signing-and-key-operations)
+and the release policy own role separation, renewal, recovery and final-byte
+publication. Optional enhanced provenance remains optional under OD-05 §7.5.
+
+Direct acquisition, the pre-V1 WinGet route, App Installer association if ever
+admitted, enterprise management, repair and uninstall have distinct authority
+and lifecycle paths. Declare one supported update owner per route and honor
+admitted external-management policy. Installed WinGet or a guessed acquisition
+origin alone does not mean “managed externally.” These routes are not an
+automatic fallback after in-app TUF denial. Do not add a competing App Installer
+auto-update association and then claim every installation is TUF-mediated.
+Do not claim that every service-bearing MSIX universally lacks auto-update
+support. Qualify the selected API/caller's rights, standard-user and alternate
+administrator contexts, multi-user registration/provisioning and both target OS
+families. A capability table is not evidence that every full-trust caller needs
+`packageManagement`; apply [Microsoft's caller-specific capability rules](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations).
+
+The network owner enforces actual proxy, DNS/address-family, metered/roaming and
+enterprise policy, with no silent direct fallback. Bound wire/decoded bytes,
+nesting/fields, roots/delegations/signatures, requests/redirects, retries,
+concurrency, disk use and cumulative native/cryptographic work before expensive
+processing. Restrict actual destinations and refetches; finite per-message size
+does not bound aggregate work. Exact production limits remain to freeze and
+qualify. Use existing bounded typed diagnostics and the shared installation
+budget; no raw metadata/notes/headers/tokens/remote errors or arbitrary paths in
+logs, no remote log upload and no log-derived UI authority. Diagnostic loss never
+converts rejection into acceptance.
+
+#### 19.8.6 Qualification and readiness
+
+The existing W11 task carries one staged evidence chain. Source contracts and
+GUI fixtures may proceed within their admitted scopes. The two investigations
+below can proceed independently where existing holds permit, but **live apply
+requires both**:
+
+- **Trust/time/client/state:** qualified freshness authority, maintained client
+  and exact crypto/runtime/licence graph, protected durable metadata progression,
+  final target policy, publisher trust and key operations. Exercise future-clock
+  poisoning/backward repair, long offline/root rollover, malformed/oversized and
+  well-formed unauthorized input, multi-user races, interrupted persistence and
+  accepted progress followed by failure beside healthy neighbors.
+- **Windows deployment/recovery:** an admitted inert complete N → N+1 MSIX proves
+  the selected supported invocation, same-byte consumption, standard/alternate
+  administrator and multi-user/Server behavior, and recovery after helper/UI
+  termination, failed successor, reboot, disk full, lost acknowledgement, queued
+  SCM restart and incompatible state. Observers must not perform the recovery
+  being claimed. Test-signing substitutions qualify only their recorded scope.
+
+Join these at the independently qualified privileged effect boundary; only then
+integrate real product apply, followed by exact final signed/distributed/native
+release qualification and operational rehearsals. The feature plan's AC-23–26
+bind the one-consent journey, independent admission, lifecycle outcomes and
+truthful accessible status to these owners. Reuse THR-15/16/17/20/23/25/26
+and CHECK-9/12/13/15/18/20/21/23/24/25/26/27 with existing owners. Reassess affected
+ASVS client-HTTP, URL/redirect, crypto, storage and authorization clauses before
+their implementation; no HTTP-server surface or conformity claim is inferred.
+The 90% security-primitive executable-line and 95% per-critical-file mutation
+gates apply when implemented. Current Core ordering, Windows/fuzz/storage holds,
+UI-M0 deferrals, Engine-only Tokio, x86-64-v3 and pre-V1 WinGet remain unchanged.
 
 ## 20. Verification strategy and acceptance checks
 
@@ -5041,7 +5331,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
 | OPEN-10 | Slint Windows accessibility, lifecycle and measured resource fit | OD-13 selects the complete v0.4 Slint replacement, with winit/software as the starting configuration; current fixture source and portable evidence do not close exact graph/distribution, native resource/accessibility or delivered-candidate gates | UI/accessibility, S0.5/UI-M0; CHECK-21/22 |
-| OPEN-11 | Direct MSIX package/publisher trust, capabilities, delivered-artifact and release-operations readiness | OD-05 §7.9 selects direct MSIX and rejects Store publication. Signing, trust, hosting and updates remain for later resolution; source/package preparation continues. Installed-code/helper admission, wrong-clock/offline behavior, exact downloaded/installed evidence, support terms and publishing-authority recovery remain open. MSI is unselected | David/release/security, P0/P6; exact support/release decision at P7 |
+| OPEN-11 | Direct MSIX package/publisher trust, updater qualification, delivered-artifact and release operations | OD-05 §7.9 selects direct MSIX; §7.10 adopts §19.8's TUF-authenticated user-initiated updater. Exact client/provider/keys/hosting, protected trust/time and surviving deployment/recovery remain unqualified; both qualification tracks must pass before live apply. Installed-code/helper admission, wrong-clock/offline behavior, exact downloaded/installed evidence, support terms and compromise recovery remain open. Source/package preparation continues; Store is rejected and MSI unselected | David/release/security with W11-W05/W11-W10, P0/P6; exact support/release decision at P7 |
 | OPEN-12 | Selected complete MSIX privilege/provisioning/recovery feasibility | Direction is selected; supported pre-start identities/rights, recovery before removal, multi-user lifetime and all section 19.4 release conditions remain unqualified. No external MSI prerequisite or automatic account broadening | Packaging/platform, S0.6/P6; source preparation can proceed under current holds |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
 | OPEN-14 | MSIX tool/schema admission, supported elevated lifecycle mechanism, transaction/recovery schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict lifecycle-input policy, hostile repair/Reset tests and no unintended downgrade. Corrective releases must qualify bad-version/partial/skipped-migration states and retain mandatory authority under the release policy. MSI/WiX-specific gates apply only if that retained route is later selected | Installer/security/license owners, S0.6/P6 |

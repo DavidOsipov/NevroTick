@@ -12,6 +12,20 @@ The [architecture and threat model](windows-time-architecture.md) owns product d
 
 ## Common provenance fields
 
+**25 November updater adoption:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+adopt a client-side TUF-authenticated complete-MSIX updater. Before implementing
+its reached HTTP/metadata/storage/helper consumers, the existing security owner
+must reassess affected full pinned V1/V2/V5/V8/V11/V12/V13/V14/V15/V16 clauses:
+bounded input/work and URL/redirect policy, cryptographic/time provenance,
+protected state, exact byte custody, current effect authority and safe diagnostics.
+One Update now consent is not cryptographic admission. A network client introduces
+no browser/login or inbound web-service stack by itself; review the actual surface
+before changing a draft exclusion. [W11 §4.40](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+owns the paired controls and integration exits. This is an explicit reassessment
+assignment: all 345 clause IDs, counts, draft classifications and unexecuted
+statuses below remain unchanged, with no conformance or implementation claim.
+
 **7 November service-management routing:** apply the
 [normal/administrative admission policy](windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
 and [IPC/route controls](windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification)

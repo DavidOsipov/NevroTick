@@ -1,19 +1,26 @@
 # TUF-authenticated updates: assessment for the Windows time client
 
 **Date:** 28 October 2026  
-**Status:** Candidate assessment; no protocol, dependency, updater topology or signing policy has been adopted.  
+**Status:** Historical assessment with an adopted-design amendment in §12, 25 November 2026. TUF authentication and the user-initiated complete-MSIX updater are selected; client/provider, keys, time authority, protected storage and Windows deployment/recovery qualification remain open.<br>
 **Baseline:** `windows-time-architecture.md`, RWTC-ARCH-001 revision 1.4.  
 **Input:** David Osipov's ArtCraft proposal, issue 888, its supplied Markdown attachment, and the live issue discussion. [P1, P2]
 
-**Current routing, 21 November 2026:** the assessment below retains its original
-MSI-era candidate and source findings. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
-selects one complete MSIX for direct distribution and rejects Microsoft Store
-publication. Signing and certificate trust remain deferred; source and package
-preparation can continue. The [release policy](release-policy.md) owns current
-support-status proposals, containment and incident procedures. This routing
-adopts neither TUF, this assessment's UpdateTrustState, a custom updater nor a
-separate download/signing authority. Operational/native rehearsals remain open
-under the existing W11 task.
+**Current routing, 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the TUF-authenticated complete direct-MSIX updater design with **Check for
+updates → verified eligible offer → “Update now?” → Yes automatically downloads,
+independently verifies and installs the exact approved target**. Normal UAC/OS
+prompts remain; there is no separate routine Download or Install click. Use
+[architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+for the canonical contract and [§12 below](#12-adopted-direct-msix-updater--25-november-2026)
+for adoption, corrections and open work. The older 21 November routing that
+adopted neither TUF nor an updater is superseded. Store publication remains
+rejected, MSI unselected, and signing/provider/trust/native work unresolved.
+
+**Historical scope:** §§1–11 retain the 28 October MSI-era assessment, candidate
+language and original evidence limits. Their “current plan,” “before a decision”
+and “if adopted” wording describes that checkpoint, not today's disposition.
+The proposal's research and library observations are not executed product tests.
+The later correction in §12 qualifies the incomplete `rust-tuf` comparison.
 
 ## 1. Assessment
 
@@ -248,6 +255,146 @@ The ASVS 5.0.0 worksheet needs targeted reassessment for actual update HTTP, URL
 
 **Recommendation for discussion:** keep TUF as a serious candidate and retain the proposal's independent-authentication requirements. Defer protocol/library/topology adoption until the clock, dependency, Windows handoff and release-operation gates have concrete answers. A smaller signed-manifest milestone remains possible, but its missing freshness, rotation and replay guarantees must be stated; adding those back informally risks recreating a bespoke update protocol.
 
+## 12. Adopted direct-MSIX updater — 25 November 2026
+
+**Authority:** David accepted the preceding complete-package/TUF design and
+replaced its three-step Check → Download → Install UX with one update decision
+after a successful eligible check. [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+records that choice; [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+owns technical semantics. This amendment changes design status, not implementation
+status. No key generation, provider onboarding, signing, host configuration,
+dependency adoption, package deployment or native qualification follows merely
+from this record.
+
+| Decision or retained boundary | Current disposition |
+| --- | --- |
+| Delivery and scope | One complete directly distributed signed MSIX, one initial stable channel, full-package updates; UI/Engine/broker/helper remain one lifecycle. Store stays rejected and MSI is no automatic fallback. |
+| User action | Check downloads metadata only. A verified eligible target can produce “Update now?”; Yes starts its automatic download/verification/apply sequence. No or dismissal downloads no package. Changed target/material terms or stale/expired intent needs renewed consent; normal UAC and unavoidable OS prompts remain. |
+| Runtime ownership | An ordinary on-demand retrieval/preview worker plus one narrow privileged maintenance/trust writer. No new resident privileged updater; broker gets no updater/network/execution command. Tokio remains Engine-only. |
+| Trust history | `UpdateTrustState` is protected mandatory metadata state. An ordinary check/cache is nonauthoritative for machine history. Independent privileged verification and protocol-ordered durable progress precede lifecycle effects. |
+| Independent policies | Metadata progress, installed version, security floor/recovery eligibility and clock authority have distinct transitions. Failed deployment does not erase accepted metadata or refund correction budgets. |
+| Live apply | Both qualified trust/time/client/state and surviving Windows deployment/recovery are mandatory. Passing only one does not admit live apply. |
+| Existing delivery/UI obligations | Pre-V1 WinGet capability, x86-64-v3, both Windows families, required signatures/mitigations, UI-M0/D2 boundaries and current native/fuzz/storage holds remain. |
+
+### 12.1 Evidence retained and corrected
+
+The TUF specification was rechecked at **1.0.37, 8 October 2026**, on 25 November.
+Its fixed workflow start, sequential authenticated root rotation, permitted
+expired intermediate roots, specified role-history reset and retained numbered
+root requirements remain applicable. TUF authenticates target acquisition; it
+does not install MSIX or supply trustworthy current UTC. The normal protocol
+must not be replaced by a bespoke signature/checksum design. [S1, S2]
+
+**`tough` finding remains source-derived.** The inspected loader writes wall-time
+high water before later metadata admission. A future-clock attempt followed by
+legitimate backward repair can therefore conflict with it. No fixture has
+executed that scenario here. Product-owned retained-root handling, durable
+storage/locking, final stream completion and exact-byte custody remain separate
+integration obligations. A CNG TLS hook does not remove mandatory AWS-LC metadata
+verification. Its mandatory runtime/TLS graph cannot be transplanted into the
+UI/helper under the Engine-only Tokio decision. [S4–S7, S11–S14]
+
+**Correction to §6's incomplete `rust-tuf` comparison:** at the already recorded
+source pin `37b51666633b100a51eb1e6eaf700314e17ccfb4`,
+`Database::from_trusted_metadata_with_start_time` accepts explicit time, and
+`Client::from_database` can construct from that database; supplied-time update
+APIs also exist. A caller is not forced to use only a wall-clock constructor.
+The trusted constructor is for embedded or retained authenticated trust, never
+TOFU of an arbitrary downloaded root. Ring, Chrono, beta/API maintenance,
+provider/licence and protected-storage questions still require exact graph
+admission. No published-archive parity, build or Windows result is established;
+removing optional HTTP transport does not qualify that graph. [U1]
+
+Microsoft's `AddPackageAsync` documentation describes current-user package
+registration from a URI. That does not qualify machine provisioning, alternate
+administrator identity, multi-user service behavior or survival of the packaged
+helper. Deployment options can terminate associated package processes; an
+in-memory await/destructor is not a recovery owner. `packageManagement`
+applicability depends on the actual caller/AppContainer context. These facts
+invalidate simplistic “just call AddPackage” and “all MSIX updaters require this
+capability” assumptions, but choose no supported NevroTick invoker. [U2, U3]
+
+### 12.2 Choices still requiring concrete qualification
+
+The exact client/provider and updater time-evidence mechanism are unselected.
+An Engine `trusted_time` flag, OS wall clock, HTTP Date or NTS authentication
+alone cannot establish privileged freshness. If qualified UTC evidence supplies
+`[L,U]`, the conservative expiry rule is `E > U`; a historical floor alone is
+insufficient. Preserve fixed-start TUF verification and separately revalidate
+the bounded admission lease before effect. Windows PKI still has its own actual
+time/offline/revocation behavior; a supplied TUF time does not change it.
+
+The custody design is adopted: final target hash/length follow **all** signing
+and timestamping; the privileged owner independently copies/verifies into a
+protected local stage and preserves the same bytes through deployment. The
+exact storage schema, native locking/durability/path API and deployment invoker
+remain to qualify. Missing/corrupt established trust blocks update admission;
+repair/Reset/reinstall and deliberate decommission/reenrollment require explicit
+retention rules. An OS acknowledgement is not proof of a healthy installed
+version, and a floor advance must not eliminate the only eligible recovery path.
+
+The preceding design proposed separate 2-of-3 root and targets custody, with
+restricted online snapshot/timestamp roles. This remains the concrete custody
+recommendation to qualify; it is not an inventory of provisioned keys or a
+substitute for David's single human release authority. Select actual algorithm,
+key format/provider, independent custody domains, backup/recovery, expiry/renewal
+cadence and supported offline window before key creation or production use.
+Two keys exposed to one CI compromise do not supply independent custody.
+
+David's “PGP key or similar” comment is signing-design uncertainty, not key
+generation authorization. TUF metadata keys and Windows code/package-signing
+credentials serve different trust paths. OpenPGP alone supplies no Windows MSIX
+publisher trust; the selected UX introduces no manual detached-signature step.
+[Signing guide §10](windows-time-signing-guide.md#10-updater-signing-and-key-operations)
+owns the operational distinction and required renewal/compromise cases. [U4]
+
+The delivery direction uses David's `david-osipov.vision` domain. Its proposed
+update endpoint, Cloudflare R2 `/metadata/` and `/targets/` layout and exact-byte
+GitHub immutable-release mirror remain hosting candidates, not configured
+infrastructure. DNSSEC is owner-reported, not independently audited;
+DNSSEC/HTTPS strengthen transport but do not authorize releases.
+Publish immutable final artifacts and dependent metadata before timestamp;
+retain the root chain and define cache behavior so mutable metadata can renew.
+No client API credential, telemetry identifier or remote script is needed.
+Exact URLs, cache/TTL constants, roles/access and availability checks remain
+deployment work. Direct, WinGet, any later App Installer and enterprise routes
+retain separate authority; none is automatic fallback after TUF denial.
+
+### 12.3 Bounded continuation and acceptance ownership
+
+Use the [existing W11 updater assignment](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+and existing P5/P6/P7 owners, not a parallel updater project. First freeze the
+state/intent/target contract and independent accepted/refused observations;
+GUI fixture preparation stays within its existing scope. Then qualify the
+trust/time/client/state track and an inert complete MSIX N → N+1 deployment with
+surviving recovery. They may proceed independently within current authorization;
+their successful join, publisher/trust prerequisites and applicable holds govern
+live integration. Final signed/delivered/native and release-operations evidence
+still precedes a production claim.
+
+Reuse §10's paired cases with MSIX-specific consumers and add no-package-before-
+consent, exactly one routine update intent, stale/changed-target reconfirmation,
+denied elevation, helper death/reboot/no login, failed successor launch,
+alternate-admin/multi-user registration, final stage substitution, security-floor
+commit/recovery and external-manager ownership. Exercise incomplete metadata
+progress and unknown native outcomes without erasing legitimate prior state.
+The healthy neighbor must reach the same actual consumer; reject-all behavior,
+cross-builds, source review or an observer performing recovery supplies no pass.
+
+AC-23–26 in the feature plan own the user journey, independent admission,
+lifecycle outcomes and truthful accessible status. THR-15/16/17/20/23/25/26 and
+CHECK-9/12/13/15/18/20/21/23/24/25/26/27 retain their owners. Reassess the affected ASVS HTTP-client/URL, cryptography, persistence and
+authorization rows before implementing them; this adds no HTTP server or ASVS
+conformity claim. Exact resource/notes/network budgets remain to freeze. The
+current plan closes no native, package, security-coverage/mutation or release gate.
+
+### 12.4 Primary evidence for this amendment
+
+- **U1:** Pinned `rust-tuf` [database construction](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/src/database.rs), [client construction/update](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/src/client.rs) and [manifest](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/Cargo.toml). Coordinator source inspection establishes the explicit-time seam, not published archive parity or qualification.
+- **U2:** Microsoft [AddPackageAsync](https://learn.microsoft.com/en-us/uwp/api/windows.management.deployment.packagemanager.addpackageasync) and [DeploymentOptions](https://learn.microsoft.com/en-us/uwp/api/windows.management.deployment.deploymentoptions), checked 25 November 2026. The exact chosen overload/options and surviving invocation remain open.
+- **U3:** Microsoft [app capability declarations](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations), checked 25 November 2026; full-trust and AppContainer caller requirements differ.
+- **U4:** Microsoft [MSIX signing overview](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview), checked 25 November 2026, and this repository's existing [signing trust matrix](windows-time-signing-guide.md#61-direct-msix-trust-and-publication-boundaries). Package signatures and target-device trust remain separate from TUF.
+
 ## Sources and reproducibility
 
 - **P1:** [User's proposal, issue 888](https://github.com/storytold/craft-launcher/issues/888). Supplied attachment SHA-256: `5b2bf4eabb183dcec647232e0cf1e8533ccef2281db59532d0bd6dd35a0e0694`. The attachment and live issue body were read in full.
@@ -269,4 +416,4 @@ The ASVS 5.0.0 worksheet needs targeted reassessment for actual update HTTP, URL
 - **S15:** [TUF-on-CI online signing at release commit](https://github.com/theupdateframework/tuf-on-ci/blob/662382a8295b89a9d538390ce8b9bb85b207a93d/docs/ONLINE-SIGNING-SETUP.md).
 - **Alternative-client evidence:** [rust-tuf registry](https://github.com/rust-lang/crates.io-index/blob/master/3/t/tuf), [beta14-era source](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/src/client.rs), [libdd-tuf registry](https://github.com/rust-lang/crates.io-index/blob/master/li/bd/libdd-tuf). Evidence and parity limits are stated in §6.
 
-Independent first-pass records are retained under `architecture-research/tuf-assessment/{protocol,dependencies,windows}/`. Those records are research evidence, not additional accepted product specifications. All maintained revision 1.4 documents remain unchanged.
+Independent first-pass records were retained under `architecture-research/tuf-assessment/{protocol,dependencies,windows}/`. Those records are research evidence, not additional accepted product specifications. At the original 28 October checkpoint, all maintained revision 1.4 documents remained unchanged; §12 records the later authorized adoption.

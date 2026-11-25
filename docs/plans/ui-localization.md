@@ -268,6 +268,77 @@ policy/input parsing, canonical numeric grammar, units, offset signs or authorit
 Future date/number display needs a contract; diagnostic UTC/identifiers stay clear.
 Long text, bidi and non-ASCII data need later layout/accessibility evidence.
 
+## Updater consent and result copy — 25 November 2026
+
+**Accepted product semantics; catalog/source integration pending.**
+[OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and the [manual update journey](../windows-time-features.md#manual-update-journey--25-november-2026)
+add one critical update offer to the existing typed catalog. Reuse the current
+message contract, ordinal/retirement rules, independent approval ledger and
+Rust → Slint/tray/accessibility consumers. This amendment creates no parallel
+catalog, new locale or independent resource-update channel. The implemented
+schema/text-contract checkpoint above contains no updater messages or approval.
+
+The sequence is **Check for updates → eligible offer → Yes, update now →
+automatic download → full verification → installation**. Check retrieves only
+metadata and transfers no MSIX package bytes. **Not now**, Escape or closing
+the unaccepted offer starts no package transfer or installation. Remove the
+superseded separate Download decision and routine second Install-now/pre-install
+confirmation from future copy/storyboards. Windows UAC and mandatory deployment
+prompts are separate. A changed target, material terms or stale/expired intent
+requires a refreshed offer and renewed consent; revalidation itself is not an
+extra confirmation step.
+
+The catalog owner must add the following meanings through the existing
+code-owned inventory before production binding. Exact IDs and quantitative
+limits belong to that reviewed implementation contract, not to translation data.
+
+| Critical meaning/group | Required visible, spoken and action semantics |
+| --- | --- |
+| Update offer | Exact target version/channel and package size; automatic download, verification and installation after Yes; Not now has no package/install effect. Disclose applicable metered/roaming restrictions, external management, service interruption, app closure/restart, possible UAC/OS prompts and known OS restart consequences before acceptance. |
+| Eligibility and verification | Separate authenticated metadata/eligible offer from downloaded bytes, complete verification and installed result. “No eligible update” requires a successful current check; offline, expired metadata, missing trustworthy time or verification failure cannot say “Up to date.” |
+| Progress and cancellation | Checking, Downloading, Verifying and Installing express the actual owner stage. Cancel revokes future admission; it does not promise that native work stopped or that committed maintenance was reversed. Unsupported cancel actions are unavailable with a useful explanation. |
+| Privileged refusal | Stable bounded reasons distinguish changed/stale intent, policy block, package/hash/signature/identity refusal and UAC denial. UI approval cannot become proof of signatures or current receiver authorization. No bypass, certificate import, detached-signature or key-generation action is offered. |
+| Result and recovery | Distinguish installed product identity, running GUI identity, restart required, maintenance health, definite pre-effect failure and outcome unknown/reconciling. Unknown does not become success, unchanged installation or permission for automatic retry/rollback. |
+
+Treat each complete offer/result group as its title, body, target facts, buttons,
+accessible names/descriptions and any later notification action label. A missing,
+unapproved or semantically incompatible translation uses the entire independently
+approved English group, never a mixture of old/new safety meanings. English
+needs the same review. Existing test-only grants and the empty production ledger
+do not satisfy that gate. A catalog cannot hide a required fact by omitting its
+placeholder, attach permission to a label, change the code-owned action, or
+silently preserve consent after the target/material semantics changed.
+
+Project versions, package size, channel, operation and reason codes through
+typed code-owned formatting. Installed and running versions are separate facts;
+neither a localized fixture status nor text-contract/build number supplies
+installed identity. A pure language change preserves operation identity and
+equivalent accepted terms, but must publish a complete current approved group
+atomically; changed material meaning invalidates the old offer/intent. Prepared
+text from an older operation/catalog generation cannot overwrite the current
+offer or re-enable its action.
+
+Release notes are separately authenticated, untrusted literal data, not catalog
+templates or consent authority. Freeze finite raw/decoded-byte, line, Unicode,
+combining/shaping, layout, speech, retained-state and aggregate work budgets
+before admitting them. The earlier 32 KiB research suggestion is not an adopted
+limit. No HTML/Markdown interpretation, executable content, automatic links,
+image/resource fetch, URI action, mnemonic injection or remote-selected button
+is permitted. Render only a valid bounded representation or a code-owned
+unavailable/truncated explanation; never truncate the required target facts or
+material consent terms. Preserve the established character/sink policy and
+bounded redacted rejection even for correctly signed notes.
+
+Acceptance follows [GUI cases UP-UI-01–12](../../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026):
+healthy one-consent operation; decline; forged/stale results; mixed/lying critical
+groups; hostile and boundary-sized notes; language changes during an offer;
+keyboard/Escape/focus after UAC; and actual Narrator/UIA result announcements at
+D3 re-entry. Signatures and technical catalog checks prove no truthful critical
+meaning or native accessibility. D2 returns before live updates; D1/D3 retain
+their existing general-user preview/release triggers, and fixture-only UI-M0
+remains unchanged.
+
 ## Delivery boundary and Slint source limits
 
 Default catalogs are immutable resources of the complete approved MSIX,

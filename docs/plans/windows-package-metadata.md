@@ -19,9 +19,12 @@ The selected delivery is one complete hardened MSIX distributed directly under
 [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026).
 David rejects Microsoft Store publication because of its publisher indemnity
 obligation. Store submission, Partner Center identity and Store listing fields
-are not current release prerequisites. Signing, publisher trust, hosting and
-update delivery remain deferred; source/resource preparation continues without
-claiming that an unsigned or untrusted package is ready for public installation.
+are not current release prerequisites. [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the TUF-authenticated updater and one Update now decision under
+[architecture §19.8](../windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater).
+Exact client/signing/trust/hosting/time/state/native qualification remains open;
+source/resource preparation continues without claiming that an unsigned or
+untrusted package is ready for public installation.
 MSI mappings are retained for possible later owner reconsideration, not a second
 deliverable or a reason to defer shared executable metadata. This contract
 supplements the [MSIX field profile](windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile),

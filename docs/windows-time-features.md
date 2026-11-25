@@ -13,7 +13,7 @@ The motivating problem is a time service that stops working without a useful exp
 
 **Owner amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) records the accepted choices and distinguishes recommendations; [NV-RESEARCH-001](nevrotick-research-handoff.md) assigns unresolved evidence. UI-M0 remains unchanged.
 
-**Current delivery decision, 21 November 2026; OS scope retained:** the intended launch scope is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience under [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope), a native English-first UI, NTPv4/NTS support and **one complete hardened MSIX distributed directly**, including services. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication because David rejects its publisher indemnity requirements. Signing, publisher trust, hosting and updates remain for later resolution; source/package preparation continues. [Architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate) and the [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retain native, provisioning and complete-product qualification. No Store approval/refusal is required; MSI remains an unselected reference. Current Core priority and execution holds remain. The application must work with its window closed and before login, without a NevroTick account or remote control plane.
+**Current delivery decisions, 21 and 25 November 2026; OS scope retained:** the intended launch scope is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience under [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope), a native English-first UI, NTPv4/NTS support and **one complete hardened MSIX distributed directly**, including services. [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) rejects Microsoft Store publication because David rejects its publisher indemnity requirements. [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts a user-initiated TUF-authenticated updater: Check for updates retrieves metadata, then one affirmative answer for the exact eligible update starts automatic download, complete verification and installation. Windows elevation or deployment prompts may still be required. Signing-provider, client/dependency, time, protected-state and native delivery qualification remain open; source/package preparation continues. [Architecture §§19.4 and 19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater) and the [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retain native, provisioning and complete-product qualification. No Store approval/refusal is required; MSI remains an unselected reference. Current Core priority and execution holds remain. The application must work with its window closed and before login, without a NevroTick account or remote control plane.
 
 [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
 requires an **x86-64-v3** minimum for that x64 product, with qualified
@@ -26,7 +26,7 @@ native compatibility and measured optional-kernel benefits remain open in the
 and its existing task. Historical generic binaries and fixture UI observations
 do not establish those results for the changed configuration.
 
-This document translates [architecture revision 1.4](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds, adopt TUF, or close any native/signing gate. Existing source/trust and correction requirements remain authoritative. New presentation choices are proposals for the first implementation.
+This document translates [architecture revision 1.4 and its accepted amendments](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds or close any native/signing gate. The updater direction and single-consent journey below are accepted under OD-05 §7.10; remaining presentation examples are design proposals. Existing source/trust and correction requirements remain authoritative.
 
 ### Current UI entry milestone: UI-M0
 
@@ -68,7 +68,9 @@ The complete MSIX contains the UI, synchronization engine, clock broker, adminis
 
 Setup checks readiness and preserves the existing Windows Time configuration before handing over. It must not overwrite peer/domain settings or invent a universal state to restore later. Managed machines initially observe without taking control. The ordinary UI opens without inheriting installer elevation.
 
-The selected direct-MSIX route requires complete-package updates after its lifecycle is qualified; hosting and update delivery remain unselected under OD-05 §7.9. See architecture sections 19.4–19.5. Package scheduling/replacement does not itself settle clock recovery. Repair preserves valid configuration, ownership records and consumed correction allowances; Reset must not delete the only mandatory recovery path. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. Updates, last-user removal and delayed payload removal must preserve the correct machine-service owner. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
+The selected direct-MSIX route uses the [manual update journey](#manual-update-journey--25-november-2026) and [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater). TUF release authorization and Windows package/publisher verification are both required. Check alone transfers no package and grants no installation intent. One **Yes, update now** authorizes the automatic download → verification → installation sequence for the exact displayed target and disclosed consequences; there is no separate Download action or routine second Install-now confirmation. The narrow privileged lifecycle owner independently revalidates before effects; the UI's answer is intent, never signature or authorization evidence. No automatic PGP key generation, detached-signature step or customer certificate-import shortcut belongs in this journey.
+
+Package scheduling/replacement does not itself settle clock recovery. Repair preserves valid configuration, ownership records and consumed correction allowances; Reset must not delete the only mandatory recovery path. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. Updates, last-user removal and delayed payload removal must preserve the correct machine-service owner. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
 
 The [release policy](release-policy.md) owns declared support status and the
 operational bad-release procedure. Its first-stable maintenance baseline is
@@ -392,7 +394,7 @@ credential has a visible remedy and cannot silently select Direct/no-authenticat
 
 ### 3.4 Diagnostics
 
-Present **Current issue → What it affects → Suggested next action**, followed by recent events and expandable technical evidence. About includes the complete product version, license/privacy information and a user-initiated link to the official release page. Opening that page is not an automatic update or an authorization to install a package.
+Present **Current issue → What it affects → Suggested next action**, followed by recent events and expandable technical evidence. About remains available in Simple and Power modes and through the existing tray About route. It includes the actual installed product version/channel, the running GUI version when different, license/privacy information, **Check for updates** and a user-initiated link to the official release page. Opening that page grants no package-installation intent. Installed identity comes from the admitted package owner; a Cargo version, fixture label, text-contract number or still-running old executable cannot establish it. Unavailable installed identity stays **Unknown**, with the check/apply behavior governed by the trusted owner.
 
 ## 4. State and freshness presentation
 
@@ -460,7 +462,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Language | English | Other locales require explicit adoption and QA |
 | Diagnostics | INFO application output; reviewed dependency messages WARN or stricter; bounded redacted export | Shared contract in architecture section 12.3; finite scoped DEBUG, administrative service control, per-user UI control; no secret data or privileged arbitrary export path |
 | Remote telemetry/crash upload | Off | No account or automatic support upload required |
-| Updates | Complete-package updates; direct delivery mechanism remains to be selected and qualified | OD-05/architecture sections 19.4–19.5; preserve ownership, mandatory recovery and release trust; no bespoke privileged updater |
+| Updates | Manual Check for updates; one Yes starts automatic download, verification and installation of the exact eligible complete MSIX | OD-05 §7.10 / architecture §19.8; TUF and Windows trust, current privileged admission, exact-target intent and surviving maintenance/recovery owner. No scheduled checks, unattended installation or permanent privileged updater service is selected |
 
 The source preset is a release deliverable, not an invitation to hard-code unreviewed endpoints. For each proposed provider, record operator, identity, protocol, supported delegation/ports, usage policy, intended population and time scale. Do not silently enroll a public fleet in a service whose published terms do not permit it. If a suitable default set cannot be qualified, record that as an onboarding/release blocker rather than claim a zero-configuration experience.
 
@@ -493,6 +495,78 @@ Open the app → distinguish connection failure from a confirmed service failure
 ### F. The user removes the application
 
 Use the product's one Installed apps entry → supported Windows-authorized removal → cancel only currently owned transient work → restore the applicable prior Windows Time state → remove components and report the result. Removal must work before the first UI launch and without a UI running. A later owner or Group Policy change is respected; another user's registration and machine-service lifetime are handled by the qualified package lifecycle.
+
+### Manual update journey — 25 November 2026
+
+**Accepted interaction, implementation pending:** open **About → Check for
+updates**. The ordinary-user worker retrieves and validates bounded metadata
+under the current trust/time/policy rules. It transfers no MSIX package bytes,
+changes no machine installation and establishes no new machine-wide trust
+history. If that check finds an eligible update, show **Update to {version}
+now?** with **Yes, update now** and **Not now**. Not now, Escape or closing the
+unaccepted offer leaves the installed product unchanged and starts no package
+download. The check is distinct from Sync now and grants no clock authority.
+
+Before Yes, show the target version/channel, complete-package download size,
+bounded release notes and material consequences: possible UAC/Windows prompts,
+service interruption, required app closure/restart or known OS restart, applicable
+metered/roaming restrictions and current management policy. Present a known
+policy/compatibility/trust block instead of an actionable offer. Do not promise
+silent elevation, uninterrupted synchronization or a reboot-free result without
+qualified evidence. Notes are literal data and cannot replace the code-owned
+consent wording, choose the target, create links/actions or waive verification.
+
+**Yes starts one automatic sequence:** download the selected complete package,
+verify its exact final bytes and all required release/package identities and
+signatures, then request installation through the narrow qualified lifecycle
+owner. Show stage progress without requiring another product confirmation at
+the download or ordinary pre-install boundary. A “verified update available”
+offer describes authenticated, eligible metadata; before download it cannot
+claim that the package bytes or their Windows signatures have already been
+verified. UAC and mandatory OS deployment prompts remain separate from
+NevroTick's one affirmative update decision.
+
+The intent is scoped to one operation, target identity/hash/length, current
+installed identity and relevant trust/policy/time/maintenance generations. It
+does not authorize a newer target discovered later or a changed material
+consequence. Revalidate at privileged apply even when the UI has already checked
+everything. If intent becomes stale, the target or material terms change, or a
+new installation attempt is needed after a definite failure, stop the automatic
+sequence and show the refreshed offer for a new Yes. Metadata refresh with the
+same still-valid target/terms need not add a routine second prompt. Another
+observer's selection or a late worker reply cannot replace the accepted target.
+
+| Current observation | Required presentation and next action |
+| --- | --- |
+| Not checked / Checking | Distinguish no prior result from bounded work in progress; coalesce repeated clicks and permit cancellation before effects. |
+| No eligible update | Report only a successful current eligible-target result. Offline, expired metadata, unavailable trustworthy time or failed verification is **Could not check**, not “Up to date.” |
+| Update available | Show the exact offer and its known consequences; wait for Yes. Decline transfers no package. |
+| Downloading / Verifying | Show the automatic stage and bounded progress. Download completion alone is no installation or signature-success claim. |
+| Installing | Explain the actual maintenance stage and interruption. Hide or disable unsupported cancellation; do not promise reversal of committed Windows work. |
+| Restart required / Installed | Distinguish an observed installed package from a still-running old GUI, remaining restart work, service readiness and complete successful maintenance. A queued request or OS acceptance is not completion. |
+| Failed / Cancelled before effects | Give a bounded reason and useful next action; report unchanged installation only when the owner proves no effect occurred. |
+| Outcome unknown / Reconciling / Recovery required | Preserve uncertainty, reconcile the durable operation and actual installation before retry. Do not automatically reinstall, roll back or refund consumed authority to hide a lost acknowledgement. |
+| Managed externally | Explain the admitted management policy and its supported route. The presence of WinGet alone does not establish this state; external routes are not automatic fallbacks after TUF rejection. |
+
+Cancellation revokes permission for future publication and effects; actual
+network/native work retains its owner, resources and budget until completion or
+reconciliation. Closing the observer cannot undo an already committed update
+or declare it successful. Reopening obtains the current operation and installed
+identity from the qualified owner, rather than replaying a cached Yes. The
+existing maintenance/recovery path must survive UI/helper termination and reboot
+before live updating can be qualified.
+
+Keep update results in About and bounded Diagnostics. The initial scope adds
+no background update watcher or rich update toast. Any later adopted toast only
+opens current update status; activation never selects a package or authorizes
+installation. Preserve per-user observer/permission boundaries, typed redacted
+events and separate log-loss status. Logs are not the UI state authority.
+
+The [GUI handoff and acceptance cases](../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026)
+own the source seam and P5 integration. UI-M0 remains fixture-only; D2 returns
+before live checking or update commands, and D1/D3 return at their existing
+display/accessibility preview and release gates. This journey records accepted
+behavior, not a working updater or native pass.
 
 ## 7. Visibility when the window is closed
 
@@ -548,6 +622,10 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-20 | All | Measure startup, idle/active CPU, memory, wakeups, log bounds and package size on the declared Windows machine with supported protections enabled. | CHECK-21 |
 | AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. Optional history disabled/full/corrupt cannot prevent live reuse; restart cannot revive stale deadlines or authenticate old observations. | CHECK-6/8/9/14/15/21/27 |
 | AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful saved/effective status. Cover old I/O during Apply and missing/wrong-purpose proxy credentials; no silent direct/no-authentication recovery. | CHECK-2/3/6/9/14/15/25/27 |
+| AC-23 | F-01/09/10 | Successful metadata-only Check offers one exact eligible target. One Yes completes download → verification → admitted installation without a second routine product prompt; pair with Not now/Escape/offer close and observe zero package transfer and zero install effects. Distinguish expected OS prompts from extra product confirmations. | CHECK-3/13/14/18/22/23/25/27 |
+| AC-24 | F-01/09 | Exercise the real privileged receiver with a forged UI “verified” result, wrong hash/length/publisher/signature, stale target/policy/installed identity/time evidence and concurrent older observer. Each is denied independently; the valid exact-target neighbor succeeds. No release-page, WinGet or App Installer fallback bypasses rejection. | CHECK-3/13/16/18/23/25/26/27 |
+| AC-25 | F-01/07/09/10 | Cancel before effects; deliver late results; deny UAC; close/kill UI or helper; lose the OS acknowledgement; interrupt/reboot during maintenance. Prevent stale publication/future effects, retain actual work custody, reconcile unknown outcome before retry and preserve the qualified recovery path. Installed and running versions remain distinct. | CHECK-3/12/13/14/18/21/23/27 |
+| AC-26 | F-01/09/10 | Offline/expired metadata/uncertain time and external management produce truthful check/blocked states. Long or hostile signed notes and incomplete translated consent cannot alter actions, hide terms, auto-fetch or create false verification claims. Use bounded literal text, complete approved English-group fallback and actual keyboard/Narrator/UIA at re-entry. | CHECK-14/17/21/22/25/26 |
 
 **AC-21/22 scope after OD-11:** direct-family/interface, path-history and shared
 Apply/reconciliation cases remain current P2/P5 work. Proxy-specific cases are
@@ -570,7 +648,7 @@ The feature scope can be delivered in small integrated slices while preserving t
 | S-2 — Usable observe-only client | Actual admitted NTS/NTP acquisition, secured status and a minimal real read-only window | Network, broker/IPC and UI owners; P2/P3 plus early P5; exact provider/verifier graph qualified | Real acquisition/status, denial cases and ordinary-user behavior; observation makes no global clock writes |
 | S-3 — Safe unattended synchronization | One owned controller corrects time before login and with UI closed | Broker/platform, installer and engine owners; P3/P4 authority/ownership prerequisites | Independent real clock trajectory, stop/restart/ownership cases, bounded native work and installation handover |
 | S-4 — Recovery and administrative workflows | Source editing, wrong-date recovery and single-use correction review work through the same policy | Network/platform/UI owners; P2/P4/P5 with resolved relevant OPEN-5/6/8 decisions | AC-07–14 valid/failure pairs; no stale approvals, downgrade or hint-derived clock write |
-| S-5 — Finished basic experience | Main/Sources/Settings/Diagnostics, optional tray, support export and complete maintenance are usable | UI, accessibility, packaging and platform owners; P5/P6; lifecycle work began in S-0 | Keyboard/Narrator/scaling, source/state truthfulness, resource measurements and interrupted-maintenance cases |
+| S-5 — Finished basic experience | Main/Sources/Settings/Diagnostics/About, optional tray, support export and the accepted one-consent complete-package update journey are usable | UI, accessibility, packaging and platform owners; P5/P6; lifecycle work began in S-0; updater live-apply join requires qualified trust/time/storage and surviving native deployment/recovery | Keyboard/Narrator/scaling, source/state truthfulness, AC-23–26, resource measurements and interrupted-maintenance cases |
 | S-6 — Exact public release candidate | One complete hardened MSIX qualified as the exact directly distributed artifact before public release | P6/P7; David/release/signing/license owners and independent verifier; signing/trust selection is deferred without blocking source/package preparation | Complete feature/architecture matrix, actual package/publisher trust and installed-file evidence, supported clean-machine lifecycle, approved support/transition record and required [operational rehearsals](release-policy.md#9-qualification-matrix-and-remaining-decisions); no unresolved dependent release blocker |
 
 Do not build the entire settings UI against invented responses and call that S-2. Prototype data must be visibly labelled, and the integrated exit needs actual admitted service data. Similarly, a headless numerical test cannot qualify Windows clock control.
@@ -593,7 +671,7 @@ Before later live status, restore D2 and define/test field ownership, state/prof
 | Dedicated handback-to-Windows button | Requires the explicit elevated transaction already identified by the architecture; uninstall retains the established restoration path |
 | Config import/export or free-form policy editor | Additional parser/migration/privileged-input surface; bounded native settings first |
 | Single-source mode and arbitrary controller tuning | Weaker trust or additional numerical policy; add only with explicit labelled requirements and evidence |
-| Bespoke privileged automatic updater or TUF integration | Separate update trust, version/rollback and recovery design; direct MSIX delivery still needs a separately selected and qualified update mechanism |
+| Scheduled background update checks, unattended installation, delta or component-only updates | OD-05 §7.10 adopts the manual Check → one Yes → automatic complete-package sequence. Broader automation/delivery requires a later decision and qualification; no permanent privileged updater service is selected |
 | Native ARM64 support | Separate complete-product and platform qualification required |
 | Russian and other locales | Adopt translations with placeholder/plural, layout and accessibility parity; English first |
 | Remote dashboard, accounts, fleet control, plugins/scripts, NTP server/PTP/refclocks | Outside the workstation client problem and current threat model |
@@ -611,6 +689,7 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 | Supported Windows builds | Actual client OS, architecture, power modes and protection configurations | Platform/release; OPEN-2 |
 | UI and tray qualification | Actual UIA, keyboard, Narrator, scaling, startup/closure and measured resource behavior | UI/accessibility; OPEN-10/13 |
 | Complete direct MSIX release path | Exact compatible graph and package tools, supported service provisioning/recovery, package/publisher identity and trust, installed-file/helper trust, complete lifecycle and release-policy support/incident readiness | License/packaging/release; OPEN-1/11/12/14; signing/hosting decisions are deferred and candidate preparation continues without Store publication |
+| Updater implementation and live-apply qualification | Admit exact TUF client/provider graph, qualified time, durable protected trust, signing/key operations, bounded metadata/transport, current exact-target intent and surviving deployment/recovery; freeze quantitative budgets before implementation | Existing P5/P6 and W11-W05/W10 owners under OD-05 §7.10 and architecture §19.8. Direction/one-consent UX are settled; implementation, native evidence and release remain open |
 
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 

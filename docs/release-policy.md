@@ -1,6 +1,6 @@
 # Release policy and incident recovery
 
-**Prepared:** 4 November 2026; direct-MSIX/no-Store amendment 21 November 2026.
+**Prepared:** 4 November 2026; direct-MSIX/no-Store amendment 21 November and adopted TUF updater operations amendment 25 November 2026.
 **Status:** operational specification; support baseline proposed for first-stable
 approval. No stable release, completed rehearsal or native qualification is
 established by this document.  
@@ -30,9 +30,15 @@ release pass. Before actual public distribution, qualify the selected signing,
 trust and delivery profile and the supported individual/package signatures under
 [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026).
 SDK, runtime and signing-provider terms remain separate; rejecting Store terms
-is not blanket redistribution clearance. Hosting, an automatic updater and a
-signing provider are unselected. MSI remains a later owner choice; no secondary
-installer, remote kill switch or privileged recovery service is introduced.
+is not blanket redistribution clearance. [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+now adopts the [TUF-authenticated in-app updater design](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater):
+Check for updates, then a verified eligible offer and “Update now?”; Yes
+automatically downloads, independently verifies and installs that exact complete
+MSIX. Normal UAC/OS prompts remain, without a separate routine Download or Install
+click. Actual hosting, client/provider/keys, trust/time and surviving Windows
+deployment/recovery remain unqualified. MSI remains a later owner choice; no
+secondary installer, remote runtime kill switch or new resident privileged
+updater/recovery service is introduced. Section 7.5 owns operational follow-through.
 
 The later [OD-05 §7.8 clarification](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
 permits interim self-signed MSI if that delivery route is selected. Apply
@@ -185,6 +191,12 @@ Bind approval to an auditable candidate evidence record containing:
   it is not a public publisher-trust pass or a claim that users verify the key.
 - Audience, direct-channel availability, rollout state, observation/stop criteria, recovery
   target, approval owner/date and subsequent publication/availability observations.
+- For the adopted TUF route, the bootstrap/retained-root lineage, approved role
+  metadata versions and exact hashes, final target hash/length after all signing,
+  product/channel/package/version/security-floor/compatibility policy, qualified
+  publisher/client profile and publication ordering. Retain actual renewal,
+  long-offline and key-loss/compromise evidence under section 7.5; metadata
+  acceptance, installed success and security-floor commit remain distinct.
 
 Changing a bound package, generated input or workflow invalidates affected
 evidence. Rebuilds receive their own identities. Never move a release tag or
@@ -237,6 +249,9 @@ the existing package trust, integrity, installed identity and native/lifecycle
 checks retain their required scope. A detected violation of those requirements
 is handled under its existing gate even if found during optional work. This
 decision does not approve the proposed first-stable support terms in §2.
+The later selected TUF release authentication is part of the in-app admission
+contract, not optional enhanced build provenance; it does not make independent
+rebuilds, transparency or GitHub/Sigstore attestations mandatory.
 
 ### 3.4 WinGet capability and publication — 7 November 2026
 
@@ -273,16 +288,19 @@ every admitted channel in the existing incident and corrective-release record.
 
 ## 4. Distribution containment for direct MSIX
 
-The direct hosting/update arrangements remain unselected. Before publishing,
-record the actual channel owner, supported availability controls and observed
-limits. These are release-stage requirements, not a new prerequisite to package
-preparation or a decision to build an updater. [MS-22]
+The TUF-authenticated in-app update design is selected under OD-05 §7.10; actual
+hosting/access/cache arrangements and implementation remain unqualified. Before
+publishing, record the real channel owner, supported availability controls and
+observed limits. These are release-stage requirements, not a new prerequisite to
+independent package preparation. TUF withdrawal changes future eligibility only
+when a client obtains and accepts current metadata; it cannot recall installed
+copies or compel offline delivery. [MS-22]
 
 | Situation/control | Operational meaning and required decision |
 | --- | --- |
 | Candidate not yet public | Keep exact bytes private under the selected preview access controls. An unlisted public URL is not private access control. |
 | Unsafe public package | Stop recommending it and use the chosen host/catalog's supported withdrawal controls; independently observe what remains downloadable, cached or mirrored. Preserve immutable incident evidence. |
-| Bad update feed, if a feed is later selected | Stop offering the suspect update; assess the fallback independently and publish only a qualified compatible correction. Feed change does not roll back installed copies. |
+| Bad TUF update offer | Stop authorizing the suspect target through current signed metadata, assess recovery eligibility independently and publish only a qualified compatible correction. Keep protocol-required root/history material and incident evidence; metadata changes do not roll back installed copies. |
 | Restricted preview or staged expansion, if selected | Define and test actual access/membership and delivery behavior; do not assume Store flights or percentage rollout exists on an ordinary download host. |
 | Corrective release | Bind approved final bytes to a suitable higher version and compatible installed-state transition. Observe actual acquisition/update; status changes alone prove no recovery. |
 | Withdrawn release or removed catalog entry | Record the action and its remaining audiences. Previously downloaded or installed copies are not recalled automatically. |
@@ -457,6 +475,8 @@ each operation. Neither option is a generic safe incident remedy. [MS-06]
 | Broker authority ledger | Preserve reserved/consumed allowances, unique operations, applied outcomes and unresolved effects. Missing acknowledgement cannot authorize a repeated relative step or refund. |
 | Lifecycle journal | Preserve original W32Time observations and every changed setting, installation/current-owner generation, maintenance inhibition and restoration progress; respect successor and later administrator/GPO state. |
 | Machine security/source policy | Preserve current authorized revision/provenance and validate explicit migration through the same domain/authorization rules. |
+| `UpdateTrustState` | Retain authenticated root and protocol-required accepted metadata progression across failed downloads/deployment, repair and ordinary reinstall; no rollback with the package transaction or permissive embedded-root reset. |
+| Installed identity and updater security floor | Commit actual installed identity after reconciliation; apply the separately defined security-floor transition only with an eligible usable recovery path. A floor advance can exclude a previous package, so it is not automatic discovery or deployment success. |
 | Protected time floor | Preserve evidence and supersession history. An intact but wrong floor may use only the narrowly authorized re-anchor contract; it grants no clock write and resets no correction budget or ownership. |
 | NTS association/private state | Revalidate source/policy binding, full-authentication/key ages and current generations; old authentic bytes do not establish freshness or permit weaker fallback. |
 | Optional priors/cache and user preferences | Apply their documented discard/reacquisition scope; their recovery rule cannot erase mandatory authority. |
@@ -513,10 +533,12 @@ and local generation files do not prevent it. Preserve this
 [THR-17 residual](windows-time-architecture.md#thr-17--valid-old-state-restores-obsolete-trust-or-repeats-consumed-authority).
 No hardware counter or universal rollback guarantee is adopted.
 
-Withdrawal is public operational status, not an implemented on-device denylist.
-An offline installation cannot be assumed to learn it. Its existing ownership,
-freshness, authentication and budget rules continue; support-end status itself
-neither grants authority nor automatically releases it to W32Time.
+Withdrawal is public operational status, not an implemented on-device runtime
+denylist. The adopted TUF route can narrow installation eligibility only through
+qualified current signed metadata/policy; an offline installation cannot be
+assumed to learn it. Its existing ownership, freshness, authentication and budget
+rules continue; a minimum-install policy or support-end status neither grants a
+remote kill switch nor automatically releases ownership to W32Time.
 
 On reconnection, use the qualified acquisition and compatibility path. Apply the
 [wrong-clock/offline matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
@@ -529,10 +551,13 @@ Required trust failure cannot admit an unverified helper.
 
 ### 7.1 Trust boundary and residual
 
-**A malicious same-product package produced through compromised signing/release
-authority may carry a valid trusted signature. No independent on-device admission
-mechanism has been established that guarantees rejection of that package.**
-It may replace the very binaries or local checks expected to enforce approval.
+**A malicious same-product package approved by sufficient compromised release
+authority may carry valid Windows and TUF signatures. Those signatures do not
+guarantee rejection of malicious authorized code.** The adopted TUF design adds
+independent release authentication against delivery-host compromise on the
+in-app route; it is not implemented/qualified evidence and does not govern every
+external installation route. Sufficient compromised authority may replace the
+very binaries or local checks expected to enforce approval.
 The existing rejection requirements for unrelated signed packages, tampering,
 copied-out helpers and inadmissible older artifacts apply at a still-trusted
 boundary; they do not demonstrate protection against replacement of that boundary.
@@ -544,7 +569,8 @@ installed code. This is the existing
 [THR-15 residual](windows-time-architecture.md#thr-15--build-or-signing-pipeline-publishes-trusted-malware),
 with OPEN-11's release/installed-code qualification still open. The first-stable
 decision must state the verified containment/recovery limits; this document
-neither accepts the residual for David nor selects a new verifier. [MS-05, W07]
+neither accepts the residual for David nor qualifies the selected TUF/Windows
+verification boundary. [MS-05, W07]
 
 ### 7.2 Readiness before a real stable release
 
@@ -624,6 +650,71 @@ These are preparation links, not evidence that a NevroTick account, alternate
 identity or recovery contact has been configured or tested. Do not substitute
 a generic CSP/Azure/Store runbook for the actual selected signing or hosting provider.
 
+### 7.5 TUF publisher operations — 25 November 2026
+
+This section applies [architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+and [signing guide §10](windows-time-signing-guide.md#10-updater-signing-and-key-operations)
+to the existing release/incident owner. TUF authentication is adopted; no
+production key, hosting deployment, renewal job or provider account is asserted.
+The proposed separate 2-of-3 root/targets custody needs actual independent
+failure domains and sustainable recovery before use. David remains the single
+human release approver; signing thresholds do not invent extra human approvers.
+
+**Before the first live updater release**, record the exact client/publisher
+interoperability profile and keys/roles/thresholds, private custody/backups,
+initial approved root, renewal and absence owner, supported offline window,
+expiry policy and loss/compromise procedure. Keep secret material private.
+Metadata renewal is required even when no new application release is produced;
+an unattended maintenance procedure needs an actually configured owner and
+observed failure path. The project has not selected numerical renewal/expiry
+periods or guaranteed continuous operational coverage.
+
+Publish only after inside-out signing and final whole-file target approval:
+immutable complete MSIX first, required retained/versioned roots and dependent
+targets/snapshot metadata next, current timestamp last. Observe the referenced
+objects through each admitted route and preserve exact bytes. Configure mutable
+metadata cache/renewal behavior separately from immutable artifacts. A host's
+object lock, mirror or editable release label is no signing authority. The
+[TUF repository operations](https://theupdateframework.github.io/specification/latest/#repository-operations)
+control protocol ordering; provider-specific guarantees require their own
+current configuration evidence.
+
+| Event | Required response and qualified neighboring case |
+| --- | --- |
+| Ordinary renewal or operator absence | Retained current targets remain obtainable through timely authorized metadata renewal; expiry/renewal failures are detected and repaired without disabled freshness checks or a client-specific secret. Demonstrate normal operation during the declared absence/offline window. |
+| Root or targets key loss | Use independent protected backup or the surviving authorized threshold to rotate. Distinguish recoverable loss from loss of enough root authority; an arbitrary new root or ordinary reinstall is not recovery. Rehearse actual long-offline sequential-root catch-up. |
+| Timestamp/snapshot credential compromise | Contain the affected signing/publication access, rotate through the qualified role authority and restore consistent freshness metadata. A malicious role's higher version/expiry history is part of the recovery case; the role does not receive targets approval. |
+| Targets/root compromise | Stop promotion, preserve suspect roots/metadata/targets, assess what sufficient authority approved and rebuild trusted custody independently. Determine whether authenticated in-band recovery is possible; if not, a separate authorized trusted recovery/bootstrap decision is necessary. Do not promise automatic repair after enough root compromise. |
+| Windows signing compromise or publisher transition | Follow the actual certificate/service revocation and renewal process; qualify expected package identity, timestamps, revocation caches, wrong-date/offline behavior and the successor signer. TUF role rotation alone does not change Windows package trust. |
+| Release withdrawal or discovered malicious authorized code | Publish qualified current eligibility/correction metadata and contain every actual distribution route. Preserve the distinction between preventing a new in-app admission, already downloaded/installed code and a potentially compromised host; no immediate recall or remote runtime kill is implied. |
+| Mirror/host/cache failure or stale content | Refuse inconsistent/expired/unauthorized inputs within finite request/work budgets; a healthy matching route remains usable without silently disabling proxy/DNS/metered/enterprise policy or selecting another target. |
+
+For a bad release, prefer the compatible greater-version correction in §5.4.
+Any exceptional lower-version recovery needs narrowly signed explicit authority
+and current-state compatibility before use. The separately owned security floor
+must not advance so early that it removes the only eligible recovery path.
+Retain accepted TUF progress across installation failure; preserve clock policy,
+spent/uncertain authority and the lifecycle journal. Freshness denial does not
+authorize automatic WinGet/App Installer fallback, a root reset or setting the
+OS clock from the update host.
+
+The user's one update intent binds exact target and material terms, while
+privileged verification rechecks current time, trust, policy and generation.
+Renewed metadata for the same target does not itself require another routine
+install click if the intent remains current and terms unchanged. Target/material
+changes or expired/stale intent require renewed consent. Interrupted maintenance
+needs authorized reconciliation, not a new attempt inferred from an old Yes.
+Recovery can proceed only through its separately qualified current authority.
+
+Release readiness requires **both** the trust/time/client/storage track and
+the surviving Windows deployment/recovery track before live apply. The latter
+must cover packaged-helper death, failed successor, no login, reboot and actual
+registration/rights, alongside valid complete updates. Retained metadata/code or
+an OS accepted request alone is insufficient. W11-W10/W11-W05 own this join under
+the [current task assignment](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026);
+exact signed/delivered/native release gates and section 9's operational rehearsals
+remain separate. No current hold is lifted by this record.
+
 ## 8. Evidence, communication and closure
 
 Keep incident evidence bounded and private where necessary. Prefer exact package/
@@ -687,8 +778,10 @@ is unresolved. No client result silently qualifies Server, and OPEN-2 stays open
 | Whole-environment rollback | Report demonstrated within-model controls and the unqualified privileged-snapshot residual separately; no file-authentication claim becomes universal anti-rollback. | CHECK-11/12/15; security/platform, admitted VM scenario. |
 | Wrong-date/offline/stale or absent trust cache | Actual declared verifier/retrieval/custody and recovery behavior, with intended allowed path and hostile helper refusal; no trust-check bypass. | CHECK-9/18/23/27; signing §5.1, actual delivered artifact/native Windows. |
 | Wrong, tampered, unrelated signed, copied-out or unapproved old code | Still-trusted admission boundary denies product authority to the inadmissible artifact; intended package/helper works. | CHECK-1/2/16/18/23; release/platform/security, exact installed artifact. |
-| Authentic malicious same-product publication | Tabletop/inert fixture distinguishes signature success from approval. Document the absent independent gate, trustworthy recovery route or unresolved exposure; do not record automatic rejection as passed. | THR-15, OPEN-11, CHECK-18/20/24; release/security, then separately admitted account/native evidence. |
+| Authentic malicious same-product publication | Distinguish delivery compromise from enough compromised TUF/Windows release authority. A qualified in-app gate rejects unauthorized targets; valid sufficient authorization cannot prove benign code. Record actual external-route and host-compromise recovery limits, without an automatic-rejection pass. | THR-15, OPEN-11, CHECK-18/20/24; release/security, then separately admitted account/native evidence. |
 | Account/application access recovery and renewal | Real roles/routes are available; authorized test access removal and remaining session limits are observed. Publishing and installed-device recovery stay separate. | W11-W10, CHECK-18/20/24; private inventory/tabletop, separately authorized account exercise. |
+| TUF renewal, root continuity and key loss/compromise | Section 7.5's exact publisher/client profile handles routine renewal, long-offline sequential rotation, recoverable loss and compromised-role history without new-root TOFU, disabled expiry or unapproved targets. Record limits after sufficient authority compromise. | W11-W10/security/release, CHECK-9/12/15/18/20/24/25/26; bounded host/provider fixtures, then authorized real role operations. |
+| In-app consent, independent admission and surviving apply | Metadata-only check, one exact-target Yes, denied UAC, stale/changed intent and final-custody failures yield no unauthorized effect; healthy complete update and helper-death/reboot/no-login recovery work under the qualified owner. Both trust/time and surviving Windows recovery qualify before live apply. | AC-23–26, W11-W10/W11-W05/GUI, CHECK-9/12/13/15/18/21/23/25/27; fixture/host first, admitted native package evidence separately. |
 | Corrective source/build/delivered custody | Substitution/unexpected inputs fail the actual release gate; reviewed valid candidate, full inventory/generated data and licenses reconcile. | CHECK-18/19/20/24/26; build/release and final direct-delivery evidence. |
 | Support export and incident guidance | Synthetic secret/error cases yield useful bounded redacted output; incomplete observations remain explicit; guidance names only a qualified local action. | CHECK-14/17/24/27; diagnostics/release, content review then actual export/native paths. |
 
@@ -723,7 +816,7 @@ a mutable first-party account, not independent forensic proof. [GH-1–GH-7]
 | Highest number or valid signature determines recommendation | Simple, but admits withdrawn/compromised/unqualified material. Use an explicitly approved status record; do not imply an independent on-device enforcement gate exists. |
 | Listing reversion or service stop completes recovery | Fast containment step; installed code, programmed rate and migrated state remain separate obligations. |
 | Restore all old data / always Reset or uninstall | Superficially simple; can erase recovery or revive consumed authority. Use the qualified state/ownership transition. |
-| New TUF/updater, mandatory-flag kill switch or MSI escape path | Could change capabilities, but would change unselected architecture and does not supply native recovery. Excluded from this scope. |
+| Unattended updater, runtime kill switch or MSI escape path | Outside the selected explicitly initiated complete-MSIX/TUF design; none supplies a missing native recovery mechanism or fallback after trust denial. |
 | Automatic two-human approval or fixed emergency SLA | Could reduce some risk with real staffing; no such delegation/capacity exists by assumption. Preserve David's authority and explicit evidence. |
 
 ### 10.2 Primary source register

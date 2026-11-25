@@ -515,8 +515,10 @@ enforcement helper into Rust project.
   bounded exact representation and separate service authorization; section 16:
   Slint default under [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), accessible behavior and English-first locale; sections
   17–18: bounded work, dependency admission and toolchain policy.
-- [Update assessment](../../../docs/windows-time-update-assessment.md): TUF is
-  research, not adopted runtime/updater architecture.
+- [Update assessment](../../../docs/windows-time-update-assessment.md): retained
+  research plus the 25 November accepted direct-MSIX updater disposition under
+  OD-05 §7.10/architecture §19.8. Exact client/runtime/signing/native evidence
+  remains open; historical research alone established no implementation.
 
 ## Primary internet and GitHub research
 
