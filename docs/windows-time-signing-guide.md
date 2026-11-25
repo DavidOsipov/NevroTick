@@ -781,6 +781,8 @@ operators. Keep private inventory and recovery material outside source, packages
 logs and support exports. Select expiry/renewal periods and the supported
 offline/maintainer-absence window from an actual sustainable procedure; this
 document chooses no production TTL, provider or personal existing key.
+Record the concrete decisions and evidence in [§10.4](#104-publisher-readiness-record--26-november-2026);
+an incomplete field remains an open prerequisite for its dependent operation.
 
 ### 10.2 Final-byte release and publication order
 
@@ -853,3 +855,49 @@ All cases above remain **planned/unexecuted** here. This design adopts no key,
 library, signer or online service. Trust/time/client/state and surviving Windows
 deployment/recovery must both qualify before live apply; signing/native/release
 claims require their own exact-artifact evidence afterward.
+
+### 10.4 Publisher readiness record — 26 November 2026
+
+Release/security/W11-W10 own one public-safe readiness record within the existing
+[W11 execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026).
+It is a concrete output of OPEN-11 under the
+[architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026),
+not another release authority, key inventory in Git or completed operational pass.
+Keep secrets, detailed custody locations, recovery material and unnecessary
+personal/access information in the authorized private inventory. The public-safe
+record contains only the profile, scope, status and references needed to assess
+readiness. Existing [release §7.5](release-policy.md#75-tuf-publisher-operations--25-november-2026)
+owns operational response; [its rehearsal evidence](release-policy.md#publisher-rehearsal-evidence--26-november-2026)
+records actual outcomes rather than duplicating this specification.
+
+| Record field | Required decision and inspectable evidence |
+| --- | --- |
+| Client/publisher interoperability | Exact maintained revisions/artifacts, metadata schema and representation, algorithms/key encodings, roles/thresholds and supported client starting roots. Bind valid and invalid signature/root/role fixtures to the actual selected client and publisher. Reference the assessment's per-process graph/time/storage admission; producer compatibility alone does not qualify a consumer or Windows trust. |
+| Bootstrap and custody | Approved initial public root and application identity; nonsecret role/key identifiers and threshold configuration; private evidence of independent custody/failure domains, authorized access and recoverable backups. Separate root, release, freshness and Windows credentials. Show how loss of one custody domain differs from loss of sufficient authority; keys sharing one compromised job/device are not independent. |
+| Renewal and maintainer absence | Selected metadata/key/certificate expiry and renewal policy, actual renewal operator/automation owner, declared absence coverage, bounded failure alerts and escalation, and permitted actions when the release approver is unavailable. Demonstrate renewal without a binary release. Record feasible recurring work, access, retention and provider/hosting costs before promising coverage; no second approver or delegated release authority is inferred. |
+| Offline clients and finite retention | Supported client/version/offline window, required numbered-root availability, oldest supported starting roots, bounded catch-up work, publisher/client storage allocation and retirement/compaction policy. Preserve protocol-required root availability and every authenticated transition needed by supported clients. A support-window change, arbitrary old-root deletion or skipped roots cannot waive protocol requirements to satisfy a resource cap; any unsupported population and recovery route must be explicit before relying on the policy. |
+| Final bytes and publication | Exact signed package and supported-file inventory, target digest/length/policy, approval identity, immutable-object and timestamp-last publication order, and retrieval/readback through each admitted route. Record mutable metadata versus immutable target cache policy, mirror consistency, partial-publication handling, bounded retries and rollback/containment ownership without treating host access as release authentication. |
+| Windows signer lifecycle | Actual provider/certificate and expected package/publisher identity policy; renewal, revocation, timestamp and successor-signer handling. Reference §5.1's process-specific wrong-clock/offline/cache/delegated-retrieval evidence and native completion custody. TUF key rotation or an updater UTC interval cannot substitute for these observations. |
+| Loss, compromise and corrective delivery | Separate recoverable loss, freshness-role compromise, targets/root compromise, Windows signing compromise and host compromise. Record the remaining authenticated recovery authority, response limits, malicious version/expiry/root-history cases, and compatible greater-version delivery. If sufficient authority is lost or compromised, preserve an explicit trusted recovery decision rather than promising in-band repair or ordinary reinstall/bootstrap. |
+| Evidence and continuing owner | Candidate/profile identity, date, existing CHECK/AC owner, healthy/failure controls, observed outcomes, private/public evidence references, gaps and next review trigger. Distinguish a written procedure, an inert fixture, an authorized real-role rehearsal, and final distributed/native qualification. Changes to keys, thresholds, algorithms, clients, providers, timing, support window or delivery configuration invalidate the affected evidence. |
+
+Qualify the declared retention and renewal policy together. A dormant release
+still consumes operational work; metadata availability must remain compatible
+with the supported absence/offline scope and finite client/publisher allocations.
+Exercise a missed renewal, unavailable signer, missing numbered root, stale cache
+and interrupted publication beside a valid renewal and long-offline client.
+Observe recovery using the still-authorized roles and preserved metadata history;
+reject-all behavior or a manually reset client supplies no useful pass.
+
+The record must also demonstrate a useful compatible correction for its declared
+affected population. A recovered account or newly issued certificate alone does
+not establish delivery to an old installed client, a usable Windows helper or
+surviving machine recovery. Keep sufficient-authority compromise, offline clients
+and already compromised hosts explicit. The state/floor and deployment joins
+remain under architecture §19.8 and release §6.
+
+All fields and rehearsals remain **open/planned** until their owning task records
+actual decisions and evidence. This amendment selects no key, algorithm, provider,
+TTL, operator delegation or service-level promise; creates no credential or
+account; and lifts no source, native, signing or release prerequisite. David's
+exact-candidate release authority and optional enhanced-provenance policy remain.

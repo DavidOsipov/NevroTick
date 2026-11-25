@@ -684,6 +684,13 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 
 ## 11. Decisions still needed before their dependent work
 
+The [architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+and [backlog intake](../tasks/development-backlog.md#architectural-closure-intake--26-november-2026)
+link the decisions below to concrete outputs, owners, dependent gates and
+independent useful/refused/unknown journey observations. This feature catalogue
+does not turn an open policy into an approved default or planned AC coverage
+into executed product evidence.
+
 | Decision | What must be established | Owner / gate |
 | --- | --- | --- |
 | Shipped source preset | Resolve OD-03 Pool/NTS role; qualified operator diversity, identities, vendor/provider permission, polling, delegation, reachability and compatible time scale | Network/release; P0/P2 and source policy |

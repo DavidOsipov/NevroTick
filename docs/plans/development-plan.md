@@ -1248,6 +1248,11 @@ compiler-unviable and 18 reviewed equivalents across all 1,285 variants.
 The separate line and contract receipts retain their exact scopes.
 The public mutation campaign remains closed.
 
+The [architectural closure workstream](#architectural-closure-workstream--26-november-2026)
+routes the remaining decision and mechanism deliverables into their existing
+phases. It does not reorder the reference/mapping dependency below or turn every
+later production-policy choice into a prerequisite for controlled-profile work.
+
 ### Resume in dependency order — 23 November 2026
 
 Use this sequence for current activation. The dated checkpoints below retain
@@ -5123,6 +5128,37 @@ new TTL, source count, correction allowance, trust exception or reset privilege.
 Freeze the relevant docs, configuration and source at one commit plus identified
 dirty bytes for handoff. Archived design copies and older review snapshots retain
 their historical status; the current maintained authorities control.
+
+#### Architectural closure workstream — 26 November 2026
+
+The [architecture §22.1 inventory](../windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+and [backlog intake](../../tasks/development-backlog.md#architectural-closure-intake--26-november-2026)
+cover the eight assessed closure areas and the current temporal integration
+dependency. Reuse their canonical contracts and existing owners. This work
+turns remaining decisions into concrete handoffs; it selects no numerical
+profile, Windows mechanism, TUF implementation, signer or additional service.
+
+| Preparation order and existing owners | Deliverable and readiness boundary |
+| --- | --- |
+| Current S2.1/S2.2/W11-W01/Core | Continue §7's independent reference, mapping/withdrawal issuer and real consume-once history join. The supplier contract is settled; physical evidence and actual suppliers remain open. A controlled-profile observation need not wait for a shipped default preset. |
+| Parallel S0.2/S0.3/S0.6, W11-W04/W05/W10 | Prepare supported pre-start isolation/admission and independently invocable recovery through the [Windows closure inventory](../../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026). Distinguish evidence already retained from rights, invocation, current authorization and final-profile gaps. Native execution still needs its scoped admission. |
+| Before dependent P1/P2/P4 behavior, R-02/R-04/R-05 and S0.4/S0.7 | Complete source/vote/freshness/fault, date/era/floor, ordinary NTS lifetime and correction/holdover/epoch decision outputs. W11 §4.31 remains the detailed correction owner. Evidence supports an NV-DEC-001 card when a material choice is ready; no permissive placeholder values. |
+| Before each mandatory production writer/reuse path, S3.3 and original state owners | Freeze [§12.1.4's physical lifetime](../windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery), actual schemas/commits/readers/retirement and bounded recovery. Join mandatory Engine restrictions and the distinct updater trust/installed/floor classes through their writers. ST-W03 supplies object evidence; optional-cache work remains paused independently. |
+| Before P5/P6 live Apply, maintenance/time/security with W11-W05/W10 | Complete separate UTC-producer, exact client/publisher/process graph, protected-state and supported Windows invocation/profile exits. Trust/time/storage and surviving deployment/recovery must both pass. Preserve one exact-target user intent and actual current admission. |
+| At dependent integration and P6/P7, platform/performance/UI/release | Populate exact supported OS/CPU/protection/caller/registration/update-owner rows and aggregate work/storage/lease/stop allocations. Later selected signing/custody/renewal/offline/absence procedures and useful corrective delivery need actual candidate/operational evidence. |
+
+For each row, the execution owner retains the explicit open question, concrete
+artifact, enforcing consumer, prerequisite, useful allowed neighbor, applicable
+malformed/unauthorized/stale/exhausted/unknown controls, finite observation and
+restoration budget, and exact result/remaining gap. The detailed tasks own these
+cases; do not duplicate their entire matrices here. Current decision, source,
+implementation and native/delivered evidence statuses remain separate.
+
+At the corresponding phase handoff, review every applicable inventory row and
+its indirect consumers. An unresolved later choice blocks only its dependent
+claim. No formal proof, optional future DNS/proxy/assurance subsystem or unrelated
+campaign is added to V1. No coverage amendment lifts current execution holds or
+substitutes a documentation pass for a product exit.
 
 ### 8.3 WIP code-quality feedback and bounded follow-up
 

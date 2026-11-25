@@ -1,5 +1,16 @@
 # NevroTick task map
 
+**Architectural closure intake — 26 November 2026:** the
+[canonical coverage inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+connects each assessed gap to its contract and existing owner. Use the
+[backlog intake](development-backlog.md#architectural-closure-intake--26-november-2026),
+[development workstream](../docs/plans/development-plan.md#architectural-closure-workstream--26-november-2026)
+and [Windows closure inventory](windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+for decision artifacts, prerequisites, observable exits and current dispositions.
+The settled reference/mapping contract still needs its actual qualified suppliers
+and real Core join; that remains the next development dependency. Documentary
+coverage does not complete an implementation or qualification gate.
+
 **Delivery decision — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects complete direct MSIX and rejects Store publication; signing is deferred.
 The [current W11-W10 handoff](windows11-integration.md#439-direct-msix-distribution-decision--21-november-2026)

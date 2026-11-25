@@ -487,6 +487,41 @@ See [durable authority](windows-time-architecture.md#1021-durable-authority-rese
 [time-floor recovery](windows-time-architecture.md#recovery-decision-flow) and
 the [data-transition contract](../.agents/skills/implementation/evolve-data-contracts/references/transitions.md).
 
+#### Transition and retirement evidence — 26 November 2026
+
+Complete this existing matrix using the
+[mandatory-state lifetime contract](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery)
+and the updater's [closure deliverables](windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026).
+For each actual record, name its bounded schema/version and units, protected
+location, canonical writer, old/bad/new readers, migration owner, lock scope,
+current authorization/generations, commit/publication point and restart consumer.
+Fresh and migrated inputs enter the same mandatory domain admission. Record
+write/flush/close/publication/acknowledgement outcomes separately; atomic
+replacement alone is not evidence of power-loss durability.
+
+| Transition to qualify | Concrete completion and interruption evidence |
+| --- | --- |
+| Authenticated metadata progression | Identify each protocol-required durable root/role update and its recovery reader. A later metadata, download or deployment failure preserves already accepted progress; record exact permitted protocol history resets without inventing a universal counter or rolling trust back with the package. |
+| Installed identity | Bind pre-update identity, deployment attempt/generation and actual reconciled package/components/rights/health to the commit. Lost acknowledgement or a progress event cannot mark installation complete or authorize a blind repeat. |
+| Security-floor advancement | State the policy/commit owner, old/new eligibility and the trusted compatible recovery version/path that remains usable after the proposed floor. Observe interruption before and after publication. If the change would exclude the only usable recovery path, refuse that transition; metadata discovery and deployment success do not advance the floor automatically. |
+| Repair, Reset, removal and reenrollment | Distinguish ordinary preservation/recovery from an explicitly authorized decommission. Record pending machine obligations, current actor/ownership, retained trust/data, permitted later bootstrap and the durable outcome required before deleting the last recovery code, registration, journal or other owned authority. Test one-user, last-user and machine-wide scope as applicable; an empty user-scoped package query proves no completed machine removal. |
+| Bounded retention and retirement | Give retained state/migration history a finite allocation and supported reader/offline window. Any compaction preserves the canonical authority and evidence still needed by supported readers or outstanding recovery. Retire old writers, readers, data and migration/recovery code separately; a package uninstall or deleted file alone proves none of those conclusions. |
+
+The protected updater writer owns these update transitions, with ST-W03 supplying
+filesystem/object evidence and existing clock/lifecycle owners retaining their
+records. Exercise partial writes, disk full, lock contention/simultaneous helpers,
+acknowledgement loss, mixed generations, bad-writer schemas, root rotation followed
+by failed deployment and interruption during retirement. A useful compatible
+transition must succeed through the same reader/effect owner. Safe refusal with
+an outstanding takeover is recorded as refusal plus an unresolved recovery
+obligation, not restored availability. Whole-environment rollback retains §6.3's
+residual; this matrix grants no irreversible device-wide history.
+
+The [W11 execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+retains planned/implemented/qualified status and the exact evidence for these
+transitions. All remain open here; no concrete schema, storage API, recovery
+mechanism or decommission policy is selected by this amendment.
+
 ### 6.2 Required owned transition
 
 The implemented lifecycle path must demonstrate these observations in its actual
@@ -715,6 +750,58 @@ the [current task assignment](../tasks/windows11-integration.md#440-tuf-authenti
 exact signed/delivered/native release gates and section 9's operational rehearsals
 remain separate. No current hold is lifted by this record.
 
+#### Publisher rehearsal evidence — 26 November 2026
+
+The concrete preparation artifact is the public-safe
+[publisher readiness record](windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026),
+with protected references to private custody and recovery evidence. Complete its
+interoperability, custody, expiry/renewal, absence/offline, finite retention,
+delivery/cache and Windows signer fields before relying on the corresponding
+operation. The [W11 execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+owns the following evidence beside §7.5's existing event cases; do not create a
+second incident plan or accept a checklist as an executed rehearsal.
+
+For each required rehearsal, freeze the exact client/publisher and policy/key
+profile, supported affected population and starting roots, delivery route,
+admitted environment, bounded work/retries/duration and restoration owner. State
+the independent expected healthy outcome and the reached fault/unauthorized
+condition. Record observed before/after metadata and installation identities,
+accepted progress, actual publication/readback, timing and residual effects;
+exclude secrets and unnecessary access details from the public-safe record.
+Use the same actual consumer for the healthy and refused/recovered controls.
+A fault rejected before the intended publication or recovery phase does not
+exercise that later phase.
+
+The minimum useful observations are a dormant-release renewal during the declared
+absence window; supported long-offline sequential-root catch-up; recoverable
+backup/key loss; failed or unavailable renewal; malicious high-version/expiry
+history for the affected role; stale/missing mirror/cache objects and interrupted
+publication; Windows signer renewal/transition; and a compatible corrective
+release that actually reaches the supported affected client. Preserve the
+distinction between loss of some custody and loss/compromise of sufficient root
+authority. A still-authorized repair may succeed; a case lacking authenticated
+recovery remains explicitly blocked rather than acquiring a new root by TOFU.
+
+Assess root retention and client/publisher resource allocations together. The
+declared supported starting roots/offline window must remain recoverable through
+the required authenticated sequence within admitted finite work. A changed support
+window does not waive protocol-required metadata availability. Check the
+boundary, exhaustion and interrupted-cleanup cases; arbitrary root deletion,
+skipped transitions, disabled expiry or an unbounded retry loop cannot repair a
+mismatch. A retention/support-policy change needs its existing decision owner
+and affected-client disposition before dependent cleanup, not a retrospective
+unsupported label after a required case fails.
+
+Record written procedure, inert fixture, authorized real-role operation and exact
+delivered/native evidence as separate statuses. Fixture success neither provisions
+custody/monitoring nor exercises an account; a recovered account or signed
+correction alone proves no installed-client recovery. Changes to the actual
+client, keys/thresholds, provider, time/expiry policy, supported window, cache or
+publication path reopen only the affected evidence. Missing required rehearsals
+remain open at their existing P6/P7 exits. These documentation requirements
+authorize no account/key action, release, operator delegation or new numeric
+support commitment, and do not make optional enhanced provenance mandatory.
+
 ## 8. Evidence, communication and closure
 
 Keep incident evidence bounded and private where necessary. Prefer exact package/
@@ -758,6 +845,19 @@ a release blocker regardless of administrative incident status. [W08, W09]
 All applicable product/signing/delivery cases below are **planned, not executed by this
 documentation work**. Preserve existing CHECK owners and candidate-specific
 receipts; this is not a new acceptance catalog.
+
+The [architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+and [W11 execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+carry the named deliverable, next bounded action and status for each applicable
+case below. Before claiming the updater's phase exit, reconcile the assessment's
+[six closure deliverables](windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026),
+§6.1's transition/retirement evidence and §7.5's publisher rehearsals against the
+actual candidate. Independent UTC evidence, exact client/crypto/runtime admission,
+durable state and finite allocations cannot be inferred from a package success;
+actual Windows PKI and surviving recovery cannot be inferred from TUF fixtures.
+Retain separate supported-profile/caller/registration/update-owner rows for each
+admitted route. A complete documentation map closes no implementation or native
+release gate.
 
 Apply the [two-family platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 to every claimed OS profile. Local package mechanics, product/CPU admission and

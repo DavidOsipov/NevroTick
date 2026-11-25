@@ -391,6 +391,162 @@ authorization rows before implementing them; this adds no HTTP server or ASVS
 conformity claim. Exact resource/notes/network budgets remain to freeze. The
 current plan closes no native, package, security-coverage/mutation or release gate.
 
+#### Concrete closure deliverables — 26 November 2026
+
+The [architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+and [W11 execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+route the following deliverables through the existing decision and phase
+owners. They refine the open work above; they are not six new product gates or
+completed decision records. Keep decision, implementation, qualification and
+accepted deferral status separate. Each task entry identifies its exact candidate,
+prerequisites, next bounded action, independent expected observations and evidence
+location. A written card or supplied-time fixture cannot close production UTC,
+Windows enforcement or release operations.
+
+##### Independent updater UTC evidence
+
+The maintenance/time/security owners must produce a decision record naming the
+actual evidence producer and privileged consumer; authenticated provenance and
+bootstrap dependencies; independence from a compromised Engine; source/fault
+assumptions; interval construction, uncertainty and maximum admissible age;
+elapsed-age basis, boot/suspend continuity and policy/evidence generations. Map
+owner-captured fixed TUF workflow start and the separate finite effect-admission
+lease to their enforcement points. Show the maintenance path when the installed
+Engine cannot supply acceptable time, including any prerequisite for trusted
+recovery-code activation. An unsupported or circular dependency remains explicit.
+This selects no time source. NTS bootstrap date/era/floor evidence, updater UTC
+evidence and [actual Windows PKI](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
+remain three distinct qualifications.
+
+**Exit:** an admitted current interval reaches the actual verification/admission
+consumer. A fabricated Engine flag or interval, NTS authentication alone and a
+historical lower bound after unknown offline time cannot manufacture freshness.
+Exercise future-clock poisoning followed by legitimate backward repair: a fresh
+qualified interval remains usable without a trust reset. Check expiry at and on
+either side of the conservative `E > U` boundary, plus suspend, reboot,
+overlong work and changed evidence/policy/operation generations. Observe fresh
+workflow recovery beside stale refusal. Qualify the actual Windows verifier,
+calling/delegated process, time/retrieval policy and completion custody separately;
+supplied TUF time does not establish wrong-clock helper or package availability.
+
+##### Exact client and publisher admission
+
+W11-W10/security/dependency owners must freeze the maintained client and publisher
+revisions, relevant published-artifact correspondence, algorithms/key encodings,
+metadata/signature representation and target-policy schema. Record the actual
+trusted-root reconstruction, explicit-time/fixed-start API, protocol-progress
+persistence, stream-completion and error seams. Inventory the complete selected
+features, licence, build, crypto, TLS and runtime graph for each using process.
+Publisher/client interoperability, HTTP transport and Windows signatures need
+separate evidence; optional transport removal alone does not admit the graph.
+Resolve any conflict with Engine-only Tokio through the existing decision owner
+before dependent implementation, without treating either researched client as
+selected.
+
+**Exit:** the chosen integration accepts a valid eligible target and sequential
+root rotation, including the protocol's permitted expired intermediates and
+specified history resets. It rejects insufficient distinct signers, skipped or
+forged roots, expired final metadata, inconsistent roles, wrong application
+policy, malformed/over-budget input and incomplete target streams. Execute the
+future-clock/backward-repair discriminator and restart after accepted metadata
+followed by later failure. Bind results to the exact graph and retained bytes;
+source inspection, client-only fixtures and a generic signature pass have narrower
+scope than this integrated exit.
+
+##### Protected state and commit order
+
+The narrow privileged maintenance owner supplies the updater rows of the
+[mandatory-state lifetime contract](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery)
+and [release compatibility matrix](release-policy.md#61-freeze-the-compatibility-matrix-before-new-writes).
+Freeze record schemas/versions, readers/writers/migrators, protected locations,
+cross-process lock, publication/flush/acknowledgement phases and restart recovery.
+Keep authenticated metadata progression, installed identity, security-floor
+advancement and existing clock authority as separate transitions. The record
+must name the eligible usable recovery version before a floor change, and define
+initial enrollment versus damaged established state, Repair/Reset/ordinary
+reinstall, authorized decommission and later reenrollment. ST-W03 supplies
+filesystem/object-custody evidence; it does not own the updater's state policy.
+
+**Exit:** compatible update and recovery preserve useful current state. Reached
+partial-write, disk-full, lock/race, lost-acknowledgement, mixed-reader and
+bad-writer-schema cases cannot reset trust or refund authority. Deployment failure
+after root rotation preserves required progress; a floor change cannot strand
+the only recovery version. Old readers, writers, data and recovery code have
+separate retirement evidence. Merely retaining files or rejecting unknown state
+does not demonstrate that an outstanding machine obligation can be recovered.
+
+##### Windows route and surviving recovery profile
+
+W11-W10/W11-W05 own the supported profile: exact Windows family/build and
+CPU/protection requirements; direct, WinGet and admitted enterprise route;
+exclusive update owner and management policy; actual API/caller/token/package
+context; standard-user/alternate-admin and multi-user registration/provisioning;
+protected-stage-to-OS byte custody; and recovery code/data/authority/invocation
+lifetimes. Link the existing [WinGet authority rules](plans/winget-distribution.md#53-relationship-to-the-adopted-in-app-updater--25-november-2026)
+and [surviving-recovery investigation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026).
+The profile chooses no invoker through this assessment and does not infer
+external management from an acquisition-origin guess.
+
+**Exit:** a healthy complete update reaches the intended user/machine scope and
+retains one current controller. External replacement between check, consent,
+admission and reconciliation invalidates stale work. Test old-helper/UI death,
+failed successor, no-login reboot, Reset, last-user removal, queued SCM restart,
+lost acknowledgement and version handoff with the obligation still pending.
+The observer supplies no recovery activation. Trusted retained bytes alone do
+not establish invocation; old cleanup cannot reset a successor, and final
+retirement must account for all owned privileged residue. These Windows results
+must join the independently qualified trust/time/client/state exit before live
+Apply; neither track can waive the other.
+
+##### Finite updater allocations and retained history
+
+The worker/maintenance, W11-W08 diagnostics, storage and release owners must
+freeze one allocation table: unit, maximum live/retained amount, aggregate scope,
+enforcement owner, release/completion event and exhaustion result. Cover wire and
+decoded metadata, nesting/fields, roots/delegations/signatures, requests/redirects/
+retries, cryptographic/native work, concurrent users and operations, stage/cache
+disk use, cleanup backlog, notes/rendering/speech, diagnostics and admission
+leases. Charge cancelled work until actual native completion; use the existing
+installation-wide budget rather than independent unbounded per-user allowances.
+
+Reconcile supported offline duration, publisher root availability, client catch-up
+work and retained-state growth with the actual protocol/client. Any compaction
+preserves protocol-required published/retained metadata, every authenticated
+transition needed by supported clients and outstanding recovery/history evidence.
+A declared support window does not waive protocol-required root availability.
+Arbitrary "keep latest N" deletion, skipped roots or a universal no-reset counter
+cannot replace protocol rules. If an allocation cannot contain required history,
+return the capacity/retention decision to its owner before exhaustion. Exact
+limits and retention periods remain unselected.
+
+**Exit:** a useful operation at each declared boundary succeeds; just-over-limit
+input, many individually valid requests, simultaneous users, retry storms,
+long-offline catch-up, disk exhaustion and cancellation with work still running
+remain bounded. Observe retained resources after both success and failure, and
+preserve current trust/recovery evidence when cleanup or compaction is interrupted.
+
+##### Publisher readiness and corrective delivery
+
+Release/security/W11-W10 must complete the public-safe
+[publisher readiness record](windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026),
+referencing protected private custody evidence without publishing it. Its exact
+client/publisher/key profile, renewal and absence coverage, backups, offline/root
+retention, delivery/cache behavior and Windows signer transition feed the
+[operational rehearsal exit](release-policy.md#publisher-rehearsal-evidence--26-november-2026).
+This does not create keys, configure accounts, delegate David's approval, select
+expiry periods or make optional enhanced provenance mandatory.
+
+**Exit:** an unchanged binary release remains usefully obtainable through normal
+metadata renewal and the declared absence/offline window. Reached key-loss,
+compromised-role history, failed renewal/publication, stale/missing mirror objects
+and Windows signer-transition cases have bounded observed outcomes beside valid
+neighbors. Distinguish recoverable custody loss from loss of sufficient root
+authority. Demonstrate compatible corrective delivery to the supported affected
+population without expiry bypass, arbitrary-root bootstrap, automatic external
+installer fallback, security-floor reduction or clock-authority refund. Written
+procedures, inert rehearsals and separately authorized real operations retain
+their own evidence scopes in W11; all these exits are open here.
+
 ### 12.4 Primary evidence for this amendment
 
 - **U1:** Pinned `rust-tuf` [database construction](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/src/database.rs), [client construction/update](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/src/client.rs) and [manifest](https://github.com/theupdateframework/rust-tuf/blob/37b51666633b100a51eb1e6eaf700314e17ccfb4/tuf/Cargo.toml). Coordinator source inspection establishes the explicit-time seam, not published archive parity or qualification.
