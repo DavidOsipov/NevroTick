@@ -25,14 +25,17 @@ is complete. Its then-next N2 fit/suffix contract and subsequent selected childr
 are also complete; the current continuation below supersedes that old routing.
 No commit/stage/push or Windows execution follows.
 
-**Current product action — 12 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-selects WSL-only preparation of the invocation-level worker stop latch and
-actual-completion custody contract, with independent review before dependent
-implementation. Reuse the actual Config/claim/provider and operation owners;
-add no service source, shared graph change, production retry/default or
-Core-positive issuer. Native Windows execution remains paused after resource
-preflight; the healthy Windows KE exit stays separate and pending. David's
-Core/Engine-only focus and all unrelated holds remain.
+**Current product action — 26 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+selects the independent reference, read-side mapping and validity issuer under
+the [Engine-to-Core admission handoff](#current-engine-to-core-admission-handoff--23-november-2026).
+The [rebuilt authenticated timing pair](#replay-the-rebuilt-authenticated-timing-pair)
+completed its exact offline Windows laboratory scope, including original
+application captures and trust/resource retirement. It still reports
+`mapping-unavailable eligible=0 fresh_sync=0`. Production date/scale/quality
+authority, physical calibration and consume-once Core history admission remain
+open. Earlier worker-stop and actual-completion source preparation is historical;
+do not restart it from the dated cards below. Independent source work follows
+section 7's own prerequisites, and all scoped execution holds remain.
 
 The default-off `ke-association-prototype` now owns the strict Windows KE path,
 private associations, protected-request custody, authenticated-response admission
@@ -66,8 +69,8 @@ Do not repeat those completed stages. Dated checkpoints below retain their exact
 candidates and then-next directions; this current summary and development §7
 control the active task.
 
-**Historical observer baseline:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is one of
-seven current workspace members. The historical S25 114-input candidate passed the
+**Historical observer baseline:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is a
+current workspace member. The historical S25 114-input candidate passed the
 configured dependency, complete GNU portable and Windows cross-build lanes,
 plus twenty-four real GNU CLI cases and eight ordinary-user Windows CLI cases.
 Its [main checkpoint](#main-workspace-checkpoint) and
@@ -34650,6 +34653,14 @@ changes stayed in the private test fixture. The adopted Engine test uses the
 normal local resolver route. [WinDNS request](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_request)
 [Cancellation contract](https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnscancelquery)
 
+| Record under `~/.local/share/nevrotick/w11-dns-live.x3Or7Xht/` | SHA-256 |
+| --- | --- |
+| `leaf-native/native-result.json` | `d9bda0a4d77d4979500b82fb353a90afbed9ff20fb897b4a752553b34ae8ca39` |
+| `leaf-interface-native/native-result.json` | `844e78e1adda137d28e2a377b4c715c860c56b9f07b2d37f22dff82b9e6a23d3` |
+| `leaf-wire-native/native-result.json` | `c87566ac785fc3a018920df95604e4fdf3599cb18e52c8fe57a77dc11503bd0b` |
+| `leaf-wire-native-retry/native-result.json` | `5e4deb0651425b66658ea495e80e6a0872dc8bce05d7e9bd0f44cce2d681a9d1` |
+| `scratch-retirement.json` | `619e4372c3e0e3afe9e6339dce245c539be541df237d62cbe8a3bb20ee86e6f6` |
+
 ##### Verify the original local bind before protected socket registration
 
 S2.1/W11-W01, TQ-01/09 and CHECK-7/25/26. The initial, ordinary and
@@ -34691,11 +34702,3 @@ source identity.
 | `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/verification.json` | `25b63f2654e6546e8b79fa02baabee0054a6cb0b5695e824f3debf9ebe806ad8` |
 | `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/exact-selector-readback.json` | `182998ae5abf993c53a59ed86e9262c9a4df64f67f9c84c70a3234d3a0a69937` |
 | `~/.local/share/nevrotick/s21-bound-endpoint-native.qERXDWMI/bounds_a8f5d0201951/verification.json` | `d46f35219d244bd46836ceb2d8bcea44d5efd87ea19706a835253c0ab5eed9dc` |
-
-| Record under `~/.local/share/nevrotick/w11-dns-live.x3Or7Xht/` | SHA-256 |
-| --- | --- |
-| `leaf-native/native-result.json` | `d9bda0a4d77d4979500b82fb353a90afbed9ff20fb897b4a752553b34ae8ca39` |
-| `leaf-interface-native/native-result.json` | `844e78e1adda137d28e2a377b4c715c860c56b9f07b2d37f22dff82b9e6a23d3` |
-| `leaf-wire-native/native-result.json` | `c87566ac785fc3a018920df95604e4fdf3599cb18e52c8fe57a77dc11503bd0b` |
-| `leaf-wire-native-retry/native-result.json` | `5e4deb0651425b66658ea495e80e6a0872dc8bce05d7e9bd0f44cce2d681a9d1` |
-| `scratch-retirement.json` | `619e4372c3e0e3afe9e6339dce245c539be541df237d62cbe8a3bb20ee86e6f6` |

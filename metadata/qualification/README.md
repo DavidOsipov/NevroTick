@@ -1,8 +1,12 @@
 # Portable metadata qualification
 
-The full campaign remains incomplete. The [current activation checkpoint](CHECKPOINT.md#direct-msix-activation-authoring--22-november-2026)
-records 261 passing metadata tests, strict typing, source CLI readback and
-passing 90% line gates on the tested candidate. Read the [assignment and historical restart checkpoint](CHECKPOINT.md)
+The full campaign remains incomplete. Start with the
+[24 November re-admission and continuation](CHECKPOINT.md#re-admit-current-portable-metadata-inputs--24-november-2026),
+which records the later source/typing/CLI readback, candidate-bound line and
+mutation results, and the final 265-test ordinary roster. The line and mutation
+receipts retain their preceding roster; use the integrated roster at the next
+qualification exit. The 22 November activation results remain historical and
+do not qualify changed inputs. Read the [assignment and historical restart checkpoint](CHECKPOINT.md)
 and [W11-W10 task](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need)
 before another campaign. The old `/tmp` evidence directory is now absent;
 its recorded partial outcomes are historical and cannot be re-admitted without

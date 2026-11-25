@@ -3,7 +3,8 @@
 **Owner requirement and research:** 5 November 2026, Asia/Tbilisi.<br>
 **Status:** accepted objective; the [owner-authorized pipeline](#13-metadata-pipeline-implementation--7-november-2026)
 implements source-tool preparation. Actual linked/installed metadata, release
-identity and complete package qualification remain open.<br>
+identity and complete package qualification require candidate-specific evidence;
+the current laboratory receipts below have narrower scopes.<br>
 **Owners:** OD-05, P6, W11-W10 with build/release, branding/localization and the
 existing CHECK-18/20/23/26/27 owners. Service descriptions also involve W11-W05.
 
@@ -44,6 +45,16 @@ product roles need admitted payloads. Package assembly must independently
 bind each actual role artifact and its dependency and resource closure.
 The direct package and installed release gates still apply.
 
+**Current artifact evidence — 26 November 2026:** the
+[guarded Slint/service archive checkpoint](../../tasks/windows11-integration.md#pack-and-verify-the-guarded-slint-and-service-combination)
+binds the linked UI/service images, embedded UI resources, metadata generation,
+artwork, PRI and authored manifest to one unsigned laboratory package. The
+[paired ScmFixture observation](../../tasks/windows11-integration.md#complete-the-paired-installed-scmfixture-observation)
+separately binds its test-signed package and two installed inert service images.
+These completed scopes do not qualify production metadata, final release
+identity/signatures or the complete installed product. The original source
+inventory below remains a historical observation, not the current file census.
+
 At the inspected NevroTick baseline
 `21726b2db44f225da0aaed82f03255c2f2c81023`, Cargo records project license,
 repository and crate descriptions; the UI crate is version `0.0.0` and explicitly
@@ -79,8 +90,10 @@ The review checked release-associated `windows` **0.62.2** source at
 `32c3144490c016fe496a0aed769bce60987a2e9d`; its Cargo manifest declares the
 features below. The symbols were found in the named source modules. This proves
 binding presence, not a new dependency admission, target build or native pass.
-NevroTick currently uses `windows-sys` 0.61.2 for its UI; retain that graph until
-the existing dependency owner admits any additional validation-tool bindings.
+The current [UI manifest](../../crates/nevrotick-ui/Cargo.toml) uses Slint 1.18.1
+and Windows-only `windows-sys` 0.61.2 plus `windows` 0.62.2 for its selected
+native adapters. Those selected features do not admit the validation-tool
+modules listed below; additional bindings retain their existing dependency owner.
 
 | Need | Verified `windows` module / feature and API examples |
 | --- | --- |

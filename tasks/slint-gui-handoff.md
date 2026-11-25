@@ -415,16 +415,28 @@ Do not reuse retired ordinals or equate the GUI build number with compatibility.
 
 GUI original code is GPL-3.0-only; inherited Core/workspace code remains
 GPL-2.0-only. Preserve [GUI provenance/licensing](../crates/nevrotick-ui/LICENSING.md),
-patch notices and separate brand/font/Unicode terms. The selected 533 registry
-identities include inert resolution entries; that number is not the runtime
+patch notices and separate brand/font/Unicode terms. The 9 November graph's 533 registry
+identities include inert resolution entries; that historical number is not the current runtime
 package count. Distribution obligations remain separate from private checks.
 
-Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Current lock SHA256:
+**Current source identity — 26 November 2026:** inspect
+[`rust-toolchain.toml`](../rust-toolchain.toml), the
+[`UI manifest`](../crates/nevrotick-ui/Cargo.toml), [`Cargo.lock`](../Cargo.lock)
+and [`dependency policy`](../policy/ui-m0-dependencies.json) for the actual
+candidate. The toolchain now selects Rust 1.100.0 and the UI still selects Slint
+1.18.1. The 24 November calendar and URL changes in
+[the build record](build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
+supersede the graph identities below. Reconcile the exact current inputs and
+their affected checks before replay; no historical GUI pass transfers by version
+name alone.
+
+**Historical graph identity — 9 November 2026:** Slint runtime/build pin:
+1.18.1; Rust: 1.99.1. Recorded lock SHA256:
 `fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba`.
-Current schema3 policy anchor:
+Recorded schema3 policy anchor:
 `29f6a647b6038bdbbdc2bf407875a43af03257382821f13bda174e6147186b88`.
-The 9 November readback matches the actual lock, policy lock binding and checker's
-canonical JSON anchor. This is identity reconciliation, not a fresh GUI/native
+The 9 November readback matched that candidate's lock, policy lock binding and checker's
+canonical JSON anchor. This was identity reconciliation, not a fresh GUI/native
 qualification. The later [AccessKit callback/advisory repair](codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
 records actual-module facade and final hosted portable/security passes at
 `f2f0f52`; native USER32/UIA, resources and GUI critical-file metrics remain open.
@@ -445,11 +457,11 @@ file SHA256. A metadata amendment does not transfer historical execution receipt
 to the changed candidate. Earlier lock `56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286`
 and anchor `a3a008828e6d8c72b7441c29bafbc67f8aa22a4c9efddbb99e32bf705cfda3f6`
 remain historical identities; their receipts are not transferred to the refresh.
-The graph includes main's normal engine→time-domain edge and direct engine→garde
+That graph includes main's normal engine→time-domain edge and direct engine→garde
 derive/defaults-off edge. Registry identities, features, grants, workspace and
 non-engine package scopes retain their reviewed boundaries. The AccessKit
 derivative pins include the range-lock repair below. The earlier GUI41–43
-receipts retain the old graph and cannot qualify this current candidate.
+receipts retain the old graph and cannot qualify later candidates.
 
 ## Not implemented or not qualified
 
@@ -463,14 +475,19 @@ receipts retain the old graph and cannot qualify this current candidate.
    using the W11-W08 catalogue and existing incident design. Preserve the sample-only
    boundary, rich-toast release deferral and D2/D3/native prerequisites; completing
    the test notification does not complete that production continuation.
-2. **Native Windows:** admitted SDK/CRT inventory, target linking and actual
-   ordinary-user execution remain open. Qualify keyboard/IME cancellation,
+2. **Native Windows:** the retained 23 November
+   [configured release-link checkpoint](#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026)
+   and [guarded startup/Close observation](#observe-guarded-slint-startup-and-caption-close--23-november-2026)
+   record their exact admitted build inputs and elevated unpackaged Windows
+   fixture. They do not qualify ordinary-user or installed activation.
+   Those cases remain open, together with keyboard/IME cancellation,
    clipboard, COM/proxies, menu timing, tray/toast callbacks, UIA/Narrator, DPI,
    focus, shutdown and retained heap/handle/GDI/USER/task resources. Windows-target
-   checking on Linux is not native qualification.
+   checking on Linux is not native qualification; the scoped native receipts do
+   not close this wider matrix.
 3. **Process/package hardening:** the desktop image-load guard has
    [cross-build and selected native policy evidence](#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026).
-   Full startup/readback, required-protection refusal, actual loader/activation
+   Full process-profile startup/readback, required-protection refusal, actual loader/activation
    paths and complete hardened direct MSIX qualification remain with their existing
    process/UI/package/release owners and applicable P0–P7 gates. OD-05's
    6 November clarification makes every applicable protection mandatory at the
@@ -646,7 +663,8 @@ At the next applicable source/native checkpoints, carry the
 into their existing owners: optional cache-aware Slint warning denial, explicit
 caught-payload fault policy, and narrow unwind assertions during a natural edit.
 Their controls remain proposed; they add no current defect, release gate or
-execution exception and do not displace S2.2.
+execution exception and do not displace the
+[current development continuation](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 ### Desktop delivery hardening — 25 November 2026
 
@@ -666,9 +684,12 @@ UI-M0/D1–D3 triggers and the basic-release rich-toast deferral remain.
 The existing dependency sequence continues below; this amendment starts no held
 native, service, package or production-UI execution.
 
-1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
-   current S2.2 laboratory handoff qualification in development section 7 and reconcile
-   only subsequent deltas. Preserve the canonical decision identities. Keep
+1. Resume from the actual checkout and
+   [development section 7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+   whose current child is independent reference/mapping qualification after the
+   completed laboratory timing pair. PR10 and the numerical checkpoint above
+   retain their dated evidence; they are not the current checkout or next task.
+   Preserve the canonical decision identities. Keep
    lock, manifest and graph policy changes with one owner; re-admit affected
    graphs before target execution.
 2. Preserve the local text/native-source-control pass on `5dcc465`, then select
@@ -678,12 +699,14 @@ native, service, package or production-UI execution.
    the two named wording-polish follow-ups above for a separate text revision.
    At that localization checkpoint, consider the [R3-P-01/P-02 source experiments](s0.5-ui-comparison.md#localization-cost-experiments--9-november-2026)
    with their approval, invariant-failure and notification controls; they are
-   unexecuted proposals and do not displace the current S2.2 handoff qualification.
+   unexecuted proposals and do not displace that current development continuation.
 3. Complete the independent exact-text review; revalidate any wording changes and
    their native/action/accessibility consumers. The supplied review bundle is
    review material, not approval.
-4. Native qualification can start with the exact fixture GUI once existing
-   Windows holds/prerequisites are resolved. Exercise its lifecycle/resource
+4. Resume the remaining native qualification with an exact admitted fixture GUI
+   once its existing Windows holds/prerequisites are resolved. Reuse the recorded
+   scoped observations only while their relevant inputs match. Exercise the
+   remaining lifecycle/resource
    matrix; restore D1/D3 only at their triggers. Neither Linux captures nor
    Windows metadata checks replace those observations.
 5. In parallel where prerequisites permit, prepare authenticated status/incident

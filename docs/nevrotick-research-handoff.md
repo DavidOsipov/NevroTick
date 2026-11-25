@@ -15,6 +15,13 @@ own that work; signing/trust resolution is deferred while preparation continues.
 Technical qualification and the eventual direct signer remain open; existing execution
 holds and Core priority remain.
 
+**25 November 2026 updater amendment:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the TUF-authenticated complete-MSIX updater with one target-bound
+**Update now** decision. [Architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+and [W11 §4.40](../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
+own its contract and phased work. Exact client, signing, trust/time/storage and
+surviving Windows deployment/recovery qualification remain open.
+
 **4 November 2026 leap-policy amendment:** [architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales)
 and [NV-LP-001](plans/leap-second-policy.md) select reviewed compiled leap history,
 separate future coverage and the continuous-UTC rule effective **20 May 2027**,
@@ -94,7 +101,7 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-03 — plain-NTP correction limits | OPEN-5/9; CHECK-3/6/7/10/12 | Proposed numerical envelope with attack and usability evidence | Plain-profile automatic actuation policy |
 | R-04 — source preset and provider use | DEC-5/7/8; OPEN-6/8 | Four-operator candidate assessment; Pool role and vendor requirements | Shipped default preset and associated claims |
 | R-05 — Windows certificate/time behavior | OPEN-1/8; CHECK-9/26/27 | Exact provider/trust/revocation/egress qualification design and evidence | NTS implementation paths relying on those guarantees |
-| R-06 — release profiles and signing eligibility | OPEN-11/12/14; CHECK-16/18/20/23/26 | Production signing for every supported shipped format, actual Store package/catalog and inner-signature preservation, capability and installed-trust evidence; MSI delivery remains a later owner choice | Dependent release claims, not independent source/design preparation; the unsigned-MSI/OpenPGP exception is superseded |
+| R-06 — release profiles and signing eligibility | OPEN-11/12/14; CHECK-16/18/20/23/26 | Production signing for every supported shipped format, actual directly distributed MSIX/package catalogue and inner-signature preservation, capability and installed-trust evidence; MSI delivery remains a later owner choice | Dependent release claims, not independent source/design preparation; the unsigned-MSI/OpenPGP exception is superseded |
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
@@ -396,7 +403,9 @@ Primary references and their limits are maintained in the [signing guide](window
 
 Do not add a second application package, bespoke privileged updater, provider
 application, paid subscription or OS-protection bypass as a side effect of this
-research. Store-managed updates need the selected complete lifecycle qualification.
+research. The accepted TUF-authenticated direct-MSIX updater follows
+[architecture §19.8](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+and requires the selected complete lifecycle and surviving-recovery qualification.
 
 ## 9. R-07 and R-08 — exception decisions and remaining platform work
 

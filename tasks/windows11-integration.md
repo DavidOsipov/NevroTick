@@ -1,10 +1,12 @@
 # Windows 11 integration: agent task and evidence record
 
-**Current delivery amendment — 21 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+**Current delivery amendments — 21 and 25 November 2026:** [OD-05 §7.9](../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects one complete MSIX for direct distribution and rejects Microsoft Store
 publication. Signing and certificate trust are deferred; permitted source,
 resource and package preparation continue. [§4.39](#439-direct-msix-distribution-decision--21-november-2026)
-is the current W11-W10/MD-P4–MD-P5/WGT-0 handoff. Older Store-attempt,
+owns the direct W11-W10/MD-P4–MD-P5/WGT-0 handoff; [§4.40](#440-tuf-authenticated-updater-integration--25-november-2026)
+adds the adopted TUF complete-MSIX updater and its still-open implementation
+and qualification. Older Store-attempt,
 refusal-first, Partner Center and `msstore`-first directions below are superseded;
 their dated research and execution receipts retain only their historical scope.
 
@@ -22,8 +24,8 @@ all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 
-**Date:** 5 November 2026, Asia/Tbilisi; earlier dated receipts retain their recorded time zones.<br>
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Section 4.24 refines pre-start provisioning; section 4.25 refines independent removal with recovery still pending. Section 4.26 records partial W11-W01 preparation through the S2.1 engine handoff. Package implementation and native product qualification remain unexecuted.<br>
+**Initial record date:** 5 November 2026, Asia/Tbilisi; **current-routing reconciliation:** 26 November 2026. Earlier dated receipts retain their recorded time zones.<br>
+**Status:** Research, portable and native-adapter source, and scoped Windows laboratory results are recorded with their exact candidates. Direct MSIX supersedes the earlier MSI-first and Store-attempt directions. The [rebuilt Engine timing pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) supplies application captures with no production sample eligibility. The [paired installed ScmFixture observation](#complete-the-paired-installed-scmfixture-observation) completes deployment-only observation of two Disabled/Stopped lab roles and restoration; access actors, continuous quiescence, product provisioning and final release qualification remain open. The [guarded ArtworkLab pack](#pack-the-guarded-artworklab-from-the-committed-stager) has its own unsigned assembly/readback scope. Independent timing reference/mapping, production services/IPC/clock control, complete signed direct delivery, updater implementation and native product qualification remain open. [Development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026) owns current activation; all earlier receipts retain their original scope.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -56,18 +58,19 @@ with those existing owners; no new source card or native result is claimed.
 
 ## 1. Authority, scope and reconciliation
 
-**UI amendment — 5 November 2026:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default UI toolkit. The current source inventory and older
-Win32 observations below retain their exact candidates. UI-M0's existing
-[migration handoff](ui-m0.md#slint-migration-handoff--5-november-2026) owns pending
-graph/licence, generated-code and native evidence; W11-W09 and package owners
-must qualify the actual Slint graph when their slices are reached. The selection
-lifts no Windows/fuzz/storage hold or D1–D3 deferral.
+**UI direction:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default UI toolkit. The [GUI handoff](slint-gui-handoff.md)
+and [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own the implemented fixture source and its exact graph/licence, generated-code
+and native evidence. Earlier Win32 and migration-preparation records retain
+their historical scope. W11-W09 and package owners must qualify the actual
+Slint graph when their slices are reached. The selection lifts no
+Windows/fuzz/storage hold or D1–D3 deferral.
 
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
 the [Windows 11 research](../docs/plans/windows11-integration.md), its
 [Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md), the
-[MSIX/Store assessment](../docs/plans/windows-msix-store.md) for packaging work,
+[direct-MSIX plan](../docs/plans/windows-msix-store.md) for packaging work,
 the [release policy](../docs/release-policy.md) for support/promotion/incident work, and
 [development §8.5](../docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
 The research retains primary-source contracts, proposed adaptations and support
@@ -82,11 +85,11 @@ or [ST-T owners](../docs/plans/windows-protected-storage.md#7-focused-threat-sce
 | Clock domains, sleep invalidation, restricted identities, maintenance inhibition, DNS ownership and fixed resource limits | Retained; native mechanisms below make existing contracts and observations more concrete. |
 | Packet timestamps, native DNS adapters, WSH, resource hints and CNG batches | Candidates to assess within their existing slice. Optional enhancement failure must have a truthful declared outcome; selecting none of these does not waive an existing required property. |
 | Modern Standby, service-setting activation, Restart Manager and powerful process handles | Added composition cases for existing timing, service, mitigation and package owners; source documentation establishes no effective state. |
-| Current development and user interface | Development §7's current portable Core checkpoint and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
+| Current development and user interface | Development §7's reference/mapping continuation and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
 | DNS and storage policy | DoQ-only upstream with leaf/intermediate pins remains; no implicit DoH/DoT/DNSCrypt/plaintext fallback or ZTDNS enablement. Optional VBS/TPM/no-cache state remains separate from mandatory clock authority. |
 | Release operations | The release policy prepares support records, containment and corrective recovery; its first-stable support baseline remains proposed. Existing W11-W10/W11-W05 and CHECK/OPEN owners retain actual decisions, rehearsals and native evidence. |
 
-This request authorizes documentation integration. It does not lift the current
+The initial request authorized documentation integration. It did not lift the
 Windows execution stop, separate fuzz no-retry hold or storage-experiment pause,
 or authorize dependency acquisition, tool installation,
 system configuration, keys, clock effects or service/package experiments. Future
@@ -98,7 +101,9 @@ dependent work. Do not scaffold product code to make a planning check executable
 Current Windows scope follows the later [section 4.19 disposition](#419-owner-ready-sandbox-scope--3-november-2026):
 owned-Sandbox management and separately admitted guest work are permitted within
 that boundary. The blocked stager/artifact, separate fuzz hold, storage pause
-and restrictions on general host Windows execution remain.
+and restrictions on general host Windows execution remain. Later execution
+receipts retain their separately admitted laboratory scopes; they grant no
+blanket native permission.
 
 Use [plan-code-change](../.agents/skills/planning/plan-code-change/SKILL.md) and
 the [testing contract](../.agents/skills/testing/CONTRACT.md). Select only relevant
@@ -114,13 +119,16 @@ and admitted profiles remain the execution authority.
 
 Use the [current Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
 for S2.1/W11-W01. The application capture now has scoped implementation and
-relative Windows timing evidence on the private artifacts. The canonical
-publication pair has a separate outstanding candidate/build check. The
+relative Windows timing evidence on the exact laboratory artifacts. The
+[rebuilt authenticated pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+completed its build, same-session loader/parser and two-exchange guest checks,
+including trust and resource retirement. The
 [finite supplier/receiver contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026)
 was settled on 8 November. Its production supplier starts with the
 [read-only reference admission](#w11-w01-application-timing-reference-trial--20-november-2026),
-actual mapping/invalidation issuer and justified physical bounds. This
-preparation can proceed independently of the publication build. Apply the
+actual mapping/invalidation issuer and justified physical bounds. Retained
+application brackets do not supply that independent calibration or positive
+sample authority. Apply the
 [18 November qualification matrix](#timestamp-qualification-matrix--18-november-2026)
 to the reached supplier or optional adapter. Development §7 owns execution
 order and the existing native admission still governs.
@@ -6538,8 +6546,6 @@ Documentation checks passed: all 18 added local links/anchors across the nine
 Markdown files resolve; `check_skills.py` passes all 66 skills; scoped
 `git diff --check` reports no whitespace errors. No application tests were rerun
 for this documentation-only change.
-
-<a id="433-winget-distribution-before-v1--7-november-2026"></a>
 
 **Cloud source-integration handoff — 8 November 2026.** Start from the exact
 published baseline named in the coordinator's publication message. This is the
@@ -14254,6 +14260,8 @@ The same evidence directory retains the recipe and all five raw case logs.
 Observe remains a diagnostic component. Windows execution, installed service,
 signing and MSIX gates retain their existing acceptance and inputs.
 
+<a id="433-winget-distribution-before-v1--7-november-2026"></a>
+
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
 **Status:** researched/planned, not implemented or natively qualified.
@@ -15141,14 +15149,20 @@ execution holds and current Core/Engine work remain with their existing owners.
 #### Service provisioning and direct MSIX order — 23 November 2026
 
 W11-W05/W11-W10 and S0.3/S0.6/S3.1–S3.4/S6.1–S6.4. Use the
-[current unsigned disabled-service fixture](#restrict-the-default-dll-search-before-both-service-entries-connect)
-for the latest authored mechanics. The linked observer and read-only
-signature controls retain their own inputs. Installed rights and supported
-provisioning remain open.
+[paired installed ScmFixture receipt](#complete-the-paired-installed-scmfixture-observation)
+for the completed test-signed deployment, image identity and query-only SCM
+observations. The separate [guarded Slint/service archive](#pack-and-verify-the-guarded-slint-and-service-combination)
+records unsigned combined-package mechanics. **Current status, 26 November 2026:**
+the common native window and paired deployment observation exist; independent
+access actors, exact protected owner/DACL comparison, continuous quiescence and
+supported production provisioning remain open. Reuse unchanged evidence only
+after checking its actual candidate and prerequisites; the separate receipts
+are not one installed-product qualification.
 
-1. **Handle-only before setters.** Prepare the concrete common native window
+1. **Handle-only before setters.** Continue with the existing common native window
    owner under the existing [pre-start experiment](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026).
-   Before the admitted lab run, bind the exact test-signed fixture, independent
+   Complete the independent access captures and descriptor/SID interpretation.
+   For each admitted lab run, bind the exact test-signed fixture, independent
    deployment/provisioner and ordinary-user contexts, and retained observation
    receipts. Observe installation with both original roles Disabled/Stopped
    and no UI launch, then exact image/configuration/descriptor and narrow
@@ -23126,3 +23140,38 @@ update, Windows experiment, dependency admission or production qualification is
 produced by this amendment. The exact client/time/state and surviving Windows
 recovery work, required signing/native/release gates and existing execution
 holds remain open at the named owners.
+
+### 4.41 Windows security review intake — 26 November 2026
+
+The [24 November source assessment](../docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
+and its [completed independent review](../docs/plans/windows11-integration-follow-up.md#independent-proposal-review--24-november-2026)
+are imported into the existing execution owners below. Their proposed
+consumer-specific refinements enter at the already assigned phase/qualification
+trigger. This intake selects no new Windows mechanism, dependency, policy or
+release gate and does not reorder the current development queue.
+
+| Existing owner / trigger | Current disposition and next dependent action |
+| --- | --- |
+| W11-W04/W11-W05, with W11-W03 and delegated-network owners; actual installed service networking | Required source/plan preparation before that qualification. Freeze final identities and the selected restriction mechanism; prepare permitted and denied IPv4/IPv6 paths, causal WSH attribution, activation/restart, managed conflicts and delegated certificate/DNS traffic. Carry the dynamic-addressing limitations if that candidate is considered; no FQDN-rule replacement of the DoQ allowlist is selected. |
+| W11-W08 / affected native QA, with ST-W07; an actual observation/output consumer | Required preparation at the reached boundary. Identify the evidence gap before selecting an additional observer; retain candidate/configuration/schema/identity, finite collection, canary and independent allow/deny controls, loss/access and cleanup. Existing admitted observers remain preferred; Sysmon is conditional QA-only. External collector retention does not become a product privacy guarantee or effect authority. |
+| ST-W01/ST-W04/ST-W07; selected provider/key-policy or diagnostic consumer | Routed to the [existing storage intake](windows-protected-storage.md#windows-security-review-intake--26-november-2026). Extend the current construction/outcome and privacy cards, retaining actual-work custody, distinct unknown/failure states, optional fallback boundaries and independent mandatory continuity. Native storage experiments remain paused. |
+| W11-W05/W11-W10 with P5/P6; actual package, service and UI compatibility | Required preparation at the existing supported-profile gates. Freeze the actual role/policy/path and pair useful operation with truthful refusal or indeterminate outcomes under applicable managed protections, including reassertion during update/repair/removal. Preserve maximum compatible hardening, signing/distribution requirements and owned recovery; no security exclusion or machine-policy weakening is selected. |
+| OPEN-8/R-05, crypto/Engine/platform | Continue required V1 trust, revocation, retrieval and native-lifetime work. Enterprise certificate-pinning compatibility retains the reported post-V1 trigger and the provenance limit below; it supplies no current wrapper-enforcement result. |
+
+Before dependent execution, each owner reconciles its existing cases, identifies
+the actual consumer and admitted profile, obtains the independent plan review
+required by the source handoff, and records the bounded checks in its existing
+receipt. Preserve each assignment's full CHECK/ST-T/DNS-C mapping. Source-only
+readiness is not native admission; all applicable scoped Windows/fuzz/storage/UI
+holds remain. The source review and this intake execute none of these cases.
+
+[WINSEC-0](../ROADMAP.md#winsec-0--post-v1-windows-security-compatibility-and-evidence)
+retains the preparation record's reported owner deferral of enterprise pinning
+until actual V1 release. **ARC-1 remains a nonblocking provenance limitation:** the original
+instruction was unavailable to the independent review, so this intake does not
+independently authenticate it. Preserve that reported timing and required V1
+OPEN-8/R-05 work. Baseline Protection, AppId tagging, development-only MXC/Hyper-V
+firewall and optional COSE evidence remain separate conditional proposals. They
+add no rank within the accepted post-V1 order, no TRUST-C01 prerequisite and no
+current implementation assignment without their existing concrete-consumer and
+decision gates. Optional enhanced provenance remains optional.

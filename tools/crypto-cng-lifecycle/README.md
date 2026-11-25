@@ -1,5 +1,16 @@
 # CNG lifecycle feasibility fixture
 
+**Current continuation — 26 November 2026:** use the
+[Engine task](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
+for the relocated KE/association source and its later qualification. The
+[rebuilt authenticated timing-pair receipt](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+records completed controlled Windows laboratory exchanges and retirement; it
+still reports `mapping-unavailable eligible=0 fresh_sync=0`. The dated EP1/EP3
+preparation and pending checks below describe their original candidates, not
+the current next task. Production trust/date/scale/quality, Core admission and
+broader provider/native gates remain separate; this routing lifts no scoped
+execution hold.
+
 This GPL-2.0-only standalone test tool is outside the product Cargo workspace.
 It supplies the first CRYPTO-01/02 public-API observations in
 [`tasks/s0.1-crypto-feasibility.md`](../../tasks/s0.1-crypto-feasibility.md).

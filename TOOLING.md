@@ -57,7 +57,8 @@ The additional analysis tools below were installed separately on 29 October;
 their compiler experiments do not change the repository's shipping Rust pin.
 
 Those dated bootstrap and first-crate records are historical. The current
-[workspace manifest](Cargo.toml) and [lockfile](Cargo.lock) cover seven members;
+[workspace manifest](Cargo.toml) and [lockfile](Cargo.lock) cover eight members,
+including the narrow `windows-platform-native` adapter owner;
 the [implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
 routes each member to its task evidence. Use the
 [development plan's current task](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
@@ -295,8 +296,8 @@ portable observations; Windows execution remains held.
 | [deny.toml](deny.toml) | Retained strict bootstrap policy, including held crypto providers; its GPL-2.0-only/no-build-script baseline remains unchanged. The UI-M0 verifier adds only the reviewed graph's grants to an owned snapshot; direct `cargo deny` against this baseline does not admit the product graph. |
 | [.config/nextest.toml](.config/nextest.toml) | Twelve test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
 | [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
-| [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls are qualified; a mutation campaign is still pending. |
-| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Records UI-M0 preview admission and the inert header/framing owners, six critical files and Linux/Windows rows for both packages. Candidate results belong to their task records; UI-M0 follows its restricted acceptance scope. |
+| [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls and application campaigns have separate evidence; completed per-file results and remaining gates belong to their exact task candidates. |
+| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. The current manifest owns the security-module, critical-file and target/feature inventory across the workspace and named standalone fixture owners. An inventory entry is not a qualification result; exact candidate results belong to their task records, and UI-M0 retains its restricted acceptance scope. |
 
 The Rust Cargo fragment is tested in owned temporary workspaces and is now
 adopted by the UI-M0 workspace. Keep `[lints] workspace = true` in **every**

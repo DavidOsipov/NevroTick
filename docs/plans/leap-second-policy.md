@@ -1,7 +1,7 @@
 # NevroTick — leap knowledge, silent sources and Windows ownership
 
 **Document:** NV-LP-001, revision 1.0, 4 November 2026<br>
-**Status:** selected engineering design; implementation and native qualification pending<br>
+**Status:** selected engineering design; pure knowledge/interpretation implemented; integration and native qualification pending<br>
 **Authority:** [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales), OPEN-7; [OD-09](../nevrotick-owner-decisions.md#13-od-09--leap-policy-and-silent-servers) records the delegated research/documentation request<br>
 **Execution:** [S1.4 leap-policy task](../../tasks/s1.4-leap-policy.md), existing S1.4/P2/S0.4/P4 gates
 
@@ -34,7 +34,14 @@ runtime network updater, privileged parser, service, dependency or trust root.
 
 ### Current source and deliberate changes
 
-The inspected application baseline is
+The pure [time-domain leap owner](../../crates/time-domain/src/leap.rs) and its
+offline generator are implemented. The [S1.4 continuation](../../tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026)
+records the selected pure LP-C01/02/03 closeout and its exact evidence scope;
+later source changes have their own task records. LP-C04's full silent-source
+acquisition and LP-C05–18's integration/native scopes remain open. Follow that
+continuation instead of restarting the original contract freeze.
+
+**Historical source baseline, 4 November 2026:** the inspected application was
 [`7550f83292f959a6d0acbb2d396e964a6bcf4b01`](https://github.com/DavidOsipov/NevroTick/tree/7550f83292f959a6d0acbb2d396e964a6bcf4b01).
 `ntp-wire` retains inert LI bits; `ntp-exchange` rejects LI=3 for ordinary time
 and retains LI=0/1/2 in fixture observations. Its stratum-zero path remains
@@ -48,8 +55,8 @@ above. It retains positive/negative modeling and the one-owner requirement,
 adds independently sourced leap knowledge and ambiguity handling, and explicitly
 does not adopt Chrony/NTPsec's dynamic LI-vote event authority. OPEN-7 remains
 open for native mapping, event-window limits and the finite-slew failure envelope.
-The current Core checkpoint and applicable selection prerequisites remain ahead
-of dependent leap-policy implementation.
+At that checkpoint, the Core continuation and applicable selection prerequisites
+preceded dependent leap-policy implementation.
 
 ## 2. Verified evidence and what it establishes
 

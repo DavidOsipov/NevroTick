@@ -7,6 +7,19 @@ challenge their assumptions, and hand concrete cases to existing implementation
 owners. This is a bounded research review, not a complete code audit or a native
 qualification result.
 
+**Current routing — 26 November 2026:** the inspected inventories, dependency
+versions, CVE dispositions and execution claims below retain their 8–9 November
+candidate scopes. Later [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
+supersedes the Store-first direction with complete direct MSIX, and
+[§7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+adopts the TUF updater design. Production signing, the real updater and final
+installed-product qualification remain open. The [current Engine task](../../tasks/engine-transport-pilot.md),
+[Windows task](../../tasks/windows11-integration.md) and
+[24 November Windows security review](../plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
+own later source, scoped laboratory evidence and consumer-specific preparation.
+Do not use this dated review's absent-source statements as the current inventory,
+or extend its vulnerability conclusions to later candidates without reassessment.
+
 ## 1. Result and interpretation
 
 This pass did **not substantiate a new exploitable NevroTick vulnerability**.
