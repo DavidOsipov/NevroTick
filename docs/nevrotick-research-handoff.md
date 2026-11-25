@@ -207,6 +207,33 @@ R-02/R-04 must freeze a decision table naming the majority denominator, configur
 
 [Chrony's FAQ §3.7](https://chrony-project.org/faq.html#_an_unreachable_source_is_selected) explains that an unreachable predictor may remain selected for hours. Its usefulness for prediction is not fresh independent corroboration or exceptional-correction authority. KE completion, cookie replacement, NAK and reachability changes must not refresh the last accepted time-observation timestamp. Preserve useful history without claiming renewed agreement.
 
+### R-02 decision and consumer closure — 26 November 2026
+
+**Disposition:** the required research and controls above remain open production
+contracts under OPEN-5/6/8. S0.7's product/security/Core coordinator prepares the
+next needed decision through [NV-DEC-001](nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete)
+and records implementation and qualification separately at the existing consumer.
+The [architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+routes these obligations; it does not accept a quorum, date interval or recovery
+privilege.
+
+| Existing owner and dependent behavior | Next bounded deliverable | Useful/refused controls and completion evidence |
+| --- | --- | --- |
+| R-02/R-04, OPEN-5/6; S0.7 → Core/Engine production voting and freshness | Prepare one versioned profile table for configured identities, eligible models and fresh independent groups; routine/exceptional denominators and minima; timeout/rejection effects; observation age and uncertainty growth; and declared faulty-group/common-path assumptions. Bind its fields to source configuration, final sample admission, selection and published agreement/quality. | Sufficient current independent agreement remains useful beside unavailable groups, aliases, a 2–2 split and one fresh source plus old predictors. Complete only after the dependent policy is accepted and the actual consumers preserve its denominator, minimum, original observation age and uncertainty meaning. CHECK-7/8/14; the [current Engine/Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026) retains its separate first-sample exit. |
+| R-02/R-05, OPEN-5/6/8; S0.7 → S2.3 authenticated date/era recovery | Bind supported true-date/era hypotheses, anchor provenance, helper mode, whole-interval scale/leap interpretation and candidate-time verification to the recovery state transitions. Separate these fields from initial local error and the broker's accepted target/direction/approval envelope. Identify the next unresolved authority choice and its evidence-backed options. | A supported large-error case completes isolated NTS recovery beside ambiguous era, unsupported true date, helper loss/conflict, invalid credentials and insufficient fresh agreement. Observe useful acquisition without a preliminary clock write; admit a later proposal only through the independent broker gate. CHECK-7/8/9/10/12 and the controlled cases below. |
+| R-02, OPEN-6; security and mandatory-state/S3.3 → persisted-floor recovery | Specify the floor's uncertainty/model/source provenance and a narrowly authorized supersession transition: current writer/revision, independent replacement evidence, preserved old record, commit/recovery outcomes and dependent model/association invalidation. Apply [mandatory-state lifetime and bounded recovery](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery) to its schema, finite retained evidence and interrupted transitions. | Correct independent sources beside an intact future floor reach only the approved supersession or explicit refusal/remedy. Forged, stale, unauthorized, missing and interrupted state cannot gain authority. Exact-candidate checks must show preserved provenance, consumed correction budgets, step authority and installation ownership across restart; supersession itself performs no clock write. CHECK-9/15; optional cache deletion or future TA-C10 cannot replace this ordinary P2 exit. |
+
+Each row needs a recorded decision status, enforcing producer/consumer, candidate
+and remaining evidence in its existing task. A research result or accepted field
+definition alone does not complete the consumer. Correction defaults/ceilings,
+cumulative accounting, holdover and boot epochs continue through
+[W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+and S4.1–S4.5; reuse that field matrix and ordered handoff. The
+[current development order](plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+still starts with the independent reference and read-side mapping issuer. Controlled-profile
+measurement and unrelated Core/service/package preparation need not wait for a
+shipped preset or exceptional-recovery choice they do not consume.
+
 ### Required controlled cases
 
 | Case family | Expected property |
@@ -280,6 +307,27 @@ The NTP Pool preference is recorded, but Pool service is plain NTP and a shipped
 
 Produce one admission record per selected provider: official identity and ports, operator/reference dependencies, geographic suitability, permission/terms and date, leap/smear policy and its operator/configuration provenance, separately recorded announcement behavior, DNS/delegated endpoint rules, normal/burst/KoD limits, TLS/AEAD/Windows-verifier behavior, observation environment and open conditions. V1 requires admitted unsmeared-UTC provenance; unknown or smeared scale is ineligible, but an unsmeared provider's absent/unknown announcement behavior is not a scale failure. NTS, LI=0 and agreement alone do not prove scale. Apply bounded backoff and provider restrictions. Do not freeze IP addresses or treat two rotating Pool results as assured independent operators.
 
+### R-04 preset admission and consumer closure — 26 November 2026
+
+**Disposition:** OD-03's exact shipped role split and OPEN-CAT-02's preset binding
+and replacement scope remain open. The source/default owner next prepares one
+decision package using the provider records above and the
+[R-02 population/freshness table](#r-02-decision-and-consumer-closure--26-november-2026).
+Reuse the catalogue task's [OMI-R01 and OMI-R05 controls](../tasks/server-catalogue-and-statistics.md#72-retained-scenarios-under-existing-owners)
+before the dependent preset/schema/source-policy freeze or shipped-profile claim.
+
+| Existing owner and deliverable | Independent useful and refused behavior | Exit and consumer |
+| --- | --- | --- |
+| OD-03/R-04: propose the normal, deliberate plain and bootstrap roles, with provider permission/terms and any required Pool vendor allocation; retain explicit unresolved options for David. | A qualified profile uses its permitted providers with the correct authentication and scale labels. An unallocated vendor name, unqualified shortlist or helper cannot silently become the normal authenticated default. | Record the owner decision and qualified provider matrix before publishing a settled default. Profile support and controlled fixtures can proceed under their own existing authority. DEC-5/7/8 and OPEN-6/8 remain controlling. |
+| OPEN-CAT-02/R-04: identify whether reviewed preset membership lives in catalogue C or separately authorized policy, its stable-identity/revision binding, and whether automatic replacement exists. | Reorder the same catalogue and add valid unselected entries: approved membership and ordinary traffic remain unchanged. On selected-operator loss, perform only explicitly authorized bounded replacement or report insufficient availability; preserve continuing provider/retry restrictions. | The actual catalogue/policy/acquisition consumers enforce the accepted binding and replacement scope. OMI-R01 and DATA-03/04/06/17/20 own the checks; catalogue size supplies no activation or traversal permission. |
+| R-04 with OPEN-CAT-02 and applicable TA-W02/06: produce the usable-group matrix after operator/dependence, profile, roots, scale, use permission, transport/family and evidence filters. | Sufficient independently evidenced groups remain useful beside one fewer group represented by extra aliases, roots or transports. Cross-protocol overlap and bootstrap ancestry do not add votes. | OMI-R05 evidence joins the accepted R-02 profile at the real eligibility consumer before a usable/shipped-preset claim. Documentary keys, directory entries and dated service descriptions remain discovery evidence, with refresh/withdrawal routed through OPEN-CAT-03. |
+
+Record exact provider evidence dates, accepted scope, enforcing consumer and
+unqualified cells in the existing catalogue/source task. A completed admission
+worksheet does not prove live interoperability or production source eligibility.
+This card selects no default, new provider, replacement policy or public-server
+probe and does not reorder the current reference/mapping work.
+
 ## 7. R-05 — Windows trust with a wrong system date
 
 The future [Roughtime handoff](plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives)
@@ -340,6 +388,31 @@ Track separately the latest accepted time observation, cookie receipt, C2S/S2C k
 CHECK-8/9/15 cases must keep protected UDP responses arriving while full reauthentication fails, policy changes or age becomes unknown. Verify the selected expiry/refusal behavior, genuine accepted-neighbor recovery, preserved observation timestamps and no plain-NTP downgrade. OPEN-8/R-05 owns the policy proposal; dependent cached-association support remains gated until its choice and actual provider behavior qualify.
 
 Test wrong name, expired/future certificates, revoked intermediates, unavailable responders, untrusted roots and extreme date conversions with valid neighboring controls. Reconcile OPEN-8's previously pinned source lead against the actual selected version. If the necessary policy cannot be enforced, report the blocked path and alternatives rather than disabling checks. A residual-risk change requires an OD-04 decision card.
+
+### R-05 ordinary and reused authentication closure — 26 November 2026
+
+**Disposition:** OPEN-8/CRYPTO-04 remains open. Security/protocol/platform owners
+use the [existing crypto lifetime card](../tasks/s0.1-crypto-feasibility.md#deferred-nts-authentication-lifetime--r-05)
+and [ordinary S2.2 composition](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+to freeze the reached provider, age and invalidation contract. Ordinary ephemeral
+validity is required before ordinary runtime use under architecture §7.4;
+later cached/resumed continuity is an additional S2.3 obligation.
+
+| Existing dependent stage | Next bounded deliverable | Useful/refused controls and exit |
+| --- | --- | --- |
+| S2.2 ordinary association, OPEN-8 | Define the distinct observation, cookie, key, association and original full-authentication age origins; finite ephemeral validity; current trust/source/algorithm invalidation; and the responsible detection/reaction and send-admission owners. Bind the policy revision to the actual association and current consumers. | Genuine current authenticated traffic remains usable. Continued protected UDP beside failed full reauthentication, known compromise, changed policy or unknown age follows the accepted expiry/refusal/recovery rule without renewing observation or full-authentication age. CHECK-8/9/15/26/27 must reach the actual provider, association and sender before this runtime gate closes. |
+| S2.3 cached/resumed association, OPEN-8 with security/mandatory-state owners | Extend that same contract with cumulative resumption/full-authentication limits, refreshes that forbid resumption, compatible restart evidence and conservative unknown-age behavior across suspend, reboot and wrong UTC. Preserve the original authentication basis and qualified state lifetime. | Compatible reuse and genuine full reauthentication succeed beside stale/substituted state, lost age evidence and isolated provisional-session state. New queries receive fresh UIDs; no outstanding exchange or extra correction authority is restored. CHECK-8/9/15 and applicable storage checks close only on the implemented selected path; optional-secret-storage gates remain separate. |
+| R-05/CRYPTO-04 verifier and native retrieval, OPEN-8 | Freeze exact provider/verifier/graph and service context, supported date conversions, trust/distrust/revocation/offline rules, direct/delegated destinations and actual native-job custody/bounds. Carry unsupported or unknown outcomes to the consumer. | Pair admitted chain/candidate-date and permitted cache/network paths with wrong-name, expired/future/revoked/untrusted, extreme-date and unavailable/prohibited retrieval cases. Observe actual validation, traffic and retirement; application timeout alone is insufficient. CHECK-9/26/27 and the existing retrieval cases above remain open until that candidate qualifies. |
+
+Keep three authorities separate in the completion record. R-02/R-05 qualify
+NTS date/era/floor recovery and authentication. The
+[TUF updater contract](windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater)
+owns independent update-freshness admission. The
+[wrong-clock/offline activation matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
+owns actual Windows package/helper/PKI behavior. Qualification or supersession
+in one path does not approve another path's time, trust or effect. Supplementary
+distrust remains post-V1 under OD-20; the current V1 duties and execution holds
+are unchanged.
 
 <a id="8-r-06--signing-eligibility-and-initial-openpgp-releases"></a>
 

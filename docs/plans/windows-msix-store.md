@@ -1187,6 +1187,12 @@ invokes that actor before functional work and whenever servicing requires
 reconciliation. Configuration readback, fresh-process admission and recovery
 remain separate subsequent obligations. OPEN-3/12/14 stay open.
 
+The [current architectural closure inventory](../../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+routes these remaining results to the existing phase owners. Actual object
+rights, supported invocation, creation-time isolation and fresh installed
+admission retain separate completion evidence; the sequence and scoped receipts
+below remain the detailed contract.
+
 #### What the evidence supports
 
 | Evidence and source class | Supported conclusion and limit |
@@ -1267,10 +1273,15 @@ version B does not itself restore the state left by version A.
 completed deployment, installed-image identity and query-only SCM observation
 for its named test-signed laboratory profile. Its two roles remained Disabled
 and Stopped at the observed points; retirement and removal were verified.
-Earlier failed and partial attempts retain their exact receipts. Independent
-provisioning/standard-user access captures, exact protected owner/DACL comparisons,
-continuous quiescence and production provisioning remain open. This is partial
-evidence for the discriminator below, not a completed access or lifecycle gate.
+The later [traced paired install](../../tasks/windows11-integration.md#observe-the-paired-installed-scmfixture-from-registration-through-retirement)
+adds process-span observations, and the [descriptor/SID receipt](../../tasks/windows11-integration.md#read-both-installed-service-descriptors-through-the-paired-window)
+adds matching two-API owner/DACL endpoints and independently resolved SIDs.
+Earlier failed and partial attempts retain their exact receipts. Actual independent
+provisioner/standard-user access, continuous SCM property protection or effective
+inhibition, and supported production invocation remain open. The
+[notification controls](../../tasks/windows11-integration.md#discriminate-scm-description-and-dacl-notifications-on-disabled-controls)
+exclude subscription silence as a DACL-continuity witness. These are scoped
+receipts for the discriminator below, not a completed access or lifecycle gate.
 
 W11-W05/S0.6 owns this bounded question; W11-W10 supplies
 the exact complete inert package and OS/channel row. The existing disposable
@@ -1310,8 +1321,10 @@ tokens still require their own observations.
 The [two-role pre-start selector](../../tasks/windows11-integration.md#observe-the-two-installed-s06-service-roles-at-pre-start--22-november-2026)
 assembles the existing query-only reads for step 2. Its compiled source
 reports numeric fields and redacted shape only. The paired installed execution
-and image-identity readback have the scoped receipt above; independent
-protected owner/DACL comparison and SID interpretation remain open. The
+and image-identity readback retain their scoped receipts; the later descriptor/SID
+companion above supplies exact owner/DACL endpoint comparison and SID resolution
+for its named fixture and deployment context. Actual access under each independent
+actor and continuous SCM property protection remain separate open obligations. The
 [installed-image companion](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 checks each fixed role against the registered exact lab package. The
 path and file controls passed in Windows Sandbox. The completed paired run
@@ -1326,9 +1339,9 @@ retain their exact PE/PDB and packer identities. The
 supplies the matched observer, both inert roles and checked unsigned archive.
 Follow the [service-provisioning order](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026).
 The separate access selectors still require independently bound actor contexts
-and their own accepted captures under the original observation owner. Point
-observations do not establish continuous quiescence, service startup, effective
-role tokens, permitted configuration writes or a production provisioner.
+and their own accepted captures under the original observation owner. Descriptor
+endpoints do not establish continuous SCM property protection, service startup,
+effective role tokens, permitted configuration writes or a production provisioner.
 
 1. Use initially disabled inert functional-service fixtures. Observe whether
    deployment registers them without UI launch; keep absent registration separate
@@ -1389,6 +1402,12 @@ begins with every product service stopped and a machine obligation outstanding.
 The evidence identifies a plausible retention building block and a stronger
 discriminator, not an adopted topology or native result. Section 7.5's actual
 object-rights and no-UI provisioning/reentry prerequisites remain separate.
+
+The [current closure inventory](../../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+joins this discriminator with the exact installation/registration/update-owner
+profile and [mandatory-state lifetime contract](../windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery).
+The four lifetimes, compatible version handoff and final retirement below remain
+required together; bounded retention cannot discard an outstanding obligation.
 
 #### Four lifetimes and the actual removal scope
 

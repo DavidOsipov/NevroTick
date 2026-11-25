@@ -2421,6 +2421,38 @@ The next step is the existing S2.1/S2.2 contract freeze and scoped implementatio
 subject to current development priorities and execution holds, not a public-server
 test or immediate activation of this plan.
 
+#### Production retry continuity closure — 26 November 2026
+
+**Current disposition:** [NV-DEC-001 §6.5](../docs/nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026)
+accepts the bounded same-process source/exact-endpoint policy. The
+[selected five-owner qualification](#selected-reply-accounting--current-five-owner-results--17-november-2026)
+and later source receipts retain their exact candidates. They do not close
+production retry policy, restart/reboot continuity, shipped intervals or native
+resource/timer qualification. The dated 11 November controls above remain the
+production cases; the accepted policy governs their KoD expectations.
+
+The Engine/source-policy owner next freezes the reached continuity contract with
+the existing mandatory-state/S3.3 owner, following
+[architecture §12.1.4](../docs/windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery).
+Keep authoritative restrictions and charged work separate from optional path
+hints or Q/H diagnostic history. No optional-cache eviction, deletion or reset
+can grant new send eligibility or replenish a burst. This handoff chooses no
+persistence mechanism, boot-identity API or interval.
+
+| Existing owner and dependent behavior | Next bounded deliverable | Independent useful/refused controls and exit |
+| --- | --- | --- |
+| S2.1/S2.2 Engine/protocol; continuous acquisition | Complete the existing failure-class table with permitted next operation, source/provider/operation identity, clock domain, earliest eligibility, finite shared work window, growth/cap/jitter and reset/re-enable rules. Distinguish local refusal, transient remote loss and persistent KE errors; preserve the same-transaction KE plus authenticated-UDP reset rule for KE backoff. A valid reply never automatically resets RATE state. | Observe actual DNS/KE starts, sender invocations and refusals through the combined refresh/online/DNS/family-change storm above. An eligible recovered peer makes finite progress; repeated triggers cannot create an early retry, new budget or nested retry amplification. CHECK-6/9/21/27; pure scheduling controls and native timing/resource evidence remain separate. |
+| Engine/source policy with mandatory-state/S3.3; restart/reboot continuity | Name the writer and schema/compatibility/commit owner for stable logical-source and normalized exact-endpoint restrictions, current policy/revisions and eligibility evidence. Define identity matching across configuration changes, supported same-boot/cross-boot recovery, unknown-epoch handling, interrupted commits and authorized targeted re-enable. Freeze finite retention/compaction/recovery bounds without discarding a live restriction to admit a send. | Same-boot restart, reboot, missing/corrupt/stale state, forward/backward UTC correction and optional-hint loss preserve required restrictions and consumed allowances. Never deserialize a process-local instant or restore pending correlation as authority. A transient failure has a finite policy-eligible reprobe; a cessation rule has an explicit authorized correction/re-enable path. Qualify both beside an independently permitted peer under CHECK-6/9/15/21/27. Cross-boot enforcement stays open until the selected representation and epoch assumptions are implemented and exercised. |
+| Engine actual sender and Windows acquisition/lifecycle owners; final enforcement | Carry restored/admitted source and endpoint revisions to the existing recheck after readiness and immediately before send. Retain actual or possibly sent work charges and native permits through real completion; record the exact policy/candidate and reached failure/cleanup observations. | No DNS, address, port, session, association or refresh change bypasses an applicable source restriction. Endpoint sharing remains exact and non-transitive. Capped RATE probes retain their full wait; DENY/RSTR requires the accepted targeted re-enable, preserving unselected restrictions and admitted earliest-send floors. Genuine authorized recovery works without a fresh burst, restored old request or plain fallback. Bind the reached CHECK-6/8/9/17/21/27 evidence to independently observed sends/refusals and final retirement. |
+
+Record the accepted policy separately from implemented continuity and qualified
+native behavior. New failure paths cannot refresh last-success time or erase an
+older valid observation's original age. The
+[architectural closure inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+and [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+retain the current reference/mapping dependency and existing holds; this card
+activates no retry campaign or durable-store experiment.
+
 ### Documentation integration and review receipt
 
 **Candidate:** base `8a66af924c509e898a9bab9bb3282f11b24fba93`, with additive
@@ -31416,6 +31448,15 @@ Later Core proposal, broker effect and acknowledged settlement stay P3/P4.
 Reference admission, positive history integration and their exact-candidate
 results remain open. The plan update schedules no builds, native execution
 or formal work.
+
+**Coverage routing — 26 November 2026:** the
+[architectural closure inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+retains this settled supplier/receiver contract and the independent reference
+trial as the next dependency. The [R-02 decision/consumer card](../docs/nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026)
+and [R-05 lifetime card](../docs/nevrotick-research-handoff.md#r-05-ordinary-and-reused-authentication-closure--26-november-2026)
+route the production policy inputs at their dependent stages. They neither
+replace calibrated mapping evidence nor reopen the supplier abstraction; the
+actual current, consume-once Core join above remains the implementation exit.
 
 ###### Calculate each original joined ordinary receipt
 

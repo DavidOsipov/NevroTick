@@ -2564,6 +2564,46 @@ DNS privacy barriers, mandatory conflict state or broker authority. Runtime
 implementation, Q format/retention choice, protected-storage qualification and
 native profile cutover remain separate pending work in their existing tasks.
 
+#### 12.1.4 Mandatory-state lifetime and bounded recovery
+
+**Closure requirement, 26 November 2026:** S3.3 and each existing mandatory-state
+writer must freeze the physical lifetime contract before its first production
+write. This refines §§10.2.1/12.1 and [release §6](release-policy.md#6-mandatory-state-compatibility-and-owned-recovery),
+not the optional Q/H cache policy. The broker owns clock reservations/outcomes;
+the lifecycle owner owns maintenance/restoration; the authorized policy and
+time-floor owners retain their revisions/provenance; the narrow maintenance
+owner owns §19.8 updater trust, installed identity and security-floor transitions.
+ST-W03 supplies filesystem/object evidence without acquiring those policy roles.
+
+For each class, the existing schema/transition record must state:
+
+| Required field | Closure obligation |
+| --- | --- |
+| Representation and custody | Version, units, identity/revision/epoch, canonical writer, protected location/object ownership, lock scope, admitted readers and mandatory validation before use. Retain the selected strict JSON journal boundary; other existing encodings keep their own decisions. |
+| Finite allocation | Maximum record/count/byte and recovery-work bounds, with aggregate peak disk/RAM including staging, replacement, migration, concurrent readers and interrupted generations. A per-record cap alone does not bound the installation. Values remain decisions for the owning profile. |
+| Retained authority | Identify live/unresolved reservations, spent-authority summaries, replay-prevention state, required floors/evidence, source restrictions and pending restoration. Specify what terminal history may retire and why its removal cannot restore authority or erase an obligation. Age, optional-history deletion and a new executable alone are no clearance. |
+| Commit and recovery | Write/flush/publication/acknowledgement order, serialization, old/new reader behavior, interruption reconciliation and current-authority checks. A checkpoint or compaction, if selected, must preserve the same semantic state and replay refusal across its own crash windows. |
+| Saturation | Define admission refusal, bounded diagnostics and the capacity or other qualified means needed to settle existing owned work. Full storage cannot silently delete unresolved effects, reset a floor/budget or convert unknown to success. Recovery itself has finite work and an observable blocked/retry/authorized-remedy state. |
+| Continuity and retirement | Bind supported restart/boot/power/VM transitions to §§7.3/10.3, and repair/Reset/reinstall/version changes to §11.2. Define full decommission and later reenrollment separately. Retire the last required record or recovery code only after durable settlement or a qualified current transfer. |
+
+Qualify useful compatible commit, restart and permitted terminal retirement
+beside disk-full, interrupted write/flush/replacement or compaction, duplicate
+old operation, concurrent/stale writer, incompatible/bad-writer schema and
+unknown-epoch cases. Observe bounded restoration work and actual current
+authority at the receiving owner; retaining bytes alone does not prove them.
+If a summary replaces detailed history, independently challenge that summary
+with an old request and unresolved original operation. Preserve a usable current
+operation after qualified recovery. These are ordinary implementation/native
+checks under CHECK-9/10/12/13/15/25/27, not pre-V1 formal-proof work.
+
+The [S3.3 task](../tasks/development-backlog.md#p3-service-boundary)
+and [Windows closure inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+own the next schema/transition and physical-evidence handoffs. The
+[mandatory-state table](plans/server-catalogue-storage-tables.md#4-table-c--mandatory-state-diagnostics-and-other-owners)
+keeps caps explicitly open until that profile exists. This requirement selects
+no new database, checkpoint algorithm, boot API or hardware rollback guarantee;
+it does not resolve §19.8.4's separate surviving-invocation gate.
+
 ### 12.2 Configuration semantics
 
 Use a versioned strict schema with explicit defaults and validation before activation. Reject duplicate/unknown security-critical keys, invalid integers, NaN/infinite values, ambiguous units, excessive source counts and conflicting profiles. Display-only preferences may use separately defined compatibility behavior.
@@ -5345,6 +5385,51 @@ These decisions have proposed directions, not missing research disguised as impl
 Use [NV-DEC-001](nevrotick-owner-decisions.md) for owner decisions and [NV-RESEARCH-001](nevrotick-research-handoff.md) for future research. Bring concrete decisions to David only when the next dependent action needs them; preserve accepted choices and record supersession explicitly.
 
 The absence of a final value for a rate/date limit does not authorize an implementer to insert an arbitrary permissive constant. P0 must turn each into a named configuration field, default, hard ceiling, test fixture and observable failure before enabling production actuation outside the approved P0 experiment harness.
+
+### 22.1 Architectural closure coverage — 26 November 2026
+
+David requested extensive coverage of the assessed gaps across technical docs,
+plans and tasks. The inventory below routes the eight architectural closure
+areas and the already designed temporal integration dependency to their existing
+owners. It adds no independent gate IDs or second product plan. A documented
+requirement, accepted decision, implemented consumer and qualified candidate are
+separate states; completion of this coverage amendment closes none of the
+remaining product decisions or evidence gates.
+
+| Assessed area and current disposition | Required closure output in the canonical owner | Existing plan/task owner and dependent trigger |
+| --- | --- | --- |
+| Production source/vote/freshness profile — decision open | §7.2 and OPEN-5/6: accepted population/grouping/denominator, fresh votes versus predictors, fault/common-path assumptions, age/uncertainty and routine/exceptional rules; OD-03 shipped-source role and admitted preset. | [R-02 decision/consumer](nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026) and [R-04 preset/admission](nevrotick-research-handoff.md#r-04-preset-admission-and-consumer-closure--26-november-2026), Core/Engine and catalogue owners; S0.7 before production selection/default claims. Controlled-profile measurement and unrelated Core work retain their own scope. |
+| Correction/holdover/epoch profile — values and dependent evidence open | §§5.3/10 and OPEN-5/7/13: measured capability versus approved defaults/ceilings, units/windows/rounding, one-use authority, delivered contribution, boot transitions and known/unknown settlement. Broker-death residual claims remain conditional on delivered exposure. | [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026), S0.4/S0.7 and S4.1–S4.5; freeze before production clock effects. |
+| Three time authorities — distinct open contracts | §8/OPEN-6/8: NTS date/era and authorized intact-floor supersession; §19.8.3/OPEN-11: independent updater UTC evidence and maintenance bootstrap; Windows verifier/deployment time and revocation need their own exact-profile evidence. | [R-02 recovery](nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026), [R-05 authentication](nevrotick-research-handoff.md#r-05-ordinary-and-reused-authentication-closure--26-november-2026) and [updater UTC deliverable](windows-time-update-assessment.md#independent-updater-utc-evidence), with [wrong-clock PKI matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix); separate P2 and P5/P6 consumers. One authority cannot waive another's prerequisite. |
+| Windows security realization — mechanism/admission choices and native evidence open | §§4/5/15 and OPEN-3/4/8/12/14: supported pre-start actor, creation-time owner/token/object isolation, actual actor/component/request binding, bounded OS-account revocation, and installed direct/delegated network policy. Exact privilege sets are already selected. | W11-W04/W05/W10, [current provisioning order](../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026) and [closure inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026); S0.2/S0.3/S0.6 before the corresponding functional P3/P6 boundary. |
+| Surviving recovery — feasibility open | §§11.2/19.8.4 and OPEN-12/14: compatible trusted code, protected data, current authority and supported independent invocation must coexist through replacement/Reset/removal; qualify version handoff and final retirement. | [MSIX §7.6](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026), W11-W05/W10 and lifecycle owners; before takeover, dependent P4 effects and live update Apply. Retained data or staged bytes alone do not close invocation. |
+| Durable state and admitted updater integration — concrete profiles open | §§7.3/12.1.4/19.8: actual schemas/writers/locks/commit/acknowledgement, finite retention and recovery, mandatory retry/restriction continuity, permitted old/new transitions, separate security-floor advancement/decommission and exact maintained client/publisher/provider graph. | S3.3, [Engine retry continuity](../tasks/engine-transport-pilot.md#production-retry-continuity-closure--26-november-2026), [release state transitions](release-policy.md#transition-and-retirement-evidence--26-november-2026) and [updater closure deliverables](windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026); before each production writer/reuse path and live Apply. ST-W03 supports object durability; optional-cache pause grants no mandatory-state reset. |
+| Supported product profile and allocations — direction selected, concrete rows open | §§15.4/17/19.8.5 and OPEN-2/11/13/14: exact OS/CPU/protection/activation/caller/registration/update-owner rows; finite aggregate bytes/work/concurrency/lease/stop limits and useful saturation behavior. Hard caps and measured performance objectives remain distinct. | [Two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026), W11-W04/W05/W08/W10 and existing build/UI/WinGet owners; freeze at dependent P0/P3/P5/P6 integration, qualify each claimed delivered profile. |
+| Sustainable publisher operations — operational profile and rehearsal open | §19.8/OPEN-11, [publisher readiness record](windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026) and [release rehearsals](release-policy.md#publisher-rehearsal-evidence--26-november-2026): actual interoperability/custody, renewal/expiry, offline/absence/root retention, backup/loss/compromise, publication/readback and useful corrective delivery. | David/release/security and W11-W10, P6/P7 before the first live updater release. Signing remains deferred at the current stage; a written runbook grants no operational observation or delegation. |
+| Existing temporal integration — contract settled; implementation/qualification open | §§7.2/10.1: actual independent reference and qualified mapping/withdrawal issuer, date/era/scale and error evidence, original receipt/age custody, final consume-once Core history and later current actual-effect feedback. | [Current Engine-to-Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026), S2.1/S2.2/W11-W01/Core. This remains the next development dependency under [development §7](plans/development-plan.md#resume-in-dependency-order--23-november-2026). |
+
+At the dependent gate, the owning card records the current rule and unresolved
+choice; the actual producer, writer and consumer/effect; prerequisite evidence;
+versioned decision/configuration/schema or mechanism output; one useful allowed
+journey plus malformed, unauthorized, stale, exhausted and indeterminate cases
+as applicable; observable forbidden effects; bounded environment/work/cleanup;
+and the exact candidate/result that closes the claim. Reuse the relevant
+REQ/BND/THR/CHECK/AC mappings already assigned there. A documented refusal must
+also identify its permitted recovery or explicit authorized remedy.
+
+The task records distinguish **decision open**, **implementation incomplete**,
+**qualification incomplete** and **intentionally deferred**. A component or
+source fixture cannot mark the integrated journey complete. Conversely, an open
+later gate does not stop a separately admitted earlier slice. Numerical values,
+mechanisms or risk changes needing David's choice use the existing NV-DEC-001
+card only when the dependent action needs it.
+
+The [development workstream](plans/development-plan.md#architectural-closure-workstream--26-november-2026)
+and [backlog intake](../tasks/development-backlog.md#architectural-closure-intake--26-november-2026)
+route preparation and activation. Preserve direct complete MSIX, one target-bound
+Update now journey, exact service privileges, v3/intended Windows-family scope,
+current Slint/licence choices, D1–D3 triggers and post-V1 formal deferral. This
+inventory neither broadens product scope nor lifts Windows/fuzz/storage holds.
 
 ---
 

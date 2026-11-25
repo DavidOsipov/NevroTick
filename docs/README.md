@@ -9,6 +9,18 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Architectural closure coverage — 26 November 2026:**
+[architecture §22.1](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
+maps the assessed gaps to canonical contracts and existing decision/implementation/
+qualification owners. The [development workstream](plans/development-plan.md#architectural-closure-workstream--26-november-2026),
+[backlog intake](../tasks/development-backlog.md#architectural-closure-intake--26-november-2026)
+and [Windows execution inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026)
+make prerequisites, concrete deliverables and useful/refused recovery observations
+explicit. [Mandatory-state lifetime](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery)
+retains finite storage/replay/retirement decisions under the original writers.
+Coverage is documentary; production choices and evidence remain open. The current
+reference/mapping child, accepted scope and all existing holds retain precedence.
+
 **TUF-authenticated updater — 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
 adopts the complete direct-MSIX updater. About checks metadata and offers
 **Update now / Later**; Yes continues download, verification and installation for
