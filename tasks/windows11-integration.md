@@ -22684,6 +22684,585 @@ The separate `paired-final-absence/guest.json` receipt under
 `s06-paired-registered.caazSYpp/` hashes to
 `be8cce21ba3b54afec477c8660ff2e5a9ab76f8686a3a5a9e27ba6a32500ae69`.
 
+##### Bind full pre-start rendering to the original role launches
+
+S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The
+[`launch_rendered_prestart_session` entry](../tools/windows-service-fixture/msix/prestart_deployment_owner.py)
+joins the existing three-role coordinator to the fixed deployment
+renderer. Only after the two access launchers return their original
+process owners does the renderer receive the full `Run`. The guest
+attempt receives the rendered full-mode entry, its extent and hash, the
+original run and the two original cutoffs. An expired render withholds
+guest activation. An activation that raises can leave work behind, so
+rollback signals and observes the original guest attempt as well as
+both access owners.
+
+| Stage and skills | Observed outcome |
+| --- | --- |
+| Plan and qualification readback · `plan-code-change`, `qa-package-artifacts` | Independent review at `a4a3bb043fdb` reverified the paired installed receipt and identified separate source chains. The paired installed launcher used `SCICOFR`. The live access-role replay used a scripted deployment peer. Neither receipt covers a full installed attempt. |
+| Source join · `security-build-deployment` | The adapter uses the existing full-mode renderer, original receipt coordinator and distinct process/pipe admission. The guest activation interface retains ownership of protected staging, watchdog launch and native settlement. The paired route keeps its existing entry. |
+| Verification · `qa-state-concurrency-lifecycle`, `qa-contract-tests` | In the Linux control the inert child reopened the staged entry, checked its pin and fixed bindings, then exchanged `SCICOAUFR`. The original access peers received `A` and `U` and EOF, each settled, and the supervisor returned four captures after retirement. Separate controls covered wrong template pin, exact-cutoff rendering and guest start refusal after custody. The portable MSIX suite passed all 208 tests under CPython 3.12.3 in a read-only, network-disabled namespace with matching source bookends. |
+| Independent review and sensitivity · `qa-context-checkpoint` | Fresh review found no material portable source defect and identified the cutoff and staged binding controls, which were added and executed. Omitting the post-render deadline check reached the guest at the cutoff. Rendering paired mode caused the inert child to withhold responses and the access peer to observe EOF before its first command. |
+| Guest controls · `manage-windows-sandbox`, `qa-state-concurrency-lifecycle` | The owner's already-running Sandbox was selected by explicit ID using WSB 0.8.114.0 and `ExistingLogin`. Windows PowerShell parsed the exact rendered full-mode entry and executed 26 session/access controls, including full ordering, skipped and crossed access checks and provisioning refusal. The wrapper required the exact case count, zero failures, the four named full-mode passes and unchanged guest input digests. Guest control, removal of the private files, and an independent absence query each returned guest exit zero. The session receiver controls used simulated window/actor streams. They establish neither installed SCM access nor native watchdog settlement. |
+
+The first two guest attempts stopped before the cases because the staging
+roster omitted the session module's sibling `prestart_child.psm1`.
+The corrected attempt staged and pinned that dependency and captured the
+original child exit and streams independently inside the guest. All three
+attempts removed their owned guest directories. No package, SCM
+configuration, certificate store or host policy was changed.
+
+Evidence at `~/.local/share/nevrotick/s06-rendered-start.IL6ZSdKA/`
+includes the exact source bookends, portable logs, directed controls,
+rendered bytes, guest status rows and the two setup refusals. The
+`SHA256SUMS` digest is
+`2a4b5119c468f0484abfd3756da527a11099491afc2fe969473a745d5f338e26`.
+The `checked.diff` digest is
+`63611c19947135fc75000a7b020c7fb695235b570723e53372bb739225c5f9cb`.
+
+The installed attempt still requires a concrete guest activation owner.
+Reuse the existing offline guest transaction. After installed readiness
+and before the original watchdog starts, accept one bound entry for the
+run and stage its exact bytes in a fresh protected local leaf. The watchdog
+must consume that leaf and pin under its original cutoffs. Drive all three
+roles without starving an access owner while the deployment relay is live.
+Provide abort before child creation, and independent exit, empty-job and
+stream settlement after creation. The transaction's package and test-leaf
+cleanup must account for every original role. The retained paired Python
+relay matches its executed pin. The retained neighboring PowerShell relay
+does not match the final paired dispatch pin, so it supplies design context
+only. Independently establish effective actors and continuous quiescence
+before the installed discriminator. The paired point observations and
+the portable controls leave that gate open.
+
+##### Stage the committed activation at the fixed guest-local owner path
+
+S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The
+[host publisher](../tools/windows-service-fixture/msix/prestart_deployment_activation.py)
+commits the rendered entry, exact run, byte count and SHA-256 in one
+fixed record. It flushes the complete bytes before exclusively creating
+the empty marker. An expired or failed write leaves no usable commit.
+After the marker is visible, the enclosing transaction owns any later
+expiry and retirement. The digest checks byte custody. The transaction
+must separately admit the origin and protect the dedicated mapping.
+
+The [guest receiver](../tools/windows-service-fixture/msix/prestart_deployment_activation.psm1)
+reads only the committed fixed record, requires the expected original
+run and a current guest cutoff, checks extent and hash, and uses
+create-new at the fixed local owner leaf. It returns a read lease and
+the exact watchdog pin after reopening and checking the local file.
+The lease permits compatible native readers and excludes changes to
+the entry through the watchdog's use. The guest transaction owns the
+protected staging directory and disposes the lease before cleanup.
+
+| Stage and skills | Observed outcome |
+| --- | --- |
+| Planning and trust boundary · `plan-code-change`, `security-build-deployment`, `qa-package-artifacts` | The source comparison identified the exact caller position after readiness and before watchdog launch. Windows WSL interop inherits the host actor and supplies no guest activation. The existing Sandbox transaction owns its mapping, admitted actor and downstream call. |
+| Contract and lifecycle · `qa-contract-tests`, `qa-state-concurrency-lifecycle` | 215 portable tests passed under CPython 3.12.3 in a read-only, network-disabled namespace. The new cases distinguish incomplete publication, a visible commit, a wrong pin, replay and a Boolean masquerading as a one-byte extent. |
+| Guest controls · `manage-windows-sandbox` | WSB dispatched the exact pinned module, fixture and host-produced activation record to the already-running user's Sandbox. The 16,143-byte rendered entry and digest matched after native staging. The eight controls passed, covering the fixed path, compatible readback, held deletion refusal, occupied leaf, missing or nonempty commit, crossed run, altered bytes, trailing data and stopped clock. The transport used bounded encoded input for this control. No mapped launch or watchdog was invoked. The guest files were removed and a separate absence query passed. |
+| Independent review and evidence · `qa-context-checkpoint` | The review identified visible-commit expiry, Boolean extent aliasing and full watchdog path limits. The source separates commit from subsequent expiry, requires canonical scalar types and applies the existing component and full-path limits to actual staging. |
+
+The activation evidence inventory at
+`~/.local/share/nevrotick/s06-activation.pIAl5LqO/SHA256SUMS`
+binds the source bookends, emitted record, portable log and guest status
+receipts. Its SHA-256 is
+`9d6d1c0fd0ac704a24dcf1ef431d5b975b95f476f3dc1bb93e64affd83601fba`.
+
+The next child connects the original mapped activation to this receiver
+inside the same offline guest transaction. Feed its exact local path and
+pin to the unchanged watchdog entry, keep the original lease, and drive
+all nine frames while both access owners progress. Observe original
+process and job settlement separately from the retirement frame. The
+installed access row remains open pending independently admitted actors
+and continuous quiescence through retirement.
+
+##### Pass the staged activation to the fixed Windows watchdog
+
+S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The
+[`Start-PrestartDeploymentActivation` entry](../tools/windows-service-fixture/msix/prestart_deployment_activation.psm1)
+calls the guest receiver, retains its exact owner lease, and opens the
+fixed watchdog under a second read lease. It compares the independently
+supplied watchdog pin before the process can start. The native argument
+list carries the staged path, exact length and digest, and original run
+alongside the existing guardian and interpreter pins. The last admission
+check occurs just before the call to start, and the relative watchdog
+budgets are derived from the remaining original guest allowance.
+
+The distinct launch-attempt and started observations belong to the same
+transaction as the process, streams and read leases. A late or failed
+start keeps those values with their caller. The enclosing guest owner
+still needs to enforce the original absolute cutoffs independently and
+contain a native watchdog even when managed stream setup fails before
+attaching the process handle. The relative native clock begins after
+creation. [Microsoft .NET Framework process-start implementation](https://github.com/microsoft/referencesource/blob/main/System/services/monitoring/system/diagnosticts/Process.cs#L1973-L2024)
+
+The [native launcher control](../tools/windows-service-fixture/msix/test_prestart_activation_watchdog.ps1)
+uses a pinned, previously built watchdog in the running Sandbox with an
+inert guardian. The healthy control requires the original native job
+to report empty, both streams to reach EOF, and the watchdog to exit
+zero. The guardian checks the exact staged owner leaf and rehashes it
+from the received arguments, then observes `R` followed by EOF. The
+wrong executable pin control refuses before an attempted process start.
+The control only considers staging releasable after the exit, stream
+and native job observations.
+
+Both cases passed in the owner's running Windows Sandbox with WSB
+0.8.114.0 and `ExistingLogin`. The final run followed an independent
+review that moved lease release after the native settlement checks.
+Guest cleanup and a distinct absence check passed. The exact source
+bookends, watchdog pin, host-produced activation and guest exit receipts
+are retained at `~/.local/share/nevrotick/s06-watchdog-activation.NpAEVUlj/`.
+The SHA-256 of its inventory is
+`d4f6fb54839457d19334abe0cab01225e4cd8a7c913ffcf49a62914726fd53d9`.
+The run exercised bounded guest staging and three redirected streams.
+It did not install a package or change trust, SCM or host settings.
+
+The installed fixture still needs the live mapped three-role
+transaction and a native owner that accounts for launch, failure and
+retirement across all three processes. The inert guardian proves the
+real watchdog's outer job at the activated path. The installed access
+row still needs the actual nested guardian, actor admission and
+continuous quiescence.
+
+##### Contain the fixed relay worker before resuming it
+
+S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The native
+[`RunDeploymentRelayJob` entry](../tools/windows-service-fixture/msix/prestart_deployment_job.cs)
+reuses the deployment job's process-at-creation containment, restricted
+standard handles and suspended child checks. It accepts one fixed
+`prestart_deployment_relay.ps1` under independent script and interpreter
+pins. It consumes the original running guest stopwatch and the original
+work and retirement values before opening the entry. The suspended
+child is checked for original job membership, image, architecture, actor
+continuity and remaining time before resuming. The same owner observes
+exit and empty-job accounting or performs bounded recovery.
+
+The relay receives the run ID and two absolute QPC endpoints. Sampling
+the current timestamp before reading elapsed ticks makes scheduling
+delay shorten the projected interval. The native owner still waits
+against its original stopwatch. The eight-process limit is a configured
+lab envelope for the relay hierarchy and console helpers. It is subject
+to independent effective-limit checks on the full nested chain.
+[Microsoft .NET Framework stopwatch implementation](https://github.com/microsoft/referencesource/blob/main/System/services/monitoring/system/diagnosticts/Stopwatch.cs)
+
+Under the deployment-security and lifecycle QA skills, the current
+five-source helper compiled in Windows PowerShell in the owner's
+already-running Sandbox. Three fresh-process controls passed. The
+healthy worker received the exact run and original deadline after a
+delay before native entry. Its independent QPC start bookend rejects a
+fresh deadline at launch. It accepted `R` and EOF and retired with an
+empty job. An elapsed original deadline refused before child creation.
+With stdin held open, the ready worker hit the original exit deadline.
+The supervisor observed exit 1223, explicit termination and an empty
+job before the retirement deadline. Fresh source review prompted the
+stronger clock and recovery assertions before the final run.
+
+The input bookends, guest status receipts, and cleanup and absence
+checks are retained at
+`~/.local/share/nevrotick/s06-relay-job.UlxSE0er/SHA256SUMS`
+with digest
+`2758eeb658481b89ad72572e0a623405b61cefe0ca485988e33aaaca34717545`.
+The controls used an inert worker, a native process and job, and
+private redirected streams. Descendant containment across the full
+relay/watchdog/guardian chain and installed MSIX execution remain open.
+
+The native relay entry is synchronous. Its enclosing transaction must
+drain the lent streams and allow both access owners to progress during
+the relay lifetime. The installed branch still needs the actual mapped
+relay entry and three-role run, the effective nested process envelope,
+independently admitted actors and continuous quiescence.
+
+##### Drive the full supervisor through the mapped deployment pipe
+
+S0.6, W11-W05/W11-W10 and CHECK-25/26/27. The
+[`MappedDeploymentProcess` host endpoint](../tools/windows-service-fixture/msix/prestart_mapped_deployment.py)
+supplies the existing supervisor with private POSIX pipes. It commits
+the nine fixed `SCICOAUFR` commands to the dedicated input mapping and
+permits an early `R` after a legal prefix. It receives at most one
+pending frame at a time and forwards it under the original retirement
+cutoff using a nonblocking pipe writer.
+
+The guest publishes the exact watchdog streams and committed terminal
+record using the existing paired field names. The host checks the run,
+command and frame counts, exact forwarded bytes and stream digests.
+Completion also requires a separate observation of the original
+watchdog PID and private diagnostic bytes from the enclosing native
+owner. The host waits for local input EOF before reporting output EOF.
+Mapping and pipe state do not confer launch or cleanup authority.
+
+The portable MSIX suite passed all 221 tests with matching source
+bookends in a read-only, network-disabled namespace. Six host relay
+controls checked the full supervisor with both inert access pipes, a
+crossed native PID, a max-size frame on an unread pipe, an unpublished
+work command at the cutoff, failure after starting the bridge thread,
+and combined native and local retirement refusals. Independent review
+found the publication and startup ownership edges before the final run.
+An expired ordinary command leaves its uncommitted slot available for
+`R`. The earlier work refusal does not turn confirmed retirement into
+a cleanup failure.
+
+Evidence at `~/.local/share/nevrotick/s06-mapped-host.ztPlGwPm/`
+includes the source hashes and portable results. The inventory digest is
+`ecd2698ff5fae59d6e3372ad785353b05226883d31c8c68bd289805eed9b1933`.
+The guest peer and native settlement observer were inert test
+providers. This checkpoint exercised POSIX pipes and local record
+directories.
+
+The next integration connects this endpoint to the live guest relay and
+the existing per-role access endpoints under their original owners. The
+guest consumes the activation and runs the fixed watchdog in the native
+envelope. The installed access row still requires independent actor
+admissions, continuous quiescence and the actual nested retirement.
+
+##### Relay all nine deployment commands inside the enclosing native job
+
+S0.6, W11-W05/W11-W10 and CHECK-25/26/27. The
+[guest worker module](../tools/windows-service-fixture/msix/prestart_deployment_relay.psm1)
+derives its remaining budgets from the original guest QPC deadlines.
+A protected run profile supplies the activation and output directories
+and fixed watchdog inputs. The module consumes the exact committed
+activation before starting the watchdog, forwards the closed full-mode
+command roster, and copies bounded pipe replies into committed records.
+It requires original watchdog exit, both stream EOFs, and native job
+diagnostics before publishing the terminal record. The enclosing job
+still owns stalled I/O and partial process-start recovery.
+
+The stream and commit helpers came from the adjacent retained paired
+relay `s06-paired-deployment-relay.9zq89xxv/s06-paired-relay.ps1`,
+whose SHA-256 is
+`c30041ae235188ea3c05eff4971b6491fb53d0f9da918dfa1f619d096da33e9a`.
+Its historical receipt does not qualify the full-mode adaptation.
+
+Independent source review identified time-of-check gaps before command
+forwarding and receipt publication. The guest now rechecks the
+retirement window before the write, before committing records and
+after terminal publication. The native enclosing job begins forced
+recovery at its work cutoff. The host's portable late-`R` behavior
+therefore does not establish a cooperative native retirement after
+that cutoff.
+
+The [native control](../tools/windows-service-fixture/msix/test_prestart_mapped_deployment.ps1)
+uses guest-local directories, the fixed enclosing native launch, the
+real watchdog and guardian, and an inert owner. It reads each reply
+independently, compares the concatenation to the retained watchdog
+stdout, checks the stream hashes and requires the enclosing job to
+report empty.
+
+Both the initial direct guest run and the final enclosing-job run
+passed in the already-running Sandbox. The final fixture verified all
+nine replies, separate exit and empty-job observations, matching source
+bookends, deletion of its private inputs and a separate absence query.
+The control retained the previously built watchdog with digest
+`1a5315cffdc61c88f7ff6efb362b7c4c9e314eb16a7e9766312dd0e35fce7c2f`.
+The guardian compiled the pinned helper sources in the guest.
+The final evidence inventory at
+`~/.local/share/nevrotick/s06-mapped-guest.NwaWxQ2K/SHA256SUMS`
+hashes to
+`367e9a18c1075a0ddd0faadb51bdcb63b4e7fb2c939b1779e34b1ad51c8c5df9`.
+
+The actual Sandbox mappings and both original access
+actors are still required together, as are the installed package and
+continuous quiescence.
+
+##### Join the host supervisor to the live Sandbox mappings
+
+S0.6, W11-W05/W11-W10 and CHECK-25/26/27. The maintained host supervisor
+and guest relay exchanged all nine `SCICOAUFR` commands over the
+already-running Sandbox's existing mappings. Fresh nonce directories
+passed the input-write refusal and writable-output readback controls.
+The guest started the real watchdog and guardian and kept the fixed
+relay inside its enclosing native job. The test used an inert Windows
+owner and two inert access reply pipes on the host. It made no package,
+SCM, trust-store or host policy change.
+
+The live mapping fixture carried the watchdog observation over the
+enclosing job's private stdout, then committed it separately from the
+relay's terminal record after outer exit and empty-job observation.
+The host compared both PID and original diagnostic bytes with the
+mapped terminal. Independent readback matched the nine raw replies
+to retained stdout, checked both hashes and native nested job reports,
+and verified the original guest returned zero.
+
+Two refusals preceded the final pass. The first reached four replies
+before the inner owner's 16.5-second cutoff. Several mapped exchanges
+took about five seconds each. The retry allocated fresh fixed fixture
+budgets from that observation and maintained the original cutoff
+within each run. The second correctly rejected an inert nested
+identity receipt still bearing the former run ID. The final fixture
+regenerated that receipt and checked it before dispatch. Both
+refusals supplied original nested job evidence. Their raw bytes were
+retained and their exact temporary scopes were removed after native
+liveness readback. The successful run also removed its guest and
+host nonce scopes. The running Sandbox and existing mappings were
+preserved.
+
+The evidence inventory at
+`~/.local/share/nevrotick/s06-sandbox-mapped.DY8EqdhG/SHA256SUMS`
+has digest
+`a37b1bfa67786cd9ab1bddfc6eabcf9d873ea2309c023960c187a8faddf9c74c`.
+This establishes the live deployment transport and positive retirement
+handoff. The next transaction must bind both actual native access
+owners to the same live deployment, then establish installed fixture
+quiescence and the required actor observations.
+
+##### Join both native access owners to the live deployment relay
+
+S0.6, W11-W05/W11-W10 and CHECK-25/26/27. One owned attempt in the
+existing offline Sandbox joined the maintained full host supervisor,
+the mapped Windows deployment owner and both native access owners.
+The access attachment reused the previously pinned native access
+artifacts and bounded role relay from the dual-role checkpoint.
+Separate protected staging preserved the differing deployment and
+access watchdog, guardian and helper pins. The test matched the
+inert deployment observation to the exact admitted inert observer
+digest and generated both identity encodings from one fresh run.
+
+The host bound both readiness receipts to one original run and shared
+access allowance, then committed deployment activation. The deployment
+received `SCICOAUFR`, and the two original role parents received
+`A` and `U` respectively. The supervisor validated four captures and
+the two native role settlements. Independent readback compared the
+two mapped access frame, status and diagnostic digests with the
+original Linux relay receipts. It bound all seven original deployment
+and access process IDs in the readback to their recorded owners. Both
+guest dispatches exited zero. The temporary Standard account, profiles
+and private stages were verified absent, and the host nonce directories
+were removed.
+
+The first preflight refused a mismatched role I/O helper pin before
+starting the roles. The retry found the exact previously admitted
+helper. The next attempt refused separately allocated allowance
+objects at the original-run binding check. Both native role parents
+then settled on empty input and restored their scopes. The final
+runner shared one allowance object and kept both native owners through
+settlement. The [joint test profile](../tools/windows-service-fixture/msix/test_prestart_mapped_deployment.ps1)
+uses bounded fixture budgets set before either guest launch. The
+host and two guest owners retain separate clock observations.
+
+The final evidence inventory at
+`~/.local/share/nevrotick/s06-live-three.rQXGpNBo/SHA256SUMS`
+has digest
+`4594e7e22e614f24fb36b4c6be39fc372233140bd8db0d1b20a8ac948734cf66`.
+It retains the actual frames and native observations, runner sources,
+separate input pins, independent readback and the setup refusals.
+The Windows relay and the provisioning fixture used the current
+guest login, and the Standard role used a separately enrolled native
+actor. The deployment owner and access observer remained inert. The
+installed trial still needs the admitted actor profile and continuous
+quiescence on the real closed package and SCM path.
+
+##### Observe a short-lived process and a reverted registry change in the Sandbox
+
+S0.6, W11-W05/W11-W10 and CHECK-1/2/15/16/27. The lifecycle, Sandbox
+and package checks isolated a candidate for observing activity between
+the installed window's point samples. The existing offline Sandbox
+reported build 26100.10075 and the Windows Sandbox CLI reported
+0.8.114.0. The run used its ExistingLogin administrator, its existing
+read-only input and separate writable output mappings, and one uniquely
+named, sequential 4 MiB guest-local trace per case. It created one
+temporary HKCU key per case and ran only two fixed Windows command
+processes. The exact signed package, installed SCM objects, trust stores
+and clock were outside these controls.
+
+The paired controls used the same witness source. Both point reads
+returned 241. The quiet case wrote the baseline once. The transient
+case wrote 242 and restored 241 between the two command processes.
+The observed Kernel-Process v4 start and v2 stop records matched each
+child by original PID and creation time, with the expected parent,
+image and exit codes 37 and 38. The Kernel-Registry v0 creation and
+write records matched the nonce key, writer and nonzero key object.
+The transient case observed two additional successful writes between
+the first process exit and second start. The quiet case observed zero.
+The native trace stop reported zero event, log-buffer and real-time
+buffer losses in both cases. Both guest dispatches exited zero. The
+keys, sessions, scratch directories and mapped nonce transfers retired.
+
+Three setup attempts refused before acceptance. The process stop event
+carried a basename, so the final witness compares the full image on
+start and joins the stop by PID and creation time. The final provider
+file names both GUIDs explicitly and the running trace reports both
+active filters. Registry write events supplied empty key-name and
+data fields. The final projection uses a unique value name and ties
+each write to the same object as the observed key creation. It supplies
+write detection for this controlled key. The point reads and the
+test input supply the value sequence. The retained trace summaries
+contain only the selected rows and aggregate event counts. The guest
+retired the raw trace files before returning.
+
+An independent host readback checked the exact script pins, distinct
+process lifetimes, relative event order, object attribution, cleanup and
+zero trace loss. It refused four altered projections covering trace
+loss, a foreign registry object, a foreign process image and a write
+outside the observed interval. Evidence is in
+`~/.local/share/nevrotick/s06-quiescence-witness.GKyGo3R7/`.
+`SHA256SUMS` hashes to
+`5de70f73117365688f96a72c203cce7f122e7c14dd1550f403353c9e9d111e17`.
+
+For the installed transaction, arm the process witness before
+registration and retain it through original-owner retirement. For
+registry attribution, qualify open and close lifetimes, reuse and
+pre-existing objects, and a same-value-name sibling control before
+using shared SCM value names. The transaction still needs authoritative
+SCM property continuity or an effective inhibition owner, same-window
+owner/DACL and SID readback, and the separately admitted actors. Keep
+package and trust removal under a settlement decision that can report
+original-owner cleanup independently of a successful probe. The
+legacy SCM database lock has no effect on current Windows.
+[ETW session statistics](https://learn.microsoft.com/windows/win32/etw/event-trace-properties)
+· [SCM database lock](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-lockservicedatabase)
+
+##### Observe the paired installed ScmFixture from registration through retirement
+
+S0.6, W11-W05/W11-W10 and CHECK-1/2/15/16/18/25/26/27. The Sandbox,
+lifecycle and package owners joined the process witness to a fresh
+paired trial of the exact test-signed ScmFixture and admitted public
+leaf in the existing offline guest. The fixed Engine and Broker are
+Disabled and the manifest names `Inert.exe` as the application
+entry. The original signed deployment entry, identity companion,
+native observer and watchdog matched their retained pins. The host
+re-rendered the owner for the new run and used a newly pinned
+PowerShell relay from the retained earlier source. That relay labels
+retirement after its existing native checks pass. The changed relay
+and dispatcher retain their own pins. The work and retirement
+budgets were fixed before the original launch.
+
+The outer guest owner armed a 4 MiB sequential process-only trace
+before the signed transaction. A live census found no running
+processes with the three executable names. A known `cmd.exe` start
+and exit preceded the original dispatcher. The signed transaction
+verified the held carrier and signer, registered the package and
+completed `SCICOFR`. The original observer matched both installed
+images and observed both SCM roles Disabled and Stopped at the
+required sample points. The original owner, guardian, watchdog and
+both observers settled, the jobs reported empty and the streams
+reached EOF. After package and leaf removal and dispatcher exit, the
+second census was empty and a second `cmd.exe` control closed the
+observed interval. Both trace and restoration dispatches exited zero.
+
+Independent readback correlated both markers and all six launched
+processes by PID, process sequence, creation time and parent
+generation. It matched the full start image and the short v2 stop
+name on this build. The readback examined every projected process
+start from the 45 decoded records. None named the installed fixture
+package or its three executable members. Native stop returned zero
+event, log-buffer and real-time buffer losses. The host readback
+also refused altered projections for a target image, lost events,
+a crossed generation, a missing closing boundary and a missing
+process row. The installed-image exclusion uses the package and
+executable names in the closed trace after retirement. The guest
+retired the raw trace and retained the bounded event projection.
+
+Separate absence verification queried the package for all users, both
+fixed SCM names and the guest test-leaf stores. Both service queries
+returned 1060. The original transaction and trace scratch, signed
+archive lease, actor lease and host nonce transfers retired. The
+evidence inventory at
+`~/.local/share/nevrotick/s06-installed-process-window.xpdxHJZW/SHA256SUMS`
+hashes to
+`a66508e24dd7507063c686a720cd1a108fee74463349cf86cf6ec6ee1fbaf547`.
+
+This establishes the process observation span for the paired installed
+fixture. The full trial still needs authoritative SCM property
+continuity or effective inhibition, the same-window descriptor and SID
+readback, and both real access actors and outcomes. Reuse the process
+method on that transaction under its own original deadlines and
+retirement evidence.
+
+##### Read both installed service descriptors through the paired window
+
+S0.6, W11-W05/W11-W10 and CHECK-1/2/15/16/18/25/26/27. The Windows
+privilege, Sandbox and package workflows joined a private descriptor
+companion to the traced trial of the same signed package and signer.
+The deployment actor opened one local SCM manager with
+`SC_MANAGER_CONNECT` and a dedicated `READ_CONTROL` handle to each
+fixed service. The companion held both handles from before
+`installed-ready` through the original `SCICOFR` observer and
+confirmed watchdog retirement. It queried owner and DACL at both
+ends through `QueryServiceObjectSecurity` and independently through
+`GetSecurityInfo(SE_SERVICE)` on each same held handle. The original
+Rust observer and its wire format retained their pins. The private
+lab deployment script added descriptor settlement to the cleanup
+condition and retained its new pin.
+
+Both APIs returned matching 100-byte descriptors at both endpoints.
+The deployment-created objects had the same SYSTEM owner and present
+68-byte DACL, with two allow ACEs. Windows resolved the trustees to
+Authenticated Users and AppXSvc. Of these two ACEs, only AppXSvc's
+includes `SERVICE_CHANGE_CONFIG`. The opening `sc.exe qsidtype`
+and `showsid` outputs matched the observer's configured type 1 and
+reported a distinct service-name SID for each fixed role. Windows
+resolved each owner, trustee and service SID and round-tripped the
+account name to the original SID. The original observation matched
+descriptor shape and configured SID type. The exact descriptor bytes
+were compared between the two native APIs.
+
+Independent host readback refused a same-length owner substitution,
+an altered ACE mask, crossed role rows and unconfirmed closure. Its
+binary decoder distinguished absent, null and present-empty DACL
+controls. Broker, Engine and manager closes returned zero. The trace
+retained 65 decoded records and reported zero native loss, with no
+observed start of the three fixture executable names. Independent
+restoration observed package absence, both SCM names returning 1060,
+and removal of the exact test leaf. The owned Sandbox stayed running.
+The private evidence inventory at
+`~/.local/share/nevrotick/s06-installed-descriptor-window.rxOGA9Oe/SHA256SUMS`
+hashes to
+`5ce0ab1b8d75ad9fb7d2f8200c9f11477d98835f938fc2d7783e06f84212f360`.
+
+These endpoints establish descriptor and SID readback for the named
+installed fixture and deployment context. The full trial retains the
+continuous SCM property requirement and the actual independent
+provisioning and Standard handle acquisitions. Preserve the first
+native refusal on a required right and its actor. The recorded ACL
+supplies an expectation for that probe.
+[SCM security query](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-queryserviceobjectsecurity)
+· [Handle-based security readback](https://learn.microsoft.com/windows/win32/api/aclapi/nf-aclapi-getsecurityinfo)
+
+##### Discriminate SCM description and DACL notifications on disabled controls
+
+S0.6, W11-W05 and CHECK-1/2/15/16/27. The lifecycle, service and Sandbox
+workflows exercised two nonce-named ordinary guest SCM controls on
+build 26100.10075, outside the signed ScmFixture. The coordinator used
+the exact pinned inert image as the fixed registration path, set both
+controls Disabled and kept them Stopped. The bounded guest-only card
+allowed creation, description and DACL changes and restoration, and
+deletion of the two owned controls. Neither binary was invoked.
+
+The first attempts refused property subscription on a handle opened
+only for `SERVICE_QUERY_STATUS`. The directed access controls then
+recorded native error 5 for that request, success for status
+subscription on the same right, and success for property subscription
+on `SERVICE_QUERY_CONFIG` alone and on query config plus query status.
+The successful control used the query-config-only property handle.
+These are observed rights for this build and disposable fixture.
+
+After the initial callbacks, the quiet interval was clear. The sibling
+description change notified only the sibling. The target description
+change and restoration were both independently read back and produced
+two target callbacks. The target DACL mutation added one expected deny
+ACE for Anonymous, and independent binary readback established the
+transient ACL and exact baseline restoration. The target property
+subscription delivered zero callbacks in either bounded DACL
+interval. A further description change after unsubscribe was seen by
+the fresh registration while the retired registration stayed clear.
+All registrations returned from native unsubscribe with zero active
+callbacks. The settled guest run and independent final absence query
+both completed. Both owned SCM names returned 1060, and the guest and
+mapped stages were retired, including the two refused attempts.
+
+This supports description-change invalidation using the qualified
+handle profile. The DACL case prevents using silence from this API as
+the authoritative SCM property continuity guard. Continue with a
+separately qualified loss-accounted witness or an effective inhibition
+owner covering the actual property paths from registration through
+retirement. The signed package actors and their actual access results
+retain their existing gates. The private evidence inventory at
+`~/.local/share/nevrotick/s06-scm-property-witness.CsfaGevu/SHA256SUMS`
+hashes to
+`b7622957cfddc12e392590e285702301f558226cd6a7297711f2d084e667c6ac`.
+[SCM subscription contract](https://learn.microsoft.com/windows/win32/services/subscribeservicechangenotifications)
+· [Native unsubscribe contract](https://learn.microsoft.com/windows/win32/services/unsubscribeservicechangenotifications)
+
 #### Pack and verify the guarded Slint and service combination
 
 W11-W10/P6 and CHECK-16/18/20/23/26/27. The package and metadata

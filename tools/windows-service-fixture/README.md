@@ -298,6 +298,51 @@ supervisor. If acquisition or admission fails, it signals every
 attempted owner before checking settlement with the original retirement
 cutoff.
 
+For a rendered full-mode entry, call
+[`launch_rendered_prestart_session`](msix/prestart_deployment_owner.py).
+The renderer receives the coordinator's full `Run` after both access
+owners are retained. The deployment guest attempt receives that exact run,
+the rendered entry bytes and their pin, and both original host cutoffs.
+The guest attempt must own protected staging and pass the pin to the
+watchdog. It remains responsible for the original attempt if activation
+raises before returning its pipes. See the
+[S0.6 integration checkpoint](../../tasks/windows11-integration.md#bind-full-pre-start-rendering-to-the-original-role-launches).
+
+The [activation publisher](msix/prestart_deployment_activation.py) writes
+the rendered bytes to the admitted mapping and exclusively commits them.
+Use the [guest receiver](msix/prestart_deployment_activation.psm1) after
+readiness to check the original run and stage the exact committed entry.
+Keep the returned read lease and feed its local path, length and digest
+to the fixed watchdog. The enclosing transaction owns the mapping,
+staging, original deadlines, lease release and native settlement. The
+[activation checkpoint](../../tasks/windows11-integration.md#stage-the-committed-activation-at-the-fixed-guest-local-owner-path)
+records the portable and guest-local controls.
+
+The same module's `Start-PrestartDeploymentActivation` stages and passes
+the exact pin directly to the fixed watchdog. Give it a fresh process
+object and a custody table owned by the transaction before the call.
+Keep the original process and both leases through stream and job
+settlement. An enclosing native owner must enforce the original
+absolute deadlines and account for a partial process start even if
+managed pipe setup fails before the process object receives its handle.
+
+The [mapped host endpoint](msix/prestart_mapped_deployment.py) attaches
+the full-mode deployment pipe to `supervise_prestart_session`. It expects
+dedicated input and fresh output mappings for the original run. The
+transaction attaches it before committing activation and must provide an
+independent retirement callback for the
+original native relay and watchdog. The existing access endpoints keep
+their own pipes, actor identities and retirement observations. See the
+[mapped host checkpoint](../../tasks/windows11-integration.md#drive-the-full-supervisor-through-the-mapped-deployment-pipe).
+
+The [guest relay](msix/prestart_deployment_relay.psm1) is called from the
+fixed, pinned relay entry inside `RunDeploymentRelayJob`. It consumes the
+original guest QPC cutoffs and a protected launch profile. It uses the
+staged activation and fixed watchdog to forward the deployment commands
+and emit their committed replies. The relay job owns containment if the
+watchdog cannot be observed or file I/O stalls. The guest relay does not
+multiplex the access owners.
+
 Each independently admitted launcher retains its actual context, process,
 job and private diagnostics from before activation through confirmed
 retirement. This includes an attempt that raised before returning a

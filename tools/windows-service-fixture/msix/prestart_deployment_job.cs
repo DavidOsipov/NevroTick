@@ -16,9 +16,12 @@ namespace NevroTick
     {
         private const string DeploymentEntryName = "prestart_deployment_owner.ps1";
         private const string DeploymentGuardianName = "prestart_deployment_guardian.ps1";
+        private const string DeploymentRelayName = "prestart_deployment_relay.ps1";
         private const int MaximumDeploymentRetirementAllowance = 30000;
         private const uint DeploymentActiveProcessLimit = 2;
         private const uint DeploymentGuardianActiveProcessLimit = 3;
+        // Relay, watchdog, guardian, owner, observer and their console helpers.
+        private const uint DeploymentRelayActiveProcessLimit = 8;
         private const int MaximumRecoveryMembers = 8;
         private const int BasicProcessIdList = 3;
         private const uint DuplicateSameAccess = 2;
@@ -114,6 +117,25 @@ namespace NevroTick
             return job.Run(guardianPath, guardianBytes, guardianSha256, powerShellBytes, powerShellSha256, runId);
         }
 
+        // The transaction lends its private redirected stdio and original running
+        // clock, which must not be stopped, reset or restarted during the call.
+        // The transaction still owns staging and observes the supervisor's exit.
+        public static DeploymentJobReport RunDeploymentRelayJob(string relayPath, long relayBytes,
+            string relaySha256, long powerShellBytes, string powerShellSha256, Guid runId,
+            Stopwatch clock, int workMilliseconds, int retirementMilliseconds)
+        {
+            if (Interlocked.Exchange(ref deploymentJobTaken, 1) != 0)
+                return new DeploymentJobReport(null, null, null, false, null, null,
+                    new InvalidOperationException("prestart-deployment-job:already-used"), null);
+            if (!DeploymentDeadlinesValid(workMilliseconds, retirementMilliseconds) ||
+                !Stopwatch.IsHighResolution || clock == null || !clock.IsRunning)
+                return new DeploymentJobReport(null, null, null, false, null, null,
+                    new ArgumentException("prestart-deployment-job:deadlines"), null);
+
+            DeploymentJob job = new DeploymentJob(clock, workMilliseconds, retirementMilliseconds, null, relay: true);
+            return job.Run(relayPath, relayBytes, relaySha256, powerShellBytes, powerShellSha256, runId);
+        }
+
         private static bool DeploymentDeadlinesValid(int workMilliseconds, int retirementMilliseconds)
         {
             return workMilliseconds > 0 && retirementMilliseconds <= MaxTimeoutMilliseconds &&
@@ -167,6 +189,7 @@ namespace NevroTick
             private readonly int workMilliseconds;
             private readonly int retirementMilliseconds;
             private readonly DeploymentGuardianArguments guardian;
+            private readonly bool relay;
             private readonly KernelHandle process = new KernelHandle();
             private readonly KernelHandle thread = new KernelHandle();
             private readonly KernelHandle input = new KernelHandle();
@@ -197,12 +220,13 @@ namespace NevroTick
             private long? jobEmptyTick;
 
             internal DeploymentJob(Stopwatch clock, int workMilliseconds, int retirementMilliseconds,
-                DeploymentGuardianArguments guardian)
+                DeploymentGuardianArguments guardian, bool relay = false)
             {
                 this.clock = clock;
                 this.workMilliseconds = workMilliseconds;
                 this.retirementMilliseconds = retirementMilliseconds;
                 this.guardian = guardian;
+                this.relay = relay;
             }
 
             internal DeploymentJobReport Run(string entryPath, long entryBytes, string entrySha256,
@@ -214,7 +238,7 @@ namespace NevroTick
                     Start(entryPath, entryBytes, entrySha256, powerShellBytes, powerShellSha256, runId);
                     ObserveExit(workMilliseconds);
                     if (exitCode.Value != 0)
-                        failure = new InvalidDataException(guardian == null ?
+                        failure = new InvalidDataException(relay ? "prestart-deployment-job:relay-exit" : guardian == null ?
                             "prestart-deployment-job:owner-exit" : "prestart-deployment-job:guardian-exit");
                     CloseOwnedHandle(process, "close-process");
                     ObserveEmptyJob(workMilliseconds);
@@ -290,7 +314,9 @@ namespace NevroTick
                 string powerShellDirectory = systemDirectory + @"\WindowsPowerShell\v1.0";
                 string powerShellPath = powerShellDirectory + "\\" + PowerShellName;
                 CheckLocalPath(powerShellPath, PowerShellName);
-                CheckLocalPath(entryPath, guardian == null ? DeploymentEntryName : DeploymentGuardianName);
+                RequireTime(workMilliseconds, "work-deadline");
+                CheckLocalPath(entryPath, relay ? DeploymentRelayName :
+                    guardian == null ? DeploymentEntryName : DeploymentGuardianName);
                 CheckFileExpectation(powerShellBytes, powerShellSha256, MaxIdentityFileBytes, "deployment-interpreter");
                 CheckFileExpectation(entryBytes, entrySha256, MaxIdentityFileBytes, "deployment-entry");
                 if (guardian != null)
@@ -317,7 +343,7 @@ namespace NevroTick
                 if (job.IsInvalid)
                     throw DeploymentNativeError("create-job");
                 const uint requiredFlags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
-                uint requiredProcessLimit = guardian == null ?
+                uint requiredProcessLimit = relay ? DeploymentRelayActiveProcessLimit : guardian == null ?
                     DeploymentActiveProcessLimit : DeploymentGuardianActiveProcessLimit;
                 JobExtendedLimits limits = new JobExtendedLimits();
                 limits.Basic.LimitFlags = requiredFlags;
@@ -442,7 +468,16 @@ namespace NevroTick
                     StringBuilder command = new StringBuilder("\"" + image.Path +
                         "\" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File \"" +
                         entry.Path + "\"");
-                    if (guardian == null)
+                    if (relay)
+                    {
+                        // Read the current timestamp first, so an intervening delay
+                        // can only shorten the projected QPC deadlines.
+                        long origin = checked(Stopwatch.GetTimestamp() - clock.ElapsedTicks);
+                        command.Append(" -RunId ").Append(runId.ToString("D"))
+                            .Append(" -WorkDeadlineTick ").Append(DeadlineTick(origin, workMilliseconds))
+                            .Append(" -RetirementDeadlineTick ").Append(DeadlineTick(origin, retirementMilliseconds));
+                    }
+                    else if (guardian == null)
                         command.Append(" -RunId ").Append(runId.ToString("D"));
                     else
                         guardian.AppendArguments(command, powerShellBytes, powerShellSha256, runId);
@@ -620,6 +655,12 @@ namespace NevroTick
             private void RequireTime(int cutoffMilliseconds, string operation)
             {
                 RemainingWait(cutoffMilliseconds, operation);
+            }
+
+            private static string DeadlineTick(long origin, int cutoffMilliseconds)
+            {
+                long tick = checked(origin + checked(Stopwatch.Frequency * cutoffMilliseconds) / 1000);
+                return tick.ToString(CultureInfo.InvariantCulture);
             }
 
             private uint RemainingWait(int cutoffMilliseconds, string operation)

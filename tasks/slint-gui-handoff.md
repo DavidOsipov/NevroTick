@@ -337,6 +337,37 @@ the admitted integration/lab and do not follow from a screenshot or cross-build.
 | UP-UI-11 — hostile notes and critical copy; AC-26 | Signed oversized/control/markup/link notes remain bounded literal data or reject with safe text; they cause no fetch/action. A missing/lying/mixed translated offer falls back to the entire approved English group or remains unavailable. Language change and stale prepared text cannot change accepted terms. Retain boundary-sized healthy notes and approved complete groups. | Catalog/security/UI owner; actual decode/formatter/Slint consumers, native sink budgets later. CHECK-14/17/21/22/25/26. |
 | UP-UI-12 — accessible, private result flow; AC-17/26 | At D1/D3 re-entry, complete Check/Yes/decline/Cancel/UAC/refusal/unknown/recovery using keyboard and actual Narrator/UIA, with long text, contrast and scaling. Meaningful progress is rate-limited; required terms/actions stay reachable. Inspect bounded redacted diagnostics; any later notice only navigates to current status within observer/permission scope. | P5 UI/accessibility, W11-W08/W09, native supported profiles; no current rich-toast or accessibility pass. CHECK-14/17/21/22. |
 
+### Bound the About fixture's text-contract transition
+
+The independent source review at `a4a3bb043fdb` found 509 active
+catalog meanings and a 512-entry map limit. The first complete sample
+needs separate meanings for the check, check progress, offer terms,
+affirmative action, decline, download, verification, installation and
+an explicitly simulated result. Count typed version, channel and size
+projections and any needed labels before freezing the roster. Reuse the
+existing About destination and sample marker. Use one in-memory offer
+and at most one active preview operation. Bind acceptance to the
+currently published offer generation and its exact fixture target and
+terms. Cover Later, dismissed and superseded offers, repeated or forged
+activation and a useful fresh acceptance through the receiving callback.
+
+Retain schema 2 and advance the semantic text contract for the new
+required meanings. Preserve the existing ordinals and both historical
+generation fixtures. Select the new map ceiling using the exact roster.
+A source calculation found 3,790,306 charged JSON work units for the
+current English bytes, against 4,000,000. The exact successor must pass
+the original work budget or justify a reviewed bounded decoder change.
+Exercise the new ceiling plus one, decoded duplicate keys, the old
+contract's refusal and complete new JSON/CBOR publication. Adding
+FixtureCopy slots shifts later aliases, so regenerate and check the
+whole immutable projection. Independent exact-copy approval remains
+open and the release ledger stays empty. See the [text workflow](../docs/nevrotick-gui-text-development.md).
+
+This is planning and independent source review for UP-UI-01/02/04/11.
+The fixture owner still has to freeze the exact messages and facts,
+implement the accepted state and bind it to About. This checkpoint
+executes no fixture, decoder, native or live-updater acceptance case.
+
 ### Readiness, skill application and retained gates
 
 The documentation stage applied `plan-code-change` to reconcile the accepted

@@ -23,6 +23,8 @@ from unittest.mock import patch
 from uuid import UUID
 
 import prestart_deployment_session as session
+import prestart_deployment_owner as owner_entry
+from prestart_deployment_owner import DeploymentOwnerInputs, RenderedDeploymentOwner, launch_rendered_prestart_session
 from prestart_deployment_session import (
     GuardedDeploymentProcess, PrivateAccessDiagnostic, launch_deployment_watchdog, read_private_access_diagnostic,
     supervise_deployment_session, supervise_prestart_session,
@@ -869,7 +871,7 @@ class FullPrestartSessionTests(unittest.TestCase):
             self.assertEqual(standard.requests, [b""])
 
 
-LaunchRunT = TypeVar("LaunchRunT", bound=DeploymentRun)
+LaunchRunT = TypeVar("LaunchRunT")
 LaunchEvent = tuple[str, str, float]
 
 
@@ -999,6 +1001,194 @@ class FullPrestartLaunchTests(unittest.TestCase):
                 (PrestartProbe.STANDARD, ordinary, replace(self.full.fixture.standard, actor=ordinary)),
             )
             self.assertEqual(empty, ())
+
+    def rendered_inputs(self) -> DeploymentOwnerInputs:
+        template: Path = Path(__file__).resolve().with_name("prestart_deployment_owner.ps1.in")
+        contents: bytes = template.read_bytes()
+        return DeploymentOwnerInputs(
+            template, Member(len(contents), sha256(contents).hexdigest()), "S-1-5-21-1337-8128-9999-1001",
+            "a" * 64, "b" * 64,
+            {
+                "interpreter": Member(111, "c" * 64),
+                "child_module": Member(112, "c" * 64),
+                "session_module": Member(113, "c" * 64),
+                "deployment_helper": Member(114, "c" * 64),
+                "archive": Member(115, self.run.signed_package_sha256),
+                "identity_entry": Member(116, "c" * 64),
+                "identity_module": Member(117, self.run.companion_sha256),
+                "identity_helper": Member(118, "c" * 64),
+                "observer": Member(119, self.run.observer_sha256),
+            },
+            1000, 1500,
+        )
+
+    def test_rendered_entry_and_original_access_owners_reach_the_full_receipt_path(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        child: str = """
+from hashlib import sha256
+import json
+from pathlib import Path
+import sys
+
+entry = Path(sys.argv[1]).read_bytes()
+if len(entry) != int(sys.argv[2]) or sha256(entry).hexdigest() != sys.argv[3]:
+    raise SystemExit(2)
+lines = entry.decode("ascii").splitlines()
+if any(lines.count(line) != 1 for line in json.loads(sys.argv[4])):
+    raise SystemExit(3)
+for command, reply in json.loads(sys.argv[5]):
+    if sys.stdin.buffer.read(1) != bytes.fromhex(command):
+        raise SystemExit(4)
+    sys.stdout.buffer.write(bytes.fromhex(reply))
+    sys.stdout.buffer.flush()
+if sys.stdin.buffer.read(1) != b"":
+    raise SystemExit(5)
+sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
+"""
+        expected: list[str] = [
+            f"[guid]$expectedRunId = '{self.run.id}'",
+            "[string]$ownerRole = 'deployment'",
+            "[string]$expectedActorSid = 'S-1-5-21-1337-8128-9999-1001'",
+            f"[string]$signerSha256 = '{'a' * 64}'",
+            f"[string]$expectedPayloadSha256 = '{'b' * 64}'",
+            "[int]$workMilliseconds = 1000",
+            "[int]$retirementMilliseconds = 1500",
+            "[bool]$fullPrestart = $true",
+            "[hashtable]$pins = @{",
+            f"    interpreter = @{{ Bytes = [long]111; Sha256 = '{'c' * 64}' }}",
+            f"    child_module = @{{ Bytes = [long]112; Sha256 = '{'c' * 64}' }}",
+            f"    session_module = @{{ Bytes = [long]113; Sha256 = '{'c' * 64}' }}",
+            f"    deployment_helper = @{{ Bytes = [long]114; Sha256 = '{'c' * 64}' }}",
+            f"    archive = @{{ Bytes = [long]115; Sha256 = '{self.run.signed_package_sha256}' }}",
+            f"    identity_entry = @{{ Bytes = [long]116; Sha256 = '{'c' * 64}' }}",
+            f"    identity_module = @{{ Bytes = [long]117; Sha256 = '{self.run.companion_sha256}' }}",
+            f"    identity_helper = @{{ Bytes = [long]118; Sha256 = '{'c' * 64}' }}",
+            f"    observer = @{{ Bytes = [long]119; Sha256 = '{self.run.observer_sha256}' }}",
+        ]
+        transcript: str = json.dumps(
+            [(command.hex(), reply.hex()) for command, reply in (*self.full.script, (b"R", b""))],
+        )
+        with (
+            ExitStack() as guest_resources,
+            TemporaryDirectory() as stage,
+            self.full.actor(b"A", self.full.access) as access,
+            self.full.actor(b"U", self.full.standard) as ordinary,
+        ):
+            processes: list[Popen[bytes]] = []
+
+            class InertGuest(ScriptedOwnerAttempt[RenderedDeploymentOwner]):
+                def start(
+                    self, entry: RenderedDeploymentOwner, deadline: float, retirement_deadline: float,
+                ) -> session.OwnedDeploymentProcess:
+                    path: Path = Path(stage) / "prestart_deployment_owner.ps1"
+                    with path.open("xb") as output:
+                        output.write(entry.contents)
+                    process: Popen[bytes] = guest_resources.enter_context(Popen(
+                        [sys.executable, "-I", "-B", "-c", child, str(path), str(entry.pin.size),
+                         entry.pin.sha256, json.dumps(expected), transcript, terminal],
+                        stdin=PIPE, stdout=PIPE, stderr=DEVNULL, bufsize=0,
+                    ))
+                    processes.append(process)
+                    self.result = GuardedDeploymentProcess(process)
+                    return super().start(entry, deadline, retirement_deadline)
+
+            terminal: str = self.full.deployment.retired.hex()
+            provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events, access)
+            standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events, ordinary)
+            deployment = InertGuest("deployment", self.events)
+            result: PrestartObservation = launch_rendered_prestart_session(
+                self.run, provisioning, standard, deployment, self.rendered_inputs(),
+                self.work_deadline, self.retirement_deadline, captures=captures,
+            )
+
+            [(entry, work, retirement)] = deployment.starts
+            self.assertEqual((work, retirement), (self.work_deadline, self.retirement_deadline))
+            self.assertIs(entry.run.deployment_actor, self.run.deployment_actor)
+            self.assertIs(entry.run.provisioning_actor, access)
+            self.assertIs(entry.run.standard_actor, ordinary)
+            self.assertIn(b"[bool]$fullPrestart = $true\n", entry.contents)
+            self.assertIn(f"[guid]$expectedRunId = '{self.run.id}'\n".encode("ascii"), entry.contents)
+            self.assertEqual(entry.pin, Member(len(entry.contents), sha256(entry.contents).hexdigest()))
+            self.assertEqual(result, PrestartObservation(
+                self.run.id, "1" * 64, ((528, 528, 528), (528, 16, 16)),
+            ))
+            self.assertEqual(access.requests, [b"A", b""])
+            self.assertEqual(ordinary.requests, [b"U", b""])
+            [owner] = processes
+            self.assertEqual(owner.returncode, 0)
+            self.assertTrue(all(process.retired_exit.is_set() for process in (access, ordinary)))
+            self.assertEqual([record.probe for record in captures.records], [
+                PrestartProbe.IDENTITY, PrestartProbe.OBSERVATION, PrestartProbe.ACCESS, PrestartProbe.STANDARD,
+            ])
+
+    def test_render_refusal_does_not_activate_the_guest_or_publish_any_capture(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        inputs: DeploymentOwnerInputs = self.rendered_inputs()
+        inputs = replace(inputs, template_pin=Member(inputs.template_pin.size, "0" * 64))
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary:
+            provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events, access)
+            standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events, ordinary)
+            deployment = ScriptedOwnerAttempt[RenderedDeploymentOwner]("deployment", self.events)
+            with self.assertRaisesRegex(ReceiptRefused, "deployment owner template differs"):
+                launch_rendered_prestart_session(
+                    self.run, provisioning, standard, deployment, inputs,
+                    self.work_deadline, self.retirement_deadline, captures=captures,
+                )
+            self.assert_rollback("provisioning", "standard")
+            self.assert_unused_retired(access, ordinary)
+            self.assertEqual(captures.records, ())
+
+    def test_guest_start_refusal_rolls_back_all_three_original_attempts(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        original: ReceiptRefused = ReceiptRefused("inert guest start refused after acquisition")
+
+        def fail_start() -> None:
+            raise original
+
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary, self.full.actor(b"") as owner:
+            provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events, access)
+            standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events, ordinary)
+            deployment = ScriptedOwnerAttempt[RenderedDeploymentOwner](
+                "deployment", self.events, owner, on_start=fail_start,
+            )
+            with self.assertRaises(ReceiptRefused) as refusal:
+                launch_rendered_prestart_session(
+                    self.run, provisioning, standard, deployment, self.rendered_inputs(),
+                    self.work_deadline, self.retirement_deadline, captures=captures,
+                )
+            self.assertIs(refusal.exception, original)
+            self.assert_rollback("provisioning", "standard", "deployment")
+            self.assert_unused_retired(access, ordinary, owner)
+            self.assertEqual(captures.records, ())
+
+    def test_render_reaching_the_work_cutoff_never_activates_the_guest(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        inputs: DeploymentOwnerInputs = self.rendered_inputs()
+        original_render = owner_entry.render_deployment_owner
+        now: float = self.work_deadline - 1.0
+
+        def late_render(*args, **kwargs) -> tuple[bytes, Member]:
+            nonlocal now
+            entry: tuple[bytes, Member] = original_render(*args, **kwargs)
+            now = self.work_deadline
+            return entry
+
+        with self.full.actor(b"") as access, self.full.actor(b"") as ordinary:
+            provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events, access)
+            standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events, ordinary)
+            deployment = ScriptedOwnerAttempt[RenderedDeploymentOwner]("deployment", self.events)
+            with (
+                patch.object(owner_entry, "render_deployment_owner", late_render),
+                patch.object(session.time, "monotonic", lambda: now),
+                self.assertRaisesRegex(TimeoutError, "deployment pipe deadline"),
+            ):
+                launch_rendered_prestart_session(
+                    self.run, provisioning, standard, deployment, inputs,
+                    self.work_deadline, self.retirement_deadline, captures=captures,
+                )
+            self.assert_rollback("provisioning", "standard")
+            self.assert_unused_retired(access, ordinary)
+            self.assertEqual(captures.records, ())
 
     def test_launch_retains_raw_provisioning_failure_and_rejects_capture_store_reuse(self) -> None:
         marker: str = "synthetic-private-child-marker"

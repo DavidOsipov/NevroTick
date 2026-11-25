@@ -1606,6 +1606,38 @@ needs separate admission of the proposed provisioning and standard
 actors, their actual access results, and the continuous-quiescence
 evidence required by the existing plan.
 
+The [full-mode render and launch join](../../tasks/windows11-integration.md#bind-full-pre-start-rendering-to-the-original-role-launches)
+passed the portable original-process controls. Windows PowerShell parsed
+the rendered entry and passed the scripted full-mode receiver controls.
+The [activation staging checkpoint](../../tasks/windows11-integration.md#stage-the-committed-activation-at-the-fixed-guest-local-owner-path)
+also passed the host publication and guest-local leased staging controls.
+The [fixed watchdog launch checkpoint](../../tasks/windows11-integration.md#pass-the-staged-activation-to-the-fixed-windows-watchdog)
+connects the exact local entry and pin to watchdog startup. The
+[relay-worker native owner](../../tasks/windows11-integration.md#contain-the-fixed-relay-worker-before-resuming-it)
+reuses the suspended job launch at the original guest deadline. The
+[mapped deployment host endpoint](../../tasks/windows11-integration.md#drive-the-full-supervisor-through-the-mapped-deployment-pipe)
+joins all nine commands to the full supervisor. The
+[guest relay checkpoint](../../tasks/windows11-integration.md#relay-all-nine-deployment-commands-inside-the-enclosing-native-job)
+passes the nested native deployment control. The
+[live mapped checkpoint](../../tasks/windows11-integration.md#join-the-host-supervisor-to-the-live-sandbox-mappings)
+joins the host and guest through the actual Sandbox mappings. The
+[joined native access checkpoint](../../tasks/windows11-integration.md#join-both-native-access-owners-to-the-live-deployment-relay)
+adds both native access owners under their original custody on the
+inert fixture. The [Sandbox trace controls](../../tasks/windows11-integration.md#observe-a-short-lived-process-and-a-reverted-registry-change-in-the-sandbox)
+distinguish short-lived processes and reverted writes on an owned HKCU
+key. The [traced paired install](../../tasks/windows11-integration.md#observe-the-paired-installed-scmfixture-from-registration-through-retirement)
+covered registration through original-owner retirement and restoration,
+with no observed start of a fixture image. The [installed descriptor
+checkpoint](../../tasks/windows11-integration.md#read-both-installed-service-descriptors-through-the-paired-window)
+adds matched owner and DACL reads and independent SID resolution on
+the two original objects. The full installed S0.6 child still needs
+both real access actors and outcomes, and authoritative SCM property
+continuity or an effective inhibition owner. The [SCM notification
+controls](../../tasks/windows11-integration.md#discriminate-scm-description-and-dacl-notifications-on-disabled-controls)
+observed description changes and no notification for the independently
+observed DACL change and restoration. SCM property subscription
+silence cannot close that gate.
+
 The [retained token generation checkpoint](../../tasks/windows11-integration.md#retain-the-token-generation-through-service-peer-reobservation--24-november-2026)
 keeps the original token and its modification generation together across
 peer observations. The [supervised fixture exchange](../../tasks/windows11-integration.md#reobserve-the-original-broker-before-request-and-reply-acceptance--24-november-2026)

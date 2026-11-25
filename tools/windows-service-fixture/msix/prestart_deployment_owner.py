@@ -5,11 +5,17 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
+from typing import Protocol
 from uuid import UUID
 
 from check_package import Refused, read_regular
+from prestart_deployment_session import (
+    OwnedDeploymentProcess, PrestartAccessLaunchAttempt, PrestartCaptures, PrestartOwnerAttempt, _remaining,
+    launch_prestart_session,
+)
 from prestart_receipts import (
-    DeploymentRun, Member, PrestartProbe, ReceiptRefused, SHA256, Run, is_prestart_sid_text, require, require_run,
+    DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, SHA256, Run,
+    is_prestart_sid_text, require, require_run,
 )
 
 
@@ -42,6 +48,109 @@ class RenderedAccessOwner:
     path: Path
     contents: bytes = field(repr=False)
     pin: Member
+
+
+@dataclass(frozen=True, slots=True)
+class DeploymentOwnerInputs:
+    """Reviewed authoring inputs from the admitted deployment context."""
+
+    template: Path
+    template_pin: Member
+    deployment_sid: str = field(repr=False)
+    signer_sha256: str
+    expected_payload_sha256: str
+    pins: Mapping[str, Member]
+    work_milliseconds: int
+    retirement_milliseconds: int
+
+
+@dataclass(frozen=True, slots=True)
+class RenderedDeploymentOwner:
+    """Full-mode entry and pin for one run with both original access owners."""
+
+    run: Run
+    contents: bytes = field(repr=False)
+    pin: Member
+
+
+class DeploymentGuestAttempt(Protocol):
+    """One-shot activation for the admitted deployment actor and guest.
+
+    Stage the rendered bytes at the fixed deployment entry, in protected
+    staging distinct from both access roles. Pass the rendered pin to the
+    original watchdog and return its private pipes. Independently enforce
+    the original cutoffs across staging, launch and unattended waits. Keep
+    the native job, deadlines, diagnostics and settlement custody across an
+    interrupted activation.
+    """
+
+    def start(self, entry: RenderedDeploymentOwner, deadline: float,
+              retirement_deadline: float) -> OwnedDeploymentProcess:
+        """Activate the fixed entry and watchdog under the original host cutoffs."""
+        ...
+
+    def request_retirement(self, retirement_deadline: float) -> None:
+        """Signal the original deployment attempt, even after a failed start."""
+        ...
+
+    def wait_retired(self, retirement_deadline: float) -> None:
+        """Observe original native job and stream settlement or retain recovery custody."""
+        ...
+
+
+class _RenderedDeploymentAttempt(PrestartOwnerAttempt[Run]):
+    """Render only after the coordinator has acquired both original access owners."""
+
+    def __init__(self, inputs: DeploymentOwnerInputs, guest: DeploymentGuestAttempt):
+        self._inputs: DeploymentOwnerInputs = inputs
+        self._guest: DeploymentGuestAttempt = guest
+        self._started: bool = False
+
+    def start(self, run: Run, deadline: float, retirement_deadline: float) -> OwnedDeploymentProcess:
+        inputs: DeploymentOwnerInputs = self._inputs
+        contents: bytes
+        pin: Member
+        contents, pin = render_deployment_owner(
+            inputs.template, inputs.template_pin, run, inputs.deployment_sid, inputs.signer_sha256,
+            inputs.pins, inputs.work_milliseconds, inputs.retirement_milliseconds,
+            expected_payload_sha256=inputs.expected_payload_sha256, full_prestart=True,
+        )
+        _remaining(deadline)
+        self._started = True
+        return self._guest.start(RenderedDeploymentOwner(run, contents, pin), deadline, retirement_deadline)
+
+    def request_retirement(self, retirement_deadline: float) -> None:
+        """Forward rollback only if staging or guest activation could have begun."""
+        if self._started:
+            return self._guest.request_retirement(retirement_deadline)
+        return None
+
+    def wait_retired(self, retirement_deadline: float) -> None:
+        """Keep the original guest's independent settlement result."""
+        if self._started:
+            return self._guest.wait_retired(retirement_deadline)
+        return None
+
+
+def launch_rendered_prestart_session(
+    run: DeploymentRun, provisioning: PrestartAccessLaunchAttempt, standard: PrestartAccessLaunchAttempt,
+    deployment: DeploymentGuestAttempt, inputs: DeploymentOwnerInputs, deadline: float,
+    retirement_deadline: float, *, captures: PrestartCaptures,
+) -> PrestartObservation:
+    """Join the fixed full-mode renderer to one admitted three-role launch.
+
+    The lab caller supplies independently admitted actors, signed artifact and
+    continuous quiescence. Neither staging the entry nor receiving a response
+    establishes any of those facts. The coordinator owns ordering; on failure
+    it signals attempted owners and requires their independent retirement under
+    the original deadlines. The caller retains resources and raw captures.
+    """
+    require(deployment is not provisioning and deployment is not standard,
+            "pre-start roles require distinct launch attempts")
+    return launch_prestart_session(
+        run, provisioning, standard, _RenderedDeploymentAttempt(inputs, deployment),
+        deadline, retirement_deadline, captures=captures,
+    )
 
 
 def render_deployment_owner(
