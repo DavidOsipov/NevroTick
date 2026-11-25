@@ -465,3 +465,53 @@ body{min-width:320px}
 @media(max-width:680px){.tray-preview{padding:12px;margin-top:16px}.tray-review-caption{flex-wrap:wrap;gap:9px}.tray-contrast-control{font-size:11px}.tray-current-summary{padding:15px 12px}.tray-observer-placeholder{align-items:flex-start;flex-direction:column;gap:12px;padding:15px 12px}.tray-observer-placeholder .button{font-size:11px}.tray-taskbar{gap:7px;padding:5px 10px}.tray-taskbar-label{font-size:9px;max-width:160px}.tray-preferences .preference-row{align-items:flex-start}.tray-preferences .setting-links .button{white-space:normal;text-align:left}.tray-review-help{font-size:10px}.tray-menu-popup{right:9px;max-width:calc(100% - 18px)}.tray-menu-item{min-height:38px}}
 @media(forced-colors:active){.tray-preview,.tray-preview:has(#tray-contrast-preview:checked){--tray-bg:Canvas;--tray-taskbar:Canvas;--tray-surface:Canvas;--tray-text:CanvasText;--tray-muted:CanvasText;--tray-border:CanvasText;--tray-hover:Highlight;--tray-focus:Highlight}.tray-brand-icon{display:none}.tray-clock-outline{display:block}.tray-preview .tray-state-symbol,.tray-preview:has(#tray-contrast-preview:checked) .tray-state-symbol{background:Canvas;color:CanvasText;border-color:Canvas;box-shadow:0 0 0 1px CanvasText;forced-color-adjust:none}.tray-preview .tray-summary-symbol,.tray-preview:has(#tray-contrast-preview:checked) .tray-summary-symbol{color:CanvasText}.tray-menu-item:hover:not(:disabled),.tray-menu-item:focus{background:Highlight;color:HighlightText}.tray-menu-item:disabled{color:GrayText;opacity:1}.tray-menu-popup,.tray-tooltip{box-shadow:none}}
 @media print{.tray-preview{display:none}}
+
+/* Manual updater: a local, finite interaction sample in the existing About view. */
+.update-card{margin:0 0 24px;padding:23px 25px;border:1px solid #c8d8e1;border-radius:10px;background:#fbfdfe;min-width:0}
+.update-card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.update-card-heading h2{font-size:20px;letter-spacing:-.35px}
+.update-card-heading .eyebrow{margin-bottom:5px;color:var(--blue)}
+.update-card-heading>.badge{flex-shrink:0}
+.update-demo-note{font-size:11px;line-height:1.6;color:var(--muted);margin-top:10px}
+.update-versions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:19px 0;padding:0 0 18px;border-bottom:1px solid var(--line)}
+.update-versions .fact{display:block;min-width:0;padding:0;border:0}
+.update-versions dt{font-size:11px;color:var(--muted);font-weight:400}
+.update-versions dd{margin:5px 0 0;font-size:16px;font-weight:650;overflow-wrap:anywhere}
+.update-status h3{font-size:15px;line-height:1.45;margin-bottom:5px}
+.update-status h3:focus-visible{outline:3px solid #236d99;outline-offset:4px}
+.update-status p{font-size:13px;max-width:72ch;color:var(--muted)}
+.update-status.good h3{color:var(--green)}
+.update-status.warning h3{color:var(--amber)}
+.update-status.danger{padding:13px 15px;border:1px solid #e5c5c7;background:var(--red-bg);border-radius:6px}
+.update-status.danger h3{color:var(--red)}
+.update-steps{display:flex;flex-wrap:wrap;gap:12px 25px;list-style:none;padding:0;margin:20px 0 12px}
+.update-steps li{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.update-step-number{display:grid;place-items:center;width:24px;height:24px;border:1px solid #c5d2da;border-radius:50%;font-size:11px;font-weight:650}
+.update-steps .current{color:var(--blue);font-weight:650}
+.update-steps .current .update-step-number{background:var(--blue);color:#fff;border-color:var(--blue)}
+.update-steps .complete{color:var(--green)}
+.update-steps .complete .update-step-number{background:var(--green-bg);border-color:#aac9b6}
+.update-progress{display:block;inline-size:100%;block-size:7px;margin:15px 0 18px;accent-color:var(--blue)}
+.update-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}
+.update-action-note{margin-top:13px;font-size:12px;color:var(--muted)}
+.update-trust-note{font-size:11px;color:var(--muted);margin-top:15px}
+.updater-reviewer .scenario-field{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.updater-reviewer .scenario-field label{flex:0 1 230px}
+.updater-reviewer .scenario-field select{min-width:0;flex:1 1 260px;max-width:100%;font-size:12px}
+.update-offer-dialog{width:620px;max-width:calc(100% - 24px)}
+.update-offer-dialog .dialog-header h1{font-size:23px;line-height:1.3;letter-spacing:-.4px}
+.update-offer-version{display:flex;align-items:center;flex-wrap:wrap;gap:9px 12px;margin-bottom:14px}
+.update-offer-version>strong{font-size:19px;line-height:1.4}
+.update-offer-version>span:not(.badge){font-size:12px;color:var(--muted)}
+.update-offer-facts{margin:17px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 0}
+.update-offer-facts .fact{grid-template-columns:112px minmax(0,1fr);padding:7px 0}
+.update-offer-facts dt{font-size:12px;color:var(--muted)}
+.update-offer-facts dd{font-size:12px;line-height:1.6;margin:0}
+.update-notes{margin:15px 0;font-size:12px}
+.update-notes summary{color:var(--blue);font-weight:600}
+.update-notes p{white-space:pre-line;overflow-wrap:anywhere;margin-top:10px}
+.update-verification-note{font-size:12px;color:var(--muted);padding:12px 14px;background:var(--blue-soft);border-radius:6px}
+dialog:modal{overscroll-behavior:contain}
+dialog::backdrop{overflow:hidden;overscroll-behavior:contain}
+@media(max-width:680px){.update-card{padding:18px 16px}.update-card-heading{flex-direction:column;gap:10px}.update-card-heading h2{font-size:19px}.update-versions{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.update-versions .fact:last-child{grid-column:1 / -1}.update-offer-facts .fact{grid-template-columns:1fr;gap:3px}.update-offer-version>span:not(.badge){flex-basis:100%}.update-steps{gap:12px}.update-steps li{font-size:11px}.update-actions .button{flex:1 1 auto}.updater-reviewer .scenario-field{align-items:stretch;flex-direction:column}.updater-reviewer .scenario-field label,.updater-reviewer .scenario-field select{flex:0 1 auto}}
+@media(forced-colors:active){.update-card,.update-status.danger,.update-verification-note,.update-step-number{border-color:CanvasText;background:Canvas;color:CanvasText}.update-steps .current .update-step-number{background:Highlight;color:HighlightText;border-color:Highlight}.update-status.good h3,.update-status.warning h3,.update-status.danger h3,.update-steps .current,.update-steps .complete{color:CanvasText}}

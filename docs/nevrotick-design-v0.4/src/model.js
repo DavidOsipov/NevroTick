@@ -290,6 +290,163 @@
     if (!['active','unknown'].includes(log.results.service)) return log;
     return {...log,state:log.results.ui === 'active' ? 'partial' : 'expired',results:{...log.results,service:'expired'}};
   }
+  // Closed, versioned update examples. These placeholder identities/digests are
+  // never downloaded or verified. Reference identity admits only these fixtures;
+  // it is not a cryptographic or privileged-installation boundary.
+  const updateTarget = (id, version, digest, termsRevision = 'terms-v1') => Object.freeze({
+    id,version,channel:'Stable',bytes:50331648,packageIdentity:'NevroTick.Sample_x64',
+    digest,releaseSequence:version === '1.2.0' ? 3 : 2,securityEpoch:1,termsRevision,
+    notes:'Sample release: improves status reporting and update recovery. These are demonstration notes, not a published release.',
+    interruption:'NevroTick services pause during installation. The app may close and restart.',
+    elevation:'Windows may require administrator approval or another mandatory OS prompt.',
+    restart:'A Windows restart may be required. NevroTick will not restart Windows automatically.',
+    network:termsRevision === 'terms-v2' ? 'Metered connection: this 48 MiB download may incur charges. Current sample policy permits it.' : 'A complete 48 MiB package will be downloaded. The sample connection is unmetered; roaming is not active and current policy permits it.'
+  });
+  const UPDATE_TARGETS = Object.freeze({
+    current:updateTarget('stable-1.1.0-v1','1.1.0','a'.repeat(64)),
+    newer:updateTarget('stable-1.2.0-v1','1.2.0','b'.repeat(64)),
+    changedTerms:updateTarget('stable-1.1.0-v2','1.1.0','a'.repeat(64),'terms-v2')
+  });
+  const updateSample = (label, check = 'available', verification = null, result = 'installed', reconciliation = 'installed') => Object.freeze({label,check,verification,result,reconciliation});
+  const UPDATE_SAMPLES = Object.freeze({
+    available:updateSample('Доступно обновление · успешная установка'),
+    'restart-required':updateSample('Установка · требуется перезапуск Windows','available',null,'restart-required'),
+    'no-update':updateSample('Подходящего обновления нет','no-update'),
+    offline:updateSample('Проверка · нет соединения','offline'),
+    'metadata-refused':updateSample('Проверка · метаданные отклонены','metadata-refused'),
+    'time-unavailable':updateSample('Проверка · достоверное время недоступно','time-unavailable'),
+    'identity-unavailable':updateSample('Проверка · установленная версия неизвестна','identity-unavailable'),
+    'policy-blocked':updateSample('Проверка · политика запрещает обновление','policy-blocked'),
+    managed:updateSample('Обновления управляются организацией','managed'),
+    'package-refused':updateSample('Пакет · проверка отклонена','available','package-refused'),
+    'uac-denied':updateSample('Системное подтверждение · отказ','available','uac-denied'),
+    'outcome-unknown':updateSample('Результат неизвестен · сверка подтверждает установку','available',null,'outcome-unknown'),
+    'unknown-no-effect':updateSample('Результат неизвестен · сверка подтверждает отсутствие установки','available',null,'outcome-unknown','no-effect'),
+    'recovery-required':updateSample('Установка · требуется восстановление','available',null,'recovery-required','recovery-required')
+  });
+  const UPDATE_REASONS = Object.freeze({
+    offline:'The update check could not connect. Update eligibility is unknown; no package was downloaded.',
+    'metadata-refused':'Update metadata was refused. No eligible release was established and no package was downloaded.',
+    'time-unavailable':'The required trustworthy time evidence is unavailable. Update eligibility cannot be established.',
+    'identity-unavailable':'The installed product identity could not be confirmed. An update cannot be offered.',
+    'policy-blocked':'Current policy does not permit this update. Another Yes cannot bypass that policy.',
+    managed:'Admitted organization policy assigns updates to an external administrator. This app will not install an update.',
+    'package-refused':'Complete-package verification was refused before installation. Package bytes, identity and Windows signatures must all pass independently.',
+    'uac-denied':'The required Windows approval was denied or cancelled before installation. The installed version is unchanged.',
+    'intent-invalidated':'The target or current installation no longer matches this update intent. Check again and review a current offer.',
+    'target-changed':'A different eligible sample release is now offered. Review it and choose Update now again to authorize that exact release.',
+    'terms-changed':'The download conditions changed. Review the new terms before authorizing this update again.',
+    'intent-expired':'The earlier update intent is no longer current. Review this offer before starting a new attempt.',
+    'installed-changed':'The installed sample product changed in another session. Review the refreshed offer before a new attempt.',
+    cancelled:'Cancelled before installation. No installation was started; a later update requires a new decision.',
+    'observer-closed':'The app observer closed. Earlier intent cannot start a new update; any started installation needs its result reconciled.',
+    'outcome-unknown':'The installation acknowledgement is missing. The update may have completed; reconcile the result before another attempt.',
+    'recovery-required':'The installation did not establish a coherent ready product. Recovery is required; do not start another update.',
+    'no-effect-confirmed':'Read-only reconciliation confirmed that no installation occurred. The previous installed version is retained.',
+    later:'Update deferred. No further package transfer or installation will start.'
+  });
+  function updateInitial(generation = 0) {
+    return {phase:'not-checked',generation,sample:'available',operationSample:null,target:null,intent:null,
+      installedVersion:'1.0.0',runningVersion:'1.0.0',installedIdentityKnown:true,previousInstalledVersion:null,
+      lastSuccessfulCheck:null,reason:null,packageStarted:false,installStarted:false,consentCount:0,
+      restartRequired:false,restartScope:'none',maintenanceComplete:false,serviceReadiness:'not-checked'};
+  }
+  const nextUpdateGeneration = u => Number.isSafeInteger(u.generation) && u.generation >= 0 && u.generation < Number.MAX_SAFE_INTEGER ? u.generation + 1 : null;
+  const updateBusy = state => ['checking','downloading','verifying','installing','reconciling'].includes(state.updater.phase);
+  const updateCanCancel = state => ['checking','downloading','verifying'].includes(state.updater.phase);
+  function updateCanCheck(state) {
+    return state.page === 'about' && !state.modal && !state.leaveGuard && state.notifications.presenter === 'active' && nextUpdateGeneration(state.updater) !== null && !updateBusy(state) && !['outcome-unknown','recovery-required','restart-required'].includes(state.updater.phase);
+  }
+  const knownUpdateTarget = target => Object.values(UPDATE_TARGETS).includes(target);
+  function updateTargetEligible(u, target) {
+    const versions = ['1.0.0','1.0.1','1.1.0','1.2.0'];
+    return knownUpdateTarget(target) && versions.includes(u.installedVersion) && versions.indexOf(u.installedVersion) < versions.indexOf(target.version);
+  }
+  function currentUpdateIntent(u) {
+    const intent = u.intent;
+    return !!intent && knownUpdateTarget(u.target) && intent.generation === u.generation && intent.targetId === u.target.id && intent.target === u.target && intent.installedVersion === u.installedVersion && intent.termsRevision === u.target.termsRevision;
+  }
+  function finishUpdate(state, phase) {
+    const u = state.updater, installed = ['installed','restart-required'].includes(phase);
+    return {...state,updater:{...u,phase,intent:null,reason:installed ? null : phase,
+      installedVersion:installed ? u.target.version : u.installedVersion,installedIdentityKnown:installed,
+      restartRequired:phase === 'restart-required',restartScope:phase === 'restart-required' ? 'windows' : 'none',maintenanceComplete:phase === 'installed',
+      serviceReadiness:phase === 'installed' ? 'ready' : phase === 'restart-required' ? 'pending-restart' : 'unknown'}};
+  }
+  function closeUpdateObserver(state) {
+    const u = state.updater;
+    if (!updateBusy(state) && u.phase !== 'available') return state;
+    const started = ['installing','reconciling'].includes(u.phase);
+    return {...state,updater:{...u,generation:nextUpdateGeneration(u) ?? Number.MAX_SAFE_INTEGER,
+      phase:started ? 'outcome-unknown' : 'cancelled',intent:null,reason:'observer-closed',
+      installedIdentityKnown:started ? false : u.installedIdentityKnown,
+      maintenanceComplete:false,serviceReadiness:started ? 'unknown' : u.serviceReadiness}};
+  }
+  function reduceUpdate(state, action) {
+    const u = state.updater;
+    switch (action.type) {
+      case 'sample-update-result':
+        return !state.modal && !updateBusy(state) && typeof action.value === 'string' && Object.hasOwn(UPDATE_SAMPLES,action.value) ? {...state,updater:{...u,sample:action.value}} : state;
+      case 'update-check': {
+        if (!updateCanCheck(state)) return state;
+        return {...state,updater:{...u,phase:'checking',generation:nextUpdateGeneration(u),operationSample:u.sample,
+          target:null,intent:null,reason:null,packageStarted:false,installStarted:false,consentCount:0,
+          previousInstalledVersion:u.installedVersion,restartRequired:false,restartScope:'none',maintenanceComplete:false,serviceReadiness:'not-checked'}};
+      }
+      case 'update-offer':
+        return state.page === 'about' && !state.modal && state.notifications.presenter === 'active' && u.phase === 'available' && u.installedIdentityKnown && updateTargetEligible(u,u.target) ? {...state,modal:'update-offer'} : state;
+      case 'update-later':
+        return state.modal === 'update-offer' && u.phase === 'available' ? {...state,modal:null,updater:{...u,intent:null,reason:'later'}} : state;
+      case 'update-accept': {
+        if (state.page !== 'about' || state.modal !== 'update-offer' || state.notifications.presenter !== 'active' || u.phase !== 'available' || !u.installedIdentityKnown || !updateTargetEligible(u,u.target) || action.generation !== u.generation || action.targetId !== u.target.id) return state;
+        const intent = Object.freeze({generation:u.generation,targetId:u.target.id,target:u.target,installedVersion:u.installedVersion,termsRevision:u.target.termsRevision});
+        return {...state,modal:null,updater:{...u,phase:'downloading',intent,reason:null,packageStarted:true,consentCount:u.consentCount + 1,previousInstalledVersion:u.installedVersion}};
+      }
+      case 'update-cancel':
+        return updateCanCancel(state) ? {...state,updater:{...u,generation:nextUpdateGeneration(u) ?? Number.MAX_SAFE_INTEGER,phase:'cancelled',intent:null,reason:'cancelled'}} : state;
+      case 'update-reconcile':
+        return state.page === 'about' && !state.modal && state.notifications.presenter === 'active' && u.phase === 'outcome-unknown' && nextUpdateGeneration(u) !== null ? {...state,updater:{...u,phase:'reconciling',generation:nextUpdateGeneration(u),intent:null,reason:null}} : state;
+      case 'update-restart':
+        return state.page === 'about' && !state.modal && state.notifications.presenter === 'active' && ['installed','restart-required'].includes(u.phase) && u.installedIdentityKnown && u.installedVersion !== u.runningVersion ? {...state,updater:{...u,runningVersion:u.installedVersion}} : state;
+      case 'sample-update-invalidate': {
+        if (!['available','downloading','verifying'].includes(u.phase) || (state.modal && state.modal !== 'update-offer') || !['target','terms','expired','installed','policy'].includes(action.value) || nextUpdateGeneration(u) === null) return state;
+        const denied = action.value === 'policy';
+        const target = action.value === 'target' ? UPDATE_TARGETS.newer : action.value === 'terms' ? UPDATE_TARGETS.changedTerms : u.target;
+        const reason = ({target:'target-changed',terms:'terms-changed',expired:'intent-expired',installed:'installed-changed',policy:'policy-blocked'})[action.value];
+        return {...state,modal:denied ? null : state.page === 'about' ? 'update-offer' : null,
+          updater:{...u,generation:nextUpdateGeneration(u),phase:denied ? 'failed' : 'available',target:denied ? null : target,
+            installedVersion:action.value === 'installed' ? '1.0.1' : u.installedVersion,intent:null,reason}};
+      }
+      case 'update-step': {
+        if (!updateBusy(state) || state.notifications.presenter !== 'active' || action.generation !== u.generation || action.phase !== u.phase || !Object.hasOwn(UPDATE_SAMPLES,u.operationSample)) return state;
+        const sample = UPDATE_SAMPLES[u.operationSample];
+        if (u.phase === 'checking') {
+          if (!['available','no-update'].includes(sample.check)) return {...state,updater:{...u,phase:sample.check === 'managed' ? 'managed' : 'failed',reason:sample.check,installedIdentityKnown:sample.check === 'identity-unavailable' ? false : u.installedIdentityKnown}};
+          const target = UPDATE_TARGETS.current;
+          if (!['1.0.0','1.0.1','1.1.0','1.2.0'].includes(u.installedVersion)) return {...state,updater:{...u,phase:'failed',reason:'identity-unavailable',installedIdentityKnown:false}};
+          const phase = sample.check === 'no-update' || !updateTargetEligible(u,target) ? 'no-update' : 'available';
+          return {...state,modal:phase === 'available' && state.page === 'about' && !state.modal ? 'update-offer' : state.modal,
+            updater:{...u,phase,target:phase === 'available' ? target : null,installedIdentityKnown:true,
+              lastSuccessfulCheck:Object.freeze({generation:u.generation,result:phase,targetId:phase === 'available' ? target.id : null})}};
+        }
+        if (u.phase === 'reconciling') {
+          if (!knownUpdateTarget(u.target)) return finishUpdate(state,'recovery-required');
+          if (sample.reconciliation === 'no-effect') return {...state,updater:{...u,phase:'failed',reason:'no-effect-confirmed',installedVersion:u.previousInstalledVersion,installedIdentityKnown:true,intent:null,serviceReadiness:'unchanged'}};
+          return finishUpdate(state,sample.reconciliation);
+        }
+        if (!currentUpdateIntent(u) || (u.phase !== 'installing' && !u.installedIdentityKnown)) {
+          if (u.phase === 'installing') return finishUpdate(state,'outcome-unknown');
+          return {...state,updater:{...u,phase:'failed',reason:'intent-invalidated',intent:null}};
+        }
+        if (u.phase === 'downloading') return {...state,updater:{...u,phase:'verifying'}};
+        if (u.phase === 'verifying') return sample.verification
+          ? {...state,updater:{...u,phase:'failed',reason:sample.verification,intent:null,serviceReadiness:'unchanged'}}
+          : {...state,updater:{...u,phase:'installing',installStarted:true,installedIdentityKnown:false,serviceReadiness:'unknown'}};
+        return finishUpdate(state,sample.result);
+      }
+      default: return state;
+    }
+  }
   // In-memory command examples. No timer, SCM, helper, UAC or clock API is called.
   const SERVICE_RESPONSES = Object.freeze({
     confirmed:'Confirmed completion', 'uac-cancelled':'Administrator prompt cancelled',
@@ -591,7 +748,7 @@
   }
   function initialState(id = 'healthy') {
     const scenario = getScenario(id);
-    return { scenario, notifications:notificationInitial(), timeManagement:timeInitial(scenario), sampleLifecyclePreflight:'ready', sampleLifecycleResponse:'confirmed', serviceControl:serviceInitial(scenario), sampleServiceResponse:'confirmed', serviceDiagnosis:false, mode: 'simple', page: 'status', powerPage: 'status', modal: null, sourceFilter: 'all', sourceQuery: '', eventFilter: 'all', drafts: [], selectedSource: null, editorReturnToDetails: false, policyDraft: null, recoveryDraft: null, recoverySavedInput:null, recoveryEditBaseline:null, returnContext:null, leaveGuard:null, recoveryInput: {count:'0',helpers:['','']}, recoveryErrors: {}, settingsSection: 'schedule', editorError: {}, notice: '', compact: false, reviewerOpen: false, frequencyPreview: 'auto', frequencyDraft: 'auto', frequencyCustom: '300', frequencyOwn: '1', frequencyOwnDraft: '1', frequencyError: '', sampleSync: scenario.syncResponse, syncFeedback: null, sampleSyncStarted: false, sampleTray: false, sampleSignIn: false, trayMenuOpen:false, sampleLogResponse: clone(scenario.diagnosticsResponse), sampleLog: { scope: 'ui', duration: '5', state: 'idle', stopRequested:false, results: { ui:'not-requested', service:'not-requested' } } };
+    return { scenario, updater:updateInitial(), notifications:notificationInitial(), timeManagement:timeInitial(scenario), sampleLifecyclePreflight:'ready', sampleLifecycleResponse:'confirmed', serviceControl:serviceInitial(scenario), sampleServiceResponse:'confirmed', serviceDiagnosis:false, mode: 'simple', page: 'status', powerPage: 'status', modal: null, sourceFilter: 'all', sourceQuery: '', eventFilter: 'all', drafts: [], selectedSource: null, editorReturnToDetails: false, policyDraft: null, recoveryDraft: null, recoverySavedInput:null, recoveryEditBaseline:null, returnContext:null, leaveGuard:null, recoveryInput: {count:'0',helpers:['','']}, recoveryErrors: {}, settingsSection: 'schedule', editorError: {}, notice: '', compact: false, reviewerOpen: false, frequencyPreview: 'auto', frequencyDraft: 'auto', frequencyCustom: '300', frequencyOwn: '1', frequencyOwnDraft: '1', frequencyError: '', sampleSync: scenario.syncResponse, syncFeedback: null, sampleSyncStarted: false, sampleTray: false, sampleSignIn: false, trayMenuOpen:false, sampleLogResponse: clone(scenario.diagnosticsResponse), sampleLog: { scope: 'ui', duration: '5', state: 'idle', stopRequested:false, results: { ui:'not-requested', service:'not-requested' } } };
   }
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function signed(value, digits = 1) { if (value === null || !Number.isFinite(value)) return '—'; const n = Math.abs(value).toFixed(digits); return (value < 0 ? '−' : value > 0 ? '+' : '') + n; }
@@ -643,7 +800,7 @@
   }
   function discardedByReset(state, full) {
     const collectionPending = logRunning(state.sampleLog) || Object.values(state.sampleLog.results).some(value => ['active','unknown'].includes(value));
-    return !!(collectionPending || state.drafts.length || state.policyDraft || state.recoveryDraft || state.recoverySavedInput || recoveryEdited(state) || state.serviceControl.phase === 'pending' || state.timeManagement.phase === 'pending' || state.timeManagement.result || state.serviceControl.result || state.notifications.items.length || state.frequencyDraft !== state.frequencyPreview || (full && (state.frequencyPreview !== 'auto' || !state.notifications.enabled)));
+    return !!(collectionPending || state.updater.phase !== 'not-checked' || state.drafts.length || state.policyDraft || state.recoveryDraft || state.recoverySavedInput || recoveryEdited(state) || state.serviceControl.phase === 'pending' || state.timeManagement.phase === 'pending' || state.timeManagement.result || state.serviceControl.result || state.notifications.items.length || state.frequencyDraft !== state.frequencyPreview || (full && (state.frequencyPreview !== 'auto' || !state.notifications.enabled)));
   }
   function enterRecovery(state, context) {
     const returnContext = state.returnContext || (state.page === 'recovery' ? null : {
@@ -679,8 +836,18 @@
       return { ...state, leaveGuard:{kind:'recovery-editor',action,previousModal:state.modal} };
     }
     switch (action.type) {
-      case 'scenario': return { ...initialState(action.id), notifications:{...notificationInitial(state.notifications.nextId),enabled:state.notifications.enabled}, compact: state.compact, mode: state.mode, reviewerOpen: state.reviewerOpen, frequencyPreview: state.frequencyPreview, frequencyDraft: state.frequencyPreview, frequencyCustom: state.frequencyCustom, frequencyOwn: state.frequencyOwn, frequencyOwnDraft: state.frequencyOwn, sampleTray: state.sampleTray, sampleSignIn: state.sampleSignIn };
-      case 'reset': return { ...initialState(state.scenario.id), notifications:notificationInitial(state.notifications.nextId), mode: state.mode, compact: state.compact, reviewerOpen: state.reviewerOpen };
+      case 'sample-update-result':
+      case 'sample-update-invalidate':
+      case 'update-check':
+      case 'update-offer':
+      case 'update-later':
+      case 'update-accept':
+      case 'update-cancel':
+      case 'update-reconcile':
+      case 'update-restart':
+      case 'update-step': return reduceUpdate(state,action);
+      case 'scenario': return { ...initialState(action.id), updater:updateInitial(nextUpdateGeneration(state.updater) ?? Number.MAX_SAFE_INTEGER), notifications:{...notificationInitial(state.notifications.nextId),enabled:state.notifications.enabled}, compact: state.compact, mode: state.mode, reviewerOpen: state.reviewerOpen, frequencyPreview: state.frequencyPreview, frequencyDraft: state.frequencyPreview, frequencyCustom: state.frequencyCustom, frequencyOwn: state.frequencyOwn, frequencyOwnDraft: state.frequencyOwn, sampleTray: state.sampleTray, sampleSignIn: state.sampleSignIn };
+      case 'reset': return { ...initialState(state.scenario.id), updater:updateInitial(nextUpdateGeneration(state.updater) ?? Number.MAX_SAFE_INTEGER), notifications:notificationInitial(state.notifications.nextId), mode: state.mode, compact: state.compact, reviewerOpen: state.reviewerOpen };
       case 'view-mode': {
         if (!['simple','power'].includes(action.mode) || action.mode === state.mode || state.modal) return state;
         if (action.mode === 'simple') return { ...state, mode: 'simple', powerPage: state.page, page: ['status','settings','about'].includes(state.page) ? state.page : 'status', notice: '' };
@@ -755,6 +922,7 @@
         return { ...state, modal: action.modal, selectedSource: action.id || null, editorReturnToDetails: action.modal === 'edit-source' && state.modal === 'source-details', editorError: {}, recoveryErrors: {}, notice: '' };
       }
       case 'close': {
+        if (state.modal === 'update-offer') return reduceUpdate(state,{type:'update-later'});
         if (state.modal === 'lifecycle-confirm') return {...state,modal:null,timeManagement:{...state.timeManagement,operation:null,kind:null,result:'cancelled'}};
         if (state.modal === 'service-confirm') return {...state,modal:null,serviceControl:{...state.serviceControl,operation:null,result:'cancelled'}};
         return state.modal === 'edit-source' && state.editorReturnToDetails ? { ...state, modal: 'source-details', editorReturnToDetails: false, editorError: {} } : { ...state, modal: null, editorReturnToDetails: false, editorError: {} };
@@ -844,7 +1012,7 @@
       case 'notification-settings': return {...endRecovery(state),mode:'power',page:'settings',powerPage:'settings',settingsSection:'notifications',modal:null,notice:''};
       case 'notifications-enabled': return typeof action.value === 'boolean' ? {...state,notifications:{...state.notifications,enabled:action.value,current:action.value ? state.notifications.current : null,feedback:action.value ? state.notifications.feedback : 'Problem notifications are off. The in-app status is unchanged.'}} : state;
       case 'sample-notification-os': return !state.modal && typeof action.value === 'string' && Object.hasOwn(NOTIFICATION_OS,action.value) ? {...state,notifications:{...state.notifications,os:action.value,current:action.value === 'allowed' ? state.notifications.current : null,feedback:''}} : state;
-      case 'sample-notification-presenter': return !state.modal && typeof action.value === 'string' && Object.hasOwn(NOTIFICATION_PRESENTERS,action.value) ? {...state,notifications:{...state.notifications,presenter:action.value,current:action.value === 'active' ? state.notifications.current : null,feedback:''}} : state;
+      case 'sample-notification-presenter': return !state.modal && typeof action.value === 'string' && Object.hasOwn(NOTIFICATION_PRESENTERS,action.value) ? {...(action.value === 'missing' ? closeUpdateObserver(state) : state),notifications:{...state.notifications,presenter:action.value,current:action.value === 'active' ? state.notifications.current : null,feedback:''}} : state;
       case 'sample-notification-persistent': return !state.modal && typeof action.value === 'boolean' ? {...state,notifications:{...state.notifications,persistent:action.value}} : state;
       case 'notification-observe': return state.modal ? state : publishNotification(state);
       case 'notification-test': return state.modal ? state : publishNotification(state,true);
@@ -892,7 +1060,7 @@
         return { ...state, sampleLog: { ...state.sampleLog, state:stopRequested ? 'unconfirmed' : 'stopped', stopRequested, results } };
       }
       case 'sample-tray-quit': return {...state,trayMenuOpen:false,modal:'tray-quit-confirm'};
-      case 'sample-tray-quit-confirm': return state.modal === 'tray-quit-confirm' ? {...state,trayMenuOpen:false,modal:null,notifications:{...state.notifications,presenter:'missing',current:null},notice:'Preview only: the app and tray observer have exited. Service state and clock ownership are unchanged. New local alerts require reopening an observer.'} : state;
+      case 'sample-tray-quit-confirm': return state.modal === 'tray-quit-confirm' ? {...closeUpdateObserver(state),trayMenuOpen:false,modal:null,notifications:{...state.notifications,presenter:'missing',current:null},notice:'Preview only: the app and tray observer have exited. Service state and clock ownership are unchanged. New local alerts require reopening an observer.'} : state;
       default: return state;
     }
   }
@@ -907,7 +1075,7 @@
     const s = state.scenario;
     return ['NevroTick — DESIGN FIXTURE ONLY', 'Source commit: ' + SOURCE_COMMIT, 'Scenario: ' + fixtureId, 'State: ' + s.title, 'Evidence scope: ' + (state.serviceControl.presentation ? 'Retained history before service operation; no fresh time agreement' : 'Selected design fixture'), (state.timeManagement.ownerKnown && state.timeManagement.owner === 'windows' ? 'Stored NevroTick profile (inactive): ' : 'Profile: ') + s.profile, ...(state.timeManagement.ownerKnown && state.timeManagement.owner === 'windows' ? ['Stored NevroTick source policy (inactive): Minimum ' + s.minimum + ' identities plus majority', 'Windows configuration: Existing peer, domain and policy settings preserved; no replacement peers selected'] : []), 'Authentication: ' + s.authentication, 'Agreement: ' + s.agree + '/' + s.total + '; ' + s.agreement, 'Qualified estimate: ' + s.estimate, 'Last applied correction: ' + s.applied + '; ' + s.appliedDetail, 'Status snapshot: ' + s.snapshot, 'Status connection: ' + s.connection, 'Service: ' + s.service, 'Time management observation: ' + s.description, 'Clock ownership: ' + s.ownership, 'NevroTick autostart: ' + startupLabel(state), 'Startup configuration: measurements ' + state.timeManagement.startup.measurement + '; clock control ' + state.timeManagement.startup.clock, 'Time manager: ' + ownerLabel(state), 'Last NevroTick ownership generation: ' + (state.timeManagement.generation ?? 'Unconfirmed'), 'Clock cleanup: ' + state.timeManagement.cleanup, 'Restart paths inhibited: ' + state.timeManagement.restartInhibited, 'Fully disabled: ' + fullDisableConfirmed(state), 'Windows Time service: ' + state.timeManagement.windows.state, 'Windows startup: ' + state.timeManagement.windows.startup, 'Windows synchronization: Not yet verified', 'Windows policy: ' + state.timeManagement.windows.policy, 'Time management request: ' + (state.timeManagement.result || 'None'), 'Service command sample: ' + (state.serviceControl.result || 'No command submitted'), 'Correction: ' + s.correction, 'Calendar: ' + s.calendar, 'Certificate-time basis: ' + s.recovery, 'History: ' + s.recoveryNote, 'Roughtime evidence: ' + recoveryPresentation(s).label, 'Roughtime decision: ' + s.roughtimeEvidence.reason, 'Roughtime signatures: ' + s.roughtimeEvidence.signatureStatus, 'Approximate recovery date: ' + (s.roughtimeEvidence.approximateDateInterval || 'Not available'), 'Recovery evidence age: ' + (s.roughtimeEvidence.receivedAge || 'No received evidence'), (state.serviceControl.presentation ? 'Historical NTS handoff: ' : 'NTS handoff: ') + s.roughtimeEvidence.ntsHandoffState, 'Recovery ancestry: ' + s.roughtimeEvidence.ancestry, 'Date-recovery clock effect: ' + s.roughtimeEvidence.clockEffect, '', 'No system data collected. No hostnames, usernames, credentials, cookies, keys or TLS secrets included.'].join('\n');
   }
-  const api = { trayPresentation, NOTIFICATION_OS, NOTIFICATION_PRESENTERS, NOTIFICATION_POLICIES, notificationCandidate, notificationAvailability, notificationIsCurrent, runtimeObservation, fullDisableConfirmed, LIFECYCLE_OPERATIONS, LIFECYCLE_PREFLIGHTS, LIFECYCLE_RESPONSES, lifecyclePermission, lifecyclePreflight, lifecycleResponseOptions, startupLabel, ownerLabel, mutationPending, runtimePending, SERVICE_RESPONSES, servicePermission, presentState, serviceLog, recoveryPresentation, SYNC_RESPONSES, syncOptions, logResponseOptions, logRunning, SOURCE_COMMIT, SCENARIOS, FREQUENCIES, frequencyLabel, getScenario, initialState, escapeHtml, signed, offsetLabel, validateSource, validHost, reduce, visibleSources, summary };
+  const api = { UPDATE_TARGETS, UPDATE_SAMPLES, UPDATE_REASONS, updateBusy, updateCanCancel, updateCanCheck, trayPresentation, NOTIFICATION_OS, NOTIFICATION_PRESENTERS, NOTIFICATION_POLICIES, notificationCandidate, notificationAvailability, notificationIsCurrent, runtimeObservation, fullDisableConfirmed, LIFECYCLE_OPERATIONS, LIFECYCLE_PREFLIGHTS, LIFECYCLE_RESPONSES, lifecyclePermission, lifecyclePreflight, lifecycleResponseOptions, startupLabel, ownerLabel, mutationPending, runtimePending, SERVICE_RESPONSES, servicePermission, presentState, serviceLog, recoveryPresentation, SYNC_RESPONSES, syncOptions, logResponseOptions, logRunning, SOURCE_COMMIT, SCENARIOS, FREQUENCIES, frequencyLabel, getScenario, initialState, escapeHtml, signed, offsetLabel, validateSource, validHost, reduce, visibleSources, summary };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.NevroTickModel = api;
 })(typeof globalThis === 'object' ? globalThis : this);

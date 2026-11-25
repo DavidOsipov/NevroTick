@@ -7,6 +7,64 @@
   let state = M.initialState(requested || 'healthy');
   let returnFocus = null;
   let guardFocus = null;
+  let updateTimer = null;
+  let updateTimerKey = null;
+  let lastUpdateAnnouncement = '';
+
+  // Finite demonstration timings only. Each callback carries its original
+  // operation and phase; the model independently rejects stale continuations.
+  function scheduleUpdateStep() {
+    const delays = {checking:650,downloading:1500,verifying:1300,installing:1800,reconciling:800};
+    const u = state.updater;
+    const active = M.updateBusy(state) && !state.leaveGuard && state.notifications.presenter === 'active';
+    const key = active ? `${u.generation}:${u.phase}` : null;
+    if (key === updateTimerKey) return;
+    if (updateTimer !== null) window.clearTimeout(updateTimer);
+    updateTimer = null;
+    updateTimerKey = key;
+    if (key === null) return;
+    const action = {type:'update-step',generation:u.generation,phase:u.phase};
+    updateTimer = window.setTimeout(() => {
+      updateTimer = null;
+      updateTimerKey = null;
+      dispatch(action);
+    },delays[u.phase]);
+  }
+  window.addEventListener('pagehide', () => {
+    if (updateTimer !== null) window.clearTimeout(updateTimer);
+    updateTimer = null;
+    updateTimerKey = null;
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) scheduleUpdateStep();
+  });
+
+  function announceUpdateResult() {
+    if (state.modal) return;
+    const message = V.updateAnnouncement(state);
+    const key = `${state.updater.generation}:${state.updater.phase}:${state.updater.runningVersion}`;
+    if (!message || key === lastUpdateAnnouncement) return;
+    const region = document.getElementById('source-results-status');
+    if (region) region.textContent = message;
+    lastUpdateAnnouncement = key;
+  }
+  function refreshUpdateCard() {
+    const card = document.getElementById('update-card');
+    const focused = document.activeElement;
+    const restore = card?.contains(focused) ? focusKey(focused) : null;
+    if (card) {
+      const next = document.createElement('div');
+      next.innerHTML = V.updateCard(state);
+      card.replaceWith(next.firstElementChild);
+      if (restore) {
+        const replacement = findFocus(restore);
+        (replacement && !replacement.disabled ? replacement : document.getElementById('update-status-title'))?.focus({preventScroll:true});
+      }
+    }
+    const selector = document.getElementById('sample-update-result');
+    if (selector) selector.disabled = M.updateBusy(state) || !!state.modal;
+    announceUpdateResult();
+  }
 
   function focusKey(element) {
     return element ? { id:element.id, action:element.dataset?.action, value:element.dataset?.value, label:element.getAttribute('aria-label'), dialog:!!element.closest('dialog') } : null;
@@ -122,6 +180,13 @@
     if (next === state) return;
     if (!previousGuard && next.leaveGuard) guardFocus = action.type === 'scenario' ? {id:'scenario'} : focusedKey;
     state = next;
+    scheduleUpdateStep();
+    // Background progress must not replace another editor, reset its inputs or
+    // steal focus. Only an eligible offer on the current About page opens a modal.
+    if (action.type === 'update-step' && wasModal === state.modal) {
+      refreshUpdateCard();
+      return;
+    }
     if (['tray-menu-open','tray-menu-toggle','tray-menu-close'].includes(action.type) && !wasModal) {
       const contrast = !!document.getElementById('tray-contrast-preview')?.checked;
       const preview = document.createElement('div');
@@ -167,12 +232,15 @@
     }
     const navigating = !state.leaveGuard && ['page','power-page','policy-page','service-settings','service-diagnose','scenario','reset','recovery-back','notification-settings','notification-open','tray-open-page','tray-check','tray-quit-manage'].includes(resolved.type);
     render(navigating,wasModal === 'recovery-editor' && state.modal === 'recovery-editor');
+    announceUpdateResult();
     if (['source-filter','clear-source-filter'].includes(action.type)) announceSourceResults();
     if (intervalHelpOpen) {
       const tip = document.querySelector('#frequency-form details.help-tip');
       if (tip) tip.open = true;
     }
-    if (returningContext && !state.leaveGuard) {
+    if (['update-check','update-accept','update-cancel','update-reconcile','update-restart'].includes(action.type)) {
+      document.getElementById('update-status-title')?.focus({preventScroll:true});
+    } else if (returningContext && !state.leaveGuard) {
       restoreRecoveryOrigin(returningContext);
     } else if (sourceAction && !state.modal) {
       const remainingDraft = state.drafts[undoneDraftIndex] || state.drafts[undoneDraftIndex - 1];
@@ -295,8 +363,10 @@
     const target = event.target.closest('[data-action]');
     if (!target || target.disabled) return;
     const action = target.dataset.action, value = target.dataset.value;
-    if ((['modal','source-details','edit-source','service-request','lifecycle-request','notification-open'].includes(action) && !state.modal) || (action === 'recovery-open' && !state.modal)) returnFocus = focusKey(target);
+    if ((['modal','source-details','edit-source','service-request','lifecycle-request','notification-open','update-check','update-offer'].includes(action) && !state.modal) || (action === 'recovery-open' && !state.modal)) returnFocus = focusKey(target);
     if (action === 'page') dispatch({ type:'page', page:value });
+    else if (action === 'update-accept') dispatch({type:action,generation:Number(target.dataset.generation),targetId:target.dataset.targetId});
+    else if (['update-check','update-offer','update-later','update-cancel','update-reconcile','update-restart'].includes(action)) dispatch({type:action});
     else if (action === 'view-mode') dispatch({ type:'view-mode', mode:value });
     else if (action === 'tray-open-page') dispatch({type:action,page:value});
     else if (['tray-menu-open','tray-menu-toggle','tray-menu-close','tray-preview-enable','tray-observer-open','tray-check','sample-tray-quit-confirm','tray-quit-manage'].includes(action)) dispatch({type:action});
@@ -351,6 +421,7 @@
   mount.addEventListener('change', event => {
     const target = event.target;
     if (target.id === 'scenario') dispatch({type:'scenario',id:target.value});
+    else if (target.id === 'sample-update-result') dispatch({type:'sample-update-result',value:target.value});
     else if (target.id === 'frequency-mode') dispatch({type:'frequency-draft',value:target.value==='auto'?'auto':state.frequencyCustom});
     else if (target.id === 'frequency-interval') dispatch({type:'frequency-draft',value:target.value === 'own' ? 'own:' + state.frequencyOwn : target.value});
     else if (target.id === 'event-filter') dispatch({type:'event-filter',value:target.value});

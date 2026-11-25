@@ -131,5 +131,33 @@ for (const scenario of M.SCENARIOS) for (const mode of ['simple','power']) {
   const open=M.reduce(base,{type:'tray-preview-enable'});
   for(const [label,state] of [['menu',open],['quit-warning',M.reduce(open,{type:'sample-tray-quit'})],['observer-closed',M.reduce(M.reduce(open,{type:'sample-tray-quit'}),{type:'sample-tray-quit-confirm'})]]) records.push({name:`tray/${mode}/${scenario.id}/${label}`,html:V.render(state)});
 }
+// Exercise actual reducer paths so every updater result and native offer dialog
+// receives the same structural checks as the existing app pages, in both modes.
+for (const mode of ['simple','power']) for (const sample of Object.keys(M.UPDATE_SAMPLES)) {
+  let state={...M.initialState(),mode,page:'about'};
+  const record=label=>records.push({name:`updater/${mode}/${sample}/${label}`,html:V.render(state)});
+  const step=()=>{state=M.reduce(state,{type:'update-step',generation:state.updater.generation,phase:state.updater.phase});};
+  state=M.reduce(state,{type:'sample-update-result',value:sample});
+  state=M.reduce(state,{type:'update-check'});
+  record('checking');
+  step(); record(state.updater.phase);
+  if (state.updater.phase==='available') {
+    const offer=state;
+    state=M.reduce(offer,{type:'update-later'}); record('later');
+    state=M.reduce(offer,{type:'update-accept',generation:offer.updater.generation,targetId:offer.updater.target.id});
+    for (let stage=0;stage<4;stage++) {
+      record(state.updater.phase);
+      if (!M.updateBusy(state)) break;
+      step();
+    }
+    if (state.updater.phase==='outcome-unknown') {
+      state=M.reduce(state,{type:'update-reconcile'}); record('reconciling');
+      step(); record('reconciled-'+state.updater.phase);
+    }
+    if (state.updater.phase==='installed') {
+      state=M.reduce(state,{type:'update-restart'}); record('app-restarted');
+    }
+  }
+}
 fs.writeFileSync(process.argv[2],JSON.stringify(records));
 console.log(records.length+' serialized view fixtures');

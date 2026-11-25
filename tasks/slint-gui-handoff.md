@@ -33,7 +33,7 @@ midnight, timezone changes and daylight-saving behavior.
 
 ## Manual updater contract and acceptance — 25 November 2026
 
-**Status: accepted product/design handoff; updater source and execution absent.**
+**Status: accepted product/design handoff; native updater source and execution absent.**
 Use [OD-05 §7.10](../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026),
 [architecture §19.8](../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater),
 the [adopted update assessment](../docs/windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
@@ -44,6 +44,99 @@ second updater plan. The [product journey](../docs/windows-time-features.md#manu
 and [critical-copy contract](../docs/plans/ui-localization.md#updater-consent-and-result-copy--25-november-2026)
 describe the same one-consent behavior. Earlier proposal text with separate
 Check, Download and Install decisions is superseded by David's correction.
+
+### HTML updater prototype — 25 November 2026
+
+David requested the accepted journey in the existing
+[v0.4 HTML design reference](../docs/nevrotick-design-v0.4/README.md), starting
+from `2454f115d9494b722d90e55b54e88d375fd39825`. This is a separate in-memory
+presentation sample within the existing S0.5/P5 handoff. The native source
+readback and planned UP-UI acceptance below retain their own scope.
+
+About is shared by Simple, Power user and the existing tray destination.
+**Check for updates** simulates checking, then presents the exact eligible
+offer with **Update now / Later**. One acceptance closes the offer and
+automatically progresses through **Downloading → Verifying → Installing**
+to an inline result. There is no separate Download action or routine second
+installation confirmation. Later, Escape or unaccepted-offer dismissal grants
+no transfer intent. **Review update** reopens the retained offer; **Check again**
+starts a fresh sample check. **Cancel check** and **Cancel update** are available
+at their respective pre-install stages; installation offers no cancellation.
+**Check installation status** reconciles an unknown result without another
+installation. **Restart app** is shown only after a known Installed result when
+the running version is older; it changes that in-memory running-version sample.
+A required Windows restart remains a separate unfinished-maintenance state and
+cannot be cleared by restarting the app. The versions
+`1.0.0 → 1.1.0`, package facts, trust results and installed outcomes are explicitly
+demonstration data. They establish no actual released or installed product.
+
+The Russian reviewer control outside the application selects one of 14 next-sample
+outcomes. The default available-update route has contrasting no-update,
+offline/metadata/time/policy/management, package-verification refusal, UAC-denial,
+unknown-installed-identity, Windows-restart, unknown-outcome and recovery cases.
+The two unknown-outcome samples reconcile to a completed installation or confirmed
+absence of installation. Target/terms invalidation has model controls, with no
+separate reviewer control exposed. The
+[reviewer guide](../docs/nevrotick-design-v0.4/README-RU.md#обновление-приложения-из-about)
+describes their use. The sample makes no network request, transfers no package,
+writes no updater file and invokes no Windows, service, UAC, signing, hashing
+or installation operation. Its finite timers drive presentation only.
+
+**Executed checks on the integrated HTML candidate:**
+
+| Check | Observed result |
+| --- | --- |
+| `node build.cjs` | Pass; standalone HTML is 902673 bytes. |
+| `node --check src/model.js`, `node --check src/views.js`, `node --check src/app.js` | All three syntax checks pass. |
+| `node --test tests/*.test.cjs` | 232/232 pass: 207 existing tests, 17 updater model tests and eight updater view tests. |
+| `tests/render-fixtures.cjs` and `tests/check_structure.py` | 1561 serialized HTML fixtures; zero structural errors, CSP hash matches the final bundled script, zero external standalone dependencies and original AVIF bytes preserved. |
+| `sha256sum --check SHA256SUMS.txt` from the bundle directory | All 185 current entries match; the original imported receipt remains unchanged. |
+
+The new updater view tests and structural fixtures cover both modes and all
+14 selected outcomes. Source review checked focus transfer to status when
+Check starts; actual browser focus placement remains unverified. The independent
+review exercised the persisted-`pageshow` handler with controlled Node timers
+and a stub DOM, not an actual browser history cache.
+
+**Independent review:** `updater_proto_judge` began with a fresh context
+(`fork_turns="none"`) and read the baseline and applicable contracts before the
+implementation results. Its own bounded checks passed 28 journeys (14 outcomes
+in each mode), 14 decline controls and 22 stale/cancel/renewed-consent controls.
+Four cases executed the actual controller with controlled timers and a stub DOM:
+automatic completion after one Yes, persisted-page resumption, cancellation
+remaining stopped after restoration, and reset-guard pause/resume. These are
+controller checks, not rendering or browser-focus evidence. The reviewer also
+checked the 134 updater records within the 1561-record structural artifact and
+independently bound the generated script/CSP to the final source and original
+AVIF bytes. The 232-test full run and 185-entry manifest check above were
+coordinator-executed, not additional independent runs.
+
+The review found and verified two narrow corrections: **J-UP-01**, the delivered
+HTML footer now identifies its Chromium evidence as historical and discloses
+the current browser-verification gap; **J-UP-02**, reset disclosure now includes
+updater progress/results and pending or unknown updater samples, without
+claiming to reconcile a real installation. Cancelling reset preserved updater
+state in the reviewer's Installing and Outcome unknown controls. The final
+verdict found no unresolved material issue within the reviewed source, model,
+controller, rendered-structure and offline-package scope. The reviewed standalone
+SHA-256 is `a449b123fd3072c2c3a229590b6f27c0075c229011fd9923a4f032c16ee91a00`.
+
+**Current browser verification is incomplete:** `/usr/bin/chromium`
+points to a missing executable, the official pinned-browser download returned
+HTTP 403, and the cloud browser could not reach the local preview before an
+explicit URL-policy refusal. No successful browser/visual or native updater
+qualification is claimed. The retained 5 November status/notification and tray reports
+remain evidence only of their original candidates. They are not a current
+updater pass. Documentation/handoff used `plan-code-change` and
+`qa-context-checkpoint` to bind this scope to the existing source owners;
+`qa-regression-selection` identified About, tray navigation, generated HTML/CSP
+and shared dialog/layout consumers for the coordinator's checks.
+
+No Rust/Slint updater, TUF client, signature verifier, protected staging,
+surviving maintenance owner or native updater result is added by this HTML
+change. UP-UI-01–12 and their actual effect/receiver/native gates below remain
+planned. D1–D3, critical-text approval, current product priority and existing
+execution holds retain their owners and re-entry conditions.
 
 ### Current source and next boundary
 
