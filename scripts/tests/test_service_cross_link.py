@@ -8,13 +8,14 @@ import io
 import json
 from pathlib import Path
 import shutil
+import struct
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from uuid import UUID
 
-from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
+from test_windows_pe import _image, _OBSERVE_GUID, _OPTIONAL, _pdb, _UI_GUID, _ui_resource_image, with_import_modules
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
@@ -23,6 +24,52 @@ SPEC = importlib.util.spec_from_file_location(
 CROSS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CROSS)
 ENGINE, BROKER = CROSS.BINS
+
+
+class BaselineServiceEntryReadback(unittest.TestCase):
+    MODULES: tuple[str, ...] = ("kernel32.dll", "vcruntime140.dll")
+    MAP: str = (
+        " Preferred load address is 0000000140000000\n\n"
+        "  Address         Publics by Value              Rva+Base               Lib:Object\n\n"
+        " 0001:00000010       nevrotick_service_entry      0000000140001010     service-entry.obj\n"
+        " 0001:00000030       mainCRTStartup               0000000140001030     msvcrt:exe_main.obj\n"
+        "\n entry point at         0001:00000010\n"
+    )
+
+    def check(self, map_text: str, modules: tuple[str, ...] = MODULES) -> dict[str, object]:
+        image: bytearray = _ui_resource_image(b"inert version", b"inert manifest")
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        struct.pack_into("<H", image, _OPTIONAL + 68, 3)
+        image = with_import_modules(image, direct=modules)
+        with patch.object(CROSS, "SERVICE_PREENTRY_IMPORTS", self.MODULES):
+            return CROSS.read_guarded_service_entry(bytes(image), map_text)
+
+    def test_binds_distinct_gate_and_original_crt(self) -> None:
+        self.assertEqual(self.check(self.MAP)["crt_startup_rva"], 0x1030)
+
+    def test_refuses_the_wrong_entry_or_object(self) -> None:
+        with self.assertRaisesRegex(CROSS.Incomplete, "nevrotick_service_entry segment and preferred address disagree"):
+            self.check(self.MAP.replace("140001010", "140001040"))
+        with self.assertRaisesRegex(CROSS.Incomplete, "gate object differs"):
+            self.check(self.MAP.replace("service-entry.obj", "other.obj"))
+
+    def test_refuses_a_duplicate_linked_symbol(self) -> None:
+        row: str = next(line for line in self.MAP.splitlines() if "nevrotick_service_entry" in line)
+        with self.assertRaisesRegex(CROSS.Incomplete, "nevrotick_service_entry.*ambiguous"):
+            self.check(self.MAP.replace(row, row + "\n" + row))
+
+    def test_requires_the_crt_row_to_match_executable_image_bytes(self) -> None:
+        for address, reason in (
+            ("140003000", "lies outside the image"),
+            ("140002000", "has no executable file-backed section"),
+            ("140001040", "segment and preferred address disagree"),
+        ):
+            with self.subTest(address=address), self.assertRaisesRegex(CROSS.Incomplete, reason):
+                self.check(self.MAP.replace("140001030", address))
+
+    def test_refuses_a_new_preentry_import(self) -> None:
+        with self.assertRaisesRegex(CROSS.Incomplete, "loader import inventory changed"):
+            self.check(self.MAP, (*self.MODULES, "additional.dll"))
 
 
 class ServiceArtifactExport(unittest.TestCase):

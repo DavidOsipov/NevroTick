@@ -2597,6 +2597,19 @@ enum PairConfigurations {
     Distinct,
 }
 
+/// Select the single active resume delivery for the first joined-pair job.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+enum PairResumeDelivery {
+    /// Neither active job receives an event.
+    None,
+    /// Deliver after the worker records the operation, before it retires.
+    BeforeWorkerRetirement,
+    /// Deliver inside the presentation reader after the joined take.
+    #[cfg(windows)]
+    DuringClosingRead,
+}
+
 /// Bind two independent peers and install their selected source configuration(s).
 /// # Errors
 /// Preserve peer binding and source installation refusals.
@@ -2709,7 +2722,7 @@ fn submit_pair_loopback(
     )
 }
 
-/// Deliver the scripted event after the original operation is recorded.
+/// Deliver resume after the original operation is recorded, when selected.
 /// # Errors
 /// Refuse a missing original target if a late event was requested.
 /// # Panics
@@ -2717,19 +2730,26 @@ fn submit_pair_loopback(
 #[cfg(any(windows, target_os = "linux"))]
 fn pair_retirement_hooks(
     observer: Option<&Weak<PowerTarget>>,
-    event: Option<PowerEvent>,
+    index: usize,
+    delivery: PairResumeDelivery,
 ) -> Result<Hooks, SubmitError> {
     let mut hooks: Hooks = Hooks::none();
-    if let Some(event) = event {
+    if index == 0 && matches!(delivery, PairResumeDelivery::BeforeWorkerRetirement) {
         let target: Arc<PowerTarget> = observer
             .and_then(Weak::upgrade)
             .ok_or(SubmitError::Control)?;
-        hooks.before_retire = Some(Box::new(move || {
-            assert!(matches!(target.prepare(), Err(Failure::Control)));
-            assert!(target.deliver(event).is_ok());
-        }));
+        hooks.before_retire = Some(Box::new(move || assert!(deliver_pair_resume(&target))));
     }
     Ok(hooks)
+}
+
+/// Deliver resume to the active binding and report whether it accepted delivery.
+/// # Panics
+/// Fail if the original target is idle before delivery.
+#[cfg(any(windows, target_os = "linux"))]
+fn deliver_pair_resume(target: &PowerTarget) -> bool {
+    assert!(matches!(target.prepare(), Err(Failure::Control)));
+    target.deliver(PowerEvent::AutomaticResume).is_ok()
 }
 
 /// Actual synthetically authenticated UDP peer result for one managed job.
@@ -2774,6 +2794,8 @@ fn pair_presentation_read(
     submissions: &Cell<usize>,
     slot: &'static WorkerSlot,
     cutoff: Instant,
+    observer: Option<&Weak<PowerTarget>>,
+    resume_delivery: PairResumeDelivery,
 ) -> crate::nts_ke_experiment::ProcessLeapPresentationRead {
     let index: usize = reads.get();
     reads.set(index + 1);
@@ -2783,6 +2805,14 @@ fn pair_presentation_read(
     } else {
         assert_eq!(submissions.get(), job + 1);
         assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
+    }
+    if index == 1 && matches!(resume_delivery, PairResumeDelivery::DuringClosingRead) {
+        assert!(
+            observer
+                .and_then(Weak::upgrade)
+                .is_some_and(|target: Arc<PowerTarget>| deliver_pair_resume(&target)),
+            "the first closing read must deliver to the original target"
+        );
     }
     if index == 3 {
         Ok(LeapPresentation::SixtySecond)
@@ -2853,7 +2883,7 @@ fn assert_pair_loopback_reports(
     peers: [(PairPeerJoin<'_>, &crate::SourceConfigurationSnapshot); 2],
     cutoff: Instant,
     configurations: PairConfigurations,
-    first_retire_event: Option<PowerEvent>,
+    resume_delivery: PairResumeDelivery,
     #[cfg(windows)] presentation_reads: usize,
 ) -> Result<(), Failure> {
     let [(first_peer, first_expected), (second_peer, second_expected)] = peers;
@@ -2862,11 +2892,12 @@ fn assert_pair_loopback_reports(
         .second()
         .ok_or(Failure::Control)?
         .map_err(|_| Failure::Control)?;
-    let first_power: ManagedPowerObservation = if first_retire_event.is_some() {
-        ManagedPowerObservation::Invalidated
-    } else {
-        ManagedPowerObservation::NoEventObserved
-    };
+    let first_power: ManagedPowerObservation =
+        if matches!(resume_delivery, PairResumeDelivery::None) {
+            ManagedPowerObservation::NoEventObserved
+        } else {
+            ManagedPowerObservation::Invalidated
+        };
     for (report, peer, expected, power) in [
         (first, first_peer, first_expected, first_power),
         (
@@ -2897,9 +2928,13 @@ fn assert_pair_loopback_reports(
 fn managed_pair_reuses_provider_across_two_joined_loopback_jobs() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    assert_managed_pair_reissue(&SLOT, &ADMISSION, PairConfigurations::Shared, None, |_| {
-        Ok(())
-    })
+    assert_managed_pair_reissue(
+        &SLOT,
+        &ADMISSION,
+        PairConfigurations::Shared,
+        PairResumeDelivery::None,
+        |_| Ok(()),
+    )
 }
 
 /// Deliver automatic resume after the first terminal commit and before its join.
@@ -2918,7 +2953,27 @@ fn managed_pair_late_power_event_invalidates_only_first_joined_observation() -> 
         &SLOT,
         &ADMISSION,
         PairConfigurations::Shared,
-        Some(PowerEvent::AutomaticResume),
+        PairResumeDelivery::BeforeWorkerRetirement,
+        |_| Ok(()),
+    )
+}
+
+/// Deliver resume during the first closing read, after its joined result was taken.
+/// # Errors
+/// Preserve admission, worker result and independent peer refusal.
+/// # Panics
+/// Fail on early binding retirement, discarded receipt facts or inherited invalidation.
+#[cfg(windows)]
+#[test]
+fn managed_pair_closing_read_resume_invalidates_only_first_joined_observation()
+-> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_managed_pair_reissue(
+        &SLOT,
+        &ADMISSION,
+        PairConfigurations::Shared,
+        PairResumeDelivery::DuringClosingRead,
         |_| Ok(()),
     )
 }
@@ -2938,7 +2993,7 @@ fn managed_pair_reissues_after_delivered_suspend_and_automatic_resume() -> Resul
         &SLOT,
         &ADMISSION,
         PairConfigurations::Distinct,
-        None,
+        PairResumeDelivery::None,
         |target: &PowerTarget| {
             target.deliver(PowerEvent::Suspending)?;
             assert!(matches!(target.prepare(), Err(Failure::Control)));
@@ -2953,6 +3008,23 @@ fn pair_preparation_refusal(cause: Failure) -> SourceProtectedProbeFailure {
     SourceProtectedProbeFailure::from_run_failure(RunFailed::Preparation(Failed::from(cause)))
 }
 
+/// Check that the first job has relinquished its original resources before reissue.
+/// # Panics
+/// Fail on missing collection, overlapping ownership or a replaced provider.
+#[cfg(any(windows, target_os = "linux"))]
+fn pair_first_taken(
+    slot: &'static WorkerSlot,
+    cutoff: Instant,
+    submissions: usize,
+    first_lifetime: &Weak<()>,
+    provider: &OnceLock<Weak<()>>,
+) {
+    assert_eq!(submissions, 1);
+    assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
+    assert_eq!(first_lifetime.strong_count(), 0);
+    assert_eq!(provider.get().map(Weak::strong_count), Some(1));
+}
+
 /// Join both original worker jobs and observe selected power delivery boundaries.
 /// # Errors
 /// Preserve the transition, admission, worker result and independent peer refusal.
@@ -2964,7 +3036,7 @@ fn assert_managed_pair_reissue(
     slot: &'static WorkerSlot,
     admission: &'static ProcessAdmission,
     configurations: PairConfigurations,
-    first_retire_event: Option<PowerEvent>,
+    delivery: PairResumeDelivery,
     after_first_take: impl FnOnce(&PowerTarget) -> Result<(), Failure>,
 ) -> Result<(), Failure> {
     use std::cell::OnceCell;
@@ -2995,10 +3067,7 @@ fn assert_managed_pair_reissue(
             let pair: ManagedProtectedPairReport = run_managed_pair_with(
                 config,
                 || {
-                    assert_eq!(submissions.get(), 1);
-                    assert_eq!(slot.observer().poll_until(cutoff), Observation::Taken);
-                    assert_eq!(first_lifetime.strong_count(), 0);
-                    assert_eq!(provider.get().map(Weak::strong_count), Some(1));
+                    pair_first_taken(slot, cutoff, submissions.get(), &first_lifetime, &provider);
                     let target: Arc<PowerTarget> = observer
                         .get()
                         .and_then(Weak::upgrade)
@@ -3029,8 +3098,7 @@ fn assert_managed_pair_reissue(
                         .get(index)
                         .copied()
                         .ok_or(SubmitError::Control)?;
-                    let event: Option<PowerEvent> = first_retire_event.filter(|_| index == 0);
-                    let hooks: Hooks = pair_retirement_hooks(observer.get(), event)?;
+                    let hooks: Hooks = pair_retirement_hooks(observer.get(), index, delivery)?;
                     submissions.set(index + 1);
                     submit_pair_loopback(
                         reservation,
@@ -3043,7 +3111,14 @@ fn assert_managed_pair_reissue(
                 },
                 #[cfg(windows)]
                 Some(&mut || {
-                    pair_presentation_read(&presentation_reads, &submissions, slot, cutoff)
+                    pair_presentation_read(
+                        &presentation_reads,
+                        &submissions,
+                        slot,
+                        cutoff,
+                        observer.get(),
+                        delivery,
+                    )
                 }),
             )
             .map_err(|_| Failure::Control)?;
@@ -3055,7 +3130,7 @@ fn assert_managed_pair_reissue(
                 ],
                 cutoff,
                 configurations,
-                first_retire_event,
+                delivery,
                 #[cfg(windows)]
                 presentation_reads.get(),
             )?;

@@ -1357,6 +1357,15 @@ lock, the raw receipt and the checked exports remain in their existing
 locations. Use a fresh label and retire the owned compiler scratch after
 artifact readback.
 
+For the [baseline-first service fixture](tasks/windows11-integration.md#bind-the-laboratory-service-entries-to-the-baseline-gate),
+add `--baseline-entry` to the same two-role `link` command. The guarded
+lane admits the selected Clang 18.1.3 code-generation inputs and links
+the separately compiled x86-64 entry with both original v3 role bodies.
+Its export includes the entry object and both linker maps alongside the
+two matching PE/PDB pairs. Use the guarded receipt when staging that
+fixture. Static entry evidence and direct native, cold-refusal and
+installed activation evidence have separate exits.
+
 
 The [top-level metadata pipeline](metadata/README.md) owns the single editable
 [product record](metadata/product.toml) and portable generation/readback tools.
@@ -2649,6 +2658,17 @@ source, compiler, resource, image and symbol identities. It labels the UI as
 unadmitted.
 Runtime mitigations, package, signing and installation retain their own gates.
 [Pinned LLVM RC options](https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/llvm/tools/llvm-rc/Opts.td#L34-L39)
+
+Add `--ui-baseline-entry` to the Windows artifact export to check OD-07 at
+the Slint fixture's PE entry. The runner executes the host selector controls,
+compiles the freestanding entry with the pinned Clang 18 inputs and mounts
+the digest-named object read-only for the exact UI release link. The
+`ui_preentry` receipt binds the UI PE and link map to the entry object and
+records the original CRT symbol and pre-entry loader declarations. The atomic
+export retains `nevrotick-ui-entry.map` beside `verification.json` and binds it
+to the exported UI image. Inspect
+the linked transfer and qualify imported DLL initialization and Windows
+activation separately.
 
 The x64 MSVC UI link embeds application manifest resource ID 1 with
 `asInvoker` and `uiAccess=false`. The Windows lane reads it from the linked

@@ -1233,7 +1233,7 @@ schedule execution while a hold applies.
 
 | Order and owner | Entry and allowed parallel work | Discriminating exit |
 | --- | --- | --- |
-| **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [current native pair](../../tasks/engine-transport-pilot.md#complete-the-association-aware-windows-timing-pair--24-november-2026) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
+| **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [rebuilt native pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
 | **Next development child — reference and mapping, S2.1/W11-W01** | The [bench reader](../../tasks/windows11-integration.md#bind-retained-application-captures-to-the-reference-trial--24-november-2026) binds the original application brackets for the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
 | **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |
 | **Secured service status — P3 and S-2** | Independent source preparation can proceed with the admitted service adapters and W11-W05/W11-W10 fixture. Bind exact roles and create protections before exposure. Qualify minimum authenticated management admission before functional IPC, then full handlers, mandatory state and simulated integration. Restore D2 freshness, connection and generation rules before connecting live status, including read-only. | Intended peers complete ready/stop and read status. Foreign identity, stale generations, failed state commit and retained native work cannot produce a false success. S-2 joins real admitted acquisition, secured status and ordinary-user read-only UI. |
@@ -1250,8 +1250,9 @@ the query in the admitted native lab.
 
 The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
 checks both held-out legs and their original wire and residual record
-digests within the declared QPC validity. Its controls used the original
-Windows application bytes with synthetic reference values. The wired
+digests within the declared QPC validity. The [paired wire order check](../../tasks/windows11-integration.md#refuse-a-paired-wire-interval-with-impossible-chronology)
+refuses pairs that admit no transmit-before-receive order. Its replay used
+the original Windows application bytes with synthetic reference values. The wired
 reference and its admitted calibration and pairing remain required.
 The [protected capture span](../../tasks/engine-transport-pilot.md#require-an-ordered-native-capture-span-before-exporting-protected-timing)
 checks the original QPC brackets and frequency on each joined receipt
@@ -1259,6 +1260,18 @@ before timing export. The [joined managed power observation](../../tasks/engine-
 retains event delivery through the original binding's serialized retirement
 beside the original transport facts. Production mapping still needs the
 independent reference, coverage of physical transitions and a validity issuer.
+The [current protected timing facade build](../../tasks/engine-transport-pilot.md#rebuild-the-current-protected-timing-facade)
+links the ordered-capture and power-observation changes. The
+[rebuilt exact pair](../../tasks/engine-transport-pilot.md#bind-and-load-the-rebuilt-timing-pair-in-the-owned-offline-guest)
+passed both standalone peer profiles, independent artifact readback,
+and the certificate-free loader and held-file parser in the same
+Windows guest. The [authenticated replay](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+captured both exchanges and verified guest trust restoration. It supplies
+the rebuilt pair's original application brackets for the bench reader.
+The [protected socket bind check](../../tasks/engine-transport-pilot.md#verify-the-original-local-bind-before-protected-socket-registration)
+now verifies the exact requested local address before registration. Both
+loopback families passed on Windows. The wired interface still needs its
+own calibration and route admission.
 The [broker presentation withdrawal](../../tasks/windows11-integration.md#withdraw-the-broker-revision-when-leap-presentation-becomes-unavailable)
 keeps an unavailable query in the historical sample and withdraws the
 old live revision. This supplies the broker-side guard under TQ-07 while
@@ -1334,7 +1347,13 @@ now exercises cutoff and recovery while the inert guardian is blocked or
 exits abruptly. The [native job readback and recovery](../../tasks/windows11-integration.md#read-back-the-original-job-limits-and-measure-watchdog-retirement)
 confirms the configured limits before launch and records the blocked
 owner's retirement timing. A repeated six-member sample included three
-console-host processes. Effective cap enforcement stays open.
+console-host processes. The [recovery census controls](../../tasks/windows11-integration.md#separate-the-recovery-census-from-confirmed-job-retirement)
+verify that directed census refusals preserve the timeout without masking
+confirmed retirement. Effective nested cap enforcement stays open.
+The [pre-start observer](../../tasks/windows11-integration.md#require-exact-job-limits-before-creating-a-pre-start-observer)
+now checks its own one-process job before child creation. The offline
+Windows controls verified refusal on mismatched readback and quota
+enforcement for that observer job.
 The [fixed deployment entry](../../tasks/windows11-integration.md#wire-the-fixed-deployment-entry-to-the-original-native-window)
 binds the original run and staged inputs to the typed native session.
 The [failed-pipe continuation](../../tasks/windows11-integration.md#retain-the-original-deployment-failure-when-the-pipe-breaks)
@@ -1413,11 +1432,21 @@ observer for that handoff.
 The [relocated role assembly](../../tasks/windows11-integration.md#pack-the-combined-artworklab-with-the-retained-hardened-roles)
 also combined those service images with the retained Slint and PRI inputs in
 a separate unsigned ArtworkLab package. Its exact archive and failure control
-passed readback. The signed installed trial still uses its own ScmFixture.
+passed readback. The [maintained combined reader](../../tasks/windows11-integration.md#read-back-the-complete-unsigned-artworklab-with-the-maintained-cli)
+now verifies the latest retained unsigned carrier against the independently
+restaged authored bytes. The signed installed trial still uses its own ScmFixture.
 The [extension-point startup checkpoint](../../tasks/windows11-integration.md#enforce-legacy-extension-point-policy-at-both-fixed-service-entries)
 observed both standalone entries enable the new mitigation from an initially
 clear flag. It rebuilt and checked the unsigned ArtworkLab with the matching
 role images. Installed behavior and final signing retain their existing gates.
+The [guarded combined archive](../../tasks/windows11-integration.md#pack-and-verify-the-guarded-slint-and-service-combination)
+joins the exact supported-native Slint image with both baseline-first service
+images. Its staging and MakeAppx readback keep the original metadata, artwork
+and PRI pins. Cold refusal and installed activation remain open.
+The [before-SCM observation](../../tasks/windows11-integration.md#observe-both-packaged-role-policies-before-the-scm-call)
+verified the image-load and extension-point words on both exact archive
+members during standalone execution. Actual loader denial and installed
+behavior remain separate checks.
 The [startup diagnostic and mutation checkpoint](../../tasks/windows11-integration.md#verify-startup-policy-diagnostics-and-enumerate-target-specific-mutations)
 checks the 15 typed refusal messages and runs the complete generated
 inventories on GNU. The matching instrumented MSVC images also passed
@@ -1428,6 +1457,33 @@ implementation files passed their 90% Windows line gates. The
 accounts for the remaining 23 overlays and five exact equivalents. Both
 files meet the 95% adjusted mutation gate. Native failure, effective
 loader denial and installed-role checks remain with the adapter owner.
+The [baseline-first ScmFixture](../../tasks/windows11-integration.md#pack-the-baseline-first-inert-application-with-both-disabled-service-roles)
+now binds the supported direct-launch Inert image to the exact unsigned
+archive. Readback refuses the earlier launcher with the same role images.
+The physical CPU-refusal and signed installed-activation rows remain open.
+The [guarded service link](../../tasks/windows11-integration.md#bind-the-laboratory-service-entries-to-the-baseline-gate)
+puts the same CPU decision before CRT startup in each fixed-role laboratory
+executable. Both exact images ran standalone on supported Windows.
+The new unsigned fixture binds them to the original gated `Inert.exe`.
+The [two-stop debugger observation](../../tasks/windows11-integration.md#observe-both-guarded-service-images-before-their-entry-instruction)
+sampled the same ten dependencies for each unpackaged lab role before
+its entry instruction. DLL initializer behavior, cold refusal and
+installed activation retain their own exits.
+The [guarded UI debugger observation](../../tasks/slint-gui-handoff.md#observe-both-pre-entry-module-snapshots-on-the-guarded-slint-image)
+recorded the same 28 images at the initial breakpoint and the entry
+instruction of the exact unsigned ArtworkLab UI. It leaves DLL
+initializer CPU compatibility and installed activation open.
+The [complete payload binding](../../tasks/windows11-integration.md#bind-the-complete-authored-payload-to-the-original-pre-start-archive)
+also joins the expected manifest and all authored bytes to the original
+archive lease before the installed window can verify its signer or launch
+the observer. The portable and native readers agreed on the unsigned fixture.
+Two [rendered owner controls](../../tasks/windows11-integration.md#run-the-rendered-pre-start-owner-through-the-payload-boundary)
+reached the live presignature boundary. The crossed pin refused at archive
+admission. The matched pin proceeded to the expected absent-service refusal.
+The [composed replay](../../tasks/windows11-integration.md#run-the-rendered-owner-under-both-native-job-owners)
+observed the same outcomes through both original native job owners and
+confirmed their empty settlement. The signed installed positive journey
+still requires the admitted carrier, signer and actor profiles.
 The [native archive
 reader](../../tasks/windows11-integration.md#read-package-identity-and-both-service-members-from-one-msix-snapshot)
 now derives the package full name and both service-member hashes from the

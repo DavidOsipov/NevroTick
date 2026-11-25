@@ -412,6 +412,7 @@ function Invoke-PrestartDeploymentOwner {
         [Parameter(Mandatory)][int]$RetirementMilliseconds,
         [Parameter(Mandatory)][string]$DeploymentSid,
         [Parameter(Mandatory)][string]$SignerSha256,
+        [Parameter(Mandatory)][string]$ExpectedPayloadSha256,
         [Parameter(Mandatory)][hashtable]$Pins,
         [switch]$FullPrestart
     )
@@ -431,7 +432,8 @@ function Invoke-PrestartDeploymentOwner {
         $stage = 'archive'
         $archive = prestart_child\Open-PrestartArchive -Clock $Clock -TimeoutMilliseconds $WorkMilliseconds `
             -ArchivePath ([IO.Path]::Combine($PSScriptRoot, 'prestart_fixture.msix')) `
-            -ExpectedArchiveBytes $Pins.archive.Bytes -ExpectedArchiveSha256 $Pins.archive.Sha256
+            -ExpectedArchiveBytes $Pins.archive.Bytes -ExpectedArchiveSha256 $Pins.archive.Sha256 `
+            -ExpectedPayloadSha256 $ExpectedPayloadSha256
         $stage = 'window'
         $window = prestart_child\Open-PrestartScmWindow -Actor $actor -ExpectedDeploymentSid $DeploymentSid `
             -Clock $Clock -TimeoutMilliseconds $WorkMilliseconds

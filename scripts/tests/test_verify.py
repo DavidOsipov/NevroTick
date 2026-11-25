@@ -135,6 +135,26 @@ class CompileResourceControls(unittest.TestCase):
         self.assertIn("--as=4294967296", legacy)
         self.assertNotIn("--as=8589934592", legacy)
 
+    def test_ui_entry_arguments_keep_the_exact_ui_release_boundary(self) -> None:
+        build: list[str] = self.release_command("nevrotick-ui")
+        command: list[str] = VERIFY.link_ui_entry(build, "a" * 64)
+        self.assertIn("build", build)
+        self.assertEqual(command[command.index("--") + 1:], [
+            "-C", "link-arg=/work/metadata/nevrotick-ui-entry-" + "a" * 64 + ".obj",
+            "-C", "link-arg=/entry:nevrotick_ui_entry",
+            "-C", "link-arg=/map:/work/metadata/nevrotick-ui-entry.map",
+        ])
+        self.assertEqual(VERIFY.command_resources("windows", "windows-link", command),
+                         VERIFY.command_resources("windows", "windows-link", build))
+        for changed in (command[:-3] + ["link-arg=/entry:mainCRTStartup", *command[-2:]],
+                        command[:-1] + ["link-arg=/map:/work/other.map"],
+                        command + ["-C", "target-cpu=native"],
+                        VERIFY.link_ui_entry(self.release_command("nevrotick-engine"), "a" * 64)):
+            with self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.command_resources("windows", "windows-link", changed)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.command_resources("windows", "windows-engine-link", command)
+
     def test_exact_default_and_prototype_release_rows_select_only_300_cpu_seconds(self):
         for profile in ("default", "engine-ke-association"):
             for label, package in (("windows-link", "nevrotick-ui"),
@@ -2570,12 +2590,12 @@ class ExecutionAccountingTests(unittest.TestCase):
             (release / name).write_bytes(payload)
         return release, output, artifacts
 
-    def complete_msix_handoff_fixture(self):
+    def complete_msix_handoff_fixture(self, *, guarded: bool = False):
         """Publish the maintained export with checked metadata and controlled PE and PNG bytes."""
         from test_windows_versioninfo import _DESCRIPTION, _FIXED, _MANIFEST, version_resource
 
         modules: dict[str, dict[str, tuple[str, ...]]] = {
-            "ui": {"direct": ("KERNEL32.dll",), "delay": ("USER32.dll",)},
+            "ui": {"direct": ("KERNEL32.dll",), "delay": () if guarded else ("USER32.dll",)},
             "observe": {"direct": ("WS2_32.dll",), "delay": ()},
         }
         _, output, _ = self.windows_release_fixture(
@@ -2602,6 +2622,13 @@ class ExecutionAccountingTests(unittest.TestCase):
         release = self.work / "target/x86_64-pc-windows-msvc/release"
         records = {}
         pe = VERIFY.windows_pe_reader(ROOT)
+        if guarded:
+            from test_windows_pe import _OPTIONAL
+
+            ui: Path = release / "nevrotick-ui.exe"
+            data: bytearray = bytearray(ui.read_bytes())
+            data[_OPTIONAL + 16:_OPTIONAL + 20] = (0x1010).to_bytes(4, "little")
+            ui.write_bytes(data)
         for role, name in (("ui", "nevrotick-ui.exe"), ("observe", "nevrotick-observe.exe")):
             image: Path = release / name
             records[role + "_versioninfo"] = {
@@ -2619,6 +2646,18 @@ class ExecutionAccountingTests(unittest.TestCase):
         records["ui_versioninfo"]["execution_manifest"] = {
             "level": "asInvoker", "ui_access": False, "sha256": digest(_MANIFEST),
         }
+        if guarded:
+            gate_pin: str = "a" * 64
+            map_path: Path = self.work / Path(VERIFY.UI_ENTRY_MAP).relative_to("/work")
+            map_path.parent.mkdir()
+            map_path.write_text(
+                " Preferred load address is 0000000140000000\n"
+                "  Address   Publics by Value   Rva+Base   Lib:Object\n"
+                f" 0001:00000010 nevrotick_ui_entry 0000000140001010 nevrotick-ui-entry-{gate_pin}.obj\n"
+                " 0001:00000050 mainCRTStartup 0000000140001050 msvcrt:exe_main.obj\n"
+                " entry point at 0001:00000010\n", encoding="utf-8")
+            records["ui_preentry"] = VERIFY.read_ui_entry(
+                self.work, ROOT, gate_pin, records["ui_versioninfo"]["image_sha256"])
         VERIFY.export_windows_build(
             self.work, output, source=ROOT,
             report={"msix_assembly_inputs": inspection, "native_windows_execution": "not performed", **records},
@@ -2661,6 +2700,66 @@ class ExecutionAccountingTests(unittest.TestCase):
         for name, row in observed["files"].items():
             content = (output / name).read_bytes()
             self.assertEqual((row["bytes"], row["sha256"]), (len(content), digest(content)))
+
+    def test_msix_handoff_retains_and_checks_the_guarded_ui_map_after_scratch_retires(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture(guarded=True)
+        source_map: Path = self.work / Path(VERIFY.UI_ENTRY_MAP).relative_to("/work")
+        map_bytes: bytes = source_map.read_bytes()
+        source_map.unlink()
+        sidecar: Path = output / source_map.name
+        self.assertEqual(sidecar.read_bytes(), map_bytes)
+        receipt: Path = output / "verification.json"
+        original: bytes = receipt.read_bytes()
+        pin: str = digest(original)
+        result: int
+        stdout: str
+        stderr: str
+        result, stdout, stderr = self.run_msix_handoff(output, pin)
+        self.assertEqual((result, stderr), (0, ""))
+        self.assertEqual(json.loads(stdout)["files"][sidecar.name], {
+            "disposition": "private-ui-link-map", "bytes": len(map_bytes), "sha256": digest(map_bytes),
+        })
+        sidecar.write_bytes(map_bytes.replace(b"exe_main.obj", b"bad_main.obj"))
+        result, stdout, stderr = self.run_msix_handoff(output, pin)
+        self.assertEqual((result, stdout), (1, ""))
+        self.assertIn("Windows UI baseline link evidence differs", stderr)
+        crossed: bytes = map_bytes.replace(b"00000050 mainCRTStartup 0000000140001050",
+                                           b"00000060 mainCRTStartup 0000000140001060")
+        self.assertNotEqual(crossed, map_bytes)
+        sidecar.write_bytes(crossed)
+        report: dict[str, Any] = json.loads(original)
+        report["ui_preentry"]["map_sha256"] = digest(crossed)
+        receipt.write_text(json.dumps(report), encoding="utf-8")
+        result, stdout, stderr = self.run_msix_handoff(output, digest(receipt.read_bytes()))
+        self.assertEqual((result, stdout), (1, ""))
+        self.assertIn("Windows MSIX handoff UI entry differs from the pinned receipt", stderr)
+        sidecar.write_bytes(map_bytes)
+        receipt.write_bytes(original)
+        self.assertEqual(self.run_msix_handoff(output, pin)[0], 0)
+
+    def test_windows_publication_refuses_a_changed_guarded_ui_map_or_image(self) -> None:
+        release: Path
+        output: Path
+        artifacts: dict[str, bytes]
+        release, output, artifacts = self.windows_release_fixture()
+        output.rmdir()
+        original: bytes = b"checked map bytes\n"
+        map_path: Path = self.work / Path(VERIFY.UI_ENTRY_MAP).relative_to("/work")
+        map_path.parent.mkdir()
+        map_path.write_bytes(original + b"changed")
+        entry: dict[str, str] = {"map_sha256": digest(original),
+                                 "image_sha256": digest(artifacts["nevrotick-ui.exe"])}
+        report: dict[str, object] = {"status": "incomplete", "ui_preentry": entry}
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Windows UI baseline link evidence differs"):
+            VERIFY.export_windows_build(self.work, output, source=ROOT, report=report,
+                                        base_artwork=None, authoring=None)
+        map_path.write_bytes(original)
+        entry["image_sha256"] = digest(artifacts["nevrotick-observe.exe"])
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "Windows UI baseline link evidence differs"):
+            VERIFY.export_windows_build(self.work, output, source=ROOT, report=report,
+                                        base_artwork=None, authoring=None)
+        self.assertFalse(output.exists())
+        self.assertEqual(list(self.work.glob(".windows-export-*")), [])
 
     def test_msix_handoff_binds_both_static_import_lists_to_the_image(self) -> None:
         output: Path = self.complete_msix_handoff_fixture()

@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import stat
 import struct
 import sys
@@ -43,7 +44,7 @@ from metadata.pipeline.generate import (
     _outside_source, _parent_unchanged, _read_checked_generation, _read_regular,
     _remove_staging, _write_payload,
 )
-from windows_pe import read_export_pair
+from windows_pe import read_export_pair, service_preentry_declarations
 
 
 def require(condition, message):
@@ -89,7 +90,38 @@ def held_directory(path: Path) -> Iterator[tuple[int, Path]]:
         os.close(descriptor)
 
 
-def _read_roles(rows: dict[str, object], anchor: Path, logical: Path) -> dict[str, bytes]:
+def _checked_role_sidecar(directory: int, name: str, pin: object, maximum: int) -> bytes:
+    """Bind the held sidecar bytes to the independently selected link receipt."""
+    require(type(pin) is str and re.fullmatch(r"[0-9a-f]{64}", pin) is not None,
+            f"The guarded link receipt lacks the {name} digest.")
+    data: bytes = _read_regular(directory, name, maximum)
+    require(bool(data) and digest(data) == pin, f"Guarded link sidecar differs: {name}.")
+    return data
+
+
+def _check_role_preentry(directory: int, stem: str, row: dict[str, object], payload: bytes) -> None:
+    """Recheck the held PE facts and map identity from the guarded link producer.
+
+    The independently pinned link receipt supplies its gate and CRT symbol
+    reconciliation. This checks the same map and PE bytes at staging.
+    """
+    raw_pe: object = row.get("raw_pe")
+    guard: object = raw_pe.get("baseline_entry") if type(raw_pe) is dict else None
+    require(type(guard) is dict, f"The guarded link receipt lacks {stem} baseline entry facts.")
+    observed: dict[str, object] = service_preentry_declarations(payload)
+    crt: object = guard.get("crt_startup_rva")
+    require(guard.keys() == observed.keys() | {"crt_startup_rva", "map_sha256"}
+            and type(crt) is int and 0 < crt < 2**32 and crt != observed["entry_rva"]
+            and all(type(guard[key]) is type(value) and guard[key] == value for key, value in observed.items()),
+            f"Guarded link facts differ from the held {stem} PE.")
+    map_stem: str = stem.replace("-", "_")
+    map_data: bytes = _checked_role_sidecar(directory, map_stem + ".map", guard["map_sha256"], 2 * 1024**2)
+    require(map_data.partition(b"\n")[0].strip() == map_stem.encode("ascii"),
+            f"Guarded link map names a different role: {stem}.")
+
+
+def _read_roles(rows: dict[str, object], directory: int, anchor: Path, logical: Path, *,
+                require_baseline_entry: bool) -> dict[str, bytes]:
     """Check the producer's fixed logical paths and read the matching held pairs."""
     images: dict[str, bytes] = {}
     for stem in BINS:
@@ -107,13 +139,15 @@ def _read_roles(rows: dict[str, object], anchor: Path, logical: Path) -> dict[st
         )
         require(image_hash == row["image_sha256"] and symbol_hash == row["pdb_sha256"],
                 "A service image or matching symbol file differs from the link receipt.")
+        if require_baseline_entry:
+            _check_role_preentry(directory, stem, row, payload)
         images[image.name] = payload
     require(len({digest(payload) for payload in images.values()}) == len(BINS),
             "Each service requires a distinct image.")
     return images
 
 
-def role_images(receipt: Path, receipt_hash: str) -> dict[str, bytes]:
+def role_images(receipt: Path, receipt_hash: str, *, require_baseline_entry: bool = False) -> dict[str, bytes]:
     """Recheck the fixed link export in place or after a byte-exact relocation."""
     require(receipt.name.startswith("cross-") and receipt.suffix == ".json",
             "Use a configured cross-link receipt.")
@@ -128,11 +162,15 @@ def role_images(receipt: Path, receipt_hash: str) -> dict[str, bytes]:
                 "Expected a passed, complete two-role link receipt.")
         rows: object = data["artifacts"]
         require(type(rows) is dict and rows.keys() == set(BINS), "The exact two service roles are required.")
+        baseline: object = data.get("baseline_entry")
         with held_directory(linked) as (descriptor, anchor):
             # Compare with the child in the original receipt directory before readback.
             current: os.stat_result = os.stat(linked.name, dir_fd=parent, follow_symlinks=False)
             require(os.path.samestat(current, os.fstat(descriptor)), "The link export directory changed.")
-            return _read_roles(rows, anchor, logical)
+            if require_baseline_entry:
+                require(type(baseline) is dict, "Expected a guarded two-role link receipt.")
+                _checked_role_sidecar(descriptor, "service-entry.obj", baseline.get("object_sha256"), 64 * 1024)
+            return _read_roles(rows, descriptor, anchor, logical, require_baseline_entry=require_baseline_entry)
 
 
 def event_resource_image(

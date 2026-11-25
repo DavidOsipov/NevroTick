@@ -324,6 +324,7 @@ function Open-PrestartArchive {
         [Parameter(Mandatory = $true)][string]$ArchivePath,
         [Parameter(Mandatory = $true)][long]$ExpectedArchiveBytes,
         [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
+        [string]$ExpectedPayloadSha256,
         [Parameter(Mandatory = $true)][Diagnostics.Stopwatch]$Clock,
         [Parameter(Mandatory = $true)][ValidateRange(1, 120000)][int]$TimeoutMilliseconds
     )
@@ -332,6 +333,10 @@ function Open-PrestartArchive {
     Initialize-PrestartObserverTypes
     Assert-PrestartDeadline $Clock $TimeoutMilliseconds 'prestart-observer:archive-deadline'
     [type]$launcher = $script:PrestartObserverType
+    if ($PSBoundParameters.ContainsKey('ExpectedPayloadSha256')) {
+        return $launcher::OpenArchiveWithPayload($ArchivePath, $ExpectedArchiveBytes, $ExpectedArchiveSha256,
+            $ExpectedPayloadSha256, $Clock, $TimeoutMilliseconds)
+    }
     return $launcher::OpenArchive($ArchivePath, $ExpectedArchiveBytes, $ExpectedArchiveSha256,
         $Clock, $TimeoutMilliseconds)
 }

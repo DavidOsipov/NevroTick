@@ -79,7 +79,7 @@ namespace NevroTick
             }
 
             internal static ArchiveLease Open(string path, long expectedBytes, string expectedSha256,
-                Stopwatch clock, int timeoutMilliseconds)
+                Stopwatch clock, int timeoutMilliseconds, string expectedPayloadSha256 = null)
             {
                 MonotonicCutoff cutoff = new MonotonicCutoff(clock, timeoutMilliseconds, "archive");
                 CheckFileExpectation(expectedBytes, expectedSha256, PrestartArchiveFacts.MaximumArchiveBytes, "archive");
@@ -94,7 +94,9 @@ namespace NevroTick
                     cutoff.Check("archive");
                     byte[] bytes = file.AdmitArchiveBytes(clock, timeoutMilliseconds);
                     cutoff.Check("archive");
-                    PrestartArchiveFacts facts = PrestartArchiveFacts.Inspect(bytes, expectedSha256);
+                    PrestartArchiveFacts facts = expectedPayloadSha256 == null
+                        ? PrestartArchiveFacts.Inspect(bytes, expectedSha256)
+                        : PrestartArchiveFacts.InspectWithPayload(bytes, expectedSha256, expectedPayloadSha256);
                     file.ConfirmPath();
                     CheckDeadline(clock, timeoutMilliseconds, "archive");
                     cutoff.Check("archive");
@@ -399,6 +401,16 @@ namespace NevroTick
             Stopwatch clock, int timeoutMilliseconds)
         {
             return ArchiveLease.Open(path, expectedBytes, expectedSha256, clock, timeoutMilliseconds);
+        }
+
+        // Keep the complete authored payload binding on the same original archive lease.
+        public static ArchiveLease OpenArchiveWithPayload(string path, long expectedBytes, string expectedSha256,
+            string expectedPayloadSha256, Stopwatch clock, int timeoutMilliseconds)
+        {
+            if (!IsDigest(expectedPayloadSha256))
+                throw new InvalidDataException("prestart-observer:archive-payload-pin");
+            return ArchiveLease.Open(path, expectedBytes, expectedSha256, clock, timeoutMilliseconds,
+                expectedPayloadSha256);
         }
 
         // Inert identity observation, including the unsigned archive controls.
@@ -1224,12 +1236,18 @@ namespace NevroTick
             job = CreateJobObjectW(IntPtr.Zero, null);
             if (job.IsInvalid)
                 throw NativeError("create-job");
-            var limits = new JobExtendedLimits();
-            limits.Basic.LimitFlags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
+            const uint requiredFlags = JobObjectLimitActiveProcess | JobObjectLimitKillOnJobClose;
+            uint limitBytes = (uint)Marshal.SizeOf(typeof(JobExtendedLimits));
+            JobExtendedLimits limits = new JobExtendedLimits();
+            limits.Basic.LimitFlags = requiredFlags;
             limits.Basic.ActiveProcessLimit = 1;
-            if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref limits,
-                (uint)Marshal.SizeOf(typeof(JobExtendedLimits))))
+            if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref limits, limitBytes))
                 throw NativeError("configure-job");
+            JobExtendedLimits observedLimits;
+            if (!QueryJobLimits(job, JobObjectExtendedLimitInformation, out observedLimits, limitBytes, IntPtr.Zero))
+                throw NativeError("query-job-limits");
+            if (observedLimits.Basic.LimitFlags != requiredFlags || observedLimits.Basic.ActiveProcessLimit != 1)
+                throw new InvalidDataException("prestart-observer:job-limits");
 
             using (var input = new PipeEnds())
             using (var output = new PipeEnds())
@@ -1697,6 +1715,10 @@ namespace NevroTick
         [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
         private static extern bool SetInformationJobObject(KernelHandle job, int informationClass,
             ref JobExtendedLimits information, uint informationBytes);
+
+        [DllImport("kernel32.dll", EntryPoint = "QueryInformationJobObject", ExactSpelling = true, SetLastError = true)]
+        private static extern bool QueryJobLimits(KernelHandle job, int informationClass,
+            out JobExtendedLimits limits, uint bytes, IntPtr returned);
 
         [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
         private static extern bool QueryInformationJobObject(KernelHandle job, int informationClass,

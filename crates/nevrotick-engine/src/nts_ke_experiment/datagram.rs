@@ -204,12 +204,18 @@ mod reached {
         pub(super) send: Option<(ProtectedClockCapture, ProtectedClockCapture, usize)>,
     }
 
-    /// Check the actual bound endpoint and selected peer before registration.
+    /// Bind the reported local endpoint to the original ephemeral bind request.
+    /// The allocated port must be nonzero, and the peer must remain loopback.
     /// # Errors
-    /// Refuse a non-loopback local or remote address or a zero bound port.
+    /// Refuse a substituted local address, zero bound port, or non-loopback peer.
     #[cfg(any(windows, test))]
-    fn check_bound_endpoints(local: SocketAddr, remote: SocketAddr) -> Result<(), Failure> {
-        if !local.ip().is_loopback() || local.port() == 0 || !remote.ip().is_loopback() {
+    fn check_bound_endpoints(
+        mut requested_local: SocketAddr,
+        local: SocketAddr,
+        remote: SocketAddr,
+    ) -> Result<(), Failure> {
+        requested_local.set_port(local.port());
+        if local != requested_local || local.port() == 0 || !remote.ip().is_loopback() {
             return Err(Failure::Endpoint);
         }
         Ok(())
@@ -223,11 +229,12 @@ mod reached {
         pub(super) fn bind(remote: SocketAddr) -> Result<Self, Failure> {
             use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, UdpSocket as StdSocket};
 
-            let ip = match remote {
+            let ip: IpAddr = match remote {
                 SocketAddr::V4(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
                 SocketAddr::V6(_) => IpAddr::V6(Ipv6Addr::LOCALHOST),
             };
-            let socket = StdSocket::bind(SocketAddr::new(ip, 0))
+            let requested_local: SocketAddr = SocketAddr::new(ip, 0);
+            let socket: StdSocket = StdSocket::bind(requested_local)
                 .map_err(|error| failed(DatagramError::Bind(error.kind())))?;
             socket
                 .set_nonblocking(true)
@@ -235,8 +242,8 @@ mod reached {
             let local: SocketAddr = socket
                 .local_addr()
                 .map_err(|error| failed(DatagramError::Local(error.kind())))?;
-            check_bound_endpoints(local, remote)?;
-            let socket = UdpSocket::from_std(socket)
+            check_bound_endpoints(requested_local, local, remote)?;
+            let socket: UdpSocket = UdpSocket::from_std(socket)
                 .map_err(|error| failed(DatagramError::Registration(error.kind())))?;
             Ok(Self {
                 io: Io::Native(socket),
@@ -2144,31 +2151,66 @@ mod reached {
     #[cfg(test)]
     #[test]
     fn bound_endpoint_check_refuses_each_invalid_coordinate() {
-        use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+        use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV6};
 
-        for (loopback, foreign) in [
+        for (loopback, foreign, other_family) in [
             (
                 IpAddr::V4(Ipv4Addr::LOCALHOST),
                 IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)),
+                IpAddr::V6(Ipv6Addr::LOCALHOST),
             ),
             (
                 IpAddr::V6(Ipv6Addr::LOCALHOST),
                 IpAddr::V6(Ipv6Addr::new(0x2001, 0x0db8, 0, 0, 0, 0, 0, 1)),
+                IpAddr::V4(Ipv4Addr::LOCALHOST),
             ),
         ] {
+            let requested: SocketAddr = SocketAddr::new(loopback, 0);
             let local: SocketAddr = SocketAddr::new(loopback, 49000);
             let remote: SocketAddr = SocketAddr::new(loopback, 4460);
-            assert_eq!(check_bound_endpoints(local, remote), Ok(()));
+            assert_eq!(check_bound_endpoints(requested, local, remote), Ok(()));
             assert_eq!(
-                check_bound_endpoints(SocketAddr::new(foreign, local.port()), remote),
+                check_bound_endpoints(requested, SocketAddr::new(foreign, local.port()), remote),
                 Err(Failure::Endpoint),
             );
             assert_eq!(
-                check_bound_endpoints(SocketAddr::new(loopback, 0), remote),
+                check_bound_endpoints(
+                    requested,
+                    SocketAddr::new(other_family, local.port()),
+                    remote
+                ),
                 Err(Failure::Endpoint),
             );
             assert_eq!(
-                check_bound_endpoints(local, SocketAddr::new(foreign, remote.port())),
+                check_bound_endpoints(requested, requested, remote),
+                Err(Failure::Endpoint),
+            );
+            assert_eq!(
+                check_bound_endpoints(requested, local, SocketAddr::new(foreign, remote.port())),
+                Err(Failure::Endpoint),
+            );
+        }
+
+        let ipv4_bind: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 0));
+        let ipv4_peer: SocketAddr = SocketAddr::from(([127, 0, 0, 2], 4460));
+        let ipv4_bound: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 49000));
+        let ipv4_alias: SocketAddr = SocketAddr::from(([127, 0, 0, 2], 49000));
+        assert_eq!(
+            check_bound_endpoints(ipv4_bind, ipv4_bound, ipv4_peer),
+            Ok(())
+        );
+        assert_eq!(
+            check_bound_endpoints(ipv4_bind, ipv4_alias, ipv4_peer),
+            Err(Failure::Endpoint),
+        );
+
+        let ipv6_bind: SocketAddr = SocketAddr::from((Ipv6Addr::LOCALHOST, 0));
+        let ipv6_peer: SocketAddr = SocketAddr::from((Ipv6Addr::LOCALHOST, 4460));
+        for (flow, scope) in [(0, 1), (1, 0)] {
+            let ipv6_changed: SocketAddr =
+                SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 49000, flow, scope));
+            assert_eq!(
+                check_bound_endpoints(ipv6_bind, ipv6_changed, ipv6_peer),
                 Err(Failure::Endpoint),
             );
         }
@@ -2183,11 +2225,40 @@ mod reached {
     #[cfg(all(test, windows))]
     #[test]
     fn native_ipv4_loopback_bind_refuses_foreign_remote_and_retires_owner() -> Result<(), Failure> {
+        verify_native_loopback_bind(
+            SocketAddr::from(([127, 0, 0, 1], 4460)),
+            SocketAddr::from(([0, 0, 0, 0], 4460)),
+        )
+    }
+
+    /// Exercise the actual IPv6 loopback binding, registration and backend drop.
+    /// # Errors
+    /// Preserve runtime setup, native binding, endpoint observation and readiness failures.
+    #[cfg(all(test, windows))]
+    #[test]
+    fn native_ipv6_loopback_bind_refuses_foreign_remote_and_retires_owner() -> Result<(), Failure> {
+        use std::net::Ipv6Addr;
+
+        verify_native_loopback_bind(
+            SocketAddr::from((Ipv6Addr::LOCALHOST, 4460)),
+            SocketAddr::from((Ipv6Addr::UNSPECIFIED, 4460)),
+        )
+    }
+
+    /// Check the registered socket and retirement for one named loopback family.
+    /// # Errors
+    /// Preserve runtime, bind, local endpoint and readiness failures.
+    /// # Panics
+    /// Fail if the socket was substituted, used before readiness, left live, or
+    /// the same family's foreign peer was admitted.
+    #[cfg(all(test, windows))]
+    fn verify_native_loopback_bind(
+        loopback: SocketAddr,
+        foreign: SocketAddr,
+    ) -> Result<(), Failure> {
         use std::sync::Weak;
         use std::time::Duration;
 
-        let loopback: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 4460));
-        let foreign: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 4460));
         let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
             .enable_io()
             .enable_time()
@@ -2201,7 +2272,10 @@ mod reached {
             let registered: SocketAddr = socket
                 .local_addr()
                 .map_err(|error| failed(DatagramError::Local(error.kind())))?;
-            assert_eq!(registered.ip(), loopback.ip());
+            assert_eq!(
+                registered,
+                SocketAddr::new(loopback.ip(), registered.port())
+            );
             assert_ne!(registered.port(), 0);
             assert_eq!((backend.local, backend.remote), (registered, loopback));
             tokio::time::timeout(Duration::from_secs(2), socket.writable())

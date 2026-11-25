@@ -7,6 +7,7 @@ from hashlib import sha256
 import io
 import json
 from pathlib import Path
+import struct
 import sys
 from tempfile import TemporaryDirectory
 import unittest
@@ -16,7 +17,7 @@ import xml.etree.ElementTree as ET
 import prepare_artwork_payload as producer
 
 sys.path.insert(0, str(producer.stage.ROOT / "scripts/tests"))
-from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
+from test_windows_pe import _image, _OBSERVE_GUID, _OPTIONAL, _pdb, _UI_GUID, _ui_resource_image
 
 FOUNDATION: str = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
 TRUSTED_LAUNCH: str = "http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10"
@@ -391,6 +392,124 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
                 self.assertIn("error:", stderr)
                 self.assertFalse(self.output.exists())
                 read_roles.assert_not_called()
+
+    def guarded_fixture(self, *, version: bytes = b"exact version resource", generation: str | None = None,
+                        missing_guard: bool = False) -> tuple[tuple[str, ...], bytes]:
+        """Write inert PE/PDB and linker map inputs for the actual guarded reader."""
+        export: Path = self.root / "guarded-ui"
+        export.mkdir(mode=0o700, exist_ok=True)
+        expected_version: bytes = b"exact version resource"
+        manifest: bytes = b"exact manifest resource"
+        self.ui = bytes(_ui_resource_image(expected_version, manifest))
+        self.ui_path.write_bytes(self.ui)
+        self.handoff_report["files"][self.ui_path.name]["sha256"] = sha256(self.ui).hexdigest()
+        image: bytearray = _ui_resource_image(version, manifest)
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        guarded: bytes = bytes(image)
+        symbols: bytes = bytes(_pdb())
+        (export / self.ui_path.name).write_bytes(guarded)
+        (export / "nevrotick_ui.pdb").write_bytes(symbols)
+        object_hash: str = "b" * 64
+        link_map: bytes = (
+            " Preferred load address is 0000000140000000\n"
+            "  Address         Publics by Value              Rva+Base               Lib:Object\n"
+            f" 0001:00000010 nevrotick_ui_entry 0000000140001010 nevrotick-ui-entry-{object_hash}.obj\n"
+            " 0001:00000050 mainCRTStartup 0000000140001050 msvcrt:exe_main.obj\n"
+            " entry point at         0001:00000010\n"
+        ).encode("ascii")
+        map_path: Path = self.root / "guarded-ui.map"
+        map_path.write_bytes(link_map)
+        generation = self.handoff_report["generation_receipt_sha256"] if generation is None else generation
+        image_hash: str = sha256(guarded).hexdigest()
+        receipt: dict = {
+            "status": "passed", "native_windows_execution": "not performed",
+            "artifact": {
+                "path": "original/nevrotick-ui.exe", "sha256": image_hash, "profile": "release",
+                "target": "x86_64-pc-windows-msvc", "component_role": "ui", "source_state": "fixture",
+                "symbols": {"path": "original/nevrotick_ui.pdb", "sha256": sha256(symbols).hexdigest(),
+                            "guid": "12345678-9abc-def0-1234-56789abcdef0", "age": 1},
+            },
+            "ui_versioninfo": {"image_sha256": image_hash, "generation_sha256": generation,
+                               "strings": {"OriginalFilename": "nevrotick-ui.exe"}},
+            "msix_assembly_inputs": {"generation_receipt_sha256": generation, "assembly_ready": False},
+            "ui_preentry": {
+                "entry_rva": 0x1010, "image_base": 0x140000000, "crt_startup_rva": 0x1050,
+                "tls_callback_table_rva": 0, "direct_import_modules": [], "image_sha256": image_hash,
+                "object_sha256": object_hash, "map_sha256": sha256(link_map).hexdigest(),
+            },
+        }
+        if missing_guard:
+            del receipt["ui_preentry"]
+        raw: bytes = json.dumps(receipt).encode("utf-8")
+        (export / "verification.json").write_bytes(raw)
+        return (
+            "--guarded-ui-export", str(export), "--guarded-ui-receipt-sha256", sha256(raw).hexdigest(),
+            "--guarded-ui-link-map", str(map_path),
+        ), guarded
+
+    def test_guarded_ui_stages_exact_selected_bytes_and_reconciled_receipts(self) -> None:
+        options: tuple[str, ...]
+        guarded: bytes
+        options, guarded = self.guarded_fixture()
+        self.assertNotEqual(guarded, self.ui)
+        role_images: dict[str, bytes] = {
+            "nevrotick-lab-s02-engine.exe": b"engine", "nevrotick-lab-s02-broker.exe": b"broker",
+        }
+        with patch.object(producer.stage, "role_images", return_value=role_images) as read_roles:
+            status, stdout, stderr = self.invoke(self.role_args + options)
+            read_roles.assert_called_once_with(self.role_receipt, self.role_pin, require_baseline_entry=True)
+        self.assertEqual((status, stderr), (0, ""))
+        report: dict = json.loads(stdout)
+        self.assertEqual(report["handoff_receipt_sha256"], self.handoff_pin)
+        self.assertEqual(report["guarded_ui_receipt_sha256"], options[3])
+        self.assertEqual(report["generation_receipt_sha256"], "7" * 64)
+        self.assertIs(report["assembly_ready"], False)
+        self.assertEqual(report["payload"][self.ui_path.name], sha256(guarded).hexdigest())
+        self.assertEqual((self.output / self.ui_path.name).read_bytes(), guarded)
+        self.assertEqual(self.ui_path.read_bytes(), self.ui)
+        self.assertEqual(set(report["payload"]), {
+            *self.artwork, *role_images, self.ui_path.name, "AppxManifest.xml", "resources.pri",
+        })
+
+    def test_guarded_ui_requires_all_three_arguments_and_combined_roles(self) -> None:
+        options: tuple[str, ...]
+        options, _ = self.guarded_fixture()
+        inert: tuple[str, ...] = ("--inert", str(self.inert), "--inert-sha256", self.inert_pin)
+        for arguments in (self.role_args + options[:4], self.role_args + options[2:],
+                          self.role_args + options[:2] + options[4:], inert + options):
+            with self.subTest(arguments=arguments):
+                status, stdout, stderr = self.invoke(arguments, parsed=False)
+                self.assertEqual((status, stdout), (2, ""))
+                self.assertIn("error:", stderr)
+                self.assertFalse(self.output.exists())
+
+    def test_guarded_ui_refuses_crossed_evidence_without_publishing(self) -> None:
+        options: tuple[str, ...]
+        options, _ = self.guarded_fixture()
+        crossed: tuple[str, ...] = (*options[:3], self.handoff_pin, *options[4:])
+        status, stdout, stderr = self.invoke(self.role_args + crossed)
+        self.assertEqual((status, stdout), (1, ""))
+        self.assertIn("differs from the checked generation", stderr)
+        self.assertFalse(self.output.exists())
+
+        Path(options[5]).write_bytes(b"crossed link map")
+        status, stdout, stderr = self.invoke(self.role_args + options)
+        self.assertEqual((status, stdout), (1, ""))
+        self.assertIn("Fixture input hash or size differs", stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_guarded_ui_refuses_unbound_entry_and_changed_generation_or_resources(self) -> None:
+        for kwargs, reason in (
+            ({"missing_guard": True}, "guarded"),
+            ({"generation": "6" * 64}, "generation"),
+            ({"version": b"different version resource"}, "resource"),
+        ):
+            with self.subTest(reason=reason):
+                options, _ = self.guarded_fixture(**kwargs)
+                status, stdout, stderr = self.invoke(self.role_args + options)
+                self.assertEqual((status, stdout), (1, ""))
+                self.assertIn(reason, stderr.lower())
+                self.assertFalse(self.output.exists())
 
     def test_rejects_unlisted_missing_and_substituted_ui_without_publishing(self) -> None:
         files: dict[str, dict[str, str]] = self.handoff_report["files"]

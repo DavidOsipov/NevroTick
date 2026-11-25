@@ -181,6 +181,9 @@ namespace NevroTick
                 if (archive == null)
                     throw new ArgumentNullException("archive");
                 scope.Actor.VerifyCurrent(scope.Clock, timeoutMilliseconds, scope.DeploymentSid);
+                PrestartArchiveFacts facts = archive.Confirm(scope.Clock, timeoutMilliseconds, null, null);
+                if (facts.PayloadSha256 == null)
+                    throw Refusal("start-identity", "payload-binding-required");
                 archive.VerifySignature(expectedArchiveSha256, expectedSignerSha256, scope.Actor,
                     scope.Clock, timeoutMilliseconds);
                 RequireCurrentTime("start-identity");

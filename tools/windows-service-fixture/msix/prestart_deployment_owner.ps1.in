@@ -185,7 +185,8 @@ try {
     if ($ownerRole -ceq 'deployment') {
         prestart_deployment_session\Invoke-PrestartDeploymentOwner -RunId $RunId -Clock $clock `
             -WorkMilliseconds $workMilliseconds -RetirementMilliseconds $retirementMilliseconds `
-            -DeploymentSid $expectedActorSid -SignerSha256 $signerSha256 -Pins $pins -FullPrestart:$fullPrestart
+            -DeploymentSid $expectedActorSid -SignerSha256 $signerSha256 `
+            -ExpectedPayloadSha256 $expectedPayloadSha256 -Pins $pins -FullPrestart:$fullPrestart
     } else {
         [hashtable]$access = @{
             Role = $ownerRole; RunId = $RunId; Clock = $clock

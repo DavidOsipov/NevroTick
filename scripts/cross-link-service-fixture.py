@@ -40,10 +40,38 @@ BINS = ("nevrotick-lab-s02-engine", "nevrotick-lab-s02-broker")
 FIXTURE_PACKAGE = "nevrotick-windows-service-fixture"
 FIXTURE_LIBRARY = "nevrotick_windows_service_fixture"
 LIBRARY_SCOPES = ("crt/lib/x86_64", "sdk/lib/um/x86_64", "sdk/lib/ucrt/x86_64")
+BASELINE_CLANG = Path("/usr/lib/llvm-18/bin/clang")
+BASELINE_CLANG_INPUTS = {
+    BASELINE_CLANG: "8ef402d453d1ba4902e4ee0f0f847f6cfa01400c95aa43c24e97818b9c0e3f45",
+    BASELINE_CLANG.parent.parent / "lib/libclang-cpp.so.18.1":
+        "b9592746f7f8ff1156680fb1fad5faf5486df7a67aca8327cc959463416c6718",
+    BASELINE_CLANG.parent.parent / "lib/libLLVM.so.1":
+        "5c3a63957e28c15cdf1503892074f032d29b72e36a9824a77dfa87e48a0dafb0",
+}
+SERVICE_ENTRY_SOURCE = Q.TOOL + "/msix/service_entry.c"
+# Both original fixed-role images use this direct import inventory. The
+# actual loader resolution and initialization are separate native obligations.
+SERVICE_PREENTRY_IMPORTS = (
+    "advapi32.dll", "api-ms-win-core-console-l1-1-0.dll",
+    "api-ms-win-core-errorhandling-l1-1-0.dll", "api-ms-win-core-errorhandling-l1-1-1.dll",
+    "api-ms-win-core-heap-l1-1-0.dll", "api-ms-win-core-interlocked-l1-1-0.dll",
+    "api-ms-win-core-libraryloader-l1-2-0.dll", "api-ms-win-core-libraryloader-l1-2-1.dll",
+    "api-ms-win-core-localization-l1-2-0.dll",
+    "api-ms-win-core-processenvironment-l1-1-0.dll", "api-ms-win-core-profile-l1-1-0.dll",
+    "api-ms-win-core-rtlsupport-l1-1-0.dll", "api-ms-win-core-string-l1-1-0.dll",
+    "api-ms-win-core-synch-l1-2-0.dll", "api-ms-win-core-sysinfo-l1-1-0.dll",
+    "api-ms-win-core-sysinfo-l1-2-0.dll", "api-ms-win-core-sysinfo-l1-2-4.dll",
+    "api-ms-win-crt-heap-l1-1-0.dll", "api-ms-win-crt-locale-l1-1-0.dll",
+    "api-ms-win-crt-math-l1-1-0.dll", "api-ms-win-crt-runtime-l1-1-0.dll",
+    "api-ms-win-crt-stdio-l1-1-0.dll", "api-ms-win-crt-string-l1-1-0.dll",
+    "kernel32.dll", "ntdll.dll", "vcruntime140.dll",
+)
 PE_READER = "scripts/windows_pe.py"
 PE_SPEC = importlib.util.spec_from_file_location("windows_pe", ROOT / PE_READER)
 PE = importlib.util.module_from_spec(PE_SPEC)
 PE_SPEC.loader.exec_module(PE)
+SERVICE_ENTRY_NAME: str = PE.SERVICE_ENTRY_NAME
+SERVICE_ENTRY_OBJECT: str = PE.SERVICE_ENTRY_OBJECT
 
 
 SOURCE_CARGO = "/toolchain/bin/cargo"
@@ -145,6 +173,17 @@ def pe_readback(path):
         raise Incomplete(str(error)) from error
 
 
+def read_guarded_service_entry(data: bytes, map_text: str) -> dict[str, object]:
+    """Bind the raw entry, zero pre-entry callbacks and existing CRT symbol."""
+    try:
+        observed: dict[str, object] = PE.service_link_preentry_declarations(data, map_text)
+    except ValueError as error:
+        raise Incomplete(str(error)) from error
+    Q.require(observed["direct_import_modules"] == list(SERVICE_PREENTRY_IMPORTS),
+              "Fixed service loader import inventory changed.")
+    return observed
+
+
 def libtest_artifact(output, work):
     """Require one fresh, package-bound release libtest at its private Cargo path."""
     package_root = "/work/source/" + Q.TOOL
@@ -211,6 +250,9 @@ def run(args):
     Q.no_ambient_flags()
     core_policy = Q.disable_core_dumps()
     Q.require(args.lane in ("ready", "link", "libtest-link"), "Unknown service cross-link lane.")
+    baseline_entry: bool = getattr(args, "baseline_entry", False)
+    Q.require(not baseline_entry or args.lane == "link",
+              "Baseline entry is only available for the two fixed service roles.")
     Q.require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh label.")
     destination = Q.RECORDS / ("cross-" + args.label + ".json")
     Q.require(not destination.exists() and not destination.is_symlink(), "A prior cross-link record already exists.")
@@ -285,8 +327,28 @@ def run(args):
         record["target_cpu"] = "x86-64-v3"
         paths = [str(linker), "-flavor", "link", *("/libpath:" + str(path) for path in library_roots)]
         wrapper = work / "linker"
-        wrapper.write_text("#!/usr/bin/python3 -I\nimport json,os,sys\nargv=" + repr(paths)
-                           + " + sys.argv[1:]\nwith open('/work/linker-calls.jsonl','a',encoding='utf-8') as stream:\n"
+        entry_object: Path = work / SERVICE_ENTRY_OBJECT
+        entry_sha256: str | None = None
+        entry_setup: str = ""
+        if baseline_entry:
+            Q.require(SERVICE_ENTRY_SOURCE in identity, "Baseline entry is missing from the admitted source.")
+            # This recipe admits one normal output per fixed role. Response
+            # files or a preexisting entry/map could hide a competing argument.
+            entry_setup = (
+                "import re\n"
+                "outs = [item[5:] for item in args if item.lower().startswith('/out:')]\n"
+                "out = re.fullmatch("
+                "r'/work/target/x86_64-pc-windows-msvc/release/build/nevrotick-windows-service-fixture/"
+                "[0-9a-f]{16}/out/(nevrotick_lab_s02_(?:engine|broker))\\.exe', outs[0]) if len(outs) == 1 else None\n"
+                "if out is None or any(item.startswith('@') or "
+                "item.lower().startswith(('/entry', '-entry', '/map', '-map')) for item in args):\n"
+                " raise SystemExit('Unadmitted baseline service link arguments.')\n"
+                f"args += ['/entry:{SERVICE_ENTRY_NAME}', '/map:/work/' + out.group(1) + '.map', "
+                f"'/work/{SERVICE_ENTRY_OBJECT}']\n"
+            )
+        wrapper.write_text("#!/usr/bin/python3 -I\nimport json,os,sys\nargs=sys.argv[1:]\n"
+                           + entry_setup + "argv=" + repr(paths)
+                           + " + args\nwith open('/work/linker-calls.jsonl','a',encoding='utf-8') as stream:\n"
                            + " stream.write(json.dumps(argv)+'\\n')\nos.execv(argv[0],argv)\n")
         wrapper.chmod(0o500)
         wrapper_sha = C.PRODUCT.sha256(wrapper)
@@ -317,6 +379,11 @@ def run(args):
                       and C.PRODUCT.sha256(config) == config_sha and C.PRODUCT.sha256(wrapper) == wrapper_sha,
                       "Cross recipe, sealed configuration or linker changed.")
             Q.require(Q.index_identity() == record["index_before"], "Staging bytes changed during cross lane.")
+            if baseline_entry:
+                Q.require(all(path.resolve(strict=True) == path and C.PRODUCT.sha256(path) == digest
+                              for path, digest in BASELINE_CLANG_INPUTS.items())
+                          and (entry_sha256 is None or C.PRODUCT.sha256(entry_object) == entry_sha256),
+                          "Baseline entry compiler or object changed.")
             for name, digest in {**sdk_hashes, **prerequisites,
                                  record["checkpoint_path"]: record["checkpoint_sha256"]}.items():
                 Q.require(C.PRODUCT.sha256(Path(name)) == digest, "Prerequisite or SDK receipt changed.")
@@ -326,7 +393,8 @@ def run(args):
             check()
             require_disk_headroom("command execution")
             options = dict(readonly=[*admitted["readonly_roots"], vendor, *library_roots],
-                           sealed=[source, config, wrapper], path_dirs=[stable / "bin", llvm],
+                           sealed=[source, config, wrapper, *([entry_object] if entry_sha256 else [])],
+                           path_dirs=[stable / "bin", llvm],
                            environment={"RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc"),
                                         "RUST_TEST_THREADS": "1"}, cwd=source, cpu_seconds=180, build_jobs=1)
             if scratch is None:
@@ -351,6 +419,17 @@ def run(args):
             succeeded = all(result["exit_code"] == 0 for result in results)
         else:
             libtest = args.lane == "libtest-link"
+            if baseline_entry:
+                produced = execute([str(BASELINE_CLANG), "--no-default-config", "--target=" + TARGET, "-std=c17", "-O2",
+                    "-Wall", "-Wextra", "-Werror", "-Wpedantic", "-ffreestanding", "-fno-lto",
+                    "-fstack-protector-strong", "-funwind-tables", "-Xclang", "-cfguard", "-march=x86-64",
+                    "-c", "/work/source/" + SERVICE_ENTRY_SOURCE, "-o", "/work/" + SERVICE_ENTRY_OBJECT])
+                Q.require(produced["exit_code"] == 0 and not entry_object.is_symlink(),
+                          "Baseline entry object compilation failed.")
+                entry_sha256 = C.PRODUCT.sha256(entry_object)
+                record["baseline_entry"] = {"compiler_inputs": {str(path): digest
+                                                                for path, digest in BASELINE_CLANG_INPUTS.items()},
+                                           "object_sha256": entry_sha256}
             subcommand = "test" if libtest else "build"
             selection = ["--lib", "--no-run"] if libtest else ["--bin", BINS[0], "--bin", BINS[1]]
             command = [str(stable / "bin/cargo"), "--verbose", "--verbose", "--config", f'target.{TARGET}.linker="/work/linker"',
@@ -398,6 +477,11 @@ def run(args):
                 staged = Path(staging.name) / "artifacts"
                 staged.mkdir(mode=0o700)
                 artifact_rows, admitted_hashes = {}, {}
+                if baseline_entry:
+                    object_data: bytes = C.read_analysis_bytes(entry_object, maximum=64 * 1024)
+                    Q.require(hashlib.sha256(object_data).hexdigest() == entry_sha256, "Entry object drifted.")
+                    (staged / entry_object.name).write_bytes(object_data)
+                    admitted_hashes[entry_object] = entry_sha256
                 for name, image in emitted.items():
                     pdb_names = {image.with_suffix(".pdb").name} if libtest else {
                         name + ".pdb", name.replace("-", "_") + ".pdb",
@@ -414,6 +498,14 @@ def run(args):
                     except ValueError as error:
                         raise Incomplete(str(error)) from error
                     Q.require(image_snapshot[1] == image_hash, "PE changed after hardening readback.")
+                    if baseline_entry:
+                        map_path: Path = work / (name.replace("-", "_") + ".map")
+                        map_data: bytes = C.read_analysis_bytes(map_path, maximum=2 * 1024 * 1024)
+                        entry: dict[str, object] = read_guarded_service_entry(image_snapshot[0], map_data.decode("utf-8"))
+                        map_sha256: str = hashlib.sha256(map_data).hexdigest()
+                        (staged / map_path.name).write_bytes(map_data)
+                        admitted_hashes[map_path] = map_sha256
+                        readback["baseline_entry"] = {**entry, "map_sha256": map_sha256}
                     observed = execute([str(inspector), "--file-headers", "--coff-load-config", "--coff-debug-directory",
                                         "--coff-imports", str(Path("/work") / image.relative_to(work))])
                     Q.require(observed["exit_code"] == 0, "Independent LLVM PE inspection failed.")
@@ -480,6 +572,8 @@ def main():
     """Select readiness, fixed compositions or the isolated fixture libtest."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("lane", choices=("ready", "link", "libtest-link"))
+    parser.add_argument("--baseline-entry", action="store_true",
+                        help="Use the admitted baseline-first startup for both fixed service roles")
     parser.add_argument("--label", required=True)
     parser.add_argument("--source-checkpoint", type=Path, required=True,
                         help="Current qualification.py privilege-checkpoint receipt and its bound graph")

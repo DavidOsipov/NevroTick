@@ -2,6 +2,7 @@
 //! Exercise primary-token acquisition with scripted statistics and a live query handle.
 
 use std::cell::Cell;
+use std::mem::size_of;
 use std::num::NonZeroU32;
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, OwnedHandle};
 
@@ -27,6 +28,17 @@ enum AcquisitionStep {
     Confirmation,
     /// Return without further queries.
     Complete,
+}
+
+/// Scripted refusal before the confirmation statistics read.
+#[derive(Clone, Copy, Debug)]
+enum EarlyRefusal {
+    /// The initial statistics query reports a native failure.
+    StatisticsDenied,
+    /// The initial statistics query returns a record one byte short.
+    ShortStatistics,
+    /// The user identity query reports a native failure.
+    IdentityDenied,
 }
 
 /// Scripted confirmation response for a well-formed first sample.
@@ -206,6 +218,108 @@ fn native_primary_token_acquisition_brackets_identity_and_preserves_handle_custo
             }
             (case, _) => return Err(format!("unexpected acquisition result for {case:?}").into()),
         }
+    }
+    Ok(())
+}
+
+/// Check each early refusal's error, last reached callback and handle release.
+/// Run this selector alone so another test cannot reuse the closed handle value.
+/// # Errors
+/// Preserve failure to retain the self process or query its real token.
+/// # Panics
+/// Panic on an unexpected read, refusal, or handle lifetime.
+#[test]
+#[ignore = "requires the admitted offline Windows broker identity fixture"]
+fn native_primary_token_acquisition_closes_handle_on_early_refusal()
+-> Result<(), Box<dyn std::error::Error>> {
+    let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
+    let process: PeerProcess = PeerProcess::open(pid)?;
+    let short_written: u32 = u32::try_from(size_of::<TOKEN_STATISTICS>() - 1)?;
+
+    for refusal in [
+        EarlyRefusal::StatisticsDenied,
+        EarlyRefusal::ShortStatistics,
+        EarlyRefusal::IdentityDenied,
+    ] {
+        let token: OwnedHandle = open_primary_token(process.as_handle().as_raw_handle())?;
+        let handle: HANDLE = token.as_raw_handle();
+        check_handle(handle)?;
+        let (original, written): (TOKEN_STATISTICS, u32) = read_statistics(token.as_handle())?;
+
+        let next: Cell<AcquisitionStep> = Cell::new(AcquisitionStep::Original);
+        let acquired: Result<RetainedPrimaryToken, PipeIdentityError> =
+            RetainedPrimaryToken::from_token(
+                token,
+                |queried: BorrowedHandle<'_>| {
+                    assert!(
+                        queried.as_raw_handle() == handle,
+                        "statistics handle changed"
+                    );
+                    assert_eq!(
+                        next.replace(AcquisitionStep::Complete),
+                        AcquisitionStep::Original,
+                        "{refusal:?} must stop before confirmation"
+                    );
+                    match refusal {
+                        EarlyRefusal::StatisticsDenied => Err(PipeIdentityError::Native {
+                            operation: "GetTokenInformation(TokenStatistics)",
+                            code: ERROR_ACCESS_DENIED,
+                        }),
+                        EarlyRefusal::ShortStatistics => Ok((original, short_written)),
+                        EarlyRefusal::IdentityDenied => {
+                            next.set(AcquisitionStep::Identity);
+                            Ok((original, written))
+                        }
+                    }
+                },
+                |queried: BorrowedHandle<'_>, _: &TOKEN_STATISTICS| {
+                    assert!(queried.as_raw_handle() == handle, "identity handle changed");
+                    assert_eq!(
+                        next.replace(AcquisitionStep::Complete),
+                        AcquisitionStep::Identity,
+                        "{refusal:?} must reach identity only after valid statistics"
+                    );
+                    Err(PipeIdentityError::Native {
+                        operation: "GetTokenInformation(TokenUser)",
+                        code: ERROR_ACCESS_DENIED,
+                    })
+                },
+            );
+        // Observe the original handle before another call can acquire a handle.
+        let handle_status: Result<(), PipeIdentityError> = check_handle(handle);
+        assert_eq!(next.get(), AcquisitionStep::Complete, "{refusal:?}");
+        assert!(
+            matches!(
+                (refusal, acquired),
+                (
+                    EarlyRefusal::StatisticsDenied,
+                    Err(PipeIdentityError::Native {
+                        operation: "GetTokenInformation(TokenStatistics)",
+                        code: ERROR_ACCESS_DENIED,
+                    }),
+                ) | (
+                    EarlyRefusal::ShortStatistics,
+                    Err(PipeIdentityError::InvalidTokenInformation),
+                ) | (
+                    EarlyRefusal::IdentityDenied,
+                    Err(PipeIdentityError::Native {
+                        operation: "GetTokenInformation(TokenUser)",
+                        code: ERROR_ACCESS_DENIED,
+                    }),
+                )
+            ),
+            "unexpected acquisition result for {refusal:?}"
+        );
+        assert!(
+            matches!(
+                handle_status,
+                Err(PipeIdentityError::Native {
+                    operation: "GetHandleInformation",
+                    code: ERROR_INVALID_HANDLE,
+                })
+            ),
+            "{refusal:?} must close the original handle"
+        );
     }
     Ok(())
 }

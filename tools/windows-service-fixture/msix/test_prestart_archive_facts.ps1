@@ -5,7 +5,9 @@ param(
     [Parameter(Mandatory = $true)][string]$CurrentArchive,
     [Parameter(Mandatory = $true)][string]$CurrentSha256,
     [Parameter(Mandatory = $true)][string]$PreviousArchive,
-    [Parameter(Mandatory = $true)][string]$PreviousSha256
+    [Parameter(Mandatory = $true)][string]$PreviousSha256,
+    [string]$CurrentPayloadSha256,
+    [string]$CrossedPayloadSha256
 )
 
 Set-StrictMode -Version Latest
@@ -73,5 +75,33 @@ Assert-Refused $nonPackage (Get-Sha256 $nonPackage) ([Runtime.InteropServices.CO
     previous = $older
     restored = $restored
     refused = @('crossed-pin', 'malformed-pin', 'empty', 'oversize', 'non-package-with-matching-pin')
+}
+
+# The independent crossed catalog retains both role files and changes the expected launcher.
+if ($PSBoundParameters.ContainsKey('CurrentPayloadSha256') -or $PSBoundParameters.ContainsKey('CrossedPayloadSha256')) {
+    if ($CurrentPayloadSha256 -cnotmatch '\A[0-9a-f]{64}\z' -or
+        $CrossedPayloadSha256 -cnotmatch '\A[0-9a-f]{64}\z' -or
+        $CurrentPayloadSha256 -ceq $CrossedPayloadSha256) {
+        throw 'archive-control:payload-pins'
+    }
+    [NevroTick.PrestartArchiveFacts]$bound = [NevroTick.PrestartArchiveFacts]::InspectWithPayload(
+        $current, $CurrentSha256, $CurrentPayloadSha256)
+    [bool]$crossedRefused = $false
+    try {
+        [void][NevroTick.PrestartArchiveFacts]::InspectWithPayload($current, $CurrentSha256, $CrossedPayloadSha256)
+    } catch {
+        [Exception]$cause = $_.Exception
+        while ($null -ne $cause.InnerException) { $cause = $cause.InnerException }
+        if ($cause -isnot [IO.InvalidDataException] -or $cause.Message -cne 'prestart-archive:payload-digest') { throw }
+        $crossedRefused = $true
+    }
+    [NevroTick.PrestartArchiveFacts]$boundRestored = [NevroTick.PrestartArchiveFacts]::InspectWithPayload(
+        $current, $CurrentSha256, $CurrentPayloadSha256)
+    if (!$crossedRefused -or $null -ne $first.PayloadSha256 -or
+        $bound.PayloadSha256 -cne $CurrentPayloadSha256 -or $boundRestored.PayloadSha256 -cne $CurrentPayloadSha256 -or
+        $bound.EngineSha256 -cne $first.EngineSha256 -or $bound.BrokerSha256 -cne $first.BrokerSha256) {
+        throw 'archive-control:payload-binding'
+    }
+    $observation.payload = @{ current = $bound.PayloadSha256; crossedRefused = $crossedRefused; restored = $boundRestored.PayloadSha256 }
 }
 ConvertTo-Json -InputObject $observation -Compress -Depth 3

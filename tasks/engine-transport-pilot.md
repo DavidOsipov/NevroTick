@@ -31345,9 +31345,10 @@ result qualifies its selected fixture scope.
    was prepared on `c347bd0` plus twelve paths and its recorded scratch-space
    preflight refused dispatch. Compare and rebind the full current candidate,
    including changed verifier helpers, graph, tools and resource/advisory
-   admission. Check the current facade, then admit the matching peer using
-   that facade's exact result. Bind scoped build and actual pair/reader evidence
-   to the same artifacts before integrating the fixture.
+   admission. The [rebuilt authenticated pair](#replay-the-rebuilt-authenticated-timing-pair)
+   now binds the facade, matching peer, controller, readback and guest retirement
+   to one tested candidate. This step supplies the original capture evidence
+   for the reference trial below.
 2. **Reference and issuer, independent of the build.** Reuse the
    [W11-W01 reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026).
    The Windows reference owner must admit traceable UTC and independently
@@ -31391,10 +31392,10 @@ process-wide CNG claim and resume registration attempt. The later
 holds one provider and persistent observer across two original jobs under
 one cutoff. Each job has its own Stop and collection ticket, and confirmed
 collection of the required first-job receipts gates the second job.
-The [current artifact pair](#rebind-the-matching-peer-to-the-provenance-facade)
-still needs the real two-peer authenticated execution and temporary trust
-restoration in an admitted offline guest. The bounded pair supplies
-no production service acquisition owner. Its power-binding epoch advances
+The [rebuilt artifact pair](#replay-the-rebuilt-authenticated-timing-pair)
+passed two authenticated exchanges on the same association and confirmed
+temporary trust restoration. The production service acquisition owner
+still needs its own reissue evidence. The fixture power-binding epoch advances
 on activation as well as delivered events. Mapping continuity still needs
 the independent qualified issuer above.
 
@@ -33997,6 +33998,188 @@ No native handle or FFI ownership model changed.
 | `native-recipe/join_5e48fa50925f/verification.json` | `265c1124c9ecf6768380c29fd2825d36a0c7ea40051c18091ccb25a770d5ec36` |
 | `native-scope-readback.json` | `7b377760ccba9865bf8f101756eac720601d63254a15c2e59a8df52a04f80cc5` |
 
+###### Observe resume inside the first closing presentation read
+
+S2.1/W11-W01, TQ-09 and CHECK-25/27. Regression selection and lifecycle
+QA confirmed that the existing late-delivery test injects its event
+before join. The new Windows selector injects `AutomaticResume` inside
+the first closing presentation read and independently observes the
+original worker slot in `Taken`. The callback requires the originally
+subscribed target to still have an active binding. Early retirement
+would fail that assertion. The joined reports check `Invalidated` on
+the first job and `NoEventObserved` on the second, alongside both
+original peer receipts, chronology and charged work. The earlier
+pre-retirement and event-free cases remain in the fixture.
+
+The two-file test overlay on `a281ec3b` produces tree
+`9fd4bb203bc16d6c819e5424d234b95c8972fad4`. On Rust 1.100.0,
+all 16 selected GNU tests passed, as did workspace formatting,
+GNU and MSVC test Clippy, the x64-v3 MSVC libtest link, and PE
+readback with the retained symbols. Independent source review confirmed
+the post-take delivery and the preserved before-retirement fixture.
+The first attempt stopped at the Clippy function-length check. The
+first Windows preflight stopped at the memory floor before process
+launch. The records retain those refusals.
+
+After retirement of 1.66 GiB of this checkpoint's derived scratch,
+the owned offline Windows build-26100 guest passed four exact selectors:
+closing-read resume, earlier resume, no delivery and abnormal join.
+The runner observed exit and both output streams for all four listings
+and four tests, verified the original image at both ends and emptied
+its shares. The new selector scripts a resume callback. Physical
+power delivery, calibrated mapping, positive Core admission and
+affected coverage/mutation qualification remain open.
+
+| Record under `~/.local/share/nevrotick/closing-read-token.uJsnGXsj/` | SHA-256 |
+| --- | --- |
+| `controls.patch` | `28bba8a5c8ddbc923a3770220839ea5c64dc781298e09f0c9694cf7190022640` |
+| `engine/verification.json` | `36bc31fd7763c1a88689be50f18ab36a8b939191c1646a40f867b6e7e32abb33` |
+| `engine-r2/verification.json` | `081abf3b3c25af8f78c1cd34b3719a194e9654184468db54a24533239431d7d6` |
+| `native-recipe/join_1d1698a6ec05/verification.json` | `dca4e4b0aba9f5798c54a2025c22b5f4c010811fccd9b21e2505ee65c4ca808b` |
+| `native-recipe/join_094cd3e42081/verification.json` | `19f8abc3febd4df3d2dd6aaf41480f875fe4edb18c2ab0714f09d6adcb4dad60` |
+
+##### Rebuild the current protected timing facade
+
+S2.1/W11-W01 and CHECK-19/26. The configured offline facade build
+linked the protected timing exporter with the ordered QPC capture
+check and the joined power-observation changes. The frozen worktree
+based on `a281ec3b` bound 758 product inputs to
+`d04462645d382f6571c35ec4dc7f6915deeeb828fe0c7075669aee267dd4d568`
+and 17 helper inputs to
+`d41257a7ad2deb13a90ab3fdb7819f5bb8488c660474cd6283844a276c61fcad`.
+The compiler admission and resource preflight held the root lock,
+reviewed Windows SDK, Rust 1.100.0 and the two-job build profile.
+
+The reconstructed read-only vendor inventory matched the prior
+admitted 588 packages and 29,510 files. The configured build passed
+all 20 build, format, lint and readback steps in 114.684 seconds.
+An external tmpfs held the owned compiler scratch with the existing
+free-space and memory stops. Source was rechecked before release.
+The exact exports and their logs were copied to durable custody,
+all copies were rehashed, and the build work and source copies were
+removed. The independent readback matched all four executable/PDB
+pairs, including the facade's 8,192-byte PDB page profile.
+
+The root metadata-only acquisition refreshed the snapshot for
+the unchanged workspace lock and admitted 2,164 files. The first
+invocation lost the original home-directory context under the mount
+namespace and refused before acquisition. The successful retry
+preserved that context and kept the same quota and lock checks.
+This refresh does not represent a fresh dependency verification run.
+
+The separate peer needs a new build against the changed shared
+Windows adapter even though its own source still matches the earlier
+peer. Refresh the standalone advisory snapshot, build the peer against
+the current candidate, then read back and render both artifacts
+together. The current facade has only cross-build and artifact evidence.
+Same-session loader and parser checks and the real authenticated pair
+remain open. The independent reference, mapping and Core-admission
+requirements remain separate.
+
+| Retained record | SHA-256 |
+| --- | --- |
+| `~/.local/share/nevrotick/s21-current-facade.TSbFcMrJ/build-summary.json` | `c962cee3da400d07ad05d6e26d519a03d13733d9f890b5e4d6b241ddf2bfd531` |
+| `~/.local/share/nevrotick/s21-current-facade.TSbFcMrJ/retained-readback.json` | `e39596c020ee28af08346b9327858dac89341bea1384c5952d7f6abed9f47ada` |
+| `~/.local/share/nevrotick/s21-current-facade.TSbFcMrJ/advisory-receipt.json` | `8867069562ebbce295bff4390bcd07f803cb157f02e3e57040dd4cb4b3cf2b27` |
+| `%LOCALAPPDATA%/NevroTick/s21-current-facade.TSbFcMrJ/build/verification.json` | `033c92ee05ad479f84e62213e5b549bc0b41b2459c8847811767f78f976194b5` |
+| `%LOCALAPPDATA%/NevroTick/s21-current-facade.TSbFcMrJ/build/engine-facade-consumer.exe` | `7e18be1d1aee1c99a9183401bfb538e152bb347d30b1fb40a361d41d7bb52301` |
+
+###### Bind and load the rebuilt timing pair in the owned offline guest
+
+S2.1/W11-W01 and CHECK-19/26. The private source snapshot took 2,400
+files from the current worktree on `a281ec3b`. Independent review
+reconstructed tree `2b0ec14e08639696b3b6bf640a0fc48be2e89aea`, checked
+the index, status and worktree bookends, and matched all 758 product
+and 17 facade helper inputs. All 112 standalone peer inputs match
+the prior peer. The new build compiled the current shared Engine and
+Windows adapter sources under the two unchanged lockfiles.
+
+The standalone acquisition used the existing 512 MiB and 16,384-inode
+quotas. It checked all 114 registry records for the standalone lock.
+The first preflight pointed at a retired scratch copy of the baseline
+lock. The exact Git bytes from `0498765` matched its recorded digest.
+Rebinding that path restored preflight. The refreshed standalone
+snapshot and the separate workspace snapshot then reached the exact
+GNU and MSVC dependency checks.
+
+The frozen, network-isolated peer producer passed all 12 lanes in
+218.297 seconds. Both GNU profiles passed their exact 31 cases.
+Both dependency lanes passed advisories, bans, licenses and sources.
+The MSVC release link used Rust 1.100.0, the configured x86-64-v3 flags
+and the same 529-library SDK inventory as the facade. The build
+verified its source and tool bookends and retired owned compiler
+scratch. Independent readback checked all 20 facade and 12 peer
+raw lane results and the five linked executable/PDB pairs. Ten
+refusal controls passed, including the genuinely pinned previous
+peer offered to the current facade. The fresh controller replaces
+only the two image-digest literals in the retained template.
+
+In the owned offline Windows build-26100 guest, the current loader
+passed all 17 expected observations. A separate held-file parser
+passed all 11 observations with the same guest, owner, controller,
+image pins and loader receipt. Both mapped shelves were empty at
+retirement. The first preflight refused on an older parser shelf
+beyond its known namespaces. The shelf remained ACL-protected.
+The retry verified that exact run's intent, terminal marker,
+all 11 command results and both empty leaves under the existing
+lease, keeping unknown shelves a refusal.
+
+This completes the exact current pair's development build and
+certificate-free Windows checks. The authenticated two-exchange run
+still needs its admitted temporary trust and fixture window. Physical
+timing reference, mapping validity and positive Core admission
+remain separate prerequisites.
+
+| Record under `~/.local/share/nevrotick/s21-current-peer.x4BLm1t6/` unless noted | SHA-256 |
+| --- | --- |
+| `frozen-source.json` | `47014a5f485cd318c53c0dfe24f4978089abdb77e50fa73064cc806878b1f638` |
+| `/mnt/wsl/nevrotick-current-peer.cHQ6mJql/advisory/advisory-receipt.json` | `2c7c9a36dce16d92ac34d8bb6fa3e55b011f1b16e8423fff69004f135b1927bd` |
+| `%LOCALAPPDATA%/NevroTick/s21-current-peer.y1qTpAVp/build/verification.json` | `e0f3dd22b1cb9eeb9e385b785a915eea96915904a5b395e2c71ab4d695ae9d52` |
+| `readback/paired-readback.json` | `b71d7e4085d802e1fc177c7372429f843b06f89a51725dc7e99118831f452c15` |
+| `controller/host-render.json` | `8bdc79b0f6063618305e8ee5973771f064425f0b77d51b6ad5e48d195dc9b68b` |
+| `timing-loader/kepre_38f4390931f9/verification.json` | `e7e9abe9f849463b9013b58a105c381a896e511a5388805596c3a4466dbf3f93` |
+| `timing-loader/keparse_990109b0aa2c/verification.json` | `8ad2e6fed4c05ea057d3738bb63ca16c30038f7f39b56549b98158acfceb9b9f` |
+
+###### Replay the rebuilt authenticated timing pair
+
+S2.1/W11-W01, TQ-01/09 and CHECK-19/25/26/27. Sandbox preflight
+rebound the existing `ordinary-timing` runner to frozen tree
+`2b0ec14e08639696b3b6bf640a0fc48be2e89aea`, the two exact build receipts
+and the same-session loader and parser above. The read-only admission
+passed, and the authenticated action refused without the exact temporary
+root confirmation. The first live attempt stopped at the shared lease
+without publishing an intent. With the lease available and owner
+confirmation, both live guest observations passed the fixture clock and
+offline checks before trust staging.
+
+On Windows build 26100 the original committed reply and its ordinary
+successor authenticated through the same association. The paired reader
+checked six Engine and four peer capture rows at 10 MHz on the original
+endpoints. The first exchange had a pre-send to peer-receive gap of
+12,336 ticks and a peer pre-send to client-receive gap of 556 ticks. The
+successor gaps were 1,963 and 617 ticks. These differences describe the
+selected application capture points. The peer counted exactly two UDP
+receives and two sends. The runner observed two child exits, all four
+stream EOFs, restoration of the guest certificate and CRL stores, and
+empty shared shelves.
+
+Regression QA read both original application triplets through the bench
+reader. Truncating the stream or supplying the predecessor receipt pin
+independently refused. The 31 bench-reader controls passed. Independent
+readback matched all 17 retained outputs and checked the original child
+exits, certificate and CRL restoration, and dispatch retirement. The
+Engine reports `mapping-unavailable eligible=0 fresh_sync=0`. The wired
+route, physical reference and qualified mapping, positive Core admission,
+and affected coverage and mutation obligations remain open.
+
+| Record under `~/.local/share/nevrotick/s21-current-authenticated.pXGxrMgH/` | SHA-256 |
+| --- | --- |
+| `dispatch-timing-pair.py` | `bba3561aa12c5fa54623e7a94ee30e826f9a9f29171049582b61e0facf9787a8` |
+| `ketiming_1b0c204a325c/dispatch-intent.json` | `da6986f1306cf4c227e6eaafbfef6b7334d8dbdb6403c5ffaac3e63fea4fd791` |
+| `ketiming_1b0c204a325c/healthy-ke.json` | `8b6ae46751a98c42bbd62d7187c816fffcd66d7119e965f8c729f5b08aacc19f` |
+| `ketiming_1b0c204a325c/verification.json` | `c2ccdf51eee08ba0a704d6fd19d9dddd5d7b6d153d6cbe98a24149ea5505c3ec` |
+| `ketiming_1b0c204a325c/dispatch-retired.json` | `493393e9b9977658261b89f52928780831d62370789d77f6cc174b12d949597a` |
+
 #### Refuse a joined Windows DNS answer after source replacement
 
 W11-W03/S2.2 and CHECK-25/27. The controlled Windows test lets the original
@@ -34056,6 +34239,48 @@ need a separate permit observation while retirement is pending. Both routing
 changes stayed in the private test fixture. The adopted Engine test uses the
 normal local resolver route. [WinDNS request](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_request)
 [Cancellation contract](https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnscancelquery)
+
+##### Verify the original local bind before protected socket registration
+
+S2.1/W11-W01, TQ-01/09 and CHECK-7/25/26. The initial, ordinary and
+successor protected UDP paths use the shared `Backend::bind` owner. It
+now retains the exact original loopback bind request and requires the
+reported endpoint to match after substituting only the assigned nonzero
+port. A crossed family, another IPv4 loopback address, or an altered IPv6
+scope or flow label refuses before the socket joins the runtime. The
+existing peer and current-authority checks still govern submission.
+
+Rust contract and regression QA used both families' valid inputs,
+including an alternate IPv4 loopback peer, against each substituted
+local coordinate. Standalone extracts of the same guard and test refused
+both weakened predicates on the intended assertions. The first isolated
+compiler call lacked its default linker symlink. The retry used the
+installed GCC executable without changing the maintained input bytes.
+
+The confined Rust 1.100.0 build on `a281ec3` froze tree
+`cfc59dd95e2f05fbac78f55dba6927dfdfea3e34`, with 758 product and
+17 helper inputs. The first GNU joined-test selector reached zero cases.
+The corrected selection on the same tree passed the exact endpoint
+control and actual joined two-leg exchange. Configured formatting,
+GNU and MSVC Clippy, the x64-v3 MSVC libtest link and PE/PDB readback
+passed. The linked pair contained all three selected test names.
+
+In the owned offline Windows build-26100 guest, three exact discovery
+processes and three test processes exited zero. The coordinate control
+passed, and the IPv4 and IPv6 selectors observed their exact actual
+bound endpoint, runtime registration, writable readiness, refusal of
+the foreign peer and release of the original owner. The runner confirmed
+both streams and empty transfer shelves. This verifies local loopback
+binding. The separate wired route, independent reference and mapping,
+affected 90% line and 95% mutation gates and positive Core admission
+remain open. The earlier authenticated timing pair retains its original
+source identity.
+
+| Record | SHA-256 |
+| --- | --- |
+| `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/verification.json` | `25b63f2654e6546e8b79fa02baabee0054a6cb0b5695e824f3debf9ebe806ad8` |
+| `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/exact-selector-readback.json` | `182998ae5abf993c53a59ed86e9262c9a4df64f67f9c84c70a3234d3a0a69937` |
+| `~/.local/share/nevrotick/s21-bound-endpoint-native.qERXDWMI/bounds_a8f5d0201951/verification.json` | `d46f35219d244bd46836ceb2d8bcea44d5efd87ea19706a835253c0ab5eed9dc` |
 
 | Record under `~/.local/share/nevrotick/w11-dns-live.x3Or7Xht/` | SHA-256 |
 | --- | --- |

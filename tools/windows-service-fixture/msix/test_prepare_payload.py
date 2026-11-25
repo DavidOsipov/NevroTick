@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import struct
 import sys
 import tempfile
 import unittest
@@ -17,6 +18,88 @@ from unittest.mock import patch
 
 import prepare_payload as producer
 from metadata.tests.test_pipeline import SourceFixture
+
+sys.path.insert(0, str(producer.ROOT / "scripts/tests"))
+from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
+
+
+class GuardedRoleTests(unittest.TestCase):
+    def setUp(self) -> None:
+        root: Path = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.receipt: Path = root / "cross-fixed-roles.json"
+        self.linked: Path = root / "cross-fixed-roles-artifacts"
+        self.linked.mkdir(mode=0o700)
+        logical: Path = producer.RECEIPTS.relative_to(producer.ROOT) / self.linked.name
+        self.images: dict[str, bytes] = {}
+        self.rows: dict[str, dict[str, object]] = {}
+        for stem, guid in zip(producer.BINS, (_UI_GUID, _OBSERVE_GUID), strict=True):
+            image_name: str = stem + ".exe"
+            map_stem: str = stem.replace("-", "_")
+            pdb_name: str = map_stem + ".pdb"
+            pe: bytearray = _image(3, pdb_path=pdb_name, guid=guid)
+            struct.pack_into("<I", pe, 0x98 + 16, 0x1010)
+            image: bytes = bytes(pe)
+            pdb: bytes = bytes(_pdb(guid=guid))
+            mapping: bytes = f" {map_stem}\n\n entry point at 0001:00000010\n".encode("ascii")
+            (self.linked / image_name).write_bytes(image)
+            (self.linked / pdb_name).write_bytes(pdb)
+            (self.linked / (map_stem + ".map")).write_bytes(mapping)
+            self.images[image_name] = image
+            self.rows[stem] = {
+                "image": (logical / image_name).as_posix(), "image_sha256": sha256(image).hexdigest(),
+                "pdb": (logical / pdb_name).as_posix(), "pdb_sha256": sha256(pdb).hexdigest(),
+                "raw_pe": {"baseline_entry": {
+                    "entry_rva": 0x1010, "crt_startup_rva": 0x1030,
+                    "image_base": 0x140000000, "tls_callback_table_rva": 0,
+                    "direct_import_modules": [], "map_sha256": sha256(mapping).hexdigest(),
+                }},
+            }
+        entry_object: bytes = b"fixture guard object"
+        (self.linked / "service-entry.obj").write_bytes(entry_object)
+        self.report: dict[str, object] = {
+            "status": "passed", "lane": "link", "bookends_passed": True, "index_bytes_unchanged": True,
+            "artifacts": self.rows, "baseline_entry": {"object_sha256": sha256(entry_object).hexdigest()},
+        }
+
+    def pin(self) -> str:
+        raw: bytes = json.dumps(self.report).encode("utf-8")
+        self.receipt.write_bytes(raw)
+        return sha256(raw).hexdigest()
+
+    def test_legacy_roles_require_no_guard_evidence(self) -> None:
+        self.report.pop("baseline_entry")
+        for row in self.rows.values():
+            row.pop("raw_pe")
+        pin: str = self.pin()
+        self.assertEqual(producer.role_images(self.receipt, pin), self.images)
+        with self.assertRaisesRegex(ValueError, "Expected a guarded two-role link receipt"):
+            producer.role_images(self.receipt, pin, require_baseline_entry=True)
+
+    def test_guarded_roles_bind_exact_sidecars_and_raw_pe_facts(self) -> None:
+        pin: str = self.pin()
+        self.assertEqual(producer.role_images(self.receipt, pin, require_baseline_entry=True), self.images)
+        engine: str = producer.BINS[0]
+        broker: str = producer.BINS[1]
+        engine_map: Path = self.linked / (engine.replace("-", "_") + ".map")
+        broker_map: Path = self.linked / (broker.replace("-", "_") + ".map")
+        original: bytes = engine_map.read_bytes()
+        crossed: bytes = broker_map.read_bytes()
+        engine_map.write_bytes(crossed)
+        with self.assertRaisesRegex(ValueError, "Guarded link sidecar differs"):
+            producer.role_images(self.receipt, pin, require_baseline_entry=True)
+        guard: dict[str, object] = self.rows[engine]["raw_pe"]["baseline_entry"]
+        guard["map_sha256"] = sha256(crossed).hexdigest()
+        with self.assertRaisesRegex(ValueError, "Guarded link map names a different role"):
+            producer.role_images(self.receipt, self.pin(), require_baseline_entry=True)
+        engine_map.write_bytes(original)
+        guard["map_sha256"] = sha256(original).hexdigest()
+        guard["entry_rva"] = 0x1030
+        guard["crt_startup_rva"] = 0x1040
+        with self.assertRaisesRegex(ValueError, "Guarded link facts differ from the held.*engine PE"):
+            producer.role_images(self.receipt, self.pin(), require_baseline_entry=True)
+        guard["entry_rva"] = 0x1010
+        guard["crt_startup_rva"] = 0x1030
+        self.assertEqual(producer.role_images(self.receipt, self.pin(), require_baseline_entry=True), self.images)
 
 
 class PublicationTests(unittest.TestCase):

@@ -204,14 +204,23 @@ class PackageReaderTests(unittest.TestCase):
             capture_output=True, text=True, check=False, timeout=10,
         )
 
-    def assert_accepted(self, members, *, include_event_resource=False):
+    def assert_accepted(self, members: dict[str, bytes], *,
+                        include_event_resource: bool = False) -> dict[str, object]:
         with ZipFile(self.package) as archive:
             self.assertEqual({name: archive.read(name) for name in archive.namelist()}, members)
-        result = self.run_reader(include_event_resource=include_event_resource)
+        result: subprocess.CompletedProcess[str] = self.run_reader(
+            include_event_resource=include_event_resource,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
-        package_bytes = self.package.read_bytes()
-        self.assertEqual(json.loads(result.stdout), {
+        package_bytes: bytes = self.package.read_bytes()
+        catalog: bytes = b"\n".join(
+            b"\t".join((name.encode("ascii"), str(len(data)).encode("ascii"),
+                         sha256(data).hexdigest().encode("ascii")))
+            for name, data in sorted(self.payload.items())
+        ) + b"\n"
+        report: dict[str, object] = json.loads(result.stdout)
+        self.assertEqual(report, {
             "status": "unsigned-fixture-package-checked",
             "package_identity": {
                 "Name": "NevroTick.S06.ScmFixture",
@@ -222,11 +231,13 @@ class PackageReaderTests(unittest.TestCase):
             "input_set_sha256": self.input_set_digest,
             "package_bytes": len(package_bytes),
             "package_sha256": sha256(package_bytes).hexdigest(),
+            "payload_sha256": sha256(catalog).hexdigest(),
             "members": {
                 name: {"bytes": len(data), "sha256": sha256(data).hexdigest()}
                 for name, data in members.items()
             },
         })
+        return report
 
     def assert_refused(self, reason, *, expected_package_digest=None, include_event_resource=False):
         result = self.run_reader(expected_package_digest=expected_package_digest,
@@ -242,6 +253,26 @@ class PackageReaderTests(unittest.TestCase):
 
     def test_admits_streamed_deflate_with_two_blocks(self):
         self.assert_accepted(self.write_package(compressed_member=INERT))
+
+    def test_payload_catalog_is_independent_of_zip_order_and_compression(self) -> None:
+        stored: dict[str, object] = self.assert_accepted(self.write_package())
+        reordered: dict[str, bytes] = dict(reversed(tuple(self.payload.items())))
+        compressed: dict[str, object] = self.assert_accepted(
+            self.write_package(payload=reordered, compressed_member=INERT),
+        )
+
+        self.assertNotEqual(stored["package_sha256"], compressed["package_sha256"])
+        self.assertEqual(stored["payload_sha256"], compressed["payload_sha256"])
+
+    def test_payload_catalog_preserves_raw_authored_manifest(self) -> None:
+        original: dict[str, object] = self.assert_accepted(self.write_package())
+        self.payload[MANIFEST] += b"\n"
+        (self.payload_dir / MANIFEST).write_bytes(self.payload[MANIFEST])
+        self.write_input_set(self.payload)
+        changed: dict[str, object] = self.assert_accepted(self.write_package())
+
+        self.assertEqual(original["package_identity"], changed["package_identity"])
+        self.assertNotEqual(original["payload_sha256"], changed["payload_sha256"])
 
     def test_requires_element_only_package_metadata(self) -> None:
         members: dict[str, bytes] = self.write_package()

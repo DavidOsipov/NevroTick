@@ -230,6 +230,193 @@ class WindowsPeTests(unittest.TestCase):
                          {"direct": ["kernel32.dll", "kernel32.dll", "z.dll"],
                           "delay": [longest.lower(), "x"]})
 
+    def test_service_preentry_accepts_absent_and_empty_tls_callbacks(self) -> None:
+        image: bytearray = with_import_modules(_image(3), direct=("KERNEL32.dll",))
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        expected: dict[str, object] = {"entry_rva": 0x1010, "image_base": _IMAGE_BASE,
+                                       "tls_callback_table_rva": 0, "direct_import_modules": ["kernel32.dll"]}
+        self.assertEqual(PE.service_preentry_declarations(bytes(image)), expected)
+        struct.pack_into("<II", image, _OPTIONAL + 112 + 9 * 8, 0x12A0, 40)
+        # The loader may retain a nonempty TLS template and an index word.
+        struct.pack_into("<QQQQII", image, 0x4A0, _IMAGE_BASE + 0x1300, _IMAGE_BASE + 0x1308,
+                         _IMAGE_BASE + 0x1308, 0, 0, 0)
+        self.assertEqual(PE.service_preentry_declarations(bytes(image)), expected)
+        struct.pack_into("<Q", image, 0x4B8, _IMAGE_BASE + 0x12C8)
+        struct.pack_into("<H", image, 0x22A, 0xA2B8)
+        self.assertEqual(PE.service_preentry_declarations(bytes(image)),
+                         {**expected, "tls_callback_table_rva": 0x12C8})
+
+    def test_service_preentry_refuses_callbacks_and_unbacked_callback_words(self) -> None:
+        image: bytearray = _image(3)
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        struct.pack_into("<II", image, _OPTIONAL + 112 + 9 * 8, 0x12A0, 40)
+        struct.pack_into("<Q", image, 0x4B8, _IMAGE_BASE + 0x12C8)
+        struct.pack_into("<H", image, 0x22A, 0xA2B8)
+        self.assertEqual(PE.service_preentry_declarations(bytes(image))["tls_callback_table_rva"], 0x12C8)
+        for offset, pointer, reason in (
+            (0x4C8, _IMAGE_BASE + 0x1010, "refuses pre-entry TLS callbacks"),
+            (0x4B8, _IMAGE_BASE - 8, "TLS callback table lies outside the image"),
+            (0x4B8, _IMAGE_BASE + 0x2000, "TLS callback table lies outside the image"),
+            (0x4B8, _IMAGE_BASE + 0x13FC, "TLS callback table exceeds its file-backed section"),
+        ):
+            with self.subTest(offset=offset, pointer=pointer), self.assertRaisesRegex(ValueError, reason):
+                wrong: bytearray = bytearray(image)
+                struct.pack_into("<Q", wrong, offset, pointer)
+                PE.service_preentry_declarations(bytes(wrong))
+        struct.pack_into("<I", image, _OPTIONAL + 112 + 9 * 8 + 4, 39)
+        with self.assertRaisesRegex(ValueError, "TLS directory has an invalid extent"):
+            PE.service_preentry_declarations(bytes(image))
+
+    def test_service_preentry_requires_an_unrelocated_empty_callback_slot(self) -> None:
+        image: bytearray = _image(3)
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        struct.pack_into("<II", image, _OPTIONAL + 112 + 9 * 8, 0x12A0, 40)
+        struct.pack_into("<Q", image, 0x4B8, _IMAGE_BASE + 0x12C8)
+        struct.pack_into("<H", image, 0x22A, 0xA2B8)
+        controls: tuple[tuple[int, str], ...] = (
+            (0xA2C0, ""),  # The preceding pointer ends at the start of the callback slot.
+            (0xA2D0, ""),  # The following pointer is outside the slot.
+            (0xA2C7, "TLS callback slot is covered"),
+            (0xA2C8, "TLS callback slot is covered"),
+            (0xA2CF, "TLS callback slot is covered"),
+            (0x32C8, "Unsupported service relocation"),
+        )
+        for relocation, reason in controls:
+            with self.subTest(relocation=relocation):
+                struct.pack_into("<H", image, 0x228, relocation)
+                if reason:
+                    with self.assertRaisesRegex(ValueError, reason):
+                        PE.service_preentry_declarations(bytes(image))
+                else:
+                    self.assertEqual(PE.service_preentry_declarations(bytes(image))["tls_callback_table_rva"],
+                                     0x12C8)
+        struct.pack_into("<I", image, 0x224, 16)
+        with self.assertRaisesRegex(ValueError, "Invalid service relocation block"):
+            PE.service_preentry_declarations(bytes(image))
+
+    def test_service_preentry_requires_the_original_callback_field_after_relocation(self) -> None:
+        image: bytearray = _image(3)
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        struct.pack_into("<II", image, _OPTIONAL + 112 + 9 * 8, 0x12A0, 40)
+        controls: tuple[tuple[int, tuple[int, int], str], ...] = (
+            (0, (0xA010, 0), ""),
+            (0, (0xA2B8, 0), "Invalid relocation of the service TLS callback field"),
+            (0x12C8, (0xA010, 0xA2B8), ""),
+            (0x12C8, (0xA010, 0), "callback field lacks a base relocation"),
+            (0x12C8, (0xA2B8, 0xA2B8), "Invalid relocation of the service TLS callback field"),
+            (0x12C8, (0xA2B7, 0xA2B8), "Invalid relocation of the service TLS callback field"),
+        )
+        for callback, entries, reason in controls:
+            with self.subTest(callback=callback, entries=entries):
+                struct.pack_into("<Q", image, 0x4B8, _IMAGE_BASE + callback if callback else 0)
+                struct.pack_into("<HH", image, 0x228, *entries)
+                if reason:
+                    with self.assertRaisesRegex(ValueError, reason):
+                        PE.service_preentry_declarations(bytes(image))
+                else:
+                    self.assertEqual(PE.service_preentry_declarations(bytes(image))["tls_callback_table_rva"],
+                                     callback)
+
+    def test_service_preentry_refuses_missing_or_nonexecutable_entry_and_delay_imports(self) -> None:
+        image: bytearray = _image(3)
+        for entry, reason in (
+            (0, "entry lies outside the image"),
+            (0x1400, "entry has no unique file-backed section"),
+        ):
+            with self.subTest(entry=entry), self.assertRaisesRegex(ValueError, reason):
+                struct.pack_into("<I", image, _OPTIONAL + 16, entry)
+                PE.service_preentry_declarations(bytes(image))
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        self.assertEqual(PE.service_preentry_declarations(bytes(image))["entry_rva"], 0x1010)
+        wrong: bytearray = bytearray(image)
+        struct.pack_into("<I", wrong, _SECTION + 36, 0x40000040)
+        with self.assertRaisesRegex(ValueError, "entry has no executable file-backed section"):
+            PE.service_preentry_declarations(bytes(wrong))
+        delayed: bytearray = with_import_modules(image, delay=("KERNEL32.dll",))
+        self.assertEqual(PE.static_import_modules(bytes(delayed), subsystem="console")["delay"],
+                         ["kernel32.dll"])
+        with self.assertRaisesRegex(ValueError, "refuses delay imports"):
+            PE.service_preentry_declarations(bytes(delayed))
+
+    def test_ui_preentry_binds_the_selected_linked_publics_to_the_gui_image(self) -> None:
+        image: bytearray = with_import_modules(_image(2), direct=("KERNEL32.dll",))
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        gate_digest: str = "a" * 64
+        gate_name: str = f"nevrotick-ui-entry-{gate_digest}.obj"
+        gate_row: str = f" 0001:00000010 nevrotick_ui_entry 0000000140001010 {gate_name}"
+        crt_row: str = " 0001:00000050 mainCRTStartup 0000000140001050 msvcrt:exe_main.obj"
+        map_text: str = "\n".join((
+            " nevrotick_ui",
+            " Preferred load address is 0000000140000000",
+            "  Address         Publics by Value              Rva+Base               Lib:Object",
+            gate_row,
+            crt_row,
+            " entry point at         0001:00000010",
+            " Static symbols",
+            "",
+        ))
+        expected: dict[str, object] = {
+            "entry_rva": 0x1010, "image_base": _IMAGE_BASE, "crt_startup_rva": 0x1050,
+            "tls_callback_table_rva": 0, "direct_import_modules": ["kernel32.dll"],
+        }
+        self.assertEqual(PE.ui_preentry_declarations(bytes(image), map_text, object_sha256=gate_digest), expected)
+        mapped_path: str = map_text.replace(gate_name, "/work/metadata/" + gate_name).replace("\n", "\r\n")
+        self.assertEqual(PE.ui_preentry_declarations(bytes(image), mapped_path, object_sha256=gate_digest), expected)
+        for faulty_map, reason in (
+            (map_text.replace(gate_name, "foreign.obj"), "gate object differs"),
+            (map_text.replace("entry point at         0001:00000010",
+                              "entry point at         0001:00000050"), "entry point differs"),
+            (map_text.replace("140000000", "150000000"), "preferred address differs"),
+            (map_text.replace(gate_row, gate_row + "\n" + gate_row), "public symbol is absent or ambiguous"),
+            (map_text.replace(crt_row, ""), "mainCRTStartup public symbol is absent"),
+            (map_text.replace("00000050 mainCRTStartup", "00000060 mainCRTStartup"), "segment and preferred"),
+            (map_text.replace("00000050 mainCRTStartup 0000000140001050",
+                              "00000400 mainCRTStartup 0000000140001400"), "no unique file-backed section"),
+            (map_text.replace("00000050 mainCRTStartup 0000000140001050",
+                              "00000010 mainCRTStartup 0000000140001010"), "distinct UI baseline gate"),
+        ):
+            with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
+                PE.ui_preentry_declarations(bytes(image), faulty_map, object_sha256=gate_digest)
+        crossed: bytearray = bytearray(image)
+        struct.pack_into("<I", crossed, _OPTIONAL + 16, 0x1050)
+        with self.assertRaisesRegex(ValueError, "distinct UI baseline gate"):
+            PE.ui_preentry_declarations(bytes(crossed), map_text, object_sha256=gate_digest)
+        struct.pack_into("<H", crossed, _OPTIONAL + 68, 3)
+        with self.assertRaisesRegex(ValueError, "subsystem changed"):
+            PE.ui_preentry_declarations(bytes(crossed), map_text, object_sha256=gate_digest)
+
+    def test_ui_preentry_checks_callbacks_and_delay_imports_before_returning_a_gate(self) -> None:
+        image: bytearray = _image(2)
+        struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+        struct.pack_into("<II", image, _OPTIONAL + 112 + 9 * 8, 0x12A0, 40)
+        struct.pack_into("<Q", image, 0x4B8, _IMAGE_BASE + 0x12C8)
+        struct.pack_into("<H", image, 0x22A, 0xA2B8)
+        gate_digest: str = "b" * 64
+        map_text: str = "\n".join((
+            " Preferred load address is 0000000140000000",
+            "  Address         Publics by Value              Rva+Base               Lib:Object",
+            f" 0001:00000010 nevrotick_ui_entry 0000000140001010 nevrotick-ui-entry-{gate_digest}.obj",
+            " 0001:00000050 mainCRTStartup 0000000140001050 msvcrt:exe_main.obj",
+            " entry point at         0001:00000010",
+            " Static symbols",
+            "",
+        ))
+        observed: dict[str, object] = PE.ui_preentry_declarations(bytes(image), map_text, object_sha256=gate_digest)
+        self.assertEqual(observed["tls_callback_table_rva"], 0x12C8)
+        callback: bytearray = bytearray(image)
+        struct.pack_into("<Q", callback, 0x4C8, _IMAGE_BASE + 0x1010)
+        relocation: bytearray = bytearray(image)
+        struct.pack_into("<H", relocation, 0x228, 0xA2C7)
+        delayed: bytearray = with_import_modules(image, delay=("KERNEL32.dll",))
+        for refused, reason in (
+            (callback, "UI startup refuses pre-entry TLS callbacks"),
+            (relocation, "UI TLS callback slot is covered by a base relocation"),
+            (delayed, "UI startup refuses delay imports"),
+        ):
+            with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
+                PE.ui_preentry_declarations(bytes(refused), map_text, object_sha256=gate_digest)
+        self.assertEqual(PE.ui_preentry_declarations(bytes(image), map_text, object_sha256=gate_digest), observed)
+
     def test_static_import_descriptor_work_has_an_inclusive_limit(self) -> None:
         # One name per row, all routed to the same independently placed module.
         table_raw: int = 0x600

@@ -35,6 +35,7 @@ function Read-FailureType([Exception]$Failure) {
     limit_terminations_at_recovery = $null; limit_terminations_at_empty = $null
     recovery_start_tick = $null; termination_accepted_tick = $null; job_empty_tick = $null; tick_frequency = $null
     failure = $null; recovery_failure = $null; members_at_recovery = $null
+    recovery_accounting_failure = $null; recovery_members_failure = $null
 }
 try {
     if ($PSVersionTable.PSEdition -cne 'Desktop' -or !$PSVersionTable.PSVersion.ToString().StartsWith('5.1.') -or
@@ -64,6 +65,8 @@ try {
     $record.tick_frequency = $report.TickFrequency
     $record.failure = Read-FailureType $report.Failure
     $record.recovery_failure = Read-FailureType $report.RecoveryFailure
+    $record.recovery_accounting_failure = Read-FailureType $report.RecoveryAccountingFailure
+    $record.recovery_members_failure = Read-FailureType $report.RecoveryMembersFailure
 } catch {
     $record.failure = Read-FailureType $_.Exception
 }

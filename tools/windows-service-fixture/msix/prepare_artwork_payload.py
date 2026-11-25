@@ -10,7 +10,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prepare_payload as stage
 import verify
-from windows_pe import MAX_PE_BYTES
+from windows_pe import MAX_PE_BYTES, read_export_pair, ui_preentry_declarations, ui_resource_payloads
 
 IDENTITY: str = "NevroTick.S06.ArtworkLab"
 UI_IMAGE: str = "nevrotick-ui.exe"
@@ -89,6 +89,51 @@ def handoff_snapshot(
                 anchor / UI_IMAGE, image["sha256"], staging_descriptor=descriptor, maximum=MAX_PE_BYTES,
             )
         return selected, properties, observed["generation_receipt_sha256"]
+
+
+def guarded_ui_snapshot(
+    path: Path, pin: str, map_path: Path, *, generation: str, matching_ui: bytes,
+) -> bytes:
+    """Join a separately verified guarded UI to the same checked authoring generation."""
+    descriptor: int
+    anchor: Path
+    with stage.held_directory(path) as (descriptor, anchor):
+        receipt: bytes = verify.read_bound_msix_leaf(
+            anchor / "verification.json", pin, staging_descriptor=descriptor,
+            maximum=verify.MSIX_HANDOFF_RECEIPT_MAX_BYTES,
+        )
+        report: dict[str, Any] = verify.decode_msix_authoring(receipt)
+        inspection: object = report.get("msix_assembly_inputs")
+        entry: object = report.get("ui_preentry")
+        stage.require(
+            report.get("status") == "passed" and report.get("native_windows_execution") == "not performed"
+            and type(inspection) is dict and inspection.get("generation_receipt_sha256") == generation
+            and type(entry) is dict,
+            "Guarded UI requires the same authoring generation and its baseline entry receipt.",
+        )
+        artifact: dict[str, Any] = report["artifact"]
+        image: str
+        symbols: str
+        image, symbols = verify._msix_handoff_image(
+            artifact, report["ui_versioninfo"], "ui", "fixture", "nevrotick-ui", generation,
+        )
+        data: bytes
+        image_pin: str
+        symbol_facts: dict[str, str | int]
+        (data, image_pin), _, symbol_facts = read_export_pair(anchor / image, anchor / symbols, subsystem="gui")
+        stage.require(image_pin == artifact["sha256"] == entry.get("image_sha256")
+                      and symbol_facts == {name: artifact["symbols"][name] for name in ("sha256", "guid", "age")},
+                      "Guarded UI image or symbols differ from the pinned export.")
+        link_map: bytes = stage.read_bound(map_path, 32 * 1024**2, entry["map_sha256"])
+        observed: dict[str, object] = ui_preentry_declarations(
+            data, link_map.decode("utf-8"), object_sha256=entry["object_sha256"],
+        )
+        stage.require(all(type(entry.get(name)) is type(value) and entry[name] == value
+                          for name, value in observed.items()),
+                      "Guarded UI PE entry differs from the pinned link receipt.")
+        stage.require(ui_resource_payloads(data) == ui_resource_payloads(matching_ui),
+                      "Guarded UI embedded resources differ from the checked authoring handoff.")
+        return data
 
 
 def pri_snapshot(path: Path, pin: str, artwork: dict[str, bytes]) -> bytes:
@@ -182,6 +227,9 @@ def main() -> int:
     digest_choice: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
     digest_choice.add_argument("--inert-sha256")
     digest_choice.add_argument("--role-link-receipt-sha256")
+    parser.add_argument("--guarded-ui-export", type=Path, help="separately retained guarded UI link export")
+    parser.add_argument("--guarded-ui-receipt-sha256")
+    parser.add_argument("--guarded-ui-link-map", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args: argparse.Namespace = parser.parse_args()
     handoff: Path = args.handoff.absolute()
@@ -191,8 +239,15 @@ def main() -> int:
     role_pin: str | None = args.role_link_receipt_sha256
     output: Path = args.output.absolute()
     combined: bool = role_receipt is not None
+    guarded_export: Path | None = args.guarded_ui_export
+    guarded_pin: str | None = args.guarded_ui_receipt_sha256
+    guarded_map: Path | None = args.guarded_ui_link_map
     if combined != (role_pin is not None):
         parser.error("the selected image input and its digest must name the same ArtworkLab profile")
+    if any(value is not None for value in (guarded_export, guarded_pin, guarded_map)) and (
+        not combined or guarded_export is None or guarded_pin is None or guarded_map is None
+    ):
+        parser.error("the guarded UI selection requires combined roles, its export, receipt digest and link map")
     try:
         stage._outside_source(handoff, output)
         stage._outside_source(pri_dir, output)
@@ -212,7 +267,17 @@ def main() -> int:
         images: dict[str, bytes]
         manifest: bytes
         if role_receipt is not None and role_pin is not None and ui is not None:
-            images = {**stage.role_images(role_receipt, role_pin), UI_IMAGE: ui}
+            if guarded_export is not None and guarded_pin is not None and guarded_map is not None:
+                guarded_export = guarded_export.absolute()
+                guarded_map = guarded_map.absolute()
+                stage._outside_source(guarded_export, output)
+                stage._outside_source(guarded_map, output)
+                ui = guarded_ui_snapshot(guarded_export, guarded_pin, guarded_map,
+                                         generation=generation, matching_ui=ui)
+                images = stage.role_images(role_receipt, role_pin, require_baseline_entry=True)
+            else:
+                images = stage.role_images(role_receipt, role_pin)
+            images[UI_IMAGE] = ui
             manifest = combined_manifest(properties)
         elif inert is not None:
             images = {"Inert.exe": stage.read_bound(inert, 64 * 1024, INERT_SHA256)}
@@ -243,6 +308,8 @@ def main() -> int:
     }
     if combined:
         report["role_link_receipt_sha256"] = role_pin
+    if guarded_pin is not None:
+        report["guarded_ui_receipt_sha256"] = guarded_pin
     print(json.dumps(report, sort_keys=True))
     return 0
 

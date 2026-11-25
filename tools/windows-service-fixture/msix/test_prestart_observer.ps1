@@ -2,6 +2,7 @@
 # Inert CHECK-1/2/26/27 controls for the S0.6 launch owner in an offline Windows Sandbox.
 param(
     [switch]$ExpectChildActorMismatch,
+    [switch]$ExpectJobLimitsMismatch,
     [ValidateNotNullOrEmpty()][string]$ExpectedStandardUserSid
 )
 
@@ -226,6 +227,7 @@ function Invoke-ObserverControl {
         [switch]$AlreadyExpired,
         [switch]$RefuseBeforeLaunch,
         [switch]$RequireNoNativeCreation,
+        [switch]$RequireReleasedJobWithoutChild,
         [switch]$RefuseBeforeEntry,
         [switch]$RequireSettledPipeReads,
         [switch]$RefuseDescendant,
@@ -301,7 +303,7 @@ function Invoke-ObserverControl {
     if ($expectsRefusal) {
         if ($null -eq $refusal -or $records.Count -ne 0) { throw "$Label published a child capture" }
         $refusedPid = Get-RefusalFact $refusal 'PrestartObserverProcessId'
-        if ($RefuseBeforeLaunch -or $RequireNoNativeCreation) {
+        if ($RefuseBeforeLaunch -or $RequireNoNativeCreation -or $RequireReleasedJobWithoutChild) {
             if ($null -ne $refusedPid -or (Get-RefusalFact $refusal 'PrestartObserverProcessCreated') -eq $true -or
                 [IO.File]::Exists($marker) -or [IO.File]::Exists($descendantMarker)) {
                 throw "$Label launched an observer"
@@ -313,6 +315,17 @@ function Invoke-ObserverControl {
                 if ($jobCreated -isnot [bool] -or $jobCreated -or $processCreated -isnot [bool] -or $processCreated -or
                     $released -isnot [bool] -or !$released) {
                     throw "$Label did not confirm refusal before job and process creation and release of the image"
+                }
+            }
+            if ($RequireReleasedJobWithoutChild) {
+                [object]$jobCreated = Get-RefusalFact $refusal 'PrestartObserverJobCreated'
+                [object]$processCreated = Get-RefusalFact $refusal 'PrestartObserverProcessCreated'
+                [object]$retired = Get-RefusalFact $refusal 'PrestartObserverRetired'
+                [object]$released = Get-RefusalFact $refusal 'PrestartObserverReleased'
+                if ($jobCreated -isnot [bool] -or !$jobCreated -or $processCreated -isnot [bool] -or $processCreated -or
+                    $retired -isnot [bool] -or !$retired -or $released -isnot [bool] -or !$released -or
+                    $null -ne (Get-RefusalFact $refusal 'PrestartObserverChild')) {
+                    throw "$Label did not release its original job without creating a child"
                 }
             }
         } elseif ($RefuseBeforeEntry) {
@@ -393,6 +406,13 @@ try {
         $image = New-FixtureCopy (Join-Path $fixtureRoot 'child-actor-refused')
         Invoke-ObserverControl -Actor $actor -Label 'child-actor-refused' -ImagePath $image -Selector $selectors[0] `
             -RefusalMessage 'prestart-observer:child-actor' -RefuseBeforeEntry
+        return
+    }
+    if ($ExpectJobLimitsMismatch) {
+        # The directed build changes only the observed limit flags after the native query.
+        $image = New-FixtureCopy (Join-Path $fixtureRoot 'job-limits-refused')
+        Invoke-ObserverControl -Actor $actor -Label 'job-limits-refused' -ImagePath $image -Selector $selectors[0] `
+            -RefusalMessage 'prestart-observer:job-limits' -RequireReleasedJobWithoutChild
         return
     }
 

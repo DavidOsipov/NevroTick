@@ -4676,6 +4676,72 @@ The reader checks the original reference bytes as opaque records. The
 bench owner still needs to qualify the physical pairing, uncertainty,
 traceable UTC and mapping validity before Core history admission.
 
+##### Refuse a paired wire interval with impossible chronology
+
+S2.1/W11-W01, TQ-01/09 and CHECK-7/11/25. The two comparison entry
+points now require a feasible transmit-before-receive order on the
+admitted common UTC coordinate. A transmit interval wholly after the
+receive interval refuses the complete pair. Overlap and equality remain
+possible at the stated uncertainty. Feasibility gives no tighter bound
+or proof of physical order. The reference owner must qualify the time
+coordinate across the full trial span.
+
+The negative-path and boundary controls shift transmit wire UTC forward
+and its placement backward by the same amount. The predecessor accepted
+both wall comparisons at 230 and 48 ns with transmit earliest one ns
+past receive latest. The repaired pinned reader refuses that pair and
+accepts separate, overlapping and touching valid intervals. CPython
+3.12.3 passed all 29 timing tests in a read-only network namespace.
+Three directed fault copies failed their expected assertions after
+omitting the guard, rejecting equality or requiring disjoint intervals.
+Restoration passed. Replay of both retained Windows application captures
+with synthetic references retained their 3 and 11 ns comparisons and
+four validity-window refusals. The executed reader SHA-256 is
+`bcb3e5172cba8e493f180b245d6d17cbfbe4a455d6d948e017f5d4446b8678da`.
+The command and log pins are under
+`~/.local/share/nevrotick/w11-paired-wire-order.6yzyetfp/verification.json`,
+SHA-256 `ed0c266ef6390dafc4cd7316c1c1d8eed80b5db59978a52ea69a5b5c19b51d61`.
+
+Independent review traced both entry points and recomputed the interval
+and error boundaries. These checks exercised the bench reader. The wired
+capture path, calibration, independent date/era/scale and mapping
+authority remain required for a positive Core history entry.
+
+##### Require feasible application placement around the wire events
+
+S2.1/W11-W01, TQ-01/09 and CHECK-7/11/25. The existing shared comparison
+now checks the paired placement intervals alongside wire chronology.
+The actual Engine takes its pre-send capture before submission and its
+receive-return capture after the selected receive. A reference pair must
+permit `pre-send ≤ wire transmit ≤ wire receive ≤ receive-return` on the
+admitted UTC coordinate. A wholly positive transmit placement or wholly
+negative receive placement refuses the pair. Touching and straddling zero
+remain possible. The wall comparison uses the full original intervals.
+The socket send-return observation supplies no additional wire-time bound.
+
+Boundary and negative-path QA held the wire and local-wall comparisons
+fixed while reversing one application placement at a time. The exact
+prior wire-order reader failed four intended checks across the two
+exchange entry points. The integrated reader passed all 31 controls in
+a read-only network namespace. Six directed faults were caught when
+omitting a guard, excluding equality or requiring the whole interval to
+lie on one side of zero. Restoration passed. Independent review traced
+the real capture edges and checked the closed-interval predicates.
+
+The original Windows capture receipt `5bab0a62…` supplied both retained
+application triplets for a second replay. With explicitly synthetic wire
+and residual records, ordered and zero placements retained the same
+comparison result. Both one-nanosecond reversals refused at their named
+guard for each exchange. A wired acquisition route, physical reference,
+finite calibrated bounds and mapping validity remain open.
+
+| Record under `~/.local/share/nevrotick/w11-timing-placement.Jc5XPQSG/` | SHA-256 |
+| --- | --- |
+| `red-exact.stderr` | `690404026db282496bc03d8b40f2e8a537a995a41b5ce863db8effc881b4050c` |
+| `integrated.stderr` | `97a128131a07ed5f65dc0c30354a08018298747576a15090c2af0bc33c50e050` |
+| `sensitivity.json` | `9322f1006173b25f59e1a0cf2f611184c00cb3056bd4cb4ca837ff6b4a5a4b07` |
+| `retained-placement.json` | `7ba563c13f4d3ba71b6e4d64146df4c957782d394b8b2b73dc8b9ffb58435ae9` |
+
 ### 4.27 Address-family admission routing — 5 November 2026
 
 **Owner/stage:** engine/protocol with the platform adapter owner, before dependent
@@ -17439,6 +17505,17 @@ The configured durable fixture campaign needs 6 GiB free on the distro
 disk at launch. This checkpoint used bounded private tmpfs work and
 verified transfer of producer evidence.
 
+The continuation checked the current checkout and the retained g5
+inventories and compiler receipt. Thirty-two of 858 bound paths differ
+from the current checkout. Each GNU pilot accounts for one descriptor.
+The ten MSVC overlays match the historical descriptors and retain zero
+behavioral kill credit. A same-candidate reconciliation must preserve the
+complete generated roster, the original GNU outcomes and the independently
+attributed MSVC compiler refusals. At preflight the distro had 1,052,135,424
+bytes available. The cleanup inventory found insufficient reclaimable
+owned output. Resume the configured replay with matching source, vendor
+and graph inputs when the 6 GiB floor is available.
+
 ### Observe fresh broker status after a delivered power cycle — 23 November 2026
 
 W11-W02 and CHECK-11/25/27. A new control drives the original private
@@ -18306,6 +18383,44 @@ this fixed native record and call-order control.
 | `token-acquisition-development-r1.json` | `320e92ff5cc7702b846cc492b3bed941552484fc21160d7f15aedd58e8dea834` |
 | `cross-token-acquisition-libtest-r1.json` | `ebda9803269a9395f885f39bdd4b8d1135e3421e1c754ee63f8232f8c2f373f2` |
 | `native/native-verdict.json` | `1e4503b555902fe3397066417ae60100160cff78d461d5deb0d3049bc08195d8` |
+
+###### Check early primary-token acquisition refusals
+
+W11-W05/S3.1–S3.2 and CHECK-2/25/27. Negative-path and lifecycle QA
+added an exact Windows fixture selector for initial-statistics denial,
+a short initial statistics record and identity-read denial. The real
+acquisition owner receives each scripted observation on the original
+open query-only token handle. The test checks the exact first error
+and fails on any later callback. It probes the original handle for
+`ERROR_INVALID_HANDLE` immediately after return and runs in its own
+test process. The earlier successful-acquisition and confirmation
+refusal controls remain in their separate selector.
+
+The isolated test tree `9fd4bb203bc16d6c819e5424d234b95c8972fad4`
+on `a281ec3b` binds 865 service inputs to
+`4f1aac3c17ad2204ce19c23a0a15c450ecdf93b9ecf26b286f39eab3491c033d`.
+All six graph commands, 12 development commands and two MSVC libtest
+link and readback commands passed on Rust 1.100.0. Both GNU profiles
+ran 70 platform and 198 fixture cases each. The platform also passed
+28 doctests. Both compiled Windows selections were bound to the exact
+PE and matching PDB before any guest work. Independent source review
+confirmed that the early refusals preserve the first error and probe
+the original handle before any new handle opens.
+
+Both selectors passed in separate processes in the owned offline
+Windows build-26100 guest. The runner observed both original child
+exits and captured complete output, rechecked the image, and
+removed the staged files. This exercises handle custody with
+scripted query and validation failures. Native query-failure
+injection, physical token changes, installed identity admission,
+and affected coverage and mutation qualification remain open.
+
+| Record under `~/.local/share/nevrotick/closing-read-token.uJsnGXsj/service/` | SHA-256 |
+| --- | --- |
+| `closing-token-graph.json` | `f69e229aadc2cef9d55586e435f039727ae2b44fa57962e7b6c200e7e9c07502` |
+| `closing-token-dev.json` | `2a8a3ea2d64534ec1e0caf683df848ffb029b772f156e4e799b4bbe06f42ca9e` |
+| `cross-closing-token-libtest.json` | `7c19466fcb1fd4a947969695207cc24447395f0bd293198ab64bb589afc8a08a` |
+| `native/native-verdict.json` | `c5048b210099c6acb939003e1009af63602616465332d5af98d37a424777e096` |
 
 ### Guard the native request and read the retained peer privileges — 24 November 2026
 
@@ -19473,6 +19588,45 @@ resource diagnostics and the installed service/package journey remain open.
 [Microsoft job query](https://learn.microsoft.com/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject)
 [Microsoft job accounting](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information)
 
+The retained blocked-run census on the earlier candidate identified three
+PowerShell processes and three console hosts, with zero limit terminations.
+The older five-member sample remains unclassified. Neither the configured
+limits nor either census establishes an application-process ceiling.
+
+Service lifecycle, fault recovery and regression selection guided the
+seven-source fixture build on `a281ec3b` plus the deployment job, watchdog
+and guardian changes. The full portable MSIX suite passed 193 tests in a
+read-only offline namespace. The same owned offline Windows build-26100
+guest compiled and ran four inert cases in 42.764 seconds. The compiler
+and interpreter pins, source and image bookends, original process exits,
+both output streams and transfer-directory retirement passed.
+
+| Windows case | Observed result |
+| --- | --- |
+| Healthy | The unchanged owner input completed. The guardian and watchdog both exited 0 and confirmed empty jobs. Both new guardian diagnostic fields were null. |
+| Blocked predecessor | With both pre-termination census reads scripted to fail, the original guardian, owner and leaf each exited 1223. The watchdog observed the job empty 18.550 ms after recovery began, reported the diagnostic exceptions as a retirement failure and exited 1. |
+| Blocked current | The same scripted census failures remained visible as two separate diagnostics. The original guardian, owner and leaf exited 1223, the watchdog confirmed empty 19.244 ms after recovery began, and the initial timeout still produced exit 1. |
+| Impossible terminal lifetime count | Both real terminal samples showed zero active processes and six lifetime processes. Both scripted zero-lifetime replacements were refused. The watchdog withheld empty-job confirmation and exited 1. |
+
+The original host comparison remains incomplete. It expected
+`AggregateException` without the actual retained retirement tag.
+Separate offline readback accepted the full emitted tag, checked all
+13 raw exports and matched all four outcomes. Independent review rechecked
+the source pins and native results. This cohort exercised simultaneous
+census faults in the outer watchdog and the healthy guardian fields.
+The individual fault cases, the guardian's faulted diagnostic
+projection and opt-in exit 3 were outside this run. Installed
+provisioning, effective process-limit enforcement and signed-package
+qualification remain open.
+
+| Record under `~/.local/share/nevrotick/s06-job-retention.XJkTIUPX/` | SHA-256 |
+| --- | --- |
+| `portable/job.patch` | `64292bac74c2c756844d28fe6a4f31dfc69e8f14acef3f974539382c691a1323` |
+| `portable/suite.stderr` | `592054fe7e9203bf2ff22078b9a2ecd94c8cd91504ee78e30ae7df8a990ceb3e` |
+| `observed-01/inputs.json` | `b028f2d7b5b6c4ec350b740be027234005f7e61f35aaf8d329ac1698f961769e` |
+| `observed-01/verification.json` | `d6276311b8cd63b916f17b99ceba496a7273cac76c9d2af74cd00bedfc70120a` |
+| `observed-01/readback.json` | `9bdb85d478d7d1688439ae727d31a9feff80367fa70fc1132b1c4b010bb87591` |
+
 | Record under `~/.local/share/nevrotick/s06-job-readback.RiFV0iNu/` | SHA-256 |
 | --- | --- |
 | `observed-01/inputs.json` | `4f0850966f0b63c3cb357026de01ba2386058799dfdc10f6c9c4a3cd3d3ae19e` |
@@ -19481,6 +19635,52 @@ resource diagnostics and the installed service/package journey remain open.
 | `observed-02/verification.json` | `a1fa5d30838daa529265ffa48e99b087dad551cb77ef15f4691bd7038038f244` |
 | `census-readback.json` | `fb10b222dd210aad386c7136fccfebc779a25b0bd479229c66e8163e0484941f` |
 | `portable.log` | `9ce89bd80b95da8da7d12699f625c6c3ae8d2d2dbc5224463ddbe4b23571a19f` |
+
+#### Require exact job limits before creating a pre-start observer
+
+S0.6/W11-W05 and CHECK-2/25/26/27. The fixed native observer now
+reads the extended limits from the original job it just configured.
+The readback must contain exactly the active-process and kill-on-close
+flags, with an active-process limit of one. A query error or disagreement
+refuses before pipe or child creation. Both observer entry paths use
+this owner. The original pre-creation deadline and the signed-window
+one-shot admission still govern launch. The observer-only and combined
+helpers use the same existing Windows interop declaration.
+
+The Windows Sandbox, lifecycle and negative-path checks ran on build
+26100 with nine exact maintained inputs on `a281ec3` plus the recorded
+working changes. The combined observer, deployment watchdog and access
+parent source compiled for x64 with warnings treated as errors. The
+maintained observer suite passed all 31 applicable controls. The same
+inert image launched a descendant outside the fixture job. The contained
+observer reached its own marker, received Win32 quota refusal `1816`
+for the ordinary descendant launch, and produced no descendant marker.
+The standard-user positive retained its separate actor prerequisite.
+
+A directed build modified only the observed flag value after the real
+query. The native test observed the exact limit refusal, a created job,
+no process or PID, no capture or child marker, reported retirement and
+release, and an exclusive reopen of the image. A second directed build
+omitted only the flag comparison. It reached the inert observer and
+failed the expected refusal assertion. Both variants retained the same
+actual configured limit. The runner checked both stream EOFs, exit codes
+`0/0/1`, tool and source bookends, guest scratch cleanup and empty
+transfer shelves. All 193 portable MSIX tests passed once the isolated
+runner supplied the home-directory value needed at import.
+
+This qualifies the fixed observer's one-process fixture case. An actual
+Windows limit-query failure, effective nested cap enforcement, broader
+native resource diagnostics and signed installed management retain their
+own exits. The installed window still requires the exact signed carrier,
+admitted actors and live SCM rights.
+
+| Record under `~/.local/share/nevrotick/s06-observer-job-limits.l4cQYfRx/` | SHA-256 |
+| --- | --- |
+| `run.py` | `93dd8cba93f0ffdca25eb50cb79808a539508dac377017f20ff9ac3e8e9c1437` |
+| `observe.ps1` | `6bdded2ebf28ed6c0c3f4fe56a4b972fcc7fcb2b6e1307d74082f0a90041c943` |
+| `native-01/inputs.json` | `c9d090a8813678dc04f5ac8a829b60e303400953ccae46ef6e2758771bb14001` |
+| `native-01/guest.json` | `0788083bc32461e1f5261ebb6de19530b783d42f2eaeaef2682a4d3559fe5a8e` |
+| `native-01/verification.json` | `682567a73beab08ad23b455314febf1032990131e118e431a6e2e1efddc0020e` |
 
 #### Wire the fixed deployment entry to the original native window
 
@@ -21196,6 +21396,42 @@ receipt. Its seven staged files matched all payload members of the retained
 unsigned ScmFixture. The `standalone-replay.json` SHA-256 is
 `406d3284a496c7c662b8eddf1889e42fc20b49d3b13784d3f7daa0a14622e0cb`.
 
+##### Read back the complete unsigned ArtworkLab with the maintained CLI
+
+W11-W10/P6 and CHECK-18/23/26. The package and metadata owners added a
+fixed reader for the combined ArtworkLab 1.0.1.0 profile. It checks the
+exact 56 authored files against independent source and original manifest
+pins, then matches those bytes to their archive members and checks the
+manifest, block map, content types and PE machine declarations. The
+shared ZIP reader keeps the ScmFixture limits and uses explicit bounds
+for the additional combined payload. Directory admission stops at the
+first unlisted entry. The CLI writes no Python cache to its source.
+
+The staged inputs came from the retained Slint handoff, PRI readback and
+two-role linker receipt. Their receipt reproduced the original pack input
+record. The maintained CLI accepted the actual latest unsigned MakeAppx
+archive `b204b5fc…` with all 58 archive members. An earlier valid archive
+with its own correct carrier digest refused at the broker image when
+checked under the later independent source pins. CPython 3.12.3 passed
+187 portable MSIX tests in a read-only network namespace, including the
+original ScmFixture profiles and eight new CLI controls. The new cases
+include same-count substitutions, a Manual service with matching pins,
+PRI size and digest refusals, and an unsupported ZIP extraction version.
+Fresh independent review checked the fixed roster, refusal paths,
+read-only behavior and standalone compatibility. The first reconstruction
+stopped before staging because its namespace lacked account lookup. The
+retry added only the read-only account database and reproduced the staged
+receipt. The final product roles, PE entry mitigations, signer and installed
+lifecycle retain their existing gates.
+
+| Record under `~/.local/share/nevrotick/p6-maintained-artwork-readback.K9eyJUex/` | SHA-256 |
+| --- | --- |
+| `combined-reader.patch` | `1e90281bc2050d2038bd8e7665537e51886c2701baa8ee00cc822cf925a6c74a` |
+| `restaged-payload.json` | `6d571e3f98edc6fe34c897880c4dc3e3a4f19d00d8e4ae64bc8e22a4efc5f24a` |
+| `latest.json` | `8e7060ad4f00bcfafcac98fe512649eb710f89b67a88efa2d4d95ece0e2c5876` |
+| `crossed.stderr` | `cfeed0980734539391028842751b91be447f1f8331269eaa55fb24837506d941` |
+| `integrated-suite.stderr` | `49cdd478c0f22ab3a96035294525edebc0fc89669b89962b8b63326859f588bc` |
+
 #### Preserve noninteractive critical-error handling at the fixed service entries
 
 W11-W05/W11-W08/ST-W07, S3.1 and CHECK-16/17/21/27. Both fixed fixture
@@ -21606,3 +21842,391 @@ original identities.
 The admitted xwin `libcmt.lib` and `kernel32.lib` hashes are respectively
 `d4cc4c224455825dec1669f9ad6a9872a4f5b37ed1daae1fd0b9044d7650d908`
 and `8ba8dab9adec752047d4f136852e8136d01836bff39bbb56a20ac5f2d56415d8`.
+
+#### Bind the laboratory service entries to the baseline gate
+
+W11-W05/W11-W10, S0.6 and CHECK-16/19/20/26/27. The CPU-dispatch,
+service and package owners selected the original CUI service entries.
+The guarded cross-link builds one freestanding x86-64 object without
+LTO across the gate. It shares the inert application's detector, refuses
+with exit 50 and transfers to `mainCRTStartup` on admission. Both role
+payloads retain the required x86-64-v3 flags and the original process
+and SCM entry. The guarded option applies only to fixed-role links.
+
+The source bookend covers 869 product and fixture inputs on `a281ec3b`
+plus the current working changes. Six graph and 12 development commands
+passed. The guarded MSVC lane compiled the C gate with Clang 18.1.3,
+linked both roles with the admitted Rust and SDK, and retained both
+matching PE/PDB pairs and linker maps. Its compiler record binds the
+Clang driver and both code-generation libraries. The 28 portable C
+controls and 27 service-link reader tests passed.
+
+The final entry RVA `0x253a0` calls the baseline detector. Independent
+disassembly observed the CPUID leaf bounds and feature masks before
+`XGETBV(0)`, the three required XCR0 bits before the admitted edge,
+and the direct call into the retained CRT symbol at `0x259d0`.
+An unsupported result reaches `ExitProcess(50)`. The 26 direct module
+names and existing hardening declarations matched the original images.
+The gate adds the `kernel32!ExitProcess` import symbol. Static TLS
+storage remains available with an empty callback table and no relocation
+affecting its first slot. No delay imports were declared.
+The readback now checks the callback field and its empty first slot across
+base relocation. All 23 current PE/PDB tests passed. Both original linked
+images passed the updated reader with their retained maps and the same
+observed import and entry facts.
+
+The link reader now requires the service CRT public and gate to agree with
+file-backed executable PE addresses and the map section offsets. The portable
+control refused the three previously admitted neighbors outside the image,
+in a non-executable section, and at a conflicting text offset. Both exact
+retained role PE/map pairs reproduced their original gate and CRT RVAs.
+
+The admitted payload preparer accepted the actual guarded role exports.
+All six SDK inputs matched the prior unsigned fixture. Only the two
+role PEs changed across the seven authored members. The original
+baseline-first `Inert.exe`, manifest and assets retained their pins.
+The selected Windows preflight initially observed 1,735 MiB available,
+below the existing 2,048 MiB floor. After retiring 1,661,378,560 bytes
+of completed scratch, the next preflight observed 1,706 MiB.
+Neither attempt launched the role executables. A later capacity check
+admitted the owned offline build-26100 guest. The independent probe
+reported `cpu-os-v3=accepted`, and both fixed-role processes returned
+their expected standalone exit 1 with original exit and both stream
+EOFs confirmed. The fixture SCM roles were absent at both bookends.
+Both images reopened exclusively and the collector retired its files.
+
+MakeAppx produced the new 214,266-byte unsigned ScmFixture and refused
+the missing-logo control. The maintained reader verified all nine
+archive members, including the three exact baseline-entry images.
+The previous archive with its correct carrier digest refused at the
+broker bytes. All 187 portable MSIX tests passed on the integrated
+reader candidate. A genuinely below-v3 or OS-masked Windows lab and the
+resolved preload graph remain open, as do installed startup, reached
+qualification gates and the complete product topology.
+
+| Record under `~/.local/share/nevrotick/w11-baseline-service-entry.rcsDTAB5/` | SHA-256 |
+| --- | --- |
+| `link/baseline-entry-graph.json` | `d914054dab2584fbed0c94c06300a6f6da56ad3c2c2e89a181f1e751c405f445` |
+| `link/baseline-entry-dev.json` | `e33f4480e3744fa83f31dfd3177ed1a24e5805ea848f8d3f756638292c5a9f5b` |
+| `link/cross-baseline-entry-link.json` | `e5c50602ad42dcb100d8932a0b24ae054f2ee0fefecb871ce91a7c31b46fe828` |
+| `link/independent-static.json` | `b0b7d6971423f8fdd67bd81ab195b1ca4eab1671872976a0fe6e11f571465c5c` |
+| `link/reader-final-replay.json` | `f2dc50b76e1bd2d6ba81848193257c4e1d4d29d47d5b9f28a29752f989be4be1` |
+| `package-inputs/inputs/input-set.json` | `355d3071d32b6903385b193d86d6b6568b0e431ce59e601fe3f0441b6d4c14a5` |
+| `supported-direct-result.json` | `d8b0f72dadba643f2ce6248d5737142019f13d2da066807ebedc7c9ef78442d1` |
+| `package-inputs/pack-receipt.json` | `eb500618d257e8549296087fefa5428f2bf1ab492e371d4cb4d4d78ad03d9c27` |
+| `NevroTick-S06-SCM-Fixture-unsigned.msix` | `2dcb5270851b4670849007d16fbef1a292dffd66091d06d5d35388ac2d14046e` |
+| `archive-readback.json` | `f56bd13783745a0088dab3cca067298393a3e3fa82e9090ef5c7ea09026d8b27` |
+| `archive-crossed.stderr` | `e061102f06cfad0ac068913747a2ecda71f289c3db1a906a00085e85f56766aa` |
+| `final-test_service_cross_link.py.stderr` | `46731ebb0ba73c244d9deca49a074474399f30635b83831c7681e30e4e73e761` |
+| `final-test_windows_pe.py.stderr` | `f1b1f95debcc2dbbe16de9bac984013762c6ccba5c2c26bc6108ddb45bf5042a` |
+| `msix-final.stderr` | `571b672cc647e2fff04f4a0c52c33b0a1a9915758f86f4fedb7aae7f6ff9c960` |
+
+##### Observe both guarded service images before their entry instruction
+
+W11-W05/W11-W10, S0.6 and CHECK-16/18/19/26/27. Package-artifact and
+Sandbox QA checked the exact Engine and Broker members in the unsigned
+ArtworkLab archive against the retained guarded service link. Both
+218,624-byte members matched their own link exports. The source review
+independently decoded the PE entries at RVA `0x253a0`, the 26 direct
+import descriptors per image, and the empty TLS callback slot.
+
+The owned offline Windows build-26100 guest ran the two images
+sequentially as standalone debuggees. For each original process, CDB
+stopped at the initial loader breakpoint and then at the first
+instruction of the linked entry. The readback bound the second
+instruction pointer to the same PID and actual mapped base plus the
+PE entry RVA. Each stop listed 11 images. The ten dependency rows
+matched across the two roles and across both stops, including the four
+literal DLLs in their PE import tables. Nine dependencies had System32
+paths and CDB identified `ntdll.dll` by basename. Address ranges matched
+between stops for each process.
+[Debugger module paths](https://learn.microsoft.com/windows-hardware/drivers/debuggercmds/lm--list-loaded-modules-)
+
+Both fixed fixture services were absent from SCM at both bookends.
+Intentional debugger quit terminated each target with `0xC0000354`.
+The debugger and relay exited 0, the streams reached EOF, and each
+run retired the owned processes, debugger configuration, scratch
+and transfer files without fallback termination. The readback refused
+the missing-entry-table, wrong-entry-PID and command-error controls
+on each native transcript. Independent review checked artifact
+identity, entry offsets and the actual module tables.
+
+These samples establish the unpackaged loader inventory at two
+points for the two lab images. DLL initializer CPU compatibility,
+mapped-byte identity and any transient load between samples remain
+open. Effective service tokens, cold refusal, signed installed
+activation and the production startup paths retain their own exits.
+
+| Record under `~/.local/share/nevrotick/s06-service-preentry.CNqI8axY/` | SHA-256 |
+| --- | --- |
+| `observed-01-engine/verification.json` | `58cf121618f403ffae749c595957d5885325cd1affcb037446fb9126f2453b1c` |
+| `observed-01-engine/readback.json` | `0ac508a31b7c59e5f6606038aa0391247acc51ff1ead4f90775c09780468d261` |
+| `observed-01-broker/verification.json` | `aa4dd2b2ae12ea512eed66bc461fe19bdffbde77a0d067c6d6b8f2af5191471c` |
+| `observed-01-broker/readback.json` | `481bb797cf70cd9def733a1309800bc70be95863be4d197c27790e7550056bd6` |
+
+##### Observe both packaged role policies before the SCM call
+
+W11-W05/W11-W10, S0.6 and CHECK-16/18/26/27. Package and Sandbox QA
+matched both guarded role images to their link exports and the exact
+unsigned ArtworkLab members above. The raw instruction at RVA `0x1050a`
+calls through IAT entry `0x2e650`. Both link maps name
+`StartServiceCtrlDispatcherW`, and the native debugger resolved the
+same target at the stopped instruction.
+
+The offline build-26100 guest ran each unchanged image standalone on
+its supported CPU row. The observer held the original PID and creation
+time on a query-only process handle across the PE entry and the stop
+immediately before that call. Both images started with image-load and
+extension-point words `0x00`. At the second stop, the same original
+processes reported image-load `0x07` and extension-point `0x01`.
+The observer made no policy changes. Both original target handles
+reported exit `1` and a native termination time after continue. Both
+stream EOFs, the two fixed SCM absences before and after execution, and
+the debugger configuration, scratch and empty transfer shelves were
+checked. The debugger and relay independently reported exit `1`.
+[Windows mitigation query](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessmitigationpolicy)
+
+The original Engine attempt reached the call but could not read the
+marker prefixed by CDB's prompt. The first retry observed the policy
+words and target exit, then stopped at the debugger-exit assertion.
+Both incomplete receipts remain under `s06-service-before-scm.JAzV5Kq5/observed-03-engine/`
+and `s06-service-before-scm-retry.xxnAHdAh/observed-04-engine/` in the
+same local evidence root. The final observer distinguished the original
+target's termination from the transport results and executed the final
+guest checks. The Windows observation covers these mitigation words
+on the exact unpackaged role images. Actual rejected DLL loads, effective
+legacy extension-point behavior, signed installed roles and the broader
+startup lifecycle retain their own exits.
+
+| Record under `~/.local/share/nevrotick/s06-service-before-scm-retirement.P5NyzMyb/` | SHA-256 |
+| --- | --- |
+| `observe.ps1` | `8c043c1d34baf1ae23a84dfcdeacbfe332da770f8efcd00c04bcb8e5b20cafe4` |
+| `observed-06-engine/verification.json` | `3a208fa5d3f28838d0ab3c78efbb4909dcfa12abef02bd49d276e203ffcc9af1` |
+| `observed-06-broker/verification.json` | `9ed4525cd7091c83ba5278d506457b7cb1f9511160fc460f9e503074b28657c4` |
+
+#### Pack the baseline-first inert application with both disabled service roles
+
+W11-W10/S0.6 and CHECK-19/20/23/26. The package-artifact and Sandbox
+skills selected the established ScmFixture producer and independent reader
+at clean signed `a281ec3b254be76a079bfe66a4623c06684c1119`. Both fixed
+role images and symbols were rechecked against their retained link receipt
+`be9adc63aa4e1acf4c9403a5e001ef846b91d0bfdebb24647e917d6a3e81e051`.
+Of its 862 bound source paths, two changed only in test modules and the
+third is the independently built `Inert.exe` entry. Independent review
+reconstructed the earlier role inputs byte for byte by removing only
+those test additions. The roles keep their original `09016a3d…` lineage.
+
+The stager bound the 4,096-byte gated image, fixed manifest, two role
+images and three assets. The six SDK inputs matched their existing
+receipts. The input-set SHA-256 is
+`a6f1dde4401b85a3c4b9cb55e6d0590c74f59c47770e6e954d443f334c01fa70`.
+The admitted offline build-26100 Sandbox ran MakeAppx 10.0.28000.2705.
+The complete pack exited 0. Removing Square44x44Logo produced the named
+manifest refusal `0x80080204` and exit 1. Both original processes retired,
+the guest scratch was removed, and transfer payloads were rechecked
+and retired after export.
+
+The independent package reader matched all nine archive members. The
+same-role crossed input retained the previous Inert bytes while every
+other staged input stayed identical. The reader refused the exact
+current archive at `Inert.exe`. A fresh-context review matched the actual
+archive, all payload bytes and both host and guest receipts. The exact
+new packaged image matches the earlier supported direct-launch image.
+
+Cold refusal requires an owned x64 Windows guest with an independently
+observed missing v3 feature. Its controller must proceed on the expected
+CPU probe refusal, then observe exit 1 from the original baseline-entry
+process and confirm retirement. The scoped local inventory supplied no
+such guest. The signed installed-role and real product startup-topology
+gates remain open.
+
+| Record under `~/.local/share/nevrotick/w11-inert-unsigned-pack.VlF2pziG/` | SHA-256 |
+| --- | --- |
+| `pack/NevroTick-S06-SCM-Fixture-unsigned.msix` | `3311919c890df27555f31f8e8189f3715edeb388df8661fbdafd8d98f049eb94` |
+| `pack/pack-receipt.json` | `35231350cc53c736f3cb899790637a3f65fd7e908480cac299783e112aee7b3e` |
+| `pack/guest.json` | `6e87024443090739774f8fac83515cd9e11ed929a46d000d258812d1f99036d3` |
+| `archive-readback.json` | `8dda6f565862402f8f2cee1f790315988d07bc3b84f88c4ce41880bfaec44659` |
+| `retained.json` | `980b443870427aba4c63f1389c8647385001050a1d4ad56c0d972b6779fa4627` |
+
+#### Bind the complete authored payload to the original pre-start archive
+
+W11-W05/W11-W10, S0.6 and CHECK-18/26/27. The portable reader measures
+the seven verified authored members of the base ScmFixture in ordinal path
+order. The pin includes the original manifest bytes. The renderer binds the
+independent expected payload digest into the fixed deployment entry. The
+Windows session supplies it when opening the exact carrier. The retained
+Appx reader verifies the manifest footprint and exact six-file payload roster
+within the original size limits. The deployment window requires the bound
+lease before verifying the original signer and launching its identity child.
+The admitted deployment owner supplies the checked final inner-file pin.
+
+On `a281ec3` plus the package changes, CPython 3.12.3 passed all 179
+portable MSIX tests in a read-only network namespace. The actual checker
+and Windows Appx reader agreed on the stored package's seven-member
+payload digest `3aa76420cdba687e7380ec7fadc3efb099718d3cd9f2412b7511fd8d5cc57713`.
+Both disabled role digests also matched. In the offline Windows Sandbox
+the archive inspector and archive lease opener compiled the current
+sources and accepted the exact package. They refused the independent
+pin containing the previous Inert image with identical other member pins.
+The opener refused the retained event-resource archive at the base roster.
+The restored original opened successfully. Exclusive reopens checked release
+after refusals and normal retirement. Both test processes exited zero;
+the guest scratch and host transfer files retired after readback.
+
+Package-artifact, negative-path, regression selection and independent review
+covered the producer, fixed renderer, native lease and the SCM consumer's
+source. The native controls used unsigned artifacts and stopped at archive
+admission. The signed installed journey still requires the original carrier
+and signer, independently admitted actors, continuously quiescent installed
+services and both observer outcomes. Below-v3 startup remains a separate
+native obligation.
+
+| Record under `~/.local/share/nevrotick/s06-bound-payload.cdsos7Q7/` | SHA-256 |
+| --- | --- |
+| `portable-readback.json` | `5e603480bd06d45ddd11b4944bcd65d4e0156034ad3bacc05931efcc526dde79` |
+| `native-8311d93fea92/verification.json` | `d2f7b85c4fcd038c31a4144ad69f19715787500ab9ba64f0e9827972a196b98a` |
+| `native-8311d93fea92/inputs.json` | `51eb5d192f9ff7236e0ae70b0ad38876741725bdf68df0a36c2e9956ce67cad1` |
+
+##### Run the rendered pre-start owner through the payload boundary
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. The maintained renderer
+produced two entries from the original template and complete file pins.
+The entries used the same unsigned ScmFixture, same admitted guest actor,
+fresh x64 .NET helpers and separate run IDs. The crossed expected payload
+uses the previous Inert image and the six current neighboring pins. The
+approved expected payload comes from the portable readback above.
+
+The original crossed process exited 1 at `session/archive` with
+`prestart-archive:payload-digest`. The approved payload reached the
+original window owner and exited 1 with `session/window` and `win32-1060`
+on the absent fixture service. Both returned empty protocol stdout and
+reported `cleanup=none`. Independent guest queries observed both fixed
+services absent before and after. The collector observed both exits and
+stream retirement, exclusively reopened every staged file, and rechecked
+the original inputs. Offline bookends passed. Guest scratch and host
+transfer files were retired in both the compiler and owner phases.
+Independent review reconstructed both rendered entries from the retained
+inputs, matched the two x64 helper images and checked the raw exit and
+stream records.
+
+An initial local driver call stopped before Windows for a missing
+transport argument. The first complete preflight stopped at 1,676 MiB
+available against the existing 2,048 MiB host floor. The observed
+capacity recovery admitted the fresh retry. The build and run used
+3,491 MiB and 3,467 MiB available at their respective admission checks.
+
+This verifies the rendered entry's live payload readback and the next
+SCM boundary in the owned offline guest. The actual signed installed
+journey still needs the enclosing guardian and watchdog, the admitted
+signer and actor contexts, and continuous installed-role quiescence.
+
+| Record under `~/.local/share/nevrotick/s06-rendered-payload.h2vVnAQm/` | SHA-256 |
+| --- | --- |
+| `build-d5ca16628d1c/verification.json` | `037ca68e7165b7f1f665d7f82f0390f1f0b99bf55c344e9524ca8388d11cc30f` |
+| `build-281f14748a67/verification.json` | `289aeea1bedd3508dbb84744f97df6cb61cb494ab70b9062cacee9ee61645264` |
+| `owner-396f1a75416e/verification.json` | `93790736d52e28c79281304d12577c3afc5ad4c00449df8a218d2e549f1f6d17` |
+| `phase-result.json` | `02b6402151b9195e791c983621b9b5a4647a8c08285028593969e080e7abade6` |
+
+##### Run the rendered owner under both native job owners
+
+W11-W05/W11-W10, S0.6 and CHECK-18/25/26/27. Planning, Sandbox and
+lifecycle QA reused the exact unsigned carrier and expected outcomes
+from the direct replay. The offline build-26100 guest compiled the
+x64 watchdog and helper images from the current sources on
+`a281ec3b` plus the payload-binding changes. Both cases launched the
+real watchdog, pinned guardian and rendered owner in that order.
+The observer closed stdin empty and captured the original stdout and
+stderr through EOF. The crossed pin refused at `session/archive`
+with `prestart-archive:payload-digest`. The matching pin reached
+`session/window` and refused with `win32-1060`. Both had empty stdout,
+and the initiating owner reported `cleanup=none`.
+
+Each owner, guardian and watchdog had a distinct observed process
+identity and exited 1. The original inner and outer jobs reported
+empty with no recovery or secondary failure. Their configured limits
+read back as two and three. Both fixture services were independently
+observed absent before and after. The per-case staged files reopened
+exclusively. The collector confirmed process exit and both stream EOFs
+before removing its scratch and transfer files. Offline bookends and
+source readback passed. Fresh independent review reconstructed both emitted
+entries, checked the 13 recorded source inputs and rehashed the raw captures.
+The run leaves signed installed actor admission,
+live SCM rights, the signed positive journey and effective live process
+limit qualification open.
+
+| Record under `~/.local/share/nevrotick/s06-composed-payload.usQRxeIm/` | SHA-256 |
+| --- | --- |
+| `run.py` | `03168209015cf676f5f6bcba68a73dfd7d99aa4f04c31152f7e0593c8f79b10e` |
+| `build-bdff8a34e590/verification.json` | `eb5b494004f0535d7bf88f40f8ff8f0df615116c66516a5f73bd72d7fcb2f5fb` |
+| `build-bdff8a34e590/prestart_deployment_watchdog.exe` | `1a5315cffdc61c88f7ff6efb362b7c4c9e314eb16a7e9766312dd0e35fce7c2f` |
+| `owner-b98a817eff98/verification.json` | `69fb71917a7545011286820b27912c5d2350a8c57d41a6be06b298fc4e78a75d` |
+| `owner-b98a817eff98/guest.json` | `88cb0f929efa9ab15a79f33ebcbdf54e4515caa5d7337db27d48cf8e6b4c25d4` |
+| `phase-result.json` | `02d20bece368b4cc1576d7d2dca212bf27e1044d10f74673dd62f950fc77fb46` |
+
+#### Pack and verify the guarded Slint and service combination
+
+W11-W10/P6 and CHECK-16/18/20/23/26/27. The package and metadata
+owners added a guarded selection to the existing ArtworkLab stager.
+It reads the original complete artwork handoff and PRI, then separately
+checks the [guarded UI export](slint-gui-handoff.md#gate-the-selected-slint-fixture-before-its-crt)
+and matching PDB against its original producer receipt. It reconciles the
+actual GUI PE and raw map and requires the same metadata generation and
+embedded resource bytes as the checked artwork handoff. It checks the
+held guarded service pairs, baseline object and both role maps against
+the original service link receipt. The two UI inputs retain separate
+receipt identities. No binary was relinked for this assembly.
+
+The 56 staged leaves matched their independent source pins. Exactly
+three payload hashes changed from the previously checked ArtworkLab:
+the UI, Engine and Broker images. All 51 artwork files, the native PRI
+and the authored manifest matched. Both service declarations remain
+Disabled. A prior UI export supplied to guarded mode refused before
+publication. The Python suite passed all 193 tests in a read-only network
+namespace, including crossed role map and UI receipt cases, changed
+embedded resources, and the existing unguarded path. Independent review
+checked the exact input composition and staged tree.
+
+The owned offline Windows build-26100 guest ran the existing pinned
+MakeAppx route on the 63 selected inputs. The healthy process exited 0.
+The invalid `StartupType` case exited 1 with `C00CE169` and produced no
+archive. Both processes were reaped. Source bookends and output custody
+passed, and the guest scratch and host transfer files were retired. The
+maintained archive reader matched all 58 members, including all 56
+authored bytes, and checked the manifest, block map and content types.
+With the exact same archive and the earlier UI's independent pin it
+refused specifically at `nevrotick-ui.exe`.
+
+This verifies unsigned pack mechanics and the exact guarded image bytes
+in one lab archive. Below-v3 refusal, imported DLL initialization, live
+SCM and installed activation, and final product roles, signing and
+installed lifecycle retain their existing exits.
+
+| Record under `%LOCALAPPDATA%/NevroTick/msix-guarded-artwork.WCYxJeSU/` | SHA-256 |
+| --- | --- |
+| `portable/stage.json` | `e14575d4351bbbc559e97b7e14686ca40b22ed6c494841742c8ceeb7f41badc5` |
+| `portable/suite.stderr` | `3935c3b2c79b264d4b204a5e9f50d87853d539a5912d4f18d626e0f8f22030e9` |
+| `native/dispatch.json` | `6d8d2c5c48268564f48874c411ec9d7dac6d12f465772dfcbee4b841bc5a6f28` |
+| `native/NevroTick-ArtworkLab-UI-DisabledServices-unsigned.msix` | `680aff298f202704c32cd218af6adf9525441db5fcaa2e21cd0bb5eb4d8e29c2` |
+| `portable/archive-check.json` | `c65e2ee0bdcb4d0abd64ce6ff8fe45a1f074828ab1f4af85c7166dabe35d59c1` |
+| `portable/archive-crossed-ui.stderr` | `11b9ddf2b41a0c146e4d8bc980e556b5afb059ec139e713e79ac29735c7f6bd5` |
+
+#### Separate the recovery census from confirmed job retirement
+
+S0.6/W11-W05 and CHECK-25/26/27. The original `DeploymentJob` takes two
+independent pre-termination diagnostic samples. Refusal of either sample
+now remains visible in the watchdog and guardian records separately from
+failures of termination, the original exit wait, empty-job confirmation
+or checked release. The initiating failure and both original deadlines
+continue to govern the outcome. The watchdog's settled nonzero exit
+classification still requires that outer recovery never began.
+
+Once the held child was confirmed in the original job, a terminal
+sample with zero active and zero lifetime processes contradicts that
+association. The owner refuses that sample before recording its empty
+observation. A job without confirmed membership may still have a
+zero lifetime count. The observable process list and total count alone
+establish no live application-process ceiling.
+[Microsoft job accounting](https://learn.microsoft.com/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information)
+
+The [native recovery census controls](#read-back-the-original-job-limits-and-measure-watchdog-retirement)
+retain the predecessor comparison, independent readback and exact input pins.

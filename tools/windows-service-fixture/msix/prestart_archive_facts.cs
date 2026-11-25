@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -12,8 +14,11 @@ namespace NevroTick
     public sealed class PrestartArchiveFacts
     {
         internal const int MaximumArchiveBytes = 8 * 1024 * 1024;
+        private const int MaximumExpandedBytes = 8 * 1024 * 1024;
         private const int MaximumMemberBytes = 2 * 1024 * 1024;
+        private const int MaximumManifestBytes = 64 * 1024;
         private const int MaximumIdentityUnits = 256;
+        private const int ManifestFootprint = 0;
         private const uint InProcessServer = 1;
         private const uint MultiThreaded = 0;
         private const uint ApartmentThreaded = 2;
@@ -22,8 +27,17 @@ namespace NevroTick
         private const string PackageName = "NevroTick.S06.ScmFixture";
         private const string PackagePublisher = "CN=NevroTick S06 Laboratory";
         private const string FullNamePrefix = PackageName + "_1.0.0.0_x64__";
+        private const string ManifestMember = "AppxManifest.xml";
         private const string EngineMember = "nevrotick-lab-s02-engine.exe";
         private const string BrokerMember = "nevrotick-lab-s02-broker.exe";
+        private static readonly string[] PayloadMembers = {
+            "Assets/PackageLogo.png",
+            "Assets/Square150x150Logo.png",
+            "Assets/Square44x44Logo.png",
+            "Inert.exe",
+            BrokerMember,
+            EngineMember,
+        };
 
         public string PackageFullName { get; private set; }
         public int ArchiveBytes { get; private set; }
@@ -32,8 +46,10 @@ namespace NevroTick
         public string EngineSha256 { get; private set; }
         public int BrokerBytes { get; private set; }
         public string BrokerSha256 { get; private set; }
+        public string PayloadSha256 { get; private set; }
 
-        private PrestartArchiveFacts(string fullName, int size, string digest, Member engine, Member broker)
+        private PrestartArchiveFacts(string fullName, int size, string digest, Member engine, Member broker,
+            string payloadSha256)
         {
             PackageFullName = fullName;
             ArchiveBytes = size;
@@ -42,11 +58,29 @@ namespace NevroTick
             EngineSha256 = engine.Digest;
             BrokerBytes = broker.Size;
             BrokerSha256 = broker.Digest;
+            PayloadSha256 = payloadSha256;
         }
 
         // Verify the expected digest of a private copy before handing those same bytes to Windows.
         // Returns facts only after the reader and all native objects have been released.
         public static PrestartArchiveFacts Inspect(byte[] archive, string expectedSha256)
+        {
+            return InspectArchive(archive, expectedSha256, null);
+        }
+
+        // Match the fixed manifest and complete authored payload with an independent catalog pin.
+        public static PrestartArchiveFacts InspectWithPayload(byte[] archive, string expectedSha256,
+            string expectedPayloadSha256)
+        {
+            if (!IsSha256(expectedPayloadSha256))
+            {
+                throw new InvalidDataException("prestart-archive:expected-payload-sha256");
+            }
+            return InspectArchive(archive, expectedSha256, expectedPayloadSha256);
+        }
+
+        private static PrestartArchiveFacts InspectArchive(byte[] archive, string expectedSha256,
+            string expectedPayloadSha256)
         {
             if (archive == null || archive.Length == 0 || archive.Length > MaximumArchiveBytes)
             {
@@ -65,7 +99,7 @@ namespace NevroTick
                 {
                     throw new InvalidDataException("prestart-archive:archive-digest");
                 }
-                return ReadPackage(snapshot, digest, sha);
+                return ReadPackage(snapshot, digest, sha, expectedPayloadSha256);
             }
         }
 
@@ -90,7 +124,8 @@ namespace NevroTick
             return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", string.Empty).ToLowerInvariant();
         }
 
-        private static PrestartArchiveFacts ReadPackage(byte[] snapshot, string digest, SHA256 sha)
+        private static PrestartArchiveFacts ReadPackage(byte[] snapshot, string digest, SHA256 sha,
+            string expectedPayloadSha256)
         {
             uint apartment = Thread.CurrentThread.GetApartmentState() == ApartmentState.STA
                 ? ApartmentThreaded : MultiThreaded;
@@ -109,7 +144,7 @@ namespace NevroTick
                 }
                 try
                 {
-                    return ReadStream(stream, snapshot.Length, digest, sha);
+                    return ReadStream(stream, snapshot.Length, digest, sha, expectedPayloadSha256);
                 }
                 finally
                 {
@@ -122,7 +157,8 @@ namespace NevroTick
             }
         }
 
-        private static PrestartArchiveFacts ReadStream(IArchiveStream stream, int size, string digest, SHA256 sha)
+        private static PrestartArchiveFacts ReadStream(IArchiveStream stream, int size, string digest, SHA256 sha,
+            string expectedPayloadSha256)
         {
             Guid classId = new Guid("5842a140-ff9f-4166-8f5c-62f5b7b0c781");
             Guid interfaceId = typeof(IAppxFactory).GUID;
@@ -137,9 +173,20 @@ namespace NevroTick
                 {
                     RequireObject(opened, reader, "package-reader");
                     string fullName = ReadIdentity(reader);
+                    if (expectedPayloadSha256 != null)
+                    {
+                        SortedDictionary<string, Member> members = ReadAuthoredMembers(reader, sha);
+                        string payloadSha256 = DigestMembers(members, sha);
+                        if (!string.Equals(payloadSha256, expectedPayloadSha256, StringComparison.Ordinal))
+                        {
+                            throw new InvalidDataException("prestart-archive:payload-digest");
+                        }
+                        return new PrestartArchiveFacts(fullName, size, digest, members[EngineMember],
+                            members[BrokerMember], payloadSha256);
+                    }
                     Member engine = ReadMember(reader, EngineMember, sha);
                     Member broker = ReadMember(reader, BrokerMember, sha);
-                    return new PrestartArchiveFacts(fullName, size, digest, engine, broker);
+                    return new PrestartArchiveFacts(fullName, size, digest, engine, broker, null);
                 }
                 finally
                 {
@@ -217,36 +264,129 @@ namespace NevroTick
             try
             {
                 RequireObject(found, file, "payload-file");
-                IntPtr namePointer;
-                int nameStatus = file.GetName(out namePointer);
-                string name = ReadString(nameStatus, namePointer, "payload-name");
-                if (!string.Equals(name, expectedName, StringComparison.Ordinal))
+                if (!string.Equals(ReadMemberName(file), expectedName, StringComparison.Ordinal))
                 {
                     throw new InvalidDataException("prestart-archive:member-name");
                 }
-
-                ulong size;
-                RequireSuccess(file.GetSize(out size), "payload-size");
-                if (size == 0 || size > MaximumMemberBytes)
-                {
-                    throw new InvalidDataException("prestart-archive:member-size");
-                }
-                int boundedSize = checked((int)size);
-                IArchiveStream stream;
-                int opened = file.GetStream(out stream);
-                try
-                {
-                    RequireObject(opened, stream, "payload-stream");
-                    return ReadMemberStream(stream, boundedSize, sha);
-                }
-                finally
-                {
-                    Release(stream);
-                }
+                return ReadMemberContents(file, MaximumMemberBytes, sha);
             }
             finally
             {
                 Release(file);
+            }
+        }
+
+        private static SortedDictionary<string, Member> ReadAuthoredMembers(IAppxPackageReader reader, SHA256 sha)
+        {
+            Member manifest = ReadManifestMember(reader, sha);
+            SortedDictionary<string, Member> members = new SortedDictionary<string, Member>(StringComparer.Ordinal);
+            members.Add(ManifestMember, manifest);
+            int remainingBytes = MaximumExpandedBytes - manifest.Size;
+            IAppxFilesEnumerator enumerator;
+            int opened = reader.GetPayloadFiles(out enumerator);
+            try
+            {
+                RequireObject(opened, enumerator, "payload-files");
+                int hasCurrent;
+                RequireSuccess(enumerator.GetHasCurrent(out hasCurrent), "payload-current");
+                for (int index = 0; index < PayloadMembers.Length; ++index)
+                {
+                    if (hasCurrent == 0)
+                    {
+                        throw new InvalidDataException("prestart-archive:payload-roster");
+                    }
+
+                    IAppxFile file;
+                    int found = enumerator.GetCurrent(out file);
+                    try
+                    {
+                        RequireObject(found, file, "payload-file");
+                        string name = ReadMemberName(file).Replace('\\', '/');
+                        if (Array.IndexOf(PayloadMembers, name) < 0 || members.ContainsKey(name))
+                        {
+                            throw new InvalidDataException("prestart-archive:payload-roster");
+                        }
+
+                        Member member = ReadMemberContents(file, Math.Min(MaximumMemberBytes, remainingBytes), sha);
+                        remainingBytes -= member.Size;
+                        members.Add(name, member);
+                    }
+                    finally
+                    {
+                        Release(file);
+                    }
+                    RequireSuccess(enumerator.MoveNext(out hasCurrent), "payload-next");
+                }
+                // Observe that the enumeration ended without opening another member.
+                if (hasCurrent != 0)
+                {
+                    throw new InvalidDataException("prestart-archive:payload-roster");
+                }
+                return members;
+            }
+            finally
+            {
+                Release(enumerator);
+            }
+        }
+
+        private static Member ReadManifestMember(IAppxPackageReader reader, SHA256 sha)
+        {
+            IAppxFile file;
+            int found = reader.GetFootprintFile(ManifestFootprint, out file);
+            try
+            {
+                RequireObject(found, file, "manifest-footprint");
+                if (!string.Equals(ReadMemberName(file), ManifestMember, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException("prestart-archive:member-name");
+                }
+                return ReadMemberContents(file, MaximumManifestBytes, sha);
+            }
+            finally
+            {
+                Release(file);
+            }
+        }
+
+        private static string DigestMembers(SortedDictionary<string, Member> members, SHA256 sha)
+        {
+            StringBuilder catalog = new StringBuilder();
+            foreach (KeyValuePair<string, Member> entry in members)
+            {
+                catalog.Append(entry.Key).Append('\t')
+                    .Append(entry.Value.Size.ToString(CultureInfo.InvariantCulture)).Append('\t')
+                    .Append(entry.Value.Digest).Append('\n');
+            }
+            return Digest(sha, Encoding.UTF8.GetBytes(catalog.ToString()));
+        }
+
+        private static string ReadMemberName(IAppxFile file)
+        {
+            IntPtr namePointer;
+            int nameStatus = file.GetName(out namePointer);
+            return ReadString(nameStatus, namePointer, "payload-name");
+        }
+
+        private static Member ReadMemberContents(IAppxFile file, int maximumBytes, SHA256 sha)
+        {
+            ulong size;
+            RequireSuccess(file.GetSize(out size), "payload-size");
+            if (size == 0 || size > (ulong)maximumBytes)
+            {
+                throw new InvalidDataException("prestart-archive:member-size");
+            }
+            int boundedSize = checked((int)size);
+            IArchiveStream stream;
+            int opened = file.GetStream(out stream);
+            try
+            {
+                RequireObject(opened, stream, "payload-stream");
+                return ReadMemberStream(stream, boundedSize, sha);
+            }
+            finally
+            {
+                Release(stream);
             }
         }
 
@@ -379,8 +519,16 @@ namespace NevroTick
             [PreserveSig] int GetBlockMap(out IntPtr blockMap);
             [PreserveSig] int GetFootprintFile(int kind, out IAppxFile file);
             [PreserveSig] int GetPayloadFile([MarshalAs(UnmanagedType.LPWStr)] string name, out IAppxFile file);
-            [PreserveSig] int GetPayloadFiles(out IntPtr enumerator);
+            [PreserveSig] int GetPayloadFiles(out IAppxFilesEnumerator enumerator);
             [PreserveSig] int GetManifest(out IAppxManifestReader manifest);
+        }
+
+        [ComImport, Guid("f007eeaf-9831-411c-9847-917cdc62d1fe"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IAppxFilesEnumerator
+        {
+            [PreserveSig] int GetCurrent(out IAppxFile file);
+            [PreserveSig] int GetHasCurrent(out int hasCurrent);
+            [PreserveSig] int MoveNext(out int hasNext);
         }
 
         [ComImport, Guid("4e1bd148-55a0-4480-a3d1-15544710637c"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

@@ -1283,6 +1283,143 @@ installed role retain their own qualification. Apply the
 [updated Windows security profile cases](../docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
 when qualifying the final service and package profile.
 
+#### Gate the selected Slint fixture before its CRT
+
+W11-W10/S6.1, OD-07 and CHECK-16/18/19/20/26. The Windows artifact
+export can now select `--ui-baseline-entry`. A separate GPL-3.0-only C
+entry checks the cumulative CPU features and XCR0 before calling the
+existing `mainCRTStartup`. An unsupported CPU or OS state takes the
+original process to `ExitProcess(50)` before the CRT call. The exact
+UI link receives a digest-named read-only object. The Rust payload
+keeps its x86-64-v3 build and GUI subsystem.
+
+The CPU-dispatch and Slint skills informed the ABI and timing of the
+handoff. Regression and artifact QA selected 25 hosted CPU controls,
+including missing feature bits, absent register leaves and missing
+extended state. Three temporary faults tested missing OSXSAVE, weakened
+XCR0 checking and lost CRT status. Each reached its intended assertion.
+All 192 verifier controls and 25 PE controls passed. The Windows build on
+`a281ec3b` plus the retained overlay passed all 38 rows on Rust 1.100.0
+with 772 bound inputs. An initial launcher invocation selected the wrong
+working directory and stopped before verification. Its stderr is retained.
+
+Independent readback reconciled the raw COFF object and LLD map with the
+linked PE and matching PDB. The PE entry at RVA `0xe366b0` matches the
+baseline object's 128-byte instruction sequence after three relocations.
+Its guarded direct call reaches the original CRT at `0xe36d90`. The
+other two calls resolve to the same `KERNEL32.dll!ExitProcess` IAT slot.
+The PE retains a zero TLS callback slot and has no delay imports. It
+declares 27 direct imports. The loader can initialize those dependencies
+before the PE entry.
+
+In the owned offline build-26100 guest, the independent CPU probe accepted
+the platform and exited zero before UI dispatch. The original elevated,
+unpackaged UI process opened its sample window with image-load policy
+`0x07`, accepted normal Close, returned zero and completed both streams.
+Both process observations and the input and output cleanup passed. This
+qualifies the supported startup of this fixture. Cold refusal on an
+independently masked platform, pre-entry DLL closure, ordinary-user and
+packaged activation, and affected per-file metric gates remain open.
+
+| Record under `%LOCALAPPDATA%/NevroTick/ui-baseline-entry.UYbr9My4/` | SHA-256 |
+| --- | --- |
+| `exports/verification.json` | `9f5e7a5bca65410ce9a5364adf46adda4b27a7e75f596e22f6579d8bab7fbe8c` |
+| `exports/nevrotick-ui.exe` | `94ea9e41f996b2a523473d22a39a62f9233b70ade4d2b547ff4da8b1c170d337` |
+| `evidence/linked-entry-readback.json` | `59a9d69ee46f23d09042117318afbc34c8ae8023b12a12e48346a4af338c74e5` |
+| `native/receipt.json` | `4a3ec8a93492ad8c5c87af377f8283879d77be44037141e1c13d856b98f1f645` |
+
+The private shelf includes the matching PDB, compiler object, compressed
+link map and raw native observations. The link-map pin refers to the
+decompressed bytes. The [combined ArtworkLab archive readback](windows11-integration.md#pack-and-verify-the-guarded-slint-and-service-combination)
+binds this same guarded UI image to the unsigned carrier.
+
+The maintained Windows export now retains the raw `nevrotick-ui-entry.map`
+inside the atomic handoff. It checks the map digest against the recorded
+link and binds the record to the exported UI image. A portable replay sent
+the exact archived UI PE/PDB and map through the exporter and the ArtworkLab
+stager after removing the original scratch. Maintained controls also refused
+changed map or image bytes before publication and a crossed CRT declaration
+during handoff readback. The historical native result applies to its original
+link and runner.
+
+##### Check debugger readiness for the pre-entry module observation
+
+W11-W10/S6.1 and CHECK-16/18/26. The bounded next observation would
+capture resolved module paths at the initial debugger breakpoint and
+then check the original process and verified PE entry address before
+the first entry instruction. The initial breakpoint precedes DLL
+initialization in a debugger-launched process. A matching subsequent
+stop could distinguish the modules present before the gate. Confirm
+original process retirement in both cases and retain the earlier
+ordinary native startup separately.
+[Microsoft initial breakpoint documentation](https://learn.microsoft.com/windows-hardware/drivers/debugger/initial-breakpoint)
+
+Read-only preflight on the owned offline build-26100 guest found the
+current-user debugger configuration absent. The exact host SDK
+`dbgeng.dll` also directly imports `DbgModel.dll`, which the current
+tool inventory does not pin. Scope the companion admission and the
+debugger/child lifetime owner before a run. The debugger and UI were
+both unlaunched in this probe. The before/after guest observations and
+configuration refusal are in `preentry-readiness.json` under
+`~/.local/share/nevrotick/w11-timing-placement.Jc5XPQSG/`, SHA-256
+`c2cd10f7cce052aadc6dd26b30a28fabb6f4f91779137c42da6e8a995a3eb63d`.
+
+##### Observe both pre-entry module snapshots on the guarded Slint image
+
+W11-W10/S6.1 and CHECK-16/18/26. Package-artifact and Sandbox QA bound
+the observed image to the retained unsigned ArtworkLab archive and
+the guarded Slint export. The exact `nevrotick-ui.exe` bytes in both
+hash to `94ea9e41f996b2a523473d22a39a62f9233b70ade4d2b547ff4da8b1c170d337`.
+The existing CDB and SDK library pins were reused. Host Authenticode
+readback verified the same-version Microsoft-signed `DbgModel.dll` as
+a scoped debugger input. The guest used the pinned offline debugger
+configuration and a private command pipe bound to its original relay.
+
+The owned offline Windows build-26100 guest stopped the same original
+UI process at the initial debugger breakpoint and then at its linked
+entry RVA `0xe366b0`, before the gate's first instruction. The latter
+stop matched both the enabled breakpoint and the original image base
+plus that RVA. Independent readback counted **28 images at each stop**,
+including the UI and 27 DLLs. Every literal DLL named in the PE import
+table was present. The paths and mapping ranges matched across the
+two stops. The DLL rows identify 25 System32 paths, one WinSxS
+Common Controls path and `ntdll.dll` by basename. API-set import
+contracts do not appear as separate image paths.
+[Initial breakpoint](https://learn.microsoft.com/windows-hardware/drivers/debugger/initial-breakpoint)
+[Debugger module paths](https://learn.microsoft.com/windows-hardware/drivers/debuggercmds/lm--list-loaded-modules-)
+
+The observer ended the debug session at the entry breakpoint with
+`q`. The debugger and relay exited 0, the original target exited
+`0xC0000354`, and both captured streams reached EOF. The observer
+confirmed retirement without fallback termination and restored guest
+configuration, scratch and transfer custody. The parser refused three
+in-memory controls covering a missing entry table, wrong entry PID
+and debugger command error. A fresh reviewer checked the original
+archive, entry address and raw tables independently.
+
+The first attempt captured the initial table before a UTF-8 preamble
+corrupted the command. Two console-based remedies refused before
+launch. The private pipe then reached the initial stop, but the
+execute breakpoint was never observed. The next attempt verified
+that a software breakpoint was enabled at the exact entry address.
+Its reader refused the valid line because CDB included its prompt.
+Both attempts requiring separate cleanup have removal receipts. The
+successful retry used the same image and corrected prompt handling.
+
+The two stops establish module presence on one debugger-launched,
+unpackaged image. They leave mapped-byte identity, transient modules,
+the CPU instructions executed by DLL initializers, cold refusal,
+ordinary-user activation and signed installed roles open. The earlier
+ordinary startup and Close observation remains separate.
+
+| Record under `~/.local/share/nevrotick/s61-preentry-observation.HkG1hccv/` | SHA-256 |
+| --- | --- |
+| `dbgmodel-host-signature.json` | `6f94c1f367a7e951c4f1880620c400ff8e6a8f564b2b08d608da2be3236f056f` |
+| `observed-06/inputs.json` | `97174494a78832f111714c16280c8555bc0b1b7ddb77b87aa89af060a8f19aff` |
+| `observed-06/verification.json` | `80743ec585133412975a419f0766b8f8def49de1258703b557e705c31b83b42f` |
+| `observed-06/cdb.stdout` | `e2f3e7f433dbefb860a8ac20ea8ae29a04ac258d60160880665cb5ec5bf3094d` |
+| `observed-06/readback.json` | `ffb32f288d78198bccd5ff058039b496f93b87151e8a7044412e91922a2d4882` |
+
 ### Observe the Low-integrity image boundary — 23 November 2026
 
 W11-W10, WIN-3/WIN-4 and CHECK-16/26. The security-boundary, integration and

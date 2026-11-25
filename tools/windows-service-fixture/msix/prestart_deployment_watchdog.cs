@@ -64,7 +64,9 @@ namespace NevroTick
                 "job_empty_tick=" + Number(report.JobEmptyTick),
                 "tick_frequency=" + report.TickFrequency.ToString(CultureInfo.InvariantCulture),
                 "failure=" + Describe(report.Failure),
-                "recovery_failure=" + Describe(report.RecoveryFailure)
+                "recovery_failure=" + Describe(report.RecoveryFailure),
+                "recovery_accounting_failure=" + Describe(report.RecoveryAccountingFailure),
+                "recovery_members_failure=" + Describe(report.RecoveryMembersFailure)
             }));
 
             if (report.ExitCode == 0 && report.JobEmpty && !report.Recovered &&

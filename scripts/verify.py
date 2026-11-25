@@ -119,6 +119,19 @@ UI_NATIVE_INPUT_CHECKER_FILES = ("scripts/native_input_source.py",
                                  "scripts/tests/test_native_input_source.py")
 
 WINDOWS_PE_INPUT_FILES = ("scripts/windows_pe.py", "scripts/tests/test_windows_pe.py")
+UI_ENTRY_SOURCE = "crates/nevrotick-ui/startup/cpu_entry.c"
+UI_ENTRY_CONTROL_SOURCE = "crates/nevrotick-ui/startup/cpu_entry_control.c"
+UI_ENTRY_MAP_LEAF = "nevrotick-ui-entry.map"
+UI_ENTRY_MAP = "/work/metadata/" + UI_ENTRY_MAP_LEAF
+UI_ENTRY_MAP_MAX_BYTES = 32 * 1024**2
+UI_ENTRY_CLANG = Path("/usr/lib/llvm-18/bin/clang")
+UI_ENTRY_TOOL_PINS = {
+    UI_ENTRY_CLANG: "8ef402d453d1ba4902e4ee0f0f847f6cfa01400c95aa43c24e97818b9c0e3f45",
+    UI_ENTRY_CLANG.parent.parent / "lib/libclang-cpp.so.18.1":
+        "b9592746f7f8ff1156680fb1fad5faf5486df7a67aca8327cc959463416c6718",
+    UI_ENTRY_CLANG.parent.parent / "lib/libLLVM.so.1":
+        "5c3a63957e28c15cdf1503892074f032d29b72e36a9824a77dfa87e48a0dafb0",
+}
 WINDOWS_UI_INPUT_FILES = (
     "metadata/product.toml",
     "metadata/__init__.py",
@@ -1678,6 +1691,16 @@ def export_windows_build(work: Path, output: Path, *, source: Path, report: dict
                 work, stage, source=source, final_output=output,
                 ui_sha256=report.get("ui_versioninfo", {}).get("image_sha256"),
                 observe_sha256=report.get("observe_versioninfo", {}).get("image_sha256"))
+            if "ui_preentry" in report:
+                entry: dict[str, Any] = report["ui_preentry"]
+                image_pin: str = completed["artifact"]["sha256"]
+                source_map: Path = work / Path(UI_ENTRY_MAP).relative_to("/work")
+                map_bytes: bytes = read_bound_ui_entry_map(source_map, entry, image_pin)
+                exported_map: Path = stage / UI_ENTRY_MAP_LEAF
+                with exported_map.open("xb") as stream:
+                    stream.write(map_bytes)
+                read_bound_ui_entry_map(exported_map, entry, image_pin, staging_descriptor=staging_descriptor)
+                completed["ui_preentry"] = {**entry, "map_artifact": UI_ENTRY_MAP_LEAF}
             if inspection is not None:
                 inspection = dict(inspection)
                 if base_artwork is not None:
@@ -1943,6 +1966,21 @@ def link_observe_resource(build: list[str], digest: str) -> list[str]:
     return [*command, "--", "-C", "link-arg=" + observe_resource_path(digest)]
 
 
+def ui_entry_object_path(digest: str) -> str:
+    """Bind the checked baseline object to the final executable's Cargo input."""
+    if re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+        raise ENV.Incomplete("Invalid UI baseline entry object digest.")
+    return f"/work/metadata/nevrotick-ui-entry-{digest}.obj"
+
+
+def link_ui_entry(build: list[str], digest: str) -> list[str]:
+    """Select only the UI executable's baseline entry and map."""
+    command: list[str] = list(build)
+    command[command.index("build")] = "rustc"
+    return [*command, "--", "-C", "link-arg=" + ui_entry_object_path(digest),
+            "-C", "link-arg=/entry:nevrotick_ui_entry", "-C", "link-arg=/map:" + UI_ENTRY_MAP]
+
+
 def command_resources(lane: str, label: str, command: list[str], *, profile: str = "default") -> dict:
     """Select one finite build budget from the exact configured command owner.
 
@@ -1966,6 +2004,11 @@ def command_resources(lane: str, label: str, command: list[str], *, profile: str
             resource = re.fullmatch(r"link-arg=/work/metadata/observe-([a-f0-9]{64})\.res", command[-1])
             if resource is not None:
                 expected = link_observe_resource(expected, resource[1])
+        elif len(command) >= 6:
+            entry: re.Match[str] | None = re.fullmatch(
+                r"link-arg=/work/metadata/nevrotick-ui-entry-([a-f0-9]{64})\.obj", command[-5])
+            if entry is not None:
+                expected = link_ui_entry(expected, entry[1])
         if command != expected:
             raise ENV.Incomplete("Windows release resource command differs from its fixed owner.")
         if label == "windows-link":
@@ -2275,6 +2318,22 @@ def read_bound_msix_leaf(path: Path, expected_sha256: str, *,
     except OSError as error:
         raise ENV.Incomplete(custody_error) from error
     return raw
+
+
+def read_bound_ui_entry_map(path: Path, entry: dict[str, Any], image_pin: str, *,
+                            staging_descriptor: int | None = None) -> bytes:
+    """Reopen only the recorded map for the exact guarded UI image."""
+    error_message: str = "Windows UI baseline link evidence differs from the checked link."
+    if type(entry) is not dict or entry.get("image_sha256") != image_pin:
+        raise ENV.Incomplete(error_message)
+    map_pin: object = entry.get("map_sha256")
+    if type(map_pin) is not str or re.fullmatch(r"[0-9a-f]{64}", map_pin) is None:
+        raise ENV.Incomplete(error_message)
+    try:
+        return read_bound_msix_leaf(path, map_pin, staging_descriptor=staging_descriptor,
+                                    maximum=UI_ENTRY_MAP_MAX_BYTES)
+    except ENV.Incomplete as error:
+        raise ENV.Incomplete(error_message) from error
 
 
 def unique_msix_json_fields(pairs):
@@ -2647,6 +2706,16 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
                  observer_symbols: "private-symbols",
                  **dict.fromkeys(authoring_paths, "private-authoring"),
                  **dict.fromkeys(artwork_paths, "unadmitted-artwork")}
+    entry: dict[str, Any] | None = report.get("ui_preentry")
+    if entry is not None and type(entry) is not dict:
+        raise ENV.Incomplete("Windows MSIX handoff UI entry record must be an object.")
+    # Earlier guarded reports stored the raw map separately.
+    if entry is not None and "map_artifact" in entry:
+        if entry["map_artifact"] != UI_ENTRY_MAP_LEAF:
+            raise ENV.Incomplete("Windows MSIX handoff UI link map artifact differs.")
+        artifacts[UI_ENTRY_MAP_LEAF] = "private-ui-link-map"
+    else:
+        entry = None
     initial = _msix_handoff_inventory(descriptor, set(artifacts))
     # The roster bookends include all files. Rebind the receipt to the first bookend
     # as it supplied the selection read before the roster could be established.
@@ -2687,6 +2756,18 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
                        for key, value in declarations.items())):
             raise ENV.Incomplete(f"Windows MSIX handoff {role} PE declarations differ from the pinned receipt.")
         if image == ui:
+            if entry is not None:
+                map_bytes: bytes = read_bound_ui_entry_map(
+                    anchor / UI_ENTRY_MAP_LEAF, entry, image_record[1], staging_descriptor=descriptor)
+                try:
+                    baseline: dict[str, object] = pe.ui_preentry_declarations(
+                        image_record[0], map_bytes.decode("utf-8"), object_sha256=entry.get("object_sha256"))
+                except ValueError as error:
+                    raise ENV.Incomplete(f"Windows MSIX handoff UI link map readback refused: {error}") from error
+                if any(type(entry.get(key)) is not type(value) or entry[key] != value
+                       for key, value in baseline.items()):
+                    raise ENV.Incomplete("Windows MSIX handoff UI entry differs from the pinned receipt.")
+                verified_digests[UI_ENTRY_MAP_LEAF] = entry["map_sha256"]
             reader: ModuleType = windows_versioninfo_reader(source)
             version: VersionInfo
             manifest: UiExecutionManifest
@@ -2835,6 +2916,57 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
     return record
 
 
+def admit_ui_entry_tools() -> None:
+    """Check the fixed baseline Clang and its two LLVM libraries."""
+    for path, digest in UI_ENTRY_TOOL_PINS.items():
+        if path.is_symlink() or not path.is_file() or sha256(path) != digest:
+            raise ENV.Incomplete(f"Unadmitted Windows UI baseline compiler input: {path.name}")
+    if not os.access(UI_ENTRY_CLANG, os.X_OK):
+        raise ENV.Incomplete("Windows UI baseline compiler must be executable.")
+
+
+def compile_ui_entry(directory: Path, run) -> tuple[Path, str]:
+    """Exercise the entry's selector, then compile its freestanding Windows object."""
+    compiled: Path = directory / "compiled-ui-entry"
+    compiled.mkdir(mode=0o700)
+    flags: list[str] = [str(UI_ENTRY_CLANG), "--no-default-config", "-std=c17", "-O2",
+                        "-Wall", "-Wextra", "-Werror", "-Wpedantic", "-march=x86-64"]
+    output_mounts: tuple[str, ...] = ("--bind", str(compiled), "/baseline-build", "--remount-ro", "/work")
+    run("ui-baseline-entry-controls-compile", [*flags, "--target=" + HOST_TARGET,
+        "/work/fixture/" + UI_ENTRY_CONTROL_SOURCE, "-o", "/baseline-build/entry-controls"], extra=output_mounts)
+    run("ui-baseline-entry-controls", ["/baseline-build/entry-controls"],
+        extra=("--ro-bind", str(compiled), "/baseline-build", "--remount-ro", "/work"))
+    run("ui-baseline-entry-compile", [*flags, "--target=" + ENV.WINDOWS_TARGET,
+        "-ffreestanding", "-fno-lto", "-fstack-protector-strong", "-funwind-tables", "-Xclang", "-cfguard",
+        "-c", "/work/fixture/" + UI_ENTRY_SOURCE, "-o", "/baseline-build/entry.obj"], extra=output_mounts)
+    entry: Path = compiled / "entry.obj"
+    if entry.is_symlink() or not entry.is_file() or not 0 < entry.stat().st_size <= 64 * 1024:
+        raise ENV.Incomplete("Missing or oversized Windows UI baseline object.")
+    admit_ui_entry_tools()
+    return entry, sha256(entry)
+
+
+def read_ui_entry(work: Path, source: Path, digest: str, image_digest: str) -> dict[str, object]:
+    """Reconcile the guarded GUI PE with the final link's selected map rows."""
+    map_path: Path = work / Path(UI_ENTRY_MAP).relative_to("/work")
+    image: Path = work / "target" / ENV.WINDOWS_TARGET / "release" / (PACKAGE + ".exe")
+    if map_path.is_symlink() or not map_path.is_file() or not 0 < map_path.stat().st_size <= UI_ENTRY_MAP_MAX_BYTES:
+        raise ENV.Incomplete("Missing or oversized Windows UI baseline link map.")
+    map_bytes: bytes = map_path.read_bytes()
+    image_bytes: bytes = image.read_bytes()
+    if hashlib.sha256(image_bytes).hexdigest() != image_digest:
+        raise ENV.Incomplete("Windows UI bytes changed after version resource inspection.")
+    pe: ModuleType = windows_pe_reader(source)
+    try:
+        observed: dict[str, object] = pe.ui_preentry_declarations(
+            image_bytes, map_bytes.decode("utf-8"), object_sha256=digest)
+    except ValueError as error:
+        raise ENV.Incomplete(str(error)) from error
+    return {**observed, "object_sha256": digest, "image_sha256": image_digest,
+            "map_sha256": hashlib.sha256(map_bytes).hexdigest(),
+            "compiler_inputs": {str(path): pin for path, pin in UI_ENTRY_TOOL_PINS.items()}}
+
+
 def execute(root: Path, args, report: dict) -> None:
     """Freeze candidate inputs, run the selected row and reject input drift."""
     profile = getattr(args, "profile", "default")
@@ -2863,13 +2995,19 @@ def execute(root: Path, args, report: dict) -> None:
     sdk_directory = getattr(args, "linux_sdk_dir", None)
     if sdk_directory is not None and (args.lane != "portable" or policy["schema_version"] != 3):
         raise ENV.Incomplete("The optional Linux SDK belongs only to portable Slint checks.")
+    rc_compiler = getattr(args, "llvm_rc", None)
+    windows_ui_selected = args.lane == "windows" and policy["schema_version"] == 3
+    ui_entry_requested: bool = getattr(args, "ui_baseline_entry", False)
+    if ui_entry_requested:
+        if not windows_ui_selected or getattr(args, "output_dir", None) is None:
+            raise ENV.Incomplete("UI baseline entry requires the selected Windows artifact export.")
+        admit_ui_entry_tools()
+        source_identity.update({name: sha256(root / name) for name in (UI_ENTRY_SOURCE, UI_ENTRY_CONTROL_SOURCE)})
+    if rc_compiler is not None and not windows_ui_selected:
+        raise ENV.Incomplete("The LLVM resource compiler belongs only to the selected Windows build lane.")
     vendor = args.vendor_dir.resolve(strict=True)
     vendor_identity = admit_vendor(vendor, policy)
     toolchain = args.toolchain_dir.resolve(strict=True)
-    rc_compiler = getattr(args, "llvm_rc", None)
-    windows_ui_selected = args.lane == "windows" and policy["schema_version"] == 3
-    if rc_compiler is not None and not windows_ui_selected:
-        raise ENV.Incomplete("The LLVM resource compiler belongs only to the selected Windows build lane.")
     ui_tools = admit_windows_ui_tools(toolchain, rc_compiler) if windows_ui_selected else None
     if args.lane == "windows":
         source_identity.update({name: sha256(root / name) for name in WINDOWS_PE_INPUT_FILES})
@@ -3029,6 +3167,8 @@ def execute(root: Path, args, report: dict) -> None:
         if args.lane == "windows":
             run("windows-pe-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
                                         "discover", "-s", "scripts/tests", "-p", "test_windows_pe.py", "-v"])
+        if ui_entry_requested:
+            entry, entry_digest = compile_ui_entry(work, run)
         patched_names = tuple(record["name"] for record in policy.get("patched_packages", []))
         metadata_dir = None
         version_roles = {"windows-link": "ui", "windows-engine-link": "observe"}
@@ -3049,6 +3189,9 @@ def execute(root: Path, args, report: dict) -> None:
             digest = inputs["res_sha256"]
             if role == "ui":
                 extra = ("--ro-bind", str(resource), RESOURCE_PATH, "--setenv", RESOURCE_DIGEST_ENV, digest)
+                if ui_entry_requested:
+                    extra += ("--ro-bind", str(entry), ui_entry_object_path(entry_digest))
+                    command = link_ui_entry(command, entry_digest)
             else:
                 extra = ("--ro-bind", str(resource), observe_resource_path(digest))
                 command = link_observe_resource(command, digest)
@@ -3056,6 +3199,10 @@ def execute(root: Path, args, report: dict) -> None:
             if sha256(resource) != digest:
                 raise ENV.Incomplete(f"Selected {role} resource changed during linking.")
             receipt.update(read_windows_versioninfo(work, source, role, expected, run))
+            if role == "ui" and ui_entry_requested:
+                if sha256(entry) != entry_digest:
+                    raise ENV.Incomplete("Windows UI baseline object changed during linking.")
+                report["ui_preentry"] = read_ui_entry(work, source, entry_digest, receipt["image_sha256"])
         if capture_requested:
             run("slint-capture-build", slint_capture_build_command())
             run("slint-capture", ["/work/target/debug/examples/capture"])
@@ -3080,6 +3227,9 @@ def execute(root: Path, args, report: dict) -> None:
             if export_authoring:
                 msix_authoring = read_msix_authoring_snapshot(metadata_dir / "generation/tree", msix_inspection)
         final_source = admit_product(root)[1]
+        if ui_entry_requested:
+            final_source.update({name: sha256(root / name) for name in (UI_ENTRY_SOURCE, UI_ENTRY_CONTROL_SOURCE)})
+            admit_ui_entry_tools()
         if args.lane == "windows":
             final_source.update({name: sha256(root / name) for name in WINDOWS_PE_INPUT_FILES})
         if ui_tools:
@@ -3157,6 +3307,8 @@ def main(argv=None) -> int:
                         help="independently retained SHA-256 for the export's verification.json")
     parser.add_argument("--export-msix-authoring", action="store_true",
                         help="retain private checked assembly source in a Windows artifact output")
+    parser.add_argument("--ui-baseline-entry", action="store_true",
+                        help="link the selected Windows UI through the baseline CPU/OS guard")
     build_paths = ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
                    "advisory-receipt", "output-dir", "json", "linux-sdk-dir", "llvm-rc", "msix-branding-dir")
     for name in build_paths:
@@ -3164,7 +3316,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.inspect_msix_handoff is not None or args.handoff_receipt_sha256 is not None:
         if (not args.handoff_receipt_sha256 or args.inspect_msix_handoff is None
-                or args.capture_slint or args.export_msix_authoring
+                or args.capture_slint or args.export_msix_authoring or args.ui_baseline_entry
                 or args.lane != "portable" or args.profile != "default"
                 or any(getattr(args, name.replace("-", "_")) is not None for name in build_paths)):
             parser.error("MSIX handoff inspection requires both handoff options without build options.")

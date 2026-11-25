@@ -52,6 +52,8 @@ namespace NevroTick
             public long TickFrequency { get { return Stopwatch.Frequency; } }
             public Exception Failure { get; private set; }
             public Exception RecoveryFailure { get; private set; }
+            public Exception RecoveryAccountingFailure { get; internal set; }
+            public Exception RecoveryMembersFailure { get; internal set; }
 
             internal DeploymentJobReport(int? pid, int? exitCode, uint? totalProcesses, bool recovered,
                 uint? activeAtRecovery, uint[] memberPidsAtRecovery, Exception failure, Exception recoveryFailure)
@@ -186,6 +188,8 @@ namespace NevroTick
             private uint? totalProcesses;
             private uint? verifiedProcessLimit;
             private JobAccounting? recoveryAccounting;
+            private Exception recoveryAccountingFailure;
+            private Exception recoveryMembersFailure;
             private uint? limitTerminationsAtEmpty;
             private uint[] memberPidsAtRecovery;
             private long? recoveryStartTick;
@@ -268,6 +272,8 @@ namespace NevroTick
                     LimitTerminationsAtRecovery = recoveryAccounting.HasValue ?
                         (uint?)recoveryAccounting.Value.TotalTerminatedProcesses : null,
                     LimitTerminationsAtEmpty = limitTerminationsAtEmpty,
+                    RecoveryAccountingFailure = recoveryAccountingFailure,
+                    RecoveryMembersFailure = recoveryMembersFailure,
                     RecoveryStartTick = recoveryStartTick,
                     TerminationAcceptedTick = terminationAcceptedTick,
                     JobEmptyTick = jobEmptyTick
@@ -474,8 +480,7 @@ namespace NevroTick
             private void Recover()
             {
                 recoveryStartTick = clock.ElapsedTicks;
-                TryRecover(() => recoveryAccounting = ReadAccounting());
-                TryRecover(() => memberPidsAtRecovery = ReadJobMemberPids());
+                ObserveRecoveryCensus();
 
                 // An original whose membership was not confirmed could not
                 // have been resumed. Keep recovery on the original handle.
@@ -514,6 +519,16 @@ namespace NevroTick
                     ReleaseHandle(process, "close-process");
                 if (!processCreated || process.IsClosed)
                     TryRecover(() => ObserveEmptyJob(retirementMilliseconds));
+            }
+
+            private void ObserveRecoveryCensus()
+            {
+                // These separate pre-termination reads are diagnostic. The
+                // original exit, terminal job accounting and release decide retirement.
+                try { recoveryAccounting = ReadAccounting(); }
+                catch (Exception problem) { recoveryAccountingFailure = problem; }
+                try { memberPidsAtRecovery = ReadJobMemberPids(); }
+                catch (Exception problem) { recoveryMembersFailure = problem; }
             }
 
             private void ObserveExit(int cutoffMilliseconds)
@@ -591,6 +606,8 @@ namespace NevroTick
                     RequireTime(cutoffMilliseconds, "job-deadline");
                     if (accounting.ActiveProcesses == 0)
                     {
+                        if (contained && accounting.TotalProcesses == 0)
+                            throw new InvalidDataException("prestart-deployment-job:empty-lifetime-count");
                         totalProcesses = accounting.TotalProcesses;
                         limitTerminationsAtEmpty = accounting.TotalTerminatedProcesses;
                         jobEmptyTick = clock.ElapsedTicks;
@@ -684,10 +701,6 @@ namespace NevroTick
         [DllImport("kernel32.dll", EntryPoint = "QueryInformationJobObject", ExactSpelling = true, SetLastError = true)]
         private static extern bool QueryJobMembers(KernelHandle job, int informationClass, IntPtr buffer,
             int bytes, IntPtr returned);
-
-        [DllImport("kernel32.dll", EntryPoint = "QueryInformationJobObject", ExactSpelling = true, SetLastError = true)]
-        private static extern bool QueryJobLimits(KernelHandle job, int informationClass,
-            out JobExtendedLimits limits, uint bytes, IntPtr returned);
 
         [DllImport("kernel32.dll", EntryPoint = "CloseHandle", ExactSpelling = true, SetLastError = true)]
         private static extern bool CloseDeploymentHandle(IntPtr handle);

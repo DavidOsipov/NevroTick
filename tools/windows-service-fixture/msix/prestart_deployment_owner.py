@@ -54,13 +54,15 @@ def render_deployment_owner(
     work_milliseconds: int,
     retirement_milliseconds: int,
     *,
+    expected_payload_sha256: str,
     full_prestart: bool = False,
 ) -> tuple[bytes, Member]:
     """Bind a protected staging entry to one run, fixed member roster and finite budgets.
 
-    The retained owner supplies the reviewed template and independent inputs.
-    It protects all staged paths through use and independently establishes
-    actor eligibility, signed-package admission and continuous quiescence.
+    The retained owner supplies the reviewed template, the independently checked
+    digest of the approved final authored payload and the other input pins.
+    It protects staged paths through use and independently establishes actor
+    eligibility, signed-package admission and continuous quiescence.
     This function produces bytes and their pin for the original watchdog.
     The Windows owner still checks and consumes the actual staged objects.
     """
@@ -74,6 +76,10 @@ def render_deployment_owner(
     require(
         type(signer_sha256) is str and SHA256.fullmatch(signer_sha256) is not None,
         "invalid deployment owner signer digest",
+    )
+    require(
+        type(expected_payload_sha256) is str and SHA256.fullmatch(expected_payload_sha256) is not None,
+        "invalid deployment owner payload digest",
     )
     require(
         type(work_milliseconds) is int and type(retirement_milliseconds) is int
@@ -93,6 +99,7 @@ def render_deployment_owner(
         "[string]$ownerRole = 'deployment'",
         f"[string]$expectedActorSid = '{deployment_sid}'",
         f"[string]$signerSha256 = '{signer_sha256}'",
+        f"[string]$expectedPayloadSha256 = '{expected_payload_sha256}'",
         f"[int]$workMilliseconds = {work_milliseconds}",
         f"[int]$retirementMilliseconds = {retirement_milliseconds}",
         "[bool]$fullPrestart = " + ("$true" if full_prestart else "$false"),

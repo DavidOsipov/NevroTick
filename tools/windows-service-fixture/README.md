@@ -45,6 +45,45 @@ Run the payload publication and unsigned package reader regressions with
 `python3 -I -B -m unittest discover -s tools/windows-service-fixture/msix`.
 The reader tests build inert archives and check the CLI's digest, payload, ZIP,
 block-map and XML decisions without installing a package.
+The successful readback includes `payload_sha256` over the verified authored
+manifest and files. Sort the exact ASCII names with `/` separators and hash
+the concatenated `name<TAB>decimal-length<TAB>sha256<LF>` rows. The package
+carrier digest stays separate. Keep the independent payload pin from the
+approved final inner files, including any signatures added before packing.
+
+### Read the combined unsigned ArtworkLab archive
+
+To stage the guarded combination with [prepare_artwork_payload.py](msix/prepare_artwork_payload.py),
+keep the complete artwork handoff and native PRI selection. Supply the
+guarded role-link receipt with its independent digest and add
+`--guarded-ui-export`, `--guarded-ui-receipt-sha256`, and `--guarded-ui-link-map`.
+Use the exact private UI PE/PDB export and pass its `nevrotick-ui-entry.map`
+as the raw linker map. For earlier exports, use the independently retained
+original map. The stager checks the same metadata generation and embedded
+resource bytes before substituting the guarded UI. It separately checks
+both service image pairs, the retained baseline object and role maps.
+The staging receipt retains both original handoff pins.
+
+Run the [combined reader](msix/check_artwork_package.py) with the complete
+authored directory, the original unsigned MakeAppx archive, the independent
+55-member digest map and the independently pinned authored manifest.
+
+```sh
+python3 -I -B tools/windows-service-fixture/msix/check_artwork_package.py \
+  --payload "$combined_payload" --package "$unsigned_artwork_package" \
+  --package-sha256 "$unsigned_artwork_sha256" \
+  --pins "$combined_member_pins" --pins-sha256 "$combined_member_pins_sha256" \
+  --manifest-sha256 "$combined_manifest_sha256"
+```
+
+The reader checks the fixed ArtworkLab 1.0.1.0 profile, including the
+51 artwork files, PRI, UI, two disabled LocalService declarations and
+original authored manifest. It verifies both package metadata parts and
+returns the carrier and independently checked authored-payload digests.
+Keep the expected pins from the original authoring and link inputs.
+This unsigned profile has separate installed and signing gates.
+
+### Inspect the ScmFixture archive before native pre-start
 
 The Windows [archive reader](msix/prestart_archive_facts.cs) measures the
 package full name and the lengths and SHA-256 digests of both fixed service
@@ -55,6 +94,13 @@ The [native controls](msix/test_prestart_archive_facts.ps1) use two previously
 checked unsigned packages with the same manifest identity and different
 service bytes. Signature and signer verification remain separate from
 these archive observations.
+The fixed deployment owner uses `Open-PrestartArchive -ExpectedPayloadSha256`
+with the checked carrier length and digest. This requires the original
+manifest footprint and exactly six authored files in the base ScmFixture.
+Supply the independent pin as `expected_payload_sha256` when rendering the
+fixed deployment entry. The original SCM window requires the payload-bound
+lease before attempting its signature check and identity launch. Use that
+window for the installed pre-start sequence.
 
 For the held §7.5 pre-start probe, the
 [installed identity entry](msix/observe_installed_identity.ps1) uses the
@@ -140,10 +186,10 @@ The samples supplement the separate signed-artifact, actor and continuous
 quiescence evidence. [Paired SCM controls](msix/test_prestart_scm_window.ps1)
 
 Use `Invoke-PrestartIdentity -Window` with the original SCM window, held
-archive and independent archive and signer pins. The window supplies its
-actor, SID and clock, verifies the signature, and keeps the original lease
-and pins for the fixed observation. After the coordinator validates that
-identity receipt, use `Invoke-PrestartVerifiedScmObservation` with the same
+payload-checked archive and independent archive and signer pins. The window
+supplies its actor, SID and clock, verifies the signature, and keeps the
+original lease and pins for the fixed observation. After the coordinator
+validates that identity receipt, use `Invoke-PrestartVerifiedScmObservation` with the same
 window and the independently pinned observer image. The window permits
 one attempt for each child and requires a successfully released identity
 capture before the second. The enclosing deployment owner supplies
@@ -195,8 +241,9 @@ retain recovery authority.
 
 Render the fixed `prestart_deployment_owner.ps1` with
 [`render_deployment_owner`](msix/prestart_deployment_owner.py) from the
-pinned [entry template](msix/prestart_deployment_owner.ps1.in). Stage the
-returned bytes under that filename and give their returned pin to
+pinned [entry template](msix/prestart_deployment_owner.ps1.in) and the
+independent expected payload digest. Stage the returned bytes under that
+filename and give their returned pin to
 `launch_deployment_watchdog`. Stage the pinned archive as
 `prestart_fixture.msix`. Keep the three installed-identity inputs in
 `identity/` and the two modules, deployment helper and observer beside

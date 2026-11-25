@@ -63,10 +63,12 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         )
         self.sid: str = "S-1-5-21-1337-8128-9999-1001"
         self.signer: str = "a" * 64
+        self.payload_sha256: str = "0123456789abcdef" * 4
 
     def render(self) -> tuple[bytes, Member]:
         return render_deployment_owner(
             self.template, self.template_pin, self.run, self.sid, self.signer, self.pins, 8000, 12000,
+            expected_payload_sha256=self.payload_sha256,
         )
 
     def test_exact_literal_boundary_and_watchdog_pin(self) -> None:
@@ -88,6 +90,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
             "[string]$ownerRole = 'deployment'",
             f"[string]$expectedActorSid = '{self.sid}'",
             f"[string]$signerSha256 = '{self.signer}'",
+            f"[string]$expectedPayloadSha256 = '{self.payload_sha256}'",
             "[int]$workMilliseconds = 8000",
             "[int]$retirementMilliseconds = 12000",
             "[bool]$fullPrestart = $false",
@@ -106,6 +109,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ReceiptRefused, "full pre-start requires both admitted access actors"):
             render_deployment_owner(
                 self.template, self.template_pin, self.run, self.sid, self.signer, self.pins, 8000, 12000,
+                expected_payload_sha256=self.payload_sha256,
                 full_prestart=True,
             )
         run: Run = Run(**vars(self.run), provisioning_actor=object(), standard_actor=object())
@@ -113,6 +117,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         pin: Member
         entry, pin = render_deployment_owner(
             self.template, self.template_pin, run, self.sid, self.signer, self.pins, 8000, 12000,
+            expected_payload_sha256=self.payload_sha256,
             full_prestart=True,
         )
         self.assertEqual(entry.count(b"[bool]$fullPrestart = $true\n"), 1)
@@ -269,6 +274,7 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         changing: ChangedPin = ChangedPin(self.pins)
         result: bytes = render_deployment_owner(
             self.template, self.template_pin, self.run, self.sid, self.signer, changing, 8000, 12000,
+            expected_payload_sha256=self.payload_sha256,
         )[0]
         self.assertIn(b"archive = @{ Bytes = [long]115; Sha256 = '" + b"5" * 64 + b"'", result)
         self.assertEqual(changing.reads, 1)
@@ -304,15 +310,29 @@ class DeploymentOwnerRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ReceiptRefused, "invalid deployment owner signer digest"):
             self.render()
 
+    def test_payload_digest_is_required_and_literal_only(self) -> None:
+        with self.assertRaisesRegex(TypeError, "expected_payload_sha256"):
+            render_deployment_owner(
+                self.template, self.template_pin, self.run, self.sid, self.signer, self.pins, 8000, 12000,
+            )
+        healthy: str = self.payload_sha256
+        for malformed in ("", healthy[:-1], healthy.upper(), healthy + "\n", "'" + healthy[1:]):
+            with self.subTest(malformed=malformed):
+                self.payload_sha256 = malformed
+                with self.assertRaisesRegex(ReceiptRefused, "invalid deployment owner payload digest"):
+                    self.render()
+
     def test_owner_deadline_relationships_and_native_limits(self) -> None:
         for work, retirement in ((True, 2), (0, 1), (500, 500), (500, 499), (500, 30501), (119999, 120001)):
             with self.subTest(work=work, retirement=retirement):
                 with self.assertRaisesRegex(ReceiptRefused, "invalid deployment owner deadlines"):
                     render_deployment_owner(
                         self.template, self.template_pin, self.run, self.sid, self.signer, self.pins, work, retirement,
+                        expected_payload_sha256=self.payload_sha256,
                     )
         result: bytes = render_deployment_owner(
             self.template, self.template_pin, self.run, self.sid, self.signer, self.pins, 90000, 120000,
+            expected_payload_sha256=self.payload_sha256,
         )[0]
         self.assertIn(b"$workMilliseconds = 90000\n[int]$retirementMilliseconds = 120000", result)
 

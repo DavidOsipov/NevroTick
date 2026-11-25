@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 from base64 import b64encode
 from codecs import BOM_UTF8
+from collections.abc import Callable
 from dataclasses import dataclass
 from hashlib import sha256
 from io import BytesIO
@@ -103,23 +104,40 @@ def read_regular(path: str | Path, limit: int, label: str, parent: int | None = 
     return data
 
 
-def read_payload(path: Path, payload_names: set[str]) -> dict[str, bytes]:
+def fixture_member_limit(name: str) -> int:
+    return MAX_XML if name.endswith(".xml") else MAX_FILE
+
+
+def require_directory_roster(directory: int, expected: set[str], reason: str) -> None:
+    """Match the held directory, stopping before any unbounded enumeration."""
+    remaining: set[str] = expected.copy()
+    with os.scandir(directory) as entries:
+        for entry in entries:
+            require(entry.name in remaining, reason)
+            remaining.remove(entry.name)
+    require(not remaining, reason)
+
+
+def read_payload(
+    path: Path, payload_names: set[str], *, member_limit: Callable[[str], int] = fixture_member_limit,
+) -> dict[str, bytes]:
+    assets_names: set[str] = {name for name in payload_names if name.startswith("Assets/")}
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
     directory = os.open(path, flags)
     try:
         before = os.fstat(directory)
-        root_files: set[str] = payload_names - ASSETS
-        require(set(os.listdir(directory)) == root_files | {"Assets"},
-                "authored payload root inventory differs")
-        data = {name: read_regular(name, MAX_XML if name == MANIFEST else MAX_FILE,
-                                   name, directory) for name in sorted(root_files)}
+        root_files: set[str] = payload_names - assets_names
+        require_directory_roster(directory, root_files | {"Assets"}, "authored payload root inventory differs")
+        data: dict[str, bytes] = {
+            name: read_regular(name, member_limit(name), name, directory) for name in sorted(root_files)
+        }
         assets = os.open("Assets", flags, dir_fd=directory)
         try:
             assets_before = os.fstat(assets)
-            require(set(os.listdir(assets)) == {Path(name).name for name in ASSETS},
-                    "authored asset inventory differs")
-            for name in sorted(ASSETS):
-                data[name] = read_regular(Path(name).name, MAX_FILE, name, assets)
+            require_directory_roster(assets, {Path(name).name for name in assets_names},
+                                     "authored asset inventory differs")
+            for name in sorted(assets_names):
+                data[name] = read_regular(Path(name).name, member_limit(name), name, assets)
             require(identity(assets_before) == identity(os.stat("Assets", dir_fd=directory,
                                                                  follow_symlinks=False)),
                     "authored asset directory changed during readback")
@@ -383,14 +401,22 @@ def check_zip_directory(data: bytes, member_count: int) -> int:
     return directory_start
 
 
-def read_archive(data: bytes, archive_names: set[str]) -> dict[str, PackageMember]:
+def read_archive(
+    data: bytes,
+    archive_names: set[str],
+    *,
+    maximum_archive_bytes: int = MAX_ARCHIVE,
+    maximum_expanded_bytes: int = MAX_EXPANDED,
+    member_limit: Callable[[str], int] = fixture_member_limit,
+) -> dict[str, PackageMember]:
+    require(len(data) <= maximum_archive_bytes, "package exceeds the input bound")
     directory_start: int = check_zip_directory(data, len(archive_names))
     with zipfile.ZipFile(BytesIO(data)) as package:
         members = package.infolist()
         require(len(members) == len(archive_names)
                 and {item.orig_filename for item in members} == archive_names,
                 "package inventory differs or contains duplicate, unsafe or signed members")
-        require(sum(item.file_size for item in members) <= MAX_EXPANDED,
+        require(sum(item.file_size for item in members) <= maximum_expanded_bytes,
                 "expanded package exceeds the input bound")
         require(package.start_dir == directory_start, "ZIP central directory extent differs")
         require(all(item.volume == 0 for item in members), "ZIP disk fields differ")
@@ -400,8 +426,8 @@ def read_archive(data: bytes, archive_names: set[str]) -> dict[str, PackageMembe
         members_by_name = {}
         for item, end in zip(physical_members, file_ends, strict=True):
             name = item.orig_filename
-            limit = MAX_XML if name.endswith(".xml") else MAX_FILE
-            require(0 < item.file_size <= limit and 0 < item.compress_size <= MAX_ARCHIVE,
+            require(0 < item.file_size <= member_limit(name)
+                    and 0 < item.compress_size <= maximum_archive_bytes,
                     f"{name} exceeds the package member bound")
             mode = stat.S_IFMT(item.external_attr >> 16)
             require(mode in (0, stat.S_IFREG) and not item.external_attr & 0x10
@@ -543,9 +569,15 @@ def main() -> int:
         cli.exit(1, f"Fixture package refused: {error}\n")
     except (OSError, zipfile.BadZipFile, zlib.error, EOFError, ValueError, RecursionError) as error:
         cli.exit(1, f"Fixture package refused: unreadable input ({type(error).__name__})\n")
+    # The selected roster uses canonical ASCII names. Each frozen digest now
+    # matches the original authored bytes and the corresponding archive member.
+    payload_catalog: bytes = "".join(
+        f"{name}\t{len(members[name].data)}\t{expected[name]}\n" for name in sorted(payload_names)
+    ).encode("ascii")
     print(json.dumps({"status": "unsigned-fixture-package-checked", "package_identity": IDENTITY,
                       "input_set_sha256": args.input_set_sha256,
                       "package_bytes": len(package), "package_sha256": package_sha256,
+                      "payload_sha256": sha256(payload_catalog).hexdigest(),
                       "members": {name: {"bytes": len(member.data), "sha256": sha256(member.data).hexdigest()}
                                   for name, member in sorted(members.items())}}, indent=2))
     return 0

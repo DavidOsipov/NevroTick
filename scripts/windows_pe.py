@@ -16,6 +16,8 @@ from uuid import UUID
 MAX_PE_BYTES = 64 * 1024 * 1024
 # Matches the existing per-file build sandbox ceiling.
 MAX_PDB_BYTES = 256 * 1024 * 1024
+SERVICE_ENTRY_NAME = "nevrotick_service_entry"
+SERVICE_ENTRY_OBJECT = "service-entry.obj"
 _MSF_MAGIC = b"Microsoft C/C++ MSF 7.00\r\n\x1aDS\0\0\0"
 _MSF_BLOCK_SIZE = 4096
 _SUBSYSTEMS = {"gui": 2, "console": 3}
@@ -211,6 +213,182 @@ def static_import_modules(data: bytes, *, subsystem: str) -> dict[str, list[str]
             names.append(_import_module_name(data, sections, name_rva, f"PE {kind} import name"))
         observed[kind] = sorted(names)
     return observed
+
+
+def _check_callback_relocations(
+    data: bytes, optional: int, sections: list[_Section], image_size: int,
+    callback_field: int, callback_rva: int, role: str,
+) -> None:
+    """Preserve a null field or the original empty callback table after relocation."""
+    rva: int
+    size: int
+    rva, size = _directory(data, optional, 5)
+    _require(size >= 8 and 0 < rva <= image_size - size, f"{role} relocation directory has an invalid extent.")
+    offset: int = _file_offset(sections, rva, size, f"{role} relocation directory")
+    end: int = offset + size
+    field_relocated: bool = False
+    while offset < end:
+        _require(end - offset >= 8, f"Incomplete {role.lower()} relocation block.")
+        page: int
+        block_size: int
+        page, block_size = struct.unpack_from("<II", data, offset)
+        _require(page % 4096 == 0 and page < image_size and 8 <= block_size <= end - offset
+                 and block_size % 4 == 0, f"Invalid {role.lower()} relocation block.")
+        for position in range(offset + 8, offset + block_size, 2):
+            entry: int = struct.unpack_from("<H", data, position)[0]
+            kind: int = entry >> 12
+            if kind == 0:  # IMAGE_REL_BASED_ABSOLUTE padding.
+                continue
+            target: int = page + (entry & 0xFFF)
+            _require(kind == 10 and target <= image_size - 8, f"Unsupported {role.lower()} relocation.")
+            if target < callback_field + 8 and callback_field < target + 8:
+                _require(callback_rva != 0 and target == callback_field and not field_relocated,
+                         f"Invalid relocation of the {role.lower()} TLS callback field.")
+                field_relocated = True
+            _require(callback_rva == 0 or target + 8 <= callback_rva or target >= callback_rva + 8,
+                     f"{role} TLS callback slot is covered by a base relocation.")
+        offset += block_size
+    _require(callback_rva == 0 or field_relocated, f"{role} TLS callback field lacks a base relocation.")
+
+
+def _check_executable_rva(
+    data: bytes, optional: int, sections: list[_Section], image_size: int, rva: int, subject: str,
+) -> tuple[int, int]:
+    """Find the section number and offset of an executable mapped byte."""
+    _require(0 < rva < image_size, f"{subject} lies outside the image.")
+    _file_offset(sections, rva, 1, subject)
+    section_table: int = optional + struct.unpack_from("<H", data, optional - 4)[0]
+    for number, (base, virtual_size, _, raw_size) in enumerate(sections):
+        if (base <= rva < base + min(virtual_size, raw_size)
+                and struct.unpack_from("<I", data, section_table + number * 40 + 36)[0] & 0x20000000):
+            return number + 1, rva - base
+    raise ValueError(f"{subject} has no executable file-backed section.")
+
+
+def _preentry_declarations(data: bytes, *, subsystem: str, role: str) -> dict[str, object]:
+    """Read actual entry bytes and loader declarations for one selected subsystem."""
+    _require(type(data) is bytes and 0 < len(data) <= MAX_PE_BYTES,
+             f"{role} startup readback requires bounded immutable PE bytes.")
+    optional: int
+    sections: list[_Section]
+    optional, _, _, sections = _pe_layout(data, subsystem)
+    entry_rva: int = struct.unpack_from("<I", data, optional + 16)[0]
+    image_base: int = struct.unpack_from("<Q", data, optional + 24)[0]
+    image_size: int = struct.unpack_from("<I", data, optional + 56)[0]
+    _check_executable_rva(data, optional, sections, image_size, entry_rva, f"{role} entry")
+
+    tls_rva: int
+    tls_size: int
+    tls_rva, tls_size = _directory(data, optional, 9)
+    callback_rva: int = 0
+    if tls_rva or tls_size:
+        _require(tls_size == 40 and 0 < tls_rva <= image_size - tls_size,
+                 f"{role} TLS directory has an invalid extent.")
+        tls: int = _file_offset(sections, tls_rva, tls_size, f"{role} TLS directory")
+        callback_va: int = struct.unpack_from("<Q", data, tls + 24)[0]
+        if callback_va:
+            callback_rva = callback_va - image_base
+            _require(0 < callback_rva <= image_size - 8,
+                     f"{role} TLS callback table lies outside the image.")
+            callback: int = _file_offset(sections, callback_rva, 8, f"{role} TLS callback table")
+            _require(struct.unpack_from("<Q", data, callback)[0] == 0,
+                     f"{role} startup refuses pre-entry TLS callbacks.")
+        _check_callback_relocations(data, optional, sections, image_size, tls_rva + 24, callback_rva, role)
+
+    imports: dict[str, list[str]] = static_import_modules(data, subsystem=subsystem)
+    _require(not imports["delay"], f"{role} startup refuses delay imports.")
+    return {"entry_rva": entry_rva, "image_base": image_base,
+            "tls_callback_table_rva": callback_rva, "direct_import_modules": imports["direct"]}
+
+
+def service_preentry_declarations(data: bytes) -> dict[str, object]:
+    """Verify the file-backed console entry and declare the pre-entry loader inputs.
+
+    An image may retain its TLS template and index, with either no callback
+    table or a table whose first pointer is null. Refuse pre-entry callbacks,
+    delay imports, and malformed extents before returning any observations.
+    This checks image bytes only. The caller binds the entry code and imports
+    to the selected service link and qualifies any loaded runtime separately.
+    """
+    return _preentry_declarations(data, subsystem="console", role="Service")
+
+
+def _linked_preentry_declarations(
+    data: bytes, map_text: str, *, subsystem: str, role: str, gate_name: str,
+    gate_origins: tuple[str, str], map_limit: int,
+) -> dict[str, object]:
+    """Reconcile the LLD public addresses and offsets with executable PE bytes."""
+    observed: dict[str, object] = _preentry_declarations(data, subsystem=subsystem, role=role)
+    _require(type(map_text) is str and 0 < len(map_text) <= map_limit,
+             f"{role} startup readback requires a bounded LLD map.")
+    public_headers: list[re.Match[str]] = list(re.finditer(
+        r"(?m)^[ \t]+Address[ \t]+Publics by Value[ \t]+Rva\+Base[ \t]+Lib:Object[ \t]*\r?$", map_text))
+    _require(len(public_headers) == 1, f"{role} LLD map has no unique public symbol table.")
+    public_header: re.Match[str] = public_headers[0]
+    preferred: list[str] = re.findall(
+        r"(?m)^[ \t]+Preferred load address is ([0-9A-Fa-f]{16})[ \t]*\r?$", map_text[:public_header.start()])
+    optional: int
+    sections: list[_Section]
+    optional, _, _, sections = _pe_layout(data, subsystem)
+    base: int = struct.unpack_from("<Q", data, optional + 24)[0]
+    _require(len(preferred) == 1 and int(preferred[0], 16) == base,
+             f"{role} LLD map preferred address differs from the PE image base.")
+    image_size: int = struct.unpack_from("<I", data, optional + 56)[0]
+    map_entry: re.Match[str] | None = re.compile(
+        r"(?m)^[ \t]+entry point at[ \t]+([0-9A-Fa-f]{4}):([0-9A-Fa-f]{8})[ \t]*\r?$"
+    ).search(map_text, public_header.end())
+    if map_entry is None:
+        raise ValueError(f"{role} LLD map has no public symbol table terminator and entry point.")
+    public_rows: str = map_text[public_header.end():map_entry.start()]
+
+    rvas: dict[str, int] = {}
+    for name in (gate_name, "mainCRTStartup"):
+        matches: list[tuple[str, str, str, str]] = re.findall(
+            rf"(?m)^[ \t]+([0-9A-Fa-f]{{4}}):([0-9A-Fa-f]{{8}})[ \t]+{name}"
+            r"[ \t]+([0-9A-Fa-f]{16})[ \t]+([^\r\n]+)\r?$", public_rows)
+        _require(len(matches) == 1, f"Linked {role} {name} public symbol is absent or ambiguous.")
+        segment: str
+        offset: str
+        address: str
+        origin: str
+        segment, offset, address, origin = matches[0]
+        rva: int = int(address, 16) - base
+        mapped: tuple[int, int] = _check_executable_rva(data, optional, sections, image_size, rva, f"{role} {name}")
+        _require((int(segment, 16), int(offset, 16)) == mapped,
+                 f"Linked {role} {name} segment and preferred address disagree.")
+        if name == gate_name:
+            _require(origin.strip() in gate_origins, f"Linked {role} gate object differs.")
+            _require((int(map_entry[1], 16), int(map_entry[2], 16)) == mapped,
+                     f"{role} LLD map entry point differs from the gate symbol.")
+        rvas[name] = rva
+    gate: int = rvas[gate_name]
+    crt: int = rvas["mainCRTStartup"]
+    _require(gate == observed["entry_rva"] and crt != gate,
+             f"PE entry is not the distinct {role} baseline gate with the original CRT symbol.")
+    return {**observed, "crt_startup_rva": crt}
+
+
+def service_link_preentry_declarations(data: bytes, map_text: str) -> dict[str, object]:
+    """Bind the fixed console gate and distinct CRT public to executable image bytes."""
+    return _linked_preentry_declarations(
+        data, map_text, subsystem="console", role="Service", gate_name=SERVICE_ENTRY_NAME,
+        gate_origins=(SERVICE_ENTRY_OBJECT, "/work/" + SERVICE_ENTRY_OBJECT), map_limit=2 * 1024**2,
+    )
+
+
+def ui_preentry_declarations(data: bytes, map_text: str, *, object_sha256: str) -> dict[str, object]:
+    """Bind the guarded GUI entry and distinct CRT public to executable image bytes.
+
+    Independent disassembly checks the transfer and startup instructions.
+    Runtime dependencies qualify separately.
+    """
+    _require(type(object_sha256) is str and re.fullmatch(r"[0-9a-f]{64}", object_sha256) is not None,
+             "UI startup readback requires the exact gate object digest.")
+    leaf: str = f"nevrotick-ui-entry-{object_sha256}.obj"
+    return _linked_preentry_declarations(
+        data, map_text, subsystem="gui", role="UI", gate_name="nevrotick_ui_entry",
+        gate_origins=(leaf, "/work/metadata/" + leaf), map_limit=64 * 1024**2,
+    )
 
 
 def ui_resource_payloads(data: bytes) -> tuple[bytes, bytes]:

@@ -439,6 +439,86 @@ class PinnedReferenceExchangeTests(unittest.TestCase):
         with self.assertRaisesRegex(TRIAL.TrialRefused, "stream differs from receipt"):
             self.compare(pairing, stream=self.app.stream.replace(b"qpc_before=100", b"qpc_before=99", 1))
 
+    def test_wire_order_must_be_possible_even_when_both_local_wall_intervals_agree(self) -> None:
+        offset: int
+        for offset in (0, 10_019, 10_020, 10_021):
+            # Hold the transmit leg's wall interval fixed while moving its wire
+            # interval across the receiver's latest possible wire tick (20020 ns).
+            tx: dict[str, object] = {
+                **self.tx, "wire_utc_ns": [10_000 + offset, 10_240 + offset],
+                "application_minus_wire_ns": [-20 - offset, -20 - offset],
+            }
+            pairing: bytes = self.encoded(pre_send=tx)
+            with self.subTest(transmit_earliest_ns=10_000 + offset):
+                if offset == 10_021:
+                    with self.assertRaisesRegex(TRIAL.TrialRefused, "wire transmit interval follows receive interval"):
+                        self.compare(pairing)
+                else:
+                    self.assertEqual(self.compare(pairing), (230, 48))
+
+    def test_application_placements_must_permit_physical_order_with_unchanged_wall(self) -> None:
+        cases: tuple[tuple[str, tuple[int, int], tuple[int, int], str | None], ...] = (
+            ("transmit follows application", (-1, -1), (1, 1), None),
+            ("both touch zero", (0, 0), (0, 0), None),
+            ("zero at the transmit edge", (0, 1), (1, 1), None),
+            ("zero at the receive edge", (-1, -1), (-1, 0), None),
+            ("both straddle zero", (-1, 1), (-1, 1), None),
+            ("transmit precedes application", (1, 1), (1, 1),
+             "pre-send application interval follows wire transmit"),
+            ("receive follows application", (-1, -1), (-1, -1),
+             "receive-return application interval precedes wire receive"),
+        )
+        label: str
+        tx: tuple[int, int]
+        rx: tuple[int, int]
+        reason: str | None
+        for label, tx, rx, reason in cases:
+            # Hold the modeled wall and wire ranges fixed. Offsetting the residual
+            # keeps each independently expected local-wall range unchanged.
+            tx_residual: tuple[int, int] = (-220 - tx[0], -200 - tx[1])
+            rx_residual: tuple[int, int] = (-195 - rx[0], -172 - rx[1])
+            tx_pairing: dict[str, object] = {
+                **self.tx, "application_minus_wire_ns": tx, "local_wall_minus_utc_ns": tx_residual,
+            }
+            rx_pairing: dict[str, object] = {
+                **self.rx, "application_minus_wire_ns": rx, "local_wall_minus_utc_ns": rx_residual,
+            }
+            pre: TRIAL.HeldOutComparison = replace(self.app.pre, reference=replace(
+                self.app.pre.reference, application_minus_wire=TRIAL.Nanoseconds(*tx),
+                local_wall_minus_utc=TRIAL.Nanoseconds(*tx_residual),
+            ))
+            receive: TRIAL.HeldOutComparison = replace(self.app.receive, reference=replace(
+                self.app.receive.reference, application_minus_wire=TRIAL.Nanoseconds(*rx),
+                local_wall_minus_utc=TRIAL.Nanoseconds(*rx_residual),
+            ))
+            pairing: bytes = self.encoded(pre_send=tx_pairing, receive_return=rx_pairing)
+            with self.subTest(case=label, entry="pinned"):
+                if reason is None:
+                    self.assertEqual(self.compare(pairing), (230, 48))
+                else:
+                    with self.assertRaisesRegex(TRIAL.TrialRefused, reason):
+                        self.compare(pairing)
+            with self.subTest(case=label, entry="typed"):
+                if reason is None:
+                    self.assertEqual(self.app.compare(self.app.window, self.app.span, pre=pre, receive=receive),
+                                     (230, 48))
+                else:
+                    with self.assertRaisesRegex(TRIAL.TrialRefused, reason):
+                        self.app.compare(self.app.window, self.app.span, pre=pre, receive=receive)
+
+    def test_all_four_physical_event_intervals_can_touch(self) -> None:
+        # Four UTC event intervals coincide. Separate residuals retain the
+        # original local-wall ranges [9780, 10040] and [19805, 19848].
+        tx: dict[str, object] = {
+            **self.tx, "wire_utc_ns": [15000, 15000], "application_minus_wire_ns": [0, 0],
+            "local_wall_minus_utc_ns": [-5220, -4960],
+        }
+        rx: dict[str, object] = {
+            **self.rx, "wire_utc_ns": [15000, 15000], "application_minus_wire_ns": [0, 0],
+            "local_wall_minus_utc_ns": [4805, 4848],
+        }
+        self.assertEqual(self.compare(self.encoded(pre_send=tx, receive_return=rx)), (230, 48))
+
     def test_pairing_and_original_artifact_pins_are_checked(self) -> None:
         pairing: bytes = self.encoded()
         pin: str = sha256(pairing).hexdigest()

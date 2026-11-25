@@ -360,7 +360,9 @@ def compare_held_out_exchange(
 
     Both results are worst-case disagreements in nanoseconds, in T1/T4 order.
     The original application brackets and external paired span are checked
-    separately. The bench owner remains responsible for physical validity.
+    separately. The paired wire and placement intervals must permit pre-send,
+    transmission, reception and receive-return in that order. Equality is valid.
+    The bench owner remains responsible for physical validity.
     """
     if type(validity) is not QpcValidityWindow or type(span) is not PairedExchangeSpan:
         raise TrialRefused("invalid exchange validity inputs")
@@ -413,6 +415,12 @@ def _compare_retained_exchange(
             exchange.modeled_leg(event, comparison.local_wall), reference,
             declared_error_ns=comparison.declared_error_ns, leg_budget_ns=comparison.leg_budget_ns,
         ))
+    if pre_send.reference.wire_utc.earliest > receive_return.reference.wire_utc.latest:
+        raise TrialRefused("wire transmit interval follows receive interval")
+    if pre_send.reference.application_minus_wire.earliest > 0:
+        raise TrialRefused("pre-send application interval follows wire transmit")
+    if receive_return.reference.application_minus_wire.latest < 0:
+        raise TrialRefused("receive-return application interval precedes wire receive")
     return results[0], results[1]
 
 
@@ -496,6 +504,8 @@ def compare_pinned_reference_exchange(
     legs each contain the event label and three closed nanosecond intervals.
     Modeled wall, validity and budgets are supplied separately by the caller.
     Both returned disagreements are in nanoseconds, in transmit/receive order.
+    The wire and placement intervals must permit the application and wire
+    event order on a common UTC coordinate.
 
     The bench owner supplies the pairing pin and remains responsible for the
     physical acquisition, chart, calibration, evidence independence and complete
