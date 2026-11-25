@@ -95,9 +95,9 @@ Its [handoff](tasks/slint-gui-handoff.md) records the implemented fixture workfl
 original GUI GPL-3.0-only grant, branch checks and remaining backend, native and
 critical-text approval gaps. Combined-tree qualification remains separate.
 
-The seven-member Rust workspace contains portable protocol/numerical fixtures,
-bounded loopback acquisition and address rounds, portable service contracts and
-the sample-data UI. Current Core work includes finite phase plans and
+The eight-member Rust workspace contains portable protocol/numerical fixtures,
+bounded loopback acquisition and address rounds, portable service contracts,
+narrow native Windows adapters and the sample-data UI. Core work includes finite phase plans and
 achieved-baseline feedback. These are development components, not an integrated
 time synchronization service.
 
@@ -112,15 +112,19 @@ variants on historical candidate `964a9573` have scoped accounting;
 37 Windows-only gaps and native/generation gates remain. Recurring native
 operation is not enabled by the probe.
 
-Current Core/Engine product work follows the existing
-[adaptive phase-correction contract](tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
-inside `FixturePhasePlanOwner`, preserving actual issue/settlement custody and
-explicit numerical profiles. Production defaults, native issuers and full Core
-qualification remain open.
+Current Core/Engine work qualifies the independent physical reference, read-side
+mapping and validity issuer selected by
+[development §7](docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026).
+The [rebuilt authenticated timing pair](tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+completed its exact offline Windows laboratory scope and retained original
+application captures, with measurement unavailable and zero sample eligibility.
+Production date/scale/quality authority, positive Core history admission, native
+issuers and full Core qualification remain open. Earlier adaptive-phase fixture
+results retain their exact candidates and qualification scope.
 
-The preceding private [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
-is implemented; its actual caller supplies `None`, retaining numerical
-unavailability and the original history. Its [Rust 1.100 receiver continuation](tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+The earlier 13 November [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
+checkpoint implemented the private receiver with its caller supplying `None`,
+retaining numerical unavailability and the original history. Its [Rust 1.100 receiver continuation](tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
 on candidate `82a19ffa` passes 410 ordinary/410 optimized tests, 34 ownership/privacy
 compiler controls, 69 doctests, format and GNU/MSVC Clippy. Synthetic forwarding
 faults are detected without generated-mutation or native qualification credit.
@@ -131,10 +135,11 @@ stay closed until complete fresh source/helper/roster and reviewed inventory
 admission, followed by required 90% coverage/95% mutation qualification. Old
 607/E9 results on `964a9573` supply no current metric credit.
 
-Experimental results remain ineligible for clock control. The complete native
-KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,
-installed services, clock changes, Android, DoQ, pinning and the complete
-installer remain future work.
+Experimental results remain ineligible for clock control. Production
+KE/TLS/CNG/UDP qualification, NTP/NTS acquisition and Core admission,
+installed product services, clock changes, Android, DoQ, pinning and the complete
+installer remain future work. Scoped native laboratory observations do not
+complete these product gates.
 
 See the [implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
 and [task index](tasks/README.md) for component evidence and qualification gaps.
@@ -158,6 +163,7 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
 | [nevrotick-engine](crates/nevrotick-engine/) | Bounded experimental loopback/address acquisition and a feature-gated NTS-KE/protected-datagram prototype; no production service or clock authority. |
 | [windows-platform](crates/windows-platform/) | Portable service lifecycle, SCM projection and exact-role privilege contracts; laboratory consumers remain separate from production/native qualification. |
+| [windows-platform-native](crates/windows-platform-native/) | Narrow native clock, DNS, process, service and process-policy adapters; actual task evidence defines their qualification scope. |
 
 ## Getting started with development
 

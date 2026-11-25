@@ -1,8 +1,8 @@
 # Roughtime and Khronos/Ananke coordination task
 
 **Date:** 3 November 2026, Asia/Tbilisi<br>
-**Current integration baseline:** `DavidOsipov/NevroTick@7550f83292f959a6d0acbb2d396e964a6bcf4b01`; 4 November 2026 leap-policy integration, NV-TA-001 revision 1.2. Earlier amendment and receipt identities are retained below.<br>
-**Design owner:** [NV-TA-001](../docs/plans/time-assurance-integration.md)<br>
+**Retained leap-policy integration baseline:** `DavidOsipov/NevroTick@7550f83292f959a6d0acbb2d396e964a6bcf4b01`; 4 November 2026, NV-TA-001 revision 1.2. Earlier amendment and receipt identities are retained below.<br>
+**Current design owner:** [NV-TA-001, revision 1.5](../docs/plans/time-assurance-integration.md), including the 14 November scheduling amendment below.<br>
 **Mode/status:** documentation and future work definition; protocol/runtime implementation and qualification have not run.<br>
 **Coordinator:** future numerical/protocol owner, with independent security and Windows reviewers; David owns material policy choices.
 

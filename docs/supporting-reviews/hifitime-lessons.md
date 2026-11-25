@@ -1,5 +1,12 @@
 # Hifitime recommendations: critical disposition
 
+**Controlling owner amendment — 6 November 2026:** [OD-10 §14.1](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work and related verifier/admission repairs until after actual V1
+release. The proof-first sequencing and continuations below retain their
+5 November historical scope; follow the [current development queue](../plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Missing proofs do not block V1. Historical proof evidence keeps its exact scope,
+and all nonformal qualification gates remain.
+
 **Reviewed:** 5 November 2026, Asia/Tbilisi. Source review and documentation
 integration; no Hifitime execution, solver campaign or product repair.
 

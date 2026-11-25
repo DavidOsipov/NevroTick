@@ -2,7 +2,7 @@
 
 **Distribution decision — 21 November 2026:** NevroTick will not be published in Microsoft Store. [OD-05 §7.9](docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects direct distribution of one complete MSIX because David rejects the Store publisher indemnity requirements. Signing is deferred for later resolution; package/source preparation continues without a Store-submission prerequisite.
 
-**Updated:** 21 November 2026 (Asia/Tbilisi)
+**Updated:** 26 November 2026 (Asia/Tbilisi)
 
 **Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
 

@@ -2,7 +2,7 @@
 
 **Distribution amendments — 21 and 25 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts the TUF-authenticated complete-MSIX updater with one Update now decision. Exact client/signing/trust/hosting, time/state and native deployment/recovery qualification remain open. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
 
-**Created:** 29 October 2026; **documentation reconciliation:** 12 November 2026
+**Created:** 29 October 2026; **current-routing reconciliation:** 26 November 2026
 
 **Status:** P0–P7 remain open. Core frequency-request/achieved-baseline feedback and the earlier laboratory KE-to-request handoff have completed their selected host exits. The default-off Engine NTS prototype now contains private association/request custody, authenticated-response admission, an explicitly selected protected-datagram path and bounded private recovery. Its latest source checkpoint retains unresolved recovery, generation and native gates; it is not a whole-Engine qualification. Production sample admission, integrated services/clock control, full S1.4/P1/P2, Slint backend/text approval and release qualification remain open. [Section 7](#7-next-executable-task-for-a-development-agent) owns the current Core/Engine continuation and exact evidence boundaries.
 
@@ -42,17 +42,17 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** continue the source-owned KE Preview contract in
-[section 7](#7-next-executable-task-for-a-development-agent) after the completed
-five-file GNU qualification of the installed numeric-source configuration.
-Preserve the installed revision at the final guards and original completion
-receivers. The earlier seven-owner Core fixture checkpoint retains its scoped
-result. David authorizes the required resources and bounded main-Windows tests.
-The [Engine nested-worker child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
-passes 235 scripted KE cases with process custody and completed cleanup on its
-recorded candidate. Real TLS/CNG/UDP, production Core suppliers and broader
-native qualification remain open. Other workstreams retain their owners and
-prerequisites, including the formal, fuzz, storage and UI holds.
+**Immediate priority:** follow [section 7's dependency order](#resume-in-dependency-order--23-november-2026).
+The [rebuilt authenticated timing pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+completed its exact offline Windows laboratory scope. The next S2.1/W11-W01
+child is the independent physical reference, read-side mapping and validity
+issuer, with justified date, era, scale and uncertainty inputs before positive
+Engine-to-Core history admission. The seven-owner Core union and earlier KE
+Preview, configuration and worker-custody receipts retain their original
+candidates; none supplies production calibration or a whole-Engine pass.
+Independent service and package source work can continue when its own
+prerequisites are satisfied. Existing scoped Windows authorization, the blocked
+S134 artifact and the separate formal, fuzz, storage and UI holds remain.
 
 **Earlier completed Core checkpoint:** the [frequency-request/achieved-baseline completion ledger](../../TOOLING.md#baseline-feedback-final-qualification) records 557 ordinary/557 optimized tests, 103 doctests, selected contracts and all five line gates. Its complete 1,145-variant union contains 701 caught, 435 compiler-unviable and nine reviewed equivalent misses, with no timeout or unresolved survivor and no added kills for equivalents. The [existing Core task](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026) retains frozen routing and source-specific evidence. These selected Linux fixture gates are complete; full S1.4/P1 and production/native qualification remain open.
 
@@ -104,9 +104,9 @@ that workstream's experiment pause or select its product default.
 
 | Area | Observed repository state | Consequence for the next agent |
 | --- | --- | --- |
-| Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
+| Cargo | The [workspace](../../Cargo.toml) has eight members: fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml), bounded [engine](../../crates/nevrotick-engine/Cargo.toml), portable [windows-platform](../../crates/windows-platform/Cargo.toml) and narrow [windows-platform-native](../../crates/windows-platform-native/Cargo.toml) adapters. | Inspect current files and linked task evidence; fixture numerical source, native adapters and loopback acquisition do not establish the complete Core, installed services or production acquisition. |
 | UI | `main` → `slint_host` → checked fixture/presentation/native-input owners → v0.4 Slint views. The original GUI is GPL-3.0-only; Core/engine retains GPL-2.0-only. Win32 is retained historical source. | Follow the [GUI handoff](../../tasks/slint-gui-handoff.md) and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui). Keep backend effects unavailable until their actual owners/contracts; reconcile the combined candidate before reusing branch receipts. One Slint product UI, no automatic Win32 fallback. |
-| UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) retains historical GUI42/43/44 and separate final-head/merge hosted results in the [GUI handoff](../../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026). [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Reconcile actual receipt inputs before reuse; private cloud raw evidence is absent locally. Hosted portable/security/secret-scan passes coexist with failed PR aggregate CodeQL/GitGuardian and open external dispositions. Native/backend/text approval, GUI coverage/mutation and package qualification remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
+| UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) retains historical GUI42/43/44 and separate final-head/merge hosted results in the [GUI handoff](../../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026). [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Reconcile actual receipt inputs before reuse; private cloud raw evidence is absent locally. At the recorded hosted readback, portable/security/secret-scan passes coexisted with failed PR aggregate CodeQL/GitGuardian and open external dispositions; this audit does not refresh those external statuses. Native/backend/text approval, GUI coverage/mutation and package qualification remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
 | Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and achieved-baseline feedback exist, alongside bounded Engine acquisition and the default-off NTS association/protected-datagram/recovery prototype. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The workspace combines the Slint GUI GPL3 graph and minimal Engine Tokio/getrandom graph, plus the default-off `ke-association-prototype` TLS/provider/AEAD feature graph admitted for the bounded experiment. Exchange and Core keep reviewed local edges; production provider adoption and service integration remain gated. | Preserve both owners' exact feature/grant/source constraints and the compatible compiler repair; qualify the combined graph/configuration separately. Branch receipts and the [engine checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) apply only to their recorded inputs. |
 | Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.3](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
@@ -5301,6 +5301,17 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**26 November Windows security review intake:** the [existing W11 record](../../tasks/windows11-integration.md#441-windows-security-review-intake--26-november-2026)
+and [storage §6.5 intake](../../tasks/windows-protected-storage.md#windows-security-review-intake--26-november-2026)
+route the 24 November source assessment into the existing service-network,
+diagnostic, storage, mitigation and package qualification triggers. Import the
+applicable paired cases before dependent adapters; source review is no native
+or installed-product pass. [WINSEC-0](../../ROADMAP.md#winsec-0--post-v1-windows-security-compatibility-and-evidence)
+retains its reported post-V1 enterprise-pinning deferral and ARC-1 provenance
+limit, with other technologies conditional. Existing OPEN-8/R-05 V1 duties,
+section 7's order and all holds remain; no TRUST-C01 prerequisite or new rank
+is added.
+
 **25 November adopted updater:** [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
 and [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
 route source-only contracts/GUI into S0.5/P5 and trust/storage/package/lifecycle
@@ -5350,7 +5361,7 @@ not additional acceptance IDs or evidence that another running agent has read th
 
 | Assignment / owner | Current disposition and implementation trigger |
 | --- | --- |
-| [ST-W01](../../tasks/windows-protected-storage.md#st-w01-prepare-one-construction-and-failure-contract) — storage lead/platform/security | Ready source-only; first storage assignment. Produce the construction row, outcome table and ownership/reconciliation map or exact blockers, within section 7's current product priority. |
+| [ST-W01](../../tasks/windows-protected-storage.md#st-w01-prepare-one-construction-and-failure-contract) — storage lead/platform/security | The [10 November documentary card](../../tasks/windows-protected-storage.md#7-st-w01-documentary-card--10-november-2026) is complete; close its named engineering blockers before construction or ST-W02 admission. The [24 November supporting enclave card](../../tasks/windows-protected-storage.md#83-source-only-next-card-and-verification-scope) is a separate source-only continuation. Preserve section 7's current priority, conditional adoption and the storage pause. |
 | [ST-W02](../../tasks/windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability) — storage/model QA | Planned portable slice after relevant ST-W01 contracts and implementation admission. Separate operation outcome from owner usability; model issued/live/durable/acknowledged state and failure during recovery. |
 | [ST-W03](../../tasks/windows-protected-storage.md#st-w03-constrain-directory-authority-before-destructive-effects) — Windows/filesystem/lifecycle | Apply before P3/S3.3 or P6 file adapters: admit directory authority and actual opened objects before destructive effects; bind replacement and handle release to the owner. Native proof remains held. |
 | [ST-W04](../../tasks/windows-protected-storage.md#st-w04-qualify-each-cng-call-and-its-crypto-result) — crypto/platform | Apply when freezing the construction and before selected CNG adapters: per-call no-UI/refusal contracts, bounded returned-property decoding, exact parameters/lengths and independent crypto expectations. Actual provider qualification remains held. |
@@ -5461,6 +5472,12 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Windows security review intake — 26 November 2026:** consume the
+[W11 §4.41 dispositions](../../tasks/windows11-integration.md#441-windows-security-review-intake--26-november-2026)
+and linked storage intake at their existing consumer triggers, as routed through
+the [imported queue](#imported-hardening-work-queue). Required V1 qualification
+refinements and conditional post-V1 WINSEC-0 evaluations retain separate scopes.
 
 **TUF-authenticated updater — 25 November 2026:** [W11 §4.40](../../tasks/windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026)
 implements the planning handoff for accepted OD-05 §7.10: metadata-only Check,

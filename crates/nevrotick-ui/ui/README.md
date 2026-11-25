@@ -6,6 +6,10 @@ The old Win32 adapter remains unexported historical source. This is still a
 fixture application: source implementation and portable rendering do not qualify
 live services, clock effects or native Windows behavior.
 
+The 25 November About updater is implemented only in the HTML reference.
+Rust/Slint operation state, copy and callbacks remain planned in the
+[updater handoff](../../../tasks/slint-gui-handoff.md#manual-updater-contract-and-acceptance--25-november-2026).
+
 Start at the [AI handoff](../../../tasks/slint-gui-handoff.md), then the
 [current S0.5 evidence](../../../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
 and [hardening handoff](../../../tasks/s0.5-ui-comparison.md#planned-hardening-gui-readiness-review--6-november-2026).
@@ -68,9 +72,12 @@ evidence. The capture example renders the real AppWindow offscreen through
 Slint's public software platform; it is not a native Windows test.
 
 The historical GUI41 checkpoint passed 183 GUI tests, 17 GUI doctests, 143 source
-controls and 50 captures. Windows-target type checking and Clippy ran on Linux;
-Windows SDK/CRT/link, actual input/clipboard/COM/UIA/Narrator/DPI/tray/toast,
-teardown and resource observations remain open. D1–D3, backend integration,
+controls and 50 captures. Its Windows-target type checking and Clippy ran on Linux.
+The later 23 November [configured release link](../../../tasks/slint-gui-handoff.md#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026)
+and [guarded startup/Close observation](../../../tasks/slint-gui-handoff.md#observe-guarded-slint-startup-and-caption-close--23-november-2026)
+cover their exact build and elevated unpackaged Windows fixture. Ordinary-user
+and installed activation, actual input/clipboard/COM/UIA/Narrator/DPI/tray/toast,
+full teardown diagnostics and resource observations remain open. D1–D3, backend integration,
 process-mitigation startup, package qualification and independent critical-text
 approval retain their existing gates. Source preparation lifts none of the
 native, fuzz or storage holds.

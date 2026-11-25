@@ -641,13 +641,14 @@ A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
-**Current Slint source continuation — 6 November 2026:** the
+**Historical Slint source checkpoint — 6 November 2026:** the
 [GUI handoff](../tasks/slint-gui-handoff.md) records the implemented v0.4 fixture
 GUI, strict text-contract2 producer/loaders, separate GPL-3.0-only original GUI
 grant and PR10 merge `3ff7e91`. Its
 [hosted reconciliation](../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026)
-records final-head/merge portable, Security gate and secret-scan passes; the PR
-aggregate CodeQL/GitGuardian checks remain failed and external dispositions open.
+records final-head/merge portable, Security gate and secret-scan passes; at that
+readback, the PR aggregate CodeQL/GitGuardian checks were failed and external
+dispositions open. This record does not re-query those external checks.
 Local source controls on the later numerical checkpoint `5dcc465` pass 509/509
 text IDs and 53 selected controls; its hosted/rendered/native results are not qualified.
 GUI42/43/44 retain historical scopes, with private raw evidence absent locally.

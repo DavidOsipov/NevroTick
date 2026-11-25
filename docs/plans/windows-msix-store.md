@@ -749,7 +749,20 @@ the delivered package, publisher identity or state schema changes.
 
 ### 7.1 Concrete source inventory and manifest profile
 
-**Inspected baseline:** `01bcb679cdf09720a1ae54dfdcae25b0864f4d77`, complete
+**Current source/evidence routing — 26 November 2026:** the inventory below is
+the preserved 3 November snapshot. The current [UI entry point](../../crates/nevrotick-ui/src/main.rs)
+selects Slint, and the [workspace](../../Cargo.toml) also contains the shared
+`windows-platform` and `windows-platform-native` owners. The
+[service fixture](../../tools/windows-service-fixture/README.md) supplies separate
+inert laboratory hosts. The [guarded combined archive](../../tasks/windows11-integration.md#pack-and-verify-the-guarded-slint-and-service-combination)
+has an unsigned pack/readback receipt, and the separate
+[ScmFixture paired observation](../../tasks/windows11-integration.md#complete-the-paired-installed-scmfixture-observation)
+has a scoped test-signed deployment/identity/SCM receipt. Neither establishes
+production services, a lifecycle helper, final signing or installed-release
+qualification. Use those owners and actual manifests for current preparation;
+the old member/dependency counts and Win32 description below are historical.
+
+**Historical inspected baseline:** `01bcb679cdf09720a1ae54dfdcae25b0864f4d77`, complete
 untruncated Git tree, root/member Cargo manifests, lockfile, UI entry point and
 Windows target configuration. The main workspace has six members; the lockfile
 contains 31 package records, including those six local members. These are source
@@ -1249,7 +1262,17 @@ version B does not itself restore the state left by version A.
 
 #### First provisioning discriminator: inspect and open handles only
 
-**Held and unexecuted.** W11-W05/S0.6 owns this bounded question; W11-W10 supplies
+**Current disposition — 26 November 2026:** the
+[paired installed ScmFixture observation](../../tasks/windows11-integration.md#complete-the-paired-installed-scmfixture-observation)
+completed deployment, installed-image identity and query-only SCM observation
+for its named test-signed laboratory profile. Its two roles remained Disabled
+and Stopped at the observed points; retirement and removal were verified.
+Earlier failed and partial attempts retain their exact receipts. Independent
+provisioning/standard-user access captures, exact protected owner/DACL comparisons,
+continuous quiescence and production provisioning remain open. This is partial
+evidence for the discriminator below, not a completed access or lifecycle gate.
+
+W11-W05/S0.6 owns this bounded question; W11-W10 supplies
 the exact complete inert package and OS/channel row. The existing disposable
 environment card must admit fixture bytes, installation setup, one owned
 machine/session, allowed operations, finite resources/time/output, cleanup and
@@ -1273,23 +1296,26 @@ The [configuration identity child](../../tasks/windows11-integration.md#observe-
 adds the stored binary path and start name to the existing query in step 2.
 The [configured privilege child](../../tasks/windows11-integration.md#observe-scm-configured-required-privileges--22-november-2026)
 adds a separate bounded query for the stored required-privilege list. Absent
-and empty lists fail the eventual explicit role-profile check. No native
-result for this new query is established yet.
+and empty lists fail the eventual explicit role-profile check. The paired
+installed observation now reaches this query and reports its bounded shape;
+it does not establish a conforming production privilege list or effective token.
 The [configured SID-type child](../../tasks/windows11-integration.md#observe-the-configured-scm-service-sid-type--22-november-2026)
 adds the raw configured DWORD through the same query-only handle. Its
 activation follows the documented next system start. Step 2 observes those
 settings on the untouched deployment objects. The later fixed-changes stage
 compares them with the approved role profile.
-The resolved installed image, its package membership and effective token
-still require separate observations.
+Resolved installed-image and package membership remain separate from these
+configured settings and are observed by the companion below. Effective runtime
+tokens still require their own observations.
 The [two-role pre-start selector](../../tasks/windows11-integration.md#observe-the-two-installed-s06-service-roles-at-pre-start--22-november-2026)
 assembles the existing query-only reads for step 2. Its compiled source
-reports numeric fields and redacted shape only. Installed execution
-and independent identity/descriptor readback stay held. The
+reports numeric fields and redacted shape only. The paired installed execution
+and image-identity readback have the scoped receipt above; independent
+protected owner/DACL comparison and SID interpretation remain open. The
 [installed-image companion](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 checks each fixed role against the registered exact lab package. The
-path and file controls passed in Windows Sandbox. The joined installed
-run requires the independent signed artifact, deployment subject and
+path and file controls passed in Windows Sandbox. The completed paired run
+binds the independently admitted signed artifact, deployment subject and
 same supervised observation window. The [step-3
 access probe](../../tasks/windows11-integration.md#observe-pre-start-service-access-for-the-proposed-provisioning-actor--22-november-2026)
 prepares the separate required-right acquisition/close observations
@@ -1299,8 +1325,10 @@ retain their exact PE/PDB and packer identities. The
 [current DLL-search checkpoint](../../tasks/windows11-integration.md#restrict-the-default-dll-search-before-both-service-entries-connect)
 supplies the matched observer, both inert roles and checked unsigned archive.
 Follow the [service-provisioning order](../../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026).
-The selectors remain unexecuted pending the exact admitted signed lab fixture,
-independently bound actor contexts and common quiescent observation window.
+The separate access selectors still require independently bound actor contexts
+and their own accepted captures under the original observation owner. Point
+observations do not establish continuous quiescence, service startup, effective
+role tokens, permitted configuration writes or a production provisioner.
 
 1. Use initially disabled inert functional-service fixtures. Observe whether
    deployment registers them without UI launch; keep absent registration separate

@@ -1,6 +1,16 @@
 # Qualification restart checkpoint — 7 November 2026
 
-## Current assignment — 9 November 2026
+**Current continuation — 26 November 2026:** the
+[24 November re-admission and subsequent closeouts](#re-admit-current-portable-metadata-inputs--24-november-2026)
+own the latest recorded candidate, ordinary roster, line evidence, completed
+file-specific mutation exits and remaining full-campaign work. Earlier counts,
+source bindings and restart directions below retain their original scope. The
+9 November assignment records authorization, not a request to restart its old
+candidate or replace the current product priority.
+
+<a id="current-assignment--9-november-2026"></a>
+
+## Retained assignment — 9 November 2026
 
 The subsequent [MD-P1–MD-P3 cloud assignment](../../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 authorizes complete portable metadata qualification with **four workers** and a

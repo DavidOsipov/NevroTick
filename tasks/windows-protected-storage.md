@@ -566,6 +566,29 @@ DoQ-only policy, one complete MSI, mandatory-state separation and UI-M0 deferral
 remain unchanged. No implementation, native test, provider or dependency admission
 is claimed by these routing changes.
 
+#### Windows security review intake — 26 November 2026
+
+The [24 November Windows security compilation](../docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026)
+and its completed independent review refine the existing storage and diagnostic
+assignments. This is source-only intake at their current phase/consumer triggers,
+not a provider choice, a new default, native execution or a storage-pause lift.
+The dated 3 November routing above retains its original scope; current delivery
+follows complete direct MSIX under OD-05 §7.9.
+
+| Existing owner | Disposition and next dependent action |
+| --- | --- |
+| ST-W01/ST-W04, construction and CNG outcome owners | Required preparation before the selected provider/key-policy qualification. Extend the [existing documentary card](#7-st-w01-documentary-card--10-november-2026) with provider-specific TPM throttling/lockout, shared effects, denied operations, missing expected roots and legitimate servicing/recovery. Preserve distinct unknown outcomes, actual-work custody and repeated/interrupted recovery; no shared TPM reset or host BitLocker change is admitted. |
+| ST-W07 with W11-W08, diagnostics/privacy | Required preparation when an actual collection or output consumer is reached. Carry bounded synthetic-sentinel, retention/access/export/cleanup and missing/overwritten-observation cases into that owner's receipt. External administrator-owned collectors can retain command lines, paths, DNS names or archived files beyond product deletion; an additional observer such as Sysmon remains conditional QA tooling, not a product dependency or automatic installation. |
+| Separate mandatory-state and lifecycle owners | Preserve mandatory continuity independently of optional-cache provider failures and any authorized fresh-state/no-cache fallback. Final package/role compatibility under managed protection remains with W11-W05/W11-W10 and P5/P6, not a new optional-storage ownership grant. |
+
+The [Windows intake](windows11-integration.md#441-windows-security-review-intake--26-november-2026)
+owns the joined network/observer/package routing. Its reported post-V1 enterprise-
+pinning deferral retains ARC-1's unavailable-original-instruction limitation;
+WINSEC-0's other evaluations remain proposals. No new post-V1 rank, V1
+predecessor or TRUST-C01 prerequisite follows. Existing ST-T/CHECK/DNS-C mappings,
+current development order, applicable Windows/fuzz/UI holds and the storage
+experiment pause remain. None of these cases is recorded as executed.
+
 ### 6.6 Primary development coordinator disposition — 3 November 2026
 
 The primary P0–P7 coordinator has read the imported ST-W queue and §6.5 second-

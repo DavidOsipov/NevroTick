@@ -220,8 +220,12 @@ readers, stored formats and migration paths before claiming compatibility.
 ## 6. Authenticated update and lifecycle design
 
 OneCRL/CRLite transport is a security-data distribution path, distinct from the
-unadopted application auto-updater/TUF research. Select endpoints, protocol and
-dependencies explicitly; do not introduce a general URL-fetch capability.
+TUF-authenticated complete-package updater adopted under
+[OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
+and [architecture §19.8](../windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater).
+Select feed endpoints, protocol and dependencies explicitly; the application
+updater decision supplies no feed authentication or implementation qualification.
+Do not introduce a general URL-fetch capability.
 
 For Mozilla Remote Settings, implement the applicable current protocol [S14]:
 
