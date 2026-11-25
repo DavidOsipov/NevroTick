@@ -1,6 +1,6 @@
 ---
 name: "wsl-cleanup"
-description: "Analyze WSL disk usage and perform authorized cleanup of caches, build outputs, retained artifacts and unused Docker data while preserving working checkouts and live services."
+description: "Analyze WSL disk usage and perform authorized cleanup of history, toolchains, caches, worktrees, verification artifacts and unused Docker data while preserving working checkouts and live services."
 ---
 
 # WSL disk cleanup
@@ -55,7 +55,11 @@ remain a limitation. Do not change ext4 reservations to conceal the shortage.
 Compare allocated bytes with apparent size for sparse files. Docker volume totals,
 database file lengths and shared image-layer sizes can greatly overstate physical
 recovery. Separate measurements may double-count hard links; do not sum overlapping
-parents/children. Final filesystem deltas determine actual recovery.
+parents/children. Count an inode once and check for links outside the removal set
+when estimating recovery; removing one name cannot free blocks held by another.
+Report the gap between same-filesystem `du -x` and `df` where relevant. Attribute
+it only with evidence. Docker storage, inaccessible files and deleted-open files
+are possible contributors. Final filesystem deltas determine actual recovery.
 
 ## Classify candidates by their real owner
 
@@ -92,6 +96,25 @@ Use one mutation owner. Read-only workers may inventory independent scopes.
 After a deletion failure or unexpected identity/reference change, stop that target,
 report the partial result and reassess; do not escalate to broader force/removal.
 
+### Git worktrees
+
+Use `git worktree list --porcelain` per owning repository. Distinguish the main
+checkout, registered linked worktrees, stale registrations and independent
+clones. Recheck missing paths on the owning host. A sandbox may hide a live
+`/tmp`, `/dev/shm` or WSL mount. Inspect locks, active writers, nested repositories,
+ignored artifacts, staged and unstaged changes, and commits reachable only from
+the worktree. A pushed main branch establishes committed state. Local files and
+independent Git metadata still require their own disposition. For a reconstructed
+copy, compare the complete index and actual file bytes and modes with the retained
+commit, and account for untracked files, refs and reflogs.
+
+Use Git's native removal for exact linked paths; use force only when the authorized
+scope includes discarding their local changes and artifacts. Before removing the
+last reference to a detached commit, preserve an agreed recovery ref or establish
+another retained ref. Verify the exact remaining registrations and the main
+checkout's HEAD, status and index. Before acting on a claim that work is pushed,
+check the actual remote head when it matters to the decision.
+
 ### Docker
 
 Inspect `docker system df`, `docker image ls --all --no-trunc`, container identities
@@ -106,14 +129,89 @@ intermediate images: inspect all images and remaining references afterward, then
 remove only authorized unused parents. Reclaimable totals and shared layers are
 estimates, not guaranteed savings. Do not stop or recreate the live database.
 
-### Managed history and evidence
+### Rustup toolchains
 
-Delete retained evidence or conversation history only within the selected scope.
-Preserve authored reports if requested and disclose loss of raw replay artifacts.
+Check `rustup toolchain list`, `rustup show active-toolchain`, `rustup default`,
+and `rustup override list`. Look for repository pins, CI and scripts invoking
+`cargo +VERSION` or setting `RUSTUP_TOOLCHAIN`, documented rollback versions,
+and active compiler processes. Old installs may come from an MSRV search rather
+than a project pin. An override for a missing directory is a separate stale
+configuration entry. Clear that exact override only within the cleanup scope.
+Use `rustup toolchain uninstall` for the confirmed versions, then verify the
+remaining list and run the retained project compiler's version command.
+
+### Editor and MCP caches
+
+Distinguish VS Code extension downloads in `CachedExtensionVSIXs` from installed
+extensions, workspace state and editor history. Confirm which edition and remote
+host own the data. Use the Remote WSL window's **Local History: Delete All**
+command when that history is in scope. If the available client cannot invoke
+it, report the remaining bytes and the editor action.
+
+For a retired MCP server, enumerate registrations and live launchers before
+removing its package cache. Remove the intended registration through the owning
+client, stop only attributable workers if authorized, then use the package
+manager's supported exact-cache removal where available. For npm, match the
+installed package to its `npm cache npx` entry. Recheck after a session or
+daemon launch. A running client can retain an older configuration, and another
+launcher or skill can re-fetch the package. If the cache reappears, check install
+logs and process lineage before retrying removal.
+
+### Managed history
+
+Delete conversation history only within the selected scope.
 For managed history, use the installed application's supported deletion API;
-do not unlink its history files or SQL-delete index rows independently. Serialize
-database mutations and use bounded retries only for transient locks. Any selected
-database integrity/compaction check must respect active writers and ownership.
+do not unlink its files or SQL-delete index rows independently.
+
+- **Codex compression.** Check installed CLI and daemon versions and the app-server
+  protocol for native cold rollout compression. Where supported, `rollout/compress`
+  can reclaim space while retaining readable sessions. The acknowledgment only
+  schedules a pass. Verify completion, retained thread records and representative
+  compressed files. In Codex 0.172.0, this RPC requires experimental capability
+  negotiation and takes no parameters. The local control socket expects
+  WebSocket RPC, even through the raw `app-server proxy`.
+- **Codex deletion.** Freeze approved conversation IDs and their linked families
+  before any mutation. Include spawned and attached threads when checking
+  boundaries. Use recorded recency and rollout mtime across the family, plus a
+  fresh loaded-thread and writer check. Filename dates can be old for a recently
+  resumed conversation. Protect active families, pinned or otherwise retained
+  threads, and out-of-scope links. Verify the installed operation's cascade
+  semantics. A delete can terminate loaded sessions in some versions.
+  Where supported, use `codex delete` by exact UUID or app-server `thread/delete`.
+  Serialize requests and verify disappearance of the selected rollout, session
+  index entry and projected history.
+- **Partial deletion and compaction.** An API error can occur after some files
+  or rows are gone. Reconcile the original manifest with the remaining state.
+  Retry only the exact affected family through the native operation if that
+  version supports resuming the partial deletion. A recurring transaction-depth
+  failure is distinct from a transient lock. Where supported, a fresh native
+  client can retry with a new database connection after the same activity checks.
+  Stop if the remaining state is uncertain. Read live SQLite state with a
+  read-only connection that sees the WAL. Keep WAL/SHM under application custody.
+  Report reusable SQLite pages (`freelist_count * page_size`) separately from
+  filesystem bytes recovered. Use read-only integrity checks. A history database
+  may remain the same size after records are removed. If the installed version
+  cannot compact safely with clients active, use an authorized maintenance
+  window and verify from the host that all clients using the database are stopped.
+
+### Verification artifacts
+
+Inventory the largest children and trace each to task records, admission
+manifests, checksums and actual build or replay scripts. A bundle named for an
+old compiler can still hold the vendor tree used by a later qualification
+command. Check Cargo source replacement, environment overrides and checksum
+inventories before separating vendor trees from generated caches and superseded
+attempts.
+Treat pinned vendor trees, archives used as acquisition evidence, and exact-path
+copies of binaries and symbols as inputs until their consumers are accounted for.
+
+Use byte comparisons and independently retained Git objects to establish
+reconstructibility. Duplicate content can still be required at two paths.
+Hardlink deduplication changes file identity and may fail source admission.
+Preserve authored reports and current raw evidence within the applicable
+retention contract. Record what raw replay or symbol access is lost when retiring
+a historical input. Archive only where the applicable retention policy and
+authorized scope allow it, and verify the restore path before removing originals.
 
 ## Verify and report
 
