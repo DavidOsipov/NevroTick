@@ -25,6 +25,22 @@ the user requests it or the selected guarantee needs it. Preserve focused
 RED→GREEN and plan formatting before final candidate freeze; reuse existing
 recipes instead of adding process layers without a concrete enforcement need.
 
+When a material external or native prerequisite is unresolved, use the existing
+task for one bounded feasibility pass: identify the required guarantee, actual method,
+equipment or available evidence, responsible owner, qualified operating
+conditions and next discriminating observation. Mark unknown availability,
+calibration or ownership explicitly. If unavailable, record the precise missing
+input and assess concrete alternatives against the same guarantee. Finish with
+**viable for the scoped next step**, **blocked**, or **requires owner decision**;
+feasibility is not qualification, and inability is never a pass. Record the
+pass's evidence/work limit, stop and re-entry condition; retry only after a
+relevant input or justified approach changes. Keep qualification references
+separate from runtime suppliers, and hold only dependent actions/claims.
+Continue authorized independent work. Use the existing
+[material decision procedure](../../../../docs/nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete)
+only when the next action needs that choice; add no recurring approval or
+standalone report requirement.
+
 For mathematical algorithms, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
 Continue ordinary product work; missing formal proofs do not block V1 acceptance.
 Track affected proof obligations under the existing task/CHECK owners as post-V1
@@ -67,4 +83,9 @@ current source, recording database coverage and unmodeled native/process seams.
 An architecture-only plan needs no database; unavailable extraction is an
 evidence gap, not grounds to create application scaffolding.
 
-Return plan/location, named next stage, readiness, remaining blockers. Stop planning once stage has verified owners/prerequisites, observable acceptance, no unresolved dependent decision. On resume recheck relevant source/environment; reuse evidence while its state unchanged.
+Return plan/location, named next stage, readiness, remaining blockers. A ready
+stage has verified owners/prerequisites, observable acceptance and no unresolved
+dependent decision. An exhausted feasibility pass ends with its scoped blocker
+or owner decision and next observation; it does not restart planning indefinitely.
+On resume recheck relevant source/environment; reuse evidence while its state
+unchanged.

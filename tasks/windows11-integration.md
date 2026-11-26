@@ -4586,6 +4586,8 @@ The owner reports ordinary pool synchronization on the available Windows
 host. An independent calibrated reference and packet capture setup have
 yet to be identified for this trial. Preserve existing host synchronization
 while the independent MSIX and service work continues.
+Use the [finite feasibility disposition](#reference-feasibility-disposition--26-november-2026)
+below to resolve that prerequisite without repeating the completed lab work.
 
 Before execution, freeze the actual reference identity and calibration
 record, traceable UTC scale and validity, the event-pairing method for T1
@@ -4727,6 +4729,71 @@ endpoint neighbors above. Bench execution needs an actual lab reference,
 calibration and transfer record, and measured placement bounds for the
 selected Windows path. Reference admission, issuance and production
 history acceptance remain open.
+
+##### Reference feasibility disposition — 26 November 2026
+
+**Disposition: blocked at reference admission.** This assessment reads the
+repository at `863396d63e82fd7aebb4c482ddb4c73d8a47fc6c`; it does not inspect
+current physical equipment or establish its availability. The
+[latest retained authenticated pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
+still reports `mapping-unavailable eligible=0 fresh_sync=0`. The
+[inner-edge comparison controls](#check-that-a-paired-span-can-contain-the-original-wire-events)
+use those original application rows with synthetic wire and residual records.
+They establish custody, relative order and comparator behavior, not independent
+physical accuracy. The 25 November wired preflight above found a disconnected
+802.3 adapter; it establishes neither a current connected route nor impossibility
+of obtaining one.
+
+**Required guarantee and missing inputs:** independently qualify the original
+T1/T4 application captures and complete exchange span under the trial's
+predeclared leg/exchange budgets, traceable UTC, finite placement/residual/drift
+bounds and validity rules above. No actual reference instrument or independent
+physical dataset, calibration/transfer record, admitted wired acquisition route,
+or responsible bench operator/equipment custodian is identified in the current
+record. The existing acquisition/Windows-platform owner owns resolving these
+inputs; a person's identity or equipment commitment must be obtained, not
+inferred. The next useful observation is a concrete access/evidence answer with
+the method's identity, calibration validity, applicable Windows/interface/path
+conditions and ability to pair both original events. Another unchanged loopback
+run cannot supply those missing facts.
+
+The independently calibrated wired timestamping method remains the trial
+candidate. Evaluate the following concrete routes within the same feasibility
+pass; none is currently admitted:
+
+| Route or available evidence | Disposition against the required guarantee |
+| --- | --- |
+| Access to a borrowed/shared calibrated wired bench or an external laboratory using the candidate method | Could provide independent UTC and event pairing if its actual instrument, calibration, operator, path and uncertainty envelope meet the existing trial. Availability, access terms and those records remain unknown. Identify a specific route before further preparation; any paid commitment uses the existing material decision procedure. |
+| A calibrated GNSS PPS reference with independently admitted date/time of day and bounded transfer to both packet events | Conditional alternative already anticipated above. PPS alone supplies neither the full date nor application-to-wire pairing and placement bounds. Actual equipment, calibration and a complete pairing method must be evidenced before treating this route as viable. |
+| Existing independent physical capture/reference records for the same admitted path and operating conditions | Reuse only if their identity, calibration, original exchange/chart pairing, full-span validity and held-out independence satisfy this trial. No such record is identified here; the retained synthetic-reference replays do not qualify. |
+| Reported ordinary pool synchronization, the shared-QPC loopback pair and synthetic comparison controls | Available only within their stated evidence scopes. They supply no admitted independent UTC reference or finite physical placement/residual envelope, so they cannot close this prerequisite. Preserve their useful arithmetic, custody and refusal evidence. |
+
+**Bounded next action and stop:** acquisition/Windows platform makes one pass
+over the existing records to identify one concrete reference/evidence route,
+obtains its available identity/calibration/access facts, and assesses the
+alternatives above against the same guarantee. If no route can be identified,
+record that availability blocker and stop. Bound the pass to those inputs;
+do not expand it into a general equipment survey or repeated native/comparator
+campaign. Stop with **viable for a scoped trial** only when the actual owner,
+method/access and operating envelope support the next planned observation;
+qualification still requires execution and its independent controls. Otherwise
+record the exact missing fact as **blocked**, or prepare the existing
+[NV-DEC-001 decision card](../docs/nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete)
+if a concrete material choice is necessary. Inability to obtain evidence is no
+pass. Re-enter only when reference/access/calibration/route evidence changes or
+a recorded decision supplies a changed approach; a handoff alone does not reset
+the pass. Record its disposition here, without a separate report.
+
+The qualification reference validates a declared physical operating envelope;
+it does not select an always-connected runtime instrument for every installation.
+The local-clock mapping supplier and read-side validity-withdrawal issuer retain
+their separate implementation and qualification obligations. Reuse calibrated
+bounds only within their qualified envelope. Reference unavailability holds
+positive physical qualification and dependent mapping/Core-admission claims;
+authorized supplier/receiver source preparation and independent service, package
+and UI work continue under [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026).
+The existing sequence, numerical/security gates, native/fuzz/storage holds and
+UI deferrals remain. This disposition grants no native execution or hold lift.
 
 ##### Verify the local-wall comparison arithmetic — 24 November 2026
 
