@@ -1,6 +1,24 @@
 # Cloud continuation: Rust data-flow audit
 
-Owner request: move the reviewed work into the active local `main` checkout and
+## Current status and next route — 26 November 2026
+
+The [15 November cloud scan](#cloud-refresh-and-completed-scan--15-november-2026)
+completed on `bb90f0c`; its results retain that exact candidate and extraction
+scope. Read the [later supplied-audit reconciliation](#supplied-enginecore-taint-audit--local-reconciliation--17-november-2026)
+before reusing reported findings. The rejection-counter lead is already repaired;
+changed consumer inputs require fresh admission. Current product order remains
+in [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+For a separately admitted data-flow question, use the
+[current-source pilot order](#current-source-pilot-order) with independent
+source-derived selectors and controls. These conditional pilots remain
+unexecuted and do not change product priority. The original prompt, twelve-selector
+expectations and cloud sequence below are historical initial-handoff material.
+**Do not resume local analysis.** Hosted CodeQL CI remains deferred. This routing
+grants no execution authority or general SAST/native/release pass; existing
+holds remain.
+
+**Historical initial owner request:** move the reviewed work into the active local `main` checkout and
 hand unfinished CodeQL analysis to a cloud AI. **Do not resume local analysis.**
 This continues the existing [GUI audit/evidence record](slint-gui-handoff.md#rust-data-flow-audit-and-text-range-lock-repair--6-november-2026),
 not a new product implementation plan.
@@ -14,6 +32,10 @@ accessibility. This corrects routing only; historical candidates, raw results an
 execution dispositions remain unchanged and supply no accessibility pass.
 
 ## First message to the cloud AI
+
+**Historical initial prompt:** retained verbatim for provenance. Use the
+[current status and next route](#current-status-and-next-route--26-november-2026)
+before planning further analysis.
 
 > Continue the Rust data-flow audit in this repository using
 > `.agents/skills/testing/qa-data-flow-analysis/SKILL.md`. Read this handoff,
@@ -114,6 +136,11 @@ these facts. If relevant inputs change, derive new endpoint facts from source
 before execution; never learn expectations from an observed empty result.
 
 ## Cloud execution sequence and finite exit
+
+**Historical initial sequence:** its twelve-selector pilot belongs to the
+original candidate. Further analysis follows the
+[current status and next route](#current-status-and-next-route--26-november-2026)
+and requires fresh source, controls and environment admission.
 
 1. Inspect the actual cloud environment and applicable environment skill. The
    local launcher assumes a separately installed WSL tool store and installation
