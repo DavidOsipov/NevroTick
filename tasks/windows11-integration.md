@@ -14640,8 +14640,32 @@ and [NV-WGT-001](../docs/plans/winget-distribution.md) place this capability bef
 V1 under existing W11-W10/P6/P7, with W11-W05 for service/lifecycle effects and
 the existing metadata/release/security/independent-QA owners.
 
-First execute WGT-W01 source/identity preparation: re-read actual release/package
-state, source-specific IDs, metadata pending fields, current tools and holds.
+**WGT-W01 source readback — 27 November 2026:** the source generator, checker
+and `inspect-msix` ran as Linux/WSL host processes with Python isolated mode
+and a private output directory; that is not an OS sandbox. Their retained
+schema-3 partial inputs leave package identity and UI application ID null;
+inspection reports assembly incomplete and all four production role artifacts
+unadmitted. The receipt binds four source inputs, eight pipeline modules and
+13 output payloads, with SHA-256
+`4c91da3ab7d67d9f7ad45a1e67c89530f299a68705d3e917d6c07311c607d740`.
+Independent source readback matched those bytes. An observation note records
+direct delivery-consumer refusal of injected fixture identity and an unexpected
+public field; the separately retained CLI refusals prove only changed-tree
+refusal because their receipts were reserialized. The evidence is retained at
+`~/.local/share/nevrotick/wgt-w01-20261127-4lhxyylo/`.
+
+Microsoft Learn's [Community manifest guide](https://learn.microsoft.com/en-us/windows/package-manager/package/manifest)
+and [package identity overview](https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/package-identity-overview)
+distinguish the Community identifier from MSIX identity and package-family
+name. No Community identifier, package identity, release URL or artifact hash
+is established by this readback. The inspected upstream manifest schema is
+research evidence, not an admitted client, generator or schema pin. WGT-W02
+still owns the reached identity/readback contract and its activation; signing,
+native package, installation and release evidence remain open.
+
+WGT-W01 source/identity preparation has the bounded readback above. Recheck
+release/package state, source-specific IDs, pending fields, tools and holds when
+their inputs change or before dependent execution.
 Under §4.39, qualify the selected complete direct MSIX through a non-Store source;
 Community publication requires an authorized public trusted complete artifact. No MSI
 selection, external service prerequisite, new signing entitlement, reserved

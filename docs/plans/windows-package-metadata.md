@@ -34,8 +34,8 @@ and [W11-W10](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-
 Existing execution holds, Core priority, actual licensing admission and optional
 enhanced-provenance policy remain unchanged.
 
-**Source implementation boundary — 22 November 2026:** the source generator emits
-checked version 2 partial inputs for direct MSIX. The full internal register
+**Source implementation boundary:** the current source generator emits checked
+version 3 partial inputs for direct MSIX. The full internal register
 retains historical Store fields and their validation. The active unresolved
 lists omit those fields, and the strict output inventory retires the Store CSV.
 The source pipeline leaves package identity and a complete manifest unresolved.

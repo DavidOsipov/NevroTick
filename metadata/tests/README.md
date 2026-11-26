@@ -51,7 +51,7 @@ later service and event integration. Emitted binaries, complete MSIX, installed
 state and directly distributed bytes retain their existing independent gates.
 
 The [21 November delivery decision](../../docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
-withdraws Store publication. The current source controls confirm the version 2
+withdraws Store publication. The current source controls confirm the version 3
 direct MSIX inputs, refusal of the retired Store CSV and continued validation
 of historical rows in the internal field register. The active unresolved
 lists exclude Store-only fields. Release-stage refusal still applies while

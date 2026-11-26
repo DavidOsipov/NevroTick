@@ -237,7 +237,7 @@ encoding rule, not a promise that every Unicode character is accepted.
 | `rust/ui.rs`, `rust/observe.rs` | Fixed typed constants for the current fixture UI and observe-only CLI |
 | `rc/ui.rc`, `rc/observe.rc` | UTF-8 VERSIONINFO source candidates for ordinary user-mode EXEs, with application type/subtype zero and explicit prerelease flags |
 | `authoring/display.xml` | Escaped custom XML authoring projection, namespace `urn:nevrotick:metadata:authoring:1` |
-| `authoring/msix-inputs.json` | Version 2 partial inputs for direct MSIX. Package identity stays null until admitted |
+| `authoring/msix-inputs.json` | Version 3 partial inputs for direct MSIX. Package identity stays null until admitted |
 | `authoring/service-inputs.json` | Planned engine/broker display/purpose data; no chosen SCM name, account or service behavior |
 | `authoring/event-inputs.json` | Partial provider inputs and pending installed qualification |
 | `authoring/service-events.man` | Conditional compiler input with the two selected service event descriptors and fixed payload template |
