@@ -419,8 +419,10 @@ class CooldownPublicationControls(unittest.TestCase):
 
     def checkout(self):
         root = self.directory / "checkout"
-        names = {*self.policy["manifests_sha256"], "Cargo.lock", ".cargo/config.toml",
-                 "policy/tool-manifest.json", "policy/ui-m0-dependencies.json"}
+        names: set[str] = {*self.policy["manifests_sha256"], "Cargo.lock", ".cargo/config.toml",
+                           "policy/tool-manifest.json", "policy/ui-m0-dependencies.json"}
+        # A resolution also binds manifest bytes outside the adopted workspace.
+        names.update(self.policy["cooldown_admission"]["resolution"]["manifests_sha256"])
         for name in names:
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -436,21 +438,21 @@ class CooldownPublicationControls(unittest.TestCase):
             network.assert_not_called()
         self.assertFalse(self.vendor.exists())
 
-    def test_accepted_baseline_reaches_transport_without_retroactive_age_claim(self):
+    def test_current_resolved_graph_reaches_transport(self):
+        self.assertEqual(self.policy["cooldown_admission"]["status"], "resolved")
         with patch.object(PREPARE.urllib.request, "urlopen", side_effect=OSError("inert transport sentinel")) as network:
             with self.assertRaisesRegex(OSError, "inert transport sentinel"):
                 PREPARE.acquire(self.vendor, self.policy)
             network.assert_called_once()
-        self.assertEqual(self.policy["cooldown_admission"]["status"], "accepted-baseline")
         self.assertFalse(self.vendor.exists())
         self.assertFalse(list(self.directory.glob(".ui-m0-acquire-*")))
 
-    def test_manually_changed_lock_cannot_publish_as_accepted_baseline(self):
+    def test_manually_changed_lock_cannot_publish_as_current_resolution(self):
         root = self.checkout()
         path = root / "Cargo.lock"
         path.write_bytes(path.read_bytes() + b"\n# imported candidate, not the approved lock\n")
         with patch.object(PREPARE, "ROOT", root), patch.object(PREPARE.urllib.request, "urlopen") as network:
-            with self.assertRaises(PREPARE.VERIFY.ENV.Incomplete):
+            with self.assertRaisesRegex(PREPARE.VERIFY.ENV.Incomplete, "Actual graph differs from its age/source admission"):
                 PREPARE.acquire(self.vendor, self.policy)
             network.assert_not_called()
         self.assertFalse(self.vendor.exists())
@@ -465,7 +467,7 @@ class CooldownPublicationControls(unittest.TestCase):
         with (patch.object(PREPARE, "ROOT", root),
               patch.object(PREPARE, "acquisition_records", return_value=[package]),
               patch.object(PREPARE.urllib.request, "urlopen", side_effect=response) as network):
-            with self.assertRaises(PREPARE.VERIFY.ENV.Incomplete):
+            with self.assertRaisesRegex(PREPARE.VERIFY.ENV.Incomplete, "Cargo configuration differs from the admitted"):
                 PREPARE.acquire(self.vendor, self.policy)
             network.assert_called_once()
         self.assertFalse(self.vendor.exists())
