@@ -389,7 +389,8 @@ class ResolutionProducerControls(unittest.TestCase):
         snapshot = AGE._load("producer_snapshot_control", ROOT / "scripts/advisory_snapshot.py")
         original_load = AGE._load
         tool = json.loads((ROOT / "policy/tool-manifest.json").read_text())["rust"]
-        toolchain = Path.home() / ".rustup/toolchains" / (tool["channel"] + "-" + tool["host"])
+        rustup_home: Path = Path(os.environ.get("RUSTUP_HOME", str(Path.home() / ".rustup")))
+        toolchain: Path = rustup_home / "toolchains" / (tool["channel"] + "-" + tool["host"])
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary)
             candidate, quota, output = base / "candidate", base / "quota", base / "result"
@@ -406,11 +407,11 @@ class ResolutionProducerControls(unittest.TestCase):
             proposal = base / "proposal.lock"
             if fault == "import-edge": proposal.write_bytes(lock.replace(b'dependencies=["selected-leaf"]', b'dependencies=["other"]'))
             if fault == "config": (candidate / ".cargo/config.toml").write_bytes(config.replace(b'14 days', b'0 days'))
-            if fault == "tool": toolchain = base / "unadmitted-toolchain"
             if fault == "tool":
+                toolchain = base / "unadmitted-toolchain"
                 (toolchain / "bin").mkdir(parents=True)
                 (toolchain / "bin/cargo").write_text("unadmitted bytes")
-            parent_environment = {}
+            parent_environment: dict[str, str] = {"HOME": str(base)}
             if fault == "age-env": parent_environment["CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE"] = "0 days"
             if fault == "home-config":
                 home = base / "inherited-home"
@@ -449,8 +450,11 @@ class ResolutionProducerControls(unittest.TestCase):
                     patch.object(snapshot, "quota_root", return_value={"bytes": 536870912, "inodes": 16384, "device": quota.stat().st_dev}), \
                     patch.object(snapshot, "run", side_effect=cargo_metadata):
                 if fault:
-                    with self.assertRaises((AGE.Incomplete, RuntimeError, OSError)):
+                    with self.assertRaises((AGE.Incomplete, RuntimeError, OSError)) as rejection:
                         AGE.resolve(args)
+                    if fault == "tool":
+                        self.assertIsInstance(rejection.exception, AGE.Incomplete)
+                        self.assertIn("Resolution executable digest differs", str(rejection.exception))
                     self.assertFalse(output.exists(), "Refused graph must not publish a lock/age receipt")
                     if fault in ("config", "tool", "age-env", "home-config"): self.assertEqual(entered, [])
                 else:
@@ -460,6 +464,7 @@ class ResolutionProducerControls(unittest.TestCase):
                     self.assertEqual((output / "Cargo.lock").read_bytes(), lock)
                     self.assertEqual(result["publication"][0]["index_record"]["pubtime"], "2020-01-01T00:00:00Z")
                     self.assertEqual(result["publication"][0]["index_record_sha256"], AGE.canonical(result["publication"][0]["index_record"]))
+                    self.assertEqual(result["cargo_sha256"], tool["linux_binary_sha256"]["cargo"])
                     self.assertEqual(result["generated_lockfile_sha256"], result["candidate_lockfile_sha256"])
                     self.assertEqual(result["scope"], "standalone")
                     self.assertEqual((candidate / ".cargo/config.toml").read_bytes(), config)

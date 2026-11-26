@@ -69,7 +69,6 @@ jobs:
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_accesskit_path_patch.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_linux_sdk.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_prepare_product.py -v
-          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_dependency_graph_admission.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_refresh_product_advisories.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_advisory_snapshot_admission.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_bounded_download.py -v
@@ -79,8 +78,9 @@ jobs:
         run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_native_input_source.py -v
       - name: Acquire the pinned compiler in private runner storage
         run: python3 -B .github/security/prepare_rust.py
-      - name: Verify registry refresh avoids dependency source downloads
+      - name: Verify dependency resolution and metadata-only registry refresh
         run: |
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_dependency_graph_admission.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_advisory_cargo_refresh.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_dependency_cooldown.py -v
       - name: Exercise the actual AccessKit subclass through the portable facade
