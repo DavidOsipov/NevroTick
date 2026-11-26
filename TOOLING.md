@@ -2756,11 +2756,13 @@ retains the observed worker failures and actual execution receipts.
 
 The two exact Windows release-link commands use a finite 300 CPU seconds.
 The UI release row alone allows 8 GiB of virtual address space and 600 seconds
-of wall time. Engine release keeps 4 GiB and 300 seconds; other product commands
-keep 90 CPU seconds, 4 GiB and 300 seconds. The 128-task inner limit, isolation
-and complete hardening remain unchanged. Receipts record the selected profile
-and the UI address-space exception. These compiler budgets change no product
-runtime resource guarantee.
+of wall time. The Windows Engine link keeps 4 GiB and 300 seconds. The exact
+portable Engine `engine-ke-association` release archive build has a 240 CPU-second
+compiler limit. Nextest runs the completed archive at 90 CPU seconds and writes
+the existing JUnit report. The build and run share one 300-second wall deadline.
+Other product commands keep 90 CPU seconds, 4 GiB and 300 seconds. The 128-task
+inner limit, isolation and complete hardening remain in force. Receipts record
+each selected profile and the effective shared wall allocation.
 
 Rows run with a read-only source snapshot, cleared environment, isolated network
 and owned output inside bubblewrap. The verifier admits pinned tools and source

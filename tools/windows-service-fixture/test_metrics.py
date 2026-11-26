@@ -511,14 +511,19 @@ class FixtureMetricControls(unittest.TestCase):
                         "broker_reports_only_current_availability_before_cleanup")
         gap = "broker_clock_change::continuity::tests::presentation_change_retires_the_original_observation"
         counter_order = "broker_clock_change::continuity::tests::counter_order_uses_the_two_inner_edges"
+        terminal = "broker_clock_change::tests::terminal_read_edge_withdraws_the_original_revision_immediately"
         unrelated = "healthy_owner"
-        expected = [availability, gap, counter_order, unrelated]
+        expected = [availability, gap, counter_order, terminal, unrelated]
         build = {"exit_code": 0, "failure": None, "output": direct_build()}
         available_file = "src/broker_availability_tests.rs"
         comparator_file: str = "src/broker_clock_continuity_tests.rs"
+        reader_file: str = "src/broker_clock_reader_tests.rs"
         for owner, name, path, accepted in (
             (M.CHANGE_DIRECT, availability, available_file, True),
             (M.CHANGE_DIRECT, gap, comparator_file, True),
+            (M.CHANGE_DIRECT, terminal, reader_file, True),
+            (M.CHANGE_DIRECT, terminal, available_file, False),
+            (M.CONTINUITY_DIRECT, terminal, reader_file, False),
             (M.CONTINUITY_DIRECT, gap, comparator_file, True),
             (M.CONTINUITY_DIRECT, counter_order, comparator_file, True),
             (M.CONTINUITY_DIRECT, availability, available_file, False),

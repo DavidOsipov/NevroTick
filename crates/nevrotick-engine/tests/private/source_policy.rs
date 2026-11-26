@@ -278,6 +278,25 @@ fn public_managed_round_restrictions_skip_only_the_endpoint_and_preserve_absent_
     Ok(())
 }
 
+/// Project only the bounded historical facts needed to diagnose a round assertion.
+fn managed_round_attempt_diagnostics(report: &crate::AddressRoundReport) -> impl fmt::Debug {
+    report
+        .attempts()
+        .iter()
+        .map(|attempt| {
+            let slot: &SlotReport = attempt.report();
+            (
+                slot.status(),
+                slot.sent(),
+                slot.received(),
+                slot.rejected(),
+                slot.last_rejection(),
+                slot.source_policy_refusal(),
+            )
+        })
+        .collect::<Vec<_>>()
+}
+
 /// A real A/E control interrupts live B/E without transitive B/F refusal.
 /// # Errors
 /// Preserve bounded query handshakes, public owners and every joined fixture result.
@@ -303,22 +322,28 @@ fn public_managed_round_live_endpoint_refusal_preserves_history_and_later_source
     let (a_plan, a_control) = a.prepare_address_round(managed_round_config(&[e])?)?;
     let (b_plan, b_control) = b.prepare_address_round(managed_round_config(&[e, f])?)?;
     let (signal, first_seen) = std::sync::mpsc::sync_channel(1);
-    let (a_report, b_report, e_socket) = std::thread::scope(|scope| -> Check<_> {
-        let server = scope.spawn(move || -> io::Result<std::net::UdpSocket> {
+    let measured_from: Instant = Instant::now();
+    let joined = std::thread::scope(|scope| -> Check<_> {
+        let server = scope.spawn(move || -> io::Result<_> {
             let mut first = [0; RECEIVE_BYTES];
             let (length, client) = e_socket.recv_from(&mut first)?;
+            let a_query: Duration = measured_from.elapsed();
             signal
                 .send(())
                 .map_err(|_| io::Error::other("query observer closed"))?;
             let mut second = [0; RECEIVE_BYTES];
             let (second_length, second_client) = e_socket.recv_from(&mut second)?;
+            let b_query: Duration = measured_from.elapsed();
             assert_eq!(second_length, 48);
             assert_ne!(client, second_client, "A and B must own separate sockets");
             managed_round_reply(&e_socket, &first, length, client, Some(DENY))?;
-            Ok(e_socket)
+            let deny_sent: Duration = measured_from.elapsed();
+            Ok((e_socket, [a_query, b_query, deny_sent]))
         });
-        let a_job = scope.spawn(move || {
-            crate::execute_address_round(a_plan, &crate::ControlSchedule::new(None, None)?)
+        let a_job = scope.spawn(move || -> Result<_, crate::PilotError> {
+            let schedule: crate::ControlSchedule = crate::ControlSchedule::new(None, None)?;
+            let a_start: Duration = measured_from.elapsed();
+            Ok((crate::execute_address_round(a_plan, &schedule)?, a_start))
         });
         first_seen.recv_timeout(Duration::from_secs(2))?;
         let b_job = scope.spawn(move || {
@@ -331,9 +356,19 @@ fn public_managed_round_live_endpoint_refusal_preserves_history_and_later_source
             .map_err(|_| "shared endpoint worker panicked")?;
         Ok((a_result?, b_result?, peer_result?))
     })?;
+    let ((a_report, a_start), b_report, (e_socket, [a_query, b_query, deny_sent])) = joined;
     drop((a_control, b_control));
-    assert_eq!(a_report.end(), crate::AddressRoundEnd::Control);
-    assert_eq!(b_report.end(), crate::AddressRoundEnd::Policy);
+    assert_eq!(
+        (a_report.end(), b_report.end()),
+        (
+            crate::AddressRoundEnd::Control,
+            crate::AddressRoundEnd::Policy
+        ),
+        "A started at {a_start:?}; queries A {a_query:?}, B {b_query:?}; DENY sent at {deny_sent:?}; \
+         attempts (status, sent, received, rejected, last rejection, policy refusal): A {:?}, B {:?}",
+        managed_round_attempt_diagnostics(&a_report),
+        managed_round_attempt_diagnostics(&b_report),
+    );
     assert!(b_report.policy_refusals().is_empty());
     assert_eq!(b_report.attempts().len(), 1);
     assert_eq!(b_report.attempts()[0].peer(), e);
@@ -353,6 +388,252 @@ fn public_managed_round_live_endpoint_refusal_preserves_history_and_later_source
     assert_eq!(later.attempts().len(), 1);
     assert_eq!(later.attempts()[0].report().status(), Status::Header);
     drop((f_socket, e_socket));
+    Ok(())
+}
+
+/// Schedule applied at the real final receive guard for one selected datagram.
+#[derive(Clone, Copy, Debug)]
+enum FinalPolicySchedule {
+    /// No other owner holds the policy cell at admission.
+    Free,
+    /// Release the acquired policy cell immediately after the first attempt.
+    Release,
+    /// Latch Stop while the actual policy owner keeps the cell.
+    Stop,
+    /// Invalidate the invocation while the actual policy owner keeps the cell.
+    Invalidate,
+    /// Hold the policy cell through retirement at the original cutoff.
+    Cutoff,
+}
+
+impl FinalPolicySchedule {
+    /// Whether the independent holder keeps custody until actual execution returns.
+    fn hold_until_return(self) -> bool {
+        matches!(self, Self::Stop | Self::Invalidate | Self::Cutoff)
+    }
+
+    /// The required terminal outcome of the original one-datagram history.
+    fn expected(self) -> Status {
+        match self {
+            Self::Free | Self::Release => Status::Control,
+            Self::Stop => Status::Stopped,
+            Self::Invalidate => Status::Stale,
+            Self::Cutoff => Status::Timeout,
+        }
+    }
+}
+
+/// Wall-wait bound for each fixture handshake and the original live request.
+const FINAL_POLICY_WAIT: Duration = Duration::from_secs(2);
+
+/// Bind observations to the real driver's original staged reply checkpoints.
+/// # Panics
+/// Fail the fixture if a pulse is missing or the requested invalidation fails.
+fn observe_final_policy_schedule(
+    plan: &mut crate::PreparedSeries,
+    schedule: FinalPolicySchedule,
+    mark: SyncSender<bool>,
+    guard_ready: Receiver<()>,
+) {
+    let guard_ready = Mutex::new(guard_ready);
+    crate::series::set_test_final_guard_observer(plan, move |event, handle| {
+        use crate::series::TestFinalGuardEvent;
+        match event {
+            TestFinalGuardEvent::ReplyBefore => {
+                assert!(mark.try_send(false).is_ok());
+                assert!(
+                    guard_ready
+                        .lock()
+                        .is_ok_and(|state| { state.recv_timeout(FINAL_POLICY_WAIT).is_ok() })
+                );
+            }
+            TestFinalGuardEvent::ReplyAfter => {
+                match schedule {
+                    FinalPolicySchedule::Stop => handle.stop(),
+                    FinalPolicySchedule::Invalidate => assert!(handle.invalidate().is_ok()),
+                    FinalPolicySchedule::Free
+                    | FinalPolicySchedule::Release
+                    | FinalPolicySchedule::Cutoff => {}
+                }
+                assert!(mark.try_send(true).is_ok());
+            }
+            TestFinalGuardEvent::WritableBefore | TestFinalGuardEvent::WritableAfter => {}
+        }
+    });
+}
+
+/// Check the original transferred accounting and absence of a successor send.
+/// # Errors
+/// Preserve absent slot, failed policy observation or native peer refusal.
+/// # Panics
+/// Fail on changed terminal outcome, duplicated receive or changed restriction.
+fn check_final_policy_reply(
+    schedule: FinalPolicySchedule,
+    report: &crate::SeriesReport,
+    peer: &std::net::UdpSocket,
+    binding: &SourceBinding,
+) -> Check<()> {
+    let slot: &SlotReport = report
+        .attempts()
+        .first()
+        .and_then(crate::SeriesAttempt::report)
+        .ok_or("first selected datagram lost its slot report")?;
+    let expected: Status = schedule.expected();
+    let applied: bool = expected == Status::Control;
+    assert_eq!(
+        (
+            slot.status(),
+            slot.sent(),
+            slot.received(),
+            slot.rejected(),
+            slot.control_code()
+        ),
+        (
+            expected,
+            true,
+            1,
+            u16::from(!applied),
+            applied.then_some(DENY)
+        ),
+        "final policy schedule {schedule:?}; last rejection: {:?}",
+        slot.last_rejection(),
+    );
+    assert!(facts(binding)?.iter().all(|record| record.2 == applied));
+    peer.set_nonblocking(true)?;
+    let mut bytes: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+    assert!(matches!(
+        peer.recv_from(&mut bytes),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock
+    ));
+    Ok(())
+}
+
+/// Check the independent peer and holder observations against the original limits.
+/// # Panics
+/// Fail on a missed release, control wake, or premature/renewed owner cutoff.
+fn check_policy_fixture_timing(
+    mode: FinalPolicySchedule,
+    cutoff: Option<Instant>,
+    returned_at: Instant,
+    released_at: Instant,
+    timely_before: Instant,
+) {
+    match mode {
+        FinalPolicySchedule::Free | FinalPolicySchedule::Release => assert!(
+            released_at < timely_before,
+            "fixture missed its conservative cutoff"
+        ),
+        FinalPolicySchedule::Stop | FinalPolicySchedule::Invalidate => assert!(
+            returned_at < timely_before,
+            "control did not retire the retained reply before the original timer"
+        ),
+        FinalPolicySchedule::Cutoff => assert!(
+            cutoff.is_some_and(|value| value <= returned_at) && returned_at < timely_before,
+            "retained reply did not retire at the earlier original owner cutoff"
+        ),
+    }
+}
+
+/// Drive one real correlated `DENY` under each original final-guard schedule.
+/// # Errors
+/// Preserve preparation, socket, synchronization and joined worker errors.
+/// # Panics
+/// Require ordered holder observations, fresh authority and exact slot accounting.
+#[test]
+fn managed_series_retains_one_deny_across_final_policy_release() -> Check<()> {
+    drop(runtime()?);
+    for mode in [
+        FinalPolicySchedule::Free,
+        FinalPolicySchedule::Release,
+        FinalPolicySchedule::Stop,
+        FinalPolicySchedule::Invalidate,
+        FinalPolicySchedule::Cutoff,
+    ] {
+        let peer: std::net::UdpSocket = std::net::UdpSocket::bind(endpoint(0))?;
+        peer.set_read_timeout(Some(FINAL_POLICY_WAIT))?;
+        peer.set_write_timeout(Some(FINAL_POLICY_WAIT))?;
+        let destination: SocketAddr = peer.local_addr()?;
+        let authority: SourcePolicyAuthority = isolated_authority(limits(1, 1)?)?;
+        let binding: SourceBinding = authority.source(0)?.bind(destination)?;
+        let config: SeriesConfig =
+            SeriesConfig::new(destination, FINAL_POLICY_WAIT, Duration::from_secs(4))?;
+        let (mut plan, control) = crate::series::prepare_series_for_source(
+            &config,
+            SourceMode::Managed(binding.clone()),
+        )?;
+        let (mark, stages) = std::sync::mpsc::sync_channel(2);
+        let (ready, guard_ready) = std::sync::mpsc::sync_channel(1);
+        let (returned, execution_return) = std::sync::mpsc::sync_channel(1);
+        observe_final_policy_schedule(&mut plan, mode, mark, guard_ready);
+        let schedule: crate::ControlSchedule = crate::ControlSchedule::new(None, None)?;
+        let (report, peer) = std::thread::scope(|scope| -> Check<_> {
+            let server = scope.spawn(move || -> io::Result<_> {
+                let mut bytes: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+                let (length, client) = peer.recv_from(&mut bytes)?;
+                managed_round_reply(&peer, &bytes, length, client, Some(DENY))?;
+                Ok(peer)
+            });
+            let cell: Arc<PolicyCell> = Arc::clone(&binding.source.cell);
+            let gate = scope.spawn(move || -> io::Result<Instant> {
+                assert!(
+                    !stages
+                        .recv_timeout(FINAL_POLICY_WAIT)
+                        .map_err(io::Error::other)?
+                );
+                let guard = if matches!(mode, FinalPolicySchedule::Free) {
+                    None
+                } else {
+                    Some(cell.lock().map_err(io::Error::other)?)
+                };
+                ready.try_send(()).map_err(io::Error::other)?;
+                assert!(
+                    stages
+                        .recv_timeout(FINAL_POLICY_WAIT)
+                        .map_err(io::Error::other)?
+                );
+                if mode.hold_until_return() {
+                    execution_return
+                        .recv_timeout(Duration::from_secs(5))
+                        .map_err(io::Error::other)?;
+                }
+                drop(guard);
+                Ok(Instant::now())
+            });
+            let execution_start: Instant = Instant::now();
+            let timely_before: Instant = execution_start
+                .checked_add(FINAL_POLICY_WAIT)
+                .ok_or(crate::PilotError::DeadlineOverflow)?;
+            // Put the owner cutoff well before the configured request timer.
+            let cutoff: Option<Instant> = if matches!(mode, FinalPolicySchedule::Cutoff) {
+                Some(
+                    execution_start
+                        .checked_add(Duration::from_secs(1))
+                        .ok_or(crate::PilotError::DeadlineOverflow)?,
+                )
+            } else {
+                None
+            };
+            let report = crate::series::execute_series_with_cutoff(plan, &schedule, cutoff);
+            let returned_at: Instant = Instant::now();
+            let notified = if mode.hold_until_return() {
+                returned.try_send(())
+            } else {
+                Ok(())
+            };
+            let gate_result = gate.join();
+            let server_result = server.join();
+            notified?;
+            let released_at: Instant =
+                gate_result.map_err(|_| "final policy lock worker panicked")??;
+            check_policy_fixture_timing(mode, cutoff, returned_at, released_at, timely_before);
+            Ok((
+                report?,
+                server_result.map_err(|_| "single DENY peer panicked")??,
+            ))
+        })?;
+        drop(control);
+        check_final_policy_reply(mode, &report, &peer, &binding)?;
+    }
     Ok(())
 }
 

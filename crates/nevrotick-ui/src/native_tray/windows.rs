@@ -14,6 +14,7 @@ use std::ptr::{null, null_mut, with_exposed_provenance_mut};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
+use std::time::Instant;
 
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::Graphics::Gdi::{
@@ -35,8 +36,8 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 };
 
 use super::{
-    CompletionLatch, ICON_ID, IconCalls, IconOperation, PreparedTray, StartError, TrayBridge,
-    TrayError, TrayFinish, native_command, popup_selection, registration_update,
+    CompletionLatch, ICON_ID, IconCalls, IconOperation, IconPublication, PreparedTray, StartError,
+    TrayBridge, TrayError, TrayFinish, native_command, popup_selection, registration_update,
 };
 
 /// Private wake; its raw message alone changes no trusted field.
@@ -211,6 +212,29 @@ impl NativeTray {
         self.bridge.stopping.store(true, Ordering::Release);
         post_control(&self.bridge).map_err(|_| TrayError::CleanupUnconfirmed)
     }
+    /// Wake the worker for an unacknowledged update or a due recovery. A failed
+    /// post leaves the original intent for the next normal UI poll.
+    pub fn poll_publication(&self) {
+        let bridge: &TrayBridge = &self.bridge;
+        if bridge.stopping.load(Ordering::Acquire)
+            || bridge.cleanup_failed.load(Ordering::Acquire)
+            || bridge.menu_open.load(Ordering::Acquire)
+            || bridge.publishing.load(Ordering::Acquire)
+        {
+            return;
+        }
+        let pending: bool = if bridge.registered.load(Ordering::Acquire) {
+            bridge.update_pending.load(Ordering::Acquire)
+        } else {
+            bridge
+                .recovery
+                .lock()
+                .is_ok_and(|state| state.due(Instant::now()))
+        };
+        if pending {
+            let _posted = post_control(bridge);
+        }
+    }
     /// Poll completion without an unbounded native wait or joining a running worker.
     ///
     /// The terminal observation retains the worker result or conservative custody
@@ -324,7 +348,7 @@ impl Resources<'_> {
         self.bridge.stopping.store(true, Ordering::Release);
         self.bridge.registered.store(false, Ordering::Release);
         let deleted = !self.bridge.icon_attempted.swap(false, Ordering::AcqRel)
-            || notify(self.bridge, NIM_DELETE);
+            || notify(self.bridge, NIM_DELETE, || true);
         let window = std::mem::replace(&mut self.window, null_mut());
         match self.bridge.endpoint.lock() {
             Ok(mut value) => *value = 0,
@@ -444,7 +468,7 @@ fn worker(bridge: &Arc<TrayBridge>, pixels: &TrayPixels) -> Result<(), StartErro
     let mut run_result = if bridge.stopping.load(Ordering::Acquire) {
         Ok(())
     } else {
-        publish_icon(bridge, false)
+        publish_icon(bridge, true)
     };
     if run_result.is_ok() && !bridge.stopping.load(Ordering::Acquire) {
         let mut message = MSG::default();
@@ -465,6 +489,9 @@ fn worker(bridge: &Arc<TrayBridge>, pixels: &TrayPixels) -> Result<(), StartErro
             let _translated = unsafe { TranslateMessage(&raw const message) };
             // SAFETY: the same OS record remains live throughout synchronous dispatch.
             let _dispatched = unsafe { DispatchMessageW(&raw const message) };
+            if bridge.stopping.load(Ordering::Acquire) {
+                break;
+            }
         }
     }
     let cleanup = resources.finish();
@@ -567,7 +594,7 @@ type IconHandle = windows_sys::Win32::UI::WindowsAndMessaging::HICON;
     unsafe_code,
     reason = "NOTIFYICONDATAW is fully initialized and all borrowed native handles remain owned by the worker"
 )]
-fn notify(bridge: &TrayBridge, operation: u32) -> bool {
+fn notify(bridge: &TrayBridge, operation: u32, eligible: impl FnOnce() -> bool) -> bool {
     let projection = if operation == NIM_ADD || operation == NIM_MODIFY {
         match bridge.prepared_projection() {
             Ok(value) => Some(value),
@@ -591,6 +618,9 @@ fn notify(bridge: &TrayBridge, operation: u32) -> bool {
     if let Some(projection) = projection {
         record.szTip = *projection.tooltip().units();
     }
+    if !eligible() {
+        return false;
+    }
     if operation == NIM_ADD {
         bridge.icon_attempted.store(true, Ordering::Release);
     }
@@ -599,53 +629,125 @@ fn notify(bridge: &TrayBridge, operation: u32) -> bool {
     (unsafe { Shell_NotifyIconW(operation, &raw const record) }) != 0
 }
 
-/// Registration/version acknowledge only their actual native API outcomes.
+/// Publish once using current intent and the original attempt's admission.
 ///
 /// # Errors
-/// Any failed acknowledgement invalidates readiness and requests visible UI restoration.
-fn publish_icon(bridge: &TrayBridge, registered: bool) -> Result<(), StartError> {
+/// An actual failed acknowledgement invalidates readiness. Superseded work stays unavailable.
+fn publish_icon(bridge: &TrayBridge, initial: bool) -> Result<(), StartError> {
     struct PublishGuard<'a>(&'a TrayBridge);
     impl Drop for PublishGuard<'_> {
         fn drop(&mut self) {
             self.0.publishing.store(false, Ordering::Release);
         }
     }
-    struct Calls<'a>(&'a TrayBridge);
+    struct Calls<'a> {
+        bridge: &'a TrayBridge,
+        publication: IconPublication,
+        loss: u64,
+    }
     impl IconCalls for Calls<'_> {
+        fn accepts_acknowledgement(&self) -> bool {
+            self.bridge.loss_generation.load(Ordering::Acquire) == self.loss
+                && !self.bridge.stopping.load(Ordering::Acquire)
+                && !self.bridge.cleanup_failed.load(Ordering::Acquire)
+        }
+        fn eligible(&self) -> bool {
+            self.publication
+                .permits(Instant::now(), self.accepts_acknowledgement())
+        }
         fn notify(&mut self, operation: IconOperation) -> bool {
             let operation = match operation {
                 IconOperation::Add => NIM_ADD,
                 IconOperation::SetVersion => NIM_SETVERSION,
                 IconOperation::Modify => NIM_MODIFY,
             };
-            notify(self.0, operation)
+            notify(self.bridge, operation, || self.eligible())
         }
     }
-    if bridge.publishing.swap(true, Ordering::AcqRel) {
+    if bridge.publishing.load(Ordering::Acquire) {
         return Err(StartError::Native);
     }
-    let publishing = PublishGuard(bridge);
+    if bridge.stopping.load(Ordering::Acquire) || bridge.cleanup_failed.load(Ordering::Acquire) {
+        return Ok(());
+    }
     if hwnd(bridge).is_null()
         || bridge.icon.load(Ordering::Acquire) == 0
         || bridge.taskbar_created.load(Ordering::Acquire) == 0
-        || bridge.stopping.load(Ordering::Acquire)
     {
-        bridge.registered.store(false, Ordering::Release);
         return Err(StartError::Native);
     }
+    let publication: Option<IconPublication> = {
+        let mut recovery = bridge.recovery.lock().map_err(|_| StartError::Native)?;
+        if initial {
+            recovery.start()
+        } else {
+            recovery.take(
+                Instant::now(),
+                bridge.registered.load(Ordering::Acquire),
+                bridge.update_pending.load(Ordering::Acquire),
+            )
+        }
+    };
+    let Some(publication) = publication else {
+        return Ok(());
+    };
+    // Only this thread admits native publications. No lock or call above can
+    // reenter dispatch. Publish the barrier before consuming the projection.
+    bridge.publishing.store(true, Ordering::Release);
+    let publishing = PublishGuard(bridge);
     // Consume only after the publication barrier is held, before reading the
     // snapshot. Later host updates leave pending=true until their own ack.
     bridge.update_pending.store(false, Ordering::Release);
-    let loss_before = bridge.loss_generation.load(Ordering::Acquire);
-    let success = registration_update(&mut Calls(bridge), registered)
-        && bridge.loss_generation.load(Ordering::Acquire) == loss_before;
-    bridge.registered.store(success, Ordering::Release);
+    let loss: u64 = bridge.loss_generation.load(Ordering::Acquire);
+    let mut calls = Calls {
+        bridge,
+        publication,
+        loss,
+    };
+    let success: bool = registration_update(&mut calls, publication == IconPublication::Update);
+    let current: bool = calls.accepts_acknowledgement();
+    if let IconPublication::Recovery(cutoff) = publication {
+        bridge
+            .recovery
+            .lock()
+            .map_err(|_| StartError::Native)?
+            .completed(Instant::now(), cutoff, !success && current);
+    }
+    bridge
+        .registered
+        .store(success && current, Ordering::Release);
     drop(publishing);
-    bridge.publish(None, !success, !success);
+    if !current {
+        return Ok(());
+    }
     if success {
-        Ok(())
-    } else {
-        Err(StartError::Native)
+        bridge.publish(None, false, false);
+        return Ok(());
+    }
+    match publication {
+        IconPublication::Initial => bridge.publish(None, true, true),
+        IconPublication::Update => note_recovery_loss(bridge, true),
+        IconPublication::Recovery(_) => bridge.publish(None, true, false),
+    }
+    Err(StartError::Native)
+}
+
+/// Mark one loss and authorize only work inside its worker-owned window.
+fn note_recovery_loss(bridge: &TrayBridge, failure: bool) {
+    if bridge.stopping.load(Ordering::Acquire) || bridge.cleanup_failed.load(Ordering::Acquire) {
+        return;
+    }
+    let first = bridge
+        .recovery
+        .lock()
+        .map(|mut state| state.hint(Instant::now()));
+    match first {
+        Ok(first) if first || failure => bridge.publish(None, failure, first),
+        Ok(_) => {}
+        Err(_) => {
+            bridge.cleanup_failed.store(true, Ordering::Release);
+            bridge.publish(None, true, true);
+        }
     }
 }
 
@@ -734,8 +836,10 @@ fn dispatch(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESU
         return 0;
     }
     if is_taskbar {
-        bridge.publish(None, false, true);
-        let _registered = publish_icon(&bridge, false);
+        note_recovery_loss(&bridge, false);
+        if !bridge.menu_open.load(Ordering::Acquire) {
+            control(&bridge);
+        }
         return 0;
     }
     if message == ICON_EVENT {
@@ -753,6 +857,9 @@ fn dispatch(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESU
     reason = "Only the current thread's own active popup and message queue are ended; no pointer or service effect exists"
 )]
 fn end_worker(bridge: &TrayBridge) {
+    if bridge.exit_requested.swap(true, Ordering::AcqRel) {
+        return;
+    }
     if bridge.menu_open.load(Ordering::Acquire) {
         // SAFETY: this thread owns the currently active synchronous popup.
         let _ended = unsafe { EndMenu() };
@@ -766,26 +873,31 @@ fn end_worker(bridge: &TrayBridge) {
     unsafe_code,
     reason = "Only this worker's currently active popup is ended; resource destruction waits for TrackPopupMenuEx to return"
 )]
-fn end_menu_for_update() {
+fn end_menu_for_update(bridge: &TrayBridge) {
+    if bridge.menu_update_requested.swap(true, Ordering::AcqRel) {
+        return;
+    }
     // SAFETY: called only after the worker's private menu_open flag is observed.
     let _ended = unsafe { EndMenu() };
 }
 
-/// A raw wake only consumes private host stop/update state, never message arguments.
+/// A raw wake only consumes private stop, update or due recovery state.
 fn control(bridge: &TrayBridge) {
     if bridge.stopping.load(Ordering::Acquire) {
         end_worker(bridge);
-    } else if bridge.update_pending.load(Ordering::Acquire)
-        && bridge.menu_open.load(Ordering::Acquire)
-    {
+        return;
+    }
+    if bridge.cleanup_failed.load(Ordering::Acquire) {
+        return;
+    }
+    if bridge.update_pending.load(Ordering::Acquire) && bridge.menu_open.load(Ordering::Acquire) {
         // Close the old-generation menu before changing its catalog projection.
-        end_menu_for_update();
-    } else if bridge.update_pending.load(Ordering::Acquire) {
-        if bridge.icon.load(Ordering::Acquire) == 0 {
-            bridge.update_pending.store(true, Ordering::Release);
-            return;
-        }
-        let _updated = publish_icon(bridge, bridge.registered.load(Ordering::Acquire));
+        end_menu_for_update(bridge);
+    } else if !bridge.menu_open.load(Ordering::Acquire)
+        && !bridge.publishing.load(Ordering::Acquire)
+        && bridge.icon.load(Ordering::Acquire) != 0
+    {
+        let _published = publish_icon(bridge, false);
     }
 }
 
@@ -820,6 +932,7 @@ fn popup(bridge: &TrayBridge, wparam: WPARAM) -> Result<(), StartError> {
     if bridge.menu_open.swap(true, Ordering::AcqRel) {
         return Ok(());
     }
+    bridge.menu_update_requested.store(false, Ordering::Release);
     let result = popup_inner(bridge, wparam);
     bridge.menu_open.store(false, Ordering::Release);
     control(bridge);

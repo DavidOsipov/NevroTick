@@ -274,6 +274,20 @@ class PackageReaderTests(unittest.TestCase):
         self.assertEqual(original["package_identity"], changed["package_identity"])
         self.assertNotEqual(original["payload_sha256"], changed["payload_sha256"])
 
+    def test_requires_the_declared_ignorable_namespace_binding(self) -> None:
+        self.assert_accepted(self.write_package())
+        original: bytes = self.payload[MANIFEST]
+        renamed: bytes = original.replace(b"xmlns:desktop6=", b"xmlns:service=").replace(
+            b"desktop6:", b"service:",
+        )
+        self.assertNotEqual(renamed, original)
+        self.assertEqual(ET.tostring(ET.fromstring(renamed)), ET.tostring(ET.fromstring(original)))
+        changed: dict[str, bytes] = {**self.payload, MANIFEST: renamed}
+        (self.payload_dir / MANIFEST).write_bytes(renamed)
+        self.write_input_set(changed)
+        self.write_package(payload=changed)
+        self.assert_refused("manifest root namespace bindings differ")
+
     def test_requires_element_only_package_metadata(self) -> None:
         members: dict[str, bytes] = self.write_package()
         cases: tuple[tuple[str, tuple[int, ...], str, str, str], ...] = (
@@ -533,6 +547,32 @@ class PackageReaderTests(unittest.TestCase):
                     changed[local_header + offset] ^= 1
                     self.package.write_bytes(changed)
                     self.assert_refused(f"{INERT} local ZIP CRC or lengths differ")
+
+    def test_rejects_local_extract_version_mismatch(self) -> None:
+        for compressed in (False, True):
+            members = self.write_package(compressed_member=INERT if compressed else None)
+            self.assert_accepted(members)
+            original: bytes = self.package.read_bytes()
+            with ZipFile(self.package) as archive:
+                local_header: int = archive.getinfo(INERT).header_offset
+            for offset in (4, 5):
+                with self.subTest(streamed=compressed, version_byte=offset):
+                    changed = bytearray(original)
+                    changed[local_header + offset] ^= 1
+                    self.package.write_bytes(changed)
+                    self.assert_refused(f"{INERT} local ZIP extract version differs")
+            self.package.write_bytes(original)
+            self.assert_accepted(members)
+
+    def test_unsupported_central_extract_version_refuses_cleanly(self) -> None:
+        members = self.write_package()
+        self.assert_accepted(members)
+        original: bytes = self.package.read_bytes()
+        directory_start, = struct.unpack_from("<I", original, len(original) - 6)
+        changed = bytearray(original)
+        changed[directory_start + 6] = 255
+        self.package.write_bytes(changed)
+        self.assert_refused("unsupported ZIP extract version")
 
     def test_rejects_missing_and_false_compressed_block_sizes(self):
         for size_case, reason in (

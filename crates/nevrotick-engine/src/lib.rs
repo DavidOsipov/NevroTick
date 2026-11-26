@@ -1639,16 +1639,40 @@ struct ReadDatagram<'a> {
     read: ApplicationClockCapture,
 }
 
-/// Commit checked packet facts only after the caller's fresh owner guards.
-/// The final processing observation is sampled under the caller's control guard.
-/// Either original receive reading or fresh processing can reach the cutoff.
-/// Reject late input once before policy admission. Earlier processing leaves it pending.
+/// Whether the final reply guard finished or still owes a private serial retry.
+enum ReplyCommit {
+    /// The current attempt committed or was refused and has no retry custody.
+    Finished,
+    /// The managed policy guard is busy. The original charged proposal remains.
+    Contended,
+}
+
+/// Publish immediately on paths without a serial reply owner. A busy managed
+/// guard counts as rejected if its caller cannot retain the selected proposal.
 fn commit_reply(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
     processing: Instant,
     deadline: Instant,
 ) {
+    if matches!(
+        try_commit_reply(slot, candidate, processing, deadline),
+        ReplyCommit::Contended
+    ) {
+        slot.rejected += 1;
+    }
+}
+
+/// Commit checked packet facts only after the caller's fresh owner guards.
+/// The final processing observation is sampled under the caller's control guard.
+/// Either original receive reading or fresh processing can reach the cutoff.
+/// Reject late input once before policy admission. Earlier processing leaves it pending.
+fn try_commit_reply(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    processing: Instant,
+    deadline: Instant,
+) -> ReplyCommit {
     if !Arc::ptr_eq(&slot.identity, &candidate.identity)
         || !Arc::ptr_eq(&slot.run_context, &candidate.run_context)
         || slot.peer != candidate.peer
@@ -1656,32 +1680,33 @@ fn commit_reply(
         || slot.profile != candidate.profile
         || !matches!(slot.phase, Phase::Pending(_))
     {
-        return;
+        return ReplyCommit::Finished;
     }
     let read: SoftwareClock = candidate.read.software();
     if processing >= deadline || read.reaches_cutoff(deadline) {
         slot.rejected += 1;
         slot.expire();
-        return;
+        return ReplyCommit::Finished;
     }
     // Windows can clamp a tiny negative checked duration to zero. Ordering must
     // reject that raw predecessor before accepting any computed age.
     let received_at: Instant = read.mono_after;
     if processing < received_at {
         slot.rejected += 1;
-        return;
+        return ReplyCommit::Finished;
     }
     let Some(age): Option<Duration> = processing.checked_duration_since(received_at) else {
         slot.rejected += 1;
-        return;
+        return ReplyCommit::Finished;
     };
-    if matches!(
-        source_policy::commit_managed_reply(slot, candidate, deadline),
-        source_policy::ManagedEffect::Handled
-    ) {
-        return;
+    match source_policy::try_commit_managed_reply(slot, candidate, deadline) {
+        source_policy::ManagedReplyCommit::Contended => return ReplyCommit::Contended,
+        source_policy::ManagedReplyCommit::Handled => return ReplyCommit::Finished,
+        source_policy::ManagedReplyCommit::UnmanagedLab => {
+            finish_valid_reply_with_age(slot, candidate, processing, age);
+        }
     }
-    finish_valid_reply_with_age(slot, candidate, processing, age);
+    ReplyCommit::Finished
 }
 
 /// Commit an already checked ordinary/control result while managed policy custody

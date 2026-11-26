@@ -25,10 +25,10 @@ use super::SoftwareClock;
 use super::{
     ApplicationClockCapture, Control, ControlHandle, ControlSchedule, ExperimentalProfile,
     FailureSummary, IoCause, IoOutcome, LiveSlot, MAX_TIMEOUT, NativeDatagramPlatform,
-    NativeReadOutcome, PACKET_BYTES, PilotError, RECEIVE_BYTES, Rejection, RunClockContext,
-    SlotReport, StagedReply, Status, TerminalOutcome, TimerAction, attempt_send,
-    charge_selected_datagram, classify_read_result, commit_reply, finish_timer, latest,
-    prepare_slot, refresh_source_policy, stage_reply, start_timer,
+    NativeReadOutcome, PACKET_BYTES, PilotError, RECEIVE_BYTES, Rejection, ReplyCommit,
+    RunClockContext, SlotReport, StagedReply, Status, TerminalOutcome, TimerAction, attempt_send,
+    charge_selected_datagram, classify_read_result, finish_timer, latest, prepare_slot,
+    refresh_source_policy, stage_reply, start_timer, try_commit_reply,
 };
 use ntp_wire::FrameLimits;
 
@@ -929,34 +929,20 @@ async fn next_series_wake(
     }
 }
 
-/// Stage semantic arithmetic, then recheck control/deadline immediately at commit.
-fn process_series_reply(
-    slot: &mut LiveSlot,
-    control: &mut watch::Receiver<Control>,
-    bytes: &[u8],
-    source: SocketAddr,
-    read: ApplicationClockCapture,
-    limits: FrameLimits,
-    deadline: Instant,
-) -> Control {
-    let staged = stage_reply(slot, bytes, source, read, limits);
-    publish_series_reply(slot, control, staged, deadline)
-}
-
 /// Publish an actual staged reply only after a fresh serialized owner checkpoint.
 ///
 /// Staging supplies no current permission: controls and the processing deadline
 /// are read here after all semantic/measurement work, with no await before commit.
 /// Refusal preserves prior payloads and irreversibly retires an invalidated request.
-fn publish_series_reply(
+fn try_publish_series_reply(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
     staged: Result<StagedReply, Rejection>,
     deadline: Instant,
-) -> Control {
+) -> (Control, Option<StagedReply>) {
     #[cfg(test)]
     let observer = slot.test_final_guard_observer.clone();
-    publish_series_reply_observing(
+    try_publish_series_reply_observing(
         slot,
         control,
         staged,
@@ -980,19 +966,19 @@ fn publish_series_reply(
 /// The callbacks run outside watch/policy custody, immediately before the final
 /// control guard and after that guard has completed. Production supplies no-ops;
 /// observers grant no permission, terminal outcome or completion acknowledgement.
-fn publish_series_reply_observing(
+fn try_publish_series_reply_observing(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
     staged: Result<StagedReply, Rejection>,
     deadline: Instant,
     before_final_guard: impl FnOnce(),
     after_final_guard: impl FnOnce(),
-) -> Control {
+) -> (Control, Option<StagedReply>) {
     if let Err(reason) = &staged {
         slot.last_rejection = Some(*reason);
         slot.rejected += 1;
     }
-    let mut state = latest(control);
+    let state: Control = latest(control);
     let processing = Instant::now();
     refresh_slot(slot, state, processing, deadline);
     if slot.done() {
@@ -1001,46 +987,99 @@ fn publish_series_reply_observing(
         }
     } else if let Ok(candidate) = staged {
         before_final_guard();
-        {
-            let current = control.borrow();
-            state = *current;
-            if current.stop {
-                slot.rejected += 1;
-                slot.finish(TerminalOutcome::Stopped);
-            } else if current.epoch != 0 {
-                slot.rejected += 1;
-                slot.finish(TerminalOutcome::Stale);
-            } else {
-                commit_reply(slot, &candidate, Instant::now(), deadline);
-            }
-        }
+        let (observed, result) = try_publish_under_control(slot, control, &candidate, deadline);
         after_final_guard();
+        return (
+            observed,
+            matches!(result, ReplyCommit::Contended).then_some(candidate),
+        );
+    }
+    (state, None)
+}
+
+/// Observe current control and admit the same candidate under that read guard.
+/// On contention the caller retains the original candidate until the next wake.
+fn try_publish_under_control(
+    slot: &mut LiveSlot,
+    control: &watch::Receiver<Control>,
+    candidate: &StagedReply,
+    deadline: Instant,
+) -> (Control, ReplyCommit) {
+    let current = control.borrow();
+    let result: ReplyCommit = if current.stop {
+        slot.rejected += 1;
+        slot.finish(TerminalOutcome::Stopped);
+        ReplyCommit::Finished
+    } else if current.epoch != 0 {
+        slot.rejected += 1;
+        slot.finish(TerminalOutcome::Stale);
+        ReplyCommit::Finished
+    } else {
+        try_commit_reply(slot, candidate, Instant::now(), deadline)
+    };
+    (*current, result)
+}
+
+/// Classify an unretained staged reply in direct synchronous controls.
+#[cfg(test)]
+fn publish_series_reply(
+    slot: &mut LiveSlot,
+    control: &mut watch::Receiver<Control>,
+    staged: Result<StagedReply, Rejection>,
+    deadline: Instant,
+) -> Control {
+    let (state, retained) = try_publish_series_reply(slot, control, staged, deadline);
+    if retained.is_some() {
+        slot.rejected += 1;
     }
     state
 }
 
-/// Charge actual datagrams even after retirement; never read a refused prefix.
-fn handle_series_read(
+/// Exercise one synchronous publication checkpoint with direct test observations.
+#[cfg(test)]
+fn publish_series_reply_observing(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
+    staged: Result<StagedReply, Rejection>,
+    deadline: Instant,
+    before_final_guard: impl FnOnce(),
+    after_final_guard: impl FnOnce(),
+) -> Control {
+    let (state, retained) = try_publish_series_reply_observing(
+        slot,
+        control,
+        staged,
+        deadline,
+        before_final_guard,
+        after_final_guard,
+    );
+    if retained.is_some() {
+        slot.rejected += 1;
+    }
+    state
+}
+
+/// Charge each consumed native datagram once and stage only its whole payload.
+/// A retired slot retains its historical terminal state. I/O and truncation
+/// are consumed here, while staged parse results are returned for publication.
+fn stage_selected_series_reply(
+    slot: &mut LiveSlot,
     selected: SeriesRead,
     buffer: &[u8; RECEIVE_BYTES],
     limits: FrameLimits,
-    deadline: Instant,
-    state: Control,
-) -> Control {
+) -> Option<Result<StagedReply, Rejection>> {
     let SeriesRead { result, read } = selected;
     let actual = charge_selected_datagram(slot, &result);
     if slot.done() {
         if actual {
             slot.rejected += 1;
         }
-        return state;
+        return None;
     }
     match result {
         NativeReadOutcome::Datagram { length, source } => {
             if let Some(bytes) = buffer.get(..length) {
-                return process_series_reply(slot, control, bytes, source, read, limits, deadline);
+                return Some(stage_reply(slot, bytes, source, read, limits));
             }
             slot.last_rejection = Some(Rejection::Length);
             slot.rejected += 1;
@@ -1050,6 +1089,69 @@ fn handle_series_read(
             slot.rejected += 1;
         }
         NativeReadOutcome::Io(cause) => slot.finish(TerminalOutcome::Io(IoOutcome::Native(cause))),
+    }
+    None
+}
+
+/// Exercise the charge and final publication for direct synchronous controls.
+#[cfg(test)]
+fn handle_series_read(
+    slot: &mut LiveSlot,
+    control: &mut watch::Receiver<Control>,
+    selected: SeriesRead,
+    buffer: &[u8; RECEIVE_BYTES],
+    limits: FrameLimits,
+    deadline: Instant,
+    state: Control,
+) -> Control {
+    stage_selected_series_reply(slot, selected, buffer, limits).map_or(state, |staged| {
+        publish_series_reply(slot, control, staged, deadline)
+    })
+}
+
+/// The existing request cutoff and its already pinned wake source.
+struct SerialReadWindow<'timer> {
+    /// The original deadline passed to every final publication check.
+    deadline: Instant,
+    /// Borrow the current request timer without starting another duration.
+    timer: Pin<&'timer mut Sleep>,
+}
+
+/// Complete a serial read or retain its single charged candidate on contention.
+/// While retaining it, only control, the original timer and the enrolled release
+/// can make progress. Neither socket I/O nor the normal policy refresh owns it.
+async fn drive_serial_read(
+    slot: &mut LiveSlot,
+    control: &mut watch::Receiver<Control>,
+    selected: SeriesRead,
+    buffer: &[u8; RECEIVE_BYTES],
+    limits: FrameLimits,
+    mut window: SerialReadWindow<'_>,
+    mut state: Control,
+) -> Control {
+    let Some(staged) = stage_selected_series_reply(slot, selected, buffer, limits) else {
+        return state;
+    };
+    let mut retained: Option<StagedReply>;
+    (state, retained) = try_publish_series_reply(slot, control, staged, window.deadline);
+    let mut control_open: bool = true;
+    while let Some(candidate) = retained {
+        tokio::select! { biased;
+            changed = control.changed(), if control_open => {
+                control_open = changed.is_ok();
+            }
+            () = window.timer.as_mut() => {}
+            () = slot.policy.wait_for_reply_release() => {
+                // Repeated immediate releases must yield to other tasks on this runtime.
+                tokio::task::yield_now().await;
+            }
+        }
+        // Go directly to current control, cutoff and policy on every retry.
+        // The original dispatch observer has already run.
+        let (observed, result) =
+            try_publish_under_control(slot, control, &candidate, window.deadline);
+        state = observed;
+        retained = matches!(result, ReplyCommit::Contended).then_some(candidate);
     }
     state
 }
@@ -1151,9 +1253,19 @@ async fn run_request(
                 state = handle_series_writable(&mut slot, control, result, deadline, state);
             }
             SeriesWake::Read(selected) => {
-                state = handle_series_read(
-                    &mut slot, control, selected, &buffer, limits, deadline, state,
-                );
+                state = drive_serial_read(
+                    &mut slot,
+                    control,
+                    selected,
+                    &buffer,
+                    limits,
+                    SerialReadWindow {
+                        deadline,
+                        timer: timer.as_mut(),
+                    },
+                    state,
+                )
+                .await;
             }
         }
         if slot.done() {

@@ -1417,6 +1417,26 @@ fn cleanup_failure_policy_reports_either_or_both_failures() {
     }
 }
 
+/// Poison a clean control gate from the test owner without unwinding the worker.
+/// # Errors
+/// Refuse a gate that was already poisoned before the injection.
+/// # Panics
+/// Fail if the injected unwind fails to poison that same gate.
+fn poison_control_gate(rig: &Rig) -> Check {
+    let guard = rig
+        .worker
+        .gate
+        .lock()
+        .map_err(|_| "gate was already poisoned")?;
+    let caught = catch_unwind(AssertUnwindSafe(move || {
+        let _held = guard;
+        resume_unwind(Box::new(()));
+    }));
+    assert!(caught.is_err());
+    assert!(rig.worker.gate.is_poisoned());
+    Ok(())
+}
+
 /// Poison the actual control lock after Engine preparation without unwinding its worker.
 ///
 /// # Errors
@@ -1435,19 +1455,7 @@ fn poisoned_control_publication_retires_the_real_preparation_without_sending() -
     let mut rig: Rig = Rig::start(worker, Admission::Accept, &peer)?;
     assert!(matches!(rig.step(), InvocationPoll::Pending(_)));
     publication.wait()?;
-    {
-        let guard = rig
-            .worker
-            .gate
-            .lock()
-            .map_err(|_| "gate was already poisoned")?;
-        let caught = catch_unwind(AssertUnwindSafe(move || {
-            let _held = guard;
-            resume_unwind(Box::new(()));
-        }));
-        assert!(caught.is_err());
-    }
-    assert!(rig.worker.gate.is_poisoned());
+    poison_control_gate(&rig)?;
     assert!(matches!(rig.step(), InvocationPoll::Pending(_)));
     assert!(rig.invocation.admission_closed());
     assert_eq!(rig.invocation.outstanding_work(), 1);

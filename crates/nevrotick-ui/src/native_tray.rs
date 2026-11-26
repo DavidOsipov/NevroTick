@@ -13,6 +13,8 @@ use std::fmt;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+#[cfg(any(windows, test))]
+use std::time::{Duration, Instant};
 
 use crate::localization::{Snapshot, UiText, check_fixture_literal};
 use crate::shell::AdapterAvailability;
@@ -22,6 +24,139 @@ use crate::tray_ui::{FixtureTrayMenu, TrayEntry, TrayInteraction, TrayItemId};
 mod windows;
 #[cfg(windows)]
 pub use windows::{NativeTray, TrayPixels};
+
+/// Fixed lifetime of a recovery window opened by an observed loss.
+#[cfg(any(windows, test))]
+const RECOVERY_WINDOW: Duration = Duration::from_secs(2);
+/// Minimum interval from a returned recovery sequence to the next start.
+#[cfg(any(windows, test))]
+const RECOVERY_SPACING: Duration = Duration::from_millis(500);
+/// Maximum number of Add/SetVersion sequences charged to one window.
+#[cfg(any(windows, test))]
+const RECOVERY_ATTEMPTS: u8 = 2;
+
+/// Admission for exactly one native publication sequence.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum IconPublication {
+    /// The initial setup has finished creating the window and icon.
+    Initial,
+    /// The current registered icon can accept a projected update.
+    Update,
+    /// One recovery sequence reserved under this original cutoff.
+    Recovery(Instant),
+}
+
+#[cfg(any(windows, test))]
+impl IconPublication {
+    /// An attempt can start a call only while its original admission is current.
+    fn permits(self, now: Instant, current: bool) -> bool {
+        current && !matches!(self, Self::Recovery(cutoff) if now >= cutoff)
+    }
+}
+
+/// Worker-owned allowance for one fixed recovery window.
+#[cfg(any(windows, test))]
+struct RecoveryWindow {
+    /// Exclusive deadline for new work in this window.
+    cutoff: Instant,
+    /// Sequences still available to the original loss window.
+    remaining: u8,
+}
+
+/// One pending intent. Success preserves the window and inter-attempt spacing.
+#[cfg(any(windows, test))]
+#[derive(Default)]
+struct TrayRecovery {
+    /// The worker explicitly began its one initial publication.
+    started: bool,
+    /// One retained loss eligible for retry within its original allowance.
+    pending: bool,
+    /// The most recently opened window, including a spent allowance.
+    window: Option<RecoveryWindow>,
+    /// Earliest subsequent start, even when the window rolls over.
+    next_start: Option<Instant>,
+}
+
+#[cfg(any(windows, test))]
+impl TrayRecovery {
+    /// Admit the worker's explicit initial publication once resources are ready.
+    fn start(&mut self) -> Option<IconPublication> {
+        if std::mem::replace(&mut self.started, true) {
+            None
+        } else {
+            Some(IconPublication::Initial)
+        }
+    }
+
+    /// Retain one loss. Only a new hint after expiry can open a new window.
+    fn hint(&mut self, now: Instant) -> bool {
+        if !self.started {
+            return false;
+        }
+        if self
+            .window
+            .as_ref()
+            .is_none_or(|window| now >= window.cutoff)
+        {
+            self.window = now
+                .checked_add(RECOVERY_WINDOW)
+                .map(|cutoff| RecoveryWindow {
+                    cutoff,
+                    remaining: RECOVERY_ATTEMPTS,
+                });
+        }
+        !std::mem::replace(&mut self.pending, true)
+    }
+
+    /// Polling is observational and cannot replenish the allowance.
+    fn due(&self, now: Instant) -> bool {
+        self.pending
+            && self
+                .window
+                .as_ref()
+                .is_some_and(|window| now < window.cutoff && window.remaining > 0)
+            && self.next_start.is_none_or(|next| now >= next)
+    }
+
+    /// Admit a Modify or charge the next recovery before any Shell work.
+    fn take(
+        &mut self,
+        now: Instant,
+        registered: bool,
+        projection_pending: bool,
+    ) -> Option<IconPublication> {
+        if !self.started {
+            return None;
+        }
+        if registered {
+            return projection_pending.then_some(IconPublication::Update);
+        }
+        if !self.due(now) {
+            return None;
+        }
+        let next = now.checked_add(RECOVERY_SPACING)?;
+        let window = self.window.as_mut()?;
+        window.remaining -= 1;
+        self.next_start = Some(next);
+        self.pending = false;
+        Some(IconPublication::Recovery(window.cutoff))
+    }
+
+    /// Space the next sequence from actual completion, even across windows.
+    /// A failure requeues only its own intent, without a refill.
+    fn completed(&mut self, now: Instant, cutoff: Instant, retry: bool) {
+        self.next_start = now.checked_add(RECOVERY_SPACING).or(self.next_start);
+        if retry
+            && self
+                .window
+                .as_ref()
+                .is_some_and(|window| window.cutoff == cutoff)
+        {
+            self.pending = true;
+        }
+    }
+}
 
 /// Fixed startup/cleanup error; no arbitrary Windows message or text is retained.
 #[cfg(any(windows, test))]
@@ -355,6 +490,9 @@ pub struct TrayBridge {
     worker_started: AtomicBool,
     /// Native publication is in flight; old registration is not a current text ack.
     publishing: AtomicBool,
+    /// Window and native call budget; locks never span a Shell call.
+    #[cfg(windows)]
+    recovery: Mutex<TrayRecovery>,
     /// An actual host projection update is pending; a raw wake cannot create one.
     update_pending: AtomicBool,
     /// Private host request, never manufactured by a raw Windows message.
@@ -362,6 +500,9 @@ pub struct TrayBridge {
     /// At most one posted control wake; repeated updates only replace one slot.
     #[cfg(windows)]
     control_queued: AtomicBool,
+    /// Request menu and message-loop exit once through the native owner.
+    #[cfg(windows)]
+    exit_requested: AtomicBool,
     /// Owned `HWND` identity expressed as an opaque Windows handle word.
     #[cfg(windows)]
     endpoint: Mutex<usize>,
@@ -377,6 +518,9 @@ pub struct TrayBridge {
     /// Native popup nesting; prevents repeated menu creation and orders teardown.
     #[cfg(windows)]
     menu_open: AtomicBool,
+    /// One update-driven dismissal request per popup, separate from Stop.
+    #[cfg(windows)]
+    menu_update_requested: AtomicBool,
     /// Explicit native cleanup failure, latched for truthful final reporting.
     cleanup_failed: AtomicBool,
     /// Only a bounded UI-event scheduling port, never the Root's controller.
@@ -401,6 +545,8 @@ impl TrayBridge {
             loss_generation: AtomicU64::new(0),
             restored_generation: AtomicU64::new(0),
             publishing: AtomicBool::new(false),
+            #[cfg(windows)]
+            recovery: Mutex::new(TrayRecovery::default()),
             update_pending: AtomicBool::new(false),
             #[cfg(windows)]
             worker_started: AtomicBool::new(false),
@@ -410,6 +556,8 @@ impl TrayBridge {
             #[cfg(windows)]
             control_queued: AtomicBool::new(false),
             #[cfg(windows)]
+            exit_requested: AtomicBool::new(false),
+            #[cfg(windows)]
             icon: AtomicUsize::new(0),
             #[cfg(windows)]
             icon_attempted: AtomicBool::new(false),
@@ -417,6 +565,8 @@ impl TrayBridge {
             taskbar_created: AtomicUsize::new(0),
             #[cfg(windows)]
             menu_open: AtomicBool::new(false),
+            #[cfg(windows)]
+            menu_update_requested: AtomicBool::new(false),
             cleanup_failed: AtomicBool::new(false),
             #[cfg(any(windows, test))]
             wake,
@@ -570,6 +720,14 @@ pub enum IconOperation {
 }
 /// Narrow native call seam for source-bound registration-order controls.
 pub trait IconCalls {
+    /// An entered call can acknowledge only the original current publication.
+    fn accepts_acknowledgement(&self) -> bool {
+        true
+    }
+    /// Recheck current authority before each individual native operation.
+    fn eligible(&self) -> bool {
+        self.accepts_acknowledgement()
+    }
     /// Return the actual outcome for this one allowed operation.
     fn notify(&mut self, operation: IconOperation) -> bool;
 }
@@ -577,11 +735,16 @@ pub trait IconCalls {
 /// Existing updates must acknowledge Modify; no failed call is converted to success.
 #[must_use]
 pub fn registration_update(calls: &mut impl IconCalls, registered: bool) -> bool {
-    if registered {
+    let accepted: bool = if !calls.eligible() {
+        false
+    } else if registered {
         calls.notify(IconOperation::Modify)
     } else {
-        calls.notify(IconOperation::Add) && calls.notify(IconOperation::SetVersion)
-    }
+        calls.notify(IconOperation::Add)
+            && calls.eligible()
+            && calls.notify(IconOperation::SetVersion)
+    };
+    accepted && calls.accepts_acknowledgement()
 }
 
 /// Encode only the six private menu IDs, reserving zero for cancellation.
@@ -1076,5 +1239,234 @@ mod tests {
         };
         assert!(!registration_update(&mut calls, true));
         assert_eq!(calls.operations, vec![IconOperation::Modify]);
+    }
+
+    /// Projection changes and raw wakes cannot bootstrap or refill registration.
+    /// # Panics
+    /// Fails if an update can register before the worker or without a loss.
+    #[test]
+    fn recovery_needs_worker_start_and_actual_loss() {
+        let now: Instant = Instant::now();
+        let mut recovery = TrayRecovery::default();
+        assert!(!recovery.hint(now));
+        assert_eq!(recovery.take(now, false, true), None);
+        assert_eq!(recovery.start(), Some(IconPublication::Initial));
+        assert_eq!(recovery.start(), None);
+        assert_eq!(recovery.take(now, false, true), None);
+        assert_eq!(
+            recovery.take(now, true, true),
+            Some(IconPublication::Update)
+        );
+        assert!(!recovery.due(now));
+    }
+
+    /// A burst of successful Shell registrations still spends one fixed window.
+    /// # Errors
+    /// Refuses an unrepresentable test deadline neighbor.
+    /// # Panics
+    /// Fails if the burst replenishes the attempt count or shortens spacing.
+    #[test]
+    fn successful_recovery_does_not_refill_a_hint_burst() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let now: Instant = Instant::now();
+        let cutoff: Instant = now + Duration::from_secs(2);
+        let second: Instant = now + Duration::from_millis(500);
+        let mut recovery = TrayRecovery::default();
+        assert_eq!(recovery.start(), Some(IconPublication::Initial));
+        assert!(recovery.hint(now));
+        assert_eq!(
+            recovery.take(now, false, true),
+            Some(IconPublication::Recovery(cutoff))
+        );
+        let mut calls = Calls {
+            results: [true, true],
+            operations: Vec::new(),
+        };
+        assert!(registration_update(&mut calls, false));
+        recovery.completed(now, cutoff, false);
+
+        assert!(recovery.hint(now));
+        for millisecond in 1..500 {
+            let later: Instant = now + Duration::from_millis(millisecond);
+            assert!(!recovery.hint(later));
+            assert_eq!(recovery.take(later, false, true), None);
+        }
+        assert_eq!(
+            recovery.take(second, false, false),
+            Some(IconPublication::Recovery(cutoff))
+        );
+        let mut replacement = Calls {
+            results: [true, true],
+            operations: Vec::new(),
+        };
+        assert!(registration_update(&mut replacement, false));
+        recovery.completed(second, cutoff, false);
+        assert_eq!(calls.operations.len() + replacement.operations.len(), 4);
+        assert!(recovery.hint(second));
+        let before_cutoff: Instant = cutoff
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("cutoff edge")?;
+        assert_eq!(recovery.take(before_cutoff, false, true), None);
+        assert_eq!(recovery.take(cutoff, false, true), None);
+        let _new_loss = recovery.hint(cutoff);
+        assert_eq!(
+            recovery.take(cutoff, false, true),
+            Some(IconPublication::Recovery(cutoff + Duration::from_secs(2)))
+        );
+        Ok(())
+    }
+
+    /// A failed retry expires with its own window, and spacing crosses its end.
+    /// # Errors
+    /// Refuses an unrepresentable test cutoff or spacing neighbor.
+    /// # Panics
+    /// Fails if expiry alone rearms work or the new window forgets spacing.
+    #[test]
+    fn expired_recovery_waits_for_a_new_hint_and_respects_spacing()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let now: Instant = Instant::now();
+        let cutoff: Instant = now + Duration::from_secs(2);
+        let returned: Instant = cutoff + Duration::from_millis(100);
+        let next: Instant = returned + Duration::from_millis(500);
+        let mut recovery = TrayRecovery::default();
+        assert_eq!(recovery.start(), Some(IconPublication::Initial));
+        assert!(recovery.hint(now));
+        let late: Instant = cutoff
+            .checked_sub(Duration::from_millis(1))
+            .ok_or("cutoff edge")?;
+        assert_eq!(
+            recovery.take(late, false, false),
+            Some(IconPublication::Recovery(cutoff))
+        );
+        assert_eq!(recovery.take(cutoff, false, true), None);
+        assert!(recovery.hint(cutoff));
+        recovery.completed(returned, cutoff, true);
+        let before_spacing: Instant = next
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("spacing edge")?;
+        assert_eq!(recovery.take(before_spacing, false, true), None);
+        assert_eq!(
+            recovery.take(next, false, true),
+            Some(IconPublication::Recovery(cutoff + Duration::from_secs(2)))
+        );
+        Ok(())
+    }
+
+    /// Retry uses the original cutoff without waiting for a second hint.
+    /// # Errors
+    /// Refuses an unrepresentable test retry neighbor.
+    /// # Panics
+    /// Fails if retry loses the original deadline or the second attempt cannot run.
+    #[test]
+    fn a_failed_shell_attempt_can_recover_within_its_original_window()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let now: Instant = Instant::now();
+        let cutoff: Instant = now + Duration::from_secs(2);
+        let retry: Instant = now + Duration::from_millis(500);
+        let mut recovery = TrayRecovery::default();
+        assert_eq!(recovery.start(), Some(IconPublication::Initial));
+        assert!(recovery.hint(now));
+        assert_eq!(
+            recovery.take(now, false, false),
+            Some(IconPublication::Recovery(cutoff))
+        );
+        let mut fails_version = Calls {
+            results: [true, false],
+            operations: Vec::new(),
+        };
+        assert!(!registration_update(&mut fails_version, false));
+        recovery.completed(now, cutoff, true);
+        let before_retry: Instant = retry
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("retry edge")?;
+        assert!(!recovery.due(before_retry));
+        assert!(recovery.due(retry));
+        assert_eq!(
+            recovery.take(retry, false, true),
+            Some(IconPublication::Recovery(cutoff))
+        );
+        let mut healthy = Calls {
+            results: [true, true],
+            operations: Vec::new(),
+        };
+        assert!(registration_update(&mut healthy, false));
+        recovery.completed(retry, cutoff, false);
+        assert!(!recovery.due(cutoff));
+        Ok(())
+    }
+
+    /// An actual Add already entered can outlive its lease. The next operation cannot.
+    /// # Panics
+    /// Fails if the next call starts, or if an obsolete final reply can acknowledge.
+    #[test]
+    fn native_sequence_rechecks_stop_loss_and_cutoff_between_calls() {
+        #[derive(Clone, Copy)]
+        enum Interruption {
+            Stop,
+            Loss,
+            Cutoff,
+        }
+        struct Interrupted {
+            publication: IconPublication,
+            now: Instant,
+            cutoff: Instant,
+            interruption: Interruption,
+            interrupt_on: IconOperation,
+            stopped: bool,
+            current: bool,
+            calls: Vec<IconOperation>,
+        }
+        impl IconCalls for Interrupted {
+            fn accepts_acknowledgement(&self) -> bool {
+                !self.stopped && self.current
+            }
+            fn eligible(&self) -> bool {
+                self.publication
+                    .permits(self.now, self.accepts_acknowledgement())
+            }
+            fn notify(&mut self, operation: IconOperation) -> bool {
+                self.calls.push(operation);
+                if operation == self.interrupt_on {
+                    match self.interruption {
+                        Interruption::Stop => self.stopped = true,
+                        Interruption::Loss => self.current = false,
+                        Interruption::Cutoff => self.now = self.cutoff,
+                    }
+                }
+                true
+            }
+        }
+        let now: Instant = Instant::now();
+        let cutoff: Instant = now + Duration::from_secs(2);
+        for (interrupt_on, interruption, expected) in [
+            (IconOperation::Add, Interruption::Stop, false),
+            (IconOperation::Add, Interruption::Loss, false),
+            (IconOperation::Add, Interruption::Cutoff, false),
+            (IconOperation::SetVersion, Interruption::Stop, false),
+            (IconOperation::SetVersion, Interruption::Loss, false),
+            (IconOperation::SetVersion, Interruption::Cutoff, true),
+        ] {
+            let mut calls = Interrupted {
+                publication: IconPublication::Recovery(cutoff),
+                now,
+                cutoff,
+                interruption,
+                interrupt_on,
+                stopped: false,
+                current: true,
+                calls: Vec::new(),
+            };
+            assert_eq!(registration_update(&mut calls, false), expected);
+            assert_eq!(calls.calls.first(), Some(&IconOperation::Add));
+            assert_eq!(calls.calls.last(), Some(&interrupt_on));
+            assert_eq!(
+                calls.calls.len(),
+                if interrupt_on == IconOperation::Add {
+                    1
+                } else {
+                    2
+                }
+            );
+        }
     }
 }

@@ -262,6 +262,150 @@ class CompileResourceControls(unittest.TestCase):
         self.assertEqual(resource.getrlimit(resource.RLIMIT_AS), before_as)
 
 
+    EP1_BUILD = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                 "--config", 'source.reviewed.directory="/vendor"', "nextest", "archive", "--package",
+                 "nevrotick-engine", "--cargo-profile", "release", "--frozen", "--build-jobs", "6",
+                 "--lib", "--tests", "--user-config-file", "none", "--features",
+                 "nevrotick-engine/ke-association-prototype", "--archive-file", "/work/gnu-ep1-engine.nextest.tar.zst"]
+    EP1_ARCHIVE = "gnu-ep1-engine.nextest.tar.zst"
+    EP1_EXTRACT = "gnu-ep1-engine-reuse"
+    EP1_REUSE = ["cargo", "nextest", "run", "--archive-file", "/work/gnu-ep1-engine.nextest.tar.zst",
+                 "--extract-to", "/work/gnu-ep1-engine-reuse", "--workspace-remap", "/work/fixture",
+                 "--user-config-file", "none", "--no-tests=fail"]
+    EP1_BUILD_ROW = "engine-ep1-release-test-build"
+    EP1_TEST_ROW = "optimized-tests:nevrotick-engine"
+    EP1_PROFILE = "engine-ke-association"
+    EP1_NEXT_TEST = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                     "--config", 'source.reviewed.directory="/vendor"', "nextest", "run", "--package",
+                     "nevrotick-engine", "--cargo-profile", "release", "--frozen", "--build-jobs",
+                     "6", "--lib", "--tests", "--user-config-file", "none", "--no-tests=fail",
+                     "--features", "nevrotick-engine/ke-association-prototype"]
+
+    def test_only_the_exact_portable_ep1_archive_command_gets_240_cpu_seconds(self):
+        context = {"lane": "portable", "label": self.EP1_BUILD_ROW, "profile": self.EP1_PROFILE}
+        expected = ["/usr/bin/prlimit", "--as=4294967296", "--cpu=240", "--nproc=128",
+                    "--nofile=256", "--fsize=268435456", "--", *self.EP1_BUILD]
+        invocation = self.assembled(self.EP1_BUILD, **context)
+        self.assertEqual(invocation[invocation.index("--") + 1:], expected)
+        bootstrap = self.assembled(self.EP1_REUSE, **{**context, "label": self.EP1_TEST_ROW})
+        self.assertIn("--cpu=90", bootstrap)
+        changes = ((self.EP1_BUILD, {"lane": "windows"}), (self.EP1_BUILD, {"profile": "default"}),
+                   (self.EP1_BUILD, {"label": self.EP1_TEST_ROW}), (self.EP1_NEXT_TEST, {}),
+                   (["run" if arg == "archive" else arg for arg in self.EP1_BUILD], {}),
+                   (["12" if arg == "6" else arg for arg in self.EP1_BUILD], {}),
+                   ([*self.EP1_BUILD[:-1], "/work/foreign.nextest.tar.zst"], {}))
+        for command, change in changes:
+            with self.subTest(command=command, change=change), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.assembled(command, **{**context, **change})
+
+    def exercise_ep1(self, report, launches, *, compile_elapsed=175, compile_exit=0,
+                     changed_runtime=False, produce_archive=True, stale_path=None):
+        with tempfile.TemporaryDirectory(prefix="nevrotick-engine-release-build-") as folder:
+            scratch = Path(folder)
+            args = argparse.Namespace(lane="portable", profile=self.EP1_PROFILE, vendor_dir=scratch,
+                                      toolchain_dir=scratch, scratch_root=scratch, nextest=None,
+                                      deny=None, output_dir=None)
+            names = {"deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+                     *VERIFY.UI_TEXT_CHECKER_FILES, *VERIFY.UI_NATIVE_INPUT_CHECKER_FILES}
+            identity = {name: VERIFY.sha256(ROOT / name) for name in names}
+            runtime = dict(VERIFY.commands("portable", schema_version=3, profile=self.EP1_PROFILE))[self.EP1_TEST_ROW]
+            self.assertEqual(runtime, self.EP1_NEXT_TEST)
+            if changed_runtime:
+                runtime = [*runtime, "--retries=1"]
+            clock = 10.0
+
+            def owns_work():
+                return next(scratch.glob("nevrotick-product-*/work"))
+
+            def boundary_control(_run):
+                if stale_path is not None:
+                    (owns_work() / stale_path).symlink_to("missing")
+
+            def run(invocation, *, timeout, resource_guard, **_kwargs):
+                nonlocal clock
+                program = invocation[invocation.index("/usr/bin/prlimit") + 7:]
+                launches.append((program, timeout))
+                work = owns_work()
+                junit = work / "target/nextest/default/junit.xml"
+                self.assertIsNone(resource_guard())
+                if program == self.EP1_BUILD:
+                    self.assertIn("--cpu=240", invocation)
+                    self.assertFalse((work / self.EP1_EXTRACT).exists())
+                    if produce_archive:
+                        (work / self.EP1_ARCHIVE).write_bytes(b"inert simulated archive")
+                    junit.parent.mkdir(parents=True)
+                    junit.write_text("stale before Nextest")
+                    clock += compile_elapsed
+                    return {"command": invocation, "exit_code": compile_exit, "failure": None, "output": ""}
+                self.assertEqual(program, self.EP1_REUSE)
+                self.assertIn("--cpu=90", invocation)
+                self.assertEqual((work / self.EP1_ARCHIVE).read_bytes(), b"inert simulated archive")
+                self.assertEqual(list((work / self.EP1_EXTRACT).iterdir()), [])
+                self.assertFalse(junit.exists())
+                junit.parent.mkdir(parents=True, exist_ok=True)
+                root = ET.Element("testsuite", name="nevrotick-engine")
+                required = {VERIFY.ENGINE_PROCESSING_GUARD, *VERIFY.ENGINE_KE_TEST_CASES,
+                            "prepare_rejects_entered_runtime_before_native_startup"}
+                for name in sorted(required):
+                    ET.SubElement(root, "testcase", name=name)
+                ET.ElementTree(root).write(junit)
+                return {"command": invocation, "exit_code": 0, "failure": None, "output": ""}
+
+            with (patch.object(VERIFY, "admit_product", return_value=({"schema_version": 3}, identity)),
+                  patch.object(VERIFY, "admit_vendor", return_value={}),
+                  patch.object(VERIFY, "admit_tools", return_value={}),
+                  patch.object(VERIFY.SLINT, "profile_rows"),
+                  patch.object(VERIFY, "commands", return_value=[(self.EP1_TEST_ROW, runtime)]),
+                  patch.object(VERIFY, "native_input_control_commands", return_value=[]),
+                  patch.object(VERIFY, "text_contract_commands", return_value=[]),
+                  patch.object(VERIFY, "boundary_control", side_effect=boundary_control),
+                  patch.object(VERIFY, "summarize_test_counts", return_value={}),
+                  patch.object(VERIFY.ENV.shutil, "which", side_effect=lambda name: "/usr/bin/" + name),
+                  patch.object(VERIFY.time, "monotonic", side_effect=lambda: clock),
+                  patch.object(VERIFY.ENV, "run", side_effect=run),
+                  redirect_stdout(io.StringIO())):
+                VERIFY.execute(ROOT, args, report)
+
+    def test_ep1_shared_wall_and_junit_belong_to_the_existing_test_run(self):
+        report, launches = {}, []
+        self.exercise_ep1(report, launches)
+        self.assertEqual(launches, [(self.EP1_BUILD, 300), (self.EP1_REUSE, 125)])
+        build, tests = report["lanes"]
+        self.assertEqual(build["lane"], self.EP1_BUILD_ROW)
+        self.assertNotIn("tests", build)
+        self.assertEqual(build["wall_timeout_seconds"], 300)
+        self.assertEqual(tests["lane"], self.EP1_TEST_ROW)
+        self.assertEqual(tests["wall_timeout_seconds"], 125)
+        self.assertEqual(tests["tests"]["executed"], 14)
+
+    def test_ep1_failed_or_overdue_compile_is_retained_without_launching_nextest(self):
+        for elapsed, exit_code, output in ((175, 101, True), (300, 0, True), (175, 0, False)):
+            report, launches = {}, []
+            with self.subTest(elapsed=elapsed, exit_code=exit_code, output=output), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.exercise_ep1(report, launches, compile_elapsed=elapsed, compile_exit=exit_code,
+                                  produce_archive=output)
+            self.assertEqual(launches, [(self.EP1_BUILD, 300)])
+            [build] = report["lanes"]
+            self.assertEqual((build["lane"], build["exit_code"]), (self.EP1_BUILD_ROW, exit_code))
+            self.assertNotIn("tests", build)
+            if not exit_code:
+                self.assertIn("wall budget" if output else "no archive", build["failure"])
+
+    def test_ep1_archive_and_extraction_paths_must_be_fresh(self):
+        for path in (self.EP1_ARCHIVE, self.EP1_EXTRACT):
+            report, launches = {}, []
+            with self.subTest(path=path), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "must be fresh"):
+                self.exercise_ep1(report, launches, stale_path=path)
+            self.assertEqual(launches, [])
+
+    def test_ep1_changed_runtime_is_rejected_before_any_process(self):
+        report, launches = {}, []
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            self.exercise_ep1(report, launches, changed_runtime=True)
+        self.assertEqual(launches, [])
+        self.assertEqual(report["lanes"], [])
+
+
 class TextContractControls(unittest.TestCase):
     def test_actual_coverage_result_requires_complete_nonempty_both_direction_success(self):
         healthy = {"status": "passed", "active_ids": 497, "used_ids": 497, "errors": []}

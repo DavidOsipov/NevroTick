@@ -390,6 +390,7 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
 
     /// Attempt at most one due observation within the caller's Running charge.
     /// Each edge freshly applies the owning invocation's Stop and time guards.
+    /// Stop, Deadline and Clock refusals end that invocation's read admission.
     pub(super) fn poll(
         &mut self,
         now: Instant,
@@ -512,12 +513,23 @@ impl<T: Copy, E: Copy> BrokerClockReader<T, E> {
     }
 
     /// Preserve the original refusal without carrying a baseline across the gap.
+    /// Close the invocation mailbox before exposing a terminal read refusal.
     fn retire(
         &mut self,
         revision: NonZeroU64,
         reason: ClockReadRetirement,
         native_failure: Option<E>,
     ) -> BrokerClockRead<T, E> {
+        match reason {
+            ClockReadRetirement::Stop
+            | ClockReadRetirement::Deadline
+            | ClockReadRetirement::Clock => {
+                self.close();
+            }
+            ClockReadRetirement::Generation
+            | ClockReadRetirement::PowerContext
+            | ClockReadRetirement::Discontinuity(_) => {}
+        }
         if let Some(sampling) = &mut self.sampling {
             sampling.previous = None;
         }

@@ -360,11 +360,11 @@ def compare_held_out_exchange(
 
     Both results are worst-case disagreements in nanoseconds, in T1/T4 order.
     The original application brackets and external paired span are checked
-    separately. The paired QPC span must overlap the span from the first tick of
-    pre-send through the last tick of receive-return. The paired wire and placement
-    intervals must permit pre-send, transmission, reception and receive-return in
-    that order. Equality is valid. The bench owner remains responsible for
-    physical validity.
+    separately. The paired QPC span must overlap the closed interval from the
+    end of the pre-send capture to the start of the receive-return capture.
+    The paired wire and placement intervals must permit pre-send, transmission,
+    reception and receive-return in that order. Equality is valid. The bench
+    owner remains responsible for physical validity.
     """
     if type(validity) is not QpcValidityWindow or type(span) is not PairedExchangeSpan:
         raise TrialRefused("invalid exchange validity inputs")
@@ -400,8 +400,8 @@ def _compare_retained_exchange(
     if not validity.start_tick <= span.earliest_tick <= span.latest_tick < validity.end_tick_exclusive:
         raise TrialRefused("paired span crosses validity window")
     if (
-        span.latest_tick < exchange.pre_send.qpc_before
-        or span.earliest_tick > exchange.receive_return.qpc_after
+        span.latest_tick < exchange.pre_send.qpc_after
+        or span.earliest_tick > exchange.receive_return.qpc_before
     ):
         raise TrialRefused("paired QPC span is disjoint from original exchange")
 
@@ -511,9 +511,9 @@ def compare_pinned_reference_exchange(
     legs each contain the event label and three closed nanosecond intervals.
     Modeled wall, validity and budgets are supplied separately by the caller.
     Both returned disagreements are in nanoseconds, in transmit/receive order.
-    The paired QPC span must overlap the original application span. The wire
-    and placement intervals must permit the application and wire event order
-    on a common UTC coordinate.
+    The paired QPC span must overlap the interval from the end of pre-send to
+    the start of receive-return. The wire and placement intervals must permit
+    the application and wire event order on a common UTC coordinate.
 
     The bench owner supplies the pairing pin and remains responsible for the
     physical acquisition, chart, calibration, evidence independence and complete

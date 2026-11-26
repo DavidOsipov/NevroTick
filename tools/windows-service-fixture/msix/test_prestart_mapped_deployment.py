@@ -4,13 +4,14 @@ from hashlib import sha256
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Thread
+from threading import Event, Thread
 from time import monotonic, sleep
 import unittest
 from unittest.mock import patch
 
-from prestart_deployment_session import supervise_prestart_session
-from prestart_mapped_deployment import MappedDeploymentProcess
+from prestart_deployment_owner import launch_rendered_prestart_session
+from prestart_deployment_session import PrestartCaptures
+from prestart_mapped_deployment import MappedDeploymentAttempt, MappedDeploymentProcess
 from prestart_receipts import ReceiptRefused
 import test_prestart_deployment_session as fixtures
 import prestart_mapped_deployment as mapped
@@ -25,8 +26,9 @@ def commit(folder: Path, name: str, data: bytes) -> None:
 
 class MappedDeploymentTests(unittest.TestCase):
     def exercise(self, *, crossed_retirement: bool) -> None:
-        fixture = fixtures.FullPrestartSessionTests()
-        fixture.setUp()
+        launch = fixtures.FullPrestartLaunchTests()
+        launch.setUp()
+        fixture = launch.full
         work = monotonic() + 3
         retirement = work + 1
         native_observations: list[float] = []
@@ -34,6 +36,8 @@ class MappedDeploymentTests(unittest.TestCase):
         failure: list[BaseException] = []
         diagnostic = b"private inert watchdog diagnostic\n"
         result = None
+        native_settled = Event()
+        test = self
         with (
             TemporaryDirectory() as temp,
             fixture.actor(b"A", fixture.access) as access,
@@ -46,18 +50,25 @@ class MappedDeploymentTests(unittest.TestCase):
             run = fixture.bind(access, standard)
             responses = (*fixture.script, (b"R", fixture.deployment.retired))
 
-            def observe_original(cutoff: float) -> tuple[int, bytes]:
-                native_observations.append(cutoff)
-                return (882 if crossed_retirement else 881), diagnostic
+            def wait_for(path: Path) -> None:
+                while not path.exists():
+                    if monotonic() >= retirement:
+                        raise TimeoutError("inert mapped commit missing")
+                    sleep(0.002)
 
             def peer() -> None:
                 try:
+                    wait_for(inbox / "deployment-activation.bin.commit")
+                    activation = (inbox / "deployment-activation.bin").read_bytes()
+                    header, _, entry = activation.partition(b"\n")
+                    test.assertEqual(header, (
+                        f"nevrotick-prestart-activation-v1 {run.id} {len(entry)} {sha256(entry).hexdigest()}"
+                    ).encode("ascii"))
+                    test.assertIn(b"[bool]$fullPrestart = $true\n", entry)
+                    test.assertIn(f"[guid]$expectedRunId = '{run.id}'\n".encode("ascii"), entry)
                     for index, (command, frame) in enumerate(responses, 1):
                         leaf = inbox / f"request-{index}.bin"
-                        while not leaf.with_suffix(".bin.commit").exists():
-                            if monotonic() >= retirement:
-                                raise TimeoutError("inert mapped request missing")
-                            sleep(0.002)
+                        wait_for(leaf.with_suffix(".bin.commit"))
                         observed = leaf.read_bytes()
                         commands.append(observed)
                         if command != observed:
@@ -75,21 +86,51 @@ class MappedDeploymentTests(unittest.TestCase):
                     }).encode("utf-8"))
                 except BaseException as error:
                     failure.append(error)
+                finally:
+                    native_settled.set()
 
-            owner = MappedDeploymentProcess(run, inbox, outbox, work, retirement, observe_original)
             remote = Thread(target=peer)
-            remote.start()
+
+            class Guest:
+                def prepare(self, full, deadline, retirement_deadline):
+                    test.assertEqual(full, run)
+                    test.assertIs(full.provisioning_actor, access)
+                    test.assertIs(full.standard_actor, standard)
+                    test.assertEqual((deadline, retirement_deadline), (work, retirement))
+                    test.assertFalse((inbox / "deployment-activation.bin.commit").exists())
+                    remote.start()
+
+                def confirm_native(self, cutoff):
+                    native_observations.append(cutoff)
+                    test.assertTrue(native_settled.wait(timeout=max(0, cutoff - monotonic())))
+                    return (882 if crossed_retirement else 881), diagnostic
+
+                def request_retirement(self, _cutoff):
+                    test.fail("successful handoff called startup rollback")
+
+                def wait_retired(self, _cutoff):
+                    test.fail("successful handoff used startup settlement")
+
+            provisioning = fixtures.ScriptedOwnerAttempt("provisioning", [], access)
+            ordinary = fixtures.ScriptedOwnerAttempt("standard", [], standard)
+            deployment = MappedDeploymentAttempt(inbox, outbox, Guest())
+
+            def run_join():
+                return launch_rendered_prestart_session(
+                    launch.run, provisioning, ordinary, deployment, launch.rendered_inputs(), work, retirement,
+                    captures=PrestartCaptures(),
+                )
+
             try:
                 if crossed_retirement:
                     with self.assertRaisesRegex(ReceiptRefused, "native observation differs"):
-                        supervise_prestart_session(run, owner, access, standard, work, retirement)
+                        run_join()
                 else:
-                    result = supervise_prestart_session(run, owner, access, standard, work, retirement)
+                    result = run_join()
             finally:
-                owner.stdin.close()
-                owner.stdout.close()
-                remote.join(timeout=max(0.0, retirement - monotonic()))
-                self.assertFalse(remote.is_alive())
+                if remote.ident is not None:
+                    remote.join(timeout=max(0.0, retirement - monotonic()))
+                    self.assertFalse(remote.is_alive())
         self.assertEqual(failure, [])
         self.assertEqual(b"".join(commands), b"SCICOAUFR")
         self.assertEqual(native_observations, [retirement])
@@ -105,6 +146,78 @@ class MappedDeploymentTests(unittest.TestCase):
 
     def test_native_watchdog_identity_must_match_even_with_complete_mapped_transcript(self) -> None:
         self.exercise(crossed_retirement=True)
+
+    def test_failed_activation_retires_original_guest_and_unadmitted_pipes(self) -> None:
+        for mode in ("preparation", "before-commit", "after-commit", "unconfirmed-native"):
+            with self.subTest(mode=mode):
+                launch = fixtures.FullPrestartLaunchTests()
+                launch.setUp()
+                work, retirement = launch.work_deadline, launch.retirement_deadline
+                events = []
+                committed = mode in ("after-commit", "unconfirmed-native")
+                test = self
+                with (
+                    TemporaryDirectory() as temp,
+                    launch.full.actor(b"") as access,
+                    launch.full.actor(b"") as standard,
+                ):
+                    inbox, outbox = Path(temp) / "in", Path(temp) / "out"
+                    inbox.mkdir()
+                    outbox.mkdir()
+                    marker = inbox / "deployment-activation.bin.commit"
+
+                    class Guest:
+                        def prepare(self, _run, _work, _retirement):
+                            events.append("prepare")
+                            if mode == "preparation":
+                                raise OSError("controlled activation refusal")
+
+                        def confirm_native(self, _cutoff):
+                            test.fail("unadmitted pipe used the positive transcript observer")
+
+                        def request_retirement(self, cutoff):
+                            test.assertEqual(cutoff, retirement)
+                            test.assertEqual(marker.exists(), committed)
+                            events.append("signal")
+
+                        def wait_retired(self, cutoff):
+                            test.assertEqual(cutoff, retirement)
+                            test.assertEqual(events, ["prepare", "signal"])
+                            events.append("observe")
+                            if mode == "unconfirmed-native":
+                                raise TimeoutError("original native settlement unconfirmed")
+
+                    original = mapped.publish_deployment_activation
+
+                    def refuse(*arguments):
+                        if committed:
+                            original(*arguments)
+                        raise OSError("controlled activation refusal")
+
+                    attempt = MappedDeploymentAttempt(inbox, outbox, Guest())
+                    provisioning = fixtures.ScriptedOwnerAttempt("provisioning", [], access)
+                    ordinary = fixtures.ScriptedOwnerAttempt("standard", [], standard)
+                    with patch.object(mapped, "publish_deployment_activation", side_effect=refuse):
+                        with self.assertRaises((OSError, BaseExceptionGroup)) as problem:
+                            launch_rendered_prestart_session(
+                                launch.run, provisioning, ordinary, attempt, launch.rendered_inputs(), work, retirement,
+                                captures=PrestartCaptures(),
+                            )
+                    if mode == "unconfirmed-native":
+                        primary, retirement_problem = problem.exception.exceptions
+                        self.assertIsInstance(primary, OSError)
+                        self.assertIsInstance(retirement_problem, TimeoutError)
+                        self.assertEqual(str(retirement_problem), "original native settlement unconfirmed")
+                    else:
+                        primary = problem.exception
+                    self.assertEqual(str(primary), "controlled activation refusal")
+                    self.assertEqual(events, ["prepare", "signal", "observe"])
+                    self.assertTrue(attempt._host.stdin.closed and attempt._host.stdout.closed)
+                    self.assertFalse(attempt._host._thread.is_alive())
+                    self.assertFalse(list(inbox.glob("request-*")))
+                    for peer in (access, standard):
+                        self.assertEqual(peer.requests, [b""])
+                        self.assertTrue(peer.retired_exit.is_set())
 
     def test_unread_reply_larger_than_pipe_capacity_cannot_hold_the_bridge_past_deadline(self) -> None:
         from fcntl import F_SETPIPE_SZ, fcntl

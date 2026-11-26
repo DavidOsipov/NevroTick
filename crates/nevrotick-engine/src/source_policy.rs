@@ -3528,6 +3528,16 @@ impl LivePolicy {
         Ok(())
     }
 
+    /// Await a reply's already-enrolled release waiter without replacing it.
+    /// The serial reply driver supplies its original timer and current controls.
+    pub(super) async fn wait_for_reply_release(&mut self) {
+        if let LiveMode::Managed(live) = &mut self.mode {
+            live.released.as_mut().await;
+        } else {
+            pending::<()>().await;
+        }
+    }
+
     /// Await actual changes for every phase; release wakes apply only to contention.
     pub(super) async fn wake(&mut self) {
         let LiveMode::Managed(live) = &mut self.mode else {
@@ -3687,9 +3697,35 @@ fn attempt_managed_send_observing(
     ManagedEffect::Handled
 }
 
+/// The result of entering the managed final receive guard for one sealed reply.
+pub(super) enum ManagedReplyCommit {
+    /// The original slot and proposal both belong to the unmanaged laboratory.
+    UnmanagedLab,
+    /// The guard has already committed or refused this proposal.
+    Handled,
+    /// The guard enrolled a release waiter and left this proposal unconsumed.
+    Contended,
+}
+
 /// Hold current policy custody through the parent's concrete terminal publication.
-/// The third argument is the original request deadline, never an old observation.
-pub(super) fn commit_managed_reply(
+/// The deadline is the original request cutoff. On contention this returns the
+/// unconsumed proposal's disposition without adding a rejection charge.
+pub(super) fn try_commit_managed_reply(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    deadline: Instant,
+) -> ManagedReplyCommit {
+    try_commit_managed_reply_observing(
+        slot,
+        candidate,
+        deadline,
+        observations::InstantRead::hardware(),
+    )
+}
+
+/// Observe the same final policy guard in the immediate-disposition fixture.
+#[cfg(test)]
+fn commit_managed_reply(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
     deadline: Instant,
@@ -3702,20 +3738,40 @@ pub(super) fn commit_managed_reply(
     )
 }
 
-/// Consume one deferred final observation under the same actual policy custody.
+/// Direct leaf controls classify unretained contention as an immediate rejection.
+#[cfg(test)]
 fn commit_managed_reply_observing(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
     deadline: Instant,
     observation: observations::InstantRead,
 ) -> ManagedEffect {
+    match try_commit_managed_reply_observing(slot, candidate, deadline, observation) {
+        ManagedReplyCommit::UnmanagedLab => ManagedEffect::UnmanagedLab,
+        ManagedReplyCommit::Handled => ManagedEffect::Handled,
+        ManagedReplyCommit::Contended => {
+            slot.rejected += 1;
+            ManagedEffect::Handled
+        }
+    }
+}
+
+/// Consume one deferred final observation only after current policy acquisition.
+fn try_commit_managed_reply_observing(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    deadline: Instant,
+    observation: observations::InstantRead,
+) -> ManagedReplyCommit {
     let (live, stamp, control) = match (&mut slot.policy.mode, &candidate.policy.kind) {
-        (LiveMode::UnmanagedLab, StagedKind::UnmanagedLab) => return ManagedEffect::UnmanagedLab,
+        (LiveMode::UnmanagedLab, StagedKind::UnmanagedLab) => {
+            return ManagedReplyCommit::UnmanagedLab;
+        }
         (LiveMode::Managed(live), StagedKind::Managed { stamp, control }) => (live, stamp, control),
         _ => {
             slot.rejected += 1;
             slot.last_rejection = Some(super::Rejection::SourcePolicy(SourcePolicyError::Foreign));
-            return ManagedEffect::Handled;
+            return ManagedReplyCommit::Handled;
         }
     };
     let binding = live.binding.clone();
@@ -3726,13 +3782,12 @@ fn commit_managed_reply_observing(
         Ok(guard) => guard,
         Err(SourcePolicyError::Contended) => {
             live.wait = WaitState::Contended;
-            slot.rejected += 1;
-            return ManagedEffect::Handled;
+            return ManagedReplyCommit::Contended;
         }
         Err(error) => {
             slot.rejected += 1;
             slot.finish(TerminalOutcome::SourcePolicy(error));
-            return ManagedEffect::Handled;
+            return ManagedReplyCommit::Handled;
         }
     };
     live.disarm_release();
@@ -3740,15 +3795,15 @@ fn commit_managed_reply_observing(
     if now >= deadline {
         slot.rejected += 1;
         slot.expire();
-        return ManagedEffect::Handled;
+        return ManagedReplyCommit::Handled;
     }
     if !matches!(slot.phase, Phase::Pending(_)) {
-        return ManagedEffect::Handled;
+        return ManagedReplyCommit::Handled;
     }
     let read: SoftwareClock = candidate.read.software();
     if now < read.mono_after {
         slot.rejected += 1;
-        return ManagedEffect::Handled;
+        return ManagedReplyCommit::Handled;
     }
     let admission = (|| {
         let state = guard.state_mut()?;
@@ -3787,7 +3842,7 @@ fn commit_managed_reply_observing(
         Ok(true) => finish_valid_reply(slot, candidate, now),
         Ok(false) => {}
     }
-    ManagedEffect::Handled
+    ManagedReplyCommit::Handled
 }
 
 /// Create an isolated laboratory fixture root using the same bounded allocator.

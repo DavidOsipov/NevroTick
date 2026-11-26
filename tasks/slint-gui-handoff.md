@@ -715,6 +715,95 @@ UI-M0/D1–D3 triggers and the basic-release rich-toast deferral remain.
 The existing dependency sequence continues below; this amendment starts no held
 native, service, package or production-UI execution.
 
+#### Bound tray recovery at the Windows worker
+
+S0.5 and CHECK-21/27. The worker's one explicit initial registration
+comes after creation of the window and icon. Later restart hints and
+actual failed Modify operations can leave one pending recovery. A raw
+control wake or a projection change while unregistered cannot create or
+refill that intent. The existing 100 ms owner poll wakes the worker for
+an unacknowledged projection or a due recovery. The original worker
+resamples its own time and authority before submitting native work.
+
+The provisional source policy allows two attempts in a fixed half-open
+two-second window. A successful attempt preserves that window and budget.
+The next attempt starts at least 500 ms after the preceding recovery
+sequence returned, including across window boundaries. This bounds each
+window to four positive registration calls. Each Add and SetVersion
+checks the original cutoff and current Stop and loss. A call already
+entered can return later. It acknowledges only while Stop and loss still
+match. A later independent hint can open a fresh expired window. The
+ordinary window remains reachable when registration is unavailable.
+
+A newer hint during a publication retains one successor and invalidates
+the older acknowledgement. Hints inside a popup defer native recovery to
+its return. An update asks to dismiss a popup once. The actual Stop has
+its own one-shot exit and still retains cleanup custody through join,
+including Delete after a possibly effective earlier Add. Recovery uses
+the existing native worker, window and UI poll.
+
+The extracted portable check ran the exact recovery state and shared
+registration sequence with the five new tests on Rust 1.100.0. Four
+isolated variants each reached the intended failure after removing the
+charge, spacing from actual completion, between-call check or final
+acknowledgement check. The first harness link stopped before execution
+because its working directory was read-only. The retry used owned
+scratch and the process-local core limit. That receipt is
+`state-check-final/result.json`, SHA-256
+`65bb2100e71ffdf1fc5c794cca218fbe8823dfadda146662e1261d931773c868`.
+The corrected test contracts and checked boundary arithmetic passed the
+same baseline and four fault controls again. Evidence under
+`~/.local/share/nevrotick/tray-recovery-2611.ryFoYvBI/state-check-lint/`
+is bound by `result.json` SHA-256
+`a94465949504ea765c8b86879feddd51e420df98ba51b9afd7279923ad70c3e7`.
+The earlier configured Windows run passed the compiler and stopped at
+Clippy on documentation, test time arithmetic, naming and the tray
+pump's function length. Its `windows-current.json` SHA-256 is
+`4d120d9006fba3d80d58666c4a83401e17d1995ba28a37373731b49eb2bb6d94`.
+The repaired candidate passed all 35 configured MSVC lanes with 772
+bound source inputs, including strict Clippy, both x64 release links
+and the VERSIONINFO and static import readbacks. The retained UI image
+SHA-256 is `bf4b30a76411f963b755eeef5bf52eb148aac8b8a09beef15837e5436576d9ed`.
+`windows-checked.json` SHA-256 is
+`aff1f70ce6f7571b339bcad78ca21ff5063a291ad04c4dfcbbbd30796e9083e1`.
+The MSIX inspection retained `assembly-inputs-incomplete`.
+The GNU run passed compilation, strict Clippy, all 214 ordinary UI
+tests including the five tray controls, and all 17 UI doctests. The
+independent roster readback matched the three tray source hashes in
+both configured receipts. The optimized Engine cohort finished 312/313.
+Its `public_managed_round_live_endpoint_refusal_preserves_history_and_later_source_use`
+case produced `Exhausted` where the fixture expected `Control` at
+[the first round assertion](../crates/nevrotick-engine/tests/private/source_policy.rs#L335).
+The same case passed in the ordinary cohort. The GNU receipt remains incomplete
+at 42 of 43 executed lanes. Its fail-fast exit left the final
+`windows-platform-native` test and doctest rows unexecuted.
+`portable-checked.json` SHA-256 is
+`c91e937d28c4fd3059aeaf4d90005ae8cd36484339f28565e3c6826998297841`.
+The first isolated launch stopped before test execution because nextest's
+nested offline Cargo invocation lacked the vendor configuration. Its
+`repeat-engine.json` SHA-256 is
+`1998a3b3ff52680e9e6aa6996eda4449626dfea4fb72be2a7d09ff601b09f62d`.
+The corrected launch used the configured private Cargo home and nextest
+store and selected the exact case with one test thread. It passed five
+times, with individual test times from 56 to 70 ms. The retained
+`engine-isolated/repeat-engine.json` SHA-256 is
+`7438d0549b537eb745fab79cf0f647f0aadfc1fe98b5b6a65968b40de55955eb`.
+The original parallel cohort remains incomplete.
+
+The [Engine contention diagnostic](engine-transport-pilot.md#diagnose-loss-of-a-selected-managed-reply-on-release--26-november-2026)
+now owns the follow-up. The source review identified both a deadline path
+and a policy-custody path consistent with the original output.
+
+This scope leaves actual Explorer/display-change behavior, native
+call counts, popup reentry and disable/Quit cleanup for Windows evidence.
+The earlier elevated Slint startup and caption-Close observer does not
+exercise the default-off tray. Start the native tray cohort with an admitted
+ordinary-user token and an observer for enable, hide, restore and cleanup
+on the original process before adding shell restarts and popup reentry.
+Observe the tray worker and window retiring and measure GUI objects and
+kernel handles before disposing of the guest. Application Verifier and
+debugger coverage of the changed Shell/FFI paths remains pending.
+
 1. Resume from the actual checkout and
    [development section 7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
    whose current child is independent reference/mapping qualification after the

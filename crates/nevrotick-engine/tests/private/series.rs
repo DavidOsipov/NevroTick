@@ -198,6 +198,39 @@ async fn queued_native_reply_configuring(
     profile: Option<ExperimentalProfile>,
     install: impl FnOnce(SocketAddr) -> Result<(), Box<dyn Error>>,
 ) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
+    let pending = pending_native_reply(source, profile, install).await?;
+    if pending.peer.send_to(&pending.reply, pending.slot.local)? != PACKET_BYTES {
+        return Err(PilotError::InternalState.into());
+    }
+    Ok((pending.slot, pending.deadline))
+}
+
+/// Actual pending request and the peer's independently correlated reply.
+struct PendingNativeReply {
+    /// Original socket owner after its single confirmed send.
+    slot: LiveSlot,
+    /// Original invocation control and its sender.
+    control: watch::Receiver<Control>,
+    /// Sender paired with the original invocation control.
+    handle: ControlHandle,
+    /// Exclusive request cutoff, retained from before the native send.
+    deadline: Instant,
+    /// The peer that received the original query.
+    peer: crate::StdSocket,
+    /// Literal header carrying the exact original echoed wire token.
+    reply: [u8; PACKET_BYTES],
+}
+
+/// Send one genuine query and retain its peer before it replies.
+/// # Errors
+/// Preserve checked configuration, readiness, and native socket failures.
+/// # Panics
+/// Fail unless the original query reaches the peer and leaves its slot pending.
+async fn pending_native_reply(
+    source: Option<&crate::SourceHandle>,
+    profile: Option<ExperimentalProfile>,
+    install: impl FnOnce(SocketAddr) -> Result<(), Box<dyn Error>>,
+) -> Result<PendingNativeReply, Box<dyn Error>> {
     let lifetime = Duration::from_secs(2);
     let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
     remote.set_read_timeout(Some(lifetime))?;
@@ -249,7 +282,7 @@ async fn queued_native_reply_configuring(
     issued?;
     drop(boundary);
     tokio::time::timeout(lifetime, slot.socket.writable()).await??;
-    let (_sender, mut control) = watch::channel(quiet);
+    let (sender, mut control) = watch::channel(quiet);
     let observed = handle_series_writable(&mut slot, &mut control, Ok(()), deadline, quiet);
     assert!(!observed.stop && observed.epoch == 0);
     if Instant::now() < deadline {
@@ -284,10 +317,15 @@ async fn queued_native_reply_configuring(
     reply[24..32].copy_from_slice(&received[40..48]);
     reply[32..40].copy_from_slice(&1_u64.to_be_bytes());
     reply[40..48].copy_from_slice(&2_u64.to_be_bytes());
-    if remote.send_to(&reply, client)? != PACKET_BYTES {
-        return Err(PilotError::InternalState.into());
-    }
-    Ok((slot, deadline))
+    assert_eq!(client, slot.local);
+    Ok(PendingNativeReply {
+        slot,
+        control,
+        handle: ControlHandle { sender },
+        deadline,
+        peer: remote,
+        reply,
+    })
 }
 
 /// Construct the original fixture receiver with explicitly unmanaged provenance.
@@ -1878,6 +1916,97 @@ fn single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor()
         assert_eq!(length, PACKET_BYTES);
         assert!(capped.terminal().and_then(TerminalOutcome::facts).is_none());
         Ok::<(), Box<dyn Error>>(())
+    })
+}
+
+/// Keep the original managed reply while another real datagram is ready.
+/// # Errors
+/// Preserve native queueing, policy custody and original driver failures.
+/// # Panics
+/// Fail if the driver reads again while retaining the first selected reply.
+#[test]
+fn managed_serial_reply_preserves_queued_second_datagram() -> Result<(), Box<dyn Error>> {
+    use std::{
+        future::Future,
+        sync::atomic::{AtomicBool, Ordering},
+        task::{Context, Waker},
+    };
+
+    runtime()?.block_on(async {
+        let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+            1,
+            1,
+            Duration::from_millis(1),
+            Duration::from_millis(4),
+        )?)?;
+        let source = authority.source(0)?;
+        let PendingNativeReply {
+            mut slot,
+            mut control,
+            handle,
+            deadline,
+            peer,
+            reply,
+        } = pending_native_reply(Some(&source), None, |_| Ok(())).await?;
+        let binding = source.bind(slot.peer)?;
+        let destination: SocketAddr = slot.local;
+        let peer_address: SocketAddr = peer.local_addr()?;
+        // The duplicated descriptor only observes the original kernel queue with
+        // MSG_PEEK and never consumes a packet or runs any product receive.
+        let original = slot.socket.into_std()?;
+        let queue_observer = original.try_clone()?;
+        slot.socket = tokio::net::UdpSocket::from_std(original)?;
+
+        let selected = Arc::new(AtomicBool::new(false));
+        slot.test_final_guard_observer = Some(TestFinalGuardObserver {
+            callback: Arc::new({
+                let selected = Arc::clone(&selected);
+                move |event, _control| {
+                    if matches!(event, TestFinalGuardEvent::ReplyAfter) {
+                        assert!(!selected.swap(true, Ordering::SeqCst));
+                    }
+                }
+            }),
+            handle,
+        });
+
+        let code: u32 = u32::from_be_bytes(*b"DENY");
+        let mut first: [u8; PACKET_BYTES] = reply;
+        first[1] = 0;
+        first[12..16].copy_from_slice(&code.to_be_bytes());
+        assert_eq!(peer.send_to(&first, destination)?, PACKET_BYTES);
+        tokio::time::timeout_at(TokioInstant::from_std(deadline), slot.socket.readable()).await??;
+        let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+        let mut request = std::pin::pin!(run_request(slot, &mut control, deadline, limits));
+        crate::source_policy::fixture_while_locked(&binding, || -> Result<(), Box<dyn Error>> {
+            let mut context = Context::from_waker(Waker::noop());
+            assert!(request.as_mut().poll(&mut context).is_pending());
+            assert!(selected.load(Ordering::SeqCst), "first final guard was not reached");
+
+            assert_eq!(peer.send_to(&reply, destination)?, PACKET_BYTES);
+            let mut queued: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+            assert_eq!(queue_observer.peek_from(&mut queued)?, (PACKET_BYTES, peer_address));
+            assert!(queued[..PACKET_BYTES] == reply, "second datagram was not queued");
+            assert!(request.as_mut().poll(&mut context).is_pending());
+            Ok(())
+        })??;
+
+        let (slot, state) =
+            tokio::time::timeout_at(TokioInstant::from_std(deadline), request).await?;
+        assert!(!state.stop && state.epoch == 0);
+        assert_eq!(slot.send_attempts, 1);
+        assert_eq!((slot.received, slot.rejected), (1, 0));
+        assert!(matches!(slot.terminal(), Some(TerminalOutcome::Control { code: actual }) if *actual == code));
+
+        let mut untouched: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+        let observed = tokio::time::timeout_at(
+            TokioInstant::from_std(deadline),
+            slot.socket.recv_from(&mut untouched),
+        )
+        .await??;
+        assert_eq!(observed, (PACKET_BYTES, peer_address));
+        assert!(untouched[..PACKET_BYTES] == reply, "driver changed the queued datagram");
+        Ok(())
     })
 }
 

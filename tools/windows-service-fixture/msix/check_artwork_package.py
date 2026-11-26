@@ -3,7 +3,6 @@
 
 import argparse
 from hashlib import sha256
-from io import BytesIO
 import json
 from pathlib import Path
 import struct
@@ -41,11 +40,7 @@ MAX_UI: int = 24 * 1024 * 1024
 PNG_SIGNATURE: bytes = b"\x89PNG\r\n\x1a\n"
 PRI_SIGNATURE: bytes = b"mrm_pri2"
 FOOTPRINT_NS: dict[str, str] = {
-    "": reader.FOUNDATION[1:-1],
-    "uap": reader.UAP[1:-1],
-    "uap10": reader.UAP10[1:-1],
-    "desktop6": reader.DESKTOP6[1:-1],
-    "rescap": reader.RESCAP[1:-1],
+    **reader.MANIFEST_NAMESPACES,
     "trustedlaunch": "http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10",
 }
 TRUSTED: str = "{" + FOOTPRINT_NS["trustedlaunch"] + "}"
@@ -91,14 +86,8 @@ def exact_text(node: ET.Element, value: str, label: str) -> None:
 
 def check_manifest(raw: bytes) -> None:
     root: ET.Element = reader.parse_xml(raw, "combined manifest")
-    namespace_bindings: dict[str, str] = {}
-    for event, value in ET.iterparse(BytesIO(raw), events=("start-ns", "start")):
-        if event == "start":
-            break
-        prefix, uri = value
-        namespace_bindings[prefix] = uri
     ignorable: list[str] = root.get("IgnorableNamespaces", "").split()
-    reader.require(namespace_bindings == FOOTPRINT_NS, "combined manifest namespace bindings differ")
+    reader.require(reader.root_namespace_bindings(raw) == FOOTPRINT_NS, "combined manifest namespace bindings differ")
     foundation: str = reader.FOUNDATION
     uap: str = reader.UAP
     uap10: str = reader.UAP10
@@ -258,13 +247,10 @@ def main() -> int:
         package_sha: str = sha256(package).hexdigest()
         reader.require(package_sha == args.package_sha256, "package SHA-256 differs")
         payload: dict[str, bytes] = reader.read_payload(args.payload, PAYLOAD_NAMES, member_limit=member_limit)
-        try:
-            members: dict[str, reader.PackageMember] = reader.read_archive(
-                package, ARCHIVE_NAMES, maximum_archive_bytes=MAX_ARCHIVE, maximum_expanded_bytes=MAX_EXPANDED,
-                member_limit=member_limit,
-            )
-        except NotImplementedError as error:
-            raise reader.Refused("unsupported ZIP extract version") from error
+        members: dict[str, reader.PackageMember] = reader.read_archive(
+            package, ARCHIVE_NAMES, maximum_archive_bytes=MAX_ARCHIVE, maximum_expanded_bytes=MAX_EXPANDED,
+            member_limit=member_limit,
+        )
         for name in sorted(PAYLOAD_NAMES):
             emitted: bytes = members[name].data
             reader.require(emitted == payload[name], f"archive/authored member differs: {name}")

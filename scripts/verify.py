@@ -69,6 +69,29 @@ BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
 # Test execution and ten-worker mutation scheduling have separate policies.
 TEST_BUILD_JOBS = 6
 BOUNDED_TEST_BUILD_PACKAGES = {"nevrotick-ui", "time-core", "ntp-wire", "time-domain"}
+# Pin the selected row before replacing its Cargo build with explicit reuse.
+ENGINE_EP1_RELEASE_BUILD_ROW = "engine-ep1-release-test-build"
+ENGINE_EP1_RELEASE_TEST_ROW = "optimized-tests:nevrotick-engine"
+ENGINE_EP1_ARCHIVE_NAME = "gnu-ep1-engine.nextest.tar.zst"
+ENGINE_EP1_EXTRACT_NAME = "gnu-ep1-engine-reuse"
+ENGINE_EP1_RELEASE_BUILD = (
+    "cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+    "--config", 'source.reviewed.directory="/vendor"', "nextest", "archive", "--package", "nevrotick-engine",
+    "--cargo-profile", "release", "--frozen", "--build-jobs", "6", "--lib", "--tests",
+    "--user-config-file", "none", "--features", "nevrotick-engine/ke-association-prototype",
+    "--archive-file", f"/work/{ENGINE_EP1_ARCHIVE_NAME}",
+)
+ENGINE_EP1_RELEASE_TEST = (
+    "cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+    "--config", 'source.reviewed.directory="/vendor"', "nextest", "run", "--package", "nevrotick-engine",
+    "--cargo-profile", "release", "--frozen", "--build-jobs", "6", "--lib", "--tests",
+    "--user-config-file", "none", "--no-tests=fail", "--features", "nevrotick-engine/ke-association-prototype",
+)
+ENGINE_EP1_RELEASE_REUSE = (
+    "cargo", "nextest", "run", "--archive-file", f"/work/{ENGINE_EP1_ARCHIVE_NAME}",
+    "--extract-to", f"/work/{ENGINE_EP1_EXTRACT_NAME}", "--workspace-remap", "/work/fixture",
+    "--user-config-file", "none", "--no-tests=fail",
+)
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",
@@ -1984,9 +2007,8 @@ def link_ui_entry(build: list[str], digest: str) -> list[str]:
 def command_resources(lane: str, label: str, command: list[str], *, profile: str = "default") -> dict:
     """Select one finite build budget from the exact configured command owner.
 
-    The larger compilation ceilings belong only to the two Windows release
-    artifact rows. UI alone allows8GiB virtual AS and600 seconds wall time.
-    These change no product runtime budget or compiler setting.
+    The two Windows release artifact rows and the portable EP1 archive build
+    have fixed compilation ceilings. Windows UI alone allows 8 GiB AS and 600 seconds wall time.
     There is no caller-provided number, environment override or CLI budget.
     """
     if (type(lane) is not str or lane not in {"portable", "windows", "dependencies"}
@@ -1995,6 +2017,12 @@ def command_resources(lane: str, label: str, command: list[str], *, profile: str
             or type(command) is not list or not command
             or any(type(argument) is not str for argument in command)):
         raise ENV.Incomplete("Unadmitted product command resource context.")
+    portable_ep1 = lane == "portable" and profile == SLINT.EP1_PROFILE
+    if label == ENGINE_EP1_RELEASE_BUILD_ROW or tuple(command) == ENGINE_EP1_RELEASE_BUILD:
+        if not portable_ep1 or label != ENGINE_EP1_RELEASE_BUILD_ROW or tuple(command) != ENGINE_EP1_RELEASE_BUILD:
+            raise ENV.Incomplete("Engine EP1 release build requires its exact lane, profile, row and command.")
+        return {"name": "product-gnu-engine-ep1-release-build", "cpu_seconds": 240, "wall_seconds": 300}
+
     release_labels = {"windows-link", "windows-engine-link"}
     if label in release_labels or "--release" in command:
         if lane != "windows" or label not in release_labels:
@@ -2029,18 +2057,18 @@ def sandbox(toolchain: Path, work: Path, source: Path, vendor: Path,
     elif profile != "default":
         raise ENV.Incomplete("A dependency profile requires an explicit product resource context.")
     invocation = ENV.sandbox_command(toolchain, work, command)
-    if resources is not None and resources["name"] in {"product-windows-release", "product-windows-ui-release"}:
+    if resources is not None and resources["cpu_seconds"] != 90:
         # The bootstrap owner remains unchanged. Admit its complete current
         # wrapper before adapting CPU and, for the exact UI release row, AS.
         try:
             separator = invocation.index("--")
         except ValueError as error:
-            raise ENV.Incomplete("Windows release compilation lacks the admitted bootstrap wrapper.") from error
+            raise ENV.Incomplete("Release compilation lacks the admitted bootstrap wrapper.") from error
         expected = ["/usr/bin/prlimit", "--as=4294967296", "--cpu=90", "--nproc=128",
                     "--nofile=256", "--fsize=268435456", "--", *command]
         if invocation[separator + 1:] != expected:
-            raise ENV.Incomplete("Windows release compilation has a changed bootstrap resource wrapper.")
-        invocation[separator + 3] = "--cpu=300"
+            raise ENV.Incomplete("Release compilation has a changed bootstrap resource wrapper.")
+        invocation[separator + 3] = f"--cpu={resources['cpu_seconds']}"
         if resources["name"] == "product-windows-ui-release":
             invocation[separator + 2] = "--as=8589934592"
     index = invocation.index("--")
@@ -3084,7 +3112,9 @@ def execute(root: Path, args, report: dict) -> None:
         report["checker_sha256"] = {name: source_identity[name] for name in checker_names}
         metadata_outputs = {}
         tree_outputs = {}
-        def run(label, command, *, extra=()):
+        ep1_archive = work / ENGINE_EP1_ARCHIVE_NAME
+
+        def run(label, command, *, extra=(), shared_deadline: float | None = None):
             target: str | None = None
             if label.startswith("dependency-"):
                 flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
@@ -3103,12 +3133,36 @@ def execute(root: Path, args, report: dict) -> None:
             if extra:
                 insertion = invocation.index("--")
                 invocation[insertion:insertion] = extra
-            result = ENV.run(invocation,
-                             cwd=root, timeout=resources["wall_seconds"],
-                             environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"},
-                             **output_budget)
+            timeout = resources["wall_seconds"]
+            if shared_deadline is not None:
+                deadline = shared_deadline
+
+                def shared_wall_guard() -> str | None:
+                    return "ENGINE_EP1_RELEASE_WALL" if time.monotonic() >= deadline else None
+
+                timeout = max(0.0, deadline - time.monotonic())
+                output_budget["resource_guard"] = shared_wall_guard
+            if timeout == 0:
+                result = {"command": invocation, "exit_code": None, "output": "",
+                          "failure": "shared Engine EP1 release wall budget expired before launch"}
+            else:
+                result = ENV.run(invocation, cwd=root, timeout=timeout,
+                                 environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"},
+                                 **output_budget)
+                if shared_deadline is not None and result["failure"] is None and shared_wall_guard():
+                    result["failure"] = "shared Engine EP1 release wall budget expired"
+                if result["failure"] is None and result["exit_code"] == 0 and label == ENGINE_EP1_RELEASE_BUILD_ROW:
+                    try:
+                        archive = ep1_archive.lstat()
+                    except FileNotFoundError:
+                        result["failure"] = "Engine EP1 release build produced no archive"
+                    else:
+                        if not stat.S_ISREG(archive.st_mode) or archive.st_nlink != 1 or archive.st_size == 0:
+                            result["failure"] = "Engine EP1 release build produced an inadmissible archive"
             record = {"lane": label, "command": command, "exit_code": result["exit_code"],
                       "failure": result["failure"], "output": result["output"], "resource_profile": resources}
+            if shared_deadline is not None:
+                record["wall_timeout_seconds"] = timeout
             if label == MSIX_INSPECTION_LANE:
                 # The final receipt contains the checked structured projection.
                 del record["output"]
@@ -3173,6 +3227,21 @@ def execute(root: Path, args, report: dict) -> None:
         metadata_dir = None
         version_roles = {"windows-link": "ui", "windows-engine-link": "observe"}
         for label, command in commands(args.lane, schema_version=policy["schema_version"], patched_packages=patched_names, profile=profile):
+            if label == ENGINE_EP1_RELEASE_BUILD_ROW:
+                raise ENV.Incomplete("The Engine EP1 release archive row belongs to optimized test dispatch.")
+            if args.lane == "portable" and profile == SLINT.EP1_PROFILE and label == ENGINE_EP1_RELEASE_TEST_ROW:
+                if tuple(command) != ENGINE_EP1_RELEASE_TEST:
+                    raise ENV.Incomplete("The configured Engine EP1 optimized command differs from its archive selectors.")
+                extract = work / ENGINE_EP1_EXTRACT_NAME
+                if os.path.lexists(ep1_archive) or os.path.lexists(extract):
+                    raise ENV.Incomplete("Engine EP1 release archive and extraction paths must be fresh.")
+                reuse = list(ENGINE_EP1_RELEASE_REUSE)
+                resources = command_resources(args.lane, label, reuse, profile=profile)
+                deadline = time.monotonic() + resources["wall_seconds"]
+                run(ENGINE_EP1_RELEASE_BUILD_ROW, list(ENGINE_EP1_RELEASE_BUILD), shared_deadline=deadline)
+                extract.mkdir(mode=0o700)
+                run(label, reuse, shared_deadline=deadline)
+                continue
             if not ui_tools or label not in version_roles:
                 run(label, command)
                 continue

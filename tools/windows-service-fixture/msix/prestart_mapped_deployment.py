@@ -11,10 +11,12 @@ import select
 import stat
 from threading import Event, Thread
 from time import monotonic
-from typing import BinaryIO
+from typing import BinaryIO, Protocol
 
 from check_package import read_regular, unique_object
-from prestart_deployment_session import MAX_FRAME, _combined_failure, _remaining, _require_deadlines
+from prestart_deployment_activation import publish_deployment_activation
+from prestart_deployment_owner import RenderedDeploymentOwner
+from prestart_deployment_session import MAX_FRAME, _combined_failure, _remaining, _require_deadlines, _retire
 from prestart_receipts import ReceiptRefused, Run, require, require_run
 
 
@@ -24,6 +26,113 @@ _TERMINAL_FIELDS: frozenset[str] = frozenset({
     "run", "commands", "reply_count", "launch_attempted", "transport_ok", "retired",
     "watchdog_pid", "watchdog_exit", "stdout_eof", "stderr_eof", "stdout_sha256", "stderr_sha256",
 })
+
+
+class MappedRelayGuest(Protocol):
+    """Retain the original relay and native job independently of the host pipes."""
+
+    def prepare(self, run: Run, deadline: float, retirement_deadline: float) -> None:
+        """Start the pinned relay and confirm it is ready to await this run's activation."""
+        ...
+
+    def confirm_native(self, deadline: float) -> tuple[int, bytes]:
+        """Confirm original relay settlement and return its watchdog PID and diagnostics.
+
+        Observe this before final package cleanup. The cleanup owner may still
+        be waiting for the host's observation of the other role processes.
+        """
+        ...
+
+    def request_retirement(self, deadline: float) -> None:
+        """Signal the original attempt without waiting, including partial preparation.
+
+        The activation marker may be absent or already visible. The guest
+        owner must handle either case without relying on an admitted host pipe.
+        """
+        ...
+
+    def wait_retired(self, deadline: float) -> None:
+        """Verify original native settlement or retain custody on refusal.
+
+        A refusal of the application or transport may still allow verified
+        retirement. Neither expiry nor final package cleanup proves it.
+        """
+        ...
+
+
+class MappedDeploymentAttempt:
+    """Connect the full rendered entry to one protected Sandbox relay attempt.
+
+    The outer transaction owns admitted actors, installation, quiescence and
+    distinct mappings. If launch fails before this attempt starts, that outer
+    owner still owns its setup and rollback.
+    """
+
+    def __init__(self, records_in: Path, records_out: Path, guest: MappedRelayGuest) -> None:
+        self._in: Path = records_in
+        self._out: Path = records_out
+        self._guest: MappedRelayGuest = guest
+        self._retirement: float | None = None
+        self._host: MappedDeploymentProcess | None = None
+        self._guest_attempted: bool = False
+
+    def start(self, entry: RenderedDeploymentOwner, deadline: float,
+              retirement_deadline: float) -> "MappedDeploymentProcess":
+        """Start with the original coordinator-rendered entry and absolute cutoffs."""
+        require(self._retirement is None, "mapped deployment attempt already used")
+        _require_deadlines(deadline, retirement_deadline)
+        self._retirement = retirement_deadline
+        host = MappedDeploymentProcess(
+            entry.run, self._in, self._out, deadline, retirement_deadline, self._guest.confirm_native,
+        )
+        self._host = host
+        _remaining(deadline)
+        self._guest_attempted = True
+        require(self._guest.prepare(entry.run, deadline, retirement_deadline) is None,
+                "invalid mapped guest readiness")
+        publish_deployment_activation(self._in, entry, deadline, retirement_deadline)
+        _remaining(deadline)
+        return host
+
+    def request_retirement(self, retirement_deadline: float) -> None:
+        """Signal the original guest and stop the unadmitted host bridge."""
+        if self._retirement is None:
+            return
+        cutoff = min(retirement_deadline, self._retirement)
+        def signal_guest() -> None:
+            if self._guest_attempted:
+                require(self._guest.request_retirement(cutoff) is None, "invalid mapped guest retirement signal")
+
+        def abandon_host() -> None:
+            if self._host is not None:
+                self._host._abandon()
+
+        problem = _retire("mapped deployment launch retirement signal failed", (signal_guest, abandon_host))
+        if problem is not None:
+            raise problem
+
+    def wait_retired(self, retirement_deadline: float) -> None:
+        """Observe local and original native retirement even if launch was refused."""
+        if self._retirement is None:
+            return
+        cutoff = min(retirement_deadline, self._retirement)
+
+        def guest_retired() -> None:
+            if self._guest_attempted:
+                require(self._guest.wait_retired(cutoff) is None, "invalid mapped guest settlement")
+
+        def host_retired() -> None:
+            if self._host is not None:
+                self._host._join_abandoned(cutoff)
+
+        def check_cutoff() -> None:
+            _remaining(cutoff)
+
+        problem = _retire(
+            "mapped deployment launch retirement failed", (guest_retired, host_retired, check_cutoff),
+        )
+        if problem is not None:
+            raise problem
 
 
 class MappedDeploymentProcess:
@@ -57,6 +166,7 @@ class MappedDeploymentProcess:
         self._terminal: dict[str, object] | None = None
         self._error: BaseException | None = None
         self._work_expired: TimeoutError | None = None
+        self._abandoned = Event()
         with ExitStack() as caller:
             worker = ExitStack()
             ready = Event()
@@ -149,7 +259,7 @@ class MappedDeploymentProcess:
         input_closed: bool = False
         try:
             os.set_blocking(reply, False)
-            while True:
+            while not self._abandoned.is_set():
                 delay: float = min(0.01, _remaining(self._retirement))
                 if not pending and replies < len(self._commands):
                     frame: bytes | None = self._committed(f"reply-{replies + 1}.bin", _FRAME_EXTENT)
@@ -183,6 +293,19 @@ class MappedDeploymentProcess:
                     del pending[:sent]
         except BaseException as failure:
             self._error = failure
+
+    def _abandon(self) -> None:
+        """Stop only local forwarding before admission has transferred pipe ownership."""
+        self._abandoned.set()
+        failure = _retire("mapped deployment pipe closure failed", (self.stdin.close, self.stdout.close))
+        if failure is not None:
+            raise failure
+
+    def _join_abandoned(self, deadline: float) -> None:
+        require(self._abandoned.is_set() and self.stdin.closed and self.stdout.closed,
+                "mapped deployment pipe retirement was not requested")
+        self._thread.join(timeout=max(0.0, min(deadline, self._retirement) - monotonic()))
+        require(not self._thread.is_alive(), "deployment relay writer retirement unconfirmed")
 
     def wait_retired(self, deadline: float) -> None:
         require(self.stdin.closed and self.stdout.closed, "deployment relay pipe custody")

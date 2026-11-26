@@ -609,9 +609,7 @@ fn pump_tray(window: &AppWindow, state: &RefCell<BindingState>) -> Option<TrayIt
     let requested = state.borrow().preferences.tray_enabled();
     if native.tray.is_none() && native.stopping.is_none() {
         native.tray_intent.acknowledge_disable();
-        if native.tray_intent.take_retry() {
-            native.tray_fault = false;
-        }
+        native.tray_fault &= !native.tray_intent.take_retry();
     }
     let mut action = None;
     if let Some(tray) = native.tray.as_mut() {
@@ -681,6 +679,7 @@ fn pump_tray(window: &AppWindow, state: &RefCell<BindingState>) -> Option<TrayIt
                         let _visible = restore_window(window);
                     }
                 }
+                tray.port.poll_publication();
             } else {
                 let start = TrayPixels::embedded_brand().and_then(|pixels| {
                     let wake: Arc<dyn UiWake> = native.wake.clone();

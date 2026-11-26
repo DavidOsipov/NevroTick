@@ -120,6 +120,7 @@ CLOCK_ASSERTIONS = {
             "newer_notice_wins_over_a_sampled_contradiction",
             "notice_or_stop_wins_over_a_sampled_getter_failure",
             "sampled_invalidation_closes_at_revision_exhaustion",
+            "terminal_read_edge_withdraws_the_original_revision_immediately",
             "time_change_controls_are_role_and_lifecycle_bound")},
         **{"broker_clock_change::power_tests::" + name: "src/broker_clock_power_tests.rs" for name in (
             "power_delivery_is_role_lifecycle_and_event_scoped",

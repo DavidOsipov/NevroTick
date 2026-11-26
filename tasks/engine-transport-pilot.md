@@ -21504,6 +21504,169 @@ pass follows. This publication includes the verified repair and existing B83
 address-round checkpoint records. The proposed current-role five-file rebind and
 fresh qualification runner remain out of tree, unapplied and unexecuted.
 
+#### Diagnose loss of a selected managed reply on release — 26 November 2026
+
+S2.1 plain managed UDP, REQ-8/BND-2 and CHECK-6/8/21/27. The
+[optimized GNU failure](slint-gui-handoff.md#bound-tray-recovery-at-the-windows-worker)
+returned `Exhausted` for the A/E round. The exact case passed five isolated
+replays, leaving the cause of the parallel failure unresolved. The private
+fixture now reports the two round summaries, historical slot accounting and
+monotonic peer query and DENY-send observations at its existing assertion.
+Its public entrypoints and deadlines are still used.
+The first diagnostic launch stopped on Rust's unused-qualification lint.
+The correction replaced the redundant import qualification. The old
+launcher detected that correction in its end-of-run worktree comparison,
+so the first receipt is incomplete and contains no executed tests.
+That `parallel-engine.json` SHA-256 is
+`fccecf341e7999c77fd551395885d2bf235e36fbdb71a349ebeafc6de75a785e`.
+The corrected diagnostic candidate passed both full optimized Engine runs,
+313 of 313 each. Those runs did not reproduce the earlier failure.
+`parallel/parallel-engine.json` SHA-256 is
+`4d5092f089f0395fd30ce49a92e6e6078a8703e1e2a57ef272171fa8aa219170`.
+
+Source review found a separate release path to test. Both serial drivers
+select and charge the actual datagram, stage it under the existing protocol
+checks, and reach the same final policy guard. On contention that guard
+arms release and rejects the staged reply. Neither driver retains that
+candidate on the release wake. The earlier rejection-accounting checkpoint
+governs the terminal count if a datagram is abandoned. It supplies no
+driver evidence for committing the original datagram after custody returns.
+
+Use the existing final guard observer in the actual series driver. The peer
+sends one correlated DENY. A synchronization worker acquires the actual
+policy mutex just before the final guard and releases it just after that
+attempt. The healthy case omits contention and keeps the same exchange.
+Require one selected and committed DENY, both direct restrictions, and no
+successor send. The peer output gives only loopback evidence. A repair must
+keep the sealed original candidate and receive charge, original cutoff, fresh
+Stop and epoch checks, and at most one commit. Stop, stale authority or an
+expired cutoff must retire it with one rejection. The distinct protected
+S2.2 receiver and native qualification stay with their existing owners.
+
+The directed optimized run on Rust 1.100.0 reached both lock schedules with
+one actual peer datagram apiece. The free-lock neighbor passed all checks.
+With the actual lock held during final commit and then released, the first
+slot instead reported `(Timeout, true, 1, 1, None)`. The expected result is
+`(Control, true, 1, 0, Some(DENY))`. This establishes a reached receive
+continuation failure. It does not attribute the earlier parallel failure.
+The frozen derived test, log and JUnit report are retained under
+`~/.local/share/nevrotick/engine-managed-round-2611.Q76D4Vms/directed/`.
+`directed-engine.json` SHA-256 is
+`f76c3fcc0c18e9cf1068663777cf11d8dda415e956be1dcb97a98872d150c60b`.
+The deadline witness repeated the failure with an independent lower bound
+on the first request's cutoff. Actual lock release left 1.999775052 seconds
+before even that earlier bound. This excludes late release as the explanation
+for this directed failure. `deadline-witness/directed-engine.json` SHA-256 is
+`6cdb9cc580900f0229728a15d07813beb51fc061ab5b3172d3b3afdf31d4c7e3`.
+
+The reviewed repair direction keeps one staged candidate local to the serial
+read continuation in both managed drivers. A contended attempt releases its
+invocation watch guard and waits on current control, the original timer and
+the enrolled policy-release notification. An intervening routine refresh
+would replace the waiter. On each retry, the original data and charge remain
+bound to the socket and guards while current authority and cutoff are checked
+again. The direct leaf and two-socket laboratory paths keep their immediate
+rejection behavior. Required controls include timely release, Stop, stale
+authority, expiry, the receive cap and a queued second datagram.
+
+The repair now routes both serial read arms through this continuation. The
+selected payload stays local to that call and the retry goes directly through
+the final current-control and managed-policy guards. The original attempt
+keeps its existing observer and the retry cannot invoke it again. The first
+strict run reached the Rust checks and stopped on the new fixture's length
+lint. The refactored fixture passed scoped strict all-targets Clippy and the
+full optimized Engine cohort, 314 of 314, including lock release, Stop,
+invalidation and cutoff while a separate worker held the actual policy cell.
+`repair/verified-controls/repair-engine.json` SHA-256 is
+`b307c73023b7d4871b58694442c6f05f05a3eb17a5632f508a3571f8cca754a3`.
+Independent review required a timing assertion that distinguishes waking on
+Stop and invalidation from noticing those events at the request timer. It also
+required an owner cutoff earlier than that timer. The fixture now includes
+both checks. The separate queued-datagram challenge remains open.
+
+The tightened source passed all six selected GNU lanes. Strict Engine
+all-targets Clippy passed. Ordinary and optimized Engine each passed 314
+tests, including the five schedules in the retained-reply fixture. Engine
+passed 90 doctests. The previously unexecuted `windows-platform-native`
+GNU lanes passed 93 ordinary tests and four doctests. Doctest counts come
+from the Cargo logs. The runner also copied an existing nextest XML file
+beside each doctest log, which supplies no doctest evidence. The readback
+matched all live Engine hashes and verified both actual Engine XML reports.
+`repair/final-host/repair-engine.json` SHA-256 is
+`ac828bbf6aafd4653508964a8577f371fea23593ef2744d1b59273fcd2f96423`.
+An isolated copy with only the continuation's control wake removed compiled
+and reached the intended timing assertion. The selected test reported one
+failure when Stop waited for the original request timer. The live code
+retains the wake and the same test passed there. This is one directed fault
+control. `repair/control-wake-fault/wake-disabled.json` SHA-256 is
+`ea7f3ab32c26781d7580f2276da417091304db7effa2ff1a426498dc68d2db4c`.
+The configured MSVC `engine-ke-association` profile passed all 35 lanes,
+including the compiler, strict Clippy, x64 release links and independent
+PE/PDB and resource readback. Its 772-input source map matched the live
+tree and all 758 shared GNU inputs. The compiler, Clippy and Observe link
+arguments carried `nevrotick-engine/ke-association-prototype`.
+The export and external `windows-ep1.json` receipts under
+`~/.local/share/nevrotick/engine-profile-receive-2611.BxCyFJMS/` were byte
+equal with SHA-256
+`3f7f8116bd89daa3c5bf0ce96845a995fbb6891e7f10b93cc8a556177a61790d`.
+The Observe image SHA-256 is
+`7e3dd73a20f1b9cbfcf82c6a1abaa5684a3dd1966520a5f5243fad42bbbf8f92`.
+The [default-profile guarded build](windows11-integration.md#bind-the-guarded-ui-to-the-selected-build-inputs--26-november-2026)
+passed all 38 MSVC lanes against exactly the same 772 source inputs.
+The selected GNU optional-profile rows passed graph admission, Engine
+compilation, strict Clippy, the host Engine build and rustdoc. The ordinary
+cohort passed 672 tests and Engine passed 91 doctests. The optimized row
+stopped before test execution when the Engine test compiler received
+`SIGKILL`. That row carried the configured 90-second CPU limit.
+`gnu-ep1-engine.json` SHA-256 is
+`564f2ce80dbecbb26279de8cecf3239beeae16a573ac35543fb4d68b6b86d694`.
+The repeated configured row again stopped at compiler `SIGKILL` before
+test execution. `gnu-ep1-optimized-allthreads.json` SHA-256 is
+`28b2002a72bd34856dc66eb746bc6b0d7678e9d6a6b7e4e2d1a5087a1e8476f0`.
+A compiler-only replay completed the exact Cargo release test build. The
+Engine test compiler was observed at 128.74 CPU seconds under a 240-second
+ceiling. The compile wall time was 147.82 seconds. The following ordinary
+nextest command started a new compiler process and again reached `SIGKILL`
+under the original limit. Warm target contents alone did not establish
+reuse. The replay and process observations hash to
+`a7c462637d1bef2f07082899e087497ed8e1e4e57560cc97c4317ce2a991f3f0` and
+`ade7317b379f47f98d3a2e28702a384ec24ca2eeb4170d821a14253710303fbf`.
+
+The pinned nextest 0.9.150 archive path was tried in an isolated release
+fixture. The first replay stopped at extraction because the destination
+directory did not exist. With a fresh empty extraction directory, the
+archived integration test checked its effective 90-second CPU limit and
+ran its compiled helper using the original build path. The archive digest
+matched before and after reuse and the configured JUnit store held the
+fresh case. The fixture result `archive-reuse-smoke-mkdir.json` hashes to
+`8b072e8405f33281b437f3b195bf2822d059d2d242cbd04e69e82257e421b698`.
+
+The queued-datagram control enters the actual serial request while the real
+policy lock is held. It observes the second, distinguishable packet in the
+original socket queue before a further pending poll. After release, the
+original DENY commits with one send, one selected receive and zero rejections.
+The test then reads the unchanged second packet from the returned socket.
+The original receive-cap and release/Stop/invalidation/cutoff controls still run.
+
+The shared verifier now selects the exact portable Engine EP1 archive build
+at 240 CPU seconds. The compile and reuse steps share the original 300-second
+wall budget. The nextest runner inherits 90 CPU seconds and the same JUnit
+policy. The archive uses the unchanged release selectors, with its own receipt
+row and no execution credit. The test-accounting row reads fresh JUnit from the
+archive replay. Incorrect selectors, failed or overdue compilation and stale
+paths fail before launching the test runner.
+
+The 758-input materialized publication candidate passed all 26 selected GNU
+lanes, including compiler, strict Clippy, 673 ordinary and 673 optimized Engine
+cases with identical names, and 91 doctests. Nextest archived and extracted the
+same 13 files and ran all 673 optimized cases without rebuilding. It started
+with 150.77 seconds left on the shared wall deadline. The new queued-datagram
+case executed once in each mode. All 199 verifier controls, 22 EP1 profile
+controls and 228 MSIX controls also passed on that materialization.
+`gnu-ep1-archive-candidate.json` hashes to
+`09c6d0c47805749c9c5318a92ef7568417a05bc2d4a3ce443d9893a775cef54e`.
+Native Windows and fresh per-file line/mutation qualification remain open.
+
 ### Current helper admission, inventory and line gates — 17 November 2026
 
 The post-publication source-role rebind is now applied on runtime product

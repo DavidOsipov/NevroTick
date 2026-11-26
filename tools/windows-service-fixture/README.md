@@ -60,9 +60,14 @@ guarded role-link receipt with its independent digest and add
 Use the exact private UI PE/PDB export and pass its `nevrotick-ui-entry.map`
 as the raw linker map. For earlier exports, use the independently retained
 original map. The stager checks the same metadata generation and embedded
-resource bytes before substituting the guarded UI. It separately checks
-both service image pairs, the retained baseline object and role maps.
+resource bytes before substituting the guarded UI. The two pinned UI
+receipts must select the same dependency profile and source digests. A
+guarded receipt can add the baseline entry and its control source when the
+original handoff did not record them. The stager separately checks both
+service image pairs, the retained baseline object and role maps.
 The staging receipt retains both original handoff pins.
+An export built with the baseline entry, complete artwork and private
+authoring can supply both UI selections using the same receipt digest.
 
 For the guarded MakeAppx handoff, add `--sdk-source "$makeappx_inputs"`
 to stage `payload/`, `sdk/` and `input-set.json` together. Use the
@@ -326,13 +331,18 @@ settlement. An enclosing native owner must enforce the original
 absolute deadlines and account for a partial process start even if
 managed pipe setup fails before the process object receives its handle.
 
-The [mapped host endpoint](msix/prestart_mapped_deployment.py) attaches
-the full-mode deployment pipe to `supervise_prestart_session`. It expects
-dedicated input and fresh output mappings for the original run. The
-transaction attaches it before committing activation and must provide an
-independent retirement callback for the
-original native relay and watchdog. The existing access endpoints keep
-their own pipes, actor identities and retirement observations. See the
+The [mapped deployment attempt](msix/prestart_mapped_deployment.py)
+accepts dedicated input and fresh output mappings and the original
+guest relay owner. Pass the attempt to
+`launch_rendered_prestart_session`. It opens the host bridge, waits
+for the original guest relay's readiness and commits the exact
+rendered entry. The guest owner supplies independent relay and
+watchdog settlement before any wait for final package cleanup.
+If activation fails before handoff, the attempt stops the local
+bridge and observes native settlement under the original cutoff.
+The guest owner handles either outcome of the commit marker.
+The existing access endpoints keep their own pipes, actor identities
+and retirement observations. See the
 [mapped host checkpoint](../../tasks/windows11-integration.md#drive-the-full-supervisor-through-the-mapped-deployment-pipe).
 
 The [guest relay](msix/prestart_deployment_relay.psm1) is called from the

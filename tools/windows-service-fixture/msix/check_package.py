@@ -27,6 +27,13 @@ UAP = "{http://schemas.microsoft.com/appx/manifest/uap/windows10}"
 UAP10 = "{http://schemas.microsoft.com/appx/manifest/uap/windows10/10}"
 DESKTOP6 = "{http://schemas.microsoft.com/appx/manifest/desktop/windows10/6}"
 RESCAP = "{http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities}"
+MANIFEST_NAMESPACES: dict[str, str] = {
+    "": FOUNDATION[1:-1],
+    "uap": UAP[1:-1],
+    "uap10": UAP10[1:-1],
+    "desktop6": DESKTOP6[1:-1],
+    "rescap": RESCAP[1:-1],
+}
 BLOCK_MAP = "{http://schemas.microsoft.com/appx/2010/blockmap}"
 FILE_HASH = "{http://schemas.microsoft.com/appx/2021/blockmap}FileHash"
 CONTENT_TYPES = "{http://schemas.openxmlformats.org/package/2006/content-types}"
@@ -203,6 +210,17 @@ def parse_xml(data: bytes, label: str) -> ET.Element:
         raise Refused(f"invalid {label} XML") from error
 
 
+def root_namespace_bindings(data: bytes) -> dict[str, str]:
+    """Read the declarations on the root of an already validated XML document."""
+    bindings: dict[str, str] = {}
+    for event, value in ET.iterparse(BytesIO(data), events=("start-ns", "start")):
+        if event == "start":
+            break
+        prefix, uri = value
+        bindings[prefix] = uri
+    return bindings
+
+
 def exact_children(node: ET.Element, tags: set[str], label: str) -> None:
     require(len(node) == len(tags) and {child.tag for child in node} == tags,
             f"{label} children differ from the fixture contract")
@@ -233,6 +251,8 @@ def attribute_path(value: str) -> str:
 
 def check_manifest(data: bytes) -> None:
     package = parse_xml(data, MANIFEST)
+    require(root_namespace_bindings(data) == MANIFEST_NAMESPACES,
+            "manifest root namespace bindings differ")
     require(package.tag == FOUNDATION + "Package"
             and package.attrib == {"IgnorableNamespaces": "uap uap10 desktop6 rescap"},
             "manifest package root or attributes differ")
@@ -332,7 +352,9 @@ def read_local_member(data: bytes, item: zipfile.ZipInfo, end: int) -> PackageMe
     begin = item.header_offset
     require(0 <= begin < end <= len(data) and begin + 30 <= end
             and data[begin:begin + 4] == b"PK\x03\x04", f"{name} local header is invalid")
-    flags, method = struct.unpack_from("<HH", data, begin + 6)
+    extract_version, reserved, flags, method = struct.unpack_from("<BBHH", data, begin + 4)
+    require((extract_version, reserved) == (item.extract_version, item.reserved),
+            f"{name} local ZIP extract version differs")
     name_bytes, extra_bytes = struct.unpack_from("<HH", data, begin + 26)
     header_size = 30 + name_bytes + extra_bytes
     body_end = begin + header_size + item.compress_size
@@ -411,7 +433,11 @@ def read_archive(
 ) -> dict[str, PackageMember]:
     require(len(data) <= maximum_archive_bytes, "package exceeds the input bound")
     directory_start: int = check_zip_directory(data, len(archive_names))
-    with zipfile.ZipFile(BytesIO(data)) as package:
+    try:
+        package = zipfile.ZipFile(BytesIO(data))
+    except NotImplementedError as error:
+        raise Refused("unsupported ZIP extract version") from error
+    with package:
         members = package.infolist()
         require(len(members) == len(archive_names)
                 and {item.orig_filename for item in members} == archive_names,

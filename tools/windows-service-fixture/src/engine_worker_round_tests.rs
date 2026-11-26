@@ -2,6 +2,7 @@
 //! Real ordered address acquisition through the existing service invocation.
 
 use std::{
+    cell::RefCell,
     net::{Ipv4Addr, SocketAddr, UdpSocket},
     rc::Rc,
     sync::MutexGuard,
@@ -10,21 +11,25 @@ use std::{
 
 use nevrotick_engine::{
     AcquisitionError, AddressAttempt, AddressRoundConfig, AddressRoundEnd, AddressRoundReport,
-    BoundedAcquisitionError, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
-    SourcePolicyError, Status,
+    BoundedAcquisitionError, PilotError, SourceAddressSet, SourceConfigurationSnapshot,
+    SourceHandle, SourcePolicyError, Status,
 };
 use windows_platform::{
     diagnostics::{ConsumerState, MemoryConsumer},
-    service::ServiceState,
+    service::{ServiceState, ServiceStatus},
 };
 
 use super::{
     Admission, Check, EngineWorker, OwnerClock, PACKET_BYTES, PEER_RECEIVE, PEER_TRANSMIT, Pause,
     Rig, Sinks, TerminalTrace, WAIT, exclusive_case, fixture_sources, peer_has_no_datagram,
-    receive_query, respond, source_and_peer,
+    poison_control_gate, receive_query, respond, source_and_peer,
 };
 use crate::engine_worker::round_operation_failed;
-use crate::{FixtureError, error::WorkerError, host::InvocationPoll};
+use crate::{
+    FixtureError,
+    error::WorkerError,
+    host::{Clock, InvocationPoll},
+};
 
 /// Keep the original ordered candidates under one finite two-second allowance.
 /// # Errors
@@ -151,6 +156,7 @@ fn stopped_active(
     prepared.release()?;
     rig.finish()?;
 
+    assert!(matches!(rig.worker.round_result(), Some(Ok(_))));
     let actual: &AddressRoundReport = report(&rig)?;
     assert_eq!(actual.round_end(), AddressRoundEnd::Stopped);
     assert_eq!(actual.end(), AddressRoundEnd::Stopped);
@@ -170,6 +176,189 @@ fn stopped_active(
     assert!(peer_has_no_datagram(first)?);
     assert!(peer_has_no_datagram(second)?);
     Ok(())
+}
+
+/// Refused control publication must retire the prepared round without publishing a result.
+/// # Errors
+/// Preserve worker construction, injected gate failure, peer observation and joined retirement.
+/// # Panics
+/// Fail for premature release, any round result, traffic or the wrong terminal cause.
+fn refused_active_publication(
+    source: SourceHandle,
+    selected: &SourceConfigurationSnapshot,
+    peers: &[SocketAddr],
+    first: &Rc<UdpSocket>,
+    second: &UdpSocket,
+) -> Check {
+    let mut worker: EngineWorker =
+        EngineWorker::new_address_round(source, selected.clone(), round_config(peers)?)?;
+    let (prepared, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
+    worker.hooks.before_control = Some(hook);
+    let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
+    worker.hooks.after_return = Some(hook);
+    let mut rig: Rig = Rig::start(worker, Admission::Accept, first)?;
+    // Drop both pause senders before Rig drains the worker on an early error.
+    let (prepared, tail): (Pause, Pause) = (prepared, tail);
+    assert!(matches!(rig.step(), InvocationPoll::Pending(_)));
+    prepared.wait()?;
+    assert_eq!(rig.invocation.state(), Some(ServiceState::Running));
+    assert!(rig.worker.result.get().is_none());
+    assert!(
+        rig.worker
+            .gate
+            .lock()
+            .is_ok_and(|gate| gate.control.is_none())
+    );
+    assert!(peer_has_no_datagram(first)?);
+    assert!(peer_has_no_datagram(second)?);
+
+    poison_control_gate(&rig)?;
+    prepared.release()?;
+    tail.wait()?;
+    let join: InvocationPoll = rig.step();
+    let admission_closed: bool = rig.invocation.admission_closed();
+    let charged: u32 = rig.invocation.outstanding_work();
+    let premature_receipt: bool = rig.invocation.take_receipt().is_some();
+    let stopped_before_join: bool = rig.states().contains(&ServiceState::Stopped);
+    let published_before_join: bool = rig.worker.result.get().is_some();
+    let first_quiet: bool = peer_has_no_datagram(first)?;
+    let second_quiet: bool = peer_has_no_datagram(second)?;
+    tail.release()?;
+    rig.finish()?;
+
+    assert!(matches!(join, InvocationPoll::JoinTail(_)));
+    assert!(admission_closed);
+    assert_eq!(charged, 1);
+    assert!(!premature_receipt);
+    assert!(!stopped_before_join);
+    assert!(!published_before_join);
+    assert!(first_quiet && second_quiet);
+    assert_eq!(rig.invocation.outstanding_work(), 0);
+    assert!(rig.worker.result.get().is_none());
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Err(FixtureError::Worker(WorkerError::Running)))
+    );
+    assert!(peer_has_no_datagram(first)?);
+    assert!(peer_has_no_datagram(second)?);
+    Ok(())
+}
+
+/// Replace the selected revision at the host's first observation after Running.
+struct ReplaceAfterRunning<'a> {
+    now: Instant,
+    acknowledged: &'a RefCell<Vec<ServiceStatus>>,
+    selected: &'a SourceConfigurationSnapshot,
+    replacement: Option<Check<SourceConfigurationSnapshot>>,
+}
+
+impl Clock for ReplaceAfterRunning<'_> {
+    /// Retain the actual issuer outcome once and return the original host time.
+    fn now(&mut self) -> Instant {
+        let running: bool = self
+            .acknowledged
+            .borrow()
+            .last()
+            .is_some_and(|status| status.state() == ServiceState::Running);
+        if running && self.replacement.is_none() {
+            self.replacement = Some(fixture_sources().and_then(|mut sources| {
+                Ok(sources.authority.replace_source_configuration(
+                    self.selected,
+                    self.selected.addresses().clone(),
+                )?)
+            }));
+        }
+        self.now
+    }
+}
+
+/// Preserve the Engine's preparation refusal when Running outlives a source revision.
+/// # Errors
+/// Preserve worker construction, actual revision replacement and joined retirement failures.
+/// # Panics
+/// Fail if the stale revision publishes a control, loses its typed cause or releases early.
+fn replaced_after_running(
+    source: SourceHandle,
+    selected: &SourceConfigurationSnapshot,
+    peers: &[SocketAddr],
+    first: &Rc<UdpSocket>,
+    second: &UdpSocket,
+) -> Check<SourceConfigurationSnapshot> {
+    let mut worker: EngineWorker =
+        EngineWorker::new_address_round(source, selected.clone(), round_config(peers)?)?;
+    let (tail, hook): (Pause, Box<dyn FnOnce() + Send>) = Pause::new();
+    worker.hooks.after_return = Some(hook);
+    let mut rig: Rig = Rig::start(worker, Admission::Accept, first)?;
+    // Release the worker's pause before Rig drains on early exit.
+    let return_tail: Pause = tail;
+    let mut clock: ReplaceAfterRunning<'_> = ReplaceAfterRunning {
+        now: rig.clock.0,
+        acknowledged: &rig.acknowledged,
+        selected,
+        replacement: None,
+    };
+    let first_poll: InvocationPoll = rig.invocation.poll(&mut clock, &rig.stop);
+    let replacement: SourceConfigurationSnapshot = clock
+        .replacement
+        .ok_or("host did not observe Running before activation")??;
+    return_tail.wait()?;
+    let join: InvocationPoll = rig.step();
+    let charged: u32 = rig.invocation.outstanding_work();
+    let admission_closed: bool = rig.invocation.admission_closed();
+    let premature_receipt: bool = rig.invocation.take_receipt().is_some();
+    let stopped_before_join: bool = rig.states().contains(&ServiceState::Stopped);
+    let retained_driver_refusal: bool = matches!(
+        rig.worker.round_result(),
+        Some(Err(BoundedAcquisitionError::Acquisition(
+            AcquisitionError::Driver(PilotError::SourcePolicy(
+                SourcePolicyError::ConfigurationChanged
+            ))
+        )))
+    );
+    let no_control: bool = rig
+        .worker
+        .gate
+        .lock()
+        .is_ok_and(|gate| gate.control.is_none());
+    let peers_quiet: bool = peer_has_no_datagram(first)? && peer_has_no_datagram(second)?;
+    return_tail.release()?;
+    rig.finish()?;
+
+    assert!(
+        replacement
+            .source_identity()
+            .same_source(selected.source_identity())
+    );
+    assert!(!replacement.same_configuration(selected));
+    assert_eq!(replacement.addresses().len(), peers.len());
+    assert!(
+        peers
+            .iter()
+            .all(|peer| replacement.addresses().allows(*peer))
+    );
+    assert!(matches!(
+        first_poll,
+        InvocationPoll::Pending(_) | InvocationPoll::JoinTail(_)
+    ));
+    assert!(matches!(join, InvocationPoll::JoinTail(_)));
+    assert!(admission_closed);
+    assert_eq!(charged, 1);
+    assert!(!premature_receipt && !stopped_before_join);
+    assert!(no_control && peers_quiet);
+    assert!(retained_driver_refusal);
+    assert!(rig.worker.round_result().is_some());
+    assert_eq!(rig.invocation.outstanding_work(), 0);
+    assert_eq!(
+        rig.invocation
+            .take_receipt()
+            .map(crate::host::HostReceipt::into_result),
+        Some(Err(FixtureError::Worker(WorkerError::Running)))
+    );
+    assert!(peer_has_no_datagram(first)?);
+    assert!(peer_has_no_datagram(second)?);
+    Ok(replacement)
 }
 
 /// Exhaust one real candidate, retain the second reply, then require physical join.
@@ -265,7 +454,10 @@ fn managed_round_fallback_retains_source_and_join_with_stale_and_stopped_neighbo
     stale_startup(obsolete, &first, &second)?;
     stopped_startup(source.clone(), selected.clone(), &peers, &first, &second)?;
     stopped_active(source.clone(), selected.clone(), &peers, &first, &second)?;
-    fallback_and_join(source, &selected, &peers, &first, &second)
+    refused_active_publication(source.clone(), &selected, &peers, &first, &second)?;
+    let successor: SourceConfigurationSnapshot =
+        replaced_after_running(source.clone(), &selected, &peers, &first, &second)?;
+    fallback_and_join(source, &successor, &peers, &first, &second)
 }
 
 /// A delayed host observation cannot renew the new round's original cutoff.

@@ -462,7 +462,7 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
                 read_roles.assert_not_called()
 
     def guarded_fixture(self, *, version: bytes = b"exact version resource", generation: str | None = None,
-                        missing_guard: bool = False) -> tuple[tuple[str, ...], bytes]:
+                        missing_guard: bool = False, stale_tray: bool = False) -> tuple[tuple[str, ...], bytes]:
         """Write inert PE/PDB and linker map inputs for the actual guarded reader."""
         export: Path = self.root / "guarded-ui"
         export.mkdir(mode=0o700, exist_ok=True)
@@ -489,8 +489,24 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         map_path.write_bytes(link_map)
         generation = self.handoff_report["generation_receipt_sha256"] if generation is None else generation
         image_hash: str = sha256(guarded).hexdigest()
+        inputs: dict[str, str] = {name: sha256(name.encode("ascii")).hexdigest() for name in (
+            "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
+            "policy/ui-m0-dependencies.json", "crates/nevrotick-ui/Cargo.toml",
+            "crates/nevrotick-ui/src/native_tray.rs", "crates/nevrotick-ui/startup/cpu_entry.c",
+        )}
+        ordinary_receipt: bytes = json.dumps({
+            "source_sha256": inputs, "dependency_profile": "default",
+        }).encode("utf-8")
+        (self.handoff / "verification.json").write_bytes(ordinary_receipt)
+        self.handoff_pin = sha256(ordinary_receipt).hexdigest()
+        guarded_inputs: dict[str, str] = {
+            **inputs, "crates/nevrotick-ui/startup/cpu_entry_control.c": "7" * 64,
+        }
+        if stale_tray:
+            guarded_inputs["crates/nevrotick-ui/src/native_tray.rs"] = "a" * 64
         receipt: dict = {
             "status": "passed", "native_windows_execution": "not performed",
+            "source_sha256": guarded_inputs, "dependency_profile": "default",
             "artifact": {
                 "path": "original/nevrotick-ui.exe", "sha256": image_hash, "profile": "release",
                 "target": "x86_64-pc-windows-msvc", "component_role": "ui", "source_state": "fixture",
@@ -647,6 +663,41 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         self.assertEqual((status, stdout), (1, ""))
         self.assertIn("Fixture input hash or size differs", stderr)
         self.assertFalse(self.output.exists())
+
+    def test_guarded_ui_refuses_stale_tray_source_with_matching_resources(self) -> None:
+        options, _ = self.guarded_fixture(stale_tray=True)
+        role_images: dict[str, bytes] = {
+            "nevrotick-lab-s02-engine.exe": b"engine", "nevrotick-lab-s02-broker.exe": b"broker",
+        }
+        with patch.object(producer.stage, "role_images", return_value=role_images):
+            status, stdout, stderr = self.invoke(self.role_args + options)
+        self.assertEqual((status, stdout), (1, ""), stderr)
+        self.assertIn("Guarded UI build inputs differ", stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_guarded_ui_requires_both_pinned_build_identities(self) -> None:
+        for kind in ("missing-source", "shared-entry", "extra-source", "different-profile"):
+            with self.subTest(kind=kind):
+                options, _ = self.guarded_fixture()
+                receipt_path: Path = Path(options[1]) / "verification.json"
+                guarded: dict = json.loads(receipt_path.read_bytes())
+                if kind == "missing-source":
+                    del guarded["source_sha256"]
+                elif kind == "shared-entry":
+                    guarded["source_sha256"]["crates/nevrotick-ui/startup/cpu_entry.c"] = "1" * 64
+                elif kind == "extra-source":
+                    guarded["source_sha256"]["crates/nevrotick-ui/src/extra.rs"] = "2" * 64
+                else:
+                    guarded["dependency_profile"] = "engine-ke-association"
+                raw: bytes = json.dumps(guarded).encode("utf-8")
+                receipt_path.write_bytes(raw)
+                selected: tuple[str, ...] = (*options[:3], sha256(raw).hexdigest(), *options[4:])
+                with patch.object(producer.stage, "role_images") as read_roles:
+                    status, stdout, stderr = self.invoke(self.role_args + selected)
+                    read_roles.assert_not_called()
+                self.assertEqual((status, stdout), (1, ""), stderr)
+                self.assertIn("frozen source map" if kind == "missing-source" else "build inputs differ", stderr)
+                self.assertFalse(self.output.exists())
 
     def test_guarded_ui_refuses_unbound_entry_and_changed_generation_or_resources(self) -> None:
         for kwargs, reason in (

@@ -11,7 +11,7 @@ use windows_platform::{scm::StopNotification, service::ServiceState};
 
 use super::{
     BrokerClockChanges, BrokerClockRead, BrokerClockReader, ClockNotice, ClockReadRetirement,
-    ClockRevision, ControlDisposition, SAMPLE_INTERVAL, SampledClockDiscontinuity,
+    ClockRevision, ControlDisposition, ReplyRevision, SAMPLE_INTERVAL, SampledClockDiscontinuity,
     SampledClockTransition, TIME_CHANGE, deliver, report_status,
 };
 
@@ -359,6 +359,84 @@ fn notice_or_stop_wins_over_a_sampled_getter_failure() {
         assert!(reader.observed_awake_revision().is_none());
         assert_eq!(reader.last_discontinuity(), None);
     }
+}
+
+/// Count actual reads across the sequential terminal-edge controls.
+static TERMINAL_EDGE_READS: AtomicU32 = AtomicU32::new(0);
+
+/// Supply a valid raw baseline, then the original error from a closing read.
+/// # Errors
+/// Returns the literal native error code zero after the valid baseline.
+fn terminal_edge_read() -> Result<u64, u32> {
+    match TERMINAL_EDGE_READS.fetch_add(1, SeqCst) {
+        0 => Ok(100),
+        _ => Err(0),
+    }
+}
+
+/// An invocation-terminal edge withdraws previous authority before host cleanup.
+/// # Errors
+/// Returns the missing-baseline assertion if the preceding healthy read was refused.
+/// # Panics
+/// Fails if retirement leaves a revision current, changes history or retries work.
+#[test]
+fn terminal_read_edge_withdraws_the_original_revision_immediately() -> Result<(), &'static str> {
+    static STOP: BrokerClockChanges = BrokerClockChanges::new();
+    static DEADLINE: BrokerClockChanges = BrokerClockChanges::new();
+    static CLOCK: BrokerClockChanges = BrokerClockChanges::new();
+    let cases: [(&BrokerClockChanges, ClockReadRetirement, Option<u32>); 3] = [
+        (&STOP, ClockReadRetirement::Stop, None),
+        (&DEADLINE, ClockReadRetirement::Deadline, Some(0)),
+        (&CLOCK, ClockReadRetirement::Clock, Some(0)),
+    ];
+    for (changes, reason, native_failure) in cases {
+        TERMINAL_EDGE_READS.store(0, SeqCst);
+        assert!(changes.arm());
+        let now: Instant = Instant::now();
+        let due: Instant = now + SAMPLE_INTERVAL;
+        let mut reader: BrokerClockReader<u64, u32> =
+            BrokerClockReader::new(changes, terminal_edge_read).with_sampling(|_, _| None);
+        reader.poll(now, || Ok(now));
+        let original: ClockRevision<'_> =
+            reader.observed_awake_revision().ok_or("missing baseline")?;
+        let retained: ReplyRevision = original.for_status_reply();
+        assert!(retained.is_current());
+
+        let mut edges: u32 = 0;
+        let mut replacement: Option<ClockRevision<'_>> = None;
+        reader.poll(due, || {
+            edges += 1;
+            if native_failure.is_some() && edges == 1 {
+                Ok(due)
+            } else {
+                if reason == ClockReadRetirement::Clock {
+                    assert!(changes.notify(ClockNotice::TimeChange));
+                    replacement = changes.revision();
+                    assert!(replacement.as_ref().is_some_and(ClockRevision::admits));
+                }
+                Err(reason)
+            }
+        });
+        let retired: Option<BrokerClockRead<u64, u32>> = Some(BrokerClockRead::Retired {
+            revision: original.number(),
+            reason,
+            native_failure,
+        });
+        assert_eq!(reader.history(), retired);
+        assert!(!retained.is_current());
+        if let Some(newer) = replacement {
+            assert_ne!(newer.number(), original.number());
+            assert!(!newer.admits());
+        }
+        assert!(!changes.notify(ClockNotice::Resume));
+        assert!(!changes.arm());
+        assert_eq!(reader.sample_wait(due), None);
+        let later: Instant = due + SAMPLE_INTERVAL;
+        reader.poll(later, || Ok(later));
+        assert_eq!(reader.history(), retired);
+        assert_eq!(TERMINAL_EDGE_READS.load(SeqCst), edges);
+    }
+    Ok(())
 }
 
 /// The last valid awake revision can retire without wrapping.

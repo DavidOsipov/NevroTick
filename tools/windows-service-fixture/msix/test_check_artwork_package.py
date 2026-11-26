@@ -207,6 +207,12 @@ class CombinedPackageTests(unittest.TestCase):
 
         self.assert_refusal(self.run_reader(archive_transform=version), b"unsupported ZIP extract version")
 
+    def test_local_extract_version_mismatch_refuses(self) -> None:
+        def version(package: bytes) -> bytes:
+            return package[:4] + bytes([package[4] ^ 1]) + package[5:]
+
+        self.assert_refusal(self.run_reader(archive_transform=version), b"local ZIP extract version differs")
+
     def test_same_count_substituted_authored_asset_refuses(self) -> None:
         original: dict[str, bytes] = self.data.copy()
         self.data["Assets/Unexpected.png"] = self.data.pop("Assets/Square44x44Logo.targetsize-24.png")

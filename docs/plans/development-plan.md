@@ -1276,6 +1276,16 @@ membership selected and sends no successor packet. Ordinary WinDNS callback
 routing and cancel retirement still need a controlled resolver that receives
 the query in the admitted native lab.
 
+The [plain managed receive continuation](../../tasks/engine-transport-pilot.md#diagnose-loss-of-a-selected-managed-reply-on-release--26-november-2026)
+retains a single charged reply during policy-lock contention. GNU ordinary
+and optimized Engine passed with real loopback controls for release,
+Stop, invalidation, the original cutoff and a second packet left queued on the
+same socket. The configured GNU EP1 archive replay passed 673 cases per mode
+within the existing test limit. The preceding Engine-source checkpoint passed
+cross-compilation and linking under both MSVC profiles. Native Windows and
+per-file qualification remain open, alongside the independent timing reference
+and other production admission prerequisites.
+
 The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
 checks both held-out legs and their original wire and residual record
 digests within the declared QPC validity. The [paired wire order check](../../tasks/windows11-integration.md#refuse-a-paired-wire-interval-with-impossible-chronology)
@@ -1320,8 +1330,10 @@ preserved both authentic receipts and emitted zero timing rows after
 the injected closing read. The next reference work still requires an
 independent calibrated physical path and a read-side validity issuer.
 The bench reader [replayed the retained spans](../../tasks/windows11-integration.md#rebind-the-reference-trial-to-the-guarded-timing-replay)
-with synthetic inputs. It still needs the physical reference and the
-read-side validity issuer to support production admission.
+with synthetic inputs. The [wire-span controls](../../tasks/windows11-integration.md#check-that-a-paired-span-can-contain-the-original-wire-events)
+now also refuse claimed spans wholly outside the wire interval bounded
+by the original send and receive captures. Production admission still
+needs the physical reference and the read-side validity issuer.
 The [protected socket bind check](../../tasks/engine-transport-pilot.md#verify-the-original-local-bind-before-protected-socket-registration)
 now verifies the exact requested local address before registration. Both
 loopback families passed on Windows. The wired interface still needs its
@@ -1330,6 +1342,13 @@ The [broker presentation withdrawal](../../tasks/windows11-integration.md#withdr
 keeps an unavailable query in the historical sample and withdraws the
 old live revision. This supplies the broker-side guard under TQ-07 while
 the independently qualified mapping and actual Core receiver remain open.
+The [terminal broker read fence](../../tasks/windows11-integration.md#close-the-broker-revision-at-a-terminal-read-edge)
+retires that invocation's mailbox before publishing a Stop, deadline or
+owner-clock refusal. The portable controls preserve the original history
+and cover a time-change notice arriving before terminal withdrawal.
+The [terminal line and replay checkpoint](../../tasks/windows11-integration.md#measure-the-terminal-reader-and-bind-its-mutation-assertion)
+reaches the mailbox close in GNU line instrumentation and attributes the
+single replayed close-removal variant to the terminal revision assertion.
 The [broker clock metric checkpoint](../../tasks/windows11-integration.md#measure-the-broker-clock-files-independently--25-november-2026)
 passes both GNU implementation line gates, preserves the complete generated
 inventories and records compiler refusals for all ten MSVC-only overlays.
@@ -1641,7 +1660,24 @@ continuity or an effective inhibition owner. The [SCM notification
 controls](../../tasks/windows11-integration.md#discriminate-scm-description-and-dacl-notifications-on-disabled-controls)
 observed description changes and no notification for the independently
 observed DACL change and restoration. SCM property subscription
-silence cannot close that gate.
+silence cannot close that gate. The [registry controls](../../tasks/windows11-integration.md#observe-registry-writes-from-the-owned-scm-dacl-round-trips)
+observed both original controls' DACL writes and restorations. A
+[classic registry run](../../tasks/windows11-integration.md#resolve-the-scm-parent-and-both-dacl-targets-in-a-classic-registry-trace)
+matched the shared SCM parent handle to `ControlSet001\Services` and
+linked all four writes to the absolute paths of the disposable controls.
+The installed continuity gate still needs coverage of the required
+mutation paths through the original transaction. The
+[rendered mapped attempt](../../tasks/windows11-integration.md#connect-rendered-activation-to-the-original-mapped-relay-attempt)
+now joins the maintained renderer and host bridge. It retains
+pre-handoff retirement for partial guest preparation and either
+activation marker outcome. The installed owner still has to supply
+independent Sandbox actors and original native settlement. The
+[installed elevated-login access probe](../../tasks/windows11-integration.md#record-the-elevated-guest-provisioning-actors-first-installed-denial)
+opened and closed the first three Engine query rights and received
+native `OpenServiceW` error 5 for `SERVICE_CHANGE_CONFIG`. This
+guest-login profile cannot supply positive provisioning access to
+the held fixture. The separate Standard control and a supported
+provisioning actor and invocation remain open.
 
 The [retained token generation checkpoint](../../tasks/windows11-integration.md#retain-the-token-generation-through-service-peer-reobservation--24-november-2026)
 keeps the original token and its modification generation together across
@@ -1891,9 +1927,19 @@ binds the exact source revision at startup, retains the original service
 cutoff in the Engine plan and keeps the original Stop and join owner. The
 [final-cutoff and Windows fixture checks](../../tasks/windows11-integration.md#verify-the-managed-rounds-final-cutoff-and-windows-fixture--23-november-2026)
 passed six focused Engine cases and all three selected Windows fixtures.
-GNU line instrumentation reached 268/283 worker lines. Continue current
-durable coverage and generated worker replay when storage admits the
-configured stage. Installed acceptance stays with the existing owner.
+The [durable GNU line run](../../tasks/windows11-integration.md#export-current-service-worker-line-evidence)
+reached 268/283 worker lines and passed all five selected file gates.
+The [complete worker replay](../../tasks/windows11-integration.md#attribute-a-missing-managed-round-report-after-stop-and-join)
+accounted for all 42 generated variants and passed the per-file gate.
+The same candidate repeated the five GNU line passes.
+The [round publication refusal control](../../tasks/windows11-integration.md#refuse-round-control-publication-through-physical-join)
+now covers an empty result slot, closed admission and one charged
+permit at the actual join tail. It reaches the refusal return and raises
+worker coverage to 269/283. The [post-Running revision control](../../tasks/windows11-integration.md#retain-the-driver-cause-when-a-running-rounds-source-revision-changes)
+preserves the original preparation Driver cause through join and then
+exercises real fallback on the successor revision. Worker coverage reached
+272/283. Outer execution error, timer cleanup and installed acceptance
+remain with their existing owners.
 
 **Qualified portable product checkpoint — 21 November 2026.** The
 [W11-W08 first portable catalogue/routing stage](../../tasks/windows11-integration.md#w11-w08-first-portable-contract--21-november-2026)
@@ -1916,6 +1962,10 @@ declared executable-line gates on the current 262-test candidate, with
 mutation inventory has 9,244 variants. Full per-file qualification is
 still open. Assembly depends on the actual admitted product roles and
 release metadata pending under W11-W10.
+The [unsigned package reader](../../tasks/windows11-integration.md#reconcile-zip-extractor-versions-and-root-namespace-bindings)
+now checks ZIP extractor-version agreement and the authored manifest's
+root namespace bindings. Four original MakeAppx archives passed current
+readback under their retained pack and member pins.
 
 The [desktop image-load guard](../../tasks/slint-gui-handoff.md#require-the-windows-desktop-image-load-policy-before-slint--23-november-2026)
 now verifies all three required flags before the real Slint backend starts.
@@ -1927,6 +1977,10 @@ ran the linked Slint fixture in the elevated offline guest and retains the
 exact image for the separately admitted non-elevated desktop case.
 Continue the remaining loader behavior, startup diagnostics and packaged
 activation under CHECK-16 and the direct MSIX profile.
+The [tray recovery repair](../../tasks/slint-gui-handoff.md#bound-tray-recovery-at-the-windows-worker)
+shares one bounded registration budget across restart hints and failed
+Modify operations. Projection updates while unregistered retain the latest
+display state. Native Explorer, popup and shutdown qualification remain open.
 
 Continue the existing delivery and retention stage under W11-W08, with
 W11-W10 and the installed service owners. Freeze the provider and channel

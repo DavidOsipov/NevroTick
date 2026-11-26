@@ -314,13 +314,14 @@ class HeldOutExchangeTests(unittest.TestCase):
         with self.assertRaisesRegex(TRIAL.TrialRefused, "paired span crosses"):
             self.compare(self.window, replace(self.span, latest_tick=200))
 
-    def test_paired_qpc_span_must_overlap_original_exchange(self) -> None:
+    def test_paired_qpc_span_must_overlap_possible_wire_interval(self) -> None:
         window: TRIAL.QpcValidityWindow = replace(self.window, start_tick=90, end_tick_exclusive=210)
-        for earliest, latest in ((95, 100), (199, 205), (95, 205)):
+        # The pre-send read completes at 108; the receive-return read begins at 190.
+        for earliest, latest in ((95, 108), (190, 205), (95, 205)):
             with self.subTest(earliest=earliest, latest=latest):
                 span: TRIAL.PairedExchangeSpan = replace(self.span, earliest_tick=earliest, latest_tick=latest)
                 self.assertEqual(self.compare(window, span), (230, 48))
-        for earliest, latest in ((95, 99), (200, 205)):
+        for earliest, latest in ((95, 99), (95, 107), (191, 205), (200, 205)):
             with (
                 self.subTest(earliest=earliest, latest=latest),
                 self.assertRaisesRegex(TRIAL.TrialRefused, "paired QPC span is disjoint from original exchange"),
@@ -590,14 +591,14 @@ class PinnedReferenceExchangeTests(unittest.TestCase):
         with self.assertRaisesRegex(TRIAL.TrialRefused, "invalid paired QPC span"):
             self.compare(self.encoded(span_qpc_ticks=[101, 100]))
 
-    def test_pinned_span_must_overlap_original_exchange(self) -> None:
+    def test_pinned_span_must_overlap_possible_wire_interval(self) -> None:
         window: TRIAL.QpcValidityWindow = replace(self.app.window, start_tick=90, end_tick_exclusive=260)
-        for ticks in ([95, 100], [199, 205], [95, 205]):
+        for ticks in ([95, 108], [190, 205], [95, 205]):
             with self.subTest(ticks=ticks):
                 self.assertEqual(self.compare(self.encoded(span_qpc_ticks=ticks), window=window), (230, 48))
         # All identifiers and wall comparisons still identify the first exchange.
         # The later case uses the successor's ticks within the same validity window.
-        for ticks in ([95, 99], [201, 249]):
+        for ticks in ([95, 99], [95, 107], [191, 205], [201, 249]):
             with (
                 self.subTest(ticks=ticks),
                 self.assertRaisesRegex(TRIAL.TrialRefused, "paired QPC span is disjoint from original exchange"),

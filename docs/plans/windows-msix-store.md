@@ -223,6 +223,9 @@ dependencies, resources, manifest, package identity, SBOM and corresponding-sour
 obligations. Preserve prepared, signed and directly downloaded identities because
 signing or any other admitted transformation may change bytes. A Cargo crate list is not an inventory of
 runtime DLLs; inspect the emitted and actually loaded images.
+The [guarded UI staging check](../../tasks/windows11-integration.md#bind-the-guarded-ui-to-the-selected-build-inputs--26-november-2026)
+also binds the selected UI build receipts to the same dependency profile and
+source before assembling the laboratory payload.
 
 The [selected leap dataset and policy](leap-second-policy.md#3-knowledge-and-distribution-contract)
 are **reviewed immutable generated data compiled into the admitted consumers**,
@@ -1222,6 +1225,29 @@ Failure of another candidate selects none of these. No external or embedded MSI,
 mandatory first-UI setup, wider LocalSystem clock broker or engine clock privilege
 is admitted by the WSL analogy or this research.
 
+The [installed elevated-login probe](../../tasks/windows11-integration.md#record-the-elevated-guest-provisioning-actors-first-installed-denial)
+confirmed `OpenServiceW` access denied for Engine's `SERVICE_CHANGE_CONFIG`
+on the signed ScmFixture. The documented `desktop6:Service` declaration
+provides name, start mode, account, arguments, dependencies and triggers.
+`desktop7:Service` adds delayed startup to that configuration surface.
+The exact required privilege list and SCM service SID type use
+`ChangeServiceConfig2W`, which requires the access that this profile was
+denied. The `com4:ServiceServer` SDDL controls COM AppID launch and
+activation permissions. SCM authorizes service access against the
+service object's own security descriptor.
+[Service declaration](https://learn.microsoft.com/uwp/schemas/appxpackage/uapmanifestschema/element-desktop6-service)
+· [Delayed startup declaration](https://learn.microsoft.com/uwp/schemas/appxpackage/uapmanifestschema/element-desktop7-service)
+· [SCM configuration contract](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w)
+· [COM service registration](https://learn.microsoft.com/uwp/schemas/appxpackage/uapmanifestschema/element-com4-serviceserver)
+
+The [custom-install capability disposition](#recovery-before-removal)
+still applies. Microsoft documents the `Microsoft.classicAppInstaller_8wekyb3d8bbwe`
+technical condition and separately restricts `customInstallActions` grants
+to certain desktop games. An explicit exception applicable to NevroTick
+would still require evidence of action ordering and actual SCM access on
+the selected direct install and servicing flows. The Sandbox access
+refusal applies to the tested actor and service object.
+
 #### Separate creation-time protection from later object defaults
 
 `TokenOwner` selects an eligible existing user/group SID for later default-owner
@@ -1276,9 +1302,12 @@ and Stopped at the observed points; retirement and removal were verified.
 The later [traced paired install](../../tasks/windows11-integration.md#observe-the-paired-installed-scmfixture-from-registration-through-retirement)
 adds process-span observations, and the [descriptor/SID receipt](../../tasks/windows11-integration.md#read-both-installed-service-descriptors-through-the-paired-window)
 adds matching two-API owner/DACL endpoints and independently resolved SIDs.
-Earlier failed and partial attempts retain their exact receipts. Actual independent
-provisioner/standard-user access, continuous SCM property protection or effective
-inhibition, and supported production invocation remain open. The
+Earlier failed and partial attempts retain their exact receipts. The
+[elevated-login probe](../../tasks/windows11-integration.md#record-the-elevated-guest-provisioning-actors-first-installed-denial)
+recorded the first native denial on the tested Engine object. The
+separate Standard-user outcome, positive provisioning access, continuous
+SCM property protection or effective inhibition, and supported production
+invocation remain open. The
 [notification controls](../../tasks/windows11-integration.md#discriminate-scm-description-and-dacl-notifications-on-disabled-controls)
 exclude subscription silence as a DACL-continuity witness. These are scoped
 receipts for the discriminator below, not a completed access or lifecycle gate.
@@ -1323,8 +1352,8 @@ assembles the existing query-only reads for step 2. Its compiled source
 reports numeric fields and redacted shape only. The paired installed execution
 and image-identity readback retain their scoped receipts; the later descriptor/SID
 companion above supplies exact owner/DACL endpoint comparison and SID resolution
-for its named fixture and deployment context. Actual access under each independent
-actor and continuous SCM property protection remain separate open obligations. The
+for its named fixture and deployment context. The full independent access
+sequence and continuous SCM property protection remain open. The
 [installed-image companion](../../tasks/windows11-integration.md#bind-disabled-scm-roles-to-their-installed-msix-images)
 checks each fixed role against the registered exact lab package. The
 path and file controls passed in Windows Sandbox. The completed paired run

@@ -28,7 +28,9 @@ use tokio::{
     time::{Instant as TokioInstant, sleep_until},
 };
 
-use super::{SeriesWake, handle_series_read, next_series_wake, refresh_slot, series_packets};
+use super::{
+    SerialReadWindow, SeriesWake, drive_serial_read, next_series_wake, refresh_slot, series_packets,
+};
 use crate::source_policy::{RoundBindings, SourceMode};
 use crate::{
     Control, ControlHandle, ControlSchedule, FailureSummary, IoCause, IoOutcome, LiveSlot,
@@ -672,9 +674,19 @@ async fn run_attempt(
             SeriesWake::Deadline => slot.expire(),
             SeriesWake::Writable(result) => guarded_writable(&mut slot, control, result, deadline),
             SeriesWake::Read(selected) => {
-                let _state = handle_series_read(
-                    &mut slot, control, selected, &buffer, limits, deadline, state,
-                );
+                let _state = drive_serial_read(
+                    &mut slot,
+                    control,
+                    selected,
+                    &buffer,
+                    limits,
+                    SerialReadWindow {
+                        deadline,
+                        timer: timer.as_mut(),
+                    },
+                    state,
+                )
+                .await;
             }
         }
         if slot.done() {

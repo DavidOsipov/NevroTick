@@ -4,8 +4,9 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import sys
-from typing import Any, cast
+from typing import Any, NamedTuple, cast
 from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -50,9 +51,42 @@ MANIFEST_BOTTOM: bytes = br'''  <Dependencies><TargetDeviceFamily Name="Windows.
 '''
 
 
+class UiBuildInputs(NamedTuple):
+    """The verifier's selected dependency profile and frozen source map."""
+
+    profile: str
+    source_sha256: dict[str, str]
+
+
+def read_build_receipt(anchor: Path, descriptor: int, pin: str) -> dict[str, Any]:
+    """Read the same pinned build receipt from the held export directory."""
+    receipt: bytes = verify.read_bound_msix_leaf(
+        anchor / "verification.json", pin, staging_descriptor=descriptor,
+        maximum=verify.MSIX_HANDOFF_RECEIPT_MAX_BYTES,
+    )
+    return verify.decode_msix_authoring(receipt)
+
+
+def ui_build_inputs(report: dict[str, Any]) -> UiBuildInputs:
+    """Admit the recorded build-input identity before comparing two receipts."""
+    profile: object = report.get("dependency_profile")
+    source: object = report.get("source_sha256")
+    if type(profile) is not str or profile not in ("default", verify.SLINT.EP1_PROFILE):
+        raise ValueError("UI build receipt lacks the selected dependency profile.")
+    required: set[str] = {
+        "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
+        "policy/ui-m0-dependencies.json", "crates/nevrotick-ui/Cargo.toml",
+    }
+    if (type(source) is not dict or not required <= source.keys()
+            or not all(type(pin) is str and re.fullmatch(r"[0-9a-f]{64}", pin)
+                       for pin in source.values())):
+        raise ValueError("UI build receipt lacks the frozen source map.")
+    return UiBuildInputs(profile, cast(dict[str, str], source))
+
+
 def handoff_snapshot(
-    path: Path, pin: str, *, include_ui: bool = False,
-) -> tuple[dict[str, bytes], bytes, str]:
+    path: Path, pin: str, *, include_ui: bool = False, include_build_inputs: bool = False,
+) -> tuple[dict[str, bytes], bytes, str, UiBuildInputs | None]:
     """Recheck the selected art, Properties and optional UI on one held export."""
     descriptor: int
     anchor: Path
@@ -90,21 +124,21 @@ def handoff_snapshot(
             selected[UI_IMAGE] = verify.read_bound_msix_leaf(
                 anchor / UI_IMAGE, image["sha256"], staging_descriptor=descriptor, maximum=MAX_PE_BYTES,
             )
-        return selected, properties, observed["generation_receipt_sha256"]
+        build: UiBuildInputs | None = (
+            ui_build_inputs(read_build_receipt(anchor, descriptor, pin)) if include_build_inputs else None
+        )
+        return selected, properties, observed["generation_receipt_sha256"], build
 
 
 def guarded_ui_snapshot(
     path: Path, pin: str, map_path: Path, *, generation: str, matching_ui: bytes,
+    matching_build: UiBuildInputs,
 ) -> bytes:
-    """Join a separately verified guarded UI to the same checked authoring generation."""
+    """Join the guarded UI to the selected authoring generation and build inputs."""
     descriptor: int
     anchor: Path
     with stage.held_directory(path) as (descriptor, anchor):
-        receipt: bytes = verify.read_bound_msix_leaf(
-            anchor / "verification.json", pin, staging_descriptor=descriptor,
-            maximum=verify.MSIX_HANDOFF_RECEIPT_MAX_BYTES,
-        )
-        report: dict[str, Any] = verify.decode_msix_authoring(receipt)
+        report: dict[str, Any] = read_build_receipt(anchor, descriptor, pin)
         inspection: object = report.get("msix_assembly_inputs")
         entry: object = report.get("ui_preentry")
         stage.require(
@@ -112,6 +146,16 @@ def guarded_ui_snapshot(
             and type(inspection) is dict and inspection.get("generation_receipt_sha256") == generation
             and type(entry) is dict,
             "Guarded UI requires the same authoring generation and its baseline entry receipt.",
+        )
+        guarded_build: UiBuildInputs = ui_build_inputs(report)
+        entry_sources: set[str] = {verify.UI_ENTRY_SOURCE, verify.UI_ENTRY_CONTROL_SOURCE}
+        stage.require(
+            guarded_build.profile == matching_build.profile
+            and entry_sources <= guarded_build.source_sha256.keys()
+            and guarded_build.source_sha256.keys() - matching_build.source_sha256.keys() <= entry_sources
+            and all(guarded_build.source_sha256.get(name) == digest
+                    for name, digest in matching_build.source_sha256.items()),
+            "Guarded UI build inputs differ from the selected handoff.",
         )
         artifact: dict[str, Any] = report["artifact"]
         image: str
@@ -338,19 +382,25 @@ def main() -> int:
         selected: dict[str, bytes]
         properties: bytes
         generation: str
-        selected, properties, generation = handoff_snapshot(handoff, args.handoff_receipt_sha256, include_ui=combined)
+        build: UiBuildInputs | None
+        selected, properties, generation, build = handoff_snapshot(
+            handoff, args.handoff_receipt_sha256, include_ui=combined,
+            include_build_inputs=guarded_export is not None,
+        )
         ui: bytes | None = selected.pop(UI_IMAGE, None)
         pri: bytes = pri_snapshot(pri_dir, args.pri_receipt_sha256, selected)
         images: dict[str, bytes]
         manifest: bytes
         if role_receipt is not None and role_pin is not None and ui is not None:
             if guarded_export is not None and guarded_pin is not None and guarded_map is not None:
+                if build is None:
+                    raise ValueError("The guarded UI selection lacks the selected build inputs.")
                 guarded_export = guarded_export.absolute()
                 guarded_map = guarded_map.absolute()
                 stage._outside_source(guarded_export, output)
                 stage._outside_source(guarded_map, output)
                 ui = guarded_ui_snapshot(guarded_export, guarded_pin, guarded_map,
-                                         generation=generation, matching_ui=ui)
+                                         generation=generation, matching_ui=ui, matching_build=build)
                 images = stage.role_images(role_receipt, role_pin, require_baseline_entry=True)
             else:
                 images = stage.role_images(role_receipt, role_pin)
