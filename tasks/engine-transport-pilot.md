@@ -21667,6 +21667,60 @@ controls and 228 MSIX controls also passed on that materialization.
 `09c6d0c47805749c9c5318a92ef7568417a05bc2d4a3ce443d9893a775cef54e`.
 Native Windows and fresh per-file line/mutation qualification remain open.
 
+##### Exercise final policy contention through the configured address round
+
+S2.1 plain managed UDP, REQ-8/BND-2 and CHECK-6/8/21/27. The configured
+round binds the actual two loopback destinations to the installed source
+configuration and the caller's original cutoff. The fixture attaches a
+test-only observer to the original live socket. The real round driver
+then sends, receives, charges and tries to publish one correlated RATE.
+The observer checks that the final attempt completed before the cutoff.
+For the two contention histories a separate thread holds the actual
+policy mutex through that attempt.
+
+The free and timely-release histories each transfer one Control report
+with one received datagram and zero rejections. RATE doubles each
+original interval once. Holding the mutex through the owner's return
+yields one Timeout with one rejection at the original round cutoff and
+keeps both intervals at their starting value. All three preserve the
+actual send debit, identify the correct destination, and leave no extra
+query on that peer or the otherwise permitted successor. The cutoff
+witness allows one second of scheduling variation after the original
+two-second cutoff. It distinguishes use of the configured four-second
+attempt timer. Independent source review checked the holder ordering,
+deadline witness, and the actual transfer and policy consumers.
+
+The 761-input default GNU candidate
+`844016b8a440601466548fbec160e5c183ed3decddde101d329150d98c01b1d3`
+passed Engine all-targets Clippy, 316 ordinary and 316 optimized Engine
+cases, and 90 Engine doctests. The verifier read fresh qualified JUnit
+accounting for each product run. The first attempt stopped on the new
+test's explicit panic lint. The next ordinary run passed all cases but
+its additional selector assertion omitted `series::`. The corrected
+receipt includes all four lanes and the source, tool, vendor and index
+bookends.
+
+An isolated test build changed only the address-round dispatch to use
+the synchronous receive path that rejects a contended publication.
+The exact selector returned nextest exit 100 and the Release history
+reported one rejection where zero were required. The free history runs
+first and reached the successful result in that same test. The first
+fault attempt had a Rust privacy lint before execution. The next
+attempt reached the intended rejection but its receipt counter included
+filtered JUnit cases. The final fault receipt reconstructs one executed
+failed testcase and retains all bookends. Fresh per-file qualification,
+Windows execution and actual platform local-path observations remain
+open for their respective gates.
+
+| Record under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `engine-direct-round-2611.lRPiBB3U/verification.json` | `be38af47aed398ba8a4c6c9863bd6e5242297ef59d38982d827b7bdb29b4a836` |
+| `engine-direct-round-settled-2611.ycqDrlnO/verification.json` | `8a88a409bde8c6c0d9c654959edbf9b67a0b7df22184b313588ff780f49bd382` |
+| `engine-direct-round-verified-2611.TdZBvvLN/verification.json` | `6aa546d77f6113e944eb6aa459832b0e61ee21338e275a4790d5e83fe3d43142` |
+| `engine-direct-round-fault-2611.trXWX4B9/verification.json` | `161c032840f73fcfa8203540ff33c55edc1f8f1211cb671e02a61ad2decb6859` |
+| `engine-direct-round-fault-settled-2611.f3ieKUWt/verification.json` | `4f4caad711737456c975f762d16633301fe4184ae0b74b0e0e471d0ff06b13bf` |
+| `engine-direct-round-fault-verified-2611.GmI2rvvX/verification.json` | `5be58ac5aab03d2a0566bc5754276695eb720d40255a10936961d12c9b7474fb` |
+
 ### Current helper admission, inventory and line gates — 17 November 2026
 
 The post-publication source-role rebind is now applied on runtime product

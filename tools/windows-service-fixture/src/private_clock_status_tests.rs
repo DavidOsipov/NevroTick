@@ -59,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 45;
+const BROKER_CASES: usize = 47;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -2463,6 +2463,8 @@ enum FirstReplyCase {
     Suspended,
     /// Deliver Suspend after collecting the full native write, before confirmation.
     SuspendedAtCompletion,
+    /// Deliver Suspend while the actual first write is still pending.
+    SuspendedWhileQueued,
     /// Prepare a positive reply and refuse it at the final submission guard.
     Refused(FirstReplyRefusal),
 }
@@ -2478,7 +2480,10 @@ impl FirstReplyCase {
             b"\x01\x00\x02\x00\x13\x00\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\
                                      {\"available\":false}";
         match self {
-            Self::Available | Self::SuspendedAtCompletion | Self::Refused(_) => AVAILABLE,
+            Self::Available
+            | Self::SuspendedAtCompletion
+            | Self::SuspendedWhileQueued
+            | Self::Refused(_) => AVAILABLE,
             Self::Suspended => UNAVAILABLE,
         }
     }
@@ -2506,7 +2511,7 @@ fn observe_native_first_reply<const CASE: usize>(
 
     use crate::{
         broker_endpoint::BrokerEndpointWorker,
-        native_broker_endpoint::NativeBrokerEndpoint,
+        native_broker_endpoint::{FirstReplyControl, NativeBrokerEndpoint},
         native_pipe_identity::RetainedFixtureClient,
         native_pipe_pair::{
             LabRequestWriter, open_first_exchange_client, prepare_first_exchange_fixture,
@@ -2519,12 +2524,14 @@ fn observe_native_first_reply<const CASE: usize>(
     let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
     let peer: RetainedFixtureClient = RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
     let pipe_case: u32 = u32::try_from(CASE)?;
-    let observe_full_write: Option<fn()> = match scenario {
-        FirstReplyCase::SuspendedAtCompletion => Some(suspend_at_write_completion::<CASE>),
+    let reply_control: Option<FirstReplyControl> = match scenario {
+        FirstReplyCase::SuspendedAtCompletion => Some(FirstReplyControl::AtFullWrite(
+            suspend_at_write_completion::<CASE>,
+        )),
         _ => None,
     };
     let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-        prepare_first_exchange_fixture(pipe_case, peer, observe_full_write)
+        prepare_first_exchange_fixture(pipe_case, peer, reply_control)
     };
     with_broker_worker_reads::<CASE, 1, _, _>(
         BrokerEndpointWorker::new(acquire),
@@ -2625,13 +2632,15 @@ fn finish_native_first_reply<P: Worker>(
     {
         return Err("the admitted reply lost its original Running custody".into());
     }
-    if matches!(scenario, FirstReplyCase::SuspendedAtCompletion)
-        && (clock.mailbox.revision().is_some()
-            || !owner
-                .broker_clock_reader
-                .as_ref()
-                .is_some_and(NativeBrokerReader::status_source_open)
-            || stop.stop_requested())
+    if matches!(
+        scenario,
+        FirstReplyCase::SuspendedAtCompletion | FirstReplyCase::SuspendedWhileQueued
+    ) && (clock.mailbox.revision().is_some()
+        || !owner
+            .broker_clock_reader
+            .as_ref()
+            .is_some_and(NativeBrokerReader::status_source_open)
+        || stop.stop_requested())
     {
         return Err("the full write did not suspend the original live mailbox".into());
     }
@@ -2813,6 +2822,10 @@ fn observe_first_reply_bytes(
         let _: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
     }
 }
+
+#[cfg(windows)]
+#[path = "private_clock_status_tests/queued_first_reply.rs"]
+mod queued_first_reply;
 
 #[cfg(windows)]
 mod distinct_peer {

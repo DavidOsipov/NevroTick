@@ -254,7 +254,7 @@ enum Operation {
     InlineReply(ReplyContext),
 }
 
-/// The original context a terminal write must satisfy to confirm the reply.
+/// The original context required to keep a write queued or confirm its completion.
 #[cfg(test)]
 #[derive(Clone, Copy)]
 struct ReplyContext {
@@ -412,7 +412,7 @@ where
         }
     }
 
-    /// Cancel one expired operation and keep its exact resources until settled.
+    /// Cancel one locally refused operation and keep its exact resources until settled.
     ///
     /// # Errors
     /// Keep the first cancellation refusal while native completion is still owed.
@@ -428,10 +428,10 @@ where
         })
     }
 
-    /// Wait within the original cutoff or start expiry retirement once.
+    /// Wait within the original cutoff or start local retirement once.
     ///
     /// # Errors
-    /// Preserve a cancellation refusal at local expiry.
+    /// Preserve a cancellation refusal while the original operation is still owned.
     fn pending(
         endpoint: &mut E,
         state: &mut Running,
@@ -544,15 +544,17 @@ where
         }
     }
 
-    /// Recheck the original host and peer admission around the peer observation.
+    /// Recheck the host and peer admission, then the original positive revision.
     /// A refusal retires this connection locally while Stop retains service precedence.
     #[cfg(test)]
     fn reply_edge<C: Clock>(
         endpoint: &mut E,
         connection: &mut RunningConnection<'_, C>,
-        cutoff: Instant,
+        reply: ReplyContext,
     ) -> ConnectionEdge {
-        connection.reply_edge_with_peer(cutoff, || endpoint.reply_peer_current())
+        connection.reply_edge_with_revision(reply.cutoff, reply.positive_revision, || {
+            endpoint.reply_peer_current()
+        })
     }
 
     /// Start the serialized fixture reply on the worker whose original read settled.
@@ -572,7 +574,7 @@ where
         };
         *state = Running::Parked;
         if !matches!(
-            Self::reply_edge(endpoint, connection, cutoff),
+            connection.reply_edge_with_peer(cutoff, || endpoint.reply_peer_current()),
             ConnectionEdge::Open(_)
         ) {
             return Ok(ConnectionWait::Service);
@@ -592,7 +594,7 @@ where
             Ok(FirstReplyStart::Queued) => {
                 let operation: Operation = Operation::QueuedReply(reply);
                 *state = Running::Queued(operation);
-                let after: ConnectionEdge = Self::reply_edge(endpoint, connection, cutoff);
+                let after: ConnectionEdge = Self::reply_edge(endpoint, connection, reply);
                 Self::pending(endpoint, state, operation, &after)
             }
             Ok(FirstReplyStart::Immediate) => {
@@ -624,19 +626,16 @@ where
         let cutoff: Instant = reply.cutoff;
         // An inline completion is already terminal. Always collect its original slot.
         if matches!(operation, Operation::QueuedReply(_)) {
-            let edge: ConnectionEdge = Self::reply_edge(endpoint, connection, cutoff);
+            let edge: ConnectionEdge = Self::reply_edge(endpoint, connection, reply);
             if !matches!(edge, ConnectionEdge::Open(_)) {
                 return Self::pending(endpoint, state, operation, &edge);
             }
         }
         let result: Result<Poll<FirstReplyCompletion>, NativeError> = endpoint.poll_first_reply();
         let after: ConnectionEdge = match result {
-            Ok(Poll::Ready(FirstReplyCompletion::Written)) => {
-                connection.reply_edge_with_revision(cutoff, reply.positive_revision, || {
-                    endpoint.reply_peer_current()
-                })
+            Ok(Poll::Ready(FirstReplyCompletion::Written) | Poll::Pending) => {
+                Self::reply_edge(endpoint, connection, reply)
             }
-            Ok(Poll::Pending) => Self::reply_edge(endpoint, connection, cutoff),
             _ => connection.reply_edge(cutoff),
         };
         match result {

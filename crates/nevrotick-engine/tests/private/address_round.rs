@@ -1935,6 +1935,254 @@ fn configured_round_original_cutoff_fences_the_actual_final_rate() -> Check<()> 
     Ok(())
 }
 
+/// Select whether the actual policy cell is free, released promptly or held past expiry.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RoundReplyPolicy {
+    /// The final guard can acquire the original cell immediately.
+    Free,
+    /// A separate holder releases the cell after the original guarded attempt.
+    Release,
+    /// The holder keeps the cell until the actual round owner returns.
+    Cutoff,
+}
+
+/// A finite bound for each cross-thread fixture observation.
+const ROUND_REPLY_WAIT: Duration = Duration::from_secs(5);
+
+/// Deliver one real RATE through the address-round driver under each final policy schedule.
+/// # Errors
+/// Preserve actual socket, stage, holder, runtime and report failures.
+/// # Panics
+/// Reject an incorrect transfer, renewed cutoff, changed receive charge or successor query.
+#[test]
+fn configured_address_round_keeps_rate_through_final_policy_contention() -> Check<()> {
+    for policy in [
+        RoundReplyPolicy::Free,
+        RoundReplyPolicy::Release,
+        RoundReplyPolicy::Cutoff,
+    ] {
+        observe_contended_round_reply(policy)?;
+    }
+    Ok(())
+}
+
+/// Run the genuine configured-round candidate and native peer for one selected schedule.
+/// # Errors
+/// Preserve actual setup, socket and joined worker failures.
+/// # Panics
+/// Refuse unstaged controls, lost original send custody or inconsistent terminal accounting.
+fn observe_contended_round_reply(policy: RoundReplyPolicy) -> Check<()> {
+    use crate::{SourceAddressSet, SourcePolicyLimits};
+    use std::sync::mpsc;
+
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let live: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let original: UdpSocket = live.try_clone()?;
+    let peer: SocketAddr = live.local_addr()?;
+    let alternative: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 2] = [peer, alternative.local_addr()?];
+    let source: crate::SourceHandle = authority.source(0)?;
+    let current: crate::SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&peers)?)?;
+    let config: AddressRoundConfig =
+        AddressRoundConfig::new(&peers, Duration::from_secs(4), Duration::from_secs(8))?;
+    let bound: ConfiguredAddressRound = source.address_round_for_configuration(&current, config)?;
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let origin: Instant = Instant::now();
+    let cutoff: Instant = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let (prepared, control): (PreparedAddressRound, ControlHandle) = bound
+        .prepare_before_with_entropy(cutoff, |entropy| {
+            fixed_entropy(entropy);
+            Ok(())
+        })?
+        .ok_or(PilotError::InternalState)?;
+    assert_eq!(prepared.original_cutoff, Some(cutoff));
+    let bindings: Option<RoundBindings> = prepared.source_policy.clone();
+    let binding: crate::source_policy::SourceBinding = source.bind(peer)?;
+    let responder: ReplyPeer = ReplyPeer::spawn(live, ReplyKind::Control)?;
+    let (mark, stages) = mpsc::sync_channel(2);
+    let (ready, guard_ready) = mpsc::sync_channel(1);
+    let (returned, done) = mpsc::sync_channel(1);
+    let mut observer = Some(round_reply_observer(mark, guard_ready, cutoff));
+    let (report, returned_at, released_at): (AddressRoundReport, Instant, Instant) =
+        thread::scope(|scope| -> Check<_> {
+            let holder: thread::ScopedJoinHandle<'_, io::Result<Instant>> =
+                scope.spawn(move || {
+                    hold_policy_for_round_reply(policy, &binding, &stages, &ready, &done)
+                });
+            let report: AddressRoundReport = runtime.block_on(run_round_with(
+                prepared,
+                origin,
+                cutoff,
+                &mut |destination, packet, context, receiver, request_end, round_end| {
+                    let mode: SourceMode = candidate_mode(bindings.as_ref(), destination)?;
+                    let mut outcome: SetupOutcome = setup_address_request_bound(
+                        destination,
+                        packet,
+                        context,
+                        receiver,
+                        request_end,
+                        round_end,
+                        mode,
+                    )?;
+                    if let SetupOutcome::Ready(slot) = &mut outcome
+                        && destination == peer
+                        && let Some(observe) = observer.take()
+                    {
+                        crate::series::observe_slot_final_guards(slot, &control, observe);
+                    }
+                    Ok(outcome)
+                },
+                &mut |_, _| {},
+            ));
+            let returned_at: Instant = Instant::now();
+            if policy == RoundReplyPolicy::Cutoff {
+                returned.try_send(())?;
+            }
+            let released_at: Instant = holder
+                .join()
+                .map_err(|_| "final round policy holder panicked")??;
+            Ok((report, returned_at, released_at))
+        })?;
+    check_query(&require_query(responder.finish()?)?);
+    assert_eq!(observe_queries(&original)?.0, 0);
+    assert_eq!(observe_queries(&alternative)?.0, 0);
+    let snapshot: crate::SourcePolicySnapshot = source.policy_snapshot(peer)?;
+    check_contended_round_history(
+        policy,
+        &report,
+        &snapshot,
+        peer,
+        cutoff,
+        returned_at,
+        released_at,
+    )
+}
+
+/// Keep the actual attempt between the holder's ready and release signals.
+/// # Panics
+/// Fails if the controlled attempt did not reach the guard before the cutoff.
+fn round_reply_observer(
+    mark: std::sync::mpsc::SyncSender<bool>,
+    ready: std::sync::mpsc::Receiver<()>,
+    cutoff: Instant,
+) -> impl Fn(crate::series::TestFinalGuardEvent, &ControlHandle) + Send + Sync + 'static {
+    use crate::series::TestFinalGuardEvent;
+    let ready: std::sync::Mutex<std::sync::mpsc::Receiver<()>> = std::sync::Mutex::new(ready);
+    move |event, _| match event {
+        TestFinalGuardEvent::ReplyBefore => {
+            assert!(mark.try_send(false).is_ok());
+            assert!(
+                ready
+                    .lock()
+                    .is_ok_and(|receiver| receiver.recv_timeout(ROUND_REPLY_WAIT).is_ok())
+            );
+        }
+        TestFinalGuardEvent::ReplyAfter => {
+            assert!(
+                Instant::now() < cutoff,
+                "final policy attempt missed the cutoff"
+            );
+            assert!(mark.try_send(true).is_ok());
+        }
+        TestFinalGuardEvent::WritableBefore | TestFinalGuardEvent::WritableAfter => {}
+    }
+}
+
+/// Synchronize exactly one actual policy guard with the staged reply.
+/// # Errors
+/// Preserve a missing checkpoint, an observation timeout or a policy-lock refusal.
+fn hold_policy_for_round_reply(
+    policy: RoundReplyPolicy,
+    binding: &crate::source_policy::SourceBinding,
+    stages: &std::sync::mpsc::Receiver<bool>,
+    ready: &std::sync::mpsc::SyncSender<()>,
+    done: &std::sync::mpsc::Receiver<()>,
+) -> io::Result<Instant> {
+    if stages
+        .recv_timeout(ROUND_REPLY_WAIT)
+        .map_err(io::Error::other)?
+    {
+        return Err(io::Error::other("unexpected first policy checkpoint"));
+    }
+    let held = || -> io::Result<()> {
+        ready.try_send(()).map_err(io::Error::other)?;
+        if !stages
+            .recv_timeout(ROUND_REPLY_WAIT)
+            .map_err(io::Error::other)?
+        {
+            return Err(io::Error::other("unexpected final policy checkpoint"));
+        }
+        if policy == RoundReplyPolicy::Cutoff {
+            done.recv_timeout(ROUND_REPLY_WAIT)
+                .map_err(io::Error::other)?;
+        }
+        Ok(())
+    };
+    if policy == RoundReplyPolicy::Free {
+        held()?;
+    } else {
+        crate::source_policy::fixture_while_locked(binding, held).map_err(io::Error::other)??;
+    }
+    Ok(Instant::now())
+}
+
+/// Check the one original transfer and both actual policy records.
+/// # Errors
+/// Refuses a missing or substituted original attempt.
+/// # Panics
+/// Reject missed contention, expired publication, duplicate charge or renewed timing.
+fn check_contended_round_history(
+    policy: RoundReplyPolicy,
+    round: &AddressRoundReport,
+    snapshot: &crate::SourcePolicySnapshot,
+    peer: SocketAddr,
+    cutoff: Instant,
+    returned_at: Instant,
+    released_at: Instant,
+) -> Check<()> {
+    assert!(round.primary_error().is_none());
+    assert!(round.policy_refusals().is_empty());
+    let [attempt]: &[AddressAttempt] = round.attempts() else {
+        return Err("the original round must transfer exactly one attempt".into());
+    };
+    if attempt.peer() != peer {
+        return Err("the original report names another destination".into());
+    }
+    let applied: bool = policy != RoundReplyPolicy::Cutoff;
+    let report: &SlotReport = attempt.report();
+    assert!(report.sent() && report.facts().is_none());
+    assert_eq!(report.received(), 1, "{policy:?}");
+    assert_eq!(report.rejected(), u16::from(!applied), "{policy:?}");
+    if applied {
+        assert!(returned_at < cutoff, "{policy:?}");
+        assert_eq!(round.end(), AddressRoundEnd::Control, "{policy:?}");
+        assert_eq!(report.status(), Status::Control, "{policy:?}");
+        assert_eq!(report.control_code(), Some(u32::from_be_bytes(*b"RATE")));
+    } else {
+        assert!(returned_at >= cutoff && released_at >= returned_at);
+        assert!(returned_at.duration_since(cutoff) < Duration::from_secs(1));
+        assert_eq!(round.end(), AddressRoundEnd::Deadline);
+        assert_eq!(report.status(), Status::Timeout);
+        assert_eq!(report.control_code(), None);
+    }
+    for record in [snapshot.source(), snapshot.endpoint()] {
+        assert_eq!(
+            record.interval(),
+            Duration::from_millis(if applied { 2 } else { 1 })
+        );
+        assert!(
+            record.floor().is_some(),
+            "the actual send must retain its debit"
+        );
+    }
+    Ok(())
+}
+
 /// Check terminal accounting and both actual managed RATE records.
 /// # Panics
 /// Reject an uncharged late reply, a late RATE effect or a lost healthy effect.

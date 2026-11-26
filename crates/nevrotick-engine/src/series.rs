@@ -308,6 +308,19 @@ pub(super) fn set_test_final_guard_observer(
     prepared.test_final_guard_observer = Some(Arc::new(observer));
 }
 
+/// Observe the original slot's final guards in the private address-round controls.
+#[cfg(test)]
+pub(super) fn observe_slot_final_guards(
+    slot: &mut LiveSlot,
+    handle: &ControlHandle,
+    observer: impl Fn(TestFinalGuardEvent, &ControlHandle) + Send + Sync + 'static,
+) {
+    slot.test_final_guard_observer = Some(TestFinalGuardObserver {
+        callback: Arc::new(observer),
+        handle: handle.clone(),
+    });
+}
+
 impl fmt::Debug for PreparedSeries {
     /// Redact packets, controls and configured payloads.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

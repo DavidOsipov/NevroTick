@@ -20529,6 +20529,164 @@ installed admission and affected coverage and mutation gates remain open.
 | `settled/reply-final.patch` | `544dfac476d047a34f6992927887d434de86989d53e37860ef5ec344dee4486a` |
 | `settled/repository-readback.json` | `ace299c26885223f6ef1c9c040d51a2930f3c96287c037a17d64e8a7fa77b1c8` |
 
+#### Retire a queued broker reply when its clock revision changes
+
+W11-W05/S3.2 and CHECK-2/3/25/27. The first-reply worker now checks the
+original positive revision just after queuing, before polling a queued
+write, and after a pending result. It uses the same guard as terminal
+confirmation, with the original peer and cutoff. A withdrawn revision
+starts one cancellation and keeps the same operation and worker permit
+through actual collection. A write that completes during retirement can
+have delivered bytes. The worker withholds current confirmation. An
+unavailable reply carries no positive revision, and inline completion
+still collects its original slot.
+
+Three scripted histories deliver TimeChange at those boundaries. The peer
+stays current, the mailbox advances to revision 2, and the original
+cutoff stays in the future. Each control checks the wait and call order,
+one cancellation, a pending drain followed by late Written, absence of
+confirmation and the original Stop/close. The test stores wait and
+confirmation observations and compares them after normal Stop. The
+tests-only candidate then returned exit 101 at `RevisionChangedAfterQueue`
+with `Cutoff` observed where `Drain` was required. The other 199 fixture
+library tests passed. The two earlier attempts stopped at the test helper's
+line limit and at abort-on-drop after an assertion during live work.
+
+The repaired 884-input candidate
+`6259a0cbe20cf5001ef9b4568d820255e388e561bc085b342b954a2cf75901c1`
+passed all six graph and twelve privilege-checkpoint commands. GNU
+ordinary and optimized each passed 200 fixture library tests and all 70
+platform tests. The admitted MSVC all-target Clippy command passed. The
+source, tool, vendor and index bookends passed. Independent source review
+confirmed the original peer, revision, Stop and drain ownership. The
+current native queued-write case remains open. It needs observed native
+pending and terminal results on the original duplex server. Earlier
+backpressure evidence covers a separate outbound pipe. Installed service
+and per-file coverage and mutation gates remain open.
+
+| Record under `artifacts/windows-services/recovery-20261107-v1/` | SHA-256 |
+| --- | --- |
+| `broker-reply-queued-red-2611-host.json` | `9978e6057791c65829375a165d397195c1adae8cf86267cd913c7f8451128dbf` |
+| `broker-reply-queued-redb-2611-host.json` | `64e77da92208836c54a10d77eed4248012c5a65e6205aab23bef30e533f39b55` |
+| `broker-reply-queued-redc-2611-host.json` | `77cea21b558a6dcaaabdb9d29389dffc3ce68232e96bdcd08edb8b1c94907d24` |
+| `broker-reply-queued-green-2611-graph.json` | `fde3b77c14ad499e9f0b801a8bd3e356e46177987d2aeb4285d0317571f98d1d` |
+| `broker-reply-queued-green-2611-host.json` | `1e0820d29dcdc46dc3b427a9afbbfe54563912fabac1167cc326ddfe0d839c1b` |
+
+The maintained `libtest-link` runner accepted that checkpoint and passed
+both AMD64 link and static readback commands. The cross-link receipt
+`cross-broker-reply-queued-2611.json` hashes to
+`afa4b9c7488c80b105e88e51ba6b47793130e946ddf3ee98f217a4bc6344a653`.
+The exported PE and matching PDB hash to
+`6eb59d09ac6c92c9d1393f790917835e153c5a304e65dd7af52bf492447238b5`
+and `243a7900461a03067c5473cd431d41fd46ef61ea25d9f3f8a172ccc359b57021`.
+
+The original offline AMD64 Sandbox and broker mappings passed preflight
+for the repaired PE and the existing terminal-withdrawal and healthy
+reply selectors. Windows available physical memory fell from 2,404 MiB
+to 1,981 MiB before launch. The 2,048 MiB floor stopped the run before
+either selector executed. Retirement rehashed and removed the staged PE
+and verified both shelves were empty. The original guest remains active.
+Under the existing owned run's `broker-reply-queued-baseline-2611/`, the
+prelaunch verification and retirement receipts hash to
+`6680cd72d7f0f5b7d40c134a1d9aa386504928b924d6f67328eec17ecae27c68`
+and `0ebc492a564220a5487c845b3d41e6bc5af0ad24985b3673090fbf37087f923b`.
+
+##### Prepare the native pending-write discriminator
+
+The opt-in first-exchange fixture preloads the admitted duplex server
+with a fixed 80-byte inert marker after accept and before the request.
+It rechecks the original peer at the marker write and collects the full
+marker count before arming the request read. The status request still
+uses the ordinary attribution and guarded submission path. The two
+histories require the actual queued submission and a native pending
+observation while the original client read is idle. The healthy control
+checks exact marker and status bytes and current confirmation. The
+withdrawal control delivers scripted Suspend at the pending edge,
+requires one cancellation request and terminal collection on the same
+write before client reads, checks that the marker remains and requires
+no status bytes or confirmation in that selected history. It then checks
+Stop and disconnection on the original connection. Marker reads are
+bounded by the remaining prefix, including after a short read.
+
+Each control preserves the original scripted cutoff and the existing
+bounded guest watchdog. The requested pipe quota is an advisory input.
+The source fixture requires actual queued and pending evidence, with a
+setup refusal if the selected profile completes the write inline.
+Independent review checked marker collection, the retained peer, the
+original write slot and the existing full-write observation hook.
+
+The first source attempt stopped at the Windows-target lint for a local
+item after a statement. The corrected 885-input candidate
+`aa489a82447cd5d89ea63a2ddbd5e05845df15963c039ba94d308050c11cedca`
+passed six graph and twelve development commands. GNU ordinary and
+optimized each passed 200 fixture library tests. Windows-target
+all-target Clippy passed. The native test remains ignored in ordinary
+execution and requires the exact offline guest selector. A subsequent
+read-only Windows preflight observed 1,602 MiB available. It remained
+below the 2,048 MiB floor, with no fixture payload dispatched.
+
+| Record under the existing service receipt directory | SHA-256 |
+| --- | --- |
+| `broker-native-pending-2611-host.json` | `063c4440d9bf2a066f34214f6b28cf2dd2e8d2a3a606fc36fb0c987b170e83d4` |
+| `broker-native-pending-settled-2611-graph.json` | `c9ba6fe7e8df2133b59238f3de4d3bba197d72e1a0c4e7c7397b2ffd6f28efe1` |
+| `broker-native-pending-settled-2611-host.json` | `abbfe9aa726a81a6b68b320ce1c9813f7ebef6883dad8fb4ea0a23754ab900ce` |
+
+The subsequent read-only host observation is `follow-up-host-preflight.json`
+in `broker-reply-queued-baseline-2611/`, SHA-256
+`332935805bf58141513272af65c26fac293a4815df819475c0fdc5341f0dc8c2`.
+
+The maintained cross-link passed both link and static readback commands
+for this same candidate. `cross-broker-native-pending-2611.json` hashes
+to `e5a4fbcf2dda18ede4dfa3bbd794f847d22f2b612c09a99a7577227b5afb066d`.
+The exported PE and PDB hash to
+`a9b9faae3ef1d3d9825feba1099a3bde16dec86b29f907e6b4e0cd897de2654f`
+and `aadbb50383ab042405a421ce8973a163b66d159071313d692bb008df2cb96b1d`.
+After the owned build scratch was removed, host memory rose to 1,968 MiB.
+The original guest was present and the floor still refused launch before
+staging. The `post-link-host-preflight.json` receipt in the same folder
+hashes to `5489b460b3214df3f9610e4236d2a7dba7077564ff9700f92bfe92d5cdb50272`.
+Resume the current linked image with
+`host::private_clock_status::tests::queued_first_reply::native_first_reply_retires_after_revision_withdrawal_while_pending`
+and the existing terminal-withdrawal neighbor when the original guest
+and host headroom pass the current preflight.
+
+##### Observe cancellation and terminal collection on the original Windows write
+
+The resumed run used the same 885-input candidate and the exact linked
+PE above. The original offline AMD64 Sandbox on build 26100 passed
+network, mapping, runtime and image checks. The dispatch measured
+2,135 MiB available before staging and 2,095 MiB immediately before
+payload launch against the existing 2,048 MiB floor.
+
+Both exact selectors passed in separate guest processes. The pending
+selector ran both histories. The healthy history observed a queued
+submission and pending collection, then read the marker and exact
+positive reply and confirmed it. The withdrawal history observed the
+same pending boundary before scripted Suspend. The original operation
+received one accepted cancellation request and returned terminal
+`Cancelled` while the client read stayed idle. The pending test
+checked the unchanged marker, no status bytes or confirmation in the
+selected history and the original Stop and disconnection. The neighboring
+selector covered the distinct full-write result. It received the exact
+reply bytes and withheld current confirmation after scripted Suspend
+at completion.
+
+Both children returned exit 0. The controller rehashed the original
+and staged image, observed both children retire and both streams close,
+preserved all five result files and confirmed that guest scratch and
+both transfer shelves were empty. The original offline guest remained
+available. This is native named-pipe evidence with scripted control
+delivery and a scripted owner cutoff. Physical suspend delivery,
+installed peer admission and per-file coverage and mutation remain
+separate open gates.
+
+| Record under the original owned run's `broker-native-pending-2611/` | SHA-256 |
+| --- | --- |
+| `verification.json` | `3a964b1a456750bb866968eea9b9f0b47ac3354bfb38dd44ac938a594b87bf47` |
+| `guest.json` | `f0934a4f35ef67e7e11d3eec115280249acde80c8eab9b86ea2638887beefdb8` |
+| `case-1.stdout` | `4055f3b9fc42ef2c8c47b6abed3b71407b1b3f52ed7f6627353a7863cce0ac97` |
+| `case-2.stdout` | `e12ea11377301d48d530158ce7e375e46e0663d71928d082c823519484c4666d` |
+
 #### Prepare the native control for confirmation after a full pipe write
 
 W11-W05/S3.2 and CHECK-2/3/25/27. The Windows-only first-exchange fixture

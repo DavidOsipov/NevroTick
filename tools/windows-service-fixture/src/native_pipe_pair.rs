@@ -38,7 +38,7 @@ use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 use crate::{
     NativeError, NativeOperation,
     broker_endpoint::{AcceptCompletion, AcceptStart, Reservation},
-    native_broker_endpoint::{FixtureConnectionError, NativeBrokerEndpoint},
+    native_broker_endpoint::{FirstReplyControl, FixtureConnectionError, NativeBrokerEndpoint},
     native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
     native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
     native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll},
@@ -497,13 +497,9 @@ pub(super) fn prepare_first_read_fixture(
 pub(super) fn prepare_first_exchange_fixture(
     case: u32,
     peer: RetainedFixtureClient,
-    observe_full_write: Option<fn()>,
+    control: Option<FirstReplyControl>,
 ) -> Result<NativeBrokerEndpoint, NativeError> {
-    NativeBrokerEndpoint::for_first_exchange_fixture(
-        first_exchange_server(case)?,
-        peer,
-        observe_full_write,
-    )
+    NativeBrokerEndpoint::for_first_exchange_fixture(first_exchange_server(case)?, peer, control)
 }
 
 /// Create the sealed original server shared by both fixture modes.

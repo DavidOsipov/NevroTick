@@ -37,7 +37,10 @@ use windows_sys::{
 };
 
 #[cfg(test)]
-use std::time::Instant;
+use std::{
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 use crate::{
     NativeError, NativeOperation,
@@ -51,10 +54,10 @@ use crate::{
     broker_endpoint::{FirstReadCompletion, FirstReadStart, FirstReplyCompletion, FirstReplyStart},
     host::{Clock, ConnectionEdge, RunningConnection},
     native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
-    native_pipe_pair::LabUnconnectedDuplexPipe,
+    native_pipe_pair::{LabPipeError, LabUnconnectedDuplexPipe},
     native_pipe_read::{
-        AttributedStatusRead, CompletedFirstRead, IdentifiedReadError, NativePipeRead,
-        NativeReadError, NativeReadStart,
+        AttributedStatusRead, CompletedFirstRead, IdentifiedReadError, NativeCancel,
+        NativePipeRead, NativeReadError, NativeReadStart,
     },
     native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll, NativeWriteStart},
     private_clock_wire::MAX_FRAME_LEN,
@@ -162,6 +165,30 @@ impl From<NativeWriteError> for ReplySubmitError {
     }
 }
 
+/// The fixed inert bytes placed before a status response in the backpressure control.
+#[cfg(test)]
+pub(super) const FIRST_REPLY_PREFILL: [u8; MAX_FRAME_LEN] = [b'~'; MAX_FRAME_LEN];
+
+/// Physical observations of the one status write. The prefill has settled first.
+#[cfg(test)]
+pub(super) enum FirstReplyIo<'a> {
+    /// The submit result of the original status frame.
+    Submitted(&'a NativeWriteStart),
+    /// A nonwaiting observation of that same submitted frame.
+    Observed(&'a NativeWritePoll),
+    /// The cancellation request outcome, before collection.
+    Cancel(&'a NativeCancel),
+}
+
+/// Optional test instrumentation on the original exchange.
+#[cfg(test)]
+pub(super) enum FirstReplyControl {
+    /// Deliver one action after a full write succeeds, before confirmation.
+    AtFullWrite(fn()),
+    /// Prefill the original server, then observe its actual status write.
+    Backpressure(Rc<dyn for<'a> Fn(FirstReplyIo<'a>)>),
+}
+
 /// The write and read records are bound to the same original server owner.
 #[cfg(test)]
 struct FirstExchange {
@@ -169,8 +196,18 @@ struct FirstExchange {
     reply: FirstReplyState,
     /// Retain the original client identity through the read and the one write.
     peer: RetainedFixtureClient,
-    /// A fixture action after the exact terminal count is collected, before confirmation.
-    observe_full_write: Option<fn()>,
+    /// Selected test instrumentation, absent from ordinary exchanges.
+    control: Option<FirstReplyControl>,
+}
+
+#[cfg(test)]
+impl FirstExchange {
+    /// Publish the result of an actual I/O call after updating its native ownership.
+    fn observe(&self, io: FirstReplyIo<'_>) {
+        if let Some(FirstReplyControl::Backpressure(observer)) = &self.control {
+            observer(io);
+        }
+    }
 }
 
 /// The original pipe has exactly one native handle owner through its operations.
@@ -388,7 +425,7 @@ impl NativeBrokerEndpoint {
     pub(super) fn for_first_exchange_fixture(
         server: LabUnconnectedDuplexPipe,
         peer: RetainedFixtureClient,
-        observe_full_write: Option<fn()>,
+        control: Option<FirstReplyControl>,
     ) -> Result<Self, NativeError> {
         let (accept, event): (AcceptRecord, OwnedHandle) = prepare_accept()?;
         let read: NativePipeRead = NativePipeRead::for_first_read(server)
@@ -402,7 +439,7 @@ impl NativeBrokerEndpoint {
                 write,
                 reply: FirstReplyState::WaitingForAttribution,
                 peer,
-                observe_full_write,
+                control,
             })),
             fixture_pipe: false,
             status_client: None,
@@ -599,6 +636,32 @@ impl Reservation for NativeBrokerEndpoint {
             }
             EndpointPipe::FirstExchange(exchange) => {
                 self.accept.state = AcceptState::Retired;
+                if matches!(exchange.control, Some(FirstReplyControl::Backpressure(_))) {
+                    let prefill_cutoff: Instant = Instant::now() + Duration::from_secs(2);
+                    exchange
+                        .write
+                        .write_fixture_fragment_before(
+                            &FIRST_REPLY_PREFILL,
+                            prefill_cutoff,
+                            |pipe| {
+                                if exchange.peer.observe(pipe) {
+                                    Ok(())
+                                } else {
+                                    Err(LabPipeError::ForeignPeer)
+                                }
+                            },
+                        )
+                        .map_err(|error| {
+                            let operation: NativeOperation =
+                                NativeOperation::BrokerEndpointReplySubmit;
+                            match error {
+                                LabPipeError::OverlappedWrite(error) => {
+                                    write_error(operation, error)
+                                }
+                                _ => NativeError::new(operation, ERROR_INVALID_PARAMETER),
+                            }
+                        })?;
+                }
                 exchange.write.begin_first_read(MAX_FRAME_LEN)
             }
         };
@@ -717,6 +780,7 @@ impl Reservation for NativeBrokerEndpoint {
             Err(ReplySubmitError::Write(error)) => return Err(write_error(operation, error)),
         };
         exchange.reply = FirstReplyState::Pending(bytes.len());
+        exchange.observe(FirstReplyIo::Submitted(&start));
         Ok(match start {
             NativeWriteStart::Queued => FirstReplyStart::Queued,
             NativeWriteStart::Immediate => FirstReplyStart::Immediate,
@@ -735,7 +799,11 @@ impl Reservation for NativeBrokerEndpoint {
         let FirstReplyState::Pending(expected) = exchange.reply else {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         };
-        let completion: FirstReplyCompletion = match exchange.write.poll() {
+        let observation: Result<NativeWritePoll, NativeWriteError> = exchange.write.poll();
+        if let Ok(observed) = &observation {
+            exchange.observe(FirstReplyIo::Observed(observed));
+        }
+        let completion: FirstReplyCompletion = match observation {
             Ok(NativeWritePoll::Pending) => return Ok(Poll::Pending),
             Ok(NativeWritePoll::Written(written)) if written == expected => {
                 FirstReplyCompletion::Written
@@ -750,8 +818,10 @@ impl Reservation for NativeBrokerEndpoint {
         };
         exchange.reply = FirstReplyState::Retired;
         if matches!(completion, FirstReplyCompletion::Written)
-            && let Some(observe) = exchange.observe_full_write.take()
+            && let Some(FirstReplyControl::AtFullWrite(observe)) = &exchange.control
         {
+            let observe: fn() = *observe;
+            exchange.control = None;
             observe();
         }
         Ok(Poll::Ready(completion))
@@ -766,11 +836,12 @@ impl Reservation for NativeBrokerEndpoint {
         let EndpointPipe::FirstExchange(exchange) = &mut self.pipe else {
             return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
         };
-        exchange
+        let cancelled: NativeCancel = exchange
             .write
             .request_cancel()
-            .map(|_| ())
-            .map_err(|error| write_error(operation, error))
+            .map_err(|error| write_error(operation, error))?;
+        exchange.observe(FirstReplyIo::Cancel(&cancelled));
+        Ok(())
     }
 
     /// Lend only the current native submission’s event and one-shot wake state.

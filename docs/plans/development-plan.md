@@ -1285,6 +1285,11 @@ within the existing test limit. The preceding Engine-source checkpoint passed
 cross-compilation and linking under both MSVC profiles. Native Windows and
 per-file qualification remain open, alongside the independent timing reference
 and other production admission prerequisites.
+The [configured round contention control](../../tasks/engine-transport-pilot.md#exercise-final-policy-contention-through-the-configured-address-round)
+now observes a real RATE through that direct driver. Timely release
+commits the original receive once. Holding the guard through expiry
+preserves the original debit and records one rejection with no successor
+query. The isolated synchronous-receive control failed the new assertion.
 
 The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
 checks both held-out legs and their original wire and residual record
@@ -1353,6 +1358,11 @@ The [broker clock metric checkpoint](../../tasks/windows11-integration.md#measur
 passes both GNU implementation line gates, preserves the complete generated
 inventories and records compiler refusals for all ten MSVC-only overlays.
 Full-file replay and Windows-only line evidence remain open.
+The [original Windows pending-write controls](../../tasks/windows11-integration.md#observe-cancellation-and-terminal-collection-on-the-original-windows-write)
+passed healthy completion and terminal cancellation after scripted
+revision withdrawal. The adjacent full-write control delivered the exact
+bytes and withheld current confirmation. Installed peer admission and
+per-file metric qualification remain open.
 The [joined measurement projection](../../tasks/engine-transport-pilot.md#calculate-each-original-joined-ordinary-receipt)
 now checks conditional nominal arithmetic for both original ordinary
 receipts through the actual Engine join. The Windows facade still supplies
