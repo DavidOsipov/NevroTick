@@ -1807,8 +1807,9 @@ calibration. [W11-W01](../tasks/windows11-integration.md#426-s21-timestamp-prove
 has a settled finite supplier/receiver contract and partial implementation
 preparation; actual mapping issuance, physical profile and native evidence remain open.
 
-**Optional packet-timestamp adapter:** compare Winsock software RX/TX timestamps
-with the qualified application-boundary path before considering NIC timestamps.
+**Optional packet-timestamp adapter:** evaluate software support and activation
+first; where available, compare Winsock software RX/TX timestamps with the
+qualified application-boundary path before considering NIC timestamps.
 Software timestamps use QPC; a hardware value needs supported/enabled capability
 and a current NIC-to-QPC correlation. Bind each record to the exchange, socket
 generation and **actual packet interface**, using qualified RX metadata and TX
@@ -1826,20 +1827,35 @@ not atomic proof of the configuration behind queued packet metadata. Validate
 payload and ancillary data separately, including truncation, capacities, returned
 lengths, framing/alignment and reset of reused output fields. Keep peer identity
 distinct from the local destination/interface; qualify IPv4 packet information
-on dual-stack sockets as well as IPv6. A fallback sample must satisfy its own
-admission/provenance contract. Use the selected SDK/generated ABI declarations,
-resolving the documented type/return-value inconsistencies recorded in the
+on dual-stack sockets as well as IPv6. `WSAEMSGSIZE` can report either payload or
+control-data truncation: inspect `MSG_TRUNC` and `MSG_CTRUNC`, retain the distinct
+failure reason and reject incomplete timestamp/interface evidence. Size control
+storage for all enabled messages with the selected SDK's alignment rules.
+Resolve `WSARecvMsg` for the actual socket's Winsock service provider, or establish
+compatible provider/protocol identity before reusing a cached extension pointer;
+the extension GUID alone is not that identity. A fallback sample must satisfy
+its own admission/provenance contract. Use the selected SDK/generated ABI
+declarations, resolving the documented type/return-value inconsistencies in the
 [follow-up](plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion).
+Do not mix older cross-timestamp layouts with the selected public API or substitute
+the reserved `GetInterfaceCurrentTimestampCapabilities` for the public active query.
 
-**Timestamp qualification refinement — 18 November 2026:** preserve per-direction
+**Timestamp qualification refinements — 18 and 26 November 2026:** preserve per-direction
 capture source/domain separately from logical source identity and authentication.
 API availability, supported flags, active mode and observed packet metadata are
 distinct admission facts. For a selected packet-timestamp path on generic NTP/NTS
 UDP, RX needs `AllReceive`; TX needs `AllTransmit` or `TaggedTransmit` in the
 selected active source set. PTP-only
-support is insufficient. Hardware and software modes are qualified separately;
-Windows does not support both enabled together on the interface. The selected
-timestamped TX path must not use unsupported `UDP_SEND_MSG_SIZE` coalesced sends.
+support is insufficient. Hardware and software modes are qualified separately.
+The documented NDIS configuration gives hardware precedence when both standardized
+settings are enabled; supported software capability is no automatic per-packet
+fallback. Miniport software timestamping is optional in that NDIS model. Socket
+subscription alone establishes neither the active adapter mode nor that a
+particular packet received a valid timestamp. Any selected adapter-configuration
+operation belongs to an explicitly authorized lifecycle owner, with restart effects, active-state
+readback and affected model/observation retirement; ordinary acquisition must not
+silently change adapter settings. The selected timestamped TX path must not use
+unsupported `UDP_SEND_MSG_SIZE` coalesced sends.
 Use the [source detail](plans/windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
 and [W11-W01 TQ-01–10](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 for implementation/acceptance rather than inferring support from a NIC label.
@@ -1848,6 +1864,14 @@ NIC-to-QPC correlation and QPC-to-UTC mapping are separate, generation-bound
 conversions. Both need justified uncertainty and validity covering the full
 exchange; nominal NIC frequency, a midpoint or a fit residual alone supplies no
 physical error guarantee. Preserve calibration brackets and drift/age allowances;
+equal nonzero QPC endpoints are an optimized form in the NDIS cross-timestamp
+contract, not a zero-uncertainty guarantee. Reject invalid NIC cross-capture output,
+including zero fields under that contract; distinguish it from unavailable nominal
+NIC frequency, which alone does not invalidate an independently qualified measured
+model. The driver-level missing-packet-timestamp representation does not establish
+how a Winsock provider exposes absence; qualify the selected public API path.
+Retain the packet/frame association and capture-point semantics rather than
+assigning a batch's timestamp to every constituent packet. Continue to
 retire affected models and queued observations on relevant mode/device/power/path
 or UTC-mapping changes. Recheck current identity/validity at the existing serialized
 final admission. Late TX retrieval cannot renew age or revise a committed estimate.

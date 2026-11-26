@@ -1,8 +1,8 @@
 # NevroTick: Microsoft Learn follow-up for Windows 11 integration
 
-**Document:** NV-WIN11-RESEARCH-002, revision 1.2<br>
+**Document:** NV-WIN11-RESEARCH-002, revision 1.3<br>
 **Date:** 3 November 2026 (Asia/Tbilisi)<br>
-**Updated:** 24 November 2026; profile-separated elevation; packet-timestamp refinement retained from 18 November<br>
+**Updated:** 26 November 2026; packet activation, receive metadata and SDK contract refinements; profile-separated elevation retained<br>
 **Owner:** David Osipov<br>
 **Status:** Source research and future qualification guidance; no implementation or native result.
 
@@ -71,15 +71,36 @@ owns the concrete cases and evidence. These are source-backed API facts plus
 explicit project qualification requirements, not implemented adapters or results.
 Required V1 capture/mapping/provenance remains separate from optional Winsock/NIC
 adoption; no hardware support requirement or new execution permission is added.
+The 26 November Microsoft Learn search/full-page review extends these same cases
+with adapter activation, receive-error and SDK-layout details below; integration
+was reconciled with repository `b161229c0d62f47246df11bfe2cf8df46e4d2e81`.
 
 | Microsoft source fact | Consequence for the selected adapter |
 | --- | --- |
-| `GetInterfaceSupportedTimestampCapabilities` and `GetInterfaceActiveTimestampCapabilities` report different states; socket `SIO_TIMESTAMPING` alone does not enable system/interface timestamp generation. Hardware and software timestamping cannot be enabled together on an interface. [T19] [T20] [T21] | Record supported, active and actually observed source separately. Test software and hardware modes separately, retaining application captures in each. Query failure or ambiguous/transition-era mode cannot be guessed from the counter magnitude or a configuration request. |
+| `GetInterfaceSupportedTimestampCapabilities` and `GetInterfaceActiveTimestampCapabilities` report different states; successful socket `SIO_TIMESTAMPING` configuration alone does not establish active system/interface generation. Hardware and software timestamping cannot be enabled together on an interface. [T19] [T20] [T21] | Record supported, active and actually observed source separately. Test software and hardware modes separately, retaining application captures in each. Query failure or ambiguous/transition-era mode cannot be guessed from the counter magnitude or a configuration request. |
+| In the documented NDIS 6.82 miniport implementation, hardware/cross-timestamp support is required and software support is optional. [T29] | Query the actual software capability and activation. This implementation requirement neither guarantees a universal software fallback nor establishes that every historical Windows software-timestamping path requires NIC hardware timestamps. |
 | `TIMESTAMPING_CONFIG.Flags` enables directions that are present and disables directions that are omitted. [T26] | Apply one explicit intended RX/TX configuration; test that a later direction-specific update does not silently disable the other required direction. |
 | Hardware `AllReceive` covers non-PTP RX; `AllTransmit` or `TaggedTransmit` covers non-PTP TX. PTP-specific flags alone do not cover ordinary NTP/NTS UDP. The software capability structure likewise has direction-specific general-packet flags. [T22] [T23] | Check each direction in the active source's capability set, then observe actual packets on the selected family/interface. A partial RX/TX capability is not full-path support; mixed-source legs need their own qualified mapping and error budget. |
-| `HardwareClockFrequencyHz` is nominal, rounded and may be zero. `SupportsCrossTimestamp` reports a capability; a cross timestamp brackets the NIC reading with QPC `SystemTimestamp1` and `SystemTimestamp2`. [T21] [T24] | The Windows cross-timestamp candidate needs actual successful observations and a measured NIC-to-QPC relationship. Nominal frequency alone cannot convert packet timing accurately. Zero nominal frequency does not disqualify an independently adequate measured model. |
+| `HardwareClockFrequencyHz` is nominal, rounded and may be zero. The NDIS cross-timestamp contract permits a more accurate paired capture with `SystemTimestamp2 == SystemTimestamp1`; its three captured fields should not be zero. [T21] [T24] [T32] | Require actual successful observations and a measured NIC-to-QPC relationship. Accept a qualified nonzero equal-endpoint case without claiming zero uncertainty. Zero nominal frequency can coexist with an adequate measured model; zero captured fields are a different condition. |
 | RX `SO_TIMESTAMP` is a `UINT64` counter: QPC ticks for software, NIC ticks for hardware. TX IDs are `UINT32`; successful retrieval removes the matching record. `SIO_GET_TX_TIMESTAMP` returns immediately with `WSAEWOULDBLOCK` while unavailable, even with OVERLAPPED; new records are discarded when the buffer is full. [T19] [T25] | Keep units explicit; bound polling, outstanding IDs, retention and queue occupancy. No unbounded busy wait, ID reuse while old records can still arrive, fake exact send time or renewed freshness at retrieval. Stop/timeout and subsequent healthy acquisition must remain usable. |
+| When enabled hardware timestamping fails to generate a corresponding packet timestamp, the miniport should attach zero to the NBL. [T33] | Preserve an explicit missing/invalid observation. This driver contract does not specify whether every Winsock path returns zero or omits ancillary metadata; qualify the selected path and never relabel missing hardware metadata as software. |
 | TX timestamps are unsupported for coalesced sends through `UDP_SEND_MSG_SIZE`. [T25] | Keep the selected timestamped TX path uncoalesced. A later batching change must requalify this boundary; do not substitute one timestamp for several NTP exchanges. |
+
+**Adapter activation.** `*PtpHardwareTimestamp` uses 0/1 for disabled/enabled;
+`*SoftwareTimestamp` uses 0 (disabled), 1 (all RX), 2 (all TX), 3 (both),
+4 (tagged TX) or 5 (all RX and tagged TX). Both default to disabled. Unsupported
+values disable the corresponding facility; a driver without software support
+omits that keyword. If both modes are requested, the miniport should enable
+hardware and disable software. The driver chooses which supported hardware flags
+to activate. [T27] [T28] `TIMESTAMPING_CONFIG` exposes direction flags and buffer
+size, without a hardware/software selector; `OID_TIMESTAMP_CURRENT_CONFIG` is
+query-only. [T26] [T30]
+Keep activation with the authorized adapter/lifecycle owner. Advanced-property
+updates write machine configuration and may need an adapter restart; a successful
+write or `-NoRestart` is not evidence of active state. Re-query and observe the
+selected path after activation. [T31] No runtime registry modification, driver
+installation, automatic software fallback or broader engine privilege follows
+from this research.
 
 **Measured conversion contract.** Preserve raw cross-timestamp brackets, interface
 and model generation. Before use, the owner must specify the correlation method,
@@ -88,10 +109,11 @@ validity and checked conversion/range limits. Propagate their justified
 uncertainty through the separate qualified QPC-to-UTC mapping; a good NIC-to-QPC
 fit alone supplies no UTC coordinate. A fitted residual or midpoint alone is not
 a worst-case error bound. Test known synthetic rate/offset and drift beside
-inverted/wide brackets, stale models, arithmetic overflow and counter
-reset/discontinuity. Retain a usable measured case with zero/rounded nominal
-frequency. Numeric thresholds and the estimator remain unselected until the
-existing owner justifies them; this adds no pre-V1 formal-proof work.
+inverted/wide brackets, zero captured fields, stale models, arithmetic overflow
+and counter reset/discontinuity. Retain nonzero equal-endpoint captures and a
+usable measured case with zero/rounded nominal frequency. Numeric thresholds and
+the estimator remain unselected until the existing owner justifies them; this
+adds no pre-V1 formal-proof work.
 
 **Invalidation and path contract.** The existing configuration callback cases
 below also cover a NIC restart that leaves hardware mode enabled. NevroTick must
@@ -108,9 +130,13 @@ timestamp failure never authorizes a different route or authentication policy.
 **Source discrepancies.** Requirement tables mix build 20348 with Windows 11
 22000.194/Server 2022. The Winsock example assigns a `Version` member to
 `INTERFACE_HARDWARE_CROSSTIMESTAMP`, while the dedicated structure page lists only
-three timestamps. [T19] [T21] [T22] [T24] Pin and check the selected SDK/generated
-bindings, exports, driver and actual OS-family behavior; neither illustrative
-sample fields nor the lowest listed build establish compatibility. Retain the
+three timestamps. [T19] [T21] [T22] [T24] Microsoft's SDK header explains the older
+`NTDDI_WIN10_RS5` layout with `Version`/`Flags` and the modern `NTDDI_WIN10_FE`
+layout; similarly named declarations are not interchangeable. The older
+`GetInterfaceCurrentTimestampCapabilities` remains reserved for system use. [T35]
+[T36] Pin and check the selected SDK/generated bindings, target guards, exports,
+driver and actual OS-family behavior; an export's presence, illustrative sample
+fields or the lowest listed build establishes no compatible public ABI. Retain the
 unregister and ancillary-layout discrepancies below. The product's OD-14 scope
 is unchanged.
 
@@ -144,22 +170,30 @@ fallible return value or universal support floor from the conflicting text.
 
 **Source fact.** `WSAMSG` distinguishes payload truncation (`MSG_TRUNC`) from
 control-data truncation (`MSG_CTRUNC`). `WSARecvMsg` uses a runtime extension-function
-lookup. Its dual-stack packet-info setup needs `IP_PKTINFO` for IPv4 as well as the
-IPv6 option. Received `IN_PKTINFO.ipi_addr` is the local destination address;
+lookup with `SIO_GET_EXTENSION_FUNCTION_POINTER` and `WSAID_WSARECVMSG`; the
+extension mechanism is provider-specific. [T5] [T34] `WSAEMSGSIZE` can report
+payload or control truncation, so it alone does not establish an oversized NTP
+payload. Inspect the returned flags. [T4] Its dual-stack packet-info setup needs
+`IP_PKTINFO` for IPv4 as well as the IPv6 option. Received `IN_PKTINFO.ipi_addr` is the local destination address;
 `ipi_ifindex` identifies the receiving interface. Neither field is the remote peer
 address. [T4] [T5] [T6]
 
 **Adaptation.** Admit payload, peer endpoint, local destination/interface and
 optional timestamps independently. Validate input capacities, output lengths,
 flags, control-message framing and alignment; reinitialize reused message outputs.
-A complete NTP packet does not make truncated ancillary data valid. A declared
-application-timestamp fallback is usable only if its own admission and provenance
-contract remains satisfied. Otherwise the measurement is unusable.
+Resolve the extension for the selected socket/provider; any shared pointer cache
+needs established provider compatibility. A complete NTP packet does not make
+truncated ancillary data valid. Distinguish an ancillary-only truncation outcome
+from payload truncation without promoting either to an admitted measurement.
+A declared application-timestamp fallback is usable only if its own admission
+and provenance contract remains satisfied. Otherwise the measurement is unusable.
 
 **Future controls.** Exercise exact-size and one-short data/control buffers,
 additional enabled control messages, stale outputs, dual-stack IPv4/IPv6 and two
-interfaces. Valid neighbors must work without parsing a truncated packet prefix
-or inventing metadata. These refine W11-W01, CHECK-6/25/27.
+interfaces, plus extension-lookup failure/provider changes and `WSAEMSGSIZE` with
+`MSG_CTRUNC` alone beside `MSG_TRUNC` and both flags. Valid neighbors must work
+without parsing a truncated packet prefix or inventing metadata. These refine
+W11-W01, CHECK-6/25/27.
 
 **ABI discrepancy.** The `WSAMSG` overview embeds `UINT cmsg_len`, whereas the
 dedicated `WSACMSGHDR` page declares `SIZE_T cmsg_len`. The latter also lists a
@@ -1060,6 +1094,16 @@ the relevant sections preserve each source's purpose and known conflicts.
 [T24]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_hardware_crosstimestamp
 [T25]: https://learn.microsoft.com/en-us/windows/win32/winsock/winsock-ioctls#sio_get_tx_timestamp
 [T26]: https://learn.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-timestamping_config
+[T27]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/standardized-inf-keywords-for-ndis-packet-timestamping
+[T28]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/ndis-status-timestamp-current-config
+[T29]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/ndis-status-timestamp-capability
+[T30]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/oid-timestamp-current-config
+[T31]: https://learn.microsoft.com/en-us/powershell/module/netadapter/set-netadapteradvancedproperty?view=windowsserver2025-ps
+[T32]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/oid-timestamp-get-crosstimestamp
+[T33]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/attaching-timestamps-to-packets
+[T34]: https://learn.microsoft.com/en-us/windows/win32/winsock/provider-specific-extension-mechanism-2
+[T35]: https://github.com/microsoft/win32metadata/blob/c16762d41f1bd641ff8c4389ebf16ee50747129f/generation/WinSDK/RecompiledIdlHeaders/um/iphlpapi.h
+[T36]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getinterfacecurrenttimestampcapabilities
 [L1]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex
 [L2]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coinitializesecurity
 [L3]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-couninitialize

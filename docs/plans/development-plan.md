@@ -5423,6 +5423,14 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**26 November timestamp contract refinements:** apply the
+[W11-W01 disposition](../../tasks/windows11-integration.md#microsoft-learn-timestamp-refinements--26-november-2026)
+and existing TQ cases before a selected packet adapter. Adapter-mode precedence
+and activation/readback, provider-compatible extension resolution, ancillary-only
+truncation and valid equal-endpoint NIC cross captures refine the existing owner;
+they do not reopen the settled supplier contract or displace section 7's reference/
+mapping continuation. Native/physical evidence and existing holds remain separate.
+
 **26 November Windows security review intake:** the [existing W11 record](../../tasks/windows11-integration.md#441-windows-security-review-intake--26-november-2026)
 and [storage §6.5 intake](../../tasks/windows-protected-storage.md#windows-security-review-intake--26-november-2026)
 route the 24 November source assessment into the existing service-network,
@@ -5630,7 +5638,7 @@ management journey before functional exposure; the real app/status join remains
 P3/S-2 with D2 restored. Reuse exact-candidate fixture evidence without promoting
 it to installed qualification. Section 7's order and all existing holds remain.
 
-**Timestamp qualification — 18 November 2026:**
+**Timestamp qualification — 18 and 26 November 2026:**
 [W11-W01 TQ-01–10](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 refine the existing S2.1/P2 capture/mapping work and conditional packet adapters.
 The finite supplier/receiver contract is settled; actual capability/calibration/
@@ -5639,6 +5647,11 @@ V1 provenance/fallback stays on the ordinary path. Evaluate software timestamps
 before optional NIC adoption; apply selected-path cases before shipping that
 path, with actual Client/Server/NIC evidence. No hardware requirement, new CHECK
 IDs, product-queue reorder or execution grant follows from this refinement.
+The [26 November disposition](../../tasks/windows11-integration.md#microsoft-learn-timestamp-refinements--26-november-2026)
+adds explicit hardware/software precedence and activation/readback, Winsock
+provider identity, ancillary-only `WSAEMSGSIZE`, selected SDK ABI and equal nonzero
+NIC cross-capture endpoints. These are source-backed implementation/acceptance
+requirements for the selected path, not implemented adapters or native passes.
 
 **Production event logger planning — 17 November 2026:**
 [W11-W08's staged continuation](../../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
@@ -5813,7 +5826,7 @@ conditional candidates remain open until their own evidence gates are met.
 
 | Existing stage / owner | Bounded assignment and observable exit | Existing acceptance ownership |
 | --- | --- | --- |
-| Settled supplier contract → S2.1/P2; engine/platform | W11-W01: implement the actual capture/mapping supplier under [TQ-01–10](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026). Selected packet paths additionally need per-direction supported/active/observed capability, actual interface attribution, NIC→QPC→UTC validity/error composition, bounded TX retirement, ancillary/ABI and transition controls. Software comparison precedes conditional hardware work; preserve useful qualified application fallback. | CHECK-6/11/21/27; CHECK-7/25 for affected numerical/construction invariants; CHECK-8 for source identity/quorum, CHECK-14 for truthful status and CHECK-24 for independent evidence review; no source-to-native promotion |
+| Settled supplier contract → S2.1/P2; engine/platform | W11-W01: implement the actual capture/mapping supplier under [TQ-01–10](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026). Selected packet paths additionally need per-direction supported/active/observed capability and activation readback, actual interface and Winsock provider attribution, NIC→QPC→UTC validity/error composition including valid equal-endpoint captures, bounded TX retirement, ancillary-only truncation/ABI and transition controls. Software comparison precedes conditional hardware work; preserve useful qualified application fallback without assuming automatic miniport fallback. | CHECK-6/11/21/27; CHECK-7/25 for affected numerical/construction invariants; CHECK-8 for source identity/quorum, CHECK-14 for truthful status and CHECK-24 for independent evidence review; no source-to-native promotion |
 | S0.4/P4; platform/clock | W11-W02: qualify timer/deadline semantics, actual I/O waits and unattended resume, Modern Standby quiescence, delivered correction and residual cleanup. A sleep-excluding clock or relative wait does not prove broker execution or elapsed freshness. Process leap presentation remains separate from leap ownership. | CHECK-10/11/12/21/25/27; DNS-C05/11 for affected consumers |
 | DNS-0/1/3; DNS/platform/lifecycle | W11-W03: freeze native field/ownership contracts, exclusive loopback readiness, bounded reconciliation and namespace/application coverage. Add immediate/pending resolver ownership, NRPT precedence, local-discovery field preservation and the separate OS-cache privacy/Forget boundary. DHCP origin remains unproven by an effective list; private-name failure cannot become public DoQ. | DNS-C01/02/03/11/17; DNS-C14/15 only for affected privacy/Forget claims; applicable CHECK-13/25/27 |
 | P0/P3/P6; platform/security/lifecycle | W11-W04/05: evaluate WSH before custom WFP, with selected COM apartment/security/teardown ownership; observe effective service settings, process-handle restrictions and package/SCM maintenance admission. Compare service-state lifetime and SCM subscriptions under existing lifecycle gates. Restart Manager and declarative MSI ACL mechanics remain reference for a later MSI choice, not assumed MSIX hooks. Optional placement cannot silently absorb mandatory records; storage replacement recovery remains ST-W02/03. | CHECK-1/9/12/13/15/16/23/27, with CHECK-9 limited to delegated certificate retrieval; applicable ST-T03/10/12/17 and DNS-C14/17 |
