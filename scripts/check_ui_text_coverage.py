@@ -434,12 +434,17 @@ CHECKED_DATA_BINDINGS={
  ('recovery.slint','RecoveryPage','BodyText','text','identity'):'helpers',
  ('about.slint','AboutPage','FactRow','value','GuiFacts.build-version'):'gui-build-version',
  ('about.slint','AboutPage','FactRow','value','GuiFacts.text-contract-version'):'text-contract-version',
+ ('about.slint','AboutPage','FactRow','value','root.update-preview.installed'):'about-update-preview',
+ ('about.slint','AboutPage','FactRow','value','root.update-preview.target'):'about-update-preview',
+ ('about.slint','AboutPage','FactRow','value','root.update-preview.channel'):'about-update-preview',
+ ('about.slint','AboutPage','FactRow','value','root.update-preview.size'):'about-update-preview',
 }
 CHECKED_DATA_RECEIVERS={
  'query':('inspection_workflow.rs','apply','set_accepted_source_query'),
  'details':('inspection_workflow.rs','apply','set_inspection_detail_source'),
  'sources':('source_workflow.rs','apply','set_sources'),
  'helpers':('recovery_workflow.rs','apply','set_recovery_preview_hosts'),
+ 'about-update-preview':('update_workflow.rs','apply','set_update_preview'),
 }
 OPTIONAL_COMPONENT_TEXT={
  ('PageHeading','description'),('PageHeading','kicker'),('FactRow','note'),

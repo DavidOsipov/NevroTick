@@ -89,6 +89,37 @@ class CodeGeneration(unittest.TestCase):
         self.assertNotIn(b'UiFixtureCopy', files['localization-copy.slint'])
         self.assertNotIn('no-notification-submission', slots['fields']['shell'])
 
+    def test_about_v3_extends_exact_v2_registry_and_keeps_existing_budgets(self):
+        root = SCRIPTS.parent
+        raw = GEN._read_regular(root / GEN.CONTRACT_PATH, GEN.MAX_CONTRACT_BYTES)
+        current = GEN.protected_json.read(raw)
+        historical = GEN.protected_json.read(GEN._read_regular(
+            FIXTURES / 'ui-text-codegen-contract-v2.json', GEN.MAX_CONTRACT_BYTES))
+        english = GEN.protected_json.read(GEN._read_regular(
+            root / 'crates/nevrotick-ui/locales/en.json', 131072))
+        self.assertEqual((current['catalog_schema_version'], current['text_contract_version']), (2, 3))
+        self.assertEqual(current['bounds'], {**historical['bounds'], 'MAX_MAP': 522})
+        self.assertEqual(current['messages'][:596], historical['messages'])
+        expected = ('check', 'checking', 'offer', 'from', 'target', 'channel', 'size',
+                    'confirm', 'decline', 'download', 'verify', 'install', 'complete')
+        ids = ['ui.update.' + field for field in expected]
+        added = current['messages'][596:]
+        self.assertEqual([row['key'] for row in added], ids)
+        self.assertEqual([row['ordinal'] for row in added], list(range(597, 610)))
+        self.assertEqual([row['key'] for row in added if row['group'] == 'UpdateOffer'], ids[2:9])
+        self.assertEqual({row['key'] for row in current['messages'] if row['active']},
+                         set(english['messages']))
+        for row in added:
+            self.assertEqual(english['messages'][row['key']], {'args': {}, **row['reference']})
+
+        files = GEN._emit_files(raw, hashlib.sha256(raw).hexdigest(), self.template)
+        slots = GEN.protected_json.read(files['output-slot-map.json'])
+        self.assertEqual((slots['static_count'], slots['output_count']), (410, 439))
+        self.assertEqual([slots['fields']['fixture']['update-' + field]['indices'] for field in expected],
+                         [[index] for index in range(110, 123)])
+        fingerprint = hashlib.sha256(files['contract-fingerprint-input.bin']).hexdigest()
+        self.assertEqual(english['source_fingerprint'], fingerprint)
+
     def test_generate_uses_new_private_output_and_preserves_repo_baseline_and_ledger(self):
         before = {str(path.relative_to(self.repo)): hashlib.sha256(path.read_bytes()).hexdigest()
                   for path in self.repo.rglob('*') if path.is_file()}

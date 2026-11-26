@@ -1,8 +1,8 @@
 # Checked catalog and presentation contract
 
-This describes the text-contract-2 native consumer candidate. It supersedes the
-initial 184-ID staging notes. The complete inventory is `contract-source.json`:
-509 active IDs, 596 stable ordinals, and 87 explicit retired/reserved meanings.
+This describes the text-contract-3 candidate, including the About update fixture.
+The complete inventory in `contract-source.json` has 522 active IDs, 609 stable
+ordinals and 87 retired or reserved meanings.
 Existing ordinals are never reused. `text-contract-v1-baseline.json` remains the
 unchanged version-1 semantic reference. English is the sole selected language;
 the production semantic review ledger remains empty.
@@ -10,8 +10,8 @@ the production semantic review ledger remains empty.
 ## Independent versions and approval
 
 Catalogs have exactly eight root fields: `schema_version` (2),
-`text_contract_version` (2), `domain` (`nevrotick.ui`), `catalog_revision`
-(positive u32; current English candidate 2), `source_fingerprint`, `locale`
+`text_contract_version` (3), `domain` (`nevrotick.ui`), `catalog_revision`
+(positive u32; current English candidate 3), `source_fingerprint`, `locale`
 (`en`), `plural_profile` (`english-u64-cardinal-v1`), and `messages`.
 Every object is closed. Required IDs must be complete; unknown, retired, reserved,
 missing, empty and blank required values reject. Optional absent feedback is a
@@ -61,15 +61,16 @@ dependency or runtime schema interpreter is required.
 | Encoded JSON string span | 6144 bytes |
 | Decoded text / key | 1024 / 96 UTF-8 bytes |
 | Decoded text scalars / aggregate decoded bytes | 512 / 65536 |
-| Object depth / fields per map / aggregate fields | 4 / 512 / 2048 |
+| Object depth / fields per map / aggregate fields | 4 / 522 / 2048 |
 | Temporary nodes / lexical tokens / charged work | 4096 / 8192 / 4000000 |
 | One formatted output | 4096 UTF-8 bytes / 2048 UTF-16 units |
 | Complete UI snapshot | 131072 UTF-8 bytes / 65536 UTF-16 units |
 
-The native candidate fits the existing 512-map and four-million-work bounds; no
-parser cap or algorithm expansion accompanies it. Counters are not observed RSS,
-CPU instruction, toolkit layout or accessibility guarantees. Native fields have
-additional sink-specific bounds and transformations before any OS submission.
+The About roster raises the per-map ceiling to 522, matching the complete
+English catalog, and fits the existing four-million-work bound. The earlier
+512-entry contract and its exact synthetic CBOR fixture remain useful for
+historical compatibility checks. The decoder counters measure charged input
+work, and native fields carry additional sink-specific bounds and transformations.
 
 The selected repertoire is printable ASCII plus U+00B7, U+2013 and U+2014. All
 unlisted scalars reject, including LF, controls, replacement/BOM, combining marks,
@@ -92,7 +93,7 @@ one `LocalizationCopy.value`. No English string comparison identifies state.
 Raw drafts, IDs, accepted preferences and command authority remain separate.
 
 `UiCopy` holds readiness, revision and one shallow reference-counted immutable
-string model: 397 static rows plus 29 feedback rows, 426 total. Private
+string model with 410 static rows and 29 feedback rows, for 439 total. Private
 `CopySlot` constants and append checks fix shape/order. Model setters cannot mutate
 an old generation. Replacing feedback constructs and validates a new model before
 publication; retained readers still see the prior immutable generation. This

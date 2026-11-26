@@ -22,7 +22,13 @@ TYPED_ARRAY_BINDINGS = {
     ('PreferencesCopy', 'interval-options'): ('ui.interval.every', ((1, 2), (2, 5), (3, 15))),
     ('DiagnosticCopy', 'durations'): ('ui.duration.minutes', ((0, 5), (1, 15), (2, 30))),
 }
-SCALAR_BINDING_ALIASES = {('SourceCopy', 'review-none'): 'ui.rust.review-none'}
+SCALAR_BINDING_ALIASES = {
+    ('SourceCopy', 'review-none'): 'ui.rust.review-none',
+    **{('FixtureCopy', 'update-' + field): 'ui.update.' + field for field in (
+        'check', 'checking', 'offer', 'from', 'target', 'channel', 'size',
+        'confirm', 'decline', 'download', 'verify', 'install', 'complete',
+    )},
+}
 
 
 def binding_definition_errors(rows):

@@ -25,7 +25,7 @@ class Coverage(unittest.TestCase):
         contract,baseline,manifest=documents;files=checker.snapshot(root)
         healthy=checker.check(contract,files,baseline,manifest['runtime_sinks'])
         self.assertTrue(healthy['ok'],healthy['errors'])
-        self.assertEqual((healthy['active_ids'],healthy['used_ids']),(509,509))
+        self.assertEqual((healthy['active_ids'],healthy['used_ids']),(522,522))
         path='crates/nevrotick-ui/ui/app.slint'
         for body,kind in [('', 'missing-required-ui-binding'),
                           ('text: root.spacing-unowned;', 'unowned-required-ui-source'),
@@ -34,7 +34,7 @@ class Coverage(unittest.TestCase):
                 changed=dict(files)
                 changed[path]=files[path].replace('inherits Window {','inherits Window { Text'+' '*501+'{ '+body+' }',1)
                 report=checker.check(contract,changed,baseline,manifest['runtime_sinks'])
-                self.assertEqual((report['active_ids'],report['used_ids']),(509,509))
+                self.assertEqual((report['active_ids'],report['used_ids']),(522,522))
                 self.assertFalse(report['ok'])
                 self.assertTrue(any(error['kind']==kind for error in report['errors']),report['errors'])
 

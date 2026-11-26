@@ -584,6 +584,14 @@ Its Vite server binds `0.0.0.0`; repair and qualify its dependency graph before
 running/exposing that server or processing untrusted build input. These findings
 remain open and are not suppressed by the native product checks.
 
+The 26 November GitHub API recheck on `b161229` still lists all 15 alerts
+on the archived v0.2 npm lockfile. The seven high-severity alerts cover
+Vite, source-map-js, Browserslist, nanoid and PostCSS. The affected packages
+are absent from the two current Rust lockfiles and the active product and
+package workflows have no archived npm build edge. The archived viewer's
+execution requirement above remains open.
+[Current alert inventory](https://github.com/DavidOsipov/NevroTick/security/dependabot)
+
 
 ## HTML design-reference replacement, 5 November 2026
 

@@ -40,7 +40,7 @@ pub(super) fn approved(catalog: &Catalog, canonical: &[u8], authority: Authority
     if authority.synthetic_fixture {
         #[cfg(test)]
         {
-            return catalog.revision == 2 && canonical == SYNTHETIC;
+            return catalog.revision == 3 && canonical == SYNTHETIC;
         }
         #[cfg(not(test))]
         {

@@ -22,6 +22,8 @@ pub enum Group {
     Recovery,
     /// Protected quit meaning/action group.
     Quit,
+    /// Protected updateoffer meaning/action group.
+    UpdateOffer,
 }
 
 /// Independently selected argument and plural representation.
@@ -52,7 +54,7 @@ pub struct Spec {
     pub group: Option<Group>,
 }
 /// Compatibility fingerprint; grants no semantic approval.
-pub const FINGERPRINT: &str = "34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80";
+pub const FINGERPRINT: &str = "091f71d5341d9963611cf73de985795803cc65b883884baa2d62af20a8ec95a7";
 /// Fixed product catalog domain, never a path.
 pub const DOMAIN: &str = "nevrotick.ui";
 /// Fixed English cardinal rule and checked integer domain.
@@ -62,9 +64,9 @@ pub const CATALOG_SCHEMA_VERSION: u32 = 2;
 /// Code-owned engineering GUI build version, distinct from file schema.
 pub const GUI_BUILD_VERSION: u32 = 2;
 /// Code-owned text meaning/type contract version, distinct from build/schema.
-pub const TEXT_CONTRACT_VERSION: u32 = 2;
+pub const TEXT_CONTRACT_VERSION: u32 = 3;
 /// Number of active messages, not registry ordinals.
-pub const COUNT: usize = 509;
+pub const COUNT: usize = 522;
 impl MessageId {
     /// Resolve one exact active ID without aliases or normalization.
     ///
@@ -1107,6 +1109,32 @@ impl MessageId {
     pub const NATIVE_OBSERVER_STOP_TIMEOUT: Self = Self(507);
     /// ui.native-observer.stop-failed; stable ordinal 596.
     pub const NATIVE_OBSERVER_STOP_FAILED: Self = Self(508);
+    /// ui.update.check; stable ordinal 597.
+    pub const UPDATE_CHECK: Self = Self(509);
+    /// ui.update.checking; stable ordinal 598.
+    pub const UPDATE_CHECKING: Self = Self(510);
+    /// ui.update.offer; stable ordinal 599.
+    pub const UPDATE_OFFER: Self = Self(511);
+    /// ui.update.from; stable ordinal 600.
+    pub const UPDATE_FROM: Self = Self(512);
+    /// ui.update.target; stable ordinal 601.
+    pub const UPDATE_TARGET: Self = Self(513);
+    /// ui.update.channel; stable ordinal 602.
+    pub const UPDATE_CHANNEL: Self = Self(514);
+    /// ui.update.size; stable ordinal 603.
+    pub const UPDATE_SIZE: Self = Self(515);
+    /// ui.update.confirm; stable ordinal 604.
+    pub const UPDATE_CONFIRM: Self = Self(516);
+    /// ui.update.decline; stable ordinal 605.
+    pub const UPDATE_DECLINE: Self = Self(517);
+    /// ui.update.download; stable ordinal 606.
+    pub const UPDATE_DOWNLOAD: Self = Self(518);
+    /// ui.update.verify; stable ordinal 607.
+    pub const UPDATE_VERIFY: Self = Self(519);
+    /// ui.update.install; stable ordinal 608.
+    pub const UPDATE_INSTALL: Self = Self(520);
+    /// ui.update.complete; stable ordinal 609.
+    pub const UPDATE_COMPLETE: Self = Self(521);
 }
 
 /// Active protected definitions in private dense storage order.
@@ -4673,5 +4701,96 @@ pub const SPECS: &[Spec] = &[
         ordinal: 596,
         kind: Kind::Text,
         group: Some(Group::Quit),
+    },
+    Spec {
+        id: MessageId::UPDATE_CHECK,
+        key: "ui.update.check",
+        ordinal: 597,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_CHECKING,
+        key: "ui.update.checking",
+        ordinal: 598,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_OFFER,
+        key: "ui.update.offer",
+        ordinal: 599,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_FROM,
+        key: "ui.update.from",
+        ordinal: 600,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_TARGET,
+        key: "ui.update.target",
+        ordinal: 601,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_CHANNEL,
+        key: "ui.update.channel",
+        ordinal: 602,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_SIZE,
+        key: "ui.update.size",
+        ordinal: 603,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_CONFIRM,
+        key: "ui.update.confirm",
+        ordinal: 604,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_DECLINE,
+        key: "ui.update.decline",
+        ordinal: 605,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_DOWNLOAD,
+        key: "ui.update.download",
+        ordinal: 606,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_VERIFY,
+        key: "ui.update.verify",
+        ordinal: 607,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_INSTALL,
+        key: "ui.update.install",
+        ordinal: 608,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_COMPLETE,
+        key: "ui.update.complete",
+        ordinal: 609,
+        kind: Kind::Text,
+        group: None,
     },
 ];

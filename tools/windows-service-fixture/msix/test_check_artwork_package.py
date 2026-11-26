@@ -118,6 +118,7 @@ class CombinedPackageTests(unittest.TestCase):
         *,
         archive_payload: dict[str, bytes] | None = None,
         archive_transform: Callable[[bytes], bytes] | None = None,
+        comments: dict[str, bytes] | None = None,
         pinned_payload: dict[str, bytes] | None = None,
         manifest_sha: str | None = None,
         script: Path = SCRIPT,
@@ -130,7 +131,7 @@ class CombinedPackageTests(unittest.TestCase):
         pinned: dict[str, bytes] = self.data if pinned_payload is None else pinned_payload
         archive: bytes = with_zip64_end_records(make_zip({
             **archived, BLOCK_MAP: block_map(archived, {}), CONTENT_TYPES: TYPES,
-        }, {}))
+        }, {}, comments=comments))
         if archive_transform is not None:
             archive = archive_transform(archive)
         self.package.write_bytes(archive)
@@ -199,6 +200,12 @@ class CombinedPackageTests(unittest.TestCase):
         altered: dict[str, bytes] = self.data.copy()
         altered["Assets/Unexpected.png"] = altered.pop("Assets/Square44x44Logo.targetsize-24.png")
         self.assert_refusal(self.run_reader(archive_payload=altered), b"package inventory differs")
+
+    def test_refuses_central_member_comment_with_original_payload_and_new_archive_pin(self) -> None:
+        healthy = self.run_reader()
+        self.assertEqual(healthy.returncode, 0, healthy.stderr)
+        self.assert_refusal(self.run_reader(comments={UI: b"note"}),
+                            b"central ZIP member comment is not admitted")
 
     def test_unsupported_extract_version_refuses_cleanly(self) -> None:
         def version(package: bytes) -> bytes:

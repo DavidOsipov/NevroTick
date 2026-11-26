@@ -4546,25 +4546,85 @@ fn managed_loopback_measures_both_joined_ordinary_receipts() -> Result<(), Failu
             || Ok(()),
             |report, _: [LoopbackPeerLeg<()>; 2]| {
                 let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
-                for result in [report.first_measurement(), report.terminal_measurement()] {
-                    let result: Result<ExperimentalMeasurement, MeasurementRefusal> =
-                        result.ok_or(Failure::Control)?;
-                    if let Some(expected) = refusal {
-                        assert_eq!(result, Err(expected));
-                    } else {
-                        let measurement: ExperimentalMeasurement =
-                            result.map_err(|_| Failure::Control)?;
-                        assert_eq!(
-                            measurement.declared_limit_ns(),
-                            LOOPBACK_MEASUREMENT_ALLOWANCE_NS
-                        );
-                    }
-                }
-                assert_ordinary_joined_quality(report, refusal)
+                assert_ordinary_joined_measurements(report, refusal)
             },
         )?;
     }
     Ok(())
+}
+
+/// Distinguish zero, one and multiple peer eras through both original joined receipts.
+/// # Errors
+/// Preserve fixture setup, actual worker and joined numerical failures.
+/// # Panics
+/// Fail if a peer era is guessed, a refusal is changed or a successful measurement is lost.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_loopback_distinguishes_joined_peer_era_outcomes() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
+    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
+    let last_era_zero_second: u64 = u64::from(u32::MAX);
+    let scenarios: [(u64, u64, Option<MeasurementRefusal>); 3] = [
+        // Include the first sealed receive second at the lower endpoint.
+        (0x2233_4455, last_era_zero_second, None),
+        // Start one second beyond the last sealed transmit second, with the local captures in scope.
+        (
+            0x5566_7789,
+            last_era_zero_second,
+            Some(MeasurementRefusal::EraNoCandidate),
+        ),
+        // Include two complete eras while retaining the same sealed peer replies.
+        (0, 8_589_934_591, Some(MeasurementRefusal::EraAmbiguous)),
+    ];
+    for ((slot, admission), (earliest, latest, refusal)) in
+        SLOTS.iter().zip(&ADMISSIONS).zip(scenarios)
+    {
+        let profile: ExperimentalProfile =
+            ExperimentalProfile::new(earliest, latest, LOOPBACK_MEASUREMENT_ALLOWANCE_NS)
+                .map_err(|_| Failure::Control)?;
+        run_managed_loopback_observing(
+            slot,
+            admission,
+            LoopbackSuccessor::ApplyOrdinary,
+            true,
+            Some(LoopbackMeasurement {
+                profile,
+                scale: SourceScale::UnsmearedUtc,
+            }),
+            || Ok(()),
+            |report, _: [LoopbackPeerLeg<()>; 2]| {
+                let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
+                assert_ordinary_joined_measurements(report, refusal)
+            },
+        )?;
+    }
+    Ok(())
+}
+
+/// Check both original measurements and their corresponding quality outcomes.
+/// # Errors
+/// Preserve a missing receipt, unexpected refusal or independent quality-oracle failure.
+/// # Panics
+/// Fail if either receipt loses its declared allowance or returns the wrong refusal.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_ordinary_joined_measurements(
+    report: &ManagedProtectedReport,
+    refusal: Option<MeasurementRefusal>,
+) -> Result<(), Failure> {
+    for result in [report.first_measurement(), report.terminal_measurement()] {
+        let result: Result<ExperimentalMeasurement, MeasurementRefusal> =
+            result.ok_or(Failure::Control)?;
+        if let Some(expected) = refusal {
+            assert_eq!(result, Err(expected));
+        } else {
+            let measurement: ExperimentalMeasurement = result.map_err(|_| Failure::Control)?;
+            assert_eq!(
+                measurement.declared_limit_ns(),
+                LOOPBACK_MEASUREMENT_ALLOWANCE_NS
+            );
+        }
+    }
+    assert_ordinary_joined_quality(report, refusal)
 }
 
 /// Declare broad test-only time limits so the literal peer timestamps reach the Q1 checks.

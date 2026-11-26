@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "domain": "nevrotick.ui",
-  "contract_revision": "ui-l10n-native-v2-unapproved",
+  "contract_revision": "ui-l10n-about-preview-v3-unapproved",
   "plural_profile": "english-u64-cardinal-v1",
   "locale": "en",
   "unicode_profile": "unicode-15.1-english-printable-ascii-middle-dot-en-em-dash-v1",
   "catalog_schema_version": 2,
   "gui_build_version": 2,
-  "text_contract_version": 2,
+  "text_contract_version": 3,
   "status": "UNAPPROVED native consumer candidate; exact source sinks and caller chains require common-integration validation. Production semantic ledger remains EMPTY.",
   "bounds": {
     "JSON_BYTES": 131072,
@@ -19,7 +19,7 @@
     "MAX_DEPTH": 4,
     "MAX_FIELDS": 2048,
     "MAX_NODES": 4096,
-    "MAX_MAP": 512,
+    "MAX_MAP": 522,
     "MAX_WORK": 4000000,
     "OUTPUT_BYTES": 4096,
     "OUTPUT_UTF16": 2048,
@@ -65,7 +65,8 @@
     ],
     "native-tray": "Exactly six code-owned native command identities. Current private readiness and receiver guards decide availability; label text never selects actions. Closing via tray preserves only an actual observer; services remain separate.",
     "native-notification-test": "Only an explicit local TestExample may reach guarded native Show. One immutable snapshot supplies title/body/fixed Notifications label. OS acceptance does not establish banner display, reading or any service/clock health. Activation is fixed navigation after current private guard checks.",
-    "native-observer-stop": "UI-only exit waits for confirmed owned native cleanup. Timeout/failure keeps the app open; elapsed time is not completion. No service, clock, network or elevation effect is authorized."
+    "native-observer-stop": "UI-only exit waits for confirmed owned native cleanup. Timeout/failure keeps the app open; elapsed time is not completion. No service, clock, network or elevation effect is authorized.",
+    "about.update-preview": "About Check publishes one in-memory sample offer for the active visit. Yes consumes the current exact offer once and simulates download, verification and installation. The typed offer owns installed 1.0.0, offered 1.1.0, stable channel, 12582912 bytes, unmetered, no roaming and no external management. Not now, dismissal and leaving About invalidate an unaccepted offer. Repeated, stale and out-of-view requests have no effect. The fixture has no network, package, persistence, service, elevation or clock effects."
   },
   "messages": [
     {
@@ -12900,6 +12901,292 @@
         "/tmp/nevrotick-native-host/v3/updated/crates/nevrotick-ui/src/slint_host/shell_workflow.rs:native_stop_feedback"
       ],
       "slint": null
+    },
+    {
+      "key": "ui.update.check",
+      "ordinal": 597,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "About action starts one in-memory update check for the active visit.",
+      "active": true,
+      "symbol": "UPDATE_CHECK",
+      "reference": {
+        "text": "Check for updates"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:142"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-check",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.checking",
+      "ordinal": 598,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Current sample update-check stage before an offer is published.",
+      "active": true,
+      "symbol": "UPDATE_CHECKING",
+      "reference": {
+        "text": "Checking sample update"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:143"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-checking",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.offer",
+      "ordinal": 599,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Current sample offer terms, one affirmative action, decline behavior and possible real Windows consequences.",
+      "active": true,
+      "symbol": "UPDATE_OFFER",
+      "reference": {
+        "text": "Yes, update now simulates download, verification and installation. Not now closes the sample offer. Sample assumptions: unmetered, no roaming, no external management. A real update may interrupt services, close the app, request Windows permission or require a Windows restart."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:144"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-offer",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.from",
+      "ordinal": 600,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Label for the current typed sample installed-version fact.",
+      "active": true,
+      "symbol": "UPDATE_FROM",
+      "reference": {
+        "text": "Sample installed version"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:145"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-from",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.target",
+      "ordinal": 601,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Label for the current typed sample offered-version fact.",
+      "active": true,
+      "symbol": "UPDATE_TARGET",
+      "reference": {
+        "text": "Sample offered version"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:146"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-target",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.channel",
+      "ordinal": 602,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Label for the current typed sample release-channel fact.",
+      "active": true,
+      "symbol": "UPDATE_CHANNEL",
+      "reference": {
+        "text": "Release channel"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:147"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-channel",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.size",
+      "ordinal": 603,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Label for the current typed sample complete package byte count.",
+      "active": true,
+      "symbol": "UPDATE_SIZE",
+      "reference": {
+        "text": "Complete package size"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:148"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-size",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.confirm",
+      "ordinal": 604,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "One affirmative action for the current exact sample offer and its terms.",
+      "active": true,
+      "symbol": "UPDATE_CONFIRM",
+      "reference": {
+        "text": "Yes, update now"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:149"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-confirm",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.decline",
+      "ordinal": 605,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Closes the unaccepted sample offer without admitting the simulated operation.",
+      "active": true,
+      "symbol": "UPDATE_DECLINE",
+      "reference": {
+        "text": "Not now"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:150"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-decline",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.download",
+      "ordinal": 606,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Simulated download stage of the accepted sample offer.",
+      "active": true,
+      "symbol": "UPDATE_DOWNLOAD",
+      "reference": {
+        "text": "Downloading sample package"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:151"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-download",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.verify",
+      "ordinal": 607,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Simulated verification stage of the accepted sample offer.",
+      "active": true,
+      "symbol": "UPDATE_VERIFY",
+      "reference": {
+        "text": "Verifying sample package"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:152"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-verify",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.install",
+      "ordinal": 608,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Simulated installation stage of the accepted sample offer.",
+      "active": true,
+      "symbol": "UPDATE_INSTALL",
+      "reference": {
+        "text": "Simulating installation"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:153"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-install",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.complete",
+      "ordinal": 609,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Terminal simulated result with no installed-product observation.",
+      "active": true,
+      "symbol": "UPDATE_COMPLETE",
+      "reference": {
+        "text": "Update simulation complete."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:154"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-complete",
+        "slot": null
+      }
     }
   ]
 }

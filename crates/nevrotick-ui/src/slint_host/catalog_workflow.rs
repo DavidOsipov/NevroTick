@@ -335,7 +335,7 @@ mod tests {
         host.publish_catalog(store)?;
         let global = window.global::<LocalizationCopy>();
         let copy = global.get_value();
-        assert_eq!(copy.revision, "2");
+        assert_eq!(copy.revision, "3");
         check_flat_rows(&copy);
         check_feedback_replacement(window, &copy);
         assert_eq!(window.get_draft_label(), "Exact raw label");
@@ -372,11 +372,18 @@ mod tests {
     /// Fails if a slot aliases, a static array entry is absent or rows are mutable.
     fn check_flat_rows(copy: &UiCopy) {
         assert!(copy.catalog_ready);
-        // Contract v2 adds native feedback rows; this is an independent fixed oracle.
-        assert_eq!(OUTPUT_SLOT_COUNT, 426);
+        // 397 original static rows, 13 updater rows and 29 feedback rows.
+        assert_eq!(OUTPUT_SLOT_COUNT, 439);
         assert_eq!(copy.texts.row_count(), OUTPUT_SLOT_COUNT);
         for (slot, expected) in [
             (CopySlot::FIXTURE_ABOUT_HEADING, "About NevroTick"),
+            (CopySlot::FIXTURE_UPDATE_CHECK, "Check for updates"),
+            (CopySlot::FIXTURE_UPDATE_CONFIRM, "Yes, update now"),
+            (CopySlot::FIXTURE_UPDATE_DECLINE, "Not now"),
+            (
+                CopySlot::FIXTURE_UPDATE_COMPLETE,
+                "Update simulation complete.",
+            ),
             (CopySlot::PREFERENCES_INTERVAL_OPTIONS_1, "Every 2 minutes"),
             (CopySlot::PREFERENCES_INTERVAL_OPTIONS_2, "Every 5 minutes"),
             (CopySlot::PREFERENCES_INTERVAL_OPTIONS_3, "Every 15 minutes"),

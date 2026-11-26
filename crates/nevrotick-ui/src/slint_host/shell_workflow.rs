@@ -515,7 +515,7 @@ pub(super) fn project_route(window: &AppWindow, state: &RefCell<BindingState>) {
             ShellProjection::from_owner(&owner),
         )
     };
-    project_navigation(window, mode, page);
+    project_navigation(window, state, mode, page);
     projection.apply(window, state);
     super::diagnostic_workflow::project(window, state);
     window.set_page_scroll_y(0.0);
@@ -666,9 +666,13 @@ fn hide_to_tray(window: &AppWindow, state: &RefCell<BindingState>) -> bool {
         return false;
     }
     if window.hide().is_ok() {
+        super::update_workflow::leave_about(window, state);
         return false;
     }
     let restored = window.show().is_ok();
+    if !restored {
+        super::update_workflow::leave_about(window, state);
+    }
     let (message, text) = if restored {
         (
             MessageId::RUST_CLOSE_RESTORED,

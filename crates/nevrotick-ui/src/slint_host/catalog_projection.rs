@@ -106,9 +106,9 @@ impl Model for ImmutableCopyModel {
 
 use super::generated::UiCopy;
 /// Number of fixed static output slots.
-pub(super) const STATIC_SLOT_COUNT: usize = 397;
+pub(super) const STATIC_SLOT_COUNT: usize = 410;
 /// Complete fixed static and typed-feedback shape.
-pub(super) const OUTPUT_SLOT_COUNT: usize = 426;
+pub(super) const OUTPUT_SLOT_COUNT: usize = 439;
 /// Protected output position; no catalog key or action can select it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct CopySlot(usize);
@@ -338,638 +338,664 @@ impl CopySlot {
     pub(super) const FIXTURE_GUI_BUILD_LABEL: Self = Self(108);
     /// Fixed output for `fixture_text_contract_label`.
     pub(super) const FIXTURE_TEXT_CONTRACT_LABEL: Self = Self(109);
+    /// Fixed output for `fixture_update_check`.
+    pub(super) const FIXTURE_UPDATE_CHECK: Self = Self(110);
+    /// Fixed output for `fixture_update_checking`.
+    pub(super) const FIXTURE_UPDATE_CHECKING: Self = Self(111);
+    /// Fixed output for `fixture_update_offer`.
+    pub(super) const FIXTURE_UPDATE_OFFER: Self = Self(112);
+    /// Fixed output for `fixture_update_from`.
+    pub(super) const FIXTURE_UPDATE_FROM: Self = Self(113);
+    /// Fixed output for `fixture_update_target`.
+    pub(super) const FIXTURE_UPDATE_TARGET: Self = Self(114);
+    /// Fixed output for `fixture_update_channel`.
+    pub(super) const FIXTURE_UPDATE_CHANNEL: Self = Self(115);
+    /// Fixed output for `fixture_update_size`.
+    pub(super) const FIXTURE_UPDATE_SIZE: Self = Self(116);
+    /// Fixed output for `fixture_update_confirm`.
+    pub(super) const FIXTURE_UPDATE_CONFIRM: Self = Self(117);
+    /// Fixed output for `fixture_update_decline`.
+    pub(super) const FIXTURE_UPDATE_DECLINE: Self = Self(118);
+    /// Fixed output for `fixture_update_download`.
+    pub(super) const FIXTURE_UPDATE_DOWNLOAD: Self = Self(119);
+    /// Fixed output for `fixture_update_verify`.
+    pub(super) const FIXTURE_UPDATE_VERIFY: Self = Self(120);
+    /// Fixed output for `fixture_update_install`.
+    pub(super) const FIXTURE_UPDATE_INSTALL: Self = Self(121);
+    /// Fixed output for `fixture_update_complete`.
+    pub(super) const FIXTURE_UPDATE_COMPLETE: Self = Self(122);
     /// Fixed output for `preferences_schedule_description`.
-    pub(super) const PREFERENCES_SCHEDULE_DESCRIPTION: Self = Self(110);
+    pub(super) const PREFERENCES_SCHEDULE_DESCRIPTION: Self = Self(123);
     /// Fixed output for `preferences_scheduling_note`.
-    pub(super) const PREFERENCES_SCHEDULING_NOTE: Self = Self(111);
+    pub(super) const PREFERENCES_SCHEDULING_NOTE: Self = Self(124);
     /// Fixed output for `preferences_custom_label`.
-    pub(super) const PREFERENCES_CUSTOM_LABEL: Self = Self(112);
+    pub(super) const PREFERENCES_CUSTOM_LABEL: Self = Self(125);
     /// Fixed output for `preferences_custom_help`.
-    pub(super) const PREFERENCES_CUSTOM_HELP: Self = Self(113);
+    pub(super) const PREFERENCES_CUSTOM_HELP: Self = Self(126);
     /// Fixed output for `preferences_accepted_interval`.
-    pub(super) const PREFERENCES_ACCEPTED_INTERVAL: Self = Self(114);
+    pub(super) const PREFERENCES_ACCEPTED_INTERVAL: Self = Self(127);
     /// Fixed output for `preferences_preferences_boundary`.
-    pub(super) const PREFERENCES_PREFERENCES_BOUNDARY: Self = Self(115);
+    pub(super) const PREFERENCES_PREFERENCES_BOUNDARY: Self = Self(128);
     /// Fixed output for `preferences_host_unavailable`.
-    pub(super) const PREFERENCES_HOST_UNAVAILABLE: Self = Self(116);
+    pub(super) const PREFERENCES_HOST_UNAVAILABLE: Self = Self(129);
     /// Fixed output for `preferences_notifications_heading`.
-    pub(super) const PREFERENCES_NOTIFICATIONS_HEADING: Self = Self(117);
+    pub(super) const PREFERENCES_NOTIFICATIONS_HEADING: Self = Self(130);
     /// Fixed output for `preferences_notifications_label`.
-    pub(super) const PREFERENCES_NOTIFICATIONS_LABEL: Self = Self(118);
+    pub(super) const PREFERENCES_NOTIFICATIONS_LABEL: Self = Self(131);
     /// Fixed output for `preferences_notifications_help`.
-    pub(super) const PREFERENCES_NOTIFICATIONS_HELP: Self = Self(119);
+    pub(super) const PREFERENCES_NOTIFICATIONS_HELP: Self = Self(132);
     /// Fixed output for `preferences_windows_availability`.
-    pub(super) const PREFERENCES_WINDOWS_AVAILABILITY: Self = Self(120);
+    pub(super) const PREFERENCES_WINDOWS_AVAILABILITY: Self = Self(133);
     /// Fixed output for `preferences_unknown_availability`.
-    pub(super) const PREFERENCES_UNKNOWN_AVAILABILITY: Self = Self(121);
+    pub(super) const PREFERENCES_UNKNOWN_AVAILABILITY: Self = Self(134);
     /// Fixed output for `preferences_availability_help`.
-    pub(super) const PREFERENCES_AVAILABILITY_HELP: Self = Self(122);
+    pub(super) const PREFERENCES_AVAILABILITY_HELP: Self = Self(135);
     /// Fixed output for `preferences_observer_label`.
-    pub(super) const PREFERENCES_OBSERVER_LABEL: Self = Self(123);
+    pub(super) const PREFERENCES_OBSERVER_LABEL: Self = Self(136);
     /// Fixed output for `preferences_observer_unavailable`.
-    pub(super) const PREFERENCES_OBSERVER_UNAVAILABLE: Self = Self(124);
+    pub(super) const PREFERENCES_OBSERVER_UNAVAILABLE: Self = Self(137);
     /// Fixed output for `preferences_observer_help`.
-    pub(super) const PREFERENCES_OBSERVER_HELP: Self = Self(125);
+    pub(super) const PREFERENCES_OBSERVER_HELP: Self = Self(138);
     /// Fixed output for `preferences_test_notification`.
-    pub(super) const PREFERENCES_TEST_NOTIFICATION: Self = Self(126);
+    pub(super) const PREFERENCES_TEST_NOTIFICATION: Self = Self(139);
     /// Fixed output for `preferences_notification_test_unavailable`.
-    pub(super) const PREFERENCES_NOTIFICATION_TEST_UNAVAILABLE: Self = Self(127);
+    pub(super) const PREFERENCES_NOTIFICATION_TEST_UNAVAILABLE: Self = Self(140);
     /// Fixed output for `preferences_preferences_heading`.
-    pub(super) const PREFERENCES_PREFERENCES_HEADING: Self = Self(128);
+    pub(super) const PREFERENCES_PREFERENCES_HEADING: Self = Self(141);
     /// Fixed output for `preferences_tray_label`.
-    pub(super) const PREFERENCES_TRAY_LABEL: Self = Self(129);
+    pub(super) const PREFERENCES_TRAY_LABEL: Self = Self(142);
     /// Fixed output for `preferences_tray_help`.
-    pub(super) const PREFERENCES_TRAY_HELP: Self = Self(130);
+    pub(super) const PREFERENCES_TRAY_HELP: Self = Self(143);
     /// Fixed output for `preferences_sign_in_label`.
-    pub(super) const PREFERENCES_SIGN_IN_LABEL: Self = Self(131);
+    pub(super) const PREFERENCES_SIGN_IN_LABEL: Self = Self(144);
     /// Fixed output for `preferences_sign_in_help`.
-    pub(super) const PREFERENCES_SIGN_IN_HELP: Self = Self(132);
+    pub(super) const PREFERENCES_SIGN_IN_HELP: Self = Self(145);
     /// Fixed output for `preferences_tray_adapter_unavailable`.
-    pub(super) const PREFERENCES_TRAY_ADAPTER_UNAVAILABLE: Self = Self(133);
+    pub(super) const PREFERENCES_TRAY_ADAPTER_UNAVAILABLE: Self = Self(146);
     /// Fixed output for `preferences_interval_options_0`.
-    pub(super) const PREFERENCES_INTERVAL_OPTIONS_0: Self = Self(134);
+    pub(super) const PREFERENCES_INTERVAL_OPTIONS_0: Self = Self(147);
     /// Fixed output for `preferences_interval_options_1`.
-    pub(super) const PREFERENCES_INTERVAL_OPTIONS_1: Self = Self(135);
+    pub(super) const PREFERENCES_INTERVAL_OPTIONS_1: Self = Self(148);
     /// Fixed output for `preferences_interval_options_2`.
-    pub(super) const PREFERENCES_INTERVAL_OPTIONS_2: Self = Self(136);
+    pub(super) const PREFERENCES_INTERVAL_OPTIONS_2: Self = Self(149);
     /// Fixed output for `preferences_interval_options_3`.
-    pub(super) const PREFERENCES_INTERVAL_OPTIONS_3: Self = Self(137);
+    pub(super) const PREFERENCES_INTERVAL_OPTIONS_3: Self = Self(150);
     /// Fixed output for `preferences_interval_options_4`.
-    pub(super) const PREFERENCES_INTERVAL_OPTIONS_4: Self = Self(138);
+    pub(super) const PREFERENCES_INTERVAL_OPTIONS_4: Self = Self(151);
     /// Fixed output for `preferences_incidents_heading`.
-    pub(super) const PREFERENCES_INCIDENTS_HEADING: Self = Self(139);
+    pub(super) const PREFERENCES_INCIDENTS_HEADING: Self = Self(152);
     /// Fixed output for `preferences_incidents_unavailable`.
-    pub(super) const PREFERENCES_INCIDENTS_UNAVAILABLE: Self = Self(140);
+    pub(super) const PREFERENCES_INCIDENTS_UNAVAILABLE: Self = Self(153);
     /// Fixed output for `preferences_language_label`.
-    pub(super) const PREFERENCES_LANGUAGE_LABEL: Self = Self(141);
+    pub(super) const PREFERENCES_LANGUAGE_LABEL: Self = Self(154);
     /// Fixed output for `preferences_language_help`.
-    pub(super) const PREFERENCES_LANGUAGE_HELP: Self = Self(142);
+    pub(super) const PREFERENCES_LANGUAGE_HELP: Self = Self(155);
     /// Fixed output for `preferences_notification_windows_allowed`.
-    pub(super) const PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED: Self = Self(143);
+    pub(super) const PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED: Self = Self(156);
     /// Fixed output for `preferences_notification_windows_blocked`.
-    pub(super) const PREFERENCES_NOTIFICATION_WINDOWS_BLOCKED: Self = Self(144);
+    pub(super) const PREFERENCES_NOTIFICATION_WINDOWS_BLOCKED: Self = Self(157);
     /// Fixed output for `preferences_notification_observer_running`.
-    pub(super) const PREFERENCES_NOTIFICATION_OBSERVER_RUNNING: Self = Self(145);
+    pub(super) const PREFERENCES_NOTIFICATION_OBSERVER_RUNNING: Self = Self(158);
     /// Fixed output for `preferences_tray_ready_note`.
-    pub(super) const PREFERENCES_TRAY_READY_NOTE: Self = Self(146);
+    pub(super) const PREFERENCES_TRAY_READY_NOTE: Self = Self(159);
     /// Fixed output for `source_profile_value`.
-    pub(super) const SOURCE_PROFILE_VALUE: Self = Self(147);
+    pub(super) const SOURCE_PROFILE_VALUE: Self = Self(160);
     /// Fixed output for `source_preview_note`.
-    pub(super) const SOURCE_PREVIEW_NOTE: Self = Self(148);
+    pub(super) const SOURCE_PREVIEW_NOTE: Self = Self(161);
     /// Fixed output for `source_add_source`.
-    pub(super) const SOURCE_ADD_SOURCE: Self = Self(149);
+    pub(super) const SOURCE_ADD_SOURCE: Self = Self(162);
     /// Fixed output for `source_remove_source`.
-    pub(super) const SOURCE_REMOVE_SOURCE: Self = Self(150);
+    pub(super) const SOURCE_REMOVE_SOURCE: Self = Self(163);
     /// Fixed output for `source_review_changes`.
-    pub(super) const SOURCE_REVIEW_CHANGES: Self = Self(151);
+    pub(super) const SOURCE_REVIEW_CHANGES: Self = Self(164);
     /// Fixed output for `source_review_heading`.
-    pub(super) const SOURCE_REVIEW_HEADING: Self = Self(152);
+    pub(super) const SOURCE_REVIEW_HEADING: Self = Self(165);
     /// Fixed output for `source_review_description`.
-    pub(super) const SOURCE_REVIEW_DESCRIPTION: Self = Self(153);
+    pub(super) const SOURCE_REVIEW_DESCRIPTION: Self = Self(166);
     /// Fixed output for `source_before_label`.
-    pub(super) const SOURCE_BEFORE_LABEL: Self = Self(154);
+    pub(super) const SOURCE_BEFORE_LABEL: Self = Self(167);
     /// Fixed output for `source_after_label`.
-    pub(super) const SOURCE_AFTER_LABEL: Self = Self(155);
+    pub(super) const SOURCE_AFTER_LABEL: Self = Self(168);
     /// Fixed output for `source_undo`.
-    pub(super) const SOURCE_UNDO: Self = Self(156);
+    pub(super) const SOURCE_UNDO: Self = Self(169);
     /// Fixed output for `source_discard`.
-    pub(super) const SOURCE_DISCARD: Self = Self(157);
+    pub(super) const SOURCE_DISCARD: Self = Self(170);
     /// Fixed output for `source_close_review`.
-    pub(super) const SOURCE_CLOSE_REVIEW: Self = Self(158);
+    pub(super) const SOURCE_CLOSE_REVIEW: Self = Self(171);
     /// Fixed output for `source_apply`.
-    pub(super) const SOURCE_APPLY: Self = Self(159);
+    pub(super) const SOURCE_APPLY: Self = Self(172);
     /// Fixed output for `source_apply_unavailable`.
-    pub(super) const SOURCE_APPLY_UNAVAILABLE: Self = Self(160);
+    pub(super) const SOURCE_APPLY_UNAVAILABLE: Self = Self(173);
     /// Fixed output for `source_empty_heading`.
-    pub(super) const SOURCE_EMPTY_HEADING: Self = Self(161);
+    pub(super) const SOURCE_EMPTY_HEADING: Self = Self(174);
     /// Fixed output for `source_empty_description`.
-    pub(super) const SOURCE_EMPTY_DESCRIPTION: Self = Self(162);
+    pub(super) const SOURCE_EMPTY_DESCRIPTION: Self = Self(175);
     /// Fixed output for `source_empty_review`.
-    pub(super) const SOURCE_EMPTY_REVIEW: Self = Self(163);
+    pub(super) const SOURCE_EMPTY_REVIEW: Self = Self(176);
     /// Fixed output for `source_add_title`.
-    pub(super) const SOURCE_ADD_TITLE: Self = Self(164);
+    pub(super) const SOURCE_ADD_TITLE: Self = Self(177);
     /// Fixed output for `source_edit_title`.
-    pub(super) const SOURCE_EDIT_TITLE: Self = Self(165);
+    pub(super) const SOURCE_EDIT_TITLE: Self = Self(178);
     /// Fixed output for `source_protocols_0`.
-    pub(super) const SOURCE_PROTOCOLS_0: Self = Self(166);
+    pub(super) const SOURCE_PROTOCOLS_0: Self = Self(179);
     /// Fixed output for `source_protocols_1`.
-    pub(super) const SOURCE_PROTOCOLS_1: Self = Self(167);
+    pub(super) const SOURCE_PROTOCOLS_1: Self = Self(180);
     /// Fixed output for `source_protocol_help`.
-    pub(super) const SOURCE_PROTOCOL_HELP: Self = Self(168);
+    pub(super) const SOURCE_PROTOCOL_HELP: Self = Self(181);
     /// Fixed output for `source_ntp_warning`.
-    pub(super) const SOURCE_NTP_WARNING: Self = Self(169);
+    pub(super) const SOURCE_NTP_WARNING: Self = Self(182);
     /// Fixed output for `source_ntp_port`.
-    pub(super) const SOURCE_NTP_PORT: Self = Self(170);
+    pub(super) const SOURCE_NTP_PORT: Self = Self(183);
     /// Fixed output for `source_port_help`.
-    pub(super) const SOURCE_PORT_HELP: Self = Self(171);
+    pub(super) const SOURCE_PORT_HELP: Self = Self(184);
     /// Fixed output for `source_statistics_description`.
-    pub(super) const SOURCE_STATISTICS_DESCRIPTION: Self = Self(172);
+    pub(super) const SOURCE_STATISTICS_DESCRIPTION: Self = Self(185);
     /// Fixed output for `source_change_labels_0`.
-    pub(super) const SOURCE_CHANGE_LABELS_0: Self = Self(173);
+    pub(super) const SOURCE_CHANGE_LABELS_0: Self = Self(186);
     /// Fixed output for `source_change_labels_1`.
-    pub(super) const SOURCE_CHANGE_LABELS_1: Self = Self(174);
+    pub(super) const SOURCE_CHANGE_LABELS_1: Self = Self(187);
     /// Fixed output for `source_change_labels_2`.
-    pub(super) const SOURCE_CHANGE_LABELS_2: Self = Self(175);
+    pub(super) const SOURCE_CHANGE_LABELS_2: Self = Self(188);
     /// Fixed output for `source_change_labels_3`.
-    pub(super) const SOURCE_CHANGE_LABELS_3: Self = Self(176);
+    pub(super) const SOURCE_CHANGE_LABELS_3: Self = Self(189);
     /// Fixed output for `source_review_none`.
-    pub(super) const SOURCE_REVIEW_NONE: Self = Self(177);
+    pub(super) const SOURCE_REVIEW_NONE: Self = Self(190);
     /// Fixed output for `source_page_required`.
-    pub(super) const SOURCE_PAGE_REQUIRED: Self = Self(178);
+    pub(super) const SOURCE_PAGE_REQUIRED: Self = Self(191);
     /// Fixed output for `source_list_required`.
-    pub(super) const SOURCE_LIST_REQUIRED: Self = Self(179);
+    pub(super) const SOURCE_LIST_REQUIRED: Self = Self(192);
     /// Fixed output for `source_review_required`.
-    pub(super) const SOURCE_REVIEW_REQUIRED: Self = Self(180);
+    pub(super) const SOURCE_REVIEW_REQUIRED: Self = Self(193);
     /// Fixed output for `recovery_title`.
-    pub(super) const RECOVERY_TITLE: Self = Self(181);
+    pub(super) const RECOVERY_TITLE: Self = Self(194);
     /// Fixed output for `recovery_description`.
-    pub(super) const RECOVERY_DESCRIPTION: Self = Self(182);
+    pub(super) const RECOVERY_DESCRIPTION: Self = Self(195);
     /// Fixed output for `recovery_back`.
-    pub(super) const RECOVERY_BACK: Self = Self(183);
+    pub(super) const RECOVERY_BACK: Self = Self(196);
     /// Fixed output for `recovery_settings_description`.
-    pub(super) const RECOVERY_SETTINGS_DESCRIPTION: Self = Self(184);
+    pub(super) const RECOVERY_SETTINGS_DESCRIPTION: Self = Self(197);
     /// Fixed output for `recovery_context_description`.
-    pub(super) const RECOVERY_CONTEXT_DESCRIPTION: Self = Self(185);
+    pub(super) const RECOVERY_CONTEXT_DESCRIPTION: Self = Self(198);
     /// Fixed output for `recovery_open_details`.
-    pub(super) const RECOVERY_OPEN_DETAILS: Self = Self(186);
+    pub(super) const RECOVERY_OPEN_DETAILS: Self = Self(199);
     /// Fixed output for `recovery_leave_title`.
-    pub(super) const RECOVERY_LEAVE_TITLE: Self = Self(187);
+    pub(super) const RECOVERY_LEAVE_TITLE: Self = Self(200);
     /// Fixed output for `recovery_leave_description`.
-    pub(super) const RECOVERY_LEAVE_DESCRIPTION: Self = Self(188);
+    pub(super) const RECOVERY_LEAVE_DESCRIPTION: Self = Self(201);
     /// Fixed output for `recovery_leave_keep`.
-    pub(super) const RECOVERY_LEAVE_KEEP: Self = Self(189);
+    pub(super) const RECOVERY_LEAVE_KEEP: Self = Self(202);
     /// Fixed output for `recovery_leave_discard`.
-    pub(super) const RECOVERY_LEAVE_DISCARD: Self = Self(190);
+    pub(super) const RECOVERY_LEAVE_DISCARD: Self = Self(203);
     /// Fixed output for `recovery_leave_stay`.
-    pub(super) const RECOVERY_LEAVE_STAY: Self = Self(191);
+    pub(super) const RECOVERY_LEAVE_STAY: Self = Self(204);
     /// Fixed output for `recovery_roughtime_title`.
-    pub(super) const RECOVERY_ROUGHTIME_TITLE: Self = Self(192);
+    pub(super) const RECOVERY_ROUGHTIME_TITLE: Self = Self(205);
     /// Fixed output for `recovery_roughtime_description`.
-    pub(super) const RECOVERY_ROUGHTIME_DESCRIPTION: Self = Self(193);
+    pub(super) const RECOVERY_ROUGHTIME_DESCRIPTION: Self = Self(206);
     /// Fixed output for `recovery_no_effect`.
-    pub(super) const RECOVERY_NO_EFFECT: Self = Self(194);
+    pub(super) const RECOVERY_NO_EFFECT: Self = Self(207);
     /// Fixed output for `recovery_unavailable`.
-    pub(super) const RECOVERY_UNAVAILABLE: Self = Self(195);
+    pub(super) const RECOVERY_UNAVAILABLE: Self = Self(208);
     /// Fixed output for `recovery_signatures`.
-    pub(super) const RECOVERY_SIGNATURES: Self = Self(196);
+    pub(super) const RECOVERY_SIGNATURES: Self = Self(209);
     /// Fixed output for `recovery_date`.
-    pub(super) const RECOVERY_DATE: Self = Self(197);
+    pub(super) const RECOVERY_DATE: Self = Self(210);
     /// Fixed output for `recovery_handoff`.
-    pub(super) const RECOVERY_HANDOFF: Self = Self(198);
+    pub(super) const RECOVERY_HANDOFF: Self = Self(211);
     /// Fixed output for `recovery_unobserved`.
-    pub(super) const RECOVERY_UNOBSERVED: Self = Self(199);
+    pub(super) const RECOVERY_UNOBSERVED: Self = Self(212);
     /// Fixed output for `recovery_no_date`.
-    pub(super) const RECOVERY_NO_DATE: Self = Self(200);
+    pub(super) const RECOVERY_NO_DATE: Self = Self(213);
     /// Fixed output for `recovery_show_path`.
-    pub(super) const RECOVERY_SHOW_PATH: Self = Self(201);
+    pub(super) const RECOVERY_SHOW_PATH: Self = Self(214);
     /// Fixed output for `recovery_hide_path`.
-    pub(super) const RECOVERY_HIDE_PATH: Self = Self(202);
+    pub(super) const RECOVERY_HIDE_PATH: Self = Self(215);
     /// Fixed output for `recovery_retained_step`.
-    pub(super) const RECOVERY_RETAINED_STEP: Self = Self(203);
+    pub(super) const RECOVERY_RETAINED_STEP: Self = Self(216);
     /// Fixed output for `recovery_date_step`.
-    pub(super) const RECOVERY_DATE_STEP: Self = Self(204);
+    pub(super) const RECOVERY_DATE_STEP: Self = Self(217);
     /// Fixed output for `recovery_nts_step`.
-    pub(super) const RECOVERY_NTS_STEP: Self = Self(205);
+    pub(super) const RECOVERY_NTS_STEP: Self = Self(218);
     /// Fixed output for `recovery_agreement_step`.
-    pub(super) const RECOVERY_AGREEMENT_STEP: Self = Self(206);
+    pub(super) const RECOVERY_AGREEMENT_STEP: Self = Self(219);
     /// Fixed output for `recovery_authority_step`.
-    pub(super) const RECOVERY_AUTHORITY_STEP: Self = Self(207);
+    pub(super) const RECOVERY_AUTHORITY_STEP: Self = Self(220);
     /// Fixed output for `recovery_helpers_title`.
-    pub(super) const RECOVERY_HELPERS_TITLE: Self = Self(208);
+    pub(super) const RECOVERY_HELPERS_TITLE: Self = Self(221);
     /// Fixed output for `recovery_helpers_description`.
-    pub(super) const RECOVERY_HELPERS_DESCRIPTION: Self = Self(209);
+    pub(super) const RECOVERY_HELPERS_DESCRIPTION: Self = Self(222);
     /// Fixed output for `recovery_one_helper_warning`.
-    pub(super) const RECOVERY_ONE_HELPER_WARNING: Self = Self(210);
+    pub(super) const RECOVERY_ONE_HELPER_WARNING: Self = Self(223);
     /// Fixed output for `recovery_two_helper_warning`.
-    pub(super) const RECOVERY_TWO_HELPER_WARNING: Self = Self(211);
+    pub(super) const RECOVERY_TWO_HELPER_WARNING: Self = Self(224);
     /// Fixed output for `recovery_count_label`.
-    pub(super) const RECOVERY_COUNT_LABEL: Self = Self(212);
+    pub(super) const RECOVERY_COUNT_LABEL: Self = Self(225);
     /// Fixed output for `recovery_counts_0`.
-    pub(super) const RECOVERY_COUNTS_0: Self = Self(213);
+    pub(super) const RECOVERY_COUNTS_0: Self = Self(226);
     /// Fixed output for `recovery_counts_1`.
-    pub(super) const RECOVERY_COUNTS_1: Self = Self(214);
+    pub(super) const RECOVERY_COUNTS_1: Self = Self(227);
     /// Fixed output for `recovery_counts_2`.
-    pub(super) const RECOVERY_COUNTS_2: Self = Self(215);
+    pub(super) const RECOVERY_COUNTS_2: Self = Self(228);
     /// Fixed output for `recovery_first_label`.
-    pub(super) const RECOVERY_FIRST_LABEL: Self = Self(216);
+    pub(super) const RECOVERY_FIRST_LABEL: Self = Self(229);
     /// Fixed output for `recovery_second_label`.
-    pub(super) const RECOVERY_SECOND_LABEL: Self = Self(217);
+    pub(super) const RECOVERY_SECOND_LABEL: Self = Self(230);
     /// Fixed output for `recovery_host_help`.
-    pub(super) const RECOVERY_HOST_HELP: Self = Self(218);
+    pub(super) const RECOVERY_HOST_HELP: Self = Self(231);
     /// Fixed output for `recovery_preview`.
-    pub(super) const RECOVERY_PREVIEW: Self = Self(219);
+    pub(super) const RECOVERY_PREVIEW: Self = Self(232);
     /// Fixed output for `recovery_cancel`.
-    pub(super) const RECOVERY_CANCEL: Self = Self(220);
+    pub(super) const RECOVERY_CANCEL: Self = Self(233);
     /// Fixed output for `recovery_review_title`.
-    pub(super) const RECOVERY_REVIEW_TITLE: Self = Self(221);
+    pub(super) const RECOVERY_REVIEW_TITLE: Self = Self(234);
     /// Fixed output for `recovery_off`.
-    pub(super) const RECOVERY_OFF: Self = Self(222);
+    pub(super) const RECOVERY_OFF: Self = Self(235);
     /// Fixed output for `recovery_boundary`.
-    pub(super) const RECOVERY_BOUNDARY: Self = Self(223);
+    pub(super) const RECOVERY_BOUNDARY: Self = Self(236);
     /// Fixed output for `recovery_keep_editing`.
-    pub(super) const RECOVERY_KEEP_EDITING: Self = Self(224);
+    pub(super) const RECOVERY_KEEP_EDITING: Self = Self(237);
     /// Fixed output for `recovery_discard`.
-    pub(super) const RECOVERY_DISCARD: Self = Self(225);
+    pub(super) const RECOVERY_DISCARD: Self = Self(238);
     /// Fixed output for `recovery_apply`.
-    pub(super) const RECOVERY_APPLY: Self = Self(226);
+    pub(super) const RECOVERY_APPLY: Self = Self(239);
     /// Fixed output for `recovery_apply_unavailable`.
-    pub(super) const RECOVERY_APPLY_UNAVAILABLE: Self = Self(227);
+    pub(super) const RECOVERY_APPLY_UNAVAILABLE: Self = Self(240);
     /// Fixed output for `shell_quit_ui`.
-    pub(super) const SHELL_QUIT_UI: Self = Self(228);
+    pub(super) const SHELL_QUIT_UI: Self = Self(241);
     /// Fixed output for `shell_quit_title`.
-    pub(super) const SHELL_QUIT_TITLE: Self = Self(229);
+    pub(super) const SHELL_QUIT_TITLE: Self = Self(242);
     /// Fixed output for `shell_keep_open`.
-    pub(super) const SHELL_KEEP_OPEN: Self = Self(230);
+    pub(super) const SHELL_KEEP_OPEN: Self = Self(243);
     /// Fixed output for `shell_manage_service`.
-    pub(super) const SHELL_MANAGE_SERVICE: Self = Self(231);
+    pub(super) const SHELL_MANAGE_SERVICE: Self = Self(244);
     /// Fixed output for `shell_quit_only`.
-    pub(super) const SHELL_QUIT_ONLY: Self = Self(232);
+    pub(super) const SHELL_QUIT_ONLY: Self = Self(245);
     /// Fixed output for `shell_unknown_consequence`.
-    pub(super) const SHELL_UNKNOWN_CONSEQUENCE: Self = Self(233);
+    pub(super) const SHELL_UNKNOWN_CONSEQUENCE: Self = Self(246);
     /// Fixed output for `shell_draft_loss_title`.
-    pub(super) const SHELL_DRAFT_LOSS_TITLE: Self = Self(234);
+    pub(super) const SHELL_DRAFT_LOSS_TITLE: Self = Self(247);
     /// Fixed output for `shell_draft_loss`.
-    pub(super) const SHELL_DRAFT_LOSS: Self = Self(235);
+    pub(super) const SHELL_DRAFT_LOSS: Self = Self(248);
     /// Fixed output for `shell_observer_consequence`.
-    pub(super) const SHELL_OBSERVER_CONSEQUENCE: Self = Self(236);
+    pub(super) const SHELL_OBSERVER_CONSEQUENCE: Self = Self(249);
     /// Fixed output for `shell_stop_path`.
-    pub(super) const SHELL_STOP_PATH: Self = Self(237);
+    pub(super) const SHELL_STOP_PATH: Self = Self(250);
     /// Fixed output for `shell_disable_path`.
-    pub(super) const SHELL_DISABLE_PATH: Self = Self(238);
+    pub(super) const SHELL_DISABLE_PATH: Self = Self(251);
     /// Fixed output for `shell_separate_management`.
-    pub(super) const SHELL_SEPARATE_MANAGEMENT: Self = Self(239);
+    pub(super) const SHELL_SEPARATE_MANAGEMENT: Self = Self(252);
     /// Fixed output for `shell_exit_requested`.
-    pub(super) const SHELL_EXIT_REQUESTED: Self = Self(240);
+    pub(super) const SHELL_EXIT_REQUESTED: Self = Self(253);
     /// Fixed output for `shell_background_service`.
-    pub(super) const SHELL_BACKGROUND_SERVICE: Self = Self(241);
+    pub(super) const SHELL_BACKGROUND_SERVICE: Self = Self(254);
     /// Fixed output for `shell_notifications`.
-    pub(super) const SHELL_NOTIFICATIONS: Self = Self(242);
+    pub(super) const SHELL_NOTIFICATIONS: Self = Self(255);
     /// Fixed output for `shell_main_content`.
-    pub(super) const SHELL_MAIN_CONTENT: Self = Self(243);
+    pub(super) const SHELL_MAIN_CONTENT: Self = Self(256);
     /// Fixed output for `shell_service_description`.
-    pub(super) const SHELL_SERVICE_DESCRIPTION: Self = Self(244);
+    pub(super) const SHELL_SERVICE_DESCRIPTION: Self = Self(257);
     /// Fixed output for `shell_service_summary`.
-    pub(super) const SHELL_SERVICE_SUMMARY: Self = Self(245);
+    pub(super) const SHELL_SERVICE_SUMMARY: Self = Self(258);
     /// Fixed output for `shell_manage_power`.
-    pub(super) const SHELL_MANAGE_POWER: Self = Self(246);
+    pub(super) const SHELL_MANAGE_POWER: Self = Self(259);
     /// Fixed output for `shell_service_unavailable`.
-    pub(super) const SHELL_SERVICE_UNAVAILABLE: Self = Self(247);
+    pub(super) const SHELL_SERVICE_UNAVAILABLE: Self = Self(260);
     /// Fixed output for `shell_diagnose`.
-    pub(super) const SHELL_DIAGNOSE: Self = Self(248);
+    pub(super) const SHELL_DIAGNOSE: Self = Self(261);
     /// Fixed output for `shell_diagnose_power`.
-    pub(super) const SHELL_DIAGNOSE_POWER: Self = Self(249);
+    pub(super) const SHELL_DIAGNOSE_POWER: Self = Self(262);
     /// Fixed output for `shell_diagnose_note`.
-    pub(super) const SHELL_DIAGNOSE_NOTE: Self = Self(250);
+    pub(super) const SHELL_DIAGNOSE_NOTE: Self = Self(263);
     /// Fixed output for `shell_startup_title`.
-    pub(super) const SHELL_STARTUP_TITLE: Self = Self(251);
+    pub(super) const SHELL_STARTUP_TITLE: Self = Self(264);
     /// Fixed output for `shell_startup_note`.
-    pub(super) const SHELL_STARTUP_NOTE: Self = Self(252);
+    pub(super) const SHELL_STARTUP_NOTE: Self = Self(265);
     /// Fixed output for `shell_autostart_on`.
-    pub(super) const SHELL_AUTOSTART_ON: Self = Self(253);
+    pub(super) const SHELL_AUTOSTART_ON: Self = Self(266);
     /// Fixed output for `shell_autostart_off`.
-    pub(super) const SHELL_AUTOSTART_OFF: Self = Self(254);
+    pub(super) const SHELL_AUTOSTART_OFF: Self = Self(267);
     /// Fixed output for `shell_disable_note`.
-    pub(super) const SHELL_DISABLE_NOTE: Self = Self(255);
+    pub(super) const SHELL_DISABLE_NOTE: Self = Self(268);
     /// Fixed output for `shell_time_manager_title`.
-    pub(super) const SHELL_TIME_MANAGER_TITLE: Self = Self(256);
+    pub(super) const SHELL_TIME_MANAGER_TITLE: Self = Self(269);
     /// Fixed output for `shell_use_windows`.
-    pub(super) const SHELL_USE_WINDOWS: Self = Self(257);
+    pub(super) const SHELL_USE_WINDOWS: Self = Self(270);
     /// Fixed output for `shell_use_nevrotick`.
-    pub(super) const SHELL_USE_NEVROTICK: Self = Self(258);
+    pub(super) const SHELL_USE_NEVROTICK: Self = Self(271);
     /// Fixed output for `shell_handover_note`.
-    pub(super) const SHELL_HANDOVER_NOTE: Self = Self(259);
+    pub(super) const SHELL_HANDOVER_NOTE: Self = Self(272);
     /// Fixed output for `shell_synchronization_settings`.
-    pub(super) const SHELL_SYNCHRONIZATION_SETTINGS: Self = Self(260);
+    pub(super) const SHELL_SYNCHRONIZATION_SETTINGS: Self = Self(273);
     /// Fixed output for `shell_time_policy`.
-    pub(super) const SHELL_TIME_POLICY: Self = Self(261);
+    pub(super) const SHELL_TIME_POLICY: Self = Self(274);
     /// Fixed output for `shell_time_policy_description`.
-    pub(super) const SHELL_TIME_POLICY_DESCRIPTION: Self = Self(262);
+    pub(super) const SHELL_TIME_POLICY_DESCRIPTION: Self = Self(275);
     /// Fixed output for `shell_time_policy_power`.
-    pub(super) const SHELL_TIME_POLICY_POWER: Self = Self(263);
+    pub(super) const SHELL_TIME_POLICY_POWER: Self = Self(276);
     /// Fixed output for `shell_personal_preferences`.
-    pub(super) const SHELL_PERSONAL_PREFERENCES: Self = Self(264);
+    pub(super) const SHELL_PERSONAL_PREFERENCES: Self = Self(277);
     /// Fixed output for `shell_personal_preferences_description`.
-    pub(super) const SHELL_PERSONAL_PREFERENCES_DESCRIPTION: Self = Self(265);
+    pub(super) const SHELL_PERSONAL_PREFERENCES_DESCRIPTION: Self = Self(278);
     /// Fixed output for `policy_heading`.
-    pub(super) const POLICY_HEADING: Self = Self(266);
+    pub(super) const POLICY_HEADING: Self = Self(279);
     /// Fixed output for `policy_description`.
-    pub(super) const POLICY_DESCRIPTION: Self = Self(267);
+    pub(super) const POLICY_DESCRIPTION: Self = Self(280);
     /// Fixed output for `policy_baseline`.
-    pub(super) const POLICY_BASELINE: Self = Self(268);
+    pub(super) const POLICY_BASELINE: Self = Self(281);
     /// Fixed output for `policy_preview`.
-    pub(super) const POLICY_PREVIEW: Self = Self(269);
+    pub(super) const POLICY_PREVIEW: Self = Self(282);
     /// Fixed output for `policy_no_preview`.
-    pub(super) const POLICY_NO_PREVIEW: Self = Self(270);
+    pub(super) const POLICY_NO_PREVIEW: Self = Self(283);
     /// Fixed output for `policy_nts`.
-    pub(super) const POLICY_NTS: Self = Self(271);
+    pub(super) const POLICY_NTS: Self = Self(284);
     /// Fixed output for `policy_ntp`.
-    pub(super) const POLICY_NTP: Self = Self(272);
+    pub(super) const POLICY_NTP: Self = Self(285);
     /// Fixed output for `policy_observe`.
-    pub(super) const POLICY_OBSERVE: Self = Self(273);
+    pub(super) const POLICY_OBSERVE: Self = Self(286);
     /// Fixed output for `policy_choose`.
-    pub(super) const POLICY_CHOOSE: Self = Self(274);
+    pub(super) const POLICY_CHOOSE: Self = Self(287);
     /// Fixed output for `policy_edit`.
-    pub(super) const POLICY_EDIT: Self = Self(275);
+    pub(super) const POLICY_EDIT: Self = Self(288);
     /// Fixed output for `policy_review`.
-    pub(super) const POLICY_REVIEW: Self = Self(276);
+    pub(super) const POLICY_REVIEW: Self = Self(289);
     /// Fixed output for `policy_keep`.
-    pub(super) const POLICY_KEEP: Self = Self(277);
+    pub(super) const POLICY_KEEP: Self = Self(290);
     /// Fixed output for `policy_discard`.
-    pub(super) const POLICY_DISCARD: Self = Self(278);
+    pub(super) const POLICY_DISCARD: Self = Self(291);
     /// Fixed output for `policy_cancel`.
-    pub(super) const POLICY_CANCEL: Self = Self(279);
+    pub(super) const POLICY_CANCEL: Self = Self(292);
     /// Fixed output for `policy_choice_label`.
-    pub(super) const POLICY_CHOICE_LABEL: Self = Self(280);
+    pub(super) const POLICY_CHOICE_LABEL: Self = Self(293);
     /// Fixed output for `policy_nts_consequence`.
-    pub(super) const POLICY_NTS_CONSEQUENCE: Self = Self(281);
+    pub(super) const POLICY_NTS_CONSEQUENCE: Self = Self(294);
     /// Fixed output for `policy_ntp_consequence`.
-    pub(super) const POLICY_NTP_CONSEQUENCE: Self = Self(282);
+    pub(super) const POLICY_NTP_CONSEQUENCE: Self = Self(295);
     /// Fixed output for `policy_observe_consequence`.
-    pub(super) const POLICY_OBSERVE_CONSEQUENCE: Self = Self(283);
+    pub(super) const POLICY_OBSERVE_CONSEQUENCE: Self = Self(296);
     /// Fixed output for `policy_authority`.
-    pub(super) const POLICY_AUTHORITY: Self = Self(284);
+    pub(super) const POLICY_AUTHORITY: Self = Self(297);
     /// Fixed output for `policy_apply`.
-    pub(super) const POLICY_APPLY: Self = Self(285);
+    pub(super) const POLICY_APPLY: Self = Self(298);
     /// Fixed output for `policy_apply_unavailable`.
-    pub(super) const POLICY_APPLY_UNAVAILABLE: Self = Self(286);
+    pub(super) const POLICY_APPLY_UNAVAILABLE: Self = Self(299);
     /// Fixed output for `policy_fixture_note`.
-    pub(super) const POLICY_FIXTURE_NOTE: Self = Self(287);
+    pub(super) const POLICY_FIXTURE_NOTE: Self = Self(300);
     /// Fixed output for `policy_preview_note`.
-    pub(super) const POLICY_PREVIEW_NOTE: Self = Self(288);
+    pub(super) const POLICY_PREVIEW_NOTE: Self = Self(301);
     /// Fixed output for `policy_phase_required`.
-    pub(super) const POLICY_PHASE_REQUIRED: Self = Self(289);
+    pub(super) const POLICY_PHASE_REQUIRED: Self = Self(302);
     /// Fixed output for `policy_invalid_choice`.
-    pub(super) const POLICY_INVALID_CHOICE: Self = Self(290);
+    pub(super) const POLICY_INVALID_CHOICE: Self = Self(303);
     /// Fixed output for `policy_no_preview_error`.
-    pub(super) const POLICY_NO_PREVIEW_ERROR: Self = Self(291);
+    pub(super) const POLICY_NO_PREVIEW_ERROR: Self = Self(304);
     /// Fixed output for `policy_page_required`.
-    pub(super) const POLICY_PAGE_REQUIRED: Self = Self(292);
+    pub(super) const POLICY_PAGE_REQUIRED: Self = Self(305);
     /// Fixed output for `policy_editor_active`.
-    pub(super) const POLICY_EDITOR_ACTIVE: Self = Self(293);
+    pub(super) const POLICY_EDITOR_ACTIVE: Self = Self(306);
     /// Fixed output for `inspection_query_label`.
-    pub(super) const INSPECTION_QUERY_LABEL: Self = Self(294);
+    pub(super) const INSPECTION_QUERY_LABEL: Self = Self(307);
     /// Fixed output for `inspection_query_placeholder`.
-    pub(super) const INSPECTION_QUERY_PLACEHOLDER: Self = Self(295);
+    pub(super) const INSPECTION_QUERY_PLACEHOLDER: Self = Self(308);
     /// Fixed output for `inspection_query_help`.
-    pub(super) const INSPECTION_QUERY_HELP: Self = Self(296);
+    pub(super) const INSPECTION_QUERY_HELP: Self = Self(309);
     /// Fixed output for `inspection_search`.
-    pub(super) const INSPECTION_SEARCH: Self = Self(297);
+    pub(super) const INSPECTION_SEARCH: Self = Self(310);
     /// Fixed output for `inspection_clear`.
-    pub(super) const INSPECTION_CLEAR: Self = Self(298);
+    pub(super) const INSPECTION_CLEAR: Self = Self(311);
     /// Fixed output for `inspection_all`.
-    pub(super) const INSPECTION_ALL: Self = Self(299);
+    pub(super) const INSPECTION_ALL: Self = Self(312);
     /// Fixed output for `inspection_used`.
-    pub(super) const INSPECTION_USED: Self = Self(300);
+    pub(super) const INSPECTION_USED: Self = Self(313);
     /// Fixed output for `inspection_other`.
-    pub(super) const INSPECTION_OTHER: Self = Self(301);
+    pub(super) const INSPECTION_OTHER: Self = Self(314);
     /// Fixed output for `inspection_roles_unavailable`.
-    pub(super) const INSPECTION_ROLES_UNAVAILABLE: Self = Self(302);
+    pub(super) const INSPECTION_ROLES_UNAVAILABLE: Self = Self(315);
     /// Fixed output for `inspection_no_matches_heading`.
-    pub(super) const INSPECTION_NO_MATCHES_HEADING: Self = Self(303);
+    pub(super) const INSPECTION_NO_MATCHES_HEADING: Self = Self(316);
     /// Fixed output for `inspection_no_matches`.
-    pub(super) const INSPECTION_NO_MATCHES: Self = Self(304);
+    pub(super) const INSPECTION_NO_MATCHES: Self = Self(317);
     /// Fixed output for `inspection_accepted_query`.
-    pub(super) const INSPECTION_ACCEPTED_QUERY: Self = Self(305);
+    pub(super) const INSPECTION_ACCEPTED_QUERY: Self = Self(318);
     /// Fixed output for `inspection_details`.
-    pub(super) const INSPECTION_DETAILS: Self = Self(306);
+    pub(super) const INSPECTION_DETAILS: Self = Self(319);
     /// Fixed output for `inspection_details_heading`.
-    pub(super) const INSPECTION_DETAILS_HEADING: Self = Self(307);
+    pub(super) const INSPECTION_DETAILS_HEADING: Self = Self(320);
     /// Fixed output for `inspection_close_details`.
-    pub(super) const INSPECTION_CLOSE_DETAILS: Self = Self(308);
+    pub(super) const INSPECTION_CLOSE_DETAILS: Self = Self(321);
     /// Fixed output for `inspection_details_note`.
-    pub(super) const INSPECTION_DETAILS_NOTE: Self = Self(309);
+    pub(super) const INSPECTION_DETAILS_NOTE: Self = Self(322);
     /// Fixed output for `inspection_hidden_details`.
-    pub(super) const INSPECTION_HIDDEN_DETAILS: Self = Self(310);
+    pub(super) const INSPECTION_HIDDEN_DETAILS: Self = Self(323);
     /// Fixed output for `inspection_selected_hidden`.
-    pub(super) const INSPECTION_SELECTED_HIDDEN: Self = Self(311);
+    pub(super) const INSPECTION_SELECTED_HIDDEN: Self = Self(324);
     /// Fixed output for `inspection_identity`.
-    pub(super) const INSPECTION_IDENTITY: Self = Self(312);
+    pub(super) const INSPECTION_IDENTITY: Self = Self(325);
     /// Fixed output for `inspection_label`.
-    pub(super) const INSPECTION_LABEL: Self = Self(313);
+    pub(super) const INSPECTION_LABEL: Self = Self(326);
     /// Fixed output for `inspection_protocol`.
-    pub(super) const INSPECTION_PROTOCOL: Self = Self(314);
+    pub(super) const INSPECTION_PROTOCOL: Self = Self(327);
     /// Fixed output for `inspection_port`.
-    pub(super) const INSPECTION_PORT: Self = Self(315);
+    pub(super) const INSPECTION_PORT: Self = Self(328);
     /// Fixed output for `inspection_local_id_note`.
-    pub(super) const INSPECTION_LOCAL_ID_NOTE: Self = Self(316);
+    pub(super) const INSPECTION_LOCAL_ID_NOTE: Self = Self(329);
     /// Fixed output for `inspection_authentication`.
-    pub(super) const INSPECTION_AUTHENTICATION: Self = Self(317);
+    pub(super) const INSPECTION_AUTHENTICATION: Self = Self(330);
     /// Fixed output for `inspection_auth_measurement`.
-    pub(super) const INSPECTION_AUTH_MEASUREMENT: Self = Self(318);
+    pub(super) const INSPECTION_AUTH_MEASUREMENT: Self = Self(331);
     /// Fixed output for `inspection_role`.
-    pub(super) const INSPECTION_ROLE: Self = Self(319);
+    pub(super) const INSPECTION_ROLE: Self = Self(332);
     /// Fixed output for `inspection_operator`.
-    pub(super) const INSPECTION_OPERATOR: Self = Self(320);
+    pub(super) const INSPECTION_OPERATOR: Self = Self(333);
     /// Fixed output for `inspection_endpoint`.
-    pub(super) const INSPECTION_ENDPOINT: Self = Self(321);
+    pub(super) const INSPECTION_ENDPOINT: Self = Self(334);
     /// Fixed output for `inspection_vote_identity`.
-    pub(super) const INSPECTION_VOTE_IDENTITY: Self = Self(322);
+    pub(super) const INSPECTION_VOTE_IDENTITY: Self = Self(335);
     /// Fixed output for `inspection_request_status`.
-    pub(super) const INSPECTION_REQUEST_STATUS: Self = Self(323);
+    pub(super) const INSPECTION_REQUEST_STATUS: Self = Self(336);
     /// Fixed output for `inspection_last_reply`.
-    pub(super) const INSPECTION_LAST_REPLY: Self = Self(324);
+    pub(super) const INSPECTION_LAST_REPLY: Self = Self(337);
     /// Fixed output for `inspection_last_accepted`.
-    pub(super) const INSPECTION_LAST_ACCEPTED: Self = Self(325);
+    pub(super) const INSPECTION_LAST_ACCEPTED: Self = Self(338);
     /// Fixed output for `inspection_offset`.
-    pub(super) const INSPECTION_OFFSET: Self = Self(326);
+    pub(super) const INSPECTION_OFFSET: Self = Self(339);
     /// Fixed output for `inspection_delay`.
-    pub(super) const INSPECTION_DELAY: Self = Self(327);
+    pub(super) const INSPECTION_DELAY: Self = Self(340);
     /// Fixed output for `inspection_uncertainty`.
-    pub(super) const INSPECTION_UNCERTAINTY: Self = Self(328);
+    pub(super) const INSPECTION_UNCERTAINTY: Self = Self(341);
     /// Fixed output for `inspection_certificate`.
-    pub(super) const INSPECTION_CERTIFICATE: Self = Self(329);
+    pub(super) const INSPECTION_CERTIFICATE: Self = Self(342);
     /// Fixed output for `inspection_scale`.
-    pub(super) const INSPECTION_SCALE: Self = Self(330);
+    pub(super) const INSPECTION_SCALE: Self = Self(343);
     /// Fixed output for `inspection_leap`.
-    pub(super) const INSPECTION_LEAP: Self = Self(331);
+    pub(super) const INSPECTION_LEAP: Self = Self(344);
     /// Fixed output for `inspection_not_observed`.
-    pub(super) const INSPECTION_NOT_OBSERVED: Self = Self(332);
+    pub(super) const INSPECTION_NOT_OBSERVED: Self = Self(345);
     /// Fixed output for `inspection_not_measured`.
-    pub(super) const INSPECTION_NOT_MEASURED: Self = Self(333);
+    pub(super) const INSPECTION_NOT_MEASURED: Self = Self(346);
     /// Fixed output for `inspection_not_established`.
-    pub(super) const INSPECTION_NOT_ESTABLISHED: Self = Self(334);
+    pub(super) const INSPECTION_NOT_ESTABLISHED: Self = Self(347);
     /// Fixed output for `inspection_not_evaluated`.
-    pub(super) const INSPECTION_NOT_EVALUATED: Self = Self(335);
+    pub(super) const INSPECTION_NOT_EVALUATED: Self = Self(348);
     /// Fixed output for `inspection_not_applicable`.
-    pub(super) const INSPECTION_NOT_APPLICABLE: Self = Self(336);
+    pub(super) const INSPECTION_NOT_APPLICABLE: Self = Self(349);
     /// Fixed output for `inspection_unauthenticated`.
-    pub(super) const INSPECTION_UNAUTHENTICATED: Self = Self(337);
+    pub(super) const INSPECTION_UNAUTHENTICATED: Self = Self(350);
     /// Fixed output for `inspection_nts`.
-    pub(super) const INSPECTION_NTS: Self = Self(338);
+    pub(super) const INSPECTION_NTS: Self = Self(351);
     /// Fixed output for `inspection_ntp`.
-    pub(super) const INSPECTION_NTP: Self = Self(339);
+    pub(super) const INSPECTION_NTP: Self = Self(352);
     /// Fixed output for `inspection_invalid_query`.
-    pub(super) const INSPECTION_INVALID_QUERY: Self = Self(340);
+    pub(super) const INSPECTION_INVALID_QUERY: Self = Self(353);
     /// Fixed output for `inspection_invalid_filter`.
-    pub(super) const INSPECTION_INVALID_FILTER: Self = Self(341);
+    pub(super) const INSPECTION_INVALID_FILTER: Self = Self(354);
     /// Fixed output for `inspection_hidden_source`.
-    pub(super) const INSPECTION_HIDDEN_SOURCE: Self = Self(342);
+    pub(super) const INSPECTION_HIDDEN_SOURCE: Self = Self(355);
     /// Fixed output for `inspection_page_required`.
-    pub(super) const INSPECTION_PAGE_REQUIRED: Self = Self(343);
+    pub(super) const INSPECTION_PAGE_REQUIRED: Self = Self(356);
     /// Fixed output for `inspection_editor_active`.
-    pub(super) const INSPECTION_EDITOR_ACTIVE: Self = Self(344);
+    pub(super) const INSPECTION_EDITOR_ACTIVE: Self = Self(357);
     /// Fixed output for `diagnostic_back`.
-    pub(super) const DIAGNOSTIC_BACK: Self = Self(345);
+    pub(super) const DIAGNOSTIC_BACK: Self = Self(358);
     /// Fixed output for `diagnostic_problem`.
-    pub(super) const DIAGNOSTIC_PROBLEM: Self = Self(346);
+    pub(super) const DIAGNOSTIC_PROBLEM: Self = Self(359);
     /// Fixed output for `diagnostic_effect`.
-    pub(super) const DIAGNOSTIC_EFFECT: Self = Self(347);
+    pub(super) const DIAGNOSTIC_EFFECT: Self = Self(360);
     /// Fixed output for `diagnostic_remedy`.
-    pub(super) const DIAGNOSTIC_REMEDY: Self = Self(348);
+    pub(super) const DIAGNOSTIC_REMEDY: Self = Self(361);
     /// Fixed output for `diagnostic_service`.
-    pub(super) const DIAGNOSTIC_SERVICE: Self = Self(349);
+    pub(super) const DIAGNOSTIC_SERVICE: Self = Self(362);
     /// Fixed output for `diagnostic_events_empty`.
-    pub(super) const DIAGNOSTIC_EVENTS_EMPTY: Self = Self(350);
+    pub(super) const DIAGNOSTIC_EVENTS_EMPTY: Self = Self(363);
     /// Fixed output for `diagnostic_events_note`.
-    pub(super) const DIAGNOSTIC_EVENTS_NOTE: Self = Self(351);
+    pub(super) const DIAGNOSTIC_EVENTS_NOTE: Self = Self(364);
     /// Fixed output for `diagnostic_report_open`.
-    pub(super) const DIAGNOSTIC_REPORT_OPEN: Self = Self(352);
+    pub(super) const DIAGNOSTIC_REPORT_OPEN: Self = Self(365);
     /// Fixed output for `diagnostic_report_title`.
-    pub(super) const DIAGNOSTIC_REPORT_TITLE: Self = Self(353);
+    pub(super) const DIAGNOSTIC_REPORT_TITLE: Self = Self(366);
     /// Fixed output for `diagnostic_report_note`.
-    pub(super) const DIAGNOSTIC_REPORT_NOTE: Self = Self(354);
+    pub(super) const DIAGNOSTIC_REPORT_NOTE: Self = Self(367);
     /// Fixed output for `diagnostic_copy`.
-    pub(super) const DIAGNOSTIC_COPY: Self = Self(355);
+    pub(super) const DIAGNOSTIC_COPY: Self = Self(368);
     /// Fixed output for `diagnostic_export`.
-    pub(super) const DIAGNOSTIC_EXPORT: Self = Self(356);
+    pub(super) const DIAGNOSTIC_EXPORT: Self = Self(369);
     /// Fixed output for `diagnostic_export_reason`.
-    pub(super) const DIAGNOSTIC_EXPORT_REASON: Self = Self(357);
+    pub(super) const DIAGNOSTIC_EXPORT_REASON: Self = Self(370);
     /// Fixed output for `diagnostic_collection_open`.
-    pub(super) const DIAGNOSTIC_COLLECTION_OPEN: Self = Self(358);
+    pub(super) const DIAGNOSTIC_COLLECTION_OPEN: Self = Self(371);
     /// Fixed output for `diagnostic_collection_title`.
-    pub(super) const DIAGNOSTIC_COLLECTION_TITLE: Self = Self(359);
+    pub(super) const DIAGNOSTIC_COLLECTION_TITLE: Self = Self(372);
     /// Fixed output for `diagnostic_collection_note`.
-    pub(super) const DIAGNOSTIC_COLLECTION_NOTE: Self = Self(360);
+    pub(super) const DIAGNOSTIC_COLLECTION_NOTE: Self = Self(373);
     /// Fixed output for `diagnostic_scope`.
-    pub(super) const DIAGNOSTIC_SCOPE: Self = Self(361);
+    pub(super) const DIAGNOSTIC_SCOPE: Self = Self(374);
     /// Fixed output for `diagnostic_scopes_0`.
-    pub(super) const DIAGNOSTIC_SCOPES_0: Self = Self(362);
+    pub(super) const DIAGNOSTIC_SCOPES_0: Self = Self(375);
     /// Fixed output for `diagnostic_scopes_1`.
-    pub(super) const DIAGNOSTIC_SCOPES_1: Self = Self(363);
+    pub(super) const DIAGNOSTIC_SCOPES_1: Self = Self(376);
     /// Fixed output for `diagnostic_scopes_2`.
-    pub(super) const DIAGNOSTIC_SCOPES_2: Self = Self(364);
+    pub(super) const DIAGNOSTIC_SCOPES_2: Self = Self(377);
     /// Fixed output for `diagnostic_duration`.
-    pub(super) const DIAGNOSTIC_DURATION: Self = Self(365);
+    pub(super) const DIAGNOSTIC_DURATION: Self = Self(378);
     /// Fixed output for `diagnostic_collection_state`.
-    pub(super) const DIAGNOSTIC_COLLECTION_STATE: Self = Self(366);
+    pub(super) const DIAGNOSTIC_COLLECTION_STATE: Self = Self(379);
     /// Fixed output for `diagnostic_effective_scope`.
-    pub(super) const DIAGNOSTIC_EFFECTIVE_SCOPE: Self = Self(367);
+    pub(super) const DIAGNOSTIC_EFFECTIVE_SCOPE: Self = Self(380);
     /// Fixed output for `diagnostic_remaining`.
-    pub(super) const DIAGNOSTIC_REMAINING: Self = Self(368);
+    pub(super) const DIAGNOSTIC_REMAINING: Self = Self(381);
     /// Fixed output for `diagnostic_unavailable`.
-    pub(super) const DIAGNOSTIC_UNAVAILABLE: Self = Self(369);
+    pub(super) const DIAGNOSTIC_UNAVAILABLE: Self = Self(382);
     /// Fixed output for `diagnostic_collection_reason`.
-    pub(super) const DIAGNOSTIC_COLLECTION_REASON: Self = Self(370);
+    pub(super) const DIAGNOSTIC_COLLECTION_REASON: Self = Self(383);
     /// Fixed output for `diagnostic_required_events`.
-    pub(super) const DIAGNOSTIC_REQUIRED_EVENTS: Self = Self(371);
+    pub(super) const DIAGNOSTIC_REQUIRED_EVENTS: Self = Self(384);
     /// Fixed output for `diagnostic_start`.
-    pub(super) const DIAGNOSTIC_START: Self = Self(372);
+    pub(super) const DIAGNOSTIC_START: Self = Self(385);
     /// Fixed output for `diagnostic_stop`.
-    pub(super) const DIAGNOSTIC_STOP: Self = Self(373);
+    pub(super) const DIAGNOSTIC_STOP: Self = Self(386);
     /// Fixed output for `diagnostic_correction_open`.
-    pub(super) const DIAGNOSTIC_CORRECTION_OPEN: Self = Self(374);
+    pub(super) const DIAGNOSTIC_CORRECTION_OPEN: Self = Self(387);
     /// Fixed output for `diagnostic_correction_title`.
-    pub(super) const DIAGNOSTIC_CORRECTION_TITLE: Self = Self(375);
+    pub(super) const DIAGNOSTIC_CORRECTION_TITLE: Self = Self(388);
     /// Fixed output for `diagnostic_correction_empty`.
-    pub(super) const DIAGNOSTIC_CORRECTION_EMPTY: Self = Self(376);
+    pub(super) const DIAGNOSTIC_CORRECTION_EMPTY: Self = Self(389);
     /// Fixed output for `diagnostic_correction_note`.
-    pub(super) const DIAGNOSTIC_CORRECTION_NOTE: Self = Self(377);
+    pub(super) const DIAGNOSTIC_CORRECTION_NOTE: Self = Self(390);
     /// Fixed output for `diagnostic_correction_rule`.
-    pub(super) const DIAGNOSTIC_CORRECTION_RULE: Self = Self(378);
+    pub(super) const DIAGNOSTIC_CORRECTION_RULE: Self = Self(391);
     /// Fixed output for `diagnostic_approve`.
-    pub(super) const DIAGNOSTIC_APPROVE: Self = Self(379);
+    pub(super) const DIAGNOSTIC_APPROVE: Self = Self(392);
     /// Fixed output for `diagnostic_unavailable_action`.
-    pub(super) const DIAGNOSTIC_UNAVAILABLE_ACTION: Self = Self(380);
+    pub(super) const DIAGNOSTIC_UNAVAILABLE_ACTION: Self = Self(393);
     /// Fixed output for `diagnostic_invalid_choice`.
-    pub(super) const DIAGNOSTIC_INVALID_CHOICE: Self = Self(381);
+    pub(super) const DIAGNOSTIC_INVALID_CHOICE: Self = Self(394);
     /// Fixed output for `diagnostic_durations_0`.
-    pub(super) const DIAGNOSTIC_DURATIONS_0: Self = Self(382);
+    pub(super) const DIAGNOSTIC_DURATIONS_0: Self = Self(395);
     /// Fixed output for `diagnostic_durations_1`.
-    pub(super) const DIAGNOSTIC_DURATIONS_1: Self = Self(383);
+    pub(super) const DIAGNOSTIC_DURATIONS_1: Self = Self(396);
     /// Fixed output for `diagnostic_durations_2`.
-    pub(super) const DIAGNOSTIC_DURATIONS_2: Self = Self(384);
+    pub(super) const DIAGNOSTIC_DURATIONS_2: Self = Self(397);
     /// Fixed output for `raw_too_long`.
-    pub(super) const RAW_TOO_LONG: Self = Self(385);
+    pub(super) const RAW_TOO_LONG: Self = Self(398);
     /// Fixed output for `raw_character`.
-    pub(super) const RAW_CHARACTER: Self = Self(386);
+    pub(super) const RAW_CHARACTER: Self = Self(399);
     /// Fixed output for `raw_invalid_option`.
-    pub(super) const RAW_INVALID_OPTION: Self = Self(387);
+    pub(super) const RAW_INVALID_OPTION: Self = Self(400);
     /// Fixed output for `raw_context`.
-    pub(super) const RAW_CONTEXT: Self = Self(388);
+    pub(super) const RAW_CONTEXT: Self = Self(401);
     /// Fixed output for `raw_unavailable`.
-    pub(super) const RAW_UNAVAILABLE: Self = Self(389);
+    pub(super) const RAW_UNAVAILABLE: Self = Self(402);
     /// Fixed output for `raw_stale`.
-    pub(super) const RAW_STALE: Self = Self(390);
+    pub(super) const RAW_STALE: Self = Self(403);
     /// Fixed output for `raw_action_undo`.
-    pub(super) const RAW_ACTION_UNDO: Self = Self(391);
+    pub(super) const RAW_ACTION_UNDO: Self = Self(404);
     /// Fixed output for `raw_action_redo`.
-    pub(super) const RAW_ACTION_REDO: Self = Self(392);
+    pub(super) const RAW_ACTION_REDO: Self = Self(405);
     /// Fixed output for `raw_action_cut`.
-    pub(super) const RAW_ACTION_CUT: Self = Self(393);
+    pub(super) const RAW_ACTION_CUT: Self = Self(406);
     /// Fixed output for `raw_action_copy`.
-    pub(super) const RAW_ACTION_COPY: Self = Self(394);
+    pub(super) const RAW_ACTION_COPY: Self = Self(407);
     /// Fixed output for `raw_action_paste`.
-    pub(super) const RAW_ACTION_PASTE: Self = Self(395);
+    pub(super) const RAW_ACTION_PASTE: Self = Self(408);
     /// Fixed output for `raw_action_select_all`.
-    pub(super) const RAW_ACTION_SELECT_ALL: Self = Self(396);
+    pub(super) const RAW_ACTION_SELECT_ALL: Self = Self(409);
     /// Typed feedback output for editor-error.
-    pub(super) const FEEDBACK_EDITOR_ERROR: Self = Self(397);
+    pub(super) const FEEDBACK_EDITOR_ERROR: Self = Self(410);
     /// Typed feedback output for editor-feedback.
-    pub(super) const FEEDBACK_EDITOR_FEEDBACK: Self = Self(398);
+    pub(super) const FEEDBACK_EDITOR_FEEDBACK: Self = Self(411);
     /// Typed feedback output for interval-error.
-    pub(super) const FEEDBACK_INTERVAL_ERROR: Self = Self(399);
+    pub(super) const FEEDBACK_INTERVAL_ERROR: Self = Self(412);
     /// Typed feedback output for interval-feedback.
-    pub(super) const FEEDBACK_INTERVAL_FEEDBACK: Self = Self(400);
+    pub(super) const FEEDBACK_INTERVAL_FEEDBACK: Self = Self(413);
     /// Typed feedback output for preference-error.
-    pub(super) const FEEDBACK_PREFERENCE_ERROR: Self = Self(401);
+    pub(super) const FEEDBACK_PREFERENCE_ERROR: Self = Self(414);
     /// Typed feedback output for preference-feedback.
-    pub(super) const FEEDBACK_PREFERENCE_FEEDBACK: Self = Self(402);
+    pub(super) const FEEDBACK_PREFERENCE_FEEDBACK: Self = Self(415);
     /// Typed feedback output for recovery-error.
-    pub(super) const FEEDBACK_RECOVERY_ERROR: Self = Self(403);
+    pub(super) const FEEDBACK_RECOVERY_ERROR: Self = Self(416);
     /// Typed feedback output for recovery-feedback.
-    pub(super) const FEEDBACK_RECOVERY_FEEDBACK: Self = Self(404);
+    pub(super) const FEEDBACK_RECOVERY_FEEDBACK: Self = Self(417);
     /// Typed feedback output for recovery-back-label.
-    pub(super) const FEEDBACK_RECOVERY_BACK_LABEL: Self = Self(405);
+    pub(super) const FEEDBACK_RECOVERY_BACK_LABEL: Self = Self(418);
     /// Typed feedback output for quit-headline.
-    pub(super) const FEEDBACK_QUIT_HEADLINE: Self = Self(406);
+    pub(super) const FEEDBACK_QUIT_HEADLINE: Self = Self(419);
     /// Typed feedback output for quit-consequence.
-    pub(super) const FEEDBACK_QUIT_CONSEQUENCE: Self = Self(407);
+    pub(super) const FEEDBACK_QUIT_CONSEQUENCE: Self = Self(420);
     /// Typed feedback output for shell-feedback.
-    pub(super) const FEEDBACK_SHELL_FEEDBACK: Self = Self(408);
+    pub(super) const FEEDBACK_SHELL_FEEDBACK: Self = Self(421);
     /// Typed feedback output for service-feedback.
-    pub(super) const FEEDBACK_SERVICE_FEEDBACK: Self = Self(409);
+    pub(super) const FEEDBACK_SERVICE_FEEDBACK: Self = Self(422);
     /// Typed feedback output for notification-feedback.
-    pub(super) const FEEDBACK_NOTIFICATION_FEEDBACK: Self = Self(410);
+    pub(super) const FEEDBACK_NOTIFICATION_FEEDBACK: Self = Self(423);
     /// Typed feedback output for diagnostic-feedback.
-    pub(super) const FEEDBACK_DIAGNOSTIC_FEEDBACK: Self = Self(411);
+    pub(super) const FEEDBACK_DIAGNOSTIC_FEEDBACK: Self = Self(424);
     /// Typed feedback output for policy-error.
-    pub(super) const FEEDBACK_POLICY_ERROR: Self = Self(412);
+    pub(super) const FEEDBACK_POLICY_ERROR: Self = Self(425);
     /// Typed feedback output for source-query-error.
-    pub(super) const FEEDBACK_SOURCE_QUERY_ERROR: Self = Self(413);
+    pub(super) const FEEDBACK_SOURCE_QUERY_ERROR: Self = Self(426);
     /// Typed feedback output for accepted-interval-label.
-    pub(super) const FEEDBACK_ACCEPTED_INTERVAL_LABEL: Self = Self(414);
+    pub(super) const FEEDBACK_ACCEPTED_INTERVAL_LABEL: Self = Self(427);
     /// Typed feedback output for status-feedback.
-    pub(super) const FEEDBACK_STATUS_FEEDBACK: Self = Self(415);
+    pub(super) const FEEDBACK_STATUS_FEEDBACK: Self = Self(428);
     /// Typed feedback output for tray-feedback.
-    pub(super) const FEEDBACK_TRAY_FEEDBACK: Self = Self(416);
+    pub(super) const FEEDBACK_TRAY_FEEDBACK: Self = Self(429);
     /// Typed feedback output for status-headline.
-    pub(super) const FEEDBACK_STATUS_HEADLINE: Self = Self(417);
+    pub(super) const FEEDBACK_STATUS_HEADLINE: Self = Self(430);
     /// Typed feedback output for status-consequence.
-    pub(super) const FEEDBACK_STATUS_CONSEQUENCE: Self = Self(418);
+    pub(super) const FEEDBACK_STATUS_CONSEQUENCE: Self = Self(431);
     /// Typed feedback output for status-profile-label.
-    pub(super) const FEEDBACK_STATUS_PROFILE_LABEL: Self = Self(419);
+    pub(super) const FEEDBACK_STATUS_PROFILE_LABEL: Self = Self(432);
     /// Typed feedback output for status-profile.
-    pub(super) const FEEDBACK_STATUS_PROFILE: Self = Self(420);
+    pub(super) const FEEDBACK_STATUS_PROFILE: Self = Self(433);
     /// Typed feedback output for status-authentication.
-    pub(super) const FEEDBACK_STATUS_AUTHENTICATION: Self = Self(421);
+    pub(super) const FEEDBACK_STATUS_AUTHENTICATION: Self = Self(434);
     /// Typed feedback output for status-agreement.
-    pub(super) const FEEDBACK_STATUS_AGREEMENT: Self = Self(422);
+    pub(super) const FEEDBACK_STATUS_AGREEMENT: Self = Self(435);
     /// Typed feedback output for status-freshness.
-    pub(super) const FEEDBACK_STATUS_FRESHNESS: Self = Self(423);
+    pub(super) const FEEDBACK_STATUS_FRESHNESS: Self = Self(436);
     /// Typed feedback output for status-check-label.
-    pub(super) const FEEDBACK_STATUS_CHECK_LABEL: Self = Self(424);
+    pub(super) const FEEDBACK_STATUS_CHECK_LABEL: Self = Self(437);
     /// Typed feedback output for status-remedy-label.
-    pub(super) const FEEDBACK_STATUS_REMEDY_LABEL: Self = Self(425);
+    pub(super) const FEEDBACK_STATUS_REMEDY_LABEL: Self = Self(438);
 }
 
 /// Closed typed-feedback order, independent of translated words.
@@ -1177,6 +1203,7 @@ pub(super) fn prepare(
     fill_32(&mut copy, &mut rows)?;
     fill_33(&mut copy, &mut rows)?;
     fill_34(&mut copy, &mut rows)?;
+    fill_35(&mut copy, &mut rows)?;
     append_feedback(&mut rows, &mut copy.budget, feedback)?;
     finish(revision, rows)
 }
@@ -1810,6 +1837,79 @@ fn fill_10(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
     )?;
     push(
         rows,
+        CopySlot::FIXTURE_UPDATE_CHECK,
+        copy.text(MessageId::UPDATE_CHECK)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_CHECKING,
+        copy.text(MessageId::UPDATE_CHECKING)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_OFFER,
+        copy.text(MessageId::UPDATE_OFFER)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_FROM,
+        copy.text(MessageId::UPDATE_FROM)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_TARGET,
+        copy.text(MessageId::UPDATE_TARGET)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_CHANNEL,
+        copy.text(MessageId::UPDATE_CHANNEL)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_SIZE,
+        copy.text(MessageId::UPDATE_SIZE)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_CONFIRM,
+        copy.text(MessageId::UPDATE_CONFIRM)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_DECLINE,
+        copy.text(MessageId::UPDATE_DECLINE)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_DOWNLOAD,
+        copy.text(MessageId::UPDATE_DOWNLOAD)?,
+    )?;
+    Ok(())
+}
+
+/// Render one closed output cohort without resetting the preparation budget.
+///
+/// # Errors
+/// Propagates protected rendering or aggregate exhaustion before publication.
+fn fill_11(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_VERIFY,
+        copy.text(MessageId::UPDATE_VERIFY)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_INSTALL,
+        copy.text(MessageId::UPDATE_INSTALL)?,
+    )?;
+    push(
+        rows,
+        CopySlot::FIXTURE_UPDATE_COMPLETE,
+        copy.text(MessageId::UPDATE_COMPLETE)?,
+    )?;
+    push(
+        rows,
         CopySlot::PREFERENCES_SCHEDULE_DESCRIPTION,
         copy.text(MessageId::PREFERENCES_SCHEDULE_DESCRIPTION)?,
     )?;
@@ -1853,11 +1953,6 @@ fn fill_10(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::PREFERENCES_NOTIFICATIONS_LABEL,
         copy.text(MessageId::PREFERENCES_NOTIFICATIONS_LABEL)?,
     )?;
-    push(
-        rows,
-        CopySlot::PREFERENCES_NOTIFICATIONS_HELP,
-        copy.text(MessageId::PREFERENCES_NOTIFICATIONS_HELP)?,
-    )?;
     Ok(())
 }
 
@@ -1865,7 +1960,12 @@ fn fill_10(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_11(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_12(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::PREFERENCES_NOTIFICATIONS_HELP,
+        copy.text(MessageId::PREFERENCES_NOTIFICATIONS_HELP)?,
+    )?;
     push(
         rows,
         CopySlot::PREFERENCES_WINDOWS_AVAILABILITY,
@@ -1921,11 +2021,6 @@ fn fill_11(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::PREFERENCES_TRAY_HELP,
         copy.text(MessageId::PREFERENCES_TRAY_HELP)?,
     )?;
-    push(
-        rows,
-        CopySlot::PREFERENCES_SIGN_IN_LABEL,
-        copy.text(MessageId::PREFERENCES_SIGN_IN_LABEL)?,
-    )?;
     Ok(())
 }
 
@@ -1933,7 +2028,12 @@ fn fill_11(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_12(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_13(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::PREFERENCES_SIGN_IN_LABEL,
+        copy.text(MessageId::PREFERENCES_SIGN_IN_LABEL)?,
+    )?;
     push(
         rows,
         CopySlot::PREFERENCES_SIGN_IN_HELP,
@@ -1989,11 +2089,6 @@ fn fill_12(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::PREFERENCES_LANGUAGE_HELP,
         copy.text(MessageId::PREFERENCES_LANGUAGE_HELP)?,
     )?;
-    push(
-        rows,
-        CopySlot::PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED,
-        copy.text(MessageId::PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED)?,
-    )?;
     Ok(())
 }
 
@@ -2001,7 +2096,12 @@ fn fill_12(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_13(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_14(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED,
+        copy.text(MessageId::PREFERENCES_NOTIFICATION_WINDOWS_ALLOWED)?,
+    )?;
     push(
         rows,
         CopySlot::PREFERENCES_NOTIFICATION_WINDOWS_BLOCKED,
@@ -2057,11 +2157,6 @@ fn fill_13(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SOURCE_BEFORE_LABEL,
         copy.text(MessageId::SOURCE_BEFORE_LABEL)?,
     )?;
-    push(
-        rows,
-        CopySlot::SOURCE_AFTER_LABEL,
-        copy.text(MessageId::SOURCE_AFTER_LABEL)?,
-    )?;
     Ok(())
 }
 
@@ -2069,7 +2164,12 @@ fn fill_13(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_14(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_15(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SOURCE_AFTER_LABEL,
+        copy.text(MessageId::SOURCE_AFTER_LABEL)?,
+    )?;
     push(
         rows,
         CopySlot::SOURCE_UNDO,
@@ -2125,11 +2225,6 @@ fn fill_14(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SOURCE_PROTOCOLS_0,
         copy.text(MessageId::SOURCE_PROTOCOL_OPTION_NTS)?,
     )?;
-    push(
-        rows,
-        CopySlot::SOURCE_PROTOCOLS_1,
-        copy.text(MessageId::SOURCE_PROTOCOL_OPTION_NTP)?,
-    )?;
     Ok(())
 }
 
@@ -2137,7 +2232,12 @@ fn fill_14(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_15(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_16(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SOURCE_PROTOCOLS_1,
+        copy.text(MessageId::SOURCE_PROTOCOL_OPTION_NTP)?,
+    )?;
     push(
         rows,
         CopySlot::SOURCE_PROTOCOL_HELP,
@@ -2193,11 +2293,6 @@ fn fill_15(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SOURCE_PAGE_REQUIRED,
         copy.text(MessageId::SOURCE_PAGE_REQUIRED)?,
     )?;
-    push(
-        rows,
-        CopySlot::SOURCE_LIST_REQUIRED,
-        copy.text(MessageId::SOURCE_LIST_REQUIRED)?,
-    )?;
     Ok(())
 }
 
@@ -2205,7 +2300,12 @@ fn fill_15(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_16(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_17(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SOURCE_LIST_REQUIRED,
+        copy.text(MessageId::SOURCE_LIST_REQUIRED)?,
+    )?;
     push(
         rows,
         CopySlot::SOURCE_REVIEW_REQUIRED,
@@ -2261,11 +2361,6 @@ fn fill_16(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::RECOVERY_LEAVE_DISCARD,
         copy.text(MessageId::RECOVERY_LEAVE_DISCARD)?,
     )?;
-    push(
-        rows,
-        CopySlot::RECOVERY_LEAVE_STAY,
-        copy.text(MessageId::RECOVERY_LEAVE_STAY)?,
-    )?;
     Ok(())
 }
 
@@ -2273,7 +2368,12 @@ fn fill_16(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_17(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_18(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::RECOVERY_LEAVE_STAY,
+        copy.text(MessageId::RECOVERY_LEAVE_STAY)?,
+    )?;
     push(
         rows,
         CopySlot::RECOVERY_ROUGHTIME_TITLE,
@@ -2329,11 +2429,6 @@ fn fill_17(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::RECOVERY_HIDE_PATH,
         copy.text(MessageId::RECOVERY_HIDE_PATH)?,
     )?;
-    push(
-        rows,
-        CopySlot::RECOVERY_RETAINED_STEP,
-        copy.text(MessageId::RECOVERY_RETAINED_STEP)?,
-    )?;
     Ok(())
 }
 
@@ -2341,7 +2436,12 @@ fn fill_17(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_18(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_19(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::RECOVERY_RETAINED_STEP,
+        copy.text(MessageId::RECOVERY_RETAINED_STEP)?,
+    )?;
     push(
         rows,
         CopySlot::RECOVERY_DATE_STEP,
@@ -2397,11 +2497,6 @@ fn fill_18(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::RECOVERY_COUNTS_1,
         copy.text(MessageId::RECOVERY_COUNT_OPTION_ONE)?,
     )?;
-    push(
-        rows,
-        CopySlot::RECOVERY_COUNTS_2,
-        copy.text(MessageId::RECOVERY_COUNT_OPTION_TWO)?,
-    )?;
     Ok(())
 }
 
@@ -2409,7 +2504,12 @@ fn fill_18(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_19(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_20(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::RECOVERY_COUNTS_2,
+        copy.text(MessageId::RECOVERY_COUNT_OPTION_TWO)?,
+    )?;
     push(
         rows,
         CopySlot::RECOVERY_FIRST_LABEL,
@@ -2465,11 +2565,6 @@ fn fill_19(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::RECOVERY_APPLY,
         copy.text(MessageId::RECOVERY_APPLY)?,
     )?;
-    push(
-        rows,
-        CopySlot::RECOVERY_APPLY_UNAVAILABLE,
-        copy.text(MessageId::RECOVERY_APPLY_UNAVAILABLE)?,
-    )?;
     Ok(())
 }
 
@@ -2477,7 +2572,12 @@ fn fill_19(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_20(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_21(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::RECOVERY_APPLY_UNAVAILABLE,
+        copy.text(MessageId::RECOVERY_APPLY_UNAVAILABLE)?,
+    )?;
     push(
         rows,
         CopySlot::SHELL_QUIT_UI,
@@ -2533,11 +2633,6 @@ fn fill_20(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SHELL_DISABLE_PATH,
         copy.text(MessageId::SHELL_DISABLE_PATH)?,
     )?;
-    push(
-        rows,
-        CopySlot::SHELL_SEPARATE_MANAGEMENT,
-        copy.text(MessageId::SHELL_SEPARATE_MANAGEMENT)?,
-    )?;
     Ok(())
 }
 
@@ -2545,7 +2640,12 @@ fn fill_20(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_21(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_22(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SHELL_SEPARATE_MANAGEMENT,
+        copy.text(MessageId::SHELL_SEPARATE_MANAGEMENT)?,
+    )?;
     push(
         rows,
         CopySlot::SHELL_EXIT_REQUESTED,
@@ -2601,11 +2701,6 @@ fn fill_21(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SHELL_DIAGNOSE_NOTE,
         copy.text(MessageId::SHELL_DIAGNOSE_NOTE)?,
     )?;
-    push(
-        rows,
-        CopySlot::SHELL_STARTUP_TITLE,
-        copy.text(MessageId::SHELL_STARTUP_TITLE)?,
-    )?;
     Ok(())
 }
 
@@ -2613,7 +2708,12 @@ fn fill_21(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_22(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_23(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SHELL_STARTUP_TITLE,
+        copy.text(MessageId::SHELL_STARTUP_TITLE)?,
+    )?;
     push(
         rows,
         CopySlot::SHELL_STARTUP_NOTE,
@@ -2669,11 +2769,6 @@ fn fill_22(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::SHELL_TIME_POLICY_DESCRIPTION,
         copy.text(MessageId::SHELL_TIME_POLICY_DESCRIPTION)?,
     )?;
-    push(
-        rows,
-        CopySlot::SHELL_TIME_POLICY_POWER,
-        copy.text(MessageId::SHELL_TIME_POLICY_POWER)?,
-    )?;
     Ok(())
 }
 
@@ -2681,7 +2776,12 @@ fn fill_22(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_23(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_24(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::SHELL_TIME_POLICY_POWER,
+        copy.text(MessageId::SHELL_TIME_POLICY_POWER)?,
+    )?;
     push(
         rows,
         CopySlot::SHELL_PERSONAL_PREFERENCES,
@@ -2737,11 +2837,6 @@ fn fill_23(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::POLICY_CHOOSE,
         copy.text(MessageId::POLICY_CHOOSE)?,
     )?;
-    push(
-        rows,
-        CopySlot::POLICY_EDIT,
-        copy.text(MessageId::POLICY_EDIT)?,
-    )?;
     Ok(())
 }
 
@@ -2749,7 +2844,12 @@ fn fill_23(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_24(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_25(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::POLICY_EDIT,
+        copy.text(MessageId::POLICY_EDIT)?,
+    )?;
     push(
         rows,
         CopySlot::POLICY_REVIEW,
@@ -2805,11 +2905,6 @@ fn fill_24(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::POLICY_APPLY_UNAVAILABLE,
         copy.text(MessageId::POLICY_APPLY_UNAVAILABLE)?,
     )?;
-    push(
-        rows,
-        CopySlot::POLICY_FIXTURE_NOTE,
-        copy.text(MessageId::POLICY_FIXTURE_NOTE)?,
-    )?;
     Ok(())
 }
 
@@ -2817,7 +2912,12 @@ fn fill_24(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_25(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_26(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::POLICY_FIXTURE_NOTE,
+        copy.text(MessageId::POLICY_FIXTURE_NOTE)?,
+    )?;
     push(
         rows,
         CopySlot::POLICY_PREVIEW_NOTE,
@@ -2873,11 +2973,6 @@ fn fill_25(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::INSPECTION_CLEAR,
         copy.text(MessageId::INSPECTION_CLEAR)?,
     )?;
-    push(
-        rows,
-        CopySlot::INSPECTION_ALL,
-        copy.text(MessageId::INSPECTION_ALL)?,
-    )?;
     Ok(())
 }
 
@@ -2885,7 +2980,12 @@ fn fill_25(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_26(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_27(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::INSPECTION_ALL,
+        copy.text(MessageId::INSPECTION_ALL)?,
+    )?;
     push(
         rows,
         CopySlot::INSPECTION_USED,
@@ -2941,11 +3041,6 @@ fn fill_26(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::INSPECTION_HIDDEN_DETAILS,
         copy.text(MessageId::INSPECTION_HIDDEN_DETAILS)?,
     )?;
-    push(
-        rows,
-        CopySlot::INSPECTION_SELECTED_HIDDEN,
-        copy.text(MessageId::INSPECTION_SELECTED_HIDDEN)?,
-    )?;
     Ok(())
 }
 
@@ -2953,7 +3048,12 @@ fn fill_26(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_27(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_28(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::INSPECTION_SELECTED_HIDDEN,
+        copy.text(MessageId::INSPECTION_SELECTED_HIDDEN)?,
+    )?;
     push(
         rows,
         CopySlot::INSPECTION_IDENTITY,
@@ -3009,11 +3109,6 @@ fn fill_27(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::INSPECTION_VOTE_IDENTITY,
         copy.text(MessageId::INSPECTION_VOTE_IDENTITY)?,
     )?;
-    push(
-        rows,
-        CopySlot::INSPECTION_REQUEST_STATUS,
-        copy.text(MessageId::INSPECTION_REQUEST_STATUS)?,
-    )?;
     Ok(())
 }
 
@@ -3021,7 +3116,12 @@ fn fill_27(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_28(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_29(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::INSPECTION_REQUEST_STATUS,
+        copy.text(MessageId::INSPECTION_REQUEST_STATUS)?,
+    )?;
     push(
         rows,
         CopySlot::INSPECTION_LAST_REPLY,
@@ -3077,11 +3177,6 @@ fn fill_28(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::INSPECTION_NOT_ESTABLISHED,
         copy.text(MessageId::INSPECTION_NOT_ESTABLISHED)?,
     )?;
-    push(
-        rows,
-        CopySlot::INSPECTION_NOT_EVALUATED,
-        copy.text(MessageId::INSPECTION_NOT_EVALUATED)?,
-    )?;
     Ok(())
 }
 
@@ -3089,7 +3184,12 @@ fn fill_28(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_29(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_30(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::INSPECTION_NOT_EVALUATED,
+        copy.text(MessageId::INSPECTION_NOT_EVALUATED)?,
+    )?;
     push(
         rows,
         CopySlot::INSPECTION_NOT_APPLICABLE,
@@ -3145,11 +3245,6 @@ fn fill_29(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::DIAGNOSTIC_PROBLEM,
         copy.text(MessageId::DIAGNOSTIC_PROBLEM)?,
     )?;
-    push(
-        rows,
-        CopySlot::DIAGNOSTIC_EFFECT,
-        copy.text(MessageId::DIAGNOSTIC_EFFECT)?,
-    )?;
     Ok(())
 }
 
@@ -3157,7 +3252,12 @@ fn fill_29(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_30(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_31(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::DIAGNOSTIC_EFFECT,
+        copy.text(MessageId::DIAGNOSTIC_EFFECT)?,
+    )?;
     push(
         rows,
         CopySlot::DIAGNOSTIC_REMEDY,
@@ -3213,11 +3313,6 @@ fn fill_30(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::DIAGNOSTIC_COLLECTION_OPEN,
         copy.text(MessageId::DIAGNOSTIC_COLLECTION_OPEN)?,
     )?;
-    push(
-        rows,
-        CopySlot::DIAGNOSTIC_COLLECTION_TITLE,
-        copy.text(MessageId::DIAGNOSTIC_COLLECTION_TITLE)?,
-    )?;
     Ok(())
 }
 
@@ -3225,7 +3320,12 @@ fn fill_30(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_31(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_32(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::DIAGNOSTIC_COLLECTION_TITLE,
+        copy.text(MessageId::DIAGNOSTIC_COLLECTION_TITLE)?,
+    )?;
     push(
         rows,
         CopySlot::DIAGNOSTIC_COLLECTION_NOTE,
@@ -3281,11 +3381,6 @@ fn fill_31(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::DIAGNOSTIC_COLLECTION_REASON,
         copy.text(MessageId::DIAGNOSTIC_COLLECTION_REASON)?,
     )?;
-    push(
-        rows,
-        CopySlot::DIAGNOSTIC_REQUIRED_EVENTS,
-        copy.text(MessageId::DIAGNOSTIC_REQUIRED_EVENTS)?,
-    )?;
     Ok(())
 }
 
@@ -3293,7 +3388,12 @@ fn fill_31(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_32(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_33(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::DIAGNOSTIC_REQUIRED_EVENTS,
+        copy.text(MessageId::DIAGNOSTIC_REQUIRED_EVENTS)?,
+    )?;
     push(
         rows,
         CopySlot::DIAGNOSTIC_START,
@@ -3349,11 +3449,6 @@ fn fill_32(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::DIAGNOSTIC_DURATIONS_0,
         copy.minutes(MessageId::DURATION_MINUTES, 5)?,
     )?;
-    push(
-        rows,
-        CopySlot::DIAGNOSTIC_DURATIONS_1,
-        copy.minutes(MessageId::DURATION_MINUTES, 15)?,
-    )?;
     Ok(())
 }
 
@@ -3361,7 +3456,12 @@ fn fill_32(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_33(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_34(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::DIAGNOSTIC_DURATIONS_1,
+        copy.minutes(MessageId::DURATION_MINUTES, 15)?,
+    )?;
     push(
         rows,
         CopySlot::DIAGNOSTIC_DURATIONS_2,
@@ -3413,11 +3513,6 @@ fn fill_33(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
         CopySlot::RAW_ACTION_COPY,
         copy.text(MessageId::RAW_ACTION_COPY)?,
     )?;
-    push(
-        rows,
-        CopySlot::RAW_ACTION_PASTE,
-        copy.text(MessageId::RAW_ACTION_PASTE)?,
-    )?;
     Ok(())
 }
 
@@ -3425,7 +3520,12 @@ fn fill_33(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> 
 ///
 /// # Errors
 /// Propagates protected rendering or aggregate exhaustion before publication.
-fn fill_34(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+fn fill_35(copy: &mut CopyPreparation<'_, '_>, rows: &mut Vec<SharedString>) -> Result<(), Error> {
+    push(
+        rows,
+        CopySlot::RAW_ACTION_PASTE,
+        copy.text(MessageId::RAW_ACTION_PASTE)?,
+    )?;
     push(
         rows,
         CopySlot::RAW_ACTION_SELECT_ALL,

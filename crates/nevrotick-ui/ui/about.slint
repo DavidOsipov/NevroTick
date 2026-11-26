@@ -1,10 +1,16 @@
 import { GuiFacts } from "localization-copy.slint";
 import { FixtureCopy } from "fixture-copy.slint";
 import { Theme } from "theme.slint";
+import { UpdatePreview, UpdateStage } from "types.slint";
 import { Panel, BodyText, SecondaryText, Heading, SectionHeading, PageHeading, FactRow, Rule, ActionButton, HelpText } from "components.slint";
 
 export component AboutPage inherits VerticalLayout {
     callback repository-requested() -> bool;
+    callback update-check();
+    callback update-yes(int);
+    callback update-later(int);
+    in property <UpdatePreview> update-preview;
+    in property <bool> update-interactive;
     private property <bool> repository-failed: false;
     spacing: 20px;
     vertical-stretch: 0;
@@ -33,6 +39,49 @@ export component AboutPage inherits VerticalLayout {
         FactRow { label: FixtureCopy.text-contract-label; value: GuiFacts.text-contract-version; }
         FactRow { label: FixtureCopy.platform-label; value: FixtureCopy.platform-value; }
         FactRow { label: FixtureCopy.code-license-label; value: FixtureCopy.code-license-value; }
+    }
+    Panel {
+        ActionButton {
+            text: FixtureCopy.update-check;
+            enabled: root.update-interactive && (root.update-preview.stage == UpdateStage.idle || root.update-preview.stage == UpdateStage.complete);
+            clicked => { root.update-check(); }
+        }
+        if root.update-preview.stage == UpdateStage.checking: BodyText {
+            text: FixtureCopy.update-checking;
+        }
+        if root.update-preview.stage == UpdateStage.offered: VerticalLayout {
+            spacing: 10px;
+            BodyText { text: FixtureCopy.update-offer; }
+            FactRow { label: FixtureCopy.update-from; value: root.update-preview.installed; }
+            FactRow { label: FixtureCopy.update-target; value: root.update-preview.target; }
+            FactRow { label: FixtureCopy.update-channel; value: root.update-preview.channel; }
+            FactRow { label: FixtureCopy.update-size; value: root.update-preview.size; }
+            HorizontalLayout {
+                spacing: 8px;
+                ActionButton {
+                    text: FixtureCopy.update-confirm;
+                    enabled: root.update-interactive;
+                    clicked => { root.update-yes(root.update-preview.generation); }
+                }
+                ActionButton {
+                    text: FixtureCopy.update-decline;
+                    enabled: root.update-interactive;
+                    clicked => { root.update-later(root.update-preview.generation); }
+                }
+            }
+        }
+        if root.update-preview.stage == UpdateStage.downloading: BodyText {
+            text: FixtureCopy.update-download;
+        }
+        if root.update-preview.stage == UpdateStage.verifying: BodyText {
+            text: FixtureCopy.update-verify;
+        }
+        if root.update-preview.stage == UpdateStage.installing: BodyText {
+            text: FixtureCopy.update-install;
+        }
+        if root.update-preview.stage == UpdateStage.complete: BodyText {
+            text: FixtureCopy.update-complete;
+        }
     }
     Panel {
         SectionHeading { text: FixtureCopy.technologies-heading; }

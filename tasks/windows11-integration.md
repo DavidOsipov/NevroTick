@@ -1189,9 +1189,106 @@ The local graph receipt is
 `artifacts/windows-services/recovery-20261107-v1/s31-combined-guarded-graph-2611.json`.
 Its SHA-256 is
 `48aa12c10c9f6e1c9b168ad9c2c1e38d826e0268760bb2d184cb1bcc95b540b0`.
-The current fixture lifecycle checks remain due on that binding. Functional
-activation requires the existing installed-role and authenticated-management
-acceptance.
+The pushed checkpoint changed the Engine series test and the shared verifier.
+On `b161229`, the reissued GNU/MSVC graph and the complete standalone
+`privilege-checkpoint` shared one 881-input candidate with SHA-256
+`e15baca1e041d09eae78271f9fb9bf697de0cd13fc0d23b681391739427882b2`.
+The graph again passed all six metadata and tree commands. On the fixture
+source, all twelve lifecycle commands passed, including formatting, strict
+GNU and MSVC all-targets Clippy, rustdoc, 70 platform cases in each of GNU
+ordinary and optimized modes, 199 fixture cases in each mode and 28 platform
+doctests. The GNU fixture counts include the fixed-role entrypoint test.
+Both records verified the source and index bookends. The run used a private
+`/mnt/wsl` work directory and the configured 4 GiB disk and 1 GiB available
+memory reserves. [Configured fixture runner](../tools/windows-service-fixture/qualification.py)
+
+| Record under `artifacts/windows-services/recovery-20261107-v1/` | SHA-256 |
+| --- | --- |
+| `s31-b161229-graph-2611.json` | `b27c32f4e2678ec0dec04a0fadb47551fe49724151512838382d0e3929b4a49d` |
+| `s31-b161229-lifecycle-2611.json` | `e2df1c8ef05d24d078bca60581470f56c1f00dd2656441a8e27472598465332e` |
+
+Environment preflight and lifecycle QA checked the same serialized host
+receiver used by the fixed service entries. MSVC Clippy provides cross-target
+source evidence. The current line and mutation gates, native execution, installed
+roles and authenticated management remain separate prerequisites to activation.
+
+The later unsigned MSIX reader change only modifies three Python package
+reader/control files in that inventory. A fresh graph receipt passed all six
+commands and source/index bookends for the 881-input candidate
+`f921761dbe76ee10b90910b2f22cf7beaafddc73cf266e9234d1c5c711c4328d`.
+Its `s31-carrier-guard-graph-2611.json` SHA-256 is
+`ec5068e8437fb6571af1d92fc7ec82a41ae7d8b39f1f8ddd81fca05311625da9`.
+The twelve lifecycle results above retain their original binding.
+
+##### Restore exact service libtest source admission
+
+W11-W05/S3.1 and CHECK-25/27. The MSVC cross-link reader refused the
+passing `b161229` fixture checkpoint because its roster pin predated
+`broker_clock_change::tests::terminal_read_edge_withdraws_the_original_revision_immediately`.
+Ordinary and optimized fixture output contain the same 199 names. Removing
+that single case recovers the predecessor's exact digest. The current pin
+requires all 199 names and retains the same platform and doctest pins.
+This keeps the terminal mailbox withdrawal control in the required roster.
+
+The actual source-prerequisite receiver was replayed in a read-only,
+network-isolated namespace with the exact `b161229` bytes of the three
+subsequently changed Python package files. It received the original index,
+graph and lifecycle receipts. Before the pin update it exited one at the
+fixture roster check. Afterward it admitted all 881 sources and both original
+receipts. All 28 cross-link Python controls passed in the integrated tree.
+
+| Record under `~/.local/share/nevrotick/s31-native-cutoff-preflight-2611.s68195ay/` | SHA-256 |
+| --- | --- |
+| `cross-roster-red.log` | `ecc51f03a32fb42beb83bf781017dc0f826b890175801e07473a8b620ac62921` |
+| `cross-roster-green.log` | `4329bd763973a1a412ac80e5f37eba9dc7a1518c5d896009c7059c6c484a9614` |
+| `cross-link-controls.log` | `f7c806ca2eb365e01a50b0e79aefc860011a6f4dc1ab752e3bc3454626eb04c6` |
+| `preflight.json` | `7abf7854a3e379df35fa522fe6595a1693d8a730e622f401ac7ca0b6e19e1eab` |
+
+The owned Sandbox inventory still matched `a18deba5-a8bf-4295-aa28-d7222052ef8f`.
+Host preflight stopped at 1,350 MiB available against the 2,048 MiB floor,
+before the guest profile probe or any staging. The retained native reply controls
+belong to their historical images. The current fixture changes include new
+token-generation checks and terminal revision withdrawal. A fresh source-bound
+MSVC image and live resource admission precede current native fixture execution.
+
+The fresh `privilege-checkpoint` on the current 881-input graph passed all
+twelve commands, preserving both 199-case fixture rosters, both 70-case
+platform rosters and 28 platform doctests. The configured `libtest-link`
+then passed both commands for `x86_64-pc-windows-msvc`, targeting x86-64-v3.
+Independent readback matched all current source digests, the graph and
+lifecycle receipts, the AMD64 PE32+ console image and the exact PDB bytes.
+The link receipt and its artifact directory are under
+`artifacts/windows-services/recovery-20261107-v1/`.
+
+| Record or artifact | SHA-256 |
+| --- | --- |
+| `s31-carrier-guard-lifecycle-2611.json` | `b51cf88881fce891cf35699546a72b85af04e890c055cca3d4e51bcd167bf13d` |
+| `cross-s31-carrier-guard-libtest-2611.json` | `1512e55fc3708736b0ea2764c1e6ff11a911257a27fff368cb10228b03d1a097` |
+| `nevrotick_windows_service_fixture-d7a1ccedc33cd2a9.exe` | `7d857bc9d1e82dd06332bc03853eec4f29801181bbbfea0a85f5ade68cf081ec` |
+| Its PDB | `e5121ea3306564031b82cb8957590708fe3205217e8970dd016179ba3986147f` |
+| `current-libtest-and-selectors.json` in the preflight evidence directory | `c32c5da2626977cfd93d24d12815c37bda173d6c4e6ee7172b5a8d86693fe262` |
+
+After build scratch retirement, the host-only recheck observed 2,264 MiB
+available. The dispatch supervisor rechecked the same owned guest and
+observed 838 MiB on its first memory admission. It returned before
+checking guest profile, staging any inputs or launching either selector.
+Both existing transfer shelves remained empty. The post-link recheck
+`post-link-host-recheck.json` hashes to
+`c4045fc019c230eb959e213fc961100df3fa8db578a5ebea4b4101d4a47b239f`.
+`guest-current-libtest/verification.json` hashes to
+`065fb51bcbe490470c1fa208b5b6b95c2ca3bc0505ddaa91eff30aefb002986c`.
+The prepared controller and its exact guest payload remain under the
+preflight evidence directory. Keep the unchanged floor for any later run.
+
+After live admission, run the two exact selectors in separate processes.
+Run `native_pipe_identity::tests::native_retained_client_rejects_a_different_primary_token_generation`
+with `--exact --ignored`. Its fixture opens a real local pipe, reads the
+same client's primary token and changes only the stored generation under test.
+Run `broker_clock_change::tests::terminal_read_edge_withdraws_the_original_revision_immediately`
+with `--exact`. It scripts the Stop, deadline and clock-refusal edges and
+observes terminal revision withdrawal. These cases require no installed role
+or physical suspend. Physical continuity, production authority, signed package
+and installed-service qualification remain open.
 
 #### Configuration and elevation review — 24 November 2026
 
@@ -24294,6 +24391,44 @@ The dispatch SHA-256 is
 The separate `current-archive-readback.json` report SHA-256 is
 `e8dee01d9ab6932406a30d30baf7ba6e8e70bda2c69f4e631019a476a3d619e7`.
 The installed service, trust and complete product package exits remain open.
+
+###### Reject unexpected ZIP extra fields and member comments
+
+W11-W10/S6.4 and CHECK-18/26. The shared unsigned archive reader previously
+accepted additional per-member ZIP extra fields and directory comments while
+returning the same checked authored payload inventory. The actual ScmFixture
+reader accepted three repinned controls with unchanged payload and separate
+local extra, central extra and member comment changes. ArtworkLab also accepted
+the member comment control. Both healthy neighbors passed on the predecessor.
+
+The shared reader now rejects local extra fields and central member comments.
+It admits ordinary central records with no extras and the exact MakeAppx
+ZIP64 central layout. The latter uses all three size/offset sentinels and
+one bounded tag-1 record with a 24-byte payload inside the admitted ZIP64
+directory. The checked size and offset values must agree with the archive
+reader's projection before reading any member body. Existing inventory,
+CRC, length, descriptor, block-map and content-type checks still apply.
+[Shared unsigned archive reader](../tools/windows-service-fixture/msix/check_package.py)
+
+Package-artifact QA used synthetic classic and ZIP64 controls and retained
+Windows SDK output. The combined tree passed all 231 Python MSIX tests in a
+network-isolated, read-only namespace. The five exact retained MakeAppx
+packages accepted the SDK layout across both reader formats. Coordinator
+replay on the integrated tree produced unchanged full reports for the guarded
+ScmFixture and the current 58-member ArtworkLab, with original payloads and
+independent pins. The prior native pack receipts retain their exact scope.
+
+| Record under `~/.local/share/nevrotick/unsigned-carrier-2611.ATuRwlS0/` | SHA-256 |
+| --- | --- |
+| `red-combined.log` | `d8c666cf54cc1fddc454bfbffaf2fb67a586e7cb28a817afa279190c3464f6ca` |
+| `green.log` | `1d644a2c2cbf6d3e082f04f41f6a518704abd7e5c0af74c36a6bb429503bf498` |
+| `msix-suite.log` | `71043ffd9ab497b35decbeea7f62ca7d54b0dd8e0936c5c52d075f378ec0b283` |
+| `retained-summary.json` | `23cd9dfa381f0e3798ee95a7b8746658aa4e03ec671cacce23c9ca199845eb91` |
+| `scm-readback.json` | `f56bd13783745a0088dab3cca067298393a3e3fa82e9090ef5c7ea09026d8b27` |
+| `artwork-readback.json` | `e8dee01d9ab6932406a30d30baf7ba6e8e70bda2c69f4e631019a476a3d619e7` |
+
+Signed carrier handling, final SDK parser parity and installed-role evidence
+remain open.
 
 ###### Derive signing obligations from the guarded ArtworkLab archive
 

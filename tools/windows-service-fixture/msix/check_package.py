@@ -75,6 +75,8 @@ ZIP_END = struct.Struct("<4s4H2IH")
 ZIP64_LOCATOR = struct.Struct("<4sIQI")
 ZIP64_END = struct.Struct("<4sQ2H2I4Q")
 ZIP64_LEGACY_FIELDS = (0xFFFF,) * 4 + (0xFFFFFFFF,) * 2
+ZIP64_CENTRAL_MEMBER = struct.Struct("<HHQQQ")
+ZIP32_MAX = 0xFFFFFFFF
 CENTRAL_HEADER_BYTES = 46
 
 
@@ -356,7 +358,8 @@ def read_local_member(data: bytes, item: zipfile.ZipInfo, end: int) -> PackageMe
     require((extract_version, reserved) == (item.extract_version, item.reserved),
             f"{name} local ZIP extract version differs")
     name_bytes, extra_bytes = struct.unpack_from("<HH", data, begin + 26)
-    header_size = 30 + name_bytes + extra_bytes
+    require(extra_bytes == 0, f"{name} local ZIP extra fields differ")
+    header_size = 30 + name_bytes
     body_end = begin + header_size + item.compress_size
     require(flags == item.flag_bits and method == item.compress_type and body_end <= end
             and data[begin + 30:begin + 30 + name_bytes] == name.encode("ascii"),
@@ -382,8 +385,28 @@ def read_local_member(data: bytes, item: zipfile.ZipInfo, end: int) -> PackageMe
     return PackageMember(body, header_size, deflated)
 
 
-def check_zip_directory(data: bytes, member_count: int) -> int:
-    """Check the physical single-disk directory and return its declared offset."""
+def check_central_member(
+    data: bytes, position: int, name_size: int, extra_size: int, *, zip64_archive: bool,
+) -> tuple[int, int, int]:
+    """Read sizes and local offset from the admitted classic or SDK ZIP64 member profile."""
+    packed_size, unpacked_size = struct.unpack_from("<II", data, position + 20)
+    local_offset, = struct.unpack_from("<I", data, position + 42)
+    sizes_and_offset = (unpacked_size, packed_size, local_offset)
+    if ZIP32_MAX not in sizes_and_offset:
+        require(extra_size == 0, "central ZIP extra fields differ")
+        return sizes_and_offset
+
+    reason = "central ZIP64 member fields differ"
+    require(zip64_archive and sizes_and_offset == (ZIP32_MAX,) * 3
+            and extra_size == ZIP64_CENTRAL_MEMBER.size, reason)
+    extra_offset = position + CENTRAL_HEADER_BYTES + name_size
+    tag, length, unpacked_size, packed_size, local_offset = ZIP64_CENTRAL_MEMBER.unpack_from(data, extra_offset)
+    require(tag == 1 and length == ZIP64_CENTRAL_MEMBER.size - 4, reason)
+    return unpacked_size, packed_size, local_offset
+
+
+def check_zip_directory(data: bytes, member_count: int) -> tuple[int, list[tuple[int, int, int]]]:
+    """Bind the complete footer and the exact member records before opening the archive."""
     end_offset = len(data) - ZIP_END.size
     reason = "unexpected ZIP comment, trailer or end record"
     require(end_offset >= 0, reason)
@@ -414,13 +437,20 @@ def check_zip_directory(data: bytes, member_count: int) -> int:
     require(0 < directory_start < directory_end and directory_start + directory_size == directory_end,
             reason)
     position = directory_start
+    directory_members: list[tuple[int, int, int]] = []
     for _ in range(total_entries):
         require(position + CENTRAL_HEADER_BYTES <= directory_end
                 and data.startswith(b"PK\x01\x02", position), reason)
         name_size, extra_size, comment_size = struct.unpack_from("<3H", data, position + 28)
-        position += CENTRAL_HEADER_BYTES + name_size + extra_size + comment_size
+        record_end = position + CENTRAL_HEADER_BYTES + name_size + extra_size + comment_size
+        require(record_end <= directory_end, reason)
+        require(comment_size == 0, "central ZIP member comment is not admitted")
+        directory_members.append(check_central_member(
+            data, position, name_size, extra_size, zip64_archive=has_locator,
+        ))
+        position = record_end
     require(position == directory_end, reason)
-    return directory_start
+    return directory_start, directory_members
 
 
 def read_archive(
@@ -432,7 +462,7 @@ def read_archive(
     member_limit: Callable[[str], int] = fixture_member_limit,
 ) -> dict[str, PackageMember]:
     require(len(data) <= maximum_archive_bytes, "package exceeds the input bound")
-    directory_start: int = check_zip_directory(data, len(archive_names))
+    directory_start, directory_members = check_zip_directory(data, len(archive_names))
     try:
         package = zipfile.ZipFile(BytesIO(data))
     except NotImplementedError as error:
@@ -445,6 +475,9 @@ def read_archive(
         require(sum(item.file_size for item in members) <= maximum_expanded_bytes,
                 "expanded package exceeds the input bound")
         require(package.start_dir == directory_start, "ZIP central directory extent differs")
+        require(all((item.file_size, item.compress_size, item.header_offset) == row
+                    for item, row in zip(members, directory_members, strict=True)),
+                "ZIP central member size or offset differs")
         require(all(item.volume == 0 for item in members), "ZIP disk fields differ")
         physical_members = sorted(members, key=lambda item: item.header_offset)
         require(physical_members[0].header_offset == 0, "unexpected bytes before ZIP payload")

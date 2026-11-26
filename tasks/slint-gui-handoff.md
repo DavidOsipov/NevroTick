@@ -368,6 +368,92 @@ The fixture owner still has to freeze the exact messages and facts,
 implement the accepted state and bind it to About. This checkpoint
 executes no fixture, decoder, native or live-updater acceptance case.
 
+#### Freeze the bounded About preview inputs — 26 November 2026
+
+For the first checked one-consent path, append thirteen `ui.update` text
+meanings at ordinals 597–609. Use `check`, `checking`, `offer`, `from`,
+`target`, `channel`, `size`, `confirm`, `decline`, `download`, `verify`,
+`install` and `complete` in that order. Retain the sample marker and use a
+dedicated updater offer group for the offer, its fact labels and both
+actions. The offer makes the preview effects, decline and Windows restart
+consequence explicit. It discloses the fixed sample assumptions of an
+unmetered connection, no roaming and no external management. The completion
+message is “Update simulation complete.” Keep schema 2, advance the text
+contract to 3 and retain all original ordinals and historical fixtures.
+
+The Rust owner publishes installed sample version `1.0.0`, offered sample
+version `1.1.0`, the stable channel and `12,582,912` package bytes from the
+same typed offer consumed by acceptance. The declaration binds material
+terms and the About visit to one generation. Check starts one simulation.
+Not now, dismissal and leaving About close the unaccepted offer. A fresh
+check creates a distinct offer. The receiving callback admits the active
+About visit and current unconsumed offer once, then drives the three simulated
+progress states and completion. A repeated, stale or direct call outside that
+state fails without progress, and a late callback cannot recreate consent.
+The preview owns one pending in-memory operation and no production port.
+
+The schema-shaped draft includes each text entry's required empty `args`
+map. At 522 active meanings it projects to 66,672 JSON bytes, 43,442 decoded
+text bytes, 6,852 lexical tokens, 1,583 fields, 1,584 value nodes and
+3,962,233 charged JSON work units. Its modeled canonical CBOR size is
+47,222 bytes. The draft fits the original work, size, depth and Unicode
+contract with a 522-entry map ceiling. The evidence is source-linked arithmetic
+for a draft whose fingerprint is deliberately unadmitted. The exact copy and
+record are in `~/.local/share/nevrotick/about-preview-roster-2611.84fvbqeu/`.
+`reviewed-roster-budget.json` hashes to
+`baabd112745671fb8eebf60a6c992196fc0df3a61d10b9905b02116a967610d3`.
+
+The code-change and localization workflows separated the prepared schema
+from admitted text and traced the current About receiver. Independent review
+confirmed the append-only range, budget arithmetic and requirement to bind
+typed fact rows to the same offer. At implementation, challenge 523 entries,
+an unknown ID substituted into exactly 522 entries, decoded duplicates and
+incompatible contract 2 and 4 candidates. Verify complete new JSON/CBOR
+publication, regenerated source sinks and approval behavior for the adopted
+locale. The critical production approval ledger stays empty.
+
+#### Implement the one-consent About simulation — 26 November 2026
+
+The About buttons and Escape route forward requests to the UI-thread owner.
+Check issues a fresh generation in the current About visit. Yes receives that
+generation and consumes the immutable offer, including its fixed material
+terms. Not now, Escape, accepted navigation away and closing to tray retire
+unconfirmed work. Accepted simulations continue through download,
+verification and installation while another page is open. One Slint timer
+belongs to the current check or progress arm. Generation and phase guards
+reject stale callbacks. The fixture scope permits simulated effects only.
+[Receiver](../crates/nevrotick-ui/src/slint_host/update_workflow.rs)
+
+The catalog now admits 522 messages at schema 2 and text contract 3. The
+checker traces all 522 meanings to their renderers or reached feedback sinks.
+The offer and both choices use the same critical group. The four displayed
+package facts come from the same typed offer consumed by Yes. The v2 CBOR
+fixture remains available for the incompatible-version refusal control.
+
+The guarded default-profile GNU UI run passed formatting, all-target compiler
+and Clippy checks, rustdoc, 220 ordinary tests and 17 doctests on the 761-input
+source identity
+`4e5847a769aa7d49f894a6f41cc9864d161da4bd01ca3aee1c27576d85a61755`.
+All five new tests exercised the generated Slint callbacks. They covered
+wrong-page requests, stale and repeated generations, decline, navigation
+before and after consent, and the actual Slint timer dispatcher on the
+software platform. The checks exercised complete JSON and CBOR admission,
+exact bounds, incompatible catalogs and the release-facing approval refusal.
+The configured source controls passed 85 text coverage, 15 code generation,
+41 native-text source and 16 native-input source checks. The 17 original
+design-reference updater tests also passed.
+
+The GNU receipt `gnu-ui-documented.json` is under
+`~/.local/share/nevrotick/about-preview-qualification-2611.xhFSU2ry/`.
+Its SHA-256 is
+`49b7722f01a02b2fd96598c5bfd8a5eee84f5552202e946db457c8aac784f4bf`.
+The companion `msvc-ui-retry.json` records the MSVC all-targets source
+checks and dependency and tool identities in the same directory.
+
+Native Windows rendering, keyboard and accessibility observations and
+independent production approval of critical text remain open. Live checking
+and installation belong to [W11 §4.40](windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026).
+
 ### Readiness, skill application and retained gates
 
 The documentation stage applied `plan-code-change` to reconcile the accepted
@@ -380,7 +466,7 @@ stale/late/unknown and real-completion controls; and `qa-i18n-localization` plus
 outputs are the source map, behavior contract and UP-UI cases above. Reading or
 writing these requirements proves no executed acceptance.
 
-**Next owner/action:** S0.5/P5 freezes the bounded fixture contract and affected
+**Next owner/action:** S0.5/P5 retains the bounded fixture contract and affected
 catalog messages within the [existing updater handoff](s0.5-ui-comparison.md#manual-updater-ui-handoff--25-november-2026),
 following the normal queue. D2 freshness/currentness returns before live metadata
 status and D2 policy/result/receiver rules before update commands. The live-apply
@@ -390,7 +476,7 @@ return before general-user preview/release or earlier claims under architecture 
 Unresolved client/dependency, publisher/key operations, time, installed identity,
 native route, recovery, critical-text approval, resources and release checks
 remain open with their existing owners. Existing native, scoped fuzz and storage
-holds remain; this amendment runs no Cargo, Windows, signing or deployment work.
+holds remain. Native deployment and signing stay with their existing owners.
 
 ## Branch and integration state
 

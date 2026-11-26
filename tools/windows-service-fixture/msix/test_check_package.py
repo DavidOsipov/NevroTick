@@ -57,7 +57,8 @@ def deflate_blocks(data):
     return spans, compressor.flush(zlib.Z_FINISH)
 
 
-def block_map(payload, compressed_sizes, *, stored_size=False):
+def block_map(payload, compressed_sizes, *, stored_size=False, local_extras=None):
+    local_extras = {} if local_extras is None else local_extras
     root = ET.Element("BlockMap", {
         "xmlns": "http://schemas.microsoft.com/appx/2010/blockmap",
         "HashMethod": "http://www.w3.org/2001/04/xmlenc#sha256",
@@ -66,7 +67,7 @@ def block_map(payload, compressed_sizes, *, stored_size=False):
         record = ET.SubElement(root, "File", {
             "Name": name.replace("/", "\\"),
             "Size": str(len(data)),
-            "LfhSize": str(30 + len(name)),
+            "LfhSize": str(30 + len(name) + len(local_extras.get(name, b""))),
         })
         for index, block in enumerate(payload_blocks(data)):
             attrs = {"Hash": b64encode(sha256(block).digest()).decode("ascii")}
@@ -89,8 +90,12 @@ def content_types(extra_declaration=b""):
 """ + extra_declaration + b"</Types>\n"
 
 
-def make_zip(members, deflated):
-    """Write classic ZIP local records and the central directory."""
+def make_zip(members, deflated, *, local_extras=None, central_extras=None, comments=None,
+             zip64_members=False):
+    """Write fixture ZIP records with optional independently chosen member metadata."""
+    local_extras = {} if local_extras is None else local_extras
+    central_extras = {} if central_extras is None else central_extras
+    comments = {} if comments is None else comments
     local = BytesIO()
     directory = BytesIO()
     for name, data in members.items():
@@ -104,16 +109,28 @@ def make_zip(members, deflated):
         # ZIP version 2.0, time 00:00:00, date 1980-01-01. The streamed
         # member finishes with a signature-prefixed 32-bit data descriptor.
         local_lengths = (0, 0, 0) if compressed else lengths
+        local_extra = local_extras.get(name, b"")
         local.write(struct.pack("<4s5H3I2H", b"PK\x03\x04", 20, flags, method,
-                                0, 33, *local_lengths, len(encoded_name), 0))
+                                0, 33, *local_lengths, len(encoded_name), len(local_extra)))
         local.write(encoded_name)
+        local.write(local_extra)
         local.write(body)
         if compressed:
             local.write(struct.pack("<4s3I", b"PK\x07\x08", *lengths))
+        crc, packed_size, unpacked_size = lengths
+        central_extra = central_extras.get(name, b"")
+        comment = comments.get(name, b"")
+        if zip64_members:
+            central_extra = struct.pack(
+                "<HHQQQ", 1, 24, unpacked_size, packed_size, record_offset,
+            ) + central_extra
+            packed_size = unpacked_size = record_offset = 0xFFFFFFFF
         directory.write(struct.pack("<4s6H3I5H2I", b"PK\x01\x02", 20, 20, flags,
-                                    method, 0, 33, *lengths, len(encoded_name),
-                                    0, 0, 0, 0, 0, record_offset))
+                                    method, 0, 33, crc, packed_size, unpacked_size, len(encoded_name),
+                                    len(central_extra), len(comment), 0, 0, 0, record_offset))
         directory.write(encoded_name)
+        directory.write(central_extra)
+        directory.write(comment)
     end_record = struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(members),
                              len(members), directory.tell(), local.tell(), 0)
     return local.getvalue() + directory.getvalue() + end_record
@@ -160,7 +177,8 @@ class PackageReaderTests(unittest.TestCase):
         self.input_set_digest = sha256(inputs).hexdigest()
 
     def write_package(self, *, payload=None, compressed_member=None, size_case=None,
-                      xml_prefix=None, types_xml=None):
+                      xml_prefix=None, types_xml=None, local_extras=None, central_extras=None,
+                      comments=None, zip64_members=False):
         if payload is None:
             payload = self.payload
         sizes = {}
@@ -179,13 +197,17 @@ class PackageReaderTests(unittest.TestCase):
             sizes[compressed_member] = block_sizes
         members = {
             **payload,
-            BLOCK_MAP: block_map(payload, sizes, stored_size=size_case == "stored"),
+            BLOCK_MAP: block_map(
+                payload, sizes, stored_size=size_case == "stored", local_extras=local_extras,
+            ),
             CONTENT_TYPES: content_types() if types_xml is None else types_xml,
         }
         if xml_prefix is not None:
             name, prefix = xml_prefix
             members[name] = prefix + members[name]
-        self.package.write_bytes(make_zip(members, compressed_members))
+        archive = make_zip(members, compressed_members, local_extras=local_extras,
+                           central_extras=central_extras, comments=comments, zip64_members=zip64_members)
+        self.package.write_bytes(with_zip64_end_records(archive) if zip64_members else archive)
         return members
 
     def run_reader(self, *, expected_package_digest=None, include_event_resource=False):
@@ -499,6 +521,44 @@ class PackageReaderTests(unittest.TestCase):
                 self.assert_refused(reason)
         self.package.write_bytes(original)
         self.assert_accepted(members)
+
+    def test_member_metadata_has_a_closed_classic_profile(self):
+        healthy = self.write_package(compressed_member=INERT)
+        self.assert_accepted(healthy)
+        note = struct.pack("<HH", 0xA001, 4) + b"note"
+        for options, reason in (
+            ({"local_extras": {INERT: note}}, "local ZIP extra fields differ"),
+            ({"central_extras": {INERT: note}}, "central ZIP extra fields differ"),
+            ({"comments": {INERT: b"note"}}, "central ZIP member comment is not admitted"),
+        ):
+            with self.subTest(options=options):
+                changed = self.write_package(compressed_member=INERT, **options)
+                with ZipFile(self.package) as archive:
+                    self.assertEqual({name: archive.read(name) for name in archive.namelist()}, changed)
+                self.assert_refused(reason)
+        self.assert_accepted(self.write_package(compressed_member=INERT))
+
+    def test_member_metadata_has_a_closed_zip64_profile(self):
+        healthy = self.write_package(compressed_member=INERT, zip64_members=True)
+        original = self.package.read_bytes()
+        self.assert_accepted(healthy)
+        # Find the selected central entry from the already decoded footer span.
+        end_record = len(original) - 98
+        position, = struct.unpack_from("<Q", original, end_record + 48)
+        name_size, = struct.unpack_from("<H", original, position + 28)
+        extra = position + 46 + name_size
+        for label, offset in (
+            ("partial placeholder", position + 20),
+            ("unexpected ZIP64 tag", extra),
+            ("incomplete ZIP64 record", extra + 2),
+        ):
+            with self.subTest(field=label):
+                changed = bytearray(original)
+                changed[offset] ^= 1
+                self.package.write_bytes(changed)
+                self.assert_refused("central ZIP64 member fields differ")
+        self.package.write_bytes(original)
+        self.assert_accepted(healthy)
 
     def test_rejects_central_record_extending_past_the_directory(self):
         members = self.write_package()

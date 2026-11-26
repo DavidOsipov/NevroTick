@@ -45,7 +45,7 @@ pub const MAX_FIELDS: usize = 2_048;
 /// Maximum cumulative temporary wire nodes before another node is built.
 pub const MAX_NODES: usize = 4_096;
 /// Maximum fields in one temporary wire map; explicit full-inventory amendment.
-pub const MAX_MAP: usize = 512;
+pub const MAX_MAP: usize = 522;
 /// Maximum charged byte/key-comparison units; scalar predicates have fixed bounds.
 pub const MAX_WORK: usize = 4_000_000;
 /// Maximum formatted UTF-8 bytes after every append.

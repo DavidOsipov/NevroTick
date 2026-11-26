@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "text_contract_version": 2,
+  "text_contract_version": 3,
   "domain": "nevrotick.ui",
-  "catalog_revision": 2,
-  "source_fingerprint": "34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80",
+  "catalog_revision": 3,
+  "source_fingerprint": "091f71d5341d9963611cf73de985795803cc65b883884baa2d62af20a8ec95a7",
   "locale": "en",
   "plural_profile": "english-u64-cardinal-v1",
   "messages": {
@@ -2057,6 +2057,58 @@
     "ui.native-observer.stop-failed": {
       "args": {},
       "text": "Native observer cleanup could not be confirmed. The app stays open; no service state was changed."
+    },
+    "ui.update.check": {
+      "args": {},
+      "text": "Check for updates"
+    },
+    "ui.update.checking": {
+      "args": {},
+      "text": "Checking sample update"
+    },
+    "ui.update.offer": {
+      "args": {},
+      "text": "Yes, update now simulates download, verification and installation. Not now closes the sample offer. Sample assumptions: unmetered, no roaming, no external management. A real update may interrupt services, close the app, request Windows permission or require a Windows restart."
+    },
+    "ui.update.from": {
+      "args": {},
+      "text": "Sample installed version"
+    },
+    "ui.update.target": {
+      "args": {},
+      "text": "Sample offered version"
+    },
+    "ui.update.channel": {
+      "args": {},
+      "text": "Release channel"
+    },
+    "ui.update.size": {
+      "args": {},
+      "text": "Complete package size"
+    },
+    "ui.update.confirm": {
+      "args": {},
+      "text": "Yes, update now"
+    },
+    "ui.update.decline": {
+      "args": {},
+      "text": "Not now"
+    },
+    "ui.update.download": {
+      "args": {},
+      "text": "Downloading sample package"
+    },
+    "ui.update.verify": {
+      "args": {},
+      "text": "Verifying sample package"
+    },
+    "ui.update.install": {
+      "args": {},
+      "text": "Simulating installation"
+    },
+    "ui.update.complete": {
+      "args": {},
+      "text": "Update simulation complete."
     }
   }
 }

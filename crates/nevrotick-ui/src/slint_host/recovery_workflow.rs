@@ -353,7 +353,7 @@ fn open(weak: &slint::Weak<AppWindow>, state: &RefCell<BindingState>) {
         )
     };
     projection.apply(&window, state);
-    project_navigation(&window, mode, page);
+    project_navigation(&window, state, mode, page);
     shell_workflow::project_section(&window, state);
     if let Some(scroll) = scroll_update {
         window.set_page_scroll_y(scroll);
@@ -530,7 +530,7 @@ fn navigation_request(
         )
     };
     projection.apply(&window, state);
-    project_navigation(&window, mode, page);
+    project_navigation(&window, state, mode, page);
     shell_workflow::project_section(&window, state);
     if let Some(scroll) = scroll_update {
         window.set_page_scroll_y(scroll);
@@ -817,7 +817,7 @@ fn resolve_leave(
     {
         return;
     }
-    project_navigation(&window, mode, page);
+    project_navigation(&window, state, mode, page);
     shell_workflow::project_section(&window, state);
     publish_shell_route(&window, state, accepted_shell);
     match result {

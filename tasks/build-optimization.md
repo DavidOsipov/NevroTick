@@ -1561,6 +1561,15 @@ full pinning, rules and CodeQL deferral. Old-main runs cannot qualify new dirty
 source. Raw current API/annotation observations are retained under
 `/home/david_osipov/.local/share/nevrotick/contract-integration-hardening-20261114-v1/hosted-audit/`.
 
+**Recheck on `b161229` — 26 November 2026.** Both required workflows
+again stopped at startup with zero jobs. The actual Rust annotation lists
+the pinned upstream checkout action. The Security annotation lists checkout
+and both pinned CodeQL actions. The repository API still reports
+`local_only` and requires full-length commit SHAs. The existing §6.4 owner
+decision remains the prerequisite to restoring these hosted runs.
+[Rust startup annotation](https://github.com/DavidOsipov/NevroTick/actions/runs/45785019484)
+[Security startup annotation](https://github.com/DavidOsipov/NevroTick/actions/runs/45785021276)
+
 The H09 source child retains both default verification rows and adds explicit
 engine-ke-association dependency/portable rows with unique receipts and the same
 complete freshly acquired lockfile/vendor/tool/advisory inputs. There is no new

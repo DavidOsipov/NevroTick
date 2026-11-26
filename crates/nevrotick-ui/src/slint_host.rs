@@ -61,6 +61,10 @@ pub use startup_image_policy::{DllSearchPolicyError, ImageLoadPolicyError};
 mod source_workflow;
 /// Explicit disconnected status input and guarded contextual navigation.
 mod status_workflow;
+/// One checked offer and its in-memory About simulation.
+mod update_workflow;
+#[cfg(all(test, not(windows)))]
+mod update_workflow_tests;
 use source_workflow::{SourceProjection, selected_editor};
 
 /// Generated component and presentation types from the maintained Slint entry.
@@ -218,6 +222,8 @@ struct BindingState {
     copy: catalog_workflow::CatalogBindingState,
     /// Quit state, shared Settings destination and fixed unavailable ports.
     shell: shell_workflow::ShellBindingState,
+    /// Active About preview and its single UI-thread timer.
+    updates: update_workflow::UpdatePreviewState,
     /// Dormant fixture receiver; only explicit native construction installs ports.
     notifications: native_notification_workflow::NotificationBindingState,
     /// UI-thread-only native resources, retained throughout pending cleanup.
@@ -490,6 +496,7 @@ pub fn create() -> Result<SlintHost, HostError> {
         raw_admission: raw_workflow::RawAdmission::Open,
         copy: catalog_workflow::CatalogBindingState::default(),
         shell: shell_workflow::ShellBindingState::new(),
+        updates: update_workflow::UpdatePreviewState::default(),
         notifications: native_notification_workflow::NotificationBindingState::default(),
         #[cfg(windows)]
         native: None,
@@ -601,6 +608,7 @@ fn install_callbacks(
     rows: &Rc<VecModel<SourceRow>>,
     changes: &Rc<VecModel<SourceChangeRow>>,
 ) {
+    update_workflow::install(window, state);
     let weak = window.as_weak();
     let owner = Rc::clone(state);
     window.on_navigate(move |page| navigate(&weak, &owner, page));
@@ -951,8 +959,16 @@ const fn session_page(page: Page) -> SessionPage {
     }
 }
 
-/// Publish the accepted mode/page pair without touching editor drafts or guards.
-fn project_navigation(window: &AppWindow, mode: Mode, page: SessionPage) {
+/// Retire any About preview on departure and publish the accepted mode/page.
+fn project_navigation(
+    window: &AppWindow,
+    state: &RefCell<BindingState>,
+    mode: Mode,
+    page: SessionPage,
+) {
+    if page != SessionPage::About {
+        update_workflow::leave_about(window, state);
+    }
     let page = match page {
         SessionPage::Status => Page::Status,
         SessionPage::Sources => Page::Sources,

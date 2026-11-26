@@ -112,8 +112,13 @@ def _core_emit(data, feedback_slots, projection_header, expected_sha256):
         raise Invalid('closed protected profile')
     NAMES = {'fixture': 'FixtureCopy', 'preferences': 'PreferencesCopy', 'source': 'SourceCopy', 'recovery': 'RecoveryCopy', 'shell': 'ShellCopy', 'policy': 'PolicyCopy', 'inspection': 'InspectionCopy', 'diagnostic': 'DiagnosticCopy', 'raw': 'RawCopy'}
     GROUPS = ['PreviewFacts', 'SourceEdit', 'Intervals', 'Lifecycle', 'Notifications', 'Policy', 'Notices', 'Recovery', 'Quit']
-    expected_bounds = {'JSON_BYTES': 131072, 'CBOR_BYTES': 65536, 'STRING_BYTES': 1024, 'STRING_SCALARS': 512, 'KEY_BYTES': 96, 'DECODED_BYTES': 65536, 'MAX_DEPTH': 4, 'MAX_FIELDS': 2048, 'MAX_NODES': 4096, 'MAX_MAP': 512, 'MAX_WORK': 4000000, 'OUTPUT_BYTES': 4096, 'OUTPUT_UTF16': 2048, 'PROJECTION_BYTES': 131072, 'PROJECTION_UTF16': 65536}
-    if not (data['bounds'] == expected_bounds and type(data['bounds']['MAX_MAP']) is int and data['bounds']['MAX_MAP'] == 512):
+    # Retain the exact v1/v2 profiles for historical generated fixtures.
+    current_text_contract = data['text_contract_version'] >= 3
+    if current_text_contract:
+        GROUPS.append('UpdateOffer')
+    map_limit = 522 if current_text_contract else 512
+    expected_bounds = {'JSON_BYTES': 131072, 'CBOR_BYTES': 65536, 'STRING_BYTES': 1024, 'STRING_SCALARS': 512, 'KEY_BYTES': 96, 'DECODED_BYTES': 65536, 'MAX_DEPTH': 4, 'MAX_FIELDS': 2048, 'MAX_NODES': 4096, 'MAX_MAP': map_limit, 'MAX_WORK': 4000000, 'OUTPUT_BYTES': 4096, 'OUTPUT_UTF16': 2048, 'PROJECTION_BYTES': 131072, 'PROJECTION_UTF16': 65536}
+    if not (data['bounds'] == expected_bounds and type(data['bounds']['MAX_MAP']) is int and data['bounds']['MAX_MAP'] == map_limit):
         raise Invalid('Protected contract shape rejected.')
     if not (type(data['unicode_profile']) is str and data['unicode_profile'] == 'unicode-15.1-english-printable-ascii-middle-dot-en-em-dash-v1'):
         raise Invalid('Protected contract shape rejected.')

@@ -49,8 +49,8 @@ fn source_and_escape_order_are_canonical() -> Result<(), Error> {
         .map_err(|_| Error::Utf8)?
         .replace('—', "\\u2014");
     let reordered = escaped.replace(
-        "\"schema_version\": 2,\n  \"text_contract_version\": 2,",
-        "\"text_contract_version\": 2,\n  \"schema_version\": 2,",
+        "\"schema_version\": 2,\n  \"text_contract_version\": 3,",
+        "\"text_contract_version\": 3,\n  \"schema_version\": 2,",
     );
     assert_ne!(
         reordered, escaped,
@@ -458,24 +458,24 @@ fn schema_text_versions_and_exact_fingerprint_fail_closed() -> Result<(), Error>
         ("\"schema_version\": 2", "\"schema_version\": 1"),
         ("\"schema_version\": 2", "\"schema_version\": 3"),
         (
-            "\"text_contract_version\": 2",
-            "\"text_contract_version\": 1",
-        ),
-        (
-            "\"text_contract_version\": 2",
             "\"text_contract_version\": 3",
+            "\"text_contract_version\": 2",
         ),
         (
-            "\"text_contract_version\": 2",
-            "\"text_contract_version\": 2.0",
+            "\"text_contract_version\": 3",
+            "\"text_contract_version\": 4",
         ),
         (
-            "\"text_contract_version\": 2",
-            "\"text_contract_version\": 2e0",
+            "\"text_contract_version\": 3",
+            "\"text_contract_version\": 3.0",
         ),
         (
-            "\"text_contract_version\": 2",
-            "\"text_contract_version\": \"2\"",
+            "\"text_contract_version\": 3",
+            "\"text_contract_version\": 3e0",
+        ),
+        (
+            "\"text_contract_version\": 3",
+            "\"text_contract_version\": \"3\"",
         ),
         (
             "\"domain\": \"nevrotick.ui\"",
@@ -510,18 +510,16 @@ fn schema_text_versions_and_exact_fingerprint_fail_closed() -> Result<(), Error>
 /// Fails if an orphan, revived ID, empty or whitespace-only required value admits.
 #[test]
 fn required_ids_and_nonblank_values_are_closed() -> Result<(), Error> {
+    for key in ["ui.no-owned-sink.text", "ui.fixture.repository-value"] {
+        let candidate: Vec<u8> = changed("\"ui.fixture.sample-label\"", &format!("\"{key}\""))?;
+        assert!(matches!(
+            Catalog::checked(json::read(&candidate)?),
+            Err(Error::Schema)
+        ));
+    }
     for candidate in [
-        changed("\"ui.fixture.sample-label\"", "\"ui.no-owned-sink.text\"")?,
-        changed(
-            "\"ui.fixture.sample-label\"",
-            "\"ui.fixture.repository-value\"",
-        )?,
         changed("\"text\": \"Prototype — sample data\"", "\"text\": \"\"")?,
         changed("\"text\": \"Prototype — sample data\"", "\"text\": \"   \"")?,
-        changed(
-            "\"messages\": {",
-            "\"messages\": {\"ui.no-owned-sink.text\": {\"args\": {}, \"text\": \"Extra\"},",
-        )?,
     ] {
         assert!(json::read(&candidate).and_then(Catalog::checked).is_err());
     }
@@ -531,6 +529,40 @@ fn required_ids_and_nonblank_values_are_closed() -> Result<(), Error> {
         Err(Error::IncompleteEnglish)
     ));
     assert!(english().is_ok());
+    Ok(())
+}
+
+/// Admit the complete 522-entry catalog and refuse the next map entry at both front ends.
+///
+/// # Errors
+/// Propagates unexpected fixture, encoding or healthy admission failures.
+///
+/// # Panics
+/// Fails if either decoder exceeds the review ceiling or rejects the healthy neighbor.
+#[test]
+fn exact_roster_fits_both_front_ends_and_one_extra_entry_rejects() -> Result<(), Error> {
+    let source: Catalog = english()?;
+    assert_eq!(source.messages.len(), 522);
+    let oversized_json: Vec<u8> = changed(
+        "\"messages\": {",
+        "\"messages\": {\"ui.no-owned-sink.text\": {\"args\": {}, \"text\": \"Extra\"},",
+    )?;
+    assert!(matches!(json::read(&oversized_json), Err(Error::Bounds)));
+
+    let mut canonical: Vec<u8> = cbor::encode(&source.wire()?)?;
+    assert_eq!(canonical.len(), 47_222);
+    assert_eq!(
+        Catalog::checked(cbor::read(&canonical)?)?.messages.len(),
+        522
+    );
+    // Definite eight-byte key, then the shortest 522-entry map header.
+    let header: &[u8] = b"\x68messages\xb9\x02\x0a";
+    let offset: usize = canonical
+        .windows(header.len())
+        .position(|bytes| bytes == header)
+        .ok_or(Error::Schema)?;
+    canonical[offset + header.len() - 1] = 0x0b;
+    assert!(matches!(cbor::read(&canonical), Err(Error::Bounds)));
     Ok(())
 }
 
@@ -545,11 +577,17 @@ fn required_ids_and_nonblank_values_are_closed() -> Result<(), Error> {
 fn runtime_version_and_missing_text_failures_preserve_prior() -> Result<(), Error> {
     let mut store = synthetic_prior()?;
     let prior = cbor::encode(&store.snapshot().catalog.wire()?)?;
+    let previous: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/fixtures/test-only-english-v2.cbor"
+    ));
+    assert!(matches!(store.replace(previous), Err(Error::Schema)));
+    assert_eq!(cbor::encode(&store.snapshot().catalog.wire()?)?, prior);
     for (field, value) in [
         ("schema_version", 1),
         ("schema_version", 3),
-        ("text_contract_version", 1),
-        ("text_contract_version", 3),
+        ("text_contract_version", 2),
+        ("text_contract_version", 4),
     ] {
         let mut fields = english()?.wire()?.map()?;
         let slot = fields
@@ -623,7 +661,7 @@ fn native_notification_feedback_keeps_closed_sticky_meanings() -> Result<(), Err
             expected
         );
     }
-    assert_eq!(snapshot.revision(), 2);
+    assert_eq!(snapshot.revision(), 3);
     assert!(matches!(
         MessageId::from_key("ui.shell.no-notification-submission"),
         Err(Error::Schema)
