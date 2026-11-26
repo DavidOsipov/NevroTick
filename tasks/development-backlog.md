@@ -74,20 +74,9 @@ consumer, independent useful/refused/indeterminate cases, finite work/environmen
 cleanup, forbidden effects and the resulting evidence. Existing CHECK/AC and
 phase exits control; a coverage row is neither an executed check nor a waiver.
 
-## Post-V1 formal-proof backlog — 6 November 2026
+## Current Core/Engine continuation — 26 November 2026
 
-[OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
-defers **all formal-proof work until after the first released software version
-(V1)**. No missing theorem, verifier/tool extension, formal source preparation,
-metadata-consumer repair or formal campaign is a first-version implementation,
-phase or release blocker. Existing proof inventories remain in the domain,
-exchange, Core and leap task records, with successful subscopes and all failed or
-incomplete attempts preserved. Older next-proof directions below are historical;
-resume through normal bounded planning after V1. The owner's report of more than
-a day without a newly identified product mathematical defect explains the
-priority change; it supplies no general correctness claim.
-
-**Current Core/Engine continuation — 26 November 2026:** follow the
+Follow the
 [dependency order in development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
 and the [actual Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026).
 The rebuilt authenticated laboratory pair and the seven-owner Core fixture
@@ -112,6 +101,13 @@ holds. Runtime validation,
 checked arithmetic, independent tests/property/boundary cases, the existing
 90%/95% thresholds, security/native/package/release gates and all execution holds
 remain required. No general parent below is activated by this note.
+
+## Historical ordinary qualification checkpoints
+
+These retained summaries preserve their dated candidates and then-current next
+steps. [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+controls current activation; the receipts do not activate deferred parents or
+close remaining product/native gates.
 
 **N3a checkpoint — 7 November 2026:** the
 [selected Linux engine exit](engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
@@ -198,6 +194,19 @@ implementation remain held; declared labels, retained lifetimes and empty input
 supply neither authority nor a precision default. Ordinary abstract
 discipline/holdover remains open in its P1 owner, without becoming a formatter
 dependency. Preserve all separate phase and execution holds.
+
+## Post-V1 formal-proof backlog — 6 November 2026
+
+[OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. No missing theorem, verifier/tool extension, formal source preparation,
+metadata-consumer repair or formal campaign is a first-version implementation,
+phase or release blocker. Existing proof inventories remain in the domain,
+exchange, Core and leap task records, with successful subscopes and all failed or
+incomplete attempts preserved. Older next-proof directions below are historical;
+resume through normal bounded planning after V1. The owner's report of more than
+a day without a newly identified product mathematical defect explains the
+priority change; it supplies no general correctness claim.
 
 ### Product guarantees still open
 

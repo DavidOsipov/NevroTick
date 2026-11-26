@@ -33,7 +33,10 @@ midnight, timezone changes and daylight-saving behavior.
 
 ## Manual updater contract and acceptance — 25 November 2026
 
-**Status: accepted product/design handoff; native updater source and execution absent.**
+**Status: accepted product/design handoff; bounded Rust/Slint About preview implemented
+on 26 November; production updater and native qualification remain open.**
+Use the [implementation checkpoint](#implement-the-one-consent-about-simulation--26-november-2026)
+for the delivered fixture and its exact evidence.
 Use [OD-05 §7.10](../docs/nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026),
 [architecture §19.8](../docs/windows-time-architecture.md#198-tuf-authenticated-direct-msix-updater),
 the [adopted update assessment](../docs/windows-time-update-assessment.md#12-adopted-direct-msix-updater--25-november-2026)
@@ -195,18 +198,28 @@ no code, browser or native qualification was executed by that review.
 
 ### Current source and next boundary
 
-Rust/Slint readback at `59838326655cd8272e0c3ced593e43c44d99d2b8` establishes these
-existing owners, without executing them; the later HTML sample adds none of
-these native updater paths:
+**Current disposition — 26 November:** the [implemented About preview](#implement-the-one-consent-about-simulation--26-november-2026)
+and its [Rust receiver](../crates/nevrotick-ui/src/slint_host/update_workflow.rs)
+provide typed in-memory offer/progress state and Check/Yes/Later callbacks.
+Reuse that bounded fixture; its recorded callback checks do not close the full
+UP-UI-01–12 matrix. Broader production target/intent and worker/helper contracts,
+trust/time/protected storage, live integration, native observations and independent
+critical-text approval remain open under the existing phase/trigger owners.
 
-| Existing source | Current fact and updater work still needed |
+**Historical predecessor readback:** the table and next-slice description below
+retain the source state and proposed work at
+`59838326655cd8272e0c3ced593e43c44d99d2b8`, before the Rust/Slint implementation.
+They are not the current fixture queue; the HTML sample itself added none of
+these Rust/Slint paths.
+
+| Existing source | Historical fact and proposed work at that baseline |
 | --- | --- |
 | [`ui/about.slint`](../crates/nevrotick-ui/ui/about.slint), [`ui/app.slint`](../crates/nevrotick-ui/ui/app.slint) and [`ui/fixture-copy.slint`](../crates/nevrotick-ui/ui/fixture-copy.slint) | About exists in the shared Simple/Power shell and has a fixed repository action. Version status is development/fixture wording; GUI build and text-contract numbers are separate rows. No Check-for-updates callback, live installed-product/version query, updater offer or progress/result consumer exists in this surface. Extend it and the existing tray About destination. |
 | [`src/slint_host.rs`](../crates/nevrotick-ui/src/slint_host.rs) and its workflow modules | Rust `BindingState`, `Rc<RefCell<…>>`, bounded models, weak window callbacks and one Slint event loop own fixture state/projections. Add a separately checked update-operation/intent projection at the admitted stage; generated widget values and `host_ready` cannot become updater authority. Existing source-editor “Update preview” callbacks are unrelated to software updates. |
 | [`src/main.rs`](../crates/nevrotick-ui/src/main.rs) and [`Cargo.toml`](../crates/nevrotick-ui/Cargo.toml) | The Windows entry calls the Slint host; the UI package is `0.0.0` and described as fixture-only. The UI has no Tokio dependency. Neither the Cargo version nor a running GUI identifies the currently installed complete product. No updater client, privileged updater endpoint or package-apply implementation is supplied by this source review. |
 | Existing catalog and [`native_notifications_windows.rs`](../crates/nevrotick-ui/src/native_notifications_windows.rs) | Typed catalog publication and sample notification lifecycle exist. `Package::Current()` guards notification identity; it does not supply an updater's actual installed-product/version reconciliation. The updater still needs code-owned messages, independent critical-content approval and current typed result producers. Sample toast/portable receipts supply no live updater or native delivery pass. |
 
-The next Rust/Slint source slice is a bounded in-memory operation model and
+At that predecessor, the next Rust/Slint source slice was a bounded in-memory operation model and
 About fixture using that established ownership, with sample labels and disabled
 live/protected effects. Freeze its typed states, exact-target intent, finite
 work/text budgets, independent cases and message-contract changes first. Keep
@@ -516,6 +529,7 @@ The following bullets retain the historical PR-preparation environment:
 | Area | Delivered behavior |
 | --- | --- |
 | Slint shell | Windows entry selects Slint/Winit/software/Fluent. Simple has Status, Settings, About; Power adds Sources, Statistics, Diagnostics. About describes the program, author, fixed GitHub repository and component libraries. Original branded PNG and separate notices retained. |
+| About update preview | [26 November implementation](#implement-the-one-consent-about-simulation--26-november-2026): bounded in-memory one-consent sample with typed offer/copy, guarded Check/Yes/Later callbacks and simulated progress. No live metadata, package, helper or installation effects; full UP-UI and native qualification remain open. |
 | Source workflow | Single checked source owner; add/edit/remove/undo, stable identities, search, details and change review. Protocol/default-port/manual-port provenance stays explicit. Edits are local previews; Apply remains unavailable. |
 | Settings and recovery | Grouped synchronization/service/notifications/time-policy/personal preferences. Custom interval accepts positive whole minutes with bounded raw/numeric admission. Policy and Roughtime/helper recovery previews preserve drafts and distinguish NTS, plain NTP, observe-only, provisional date and clock authority. |
 | Status and diagnostics | Closed typed presentation separates authentication, agreement, freshness, service liveness and clock effects. Historical observations cannot show current Tracking. Diagnostics and correction review show unavailable/sample facts and safe navigation. |
@@ -524,9 +538,15 @@ The following bullets retain the historical PR-preparation environment:
 | Localization | Strict original UTF-8 JSON, duplicate/unknown-field rejection, closed schema, canonical bounded CBOR, Unicode/emoji policy, typed placeholders, literal sinks and atomic catalog publication. Missing/blank/orphan consumer checks run before Cargo. Catalogs cannot choose actions, severity, permissions, routes or URIs. |
 | Dependencies/tooling | One pinned graph and schema3 admission policy; Windows-only Winit/AccessKit/WinRT/Shell features, narrow Linux software test profile, reviewed local `spin_on` and AccessKit patches, guarded verifier/captures and negative checker controls. No new Core runtime or broad execution exception. |
 
-Text identities: schema 2, text contract 2, English revision 2; informational GUI
-build 2. There are 509 active IDs, 596 stable ordinals, 87 inactive identities and
-426 immutable output rows. Fingerprint:
+**Current text identities — 26 November:** schema 2, text contract 3, English
+revision 3 and informational GUI build 2; 522 active messages. The
+[protected contract](../crates/nevrotick-ui/src/localization/contract.rs) and
+[English catalog](../crates/nevrotick-ui/locales/en.json) carry the exact current
+roster and identity. Current fingerprint:
+`091f71d5341d9963611cf73de985795803cc65b883884baa2d62af20a8ec95a7`.
+The [earlier text2 cohort](s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+retains its historical 509 active IDs, 596 stable ordinals, 87 inactive identities,
+426 immutable output rows and fingerprint
 `34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80`.
 Do not reuse retired ordinals or equate the GUI build number with compatibility.
 
@@ -618,10 +638,16 @@ receipts retain the old graph and cannot qualify later candidates.
    critical English/catalog/bootstrap meaning needs independent human approval
    bound to content and contract. Test-only grants, signatures and parser success
    cannot approve production packs. Do not disable this gate to make an import work.
-   The prepared private bundle at
-   `/tmp/nevrotick-localization-contract-v2/human-review-v1/` covers all 509 active
-   meanings, 87 inactive identities and eight separate bootstrap words. Its
-   presence is neither approval nor guaranteed availability in the next cloud.
+   The historical private bundle at
+   `/tmp/nevrotick-localization-contract-v2/human-review-v1/` covers the former
+   contract 2 roster of 509 active meanings, 87 inactive identities and eight
+   separate bootstrap words. It is insufficient for current contract 3 approval,
+   and its availability in the next cloud is not guaranteed. At the existing
+   critical-content approval gate, prepare and verify a bundle against the
+   [current protected contract](../crates/nevrotick-ui/src/localization/contract.rs),
+   catalog and bootstrap bytes through the existing exact-content workflow,
+   including the updater meanings. No current approval bundle or human approval
+   is established by this handoff.
 5. **Remaining polish/provenance:** scope the service administrator badge to
    changes rather than read-only inspection; explain the consumed session test
    identity after the first notification attempt. PR #10 review reconciled
