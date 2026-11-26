@@ -24556,6 +24556,47 @@ The separate `current-archive-readback.json` report SHA-256 is
 `e8dee01d9ab6932406a30d30baf7ba6e8e70bda2c69f4e631019a476a3d619e7`.
 The installed service, trust and complete product package exits remain open.
 
+###### Pack the guarded ArtworkLab with the current About preview — 26 November 2026
+
+W11-W10/P6 and CHECK-16/18/20/23/26/27. Source commit `91265bd`
+includes the fixture-only About update preview. The first MSVC attempt
+stopped in a host build-script link when LLVM reported unavailable
+resources. The four-CPU-affinity retry kept the configured commands,
+sandbox limits and source checks and passed all 38 lanes on 775 input
+pins. Both release images, the UI baseline entry and map, embedded
+resources and private authoring were read back. The current guarded UI
+SHA-256 is `09352fd0a8584f04aff36eb080947c5327e83ee71c8c36267cec58b3728211d4`.
+
+Both UI inputs used that held export. Independent readback checked all
+56 payload and six SDK files against the admitted image, role and PRI
+receipts and previous source pins. Only the UI differed from the prior
+guarded payload. The manifest still declares two Disabled LocalService
+roles. The pack-input owner refused the old UI pin with exit 1 and
+published no stale recipe. The current pins produced the 63-row recipe.
+
+MakeAppx ran in the existing offline AMD64 Windows Sandbox on build
+26100 using its original mappings. The healthy pack exited 0 and the
+invalid `StartupType` control exited 1. Both processes retired, the
+guest scratch was removed and both transfer shelves returned to empty.
+The maintained reader verified all 58 archive members. The stale UI
+pin refused at `nevrotick-ui.exe`. Independent ZIP comparison found
+only the UI and `AppxBlockMap.xml` changed, with only the UI block row
+changed. The 11,395,630-byte unsigned archive hashes to
+`c4ee1ba86a57bf1a3c27fad3efe00e930b7a83366d4158c35b5717090e824177`.
+
+| Record under `~/.local/share/nevrotick/w11-current-guarded-affinity-2611.QHow3GKP/` | SHA-256 |
+| --- | --- |
+| `windows-default-guarded.json` | `39846432cd62cffd6c8ed71bb282386da0c696266981a13a9b8193d1f59874f9` |
+| `current-artworklab-readback.json` | `bc42012fa047c8eed9341161e8a125fbdc8fa4496b23da7fad31d26978d883ed` |
+| `current-makeappx-recipe.json` | `ec40571b680f12b77dda0a03fa17067f5adda82728dd428e0ef96ee42cf94516` |
+| `current-makeappx-recipe/pack-1cf34bba4c6f/guest.json` | `d02d48dff1b9cc4ac710e5996483d915abf2ae6269d442cdcf5ada140d14513e` |
+| `current-archive-readback.json` | `21bd86803adfd08bbaee65b007efbc91a81bc784700663c14b30269b9bce2f61` |
+| `package-compare.json` | `3ccf57cb8ebfa5a0e17f7cdb21ea2b3e09809341ff69429cf3bbf983da4a03ab` |
+
+This advances the unsigned disabled-service assembly. Product role
+selection, signatures and trust, installed activation and servicing,
+and native updater behavior remain open.
+
 ###### Reject unexpected ZIP extra fields and member comments
 
 W11-W10/S6.4 and CHECK-18/26. The shared unsigned archive reader previously
