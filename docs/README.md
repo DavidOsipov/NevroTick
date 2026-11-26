@@ -83,7 +83,7 @@ owns the evidence and conditional implementation handoff;
 preserves the current product continuation and accepted post-V1 order. These are
 research proposals, not implemented support, measured accuracy or a new V1 gate.
 
-**Timestamp qualification — 18 November 2026:** the
+**Timestamp qualification — 18 and 26 November 2026:** the
 [W11-W01 matrix](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 adds concrete clock/capability, RX/TX, NIC calibration, transition, fallback and
 measured-benefit cases under existing CHECK owners. The
@@ -93,6 +93,11 @@ and SDK/source discrepancies. The finite supplier/receiver contract is settled;
 actual suppliers, physical uncertainty and native qualification remain open.
 Required V1 provenance stays separate from optional software/NIC adoption.
 These are planned checks, not implementation, executed tests or a hardware requirement.
+The [26 November refinement](../tasks/windows11-integration.md#microsoft-learn-timestamp-refinements--26-november-2026)
+makes adapter-mode precedence/activation, Winsock provider identity, ancillary-only
+truncation, selected SDK ABI and equal nonzero NIC cross-capture endpoints explicit
+under the same owners. Application capture and the independent mapping continuation
+retain their existing implementation and evidence scope.
 
 **Production event logger plan — 17 November 2026:** the
 [W11-W08 continuation](../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)

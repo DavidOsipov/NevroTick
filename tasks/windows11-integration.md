@@ -260,6 +260,67 @@ universal correction, Windows busy-poll/power setting or measured product gain.
 Required S2.1/P2 provenance stays on the V1 path; optional adapter adoption still
 requires its existing contract and native evidence.
 
+#### Microsoft Learn timestamp refinements — 26 November 2026
+
+**Scope/disposition:** the [Microsoft source follow-up](../docs/plans/windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
+refines TQ-02/04/06/08/10 below under their existing CHECK owners. Added adapter
+cases remain planned. Source review was reconciled with
+`b161229c0d62f47246df11bfe2cf8df46e4d2e81`; this is no new workstream or native gate.
+
+**Current executable path:** [raw clock reads](../crates/windows-platform-native/src/clock_coordinates.rs)
+and [application captures](../crates/nevrotick-engine/src/clock_capture.rs) retain
+QPC/FILETIME brackets at the socket call boundaries. The
+[serial receive owner](../crates/nevrotick-engine/src/series.rs) retains the
+original staged capture through policy contention and rechecks the original
+deadline/current guards. No Winsock packet-timestamp or NIC-cross adapter was
+found in maintained source. The existing `recv_from` oversize classification
+does not implement `WSARecvMsg` ancillary-error handling. No matching executable
+repair follows from these API-specific findings. Equal signed application QPC
+ticks and raw FILETIME zero keep their existing contract; the selected NIC
+cross-record admission rule in TQ-06 does not apply to those application reads.
+
+**Owner/next action:** Engine/platform continues the required S2.1/P2 independent
+reference, mapping/validity issuer and actual consumer assignment. The optional
+adapter receives these controls only at its existing trigger. No native or
+application tests were run for this refinement; it establishes no new calibration,
+packet-source observation or eligible sample. Completed laboratory
+evidence keeps its original scope; native/fuzz/storage holds and development
+order remain unchanged.
+
+**Documentation checkpoint:** `plan-architecture` mapped the refinements to the
+existing owners; `plan-independent-review` independently checked Microsoft/SDK
+sources, current callers, useful controls and evidence limits. A fresh-context
+review accepted the six-file technical candidate tree
+`e3ec776158a6f823e156a8806ce355f80f21c2cb` for this documentation stage.
+`qa-pre-commit` checked the complete staged change scope, added relative paths/
+heading targets and timestamp-source references; `git diff --cached --check`
+passed. The root documentation checksum manifest is absent, so no bundle-integrity
+claim follows. This receipt records source/document checks, not execution of the
+planned TQ cases; application, mutation and native runs are not part of this
+non-executable amendment.
+
+**Resumed closeout — 26 November 2026:** `/root/timestamp_review` completed an
+independent Microsoft Learn/pinned-SDK and current-source review of the recovered
+technical amendment; conversation context was inherited. `/root/final_judge`
+completed a separate fresh-context (`fork_turns: none`) publication review of
+staged tree `d38b331e6b2638716fa3fe567bde8effb945e7b9`, reading the full six-file
+diff, canonical owners and current capture/receive callers. Both returned ready
+for this documentation stage with no substantive finding. The judge's retained
+comprehension follows:
+
+> The amendment refines the existing W11-W01 timestamp contract and its planned acceptance cases. It separates adapter support, requested configuration, active mode and actual packet evidence; strengthens provider-specific receive handling and ancillary truncation checks; and distinguishes valid equal-endpoint NIC cross captures from invalid captured fields and unavailable nominal frequency. These refinements remain attached to the existing Engine/platform owners and CHECK identities. They do not select or implement a packet-timestamp adapter, grant adapter-configuration authority, or establish native results.
+
+> The current source retains application-level QPC/FILETIME capture brackets and preserves the original staged receive through policy contention and final admission guards. The required continuation remains the independent reference, mapping and validity issuer, followed by actual consumer admission. Optional software/NIC timing remains conditional, and the source/documentation evidence does not establish production calibration, eligible samples, clock-write authority or native qualification.
+
+The resumed inert checks resolved all ten added local-link occurrences and the
+23 added timestamp-source reference occurrences; staged whitespace passed, and
+the changed working files matched the index. The judge separately resolved the
+ten links, including seven heading fragments. This addition records those
+completed reviews and checks; the reviewed technical amendment is unchanged.
+Remote publication/signature/hosted-check results are reported on the resulting
+pull request rather than presumed by this source receipt. No new product or
+native test result is claimed.
+
 #### Timestamp qualification matrix — 18 November 2026
 
 **Scope/status:** documentation and acceptance refinement against main
@@ -281,15 +342,15 @@ must pass before use. Development §7, post-V1 order and execution holds remain.
 | Case / existing checks | Independent controls and required observation |
 | --- | --- |
 | **TQ-01 — clocks and conversions**; CHECK-7/11/25 | Preserve UTC, QPC, active-awake and NIC domains and original capture placement. Pair normal conversion with equal/adjacent cross-thread QPC ticks, wide capture brackets, range/rounding/overflow boundaries and an external wall step. Ambiguous order stays uncertain; QPC continuity grants neither UTC mapping nor delivered correction. Required for the baseline supplier; NIC inputs apply only when selected. |
-| **TQ-02 — capability and activation**; CHECK-6/11/25 | Pair genuinely active general-packet timestamping with unsupported API/driver, query failure, supported-but-disabled, PTP-only, RX-only/TX-only and contradictory mode observations. Check `AllReceive` for generic RX and `AllTransmit` or `TaggedTransmit` for generic TX in the actual source set. Record each direction independently; a full-path label requires both. Directions omitted from `TIMESTAMPING_CONFIG.Flags` are disabled: challenge a later RX-only/TX-only call beside correct combined configuration. Software/hardware comparisons use separate interface modes, with application captures retained in each. Socket configuration success or both supported sets is no proof of an active mode. |
+| **TQ-02 — capability and activation**; CHECK-6/11/25 | Pair genuinely active general-packet timestamping with unsupported API/driver, query failure, supported-but-disabled, PTP-only, RX-only/TX-only and contradictory mode observations. Keep a successful query with no applicable direction flags distinct from query failure. Check `AllReceive` for generic RX and `AllTransmit` or `TaggedTransmit` for generic TX in the actual source set. Record each direction independently; a full-path label requires both. Directions omitted from `TIMESTAMPING_CONFIG.Flags` are disabled: challenge a later RX-only/TX-only call beside correct combined configuration. Software/hardware comparisons use separate interface modes, with application captures retained in each. Software support is optional in the documented NDIS 6.82 miniport path; no automatic software fallback follows hardware absence. For that path, challenge both standardized settings requesting enablement: verify reported hardware-active/software-disabled state; PTP-only hardware supplies no implicit software-timestamp coverage for ordinary UDP. After authorized activation, re-query and observe the selected path. Socket/adapter configuration success or both supported sets is no proof of an active mode. |
 | **TQ-03 — actual packet path**; CHECK-6/11/27 | Controlled IPv4/IPv6 and two-adapter cases bind exchange, socket/association generation, RX interface/local destination and qualified TX selection. Switch routes/interfaces and challenge stale interface-index reuse and virtual/VPN attribution beside stable paths. Outer tunnel or later SOCKS-relay timing cannot stand in for the inner exchange without demonstrated association. Preserve current interface/family/trust policy; SOCKS-specific execution remains deferred. |
-| **TQ-04 — receive metadata**; CHECK-6/21/25/27 | Retain the existing payload/control truncation and ABI cases; add absent, duplicate/conflicting and wrong-length timestamp messages plus a valid neighboring message. Treat `UINT64` as source-domain ticks, not nanoseconds/UTC. A sound payload does not repair bad metadata. Use only an independently admitted original application capture as fallback, or refuse the measurement. |
+| **TQ-04 — receive metadata**; CHECK-6/21/25/27 | Retain the existing payload/control truncation and ABI cases; add absent, duplicate/conflicting and wrong-length timestamp messages plus a valid neighboring message. Resolve `WSARecvMsg` for the selected socket/provider; pair lookup failure and provider changes with a compatible-provider success. Shared extension-pointer caching needs established provider compatibility. Distinguish `WSAEMSGSIZE` with `MSG_CTRUNC` alone, `MSG_TRUNC` alone and both; this API's error alone does not prove oversized payload. Preserve returned lengths/flags and selected SDK control-message layout. Treat `UINT64` as source-domain ticks, not nanoseconds/UTC. A sound payload does not repair bad metadata. Use only an independently admitted original application capture as fallback, or refuse the measurement. |
 | **TQ-05 — transmit lifetime**; CHECK-6/21/27 | Pair immediate and delayed success with repeated `WSAEWOULDBLOCK`, a full buffer, absent records, retrieval after deadline/Stop, socket recreation and `UINT32` ID exhaustion/reuse. Freeze finite outstanding/queue/poll/retention budgets; no busy wait or reuse while an old record can match. Prevent or explicitly refuse `UDP_SEND_MSG_SIZE` coalesced TX on this path. Retrieval consumes the matching record once; late records cannot renew sample age, alter authenticated bytes or revise an already committed estimate. Observe bounded cleanup and a subsequent valid exchange. |
-| **TQ-06 — NIC correlation**; CHECK-7/11/25 | Check `SupportsCrossTimestamp` and real capture success for this candidate. Independent rate/offset/drift fixtures and later native brackets exercise NIC→QPC→UTC with conservative composed uncertainty and finite model validity. Pair valid calibration, including zero/rounded nominal frequency, with failed cross capture, wide/inverted brackets, expired calibration, overflow and counter reset/discontinuity. Nominal frequency, midpoint or regression residual alone is no physical error guarantee. Unknown mapping yields fallback/refusal, never zero uncertainty. |
+| **TQ-06 — NIC correlation**; CHECK-7/11/25 | Check `SupportsCrossTimestamp` and real capture success for this candidate. Independent rate/offset/drift fixtures and later native brackets exercise NIC→QPC→UTC with conservative composed uncertainty and finite model validity. Include a healthy nonzero cross record with `SystemTimestamp2 == SystemTimestamp1`; equal endpoints alone do not establish zero uncertainty. Pair valid measured calibration, including zero/rounded nominal frequency, with failed cross capture, wide/inverted brackets, expired calibration, overflow and counter reset/discontinuity. Refuse a zero captured field in the selected NIC cross record as a project admission rule derived from the driver contract; this neither makes zero nominal frequency invalid nor claims a universal user-mode API error. Nominal frequency, midpoint or regression residual alone is no physical error guarantee. Unknown mapping yields fallback/refusal, never zero uncertainty. |
 | **TQ-07 — transitions and retirement**; CHECK-11/21/27 | Existing configuration/callback/stop cases include same-mode NIC restart, driver/device change, sleep/hibernate/Modern Standby where supported, and lost UTC-mapping continuity. Retire affected issuers, queued metadata and crossing exchanges before final admission; fresh re-query/recalibration permits a healthy later exchange. Unknown transition coverage remains unavailable. Observe real native completion and callback draining before releasing context/resources; mock traces do not qualify native behavior. |
-| **TQ-08 — fallback and truthful state**; CHECK-6/8/14/25 | Pair unavailable optional timing with a qualified application fallback, and with absent/stale application mapping. The first preserves useful acquisition with actual per-leg source and justified uncertainty; the second refuses production admission. Any RX/TX mixed-source path needs explicitly qualified conversions/error composition. No automatic NTS→NTP, route escape, renewed age, zero error or synthetic hardware-success label follows timing failure. |
+| **TQ-08 — fallback and truthful state**; CHECK-6/8/14/25 | Pair unavailable optional timing with a qualified application fallback, and with absent/stale application mapping. The first preserves useful acquisition with actual per-leg source and justified uncertainty; the second refuses production admission. Do not relabel absent or zero-valued hardware metadata as software; qualify whether the selected Winsock path exposes zero or omits metadata after the driver reports missing hardware timing. Any RX/TX mixed-source path needs explicitly qualified conversions/error composition. No automatic NTS→NTP, route escape, renewed age, zero error or synthetic hardware-success label follows timing failure. |
 | **TQ-09 — actual final consumer**; CHECK-6/7/11/25/27 | Trace original capture/packet identity → calibrated mapping → measurement → serialized consume-once admission. Challenge model/configuration replacement immediately before commit and TX arrival after publication, beside a valid same-generation exchange. Late facts may remain historical diagnostics but cannot update current history/readiness twice. Keep request wire-correlation bytes separate from local measured T1; no post-authentication rewrite or unconditional crypto-duration subtraction. |
-| **TQ-10 — measured benefit and cost**; CHECK-7/8/21/24 | Compare application plus software, then application plus hardware under matched estimator, controlled peer/path, independent timing truth and declared idle/load conditions. Include mixed endpoint capabilities, missing/delayed metadata, both claimed families and stop/recovery. Report local capture latency, calibration/total uncertainty, end-to-end error, loss/fallback counts and CPU/wakeups/memory separately. Better placement alone proves no UTC improvement; unsupported hardware is an explicit optional outcome. |
+| **TQ-10 — measured benefit and cost**; CHECK-7/8/21/24 | Compare application plus software where supported and active, then application plus hardware where supported and active, under matched estimator, controlled peer/path, independent timing truth and declared idle/load conditions. Include mixed endpoint capabilities, missing/delayed metadata, both claimed families and stop/recovery. Report local capture latency, calibration/total uncertainty, end-to-end error, loss/fallback counts and CPU/wakeups/memory separately. Better placement alone proves no UTC improvement; unavailable software and unsupported hardware are explicit optional outcomes. |
 
 **Native evidence and exit.** Bind each claimed result to the exact candidate,
 OS family/build/servicing, SDK/bindings, effective service token/protections,

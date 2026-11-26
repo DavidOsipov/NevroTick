@@ -1,7 +1,7 @@
 # NevroTick: useful Windows 11 integration mechanisms
 
-**Document:** NV-WIN11-RESEARCH-001, revision 1.4<br>
-**Date:** 18 November 2026<br>
+**Document:** NV-WIN11-RESEARCH-001, revision 1.5<br>
+**Date:** 26 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested documentation integration; source research and proposed qualification, no native execution.
 
@@ -53,7 +53,7 @@ Already covered well: clock-domain separation, suspend/resume invalidation, W32T
 
 | Area | Useful increment | Placement in existing work | Recommendation |
 | --- | --- | --- | --- |
-| Time measurement | Winsock RX/TX timestamps; optional NIC/QPC correlation | Native time/network adapter | Strong bounded candidate; software path first |
+| Time measurement | Winsock RX/TX timestamps; optional NIC/QPC correlation | Native time/network adapter | Strong bounded candidate; compare software where supported and active |
 | Sleep and lifecycle | Modern Standby suspension, timer semantics, actual service-setting activation | Existing platform and service checks | Clarify contracts before claiming native correctness |
 | DNS ownership | Versioned native configuration, exclusive endpoints, reconciled notifications | Future DNS platform slice | Strong implementation candidates |
 | Network confinement | Windows Service Hardening service restriction rules | Existing installer/security boundary | Qualify before custom WFP management |
@@ -71,7 +71,7 @@ Already covered well: clock-domain separation, suspend/resume invalidation, W32T
 
 Microsoft documents UDP receive timestamps through `WSARecvMsg` ancillary data and transmit timestamps correlated by an application-supplied ID. Software timestamps use QPC; hardware timestamps use the NIC's counter. TX retrieval can report “not yet available,” and its bounded timestamp buffer can drop new entries when full. Socket configuration alone does not establish that system/interface timestamping is active. [T1] [T2]
 
-**Proposed use.** Add an optional measurement adapter that records the actual timestamp source. First compare software packet timestamps with the existing application-boundary timestamps. This can reveal local scheduling and queueing contributions to measurement error. Preserve a qualified application-level path when the optional facility is unavailable, with an honest source/uncertainty label. A missing TX timestamp must not hang the exchange or be replaced by an invented exact send time.
+**Proposed use.** Add an optional measurement adapter that records the actual timestamp source. First compare supported, active software packet timestamps with the existing application-boundary timestamps. This can reveal local scheduling and queueing contributions to measurement error. Software support is optional in the documented NDIS miniport implementation; it is not a universal native fallback. [T9] Preserve a qualified application-level path when the optional facility is unavailable, with an honest source/uncertainty label. A missing TX timestamp must not hang the exchange or be replaced by an invented exact send time.
 
 For hardware timing, check both supported and currently enabled capabilities. Support for PTP packets alone is insufficient for arbitrary NTP UDP traffic. Microsoft exposes a cross-timestamp operation that brackets a NIC clock observation with QPC readings; its documented Windows 11 client floor is build 22000.194. Clock frequency information may be unavailable or inadequate as an exact conversion. [T2] [T3] [T8]
 
@@ -86,8 +86,22 @@ NIC→QPC→UTC calibration, bounded TX retirement and the coalesced-TX exclusio
 explicit. They retain independent valid fallback and matched accuracy/cost
 controls on each claimed OS/NIC profile. The finite supplier/receiver contract is
 settled; actual suppliers, physical error bounds and native evidence remain open.
-Software comparison precedes optional hardware adoption; neither becomes a new
-V1 feature requirement or a reason to repeat the original survey.
+Where supported and active, software comparison precedes optional hardware
+adoption; neither becomes a new V1 feature requirement or a reason to repeat the
+original survey.
+
+**26 November activation and receive refinement:** the same
+[source detail](windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
+records hardware precedence when both adapter modes are requested, query-only
+configuration discovery and activation readback after possible adapter restart.
+The documented socket configuration has no software/hardware selector. It also preserves
+nonzero equal-QPC cross captures, separates zero nominal frequency from missing
+captured values, and reconciles current/older SDK layouts. The existing
+[receive-admission cases](windows11-integration-follow-up.md#packet-payload-and-ancillary-metadata-need-separate-admission)
+cover provider-specific extension lookup and ancillary-only `WSAEMSGSIZE`; neither
+configuration success nor a complete payload proves usable timestamp metadata.
+These refine W11-W01's optional adapter and existing acceptance owners; they add
+no runtime activation, implementation result or native execution authority.
 
 ### Sleep, timers, and leap presentation
 
@@ -477,6 +491,7 @@ Links below are primary Microsoft documentation, except the pinned project basel
 [T6]: https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-setwaitabletimerex
 [T7]: https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_leap_second_info
 [T8]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_timestamp_capabilities
+[T9]: https://learn.microsoft.com/en-us/windows-hardware/drivers/network/ndis-status-timestamp-capability
 [N1]: https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-getinterfacednssettings
 [N2]: https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-setinterfacednssettings
 [N3]: https://learn.microsoft.com/en-us/windows/win32/api/netioapi/ns-netioapi-dns_interface_settings3
