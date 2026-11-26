@@ -486,16 +486,18 @@ fn request_packets(entropy: &[u8; 16]) -> Result<[[u8; PACKET_BYTES]; 2], PilotE
 /// # Errors
 /// Return bounded bind/nonblocking/local-address failures without a query send.
 fn prepare_slot(peer: SocketAddr, packet: [u8; PACKET_BYTES]) -> Result<PreparedSlot, PilotError> {
-    let bind_ip = match peer {
+    let bind_ip: IpAddr = match peer {
         SocketAddr::V4(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
         SocketAddr::V6(_) => IpAddr::V6(Ipv6Addr::LOCALHOST),
     };
-    let socket = StdSocket::bind(SocketAddr::new(bind_ip, 0))
-        .map_err(|e| PilotError::Bind(IoCause::capture(&e)))?;
+    let requested: SocketAddr = SocketAddr::new(bind_ip, 0);
+    let socket: StdSocket =
+        StdSocket::bind(requested).map_err(|e| PilotError::Bind(IoCause::capture(&e)))?;
     socket
         .set_nonblocking(true)
         .map_err(|e| PilotError::Nonblocking(IoCause::capture(&e)))?;
-    let local = checked_local_endpoint(
+    let local: SocketAddr = checked_local_endpoint(
+        requested,
         socket
             .local_addr()
             .map_err(|e| PilotError::LocalAddress(IoCause::capture(&e)))?,
@@ -511,13 +513,21 @@ fn prepare_slot(peer: SocketAddr, packet: [u8; PACKET_BYTES]) -> Result<Prepared
     })
 }
 
-/// Admit the actual bound address before it can become a prepared local endpoint.
-/// This pure check does not assert that a caller-supplied address was OS-bound.
+/// Admit the address read from an owned socket against its original ephemeral
+/// loopback bind request. Port allocation may change only the port.
 ///
 /// # Errors
-/// Reject a non-loopback or zero-port result without retaining a prepared socket.
-fn checked_local_endpoint(local: SocketAddr) -> Result<SocketAddr, PilotError> {
-    if !local.ip().is_loopback() || local.port() == 0 {
+/// Reject a non-ephemeral or non-loopback request, a zero assigned port or a
+/// changed address, including IPv6 scope and flow information.
+fn checked_local_endpoint(
+    mut requested: SocketAddr,
+    local: SocketAddr,
+) -> Result<SocketAddr, PilotError> {
+    if requested.port() != 0 || !requested.ip().is_loopback() || local.port() == 0 {
+        return Err(PilotError::InvalidPeer);
+    }
+    requested.set_port(local.port());
+    if local != requested {
         return Err(PilotError::InvalidPeer);
     }
     Ok(local)

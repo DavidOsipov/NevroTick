@@ -25,7 +25,7 @@ import tempfile
 import time
 import tomllib
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, BinaryIO
 import xml.etree.ElementTree as ET
 
 if TYPE_CHECKING:
@@ -2331,30 +2331,35 @@ def admit_windows_ui_tools(toolchain: Path, compiler: Path | None) -> dict[str, 
 def stage_windows_build_tools(directory: Path, tools: dict[str, tuple[Path, str]]) -> dict[str, tuple[Path, str]]:
     """Copy exact selected tools outside the child-writable tree and mount only those copies."""
     directory.mkdir(mode=0o700)
-    info = directory.lstat()
+    info: os.stat_result = directory.lstat()
     if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
         raise ENV.Incomplete("Windows build tools require owner-private snapshot storage.")
-    staged = {}
-    copies = {}
+    staged: dict[str, tuple[Path, str]] = {}
+    copies: dict[tuple[str, int], Path] = {}
+    mount: str
+    source: Path
+    expected: str
     for mount, (source, expected) in tools.items():
-        mode = 0o500 if "/bin/" in mount else 0o400
-        key = (expected, mode)
+        mode: int = 0o500 if "/bin/" in mount else 0o400
+        key: tuple[str, int] = (expected, mode)
         # The reader and linker resolve the same LLVM bytes in distinct directories.
         if key in copies:
             staged[mount] = (copies[key], expected)
             continue
-        target = directory / mount.lstrip("/")
+        target: Path = directory / mount.lstrip("/")
         target.parent.mkdir(parents=True, exist_ok=True)
-        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+        flags: int = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+        reader: BinaryIO
+        writer: BinaryIO
         with os.fdopen(os.open(source, flags), "rb") as reader, target.open("xb") as writer:
             info = os.fstat(reader.fileno())
             # Apply the existing child per-file ceiling to the staged linker too.
-            limit = WINDOWS_UI_TOOL_PINS.get(mount, (256 * 1024 * 1024, ""))[0]
+            limit: int = WINDOWS_UI_TOOL_PINS.get(mount, (256 * 1024 * 1024, ""))[0]
             if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
                 raise ENV.Incomplete(f"Unadmitted Windows tool size or type: {source.name}")
-            remaining = info.st_size
+            remaining: int = info.st_size
             while remaining:
-                block = reader.read(min(remaining, 1024 * 1024))
+                block: bytes = reader.read(min(remaining, 1024 * 1024))
                 if not block:
                     break
                 writer.write(block)

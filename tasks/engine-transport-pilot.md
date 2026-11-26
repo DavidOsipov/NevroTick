@@ -2378,6 +2378,197 @@ coverage and execution holds remain with their existing Windows/CHECK owners.
 Historical receipts above establish none of these new results; the coordinator's
 documentation review receipt is separate from future implementation acceptance.
 
+#### Bind an Engine local path decision to its observation owner
+
+S2.1 and CHECK-8/25/27 follow the existing address-family workstream.
+The configured plain managed round already carries the source
+configuration revision, exact candidate membership, normalized
+destination and original cutoff. Its invocation control can invalidate
+the round. It currently receives no route or interface observation.
+W11-W03 DNS supplies candidate addresses, and the protected KE power
+observer belongs to a different invocation. The Windows platform
+observation and reconciliation owner must supply currentness to the
+configured round before the sender can make a reachable local exclusion.
+[Windows address-family workstream](windows11-integration.md#427-address-family-admission-routing--5-november-2026)
+
+The first portable slice consumes a bounded observation for each original
+round member from the selected observation owner. Keep the source binding
+and exact destination, including IPv6 scope where admitted, plus the owner
+generation and a finite monotonic validity allowance. After current Stop,
+cutoff and destination checks, apply a conclusive local exclusion before
+socket setup and check again before the managed sender's reservation.
+Expired, incomplete or superseded observation leaves the admitted attempt
+eligible for its original budget. Actual round invalidation still retires
+that invocation. A local exclusion advances within the original membership
+and records a local reason with zero new peer debit. The slice requires
+serialization between observation revocation and the final reservation and
+synchronous send, or an equivalent ordering guarantee. A bounded refresh
+or ordinary recovery path must eventually reconsider the destination even
+if a notification is missed. A test fixture can supply observations to
+prove the portable contract while the real Windows issuer is pending.
+
+The Microsoft Learn Win32 contract for `GetBestRoute2` requires a
+selected interface LUID or index. A result for one interface covers only
+that lookup. To exclude a destination on actual Windows, the selected
+producer needs complete observations for the admitted interface context,
+checked source address validity and a rule for demand-activated paths.
+Unclassified Windows errors remain unknown. Route and address callbacks
+should request reconciliation because their rows can be incomplete.
+Initial callbacks acknowledge registration. Cancel from the independent
+lifetime owner after releasing any resource the callback needs. SDK
+bindings, multi-call coherence, finite refresh and actual Windows behavior
+still require qualification. [Route lookup](https://learn.microsoft.com/windows/win32/api/netioapi/nf-netioapi-getbestroute2) · [Source address state](https://learn.microsoft.com/windows/win32/api/netioapi/ns-netioapi-mib_unicastipaddress_row) · [Route notification](https://learn.microsoft.com/windows/win32/api/netioapi/nf-netioapi-notifyroutechange2) · [Address notification](https://learn.microsoft.com/windows/win32/api/netioapi/nf-netioapi-notifyunicastipaddresschange) · [Notification retirement](https://learn.microsoft.com/windows/win32/api/netioapi/nf-netioapi-cancelmibchangenotify2)
+
+The portable discriminator uses two permitted loopback destinations.
+Require zero setup, packets and debit for the conclusively excluded
+destination and a reply from its permitted successor. Install a current
+exclusion after setup and before the first reservation to exercise the
+sender guard. Require zero packets and zero debit on that socket and
+observe its retirement before the successor. A later exclusion preserves
+debit already spent on an earlier attempt. With the same first destination
+and expired, missing, superseded or foreign observation, require its
+bounded attempt to succeed. Repeat with the same endpoint values under a
+replacement configuration. Native API selection and qualification remain
+with the Windows platform owner.
+
+##### Continue a configured round after its local address fails to bind
+
+S2.1 and CHECK-8/25/27. When the configured managed loopback round has
+no route observation, its actual UDP bind can report that the selected
+local address is unavailable. The Engine now retains that concrete
+`AddrNotAvailable` refusal by original position and makes the next
+claim under the same configuration and cutoff. No registered socket,
+send or peer debit was created for the failed bind. The next candidate
+repeats current Stop, deadline and source/endpoint checks. The result
+keeps the refusal separate from policy refusal and completed attempts.
+An occupied bind and other setup errors still produce the original
+terminal failure. The configured entry supplies no DNS refresh successor.
+[Winsock bind](https://learn.microsoft.com/windows/win32/api/winsock2/nf-winsock2-bind)
+
+The negative control supplies the precise local bind category to the
+actual round driver. With the original driver, the selected test returned
+`Failure` where the admitted loopback successor required `Reply`.
+Nextest exited 100 for that single test. The repaired control compares
+both policy records before the successor reserves a send. It joins the
+actual responder, checks both socket queues and requires one reply from
+the permitted successor. An occupied-bind neighbor observes zero
+successor work. The Stop neighbor delivers Stop after the original
+refusal is recorded and before the fresh summary. It observes the
+original refusal and no successor.
+
+The 761-input GNU default candidate passed all-targets Engine Clippy,
+317 qualified ordinary and 317 qualified optimized cases, and 90
+doctests. Both live Nextest listings matched the fresh JUnit identities.
+Engine all-targets Clippy for the AMD64 MSVC target also passed from
+WSL on the same 761 source inputs. Source, tool, dependency and index
+bookends passed. Two earlier candidate checks stopped at strict Clippy
+before product execution.
+The retained source candidates used isolated WSL scratch and the
+existing durable Windows evidence directory, with the four-GiB reserves
+on the actual candidate, scratch and evidence volumes.
+
+| Record under `%LOCALAPPDATA%/NevroTick/round-local-bind-2611.QaPZqgB9/` | SHA-256 |
+| --- | --- |
+| `red-report.json` | `d80ec230f1fb7a61850973c7dfae66d743e5b9418d686b0993129ec7cb83561f` |
+| `final-report.json` | `fe64631b959b9bc921f152395f7cf1b06f4c3811762e3fb028787be1c87ded2a` |
+| `final-1.xml` | `5f61c69eefc20832e624e286afd216bd2b0cf63a708d802df1438d02dbb3ba03` |
+| `final-2.xml` | `c3d4dd12063598ea3d73212a84ec249ea6f0a161fc07bfc7255475f09e2441a9` |
+| `msvc-report.json` | `084d0370b2ebe368d286df3a14fcfafb7581a10dd9ddf463318964121fb944a6` |
+
+The selected setup category comes from the actual bind adapter in
+production. The control injects that outcome and exercises the real
+configured round and successor on Linux. Windows bind and route
+observations, the production route issuer and fresh per-file
+qualification remain separate gates.
+
+##### Guard the older managed round against bind fallback expansion
+
+The independent audit of `24442f8` identified a missing test for the
+managed constructor without an original configured-round cutoff. The
+actual round driver already keeps `AddrNotAvailable` terminal in that mode.
+The added control retains the original typed cause, observes no fallback
+record or successor attempt, and checks both peer queues. The existing
+configured-round test supplies the successful successor neighbor.
+
+The first test attempt stopped at an unused-mut compiler diagnostic. After
+correction, the private guard-removal control reached the intended failure.
+The current candidate passed Engine Clippy, 318 ordinary and 318 optimized
+cases, and 90 doctests in the isolated GNU lane. Discovery and execution
+identities matched, and source, tool, vendor and index bookends passed.
+The `red-report.json` and `final-report.json` receipts under
+`~/.local/share/nevrotick/commit-audit-24442f8.e7OOOLbP/retry/` have
+SHA-256 `bb62424b17cfee39342022121f1e4c4398538d58e76582488b084709079416c2`
+and `54b84b28e7e1044f760a166beb44a3eea8e123f4b70ff0814fa5ef0e8751b78f`.
+The guard-removal result is a directed sensitivity control. Native Windows
+and the existing per-file qualification gates remain open.
+
+The same candidate includes explicit Python local types in the Windows tool
+staging helper. Five focused tool-admission controls passed against the
+annotated `scripts/verify.py` under the isolated Python boundary; its SHA-256
+was `a494779ad9a153ef12ab201af21c8c05e30ee89d6d7f440d67aae50cde5b4fba`.
+The retained test log SHA-256 is
+`0cf7062e53277b25f2696ce4ed9269e93eb1ca9776552a5c327b6a344b5803cc`
+under `~/.local/share/nevrotick/verifier-tool-controls-2711.Q1bIbGlq/`.
+This focused execution does not claim a separate Python type-checker pass.
+
+##### Bind the plain UDP socket readback to its original request
+
+S2.1/W11-W01 and CHECK-8/25/27. The shared plain socket constructor
+currently accepts a same-family loopback alias and an alternate loopback
+family in its local address check. The protected constructor already
+requires its original bind address after port allocation. Apply the same
+check before either constructor registers or exposes the socket. Preserve
+the original plain native errors, protected remote check and configured
+round bind-fallback behavior. Address readback proves the local binding of
+that socket. Route observation and authority remain separately owned.
+
+Rust implementation, contract, protocol-input and regression selection
+cover the shared constructor and both callers. Use a matching socket
+readback and a same-family loopback alias with the same nonzero port as
+the principal control pair. Cover the wrong family, zero port and IPv6
+scope/flow, then the actual plain loopback consumers and protected caller.
+Use one source and check allowance through `2026-11-26T21:05:00Z`, one
+directed reproduction and one qualified candidate. Keep setup or resource
+refusals as incomplete, with original first failure and intended selector.
+
+The first directed run selected zero tests because its filter used the wrong
+module name. A corrected run removed the exact-address condition in a private
+copy and reached the intended assertion failure. The unchanged candidate then
+passed Engine Clippy, 317 ordinary and 317 optimized cases, and 90 doctests.
+Both Nextest listings matched their executed qualified identities and the
+source, tool, vendor and index bookends passed. The synthetic removal is a
+sensitivity control, not evidence of a native socket returning a substituted
+address. The protected feature and Windows paths retain their own checks.
+
+| Record under `~/.local/share/nevrotick/engine-exact-loopback-2711.Hmb3RUNG/retry/` | SHA-256 |
+| --- | --- |
+| `red-report.json` | `3ad8a2b13452ca5514a93446c9a1919e57291e483e0d1c5558d3be314ff0fe79` |
+| `final-report.json` | `5b933050e435675fa92a9d400088bf2082dc60651cfebacbf7a8ff418d54c4f8` |
+
+The first focused EP1 invocation stopped before compilation because the tool
+admission omitted the required pinned Nextest path. After correcting that
+input, the exact protected bound-endpoint control and the actual two-leg
+managed loopback measurement each executed one passing case. Product source,
+compiler and vendor readbacks matched. The focused receipt is
+`engine-exact-loopback-2711.Hmb3RUNG/ep1/report.json` in the existing local
+evidence store, SHA-256
+`b9ef4b041f75f583a74da5275195b08b1649c4fc1ac3c290ca8708200d869040`.
+The default-feature Engine all-targets MSVC Clippy check also passed with
+source, tool, vendor and index bookends. Its receipt is
+`engine-exact-loopback-2711.Hmb3RUNG/msvc/msvc-report.json`, SHA-256
+`99db5018876dd42964c0b4dc5c0fb776ac7474dd5363879966ed3dea6caa1d40`.
+The protected-feature Engine all-targets MSVC Clippy check passed on its
+earlier candidate with the same bookends. Its receipt is
+`engine-exact-loopback-2711.Hmb3RUNG/msvc-ep1/msvc-ep1-report.json`, SHA-256
+`b3e261df0cc9dc5d53ddf960ee3b32492142e48dd6584afeb1d39989ca81d93f`.
+The later audit candidate also passed the same protected-feature MSVC Clippy
+lane. Its receipt is
+`engine-exact-loopback-2711.Hmb3RUNG/msvc-ep1-current/msvc-ep1-current-report.json`,
+SHA-256 `0e229d7b9bf2bc97b2015986808127f674d7cfb57827a54af565ab2d8a7e6a50`.
+Full EP1 and Windows native qualification remain open. The previous native
+test recipe pins an older source and guest; rebuilding and rebinding it cannot
+be completed within this slice's original deadline.
+
 ### Anti-hot-retry integration controls — 11 November 2026
 
 **Planned S2.1/S2.2 evidence, not implemented retry policy.** This refines the

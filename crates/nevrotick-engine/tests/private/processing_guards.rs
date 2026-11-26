@@ -1969,33 +1969,51 @@ fn entropy_admission_checks_each_half_and_exact_request_bytes() -> Result<(), Bo
     Ok(())
 }
 
-/// Synthetic endpoint values exercise the defensive check of an actual bind result.
-/// Passing this pure helper alone establishes no OS socket/address ownership.
+/// Compare independently specified readbacks against the original bind request.
 ///
 /// # Errors
-/// Preserve rejection of the independently valid IPv4/IPv6 loopback neighbors.
+/// Propagate an unexpected refusal of either allocated loopback endpoint.
 ///
 /// # Panics
-/// Fail if either invalid predicate alone bypasses admission or an endpoint changes.
+/// Fail if refusal can be bypassed or port allocation changes another coordinate.
 #[test]
-fn local_endpoint_admission_requires_both_loopback_and_nonzero_port() -> Result<(), Box<dyn Error>>
-{
-    for endpoint in [
-        SocketAddr::from(([127, 0, 0, 1], 1)),
-        SocketAddr::from(([127, 0, 0, 2], 65535)),
-        SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 123),
-    ] {
-        assert_eq!(checked_local_endpoint(endpoint)?, endpoint);
-    }
-    for endpoint in [
-        SocketAddr::from(([127, 0, 0, 1], 0)),
-        SocketAddr::from(([192, 0, 2, 1], 123)),
-        SocketAddr::from(([192, 0, 2, 1], 0)),
-        SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 0),
-        SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 123),
-    ] {
+fn local_endpoint_admission_requires_the_original_loopback_bind() -> Result<(), Box<dyn Error>> {
+    use std::net::SocketAddrV6;
+
+    let ipv4_request: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 0));
+    let ipv4_bound: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 65535));
+    let ipv6_request: SocketAddr = SocketAddr::from((Ipv6Addr::LOCALHOST, 0));
+    let ipv6_bound: SocketAddr = SocketAddr::from((Ipv6Addr::LOCALHOST, 65535));
+    let foreign_request: SocketAddr = SocketAddr::from(([192, 0, 2, 1], 0));
+    let foreign_bound: SocketAddr = SocketAddr::from(([192, 0, 2, 1], 65535));
+    assert_eq!(
+        checked_local_endpoint(ipv4_request, ipv4_bound)?,
+        ipv4_bound
+    );
+    assert_eq!(
+        checked_local_endpoint(ipv6_request, ipv6_bound)?,
+        ipv6_bound
+    );
+    let rejected: [(SocketAddr, SocketAddr); 9] = [
+        (ipv4_request, SocketAddr::from(([127, 0, 0, 2], 65535))),
+        (ipv4_request, ipv6_bound),
+        (ipv4_request, ipv4_request),
+        (ipv6_request, ipv6_request),
+        (ipv4_request, foreign_bound),
+        (foreign_request, foreign_bound),
+        (ipv4_bound, ipv4_bound),
+        (
+            ipv6_request,
+            SocketAddrV6::new(Ipv6Addr::LOCALHOST, 65535, 0, 1).into(),
+        ),
+        (
+            ipv6_request,
+            SocketAddrV6::new(Ipv6Addr::LOCALHOST, 65535, 1, 0).into(),
+        ),
+    ];
+    for (requested, observed) in rejected {
         assert!(matches!(
-            checked_local_endpoint(endpoint),
+            checked_local_endpoint(requested, observed),
             Err(PilotError::InvalidPeer)
         ));
     }

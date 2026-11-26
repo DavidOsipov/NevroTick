@@ -2675,6 +2675,67 @@ fn configured_round_advances_after_local_address_unavailable() -> Check<()> {
     Ok(())
 }
 
+/// The older managed round keeps a local bind failure terminal.
+/// # Errors
+/// Preserve socket, configuration and runtime setup failures.
+/// # Panics
+/// Require the original bind cause and no successor setup or datagram.
+#[test]
+fn managed_round_without_original_cutoff_keeps_local_bind_failure() -> Check<()> {
+    let authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        crate::SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 2] = [first.local_addr()?, second.local_addr()?];
+    let source: crate::SourceHandle = authority.source(0)?;
+    let (prepared, _control): (PreparedAddressRound, ControlHandle) =
+        source.prepare_address_round(checked_config(&peers)?)?;
+    let bindings: Option<RoundBindings> = prepared.source_policy.clone();
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let origin: Instant = Instant::now();
+    let deadline: Instant = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let cause: IoCause = IoCause::capture(&io::Error::from(io::ErrorKind::AddrNotAvailable));
+    let mut setup_count: usize = 0;
+    let report: AddressRoundReport = runtime.block_on(run_round_with(
+        prepared,
+        origin,
+        deadline,
+        &mut |peer, packet, context, receiver, request_end, round_end| {
+            setup_count += 1;
+            if peer == peers[0] {
+                return Err(PilotError::Bind(cause));
+            }
+            let mode: SourceMode = candidate_mode(bindings.as_ref(), peer)?;
+            setup_address_request_bound(
+                peer,
+                packet,
+                context,
+                receiver,
+                request_end,
+                round_end,
+                mode,
+            )
+        },
+        &mut |_, _| {},
+    ));
+    assert_eq!(report.end(), AddressRoundEnd::Failure);
+    let Some(PilotError::Bind(actual)) = report.primary_error() else {
+        return Err(io::Error::other("original bind cause was not retained").into());
+    };
+    assert_eq!(actual.kind(), cause.kind());
+    assert_eq!(actual.native_code(), cause.native_code());
+    assert_eq!(setup_count, 1);
+    assert!(report.bind_refusals().is_empty());
+    assert!(report.policy_refusals().is_empty());
+    assert!(report.attempts().is_empty());
+    assert_eq!(observe_queries(&first)?.0, 0);
+    assert_eq!(observe_queries(&second)?.0, 0);
+    Ok(())
+}
+
 /// Feed one classified bind result into the real configured round driver.
 /// # Errors
 /// Preserve actual socket, configuration, driver and peer setup failures.

@@ -210,15 +210,14 @@ mod reached {
     /// Refuse a substituted local address, zero bound port, or non-loopback peer.
     #[cfg(any(windows, test))]
     fn check_bound_endpoints(
-        mut requested_local: SocketAddr,
+        requested_local: SocketAddr,
         local: SocketAddr,
         remote: SocketAddr,
-    ) -> Result<(), Failure> {
-        requested_local.set_port(local.port());
-        if local != requested_local || local.port() == 0 || !remote.ip().is_loopback() {
+    ) -> Result<SocketAddr, Failure> {
+        if !remote.ip().is_loopback() {
             return Err(Failure::Endpoint);
         }
-        Ok(())
+        crate::checked_local_endpoint(requested_local, local).map_err(|_| Failure::Endpoint)
     }
 
     impl Backend {
@@ -239,10 +238,10 @@ mod reached {
             socket
                 .set_nonblocking(true)
                 .map_err(|error| failed(DatagramError::Nonblocking(error.kind())))?;
-            let local: SocketAddr = socket
+            let observed: SocketAddr = socket
                 .local_addr()
                 .map_err(|error| failed(DatagramError::Local(error.kind())))?;
-            check_bound_endpoints(requested_local, local, remote)?;
+            let local: SocketAddr = check_bound_endpoints(requested_local, observed, remote)?;
             let socket: UdpSocket = UdpSocket::from_std(socket)
                 .map_err(|error| failed(DatagramError::Registration(error.kind())))?;
             Ok(Self {
@@ -2168,7 +2167,7 @@ mod reached {
             let requested: SocketAddr = SocketAddr::new(loopback, 0);
             let local: SocketAddr = SocketAddr::new(loopback, 49000);
             let remote: SocketAddr = SocketAddr::new(loopback, 4460);
-            assert_eq!(check_bound_endpoints(requested, local, remote), Ok(()));
+            assert_eq!(check_bound_endpoints(requested, local, remote), Ok(local));
             assert_eq!(
                 check_bound_endpoints(requested, SocketAddr::new(foreign, local.port()), remote),
                 Err(Failure::Endpoint),
@@ -2197,7 +2196,7 @@ mod reached {
         let ipv4_alias: SocketAddr = SocketAddr::from(([127, 0, 0, 2], 49000));
         assert_eq!(
             check_bound_endpoints(ipv4_bind, ipv4_bound, ipv4_peer),
-            Ok(())
+            Ok(ipv4_bound)
         );
         assert_eq!(
             check_bound_endpoints(ipv4_bind, ipv4_alias, ipv4_peer),
