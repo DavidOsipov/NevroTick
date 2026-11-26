@@ -204,7 +204,7 @@ class GuardTests(unittest.TestCase):
                     '[registry]\nglobal-min-publish-age="14 days"\n'
                     '[resolver]\nincompatible-publish-age="deny"\n'
                     '[target.x86_64-pc-windows-msvc]\nrustflags=' + json.dumps(candidate) + '\n')
-                with (self.subTest(case=name), patch.dict(os.environ, {}, clear=True),
+                with (self.subTest(case=name), patch.dict(os.environ, {"HOME": str(root)}, clear=True),
                       patch.object(ENV.subprocess, "Popen") as launch):
                     with self.assertRaisesRegex(ENV.Incomplete, diagnostic):
                         ENV.inspect(root)
@@ -234,8 +234,11 @@ class CargoContextTests(unittest.TestCase):
             find.assert_not_called()
 
     def test_explicit_cleared_environment_is_distinct_from_ambient_environment(self):
-        with patch.dict(os.environ, {"CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE": "private-value"}, clear=True):
+        account = type("Account", (), {"pw_dir": str(self.base)})()
+        with (patch.dict(os.environ, {"CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE": "private-value"}, clear=True),
+              patch("pwd.getpwuid", return_value=account) as lookup):
             self.assertEqual(ENV.require_cargo_context(self.root, {})["cwd"], str(self.root))
+            lookup.assert_called_once_with(os.getuid())
             with self.assertRaisesRegex(ENV.Incomplete, "CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE") as error:
                 ENV.require_cargo_context(self.root)
             self.assertNotIn("private-value", str(error.exception))
