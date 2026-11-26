@@ -4,7 +4,7 @@
 from base64 import b64encode
 from collections.abc import Callable
 from contextlib import ExitStack
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from hashlib import sha256
 import json
 import os
@@ -32,6 +32,7 @@ from prestart_deployment_session import (
 from prestart_receipts import (
     Capture, DeploymentObservation, DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, Run,
 )
+import test_check_package as package_fixture
 import test_prestart_receipts as receipts
 
 
@@ -249,10 +250,64 @@ class ScriptedProcess:
         self.retired_exit.set()
 
 
+@dataclass(frozen=True, slots=True)
+class SignedPrestartFixture:
+    """Synthetic signed-profile bytes and independent expected payload identities."""
+
+    path: Path
+    archive: Member
+    payload_sha256: str
+    engine: Member
+    broker: Member
+
+
+def write_signed_prestart_fixture(path: Path, *, signature_marker: bytes = b"S") -> SignedPrestartFixture:
+    """Use the established ZIP fixture producer with distinct inert service members."""
+    engine: bytes = b"engine marker"
+    broker: bytes = b"broker bytes!"
+    payload: dict[str, bytes] = {
+        "AppxManifest.xml": Path(__file__).with_name("AppxManifest.xml").read_bytes(),
+        "Inert.exe": b"inert marker",
+        "nevrotick-lab-s02-engine.exe": engine,
+        "nevrotick-lab-s02-broker.exe": broker,
+        "Assets/PackageLogo.png": b"package logo marker",
+        "Assets/Square44x44Logo.png": b"small logo marker",
+        "Assets/Square150x150Logo.png": b"large logo marker",
+    }
+    members: dict[str, bytes] = {
+        **payload,
+        package_fixture.BLOCK_MAP: package_fixture.block_map(payload, {}),
+        package_fixture.CONTENT_TYPES: package_fixture.content_types(
+            package_fixture.SIGNATURE_TYPE + package_fixture.CATALOG_TYPE,
+        ),
+        package_fixture.SIGNATURE_PART: b"PKCX" + package_fixture.opaque_der(signature_marker),
+        package_fixture.CATALOG_PART: package_fixture.opaque_der(b"C"),
+    }
+    archive: bytes = package_fixture.with_zip64_end_records(package_fixture.make_zip(members, {}), signed=True)
+    path.write_bytes(archive)
+    catalog: bytes = "".join(
+        f"{name}\t{len(data)}\t{sha256(data).hexdigest()}\n" for name, data in sorted(payload.items())
+    ).encode("ascii")
+    return SignedPrestartFixture(path, Member(len(archive), sha256(archive).hexdigest()), sha256(catalog).hexdigest(),
+                                 Member(len(engine), sha256(engine).hexdigest()),
+                                 Member(len(broker), sha256(broker).hexdigest()))
+
+
 class DeploymentSessionTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self, artifact: SignedPrestartFixture | None = None) -> None:
         self.fixture = receipts.PrestartReceiptTests()
         self.fixture.setUp()
+        if artifact is not None:
+            self.fixture.run = replace(self.fixture.run, signed_package_sha256=artifact.archive.sha256,
+                                       engine=artifact.engine, broker=artifact.broker)
+            self.fixture.report["signed_package_sha256"] = artifact.archive.sha256
+            self.fixture.report["roles"] = [
+                {"key": receipts.ENGINE, "member": "nevrotick-lab-s02-engine.exe",
+                 "bytes": artifact.engine.size, "sha256": artifact.engine.sha256},
+                {"key": receipts.BROKER, "member": "nevrotick-lab-s02-broker.exe",
+                 "bytes": artifact.broker.size, "sha256": artifact.broker.sha256},
+            ]
+            self.fixture.identity = replace(self.fixture.identity, stdout=self.fixture.identity_bytes())
         self.run: DeploymentRun = self.fixture.deployment_run()
         self.script: PipeScript = (
             (b"S", self.reply("sample", engine=[528, 528], broker=[528, 16])),
@@ -495,9 +550,9 @@ class DeploymentSessionTests(unittest.TestCase):
 
 
 class FullPrestartSessionTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self, artifact: SignedPrestartFixture | None = None) -> None:
         self.deployment = DeploymentSessionTests()
-        self.deployment.setUp()
+        self.deployment.setUp(artifact)
         self.fixture = self.deployment.fixture
         self.script: PipeScript = (
             *self.deployment.script[:5],
@@ -923,8 +978,11 @@ class ScriptedOwnerAttempt(Generic[LaunchRunT]):
 
 class FullPrestartLaunchTests(unittest.TestCase):
     def setUp(self) -> None:
+        directory: TemporaryDirectory[str] = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.artifact: SignedPrestartFixture = write_signed_prestart_fixture(Path(directory.name) / "fixture.msix")
         self.full: FullPrestartSessionTests = FullPrestartSessionTests()
-        self.full.setUp()
+        self.full.setUp(self.artifact)
         self.run: DeploymentRun = self.full.deployment.run
         self.work_deadline: float = monotonic() + 3.0
         self.retirement_deadline: float = self.work_deadline + 1.0
@@ -973,7 +1031,7 @@ class FullPrestartLaunchTests(unittest.TestCase):
 
             result: PrestartObservation = self.launch(provisioning, standard, deployment, captures=captures)
             self.assertEqual(result, PrestartObservation(
-                self.run.id, "1" * 64, ((528, 528, 528), (528, 16, 16)),
+                self.run.id, self.artifact.archive.sha256, ((528, 528, 528), (528, 16, 16)),
             ))
             self.assertEqual(self.events, [("start", role, self.work_deadline) for role in (
                 "provisioning", "standard", "deployment",
@@ -1007,19 +1065,19 @@ class FullPrestartLaunchTests(unittest.TestCase):
         contents: bytes = template.read_bytes()
         return DeploymentOwnerInputs(
             template, Member(len(contents), sha256(contents).hexdigest()), "S-1-5-21-1337-8128-9999-1001",
-            "a" * 64, "b" * 64,
+            "a" * 64, self.artifact.payload_sha256,
             {
                 "interpreter": Member(111, "c" * 64),
                 "child_module": Member(112, "c" * 64),
                 "session_module": Member(113, "c" * 64),
                 "deployment_helper": Member(114, "c" * 64),
-                "archive": Member(115, self.run.signed_package_sha256),
+                "archive": self.artifact.archive,
                 "identity_entry": Member(116, "c" * 64),
                 "identity_module": Member(117, self.run.companion_sha256),
                 "identity_helper": Member(118, "c" * 64),
                 "observer": Member(119, self.run.observer_sha256),
             },
-            1000, 1500,
+            1000, 1500, signed_archive=self.artifact.path,
         )
 
     def test_rendered_entry_and_original_access_owners_reach_the_full_receipt_path(self) -> None:
@@ -1050,7 +1108,7 @@ sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
             "[string]$ownerRole = 'deployment'",
             "[string]$expectedActorSid = 'S-1-5-21-1337-8128-9999-1001'",
             f"[string]$signerSha256 = '{'a' * 64}'",
-            f"[string]$expectedPayloadSha256 = '{'b' * 64}'",
+            f"[string]$expectedPayloadSha256 = '{self.artifact.payload_sha256}'",
             "[int]$workMilliseconds = 1000",
             "[int]$retirementMilliseconds = 1500",
             "[bool]$fullPrestart = $true",
@@ -1059,7 +1117,8 @@ sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
             f"    child_module = @{{ Bytes = [long]112; Sha256 = '{'c' * 64}' }}",
             f"    session_module = @{{ Bytes = [long]113; Sha256 = '{'c' * 64}' }}",
             f"    deployment_helper = @{{ Bytes = [long]114; Sha256 = '{'c' * 64}' }}",
-            f"    archive = @{{ Bytes = [long]115; Sha256 = '{self.run.signed_package_sha256}' }}",
+            f"    archive = @{{ Bytes = [long]{self.artifact.archive.size}; "
+            f"Sha256 = '{self.artifact.archive.sha256}' }}",
             f"    identity_entry = @{{ Bytes = [long]116; Sha256 = '{'c' * 64}' }}",
             f"    identity_module = @{{ Bytes = [long]117; Sha256 = '{self.run.companion_sha256}' }}",
             f"    identity_helper = @{{ Bytes = [long]118; Sha256 = '{'c' * 64}' }}",
@@ -1093,14 +1152,24 @@ sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
                     return super().start(entry, deadline, retirement_deadline)
 
             terminal: str = self.full.deployment.retired.hex()
-            provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events, access)
+            inputs: DeploymentOwnerInputs = self.rendered_inputs()
+            mutable_pins: dict[str, Member] = dict(inputs.pins)
+            changed_pin: Member = Member(self.artifact.archive.size, "b" * 64)
+
+            def change_archive_pin() -> None:
+                mutable_pins["archive"] = changed_pin
+
+            provisioning = ScriptedOwnerAttempt[DeploymentRun](
+                "provisioning", self.events, access, on_start=change_archive_pin,
+            )
             standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events, ordinary)
             deployment = InertGuest("deployment", self.events)
             result: PrestartObservation = launch_rendered_prestart_session(
-                self.run, provisioning, standard, deployment, self.rendered_inputs(),
+                self.run, provisioning, standard, deployment, replace(inputs, pins=mutable_pins),
                 self.work_deadline, self.retirement_deadline, captures=captures,
             )
 
+            self.assertEqual(mutable_pins["archive"], changed_pin)
             [(entry, work, retirement)] = deployment.starts
             self.assertEqual((work, retirement), (self.work_deadline, self.retirement_deadline))
             self.assertIs(entry.run.deployment_actor, self.run.deployment_actor)
@@ -1110,7 +1179,7 @@ sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
             self.assertIn(f"[guid]$expectedRunId = '{self.run.id}'\n".encode("ascii"), entry.contents)
             self.assertEqual(entry.pin, Member(len(entry.contents), sha256(entry.contents).hexdigest()))
             self.assertEqual(result, PrestartObservation(
-                self.run.id, "1" * 64, ((528, 528, 528), (528, 16, 16)),
+                self.run.id, self.artifact.archive.sha256, ((528, 528, 528), (528, 16, 16)),
             ))
             self.assertEqual(access.requests, [b"A", b""])
             self.assertEqual(ordinary.requests, [b"U", b""])
@@ -1120,6 +1189,83 @@ sys.stdout.buffer.write(bytes.fromhex(sys.argv[6]))
             self.assertEqual([record.probe for record in captures.records], [
                 PrestartProbe.IDENTITY, PrestartProbe.OBSERVATION, PrestartProbe.ACCESS, PrestartProbe.STANDARD,
             ])
+
+    def test_signed_archive_refusal_precedes_every_original_owner(self) -> None:
+        class NonPlainDigest(str):
+            pass
+
+        inputs: DeploymentOwnerInputs = self.rendered_inputs()
+        bad_archive: Path = self.artifact.path.with_name("not-a-package.msix")
+        bad_contents: bytes = b"inert non-package fixture"
+        bad_archive.write_bytes(bad_contents)
+        bad_pin: Member = Member(len(bad_contents), sha256(bad_contents).hexdigest())
+        linked_archive: Path = self.artifact.path.with_name("linked-package.msix")
+        linked_archive.symlink_to(self.artifact.path)
+        alternate: SignedPrestartFixture = write_signed_prestart_fixture(
+            self.artifact.path.with_name("alternate-package.msix"), signature_marker=b"T",
+        )
+        self.assertEqual(alternate.archive.size, self.artifact.archive.size)
+        self.assertNotEqual(alternate.archive.sha256, self.artifact.archive.sha256)
+        self.assertEqual(alternate.payload_sha256, self.artifact.payload_sha256)
+        for label, run, candidate in (
+            ("different signed digest", replace(self.run, signed_package_sha256="b" * 64), inputs),
+            ("different archive bytes at the same extent", self.run, replace(inputs, signed_archive=alternate.path)),
+            ("crossed Engine role", replace(self.run, engine=self.run.broker), inputs),
+            ("crossed Broker role", replace(self.run, broker=self.run.engine), inputs),
+            ("different full payload digest", self.run, replace(inputs, expected_payload_sha256="b" * 64)),
+            ("malformed payload digest", self.run, replace(inputs, expected_payload_sha256="g" * 64)),
+            ("non-plain payload digest", self.run,
+             replace(inputs, expected_payload_sha256=NonPlainDigest(self.artifact.payload_sha256))),
+            ("different archive extent", self.run, replace(inputs, pins={
+                **inputs.pins, "archive": replace(self.artifact.archive, size=self.artifact.archive.size + 1),
+            })),
+            ("structurally invalid archive with matching pins", replace(self.run, signed_package_sha256=bad_pin.sha256),
+             replace(inputs, signed_archive=bad_archive, pins={**inputs.pins, "archive": bad_pin})),
+            ("archive path alias", self.run, replace(inputs, signed_archive=linked_archive)),
+            ("relative archive path", self.run, replace(inputs, signed_archive=Path(self.artifact.path.name))),
+            ("invalid absolute archive path", self.run,
+             replace(inputs, signed_archive=self.artifact.path.with_name("invalid\x00name.msix"))),
+        ):
+            with self.subTest(label=label):
+                captures: session.PrestartCaptures = session.PrestartCaptures()
+                events: list[LaunchEvent] = []
+                provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", events)
+                standard = ScriptedOwnerAttempt[DeploymentRun]("standard", events)
+                deployment = ScriptedOwnerAttempt[RenderedDeploymentOwner]("deployment", events)
+                with self.assertRaises(ReceiptRefused):
+                    launch_rendered_prestart_session(
+                        run, provisioning, standard, deployment, candidate,
+                        self.work_deadline, self.retirement_deadline, captures=captures,
+                    )
+                self.assertEqual(events, [])
+                self.assertEqual(captures.records, ())
+
+    def test_signed_archive_read_at_the_work_cutoff_never_starts_an_owner(self) -> None:
+        captures: session.PrestartCaptures = session.PrestartCaptures()
+        provisioning = ScriptedOwnerAttempt[DeploymentRun]("provisioning", self.events)
+        standard = ScriptedOwnerAttempt[DeploymentRun]("standard", self.events)
+        deployment = ScriptedOwnerAttempt[RenderedDeploymentOwner]("deployment", self.events)
+        original_read = owner_entry.read_regular
+        now: float = self.work_deadline - 1.0
+
+        def expire_after_read(path: Path, maximum: int, label: str) -> bytes:
+            nonlocal now
+            self.assertEqual(path, self.artifact.path)
+            raw: bytes = original_read(path, maximum, label)
+            now = self.work_deadline
+            return raw
+
+        with (
+            patch.object(owner_entry, "read_regular", expire_after_read),
+            patch.object(session.time, "monotonic", lambda: now),
+            self.assertRaisesRegex(TimeoutError, "deployment pipe deadline"),
+        ):
+            launch_rendered_prestart_session(
+                self.run, provisioning, standard, deployment, self.rendered_inputs(),
+                self.work_deadline, self.retirement_deadline, captures=captures,
+            )
+        self.assertEqual(self.events, [])
+        self.assertEqual(captures.records, ())
 
     def test_render_refusal_does_not_activate_the_guest_or_publish_any_capture(self) -> None:
         captures: session.PrestartCaptures = session.PrestartCaptures()

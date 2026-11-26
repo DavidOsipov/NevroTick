@@ -1290,6 +1290,35 @@ observes terminal revision withdrawal. These cases require no installed role
 or physical suspend. Physical continuity, production authority, signed package
 and installed-service qualification remain open.
 
+###### Run both retained service controls in the offline guest
+
+W11-W05/S3.1 and CHECK-25/27. An independent source readback compared the
+retained 881-input link candidate with signed `0837d44`. The 32 later
+differences are confined to UI, catalog tooling and an Engine test. The
+guest executed the retained `f921761d…` fixture image with the exact PE
+pin above. It ran only the two listed selectors, in separate processes.
+
+The host-only readback found 2,806 MiB available. The dispatch controller
+observed 3,656 MiB at admission and 3,138 MiB before the payload. It
+rechecked the same offline build-26100 guest and its mapped inputs. The
+native pipe case reread the same client's primary token after the fixture
+changed its stored expected generation. The terminal-read case exercised
+the scripted Stop, deadline and clock-refusal paths. Each selected one
+test and exited zero.
+The controller matched the guest result and both raw libtest streams,
+then verified input identity, child reaping, private scratch removal
+and empty transfer shelves. The original guest stayed running.
+
+| Record under `~/.local/share/nevrotick/s31-native-continuation-2611.gvzhpz_v/` | SHA-256 |
+| --- | --- |
+| `host-preflight.json` | `9ae53c5ecf067db59c2af32f9f6cf87f9b42f7674be918663fe46e3fbd5111d7` |
+| `guest-control/verification.json` | `84af1f1c84a3a8f785a6a93c8ea6d286f8165316edad088fb64e233f75c4bd1a` |
+| `guest-control/guest.json` | `5ab5877eef41986cdb1378a10129a2c07b23447fbbfdf35269cf932ddf4f5997` |
+
+The real pipe observation and scripted terminal withdrawal close those
+two retained-image cases. Installed roles and effective rights, physical
+clock continuity and product activation retain their existing gates.
+
 #### Configuration and elevation review — 24 November 2026
 
 **Scope and source:** documentation-only review of
@@ -23341,6 +23370,49 @@ only. Independently establish effective actors and continuous quiescence
 before the installed discriminator. The paired point observations and
 the portable controls leave that gate open.
 
+###### Bind the signed archive before launching pre-start actors
+
+S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The rendered full-mode
+launcher now reads the independently pinned local signed ScmFixture
+before the coordinator claims captures or attempts any actor. It uses
+the same signed structural reader as the archive CLI, derives the
+canonical authored payload digest from the archive and matches both
+role images against the original `DeploymentRun`. It copies the
+admitted pins for rendering and checks the original work deadline
+again before proceeding. The native held-file signer and custody
+checks and the paired renderer retain their existing contracts.
+
+Using the retained signed archive and independently staged authored
+roles, the predecessor reached the first inert actor with crossed
+role pins. The repaired launcher refused the same input before any
+owner callback. Matching pins reached the same inert launch boundary;
+wrong payload, crossed archive bytes and a repinned unsigned archive
+also refused before any callback. Both archive CLI reports matched
+their retained signed and unsigned results byte for byte.
+
+Package-artifact and contract QA exercised both crossed role pins,
+altered archive bytes, extent, malformed paths and payload digests,
+and expiry at the end of the read. The complete portable MSIX suite
+passed 236 tests under CPython 3.12.3 with read-only inputs, no network
+and matching source bookends. The healthy rendered and mapped
+handshakes still pass. The renderer test changes the caller's archive
+map during provisioning and checks the admitted pin in the resulting
+entry. Seven directed omissions produced their intended failures and
+all three restored focused tests passed.
+
+| Record under `~/.local/share/nevrotick/w11-prestart-archive-join.v9hbAO1v/` | SHA-256 |
+| --- | --- |
+| `retained-final.json` | `6fa68ed14f49f7df2a735b5f4bc5dd0c8d600f6e5b10f3776f134ec48ad8d8ec` |
+| `readback-signed.json` | `272c3ffe91c78ea32c8d024f376d2316e268146805bdc882006375eb052c0264` |
+| `readback-unsigned.json` | `97f384be0f7b1e3cf339dfed4110ecc4fd9f4da16eb9d812f0f22f629c6d1cab` |
+| `msix-suite.stderr` | `8184d6a381a6aaa012f2e89cf3a417c5f50b176b26fd1ad2a672146b1742a0b4` |
+| `source-before.sha256` | `ede4d3217bc84ae8cc4f64f47b8563ae5326dbdcd0ad91f7700650de6bccf1c7` |
+| `directed-controls.json` | `ee3aeabc3fa2e5c02e3509c638d356393fee5883151d40d3e8fa4351c9da16cb` |
+
+This checkpoint is host-side admission and portable relay evidence.
+Independent installed-actor rights, continuous quiescence and the
+full native installed sequence remain open.
+
 ##### Stage the committed activation at the fixed guest-local owner path
 
 S0.6, W11-W05/W11-W10 and CHECK-18/25/26/27. The
@@ -24045,6 +24117,98 @@ Continue evaluating supported provisioning and the separate Standard
 control without modifying package-owned rights. The supported actor
 and invocation decision remains with W11-W05/W11-W10.
 
+###### Retain both query-only handles through the Standard probe
+
+S0.6/W11-W05 and CHECK-1/2/25/27. The Standard selector holds one
+original `SERVICE_QUERY_STATUS` handle for each fixed role. It samples
+both as Stopped, probes `SERVICE_CHANGE_CONFIG` separately on each
+role, and admits only the service-open denial with a clean manager
+close. It rechecks the same status handles, requiring Stopped and the
+same raw service type, then closes Broker before Engine. The four
+existing output rows appear only after both closes and the final
+unimpersonated-thread check. The provisioner retains its existing six
+individual rights and receipt.
+[Standard and provisioning selectors](../tools/windows-service-fixture/src/scm_access_probe.rs)
+
+The service and lifecycle QA workflows traced the selected receiver
+through the fixed role key, original status handles, access result,
+final sample and completion output. The portable controls check exact
+access ordering, a wrong denial stage or error, unexpected success,
+late withdrawal and primary failure retained beside both cleanup
+failures. The existing receipt consumer still requires the same four
+rows from the independently admitted Standard actor.
+
+The guarded Rust 1.100.0 source run passed all six graph and twelve
+development commands on 884-input candidate
+`12610d4b347b8f247abcfd8e7b5d37b8ad9f957ad5a6d52747d5678649b460e6`.
+This includes GNU and MSVC all-targets Clippy, 201 fixture and 70
+platform tests in each GNU mode, and 28 platform doctests. The two
+fixture rosters agree and retain both new controls. The host receipt
+and cross-link reader also passed 13 and 28 Python controls,
+respectively.
+
+| Record under `artifacts/windows-services/recovery-20261107-v1/` | SHA-256 |
+| --- | --- |
+| `s31-standard-scm-graph-2611.json` | `5f5f0ba171f48811866893270ea6a16206e3f2521deafaece74320fa32830098` |
+| `s31-standard-scm-check-2611.json` | `8d624ae5f0c44c63ba9f201e8772bbcfc009bc75c83d1f43f0dd694fce7a09ee` |
+| `cross-s31-standard-scm-libtest-2611.json` | `2eb302559583931d6b05fa61e4c63446caad11be59dd73f4862cfa4fc27da1af` |
+
+The two configured MSVC link commands passed on the same source
+candidate for x86-64-v3. Independent readback matched the image and
+PDB bytes and found the exact Standard selector and both portable
+control names in the AMD64 PE32+ console image.
+The image SHA-256 is
+`6599badfc8d6dd629a1e4d006bcf4f377b5e3deb1fca15fcfe5033e4cb9e89a0`.
+The readback under
+`~/.local/share/nevrotick/standard-access-readback-2611.bu0ls1re/`
+hashes to
+`d802ed90297540cdae5881b628ef8507b15a4d53e2d108b261fc1d7553e1964a`.
+
+The Standard result remains an installed observation. It requires the
+independently admitted ordinary-user actor and the signed, continuously
+quiescent fixture window. The elevated actor's confirmed configuration
+denial leaves supported production provisioning and invocation open.
+
+###### Verify the effective profile of the independently enrolled Standard actor
+
+S0.6/W11-W05 and CHECK-1/2/26/27. Before either managed owner opens a
+private status pipe or creates an observer process, the Standard guard
+matches the independently supplied SID to the current primary token.
+The lab profile requires default elevation, a non-elevated token, exact
+Medium integrity and enabled built-in Users membership. The guard
+refuses any Administrators membership, a token that has been filtered,
+restricting SIDs or an AppContainer token. The original process and the
+suspended observer retain the existing token identity and version checks.
+[Token information](https://learn.microsoft.com/windows/win32/api/winnt/ne-winnt-token_information_class)
+[SID attributes](https://learn.microsoft.com/windows/win32/secauthz/sid-attributes-in-an-access-token)
+
+The warnings-as-errors x64 Framework build and PowerShell AST parser
+admitted the managed sources. The previous predicate admitted a synthetic
+low-integrity snapshot after the healthy snapshot. The current predicate
+passed all 12 managed controls, including the healthy profile and separate
+refusals for restricted, filtered, disabled-group and deny-only cases.
+These profiles exercised the actual classifier with synthetic snapshots.
+
+The new helper also admitted a fresh local account in the owned offline
+AMD64 Windows Sandbox on build 26100. Independent readback found enabled
+Users and Medium integrity and excluded Administrators. The inert Standard
+selector returned the exact raw streams and exited zero. Readback verified
+the image before and after launch and its exclusive reopen, the retirement
+of the original processes and the removal of the account, profile and
+guest scratch. Both existing mapped shelves returned to empty, and the
+same guest remained running. The run exercised no installed SCM access.
+
+| Record under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `s06-standard-token-profile-2611.clwym4ni/verification.json` | `271e77c230d3cc4afbc3b13de8d3305d507c474dc289bbf50275e62bad03cd89` |
+| `s06-standard-token-native-2611.Sc3IP2NS/verification.json` | `45ff8d86a97be5ae19d078b2cc7581be4968fa1eb847be84db579bd26cfe9b9e` |
+| `s06-standard-token-native-2611.Sc3IP2NS/readback.json` | `f75e04621559848e841fe9fe66d1e432cfb7a8b3fd21c451762c7b9013ebd8de` |
+
+The signed fixture still needs an independently witnessed, continuously
+quiescent window for the installed Standard SCM result. The supported
+provisioning route and affected native resource and metric gates remain
+open.
+
 #### Pack and verify the guarded Slint and service combination
 
 W11-W10/P6 and CHECK-16/18/20/23/26/27. The package and metadata
@@ -24427,8 +24591,53 @@ independent pins. The prior native pack receipts retain their exact scope.
 | `scm-readback.json` | `f56bd13783745a0088dab3cca067298393a3e3fa82e9090ef5c7ea09026d8b27` |
 | `artwork-readback.json` | `e8dee01d9ab6932406a30d30baf7ba6e8e70bda2c69f4e631019a476a3d619e7` |
 
-Signed carrier handling, final SDK parser parity and installed-role evidence
-remain open.
+The supported signed lab carrier has a separate readback mode below. Final
+SDK parser parity and installed-role evidence remain open.
+
+###### Read the retained test-signed ScmFixture against its authored payload
+
+W11-W10/S6.4 and CHECK-18/23/26. The maintained reader selects the fixed
+signed fixture through `--signed-fixture` and matches the whole archive
+to a separate digest from the signing record. It checks the SignTool
+ZIP64 footer, classic-size member records, exact eleven-member roster,
+authored member bytes and the block map against the payload. Both signing
+footprint parts require their exact content-type overrides and complete
+outer envelopes. The receipt records their lengths and digests and reports
+signature verification as `not-run`.
+[ScmFixture reader](../tools/windows-service-fixture/msix/check_package.py)
+
+The existing payload producer independently regenerated the original
+seven authored files and input-set digest
+`c16eaeed01ff42f487524dd8ca85ab5bd496de5d01b5ab7b2a98109e2968d81a`.
+The old reader passed the retained unsigned archive and refused the
+test-signed archive at the legacy ZIP64 fields. The current CLI reproduced
+the unsigned report and accepted the signed neighbor. The seven authored
+members and block map matched exactly. The only changed common member was
+`[Content_Types].xml`. The signed archive added
+`AppxMetadata/CodeIntegrity.cat` and `AppxSignature.p7x`. The crossed
+profile and crossed digest controls refused with empty stdout.
+
+The guarded CPython 3.12.3 suite passed all 234 portable MSIX tests
+with matching source bookends. The three new CLI tests cover profile
+selection, archive roster and ZIP64 framing, and signing-part type and
+envelope checks. Fresh review compared the unsigned and ArtworkLab callers,
+the retained test-signed archive and the native fixture's raw outcomes.
+
+The retained signed package SHA-256 is
+`dea1f9313da627b56b20bf1983a173a15df5e87dc52cf9a7c33abc3291cadcd9`.
+The final readback and source bookends are under
+`~/.local/share/nevrotick/w11-signed-reader-2611.5c5vgtfx/`.
+
+| Record | SHA-256 |
+| --- | --- |
+| `signed-final.json` | `272c3ffe91c78ea32c8d024f376d2316e268146805bdc882006375eb052c0264` |
+| `final-bookends.json` | `0203dbb4a5bb17df49014ff45f47d4bfff8d4751b43c72e0e767df78c10c798b` |
+| `msix-suite.stderr` | `8e87ae4b8493469a6404cafdeab6a64f3f3a87c2b18efcb10cdfe733a7c99e6e` |
+
+The [held native signer check](#bind-the-windows-verified-signer-to-the-held-msix-footprint)
+retains its own evidence. Production identity, full payload, signing,
+effective provisioning and installed lifecycle remain under their existing
+acceptance gates.
 
 ###### Derive signing obligations from the guarded ArtworkLab archive
 

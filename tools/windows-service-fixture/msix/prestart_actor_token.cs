@@ -20,9 +20,13 @@ namespace NevroTick
         private const int MaxInformationBytes = 256 * 1024;
         private const int PrimaryToken = 1;
         private const uint DefaultElevationType = 1;
+        private const uint GroupEnabled = 0x00000004;
+        private const uint GroupDenyOnly = 0x00000010;
         private const int SidHeaderBytes = 8;
         private const int MaxSidSubAuthorities = 15;
         private const string AdministratorsSid = "S-1-5-32-544";
+        private const string UsersSid = "S-1-5-32-545";
+        private const string MediumIntegritySid = "S-1-16-8192";
         private const string CallerActor = "prestart-observer:caller-actor";
         private const string ChildActor = "prestart-observer:child-actor";
         private static readonly int StatisticsBytes = Marshal.SizeOf(typeof(TokenStatistics));
@@ -113,11 +117,9 @@ namespace NevroTick
             if (!snapshot.User.HasExactIdentity(expectedSubjectSid))
                 throw new InvalidOperationException("prestart-observer:standard-user-subject-actor");
 
-            // Membership includes disabled and deny-only groups.
-            bool includesAdministrators = Array.Exists(snapshot.Groups,
-                (SidEntry group) => group.HasExactIdentity(AdministratorsSid));
+            bool matchesProfile = snapshot.IsStandardUserProfile();
             CheckDeadline(clock, timeoutMilliseconds);
-            if (includesAdministrators || snapshot.ElevationType != DefaultElevationType || snapshot.Elevated)
+            if (!matchesProfile)
                 throw new InvalidOperationException("prestart-observer:standard-user-token-profile");
         }
 
@@ -440,6 +442,17 @@ namespace NevroTick
             internal SidEntry Integrity;
             internal bool IsAppContainer;
 
+            internal bool IsStandardUserProfile()
+            {
+                // The fresh lab account must have ordinary Users access at Medium integrity.
+                // Count even disabled and deny-only Administrators membership.
+                return ElevationType == DefaultElevationType && !Elevated && !WasFiltered &&
+                    !IsAppContainer && RestrictingSids.Length == 0 &&
+                    Integrity.HasExactIdentity(MediumIntegritySid) &&
+                    Array.Exists(Groups, (SidEntry group) => group.HasEnabledIdentity(UsersSid)) &&
+                    !Array.Exists(Groups, (SidEntry group) => group.HasExactIdentity(AdministratorsSid));
+            }
+
             internal bool SameContext(Snapshot other)
             {
                 // TokenId and ModifiedId describe each individual token object.
@@ -466,6 +479,11 @@ namespace NevroTick
             internal bool HasExactIdentity(string expected)
             {
                 return string.Equals(sid.Value, expected, StringComparison.Ordinal);
+            }
+
+            internal bool HasEnabledIdentity(string expected)
+            {
+                return (attributes & (GroupEnabled | GroupDenyOnly)) == GroupEnabled && HasExactIdentity(expected);
             }
 
             public int CompareTo(SidEntry other)

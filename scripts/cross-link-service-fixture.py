@@ -83,7 +83,7 @@ METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
 # The fixture roster includes the broker clock terminal edge, paired SCM observations and managed address rounds.
 # Platform and fixture doctest scopes retain their independently reviewed roster.
 SOURCE_TEST_ROSTERS = {
-    "fixture-test": "c476de12175b7367ae798405375633e466a1f6d907876bf2efdd26a988318ece",
+    "fixture-test": "f5dd6878a78937005ca73d095b16d6fe2917cad70e105c8303c7d6d975d7d634",
     "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
     "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
     "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",

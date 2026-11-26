@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Exercise the unsigned S0.6 package reader with private synthetic ZIP files."""
+"""Exercise the S0.6 package reader with private synthetic ZIP files."""
 
 from base64 import b64encode
 from codecs import BOM_UTF8
@@ -23,6 +23,14 @@ HERE = Path(__file__).resolve().parent
 MANIFEST = "AppxManifest.xml"
 BLOCK_MAP = "AppxBlockMap.xml"
 CONTENT_TYPES = "[Content_Types].xml"
+SIGNATURE_PART = "AppxSignature.p7x"
+CATALOG_PART = "AppxMetadata/CodeIntegrity.cat"
+SIGNATURE_TYPE = (
+    b'  <Override PartName="/AppxSignature.p7x" ContentType="application/vnd.ms-appx.signature"/>\n'
+)
+CATALOG_TYPE = (
+    b'  <Override PartName="/AppxMetadata/CodeIntegrity.cat" ContentType="application/vnd.ms-pkiseccat"/>\n'
+)
 INERT = "Inert.exe"
 EVENT_RESOURCE = "nevrotick-test-events.dll"
 EVENT_DEFAULT_TYPE = b'  <Default Extension="dll" ContentType="application/x-msdownload"/>\n'
@@ -91,7 +99,7 @@ def content_types(extra_declaration=b""):
 
 
 def make_zip(members, deflated, *, local_extras=None, central_extras=None, comments=None,
-             zip64_members=False):
+             zip64_members=False, duplicate_member=None):
     """Write fixture ZIP records with optional independently chosen member metadata."""
     local_extras = {} if local_extras is None else local_extras
     central_extras = {} if central_extras is None else central_extras
@@ -99,6 +107,8 @@ def make_zip(members, deflated, *, local_extras=None, central_extras=None, comme
     local = BytesIO()
     directory = BytesIO()
     for name, data in members.items():
+        if duplicate_member is not None and name == duplicate_member[0]:
+            name = duplicate_member[1]
         encoded_name = name.encode("ascii")
         compressed = name in deflated
         flags = 8 if compressed else 0
@@ -136,15 +146,22 @@ def make_zip(members, deflated, *, local_extras=None, central_extras=None, comme
     return local.getvalue() + directory.getvalue() + end_record
 
 
-def with_zip64_end_records(classic):
-    """Give an ordinary fixture the fixed end-record layout MakeAppx emits."""
+def with_zip64_end_records(classic, *, signed=False):
+    """Give an ordinary fixture the fixed MakeAppx or SignTool end-record layout."""
     footer_offset = len(classic) - 22
     count, size, offset = struct.unpack_from("<HII", classic, footer_offset + 10)
     record = struct.pack("<4sQ2H2I4Q", b"PK\x06\x06", 44, 45, 45, 0, 0,
                          count, count, size, offset)
     locator = struct.pack("<4sIQI", b"PK\x06\x07", 0, footer_offset, 1)
-    legacy = b"PK\x05\x06" + b"\xff" * 16 + b"\0\0"
+    disk_fields = b"\0" * 4 if signed else b"\xff" * 4
+    legacy = b"PK\x05\x06" + disk_fields + b"\xff" * 12 + b"\0\0"
     return classic[:footer_offset] + record + locator + legacy
+
+
+def opaque_der(marker: bytes) -> bytes:
+    """Create an inert length-delimited sequence without authenticated content."""
+    body = marker * 256
+    return b"\x30\x82" + struct.pack(">H", len(body)) + body
 
 
 class PackageReaderTests(unittest.TestCase):
@@ -210,7 +227,8 @@ class PackageReaderTests(unittest.TestCase):
         self.package.write_bytes(with_zip64_end_records(archive) if zip64_members else archive)
         return members
 
-    def run_reader(self, *, expected_package_digest=None, include_event_resource=False):
+    def run_reader(self, *, expected_package_digest=None, include_event_resource=False,
+                   signed_fixture=False):
         if expected_package_digest is None:
             expected_package_digest = sha256(self.package.read_bytes()).hexdigest()
         command = [
@@ -221,6 +239,8 @@ class PackageReaderTests(unittest.TestCase):
         ]
         if include_event_resource:
             command.append("--include-event-resource")
+        if signed_fixture:
+            command.append("--signed-fixture")
         return subprocess.run(
             command,
             capture_output=True, text=True, check=False, timeout=10,
@@ -261,9 +281,11 @@ class PackageReaderTests(unittest.TestCase):
         })
         return report
 
-    def assert_refused(self, reason, *, expected_package_digest=None, include_event_resource=False):
+    def assert_refused(self, reason, *, expected_package_digest=None, include_event_resource=False,
+                       signed_fixture=False):
         result = self.run_reader(expected_package_digest=expected_package_digest,
-                                 include_event_resource=include_event_resource)
+                                 include_event_resource=include_event_resource,
+                                 signed_fixture=signed_fixture)
         self.assertEqual(result.returncode, 1, result.stderr or "reader accepted the fixture")
         self.assertEqual(result.stdout, "")
         self.assertTrue(result.stderr.startswith("Fixture package refused: "), result.stderr)
@@ -275,6 +297,99 @@ class PackageReaderTests(unittest.TestCase):
 
     def test_admits_streamed_deflate_with_two_blocks(self):
         self.assert_accepted(self.write_package(compressed_member=INERT))
+
+    def signed_members(self, payload: dict[str, bytes]) -> dict[str, bytes]:
+        """Build independent stand-ins for the two SignTool footprint parts."""
+        return {
+            **payload,
+            CONTENT_TYPES: content_types(SIGNATURE_TYPE + CATALOG_TYPE),
+            CATALOG_PART: opaque_der(b"C"),
+            SIGNATURE_PART: b"PKCX" + opaque_der(b"S"),
+        }
+
+    def write_signed_members(self, members: dict[str, bytes], **zip_options) -> bytes:
+        """Publish private synthetic members using the SignTool ZIP64 footer."""
+        package = with_zip64_end_records(make_zip(members, {}, **zip_options), signed=True)
+        self.package.write_bytes(package)
+        return package
+
+    def test_signed_fixture_requires_explicit_profile_and_preserves_payload_identity(self):
+        unsigned_members = self.write_package(zip64_members=True)
+        unsigned_package = self.package.read_bytes()
+        unsigned_report = self.assert_accepted(unsigned_members)
+        self.assert_refused("ZIP64 legacy fields differ", signed_fixture=True)
+
+        signed_members = self.signed_members(unsigned_members)
+        signed_package = self.write_signed_members(signed_members)
+        self.assert_refused("ZIP64 legacy fields differ")
+        result = self.run_reader(signed_fixture=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        with ZipFile(BytesIO(signed_package)) as archive:
+            self.assertEqual({name: archive.read(name) for name in archive.namelist()}, signed_members)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["status"], "signed-scmfixture-structure-checked")
+        self.assertEqual(report["signature_verification"], "not-run")
+        self.assertEqual(report["package_sha256"], sha256(signed_package).hexdigest())
+        self.assertEqual(report["package_bytes"], len(signed_package))
+        for field in ("package_identity", "input_set_sha256", "payload_sha256"):
+            self.assertEqual(report[field], unsigned_report[field])
+        self.assertEqual(report["members"], {
+            name: {"bytes": len(data), "sha256": sha256(data).hexdigest()}
+            for name, data in signed_members.items()
+        })
+        self.assert_refused("package SHA-256 differs", signed_fixture=True,
+                            expected_package_digest=sha256(unsigned_package).hexdigest())
+
+    def test_signed_fixture_checks_footer_and_exact_roster_after_matching_pin(self):
+        members = self.signed_members(self.write_package())
+        original = self.write_signed_members(members)
+        self.assertEqual(self.run_reader(signed_fixture=True).returncode, 0)
+        # Offset 12 in the 56-byte ZIP64 end record is the made-with word.
+        version_changed = bytearray(original)
+        version_changed[-98 + 12] = 44
+        cases = (
+            ("classic footer", make_zip(members, {}), "signed fixture requires SignTool ZIP64 footer"),
+            ("ZIP64 end version", version_changed, "SignTool ZIP64 version differs"),
+            ("ZIP64 central extra", with_zip64_end_records(
+                make_zip(members, {}, zip64_members=True), signed=True,
+            ), "central ZIP64 member fields differ"),
+            ("extra member", with_zip64_end_records(
+                make_zip({**members, "AppxMetadata/extra.bin": b"inert marker"}, {}), signed=True,
+            ), "ZIP entry counts differ"),
+            ("duplicate signature", with_zip64_end_records(
+                make_zip(members, {}, duplicate_member=(CATALOG_PART, SIGNATURE_PART)), signed=True,
+            ), "package inventory differs"),
+        )
+        for label, raw, reason in cases:
+            with self.subTest(case=label):
+                self.package.write_bytes(raw)
+                self.assert_refused(reason, signed_fixture=True)
+        self.write_signed_members(members)
+        self.assertEqual(self.run_reader(signed_fixture=True).returncode, 0)
+
+    def test_signed_fixture_checks_footprint_shapes_and_exact_types_after_matching_pin(self):
+        members = self.signed_members(self.write_package())
+        self.write_signed_members(members)
+        self.assertEqual(self.run_reader(signed_fixture=True).returncode, 0)
+        cases = (
+            ("signature marker", SIGNATURE_PART, b"NOPE" + opaque_der(b"S"), SIGNATURE_PART),
+            ("catalog length", CATALOG_PART, opaque_der(b"C") + b"trailer", CATALOG_PART),
+            ("signature type", CONTENT_TYPES,
+             content_types(SIGNATURE_TYPE.replace(b"application/vnd.ms-appx.signature", b"image/png")
+                           + CATALOG_TYPE), "content type"),
+            ("missing catalog type", CONTENT_TYPES, content_types(SIGNATURE_TYPE), "content type"),
+            ("signature default beside valid override", CONTENT_TYPES,
+             content_types(SIGNATURE_TYPE + CATALOG_TYPE
+                           + b'<Default Extension="p7x" ContentType="application/octet-stream"/>'),
+             "unexpected content-type default for AppxSignature.p7x"),
+        )
+        for label, name, replacement, reason in cases:
+            with self.subTest(case=label):
+                self.write_signed_members({**members, name: replacement})
+                self.assert_refused(reason, signed_fixture=True)
+        self.write_signed_members(members)
+        self.assertEqual(self.run_reader(signed_fixture=True).returncode, 0)
 
     def test_payload_catalog_is_independent_of_zip_order_and_compression(self) -> None:
         stored: dict[str, object] = self.assert_accepted(self.write_package())

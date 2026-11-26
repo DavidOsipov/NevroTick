@@ -189,6 +189,66 @@ function Assert-Bytes {
     }
 }
 
+function Assert-StandardTokenProfiles {
+    param([type]$ActorType)
+
+    # Exercise the same classifier as both launch owners using synthetic snapshots.
+    $instance = [Reflection.BindingFlags]'Instance,NonPublic'
+    $snapshotType = $ActorType.GetNestedType('Snapshot', 'NonPublic')
+    $entryType = $ActorType.GetNestedType('SidEntry', 'NonPublic')
+    $classify = $snapshotType.GetMethod('IsStandardUserProfile', $instance)
+    $entry = $entryType.GetConstructor($instance, $null, [type[]]@([Security.Principal.SecurityIdentifier], [uint32]), $null)
+    $makeEntry = {
+        param([string]$Sid, [uint32]$Attributes)
+        $entry.Invoke([object[]]@([Security.Principal.SecurityIdentifier]::new($Sid), $Attributes))
+    }
+    $users = & $makeEntry 'S-1-5-32-545' 4
+    $ordinaryGroups = [Array]::CreateInstance($entryType, 1)
+    $ordinaryGroups.SetValue($users, 0)
+    $restrictedGroups = [Array]::CreateInstance($entryType, 1)
+    $restrictedGroups.SetValue((& $makeEntry 'S-1-5-12' 4), 0)
+    $emptyGroups = [Array]::CreateInstance($entryType, 0)
+    $defaults = @{
+        Groups = $ordinaryGroups
+        RestrictingSids = $emptyGroups
+        Integrity = & $makeEntry 'S-1-16-8192' 32
+        ElevationType = [uint32]1
+    }
+    $cases = @(
+        @{ Label = 'ordinary'; Expected = $true; Fields = @{} }
+        @{ Label = 'low-integrity'; Fields = @{ Integrity = & $makeEntry 'S-1-16-4096' 32 } }
+        @{ Label = 'high-integrity'; Fields = @{ Integrity = & $makeEntry 'S-1-16-12288' 32 } }
+        @{ Label = 'missing-users'; Fields = @{ Groups = $emptyGroups } }
+        @{ Label = 'restricted'; Fields = @{ RestrictingSids = $restrictedGroups } }
+        @{ Label = 'filtered'; Fields = @{ WasFiltered = $true } }
+        @{ Label = 'app-container'; Fields = @{ IsAppContainer = $true } }
+        @{ Label = 'elevated'; Fields = @{ Elevated = $true } }
+        @{ Label = 'limited-elevation'; Fields = @{ ElevationType = [uint32]3 } }
+    )
+    foreach ($attributes in @(0, 16)) {
+        $groups = [Array]::CreateInstance($entryType, 1)
+        $groups.SetValue((& $makeEntry 'S-1-5-32-545' $attributes), 0)
+        $cases += @{ Label = "users-attributes-$attributes"; Fields = @{ Groups = $groups } }
+    }
+    $adminGroups = [Array]::CreateInstance($entryType, 2)
+    $adminGroups.SetValue($users, 0)
+    $adminGroups.SetValue((& $makeEntry 'S-1-5-32-544' 16), 1)
+    $cases += @{ Label = 'deny-only-admin'; Fields = @{ Groups = $adminGroups } }
+
+    foreach ($case in $cases) {
+        $snapshot = [Activator]::CreateInstance($snapshotType, $true)
+        foreach ($fields in @($defaults, $case.Fields)) {
+            foreach ($field in $fields.Keys) {
+                $snapshotType.GetField($field, $instance).SetValue($snapshot, $fields[$field])
+            }
+        }
+        if ($classify.Invoke($snapshot, $null) -ne [bool]$case['Expected']) {
+            throw "Standard token classifier disagreed for $($case.Label)"
+        }
+    }
+    return $cases.Count
+}
+
 function Read-FixturePid {
     param([string]$Marker)
 
@@ -415,6 +475,9 @@ try {
             -RefusalMessage 'prestart-observer:job-limits' -RequireReleasedJobWithoutChild
         return
     }
+    $profileControls = Assert-StandardTokenProfiles ($actor.GetType())
+    "s06-prestart-observer token-profile controls=$profileControls"
+    $controls += $profileControls
 
     $image = New-FixtureCopy (Join-Path $fixtureRoot 'observation-raw')
     Invoke-ObserverControl -Actor $actor -Label 'observation-raw' -ImagePath $image -Selector $selectors[0] `

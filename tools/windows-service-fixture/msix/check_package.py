@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""Read back the exact unsigned S0.6 fixture archive without extracting it."""
+"""Read back an exact S0.6 fixture archive without extracting it."""
 
 from __future__ import annotations
 
@@ -48,6 +48,12 @@ DISPLAY_NAME = "NevroTick S0.6 SCM Fixture"
 MANIFEST = "AppxManifest.xml"
 BLOCK_MAP_FILE = "AppxBlockMap.xml"
 CONTENT_TYPES_FILE = "[Content_Types].xml"
+SIGNATURE_PART = "AppxSignature.p7x"
+CODE_INTEGRITY_PART = "AppxMetadata/CodeIntegrity.cat"
+SIGNING_CONTENT_TYPES = {
+    SIGNATURE_PART: "application/vnd.ms-appx.signature",
+    CODE_INTEGRITY_PART: "application/vnd.ms-pkiseccat",
+}
 EVENT_RESOURCE: str = "nevrotick-test-events.dll"
 LOGO = "Assets/PackageLogo.png"
 SMALL_LOGO = "Assets/Square44x44Logo.png"
@@ -75,13 +81,14 @@ ZIP_END = struct.Struct("<4s4H2IH")
 ZIP64_LOCATOR = struct.Struct("<4sIQI")
 ZIP64_END = struct.Struct("<4sQ2H2I4Q")
 ZIP64_LEGACY_FIELDS = (0xFFFF,) * 4 + (0xFFFFFFFF,) * 2
+SIGNTOOL_LEGACY_FIELDS = (0, 0, *ZIP64_LEGACY_FIELDS[2:])
 ZIP64_CENTRAL_MEMBER = struct.Struct("<HHQQQ")
 ZIP32_MAX = 0xFFFFFFFF
 CENTRAL_HEADER_BYTES = 46
 
 
 class Refused(ValueError):
-    """Input did not match the unsigned fixture contract."""
+    """Input did not match the selected fixture contract."""
 
 
 @dataclass(frozen=True)
@@ -114,7 +121,7 @@ def read_regular(path: str | Path, limit: int, label: str, parent: int | None = 
 
 
 def fixture_member_limit(name: str) -> int:
-    return MAX_XML if name.endswith(".xml") else MAX_FILE
+    return MAX_XML if name.endswith(".xml") or name in SIGNING_CONTENT_TYPES else MAX_FILE
 
 
 def require_directory_roster(directory: int, expected: set[str], reason: str) -> None:
@@ -405,7 +412,9 @@ def check_central_member(
     return unpacked_size, packed_size, local_offset
 
 
-def check_zip_directory(data: bytes, member_count: int) -> tuple[int, list[tuple[int, int, int]]]:
+def check_zip_directory(
+    data: bytes, member_count: int, *, signed_fixture: bool = False,
+) -> tuple[int, list[tuple[int, int, int]]]:
     """Bind the complete footer and the exact member records before opening the archive."""
     end_offset = len(data) - ZIP_END.size
     reason = "unexpected ZIP comment, trailer or end record"
@@ -417,18 +426,21 @@ def check_zip_directory(data: bytes, member_count: int) -> tuple[int, list[tuple
     locator_offset = end_offset - ZIP64_LOCATOR.size
     legacy_fields = tuple(fields)
     has_locator = locator_offset >= 0 and data.startswith(b"PK\x06\x07", locator_offset)
+    expected_legacy = SIGNTOOL_LEGACY_FIELDS if signed_fixture else ZIP64_LEGACY_FIELDS
+    if signed_fixture:
+        require(has_locator, "signed fixture requires SignTool ZIP64 footer")
     if has_locator or legacy_fields == ZIP64_LEGACY_FIELDS:
-        # The two admitted MakeAppx archives use the fixed ZIP64 record and
-        # put placeholders in every legacy field other than the comment size.
-        require(legacy_fields == ZIP64_LEGACY_FIELDS, "ZIP64 legacy fields differ")
+        require(legacy_fields == expected_legacy, "ZIP64 legacy fields differ")
         directory_end = locator_offset - ZIP64_END.size
         require(has_locator and directory_end >= 0, "ZIP64 locator differs")
         _, disk, record_offset, disk_count = ZIP64_LOCATOR.unpack_from(data, locator_offset)
         require(disk == 0 and record_offset == directory_end and disk_count == 1,
                 "ZIP64 locator differs")
-        signature, size, _, _, *fields = ZIP64_END.unpack_from(data, directory_end)
+        signature, size, made_with, required_version, *fields = ZIP64_END.unpack_from(data, directory_end)
         require(signature == b"PK\x06\x06" and size == ZIP64_END.size - 12,
                 "ZIP64 end record differs")
+        if signed_fixture:
+            require((made_with, required_version) == (45, 45), "SignTool ZIP64 version differs")
 
     disk, directory_disk, disk_entries, total_entries, directory_size, directory_start = fields
     require(disk == directory_disk == 0, "ZIP disk fields differ")
@@ -446,7 +458,7 @@ def check_zip_directory(data: bytes, member_count: int) -> tuple[int, list[tuple
         require(record_end <= directory_end, reason)
         require(comment_size == 0, "central ZIP member comment is not admitted")
         directory_members.append(check_central_member(
-            data, position, name_size, extra_size, zip64_archive=has_locator,
+            data, position, name_size, extra_size, zip64_archive=has_locator and not signed_fixture,
         ))
         position = record_end
     require(position == directory_end, reason)
@@ -460,9 +472,12 @@ def read_archive(
     maximum_archive_bytes: int = MAX_ARCHIVE,
     maximum_expanded_bytes: int = MAX_EXPANDED,
     member_limit: Callable[[str], int] = fixture_member_limit,
+    signed_fixture: bool = False,
 ) -> dict[str, PackageMember]:
     require(len(data) <= maximum_archive_bytes, "package exceeds the input bound")
-    directory_start, directory_members = check_zip_directory(data, len(archive_names))
+    directory_start, directory_members = check_zip_directory(
+        data, len(archive_names), signed_fixture=signed_fixture,
+    )
     try:
         package = zipfile.ZipFile(BytesIO(data))
     except NotImplementedError as error:
@@ -554,7 +569,7 @@ def check_block_map(members: dict[str, PackageMember], payload_names: set[str]) 
                     f"{name} compressed block map does not leave the expected DEFLATE terminator")
 
 
-def check_content_types(data: bytes, archive_names: set[str]) -> None:
+def check_content_types(data: bytes, archive_names: set[str], *, signed_fixture: bool = False) -> None:
     types = parse_xml(data, CONTENT_TYPES_FILE)
     require(types.tag == CONTENT_TYPES + "Types" and not types.attrib, "content-types root differs")
     require_xml_spacing(types, "content-types document")
@@ -593,6 +608,47 @@ def check_content_types(data: bytes, archive_names: set[str]) -> None:
     for name, allowed in permitted.items():
         kind = overrides.get(name, defaults.get(name.rsplit(".", 1)[1]))
         require(kind in allowed, f"content type differs or is missing for {name}")
+    if signed_fixture:
+        for name, kind in SIGNING_CONTENT_TYPES.items():
+            require(name.rsplit(".", 1)[1] not in defaults, f"unexpected content-type default for {name}")
+            require(overrides.get(name) == kind, f"content type differs or is missing for {name}")
+
+
+def check_signing_parts(members: dict[str, PackageMember]) -> None:
+    """Check the fixed SignTool envelopes without interpreting or trusting their contents."""
+    signature = members[SIGNATURE_PART].data
+    require(signature.startswith(b"PKCX"), f"{SIGNATURE_PART} magic differs")
+    for name, der in ((SIGNATURE_PART, signature[4:]),
+                      (CODE_INTEGRITY_PART, members[CODE_INTEGRITY_PART].data)):
+        declared = int.from_bytes(der[2:4], "big")
+        require(der.startswith(b"\x30\x82") and 256 <= declared == len(der) - 4,
+                f"{name} DER envelope differs")
+
+
+def read_fixture_package(
+    package: bytes, payload_names: set[str], *, signed_fixture: bool,
+) -> dict[str, PackageMember]:
+    """Read the selected fixed package structure and verify member coverage."""
+    archive_names = payload_names | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
+    if signed_fixture:
+        require(payload_names == BASE_PAYLOAD, "signed fixture requires the base authored payload")
+        archive_names.update(SIGNING_CONTENT_TYPES)
+    members = read_archive(package, archive_names, signed_fixture=signed_fixture)
+    check_manifest(members[MANIFEST].data)
+    check_block_map(members, payload_names)
+    check_content_types(members[CONTENT_TYPES_FILE].data, archive_names, signed_fixture=signed_fixture)
+    if signed_fixture:
+        check_signing_parts(members)
+    return members
+
+
+def fixture_payload_sha256(members: dict[str, PackageMember], payload_names: set[str]) -> str:
+    """Hash the canonical ASCII inventory of the already checked authored members."""
+    catalog = "".join(
+        f"{name}\t{len(members[name].data)}\t{sha256(members[name].data).hexdigest()}\n"
+        for name in sorted(payload_names)
+    ).encode("ascii")
+    return sha256(catalog).hexdigest()
 
 
 def main() -> int:
@@ -601,13 +657,15 @@ def main() -> int:
     cli.add_argument("--package", required=True, type=Path)
     cli.add_argument("--input-set", required=True, type=Path)
     cli.add_argument("--input-set-sha256", required=True, help="digest from the admitted pack inputs")
-    cli.add_argument("--package-sha256", required=True, help="digest from the packer's retained output record")
-    cli.add_argument("--include-event-resource", action="store_true",
-                     help=f"require the laboratory payload with {EVENT_RESOURCE}")
+    cli.add_argument("--package-sha256", required=True, help="digest from the retained pack or signing record")
+    profile = cli.add_mutually_exclusive_group()
+    profile.add_argument("--include-event-resource", action="store_true",
+                         help=f"require the laboratory payload with {EVENT_RESOURCE}")
+    profile.add_argument("--signed-fixture", action="store_true",
+                         help="inspect the test-signed base ScmFixture structure without verifying trust")
     args = cli.parse_args()
     # The caller selects a fixed profile before any package inputs are read.
     payload_names: set[str] = BASE_PAYLOAD | {EVENT_RESOURCE} if args.include_event_resource else BASE_PAYLOAD
-    archive_names: set[str] = payload_names | {BLOCK_MAP_FILE, CONTENT_TYPES_FILE}
     try:
         require(is_sha256(args.input_set_sha256) and is_sha256(args.package_sha256),
                 "expected lowercase SHA-256 digests for the frozen input set and package")
@@ -615,30 +673,29 @@ def main() -> int:
         payload: dict[str, bytes] = read_payload(args.payload, payload_names)
         package = read_regular(args.package, MAX_ARCHIVE, "package")
         package_sha256 = sha256(package).hexdigest()
-        require(package_sha256 == args.package_sha256, "package SHA-256 differs from the pack output record")
-        members: dict[str, PackageMember] = read_archive(package, archive_names)
+        output_record = "signing" if args.signed_fixture else "pack output"
+        require(package_sha256 == args.package_sha256, f"package SHA-256 differs from the {output_record} record")
+        members: dict[str, PackageMember] = read_fixture_package(
+            package, payload_names, signed_fixture=args.signed_fixture,
+        )
         for name in sorted(payload_names):
             require(sha256(payload[name]).hexdigest() == expected[name],
                     f"authored payload member differs from the frozen input set: {name}")
             require(members[name].data == payload[name], f"emitted package member differs: {name}")
-        check_manifest(members[MANIFEST].data)
-        check_block_map(members, payload_names)
-        check_content_types(members[CONTENT_TYPES_FILE].data, archive_names)
     except Refused as error:
         cli.exit(1, f"Fixture package refused: {error}\n")
     except (OSError, zipfile.BadZipFile, zlib.error, EOFError, ValueError, RecursionError) as error:
         cli.exit(1, f"Fixture package refused: unreadable input ({type(error).__name__})\n")
-    # The selected roster uses canonical ASCII names. Each frozen digest now
-    # matches the original authored bytes and the corresponding archive member.
-    payload_catalog: bytes = "".join(
-        f"{name}\t{len(members[name].data)}\t{expected[name]}\n" for name in sorted(payload_names)
-    ).encode("ascii")
-    print(json.dumps({"status": "unsigned-fixture-package-checked", "package_identity": IDENTITY,
-                      "input_set_sha256": args.input_set_sha256,
-                      "package_bytes": len(package), "package_sha256": package_sha256,
-                      "payload_sha256": sha256(payload_catalog).hexdigest(),
-                      "members": {name: {"bytes": len(member.data), "sha256": sha256(member.data).hexdigest()}
-                                  for name, member in sorted(members.items())}}, indent=2))
+    report = {"status": "unsigned-fixture-package-checked", "package_identity": IDENTITY,
+              "input_set_sha256": args.input_set_sha256,
+              "package_bytes": len(package), "package_sha256": package_sha256,
+              "payload_sha256": fixture_payload_sha256(members, payload_names),
+              "members": {name: {"bytes": len(member.data), "sha256": sha256(member.data).hexdigest()}
+                          for name, member in sorted(members.items())}}
+    if args.signed_fixture:
+        report["status"] = "signed-scmfixture-structure-checked"
+        report["signature_verification"] = "not-run"
+    print(json.dumps(report, indent=2))
     return 0
 
 

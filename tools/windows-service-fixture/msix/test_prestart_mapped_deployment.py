@@ -28,6 +28,7 @@ class MappedDeploymentTests(unittest.TestCase):
     def exercise(self, *, crossed_retirement: bool) -> None:
         launch = fixtures.FullPrestartLaunchTests()
         launch.setUp()
+        self.addCleanup(launch.doCleanups)
         fixture = launch.full
         work = monotonic() + 3
         retirement = work + 1
@@ -138,7 +139,7 @@ class MappedDeploymentTests(unittest.TestCase):
         self.assertEqual(standard.requests, [b"U", b""])
         if not crossed_retirement:
             self.assertEqual(result, fixtures.PrestartObservation(
-                run.id, "1" * 64, ((528, 528, 528), (528, 16, 16)),
+                run.id, launch.artifact.archive.sha256, ((528, 528, 528), (528, 16, 16)),
             ))
 
     def test_full_supervisor_joins_both_access_owners_and_mapped_deployment_reply(self) -> None:
@@ -152,6 +153,7 @@ class MappedDeploymentTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 launch = fixtures.FullPrestartLaunchTests()
                 launch.setUp()
+                self.addCleanup(launch.doCleanups)
                 work, retirement = launch.work_deadline, launch.retirement_deadline
                 events = []
                 committed = mode in ("after-commit", "unconfirmed-native")

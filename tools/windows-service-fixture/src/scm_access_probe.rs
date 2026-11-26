@@ -40,6 +40,32 @@ impl Right {
     }
 }
 
+/// Fixed role-specific access sequences under the retained status pair.
+#[derive(Clone, Copy)]
+enum AccessProfile {
+    /// Provisioner observes the exact six individually acquired rights.
+    Provisioning,
+    /// Ordinary user challenges configuration access while holding only status.
+    Standard,
+}
+
+impl AccessProfile {
+    /// Return the separate rights to probe while both query handles stay open.
+    const fn rights(self) -> &'static [Right] {
+        match self {
+            Self::Provisioning => &[
+                Right::QueryStatus,
+                Right::QueryConfig,
+                Right::ReadControl,
+                Right::ChangeConfig,
+                Right::Start,
+                Right::Stop,
+            ],
+            Self::Standard => &[Right::ChangeConfig],
+        }
+    }
+}
+
 /// First unsuccessful operation for one fixed right and role.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Stage {
@@ -133,19 +159,27 @@ fn observe<A: AccessHandles>(api: &A, role: LabRole, right: Right) -> Result<(),
     }
 }
 
+/// Recognize only the original service-open denial with confirmed manager retirement.
+const fn is_exact_service_denial(access: &Result<(), Failure>) -> bool {
+    matches!(
+        access,
+        Err(Failure {
+            stage: Stage::OpenService,
+            code: ACCESS_DENIED,
+            additional_manager_close: None,
+        })
+    )
+}
+
 /// Visit each required role/right observation in order.
 /// # Errors
 /// Stop at the first incomplete observation, without requesting further rights.
-fn visit<E>(mut inspect: impl FnMut(LabRole, Right) -> Result<(), E>) -> Result<(), E> {
+fn visit<E>(
+    profile: AccessProfile,
+    mut inspect: impl FnMut(LabRole, Right) -> Result<(), E>,
+) -> Result<(), E> {
     for role in [LabRole::Engine, LabRole::ClockBroker] {
-        for right in [
-            Right::QueryStatus,
-            Right::QueryConfig,
-            Right::ReadControl,
-            Right::ChangeConfig,
-            Right::Start,
-            Right::Stop,
-        ] {
+        for &right in profile.rights() {
             inspect(role, right)?;
         }
     }
@@ -210,6 +244,7 @@ pub(super) fn observe_prestart_pair<H, T, E>(
 /// Preserve the first open, preamble, access or final-read failure and any
 /// later status close failures. Failed access prevents later right acquisitions.
 fn probe_access<H, E>(
+    profile: AccessProfile,
     open_status: impl FnMut(LabRole) -> Result<H, E>,
     preamble: impl FnOnce(&H, &H) -> Result<[u32; 2], E>,
     inspect: impl FnMut(LabRole, Right) -> Result<(), E>,
@@ -220,7 +255,7 @@ fn probe_access<H, E>(
         open_status,
         |engine: &H, broker: &H| {
             let [engine_type, broker_type]: [u32; 2] = preamble(engine, broker)?;
-            visit(inspect)?;
+            visit(profile, inspect)?;
             recheck(engine, engine_type)?;
             recheck(broker, broker_type)
         },
@@ -251,8 +286,8 @@ mod windows {
     };
 
     use super::{
-        ACCESS_DENIED, AccessHandles, Failure, LabRole, Right, SERVICE_ABSENT, Stage, observe,
-        probe_access,
+        ACCESS_DENIED, AccessHandles, AccessProfile, Failure, LabRole, Right, SERVICE_ABSENT,
+        is_exact_service_denial, observe, probe_access,
     };
 
     const _: () = {
@@ -347,6 +382,7 @@ mod windows {
     fn native_installed_roles_prestart_access() -> Result<(), Box<dyn Error>> {
         ensure_unimpersonated()?;
         probe_access(
+            AccessProfile::Provisioning,
             PrestartRoleStatus::open,
             |engine: &PrestartRoleStatus, broker: &PrestartRoleStatus| {
                 let engine: PrestartObservation = engine.read_observation()?;
@@ -388,43 +424,49 @@ mod windows {
     /// The thread must use the invoking process's identity.
     ///
     /// # Errors
-    /// Refuse failed status access, unexpected configuration access, a different
-    /// denial stage, missing registration or unconfirmed handle closure.
+    /// Refuse a failed open or status read, a non-Stopped or changed role,
+    /// any outcome other than exact configuration denial, or unconfirmed closure.
     #[test]
     #[ignore = "requires the admitted installed S0.6 MSIX and standard-user actor"]
     fn native_standard_user_prestart_change_config_refused() -> Result<(), Box<dyn Error>> {
+        ensure_unimpersonated()?;
+        probe_access(
+            AccessProfile::Standard,
+            PrestartRoleStatus::open,
+            |engine: &PrestartRoleStatus, broker: &PrestartRoleStatus| {
+                Ok([
+                    engine.standard_status_type()?,
+                    broker.standard_status_type()?,
+                ])
+            },
+            |role: LabRole, right: Right| -> Result<(), Box<dyn Error>> {
+                let access: Result<(), Failure> = observe(&Native, role, right);
+                if is_exact_service_denial(&access) {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "scm-prestart-standard-user {} configuration access: {access:?}",
+                        role.name()
+                    )
+                    .into())
+                }
+            },
+            |status: &PrestartRoleStatus, raw_type: u32| {
+                status.recheck(raw_type, PrestartReadback::StandardAccess)
+            },
+            PrestartRoleStatus::finish,
+        )?;
         ensure_unimpersonated()?;
         println!(
             "scm-prestart-standard-user invoking-pid={}",
             std::process::id()
         );
         for role in [LabRole::Engine, LabRole::ClockBroker] {
-            observe(&Native, role, Right::QueryStatus).map_err(|failure: Failure| {
-                format!(
-                    "scm-prestart-standard-user {} status access: {failure:?}",
-                    role.name()
-                )
-            })?;
-            let access: Result<(), Failure> = observe(&Native, role, Right::ChangeConfig);
-            if access
-                != Err(Failure {
-                    stage: Stage::OpenService,
-                    code: ACCESS_DENIED,
-                    additional_manager_close: None,
-                })
-            {
-                return Err(format!(
-                    "scm-prestart-standard-user {} configuration access: {access:?}",
-                    role.name(),
-                )
-                .into());
-            }
             println!(
                 "scm-prestart-standard-user {} status-opened-and-closed configuration-denied code={ACCESS_DENIED}",
                 role.name()
             );
         }
-        ensure_unimpersonated()?;
         println!("scm-prestart-standard-user observed-rows=2");
         Ok(())
     }
@@ -436,8 +478,8 @@ mod tests {
     use std::cell::RefCell;
 
     use super::{
-        AccessHandles, Failure, LabRole, Right, Stage, observe, observe_prestart_pair,
-        probe_access, visit,
+        AccessHandles, AccessProfile, Failure, LabRole, Right, Stage, is_exact_service_denial,
+        observe, observe_prestart_pair, probe_access, visit,
     };
 
     /// One call in the scripted ownership trace.
@@ -572,10 +614,13 @@ mod tests {
     #[test]
     fn access_probe_uses_separate_masks_and_stops_at_first_refusal() {
         let mut observed: Vec<(LabRole, u32)> = Vec::new();
-        let result: Result<(), u32> = visit(|role: LabRole, right: Right| {
-            observed.push((role, right.mask()));
-            Ok(())
-        });
+        let result: Result<(), u32> = visit(
+            AccessProfile::Provisioning,
+            |role: LabRole, right: Right| {
+                observed.push((role, right.mask()));
+                Ok(())
+            },
+        );
         let masks: [u32; 6] = [4, 1, 131_072, 2, 16, 32];
         let expected: Vec<(LabRole, u32)> = [LabRole::Engine, LabRole::ClockBroker]
             .into_iter()
@@ -584,13 +629,16 @@ mod tests {
         assert_eq!(result, Ok(()));
         assert_eq!(observed, expected);
         observed.clear();
-        let blocked: Result<(), u32> = visit(|role: LabRole, right: Right| {
-            observed.push((role, right.mask()));
-            if role == LabRole::Engine && right == Right::ChangeConfig {
-                return Err(5);
-            }
-            Ok(())
-        });
+        let blocked: Result<(), u32> = visit(
+            AccessProfile::Provisioning,
+            |role: LabRole, right: Right| {
+                observed.push((role, right.mask()));
+                if role == LabRole::Engine && right == Right::ChangeConfig {
+                    return Err(5);
+                }
+                Ok(())
+            },
+        );
         assert_eq!(blocked, Err(5));
         assert_eq!(observed, expected[..4]);
     }
@@ -665,12 +713,16 @@ mod tests {
     }
 
     /// Exercise the access selector's own scope and ordered visitor using recorded calls.
-    fn run_probe(failures: &[(ProbeCall, u32)]) -> (Vec<ProbeCall>, Result<(), ProbeErrors>) {
+    fn run_probe(
+        profile: AccessProfile,
+        failures: &[(ProbeCall, u32)],
+    ) -> (Vec<ProbeCall>, Result<(), ProbeErrors>) {
         let script: ProbeScript<'_> = ProbeScript {
             trace: RefCell::default(),
             failures,
         };
         let result: Result<(), ProbeErrors> = probe_access(
+            profile,
             |role: LabRole| script.record(ProbeCall::Open(role)).map(|()| role),
             |engine: &LabRole, broker: &LabRole| {
                 script
@@ -802,7 +854,8 @@ mod tests {
     fn prestart_access_holds_both_roles_through_rights_and_final_reads() {
         use LabRole::{ClockBroker, Engine};
 
-        let (calls, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) = run_probe(&[]);
+        let (calls, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) =
+            run_probe(AccessProfile::Provisioning, &[]);
         assert_eq!(result, Ok(()));
         assert_eq!(
             calls,
@@ -837,7 +890,8 @@ mod tests {
     fn prestart_access_preserves_first_refusal_and_all_acquired_closes() {
         use LabRole::{ClockBroker, Engine};
 
-        let (healthy, _): (Vec<ProbeCall>, Result<(), ProbeErrors>) = run_probe(&[]);
+        let (healthy, _): (Vec<ProbeCall>, Result<(), ProbeErrors>) =
+            run_probe(AccessProfile::Provisioning, &[]);
         let engine_close: (ProbeCall, u32) = (ProbeCall::Close(Engine), 61);
         let broker_close: (ProbeCall, u32) = (ProbeCall::Close(ClockBroker), 62);
         for (index, primary, extra_closes) in [
@@ -868,7 +922,8 @@ mod tests {
         ] {
             let mut failed: Vec<(ProbeCall, u32)> = vec![primary];
             failed.extend_from_slice(extra_closes);
-            let (observed, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) = run_probe(&failed);
+            let (observed, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) =
+                run_probe(AccessProfile::Provisioning, &failed);
             let mut expected: Vec<ProbeCall> = healthy[..=index].to_vec();
             expected.extend(extra_closes.iter().map(|&(call, _)| call));
             assert_eq!(observed, expected);
@@ -879,6 +934,116 @@ mod tests {
                     additional_closes: extra_closes.to_vec()
                 })
             );
+        }
+    }
+
+    /// The Standard path keeps both original objects through the two denials.
+    /// # Panics
+    /// Fail if a right, resample or close moves, or a failed pair succeeds.
+    #[test]
+    fn standard_prestart_holds_status_until_denials_and_closure() {
+        use LabRole::{ClockBroker, Engine};
+
+        let expected: [ProbeCall; 9] = [
+            ProbeCall::Open(Engine),
+            ProbeCall::Open(ClockBroker),
+            ProbeCall::Preamble([Engine, ClockBroker]),
+            ProbeCall::Right(Engine, 2),
+            ProbeCall::Right(ClockBroker, 2),
+            ProbeCall::Recheck(Engine, 16),
+            ProbeCall::Recheck(ClockBroker, 272),
+            ProbeCall::Close(ClockBroker),
+            ProbeCall::Close(Engine),
+        ];
+        let (calls, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) =
+            run_probe(AccessProfile::Standard, &[]);
+        assert_eq!(calls, expected);
+        assert_eq!(result, Ok(()));
+
+        let engine_close: (ProbeCall, u32) = (expected[8], 61);
+        let broker_close: (ProbeCall, u32) = (expected[7], 62);
+        for (failed, code, cleanup) in [
+            (1, 1060, &[engine_close][..]),
+            (2, 21, &[broker_close, engine_close][..]),
+            (3, 5, &[broker_close, engine_close][..]),
+            (5, 33, &[broker_close, engine_close][..]),
+            (6, 34, &[broker_close, engine_close][..]),
+            (7, 62, &[engine_close][..]),
+            (8, 61, &[][..]),
+        ] {
+            let primary: (ProbeCall, u32) = (expected[failed], code);
+            let mut failures: Vec<(ProbeCall, u32)> = vec![primary];
+            failures.extend_from_slice(cleanup);
+            let (observed, result): (Vec<ProbeCall>, Result<(), ProbeErrors>) =
+                run_probe(AccessProfile::Standard, &failures);
+            let mut prefix: Vec<ProbeCall> = expected[..=failed].to_vec();
+            prefix.extend(cleanup.iter().map(|&(call, _)| call));
+            assert_eq!(observed, prefix);
+            assert_eq!(
+                result,
+                Err(ProbeErrors {
+                    first: primary,
+                    additional_closes: cleanup.to_vec(),
+                })
+            );
+        }
+    }
+
+    /// Only denial of the service open with successful cleanup counts.
+    /// # Panics
+    /// Fail if another stage or code, a grant, or a close error counts as denial.
+    #[test]
+    fn standard_prestart_requires_exact_denial_from_service_open() {
+        use LabRole::Engine;
+
+        let service_open: [Call; 3] = [Call::Connect, Call::Open(Engine, 2), Call::Close(false)];
+        for (open_failure, manager_close, expected, calls) in [
+            (Some((Stage::OpenService, 5)), None, true, &service_open[..]),
+            (
+                Some((Stage::OpenManager, 5)),
+                None,
+                false,
+                &[Call::Connect][..],
+            ),
+            (
+                Some((Stage::OpenService, 1060)),
+                None,
+                false,
+                &service_open[..],
+            ),
+            (
+                Some((Stage::OpenService, 1072)),
+                None,
+                false,
+                &service_open[..],
+            ),
+            (
+                Some((Stage::OpenService, 5)),
+                Some(61),
+                false,
+                &service_open[..],
+            ),
+            (
+                None,
+                None,
+                false,
+                &[
+                    Call::Connect,
+                    Call::Open(Engine, 2),
+                    Call::Close(true),
+                    Call::Close(false),
+                ][..],
+            ),
+        ] {
+            let script: Script = Script {
+                calls: RefCell::default(),
+                open_failure,
+                service_close: None,
+                manager_close,
+            };
+            let result: Result<(), Failure> = observe(&script, Engine, Right::ChangeConfig);
+            assert_eq!(is_exact_service_denial(&result), expected);
+            assert_eq!(script.calls.into_inner(), calls);
         }
     }
 }

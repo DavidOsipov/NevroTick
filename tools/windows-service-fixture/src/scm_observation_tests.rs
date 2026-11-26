@@ -315,6 +315,8 @@ pub(super) enum PrestartReadback {
     Observation,
     /// The provisioner's final access handle has closed.
     Access,
+    /// The ordinary user's configuration-denial probes have finished.
+    StandardAccess,
 }
 
 /// A fixed role's original status-only handle and the matching key for narrow reads.
@@ -363,6 +365,18 @@ impl PrestartRoleStatus {
         })
     }
 
+    /// Sample the original query-only handle before ordinary-user access probes.
+    /// # Errors
+    /// Refuse any native query failure or a non-Stopped report.
+    pub(super) fn standard_status_type(&self) -> Result<u32, Box<dyn Error>> {
+        Ok(self
+            .stopped(
+                "status before standard access",
+                "before standard access readback",
+            )?
+            .service_type())
+    }
+
     /// Sample the original object again after the selected pair operation completes.
     /// # Errors
     /// Refuse a non-Stopped report, changed raw service type or native query error.
@@ -381,6 +395,11 @@ impl PrestartRoleStatus {
                 "status after access",
                 "after access readback",
                 "access readback",
+            ),
+            PrestartReadback::StandardAccess => (
+                "status after standard access",
+                "after standard access readback",
+                "standard access readback",
             ),
         };
         let final_status: ReportedServiceStatus = self.stopped(stage, sample)?;

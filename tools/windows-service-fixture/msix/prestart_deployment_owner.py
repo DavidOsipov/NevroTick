@@ -2,20 +2,25 @@
 """Render the fixed S0.6 native owner entries from independently admitted pins."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from hashlib import sha256
 from pathlib import Path
 from typing import Protocol
 from uuid import UUID
+from zipfile import BadZipFile
+from zlib import error as DeflateError
 
-from check_package import Refused, read_regular
+from check_package import (
+    BASE_PAYLOAD, SERVICES, PackageMember, Refused, fixture_payload_sha256, is_sha256, read_fixture_package,
+    read_regular,
+)
 from prestart_deployment_session import (
     OwnedDeploymentProcess, PrestartAccessLaunchAttempt, PrestartCaptures, PrestartOwnerAttempt, _remaining,
-    launch_prestart_session,
+    _require_deadlines, launch_prestart_session,
 )
 from prestart_receipts import (
     DeploymentRun, Member, PrestartObservation, PrestartProbe, ReceiptRefused, SHA256, Run,
-    is_prestart_sid_text, require, require_run,
+    is_prestart_sid_text, require, require_deployment_run, require_run,
 )
 
 
@@ -52,7 +57,7 @@ class RenderedAccessOwner:
 
 @dataclass(frozen=True, slots=True)
 class DeploymentOwnerInputs:
-    """Reviewed authoring inputs from the admitted deployment context."""
+    """Reviewed authoring pins and the independently admitted local signed archive."""
 
     template: Path
     template_pin: Member
@@ -62,6 +67,7 @@ class DeploymentOwnerInputs:
     pins: Mapping[str, Member]
     work_milliseconds: int
     retirement_milliseconds: int
+    signed_archive: Path
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,18 +145,55 @@ def launch_rendered_prestart_session(
 ) -> PrestartObservation:
     """Join the fixed full-mode renderer to one admitted three-role launch.
 
-    The lab caller supplies independently admitted actors, signed artifact and
-    continuous quiescence. Neither staging the entry nor receiving a response
-    establishes any of those facts. The coordinator owns ordering; on failure
-    it signals attempted owners and requires their independent retirement under
-    the original deadlines. The caller retains resources and raw captures.
+    The caller supplies independently admitted actors, a signed artifact and
+    continuous quiescence. Compare the original pinned archive, payload and
+    role images before the coordinator attempts any owner or claims captures.
+    The coordinator retains the original deadlines and owns ordered launch and
+    retirement. Native held-file trust checks and staged-object custody remain
+    with their original owners.
     """
     require(deployment is not provisioning and deployment is not standard,
             "pre-start roles require distinct launch attempts")
+    _require_deadlines(deadline, retirement_deadline)
+    require(type(run) is DeploymentRun, "pre-start launches require the base deployment run")
+    require_deployment_run(run)
+    _remaining(deadline)
+    admitted: DeploymentOwnerInputs = _bind_full_mode_archive(run, inputs)
+    _remaining(deadline)
     return launch_prestart_session(
-        run, provisioning, standard, _RenderedDeploymentAttempt(inputs, deployment),
+        run, provisioning, standard, _RenderedDeploymentAttempt(admitted, deployment),
         deadline, retirement_deadline, captures=captures,
     )
+
+
+def _bind_full_mode_archive(run: DeploymentRun, inputs: DeploymentOwnerInputs) -> DeploymentOwnerInputs:
+    """Bind actual archive bytes, authored inventory and both role pins before launch."""
+    require(is_sha256(inputs.expected_payload_sha256), "invalid deployment owner payload digest")
+    pins: dict[str, Member] = _snapshot_pins(inputs.pins, _PIN_LIMITS)
+    archive: Member = pins["archive"]
+    require(archive.sha256 == run.signed_package_sha256
+            and pins["identity_module"].sha256 == run.companion_sha256
+            and pins["observer"].sha256 == run.observer_sha256,
+            "deployment owner pins differ from the admitted run")
+    path: Path = inputs.signed_archive
+    require(isinstance(path, Path) and path.is_absolute(), "pre-start signed archive requires an absolute path")
+    try:
+        raw: bytes = read_regular(path, archive.size, "pre-start signed archive")
+    except (OSError, ValueError) as error:
+        raise ReceiptRefused("pre-start signed archive read refused") from error
+    require(len(raw) == archive.size and sha256(raw).hexdigest() == archive.sha256,
+            "pre-start signed archive bytes differ from the admitted pin")
+    try:
+        members: dict[str, PackageMember] = read_fixture_package(raw, BASE_PAYLOAD, signed_fixture=True)
+    except (ValueError, BadZipFile, DeflateError, EOFError, RecursionError) as error:
+        raise ReceiptRefused("pre-start signed archive structure refused") from error
+    require(fixture_payload_sha256(members, BASE_PAYLOAD) == inputs.expected_payload_sha256,
+            "pre-start signed archive payload differs from the authored pin")
+    for name, expected in zip(SERVICES, (run.engine, run.broker), strict=True):
+        body: bytes = members[name].data
+        require(Member(len(body), sha256(body).hexdigest()) == expected,
+                f"pre-start signed archive role pin differs: {name}")
+    return replace(inputs, pins=pins)
 
 
 def render_deployment_owner(
@@ -186,10 +229,7 @@ def render_deployment_owner(
         type(signer_sha256) is str and SHA256.fullmatch(signer_sha256) is not None,
         "invalid deployment owner signer digest",
     )
-    require(
-        type(expected_payload_sha256) is str and SHA256.fullmatch(expected_payload_sha256) is not None,
-        "invalid deployment owner payload digest",
-    )
+    require(is_sha256(expected_payload_sha256), "invalid deployment owner payload digest")
     require(
         type(work_milliseconds) is int and type(retirement_milliseconds) is int
         and 0 < work_milliseconds < retirement_milliseconds <= 120_000

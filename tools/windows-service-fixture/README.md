@@ -305,13 +305,19 @@ cutoff.
 
 For a rendered full-mode entry, call
 [`launch_rendered_prestart_session`](msix/prestart_deployment_owner.py).
+Supply the absolute local `signed_archive` path in `DeploymentOwnerInputs`
+along with the independently checked archive, authored payload and role
+pins. The launcher reads the pinned archive and compares its payload and
+both role images before attempting to start either access owner. It
+retains the admitted pin snapshot for rendering.
 The renderer receives the coordinator's full `Run` after both access
 owners are retained. The deployment guest attempt receives that exact run,
 the rendered entry bytes and their pin, and both original host cutoffs.
 The guest attempt must own protected staging and pass the pin to the
-watchdog. It remains responsible for the original attempt if activation
+watchdog. Native held-file signature and identity checks still apply. The
+guest attempt remains responsible for the original attempt if activation
 raises before returning its pipes. See the
-[S0.6 integration checkpoint](../../tasks/windows11-integration.md#bind-full-pre-start-rendering-to-the-original-role-launches).
+[S0.6 integration checkpoint](../../tasks/windows11-integration.md#bind-the-signed-archive-before-launching-pre-start-actors).
 
 The [activation publisher](msix/prestart_deployment_activation.py) writes
 the rendered bytes to the admitted mapping and exclusively commits them.
