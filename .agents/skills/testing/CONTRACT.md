@@ -26,23 +26,42 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 - Bound cases/duration/retries/concurrency/repair attempts. One owner per writable environment/artifact output/simulator clock/Windows machine. Independent workers may inspect complementary boundaries; avoid concurrent Cargo contention for shared outputs or conflicting system mutations.
 - Preserve native exit codes, selected/discovered test counts, failures, skipped/ignored tests, retries, cancellations, cleanup failures. Zero-test success/caught panic/generated report/exit zero alone proves no behavior. Required unavailable/failed/cancelled check remains incomplete, including inherited failure.
 - Keep independent fixture truth/production entry points. Observers must not perform claimed transition. Inspect application cleanup before harness teardown masks leaked handles/tasks/timers/privileges/temporary clock changes. Restore owned resources on every exit; abort/crash tests need external cleanup: destructors may not execute.
-- Reuse evidence while all relevant state/prerequisites unchanged. Rerun affected checks after invalidating changes, including features/generated code/platform bindings/packaging/fixtures. No ritual reruns of unrelated expensive gates.
+- Follow [execution efficiency](#execution-efficiency) for evidence reuse, invalidation and qualification timing.
 
 ## Execution efficiency
 
+- In the existing task, name a finite slice, its healthy/refused exit, owners,
+  prerequisites, required checkpoint gates and total work/repair budget. Finishing
+  the slice never defers a prerequisite check needed to admit the next action.
 - Run cheap resource/cache/readiness checks before preparing expensive campaigns,
   inventories or admission paperwork. Preserve a failed preflight as incomplete;
   retry only after its relevant condition changes. Continue useful independent
   work without repeatedly submitting the same blocked campaign.
-- Meaningful behavioral repairs: retain focused RED→GREEN procedure and
-  exceptions above. Complete a coherent bounded slice and its planned cases,
-  then format before freezing the expensive qualification candidate. Select
-  affected checks and indirect consumers through
-  [regression selection](qa-regression-selection/SKILL.md); run the applicable full
-  phase/release gates at their declared checkpoints. Name required gates, owners
-  and checkpoint exits in the existing plan; never move a checkpoint just to
-  avoid a missing or failing required check. Later bound-byte changes
-  still require configured re-admission and honest candidate-specific reporting.
+- During implementation, use focused behavioral RED→GREEN and cheap applicable
+  checks, preserving the exceptions above. Complete the coherent slice and its
+  planned cases, then format and freeze the qualification candidate. Select
+  affected expensive checks and indirect consumers through
+  [regression selection](qa-regression-selection/SKILL.md). Run required expensive
+  qualification at its declared checkpoints, including applicable full phase,
+  final and release gates; never move a checkpoint to avoid a missing/failing gate.
+- Reuse valid evidence with a recorded evidence reference and exact tested/current
+  identities for the relevant source/callers, generated/platform/package inputs,
+  configuration, locked feature/target graph, fixtures, tool/runner, environment
+  and contract. Justify unchanged validity and current prerequisites. Rerun checks
+  invalidated by concrete changes; preserve required fresh/full checkpoint
+  execution. Unknown impact or missing identity evidence leaves a gap, not reuse
+  credit. Generated or bound-byte changes, including formatting/comments or
+  documentation within bound inputs, still require configured re-admission and
+  candidate-specific reporting; unchanged runtime behavior alone does not
+  establish unchanged identity.
+- Qualification failures return to focused diagnosis and authorized causal repair
+  within the same finite budget; complete the coherent repair before refreezing
+  and running affected qualification. Preserve first failures and consumed work;
+  retry blocked work only when its
+  relevant condition changes. Budget exhaustion or missing required evidence
+  leaves the checkpoint incomplete. Once the declared exit is met, continue the
+  next ready slice; do not create a perpetual repair/refreeze loop or reset the
+  budget by renaming the slice.
 - Before a large campaign, exercise representative healthy/faulty harness controls
   with the admitted compiler. A negative consumer must fail for its intended rule;
   match the required diagnostic meaning/context rather than incidental rendering

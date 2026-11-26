@@ -232,6 +232,37 @@ Each worker applies its stage/phase/guarantee skills; all section 5 status
 rules and prescribed review/qualification exits remain. Worker success does not
 establish a phase pass. Keep assignments/results in the existing task chain.
 
+### Bounded feasibility and qualification — 26 November 2026
+
+**Accepted workflow direction:** resolve material external prerequisites through
+a finite feasibility task, and finish coherent changes before expensive
+qualification. Use the existing task/evidence chain and acceptance IDs.
+
+Apply [next-stage planning](../../.agents/skills/planning/plan-code-change/SKILL.md)
+when a required physical reference, native capability or other external input is
+unavailable or uncertain. Identify the required guarantee, actual method and
+availability evidence, responsible owner, next permitted observation, finite
+stop condition and what changed input permits resumption. A blocked disposition
+keeps the dependent claim open; continue independently admitted source work.
+Prepare concrete alternatives against the same guarantee before escalating a
+material unresolved choice through the existing owner-decision procedure.
+
+For the current S2.1/W11-W01 child, use the
+[reference feasibility disposition](../../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026).
+It precedes reference admission in section 7; it establishes no calibration,
+runtime mapping, sample eligibility or new native-execution permission.
+
+Apply the [qualification lifecycle](../../.agents/skills/testing/CONTRACT.md#execution-efficiency)
+to a bounded slice with an observable exit. Keep prerequisite and focused
+behavioral checks during implementation; freeze the coherent source, tests and
+relevant inputs before expensive qualification. Run required gates at their
+declared checkpoints, justify unaffected evidence reuse and requalify invalidated
+scope. Stop local expansion when the exit is met; a failed gate or exhausted
+budget stays incomplete with its diagnosed next action.
+
+These rules change execution discipline, not V1 scope, dependency order,
+90%/95% thresholds, required security/native/release evidence or existing holds.
+
 ## 3. Mandatory explicit contracts during implementation
 
 Every new or changed **module, function, private helper, method, trait
@@ -1262,7 +1293,7 @@ schedule execution while a hold applies.
 | Order and owner | Entry and allowed parallel work | Discriminating exit |
 | --- | --- | --- |
 | **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [rebuilt native pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
-| **Next development child — reference and mapping, S2.1/W11-W01** | The [bench reader](../../tasks/windows11-integration.md#bind-retained-application-captures-to-the-reference-trial--24-november-2026) binds the original application brackets for the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
+| **Next development child — reference and mapping, S2.1/W11-W01** | Start with the [finite reference feasibility disposition](../../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026). The [bench reader](../../tasks/windows11-integration.md#bind-retained-application-captures-to-the-reference-trial--24-november-2026) binds the original application brackets for the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
 | **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |
 | **Secured service status — P3 and S-2** | Independent source preparation can proceed with the admitted service adapters and W11-W05/W11-W10 fixture. Bind exact roles and create protections before exposure. Qualify minimum authenticated management admission before functional IPC, then full handlers, mandatory state and simulated integration. Restore D2 freshness, connection and generation rules before connecting live status, including read-only. | Intended peers complete ready/stop and read status. Foreign identity, stale generations, failed state commit and retained native work cannot produce a false success. S-2 joins real admitted acquisition, secured status and ordinary-user read-only UI. |
 | **Real clock control — P4** | Require the reached P3/S0 evidence, independent reference and finite owned-lab card. Join current ownership, durable reservation, checked budgets and recoverable handover before the first product-backed write. Keep measurement admission independent of actuation. | Observe actual delivered correction and cleanup with current authorization. Crash, lost acknowledgement, competing ownership or invalidation cannot repeat a step, restore spent authority or publish a current synthetic effect. |
@@ -5958,6 +5989,8 @@ still open. Section 7's Core priority and scoped holds remain controlling.
 
 ## 9. Verification commands, phase records and stop rules
 
+Select development checks and qualification checkpoints through
+[bounded feasibility and qualification](#bounded-feasibility-and-qualification--26-november-2026).
 Use [TOOLING.md](../../TOOLING.md#starting-implementation) and
 [configured verification](../../.agents/skills/testing/references/configured-tooling.md).
 The admitted workspace uses the following entry points after its selected

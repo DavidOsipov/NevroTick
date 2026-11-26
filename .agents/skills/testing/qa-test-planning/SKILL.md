@@ -11,6 +11,11 @@ Start from observable requirements/actual producer → state → consumer flow; 
 
 Each selected obligation: preconditions, admitted input/action, independent expected result, forbidden effects, owner, cheapest adequate evidence layer, valid/invalid controls. Include affected recovery paths/indirect consumers/exact candidate identity. Use [numerical/protocol truth](../references/numerical-protocol.md) and [Windows evidence](../references/windows-evidence.md) only where relevant.
 
+Schedule each obligation as a prerequisite, focused development check or required
+qualification checkpoint through [execution efficiency](../CONTRACT.md#execution-efficiency).
+Record which earlier evidence can satisfy it and its reuse justification in the
+existing plan.
+
 Inventory the changed function/module contracts and their enforcing types,
 mandatory constructors and live guards. Plan direct-call/bypass and transformed
 output checks through [contract QA](../qa-contract-tests/SKILL.md), including a

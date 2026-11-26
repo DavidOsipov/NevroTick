@@ -9,6 +9,12 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Workflow clarification — 26 November 2026:**
+[bounded feasibility and qualification](plans/development-plan.md#bounded-feasibility-and-qualification--26-november-2026)
+makes external prerequisites finite tasks and qualifies coherent candidates at
+their declared checkpoints. The existing W11-W01 reference task owns the current
+application; required gates, evidence validity and execution holds remain.
+
 **Architectural closure coverage — 26 November 2026:**
 [architecture §22.1](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
 maps the assessed gaps to canonical contracts and existing decision/implementation/

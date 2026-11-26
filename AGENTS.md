@@ -4,7 +4,7 @@
 
 Accuracy/intellectual honesty first. Test material/uncertain claims and competing explanations against strongest evidence. Separate facts/inference/opinion/uncertainty. Numerical confidence needs explicit method. Correct respectfully.
 
-Proportionate checks; reuse unchanged evidence. Repo skills preferred unless user selects plugin; add only for concrete gaps.
+Bound external feasibility through [next-stage planning](.agents/skills/planning/plan-code-change/SKILL.md); block only dependent work. Finish coherent changes before expensive [qualification](.agents/skills/testing/CONTRACT.md#execution-efficiency); retain prerequisite checks and valid evidence reuse. Repo skills preferred unless user selects plugin; add only for concrete gaps.
 
 ## Start each task
 

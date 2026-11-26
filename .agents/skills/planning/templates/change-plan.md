@@ -13,6 +13,8 @@
 ## Next executable stage
 
 - Inputs, environment and prerequisites:
+- If a material external/native prerequisite is unresolved: required guarantee; actual method/equipment or available evidence; responsible owner; qualified conditions; unknowns and next observation:
+- Bounded feasibility pass: evidence/work limit; concrete alternatives against that guarantee; viable/blocked/owner-decision disposition; stop/re-entry condition; dependent claims and independent work that can continue:
 - Owner/files and bounded action:
 - Independently derived expectation and legitimate/failure controls:
 - Contract bypass/transform checks and real caller/consumer observations:

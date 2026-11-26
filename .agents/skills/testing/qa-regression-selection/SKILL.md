@@ -13,6 +13,10 @@ Map each changed guarantee/plausible regression to existing check/specific new c
 
 After root-cause confirmation, use [the bounded variant-search method](../references/defect-variants.md) for potentially relevant related occurrences. Calibrate on known defect; inspect each candidate; record unsearched areas. Pattern matches are not findings.
 
-Justify unaffected excluded checks from current source/configuration; history/convenience insufficient. Unknown impact needs broader applicable selection/explicit unresolved gap; no invented all-features/whole-suite mandate.
+Apply [execution efficiency](../CONTRACT.md#execution-efficiency) to justify reused
+results and unaffected excluded checks from current impact and identity evidence;
+history/convenience insufficient. Unknown impact needs broader applicable
+selection/explicit unresolved gap. Preserve declared full checkpoint gates;
+no invented all-features/whole-suite mandate.
 
 Verify discovery and actual execution for the selected tests, preserve doctests where in scope and invalidate prior evidence only for relevant changed state. Use [Rust techniques](../references/rust-techniques.md) for target/feature/runner selection.

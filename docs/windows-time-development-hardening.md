@@ -875,6 +875,12 @@ scope. The [focused record](plans/release-provenance.md) owns the optional work.
 
 ## 9. Tests, coverage and evidence of bug detection
 
+Use the [qualification lifecycle](../.agents/skills/testing/CONTRACT.md#execution-efficiency)
+for focused checks during a coherent change, frozen expensive-qualification
+candidates and explicit reuse of unaffected evidence. Admission and other checks
+required before the next action still precede it. Section 11's applicable
+checkpoint gates and all per-file thresholds remain required.
+
 ### 9.1 Meaningful execution and doctests
 
 Use nextest for ordinary tests with explicit `--no-tests=fail`, and run `cargo test --doc` separately because nextest excludes doctests. Commands below illustrate the default-feature workspace only; the final gate wrapper must use the reviewed package/target/feature matrix and sandboxed inputs. [V01]
@@ -1479,15 +1485,15 @@ Retain first failures, retry reasons and cleanup evidence. A clean rerun after d
 
 ### 11.1 Ordered tiers
 
-Independent checks within a tier may run concurrently in isolated owned environments. Every later tier consumes evidence for the identified candidate lineage, recording any Store/signing transformation and the final delivered artifact separately.
+Independent checks within a tier may run concurrently in isolated owned environments. Every later tier consumes evidence for the identified candidate lineage, recording packaging/signing transformations and the final directly distributed artifact separately. The qualification lifecycle in section 9 governs candidate freeze and evidence reuse; it does not postpone prerequisite admission or omit required tiers at their checkpoints.
 
 | Tier | Required work | When and authority |
 | --- | --- | --- |
 | T0 — admission | Source/policy/tool identity, lock/feature/source/license/advisory disposition, workflow/secret checks, scope inventory | Before target-controlled execution; tools that invoke Cargo already need the sandbox |
 | T1 — fast contracts | Formatting, compiler/Clippy/rustdoc, applicable constructor/consumer and external compile-fail controls, unit/property/API tests, doctests and qualified SAST | Every relevant PR/configuration change; checked postconditions and no privileged clock effects |
 | T2 — affected behavior | Regression corpus, focused fuzzing, affected coverage/mutation, native integration, applicable native-memory and retention checks, lifecycle/accessibility checks | Based on changed requirements and milestone; missing affected evidence blocks that change |
-| T3 — release candidate | Complete pre-submission candidate matrix, required critical-file gates, local native authority/mitigation/package mechanics, resource measurements, inventory/SBOM and independent review | Exact source/artifact candidate; explicitly retain Store-signature-dependent cases for T4. Local test signing does not pass those cases, and unrelated older runs do not establish candidate coverage |
-| T4 — signing/publication | Owner-controlled Store submission, external certification/signing, then final delivered package/catalog/payload and lifecycle qualification; a later selected MSI alternative uses its own qualified signing flow | Preparation needs no speculative Store preapproval; broad release follows actual final-artifact evidence and David's exact-candidate decision |
+| T3 — release candidate | Complete pre-release candidate matrix, required critical-file gates, local native authority/mitigation/package mechanics, resource measurements, inventory/SBOM and independent review | Exact source/artifact candidate; retain final-signature/trust-dependent cases for T4. Local test signing does not pass those cases, and unrelated older runs do not establish candidate coverage |
+| T4 — signing/publication | Owner-controlled signing and direct distribution, with final package, supported per-file signatures, loaded-image trust and delivered lifecycle qualification under OD-05 §§7.7/7.9; a later selected MSI alternative needs its own qualified flow | Deferred signer/trust selection does not block independent source/package preparation. Public release follows actual final-artifact evidence and David's exact-candidate decision; no Store submission or certification is required |
 
 Scheduled advisory/secret metadata refresh and long fuzz campaigns run separately and can reopen admitted inputs. They do not modify the lockfile or auto-accept risk.
 
