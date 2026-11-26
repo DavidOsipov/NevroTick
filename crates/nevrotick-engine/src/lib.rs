@@ -1640,6 +1640,7 @@ struct ReadDatagram<'a> {
 }
 
 /// Whether the final reply guard finished or still owes a private serial retry.
+#[must_use = "retain the original candidate on contention or account for its rejection"]
 enum ReplyCommit {
     /// The current attempt committed or was refused and has no retry custody.
     Finished,

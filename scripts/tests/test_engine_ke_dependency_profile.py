@@ -503,6 +503,8 @@ class EngineKeExecutionAccountingControls(unittest.TestCase):
                         ('<' + outcome + '/>' if outcome else '') + '</testcase>' for name in sorted(names))
         self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
             '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+            '<testcase name="source_policy::tests::managed_series_retains_one_deny_across_final_policy_release"/>'
+            '<testcase name="series::tests::managed_serial_reply_preserves_queued_second_datagram"/>'
             '</testsuite><testsuite name="' + unit_suite + '">' + cases +
             '</testsuite><testsuite name="nevrotick-engine::prepare_entered">'
             '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
@@ -521,18 +523,18 @@ class EngineKeExecutionAccountingControls(unittest.TestCase):
         for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
             with self.subTest(lane=lane):
                 result = VERIFY.validate_test_result(lane, "", self.work, profile="engine-ke-association")
-                self.assertEqual(result["executed"], len(self.expected_names()) + 2)
+                self.assertEqual(result["executed"], len(self.expected_names()) + 4)
 
     def test_old_report_or_each_missing_ke_control_cannot_qualify_feature(self):
         for names in (set(), *(self.expected_names() - {name} for name in sorted(self.expected_names()))):
             self.junit_with(names)
             for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
                 with self.subTest(lane=lane, missing=self.expected_names() - names), \
-                        self.assertRaisesRegex(VERIFY.ENV.Incomplete, "KE.*unit"):
+                        self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
                     VERIFY.validate_test_result(lane, "", self.work, profile="engine-ke-association")
         # The original no-feature row continues to admit its own healthy report.
         self.junit_with(set())
-        self.assertEqual(VERIFY.validate_test_result("product-tests:nevrotick-engine", "", self.work)["executed"], 2)
+        self.assertEqual(VERIFY.validate_test_result("product-tests:nevrotick-engine", "", self.work)["executed"], 4)
 
     def test_names_from_other_binary_or_skipped_cases_cannot_stand_in_for_units(self):
         for suite, outcome in (("nevrotick-engine::unrelated", None), ("foreign", None),

@@ -135,8 +135,8 @@ impl TrayRecovery {
         if !self.due(now) {
             return None;
         }
-        let next = now.checked_add(RECOVERY_SPACING)?;
-        let window = self.window.as_mut()?;
+        let next: Instant = now.checked_add(RECOVERY_SPACING)?;
+        let window: &mut RecoveryWindow = self.window.as_mut()?;
         window.remaining -= 1;
         self.next_start = Some(next);
         self.pending = false;

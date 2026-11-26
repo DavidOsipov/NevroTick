@@ -934,6 +934,7 @@ async fn next_series_wake(
 /// Staging supplies no current permission: controls and the processing deadline
 /// are read here after all semantic/measurement work, with no await before commit.
 /// Refusal preserves prior payloads and irreversibly retires an invalidated request.
+#[must_use = "retain or explicitly reject the outstanding reply"]
 fn try_publish_series_reply(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
@@ -966,6 +967,7 @@ fn try_publish_series_reply(
 /// The callbacks run outside watch/policy custody, immediately before the final
 /// control guard and after that guard has completed. Production supplies no-ops;
 /// observers grant no permission, terminal outcome or completion acknowledgement.
+#[must_use = "retain or explicitly reject the outstanding reply"]
 fn try_publish_series_reply_observing(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
@@ -987,7 +989,8 @@ fn try_publish_series_reply_observing(
         }
     } else if let Ok(candidate) = staged {
         before_final_guard();
-        let (observed, result) = try_publish_under_control(slot, control, &candidate, deadline);
+        let (observed, result): (Control, ReplyCommit) =
+            try_publish_under_control(slot, control, &candidate, deadline);
         after_final_guard();
         return (
             observed,
@@ -1005,7 +1008,7 @@ fn try_publish_under_control(
     candidate: &StagedReply,
     deadline: Instant,
 ) -> (Control, ReplyCommit) {
-    let current = control.borrow();
+    let current: watch::Ref<'_, Control> = control.borrow();
     let result: ReplyCommit = if current.stop {
         slot.rejected += 1;
         slot.finish(TerminalOutcome::Stopped);
@@ -1028,7 +1031,8 @@ fn publish_series_reply(
     staged: Result<StagedReply, Rejection>,
     deadline: Instant,
 ) -> Control {
-    let (state, retained) = try_publish_series_reply(slot, control, staged, deadline);
+    let (state, retained): (Control, Option<StagedReply>) =
+        try_publish_series_reply(slot, control, staged, deadline);
     if retained.is_some() {
         slot.rejected += 1;
     }
@@ -1045,7 +1049,7 @@ fn publish_series_reply_observing(
     before_final_guard: impl FnOnce(),
     after_final_guard: impl FnOnce(),
 ) -> Control {
-    let (state, retained) = try_publish_series_reply_observing(
+    let (state, retained): (Control, Option<StagedReply>) = try_publish_series_reply_observing(
         slot,
         control,
         staged,
@@ -1129,7 +1133,9 @@ async fn drive_serial_read(
     mut window: SerialReadWindow<'_>,
     mut state: Control,
 ) -> Control {
-    let Some(staged) = stage_selected_series_reply(slot, selected, buffer, limits) else {
+    let Some(staged): Option<Result<StagedReply, Rejection>> =
+        stage_selected_series_reply(slot, selected, buffer, limits)
+    else {
         return state;
     };
     let mut retained: Option<StagedReply>;
@@ -1148,7 +1154,7 @@ async fn drive_serial_read(
         }
         // Go directly to current control, cutoff and policy on every retry.
         // The original dispatch observer has already run.
-        let (observed, result) =
+        let (observed, result): (Control, ReplyCommit) =
             try_publish_under_control(slot, control, &candidate, window.deadline);
         state = observed;
         retained = matches!(result, ReplyCommit::Contended).then_some(candidate);

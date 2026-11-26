@@ -674,7 +674,7 @@ async fn run_attempt(
             SeriesWake::Deadline => slot.expire(),
             SeriesWake::Writable(result) => guarded_writable(&mut slot, control, result, deadline),
             SeriesWake::Read(selected) => {
-                let _state = drive_serial_read(
+                let _state: Control = drive_serial_read(
                     &mut slot,
                     control,
                     selected,

@@ -1737,6 +1737,68 @@ bytes and historical receipts intact. The current product priority remains
 No runner implementation, tool admission, product/native execution, campaign
 restart or post-V1 formal work is performed by this follow-up.
 
+#### Bind selected Nextest cases to their binaries — 26 November 2026
+
+CHECK-6/19/25. The review of `b161229c` confirmed the scheduled gap on
+`a5d877c`. The previous JUnit consumer admitted unnamed and duplicate
+cases, a same-count substitution and a required Engine case reported
+under the wrong binary. These were directed report controls.
+
+The [shared verifier](../scripts/verify.py) now checks successful JUnit
+identities by package, Nextest binary ID and case name. Equal names
+remain valid in different binaries. The planned portable selections
+cover the two retained-reply controls beside the existing Engine
+processing and profile-specific KE cases, the four optimized
+discriminators and the patched `spin_on` controls. For these rows a
+separate Nextest JSON listing must contain the mandatory identities.
+The passing JUnit identities must match that live selection. The receipt
+keeps planned, discovered and executed identities and the prior count
+fields. Doctest accounting remains a separate lane.
+
+The release EP1 lane builds the same archive, lists the original
+extraction and runs against its cargo and binary metadata. Archive build,
+discovery and execution share the original 300-second wall deadline.
+Only the original archive build receives 240 CPU seconds. Discovery
+and replay keep the ordinary 90-second limit, and a fresh JUnit is
+required for execution credit. The focused controls cover the same
+name in different binaries, a missing mandatory discovered case, a
+missing discovered case at replay and expiry during discovery.
+
+The guarded GNU EP1 run passed 28 selected lanes on 761 inputs, including
+the Engine compiler, strict Clippy, 91 doctests and 674 qualified cases in
+each mode across the same nine binaries. Each listing matched its fresh
+JUnit, and both modes executed the two retained-reply cases. The optimized
+execution reused the listed archive without compiling and started with
+163.775 seconds of the shared wall budget remaining. The final verifier
+retains semantic refusals in the command row and reports a pass only
+after validation. Its current parser reproduced both rosters from the
+guarded raw listings and JUnit files. The isolated suites passed 206 shared-verifier
+and 63 dependency-profile controls.
+
+| Record under `~/.local/share/nevrotick/gnu-ep1-q01-audit-2611.pf9FLDhg/` | SHA-256 |
+| --- | --- |
+| `verification.json` | `ff151afd70585af949f5c20f0d6ea905f63b0582f04e8f6cd56a8bece9013e64` |
+| `final-parser-readback.json` | `bcd50a3f844eb0339618eb497bee4b8caa41daddc064ead596a9da67aaf769eb` |
+| `reply-outcome-diagnostics.json` | `de78ec252c5170916a39f053e232506dab78e357df3c5403ee01408d18305297` |
+
+The final verifier also passed the six selected GNU default-profile
+identity comparisons. Engine matched 315 cases in each mode. The
+optimized domain, exchange and Core rows matched 71, 63 and 624,
+respectively. The patched `spin_on` row matched all three required
+cases. The 29-lane receipt at
+`~/.local/share/nevrotick/q01-portable-selected-2611.NdHsuHpI/verification.json`
+hashes to `6a6c7d2d2a3d1b24426456fec7a531f296f5fe205b673aee2f72772a835e2e3c`.
+
+The same audit confirmed the missing Rust `must_use` conditions at the
+direct managed result and the serial tuple result. Type-level attributes enforce
+those conditions. The two wrappers that return an optional retained reply
+also carry the handling requirement because an ignored `Option` can hide it.
+Pinned Rust 1.100.0 diagnostics at the extracted wrapper bodies pair each
+ignored call with legal handling. The new expressible locals in the retry
+and tray paths use the existing domain types. Four source-extracted portable
+tray controls passed. Native Windows and fresh metric qualification remain
+with their existing owners.
+
 ## Linked Windows PE hardening gate — 21 November 2026
 
 W11-W10/P6, CHECK-18/20/23. The configured Windows build now checks the

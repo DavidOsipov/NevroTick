@@ -269,8 +269,13 @@ class CompileResourceControls(unittest.TestCase):
                  "nevrotick-engine/ke-association-prototype", "--archive-file", "/work/gnu-ep1-engine.nextest.tar.zst"]
     EP1_ARCHIVE = "gnu-ep1-engine.nextest.tar.zst"
     EP1_EXTRACT = "gnu-ep1-engine-reuse"
-    EP1_REUSE = ["cargo", "nextest", "run", "--archive-file", "/work/gnu-ep1-engine.nextest.tar.zst",
-                 "--extract-to", "/work/gnu-ep1-engine-reuse", "--workspace-remap", "/work/fixture",
+    EP1_DISCOVERY = ["cargo", "nextest", "list", "--archive-file", "/work/gnu-ep1-engine.nextest.tar.zst",
+                     "--extract-to", "/work/gnu-ep1-engine-reuse", "--workspace-remap", "/work/fixture",
+                     "--user-config-file", "none", "--message-format", "json"]
+    EP1_REUSE = ["cargo", "nextest", "run",
+                 "--cargo-metadata", "/work/gnu-ep1-engine-reuse/target/nextest/cargo-metadata.json",
+                 "--binaries-metadata", "/work/gnu-ep1-engine-reuse/target/nextest/binaries-metadata.json",
+                 "--target-dir-remap", "/work/gnu-ep1-engine-reuse/target", "--workspace-remap", "/work/fixture",
                  "--user-config-file", "none", "--no-tests=fail"]
     EP1_BUILD_ROW = "engine-ep1-release-test-build"
     EP1_TEST_ROW = "optimized-tests:nevrotick-engine"
@@ -299,7 +304,8 @@ class CompileResourceControls(unittest.TestCase):
                 self.assembled(command, **{**context, **change})
 
     def exercise_ep1(self, report, launches, *, compile_elapsed=175, compile_exit=0,
-                     changed_runtime=False, produce_archive=True, stale_path=None):
+                     changed_runtime=False, produce_archive=True, stale_path=None,
+                     discovery_elapsed=2, omit_discovery_case=False, omit_executed_case=False):
         with tempfile.TemporaryDirectory(prefix="nevrotick-engine-release-build-") as folder:
             scratch = Path(folder)
             args = argparse.Namespace(lane="portable", profile=self.EP1_PROFILE, vendor_dir=scratch,
@@ -337,17 +343,33 @@ class CompileResourceControls(unittest.TestCase):
                     junit.write_text("stale before Nextest")
                     clock += compile_elapsed
                     return {"command": invocation, "exit_code": compile_exit, "failure": None, "output": ""}
-                self.assertEqual(program, self.EP1_REUSE)
                 self.assertIn("--cpu=90", invocation)
                 self.assertEqual((work / self.EP1_ARCHIVE).read_bytes(), b"inert simulated archive")
-                self.assertEqual(list((work / self.EP1_EXTRACT).iterdir()), [])
+                required = VERIFY.planned_test_cases(self.EP1_TEST_ROW, self.EP1_PROFILE)
+                neighbor = ("nevrotick-engine", "discovered_neighbor")
+                if program == self.EP1_DISCOVERY:
+                    self.assertEqual(list((work / self.EP1_EXTRACT).iterdir()), [])
+                    self.assertEqual(junit.read_text(), "stale before Nextest")
+                    clock += discovery_elapsed
+                    selection = required | {neighbor}
+                    if omit_discovery_case:
+                        selection = selection - {min(required)}
+                    suites = {}
+                    for suite, case in sorted(selection):
+                        binary = suites.setdefault(suite, {"package-name": "nevrotick-engine", "binary-id": suite,
+                                                           "status": "listed", "testcases": {}})
+                        binary["testcases"][case] = {"ignored": False, "filter-match": {"status": "matches"}}
+                    output = json.dumps({"rust-suites": suites, "test-count": len(selection)})
+                    return {"command": invocation, "exit_code": 0, "failure": None, "output": "Cargo status\n" + output}
+                self.assertEqual(program, self.EP1_REUSE)
                 self.assertFalse(junit.exists())
                 junit.parent.mkdir(parents=True, exist_ok=True)
-                root = ET.Element("testsuite", name="nevrotick-engine")
-                required = {VERIFY.ENGINE_PROCESSING_GUARD, *VERIFY.ENGINE_KE_TEST_CASES,
-                            "prepare_rejects_entered_runtime_before_native_startup"}
-                for name in sorted(required):
-                    ET.SubElement(root, "testcase", name=name)
+                root = ET.Element("testsuites")
+                executed = required if omit_executed_case else required | {neighbor}
+                for suite in sorted({suite for suite, _ in executed}):
+                    binary = ET.SubElement(root, "testsuite", name=suite)
+                    for name in sorted(name for owner, name in executed if owner == suite):
+                        ET.SubElement(binary, "testcase", name=name, classname=suite)
                 ET.ElementTree(root).write(junit)
                 return {"command": invocation, "exit_code": 0, "failure": None, "output": ""}
 
@@ -369,14 +391,36 @@ class CompileResourceControls(unittest.TestCase):
     def test_ep1_shared_wall_and_junit_belong_to_the_existing_test_run(self):
         report, launches = {}, []
         self.exercise_ep1(report, launches)
-        self.assertEqual(launches, [(self.EP1_BUILD, 300), (self.EP1_REUSE, 125)])
-        build, tests = report["lanes"]
+        self.assertEqual(launches, [(self.EP1_BUILD, 300), (self.EP1_DISCOVERY, 125), (self.EP1_REUSE, 123)])
+        build, discovery, tests = report["lanes"]
         self.assertEqual(build["lane"], self.EP1_BUILD_ROW)
         self.assertNotIn("tests", build)
+        self.assertNotIn("tests", discovery)
+        self.assertEqual(discovery["discovered_cases"], tests["tests"]["discovered_cases"])
         self.assertEqual(build["wall_timeout_seconds"], 300)
         self.assertEqual(tests["lane"], self.EP1_TEST_ROW)
-        self.assertEqual(tests["wall_timeout_seconds"], 125)
-        self.assertEqual(tests["tests"]["executed"], 14)
+        self.assertEqual(tests["wall_timeout_seconds"], 123)
+        self.assertEqual(tests["tests"]["executed"], 17)
+        self.assertEqual(tests["tests"]["executed_cases"], tests["tests"]["discovered_cases"])
+        self.assertEqual(len(tests["tests"]["planned_cases"]), 16)
+
+    def test_ep1_missing_discovery_or_exhausted_discovery_budget_stops_before_replay(self):
+        for options in ({"omit_discovery_case": True}, {"discovery_elapsed": 125}):
+            report, launches = {}, []
+            with self.subTest(options=options), self.assertRaises(VERIFY.ENV.Incomplete):
+                self.exercise_ep1(report, launches, **options)
+            self.assertEqual(launches, [(self.EP1_BUILD, 300), (self.EP1_DISCOVERY, 125)])
+            self.assertTrue(all("tests" not in row for row in report["lanes"]))
+            self.assertIn("mandatory qualified" if "omit_discovery_case" in options else "wall budget",
+                          report["lanes"][-1]["failure"])
+
+    def test_ep1_replay_cannot_lose_a_discovered_case_even_with_all_mandatory_cases(self):
+        report, launches = {}, []
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differ from their discovery"):
+            self.exercise_ep1(report, launches, omit_executed_case=True)
+        self.assertEqual(launches[-1], (self.EP1_REUSE, 123))
+        self.assertNotIn("tests", report["lanes"][-1])
+        self.assertIn("differ from their discovery", report["lanes"][-1]["failure"])
 
     def test_ep1_failed_or_overdue_compile_is_retained_without_launching_nextest(self):
         for elapsed, exit_code, output in ((175, 101, True), (300, 0, True), (175, 0, False)):
@@ -2348,6 +2392,12 @@ class DirectMsixArtworkTests(unittest.TestCase):
 
 
 class ExecutionAccountingTests(unittest.TestCase):
+    ENGINE_UNIT_SUITE = ('<testsuite name="nevrotick-engine">'
+                         '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+                         '<testcase name="source_policy::tests::managed_series_retains_one_deny_across_final_policy_release"/>'
+                         '<testcase name="series::tests::managed_serial_reply_preserves_queued_second_datagram"/>'
+                         '</testsuite>')
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="product-results-control-")
         self.addCleanup(temporary.cleanup)
@@ -2358,20 +2408,95 @@ class ExecutionAccountingTests(unittest.TestCase):
     def test_passing_nonempty_product_selection_is_counted(self):
         self.junit.write_text('<testsuites><testsuite name="nevrotick-ui::preview"><testcase name="valid_neighbor"/></testsuite></testsuites>')
         result = VERIFY.validate_test_result("product-tests:nevrotick-ui", "", self.work)
-        self.assertEqual(result, {"package": "nevrotick-ui", "executed": 1, "test_names": ["valid_neighbor"]})
+        self.assertEqual(result, {"package": "nevrotick-ui", "executed": 1, "test_names": ["valid_neighbor"],
+                                  "planned_cases": [], "executed_cases": [("nevrotick-ui::preview", "valid_neighbor")]})
+
+    def test_product_result_refuses_missing_names_and_duplicate_qualified_cases(self):
+        for cases in ('<testcase/>', '<testcase name=""/>', '<testcase name=" "/>',
+                      '<testcase name="same"/><testcase name="same"/>'):
+            with self.subTest(cases=cases), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "testcase identity"):
+                self.junit.write_text(f'<testsuites><testsuite name="nevrotick-ui::preview">'
+                                      f'{cases}</testsuite></testsuites>')
+                VERIFY.validate_test_result("product-tests:nevrotick-ui", "", self.work)
+
+    def test_same_name_in_distinct_binaries_is_two_executed_cases(self):
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-ui"><testcase name="same"/></testsuite>'
+                              '<testsuite name="nevrotick-ui::preview"><testcase name="same"/></testsuite></testsuites>')
+        result = VERIFY.validate_test_result("product-tests:nevrotick-ui", "", self.work)
+        self.assertEqual(result["executed"], 2)
+        self.assertEqual(result["executed_cases"], [("nevrotick-ui", "same"), ("nevrotick-ui::preview", "same")])
+
+    def test_optimized_discovery_tracks_qualified_selected_cases(self):
+        mandatory = "release_build_preserves_checked_admission"
+        suite = "time-domain::coordinate"
+        matched = {"ignored": False, "filter-match": {"status": "matches"}}
+        ignored = {"ignored": True, "filter-match": {"status": "mismatch", "reason": "ignored"}}
+
+        def binary(name, cases):
+            return {"package-name": "time-domain", "binary-id": name, "status": "listed", "testcases": cases}
+
+        def listing(binaries, count=3):
+            return "Cargo status\n" + json.dumps({"rust-suites": binaries, "test-count": count}) + "\n"
+
+        lane = "optimized-tests:time-domain"
+        healthy = {suite: binary(suite, {mandatory: matched, "ignored": ignored}),
+                   "time-domain": binary("time-domain", {mandatory: matched})}
+        self.assertEqual(VERIFY.validate_test_discovery(lane, listing(healthy), "default"),
+                         {(suite, mandatory), ("time-domain", mandatory)})
+        wrong_suite = {**healthy, suite: binary(suite, {"substituted": matched, "ignored": ignored})}
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
+            VERIFY.validate_test_discovery(lane, listing(wrong_suite), "default")
+        filtered = {**healthy, suite: binary(suite, {mandatory: ignored, "ignored": ignored})}
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
+            VERIFY.validate_test_discovery(lane, listing(filtered), "default")
+        duplicate = listing(healthy).replace('"test-count": 3', '"test-count": 3, "test-count": 3')
+        for invalid in (duplicate, listing(healthy, 2), listing(healthy) * 2):
+            with self.subTest(invalid=invalid), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_test_discovery(lane, invalid, "default")
+
+    def test_nextest_discovery_keeps_the_exact_portable_build_selection(self):
+        rows = dict(VERIFY.commands("portable", schema_version=3, profile="engine-ke-association",
+                                    patched_packages=("spin_on",)))
+        for lane in ("product-tests:nevrotick-engine", "optimized-tests:time-domain", "product-tests:spin_on"):
+            run = rows[lane]
+            listing = VERIFY.nextest_discovery_command(run)
+            self.assertEqual(listing[-2:], ["--message-format", "json"])
+            self.assertEqual(["run" if flag == "list" else flag for flag in listing[:-2]],
+                             [flag for flag in run if flag != "--no-tests=fail"])
+
+    def test_engine_claims_require_retained_reply_cases_in_the_unit_binary(self):
+        processing = 'processing_guard_tests::processing_uses_fresh_deadline_and_current_control'
+        contention = 'source_policy::tests::managed_series_retains_one_deny_across_final_policy_release'
+        queued = 'series::tests::managed_serial_reply_preserves_queued_second_datagram'
+        for suite, case in (("nevrotick-engine::prepare_entered", queued), ("nevrotick-engine", "same_count_neighbor"),
+                            ("nevrotick-engine", queued)):
+            with self.subTest(suite=suite, case=case):
+                report = ET.Element('testsuites')
+                unit = ET.SubElement(report, 'testsuite', name='nevrotick-engine')
+                for name in (processing, contention):
+                    ET.SubElement(unit, 'testcase', name=name)
+                selected = unit if suite == 'nevrotick-engine' else ET.SubElement(report, 'testsuite', name=suite)
+                ET.SubElement(selected, 'testcase', name=case)
+                ET.ElementTree(report).write(self.junit)
+                if suite == 'nevrotick-engine' and case == queued:
+                    result = VERIFY.validate_test_result("product-tests:nevrotick-engine", "", self.work)
+                    self.assertEqual(result["executed"], 3)
+                else:
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
+                        VERIFY.validate_test_result("product-tests:nevrotick-engine", "", self.work)
 
     def test_protocol_test_row_cannot_reuse_only_ui_green(self):
         self.junit.write_text('<testsuites><testsuite name="ntp-wire::header"><testcase name="valid_neighbor"/></testsuite></testsuites>')
         result = VERIFY.validate_test_result("product-tests:ntp-wire", "", self.work)
-        self.assertEqual(result, {"package": "ntp-wire", "executed": 1, "test_names": ["valid_neighbor"]})
+        self.assertEqual(result["executed_cases"], [("ntp-wire::header", "valid_neighbor")])
 
     def test_optimized_domain_result_requires_actual_discriminating_case(self):
         self.junit.write_text('<testsuites><testsuite name="time-domain::coordinate">'
                               '<testcase name="release_build_preserves_checked_admission"/>'
                               '</testsuite></testsuites>')
         result = VERIFY.validate_test_result("optimized-tests:time-domain", "", self.work)
-        self.assertEqual(result, {"package": "time-domain", "executed": 1,
-                                  "test_names": ["release_build_preserves_checked_admission"]})
+        self.assertEqual(result["planned_cases"], result["executed_cases"])
+        self.assertEqual(result["executed_cases"], [("time-domain::coordinate", "release_build_preserves_checked_admission")])
         self.junit.write_text('<testsuites><testsuite name="time-domain::coordinate">'
                               '<testcase name="debug_neighbor"/></testsuite></testsuites>')
         with self.assertRaises(VERIFY.ENV.Incomplete):
@@ -2381,7 +2506,7 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.junit.write_text('<testsuites><testsuite name="ntp-exchange::association">'
                               '<testcase name="valid_neighbor"/></testsuite></testsuites>')
         result = VERIFY.validate_test_result("product-tests:ntp-exchange", "", self.work)
-        self.assertEqual(result, {"package": "ntp-exchange", "executed": 1, "test_names": ["valid_neighbor"]})
+        self.assertEqual(result["executed_cases"], [("ntp-exchange::association", "valid_neighbor")])
         self.junit.write_text('<testsuites><testsuite name="ntp-exchange::association">'
                               '<testcase name="release_build_preserves_exchange_admission"/>'
                               '</testsuite></testsuites>')
@@ -2446,9 +2571,9 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertIn("--no-tests=fail", command)
         self.junit.write_text('<testsuites><testsuite name="time-core">'
                               '<testcase name="ordinary_neighbor"/></testsuite></testsuites>')
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "discriminator"):
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
             VERIFY.validate_test_result("optimized-tests:time-core", "", self.work)
-        self.junit.write_text('<testsuites><testsuite name="time-core">'
+        self.junit.write_text('<testsuites><testsuite name="time-core::regression">'
                               '<testcase name="release_build_preserves_regression_admission"/>'
                               '</testsuite></testsuites>')
         self.assertEqual(VERIFY.validate_test_result("optimized-tests:time-core", "", self.work)["executed"], 1)
@@ -2482,19 +2607,17 @@ class ExecutionAccountingTests(unittest.TestCase):
             self.assertIn("--no-tests=fail", command)
         optimized = rows["optimized-tests:nevrotick-engine"]
         self.assertEqual(optimized[optimized.index("--cargo-profile") + 1], "release")
-        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
-                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
-                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
+        self.junit.write_text('<testsuites>' + self.ENGINE_UNIT_SUITE +
+                              '<testsuite name="nevrotick-engine::prepare_entered">'
                               '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
                               '</testsuite></testsuites>')
         self.assertEqual(VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
-                         ["executed"], 2)
-        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
-                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
-                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
-                              '<testcase name="prepare_outside_runtime_owns_and_releases_standard_sockets"/>'
+                         ["executed"], 4)
+        self.junit.write_text('<testsuites>' + self.ENGINE_UNIT_SUITE +
+                              '<testsuite name="nevrotick-engine::runtime_boundary">'
+                              '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
                               '</testsuite></testsuites>')
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "discriminator"):
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
             VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
 
     def test_engine_runtime_only_junit_cannot_hide_missing_processing_unit(self):
@@ -2505,19 +2628,18 @@ class ExecutionAccountingTests(unittest.TestCase):
                               '<testcase name="execute_rejects_entered_runtime_without_nested_runtime_creation"/>'
                               '</testsuite></testsuites>')
         for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
-            with self.subTest(lane=lane), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "processing guard"):
+            with self.subTest(lane=lane), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "mandatory qualified"):
                 VERIFY.validate_test_result(lane, "", self.work)
 
     def test_engine_processing_unit_has_healthy_ordinary_and_optimized_neighbors(self):
-        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
-                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
-                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
+        self.junit.write_text('<testsuites>' + self.ENGINE_UNIT_SUITE +
+                              '<testsuite name="nevrotick-engine::prepare_entered">'
                               '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
                               '<testcase name="future_additional_cli_case"/></testsuite></testsuites>')
         for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
             with self.subTest(lane=lane):
                 result = VERIFY.validate_test_result(lane, "", self.work)
-                self.assertEqual(result["executed"], 3)
+                self.assertEqual(result["executed"], 5)
                 self.assertIn("future_additional_cli_case", result["test_names"])
 
     def test_engine_processing_name_does_not_override_failed_or_wrong_owner_junit(self):

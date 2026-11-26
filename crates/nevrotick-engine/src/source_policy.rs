@@ -3698,6 +3698,7 @@ fn attempt_managed_send_observing(
 }
 
 /// The result of entering the managed final receive guard for one sealed reply.
+#[must_use = "handle the lab fallback or propagate contention for the original candidate"]
 pub(super) enum ManagedReplyCommit {
     /// The original slot and proposal both belong to the unmanaged laboratory.
     UnmanagedLab,

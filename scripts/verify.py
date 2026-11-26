@@ -87,18 +87,30 @@ ENGINE_EP1_RELEASE_TEST = (
     "--cargo-profile", "release", "--frozen", "--build-jobs", "6", "--lib", "--tests",
     "--user-config-file", "none", "--no-tests=fail", "--features", "nevrotick-engine/ke-association-prototype",
 )
-ENGINE_EP1_RELEASE_REUSE = (
-    "cargo", "nextest", "run", "--archive-file", f"/work/{ENGINE_EP1_ARCHIVE_NAME}",
+ENGINE_EP1_RELEASE_DISCOVERY = (
+    "cargo", "nextest", "list", "--archive-file", f"/work/{ENGINE_EP1_ARCHIVE_NAME}",
     "--extract-to", f"/work/{ENGINE_EP1_EXTRACT_NAME}", "--workspace-remap", "/work/fixture",
+    "--user-config-file", "none", "--message-format", "json",
+)
+ENGINE_EP1_RELEASE_REUSE = (
+    "cargo", "nextest", "run",
+    "--cargo-metadata", f"/work/{ENGINE_EP1_EXTRACT_NAME}/target/nextest/cargo-metadata.json",
+    "--binaries-metadata", f"/work/{ENGINE_EP1_EXTRACT_NAME}/target/nextest/binaries-metadata.json",
+    "--target-dir-remap", f"/work/{ENGINE_EP1_EXTRACT_NAME}/target", "--workspace-remap", "/work/fixture",
     "--user-config-file", "none", "--no-tests=fail",
 )
+CaseIdentity = tuple[str, str]
 OPTIMIZED_DISCRIMINATORS = {
-    "time-domain": "release_build_preserves_checked_admission",
-    "ntp-exchange": "release_build_preserves_exchange_admission",
-    "time-core": "release_build_preserves_regression_admission",
-    "nevrotick-engine": "prepare_rejects_entered_runtime_before_native_startup",
+    "time-domain": ("time-domain::coordinate", "release_build_preserves_checked_admission"),
+    "ntp-exchange": ("ntp-exchange::association", "release_build_preserves_exchange_admission"),
+    "time-core": ("time-core::regression", "release_build_preserves_regression_admission"),
+    "nevrotick-engine": ("nevrotick-engine::prepare_entered", "prepare_rejects_entered_runtime_before_native_startup"),
 }
 ENGINE_PROCESSING_GUARD = "processing_guard_tests::processing_uses_fresh_deadline_and_current_control"
+ENGINE_RETAINED_REPLY_CASES = {
+    "source_policy::tests::managed_series_retains_one_deny_across_final_policy_release",
+    "series::tests::managed_serial_reply_preserves_queued_second_datagram",
+}
 # Nonempty EP1 selection across actual private owners, required in ordinary and
 # optimized Engine unit binaries. These are component tests, not native KE proof.
 ENGINE_KE_TEST_CASES = {
@@ -115,8 +127,10 @@ ENGINE_KE_TEST_CASES = {
     "nts_ke_experiment::request::tests::s2c_changes_do_not_select_the_outgoing_key",
     "nts_ke_experiment::handoff::tests::cancellation_after_sealing_refuses_final_completion",
 }
-PATCH_TEST_CASES = {"tests::ready", "tests::count",
-                    "non_unpin_future_keeps_its_address_and_drops_once_after_pending_polls"}
+PATCH_TEST_CASES = {
+    ("spin_on", "tests::ready"), ("spin_on", "tests::count"),
+    ("spin_on::stack_pin", "non_unpin_future_keeps_its_address_and_drops_once_after_pending_polls"),
+}
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
@@ -1891,8 +1905,90 @@ def export_slint_captures(work: Path, output: Path) -> dict:
     return {"scope": "Public software platform on Linux; no native Windows observation", "files": records}
 
 
+def planned_test_cases(lane: str, profile: str) -> set[CaseIdentity]:
+    """Select claim-critical cases for the current portable package/profile row."""
+    kind, _, package = lane.partition(":")
+    required: set[CaseIdentity] = set()
+    if kind not in {"product-tests", "optimized-tests"}:
+        return required
+    if package == "nevrotick-engine":
+        required.update((package, case) for case in {ENGINE_PROCESSING_GUARD, *ENGINE_RETAINED_REPLY_CASES})
+        if profile == SLINT.EP1_PROFILE:
+            required.update((package, case) for case in ENGINE_KE_TEST_CASES)
+    if package == SLINT.PATCH_NAME:
+        required.update(PATCH_TEST_CASES)
+    if kind == "optimized-tests" and package in OPTIMIZED_DISCRIMINATORS:
+        required.add(OPTIMIZED_DISCRIMINATORS[package])
+    return required
+
+
+def nextest_discovery_command(command: list[str]) -> list[str]:
+    """Use the run's exact Cargo build and filter selection for discovery."""
+    index: int = command.index("nextest") + 1
+    if command[index] != "run" or command.count("--no-tests=fail") != 1:
+        raise ENV.Incomplete("Nextest discovery needs an admitted product test command.")
+    listing: list[str] = list(command)
+    listing[index] = "list"
+    listing.remove("--no-tests=fail")
+    return [*listing, "--message-format", "json"]
+
+
+def test_suite_belongs_to(suite: str, package: str) -> bool:
+    return suite == package or (suite.startswith(package + "::") and bool(suite[len(package) + 2:]))
+
+
+def validate_test_discovery(lane: str, output: str, profile: str) -> set[CaseIdentity]:
+    """Read the pinned nextest JSON listing, independently of JUnit execution."""
+    _, _, package = lane.partition(":")
+
+    def unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        fields: dict[str, object] = dict(pairs)
+        if len(fields) != len(pairs):
+            raise ValueError("duplicate nextest discovery field")
+        return fields
+
+    # The pinned compact format emits one JSON line. Cargo and archive status
+    # messages share this runner's bounded stream but are not discovery records.
+    records: list[str] = [line for line in output.splitlines() if line.startswith("{")]
+    if len(records) != 1:
+        raise ENV.Incomplete("Nextest discovery needs one compact JSON record.")
+    try:
+        record = json.loads(records[0], object_pairs_hook=unique_fields)
+    except ValueError as error:
+        raise ENV.Incomplete("Invalid nextest discovery record.") from error
+    if type(record) is not dict or type(record.get("rust-suites")) is not dict:
+        raise ENV.Incomplete("Nextest discovery has no test binary inventory.")
+    discovered: set[CaseIdentity] = set()
+    total: int = 0
+    for suite, binary in record["rust-suites"].items():
+        if (not test_suite_belongs_to(suite, package) or type(binary) is not dict
+                or binary.get("binary-id") != suite or binary.get("package-name") != package
+                or type(binary.get("testcases")) is not dict):
+            raise ENV.Incomplete("Nextest discovery contains an invalid or foreign test binary.")
+        cases = binary["testcases"]
+        if binary.get("status") == "skipped" and not cases:
+            continue
+        if binary.get("status") != "listed":
+            raise ENV.Incomplete("Nextest discovery contains an invalid test binary status.")
+        for name, case in cases.items():
+            total += 1
+            if (not name.strip() or type(case) is not dict or type(case.get("ignored")) is not bool
+                    or type(case.get("filter-match")) is not dict):
+                raise ENV.Incomplete("Nextest discovery contains an invalid testcase identity or selection.")
+            status = case["filter-match"].get("status")
+            if status == "matches" and not case["ignored"]:
+                discovered.add((suite, name))
+            elif status != "mismatch":
+                raise ENV.Incomplete("Nextest discovery contains an inadmissible testcase selection.")
+    if type(record.get("test-count")) is not int or total != record["test-count"]:
+        raise ENV.Incomplete("Nextest discovery count differs from its binary inventory.")
+    if not planned_test_cases(lane, profile) <= discovered:
+        raise ENV.Incomplete("Nextest discovery lacks mandatory qualified testcases.")
+    return discovered
+
+
 def validate_test_result(lane: str, output: str, work: Path, *, profile: str = "default") -> dict | None:
-    """Reject empty, wrong-package or skipped behavior despite a zero runner exit."""
+    """Credit successful JUnit cases only under their package and binary identity."""
     if profile not in {"default", SLINT.EP1_PROFILE}:
         raise ENV.Incomplete("Unknown test-accounting profile.")
     kind, _, package = lane.partition(":")
@@ -1906,27 +2002,31 @@ def validate_test_result(lane: str, output: str, work: Path, *, profile: str = "
         report = work / "target/nextest/default/junit.xml"
         if not report.is_file():
             raise ENV.Incomplete("Product test execution lacks its JUnit accounting.")
-        root = ET.parse(report).getroot()
-        suites = list(root.iter("testsuite"))
-        cases = [case for suite in suites for case in suite.findall("testcase")]
+        try:
+            root = ET.parse(report).getroot()
+        except ET.ParseError as error:
+            raise ENV.Incomplete("Product test execution emitted invalid JUnit accounting.") from error
+        suites: list[ET.Element] = list(root.iter("testsuite"))
+        cases: list[tuple[str, ET.Element]] = [(suite.get("name", ""), case)
+                                              for suite in suites for case in suite.findall("testcase")]
         if (not cases or len(cases) != len(list(root.iter("testcase")))
-                or any(suite.get("name") != package
-                       and not suite.get("name", "").startswith(package + "::") for suite in suites)
-                or any(any(child.tag in {"skipped", "failure", "error"} for child in case) for case in cases)):
+                or any(not test_suite_belongs_to(suite.get("name", ""), package) for suite in suites)
+                or any(any(child.tag in {"skipped", "failure", "error"} for child in case) for _, case in cases)):
             raise ENV.Incomplete("Required product tests are empty, skipped or failed.")
-        names = [case.get("name") for case in cases]
-        if package == "nevrotick-engine" and ENGINE_PROCESSING_GUARD not in names:
-            raise ENV.Incomplete("Engine tests did not execute the processing guard unit.")
-        if package == "nevrotick-engine" and profile == SLINT.EP1_PROFILE:
-            unit_names = {case.get("name") for suite in suites if suite.get("name") == package
-                          for case in suite.findall("testcase")}
-            if not ENGINE_KE_TEST_CASES <= unit_names:
-                raise ENV.Incomplete("Engine KE tests did not execute every selected private-owner unit control.")
-        if package == SLINT.PATCH_NAME and not PATCH_TEST_CASES <= set(names):
-            raise ENV.Incomplete("Patched spin_on tests did not execute its unit and non-Unpin/drop regression controls.")
-        if kind == "optimized-tests" and OPTIMIZED_DISCRIMINATORS[package] not in names:
-            raise ENV.Incomplete("Optimized tests did not execute the release admission discriminator.")
-        return {"package": package, "executed": len(cases), "test_names": names}
+        executed: list[CaseIdentity] = []
+        for suite, case in cases:
+            name: str = case.get("name", "")
+            if not name.strip() or case.get("classname", suite) != suite:
+                raise ENV.Incomplete("Missing or inconsistent JUnit testcase identity.")
+            executed.append((suite, name))
+        unique: set[CaseIdentity] = set(executed)
+        if len(unique) != len(executed):
+            raise ENV.Incomplete("Duplicate qualified JUnit testcase identity.")
+        planned: set[CaseIdentity] = planned_test_cases(lane, profile)
+        if not planned <= unique:
+            raise ENV.Incomplete("JUnit execution lacks mandatory qualified testcases.")
+        return {"package": package, "executed": len(executed), "test_names": [name for _, name in executed],
+                "planned_cases": sorted(planned), "executed_cases": executed}
     if kind == "doctests":
         counts = re.findall(r"test result: ok\. (\d+) passed; 0 failed; (\d+) ignored;", output)
         if not counts or sum(int(passed) for passed, _ in counts) == 0 or any(int(ignored) for _, ignored in counts):
@@ -3114,7 +3214,8 @@ def execute(root: Path, args, report: dict) -> None:
         tree_outputs = {}
         ep1_archive = work / ENGINE_EP1_ARCHIVE_NAME
 
-        def run(label, command, *, extra=(), shared_deadline: float | None = None):
+        def run(label, command, *, extra=(), shared_deadline: float | None = None,
+                discovered: set[CaseIdentity] | None = None):
             target: str | None = None
             if label.startswith("dependency-"):
                 flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
@@ -3205,11 +3306,30 @@ def execute(root: Path, args, report: dict) -> None:
                     projected = work / ("selected-metadata-" + target + ".json")
                     projected.write_text(json.dumps(projection, sort_keys=True, separators=(",", ":")))
                     record["selected_metadata_sha256"] = sha256(projected)
-            counts = validate_test_result(label, output, work, profile=profile)
-            if counts:
-                record["tests"] = counts
+            validated: str | set[CaseIdentity] = output
+            try:
+                if label.startswith("test-discovery:"):
+                    test_lane: str = label.removeprefix("test-discovery:")
+                    record["planned_cases"] = sorted(planned_test_cases(test_lane, profile))
+                    validated = validate_test_discovery(test_lane, output, profile)
+                    record["discovered_cases"] = sorted(validated)
+                else:
+                    counts = validate_test_result(label, output, work, profile=profile)
+                    if counts:
+                        if counts.get("planned_cases"):
+                            if discovered is None or set(counts["executed_cases"]) != discovered:
+                                raise ENV.Incomplete("Nextest execution identities differ from their discovery inventory.")
+                            counts["discovered_cases"] = sorted(discovered)
+                        record["tests"] = counts
+            except ENV.Incomplete as error:
+                record["failure"] = str(error)
+                raise
             print(f"PASSED: {label}", flush=True)
-            return output
+            return validated
+
+        def discover(label: str, command: list[str], *, deadline: float | None = None) -> set[CaseIdentity]:
+            return run("test-discovery:" + label, command, shared_deadline=deadline)
+
         boundary_control(run)
         for label, command in native_input_control_commands(args.lane, schema_version=policy["schema_version"]):
             run(label, command)
@@ -3240,7 +3360,12 @@ def execute(root: Path, args, report: dict) -> None:
                 deadline = time.monotonic() + resources["wall_seconds"]
                 run(ENGINE_EP1_RELEASE_BUILD_ROW, list(ENGINE_EP1_RELEASE_BUILD), shared_deadline=deadline)
                 extract.mkdir(mode=0o700)
-                run(label, reuse, shared_deadline=deadline)
+                discovered: set[CaseIdentity] = discover(label, list(ENGINE_EP1_RELEASE_DISCOVERY), deadline=deadline)
+                run(label, reuse, shared_deadline=deadline, discovered=discovered)
+                continue
+            if planned_test_cases(label, profile):
+                selection: set[CaseIdentity] = discover(label, nextest_discovery_command(command))
+                run(label, command, discovered=selection)
                 continue
             if not ui_tools or label not in version_roles:
                 run(label, command)
