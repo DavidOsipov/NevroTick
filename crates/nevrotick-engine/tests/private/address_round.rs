@@ -2656,6 +2656,129 @@ fn setup_failure_retains_prior_timeout_and_the_actual_injected_cause() -> Check<
     Ok(())
 }
 
+/// A local address refusal can advance the configured round without a peer debit.
+/// The controlled bind result is paired with a real loopback successor.
+/// # Errors
+/// Preserve actual fixture, runtime or unexpected successor failures.
+/// # Panics
+/// Require the original order, zero charge for the unusable local address and
+/// exactly one successful successor operation. Occupied bind remains terminal.
+#[test]
+fn configured_round_advances_after_local_address_unavailable() -> Check<()> {
+    for (kind, expected) in [
+        (io::ErrorKind::AddrInUse, AddressRoundEnd::Failure),
+        (io::ErrorKind::AddrNotAvailable, AddressRoundEnd::Reply),
+        (io::ErrorKind::AddrNotAvailable, AddressRoundEnd::Stopped),
+    ] {
+        observe_configured_bind_refusal(kind, expected)?;
+    }
+    Ok(())
+}
+
+/// Feed one classified bind result into the real configured round driver.
+/// # Errors
+/// Preserve actual socket, configuration, driver and peer setup failures.
+/// # Panics
+/// Reject missing peer accounting, changed policy floors or incorrect advancement.
+fn observe_configured_bind_refusal(kind: io::ErrorKind, expected: AddressRoundEnd) -> Check<()> {
+    let mut authority: crate::SourcePolicyAuthority = crate::source_policy::isolated_authority(
+        crate::SourcePolicyLimits::new(1, 2, Duration::from_millis(1), Duration::from_millis(4))?,
+    )?;
+    let first: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let second: UdpSocket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers: [SocketAddr; 2] = [first.local_addr()?, second.local_addr()?];
+    let source: crate::SourceHandle = authority.source(0)?;
+    let current: crate::SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, crate::SourceAddressSet::new(&peers)?)?;
+    let bound: ConfiguredAddressRound =
+        source.address_round_for_configuration(&current, checked_config(&peers)?)?;
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let origin: Instant = Instant::now();
+    let cutoff: Instant = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let (prepared, control): (PreparedAddressRound, ControlHandle) = bound
+        .prepare_before_with_entropy(cutoff, |entropy| {
+            fixed_entropy(entropy);
+            Ok(())
+        })?
+        .ok_or(PilotError::InternalState)?;
+    let bindings: Option<RoundBindings> = prepared.source_policy.clone();
+    let responder: ReplyPeer = ReplyPeer::spawn(second.try_clone()?, ReplyKind::Ordinary)?;
+    let original: crate::SourcePolicySnapshot = source.policy_snapshot(peers[0])?;
+    let mut setup_count: usize = 0;
+    let report: AddressRoundReport = runtime.block_on(run_round_with(
+        prepared,
+        origin,
+        cutoff,
+        &mut |peer, packet, context, receiver, request_end, round_end| {
+            setup_count += 1;
+            if peer == peers[0] {
+                return Err(PilotError::Bind(IoCause::capture(&io::Error::from(kind))));
+            }
+            assert_eq!(peer, peers[1]);
+            let current: crate::SourcePolicySnapshot = source
+                .policy_snapshot(peers[0])
+                .map_err(PilotError::SourcePolicy)?;
+            assert_eq!(current.source().revision(), original.source().revision());
+            assert_eq!(current.source().floor(), original.source().floor());
+            assert_eq!(
+                current.endpoint().revision(),
+                original.endpoint().revision()
+            );
+            assert_eq!(current.endpoint().floor(), original.endpoint().floor());
+            let mode: SourceMode = candidate_mode(bindings.as_ref(), peer)?;
+            setup_address_request_bound(
+                peer,
+                packet,
+                context,
+                receiver,
+                request_end,
+                round_end,
+                mode,
+            )
+        },
+        &mut |index, checkpoint| {
+            if expected == AddressRoundEnd::Stopped
+                && (index, checkpoint) == (0, RoundCheckpoint::Before)
+            {
+                control.stop();
+            }
+        },
+    ));
+    let query: Option<SeenQuery> = responder.finish()?;
+    assert_eq!(observe_queries(&first)?.0, 0);
+    assert_eq!(observe_queries(&second)?.0, 0);
+    assert_eq!(report.end(), expected);
+    assert!(report.policy_refusals().is_empty());
+    if kind == io::ErrorKind::AddrNotAvailable {
+        let [refusal] = report.bind_refusals() else {
+            return Err(io::Error::other("expected original local bind refusal").into());
+        };
+        assert_eq!(refusal.index(), 0);
+        assert_eq!(refusal.cause().kind(), kind);
+        assert!(report.primary_error().is_none());
+    } else {
+        assert!(report.bind_refusals().is_empty());
+        assert!(
+            matches!(report.primary_error(), Some(PilotError::Bind(cause)) if cause.kind() == kind)
+        );
+    }
+    if expected == AddressRoundEnd::Reply {
+        assert_eq!(setup_count, 2);
+        check_query(&require_query(query)?);
+        let [attempt] = report.attempts() else {
+            return Err(io::Error::other("expected exactly one successor attempt").into());
+        };
+        assert_eq!(attempt.peer(), peers[1]);
+        assert_eq!(attempt.report().status(), Status::Header);
+    } else {
+        assert_eq!(setup_count, 1);
+        assert!(query.is_none() && report.attempts().is_empty());
+    }
+    Ok(())
+}
+
 /// Cleanup projection retains a genuine captured native cause and both secondaries.
 /// This tests the result boundary, not a native timer-failure or bind-adapter claim.
 /// # Errors
@@ -3354,7 +3477,7 @@ fn setup_handler_control_case(expected: Option<AddressRoundEnd>) -> Check<()> {
             handler_outcome = Some(match &outcome {
                 SetupOutcome::Ready(_) => None,
                 SetupOutcome::Retired(end) => Some(*end),
-                SetupOutcome::PolicyRefused(_) => return Err(PilotError::InternalState),
+                SetupOutcome::Refused(_) => return Err(PilotError::InternalState),
             });
             Ok(outcome)
         },

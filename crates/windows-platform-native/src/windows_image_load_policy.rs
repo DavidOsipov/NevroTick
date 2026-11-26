@@ -176,6 +176,286 @@ pub fn enforce_current_extension_point_policy() -> Result<(), ExtensionPointPoli
     )
 }
 
+/// The original stage and cause of a permanent strict-handle policy refusal.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "a strict-handle refusal prevents normal startup admission"]
+pub enum StrictHandlePolicyError {
+    /// The first query failed with this Win32 error code.
+    ReadInitial(u32),
+    /// The first query returned a flag word containing reserved bits.
+    UnknownInitialFlags(u32),
+    /// The setter failed with this Win32 error code.
+    Apply(u32),
+    /// The query after setting the policy failed with this Win32 error code.
+    ReadEffective(u32),
+    /// Readback returned a flag word containing reserved bits.
+    UnknownEffectiveFlags(u32),
+    /// Readback did not establish both invalid-handle exceptions and permanence.
+    NotEffective {
+        /// Complete recognized flag word returned by the effective query.
+        observed: u32,
+    },
+}
+
+#[cfg(any(windows, test))]
+impl fmt::Display for StrictHandlePolicyError {
+    /// Render only the fixed stage and bounded native code or flag word.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::ReadInitial(code) => {
+                write!(
+                    formatter,
+                    "Strict-handle policy query failed (Win32 {code})."
+                )
+            }
+            Self::UnknownInitialFlags(flags) => write!(
+                formatter,
+                "Unrecognized initial strict-handle flags ({flags:#010x})."
+            ),
+            Self::Apply(code) => {
+                write!(
+                    formatter,
+                    "Strict-handle policy setter failed (Win32 {code})."
+                )
+            }
+            Self::ReadEffective(code) => write!(
+                formatter,
+                "Effective strict-handle policy query failed (Win32 {code})."
+            ),
+            Self::UnknownEffectiveFlags(flags) => write!(
+                formatter,
+                "Unrecognized effective strict-handle flags ({flags:#010x})."
+            ),
+            Self::NotEffective { observed } => write!(
+                formatter,
+                "Permanent strict-handle checking is not effective ({observed:#010x})."
+            ),
+        }
+    }
+}
+
+#[cfg(any(windows, test))]
+impl std::error::Error for StrictHandlePolicyError {}
+
+/// Permanently enable invalid-handle exceptions in the calling service process.
+///
+/// The startup owner serializes this after the other supported early policies
+/// and before SCM connection or service work. Both documented setter fields
+/// are enabled together. An already permanent observation needs no setter.
+/// Temporary exceptions supplied by a debugger or verifier are insufficient.
+/// This observation covers the original process at the effective query.
+///
+/// # Errors
+/// Preserve the first query, setter or effective-readback refusal, including
+/// unknown flags and missing permanence. Refusal makes no weaker retry and
+/// does not attempt to undo protections that have already taken effect.
+#[cfg(windows)]
+pub fn enforce_current_strict_handle_policy() -> Result<(), StrictHandlePolicyError> {
+    strict_handle::check(
+        native::read_strict_handle_policy,
+        native::set_strict_handle_policy,
+    )
+}
+
+/// Require matching enabled fields and complete permanent enforcement readback.
+#[cfg(any(windows, test))]
+mod strict_handle {
+    use super::StrictHandlePolicyError;
+
+    /// `RaiseExceptionOnInvalidHandleReference` and `HandleExceptionsPermanentlyEnabled`.
+    const REQUIRED_FLAGS: u32 = 0x0000_0003;
+
+    /// Read, tighten both documented fields if needed, and verify the same policy.
+    ///
+    /// # Errors
+    /// Preserve the first failure and refuse reserved or incomplete observations.
+    /// The setter is called at most once and always receives matching enabled bits.
+    pub(super) fn check(
+        mut read: impl FnMut() -> Result<u32, u32>,
+        set: impl FnOnce(u32) -> Result<(), u32>,
+    ) -> Result<(), StrictHandlePolicyError> {
+        let original: u32 = read().map_err(StrictHandlePolicyError::ReadInitial)?;
+        if original & !REQUIRED_FLAGS != 0 {
+            return Err(StrictHandlePolicyError::UnknownInitialFlags(original));
+        }
+        if original == REQUIRED_FLAGS {
+            return Ok(());
+        }
+        set(REQUIRED_FLAGS).map_err(StrictHandlePolicyError::Apply)?;
+        let observed: u32 = read().map_err(StrictHandlePolicyError::ReadEffective)?;
+        if observed & !REQUIRED_FLAGS != 0 {
+            return Err(StrictHandlePolicyError::UnknownEffectiveFlags(observed));
+        }
+        if observed != REQUIRED_FLAGS {
+            return Err(StrictHandlePolicyError::NotEffective { observed });
+        }
+        Ok(())
+    }
+
+    /// Independent ordered native transcripts for permanent handle enforcement.
+    #[cfg(test)]
+    mod tests {
+        use std::cell::RefCell;
+
+        use super::{StrictHandlePolicyError, check};
+
+        /// One independently specified native operation and its returned result.
+        #[derive(Debug)]
+        enum Step {
+            /// Query the original or effective flag word.
+            Read(Result<u32, u32>),
+            /// Submit exactly the expected flag word.
+            Set(u32, Result<(), u32>),
+        }
+
+        /// Exercise the actual decision and require the complete planned call order.
+        ///
+        /// # Panics
+        /// Report a changed flag, unexpected call, omitted call or wrong outcome.
+        #[expect(
+            clippy::panic,
+            reason = "unexpected native calls fail the fixed transcript"
+        )]
+        fn require_steps<const LENGTH: usize>(
+            steps: [Step; LENGTH],
+            expected: Result<(), StrictHandlePolicyError>,
+        ) {
+            let remaining: RefCell<std::array::IntoIter<Step, LENGTH>> =
+                RefCell::new(steps.into_iter());
+            let result: Result<(), StrictHandlePolicyError> = check(
+                || match remaining.borrow_mut().next() {
+                    Some(Step::Read(result)) => result,
+                    step => panic!("unexpected strict-handle query before {step:?}"),
+                },
+                |flags: u32| match remaining.borrow_mut().next() {
+                    Some(Step::Set(expected_flags, result)) => {
+                        assert_eq!(flags, expected_flags);
+                        result
+                    }
+                    step => panic!("unexpected strict-handle setter before {step:?}"),
+                },
+            );
+            assert_eq!(result, expected);
+            assert!(remaining.into_inner().next().is_none());
+        }
+
+        /// Already permanent policy is retained without a setter or redundant query.
+        #[test]
+        fn preserves_inherited_permanent_policy_without_setting() {
+            require_steps([Step::Read(Ok(3))], Ok(()));
+        }
+
+        /// Each recognized incomplete state requires both matching setter bits.
+        #[test]
+        fn enables_both_fields_from_each_nonpermanent_word() {
+            for original in [0_u32, 1, 2] {
+                require_steps(
+                    [
+                        Step::Read(Ok(original)),
+                        Step::Set(3, Ok(())),
+                        Step::Read(Ok(3)),
+                    ],
+                    Ok(()),
+                );
+            }
+        }
+
+        /// Temporary verifier-style exceptions and either missing field refuse admission.
+        #[test]
+        fn refuses_each_incomplete_effective_word_without_retrying() {
+            for original in [0_u32, 1, 2] {
+                for observed in [0_u32, 1, 2] {
+                    require_steps(
+                        [
+                            Step::Read(Ok(original)),
+                            Step::Set(3, Ok(())),
+                            Step::Read(Ok(observed)),
+                        ],
+                        Err(StrictHandlePolicyError::NotEffective { observed }),
+                    );
+                }
+            }
+        }
+
+        /// Every reserved bit is refused regardless of the two documented fields.
+        #[test]
+        fn refuses_reserved_bits_before_setting_and_after_readback() {
+            for bit in 2_u32..u32::BITS {
+                for known in [0_u32, 1, 2, 3] {
+                    let flags: u32 = (1_u32 << bit) | known;
+                    require_steps(
+                        [Step::Read(Ok(flags))],
+                        Err(StrictHandlePolicyError::UnknownInitialFlags(flags)),
+                    );
+                    require_steps(
+                        [
+                            Step::Read(Ok(0)),
+                            Step::Set(3, Ok(())),
+                            Step::Read(Ok(flags)),
+                        ],
+                        Err(StrictHandlePolicyError::UnknownEffectiveFlags(flags)),
+                    );
+                }
+            }
+        }
+
+        /// Each native refusal stops subsequent calls and preserves its original code.
+        #[test]
+        fn preserves_first_native_failure_at_each_stage() {
+            require_steps(
+                [Step::Read(Err(5))],
+                Err(StrictHandlePolicyError::ReadInitial(5)),
+            );
+            require_steps(
+                [Step::Read(Ok(0)), Step::Set(3, Err(87))],
+                Err(StrictHandlePolicyError::Apply(87)),
+            );
+            require_steps(
+                [Step::Read(Ok(0)), Step::Set(3, Ok(())), Step::Read(Err(50))],
+                Err(StrictHandlePolicyError::ReadEffective(50)),
+            );
+        }
+
+        /// All typed diagnostic variants retain their stage and bounded observation.
+        ///
+        /// # Panics
+        /// Fails if a stage, code or observed word changes in its diagnostic.
+        #[test]
+        fn reports_strict_handle_refusal_stage_and_observation() {
+            let cases: [(StrictHandlePolicyError, &str); 6] = [
+                (
+                    StrictHandlePolicyError::ReadInitial(5),
+                    "Strict-handle policy query failed (Win32 5).",
+                ),
+                (
+                    StrictHandlePolicyError::UnknownInitialFlags(4),
+                    "Unrecognized initial strict-handle flags (0x00000004).",
+                ),
+                (
+                    StrictHandlePolicyError::Apply(87),
+                    "Strict-handle policy setter failed (Win32 87).",
+                ),
+                (
+                    StrictHandlePolicyError::ReadEffective(50),
+                    "Effective strict-handle policy query failed (Win32 50).",
+                ),
+                (
+                    StrictHandlePolicyError::UnknownEffectiveFlags(4),
+                    "Unrecognized effective strict-handle flags (0x00000004).",
+                ),
+                (
+                    StrictHandlePolicyError::NotEffective { observed: 1 },
+                    "Permanent strict-handle checking is not effective (0x00000001).",
+                ),
+            ];
+            for (error, expected) in cases {
+                assert_eq!(error.to_string(), expected);
+            }
+        }
+    }
+}
+
 /// Enforce one reviewed flag and admit only the documented effective word.
 #[cfg(any(windows, test))]
 mod extension_point {
@@ -633,6 +913,8 @@ mod native {
         ImageLoad,
         /// `PROCESS_MITIGATION_EXTENSION_POINT_DISABLE_POLICY`.
         ExtensionPointDisable,
+        /// `PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY`.
+        StrictHandleCheck,
     }
 
     impl DwordPolicy {
@@ -641,11 +923,12 @@ mod native {
             match self {
                 Self::ImageLoad => 10,
                 Self::ExtensionPointDisable => 6,
+                Self::StrictHandleCheck => 3,
             }
         }
     }
 
-    /// One DWORD in either selected policy union.
+    /// One DWORD in each selected policy union.
     #[repr(transparent)]
     struct PolicyFlags(u32);
 
@@ -770,5 +1053,21 @@ mod native {
     /// Return the original Win32 setter failure.
     pub(super) fn set_extension_point_policy(flags: u32) -> Result<(), u32> {
         set_policy(DwordPolicy::ExtensionPointDisable, flags)
+    }
+
+    /// Query only the strict-handle flags of the current process.
+    ///
+    /// # Errors
+    /// Return the original Win32 query failure.
+    pub(super) fn read_strict_handle_policy() -> Result<u32, u32> {
+        read_policy(DwordPolicy::StrictHandleCheck)
+    }
+
+    /// Apply the matching enabled fields admitted by the strict-handle decision.
+    ///
+    /// # Errors
+    /// Return the original Win32 setter failure. The caller checks permanence.
+    pub(super) fn set_strict_handle_policy(flags: u32) -> Result<(), u32> {
+        set_policy(DwordPolicy::StrictHandleCheck, flags)
     }
 }

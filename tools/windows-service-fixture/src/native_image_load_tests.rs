@@ -28,7 +28,7 @@ use windows_sys::Win32::{
     },
     System::Threading::{
         GetCurrentProcess, GetProcessMitigationPolicy, PROCESS_MITIGATION_POLICY,
-        ProcessExtensionPointDisablePolicy, ProcessImageLoadPolicy,
+        ProcessExtensionPointDisablePolicy, ProcessImageLoadPolicy, ProcessStrictHandleCheckPolicy,
     },
 };
 
@@ -38,13 +38,15 @@ use crate::{
     retained_dispatch_diagnostics,
 };
 
-/// The only two four-byte mitigation layouts observed by this test.
+/// The three four-byte mitigation layouts observed by this test.
 #[derive(Clone, Copy)]
 enum ObservedPolicy {
     /// SDK image-load flags.
     ImageLoad,
     /// SDK extension-point admission flags.
     ExtensionPointDisable,
+    /// SDK invalid-handle exception and permanent-enable flags.
+    StrictHandleCheck,
 }
 
 /// Snapshot a selected one-DWORD SDK policy through the independent binding.
@@ -59,11 +61,12 @@ fn observed_policy_flags(policy: ObservedPolicy) -> Result<u32, Box<dyn Error>> 
     let selector: PROCESS_MITIGATION_POLICY = match policy {
         ObservedPolicy::ImageLoad => ProcessImageLoadPolicy,
         ObservedPolicy::ExtensionPointDisable => ProcessExtensionPointDisablePolicy,
+        ObservedPolicy::StrictHandleCheck => ProcessStrictHandleCheckPolicy,
     };
     let mut flags: u32 = 0;
     // SAFETY: This call returns a borrowed pseudohandle and needs no parameters.
     let process: HANDLE = unsafe { GetCurrentProcess() };
-    // SAFETY: Both test-selected policy layouts are one DWORD. The local buffer
+    // SAFETY: Each test-selected policy layout is one DWORD. The local buffer
     // remains live and writable during the synchronous query.
     let result: i32 = unsafe {
         GetProcessMitigationPolicy(
@@ -97,7 +100,7 @@ fn observed_process_error_mode() -> u32 {
 ///
 /// # Errors
 /// Refuse an already protected setup, unexpected SCM result, incomplete
-/// image, error-mode or extension policy readback, or an accepted duplicate entry.
+/// image, error-mode, extension or strict-handle readback, or an accepted duplicate entry.
 ///
 /// # Panics
 /// Fails if the required diagnostic contradicts the original dispatcher refusal.
@@ -115,6 +118,7 @@ fn verify_console_entry(
     assert!(retained_dispatch_diagnostic().is_none());
     let error_mode_before: u32 = observed_process_error_mode();
     let extension_before: u32 = observed_policy_flags(ObservedPolicy::ExtensionPointDisable)?;
+    let strict_handles_before: u32 = observed_policy_flags(ObservedPolicy::StrictHandleCheck)?;
     let original: Result<(), &'static FixtureError> = enter();
     if !matches!(
         original,
@@ -148,6 +152,16 @@ fn verify_console_entry(
     }
     println!(
         "service_extension_points_before={extension_before:#010x} service_extension_points_after={extension_after:#010x}"
+    );
+    let strict_handles_after: u32 = observed_policy_flags(ObservedPolicy::StrictHandleCheck)?;
+    if strict_handles_after != 3 {
+        return Err(format!(
+            "incomplete permanent strict-handle policy after entry ({strict_handles_after:#010x})"
+        )
+        .into());
+    }
+    println!(
+        "service_strict_handles_before={strict_handles_before:#010x} service_strict_handles_after={strict_handles_after:#010x}"
     );
     let dispatch_diagnostic: &DispatchDiagnostic = retained_dispatch_diagnostic()
         .ok_or("missing diagnostic from the original dispatcher refusal")?;

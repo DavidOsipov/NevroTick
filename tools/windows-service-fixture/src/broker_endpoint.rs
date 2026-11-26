@@ -43,6 +43,15 @@ pub(super) enum AcceptCompletion {
 pub(super) enum FirstReadStart {
     /// This reservation admits no reads.
     Unarmed,
+    /// Admission closed before a read was submitted.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "only the sealed test reservation implements a first read"
+        )
+    )]
+    Refused,
     /// The original read record awaits native completion.
     #[cfg_attr(
         not(test),
@@ -137,10 +146,14 @@ pub(super) trait Reservation: Sized {
     fn poll_accept(&mut self) -> Result<Poll<AcceptCompletion>, NativeError>;
 
     /// Start one read only on the same, uncancelled fixture accept.
+    /// Recheck the original connection after preparation, at submission.
     ///
     /// # Errors
     /// A failed submission queues no new read.
-    fn begin_first_read(&mut self) -> Result<FirstReadStart, NativeError> {
+    fn begin_first_read<C: Clock>(
+        &mut self,
+        _connection: &mut RunningConnection<'_, C>,
+    ) -> Result<FirstReadStart, NativeError> {
         Ok(FirstReadStart::Unarmed)
     }
 
@@ -459,13 +472,13 @@ where
             *state = Running::Parked;
             return Ok(ConnectionWait::Service);
         }
-        let start: Result<FirstReadStart, NativeError> = endpoint.begin_first_read();
+        let start: Result<FirstReadStart, NativeError> = endpoint.begin_first_read(connection);
         let after: ConnectionEdge = connection.edge();
         match start {
             Ok(FirstReadStart::Unarmed) if matches!(after, ConnectionEdge::Open(_)) => {
                 Self::unexpected(state)
             }
-            Ok(FirstReadStart::Unarmed) => {
+            Ok(FirstReadStart::Unarmed | FirstReadStart::Refused) => {
                 *state = Running::Parked;
                 Ok(ConnectionWait::Service)
             }

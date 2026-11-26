@@ -148,6 +148,13 @@ CLOCK_ASSERTIONS = {
     },
 }
 DIRECT_ASSERTIONS = {WORKER_DIRECT: WORKER_ROUND_ASSERTIONS, WRITER_DIRECT: WRITER_ASSERTIONS, **CLOCK_ASSERTIONS}
+# These private test modules are registered by host_tests.rs. Require their
+# admitted libtest names as well as the source file supplying the assertion.
+HOST_ASSERTION_MODULES: dict[str, str] = {
+    "host::tests::broker_clock_change_tests::": "src/broker_clock_change_tests.rs",
+    "host::tests::broker_endpoint_host_tests::": "src/broker_endpoint_host_tests.rs",
+    "host::tests::broker_observation_tests::": "src/broker_observation_tests.rs",
+}
 CLOCK_NATIVE_GAPS = {
     "broker_clock_change": "GNU libtest excludes Windows-only native sampling attachment and reader construction.",
     "broker_clock_continuity": "GNU libtest excludes Windows-only raw sample getters and native sample projection.",
@@ -665,8 +672,12 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
                     and (required_source is None or name == LIBRARY),
                     "Mutation compiler diagnostic has a different target role or source.")
             if native_subject in callers:
-                accepted = callers[native_subject]
-                paths = {prefix + path for path in accepted for prefix in ("", Q.TOOL + "/", root + "/")}
+                accepted: set[str] = callers[native_subject]
+                code: object = item["message"].get("code")
+                # Removing host dispatch, emission or shutdown can orphan its diagnostic callees.
+                if native_subject == "src/host.rs" and type(code) is dict and code.get("code") == "dead_code":
+                    accepted = accepted | {"src/diagnostics.rs"}
+                paths: set[str] = {prefix + path for path in accepted for prefix in ("", Q.TOOL + "/", root + "/")}
                 require(name == LIBRARY and all(span.get("file_name") in paths for span in primary),
                         "Cfg-only mutation compiler diagnostic has a different target or primary source.")
             if required_source is not None:
@@ -690,15 +701,22 @@ def classify_cause(text: str, expected_tests: list[str], *, compiler: bool = Fal
         return {"kind": "compiler-unviable", "kill_credit": 0, "log_sha256": digest}
     require(not diagnostics and not re.search(r"error\[E\d+\]|could not compile", text),
             "Caught mutant contains a compiler failure.")
-    def admitted_assertion(name, path):
+    def admitted_assertion(name: str, path: str) -> bool:
         if name not in expected_tests:
             return False
         if assertion_files is not None:
             if name in assertion_files:
                 return selected_span(path, files=(assertion_files[name],))
-            if not allow_legacy_assertions:
-                return False
-        return selected_span(path)
+            return allow_legacy_assertions and selected_span(path)
+        if selected_span(path):
+            return True
+        for owners in DIRECT_ASSERTIONS.values():
+            if name in owners:
+                return selected_span(path, files=(owners[name],))
+        for module, source in HOST_ASSERTION_MODULES.items():
+            if name.startswith(module):
+                return selected_span(path, files=(source,))
+        return False
 
     assertions = []
     for match in re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text, re.M | re.S):

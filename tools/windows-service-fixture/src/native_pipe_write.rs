@@ -176,14 +176,15 @@ impl NativePipeWrite<NativePipeRead> {
         self.writer.pipe()
     }
 
-    /// Submit a read on the original server before a reply occupies the slot.
+    /// Submit a read on the original server under the final owner guard.
     /// # Errors
     /// Preserve the read refusal or refuse an outstanding write.
-    pub(super) fn begin_first_read(
+    pub(super) fn begin_first_read<E: From<NativeReadError>>(
         &mut self,
         extent: usize,
-    ) -> Result<NativeReadStart, NativeReadError> {
-        self.idle_reader()?.begin(extent)
+        guard: impl FnOnce() -> Result<(), E>,
+    ) -> Result<NativeReadStart, E> {
+        self.idle_reader()?.begin_guarded(extent, guard)
     }
 
     /// Collect and lend the first read without transferring its pipe owner.

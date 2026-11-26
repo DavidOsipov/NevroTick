@@ -119,6 +119,34 @@ class NativeInputSourceControls(unittest.TestCase):
         self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
         self.assertEqual(n.check(files), ['native input closed create_native body'])
 
+    def test_missing_strict_handle_startup_guard_is_rejected(self) -> None:
+        files: dict[str, str] = copy.deepcopy(self.files)
+        guard: str = ('    startup_image_policy::enforce_strict_handles()'
+                      '.map_err(HostError::StrictHandlePolicy)?;')
+        # This specimen also represents an older caller with no guard at all.
+        files[n.HOST] = files[n.HOST].replace(guard, '')
+        self.assertEqual(n.check(files), ['native input closed create_native body'])
+
+    def test_strict_handles_precede_backend_and_propagate_refusal(self) -> None:
+        guard: str = ('    startup_image_policy::enforce_strict_handles()'
+                      '.map_err(HostError::StrictHandlePolicy)?;')
+        replacements: tuple[str, ...] = (
+            '    let _ = startup_image_policy::enforce_strict_handles();',
+            '    if false {\n' + guard + '\n    }',
+            '    let unused = || startup_image_policy::enforce_strict_handles();',
+        )
+        files: dict[str, str]
+        replacement: str
+        for replacement in replacements:
+            files = copy.deepcopy(self.files)
+            self.change(files, n.HOST, guard, replacement)
+            with self.subTest(replacement=replacement):
+                self.assertEqual(n.check(files), ['native input closed create_native body'])
+        files = copy.deepcopy(self.files)
+        self.change(files, n.HOST, guard, '')
+        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
+        self.assertEqual(n.check(files), ['native input closed create_native body'])
+
     def test_hook_must_install_on_same_host_before_observers_and_show(self):
         hook = '    native_input::install(host.window.window());'
         observer = '    native_workflow::install(&host.window, &host.state).map_err(HostError::Native)?;'

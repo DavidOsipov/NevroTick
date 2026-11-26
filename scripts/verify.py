@@ -372,6 +372,7 @@ RC_LIBRARY = "/tools/llvm/lib/libLLVM.so.22.1"
 WINDOWS_UI_HOST_TOOLS = "lib/rustlib/x86_64-unknown-linux-gnu"
 READOBJ = f"{WINDOWS_UI_HOST_TOOLS}/bin/llvm-readobj"
 READOBJ_LIBRARY = f"{WINDOWS_UI_HOST_TOOLS}/lib/libLLVM.so.23.1-rust-1.100.0-stable"
+LINKER_LLVM = f"/toolchain/lib/{Path(READOBJ_LIBRARY).name}"
 RESOURCE_PATH = "/work/metadata/ui.res"
 RESOURCE_DIGEST_ENV = "NEVROTICK_UI_VERSIONINFO_SHA256"
 
@@ -381,6 +382,8 @@ WINDOWS_UI_TOOL_PINS = {
     RC_LIBRARY: (149344344, "3f02d721ee01ce618a2317fe5552ab3bbd44331cd6d65e602dae2876fbf35e2e"),
     f"/toolchain/{READOBJ}": (3134320, "867e1f5d2a6d277d4ba5d01ba8205f301d1734ff6e7bb64663e2c8aaa2b35d63"),
     f"/toolchain/{READOBJ_LIBRARY}": (
+        208242288, "517f2e2d3762ccd6fe742c1b2fc720f447777c2589c99f58e7d12bfacf7b908c"),
+    LINKER_LLVM: (
         208242288, "517f2e2d3762ccd6fe742c1b2fc720f447777c2589c99f58e7d12bfacf7b908c"),
 }
 
@@ -1953,34 +1956,44 @@ def validate_test_discovery(lane: str, output: str, profile: str) -> set[CaseIde
     if len(records) != 1:
         raise ENV.Incomplete("Nextest discovery needs one compact JSON record.")
     try:
-        record = json.loads(records[0], object_pairs_hook=unique_fields)
+        record: object = json.loads(records[0], object_pairs_hook=unique_fields)
     except ValueError as error:
         raise ENV.Incomplete("Invalid nextest discovery record.") from error
-    if type(record) is not dict or type(record.get("rust-suites")) is not dict:
+    if type(record) is not dict:
         raise ENV.Incomplete("Nextest discovery has no test binary inventory.")
+    inventory: object = record.get("rust-suites")
+    if type(inventory) is not dict:
+        raise ENV.Incomplete("Nextest discovery has no test binary inventory.")
+    # Every JSON object passes through unique_fields, with string keys.
+    binaries: dict[str, object] = inventory
     discovered: set[CaseIdentity] = set()
     total: int = 0
-    for suite, binary in record["rust-suites"].items():
+    for suite, binary in binaries.items():
         if (not test_suite_belongs_to(suite, package) or type(binary) is not dict
                 or binary.get("binary-id") != suite or binary.get("package-name") != package
                 or type(binary.get("testcases")) is not dict):
             raise ENV.Incomplete("Nextest discovery contains an invalid or foreign test binary.")
-        cases = binary["testcases"]
-        if binary.get("status") == "skipped" and not cases:
+        cases: dict[str, object] = binary["testcases"]
+        binary_status: object = binary.get("status")
+        if binary_status == "skipped" and not cases:
             continue
-        if binary.get("status") != "listed":
+        if binary_status != "listed":
             raise ENV.Incomplete("Nextest discovery contains an invalid test binary status.")
         for name, case in cases.items():
             total += 1
-            if (not name.strip() or type(case) is not dict or type(case.get("ignored")) is not bool
-                    or type(case.get("filter-match")) is not dict):
+            if not name.strip() or type(case) is not dict:
                 raise ENV.Incomplete("Nextest discovery contains an invalid testcase identity or selection.")
-            status = case["filter-match"].get("status")
-            if status == "matches" and not case["ignored"]:
+            ignored: object = case.get("ignored")
+            match: object = case.get("filter-match")
+            if type(ignored) is not bool or type(match) is not dict:
+                raise ENV.Incomplete("Nextest discovery contains an invalid testcase identity or selection.")
+            status: object = match.get("status")
+            if status == "matches" and not ignored:
                 discovered.add((suite, name))
             elif status != "mismatch":
                 raise ENV.Incomplete("Nextest discovery contains an inadmissible testcase selection.")
-    if type(record.get("test-count")) is not int or total != record["test-count"]:
+    declared_total: object = record.get("test-count")
+    if type(declared_total) is not int or total != declared_total:
         raise ENV.Incomplete("Nextest discovery count differs from its binary inventory.")
     if not planned_test_cases(lane, profile) <= discovered:
         raise ENV.Incomplete("Nextest discovery lacks mandatory qualified testcases.")
@@ -2224,8 +2237,8 @@ def library_inventory(directory: Path) -> dict[str, str]:
     return result
 
 
-def windows_libraries(root: Path, toolchain: Path, config_path: Path, work: Path,
-                      inventory_path: Path | None) -> tuple[Path, dict[str, str]]:
+def prepare_windows_link(root: Path, toolchain: Path, config_path: Path, work: Path,
+                         inventory_path: Path | None) -> tuple[Path, dict[str, str], tuple[str, Path, str]]:
     """Admit the configured Microsoft input identity and pinned bundled linker."""
     policy = json.loads((root / "policy/tool-manifest.json").read_text())
     config = json.loads(config_path.read_text())
@@ -2249,11 +2262,20 @@ def windows_libraries(root: Path, toolchain: Path, config_path: Path, work: Path
     if acquisition.get("files") != files:
         raise ENV.Incomplete("Microsoft library bytes differ from the admitted acquisition inventory.")
     relative = f"lib/rustlib/{policy['rust']['host']}/bin/rust-lld"
-    ENV.require_admitted_binary(toolchain / relative, policy["cross_toolchain"]["linker"]["binary_sha256"], "rust-lld")
+    linker_source = toolchain / relative
+    linker_pin = ENV.require_admitted_binary(
+        linker_source, policy["cross_toolchain"]["linker"]["binary_sha256"], "rust-lld")
     linker = work / "linker"
     args = [f"/toolchain/{relative}", "-flavor", "link", *("/libpath:/xwin/" + suffix for suffix in suffixes)]
     linker.write_text("#!/usr/bin/python3\nimport os,sys\n" + f"os.execv({args[0]!r}, {args!r} + sys.argv[1:])\n")
     linker.chmod(0o700)
+    return directory, files, (args[0], linker_source, linker_pin)
+
+
+def windows_libraries(root: Path, toolchain: Path, config_path: Path, work: Path,
+                      inventory_path: Path | None) -> tuple[Path, dict[str, str]]:
+    """Keep the SDK inventory and wrapper interface for the standalone Windows lanes."""
+    directory, files, _ = prepare_windows_link(root, toolchain, config_path, work, inventory_path)
     return directory, files
 
 
@@ -2284,7 +2306,7 @@ def admit_advisories(receipt_path: Path | None, now: float, expected_lock: str) 
 
 
 def admit_windows_ui_tools(toolchain: Path, compiler: Path | None) -> dict[str, tuple[Path, str]]:
-    """Admit the selected resource compiler and reader with their LLVM libraries."""
+    """Admit the version tools and the two selected Rust LLVM library locations."""
     if compiler is None:
         raise ENV.Incomplete("Windows UI linking requires the admitted --llvm-rc executable.")
     compiler = compiler.resolve(strict=True)
@@ -2293,7 +2315,8 @@ def admit_windows_ui_tools(toolchain: Path, compiler: Path | None) -> dict[str, 
     rust_library = toolchain / READOBJ_LIBRARY
     paths = {RC_COMPILER: compiler, RC_LIBRARY: compiler_library,
              f"/toolchain/{READOBJ}": rust_tool,
-             f"/toolchain/{READOBJ_LIBRARY}": rust_library}
+             f"/toolchain/{READOBJ_LIBRARY}": rust_library,
+             LINKER_LLVM: toolchain / "lib" / rust_library.name}
     tools = {}
     for mount, path in paths.items():
         size, digest = WINDOWS_UI_TOOL_PINS[mount]
@@ -2303,6 +2326,53 @@ def admit_windows_ui_tools(toolchain: Path, compiler: Path | None) -> dict[str, 
     if not os.access(compiler, os.X_OK) or not os.access(rust_tool, os.X_OK):
         raise ENV.Incomplete("Windows UI version tools must be executable.")
     return tools
+
+
+def stage_windows_build_tools(directory: Path, tools: dict[str, tuple[Path, str]]) -> dict[str, tuple[Path, str]]:
+    """Copy exact selected tools outside the child-writable tree and mount only those copies."""
+    directory.mkdir(mode=0o700)
+    info = directory.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+        raise ENV.Incomplete("Windows build tools require owner-private snapshot storage.")
+    staged = {}
+    copies = {}
+    for mount, (source, expected) in tools.items():
+        mode = 0o500 if "/bin/" in mount else 0o400
+        key = (expected, mode)
+        # The reader and linker resolve the same LLVM bytes in distinct directories.
+        if key in copies:
+            staged[mount] = (copies[key], expected)
+            continue
+        target = directory / mount.lstrip("/")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+        with os.fdopen(os.open(source, flags), "rb") as reader, target.open("xb") as writer:
+            info = os.fstat(reader.fileno())
+            # Apply the existing child per-file ceiling to the staged linker too.
+            limit = WINDOWS_UI_TOOL_PINS.get(mount, (256 * 1024 * 1024, ""))[0]
+            if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
+                raise ENV.Incomplete(f"Unadmitted Windows tool size or type: {source.name}")
+            remaining = info.st_size
+            while remaining:
+                block = reader.read(min(remaining, 1024 * 1024))
+                if not block:
+                    break
+                writer.write(block)
+                remaining -= len(block)
+            if remaining or reader.read(1):
+                raise ENV.Incomplete(f"Windows tool extent changed during snapshotting: {source.name}")
+        if sha256(target) != expected:
+            raise ENV.Incomplete(f"Windows tool snapshot digest differs from the reviewed bytes: {source.name}")
+        target.chmod(mode)
+        staged[mount] = (target, expected)
+        copies[key] = target
+    return staged
+
+
+def windows_tool_mounts(tools: dict[str, tuple[Path, str]], *destinations: str) -> tuple[str, ...]:
+    """Bind the exact selected copies at the tools' original loader paths."""
+    return tuple(argument for destination in destinations
+                 for argument in ("--ro-bind", str(tools[destination][0]), destination))
 
 
 def generate_windows_metadata(generation: Path, run) -> None:
@@ -2992,8 +3062,7 @@ def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) ->
         raise ENV.Incomplete(f"Missing or oversized checked {role} resource source.")
     inputs = {"rc_sha256": sha256(rc), "generation_sha256": sha256(generation / "tree/receipt.json")}
     mounts = ("--ro-bind", str(rc), "/metadata-input/version.rc", "--bind", str(compiled), "/metadata-build",
-              "--remount-ro", "/work", "--ro-bind", str(tools[RC_COMPILER][0]), RC_COMPILER,
-              "--ro-bind", str(tools[RC_LIBRARY][0]), RC_LIBRARY)
+              "--remount-ro", "/work", *windows_tool_mounts(tools, RC_COMPILER, RC_LIBRARY))
     run(f"{role}-versioninfo-compile", [RC_COMPILER, "/no-preprocess", "/C", "65001", "/FO",
                                       "/metadata-build/version.res", "--", "/metadata-input/version.rc"], extra=mounts)
     resource = compiled / "version.res"
@@ -3005,7 +3074,7 @@ def compile_windows_versioninfo(directory: Path, role: str, tools: dict, run) ->
     return resource, expected, inputs
 
 
-def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict, run) -> dict:
+def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict, tools: dict, run) -> dict:
     """Check PE declarations, resources and imports against the selected linked role."""
     binaries = {"ui": PACKAGE, "observe": "nevrotick-observe"}
     if role not in binaries:
@@ -3016,9 +3085,11 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
     pe = windows_pe_reader(source)
     declarations = pe.pe_readback(binary, subsystem="gui" if role == "ui" else "console", imports=True)
     identity = declarations["image_sha256"]
+    mounts = ("--remount-ro", "/work", *windows_tool_mounts(tools, f"/toolchain/{READOBJ}",
+                                                            f"/toolchain/{READOBJ_LIBRARY}"))
     report = run(f"{role}-versioninfo-readback", [f"/toolchain/{READOBJ}", "--file-headers",
                                                 "--coff-resources", f"/work/{relative}"],
-                 extra=("--remount-ro", "/work"))
+                 extra=mounts)
     execution_manifest = None
     if role == "ui":
         actual, execution_manifest = reader.decode_ui_resources(report)
@@ -3030,7 +3101,7 @@ def read_windows_versioninfo(work: Path, source: Path, role: str, expected: dict
         raise ENV.Incomplete(f"Linked {role} version resource differs from the checked source facts.")
     imports = run(f"{role}-static-import-readback", [f"/toolchain/{READOBJ}", "--coff-imports",
                                                     f"/work/{relative}"],
-                  extra=("--remount-ro", "/work"))
+                  extra=mounts)
     static_imports = reader.decode_imports(imports, image=f"/work/{relative}")
     expected_counts = {kind: declarations[f"{kind}_import_descriptors"] for kind in ("direct", "delay")}
     if {kind: len(modules) for kind, modules in static_imports.items()} != expected_counts:
@@ -3194,15 +3265,32 @@ def execute(root: Path, args, report: dict) -> None:
         if args.lane == "portable":
             config = source / ".config/nextest.toml"
             config.write_text(product_nextest(config.read_text()))
+        library_inputs = None
+        libraries = None
+        staged_tools: dict[str, tuple[Path, str]] = {}
+        linker_mounts: tuple[str, ...] = ()
         if args.lane == "windows":
             if args.xwin_inventory is None:
                 raise ENV.Incomplete("Windows linking requires the admitted complete library inventory.")
             report["xwin_config_sha256"] = sha256(args.xwin_config)
             report["xwin_inventory_sha256"] = sha256(args.xwin_inventory)
-        library_inputs = windows_libraries(root, toolchain, args.xwin_config, work, args.xwin_inventory) if args.lane == "windows" else None
-        libraries = library_inputs[0] if library_inputs else None
+            # Cargo scratch may be on DrvFS, which need not enforce private POSIX modes.
+            tool_scratch = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="nevrotick-windows-tools-")))
+            library_inputs = prepare_windows_link(root, toolchain, args.xwin_config, tool_scratch, args.xwin_inventory)
         if library_inputs:
-            report["windows_library_sha256"] = library_inputs[1]
+            libraries, library_inventory_inputs, linker_input = library_inputs
+            linker_mount, linker_path, linker_pin = linker_input
+            report["windows_library_sha256"] = library_inventory_inputs
+            linker_wrapper = tool_scratch / "linker"
+            wrapper_pin = sha256(linker_wrapper)
+            report["windows_linker"] = {"path": str(linker_path), "sha256": linker_pin, "wrapper_sha256": wrapper_pin}
+            tool_inputs = {**(ui_tools or {}), linker_mount: (linker_path, linker_pin)}
+            staged_tools = stage_windows_build_tools(tool_scratch / "build-tools", tool_inputs)
+            linker_mounts = ("--ro-bind", str(linker_wrapper), "/work/linker",
+                             *windows_tool_mounts(staged_tools, linker_mount))
+            if ui_tools:
+                linker_mounts += windows_tool_mounts(staged_tools, LINKER_LLVM,
+                                                     f"/toolchain/{READOBJ_LIBRARY}")
         if args.lane == "dependencies":
             report["bootstrap_deny_sha256"] = sha256(source / "deny.toml")
         else:
@@ -3214,8 +3302,9 @@ def execute(root: Path, args, report: dict) -> None:
         tree_outputs = {}
         ep1_archive = work / ENGINE_EP1_ARCHIVE_NAME
 
-        def run(label, command, *, extra=(), shared_deadline: float | None = None,
-                discovered: set[CaseIdentity] | None = None):
+        def run(label: str, command: list[str], *, extra: tuple[str, ...] = (),
+                shared_deadline: float | None = None,
+                discovered: set[CaseIdentity] | None = None) -> str | set[CaseIdentity]:
             target: str | None = None
             if label.startswith("dependency-"):
                 flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
@@ -3231,6 +3320,8 @@ def execute(root: Path, args, report: dict) -> None:
             invocation = sandbox(toolchain, work, source, vendor, command, extension, libraries,
                                  "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory,
                                  lane=args.lane, label=label, profile=profile)
+            if label in {"windows-link", "windows-engine-link"}:
+                extra = (*linker_mounts, *extra)
             if extra:
                 insertion = invocation.index("--")
                 invocation[insertion:insertion] = extra
@@ -3273,7 +3364,7 @@ def execute(root: Path, args, report: dict) -> None:
             if label == MSIX_INSPECTION_LANE and (result["failure"] or result["exit_code"] != 0):
                 raise ENV.Incomplete(f"Windows MSIX source inspection failed: "
                                      f"{result['failure'] or result['exit_code']}.")
-            output = ENV.require_ok(result)
+            output: str = ENV.require_ok(result)
             if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls",
                          "ui-native-input-controls", "ui-versioninfo-controls", "windows-pe-controls"}:
                 record["executed_controls"] = validate_text_control_result(output)
@@ -3311,8 +3402,11 @@ def execute(root: Path, args, report: dict) -> None:
                 if label.startswith("test-discovery:"):
                     test_lane: str = label.removeprefix("test-discovery:")
                     record["planned_cases"] = sorted(planned_test_cases(test_lane, profile))
-                    validated = validate_test_discovery(test_lane, output, profile)
-                    record["discovered_cases"] = sorted(validated)
+                    cases: set[CaseIdentity] = validate_test_discovery(test_lane, output, profile)
+                    if not isinstance(cases, set):
+                        raise ENV.Incomplete("Nextest discovery did not return a qualified case set.")
+                    record["discovered_cases"] = sorted(cases)
+                    validated = cases
                 else:
                     counts = validate_test_result(label, output, work, profile=profile)
                     if counts:
@@ -3328,7 +3422,10 @@ def execute(root: Path, args, report: dict) -> None:
             return validated
 
         def discover(label: str, command: list[str], *, deadline: float | None = None) -> set[CaseIdentity]:
-            return run("test-discovery:" + label, command, shared_deadline=deadline)
+            selection: str | set[CaseIdentity] = run("test-discovery:" + label, command, shared_deadline=deadline)
+            if isinstance(selection, str):
+                raise ENV.Incomplete("Nextest discovery command returned text instead of its qualified inventory.")
+            return selection
 
         boundary_control(run)
         for label, command in native_input_control_commands(args.lane, schema_version=policy["schema_version"]):
@@ -3377,7 +3474,7 @@ def execute(root: Path, args, report: dict) -> None:
                 generate_windows_metadata(metadata_dir / "generation", run)
                 (work / "metadata").mkdir()
             role = version_roles[label]
-            resource, expected, inputs = compile_windows_versioninfo(metadata_dir, role, ui_tools, run)
+            resource, expected, inputs = compile_windows_versioninfo(metadata_dir, role, staged_tools, run)
             receipt = report[f"{role}_versioninfo"]
             receipt.update(inputs)
             digest = inputs["res_sha256"]
@@ -3392,7 +3489,7 @@ def execute(root: Path, args, report: dict) -> None:
             run(label, command, extra=extra)
             if sha256(resource) != digest:
                 raise ENV.Incomplete(f"Selected {role} resource changed during linking.")
-            receipt.update(read_windows_versioninfo(work, source, role, expected, run))
+            receipt.update(read_windows_versioninfo(work, source, role, expected, staged_tools, run))
             if role == "ui" and ui_entry_requested:
                 if sha256(entry) != entry_digest:
                     raise ENV.Incomplete("Windows UI baseline object changed during linking.")
@@ -3441,6 +3538,14 @@ def execute(root: Path, args, report: dict) -> None:
                                or sha256(args.xwin_inventory) != report["xwin_inventory_sha256"]
                                or sha256(args.xwin_config) != report["xwin_config_sha256"]):
             raise ENV.Incomplete("Microsoft library inputs changed during product verification.")
+        if library_inputs:
+            _, linker_path, linker_pin = library_inputs[2]
+            ENV.require_admitted_binary(linker_path, linker_pin, "rust-lld")
+            if sha256(linker_wrapper) != wrapper_pin:
+                raise ENV.Incomplete("Windows linker wrapper digest changed before export.")
+            for path, pin in sorted(set(staged_tools.values())):
+                if sha256(path) != pin:
+                    raise ENV.Incomplete(f"Staged Windows tool digest changed before export: {path.name}")
         if advisory:
             if (admit_advisories(args.advisory_receipt, time.time(), source_identity["Cargo.lock"]) != advisory
                     or ADVISORY.receipt_digest(args.advisory_receipt) != report["advisory_receipt_sha256"]):

@@ -76,6 +76,9 @@ pub enum DispatchFailureDetail {
     /// Extension-point refusal, with its original stage and known facts.
     #[cfg(windows)]
     ExtensionPoint(windows_platform_native::ExtensionPointPolicyError),
+    /// Permanent handle-check refusal, with its original stage and observed word.
+    #[cfg(windows)]
+    StrictHandle(windows_platform_native::StrictHandlePolicyError),
     /// The dispatcher returned a different cause with no startup-policy detail.
     Other(windows_platform::diagnostics::PrimaryCause),
 }

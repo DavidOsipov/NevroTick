@@ -26,9 +26,9 @@ use crate::{
     error::WorkerError,
     host::{
         Clock, ConnectionEdge, ConnectionWait, HostReceipt, InvocationPoll, ObservedClock,
-        RunningConnection, ServiceInvocation, Worker, WorkerCompletion, WorkerFailure,
-        WorkerFinish, WorkerWake, run_broker_service_with_worker, start_broker_worker,
-        start_invocation,
+        PrefillRefusal, RunningConnection, ServiceInvocation, Worker, WorkerCompletion,
+        WorkerFailure, WorkerFinish, WorkerWake, run_broker_service_with_worker,
+        start_broker_worker, start_invocation,
     },
 };
 use std::time::{Duration, Instant};
@@ -46,6 +46,12 @@ enum EndpointCall {
     Cancel(Option<u32>),
     /// Collect completion of the retained accept.
     Poll(Option<u32>),
+    /// Observe the retained peer before writing the prefill marker.
+    ObservePrefillPeer(Option<u32>),
+    /// Submit the prefill marker on the original endpoint.
+    BeginPrefillMarker(Option<u32>),
+    /// Collect the original prefill marker.
+    PollPrefillMarker(Option<u32>),
     /// Submit the only read on the observed, connected endpoint.
     BeginRead(Option<u32>),
     /// Observe physical completion on that read.
@@ -1354,6 +1360,12 @@ struct ArmedEndpoint<'a> {
     endpoint: TestEndpoint<'a>,
     /// Scripted result from the same submitted read.
     read_start: FirstReadStart,
+    /// Enable prefill and script currentness of its retained peer.
+    prefill_peer: Option<&'a dyn Fn() -> bool>,
+    /// A deterministic change during marker preparation, before its first guard.
+    before_prefill_guard: Option<&'a dyn Fn()>,
+    /// A deterministic control or clock change while prefill is settling.
+    before_read_submit: Option<&'a dyn Fn()>,
     /// A deterministic control or clock change during submission.
     on_read_begin: Option<&'a dyn Fn()>,
     /// Independent result of cancelling the original read.
@@ -1416,6 +1428,9 @@ impl<'a> ArmedEndpoint<'a> {
                 hint: None,
             },
             read_start,
+            prefill_peer: None,
+            before_prefill_guard: None,
+            before_read_submit: None,
             on_read_begin: None,
             read_cancel,
             reads,
@@ -1442,7 +1457,37 @@ impl Reservation for ArmedEndpoint<'_> {
     }
 
     /// Record the call under the actual current SCM state.
-    fn begin_first_read(&mut self) -> Result<FirstReadStart, NativeError> {
+    fn begin_first_read<C: Clock>(
+        &mut self,
+        connection: &mut RunningConnection<'_, C>,
+    ) -> Result<FirstReadStart, NativeError> {
+        if let Some(observe_peer) = self.prefill_peer {
+            if let Some(action) = self.before_prefill_guard {
+                action();
+            }
+            match connection.admit_prefill_marker(|| {
+                self.endpoint.record(EndpointCall::ObservePrefillPeer);
+                observe_peer()
+            }) {
+                Ok(()) => {
+                    self.endpoint.record(EndpointCall::BeginPrefillMarker);
+                    self.endpoint.record(EndpointCall::PollPrefillMarker);
+                }
+                Err(PrefillRefusal::ConnectionClosed) => return Ok(FirstReadStart::Refused),
+                Err(PrefillRefusal::ForeignPeer) => {
+                    return Err(NativeError::new(
+                        NativeOperation::BrokerEndpointReplySubmit,
+                        87,
+                    ));
+                }
+            }
+        }
+        if let Some(action) = self.before_read_submit {
+            action();
+        }
+        if !connection.first_read_is_current() {
+            return Ok(FirstReadStart::Refused);
+        }
         self.endpoint.record(EndpointCall::BeginRead);
         if let Some(action) = self.on_read_begin {
             action();
@@ -1878,6 +1923,308 @@ fn inline_read_history(stop_during_read: bool, ambiguous: bool) -> Result<(), Fi
     calls.push(EndpointCall::Close(Some(3)));
     assert_eq!(trace.borrow().calls, calls);
     Ok(())
+}
+
+/// Stop during prefill must leave the original read slot unused.
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+#[test]
+fn broker_first_read_refuses_stop_after_prefill() -> Result<(), FixtureError> {
+    refused_post_prefill_read(true)
+}
+
+/// The original cutoff during prefill must leave the original read slot unused.
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+#[test]
+fn broker_first_read_refuses_original_cutoff_after_prefill() -> Result<(), FixtureError> {
+    refused_post_prefill_read(false)
+}
+
+/// Compare Stop against connection expiry after prefill, before any read has started.
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+/// # Panics
+/// Panics if a read starts or the reservation releases before the original Stop.
+fn refused_post_prefill_read(stop_during_prefill: bool) -> Result<(), FixtureError> {
+    let observations: Rc<RefCell<Observations>> = Rc::default();
+    let trace: RefCell<EndpointTrace> = RefCell::default();
+    let stop: StopNotification = StopNotification::new();
+    let mut clock: TestClock = fixed_accept_clock();
+    let time: Rc<RefCell<Time>> = Rc::clone(&clock.0);
+    let prefill_observed: Cell<bool> = Cell::new(false);
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observations),
+        failure: None,
+    };
+    let prefill = || {
+        assert!(!prefill_observed.replace(true));
+        if stop_during_prefill {
+            assert_eq!(stop.handle_control(1), ScmControl::Stop);
+        } else {
+            time.borrow_mut().current += Duration::from_secs(5);
+        }
+    };
+    let acquire = || -> Result<ArmedEndpoint<'_>, NativeError> {
+        Ok(ArmedEndpoint {
+            before_read_submit: Some(&prefill),
+            ..ArmedEndpoint::new(
+                &observations,
+                &trace,
+                FirstReadStart::Immediate,
+                Ok(()),
+                &[Ok(Poll::Ready(FirstReadCompletion::Settled))],
+            )
+        })
+    };
+    let mut invocation: ServiceInvocation<Reporter, BrokerEndpointWorker<_, ArmedEndpoint<'_>>> =
+        start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+    let accept_queued: InvocationPoll = invocation.poll(&mut clock, &stop);
+    let after_prefill: InvocationPoll = invocation.poll(&mut clock, &stop);
+    if stop_during_prefill {
+        assert_eq!(after_prefill, InvocationPoll::Finished);
+    } else {
+        let state: Option<ServiceState> = invocation.state();
+        let work: u32 = invocation.outstanding_work();
+        let delivered: ScmControl = stop.handle_control(1);
+        let finished: InvocationPoll = invocation.poll(&mut clock, &stop);
+        assert_eq!(finished, InvocationPoll::Finished);
+        assert_eq!(delivered, ScmControl::Stop);
+        assert_eq!(
+            after_prefill,
+            InvocationPoll::Pending(Duration::from_secs(55))
+        );
+        assert_eq!(state, Some(ServiceState::Running));
+        assert_eq!(work, 1);
+    }
+    assert_eq!(
+        accept_queued,
+        InvocationPoll::Pending(Duration::from_secs(5))
+    );
+    assert!(prefill_observed.get());
+    assert_eq!(invocation.outstanding_work(), 0);
+    assert!(invocation.failure().is_none());
+    assert_eq!(
+        trace.borrow().calls,
+        [
+            EndpointCall::Begin(Some(4)),
+            EndpointCall::Poll(Some(4)),
+            EndpointCall::Close(Some(3)),
+        ]
+    );
+    Ok(())
+}
+
+#[derive(Clone, Copy, Debug)]
+enum PrefillHistory {
+    Current,
+    StopBeforeGuard,
+    OriginalCutoffBeforeGuard,
+    Stop,
+    OriginalCutoff,
+    ForeignPeer,
+}
+
+/// Specify the invocation state after the marker admission attempt returns.
+fn expected_prefill_outcome(
+    history: PrefillHistory,
+) -> (InvocationPoll, Option<ServiceState>, u32) {
+    match history {
+        PrefillHistory::Current => (
+            InvocationPoll::Pending(Duration::from_secs(60)),
+            Some(ServiceState::Running),
+            1,
+        ),
+        PrefillHistory::StopBeforeGuard | PrefillHistory::Stop | PrefillHistory::ForeignPeer => {
+            (InvocationPoll::Finished, Some(ServiceState::Stopped), 0)
+        }
+        PrefillHistory::OriginalCutoffBeforeGuard | PrefillHistory::OriginalCutoff => (
+            InvocationPoll::Pending(Duration::from_secs(55)),
+            Some(ServiceState::Running),
+            1,
+        ),
+    }
+}
+
+/// Withdraw at the independently selected preparation or peer-observation edge.
+fn withdraw_prefill_at(
+    history: PrefillHistory,
+    before_guard: bool,
+    stop: &StopNotification,
+    delivered_stop: &Cell<Option<ScmControl>>,
+    time: &RefCell<Time>,
+    cutoff: Option<Instant>,
+) {
+    match (history, before_guard) {
+        (PrefillHistory::StopBeforeGuard, true) | (PrefillHistory::Stop, false) => {
+            delivered_stop.set(Some(stop.handle_control(1)));
+        }
+        (PrefillHistory::OriginalCutoffBeforeGuard, true)
+        | (PrefillHistory::OriginalCutoff, false) => {
+            if let Some(cutoff) = cutoff {
+                time.borrow_mut().current = cutoff;
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Recheck Stop, the original cutoff and peer identity before submitting a marker.
+///
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+///
+/// # Panics
+/// Panics if a refused marker starts, or the original worker or its permit is lost.
+#[test]
+fn broker_prefill_marker_rechecks_stop_and_cutoff_after_peer_observation()
+-> Result<(), FixtureError> {
+    for history in [
+        PrefillHistory::Current,
+        PrefillHistory::StopBeforeGuard,
+        PrefillHistory::OriginalCutoffBeforeGuard,
+        PrefillHistory::Stop,
+        PrefillHistory::OriginalCutoff,
+        PrefillHistory::ForeignPeer,
+    ] {
+        check_prefill_marker_history(history)?;
+    }
+    Ok(())
+}
+
+/// Exercise one marker admission history through the original worker and host.
+///
+/// # Errors
+/// Returns a refusal from starting the service fixture.
+///
+/// # Panics
+/// Panics if refused work starts or the original cutoff, permit or retirement is lost.
+fn check_prefill_marker_history(history: PrefillHistory) -> Result<(), FixtureError> {
+    let observations: Rc<RefCell<Observations>> = Rc::default();
+    let trace: RefCell<EndpointTrace> = RefCell::default();
+    let stop: StopNotification = StopNotification::new();
+    let delivered_stop: Cell<Option<ScmControl>> = Cell::new(None);
+    let mut clock: TestClock = fixed_accept_clock();
+    let time: Rc<RefCell<Time>> = Rc::clone(&clock.0);
+    let anchor: Instant = time.borrow().current;
+    let original_cutoff: Cell<Option<Instant>> = Cell::new(None);
+    let mut factory: Factory = Factory {
+        observations: Rc::clone(&observations),
+        failure: None,
+    };
+    let change_at_boundary = |before_guard: bool| {
+        withdraw_prefill_at(
+            history,
+            before_guard,
+            &stop,
+            &delivered_stop,
+            &time,
+            original_cutoff.get(),
+        );
+    };
+    let before_prefill_guard = || change_at_boundary(true);
+    let observe_peer = || -> bool {
+        change_at_boundary(false);
+        !matches!(history, PrefillHistory::ForeignPeer)
+    };
+    let acquire = || -> Result<ArmedEndpoint<'_>, NativeError> {
+        Ok(ArmedEndpoint {
+            prefill_peer: Some(&observe_peer),
+            before_prefill_guard: Some(&before_prefill_guard),
+            ..ArmedEndpoint::new(
+                &observations,
+                &trace,
+                FirstReadStart::Immediate,
+                Ok(()),
+                &[Ok(Poll::Ready(FirstReadCompletion::Settled))],
+            )
+        })
+    };
+    let mut invocation: ServiceInvocation<Reporter, BrokerEndpointWorker<_, ArmedEndpoint<'_>>> =
+        start_invocation(
+            LabRole::ClockBroker,
+            0,
+            &mut factory,
+            &mut HealthyTokenObserver(LabRole::ClockBroker),
+            &mut clock,
+            &stop,
+            BrokerEndpointWorker::new(acquire),
+        )
+        .map_err(startup_error)?;
+    let accept_queued: InvocationPoll = invocation.poll(&mut clock, &stop);
+    assert_eq!(
+        invocation.state(),
+        Some(ServiceState::Running),
+        "{history:?}"
+    );
+    assert_eq!(invocation.outstanding_work(), 1, "{history:?}");
+    original_cutoff.set(invocation.connection_cutoff);
+    let after_admission: InvocationPoll = invocation.poll(&mut clock, &stop);
+    let state: Option<ServiceState> = invocation.state();
+    let work: u32 = invocation.outstanding_work();
+    let cutoff_after_admission: Option<Instant> = invocation.connection_cutoff;
+    let failure: Option<FixtureError> = matches!(history, PrefillHistory::ForeignPeer).then_some(
+        FixtureError::Worker(WorkerError::EndpointRead(NativeError::new(
+            NativeOperation::BrokerEndpointReplySubmit,
+            87,
+        ))),
+    );
+    assert_eq!(invocation.failure(), failure.as_ref(), "{history:?}");
+    let delivered: ScmControl = delivered_stop
+        .get()
+        .unwrap_or_else(|| stop.handle_control(1));
+    let retired: InvocationPoll = invocation.poll(&mut clock, &stop);
+
+    assert_eq!(retired, InvocationPoll::Finished, "{history:?}");
+    assert_eq!(delivered, ScmControl::Stop);
+    assert_eq!(invocation.outstanding_work(), 0);
+    assert_eq!(invocation.failure(), failure.as_ref(), "{history:?}");
+    assert_eq!(
+        (after_admission, state, work),
+        expected_prefill_outcome(history),
+        "{history:?}"
+    );
+    assert_eq!(
+        accept_queued,
+        InvocationPoll::Pending(Duration::from_secs(5))
+    );
+    assert_eq!(original_cutoff.get(), Some(anchor + Duration::from_secs(5)));
+    assert_eq!(cutoff_after_admission, original_cutoff.get());
+
+    let calls: Vec<EndpointCall> = prefill_marker_calls(history);
+    assert_eq!(trace.borrow().calls, calls, "{history:?}");
+    Ok(())
+}
+
+/// Expected owned operations from a current or refused prefill followed by Stop.
+fn prefill_marker_calls(history: PrefillHistory) -> Vec<EndpointCall> {
+    let mut calls: Vec<EndpointCall> =
+        vec![EndpointCall::Begin(Some(4)), EndpointCall::Poll(Some(4))];
+    if !matches!(
+        history,
+        PrefillHistory::StopBeforeGuard | PrefillHistory::OriginalCutoffBeforeGuard
+    ) {
+        calls.push(EndpointCall::ObservePrefillPeer(Some(4)));
+    }
+    if matches!(history, PrefillHistory::Current) {
+        calls.extend([
+            EndpointCall::BeginPrefillMarker(Some(4)),
+            EndpointCall::PollPrefillMarker(Some(4)),
+            EndpointCall::BeginRead(Some(4)),
+            EndpointCall::PollRead(Some(4)),
+        ]);
+    }
+    calls.push(EndpointCall::Close(Some(3)));
+    calls
 }
 
 /// The first ambiguous result is observed while Running.

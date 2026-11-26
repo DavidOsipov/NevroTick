@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Desktop UI image-load mitigation and DLL search policy before Slint starts.
+//! Desktop UI image-load, strict-handle and DLL search policies before Slint.
 //!
 //! The mitigation guard checks effective flags after any tightening. The
 //! search policy sets the process default for later DLL loads. Pre-entry
 //! images and searches with explicit loader flags are outside that default.
 
 use std::fmt;
+
+/// Permanent strict-handle admission has its own fixed policy and outcome.
+mod strict_handles;
+pub use strict_handles::StrictHandlePolicyError;
 
 /// Required `PROCESS_MITIGATION_IMAGE_LOAD_POLICY` bits from `winnt.h`.
 const REQUIRED_FLAGS: u32 = 0x01 | 0x02 | 0x04;
@@ -124,7 +128,7 @@ impl std::error::Error for ImageLoadPolicyError {}
 
 /// Synchronous reads and writes of one policy on the current process.
 trait PolicyCalls {
-    /// Return the exact image-load flags.
+    /// Return the exact flags for this adapter's one fixed policy kind.
     ///
     /// # Errors
     /// Return the original native error if the query fails.
@@ -178,6 +182,16 @@ pub(super) fn enforce() -> Result<(), ImageLoadPolicyError> {
     enforce_with(&mut windows::SystemPolicyCalls)
 }
 
+/// Require permanent strict handles on this UI process before Slint starts.
+///
+/// # Errors
+/// Return the first native error or refused observation. A successful setting
+/// is permanent; later refusal does not roll back or retry under weaker flags.
+#[cfg(windows)]
+pub(super) fn enforce_strict_handles() -> Result<(), StrictHandlePolicyError> {
+    strict_handles::enforce_with(&mut windows::StrictHandlePolicyCalls)
+}
+
 /// Narrow Kernel32 adapters for the UI process's startup policies.
 #[cfg(windows)]
 mod windows {
@@ -207,10 +221,20 @@ mod windows {
     /// `PROCESS_MITIGATION_POLICY::ProcessImageLoadPolicy` in the Windows SDK.
     const PROCESS_IMAGE_LOAD_POLICY: i32 = 10;
 
+    /// `PROCESS_MITIGATION_POLICY::ProcessStrictHandleCheckPolicy` in `winnt.h`.
+    const PROCESS_STRICT_HANDLE_CHECK_POLICY: i32 = 3;
+
     /// The single DWORD union in `PROCESS_MITIGATION_IMAGE_LOAD_POLICY`.
     #[repr(C)]
     struct NativeImageLoadPolicy {
         /// Flags, including the documented enforcement and audit bitfields.
+        flags: u32,
+    }
+
+    /// The DWORD union in `PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY`.
+    #[repr(C)]
+    struct NativeStrictHandlePolicy {
+        /// Both documented one-bit fields, with the upper 30 bits reserved.
         flags: u32,
     }
 
@@ -293,6 +317,68 @@ mod windows {
             if status == 0 {
                 // SAFETY: This takes no arguments and immediately reads the
                 // error for the failed setter on the same thread.
+                return Err(unsafe { GetLastError() });
+            }
+            Ok(())
+        }
+    }
+
+    /// Fixed strict-handle calls for the UI's own current process only.
+    pub(super) struct StrictHandlePolicyCalls;
+
+    impl PolicyCalls for StrictHandlePolicyCalls {
+        /// Read the exact DWORD from the borrowed current-process pseudohandle.
+        ///
+        /// # Errors
+        /// Preserve the query's immediate Win32 code on its original thread.
+        #[expect(
+            unsafe_code,
+            reason = "Query the fixed strict-handle policy into its exact DWORD layout"
+        )]
+        fn read(&mut self) -> Result<u32, u32> {
+            let mut policy: NativeStrictHandlePolicy = NativeStrictHandlePolicy { flags: 0 };
+            // SAFETY: This argument-free API returns the borrowed pseudohandle
+            // for this process. It needs no close and outlives the query.
+            let process: HANDLE = unsafe { GetCurrentProcess() };
+            // SAFETY: The initialized, aligned DWORD output has the exact SDK
+            // policy extent and remains writable through this synchronous call.
+            let status: i32 = unsafe {
+                GetProcessMitigationPolicy(
+                    process,
+                    PROCESS_STRICT_HANDLE_CHECK_POLICY,
+                    (&raw mut policy).cast::<c_void>(),
+                    size_of::<NativeStrictHandlePolicy>(),
+                )
+            };
+            if status == 0 {
+                // SAFETY: Read the failed query's error before another call.
+                return Err(unsafe { GetLastError() });
+            }
+            Ok(policy.flags)
+        }
+
+        /// Set the checked matching exception/permanent fields exactly once.
+        ///
+        /// # Errors
+        /// Preserve the setter's immediate Win32 code without another setting.
+        #[expect(
+            unsafe_code,
+            reason = "Set only the fixed current-process strict-handle DWORD policy"
+        )]
+        fn apply(&mut self, flags: u32) -> Result<(), u32> {
+            let policy: NativeStrictHandlePolicy = NativeStrictHandlePolicy { flags };
+            // SAFETY: The private caller supplies the checked matching fields.
+            // This exact initialized DWORD input lives through the synchronous
+            // call, which sets only this process's strict-handle policy.
+            let status: i32 = unsafe {
+                SetProcessMitigationPolicy(
+                    PROCESS_STRICT_HANDLE_CHECK_POLICY,
+                    (&raw const policy).cast::<c_void>(),
+                    size_of::<NativeStrictHandlePolicy>(),
+                )
+            };
+            if status == 0 {
+                // SAFETY: Read the failed setter's error on this same thread.
                 return Err(unsafe { GetLastError() });
             }
             Ok(())

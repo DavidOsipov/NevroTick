@@ -52,7 +52,7 @@ use crate::{
 use crate::{
     broker_clock_change::ReplyRevision,
     broker_endpoint::{FirstReadCompletion, FirstReadStart, FirstReplyCompletion, FirstReplyStart},
-    host::{Clock, ConnectionEdge, RunningConnection},
+    host::{Clock, ConnectionEdge, PrefillRefusal, RunningConnection},
     native_pipe_identity::{PipeIdentity, RetainedFixtureClient},
     native_pipe_pair::{LabPipeError, LabUnconnectedDuplexPipe},
     native_pipe_read::{
@@ -151,6 +151,22 @@ enum FirstReplyState {
 
 /// Separate deliberate final refusal from a failed native or slot operation.
 #[cfg(test)]
+enum ReadSubmitError {
+    /// Admission closed before Windows acquired the prepared read.
+    Refused,
+    /// Slot preparation or native submission failed.
+    Read(NativeReadError),
+}
+
+#[cfg(test)]
+impl From<NativeReadError> for ReadSubmitError {
+    fn from(error: NativeReadError) -> Self {
+        Self::Read(error)
+    }
+}
+
+/// Separate deliberate final refusal from a failed native or slot operation.
+#[cfg(test)]
 enum ReplySubmitError {
     /// Admission closed before Windows acquired the prepared write.
     Refused,
@@ -186,7 +202,14 @@ pub(super) enum FirstReplyControl {
     /// Deliver one action after a full write succeeds, before confirmation.
     AtFullWrite(fn()),
     /// Prefill the original server, then observe its actual status write.
-    Backpressure(Rc<dyn for<'a> Fn(FirstReplyIo<'a>)>),
+    Backpressure {
+        /// Observe native status-write submission and collection.
+        observe_reply: Rc<dyn for<'a> Fn(FirstReplyIo<'a>)>,
+        /// Drive a fixture action after the original marker's exact count has settled.
+        after_prefill: Option<Rc<dyn Fn()>>,
+        /// Drive a fixture action after observing the peer at marker submission.
+        after_prefill_peer: Option<Rc<dyn Fn()>>,
+    },
 }
 
 /// The write and read records are bound to the same original server owner.
@@ -204,8 +227,8 @@ struct FirstExchange {
 impl FirstExchange {
     /// Publish the result of an actual I/O call after updating its native ownership.
     fn observe(&self, io: FirstReplyIo<'_>) {
-        if let Some(FirstReplyControl::Backpressure(observer)) = &self.control {
-            observer(io);
+        if let Some(FirstReplyControl::Backpressure { observe_reply, .. }) = &self.control {
+            observe_reply(io);
         }
     }
 }
@@ -623,54 +646,89 @@ impl Reservation for NativeBrokerEndpoint {
     /// # Errors
     /// A refused submission leaves no read charged.
     #[cfg(test)]
-    fn begin_first_read(&mut self) -> Result<FirstReadStart, NativeError> {
+    fn begin_first_read<C: Clock>(
+        &mut self,
+        connection: &mut RunningConnection<'_, C>,
+    ) -> Result<FirstReadStart, NativeError> {
         let operation: NativeOperation = NativeOperation::BrokerEndpointReadSubmit;
-        let start: Result<NativeReadStart, NativeReadError> = match &mut self.pipe {
+        let start: Result<NativeReadStart, ReadSubmitError> = match &mut self.pipe {
             EndpointPipe::Reservation(_) => return Ok(FirstReadStart::Unarmed),
             _ if !matches!(self.accept.state, AcceptState::Connected) => {
                 return Err(NativeError::new(operation, ERROR_INVALID_PARAMETER));
             }
             EndpointPipe::FirstRead(read) => {
                 self.accept.state = AcceptState::Retired;
-                read.begin(MAX_FRAME_LEN)
+                read.begin_guarded(MAX_FRAME_LEN, || {
+                    if connection.first_read_is_current() {
+                        Ok(())
+                    } else {
+                        Err(ReadSubmitError::Refused)
+                    }
+                })
             }
             EndpointPipe::FirstExchange(exchange) => {
                 self.accept.state = AcceptState::Retired;
-                if matches!(exchange.control, Some(FirstReplyControl::Backpressure(_))) {
+                if let Some(FirstReplyControl::Backpressure {
+                    after_prefill,
+                    after_prefill_peer,
+                    ..
+                }) = &exchange.control
+                {
                     let prefill_cutoff: Instant = Instant::now() + Duration::from_secs(2);
-                    exchange
-                        .write
-                        .write_fixture_fragment_before(
+                    let prefill: Result<(), LabPipeError> =
+                        exchange.write.write_fixture_fragment_before(
                             &FIRST_REPLY_PREFILL,
                             prefill_cutoff,
                             |pipe| {
-                                if exchange.peer.observe(pipe) {
-                                    Ok(())
-                                } else {
-                                    Err(LabPipeError::ForeignPeer)
-                                }
+                                connection
+                                    .admit_prefill_marker(|| {
+                                        let current: bool = exchange.peer.observe(pipe);
+                                        if let Some(action) = after_prefill_peer {
+                                            action();
+                                        }
+                                        current
+                                    })
+                                    .map_err(|error| match error {
+                                        PrefillRefusal::ConnectionClosed => {
+                                            LabPipeError::PrefillClosed
+                                        }
+                                        PrefillRefusal::ForeignPeer => LabPipeError::ForeignPeer,
+                                    })
                             },
-                        )
-                        .map_err(|error| {
+                        );
+                    match prefill {
+                        Ok(()) => {}
+                        Err(LabPipeError::PrefillClosed) => return Ok(FirstReadStart::Refused),
+                        Err(error) => {
                             let operation: NativeOperation =
                                 NativeOperation::BrokerEndpointReplySubmit;
-                            match error {
+                            return Err(match error {
                                 LabPipeError::OverlappedWrite(error) => {
                                     write_error(operation, error)
                                 }
                                 _ => NativeError::new(operation, ERROR_INVALID_PARAMETER),
-                            }
-                        })?;
+                            });
+                        }
+                    }
+                    if let Some(action) = after_prefill {
+                        action();
+                    }
                 }
-                exchange.write.begin_first_read(MAX_FRAME_LEN)
+                exchange.write.begin_first_read(MAX_FRAME_LEN, || {
+                    if connection.first_read_is_current() {
+                        Ok(())
+                    } else {
+                        Err(ReadSubmitError::Refused)
+                    }
+                })
             }
         };
-        start
-            .map(|start| match start {
-                NativeReadStart::Queued => FirstReadStart::Queued,
-                NativeReadStart::Immediate => FirstReadStart::Immediate,
-            })
-            .map_err(|error| read_error(operation, error))
+        match start {
+            Ok(NativeReadStart::Queued) => Ok(FirstReadStart::Queued),
+            Ok(NativeReadStart::Immediate) => Ok(FirstReadStart::Immediate),
+            Err(ReadSubmitError::Refused) => Ok(FirstReadStart::Refused),
+            Err(ReadSubmitError::Read(error)) => Err(read_error(operation, error)),
+        }
     }
 
     /// Observe the charged read, suppressing both fresh and late bytes.

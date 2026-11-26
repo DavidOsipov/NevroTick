@@ -2094,32 +2094,14 @@ fn process_mode_refusal_consumes_the_original_dispatch_attempt() {
     assert_eq!(driver.calls, 1);
 }
 
-/// Preserve representative policy failures without inventing missing observations.
-///
-/// # Errors
-/// Fails if the original dispatch receipt or its local v2 record is missing or invalid.
-///
-/// # Panics
-/// Fails if policy details, role, record identity or the actual error change.
+/// Supply independent policy refusal and historical-detail expectations.
 #[cfg(windows)]
-#[test]
-fn dispatch_policy_diagnostic_preserves_original_typed_details() -> Result<(), &'static str> {
-    use windows_platform::diagnostics::{DecodedRecord, LifecycleObservationClaim};
+fn dispatch_policy_refusal_cases() -> [(FixtureError, DispatchFailureDetail); 8] {
     use windows_platform_native::{
         ExtensionPointPolicyError, ImageLoadPolicyError, ServiceErrorModeError,
+        StrictHandlePolicyError,
     };
-
-    /// Returns one scripted policy refusal through the actual receipt owner.
-    struct RefusingDriver(Option<FixtureError>);
-
-    impl Dispatcher for RefusingDriver {
-        /// Refuse the first attempt with the original typed policy error.
-        fn dispatch(&mut self, _role: LabRole) -> Result<(), FixtureError> {
-            self.0.take().map_or(Ok(()), Err)
-        }
-    }
-
-    let cases: [(FixtureError, DispatchFailureDetail); 5] = [
+    [
         (
             FixtureError::ImageLoadPolicy(ImageLoadPolicyError::MissingEffectiveFlags {
                 requested: 0x1f,
@@ -2154,7 +2136,46 @@ fn dispatch_policy_diagnostic_preserves_original_typed_details() -> Result<(), &
             FixtureError::ExtensionPointPolicy(ExtensionPointPolicyError::NotEffective),
             DispatchFailureDetail::ExtensionPoint(ExtensionPointPolicyError::NotEffective),
         ),
-    ];
+        (
+            FixtureError::StrictHandlePolicy(StrictHandlePolicyError::NotEffective { observed: 1 }),
+            DispatchFailureDetail::StrictHandle(StrictHandlePolicyError::NotEffective {
+                observed: 1,
+            }),
+        ),
+        (
+            FixtureError::StrictHandlePolicy(StrictHandlePolicyError::ReadEffective(0)),
+            DispatchFailureDetail::StrictHandle(StrictHandlePolicyError::ReadEffective(0)),
+        ),
+        (
+            FixtureError::StrictHandlePolicy(StrictHandlePolicyError::UnknownInitialFlags(8)),
+            DispatchFailureDetail::StrictHandle(StrictHandlePolicyError::UnknownInitialFlags(8)),
+        ),
+    ]
+}
+
+/// Preserve representative policy failures without inventing missing observations.
+///
+/// # Errors
+/// Fails if the original dispatch receipt or its local v2 record is missing or invalid.
+///
+/// # Panics
+/// Fails if policy details, role, record identity or the actual error change.
+#[cfg(windows)]
+#[test]
+fn dispatch_policy_diagnostic_preserves_original_typed_details() -> Result<(), &'static str> {
+    use windows_platform::diagnostics::{DecodedRecord, LifecycleObservationClaim};
+
+    /// Returns one scripted policy refusal through the actual receipt owner.
+    struct RefusingDriver(Option<FixtureError>);
+
+    impl Dispatcher for RefusingDriver {
+        /// Refuse the first attempt with the original typed policy error.
+        fn dispatch(&mut self, _role: LabRole) -> Result<(), FixtureError> {
+            self.0.take().map_or(Ok(()), Err)
+        }
+    }
+
+    let cases: [(FixtureError, DispatchFailureDetail); 8] = dispatch_policy_refusal_cases();
     for (error, expected) in cases {
         let once: AtomicBool = AtomicBool::new(false);
         let outcome: OnceLock<super::HostReceipt> = OnceLock::new();
@@ -3565,6 +3586,33 @@ mod worker_tests {
             if trace.destructor_markers {
                 eprintln!("fixture-worker-worker-dropped");
             }
+        }
+    }
+
+    /// Reuse initialization and cleanup while inheriting the default health refusal.
+    struct DefaultHealthWorker(ScriptedWorker);
+
+    impl Worker for DefaultHealthWorker {
+        /// Retain the same independently scripted dormant preparation or refusal.
+        fn poll_prepare(&mut self, wake: &WorkerWake) -> Poll<Result<(), WorkerError>> {
+            self.0.poll_prepare(wake)
+        }
+
+        /// Delegate activation after the original Running acknowledgement.
+        /// # Errors
+        /// Preserve the original scripted activation refusal.
+        fn activate(&mut self, cutoff: Instant) -> Result<(), WorkerError> {
+            self.0.activate(cutoff)
+        }
+
+        /// Request cancellation without changing the separate completion fact.
+        fn request_cancel(&mut self, wake: &WorkerWake) {
+            self.0.request_cancel(wake);
+        }
+
+        /// Only the original script's physical completion can settle custody.
+        fn poll_finished(&mut self, wake: &WorkerWake) -> WorkerFinish {
+            self.0.poll_finished(wake)
         }
     }
 
@@ -6225,6 +6273,125 @@ mod worker_tests {
         );
         assert!(!rig.statuses().iter().any(|raw| raw[1] == 1));
         assert!(matches!(rig.settle(Ok(())), Some(Err(_))));
+        Ok(())
+    }
+
+    /// The explicit healthy implementation remains useful beside the default refusal.
+    ///
+    /// # Errors
+    /// Propagate checked fixture startup or missing-owner observations.
+    /// # Panics
+    /// Fails if explicit healthy health is refused or cannot finish cleanly.
+    fn assert_explicit_health_neighbor() -> TestResult {
+        let mut rig: Rig = Rig::start(Settings::default())?;
+        rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+        let _running: InvocationPoll = rig.poll()?;
+        let observed: (Option<ServiceState>, bool, u32, bool, usize) = (
+            rig.owner()?.state(),
+            rig.owner()?.admission_closed(),
+            rig.owner()?.outstanding_work(),
+            rig.failure().is_none(),
+            rig.count(&Event::Running),
+        );
+        let result: Option<Result<(), FixtureError>> = rig.settle(Ok(()));
+        assert_eq!(observed, (Some(ServiceState::Running), false, 1, true, 1));
+        assert_eq!(result, Some(Ok(())));
+        Ok(())
+    }
+
+    /// A missing health implementation refuses work without acknowledging cleanup.
+    ///
+    /// # Errors
+    /// Propagate checked token construction or an unexpected startup refusal.
+    /// # Panics
+    /// Fails if default health is accepted, admission reopens or original custody is lost.
+    #[test]
+    fn default_running_health_refusal_keeps_original_worker_until_cleanup() -> TestResult {
+        let trace: Rc<RefCell<Trace>> = Rc::default();
+        let time: Rc<RefCell<Instant>> = Rc::new(RefCell::new(Instant::now()));
+        let notification: Rc<StopNotification> = Rc::new(StopNotification::new());
+        let script: Rc<RefCell<Script>> = Rc::new(RefCell::new(Script {
+            preparation: Poll::Ready(Ok(())),
+            ..Script::default()
+        }));
+        let mut factory: Factory = Factory {
+            trace: Rc::clone(&trace),
+            notification: Rc::clone(&notification),
+            time: Rc::clone(&time),
+        };
+        let mut observer: Observer = Observer {
+            result: Some(snapshot(Capture::Healthy, LabRole::Engine)?),
+            trace: Rc::clone(&trace),
+        };
+        let mut clock: TestClock = TestClock {
+            time: Rc::clone(&time),
+            trace: Rc::clone(&trace),
+            notification: Rc::clone(&notification),
+        };
+        let worker: DefaultHealthWorker = DefaultHealthWorker(ScriptedWorker {
+            script: Rc::clone(&script),
+            trace: Rc::clone(&trace),
+            notification: Rc::clone(&notification),
+            time,
+        });
+        let mut invocation: ServiceInvocation<Reporter, DefaultHealthWorker> =
+            super::super::start_invocation(
+                LabRole::Engine,
+                0,
+                &mut factory,
+                &mut observer,
+                &mut clock,
+                &notification,
+                worker,
+            )
+            .map_err(super::startup_error)?;
+        let _first: InvocationPoll = invocation.poll(&mut clock, &notification);
+        let first: (Option<ServiceState>, bool, u32, bool) = (
+            invocation.state(),
+            invocation.admission_closed(),
+            invocation.outstanding_work(),
+            invocation.failure() == Some(&FixtureError::Worker(WorkerError::Running)),
+        );
+        let _pending: InvocationPoll = invocation.poll(&mut clock, &notification);
+        let pending_work: u32 = invocation.outstanding_work();
+        let _control: ScmControl = notification.handle_control(1);
+        let _stopping: InvocationPoll = invocation.poll(&mut clock, &notification);
+        let stopping_work: u32 = invocation.outstanding_work();
+        script.borrow_mut().completion = Poll::Ready(Ok(()));
+        let retired: InvocationPoll = invocation.poll(&mut clock, &notification);
+        let retired_state: Option<ServiceState> = invocation.state();
+        let retired_work: u32 = invocation.outstanding_work();
+        let result: Option<Result<(), FixtureError>> = invocation
+            .take_receipt()
+            .map(super::super::HostReceipt::into_result);
+        drop(invocation);
+        let calls: [usize; 6] = [
+            Event::Prepare,
+            Event::Activate,
+            Event::Cancel,
+            Event::Completion,
+            Event::WorkerDropped,
+            Event::ReporterDropped,
+        ]
+        .map(|event: Event| {
+            trace
+                .borrow()
+                .events
+                .iter()
+                .filter(|observed| **observed == event)
+                .count()
+        });
+
+        assert_explicit_health_neighbor()?;
+        assert_eq!(first, (Some(ServiceState::StopPending), true, 1, true));
+        assert_eq!((pending_work, stopping_work, retired_work), (1, 1, 0));
+        assert_eq!(retired, InvocationPoll::Finished);
+        assert_eq!(retired_state, Some(ServiceState::Stopped));
+        assert_eq!(
+            result,
+            Some(Err(FixtureError::Worker(WorkerError::Running)))
+        );
+        assert_eq!(calls, [1, 1, 1, 4, 1, 1]);
         Ok(())
     }
 

@@ -348,6 +348,8 @@ pub(super) enum LabPipeError {
     SecurityAttributesSize,
     /// At least one connected endpoint reported another process.
     ForeignPeer,
+    /// Stop or the original connection cutoff refused the inert marker.
+    PrefillClosed,
     /// Observing the retained supervising process failed.
     Supervisor(PeerProcessError),
     /// The original supervisor's primary-token observation refused.
@@ -387,6 +389,7 @@ impl fmt::Display for LabPipeError {
             Self::ForeignPeer => {
                 formatter.write_str("fixture pipe endpoint belongs to another process")
             }
+            Self::PrefillClosed => formatter.write_str("fixture prefill connection closed"),
             Self::Supervisor(cause) => write!(formatter, "fixture pipe supervisor: {cause}"),
             Self::SupervisorToken(cause) => write!(formatter, "fixture supervisor token: {cause}"),
             Self::SupervisorCutoff => formatter.write_str("fixture supervisor cutoff elapsed"),

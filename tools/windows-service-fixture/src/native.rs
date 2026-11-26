@@ -79,7 +79,7 @@ impl Dispatcher for NativeDispatcher {
     /// Connect the process using one fixed entry and the mandatory null terminator.
     ///
     /// # Errors
-    /// Require the image-load, critical-error and extension-point policies before connecting to SCM.
+    /// Require the fixed runtime policies, including permanent handle checks, before SCM.
     /// Preserve an admission or dispatcher failure without a console-mode retry.
     fn dispatch(&mut self, role: LabRole) -> Result<(), FixtureError> {
         windows_platform_native::enforce_current_image_load_policy()
@@ -88,6 +88,8 @@ impl Dispatcher for NativeDispatcher {
             .map_err(FixtureError::ServiceErrorMode)?;
         windows_platform_native::enforce_current_extension_point_policy()
             .map_err(FixtureError::ExtensionPointPolicy)?;
+        windows_platform_native::enforce_current_strict_handle_policy()
+            .map_err(FixtureError::StrictHandlePolicy)?;
         let service_main = match role {
             LabRole::Engine => engine_service_main,
             LabRole::ClockBroker => broker_service_main,

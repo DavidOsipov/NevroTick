@@ -56,6 +56,7 @@ pub(super) enum NativeReadError {
 
 /// The actual native submission result. Both paths use the completion observer.
 #[derive(Debug, Eq, PartialEq)]
+#[must_use = "collect the submitted read through its original record"]
 pub(super) enum NativeReadStart {
     /// Win32 completed the operation inline.
     Immediate,
@@ -557,16 +558,27 @@ impl NativePipeRead {
     /// Issue one nonempty read within the fixed capacity using this slot.
     /// # Errors
     /// Refuses invalid extent, occupied custody or a native submission failure.
+    pub(super) fn begin(&mut self, span: usize) -> Result<NativeReadStart, NativeReadError> {
+        self.begin_guarded(span, || Ok(()))
+    }
+
+    /// Check the owner after preparing the stable record and before submitting the read.
+    /// # Errors
+    /// A guard refusal leaves the prepared record idle. Other errors retain the native cause.
     #[expect(
         unsafe_code,
         reason = "Submit a bounded read with stable owned buffers and event"
     )]
-    pub(super) fn begin(&mut self, span: usize) -> Result<NativeReadStart, NativeReadError> {
+    pub(super) fn begin_guarded<E: From<NativeReadError>>(
+        &mut self,
+        span: usize,
+        guard: impl FnOnce() -> Result<(), E>,
+    ) -> Result<NativeReadStart, E> {
         if self.record.outstanding.is_some() {
-            return Err(NativeReadError::Busy);
+            return Err(NativeReadError::Busy.into());
         }
         if !(1..=MAX_FRAME_LEN).contains(&span) {
-            return Err(NativeReadError::Size);
+            return Err(NativeReadError::Size.into());
         }
         let span: u32 = u32::try_from(span).map_err(|_| NativeReadError::Size)?;
         let slot: &ReadStorage = self.record.storage.as_ref().get_ref();
@@ -579,19 +591,16 @@ impl NativePipeRead {
             });
         };
         self.record.wake = CompletionWakeState::new();
+        let pipe: BorrowedHandle<'_> = self.reader.as_handle();
+        let buffer: *mut u8 = slot.bytes.get().cast::<u8>();
+        let overlapped: *mut OVERLAPPED = slot.overlapped.get();
+        guard()?;
         self.record.outstanding = Some(span);
         // SAFETY: The private reader uses FILE_FLAG_OVERLAPPED. The
         // kernel-written pointers remain live and pinned. The fixed buffer
         // holds span writable bytes and the count output is collected by poll.
-        let result: i32 = unsafe {
-            ReadFile(
-                self.reader.as_handle().as_raw_handle(),
-                slot.bytes.get().cast(),
-                span,
-                null_mut(),
-                slot.overlapped.get(),
-            )
-        };
+        let result: i32 =
+            unsafe { ReadFile(pipe.as_raw_handle(), buffer, span, null_mut(), overlapped) };
         if result != 0 {
             return Ok(NativeReadStart::Immediate);
         }
@@ -601,7 +610,7 @@ impl NativePipeRead {
         }
         // Byte-mode submission has no partial-message failure result.
         self.record.outstanding = None;
-        Err(NativeReadError::Submit(code))
+        Err(NativeReadError::Submit(code).into())
     }
 
     /// Observe native completion without waiting or releasing pending storage.

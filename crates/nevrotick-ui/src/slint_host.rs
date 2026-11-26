@@ -50,13 +50,18 @@ mod raw_workflow;
 mod recovery_workflow;
 /// Guarded UI exit and shared Settings destinations; native ports stay unavailable.
 mod shell_workflow;
-/// Fixed early-runtime image and DLL search policy for the Windows UI process.
+/// Fixed early-runtime image, handle and DLL search policies for the Windows UI.
 #[cfg(any(windows, test))]
 mod startup_image_policy;
+/// Real native host error projection remains separate from standalone policy tests.
+#[cfg(all(windows, test))]
+mod startup_policy_error_tests;
 #[cfg(windows)]
 pub use native_workflow::NativeHostError;
 #[cfg(any(windows, test))]
-pub use startup_image_policy::{DllSearchPolicyError, ImageLoadPolicyError};
+pub use startup_image_policy::{
+    DllSearchPolicyError, ImageLoadPolicyError, StrictHandlePolicyError,
+};
 /// Source/editor projection and callbacks; no backend effect paths.
 mod source_workflow;
 /// Explicit disconnected status input and guarded contextual navigation.
@@ -126,6 +131,7 @@ const EDITOR_CLOSED_MESSAGE: &str = "Open the sample source editor before updati
 
 /// Failure to construct the checked fixture or create/run its toolkit window.
 #[derive(Debug)]
+#[must_use = "UI construction and startup failures must be handled by the owning entry point"]
 pub enum HostError {
     /// Maintained fixture input failed its existing checked constructor.
     Fixture(SourceDraftError),
@@ -142,6 +148,9 @@ pub enum HostError {
     /// The Windows process could not configure its required default DLL search.
     #[cfg(windows)]
     DllSearchPolicy(DllSearchPolicyError),
+    /// The Windows process could not establish permanent strict-handle checks.
+    #[cfg(windows)]
+    StrictHandlePolicy(StrictHandlePolicyError),
 }
 
 impl fmt::Display for HostError {
@@ -157,6 +166,8 @@ impl fmt::Display for HostError {
             Self::ImageLoadPolicy(error) => fmt::Display::fmt(error, formatter),
             #[cfg(windows)]
             Self::DllSearchPolicy(error) => fmt::Display::fmt(error, formatter),
+            #[cfg(windows)]
+            Self::StrictHandlePolicy(error) => fmt::Display::fmt(error, formatter),
         }
     }
 }
@@ -174,6 +185,8 @@ impl std::error::Error for HostError {
             Self::ImageLoadPolicy(error) => Some(error),
             #[cfg(windows)]
             Self::DllSearchPolicy(error) => Some(error),
+            #[cfg(windows)]
+            Self::StrictHandlePolicy(error) => Some(error),
         }
     }
 }
@@ -567,12 +580,13 @@ pub fn create() -> Result<SlintHost, HostError> {
 ///
 /// # Errors
 /// Returns a startup policy, checked fixture, backend selection, toolkit or
-/// native-host installation failure. Both startup policies must pass before
+/// native-host installation failure. All startup policies must pass before
 /// backend selection and installation of observers.
 #[cfg(windows)]
 pub fn create_native() -> Result<SlintHost, HostError> {
     startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
     startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;
+    startup_image_policy::enforce_strict_handles().map_err(HostError::StrictHandlePolicy)?;
     slint::BackendSelector::new()
         .backend_name("winit".into())
         .renderer_name("software".into())

@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -249,6 +250,34 @@ class ServiceArtifactExport(unittest.TestCase):
 
     def test_valid_fixed_roles_export_exact_bytes_and_receipt(self):
         self.assert_healthy("healthy")
+
+    def test_late_empty_artifact_directory_is_preserved(self):
+        label: str = "late-artifact-slot"
+        artifacts: Path = self.records / ("cross-" + label + "-artifacts")
+        is_symlink = Path.is_symlink
+        prior: os.stat_result | None = None
+
+        def appear_after_check(path: Path) -> bool:
+            nonlocal prior
+            result: bool = is_symlink(path)
+            if path == artifacts and prior is None:
+                path.mkdir()
+                prior = path.stat()
+            return result
+
+        with (patch.object(Path, "is_symlink", appear_after_check),
+              self.assertRaises(FileExistsError)):
+            self.run_link(label)
+
+        self.assertIsNotNone(prior)
+        self.assertTrue(os.path.samestat(prior, artifacts.stat()))
+        self.assertEqual(list(artifacts.iterdir()), [])
+        receipt = self.receipt(label)
+        self.assertEqual(receipt["status"], "incomplete")
+        self.assertFalse(receipt["bookends_passed"])
+        self.assertNotIn("artifacts", receipt)
+        self.assertFalse(list(self.records.glob(".cross-publish-*")))
+        self.assert_healthy("uncontended-artifact-slot")
 
     def test_reserve_boundary_and_existing_record_have_distinct_diagnostics(self):
         minimum = 4 * 1024 ** 3

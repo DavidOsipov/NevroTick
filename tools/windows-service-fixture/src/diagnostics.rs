@@ -32,6 +32,8 @@ pub(super) const fn dispatch_failure_detail(error: &FixtureError) -> DispatchFai
         FixtureError::ServiceErrorMode(error) => DispatchFailureDetail::CriticalErrorMode(*error),
         #[cfg(windows)]
         FixtureError::ExtensionPointPolicy(error) => DispatchFailureDetail::ExtensionPoint(*error),
+        #[cfg(windows)]
+        FixtureError::StrictHandlePolicy(error) => DispatchFailureDetail::StrictHandle(*error),
         error => DispatchFailureDetail::Other(primary_cause(error)),
     }
 }
@@ -51,7 +53,8 @@ pub(super) const fn primary_cause(error: &FixtureError) -> PrimaryCause {
         #[cfg(windows)]
         FixtureError::ImageLoadPolicy(_)
         | FixtureError::ServiceErrorMode(_)
-        | FixtureError::ExtensionPointPolicy(_) => PrimaryCause::Native,
+        | FixtureError::ExtensionPointPolicy(_)
+        | FixtureError::StrictHandlePolicy(_) => PrimaryCause::Native,
         FixtureError::Lifecycle(error) => match error {
             LifecycleError::Report(_) => PrimaryCause::LifecycleReport,
             LifecycleError::DeadlineElapsed => PrimaryCause::LifecycleDeadlineElapsed,

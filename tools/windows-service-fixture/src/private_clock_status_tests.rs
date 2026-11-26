@@ -59,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 47;
+const BROKER_CASES: usize = 49;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -2819,7 +2819,7 @@ fn observe_first_reply_bytes(
         if remaining.is_empty() {
             return Ok(());
         }
-        let _: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
+        let _submitted: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
     }
 }
 

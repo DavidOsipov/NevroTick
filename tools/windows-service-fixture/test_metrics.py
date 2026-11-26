@@ -678,6 +678,46 @@ class FixtureMetricControls(unittest.TestCase):
                          "/foreign/src/diagnostics.rs", "src/../src/diagnostics_tests.rs"):
             self.assertFalse(M.selected_span(filename))
 
+    def test_native_cause_reader_binds_split_assertions_to_their_selected_cases(self):
+        """A retained split-module assertion earns credit through the actual campaign reader."""
+        endpoint: str = ("host::tests::broker_endpoint_host_tests::"
+                         "broker_prefill_marker_rechecks_stop_and_cutoff_after_peer_observation")
+        writer: str = "diagnostics::threaded::queue_control::one_queued_original_obeys_the_drain_cutoff"
+        sampling: str = ("host::tests::broker_clock_change_tests::sampling_tests::"
+                         "selected_broker_samples_quietly_and_retains_observed_breaks")
+        endpoint_file: str = "src/broker_endpoint_host_tests.rs"
+        writer_file: str = "src/diagnostics_thread_tests.rs"
+        sampling_file: str = "src/broker_clock_sampling_tests.rs"
+        roster: list[str] = [endpoint, writer, sampling, "legacy_neighbor"]
+        report: dict = outcomes()
+        row: dict = report["outcomes"][1]
+        with tempfile.TemporaryDirectory() as directory:
+            work: Path = Path(directory)
+            path: Path = work / row["log_path"]
+            for name, source, admitted in (
+                (endpoint, endpoint_file, True),
+                (writer, writer_file, True),
+                (sampling, sampling_file, True),
+                (sampling, "src/broker_clock_change_tests.rs", False),
+                (endpoint, writer_file, False),
+                (writer, endpoint_file, False),
+                ("host::tests::broker_endpoint_host_tests::unselected", endpoint_file, False),
+                ("legacy_neighbor", endpoint_file, False),
+                (endpoint, "/foreign/" + endpoint_file, False),
+            ):
+                with self.subTest(name=name, source=source):
+                    text: str = f"thread '{name}' panicked at {source}:12:5:\nassertion failed"
+                    path.write_text(native_log(row, text), encoding="utf-8")
+                    if admitted:
+                        causes: dict = M.mutation_causes(work, report, roster)
+                        self.assertEqual(causes["host guard"]["causes"], [{
+                            "test": name, "source": source, "line": 12,
+                            "kind": "unbuffered-semantic-assertion",
+                        }])
+                    else:
+                        with self.assertRaisesRegex(M.Incomplete, "lacks an actual selected semantic assertion"):
+                            M.mutation_causes(work, report, roster)
+
     def test_direct_worker_raw_identity_and_native_refusal_are_distinct(self):
         source = b"fn guard() -> bool {\n    true\n}\n"
         span = {"start": {"line": 2, "column": 5}, "end": {"line": 2, "column": 9}}
@@ -852,12 +892,15 @@ class FixtureMetricControls(unittest.TestCase):
                     receive({**item, **bad})
 
     def test_cfg_only_compile_failure_requires_its_libtest_and_a_consumer_span(self):
-        for subject, caller in (("host", "src/host_tests.rs"), ("diagnostics", "src/host.rs")):
+        for subject, caller, code in (("host", "src/host_tests.rs", "E0308"),
+                                      ("diagnostics", "src/host.rs", "E0308"),
+                                      ("host", "src/diagnostics.rs", "dead_code")):
             row = outcomes("Unviable")["outcomes"][1]
             row["scenario"]["Mutant"]["file"] = f"src/{subject}.rs"
             target = fixture_artifacts()[0]
             item = {"reason": "compiler-message", "target": target["target"], "package_id": target["package_id"],
-                    "manifest_path": target["manifest_path"], "message": {"level": "error", "message": "mismatched types",
+                    "manifest_path": target["manifest_path"], "message": {"level": "error", "message": "fixture diagnostic",
+                    "code": {"code": code},
                     "spans": [{"is_primary": True, "file_name": caller}]}}
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
@@ -865,7 +908,12 @@ class FixtureMetricControls(unittest.TestCase):
                     log = native_log(row, json.dumps(diagnostic)).replace("(lib test) due to", f"({profile}) due to")
                     (root / row["log_path"]).write_text(log)
                     return M.mutation_causes(root, {"outcomes": [row]}, [])["host guard"]
-                self.assertEqual(receive(item)["kind"], "compiler-unviable")
+                observed: dict = receive(item)
+                self.assertEqual((observed["kind"], observed["kill_credit"]), ("compiler-unviable", 0))
+                if caller == "src/diagnostics.rs":
+                    unrelated: dict = {**item, "message": {**item["message"], "code": {"code": "E0308"}}}
+                    with self.assertRaisesRegex(M.Incomplete, "different target or primary source"):
+                        receive(unrelated)
                 for bad, profile in (({**item, "target": fixture_artifacts()[-1]["target"]}, "lib test"),
                         ({**item, "package_id": "foreign"}, "lib test"), (item, "lib"),
                         ({**item, "message": {**item["message"], "spans": [

@@ -127,9 +127,12 @@ pub use windows_dns::{DnsAddressQuery, dns_worker_thread_exited};
 #[cfg(any(windows, test))]
 pub use windows_image_load_policy::ExtensionPointPolicyError;
 pub use windows_image_load_policy::ImageLoadPolicyError;
+#[cfg(any(windows, test))]
+pub use windows_image_load_policy::StrictHandlePolicyError;
 #[cfg(windows)]
 pub use windows_image_load_policy::{
     enforce_current_extension_point_policy, enforce_current_image_load_policy,
+    enforce_current_strict_handle_policy,
 };
 #[cfg(windows)]
 pub use windows_leap_presentation::read_leap_presentation;

@@ -305,7 +305,8 @@ class CompileResourceControls(unittest.TestCase):
 
     def exercise_ep1(self, report, launches, *, compile_elapsed=175, compile_exit=0,
                      changed_runtime=False, produce_archive=True, stale_path=None,
-                     discovery_elapsed=2, omit_discovery_case=False, omit_executed_case=False):
+                     discovery_elapsed=2, omit_discovery_case=False,
+                     executed_neighbor: str | None = "discovered_neighbor", stdout: io.StringIO | None = None):
         with tempfile.TemporaryDirectory(prefix="nevrotick-engine-release-build-") as folder:
             scratch = Path(folder)
             args = argparse.Namespace(lane="portable", profile=self.EP1_PROFILE, vendor_dir=scratch,
@@ -346,12 +347,11 @@ class CompileResourceControls(unittest.TestCase):
                 self.assertIn("--cpu=90", invocation)
                 self.assertEqual((work / self.EP1_ARCHIVE).read_bytes(), b"inert simulated archive")
                 required = VERIFY.planned_test_cases(self.EP1_TEST_ROW, self.EP1_PROFILE)
-                neighbor = ("nevrotick-engine", "discovered_neighbor")
                 if program == self.EP1_DISCOVERY:
                     self.assertEqual(list((work / self.EP1_EXTRACT).iterdir()), [])
                     self.assertEqual(junit.read_text(), "stale before Nextest")
                     clock += discovery_elapsed
-                    selection = required | {neighbor}
+                    selection = required | {("nevrotick-engine", "discovered_neighbor")}
                     if omit_discovery_case:
                         selection = selection - {min(required)}
                     suites = {}
@@ -365,7 +365,7 @@ class CompileResourceControls(unittest.TestCase):
                 self.assertFalse(junit.exists())
                 junit.parent.mkdir(parents=True, exist_ok=True)
                 root = ET.Element("testsuites")
-                executed = required if omit_executed_case else required | {neighbor}
+                executed = required if executed_neighbor is None else required | {("nevrotick-engine", executed_neighbor)}
                 for suite in sorted({suite for suite, _ in executed}):
                     binary = ET.SubElement(root, "testsuite", name=suite)
                     for name in sorted(name for owner, name in executed if owner == suite):
@@ -385,7 +385,7 @@ class CompileResourceControls(unittest.TestCase):
                   patch.object(VERIFY.ENV.shutil, "which", side_effect=lambda name: "/usr/bin/" + name),
                   patch.object(VERIFY.time, "monotonic", side_effect=lambda: clock),
                   patch.object(VERIFY.ENV, "run", side_effect=run),
-                  redirect_stdout(io.StringIO())):
+                  redirect_stdout(stdout if stdout is not None else io.StringIO())):
                 VERIFY.execute(ROOT, args, report)
 
     def test_ep1_shared_wall_and_junit_belong_to_the_existing_test_run(self):
@@ -417,10 +417,38 @@ class CompileResourceControls(unittest.TestCase):
     def test_ep1_replay_cannot_lose_a_discovered_case_even_with_all_mandatory_cases(self):
         report, launches = {}, []
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differ from their discovery"):
-            self.exercise_ep1(report, launches, omit_executed_case=True)
+            self.exercise_ep1(report, launches, executed_neighbor=None)
         self.assertEqual(launches[-1], (self.EP1_REUSE, 123))
         self.assertNotIn("tests", report["lanes"][-1])
         self.assertIn("differ from their discovery", report["lanes"][-1]["failure"])
+
+    def test_ep1_replay_refuses_equal_count_substitution_of_a_nonmandatory_case(self):
+        report, launches = {}, []
+        stdout: io.StringIO = io.StringIO()
+        message: str = "Nextest execution identities differ from their discovery inventory."
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differ from their discovery"):
+            self.exercise_ep1(report, launches, executed_neighbor="replacement_neighbor", stdout=stdout)
+        self.assertEqual(launches[-1], (self.EP1_REUSE, 123))
+        replay = report["lanes"][-1]
+        self.assertEqual(replay["lane"], self.EP1_TEST_ROW)
+        self.assertEqual(replay["exit_code"], 0)
+        self.assertEqual(replay["failure"], message)
+        self.assertNotIn("tests", replay)
+        self.assertNotIn(f"PASSED: {self.EP1_TEST_ROW}", stdout.getvalue())
+
+    def test_ep1_replay_refuses_text_in_place_of_a_discovery_case_set(self):
+        report, launches = {}, []
+        stdout: io.StringIO = io.StringIO()
+        with (patch.object(VERIFY, "validate_test_discovery", return_value="unexpected text"),
+              self.assertRaisesRegex(VERIFY.ENV.Incomplete, "did not return a qualified case set")):
+            self.exercise_ep1(report, launches, stdout=stdout)
+        self.assertEqual(launches, [(self.EP1_BUILD, 300), (self.EP1_DISCOVERY, 125)])
+        discovery = report["lanes"][-1]
+        self.assertEqual(discovery["lane"], f"test-discovery:{self.EP1_TEST_ROW}")
+        self.assertEqual(discovery["failure"], "Nextest discovery did not return a qualified case set.")
+        self.assertNotIn("discovered_cases", discovery)
+        self.assertNotIn(f"PASSED: test-discovery:{self.EP1_TEST_ROW}", stdout.getvalue())
+        self.assertTrue(all("tests" not in row for row in report["lanes"]))
 
     def test_ep1_failed_or_overdue_compile_is_retained_without_launching_nextest(self):
         for elapsed, exit_code, output in ((175, 101, True), (300, 0, True), (175, 0, False)):
@@ -3311,7 +3339,7 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
 
     def run_windows_publication(self, release, output, report):
-        """Run the unchanged verification coordinator with only build effects simulated."""
+        """Run the verification coordinator with build effects simulated."""
         project = self.work / "windows-projection"
         project.mkdir(exist_ok=True)
         names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
@@ -3337,7 +3365,7 @@ class ExecutionAccountingTests(unittest.TestCase):
         with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 2}, identity)), \
                 patch.object(VERIFY, "admit_vendor", return_value={}), \
                 patch.object(VERIFY, "admit_tools", return_value={}), \
-                patch.object(VERIFY, "windows_libraries", return_value=None), \
+                patch.object(VERIFY, "prepare_windows_link", return_value=None), \
                 patch.object(VERIFY, "commands", return_value=[]), \
                 patch.object(VERIFY, "boundary_control"), \
                 patch.object(VERIFY, "sandbox", side_effect=simulated_build), \
@@ -4054,10 +4082,10 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
         self.work.mkdir()
         self.toolchain = self.root / "toolchain"
         self.policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
-        linker = self.toolchain / "lib/rustlib" / self.policy["rust"]["host"] / "bin/rust-lld"
-        linker.parent.mkdir(parents=True)
-        linker.write_text("synthetic linker; never executed")
-        self.policy["cross_toolchain"]["linker"]["binary_sha256"] = VERIFY.sha256(linker)
+        self.linker = self.toolchain / "lib/rustlib" / self.policy["rust"]["host"] / "bin/rust-lld"
+        self.linker.parent.mkdir(parents=True)
+        self.linker.write_text("synthetic linker; never executed")
+        self.policy["cross_toolchain"]["linker"]["binary_sha256"] = VERIFY.sha256(self.linker)
         (self.root / "policy").mkdir()
         (self.root / "policy/tool-manifest.json").write_text(json.dumps(self.policy))
         suffixes = ("crt/lib/x86_64", "sdk/lib/um/x86_64", "sdk/lib/ucrt/x86_64")
@@ -4076,7 +4104,8 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
                                           "acquisition_receipt_sha256": VERIFY.sha256(self.config)}))
 
     def test_complete_library_tree_and_linker_are_admitted(self):
-        directory, files = VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, self.receipt)
+        directory, files = VERIFY.windows_libraries(
+            self.root, self.toolchain, self.config, self.work, self.receipt)
         self.assertEqual(directory, self.splat)
         self.assertEqual(len(files), 4)
         self.assertTrue((self.work / "linker").is_file())
@@ -4106,12 +4135,76 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "different acquisition receipt"):
             VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, self.receipt)
 
+    def test_configured_windows_link_refuses_linker_drift_before_export(self):
+        original = self.linker.read_bytes()
+        for changed in (False, True):
+            with self.subTest(changed=changed):
+                self.linker.write_bytes(original)
+                output = self.root.parent / (self.root.name + "-output")
+                args = argparse.Namespace(lane="windows", vendor_dir=self.splat,
+                                          toolchain_dir=self.toolchain, scratch_root=self.root.parent,
+                                          xwin_config=self.config, xwin_inventory=self.receipt,
+                                          output_dir=output)
+                names = {"deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+                         *VERIFY.WINDOWS_PE_INPUT_FILES}
+                identity = {}
+                for name in names:
+                    path = self.root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("inert input\n")
+                    identity[name] = VERIFY.sha256(path)
+                command = dict(VERIFY.commands("windows", schema_version=2))["windows-link"]
+                wrapper_pins = []
+
+                def run(invocation, **_kwargs):
+                    if invocation[-len(command):] == command:
+                        mount = "/toolchain/" + self.linker.relative_to(self.toolchain).as_posix()
+                        position = invocation.index(mount)
+                        staged = Path(invocation[position - 1])
+                        self.assertEqual(invocation[position - 2], "--ro-bind")
+                        self.assertNotEqual(staged, self.linker)
+                        wrapper_position = invocation.index("/work/linker")
+                        wrapper = Path(invocation[wrapper_position - 1])
+                        self.assertEqual(invocation[wrapper_position - 2], "--ro-bind")
+                        self.assertEqual(staged, wrapper.parent / "build-tools" / mount.lstrip("/"))
+                        self.assertIn(f"os.execv({mount!r}, ", wrapper.read_text())
+                        wrapper_pins.append(VERIFY.sha256(wrapper))
+                        if changed:
+                            self.linker.write_bytes(original[::-1])
+                        self.assertEqual(staged.read_bytes(), original)
+                    return {"command": invocation, "exit_code": 0, "failure": None, "output": ""}
+
+                report = {"status": "incomplete"}
+                with (patch.object(VERIFY, "admit_product", return_value=({"schema_version": 2}, identity)),
+                      patch.object(VERIFY, "admit_vendor", return_value={}),
+                      patch.object(VERIFY, "admit_tools", return_value={}),
+                      patch.object(VERIFY, "commands", return_value=[("windows-link", command)]),
+                      patch.object(VERIFY, "boundary_control"),
+                      patch.object(VERIFY, "require_slint_capture", return_value=False),
+                      patch.object(VERIFY, "validate_text_control_result", return_value=1),
+                      patch.object(VERIFY, "sandbox", side_effect=lambda *a, **k: ["--", *a[4]]),
+                      patch.object(VERIFY.ENV, "run", side_effect=run),
+                      patch.object(VERIFY, "export_windows_build") as export,
+                      redirect_stdout(io.StringIO())):
+                    if changed:
+                        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "rust-lld.*digest"):
+                            VERIFY.execute(self.root, args, report)
+                        export.assert_not_called()
+                    else:
+                        VERIFY.execute(self.root, args, report)
+                        export.assert_called_once()
+                self.assertEqual(len(wrapper_pins), 1)
+                self.assertEqual(report["windows_linker"], {"path": str(self.linker), "sha256": digest(original),
+                                                           "wrapper_sha256": wrapper_pins[0]})
+                self.assertFalse(output.exists())
+
 
 class WindowsUiToolAdmissionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="windows-ui-tool-control-")
         self.addCleanup(temporary.cleanup)
-        root = Path(temporary.name)
+        self.root = Path(temporary.name)
+        root = self.root
         self.compiler = root / "llvm/bin/llvm-rc"
         self.toolchain = root / "rust"
         rust = self.toolchain / "lib/rustlib/x86_64-unknown-linux-gnu"
@@ -4122,6 +4215,8 @@ class WindowsUiToolAdmissionTests(unittest.TestCase):
                 rust / "bin/llvm-readobj", b"reviewed reader"),
             "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/lib/libLLVM.so.23.1-rust-1.100.0-stable": (
                 rust / "lib/libLLVM.so.23.1-rust-1.100.0-stable", b"reader library"),
+            "/toolchain/lib/libLLVM.so.23.1-rust-1.100.0-stable": (
+                self.toolchain / "lib/libLLVM.so.23.1-rust-1.100.0-stable", b"reader library"),
         }
         for tool, payload in self.files.values():
             tool.parent.mkdir(parents=True, exist_ok=True)
@@ -4136,6 +4231,29 @@ class WindowsUiToolAdmissionTests(unittest.TestCase):
     def test_admits_exact_compiler_reader_and_libraries(self):
         expected = {mount: (tool, digest(payload)) for mount, (tool, payload) in self.files.items()}
         self.assertEqual(VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler), expected)
+
+    def test_stages_private_copies_for_the_resource_tools_and_llvm_aliases(self):
+        admitted = VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler)
+        scratch = self.root / "build-tools"
+        staged = VERIFY.stage_windows_build_tools(scratch, admitted)
+        self.assertEqual(staged.keys(), self.files.keys())
+        self.assertEqual(scratch.stat().st_mode & 0o777, 0o700)
+        for mount, (original, payload) in self.files.items():
+            with self.subTest(mount=mount):
+                copied, pin = staged[mount]
+                self.assertTrue(copied.is_relative_to(scratch))
+                self.assertFalse(copied.samefile(original))
+                self.assertEqual(copied.read_bytes(), payload)
+                self.assertEqual(pin, digest(payload))
+                self.assertEqual(copied.stat().st_mode & 0o777, 0o500 if "/bin/" in mount else 0o400)
+        self.assertEqual(staged[VERIFY.LINKER_LLVM], staged[f"/toolchain/{VERIFY.READOBJ_LIBRARY}"])
+
+    def test_staging_refuses_compiler_changed_after_admission(self):
+        admitted = VERIFY.admit_windows_ui_tools(self.toolchain, self.compiler)
+        original = self.compiler.read_bytes()
+        self.compiler.write_bytes(original[::-1])
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, r"snapshot digest.*llvm-rc"):
+            VERIFY.stage_windows_build_tools(self.root / "build-tools", admitted)
 
     def test_refuses_unselected_or_missing_binary_and_library_inputs(self):
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "--llvm-rc"):

@@ -181,6 +181,9 @@ pub enum FixtureError {
     /// The required legacy extension-point restriction was not confirmed.
     #[cfg(windows)]
     ExtensionPointPolicy(windows_platform_native::ExtensionPointPolicyError),
+    /// Permanent invalid-handle checking was not confirmed before SCM entry.
+    #[cfg(windows)]
+    StrictHandlePolicy(windows_platform_native::StrictHandlePolicyError),
     /// Complete token capture/context/cleanup could not establish known facts.
     TokenObservation(TokenObservationFailure),
     /// A complete observation did not match the fixed service role's exact profile.
@@ -215,6 +218,8 @@ impl fmt::Display for FixtureError {
             Self::ServiceErrorMode(_) => "laboratory service critical-error mode refused",
             #[cfg(windows)]
             Self::ExtensionPointPolicy(_) => "laboratory service extension-point policy refused",
+            #[cfg(windows)]
+            Self::StrictHandlePolicy(_) => "laboratory service strict-handle policy refused",
             Self::TokenObservation(_) => "laboratory token observation failed",
             Self::PrivilegeAdmission(_) => "laboratory service privilege admission failed",
             Self::ServiceFailed => "laboratory service did not finish cleanly",
@@ -238,6 +243,8 @@ impl Error for FixtureError {
             Self::ServiceErrorMode(error) => Some(error),
             #[cfg(windows)]
             Self::ExtensionPointPolicy(error) => Some(error),
+            #[cfg(windows)]
+            Self::StrictHandlePolicy(error) => Some(error),
             Self::TokenObservation(error) => Some(error),
             Self::PrivilegeAdmission(error) => Some(error),
             Self::Worker(error) => Some(error),

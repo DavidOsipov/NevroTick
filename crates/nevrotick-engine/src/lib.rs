@@ -90,9 +90,10 @@ pub use relative::{
     ExperimentalReferenceNs, ExperimentalRelativeMeasurement, RelativeMeasurementRefusal,
 };
 pub use series::address_round::{
-    AddressAttempt, AddressPolicyRefusal, AddressPolicyRefusalScope, AddressRoundConfig,
-    AddressRoundConfigError, AddressRoundEnd, AddressRoundRefreshOutcome, AddressRoundReport,
-    ConfiguredAddressRound, PreparedAddressRound, execute_address_round, prepare_address_round,
+    AddressAttempt, AddressBindRefusal, AddressPolicyRefusal, AddressPolicyRefusalScope,
+    AddressRoundConfig, AddressRoundConfigError, AddressRoundEnd, AddressRoundRefreshOutcome,
+    AddressRoundReport, ConfiguredAddressRound, PreparedAddressRound, execute_address_round,
+    prepare_address_round,
 };
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,

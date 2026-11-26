@@ -408,7 +408,7 @@ pub enum AddressRoundEnd {
     Reply,
     /// A correlated control/KoD ended this source round without address evasion.
     Control,
-    /// Every candidate was attempted once without an ordinary or control reply.
+    /// Every candidate retired without an ordinary or control reply.
     Exhausted,
     /// Stop was admitted before the final serialized summary checkpoint.
     Stopped,
@@ -468,6 +468,28 @@ impl fmt::Debug for AddressPolicyRefusal {
     }
 }
 
+/// A configured candidate whose actual local bind could return no socket.
+pub struct AddressBindRefusal {
+    /// Original candidate position.
+    index: u8,
+    /// Bounded local-address refusal from that candidate's bind.
+    cause: IoCause,
+}
+
+impl AddressBindRefusal {
+    /// Return the original candidate position.
+    #[must_use]
+    pub const fn index(&self) -> u8 {
+        self.index
+    }
+
+    /// Return the captured local cause. It describes only the original bind.
+    #[must_use]
+    pub const fn cause(&self) -> IoCause {
+        self.cause
+    }
+}
+
 /// One actual attempt, with its original destination and consume-once terminal report.
 pub struct AddressAttempt {
     /// Checked destination consumed by this actual socket owner.
@@ -494,6 +516,8 @@ impl AddressAttempt {
 pub struct AddressRoundReport {
     /// At most three actual pre-socket refusals, disjoint from terminal attempts.
     policy_refusals: Vec<AddressPolicyRefusal>,
+    /// Local bind refusals, disjoint from policy refusals and terminal attempts.
+    bind_refusals: Vec<AddressBindRefusal>,
     /// At most three actual terminal records in their original attempt order.
     attempts: Vec<AddressAttempt>,
     /// Fresh final decision, which does not rewrite historical records.
@@ -515,6 +539,7 @@ impl AddressRoundReport {
     fn empty() -> Self {
         Self {
             policy_refusals: Vec::with_capacity(CAPACITY),
+            bind_refusals: Vec::new(),
             attempts: Vec::with_capacity(CAPACITY),
             round_end: AddressRoundEnd::Exhausted,
             primary: None,
@@ -535,6 +560,12 @@ impl AddressRoundReport {
     #[must_use]
     pub fn policy_refusals(&self) -> &[AddressPolicyRefusal] {
         &self.policy_refusals
+    }
+
+    /// Borrow original local-address bind refusals in candidate order.
+    #[must_use]
+    pub fn bind_refusals(&self) -> &[AddressBindRefusal] {
+        &self.bind_refusals
     }
 
     /// Return the original round outcome, including any failure during timer cleanup.
@@ -743,10 +774,19 @@ enum RoundCheckpoint {
     After,
 }
 
+/// The exact candidate retired before it owned a registered socket.
+#[derive(Clone, Copy)]
+enum SetupRefusal {
+    /// Current source or endpoint policy refused before binding.
+    Policy(AddressPolicyRefusalScope),
+    /// Its selected local address was unavailable at the actual bind.
+    LocalBind(IoCause),
+}
+
 /// Actual setup either owns a socket or records why none was admitted.
 enum SetupOutcome {
-    /// Actual guarded refusal before any socket/registration/send for this candidate.
-    PolicyRefused(AddressPolicyRefusalScope),
+    /// Actual refusal without a live registered socket or any send.
+    Refused(SetupRefusal),
     /// The sole actual bind/registration succeeded under the current guard.
     /// One bounded box avoids storing the large live socket state in a refusal.
     Ready(Box<LiveSlot>),
@@ -814,7 +854,7 @@ fn setup_address_request_bound(
         .pre_socket_refusal()
         .map_err(PilotError::SourcePolicy)?
     {
-        return Ok(SetupOutcome::PolicyRefused(scope));
+        return Ok(SetupOutcome::Refused(SetupRefusal::Policy(scope)));
     }
     let mut request = prepare_slot(peer, packet)?;
     request.source_policy = mode;
@@ -947,14 +987,14 @@ fn terminal_round_end(
     })
 }
 
-/// Retain one genuine pre-socket fact before completing its exact cursor claim.
+/// Retain one genuine setup refusal before completing its exact cursor claim.
 /// The fresh summary observes current control without rewriting that history.
 /// # Errors
 /// Preserve a cursor contradiction; it cannot admit a successor or fake native completion.
-fn record_policy_refusal<O>(
+fn record_setup_refusal<O>(
     report: &mut AddressRoundReport,
     claim: progress::Claim<'_, '_>,
-    scope: AddressPolicyRefusalScope,
+    refusal: SetupRefusal,
     control: &mut watch::Receiver<Control>,
     deadline: Instant,
     observe: &mut O,
@@ -962,17 +1002,27 @@ fn record_policy_refusal<O>(
 where
     O: FnMut(u8, RoundCheckpoint),
 {
-    let (index, _, _) = claim.parts();
-    report
-        .policy_refusals
-        .push(AddressPolicyRefusal { index, scope });
+    let (index, _, _): (u8, SocketAddr, Instant) = claim.parts();
+    let refused_end: Option<AddressRoundEnd> = match refusal {
+        SetupRefusal::Policy(scope) => {
+            report
+                .policy_refusals
+                .push(AddressPolicyRefusal { index, scope });
+            (scope == AddressPolicyRefusalScope::Source)
+                .then_some(AddressRoundEnd::SourceRestricted)
+        }
+        SetupRefusal::LocalBind(cause) => {
+            report
+                .bind_refusals
+                .push(AddressBindRefusal { index, cause });
+            None
+        }
+    };
     claim.finish(index)?;
     observe(index, RoundCheckpoint::Before);
-    let end = current_end(control, deadline);
+    let end: Option<AddressRoundEnd> = current_end(control, deadline);
     observe(index, RoundCheckpoint::After);
-    Ok(end
-        .or((scope == AddressPolicyRefusalScope::Source)
-            .then_some(AddressRoundEnd::SourceRestricted)))
+    Ok(end.or(refused_end))
 }
 
 /// Transfer actual socket retirement and its historical terminal facts exactly once.
@@ -1065,14 +1115,24 @@ where
             Ok(plan) => plan,
             Err(error) => return report.fail(error),
         };
-        let outcome = setup_candidate(&plan, &mut prepared.control, setup).await;
+        let outcome: Result<SetupOutcome, PilotError> =
+            match setup_candidate(&plan, &mut prepared.control, setup).await {
+                Err(PilotError::Bind(cause))
+                    if prepared.original_cutoff.is_some()
+                        && matches!(&plan.mode, SourceMode::Managed(_))
+                        && cause.kind() == std::io::ErrorKind::AddrNotAvailable =>
+                {
+                    Ok(SetupOutcome::Refused(SetupRefusal::LocalBind(cause)))
+                }
+                result => result,
+            };
         let slot = match outcome {
             Ok(SetupOutcome::Ready(slot)) => *slot,
-            Ok(SetupOutcome::PolicyRefused(scope)) => {
-                match record_policy_refusal(
+            Ok(SetupOutcome::Refused(refusal)) => {
+                match record_setup_refusal(
                     &mut report,
                     claim,
-                    scope,
+                    refusal,
                     &mut prepared.control,
                     deadline,
                     observe,

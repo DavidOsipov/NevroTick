@@ -80,10 +80,10 @@ SOURCE_CONFIG_SHA256 = hashlib.sha256(
 ).hexdigest()
 METRICS_READER = Q.TOOL + "/metrics.py"
 METRICS_EXPORT_HELPER = "scripts/run-service-analysis.py"
-# The fixture roster includes the broker clock terminal edge, paired SCM observations and managed address rounds.
+# The fixture roster includes default worker-health refusal and the prefill and first-read guards.
 # Platform and fixture doctest scopes retain their independently reviewed roster.
 SOURCE_TEST_ROSTERS = {
-    "fixture-test": "f5dd6878a78937005ca73d095b16d6fe2917cad70e105c8303c7d6d975d7d634",
+    "fixture-test": "591e794073bc21d567bb2cfd37641408c43b89a9d69566eb43b6c4885b61883c",
     "platform-test": "f7bd2453a7c5ad3084791c92c2093d2c49a2c81047efec2d2d2350bda4de01b2",
     "platform-doc": "a4773395aa848cd76e6793dff9a9c9c5feaa2d7f7c6fa2ae70412c897972d780",
     "fixture-doc": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
@@ -546,8 +546,14 @@ def run(args):
                 check_scratch_headroom(work, "artifact publication")
             Q.require(not artifacts.exists() and not artifacts.is_symlink(),
                       "Cross artifact destination already exists.")
-            # The cache writer lock serializes cross-lane publication.
-            staged.rename(artifacts)
+            # The cache lock covers cooperating callers. The rename must also
+            # refuse a destination that appeared after the precheck.
+            parent: int = os.open(artifacts.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+            try:
+                C.PRODUCT._publish_windows_export(
+                    parent, staged.relative_to(artifacts.parent).as_posix(), artifacts.name)
+            finally:
+                os.close(parent)
             record["artifacts"] = artifact_rows
         record.update(bookends_passed=True, index_bytes_unchanged=True, index_after=index_after,
                       status="passed" if succeeded else "failed")

@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Backpressure on the original Windows broker exchange.
 
-use std::{cell::RefCell, num::NonZeroU32, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    num::NonZeroU32,
+    rc::Rc,
+};
 
 use windows_platform::service::ServiceState;
 use windows_platform_native::PeerProcess;
 
 use super::{
-    BrokerControlWake, BrokerWait, Duration, Error, FirstReplyCase, Instant, InvocationPoll,
+    BrokerControlWake, BrokerWait, Clock, Duration, Error, FirstReplyCase, Instant, InvocationPoll,
     LabPipeReader, MAX_FRAME_LEN, NativeCancel, NativeError, NativePipeRead, NativeReadPoll,
     NativeReadStart, NativeWritePoll, NativeWriteStart, ServiceInvocation, StopNotification,
     WakeSource, Worker, deliver_first_reply_suspend, finish_native_first_reply,
     native_fixture_result, observe_first_reply_bytes, retire_pending_peer_read,
-    wait_for_first_reply_write, wait_for_native_read, with_broker_worker_reads,
+    stop_after_pending_peer_read, wait_for_first_reply_write, wait_for_native_read,
+    with_broker_worker_reads,
 };
 use super::{Reporter, ScriptClock};
 use crate::{
     broker_endpoint::BrokerEndpointWorker,
+    host::PrivateStatusIssue,
     native_broker_endpoint::{
         FIRST_REPLY_PREFILL, FirstReplyControl, FirstReplyIo, NativeBrokerEndpoint,
     },
@@ -84,9 +90,11 @@ fn observe_pending_reply<const CASE: usize>(
     let pipe_case: u32 = u32::try_from(CASE)?;
     let events: Rc<RefCell<Vec<Step>>> = Rc::default();
     let sink: Rc<RefCell<Vec<Step>>> = Rc::clone(&events);
-    let probe: FirstReplyControl = FirstReplyControl::Backpressure(Rc::new(move |io| {
-        sink.borrow_mut().push(Step::from(io));
-    }));
+    let probe: FirstReplyControl = FirstReplyControl::Backpressure {
+        observe_reply: Rc::new(move |io| sink.borrow_mut().push(Step::from(io))),
+        after_prefill: None,
+        after_prefill_peer: None,
+    };
     let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
         prepare_first_exchange_fixture(pipe_case, peer, Some(probe))
     };
@@ -124,7 +132,8 @@ fn observe_pending_reply<const CASE: usize>(
                 }
                 read_prefill(&mut reader)?;
                 if matches!(scenario, FirstReplyCase::Available) {
-                    let _: NativeReadStart = native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
+                    let _submitted: NativeReadStart =
+                        native_fixture_result(reader.begin(MAX_FRAME_LEN))?;
                     wait_for_first_reply_write(
                         owner,
                         clock,
@@ -156,6 +165,124 @@ fn observe_pending_reply<const CASE: usize>(
     )?
 }
 
+/// Advance the original owner clock only after the exact marker count settles.
+struct PrefillClock<'a, 'b> {
+    /// Preserve the selected broker clock and original control owner.
+    clock: &'a mut ScriptClock<'b>,
+    /// Set by the driver after it collects the marker's full physical count.
+    marker_settled: &'a Cell<bool>,
+    /// Reuse the already charged accept cutoff.
+    cutoff: Instant,
+}
+
+impl Clock for PrefillClock<'_, '_> {
+    /// Deliver the original cutoff on the first observation after prefill.
+    fn now(&mut self) -> Instant {
+        if self.marker_settled.replace(false) {
+            self.clock.now = self.cutoff;
+            self.clock.reached = true;
+        }
+        self.clock.now()
+    }
+}
+
+/// Observe completed marker bytes, no server read submission, and clean Stop.
+///
+/// # Errors
+/// Returns a failure from the fixture, native I/O, or one of the custody checks.
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_first_read_refuses_original_cutoff_after_prefill() -> Result<(), Box<dyn Error>> {
+    observe_prefill_cutoff::<47>(false)
+}
+
+/// Refuse the marker after the original peer observation reaches the cutoff.
+/// # Errors
+/// Returns a fixture, native I/O, or custody failure.
+#[test]
+#[ignore = "requires the admitted offline Windows first-exchange fixture supervisor"]
+fn native_prefill_marker_refuses_cutoff_during_peer_observation() -> Result<(), Box<dyn Error>> {
+    observe_prefill_cutoff::<48>(true)
+}
+
+/// Observe the same guarded connection before its marker or after marker collection.
+/// # Errors
+/// Returns a native setup, unexpected I/O, or incomplete retirement result.
+fn observe_prefill_cutoff<const CASE: usize>(before_marker: bool) -> Result<(), Box<dyn Error>> {
+    let pid: NonZeroU32 = NonZeroU32::new(std::process::id()).ok_or("fixture PID was zero")?;
+    let peer: RetainedFixtureClient = RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
+    let pipe_case: u32 = u32::try_from(CASE)?;
+    let marker_settled: Rc<Cell<bool>> = Rc::default();
+    let settled: Rc<Cell<bool>> = Rc::clone(&marker_settled);
+    let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+        let action: Rc<dyn Fn()> = Rc::new(move || settled.set(true));
+        let probe: FirstReplyControl = FirstReplyControl::Backpressure {
+            observe_reply: Rc::new(|_| {}),
+            after_prefill: (!before_marker).then(|| Rc::clone(&action)),
+            after_prefill_peer: before_marker.then_some(action),
+        };
+        prepare_first_exchange_fixture(pipe_case, peer, Some(probe))
+    };
+    with_broker_worker_reads::<CASE, 1, _, _>(
+        BrokerEndpointWorker::new(acquire),
+        |owner, clock, stop| {
+            let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+            let (client_reader, _client_writer): (LabPipeReader, LabRequestWriter) =
+                native_fixture_result(open_first_exchange_client(pipe_case))?;
+            let mut reader: NativePipeRead =
+                native_fixture_result(NativePipeRead::new(client_reader))?;
+            let control: BrokerControlWake = BrokerControlWake::new()?;
+            let mut waiter: BrokerWait = BrokerWait::new();
+            let result: Result<(), Box<dyn Error>> = (|| {
+                if waiter.observe(
+                    &control,
+                    Duration::from_secs(2),
+                    owner.worker.completion_wake(),
+                )? != WakeSource::Completion
+                {
+                    return Err("the original accept did not complete".into());
+                }
+                let mut at_prefill: PrefillClock<'_, '_> = PrefillClock {
+                    clock,
+                    marker_settled: &marker_settled,
+                    cutoff,
+                };
+                // The client has sent no request. Any submitted server read is
+                // still recorded even if this poll requested its cancellation.
+                if !matches!(
+                    owner.poll(&mut at_prefill, stop),
+                    InvocationPoll::Pending(_)
+                ) || !clock.reached
+                    || clock.now != cutoff
+                    || owner.worker.completion_wake().is_some()
+                    || owner.state() != Some(ServiceState::Running)
+                    || owner.connection_cutoff != Some(cutoff)
+                    || owner.outstanding_work() != 1
+                    || owner.private_status_issue != PrivateStatusIssue::Unissued
+                    || owner.native_status.capture_observed
+                    || owner.native_status.outcome.is_some()
+                    || owner.native_status.reply_written
+                {
+                    return Err(
+                        "cutoff after the marker did not leave the original read idle".into(),
+                    );
+                }
+                if !before_marker {
+                    read_prefill(&mut reader)?;
+                }
+                if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                    return Err("unexpected bytes followed the original marker".into());
+                }
+                stop_after_pending_peer_read(owner, clock, stop, &mut reader)
+            })();
+            if result.is_err() {
+                retire_pending_peer_read(&mut reader);
+            }
+            result
+        },
+    )?
+}
+
 /// Read only the remaining inert prefix, even if the status write completes meanwhile.
 ///
 /// # Errors
@@ -163,7 +290,7 @@ fn observe_pending_reply<const CASE: usize>(
 fn read_prefill(reader: &mut NativePipeRead) -> Result<(), Box<dyn Error>> {
     let mut remaining: &[u8] = &FIRST_REPLY_PREFILL;
     while !remaining.is_empty() {
-        let _: NativeReadStart = native_fixture_result(reader.begin(remaining.len()))?;
+        let _submitted: NativeReadStart = native_fixture_result(reader.begin(remaining.len()))?;
         let NativeReadPoll::Data(completed) = wait_for_native_read(reader)? else {
             return Err("the original peer did not receive the prefill".into());
         };

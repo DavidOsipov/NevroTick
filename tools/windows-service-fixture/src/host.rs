@@ -312,6 +312,16 @@ pub(super) enum ConnectionEdge {
     Closed,
 }
 
+/// A prefill marker refused before the writer acquired native custody.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(super) enum PrefillRefusal {
+    /// Stop or the original owner cutoff fenced the connection.
+    ConnectionClosed,
+    /// The retained peer failed its current identity observation.
+    ForeignPeer,
+}
+
 /// A connection can shorten the owner's ordinary wait without renewing any deadline.
 #[must_use = "respect the endpoint's next observation bound"]
 #[derive(Debug, Eq, PartialEq)]
@@ -428,6 +438,34 @@ impl<C: Clock> RunningConnection<'_, C> {
     #[cfg(test)]
     pub(super) const fn record_reply_written(&mut self) {
         self.reply_written = true;
+    }
+
+    /// Fence the inert prefill marker around the original peer observation.
+    /// # Errors
+    /// Preserves an admission refusal or a foreign peer while admission is open.
+    #[cfg(test)]
+    pub(super) fn admit_prefill_marker(
+        &mut self,
+        observe_peer: impl FnOnce() -> bool,
+    ) -> Result<(), PrefillRefusal> {
+        if !matches!(self.edge(), ConnectionEdge::Open(_)) {
+            return Err(PrefillRefusal::ConnectionClosed);
+        }
+        let peer_current: bool = observe_peer();
+        if !matches!(self.edge(), ConnectionEdge::Open(_)) {
+            return Err(PrefillRefusal::ConnectionClosed);
+        }
+        if !peer_current {
+            return Err(PrefillRefusal::ForeignPeer);
+        }
+        Ok(())
+    }
+
+    /// Authorize immediate submission of the first read on this connection.
+    #[cfg(test)]
+    #[must_use = "submit the first read only while the original connection is open"]
+    pub(super) fn first_read_is_current(&mut self) -> bool {
+        matches!(self.edge(), ConnectionEdge::Open(_))
     }
 
     /// Observe current owner time and Stop before or after one native connection call.
