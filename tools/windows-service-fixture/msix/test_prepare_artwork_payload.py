@@ -15,6 +15,7 @@ from unittest.mock import call, patch
 import xml.etree.ElementTree as ET
 
 import prepare_artwork_payload as producer
+from test_prepare_payload import write_guarded_role_export
 
 sys.path.insert(0, str(producer.stage.ROOT / "scripts/tests"))
 from test_windows_pe import _image, _OBSERVE_GUID, _OPTIONAL, _pdb, _UI_GUID, _ui_resource_image
@@ -33,6 +34,16 @@ PROPERTIES: bytes = (
     '  <trustedlaunch:TrustedLaunch>true</trustedlaunch:TrustedLaunch>\n'
     '</Properties>\n'
 ).encode("utf-8")
+SHARED_GUI_BUILD_SOURCES: dict[str, str] = {
+    name: sha256(name.encode("ascii")).hexdigest() for name in (
+        "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
+        "policy/ui-m0-dependencies.json", "crates/nevrotick-ui/Cargo.toml",
+        "crates/nevrotick-ui/src/native_tray.rs", "crates/nevrotick-ui/startup/cpu_entry.c",
+    )
+}
+GUARDED_ROLE_SOURCES: dict[str, str] = {
+    **SHARED_GUI_BUILD_SOURCES, "crates/nevrotick-ui/startup/cpu_entry_control.c": "7" * 64,
+}
 
 
 class ArtworkPayloadInputs(unittest.TestCase):
@@ -489,19 +500,16 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         map_path.write_bytes(link_map)
         generation = self.handoff_report["generation_receipt_sha256"] if generation is None else generation
         image_hash: str = sha256(guarded).hexdigest()
-        inputs: dict[str, str] = {name: sha256(name.encode("ascii")).hexdigest() for name in (
-            "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
-            "policy/ui-m0-dependencies.json", "crates/nevrotick-ui/Cargo.toml",
-            "crates/nevrotick-ui/src/native_tray.rs", "crates/nevrotick-ui/startup/cpu_entry.c",
-        )}
+        ui_only_inputs: dict[str, str] = {
+            "scripts/windows_pe.py": "8" * 64,
+            "metadata/product.toml": "9" * 64,
+        }
         ordinary_receipt: bytes = json.dumps({
-            "source_sha256": inputs, "dependency_profile": "default",
+            "source_sha256": {**SHARED_GUI_BUILD_SOURCES, **ui_only_inputs}, "dependency_profile": "default",
         }).encode("utf-8")
         (self.handoff / "verification.json").write_bytes(ordinary_receipt)
         self.handoff_pin = sha256(ordinary_receipt).hexdigest()
-        guarded_inputs: dict[str, str] = {
-            **inputs, "crates/nevrotick-ui/startup/cpu_entry_control.c": "7" * 64,
-        }
+        guarded_inputs: dict[str, str] = {**GUARDED_ROLE_SOURCES, **ui_only_inputs}
         if stale_tray:
             guarded_inputs["crates/nevrotick-ui/src/native_tray.rs"] = "a" * 64
         receipt: dict = {
@@ -541,7 +549,9 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         }
         with patch.object(producer.stage, "role_images", return_value=role_images) as read_roles:
             status, stdout, stderr = self.invoke(self.role_args + options)
-            read_roles.assert_called_once_with(self.role_receipt, self.role_pin, require_baseline_entry=True)
+            read_roles.assert_called_once_with(
+                self.role_receipt, self.role_pin, require_baseline_entry=True, matching_sources=GUARDED_ROLE_SOURCES,
+            )
         self.assertEqual((status, stderr), (0, ""))
         report: dict = json.loads(stdout)
         self.assertEqual(report["handoff_receipt_sha256"], self.handoff_pin)
@@ -633,7 +643,7 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
             self.assertEqual((status, stdout), (1, ""))
             self.assertIn("File exists", stderr)
             self.assertEqual(read_roles.call_args_list, [
-                call(self.role_receipt, self.role_pin, require_baseline_entry=True),
+                call(self.role_receipt, self.role_pin, require_baseline_entry=True, matching_sources=GUARDED_ROLE_SOURCES),
             ] * 3)
         actual: dict[str, bytes] = {
             path.relative_to(self.output).as_posix(): path.read_bytes()
@@ -674,6 +684,35 @@ class CombinedArtworkPayloadTests(ArtworkPayloadInputs):
         self.assertEqual((status, stdout), (1, ""), stderr)
         self.assertIn("Guarded UI build inputs differ", stderr)
         self.assertFalse(self.output.exists())
+
+    def test_guarded_cli_rejects_a_repinned_stale_role_export_before_publication(self) -> None:
+        options: tuple[str, ...]
+        guarded: bytes
+        options, guarded = self.guarded_fixture()
+        linked: Path = self.role_directory / (self.role_receipt.stem + "-artifacts")
+        images: dict[str, bytes]
+        report: dict[str, object]
+        images, _, report = write_guarded_role_export(linked)
+        sources: dict[str, str] = {**GUARDED_ROLE_SOURCES, "tools/windows-service-fixture/msix/service_entry.c": "b" * 64}
+        report["source_sha256"] = {**sources, "crates/nevrotick-ui/startup/cpu_entry_control.c": "a" * 64}
+        stale: bytes = json.dumps(report).encode("utf-8")
+        self.role_receipt.write_bytes(stale)
+        status, stdout, stderr = self.invoke((*self.role_args[:-1], sha256(stale).hexdigest()) + options)
+        self.assertEqual((status, stdout), (1, ""), stderr)
+        self.assertIn("Service role source pins differ from the selected UI build", stderr)
+        self.assertFalse(self.output.exists())
+
+        report["source_sha256"] = sources
+        healthy: bytes = json.dumps(report).encode("utf-8")
+        self.role_receipt.write_bytes(healthy)
+        status, stdout, stderr = self.invoke((*self.role_args[:-1], sha256(healthy).hexdigest()) + options)
+        self.assertEqual((status, stderr), (0, ""))
+        self.assertEqual(json.loads(stdout)["role_link_receipt_sha256"], sha256(healthy).hexdigest())
+        self.assertEqual((self.output / self.ui_path.name).read_bytes(), guarded)
+        name: str
+        expected: bytes
+        for name, expected in images.items():
+            self.assertEqual((self.output / name).read_bytes(), expected)
 
     def test_guarded_ui_requires_both_pinned_build_identities(self) -> None:
         for kind in ("missing-source", "shared-entry", "extra-source", "different-profile"):

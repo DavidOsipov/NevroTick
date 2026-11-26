@@ -144,7 +144,10 @@ def _read_roles(rows: dict[str, object], directory: int, anchor: Path, logical: 
     return images
 
 
-def role_images(receipt: Path, receipt_hash: str, *, require_baseline_entry: bool = False) -> dict[str, bytes]:
+def role_images(
+    receipt: Path, receipt_hash: str, *, require_baseline_entry: bool = False,
+    matching_sources: dict[str, str] | None = None,
+) -> dict[str, bytes]:
     """Recheck the fixed link export in place or after a byte-exact relocation."""
     require(receipt.name.startswith("cross-") and receipt.suffix == ".json",
             "Use a configured cross-link receipt.")
@@ -157,6 +160,11 @@ def role_images(receipt: Path, receipt_hash: str, *, require_baseline_entry: boo
         require(type(data) is dict and data.get("status") == "passed" and data.get("lane") == "link"
                 and data.get("bookends_passed") is True and data.get("index_bytes_unchanged") is True,
                 "Expected a passed, complete two-role link receipt.")
+        if matching_sources is not None:
+            source: object = data.get("source_sha256")
+            require(type(source) is dict
+                    and all(source.get(name) == pin for name, pin in matching_sources.items()),
+                    "Service role source pins differ from the selected UI build.")
         rows: object = data["artifacts"]
         require(type(rows) is dict and rows.keys() == set(BINS), "The exact two service roles are required.")
         baseline: object = data.get("baseline_entry")

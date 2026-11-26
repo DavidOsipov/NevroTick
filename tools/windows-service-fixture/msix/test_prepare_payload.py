@@ -23,50 +23,61 @@ sys.path.insert(0, str(producer.ROOT / "scripts/tests"))
 from test_windows_pe import _image, _OBSERVE_GUID, _pdb, _UI_GUID
 
 
+def write_guarded_role_export(linked: Path) -> tuple[
+    dict[str, bytes], dict[str, dict[str, object]], dict[str, object],
+]:
+    """Write two distinct inert PE/PDB pairs and their baseline sidecars."""
+    linked.mkdir(mode=0o700)
+    logical: Path = producer.RECEIPTS.relative_to(producer.ROOT) / linked.name
+    images: dict[str, bytes] = {}
+    rows: dict[str, dict[str, object]] = {}
+    for stem, guid in zip(producer.BINS, (_UI_GUID, _OBSERVE_GUID), strict=True):
+        image_name: str = stem + ".exe"
+        map_stem: str = stem.replace("-", "_")
+        pdb_name: str = map_stem + ".pdb"
+        pe: bytearray = _image(3, pdb_path=pdb_name, guid=guid)
+        struct.pack_into("<I", pe, 0x98 + 16, 0x1010)
+        image: bytes = bytes(pe)
+        pdb: bytes = bytes(_pdb(guid=guid))
+        mapping: bytes = (
+            f" {map_stem}\n\n"
+            " Preferred load address is 0000000140000000\n\n"
+            "  Address         Publics by Value              Rva+Base               Lib:Object\n\n"
+            " 0001:00000010 nevrotick_service_entry 0000000140001010 service-entry.obj\n"
+            " 0001:00000030 mainCRTStartup 0000000140001030 msvcrt:exe_main.obj\n"
+            "\n entry point at         0001:00000010\n"
+        ).encode("ascii")
+        (linked / image_name).write_bytes(image)
+        (linked / pdb_name).write_bytes(pdb)
+        (linked / (map_stem + ".map")).write_bytes(mapping)
+        images[image_name] = image
+        rows[stem] = {
+            "image": (logical / image_name).as_posix(), "image_sha256": sha256(image).hexdigest(),
+            "pdb": (logical / pdb_name).as_posix(), "pdb_sha256": sha256(pdb).hexdigest(),
+            "raw_pe": {"baseline_entry": {
+                "entry_rva": 0x1010, "crt_startup_rva": 0x1030,
+                "image_base": 0x140000000, "tls_callback_table_rva": 0,
+                "direct_import_modules": [], "map_sha256": sha256(mapping).hexdigest(),
+            }},
+        }
+    entry_object: bytes = b"fixture guard object"
+    (linked / "service-entry.obj").write_bytes(entry_object)
+    report: dict[str, object] = {
+        "status": "passed", "lane": "link", "bookends_passed": True, "index_bytes_unchanged": True,
+        "artifacts": rows, "baseline_entry": {"object_sha256": sha256(entry_object).hexdigest()},
+    }
+    return images, rows, report
+
+
 class GuardedRoleTests(unittest.TestCase):
     def setUp(self) -> None:
         root: Path = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.receipt: Path = root / "cross-fixed-roles.json"
         self.linked: Path = root / "cross-fixed-roles-artifacts"
-        self.linked.mkdir(mode=0o700)
-        logical: Path = producer.RECEIPTS.relative_to(producer.ROOT) / self.linked.name
-        self.images: dict[str, bytes] = {}
-        self.rows: dict[str, dict[str, object]] = {}
-        for stem, guid in zip(producer.BINS, (_UI_GUID, _OBSERVE_GUID), strict=True):
-            image_name: str = stem + ".exe"
-            map_stem: str = stem.replace("-", "_")
-            pdb_name: str = map_stem + ".pdb"
-            pe: bytearray = _image(3, pdb_path=pdb_name, guid=guid)
-            struct.pack_into("<I", pe, 0x98 + 16, 0x1010)
-            image: bytes = bytes(pe)
-            pdb: bytes = bytes(_pdb(guid=guid))
-            mapping: bytes = (
-                f" {map_stem}\n\n"
-                " Preferred load address is 0000000140000000\n\n"
-                "  Address         Publics by Value              Rva+Base               Lib:Object\n\n"
-                " 0001:00000010 nevrotick_service_entry 0000000140001010 service-entry.obj\n"
-                " 0001:00000030 mainCRTStartup 0000000140001030 msvcrt:exe_main.obj\n"
-                "\n entry point at         0001:00000010\n"
-            ).encode("ascii")
-            (self.linked / image_name).write_bytes(image)
-            (self.linked / pdb_name).write_bytes(pdb)
-            (self.linked / (map_stem + ".map")).write_bytes(mapping)
-            self.images[image_name] = image
-            self.rows[stem] = {
-                "image": (logical / image_name).as_posix(), "image_sha256": sha256(image).hexdigest(),
-                "pdb": (logical / pdb_name).as_posix(), "pdb_sha256": sha256(pdb).hexdigest(),
-                "raw_pe": {"baseline_entry": {
-                    "entry_rva": 0x1010, "crt_startup_rva": 0x1030,
-                    "image_base": 0x140000000, "tls_callback_table_rva": 0,
-                    "direct_import_modules": [], "map_sha256": sha256(mapping).hexdigest(),
-                }},
-            }
-        entry_object: bytes = b"fixture guard object"
-        (self.linked / "service-entry.obj").write_bytes(entry_object)
-        self.report: dict[str, object] = {
-            "status": "passed", "lane": "link", "bookends_passed": True, "index_bytes_unchanged": True,
-            "artifacts": self.rows, "baseline_entry": {"object_sha256": sha256(entry_object).hexdigest()},
-        }
+        self.images: dict[str, bytes]
+        self.rows: dict[str, dict[str, object]]
+        self.report: dict[str, object]
+        self.images, self.rows, self.report = write_guarded_role_export(self.linked)
 
     def pin(self) -> str:
         raw: bytes = json.dumps(self.report).encode("utf-8")
@@ -107,6 +118,32 @@ class GuardedRoleTests(unittest.TestCase):
         guard["entry_rva"] = 0x1010
         guard["crt_startup_rva"] = 0x1030
         self.assertEqual(producer.role_images(self.receipt, self.pin(), require_baseline_entry=True), self.images)
+
+    def test_guarded_roles_bind_all_selected_source_pins(self) -> None:
+        expected: dict[str, str] = {
+            "Cargo.lock": "a" * 64, "crates/nevrotick-ui/startup/cpu_entry_control.c": "b" * 64,
+        }
+        sources: dict[str, str] = {**expected, "tools/windows-service-fixture/msix/service_entry.c": "c" * 64}
+        self.report["source_sha256"] = sources
+        self.assertEqual(producer.role_images(
+            self.receipt, self.pin(), require_baseline_entry=True, matching_sources=expected,
+        ), self.images)
+        name: str
+        altered: dict[str, str] | None
+        for name, altered in (
+            ("changed-required-pin", {**sources, "Cargo.lock": "d" * 64}),
+            ("missing-required-pin", {"Cargo.lock": sources["Cargo.lock"]}),
+            ("missing-source-map", None),
+        ):
+            with self.subTest(name=name):
+                if altered is None:
+                    del self.report["source_sha256"]
+                else:
+                    self.report["source_sha256"] = altered
+                pin: str = self.pin()
+                with self.assertRaisesRegex(ValueError, "Service role source pins differ from the selected UI build"):
+                    producer.role_images(self.receipt, pin, require_baseline_entry=True, matching_sources=expected)
+                self.assertEqual(producer.role_images(self.receipt, pin, require_baseline_entry=True), self.images)
 
     def test_guarded_staging_rejects_a_repinned_map_with_crt_outside_the_image(self) -> None:
         engine: str = producer.BINS[0]

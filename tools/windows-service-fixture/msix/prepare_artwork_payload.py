@@ -133,7 +133,7 @@ def handoff_snapshot(
 def guarded_ui_snapshot(
     path: Path, pin: str, map_path: Path, *, generation: str, matching_ui: bytes,
     matching_build: UiBuildInputs,
-) -> bytes:
+) -> tuple[bytes, UiBuildInputs]:
     """Join the guarded UI to the selected authoring generation and build inputs."""
     descriptor: int
     anchor: Path
@@ -179,7 +179,7 @@ def guarded_ui_snapshot(
                       "Guarded UI PE entry differs from the pinned link receipt.")
         stage.require(ui_resource_payloads(data) == ui_resource_payloads(matching_ui),
                       "Guarded UI embedded resources differ from the checked authoring handoff.")
-        return data
+        return data, guarded_build
 
 
 def _check_pri_dump(dump: bytes, artwork: dict[str, bytes], rows: dict[str, dict[str, object]]) -> None:
@@ -399,9 +399,21 @@ def main() -> int:
                 guarded_map = guarded_map.absolute()
                 stage._outside_source(guarded_export, output)
                 stage._outside_source(guarded_map, output)
-                ui = guarded_ui_snapshot(guarded_export, guarded_pin, guarded_map,
-                                         generation=generation, matching_ui=ui, matching_build=build)
-                images = stage.role_images(role_receipt, role_pin, require_baseline_entry=True)
+                guarded_build: UiBuildInputs
+                ui, guarded_build = guarded_ui_snapshot(
+                    guarded_export, guarded_pin, guarded_map, generation=generation,
+                    matching_ui=ui, matching_build=build,
+                )
+                # The service link freezes the product inventory. The Windows verifier adds
+                # these resource and PE reader inputs separately from that inventory.
+                windows_input_files: set[str] = set(verify.WINDOWS_PE_INPUT_FILES + verify.WINDOWS_UI_INPUT_FILES)
+                matching_sources: dict[str, str] = {
+                    name: digest for name, digest in guarded_build.source_sha256.items()
+                    if name not in windows_input_files
+                }
+                images = stage.role_images(
+                    role_receipt, role_pin, require_baseline_entry=True, matching_sources=matching_sources,
+                )
             else:
                 images = stage.role_images(role_receipt, role_pin)
             images[UI_IMAGE] = ui
