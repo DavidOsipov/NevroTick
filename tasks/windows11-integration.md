@@ -10,6 +10,12 @@ hardware survey. Follow the [bounded receiving source child](engine-transport-pi
 and the [re-entry/reconciliation record](#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
 positive production mapping/Core admission and all existing holds remain open.
 
+**Deferred clock-permissions routing — 27 November 2026:**
+[§4.43](#443-deferred-clock-permissions-feature--27-november-2026) imports CLK-0
+under W11-W05/W11-W10 after MT-C01 and immediately before Khronos. The linked
+plan owns reassessment and proposed restriction; mandatory V1 service isolation
+and provisioning retain their current requirements and priority.
+
 **Architectural closure routing — 26 November 2026:** [§4.42](#442-architectural-closure-execution-inventory--26-november-2026)
 connects the assessed gaps to existing Windows and dependent time/updater owners,
 concrete deliverables, prerequisites and useful/refused/unknown completion evidence.
@@ -15562,10 +15568,11 @@ evidence, unexecuted rows and next action here. Keep documentation review in
 the linked plan. This entry executes no Windows/package/signing/credential/Store
 or Community operation and lifts none of the current holds. Under
 [OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
-and the 14 November [OD-20 amendment](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1),
+with the 14 November [OD-20 amendment](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+and the 27 November [OD-21 amendment](../docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions),
 post-V1 work starts with MATH-0 evaluation/disposition, then TRUST-0/TRUST-C01,
-MT-0 and Khronos. The original dated assignment and review receipts retain their
-evidence scope.
+MT-0/MT-C01, [CLK-0/CLK-C01](../docs/plans/windows-clock-permissions.md) and Khronos.
+The original dated assignment and review receipts retain their evidence scope.
 
 ### 4.37 OS-integration vulnerability research — 8 November 2026
 
@@ -27517,3 +27524,37 @@ revocation source, network filter, surviving helper/task, client/provider or
 signer is selected here. Current scoped Windows/fuzz/storage/UI holds and
 post-V1 formal deferral remain; this amendment grants no live Apply, clock
 takeover, installation, product publication or release permission.
+
+### 4.43 Deferred clock-permissions feature — 27 November 2026
+
+**Disposition: deferred post-V1; documentation imported, implementation and
+qualification not started.** [OD-21](../docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
+places [CLK-0](../ROADMAP.md#clk-0--restrict-local-clock-changing-permissions)
+after actual V1 release, MATH-C01, TRUST-C01 and MT-C01, immediately before
+Khronos/Ananke. [NV-CLK-001](../docs/plans/windows-clock-permissions.md) owns the
+proposal, Microsoft sources, limits, reassessment and feature-local cases.
+This entry adds no ready V1 assignment or new global CHECK identity.
+
+| Existing owner | Deferred work and prerequisite | Required observation / exit |
+| --- | --- | --- |
+| W11-W05, platform/security and maintenance/IPC owners | At CLK-S0/S1, reassess the released source and Windows contracts; specify bounded assessment, direct/inherited/token evidence, managed-profile refusal, current proposal/consent and activation. Import actual source work only after that review. | Complete, complete-empty, denied and unknown results stay distinct; stale or unsupported proposals cannot reach Apply. Use the plan's CLK-T01–T11 and current CHECK-1/2/3/25/27 owners. |
+| W11-W05 with W11-W10/P6 and mandatory-state/recovery owners | Before CLK-S4 persistent mutation, qualify independent broker authority, installed identities, baseline provisioning and the existing inert pending-obligation removal discriminator. Then qualify the fixed SID/right delta, activation and ownership-aware restoration on an admitted disposable profile. | Preserve required system/unrelated grants and legitimate broker operation; observe step/rate denial, actual or uncertain effects, concurrent changes, death/restart, update/rollback and removal/reinstall. CLK-T05–T18/21–T23 refine existing CHECK-1/2/5/12/13/15/18/23/27. Missing code, state, authority or independent recovery invocation blocks mutation. |
+| Existing S0.5/P5 UI, W11-W08 diagnostics and independent QA owners | At CLK-S5/S6, consume the real admitted assessment and maintenance result; preserve consent, observation freshness, activation and recovery distinctions. | CLK-T19/T20/T23 and CHECK-14/17/22 require truthful status, cancellation handling, accessibility and minimized diagnostics. Reconcile actual evidence and limitations into CLK-C01; fixture presentation supplies no native enforcement pass. |
+
+**Next action at the scheduled trigger:** follow
+[CLK-S0 through CLK-S6](../docs/plans/windows-clock-permissions.md#14-staged-implementation-and-existing-owners),
+starting with the plan's
+[read-only assessment/proposal slice](../docs/plans/windows-clock-permissions.md#142-first-executable-slice-on-resumption).
+Retain finite work and the explicit re-entry condition for each unavailable
+mechanism. The [CLK-T01–T23 matrix](../docs/plans/windows-clock-permissions.md#13-acceptance-and-adversarial-case-matrix)
+supplies planned independent useful/refused/unknown controls, not executed results.
+
+**Exit:** record CLK-C01's independently reviewed implementation/qualification
+status, exact supported profiles, evidence, limits and explicit disposition here
+and in the plan. Research, readback alone, assessment-only behavior or blocked
+work cannot close a claim of implemented restriction. Deliberate deferral or
+reordering needs the existing owner-decision procedure before KHR-0 advances.
+Current [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+mandatory V1 isolation/provisioning, RGT-C01, hardware boundaries and scoped
+Windows/fuzz/storage/UI holds retain their scope. This import runs no policy,
+clock, service or package operation and authorizes no development-PC mutation.

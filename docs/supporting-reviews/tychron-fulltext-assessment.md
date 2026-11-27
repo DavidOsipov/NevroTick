@@ -426,10 +426,11 @@ evidence, limits and a return trigger. Missing original artifacts can limit
 reproduction without blocking an independently specified comparison. Production
 adoption is not required to advance the sequence. The 14 November
 [OD-20 amendment](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
-sets the current scheduling below; this research review retains its original
+and the 27 November [OD-21 amendment](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
+set the current scheduling below; this research review retains its original
 date and evidence scope:
 
-**actual V1 release → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android.**
+**actual V1 release → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → Android.**
 
 Existing formal/native/fuzz/storage/UI holds and the separate RGT-0 → CHR-0
 direction remain. This documentation reports no new product test pass, measured

@@ -27,7 +27,7 @@ post-V1 work below or mark any new native check passed.
 
 **Second post-V1 priority:** [TRUST-0, OneCRL and CRLite integration](#trust-0--post-v1-certificate-distrust-and-revocation), after MATH-C01 and before MT-0. [OD-20](docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1) records the owner's deferral and the delegated placement decision; this adds no V1 blocker.
 
-**Post-V1 order:** MATH-0 → [TRUST-0, certificate distrust/revocation](#trust-0--post-v1-certificate-distrust-and-revocation) → [MT-0, multithreading](#mt-0--post-v1-multithreading-and-concurrent-acquisition) → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
+**Post-V1 order:** MATH-0 → [TRUST-0, certificate distrust/revocation](#trust-0--post-v1-certificate-distrust-and-revocation) → [MT-0, multithreading](#mt-0--post-v1-multithreading-and-concurrent-acquisition) → [CLK-0, restricted local clock-changing permissions](#clk-0--restrict-local-clock-changing-permissions) → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
 
 **Retained replacement dependency:** [CHR-0, independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations), remains post-V1 and requires RGT-C01. Moving Roughtime into V1 does not start CHR-0 immediately; its later placement and future public licence remain undecided.
 
@@ -47,6 +47,8 @@ After its comparison and disposition, continue with
 [TRUST-0](#trust-0--post-v1-certificate-distrust-and-revocation) under
 [OD-20](docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1), then
 [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
+then [CLK-0](#clk-0--restrict-local-clock-changing-permissions) under
+[OD-21](docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions),
 then the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
 then the [GEO-0 experiment and disposition](#geo-0--evaluate-geography-assisted-source-ordering)
 requested on 5 November 2026. Then pursue the Android application
@@ -71,8 +73,9 @@ applying time to its own clock.
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. The [24 November custom-enclave plan](docs/plans/windows-vbs-enclave.md) adds a source-only NTS boundary/feasibility card to that task; adoption remains conditional. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Mathematical estimation experiments | [MATH-0](#math-0--post-v1-mathematical-estimation-experiments): first TODO after actual V1 release, before TRUST-0. Compare paper-informed candidates against the released estimator and pinned Chrony processing with independent truth; MATH-C01 records evidence and disposition, not automatic production adoption. |
 | Supplementary certificate distrust/revocation | [TRUST-0](#trust-0--post-v1-certificate-distrust-and-revocation) and [NV-TRUST-001](docs/plans/post-v1-certificate-distrust.md): second, after MATH-C01 and before MT-0. Plan both OneCRL and CRLite, authenticated updates, actual-chain enforcement and association invalidation; separately qualify root/distrust-after policy gaps. TRUST-C01 records integration/qualification and disposition; no feed capability or stronger V1 protection is claimed. |
-| Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): after TRUST-C01 and before Khronos. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change against the intervening trust-policy changes; existing V1 correctness duties remain. |
-| Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): after V1 release and MT-C01, before GEO-0/Android; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks. |
+| Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): after TRUST-C01 and before CLK-0. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change against the intervening trust-policy changes; existing V1 correctness duties remain. |
+| Restricted local clock-changing permissions | [CLK-0](#clk-0--restrict-local-clock-changing-permissions) and [NV-CLK-001](docs/plans/windows-clock-permissions.md): after MT-C01, immediately before KHR-0 under OD-21. Reassess the released baseline and current Windows evidence, then implement/qualify the admitted optional restriction profile and record CLK-C01's explicit disposition. Existing V1 process/service isolation remains mandatory; planning establishes no protection or native pass. |
+| Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): after V1 release and CLK-C01, before GEO-0/Android; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks. |
 | Geography-assisted acquisition | [GEO-0](#geo-0--evaluate-geography-assisted-source-ordering): bounded comparison after KHR-C01; the [existing catalogue task](tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) owns GEO-C01. Evaluation and disposition precede Android; GeoIP adoption is optional. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01 and GEO-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
@@ -105,7 +108,7 @@ public availability remain open.
 
 **Placement:** existing P6/P7 packaging and release work, before actual V1 release.
 Current Core continuation and native execution holds retain their scope. After
-V1, MATH-0 runs first, then TRUST-0, MT-0 and Khronos/Ananke.
+V1, MATH-0 runs first, then TRUST-0, MT-0, CLK-0 and Khronos/Ananke.
 
 **Plan / owner:** [WinGet distribution plan](docs/plans/winget-distribution.md)
 and existing [W11-W10/W11-W05](tasks/windows11-integration.md#436-winget-distribution-before-v1--7-november-2026),
@@ -171,7 +174,7 @@ configured checks and candidate records; no separate runtime or evidence chain.
 **Exit discipline:** relevant existing task/phase records distinguish prepared,
 executed, blocked and deferred cases. No document, model-only result or another
 candidate's receipt passes an absent mechanism or native/release gate. Preserve
-RGT-C01 before V1, V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android,
+RGT-C01 before V1, V1 → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → Android,
 the post-V1 CHR-0 dependency on RGT-C01, existing execution holds and formal
 deferral. This work grants no new clock authority.
 
@@ -184,7 +187,7 @@ Research supports comparison candidates; no algorithm, dependency, production
 constant, accuracy improvement or experiment result is adopted or qualified.
 
 **Order:** actual V1 release → MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 → MT-0 / MT-C01 →
-KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. A source push, successful build,
+CLK-0 / CLK-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. A source push, successful build,
 release tag or completed planning alone does not establish actual V1 release.
 This experiment adds no pre-V1 requirement and does not activate work now.
 
@@ -374,10 +377,12 @@ this documentation. Existing holds and post-V1 CHR-0's dependency on V1 RGT-C01 
 **Status:** planned under David's 7 November instruction; the
 [13 November amendment](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
 keeps MATH-0 first; [OD-20](docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
-now places TRUST-0 second and this stage after TRUST-C01, before Khronos.
+places TRUST-0 second and this stage after TRUST-C01. The
+[27 November OD-21 amendment](docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
+places CLK-0 next, immediately before Khronos.
 Implementation, measurements and native qualification remain open.
 
-**Order:** actual V1 release → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → AND-0.
+**Order:** actual V1 release → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → AND-0.
 Finishing a build or P0–P7 paperwork alone does not activate MT-0.
 
 **Plan and evidence:** [NV-MT-001](docs/plans/post-v1-multithreading.md) owns the
@@ -397,7 +402,7 @@ work with an independent reviewer.
   MT-W05; preserve trust/quorum/timestamps, actual native completion, policy-issue
   checks and aggregate resource bounds. No worker count/runtime is selected here.
 - [ ] Complete independent review and the applicable qualification through MT-W06,
-  recording MT-C01 before Khronos begins.
+  recording MT-C01 before CLK-0 begins.
 
 **Exit MT-C01:** qualified implementation or evidence-supported retention of the
 released baseline, under the [plan's exit rule](docs/plans/post-v1-multithreading.md#8-exit-mt-c01-and-onward-scheduling).
@@ -410,13 +415,56 @@ The current Windows/fuzz/storage/UI holds and pre-release development order
 remain. OD-10's post-V1 formal eligibility does not place the whole proof backlog
 ahead of the scheduled MATH-0 → TRUST-0 → MT-0 sequence.
 
+### CLK-0 — restrict local clock-changing permissions
+
+**Status:** detailed planning and post-V1 placement authorized on 27 November 2026
+under [OD-21](docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions).
+Engineering mechanisms remain proposed; no permission restriction, installed
+profile or Windows-native qualification is established by this record.
+
+**Order:** actual V1 release → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 →
+KHR-C01 → GEO-C01 → AND-0. Start CLK-0 after MT-C01 and complete its explicit
+disposition immediately before KHR-0.
+
+**Plan and owners:** [NV-CLK-001](docs/plans/windows-clock-permissions.md) owns
+the Microsoft source record, threat model, bounded work, qualification and future
+reassessment criteria. Reuse [W11-W05 and W11-W10](tasks/windows11-integration.md)
+for service/broker/lifecycle and complete-package ownership, with security,
+UI and independent native QA. Runtime clock authority remains at the existing
+broker; this does not select an additional elevated runtime service.
+
+- [ ] At activation, refresh Microsoft guidance and inspect the actual released
+  identities, service/package support, policy authority and recovery behavior.
+  Freeze one supported optional profile and finite evidence/implementation scope.
+- [ ] Specify precise user-visible protection and limits, managed-policy
+  compatibility, activation of changed privileges, ownership, reversible
+  installation/maintenance and recovery before any mutation is admitted.
+- [ ] Implement and qualify the admitted profile through the existing owners,
+  including adversarial token/policy/lifecycle cases and required native gates;
+  assess what a clock jump can still damage before detection or recovery.
+- [ ] Record CLK-C01's assessed implementation/qualification, exact evidence,
+  remaining limits and explicit disposition under the detailed plan.
+
+**Exit CLK-C01:** an independently reviewed, evidence-supported disposition of
+the assessed feature and its implementation/qualification status. Research,
+configuration readback, an attempted check or an unavailable prerequisite is not
+an implemented/qualified pass. Blocked or inconclusive work remains incomplete;
+deliberate deferral or reordering requires an explicit owner decision before
+advancing to KHR-0.
+
+The optional host-wide restriction is separate from mandatory V1 least-privilege
+process/service isolation and complete-package provisioning. It cannot establish
+exclusive control against an unrestricted administrator, SYSTEM/kernel compromise
+or a controlling hypervisor. Current Core/P0–P7 order, V1 correctness and
+installation requirements, hardware boundaries and execution holds remain.
+
 ### KHR-0 — evaluate independent time cross-checking
 
 **Status:** planned research and bounded experiment; later on 3 November 2026
 the owner selected a conditional bootstrap-reserve role. No implementation,
 source roster or recovery envelope is qualified.
 
-**Order:** after actual V1 release and [MT-C01](#mt-0--post-v1-multithreading-and-concurrent-acquisition), before GEO-0 and AND-0.
+**Order:** after actual V1 release and [CLK-C01](#clk-0--restrict-local-clock-changing-permissions), before GEO-0 and AND-0. MT-C01 precedes CLK-0 under OD-21.
 
 **Owners:** numerical/protocol implementer, with independent security/test review.
 
@@ -505,7 +553,7 @@ delivered client.
 [OD-12](docs/nevrotick-owner-decisions.md#16-od-12--geoip-experiment-after-khronos).
 No GeoIP database, dependency, provider or production selection rule is adopted.
 
-**Order:** V1 released → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
+**Order:** V1 released → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
 `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition closes this experiment; GeoIP
 deployment is not an Android prerequisite. Post-V1 CHR-0's dependency on V1
 RGT-C01 remains separate.
@@ -589,7 +637,7 @@ established. This stage is distinct from KHR-0.
 
 **Order:** implement and qualify RGT-0 within existing P2/P7 owners, closing
 RGT-C01 before actual V1 release. The post-V1
-MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android order remains. CHR-0 still requires
+MATH-0 → TRUST-0 → MT-0 → CLK-0 → KHR-0 → GEO-0 → Android order remains. CHR-0 still requires
 RGT-C01 but remains post-V1; the earlier immediate-successor wording does not
 advance Chrony replacement into V1.
 
@@ -756,7 +804,7 @@ verifier, UI and independent security/QA review at their dependent boundaries.
 Reuse the current engine task; do not start a parallel proxy project or database.
 Schedule the stage when a real supported use case and maintenance capacity justify
 it, after Windows delivery. Its place among other future work remains undecided;
-the V1 released → MATH → TRUST → MT → KHR → GEO → Android order and post-V1
+the V1 released → MATH → TRUST → MT → CLK → KHR → GEO → Android order and post-V1
 CHR-0's dependency on V1 RGT-C01 remain intact.
 
 **First future profile:** the canonical
@@ -804,7 +852,7 @@ coordinator-proposed post-V1 feasibility candidates, independently reviewed as
 source-only proposals; any material owner decision remains separate. No new
 dependency, production API, device-wide security policy
 or release gate is adopted. No new predecessor or rank is assigned within
-MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android; retain that order and the
+MATH-0 → TRUST-0 → MT-0 → CLK-0 → KHR-0 → GEO-0 → Android; retain that order and the
 post-V1 CHR-0 dependency on V1 RGT-C01. Reuse the existing task owners, not a new
 implementation workstream. See [dated assessment and V1 refinements](docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026).
 
@@ -901,7 +949,7 @@ label; it must not be entered automatically on NTS failure.
 
 ## 4. Ordered Android stages
 
-Begin these stages only after V1 release, MATH-C01, TRUST-C01, MT-C01, KHR-C01, any adopted cross-check implementation and
+Begin these stages only after V1 release, MATH-C01, TRUST-C01, MT-C01, CLK-C01, KHR-C01, any adopted cross-check implementation and
 the GEO-C01 experiment disposition have been completed. GeoIP implementation is
 separately scoped if selected; it is not an Android prerequisite. This ordering
 leaves the current Windows plan intact.
@@ -1146,7 +1194,7 @@ dependencies, demand aggregates, hot/warm/cold/frozen classes, optional seasonal
 heatmap, bounded proactive refresh, encrypted statistics, privacy controls,
 resource accounting, comparison experiment and DNS-C01–DNS-C18 acceptance cases.
 Its engineering parameters are proposals pending qualification. This future
-workstream does not reorder the current Windows plan or the post-V1 MATH-0 → TRUST-0 → MT-0 → KHR-0 follow-ups.
+workstream does not reorder the current Windows plan or the post-V1 MATH-0 → TRUST-0 → MT-0 → CLK-0 → KHR-0 follow-ups.
 
 The [source-attributed DNS upstream lessons](docs/plans/dns-upstream-lessons.md)
 record mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and
@@ -1329,7 +1377,7 @@ Current implementation follows the Windows development plan, including WGT-0
 capability at P6/P7 and RGT-C01 through existing P2/P7 before actual V1 release.
 WGT-C02 separately records externally observed catalog availability. Its first
 post-V1 TODO is **MATH-0**, followed by
-**TRUST-0**, **MT-0**, **KHR-0** and **GEO-0**. MATH-C01, TRUST-C01, MT-C01, KHR-C01 and GEO-C01 precede
+**TRUST-0**, **MT-0**, **CLK-0**, **KHR-0** and **GEO-0**. MATH-C01, TRUST-C01, MT-C01, CLK-C01, KHR-C01 and GEO-C01 precede
 Android work.
 The first Android stage is then **AND-0**, starting with device identification and
 read-only capability discovery. Dates for later stages are intentionally not promised before those
@@ -1372,7 +1420,7 @@ Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-WGT-C01/WGT-C02, MATH-C01, TRUST-C01, MT-C01, KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+WGT-C01/WGT-C02, MATH-C01, TRUST-C01, MT-C01, CLK-C01, KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.

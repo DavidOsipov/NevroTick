@@ -1,10 +1,10 @@
 # Post-V1 multithreading and concurrent NTS acquisition
 
-**Document:** NV-MT-001, revision 1.2<br>
+**Document:** NV-MT-001, revision 1.3<br>
 **Owner instruction:** David Osipov, 7 November 2026  
 **Roadmap stage / exit:** MT-0 / MT-C01  
 **Status:** planned; implementation, experiments and qualification have not run  
-**Activation:** after actual V1 release, MATH-C01's experiment evaluation/disposition and TRUST-C01; before Khronos/Ananke under the 14 November scheduling amendment<br>
+**Activation:** after actual V1 release, MATH-C01's experiment evaluation/disposition and TRUST-C01; before CLK-0 and then Khronos/Ananke under the 27 November OD-21 scheduling amendment<br>
 **Planning baseline:** [e5d9a0112e198ab41a50ee0b0057e06eab68ab84](https://github.com/DavidOsipov/NevroTick/commit/e5d9a0112e198ab41a50ee0b0057e06eab68ab84)  
 **Implementation/evidence owner:** existing [engine transport task](../../tasks/engine-transport-pilot.md#post-v1-multithreading--mt-0-7-november-2026), with platform/protocol/performance owners and an independent reviewer
 
@@ -13,9 +13,11 @@
 [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
 preserves mathematics first after V1. The 14 November
 [OD-20](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
-inserts supplementary certificate distrust before multithreading:
+inserts supplementary certificate distrust before multithreading. The 27 November
+[OD-21](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
+adds restricted clock permissions immediately after MT-C01 and before Khronos:
 
-**V1 released → MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 → MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android.**
+**V1 released → MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 → MT-0 / MT-C01 → CLK-0 / CLK-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android.**
 
 [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 evaluates the researched mathematical approaches first; its disposition does not
@@ -53,7 +55,7 @@ finite-budget rules to any relevant resumed proof work.
 | Surface | Disposition |
 | --- | --- |
 | Earlier first-Khronos and first-MT scheduling, then immediate MATH-0 → MT-0 scheduling | Superseded by the 13 and 14 November decisions: MATH-0 evaluation/disposition is first after actual V1 release, then TRUST-0, then MT-0. |
-| MT-0 → Khronos → GeoIP → Android | Relative order retained after MATH-C01 and TRUST-C01. [OD-02’s 27 November amendment](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) places RGT-C01 in V1; CHR-0 retains that prerequisite and remains post-V1. |
+| MT-0 → CLK-0 → Khronos → GeoIP → Android | OD-21 inserts CLK-0 immediately before Khronos; earlier relative order is retained after MATH-C01 and TRUST-C01. [OD-02’s 27 November amendment](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) places RGT-C01 in V1; CHR-0 retains that prerequisite and remains post-V1. |
 | Current-thread engine experiment | Retained as the inspected reference, not permanently selected for the post-V1 product or claimed superior. |
 | Source admission, independence and clock authority | Unchanged. Concurrency cannot lower a source minimum, add votes or grant workers broker privileges. |
 | Worker count, provider and runtime choice | Open. Neither four workers nor multithread Tokio is adopted by this plan. |
@@ -331,8 +333,9 @@ feature graph must pass its existing admission.
 
 ## 8. Exit MT-C01 and onward scheduling
 
-MT-0 follows TRUST-C01, after actual V1 release and MATH-C01's evaluation/disposition; Khronos
-does not begin merely because this plan exists or an experiment was attempted.
+MT-0 follows TRUST-C01, after actual V1 release and MATH-C01's evaluation/disposition.
+CLK-0 follows MT-C01; neither CLK-0 nor Khronos begins merely because this plan
+exists or an experiment was attempted.
 
 Close MT-C01 with one of these evidence-backed dispositions in the existing
 engine task:
@@ -347,9 +350,12 @@ engine task:
 
 An unavailable prerequisite, inconclusive experiment, failed guard or occupied
 native slot is **BLOCKED/INCOMPLETE**, not BASELINE_RETAINED. Record cause and next
-permitted action; do not silently advance to Khronos. A deliberate deferral or
+permitted action; do not silently advance to CLK-0. A deliberate deferral or
 reprioritization requires an explicit owner decision updating the same roadmap
-chain. A qualified MT-C01 disposition admits KHR-0 subject to its own gates.
+chain. A qualified MT-C01 disposition admits [CLK-0](windows-clock-permissions.md)
+subject to its own gates. CLK-C01's assessed implementation/qualification and
+explicit disposition then precede KHR-0 under OD-21; research or blocked work is
+not an implemented pass or silent permission to skip that stage.
 
 For permanent native hangs, finite capacity cannot promise unlimited new
 admission. Qualify bounded degradation and the existing process-recovery contract;
@@ -381,7 +387,7 @@ preferences into production constants.
 ### Documentation review record
 
 The dated review below records revision 1.0 and its original scheduling. The
-14 November amendment in §1 controls the current order; this receipt is unchanged.
+27 November amendment in §1 controls the current order; this receipt is unchanged.
 
 **Review completed, 7 November 2026:** post_v1_plan_review returned **READY to
 record the deferred plan and scheduling amendment**, with no material finding.

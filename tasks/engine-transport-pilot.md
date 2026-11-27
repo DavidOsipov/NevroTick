@@ -16311,8 +16311,8 @@ holds remain; this enhancement creates no V1 blocker and no trust downgrade.
 ## Post-V1 multithreading — MT-0, 7 November 2026
 
 **Status:** deferred until actual V1 release, MATH-C01's experiment
-evaluation/disposition and TRUST-C01; before Khronos under the current
-[OD-20 amendment](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1).
+evaluation/disposition and TRUST-C01; before CLK-0 and then Khronos under the current
+[OD-21 amendment](../docs/nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions).
 [NV-MT-001](../docs/plans/post-v1-multithreading.md) owns the bounded plan,
 MT-W01–MT-W06, acceptance matrix and MT-C01 exit; this existing task retains the
 implementation/evidence record. No new runtime, worker count, provider, benchmark
@@ -16328,7 +16328,11 @@ Current S2.1/S2.2 work, V1 blocking-work isolation, native completion/permit
 custody, policy issue/acceptance checks and control responsiveness retain their
 existing requirements. This enhancement is not a pre-V1 prerequisite and does not
 defer those correctness duties or release current execution holds. Do not restart
-the prototype or silently advance to KHR-0 while MT-C01 is blocked/incomplete.
+the prototype or silently advance to CLK-0 while MT-C01 is blocked/incomplete.
+[NV-CLK-001](../docs/plans/windows-clock-permissions.md) and existing W11-W05/W11-W10
+own the next stage. CLK-C01's assessed implementation/qualification and explicit
+disposition then precede KHR-0; this engine record supplies no clock-permission
+implementation or native qualification.
 
 ### Final series-summary checkpoint repair — 8 November 2026
 

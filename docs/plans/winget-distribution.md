@@ -20,9 +20,12 @@ invocation is inserted into the clock service or used to bypass TUF rejection.
 places WinGet distribution capability **before the first software release**.
 Implement and qualify its preparation, package integration and release operation
 within P6/P7. The [roadmap](../../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1)
-then follows **V1 release → MATH-0 evaluation/disposition → TRUST-0 supplementary certificate distrust → MT-0 multithreading → Khronos/Ananke → GeoIP → Android**
+then follows **V1 release → MATH-0 evaluation/disposition → TRUST-0 supplementary certificate distrust → MT-0 multithreading → CLK-0 restricted clock permissions → Khronos/Ananke → GeoIP → Android**
 under [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
-and the 14 November [OD-20 amendment](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1).
+with the 14 November [OD-20 amendment](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+and the 27 November [OD-21 amendment](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions).
+[CLK-C01](windows-clock-permissions.md) records assessed implementation/qualification
+and explicit disposition before Khronos; planning does not complete that stage.
 WinGet does not become a new Core prerequisite or alter this post-V1 order.
 
 [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete direct-distribution MSIX containing UI, engine, broker and lifecycle helper. Prepare the Community `winget` source route for that artifact; actual publication requires its authorized signing/trust/hosting solution and release approval. `msstore` and Store publication are rejected, and no Store ID is required. This adds neither MSI nor a split product. [S01–S03]
