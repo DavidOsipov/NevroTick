@@ -19,10 +19,23 @@ The original continuation baseline was commit `d6bb2bdcd2145950586407698490b61d9
 | Attempt facts, compatible aggregation and explanation | Engine/core contracts; DATA-10–20, OPEN-DATA-01/04. Freshness, operator dependence and actual correction effects remain explicit. |
 | Advisory Q/H, publication, cleanup and migration | Storage owner; OPEN-DATA-02/03/06 and OPEN-ST-01/02. Existing mandatory stores and protected secrets retain independent authority. |
 | Independent oracle and finite execution | QA/testing owner under [testing CONTRACT](../.agents/skills/testing/CONTRACT.md); §10.3 literal/analytical expectations, paired valid/refusal controls and §10.4 budget. |
-| Conditional conflict/pin/bootstrap policy | Existing [TA-W02/06/08 owners](time-assurance-integration.md) and OPEN-PIN-01; no future safety record is silently adopted. |
+| Conditional conflict/pin/bootstrap policy | Existing [TA-W02/04/06/08 owners](time-assurance-integration.md), DATA-18, OPEN-DATA-05 and OPEN-PIN-01; no future safety record is silently adopted. |
 | Native protected-storage implications | Existing [ST-W01 onward](windows-protected-storage.md). Reuse their frozen contracts where applicable; this task neither duplicates nor completes them. |
 
 UI receives bounded projections; it does not open the database. Quality history cannot authenticate a server, authorize a correction, clear mandatory state or renew full NTS authentication age.
+
+### RFC 10049 evidence handoff — 27 November 2026
+
+The completed RFC audit refines existing DATA-18 ownership; it does not identify a missing evidence owner or select a new store. Use [NV-TA-001 §8.4](../docs/plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026) for the single client contract and acceptance mapping, [DATA-18](../docs/plans/server-catalogue-and-statistics-draft.md#data-18--sparse-evidence-and-unresolved-security-conflicts) for bounded proof custody/export, and [binary §5.1](../docs/plans/server-catalogue-binary-format.md#51-root-keys-and-protocol-profiles) for the already-recorded root/SRV and exact profile facts. RFC-M01/RFC-I02 are one proof/reporting refinement, not two independent defects. These documentary amendments establish no runtime conformance or new result for the historical receipts below.
+
+| Existing owner/cases | Required continuation and independent expected result |
+| --- | --- |
+| TA-W02/04; DATA-18; TA-C06/13/19/21 | Retain response order with each expected long-term `publicKey`, exact framed `request` and `response`, and each later 32-byte linking `rand` (optional only for the first entry). Preserve signed bytes, unknown fields, padding and the full intervening chain between conflicting entries. An independent verifier reconstructs both the authenticated chain and raw causal contradiction; a normalized summary or reserialized packet cannot substitute. |
+| TA-W04/08; DATA-18; TA-C06/13/19/21 | Pair a complete independently generated contradictory chain with healthy consistency, a missing/altered link or header, and proof-capacity exhaustion. Missing, invalid, truncated or unavailable proof is explicit and cannot clear an existing conflict or become a complete export. Ordinary logs/status contain redacted summaries/references; the dedicated evidence path has bounded custody and authorized export. |
+| TA-W02/08; DATA-18; TA-C13/19/21 | Apply the canonical feasible local proof, user-alert, bounded re-measurement and user-controlled-export disposition, with explicit infeasibility reasons. A later successful measurement does not itself clear conflict. Preserve no default upload and no submission for signature failures or other protocol errors, including grease. A product NTS/Roughtime conflict does not itself prove RFC malfeasance or identify the guilty operator. Submission-specific HTTPS POST/media-type/exponential-backoff and finite-budget cases apply only if a sender is later adopted; an imported URL is not approval. |
+| TA-W02; OPEN-DATA-05 | Freeze any required cross-restart minimum, missing-state/durable-write-failure behavior and authorized clearance before that dependent feature. Preserve branch/timeout conflict continuity and keep optional proof loss separate from resolution; this handoff adopts no permanent quarantine or automatic global ban. |
+
+At the existing Roughtime contract entry, reconcile these expectations with TA-W02 and its independent fixtures before dependent implementation. This does not reopen the Q0/Q-J recipe, select external reporting, change a crypto/provider gate, reorder development §7, or lift native/fuzz/storage holds. No tests, protocol probes or native experiments were run for this amendment.
 
 ### Network-path reuse handoff — 5 November 2026
 

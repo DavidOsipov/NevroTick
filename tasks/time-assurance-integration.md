@@ -2,8 +2,8 @@
 
 **Date:** 3 November 2026, Asia/Tbilisi<br>
 **Retained leap-policy integration baseline:** `DavidOsipov/NevroTick@7550f83292f959a6d0acbb2d396e964a6bcf4b01`; 4 November 2026, NV-TA-001 revision 1.2. Earlier amendment and receipt identities are retained below.<br>
-**Current design owner:** [NV-TA-001, revision 1.8](../docs/plans/time-assurance-integration.md), including the 27 November V1 scope, post-V1 clock-permissions and implementation-source amendments below.<br>
-**Mode/status:** V1 Roughtime implementation/qualification work defined; protocol/runtime implementation and qualification have not run. Khronos/Ananke remains post-V1.<br>
+**Current design owner:** [NV-TA-001, revision 1.9](../docs/plans/time-assurance-integration.md), including the 27 November V1 scope, post-V1 clock-permissions, implementation-source and RFC 10049 amendments below.<br>
+**Mode/status:** RFC semantic baseline documented; V1 Roughtime engineering freeze, implementation and qualification remain open. Protocol/runtime implementation and qualification have not run. Khronos/Ananke remains post-V1.<br>
 **Coordinator:** existing numerical/protocol P2/P7 owner, with independent security and Windows reviewers; David owns material policy choices.
 
 **Current V1 scope, 27 November 2026:**
@@ -14,6 +14,17 @@ P2/P7 owners before V1. This supersedes the earlier later-only RGT scheduling;
 CHR-0 still requires RGT-C01 and stays post-V1. No missing laboratory hardware
 becomes a recurring prerequisite for independent protocol work. Actual
 provider/key/interval/Windows-verifier gates remain open.
+
+**RFC 10049 audit integration, 27 November 2026:**
+[NV-TA-001 §8.4](../docs/plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+owns the consolidated client contract and dispositions for RFC-W01–W06 and
+RFC-M01–M04; RFC-I01 is RFC-W01 and RFC-I02 is RFC-M01, not additional findings.
+Section 4.2 below maps independent expected results to existing TA-C owners.
+This completes the documentary semantic baseline, not TA-W02's engineering
+exit: typed constructors, remaining product constants, aggregation/fault policy
+and exact independent fixtures still require their bounded freeze and review.
+Combined revision 1.9 documentary review completed in §6.5. Current product order and every
+dependency, native, resource and release gate retain their scope.
 
 **Post-V1 scheduling amendment, 14 November 2026:** [OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026) preserves [MATH-0/MATH-C01](../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments) first after actual V1 release. [OD-20](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1) and NV-TA-001 revision 1.5 placed [TRUST-0/TRUST-C01](../docs/plans/post-v1-certificate-distrust.md) second, then [MT-0/MT-C01](../docs/plans/post-v1-multithreading.md), before this task's KHR work; the later 27 November amendment below inserts CLK-0 between MT-0 and Khronos. MATH-C01 requires evaluation/disposition, not production adoption. Earlier baseline and review receipts below retain their historical scope.
 
@@ -159,14 +170,14 @@ run. Later unresolved choices do not block this documentation handoff.
 
 | ID / owner | Work and required input | Observable exit / current status |
 | --- | --- | --- |
-| **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | Source/design findings and canonical routing are recorded. **Revision 1.8 independent review completed: ready for documentation handoff only; §6.4 retains the receipt. Historical receipts keep their original scopes** |
-| **TA-W02 — protocol/security owner** | Freeze the V1 Roughtime/NTS contract in §3.1: exact profile, mandatory roots, intervals/units, independent groups, sequential measurement/repetition, evidence fields, generations, refusal and conflict clearance. Distinguish date-specific NTS failures and retain compromised-key controls. Integrate NV-LP-001's dataset/rule/scale-segment, full-date/era and guard fields without a circular bootstrap prerequisite. Freeze reserve-only envelope and expired-NTS-key/common-path threats at the later KHR entry | Reviewed contract and independent expected-result table for each selected slice; exact owners, assurance limits and forbidden effects. **V1 P2 contract pending; reserve-only work post-V1** |
+| **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | Source/design findings, RFC semantic baseline and canonical routing are recorded. **Revision 1.9 independent reviews completed: ready for documentary handoff only, §6.5. The revision 1.8 receipt remains in §6.4; historical receipts keep their original scopes** |
+| **TA-W02 — protocol/security owner** | Use NV-TA-001 §8.4's RFC semantic baseline and §4.2's independent expectations; freeze §3.1's remaining typed construction, packet/work/date/rate limits, aggregation/fault assumptions, exact fixtures, retry-state lifecycle and evidence retention/clearance. Preserve mandatory roots, independent groups, selected sequential schedule, original time frames, generations and refusal. Distinguish date-specific NTS failures and retain compromised-key controls. Integrate NV-LP-001 without a circular bootstrap prerequisite. Freeze reserve-only envelope and expired-NTS-key/common-path threats at the later KHR entry | Reviewed executable contract and independent expected-result table for each selected slice; exact owners, assurance limits and forbidden effects. **RFC semantic mapping complete at documentary scope; V1 P2 engineering freeze pending; reserve-only work post-V1** |
 | **TA-W03 — Roughtime/dependency owner** | Evaluate §2.1's source recommendation; admit the exact wire/crypto implementation and graph under CHECK-26, then implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02. Keep protocol-profile fixtures independent of the implementation | Valid response accepted; missing/wrong root, version/context/unit errors, malformed/replayed input and invalid intervals cannot create authenticated evidence. **V1 P2, not implemented; no graph admitted by this review** |
 | **TA-W04 — core/engine owner** | Implement the actual pure evidence-admission consumer and model V1 Roughtime/NTS branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth. Retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under S1.4. Add reserve-specific behavior after TA-W05 | Applicable TA-C01–TA-C07/10/12/13/16/18/21 controls reach the actual consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **V1 P2 work pending; reserve portions post-V1** |
 | **TA-W05 — KHR numerical/security owner** | After actual V1 release, MATH-C01 disposition, TRUST-C01, MT-C01 and CLK-C01, evaluate cold-start reserve candidates, Ananke-inspired admission, initial roster/refresh and bounded sampling against the unchanged baseline; do not import periodic-watchdog security bounds | KHR-0's recovery/error/false-acceptance/latency/cost evidence plus `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs qualified bounded implementation. **Future KHR phase** |
-| **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume the catalogue owner's required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first | Exact compatibility and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **V1 P2/P7 evidence pending** |
+| **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first. Observe NV-TA-001 §8.4's acquisition backoff and authenticated reset at actual sends/connect attempts under TA-C14/19 | Exact compatibility, transport/retry and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **V1 P2/P7 evidence pending** |
 | **TA-W07 — Windows/NTS owner** | With admitted artifacts and owned disposable environment, exercise the V1 Roughtime date-basis route under OPEN-8/R-02/R-05, exact error categories and fresh isolated verification across hypotheses; exercise the reserve route only after its post-V1 admission | Valid supported-date recovery and explicit failure for bad identity/revocation/era; applicable TA-C11/19/20/22, no unauthorized effect, observed cleanup/restoration. **V1 P2/P7 gate open; existing native admission/holds remain** |
-| **TA-W08 — engine/performance/security owner** | Exercise V1 Roughtime failure, resource, cancellation, conflict and broker boundaries, including healthy cached/strict NTS and the absent reserve. Add forced-reserve cases only for a qualified post-V1 profile | Applicable TA-C08/11/12/14–TA-C22 plus integrated cases; aggregate limits and actual effects observed. **V1 P2/P7 evidence pending; reserve-only work post-V1** |
+| **TA-W08 — engine/performance/security owner** | Exercise V1 Roughtime failure, acquisition backoff/reset, resource, cancellation, conflict and broker boundaries, including DATA-18 proof/export custody, bounded alert/remeasurement, healthy cached/strict NTS and the absent reserve. Add forced-reserve cases only for a qualified post-V1 profile | Applicable TA-C08/11/12/14–TA-C22 plus integrated cases; aggregate limits, preserved conflict and actual effects observed. **V1 P2/P7 evidence pending; reserve-only work post-V1** |
 | **TA-W09 — coordinator/independent reviewer** | Reconcile candidate-specific evidence and remaining policy/operational gaps at each exit | RGT-C01 before V1; separate post-V1 KHR-C01 disposition and CHR-0 dependency. **Both exits open; no combined automatic pass** |
 
 TA-W03/04 do not require a full production service or public network access.
@@ -187,16 +198,20 @@ consumer, independent fixture provenance, healthy/refused exit, finite work and
 verification budget. Later Windows, roster or reserve questions block their
 dependent integration, not every portable contract calculation.
 
-1. **TA-W02 — freeze one executable contract.** Name the exact RFC/wire profile,
-   signature contexts and handling of the specification's documented erratum;
-   require the admitted long-term root key and bind the delegation, request and
-   response. Define wire units/epoch, checked conversion and supported true-date/
-   era bounds; preserve the complete interval, delay/elapsed-time uncertainty and
-   the rule for passing a point to a certificate verifier. Freeze independent
-   operator/dependency groups, selected/responding/admitted sets and the sequential
-   chain procedure, including the required repeated-measurement count and
-   comparison instants derived from RFC 10049 §8.2. Do not substitute one reply
-   per peer, unconstrained parallel queries or an invented product constant.
+1. **TA-W02 — finish one executable contract.** Apply
+   [NV-TA-001 §8.4](../docs/plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+   and the independent expectations in §4.2. The documentary v1 profile uses
+   `S || S || S`: three total traversals of the same randomly selected set of at
+   least three admitted operators in one fixed serial order, with a continuous
+   32-byte nonce chain. This is the conservative literal interpretation of RFC
+   §8.2, not an authoritative erratum. Preserve the selected signature/schema,
+   causal, interval, retry and proof rules rather than reopening them implicitly.
+   Freeze enforcing private types/constructors, remaining packet/work/date/rate
+   limits, capture-error bounds, aggregation/fault model, retry-state lifetime,
+   DATA-18 retention/clearance and exact independently checked fixture bytes.
+   Bind all controls to the actual producer/consumer and retain the documented
+   erratum's fixture limitations. No unsupported clock assumption or convenient
+   midpoint may replace the full interval and certificate-admission contract.
 2. **TA-W03 — bounded codec and verification.** After exact manifest/feature/
    transitive/native/crypto/licence and cooldown admission under CHECK-26,
    implement the inert parser and mandatory-root-key verification adapter.
@@ -215,12 +230,21 @@ dependent integration, not every portable contract calculation.
    explicitly separate from a production cryptographic issuer.
 4. **Subsequent Engine/NTS integration.** Own bounded acquisition under the
    existing current-thread runtime, original stage/total deadlines and one
-   aggregate resource budget. Cancellation requests do not release permits or
+   aggregate resource budget. Apply the selected one-second, factor-1.5,
+   24-hour-cap acquisition retry profile; only a fully validated, current,
+   request- and admitted-root-bound response resets it. This is the stronger
+   product reset predicate. A new round, TCP establishment or invalid traffic
+   cannot reset backoff, and no retry may exceed the remaining finite budget.
+   Cancellation requests do not release permits or
    retained input until actual work completes or its qualified recovery owner
    takes custody. Fresh final guards precede evidence publication and consumption.
    Keep the private date basis with the same NTS connection, full handshake and
    protected receipt; revalidate at candidate time without cross-hypothesis
    resumption. The Windows path remains separately subject to OPEN-8 and TA-W07.
+
+Recording the RFC semantics does not close TA-W02. Its engineering exit still
+requires the reviewed enforcing contract, selected limits and independent
+fixture/expected-result identities before dependent implementation.
 
 The portable exit is a checked useful interval and observable typed refusals at
 the actual adapter/pure consumer, with original provenance and no clock effects.
@@ -305,6 +329,43 @@ contexts to make a historical example pass.
 | TA-C07/13/21 — uncertainty and disagreement | Retain the counterexample with centers `0, 0, 10, 10` seconds and radius `1` second each: an even-count median of `5` with the maximum input radius describes `[4, 6]`, disjoint from every input interval. That construction cannot authorize bootstrap or clear signed conflict. Pair it with independently supported compatible intervals admitted by the reviewed full-interval rule; check a certificate validity boundary inside the interval. |
 | TA-C04/14/22 — deadlines, cancellation and resource custody | Delay decoding/verification or delivery across the original deadline, key/policy replacement, Stop and candidate-date changes. Final acceptance refuses stale results; cancellation retains the permit and inputs until actual completion/recovery. A healthy bounded operation completes and releases custody once. Repeated individually valid requests must remain within the aggregate source/socket/byte/signature/job budget without starving primary acquisition. |
 | TA-C02/11/16/19/22 — NTS handoff | Preserve the private original Roughtime basis through the actual configured connection, accepted full handshake and protected receipt. Test unsupported local clock readings separately from certificate date, name, trust, revocation and transport failures. Healthy cached/strict NTS avoids unnecessary bootstrap; absent reserve remains visible. Current laboratory provenance and a successful callback do not establish production bootstrap or OPEN-8 compliance. |
+
+### 4.2 RFC 10049 acceptance refinements — 27 November 2026
+
+These are independent expected results, **planned, not executed**. The sole
+client-contract owner is
+[NV-TA-001 §8.4](../docs/plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026);
+the rows below refine existing TA-C cases and their CHECK mappings, without
+creating a second specification or campaign. RFC-W01 absorbs RFC-I01; RFC-M01
+absorbs RFC-I02. TA-W02 fixes the independent fixture identities and remaining
+engineering limits before the responsible TA-W03/04/06/08 consumer runs them.
+Codec or signature acceptance alone never supplies date eligibility, correct
+UTC, an ordinary NTS vote or clock-write authority.
+
+| Canonical finding / existing owners and cases | Healthy independent control | Discriminating expected result |
+| --- | --- | --- |
+| **RFC-W01 — acquisition retry/reset**; TA-W02/06/08, TA-C14/19 | Observe actual UDP sends and TCP connection attempts after successive failures: minimum waits are `1`, `1.5`, `2.25`, `3.375` seconds, with the minimum saturating at `86400` seconds, subject to earlier finite-budget exhaustion. A fully validated current request/root-bound response permits the selected reset; independent healthy acquisition still progresses. | Fixed-spacing failures fail the contract. Malformed packets, invalid-signature/profile grease, stale or wrong-root/request replies, TCP establishment, cancellation/re-entry and round/route recreation cannot reset or bypass the peer/root retry record shared across endpoint aliases and UDP/TCP. Exhaustion stops dependent work; it cannot reduce the minimum, replenish budgets or starve primary acquisition. A helper's delay calculation without observed send/connect behavior is incomplete evidence. |
+| **RFC-W02 — bounded framing/maps and extension handling**; TA-W02/03/06, TA-C06/17/19 | Independently encoded smallest one-pair map; nondecreasing equal offsets for allowed empty values; valid empty PATH; well-formed unknown tags, including a correctly signed unknown SREP value and an opaque final value whose length is not a multiple of four. Healthy TCP frames survive split/coalesced delivery. | Reject zero count, truncated/overflowing headers, duplicate or numerically unsorted tags, descending/unaligned/out-of-message offsets and malformed nested extents before allocation/crypto. Wrong magic/length, trailing UDP bytes or combining UDP datagrams cannot create a packet. Unknown tags are ignored semantically; changing signed unknown bytes without resigning fails authentication. No unconditional four-byte total-length rule or TCP trailing-frame rejection may exclude the healthy controls. |
+| **RFC-W03 — generated requests and response schema**; TA-W02/03/06, TA-C06/17/19 | Check emitted v1 bytes independently: `VER=[1]`, 32-byte NONC, request TYPE=0, the §8.4 admitted-root SRV selector and zero ZZZZ; a default-size 1024-byte UDP message has a 1036-byte framed packet. A controlled multi-key peer uses the requested admitted root. A correct response has the required nested VER and selected-version membership in VERS. | Missing/wrong-width required fields, wrong TYPE, empty/33-entry/duplicate/descending request versions or mixed-profile contents cannot yield accepted evidence. An unknown SRV produces no controlled-server response; wrong SRV binding cannot yield evidence attributed to the intended root. Missing/moved response fields, invalid VERS bounds/order/membership and unsupported or unoffered response versions are refused under the selected product profile. A deliberately specified smaller-message exception is distinct from malformed encoding and may receive no server response; it is no universal RFC-invalid-packet rule. |
+| **RFC-W04 — original signature inputs and scope**; TA-W02/03, TA-C06/19 | Independently checked final-v1 plain-Ed25519 signatures over the exact original DELE and SREP values with their respective complete NUL-terminated prefixes both verify under the admitted root and delegated key. | Missing NUL, wrong case, legacy/swapped prefix, wrong root/delegated key, a modified signed value or either invalid signature prevents authenticated evidence. Re-serialization or signing only recognized fields cannot pass original-byte vectors. Unsigned outer fields acquire no SREP-signature authority. Keep Appendix B's reported legacy-context defect separate from the normative positive fixture. |
+| **RFC-W05 — full-request Merkle binding**; TA-W02/03, TA-C06/17/19 | Empty PATH, INDX=0 and ROOT equal to the independently computed full framed-request leaf passes. Correct left/right cases and a 32-sibling proof pass within a sufficiently large controlled request/packet budget. | The same empty proof with INDX=1 fails even when ROOT still matches. Nonzero remainder bits, 33 siblings, non-32-byte sibling extents, wrong child order/root or nonce-only/message-only/re-encoded request hashing fail. Changing the original header, length, versions, extension or padding with the same nonce invalidates the old proof. Cover the depth-32 boundary without a word-width shift. |
+| **RFC-W06 — time encoding and delegation**; TA-W02/03/04, TA-C06/07/09 | At decoding, MIDP=1 means Unix epoch plus one second. `MINT=MIDP=MAXT` passes the inclusive delegation predicate with nonzero RADI; legitimate RADI=1 and RADI=2 controls remain valid even when their intervals extend outside delegation endpoints. A separately supported date/interval passes the pure eligibility consumer. | Wrong epoch/units/width, zero RADI, MIDP outside either endpoint, wrapped/saturated arithmetic or unsupported date conversion cannot create eligible evidence. A wrong host clock cannot decide delegation validity. Strict endpoint or universal RADI≥3 rejection fails the healthy controls. Wire/delegation validity and whole-interval product eligibility must have separate results. |
+| **RFC-M02 — complete sequence and continuous chain**; TA-W02/03/04/06, TA-C01/06/08/17/19 | For an independently fixed random selection `S` of `N≥3` separately operated admitted servers, observe exactly the selected `S \|\| S \|\| S` schedule: `3N` successful serial request/response links, at least nine. A random first 32-byte nonce and distinct subsequent 32-byte linking random values preserve one chain across traversal boundaries. Retransmission retains exact request bytes and first-send time; only its first admitted reply advances the chain. | Two total traversals, a missing/reshuffled traversal, reset chain, wrong/partial previous-response hash input or aliases counted as separate operators cannot complete the measurement. Timeout, invalid response or RNG failure cannot advance a fabricated link or relabel a partial round complete. A restarted round uses a fresh first nonce and full schedule while preserving conflict, backoff and aggregate budgets under §8.4. The three-traversal total is the documented interpretation, not a claimed RFC erratum. |
+| **RFC-M03 — raw all-pairs causality**; TA-W02/04, TA-C06/07/13/21 | The raw signed pair `(MIDP,RADI)=(12,1),(10,1)` passes equality (`11≤11`); the chronologically increasing, disjoint pair `(10,1),(20,1)` also passes the causal predicate. Date-admission/aggregation remains separate. | In receive order `(20,1),(15,10),(10,1)`, adjacent checks pass but pair 1/3 fails (`19>11`). The complete measurement must report authenticated causal contradiction. Checking only neighbors, monotonic centers or interval overlap fails this witness; adding local delay/aging to raw proof bounds cannot hide it. The proof establishes at least one wrong assertion, not which operator lied. |
+| **RFC-M04 — processing, receipt and evaluation intervals**; TA-W02/04, TA-C04/05/07/09/14/22 | With zero drift/capture error and zero RTT, `[999,1001]` advances after 60 seconds to `[1059,1061]`. For §8.4's illustrative sufficient enclosure, `m_s=0`, `m_r=2`, `m_e=62`, raw `[1000,1002]` and zero drift/capture error yield `[1060,1064]`; the two seconds of asymmetric delay remain represented. A selected more conservative model may widen these bounds while containing all admissible true-time cases. | A fixed old center, omitted delay, inward rounding or late verification that renews age fails. Missing qualified rate/capture/scale/continuity assumptions or stale generations cannot yield current eligible evidence. A certificate starting at 1060 cannot cover all of `[1059,1061]`; a valid window covering the complete admitted interval passes this date predicate while every other NTS check remains required. RFC §6's notation hazard is not an independently verified erratum. |
+| **RFC-M01 — reconstructible proof and local/reporting disposition**; TA-W02/04/08 with DATA-18, TA-C06/13/19/21 | An independently generated valid contradictory chain reconstructs from ordered expected long-term root, exact framed request, exact framed response and each later 32-byte `rand`. Authorized export from the dedicated bounded evidence owner preserves the RFC response sequence with base64 fields; the owner surfaces a local alert and schedules only bounded remeasurement. A consistent healthy chain produces no causal-malfeasance report; ordinary logs remain redacted summaries. | Missing `rand`/packet material, changed header/order/root or altered link yields explicit incomplete/invalid proof, without clearing conflict. Invalid signatures, protocol grease, timeout or broader NTS/Roughtime disagreement alone cannot create a malfeasance submission. Preserve no-default-upload; an explicitly selected future reporting route must satisfy §8.4's conditional endpoint/HTTPS POST/media-type and separate reporting-backoff contract. Storage/export failure or resource refusal retains the safety outcome, not a false complete proof or automatic global ban. |
+
+[DATA-18](../docs/plans/server-catalogue-and-statistics-draft.md#data-18--sparse-evidence-and-unresolved-security-conflicts)
+remains the evidence owner with TA-W02/OPEN-DATA-05 for bounded lifetime,
+conditional cross-restart safety state, missing-state behavior and authorized
+clearance. The RFC tuple refines that existing ownership; it creates neither a
+second conflict store nor permanent retention. Local proof generation/export,
+alert and another measurement are the selected feasible behavior; their actual
+consumers and budgets remain unimplemented. The conditional reporting SHOULD is
+deliberately left without automatic external submission under the existing
+no-default-upload policy. A later explicitly selected sender needs its own
+qualified disclosure/endpoint policy and exponential report retry state; it
+cannot use acquisition success or an invalid packet as report authority.
 
 ## 5. Exit and claim discipline
 
@@ -510,3 +571,46 @@ record binds the subsequent receipt-only amendment to its final tree; no earlier
 review is relabeled as a revision 1.8 pass. No product build/test, dependency
 resolution, public-peer probe or native qualification was performed for this
 documentation handoff.
+
+### 6.5 RFC 10049 audit-integration checkpoint — 27 November 2026
+
+**Documentary candidate base:**
+`2583f8b80c106bad410466bafd5cf4416ca60eab`. The completed RFC audit's consolidated
+findings and supplied RFC 10049 text inform NV-TA-001 revision 1.9 and this task's
+existing assignments/acceptance map. Historical receipts in §§6.1–6.4 retain
+their original contents and candidates. No previous review is relabeled as a
+revision 1.9 review.
+
+| Stage | Skill / requirement or trigger | Concrete action and status | Remaining owner / next condition |
+| --- | --- | --- | --- |
+| Scope and decision reconciliation | `plan-code-change`, `plan-architecture`; existing RGT-0/P2 and bounded documentary amendment | Reconciled RFC-W01–W06/M01–M04, deduplicated I01/I02 and integrated ten existing plan/task/architecture/catalogue/handoff files. Reused Engine, DATA-18, NTS and broker owners; retained V1/post-V1 order and holds. Two disjoint editing workers and two fresh read-only reviewers completed their assigned slices | Current development §7 product child is unchanged; dependent engineering remains with the existing TA-W owners |
+| Acceptance design | `qa-test-planning`, testing contract and numerical/protocol truth; independent expected results before implementation | Added §4.2's healthy/refused controls under existing TA-C/CHECK owners; completed documentary RFC semantic mapping only | TA-W02 freezes enforcing constructors, remaining constants/aggregation and independent fixture identities; TA-W03/04/06/08 later execute their consumers |
+| Documentary verification and commit preparation | `plan-independent-review`, `qa-pre-commit`; combined candidate, canonical consistency and historical-evidence custody | Two independent reviews completed with no material correction; scope and raw-result identities below. Combined added-link/anchor and changed-table checks passed; nine TA-W, 22 primary TA-C and ten canonical RFC refinements remain. Historical §§6.1–6.4 are byte-for-byte preserved. Git whitespace/scope and candidate-content checks cover the intended Markdown-only change; all TA-C results remain planned/unexecuted | The publication commit binds the final tree and review receipts; implementation, interoperability, coverage/mutation and native gates remain open under their existing owners |
+
+**Independent reviews: completed, ready for documentary publication.** Both
+reviewers were spawned with conversation inheritance disabled and began their
+raw results with two own-words comprehension paragraphs. The coordinator read
+both complete results, checked their source reasoning against this candidate,
+and retained the reports verbatim, including those paragraphs and file-identity
+tables, in the commit message introducing this checkpoint. No reviewer was given
+the other's result. Neither review found a material correction within its stated
+scope; this is not an implementation-conformance verdict.
+
+| Reviewer / scope | Reviewed identity and retained raw-result SHA-256 |
+| --- | --- |
+| `/root/rfc_contract_review`; RFC packet/crypto, retry, sequence, interval and proof contract plus eight companion files; task acceptance file excluded | Base `2583f8b80c106bad410466bafd5cf4416ca60eab`; plan SHA-256 `c13622db6822af46bbd782faa9172d0c006073570bee858591d370e1fa8848bf`. Raw report `rfc-contract-adjustment-review.md`: `547105512036bfa22f9f28766392622c1094e57b61b6cfeadced8f09e7d08989` |
+| `/root/rfc_integration_adjustment_review`; all ten changed files, actual §4.2 cases, owner decisions, DATA-18, reporting, holds and completion claims | Same base and plan; task SHA-256 `446e69b545e0e19c01606d20d1c22e96c27ea0e5a7b57b404194e311c3dcc027`. Raw report `rfc-integration-adjustment-review.md`: `c16c822684cb412227a6d31cba11a87efbe0fd8949f977d9594fae0939def446` |
+
+After those frozen reviews, only this task's review-status references and §6.5
+receipt were updated. The acceptance rows and all other nine candidate files
+remain unchanged. The final publication tree binds those receipt-only edits;
+the earlier reviewed hashes are not relabeled as final hashes. The coordinator's
+bounded Python standard-library link/anchor and table checks, `git diff --check`
+and staged-tree inspection supply documentary evidence only. An initial TA-C
+count-check locator omitted the table's bold markup; correcting that locator
+required no document change. No top-level `docs/SHA256SUMS.txt` exists.
+
+No product build/test, dependency resolution, formal job, public-peer probe or
+native execution was performed for this amendment. TA-W02's engineering exit,
+RGT-C01, OPEN-8, CHECK-26/27 and the existing source/Windows/resource/roster gates
+remain open at their current scopes.

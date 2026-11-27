@@ -1,8 +1,9 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.8<br>
+**Document:** NV-TA-001, revision 1.9<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
 **Implementation-source review:** 27 November 2026, Asia/Tbilisi; §8.2<br>
+**RFC client-contract reconciliation:** 27 November 2026, Asia/Tbilisi; §§8.3–8.4<br>
 **Scope amended:** 27 November 2026<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
 **Status:** owner-selected V1 Roughtime bootstrap and post-V1 reserve research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
@@ -190,7 +191,8 @@ NTS tracking outside the applicable guard.
 2. For cold date bootstrap, try Roughtime first using the reviewed initial
    key/endpoint catalogue and its multi-operator measurement procedure. Apply
    finite deadlines and available qualified transports, including TCP where
-   advertised; one malformed reply is not a failure of the whole mechanism.
+   advertised, with §8.4.2's exponential retry and authenticated-reset rules;
+   one malformed reply is not a failure of the whole mechanism.
 3. If that branch yields usable evidence, pass its interval to isolated NTS
    verification. If it cannot, classify the reason under section 6. Without a
    separately enabled, policy-admissible plain-helper route, V1 reports blocked
@@ -296,7 +298,9 @@ For example, a 1–3 January interval spans both sides of a certificate's 2 Janu
 start date. Define the complete interval-admission rule, units, supported calendar
 range and conversion bounds before handing a point to a verifier API. Retain
 network-delay and elapsed-time uncertainty; no unqualified symmetric-delay or
-perfect-monotonic-clock assumption.
+perfect-monotonic-clock assumption. Section 8.4.3 separates the raw signed
+causal test from projection to the current evaluation instant and supplies
+independent delay/aging counterexamples.
 
 Apply the same whole-interval rule to leap history and the effective UTC regime.
 An interval straddling 20 May 2027 may proceed when every admitted hypothesis
@@ -342,8 +346,11 @@ A timeout after a recorded contradiction does not resolve it. Declare how a
 conflict is cleared by new comparable evidence or an authorized decision. Keep
 transport failure, invalid unauthenticated traffic and contradictory signed
 evidence distinct; they do not identify the same cause or justify the same server
-removal. Store bounded diagnostic evidence locally; automatic external reporting
-is a separate privacy/product choice.
+removal. Retain the bounded reconstructible transcript under the existing
+[DATA-18 owner](server-catalogue-and-statistics-draft.md#data-18--sparse-evidence-and-unresolved-security-conflicts)
+and §8.4.4; ordinary diagnostics carry redacted summaries, not packet dumps.
+Local proof generation, user alert, bounded remeasurement and export implement
+the selected reporting disposition; automatic external upload is not selected.
 
 ## 7. Catalogues, keys and aggregate resource limits
 
@@ -559,7 +566,9 @@ Merkle and signature checks plus the separate `VERS` membership check. The
 Engine policy must enforce independent operator groups, the complete RFC §8.2
 chained measurement with its repeated server order, causal consistency and
 interval admission; the generic sequence API does not establish those obligations
-merely by returning measurements. TA-W02 freezes the exact count/round contract.
+merely by returning measurements. Section 8.4.2 now fixes the documentary
+three-traversal schedule; TA-W02 still owns its checked representation,
+resource limits and enforcing consumers.
 [S6, S18]
 
 `ed25519-dalek` **3.0.0** is a possible primitive backend, not an
@@ -606,6 +615,250 @@ policy, leap/era policy, one broker clock writer, OPEN-8, CHECK-26/27 and the
 scoped native/CI execution holds. This research neither advances the current
 Core queue nor admits network experiments, resets budgets or enables clock writes.
 
+### 8.3 RFC audit disposition — 27 November 2026
+
+The client-contract audit compared revision 1.8 at
+[`2583f8b80c106bad410466bafd5cf4416ca60eab`](https://github.com/DavidOsipov/NevroTick/tree/2583f8b80c106bad410466bafd5cf4416ca60eab)
+with the supplied RFC 10049 text (SHA-256
+`4932fb066c9681860b81aeacbe1a263729339e553c14056243ec721feae14fc4`).
+Three independent specialists examined wire/cryptography, measurement/math and
+integration; a fresh-context judge reconciled the findings against the sources.
+The result supported the architecture and initiation of TA-W02, not completion
+of that engineering freeze or correctness of a future implementation. [S1]
+
+Revision 1.9 records the RFC semantics and independent expected results below.
+It closes the documentary retry mapping **RFC-W01** (also reported as RFC-I01)
+and refines existing DATA-18 proof/reporting ownership under **RFC-M01** (also
+RFC-I02). RFC-W02–W06 and RFC-M02–M04 elaborate already pending contract work;
+they are not eight observed runtime bugs. The existing catalogue already states
+the SRV hash and v1 time widths, and DATA-18 already owns retained conflict
+evidence. Those owners are refined rather than replaced.
+
+TA-W02 remains open for checked types/private construction, numerical and resource
+constants, source-fault/aggregation policy, complete lifetime/restart rules and
+independent fixture provenance. Each dependent slice must freeze its applicable
+contract before implementation. Crypto graph admission, controlled interoperability,
+admitted server/key availability, OPEN-8 and RGT-C01 remain separate unfinished
+work; unavailable later prerequisites block only dependent actions. The
+[existing task](../../tasks/time-assurance-integration.md) carries the finding
+dispositions, review and check results. No new dependency, runtime, automatic
+report sender, public-peer probe or Windows experiment follows from this revision.
+
+### 8.4 RFC 10049 client contract and acceptance mapping — 27 November 2026
+
+This is the shared documentary baseline for TA-W02/03/04/06/08. RFC definitions
+and uppercase MUST/SHOULD requirements retain their strength; the explicitly
+identified NevroTick choices below are product policy. RFC 10049 is Experimental.
+A conforming signed response, a complete causally consistent measurement and an
+interval admitted for NTS are three different results. The
+[task's acceptance cases](../../tasks/time-assurance-integration.md#4-independent-acceptance-cases)
+must observe the real parser, scheduler and evidence consumers with independent
+healthy and rejected controls; this table records expectations, not executed
+tests. [S1, §§4–8]
+
+#### 8.4.1 Packet, signature and Merkle contract
+
+| Boundary / audit identity | RFC rule and selected profile | Independent accepted/refused result and owner |
+| --- | --- | --- |
+| Map representation — RFC-W02; §§4.1–4.2 | Integers are little-endian. Tags contain 1–4 uppercase ASCII letters followed by zero padding to four bytes and sort by numeric uint32 value. Require `N >= 1`, checked `8*N` header size, `N-1` explicit offsets plus implicit zero, nondecreasing four-byte-aligned offsets within the containing values section, and sorted unique tags at every defined nested map. Equal offsets and zero-length values are allowed. | Accept the smallest well-formed map and an allowed empty value; reject zero/overflowing counts, truncated headers, descending/unaligned/out-of-range offsets and duplicate/unsorted tags before allocation or expensive work. `VER` is `0x00524556`, `NONC` is `0x434e4f4e`; lexical sorting is not the oracle. TA-W02/03; TA-C06/17/19. |
+| Unknown tags — RFC-W02; §7 | Accept and ignore well-formed undefined tags semantically, including in SREP; retain their original bytes inside signed values. The offset-alignment rule is not a general requirement that every final value or message length be divisible by four. Apply finite packet/tag/depth/work caps before slicing, allocating or verifying. | A correctly signed unknown SREP field succeeds; changing its bytes without resigning fails. Malformed framing or missing mandatory fields still fails. Do not reject all extensions, parse an opaque field recursively, or silently discard its signed bytes. TA-W02/03; TA-C06/17/19. |
+| Framing and transport — RFC-W03; §§5, 5.1 | Packet = eight ASCII bytes `ROUGHTIM`, uint32 little-endian **message** length, then that exact message. UDP carries the whole packet in one datagram; TCP uses bounded stream framing across split/coalesced reads. Version 1 uses the same framing on both. Qualified TCP should be attempted after unanswered UDP when advertised and within the aggregate budget. | Wrong magic, truncated/oversized declaration, incomplete datagram or unexplained UDP trailing bytes fails; the next framed TCP packet is not trailing garbage. Bound actual retained bytes and datagram truncation. No TCP pipelining is required for the selected serial measurement. Close an idle completed connection and handle stream format/synchronization/timeouts with bounded cleanup. TA-W02/03/06; TA-C06/14/17/19. |
+| Generated request — RFC-W03; §§5.1–5.1.5 | `VER`: 1–32 compatible ascending, nonrepeated uint32 versions; the selected initial profile offers only `1`. `NONC`: exactly 32 random-looking bytes, generated under §8.4.2. `TYPE`: uint32 zero. NevroTick emits recommended `SRV = first32(SHA-512(0xff \|\| admitted_root_key32))`. `ZZZZ`, when used, contains only zero bytes. Default UDP message size is at least 1024 bytes, yielding at least 1036 framed bytes. | Check emitted bytes against independent vectors, not the production serializer. Reject invalid generated shapes. SRV identifies the expected root and never replaces signature verification. A documented smaller-message path-MTU exception is an RFC SHOULD disposition with possible server refusal, not an automatically malformed packet; none is silently enabled by timeout. 1024 is not a universal receive-buffer maximum. TA-W02/03/06; TA-C06/17/19. |
+| Response schema — RFC-W03; §§5.2–5.2.7 | Root contains `SIG/NONC/TYPE/PATH/SREP/CERT/INDX`. SREP contains `VER/RADI/MIDP/VERS/ROOT`; CERT contains `SIG/DELE`; DELE contains `PUBK/MINT/MAXT`. `TYPE` is uint32 one and NONC equals the actual request nonce. SREP `VER` is one uint32 matching the packet profile. `VERS` is ascending, at most 32 uint32 values, and contains the selected VER. | Each missing/duplicate mandatory tag or wrong width fails. Response VER is in SREP; do not require a second top-level VER. NevroTick additionally requires offered/supported version membership; RFC's offered-version language is SHOULD, not an unconditional client MUST. Request VER has an explicit no-duplicate rule; do not invent identical normative wording for VERS. No unauthenticated error packet can change trust or downgrade policy. TA-W02/03; TA-C06/17/19. |
+| Signatures — RFC-W04; §§5.2.1, 5.2.6, 5.4 | Both 64-byte Ed25519 signatures must verify: configured admitted 32-byte long-term root over DELE, then delegated 32-byte PUBK over SREP. Use plain Ed25519 on the exact prefix-plus-original-value concatenations below, including the terminal NUL. Do not reserialize, omit extensions, substitute Ed25519ctx/ph or use legacy `RoughTime`/`--` prefixes. | Independent final-v1 positive vector; separate bad-root, bad-delegated-key, missing-NUL, wrong-case/context and each-signature negative. Altering an original signed byte fails; outer NONC/TYPE and proof metadata still need their own checks. Appendix B provenance remains subject to §8.2.3. TA-W02/03; TA-C06/19. |
+| Request commitment — RFC-W05; §§5.3–5.3.1 | `H(x) = first32(SHA-512(x))`, not SHA-512/256. Leaf = `H(0x00 \|\| original_complete_framed_request)`; parent = `H(0x01 \|\| left32 \|\| right32)`. Include the header, length, all tags, unknown fields and padding exactly as transmitted. PATH has 0–32 hashes of 32 bytes; ROOT is 32 bytes; INDX is uint32. Consume index bits least-significant first and reject any nonzero unused bits. | Empty PATH with INDX=0 and ROOT=leaf succeeds; the same packet with INDX=1 fails. Exercise both child orientations, malformed/33-hash paths and depth 32 without shifting a uint32 by 32. Changed framing/padding with the same nonce fails. A depth-32 controlled response needs a sufficiently large request to respect server amplification limits. TA-W02/03; TA-C06/17/19. |
+| Time and delegation — RFC-W06; §§4.1.4, 5.2.5–5.2.6, 5.4 | MIDP/MINT/MAXT are uint64 Unix seconds; RADI is nonzero uint32 seconds. Validate `MINT <= MIDP <= MAXT` inclusively, independently of the unreliable host date. The signed processing interval is open `(MIDP-RADI, MIDP+RADI)`; a documented conservative closed enclosure may support checked consumers. Use wider checked arithmetic for endpoints. | `MINT=MIDP=MAXT` with RADI>0 passes that delegation check. RADI=1/2 healthy controls remain possible; ≥3 is a server SHOULD when leap information is absent, not a universal client threshold. Reject zero radius, reversed/violated delegation, wraparound or unsupported conversion. Whole-radius containment inside the delegation period would be a separate stronger product rule, not RFC validity. TA-W02/03/04; TA-C06/07/09. |
+
+```text
+delegation_message = b"Roughtime v1 delegation signature\x00" || raw_DELE_value
+response_message   = b"Roughtime v1 response signature\x00"   || raw_SREP_value
+```
+
+RFC wire range, NevroTick's supported calendar, leap/era interpretation and
+Windows-verifier range remain separate. A wire-valid value can be refused by a
+documented consumer limit without being called an invalid signature. Port 5319
+is registered for UDP/TCP; an explicitly admitted alternate port is not itself
+a wire-version violation. Server-list JSON is optional; the binary catalogue's
+existing root/profile and trust-update owners remain controlling. Server-only
+key-generation, amplification and NTP-serving rules apply to controlled fixtures
+where relevant, not a new production server deliverable. [S1, §§8.3, 9, 11]
+
+#### 8.4.2 Acquisition retries and the complete measurement
+
+**RFC-W01 — retry behavior.** RFC §5 requires exponential backoff for UDP
+requests and TCP connection establishment and prohibits resetting the retry
+interval before a properly signed response. NevroTick selects the recommended
+profile: after `n >= 1` failures, wait at least
+`min(1.5^(n-1), 86400)` seconds before retrying (initial 1 second, cap 24 hours).
+Use checked/saturating delay computation, qualified monotonic deadlines and
+only nonnegative additional jitter; no early retry due to rounding or jitter.
+The per-round deadline may terminate work before the next eligible attempt;
+it never shortens this wait. The exact recommended constants are selected
+product values, while exponential growth and authenticated reset are RFC MUSTs.
+
+The Engine owns a bounded retry record for the admitted logical peer/root
+binding, shared by its endpoint aliases and UDP/TCP attempts. A round, route,
+transport or policy-generation change cannot manufacture a fresh retry budget.
+NevroTick's stronger reset event is a fully validated, request-correlated,
+current-generation response from that admitted root; a TCP connect, some bytes,
+malformed packet, invalid signature, stale response or discarded chain does not
+reset it. Updating interval state after a valid peer response does not clear an
+existing signed conflict. TA-W02 freezes storage/restart and binding-retirement
+details before the network slice; missing state cannot silently become an
+authenticated-success event. TA-W06/08 observe actual sends/connects and job
+completion under TA-C14/19, including waits 1, 1.5, 2.25 and 3.375 seconds,
+invalid-traffic nonreset and progress of independent healthy work.
+
+**RFC-M02 — selected v1 sequence.** Randomly select `N >= 3` admitted operational
+servers from separately operated groups, within the existing active-source and
+aggregate-work limits. Let their chosen order be `S`. Query serially in the
+fixed order **`S || S || S`**, three total traversals and `3*N` accepted responses.
+This is the conservative literal interpretation of RFC §8.2's initial sequence
+followed by two repetitions. The source wording also admits an informal
+two-total-traversal reading; no author-confirmed clarification is claimed.
+The explicit three-traversal profile avoids silently inheriting a library's
+default. A future count change requires a documented interpretation and updated
+independent sequence expectations; it is not a retry-time availability fallback.
+
+The first NONC is a fresh random 32-byte value. Every subsequent query, including
+the first query of a repeated traversal, uses:
+
+```text
+NONC_i = first32(SHA-512(original_framed_response_(i-1) || rand_i))
+```
+
+Every `rand_i` is a different random 32-byte value from the admitted OS randomness
+owner. Retain the original framed response and linking value. RNG failure refuses
+the affected measurement; no counter, timestamp or weak fallback creates a nonce.
+Do not parallelize the chain, reshuffle between traversals, splice completed
+fragments or count aliases, keys, transports or repeat visits as new operators.
+Every accepted response must satisfy §8.4.1, request correlation, current
+generations, the configured maximum RTT and the total measurement budget.
+
+Within one outstanding chain position, a retransmission retains the exact request
+bytes and original first-send time; it neither advances the chain nor refreshes
+age. Only its first admitted reply advances the sequence. Invalid/duplicate/late
+traffic cannot fill another position. An expired position or cancelled/invalidated
+round yields incomplete evidence, not a successful shorter measurement. Any new
+round starts a new first nonce and complete selection/schedule within the same
+aggregate and retry-state limits; preserve prior conflict and evidence. This is
+the selected bounded retry/partial-round policy, not an extra RFC wire field.
+TA-W02/06/08 freeze concrete caps and transition types; TA-C01/06/08/17/19 retain
+complete-order, chain-boundary, RNG-failure, replay and incomplete-round controls.
+
+#### 8.4.3 Causal consistency and current-time intervals
+
+**RFC-M03 — exact proof predicate.** For every earlier/later accepted response
+pair `i < j`, apply RFC §8.2 to the original signed values using checked wider
+endpoint arithmetic:
+
+```text
+MIDP_i - RADI_i <= MIDP_j + RADI_j
+```
+
+All pairs are required; a prefix maximum of earlier lower bounds is an equivalent
+bounded implementation, not a requirement for quadratic allocation. Equality
+passes. Neither adjacent-only comparisons, increasing centers nor common raw
+interval overlap implements this test. Keep these raw bounds separate from
+delay-enlarged/evaluation-time intervals; enlarging a later bound first can hide
+a signed causal contradiction. A failed pair proves at least one signed time is
+wrong when the chain and signatures validate, not which operator was at fault.
+
+Independent controls for TA-W02/04 and TA-C06/07/13/21:
+
+| Ordered `(MIDP,RADI)` input | Expected result |
+| --- | --- |
+| `(20,1), (15,10), (10,1)` | Adjacent comparisons pass, but the first/third pair fails (`19 > 11`); preserve the signed contradiction. |
+| `(11,1), (9,1)` | The specified equality boundary passes (`10 <= 10`); do not substitute a strict comparison. |
+| `(100,1), (110,1)` | Disjoint chronological intervals can pass; overlap is not the causal predicate. |
+
+**RFC-M04 — processing, receipt and evaluation frames.** A signed interval
+describes the server's processing instant. Capture original monotonic send
+`m_s`, receipt `m_r` and evaluation `m_e`, along with capture/conversion error,
+clock/boot/mapping generations, scale segment, RTT and absolute lifetime. A
+signature or unpredictable nonce does not remove asymmetric network delay.
+Unknown suspend/restore continuity or changed generations requires refusal or a
+separately justified transformation; late crypto completion never renews age.
+
+The consumer must have an independently justified conservative enclosure. For
+example, given a truthful signed interval with `L = MIDP-RADI`, `U = MIDP+RADI`,
+`m_e >= m_r >= m_s`, a compatible UTC scale segment, and the explicit rate model
+`1-phi <= dm/dUTC <= 1+phi` with `0 <= phi < 1`, a sufficient enclosure before
+capture error and outward rounding is:
+
+```text
+[ L + (m_e-m_r)/(1+phi), U + (m_e-m_s)/(1-phi) ]
+```
+
+At receipt this retains `[L, U + RTT/(1-phi)]`. Enlarge for qualified timestamp
+and conversion errors, and round lower bounds down and upper bounds up. This is
+a conditional derivation, not an RFC-mandated estimator or a selected production
+drift constant. TA-W02/04 must instantiate an equivalent or more conservative
+model and its supported dates/rates/errors before the dependent consumer. Retain
+the source-fault and aggregation assumptions: several consistent signatures do
+not independently prove UTC, and median-plus-maximum-radius is not a generally
+valid enclosure of the contributing intervals.
+
+RFC §6's aged-interval notation must not freeze the measurement center while
+only widening it. With `t0=1000`, `delta=0`, `sigma=1`, `phi=0` and 60 elapsed
+seconds, the enclosure must advance from `(999,1001)` to `(1059,1061)`. Interpret
+`t` as the advancing evaluation reading or explicitly advance the original center;
+this is a documented interpretation hazard, not a verified erratum. If elapsed
+`d` is measured by the rate-bounded monotonic clock, its UTC duration lies between
+`d/(1+phi)` and `d/(1-phi)`; a `d +/- d*phi` approximation needs its own conservative
+justification. RFC delta is client-minus-reference; NevroTick's positive offset
+means the client is behind, so the signs differ. TA-C04/05/07/09/14/22 exercise
+zero-drift advancement, asymmetric delay, stale frames, outward rounding and a
+certificate boundary inside the full interval at the actual NTS consumer.
+
+#### 8.4.4 Reconstructible conflict evidence and reporting
+
+**RFC-M01.** DATA-18 remains the bounded evidence owner. For an RFC §8.4.1 proof,
+retain responses in their original chain order and these exact fields:
+
+| Report field | Required content |
+| --- | --- |
+| `publicKey` | Expected admitted long-term Ed25519 root for that response. |
+| `request` | Exact transmitted packet, including `ROUGHTIM`, length, all fields and padding. |
+| `response` | Exact received packet, including its complete framing and unknown fields. |
+| `rand` | The 32-byte linking random value for every entry after the first; it may be omitted for the first entry. |
+
+The export format is an object with ordered `responses`; each field is a
+base64-encoded string. A later independent verifier must reconstruct the nonce
+links, request commitments, both signatures, delegation and causal contradiction
+from those bytes. Reencoded maps, retained signatures alone or receive-order logs
+cannot substitute. Preserve the chain needed between conflicting entries, not
+just the endpoints. Missing/altered linking values or packets yields an explicit
+incomplete/invalid-proof result; bounded-storage exhaustion never fabricates a
+complete proof or silently clears conflict. TA-W02/04/08 and DATA-18 freeze
+concrete caps, custody and mandatory-state persistence/clearance under OPEN-DATA-05;
+this does not select indefinite raw-packet retention or a new quarantine store.
+
+RFC §§8.1–8.2 recommend a reporting means and, where technically possible,
+generation of proof, user alert and another measurement. NevroTick's selected
+disposition is bounded local proof generation, a truthful user alert, a bounded
+new measurement under §8.4.2, and user-controlled export from the dedicated
+evidence owner. A later successful measurement does not itself clear retained
+conflict. Ordinary logs contain only approved summaries/identifiers; packet proof
+material uses its separate bounded custody/export path.
+
+RFC §8.4.2's recommendation to send is conditional on an associated reporting
+endpoint and technical feasibility. The existing no-default-upload privacy policy
+is an explicit disposition of that SHOULD, not a claim that the RFC prohibits
+sending. No automatic report sender is selected. If one is later adopted, bind
+the recipient to the admitted list/policy and user authorization, use HTTPS POST
+with `application/roughtime-malfeasance+json`, and require exponential reporting
+backoff with finite work/disclosure budgets (RFC recommended initial 10 seconds,
+factor 1.5, cap 24 hours). A conditional sender gate does not block pure protocol
+or interval implementation.
+
+Invalid signatures and other protocol errors **must never** produce malfeasance
+submissions. Grease, timeout, a product-policy refusal or NTS/Roughtime disagreement
+is not by itself the RFC's signed causal proof. TA-C06/13/19/21 require an
+independently reconstructed contradictory transcript beside a consistent healthy
+chain and missing-`rand`/altered-packet/invalid-signature controls; report generation
+or export cannot designate a particular server as the liar without further evidence.
+
 ## 9. Windows gate and explicit decision alternatives
 
 Microsoft documents that a supplied `CertGetCertificateChain` validation time
@@ -643,8 +896,10 @@ TA-C01–TA-C22, valid/hostile controls, candidate identity and actual results. 
 separates portable policy/protocol models, controlled interoperability, native
 Windows evidence and the two roadmap exits. No planned case is marked passed.
 
-The next step is the Roughtime/NTS source/contract freeze in TA-W02 at the existing
-P2 entry; RGT-C01 is required by P7 before V1. Current product ordering stays with
+The next step is to instantiate §8.4's documented RFC baseline in TA-W02's checked
+Roughtime/NTS types, limits, aggregation and independent fixtures at the existing
+P2 entry, then review that engineering exit before dependent implementation.
+RGT-C01 is required by P7 before V1. Current product ordering stays with
 development-plan §7 and does not retry the blocked physical-reference trial.
 Reserve-only TA work remains post-V1. KHR-C01
 can close with a documented deferral/rejection, then hand off to GEO-0 before
@@ -654,7 +909,7 @@ hidden prerequisite; CHR-0 requires RGT-C01 but remains post-V1.
 
 ## 11. Primary sources
 
-- **S1:** [RFC 10049, Roughtime](https://www.rfc-editor.org/rfc/rfc10049.html), October 2026, Experimental; §§5.4, 6, 8–9.
+- **S1:** [RFC 10049, Roughtime](https://www.rfc-editor.org/rfc/rfc10049.html), October 2026, Experimental; §§4–9, 11. The 27 November client-contract audit used the supplied text fingerprint recorded in §8.3; §8.4 distinguishes normative rules, product choices and unresolved engineering qualification.
 - **S2:** [RFC 8915, Network Time Security](https://www.rfc-editor.org/rfc/rfc8915.html), especially §§8.3, 8.5–8.7. The project's existing NTS contracts remain controlling.
 - **S3:** [RFC 9523, Khronos](https://www.rfc-editor.org/rfc/rfc9523.html), Informational; §§3, 5–6.
 - **S4:** Perry, Rozen-Schiff and Schapira, [A Devil of a Time: How Vulnerable is NTP to Malicious Timeservers?](https://www.ndss-symposium.org/wp-content/uploads/ndss2021_1A-2_24302_paper.pdf), NDSS 2021, §VI-B–F, pp. 11–15.

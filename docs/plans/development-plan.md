@@ -6082,8 +6082,14 @@ refusal at the actual consumer before Engine transport and isolated NTS/native
 integration. Reuse the existing task's cases and source identities, including
 the RFC example erratum; no public-server probe or reference-clock hardware is
 needed for that portable child. Exact graph admission precedes dependent code
-execution. This preparation changes neither section 7's next task nor any
-current implementation, metric, native or release gate.
+execution. The [revision 1.9 RFC client contract](time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+now maps the wire/crypto rules, authenticated retry resets, three-traversal chain,
+all-pairs causal test, conservative current-time interval and reconstructible
+proof/reporting disposition to existing TA-W/TA-C owners. TA-W02 still instantiates
+checked types, concrete caps/rate assumptions, aggregation and independent fixture
+provenance; documentary mapping does not close that engineering exit. This
+preparation changes neither section 7's next task nor any current implementation,
+metric, native or release gate.
 
 ### 8.7 Catalogue preparation and release data
 

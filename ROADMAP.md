@@ -653,8 +653,12 @@ The [27 November source assessment](docs/plans/time-assurance-integration.md#82-
 recommends RFC 10049 with selected Roughenough protocol/validation reuse and
 Engine-owned policy, subject to exact crypto/graph admission. It records why
 `roughtime` 0.2.1 is unsuitable unchanged and why the complete Roughenough client
-is not yet admitted. TA-W02's contract freeze remains the next Roughtime-specific
-step; it does not replace the current development next-task record.
+is not yet admitted. The [RFC client contract](docs/plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+now specifies exact v1 validation, authenticated retry/reset, three chained
+traversals, all-pairs causal consistency, interval propagation and reconstructible
+conflict evidence. TA-W02 still freezes the checked types, resource/rate limits,
+aggregation and independent fixtures before dependent implementation; this
+Roughtime-specific step does not replace the current development next-task record.
 
 **Outcome:** prefer Roughtime servers for an authenticated approximate-time
 interval during cold date bootstrap. If that branch cannot supply usable evidence,
@@ -686,10 +690,13 @@ validation. This is a protocol basis to qualify, not a qualified service list.
   and interoperability evidence. Review the server/key catalogue, independent
   operators, authenticated distribution, rotation/revocation and stale-list
   behavior. RFC 10049 §8 requires at least three operational independently run
-  servers and chained repeated measurements; a one-server demonstration does not
-  qualify this stage.
+  servers and chained repeated measurements; the documented v1 profile uses three
+  complete traversals in one fixed serial order with a continuous nonce chain.
+  A one-server demonstration or incomplete round does not qualify this stage.
 - [ ] Define bounded interval admission, monotonic elapsed-time/delay limits,
-  supported true-date/era range, saved-floor conflicts, retries and resource use.
+  supported true-date/era range, saved-floor conflicts, exponential retries with
+  authenticated reset and resource use. Retain the all-pairs raw signed causal
+  test separately from delay/age projection and DATA-18's reconstructible proof.
   Specify the faulty-server/path assumptions and refusal behavior. Qualify the
   handoff to the actual NTS verifier, including the unresolved Windows
   trust/revocation gate OPEN-8; supplying a better date does not itself close it.

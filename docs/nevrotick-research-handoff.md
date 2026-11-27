@@ -172,6 +172,16 @@ for reported RFC erratum 9238. Catalogue imports, UI text and the laboratory TLS
 time-provider seam are preparation, not an implemented bootstrap route. This
 source handoff closes neither R-02 nor OPEN-8 and does not reorder current work.
 
+The [RFC 10049 reconciliation, revision 1.9 §8.4](plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+supplies the documentary v1 byte/validation contract, authenticated retry resets,
+three-traversal chain and exact all-pairs causal predicate. Its interval controls
+separate signed processing time from receipt/evaluation time; DATA-18 retains
+the original framed transcript and linking randomness needed for independent
+proof reconstruction. RFC requirements, stronger product policy and the two
+documented interpretation hazards remain explicit. TA-W02 still freezes checked
+types, resource/rate limits, aggregation and independent fixtures before the
+dependent implementation. No RFC, native or RGT-C01 qualification is claimed.
+
 ### Required research result
 
 Design a bounded recovery path that can correct a very wrong local date when authenticated evidence is sufficient. Separate the supported **true date** from the initial **Windows date error**. Investigate both forward and backward 100-year errors, without assuming both directions or all runtime circumstances have already been approved for automatic steps.

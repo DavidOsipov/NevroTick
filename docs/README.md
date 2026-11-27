@@ -20,7 +20,7 @@ P2/P7; Khronos/Ananke, CHR-0 and other post-V1 work retain their separate placem
 Physical accuracy, positive production admission and all other unmet gates remain open.
 
 **Roughtime implementation-source review — 27 November 2026:**
-[NV-TA-001 revision 1.8](plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+[NV-TA-001 §8.2](plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
 compares the published `roughtime` 0.2.1 client with pinned Roughenough source and
 RFC 10049. It records the wire/evidence mismatches, the existing AWS-LC admission
 hold, the recommended narrow reuse boundary and reported erratum 9238's fixture
@@ -30,6 +30,17 @@ native integration. [Architecture §8.3](windows-time-architecture.md#83-trust-d
 now distinguishes signed Roughtime date provenance from plain hints. No client,
 crypto graph, provider roster or Windows recovery is qualified; current product
 ordering and execution holds remain.
+
+**Roughtime RFC contract reconciliation — 27 November 2026:**
+[NV-TA-001 revision 1.9 §8.4](plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+now specifies the v1 packet/signature/Merkle rules, authenticated retry resets,
+three total chained traversals, all-pairs causal check, conservative interval
+propagation and reconstructible conflict evidence. The
+[existing TA cases](../tasks/time-assurance-integration.md#4-independent-acceptance-cases)
+map independent healthy and rejected controls; DATA-18 retains evidence custody.
+The RFC semantic baseline is documented; TA-W02's checked types, resource/rate
+limits, aggregation and independent fixtures remain engineering work. No test,
+interoperability, crypto graph or Windows-recovery pass follows from the text.
 
 **Restricted clock permissions plan — 27 November 2026:**
 [OD-21](nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)

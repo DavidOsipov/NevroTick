@@ -1736,8 +1736,17 @@ recommends RFC 10049 with selected Roughenough protocol/validation reuse,
 separately admitted cryptography and Engine-owned acquisition/evidence policy.
 The complete upstream client graph is not admitted, and the inspected
 `roughtime` 0.2.1 client does not satisfy this profile or evidence contract.
-TA-W02/03 own exact profile, source and dependency selection; the research adds
-no crypto provider, runtime, clock writer or native-qualification result.
+The [RFC client contract](plans/time-assurance-integration.md#84-rfc-10049-client-contract-and-acceptance-mapping--27-november-2026)
+now maps the v1 codec, exact signature/Merkle inputs, exponential UDP/TCP-establishment
+backoff and authenticated reset, three chained traversals, all-pairs causal
+consistency and current-time interval propagation. Keep protocol validity,
+measurement success and NTS interval admission distinct. The existing DATA-18
+owner retains a bounded reconstructible transcript; local alert, remeasurement
+and user-controlled export do not select automatic uploads or identify a culprit
+from one signed contradiction. TA-W02/03 still own checked construction, limits,
+aggregation, source and graph admission; the documentary baseline adds no crypto
+provider, runtime, clock writer or native-qualification result. Section 8.2's
+plain-helper retry parameters do not replace the Roughtime-specific retry rule.
 
 Khronos/Ananke-inspired NTP sampling remains a post-V1 conditional reserve when
 Roughtime is unavailable or unusable for NTS. Roughtime-only V1 qualification
