@@ -9,11 +9,22 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**V1 network scope and current routing — 27 November 2026:**
+[OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+includes NTP/NTS and Roughtime bootstrap in V1, with no PPS/GNSS/refclock product
+input or user-owned timing-hardware prerequisite. [Development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+selects the bounded source child separately from the [blocked physical-reference
+trial](../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026).
+Do not repeat equipment questions without a changed input. RGT-C01 now joins V1
+P2/P7; Khronos/Ananke, CHR-0 and other post-V1 work retain their separate placement.
+Physical accuracy, positive production admission and all other unmet gates remain open.
+
 **Workflow clarification — 26 November 2026:**
 [bounded feasibility and qualification](plans/development-plan.md#bounded-feasibility-and-qualification--26-november-2026)
 makes external prerequisites finite tasks and qualifies coherent candidates at
-their declared checkpoints. The existing W11-W01 reference task owns the current
-application; required gates, evidence validity and execution holds remain.
+their declared checkpoints. The W11-W01 reference task owns the blocked physical
+qualification and resume condition; development §7 owns ready source work.
+Required gates, evidence validity and execution holds remain.
 
 **Architectural closure coverage — 26 November 2026:**
 [architecture §22.1](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
@@ -25,7 +36,7 @@ make prerequisites, concrete deliverables and useful/refused recovery observatio
 explicit. [Mandatory-state lifetime](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery)
 retains finite storage/replay/retirement decisions under the original writers.
 Coverage is documentary; production choices and evidence remain open. The current
-reference/mapping child, accepted scope and all existing holds retain precedence.
+§7 source/held-qualification split, accepted scope and existing holds govern execution.
 
 **TUF-authenticated updater — 25 November 2026:** [OD-05 §7.10](nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026)
 adopts the complete direct-MSIX updater. About checks metadata and offers
@@ -607,7 +618,7 @@ authenticated client, native clock synchronization or release readiness.
 | Which task owns each phase, integrated slice and deferred continuation? | [Task index](../tasks/README.md) maps existing implementation and evidence records; the [grouped deferred backlog](../tasks/development-backlog.md) supplies uncovered phase parents and activation criteria. The development plan still controls order and acceptance; task presence proves no readiness or completion. |
 | What must formal proofs actually establish, and what is still unproved? | [OD-10 §14.2](nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026) and the [product-guarantee debt](../tasks/development-backlog.md#product-guarantees-still-open) define scope, missing composition and completion; the [agent workflow](../.agents/skills/testing/references/formal-verification.md) prevents helper/tooling counts from replacing useful guarantees. All formal execution remains post-V1 under §14.1. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
-| How should Roughtime work with NTS and Khronos/Ananke? | [Time-assurance coordination design](plans/time-assurance-integration.md) and [shared future task](../tasks/time-assurance-integration.md): preferred Roughtime cold bootstrap, conditional Khronos/Ananke provisional-date reserve, then full NTS; dated server census, provenance, failure classification, epochs, conflict/resource rules and Windows gates. KHR-C01 and RGT-C01 remain separate future exits, with no new current Core prerequisite. |
+| How should Roughtime work with NTS and Khronos/Ananke? | [Current OD-02 scope](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026), [time-assurance design](plans/time-assurance-integration.md) and [shared task](../tasks/time-assurance-integration.md): RGT-C01 is V1 P2/P7 bootstrap-to-NTS work; KHR-C01 remains a separate post-V1 reserve exit. Preserve dated census/provenance, bounded interval/key policy, failure/epoch/resource rules and Windows gates. Roughtime-only qualification does not require Khronos or a PPS product input. |
 | What data should the default-source catalogue and source-quality history retain, and where might it live? | [Server catalogue and statistics draft](plans/server-catalogue-and-statistics-draft.md): data inventory, authority and provenance, proposed RAM/SQLite/compressed-history allocation, catalogue verification, database protection and optional NTS pinning. [Storage and format tables](plans/server-catalogue-storage-tables.md) provide the companion data/location/encoding/rationale/capacity/security matrices. Exact client representations, budgets, cryptographic providers and runtime implementation remain unselected or unqualified as stated there; the later shipped-catalogue direction and separate publisher input stage are recorded below. |
 | How should a compact release catalogue include hundreds of sources, Roughtime keys and future collection tooling? | [Binary catalogue refinement](plans/server-catalogue-binary-format.md): prefer binary delivery, with constrained CBOR and generated immutable tables as candidates; require Roughtime key/profile material in the first schema; the [offline publisher collector](../tools/server-catalogue/README.md) implements bounded local candidates and semantic diff. The [existing catalogue task §8](../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) owns its exact verification evidence and remaining build/admission work. Catalogue size does not enlarge the active-source set, settle OD-03 or implement RGT-0; Q0/Q-J retains its separate scope. |
 | Which catalogue decisions remain open, including expected DNSSEC protection? | [Catalogue open-question register](server-catalogue-open-questions.md) consolidates OPEN-CAT-01–03 and the proposed per-source DNSSEC continuity rule. It preserves Roughtime-first bootstrap, existing DNS validation owners and the current Core queue; no new preset, encoding, validator or release blocker is selected. |
@@ -941,7 +952,8 @@ admission. They retain one broker, conditional provenance, comparison epochs,
 bounded conflict behavior and OPEN-8. The roadmap's current Windows/Khronos/Android
 order and later RGT-0 → CHR-0 sequence remain. The research selects no production
 providers, library, extra quorum, preliminary clock write or watchdog veto;
-implementation and native evidence remain future work.
+implementation and native evidence remain future work in that dated receipt.
+The [27 November OD-02 scope](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) supersedes its later-only scheduling: RGT-C01 is V1 P2/P7; reserve and replacement remain post-V1.
 
 **Later bootstrap-priority refinement, 3 November 2026:** the owner selected
 Roughtime first for the initial date, then NTS, with Khronos/Ananke only as a

@@ -2,7 +2,14 @@
 
 **Distribution decision — 21 November 2026:** NevroTick will not be published in Microsoft Store. [OD-05 §7.9](docs/nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects direct distribution of one complete MSIX because David rejects the Store publisher indemnity requirements. Signing is deferred for later resolution; package/source preparation continues without a Store-submission prerequisite.
 
-**Updated:** 26 November 2026 (Asia/Tbilisi)
+**Updated:** 27 November 2026 (Asia/Tbilisi)
+
+**V1 protocol scope:** [OD-02's 27 November clarification](docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+selects NTPv4/NTS and [Roughtime cold-date bootstrap](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock).
+RGT-C01 belongs to the existing P2/P7 delivery path before V1. PPS, GNSS and
+refclock product inputs are outside V1; unavailable laboratory hardware is not a
+recurring prerequisite for this protocol work. Implementation and qualification
+remain open.
 
 **Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
 
@@ -22,7 +29,7 @@ post-V1 work below or mark any new native check passed.
 
 **Post-V1 order:** MATH-0 → [TRUST-0, certificate distrust/revocation](#trust-0--post-v1-certificate-distrust-and-revocation) → [MT-0, multithreading](#mt-0--post-v1-multithreading-and-concurrent-acquisition) → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
 
-**Later owner-selected sequence:** [Roughtime bootstrap for a badly wrong clock](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) → [independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations); future public licence undecided
+**Retained replacement dependency:** [CHR-0, independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations), remains post-V1 and requires RGT-C01. Moving Roughtime into V1 does not start CHR-0 immediately; its later placement and future public licence remain undecided.
 
 **Android status:** planned; no Android implementation or handset qualification is established  
 **Original Android research baseline:** [a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab](https://github.com/DavidOsipov/NevroTick/commit/a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab)
@@ -32,7 +39,8 @@ post-V1 work below or mark any new native check passed.
 Finish the current Windows development and acceptance plan, including
 [WGT-0 WinGet capability](#wgt-0--winget-distribution-capability-before-v1) under
 [OD-17](docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1),
-and [LIT-0's applicable qualification](#lit-0--literature-derived-qualification-before-v1),
+[LIT-0's applicable qualification](#lit-0--literature-derived-qualification-before-v1),
+and [RGT-C01](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) through the existing P2/P7 owners,
 then actually release V1. Under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
 the first post-V1 job is [MATH-0](#math-0--post-v1-mathematical-estimation-experiments).
 After its comparison and disposition, continue with
@@ -69,14 +77,15 @@ applying time to its own clock.
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01 and GEO-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
 | System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
-| Roughtime bootstrap | [RGT-0](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock): obtain an authenticated approximate-time interval to bootstrap NTS when the local date is badly wrong; provider, trust-policy and Windows qualification remain future work. |
-| Chrony-independent implementation | [CHR-0](#chr-0--independently-replace-chrony-derived-implementations): owner-selected future replacement stage immediately after Roughtime. Remove reliance on Chrony's licence for the replacement implementation; the future public licence remains open, and David will authorize Microsoft to use the resulting code in Windows within the rights established for it. |
-| Optional SOCKS5 time acquisition | [SOCKS-0](#socks-0--optional-socks5-time-acquisition): deferred beyond the first Windows P0–P7 delivery under [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral). Direct family/interface policy and successful-path reuse stay in the current plan. No new predecessor to KHR-0, Android or RGT-0 → CHR-0 is introduced. |
+| Roughtime bootstrap before V1 | [RGT-0](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock): obtain an authenticated approximate-time interval to bootstrap NTS when the local date is badly wrong; implementation, provider/trust-policy and Windows qualification are open P2/P7 work, with RGT-C01 required before V1. |
+| Chrony-independent implementation | [CHR-0](#chr-0--independently-replace-chrony-derived-implementations): owner-selected post-V1 replacement stage requiring RGT-C01, without immediate pre-V1 activation. Remove reliance on Chrony's licence for the replacement implementation; the future public licence remains open, and David will authorize Microsoft to use the resulting code in Windows within the rights established for it. |
+| Optional SOCKS5 time acquisition | [SOCKS-0](#socks-0--optional-socks5-time-acquisition): deferred beyond the first Windows P0–P7 delivery under [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral). Direct family/interface policy and successful-path reuse stay in the current plan. No new predecessor to KHR-0, Android, V1 RGT-C01 or post-V1 CHR-0 is introduced. |
 
 The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
 [documentation guide](docs/README.md) retain their existing authority. Windows v1
-remains an NTP/NTS client; this roadmap does not add a Windows NTP/NTS listener to v1.
+remains an NTPv4/NTS client with Roughtime cold-date bootstrap; this roadmap does
+not add a Windows NTP/NTS listener to v1.
 Current development follows the [next-task plan](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
 including its portable Core continuation, Windows execution stop and separate
 fuzz no-retry hold. Roadmap research does not lift those restrictions.
@@ -143,9 +152,10 @@ configured checks and candidate records; no separate runtime or evidence chain.
   source-identity/withdrawal and TA cases using the
   [case matrix](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#5-pre-v1-cases-under-existing-owners).
   Execute reached V1 cases before their existing phase/release exit.
-- [ ] For absent future TA/RGT/TPKI consumers, retain precise inputs, independent
-  expectations and the future owner/stage. Case preparation is the pre-V1
-  deliverable; it does not implement or qualify that future runtime.
+- [ ] For absent TA/RGT consumers, retain precise inputs and independent
+  expectations, then exercise the applicable V1 cases when RGT-0 reaches its
+  P2/P7 consumers. Case preparation alone cannot close RGT-C01. Reserve-only
+  Khronos and unselected TPKI cases retain their post-V1/deferred execution owners.
 - [ ] Reconcile selected cases, actual results, existing coverage and longer
   work with independent review before the affected release checkpoint.
 
@@ -161,8 +171,9 @@ configured checks and candidate records; no separate runtime or evidence chain.
 **Exit discipline:** relevant existing task/phase records distinguish prepared,
 executed, blocked and deferred cases. No document, model-only result or another
 candidate's receipt passes an absent mechanism or native/release gate. Preserve
-V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android, RGT-0 → CHR-0, existing
-execution holds and formal deferral. This work grants no new clock authority.
+RGT-C01 before V1, V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android,
+the post-V1 CHR-0 dependency on RGT-C01, existing execution holds and formal
+deferral. This work grants no new clock authority.
 
 ### MATH-0 — post-V1 mathematical estimation experiments
 
@@ -356,7 +367,7 @@ updates and names the independent positive/negative controls for both.
 
 No production dependency, polling interval, evidence-age limit, broad root-store
 replacement, weaker trust policy or pre-V1 feed implementation is authorized by
-this documentation. Existing holds and the separate RGT-0 → CHR-0 sequence remain.
+this documentation. Existing holds and post-V1 CHR-0's dependency on V1 RGT-C01 remain.
 
 ### MT-0 — post-V1 multithreading and concurrent acquisition
 
@@ -410,16 +421,18 @@ source roster or recovery envelope is qualified.
 **Owners:** numerical/protocol implementer, with independent security/test review.
 
 **Coordination and evidence:** the [Roughtime/NTS/Khronos/Ananke design](docs/plans/time-assurance-integration.md)
-and [shared future task](tasks/time-assurance-integration.md) own the proposed
+and [shared task](tasks/time-assurance-integration.md) own the proposed
 interaction, dependency accounting, common comparison frame and combined cases.
-Ananke informs pool admission; it is not another protocol vote. Roughtime is a
-separate later bootstrap/coarse-evidence path, not a new KHR-C01 prerequisite.
+Ananke informs pool admission; it is not another protocol vote. V1 Roughtime
+bootstrap has its own RGT-C01 exit; it does not qualify KHR-C01 or require
+reserve adoption.
 
 Evaluate a bounded initial-date reserve, adapting Khronos's sampling/filtering
 idea from
 [Informational RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html) and
 [Ananke's cautious pool-formation proposal](https://www.ndss-symposium.org/wp-content/uploads/ndss2021_1A-2_24302_paper.pdf).
-The future preferred route is Roughtime → NTS. Invoke this reserve only when the
+The V1 preferred route is Roughtime → NTS. After post-V1 qualification, invoke
+this reserve only when the
 preferred branch cannot supply usable date evidence, then complete full NTS
 recovery before any broker clock change. Healthy NTS does not periodically run
 Khronos under this selected profile; continuous watchdog use remains a deferred
@@ -494,7 +507,8 @@ No GeoIP database, dependency, provider or production selection rule is adopted.
 
 **Order:** V1 released → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
 `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition closes this experiment; GeoIP
-deployment is not an Android prerequisite. RGT-0 → CHR-0 remains separate.
+deployment is not an Android prerequisite. Post-V1 CHR-0's dependency on V1
+RGT-C01 remains separate.
 
 **Owners and evidence:** catalogue/release owner, engine acquisition owner and
 independent QA/security reviewer, in the
@@ -534,9 +548,10 @@ Geographic distance is a hypothesis about acquisition cost, not a timing guarant
 - [ ] Cover cold/warm start, IPv4/IPv6, asymmetric delay and loss, NAT/VPN/proxy
   context changes, DNS/delegation churn, anycast, LAN/private/custom sources and
   missing/stale/incorrect geographic data. Use controlled traces/fixtures first;
-  actual NTP/NTS execution requires its existing admission. Roughtime and deferred
-  SOCKS5 scenarios use fixtures until their own runtime stages permit them; neither
-  future implementation is required for GEO-C01. Keep the existing active-source,
+  actual NTP/NTS/Roughtime execution requires admission for the selected V1
+  baseline. Deferred SOCKS5 scenarios use fixtures until their own runtime stage
+  permits them; GEO-C01 does not require SOCKS5 implementation or further
+  Roughtime features. Keep the existing active-source,
   resource, service-permission and provider-rate limits across all experiment arms.
 - [ ] Predeclare benefit and non-regression thresholds, matched inputs, independent
   expected outcomes and finite runs before execution. Compare distributions of time
@@ -566,13 +581,17 @@ experiments.
 
 ### RGT-0 — Roughtime bootstrap for a badly wrong clock
 
-**Status:** planned future stage; the owner clarified the initial-recovery purpose
-on 3 November 2026. No Roughtime implementation, provider selection or Windows
-qualification is established. This stage is distinct from KHR-0.
+**Status:** required V1 bootstrap capability under
+[OD-02's 27 November clarification](docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026),
+superseding the later-only scheduling of the 3 November initial-recovery direction.
+No Roughtime implementation, provider selection or Windows qualification is
+established. This stage is distinct from KHR-0.
 
-**Order:** RGT-0 → CHR-0. This later sequence preserves the current
-V1 released → MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
-and DNS work remains open; it creates no new active Windows prerequisite.
+**Order:** implement and qualify RGT-0 within existing P2/P7 owners, closing
+RGT-C01 before actual V1 release. The post-V1
+MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android order remains. CHR-0 still requires
+RGT-C01 but remains post-V1; the earlier immediate-successor wording does not
+advance Chrony replacement into V1.
 
 **Owners:** protocol implementer, NTS/trust-policy owner, independent security
 reviewer and Windows qualification owner.
@@ -584,9 +603,13 @@ own the bounded work and evidence. RGT-C01 remains separate from KHR-C01.
 
 **Outcome:** prefer Roughtime servers for an authenticated approximate-time
 interval during cold date bootstrap. If that branch cannot supply usable evidence,
-the selected future profile uses a bounded Khronos/Ananke-inspired provisional
-date reserve. Feed the applicable candidate into isolated TLS verification and
-date/era interpretation, then complete authenticated NTS acquisition before any
+the strict/Roughtime-only profile reports blocked recovery or continues independently
+usable cached/strict NTS. A separately enabled, policy-admissible plain-helper route
+retains [architecture §8.1’s existing gates](docs/windows-time-architecture.md#81-recovery-order);
+Roughtime failure does not enable helpers or clear signed conflict.
+The Khronos/Ananke-inspired provisional-date reserve remains post-V1 and is
+not required for RGT-C01. Feed an admitted candidate into isolated TLS verification
+and date/era interpretation, then complete authenticated NTS acquisition before any
 broker-authorized system-clock correction. Preserve the interval's uncertainty
 and trust provenance; a signed server assertion is not proof of accurate UTC.
 
@@ -594,9 +617,11 @@ This extends the recovery goal already recorded in
 [OD-02](docs/nevrotick-owner-decisions.md#4-od-02--distinguish-authenticated-recovery-from-ordinary-correction),
 [architecture §8](docs/windows-time-architecture.md#8-recovery-when-the-system-date-breaks-tls)
 and [R-02](docs/nevrotick-research-handoff.md#4-r-02--century-scale-authenticated-recovery).
-Those contracts currently describe cached NTS, strict NTS-KE and optional plain
-NTP hints; they did not select Roughtime. DEC-7 identifies an independent trusted
-time anchor as a reason to revisit the helper design.
+The earlier cached-NTS, strict-NTS-KE and optional plain-hint contracts remain
+the baseline until the V1 extension in
+[architecture §8.5](docs/windows-time-architecture.md#85-v1-roughtime-bootstrap-and-post-v1-reserve)
+is qualified. DEC-7's independent-anchor route does not waive its NTS, trust or
+broker gates.
 [RFC 10049](https://www.rfc-editor.org/rfc/rfc10049.html), published as
 Experimental in October 2026, explicitly supports NTS certificate-time bootstrap
 in §6. Its long-term server keys supply trust roots independently of X.509 time
@@ -616,12 +641,13 @@ validation. This is a protocol basis to qualify, not a qualified service list.
 - [ ] Keep valid cached/strict NTS acquisition ahead of unnecessary bootstrap.
   Roughtime must not directly set Windows time, vote as an NTS source, disable
   certificate checks or authorize ordinary plain-NTP discipline. The qualified
-  reserve supplies only a labelled provisional TLS date; distinguish no/insufficient
-  Roughtime evidence, signed conflict, date-specific NTS incompatibility and other
+  post-V1 reserve supplies only a labelled provisional TLS date; distinguish
+  absent or insufficient Roughtime evidence, signed conflict, date-specific NTS
+  incompatibility and other
   NTS failures. Preserve protected
   NTS observations, candidate-time revalidation, source agreement and the broker's
-  current correction authority. Until this scoped automatic-reserve extension is
-  qualified, the existing strict-default/explicit-enable recovery policy remains.
+  current correction authority. V1 adds no automatic plain-NTP reserve or silent
+  downgrade; the existing strict-default/explicit-enable policy retains its scope.
 - [ ] Retain deterministic cases for local-date errors in both directions around
   100 years, supported/unsupported true dates and era boundaries. Challenge
   malformed responses, bad signatures, request mismatch/replay, contradictory
@@ -644,14 +670,17 @@ actual provider interoperability and Windows verifier/recovery evidence. Show
 both successful bounded bootstrap into NTS and observable blocked outcomes without
 unauthorized clock changes or weakened TLS checks. Record the qualified envelope
 and remaining limitations; a research note or successful handshake alone does not
-complete the stage. CHR-0 follows this completion.
+complete the stage. RGT-C01 is required before V1 and remains a prerequisite of
+post-V1 CHR-0; it does not activate Chrony replacement immediately.
 
 ### CHR-0 — independently replace Chrony-derived implementations
 
-**Status:** owner-selected future implementation and provenance/rights review,
+**Status:** owner-selected post-V1 implementation and provenance/rights review,
 recorded 3 November 2026; no replacement or relicensing has been completed.
 
-**Depends on:** RGT-C01, immediately after the Roughtime stage.
+**Depends on:** RGT-C01 and actual V1 release. The 27 November V1 scope
+supersedes the earlier immediate-after-Roughtime timing; placement among later
+work remains open without changing the selected post-V1 priorities.
 
 **Owners:** numerical/protocol implementer, independent correctness/security
 reviewer and provenance/licensing reviewer; David owns the eventual licence and
@@ -727,7 +756,8 @@ verifier, UI and independent security/QA review at their dependent boundaries.
 Reuse the current engine task; do not start a parallel proxy project or database.
 Schedule the stage when a real supported use case and maintenance capacity justify
 it, after Windows delivery. Its place among other future work remains undecided;
-the V1 released → MATH → TRUST → MT → KHR → GEO → Android and RGT → CHR ordering remains intact.
+the V1 released → MATH → TRUST → MT → KHR → GEO → Android order and post-V1
+CHR-0's dependency on V1 RGT-C01 remain intact.
 
 **First future profile:** the canonical
 [limited SOCKS5 profile](docs/windows-time-architecture.md#limited-socks5-profile--deferred)
@@ -775,7 +805,7 @@ source-only proposals; any material owner decision remains separate. No new
 dependency, production API, device-wide security policy
 or release gate is adopted. No new predecessor or rank is assigned within
 MATH-0 → TRUST-0 → MT-0 → KHR-0 → GEO-0 → Android; retain that order and the
-separate RGT-0 → CHR-0 relationship. Reuse the existing task owners, not a new
+post-V1 CHR-0 dependency on V1 RGT-C01. Reuse the existing task owners, not a new
 implementation workstream. See [dated assessment and V1 refinements](docs/plans/windows11-integration-follow-up.md#windows-security-compilation--24-november-2026).
 
 | Candidate | Later bounded decision / discriminating exit |
@@ -1296,8 +1326,9 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 ## 7. Decision points and evidence discipline
 
 Current implementation follows the Windows development plan, including WGT-0
-capability at P6/P7 before actual V1 release. WGT-C02 separately records externally
-observed catalog availability. Its first post-V1 TODO is **MATH-0**, followed by
+capability at P6/P7 and RGT-C01 through existing P2/P7 before actual V1 release.
+WGT-C02 separately records externally observed catalog availability. Its first
+post-V1 TODO is **MATH-0**, followed by
 **TRUST-0**, **MT-0**, **KHR-0** and **GEO-0**. MATH-C01, TRUST-C01, MT-C01, KHR-C01 and GEO-C01 precede
 Android work.
 The first Android stage is then **AND-0**, starting with device identification and
@@ -1327,9 +1358,9 @@ Resolve these choices when the dependent stage is ready, using the existing
   adaptive-cache parameters, statistics privacy/identity and measured adoption.
 - Any later Android-wide DNS integration and its separately qualified scope.
 - Roughtime's protocol/provider/key policy, admitted uncertainty and recovery
-  envelope, Windows verifier qualification and scheduling against other later
-  work; CHR-0 remains its immediate successor.
-- Preferred/reserve admission, cold-start sampling, dependency/epoch accounting and any later correction-inhibition
+  envelope, and Windows verifier qualification before RGT-C01/V1. CHR-0 remains
+  post-V1 with RGT-C01 as a prerequisite; its later scheduling remains open.
+- Post-V1 reserve admission, cold-start sampling, dependency/epoch accounting and any later correction-inhibition
   policy under [NV-TA-001](docs/plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives);
   no generic majority vote across mechanisms or automatic new clock authority.
 - The post-CHR-0 public distribution licence and concrete Microsoft permission,

@@ -8,7 +8,7 @@ Prepared: six minimum logical record families, separate catalogue/Q/H comparison
 
 The original continuation baseline was commit `d6bb2bdcd2145950586407698490b61d9e12ced9`, actual tree `3635c70a72cd32ca0a7f66cc545719c1aae46ece`. Its 28 locally used documentation files were matched to Git blobs; this was not a full source checkout or target-code audit. That checkpoint preserved draft §§1–9; the later binary refinement updates current catalogue passages while preserving the historical raw reports and their candidate scope. The completed continuation review is retained below and does not review the later refinement.
 
-[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains the current bounded Core checkpoint and priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. Section 8's bounded Python host-fixture route supplies no target/native qualification. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0; requiring Roughtime schema fields now does not alter RGT-0 → CHR-0.
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains the current bounded Core checkpoint and priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. Section 8's bounded Python host-fixture route supplies no target/native qualification. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0. [OD-02’s 27 November clarification](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) places RGT-C01 in V1 P2/P7; CHR-0 remains post-V1. Schema preparation does not qualify either runtime.
 
 ## 2. Ownership and authority
 
@@ -76,8 +76,9 @@ Record missing/stale/incorrect data, anycast, DNS changes, IPv4/IPv6 and NAT/VPN
 proxy-context cases; no new database or default client-IP/location history is
 introduced. GeoLite2-City and optional public-egress geolocation remain candidates;
 review licence/update duties and distribution cost before selecting either.
-Deferred Roughtime/SOCKS5 behavior uses fixtures until its own runtime admission;
-their implementation is not a GEO-C01 prerequisite. Existing proof obligations
+Use the admitted V1 Roughtime baseline for actual Roughtime behavior. Deferred
+SOCKS5 scenarios use fixtures until their own runtime admission; GEO-C01 does
+not require SOCKS5 implementation or further Roughtime features. Existing proof obligations
 and execution holds apply at their stated scopes.
 
 **Disposition evidence:** retain the actual candidate, recipe, results and
@@ -487,7 +488,10 @@ release catalogue for hundreds of NTP/pool, NTS and Roughtime records. Binary
 shipment is preferred over JSON; constrained CBOR and generated immutable tables
 remain candidates. Roughtime public-key algorithm/bytes, exact profile,
 source/endpoint scope and provenance are required in the first schema. Runtime
-Roughtime implementation, provider admission and RGT-C01 remain future work.
+Roughtime implementation, provider admission and RGT-C01 remain uncompleted
+V1 P2/P7 work under OD-02’s 27 November scope; schema fields alone cannot pass
+that gate. Earlier dated review receipts below retain their original candidate
+and scheduling context.
 
 The future collector is planned at `tools/server-catalogue/build_catalogue.py`,
 reusing the existing lowercase `tools/` directory. It is publisher-side R work:

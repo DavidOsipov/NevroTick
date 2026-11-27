@@ -258,7 +258,7 @@ qualification. P0 investigations and D1–D3 re-entry gates remain unchanged.
 
 ### 1.2 Scope and non-goals
 
-Version 1 is a Windows NTPv4 client with NTS, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and the current Server counterpart, Windows Server 2025 x64 with Desktop Experience, using `x86_64-pc-windows-msvc`. Pro and Standard are first engineering fixtures, not all-edition support promises. The [two-family evidence matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) keeps exact build/UBR/servicing, CPU/protection, package applicability and native results open at their existing gates. Add ARM64 only after its own runtime, mitigation and package gates pass. An API/MSIX minimum or shared numeric build threshold does not select these two product families or establish support.
+Version 1 is a Windows NTPv4 client with NTS and Roughtime cold-date bootstrap, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and the current Server counterpart, Windows Server 2025 x64 with Desktop Experience, using `x86_64-pc-windows-msvc`. Pro and Standard are first engineering fixtures, not all-edition support promises. The [two-family evidence matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) keeps exact build/UBR/servicing, CPU/protection, package applicability and native results open at their existing gates. Add ARM64 only after its own runtime, mitigation and package gates pass. An API/MSIX minimum or shared numeric build threshold does not select these two product families or establish support.
 
 The initial product is not an NTP server, PTP client, GPS/PPS/refclock host, domain-controller time service, kernel driver, chronyc-compatible remote management endpoint or general clock laboratory. It does not need symmetric peers, broadcast/multicast operation, interleaved mode, hardware timestamping, RTC temperature compensation or a plugin/script system. Time zones and daylight-saving settings remain Windows settings; the service disciplines UTC.
 
@@ -1620,17 +1620,17 @@ Do not add mixed authenticated/unauthenticated voting in version 1. It complicat
 
 ### 8.1 Recovery order
 
-The requested one or two NTP backup servers are supported as **bootstrap-only time hints**. This is an explicit administrator-enabled recovery policy, disabled in the strict default profile. They are not fallback members of the normal NTS source set.
+The V1 target adds Roughtime as the preferred cold-date bootstrap after usable cached/strict NTS, under [OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) and [§8.5](#85-v1-roughtime-bootstrap-and-post-v1-reserve). RGT-C01 must qualify this extension before V1; the sequence below is required behavior, not an implemented or native-qualified result. The separately requested one or two plain-NTP backup servers remain **bootstrap-only time hints** under explicit administrator-enabled policy, disabled in the strict default profile. Neither bootstrap route is a normal NTS source-set member. Roughtime failure does not enable plain helpers, clear signed conflict or activate the post-V1 Khronos/Ananke reserve.
 
 1. Load protected state and assess whether there is a usable authenticated time model or floor. Derive the saved floor conservatively from an accepted estimate minus a precisely defined uncertainty quantity, not from an arbitrary OS timestamp or an estimate's center. Record the model/version, source evidence, provenance and delay/fault assumptions. Regression standard error, a confidence interval and root distance are not interchangeable hard bounds. The floor is a lower-bound hint under the declared assumptions across an unknown powered-off interval, not proof of current UTC or infallible accepted evidence.
 2. Try cached NTS cookies and keys with fresh request UIDs only when section 7.4's lifetime/current-trust policy permits. Packet authentication can work without a new certificate-time check. A server may reject old cookies; that causes bounded re-establishment, not plain tracking.
 3. Try normal NTS-KE with ordinary validation. Successful strict or cached NTS acquisition takes precedence over the hint branch.
-4. Only if an unreliable date and certificate-time validity are the blocker, and bootstrap policy is enabled, collect bounded samples from the configured one or two plain servers.
-5. Build a provisional time interval. Check its configured absolute date range, NTP-era interpretation, persisted authenticated floor, delay limits and agreement rule. Never compare solely against a narrow range around an OS clock already assumed to be years wrong.
+4. Only if an unreliable date and certificate-time validity are the blocker, try the admitted V1 Roughtime bootstrap. Require the selected wire/profile, trusted root-key binding, request freshness, compatible independent support and bounded interval under NV-TA-001. Missing or unusable evidence produces an explicit unavailable result; signed contradictions retain their conflict state. Separately enabled plain helpers may supply a provisional interval only under their existing policy, with no silent fallback or conflict clearance. If neither policy admits a route, remain in holdover/Blocked.
+5. Validate the provisional time interval and its provenance. Check its configured absolute date range, NTP-era interpretation, persisted authenticated floor, delay limits and agreement rule. Preserve Roughtime uncertainty and dependency assumptions; signatures alone do not establish UTC accuracy. Never compare solely against a narrow range around an OS clock already assumed to be years wrong.
 6. Use that provisional time only in a separate TLS verifier/time provider. Keep hostname, trust-anchor, signature, algorithm and configured revocation checks. The Windows clock is unchanged.
 7. Obtain protected NTS observations and enforce the configured authenticated-source agreement. Require the resulting candidate time to be consistent with the certificate validity used, the stored floor and policy bounds.
 8. Perform a fresh, isolated validation/handshake using the resulting authenticated candidate time. Do not share relaxed resumption state with ordinary sessions. Only after the complete gate may the engine propose a correction to the broker.
-9. Preserve the bootstrap provenance. A later fresh handshake does not retroactively prove that the original unauthenticated time hint was trustworthy.
+9. Preserve the bootstrap provenance and unresolved conflicts. A later fresh handshake does not retroactively prove that an unauthenticated hint was trustworthy or that a signed Roughtime assertion was accurate.
 
 RFC 8915 discusses certificate-time bootstrapping, saved-time floors, delay threats and downgrade avoidance. This design narrows that recovery into an explicit state transition. One or two unauthenticated sources cannot establish cryptographic time authenticity. In particular, an attacker with an expired compromised certificate key and influence over the hinted date remains a threat. [S20]
 
@@ -1648,7 +1648,11 @@ flowchart TD
     K -->|"Valid TLS"| P
     K -->|"Failure"| D{"Certificate-date circularity only?"}
     D -->|"No"| H["Holdover or blocked; report cause"]
-    D -->|"Yes"| O{"Bootstrap explicitly enabled?"}
+    D -->|"Yes"| G["Try admitted V1 Roughtime bootstrap"]
+    G --> J{"Usable signed interval?"}
+    J -->|"Yes"| T
+    J -->|"Signed conflict"| H
+    J -->|"Unavailable"| O{"Plain helpers explicitly enabled and policy admits route?"}
     O -->|"No"| H
     O -->|"Yes"| N["Collect one or two configured plain NTP hints"]
     N --> V{"Bounded date interval and helper policy pass?"}
@@ -1669,7 +1673,7 @@ flowchart TD
     B -->|"Rejected"| H
 ```
 
-The operating-system clock is unchanged throughout candidate-time TLS work. Plain hints never enter the ordinary source population or authorize a clock write. Two-helper mode requires both helpers and does not silently become one-helper mode. Agreement and a subsequent fresh handshake improve consistency; they cannot erase the residual expired-compromised-key attack or manufacture trusted UTC from unauthenticated hints. The detailed admission rules in sections 8.1-8.4 remain authoritative.
+The operating-system clock is unchanged throughout candidate-time TLS work. Roughtime and plain hints never enter the ordinary NTS voting population or authorize a clock write; the admitted signed interval must satisfy the same candidate-date, floor and final verifier gates. The diagram describes the required V1 extension; no reserve implementation or recovery qualification is implied. Two-helper mode requires both helpers and does not silently become one-helper mode. Agreement and a subsequent fresh handshake improve consistency; they cannot erase the residual expired-compromised-key attack or manufacture trusted UTC from unauthenticated hints. The detailed admission rules in sections 8.1-8.4 remain authoritative.
 
 An intact protected floor can nevertheless be ahead of true UTC after previously
 accepted bad evidence. Before enabling persisted-floor recovery, define a narrowly
@@ -1708,18 +1712,25 @@ or event interpretation is unresolved; discipline admission must not become a
 circular prerequisite for the bootstrap that resolves it. Section 10.5 defines
 the event-free interpretation required before a resulting clock proposal.
 
-### 8.5 Future Roughtime and watchdog coordination
+### 8.5 V1 Roughtime bootstrap and post-V1 reserve
 
-The owner-selected future RGT-0 direction and requested Khronos/Ananke
-coordination are recorded in [OD-02](nevrotick-owner-decisions.md#4-od-02--distinguish-authenticated-recovery-from-ordinary-correction),
+[OD-02's 27 November scope clarification](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+moves RGT-0/RGT-C01 into V1 P2 recovery and P7 integrated acceptance.
 [NV-TA-001](plans/time-assurance-integration.md) and the
-[shared task](../tasks/time-assurance-integration.md). The later 3 November owner
-refinement selects Roughtime as the preferred cold-bootstrap date basis and
-Khronos/Ananke-inspired NTP sampling as a conditional reserve when that basis is
-unavailable or unusable for NTS. The reserve supplies a bounded provisional TLS
-date through sections 8.1–8.4, followed by full NTS verification, protected fresh
-observations, configured agreement and revalidation before the broker. Healthy
-retained NTS needs no extra Roughtime dependency or periodic Khronos run.
+[shared task](../tasks/time-assurance-integration.md) retain the implementation
+and qualification work. Roughtime supplies the preferred authenticated
+approximate-date interval for cold bootstrap, followed by full NTS verification,
+protected fresh observations, configured agreement and revalidation before the
+broker. Healthy retained/strict NTS needs no additional bootstrap query.
+Provider/key, interval, dependency and OPEN-8 qualification remain open; this
+requirement is not a claim of implemented or admitted production support.
+
+Khronos/Ananke-inspired NTP sampling remains a post-V1 conditional reserve when
+Roughtime is unavailable or unusable for NTS. Roughtime-only V1 qualification
+does not depend on that reserve. Preserve an honest blocked cold-bootstrap
+outcome or usable retained/strict NTS under the existing policy when no usable
+bootstrap evidence exists. The future reserve supplies a bounded provisional
+TLS date through sections 8.1–8.4 and the same complete NTS/broker checks.
 
 The selected future reserve is automatic within its qualified envelope. This is
 a scoped future supersession of the opt-in helper default in section 8.1/DEC-7,
@@ -1740,7 +1751,7 @@ fresh applicable certificate evidence, not stale resumption assurance.
 Keep evidence ancestry, authentication, source independence, uncertainty and
 comparison epochs distinct. A Roughtime-conditioned NTS association or a second
 calculation over dependent observations creates no extra independent vote.
-Future status must distinguish signed Roughtime from unauthenticated reserve
+Status must distinguish signed Roughtime from any later unauthenticated reserve
 ancestry without erasing bootstrap history after successful NTS. Auxiliary mechanisms have no separate
 clock writer, ordinary NTS vote or implicit veto authority. The existing engine
 policy and broker retain their respective admission and effect responsibilities.
@@ -1806,6 +1817,15 @@ coordinates need compatible scale, while the remote clock retains its own
 calibration. [W11-W01](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
 has a settled finite supplier/receiver contract and partial implementation
 preparation; actual mapping issuance, physical profile and native evidence remain open.
+
+**V1 hardware boundary:** the [current owner scope](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+excludes local PPS/GNSS/refclock product inputs. An independent lab instrument
+qualifies a physical operating envelope; it is separate from the runtime mapping
+supplier and is not a user-owned hardware prerequisite. The [reference disposition](../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026)
+retains its blocked evidence and changed-input resume condition. Continue admitted
+supplier/receiver source work while keeping physical accuracy and dependent
+positive Core-admission claims open; do not substitute synthetic truth or known
+relative ordering for calibration.
 
 **Optional packet-timestamp adapter:** evaluate software support and activation
 first; where available, compare Winsock software RX/TX timestamps with the
@@ -5430,7 +5450,7 @@ remaining product decisions or evidence gates.
 | Durable state and admitted updater integration — concrete profiles open | §§7.3/12.1.4/19.8: actual schemas/writers/locks/commit/acknowledgement, finite retention and recovery, mandatory retry/restriction continuity, permitted old/new transitions, separate security-floor advancement/decommission and exact maintained client/publisher/provider graph. | S3.3, [Engine retry continuity](../tasks/engine-transport-pilot.md#production-retry-continuity-closure--26-november-2026), [release state transitions](release-policy.md#transition-and-retirement-evidence--26-november-2026) and [updater closure deliverables](windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026); before each production writer/reuse path and live Apply. ST-W03 supports object durability; optional-cache pause grants no mandatory-state reset. |
 | Supported product profile and allocations — direction selected, concrete rows open | §§15.4/17/19.8.5 and OPEN-2/11/13/14: exact OS/CPU/protection/activation/caller/registration/update-owner rows; finite aggregate bytes/work/concurrency/lease/stop limits and useful saturation behavior. Hard caps and measured performance objectives remain distinct. | [Two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026), W11-W04/W05/W08/W10 and existing build/UI/WinGet owners; freeze at dependent P0/P3/P5/P6 integration, qualify each claimed delivered profile. |
 | Sustainable publisher operations — operational profile and rehearsal open | §19.8/OPEN-11, [publisher readiness record](windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026) and [release rehearsals](release-policy.md#publisher-rehearsal-evidence--26-november-2026): actual interoperability/custody, renewal/expiry, offline/absence/root retention, backup/loss/compromise, publication/readback and useful corrective delivery. | David/release/security and W11-W10, P6/P7 before the first live updater release. Signing remains deferred at the current stage; a written runbook grants no operational observation or delegation. |
-| Existing temporal integration — contract settled; implementation/qualification open | §§7.2/10.1: actual independent reference and qualified mapping/withdrawal issuer, date/era/scale and error evidence, original receipt/age custody, final consume-once Core history and later current actual-effect feedback. | [Current Engine-to-Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026), S2.1/S2.2/W11-W01/Core. This remains the next development dependency under [development §7](plans/development-plan.md#resume-in-dependency-order--23-november-2026). |
+| Existing temporal integration — contract settled; implementation/qualification open | §§7.2/10.1: actual independent reference and qualified mapping/withdrawal issuer, date/era/scale and error evidence, original receipt/age custody, final consume-once Core history and later current actual-effect feedback. | [Current Engine-to-Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026), S2.1/S2.2/W11-W01/Core. Physical qualification is blocked under the recorded reference disposition; [development §7](plans/development-plan.md#resume-in-dependency-order--23-november-2026) selects the next source child without reopening equipment questions. Positive production history retains its qualified-input gates. |
 
 At the dependent gate, the owning card records the current rule and unresolved
 choice; the actual producer, writer and consumer/effect; prerequisite evidence;

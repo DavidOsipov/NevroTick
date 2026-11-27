@@ -31,6 +31,13 @@ My goal is a simpler app with **NTS** (Network Time Security).
 GPS synchronization, external reference-clock hardware and amateur-radio
 integrations are outside the planned timekeeping scope.
 
+**V1 time sources:** NTP/NTS and Roughtime for cold-date bootstrap into NTS,
+under the [27 November scope clarification](docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026).
+No PPS/GNSS device is required to install, run or develop the client. Independent
+laboratory references remain possible accuracy-test methods; the current blocked
+trial does not establish a hardware feature or a recurring equipment inquiry.
+Roughtime implementation and qualification remain open.
+
 ## What is being built
 
 - **Windows focus:** authenticated network time, chrony-derived estimation,
@@ -112,9 +119,12 @@ variants on historical candidate `964a9573` have scoped accounting;
 37 Windows-only gaps and native/generation gates remain. Recurring native
 operation is not enabled by the probe.
 
-Current Core/Engine work qualifies the independent physical reference, read-side
-mapping and validity issuer selected by
+Current Core/Engine source work follows the bounded supplier/receiver child in
 [development §7](docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026).
+Independent physical-reference qualification remains blocked under its
+[recorded disposition](tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026);
+unchanged equipment questions do not restart it. Source preparation and independent
+service, UI and package work continue under their own prerequisites.
 The [rebuilt authenticated timing pair](tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
 completed its exact offline Windows laboratory scope and retained original
 application captures, with measurement unavailable and zero sample eligibility.

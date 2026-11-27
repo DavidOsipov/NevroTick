@@ -1,5 +1,15 @@
 # Windows 11 integration: agent task and evidence record
 
+**Current V1 routing — 27 November 2026:** [OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+defines network-protocol scope: NTP, NTS and Roughtime, with no V1 GPS/PPS/refclock
+or special timing-hardware requirement. Physical-reference qualification is
+**HELD/BLOCKED** because no admitted reference/evidence route is identified.
+This records scope, not an equipment inventory or a claim that no equipment exists.
+Ordinary resumption must not restart device questions, procurement or a general
+hardware survey. Follow the [bounded receiving source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+and the [re-entry/reconciliation record](#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
+positive production mapping/Core admission and all existing holds remain open.
+
 **Architectural closure routing — 26 November 2026:** [§4.42](#442-architectural-closure-execution-inventory--26-november-2026)
 connects the assessed gaps to existing Windows and dependent time/updater owners,
 concrete deliverables, prerequisites and useful/refused/unknown completion evidence.
@@ -31,7 +41,7 @@ all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 
-**Initial record date:** 5 November 2026, Asia/Tbilisi; **current-routing reconciliation:** 26 November 2026. Earlier dated receipts retain their recorded time zones.<br>
+**Initial record date:** 5 November 2026, Asia/Tbilisi; **current-routing reconciliation:** 27 November 2026. Earlier dated receipts retain their recorded time zones.<br>
 **Status:** Research, portable and native-adapter source, and scoped Windows laboratory results are recorded with their exact candidates. Direct MSIX supersedes the earlier MSI-first and Store-attempt directions. The [rebuilt Engine timing pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) supplies application captures with no production sample eligibility. The [paired installed ScmFixture observation](#complete-the-paired-installed-scmfixture-observation) completes deployment-only observation of two Disabled/Stopped lab roles and restoration; access actors, continuous quiescence, product provisioning and final release qualification remain open. The [guarded ArtworkLab pack](#pack-the-guarded-artworklab-from-the-committed-stager) has its own unsigned assembly/readback scope. Independent timing reference/mapping, production services/IPC/clock control, complete signed direct delivery, updater implementation and native product qualification remain open. [Development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026) owns current activation; all earlier receipts retain their original scope.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
@@ -92,7 +102,7 @@ or [ST-T owners](../docs/plans/windows-protected-storage.md#7-focused-threat-sce
 | Clock domains, sleep invalidation, restricted identities, maintenance inhibition, DNS ownership and fixed resource limits | Retained; native mechanisms below make existing contracts and observations more concrete. |
 | Packet timestamps, native DNS adapters, WSH, resource hints and CNG batches | Candidates to assess within their existing slice. Optional enhancement failure must have a truthful declared outcome; selecting none of these does not waive an existing required property. |
 | Modern Standby, service-setting activation, Restart Manager and powerful process handles | Added composition cases for existing timing, service, mitigation and package owners; source documentation establishes no effective state. |
-| Current development and user interface | Development §7's reference/mapping continuation and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
+| Current development and user interface | Development §7 routes the original-receipt receiving source child separately from HELD/BLOCKED physical-reference qualification. P0–P7 and UI-M0's fixture-only scope remain; D1, D2 and D3 stay Deferred until their existing re-entry gates. |
 | DNS and storage policy | DoQ-only upstream with leaf/intermediate pins remains; no implicit DoH/DoT/DNSCrypt/plaintext fallback or ZTDNS enablement. Optional VBS/TPM/no-cache state remains separate from mandatory clock authority. |
 | Release operations | The release policy prepares support records, containment and corrective recovery; its first-stable support baseline remains proposed. Existing W11-W10/W11-W05 and CHECK/OPEN owners retain actual decisions, rehearsals and native evidence. |
 
@@ -125,14 +135,22 @@ and admitted profiles remain the execution authority.
 ## 2. Next source-only assignment
 
 Use the [current Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026)
-for S2.1/W11-W01. The application capture now has scoped implementation and
+and its [consume-once receiving child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+for S2.1/W11-W01. Implement the bounded handoff through the existing joined
+receipt and report owners, preserving absent/withdrawn mapping outcomes and
+using controlled useful/refused/duplicate/reissue cases at that actual boundary.
+This advances receipt custody and final admission preparation without selecting
+an affirmative mapping supplier or an unadmitted Engine-to-Core dependency.
+The application capture now has scoped implementation and
 relative Windows timing evidence on the exact laboratory artifacts. The
 [rebuilt authenticated pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
 completed its build, same-session loader/parser and two-exchange guest checks,
 including trust and resource retirement. The
 [finite supplier/receiver contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026)
-was settled on 8 November. Its production supplier starts with the
-[read-only reference admission](#w11-w01-application-timing-reference-trial--20-november-2026),
+was settled on 8 November; do not restart its design. Physical-reference
+qualification is HELD/BLOCKED under the [current disposition](#v1-reference-routing-and-documentation-reconciliation--27-november-2026).
+The eventual production-positive join still requires
+[reference admission](#w11-w01-application-timing-reference-trial--20-november-2026),
 actual mapping/invalidation issuer and justified physical bounds. Retained
 application brackets do not supply that independent calibration or positive
 sample authority. Apply the
@@ -154,10 +172,11 @@ and control-buffer admission, and actual completion ownership if a direct
 overlapped adapter is proposed. Record the documented signature/layout conflicts
 as unresolved selected-SDK/binding questions; an MCP result is not an ABI test.
 
-**Source-preparation exit:** a reviewer can trace the selected supplier's
-timestamp identities, uncertainty, invalidation and unavailable outcomes to
-the existing CHECK owners. Record any missing physical reference or authority
-input before dependent implementation. Hardware timing stays conditional.
+**Source-child exit:** the actual joined receiving path preserves the original
+receipt and consumes its admission handoff once, with controlled useful/refused/
+reissue evidence and the source child's applicable checks. Missing production
+reference, mapping, uncertainty and authority inputs remain unavailable; this
+does not close positive history admission. Hardware timing stays conditional.
 The remaining work items enter when their corresponding product slice is ready.
 
 ## 3. Bounded work assignments
@@ -180,15 +199,17 @@ with optional packet-adapter qualification at its own trigger.
 **Current source disposition:** [§4.26](#426-s21-timestamp-provenance-preparation--5-november-2026)
 records the finite supplier/receiver contract and its capture continuation.
 Production mapping capability, the actual invalidation issuer, physical error
-bounds and the claimed native scope remain open. The matrix below refines this
-existing assignment.
+bounds and the claimed native scope remain open. The [27 November routing](#v1-reference-routing-and-documentation-reconciliation--27-november-2026)
+holds physical qualification and selects the bounded receiving source child;
+the matrix below refines the existing acceptance without reopening that hold.
 
 **Work:** distinguish application, software-QPC and NIC timestamps. Bind metadata
 to the exchange, socket generation, actual interface and current conversion
 model; qualify RX packet attribution and TX interface selection. Bound TX IDs,
 retention/retrieval and missing/saturated metadata. Supported NIC capabilities,
 currently enabled mode and an adequate conversion are separate conditions.
-Start with software timing; hardware timing requires its own evidenced benefit.
+For an optional packet adapter, evaluate software timing first; hardware timing
+requires its own evidenced benefit and separate adoption.
 Late TX metadata is a local measurement and cannot rewrite sent/authenticated
 wire bytes. Device configuration belongs to the lifecycle owner.
 
@@ -4752,37 +4773,38 @@ physical dataset, calibration/transfer record, admitted wired acquisition route,
 or responsible bench operator/equipment custodian is identified in the current
 record. The existing acquisition/Windows-platform owner owns resolving these
 inputs; a person's identity or equipment commitment must be obtained, not
-inferred. The next useful observation is a concrete access/evidence answer with
+inferred. Relevant re-entry evidence would identify a concrete access/evidence route with
 the method's identity, calibration validity, applicable Windows/interface/path
 conditions and ability to pair both original events. Another unchanged loopback
 run cannot supply those missing facts.
 
 The independently calibrated wired timestamping method remains the trial
-candidate. Evaluate the following concrete routes within the same feasibility
-pass; none is currently admitted:
+candidate. The following routes retain their feasibility assessment; none is
+currently admitted and this list does not schedule a new survey:
 
 | Route or available evidence | Disposition against the required guarantee |
 | --- | --- |
 | Access to a borrowed/shared calibrated wired bench or an external laboratory using the candidate method | Could provide independent UTC and event pairing if its actual instrument, calibration, operator, path and uncertainty envelope meet the existing trial. Availability, access terms and those records remain unknown. Identify a specific route before further preparation; any paid commitment uses the existing material decision procedure. |
-| A calibrated GNSS PPS reference with independently admitted date/time of day and bounded transfer to both packet events | Conditional alternative already anticipated above. PPS alone supplies neither the full date nor application-to-wire pairing and placement bounds. Actual equipment, calibration and a complete pairing method must be evidenced before treating this route as viable. |
+| A calibrated GNSS PPS reference with independently admitted date/time of day and bounded transfer to both packet events | Conditional laboratory alternative only; no V1 runtime, David-owned-device or procurement requirement. PPS alone supplies neither the full date nor application-to-wire pairing and placement bounds. Actual equipment, calibration and a complete pairing method must be evidenced before treating this route as viable. |
 | Existing independent physical capture/reference records for the same admitted path and operating conditions | Reuse only if their identity, calibration, original exchange/chart pairing, full-span validity and held-out independence satisfy this trial. No such record is identified here; the retained synthetic-reference replays do not qualify. |
 | Reported ordinary pool synchronization, the shared-QPC loopback pair and synthetic comparison controls | Available only within their stated evidence scopes. They supply no admitted independent UTC reference or finite physical placement/residual envelope, so they cannot close this prerequisite. Preserve their useful arithmetic, custody and refusal evidence. |
 
-**Bounded next action and stop:** acquisition/Windows platform makes one pass
-over the existing records to identify one concrete reference/evidence route,
-obtains its available identity/calibration/access facts, and assesses the
-alternatives above against the same guarantee. If no route can be identified,
-record that availability blocker and stop. Bound the pass to those inputs;
-do not expand it into a general equipment survey or repeated native/comparator
-campaign. Stop with **viable for a scoped trial** only when the actual owner,
-method/access and operating envelope support the next planned observation;
-qualification still requires execution and its independent controls. Otherwise
-record the exact missing fact as **blocked**, or prepare the existing
+**Current stop and re-entry — 27 November 2026:** physical-reference qualification
+is **HELD/BLOCKED**. The 26 November assessment allowed one bounded access/evidence
+pass; it did not establish that every inquiry was exhausted or that equipment
+does not exist. David's [V1 scope clarification](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+does not authorize recurring device inventory, procurement or general hardware
+research. Keep this hold on ordinary resumption and handoff. Re-enter only when
+concrete reference/access/calibration/route evidence changes or an explicit
+owner decision changes the approach. Acquisition/Windows platform then assesses
+only that changed input against the same guarantee, stopping at the first
+missing prerequisite; do not repeat unchanged native/comparator campaigns.
+Record **viable for a scoped trial** only when actual ownership, method/access
+and operating envelope support the planned observation. Qualification still
+requires execution and independent controls. Otherwise retain **blocked**, or prepare the existing
 [NV-DEC-001 decision card](../docs/nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete)
 if a concrete material choice is necessary. Inability to obtain evidence is no
-pass. Re-enter only when reference/access/calibration/route evidence changes or
-a recorded decision supplies a changed approach; a handoff alone does not reset
-the pass. Record its disposition here, without a separate report.
+pass. Record any changed disposition here, without a separate report.
 
 The qualification reference validates a declared physical operating envelope;
 it does not select an always-connected runtime instrument for every installation.
@@ -4794,6 +4816,35 @@ authorized supplier/receiver source preparation and independent service, package
 and UI work continue under [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026).
 The existing sequence, numerical/security gates, native/fuzz/storage holds and
 UI deferrals remain. This disposition grants no native execution or hold lift.
+
+##### V1 reference routing and documentation reconciliation — 27 November 2026
+
+**Authority and predecessor:** David's current clarification, recorded in
+[OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026),
+and his request to repair the documentation govern this amendment. The
+26 November disposition and the settled 8 November supplier contract remain
+the acceptance basis. The clarification changes live scheduling and Roughtime's
+V1 placement; it establishes no equipment availability, calibration or test result.
+
+**Current route:** the physical trial is HELD/BLOCKED with the changed-input
+re-entry rule above. The next executable source child is
+[consume-once admission handoff for original joined protected receipts](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+It uses the actual Engine join and report path; controlled source evidence does
+not supply a production mapping issuer or permit positive Core history.
+Independent service, package and UI source work continues at its own gates.
+RGT-C01 moves to P2/P7 through the existing time-assurance task; reserve/replacement
+and other post-V1 work retain their distinct exits.
+
+| Stage / applied guidance | Evidence and disposition |
+| --- | --- |
+| Routing reconciliation — `plan-code-change`, `plan-architecture`, their review/handoff and testable-slice references; existing CHECK-6/7/8/11/14/25/27 | Inspected documentation at `45e2fcaafe25faae02c41d5ddc4a46ebdcf48a92`, the actual Engine receipt/measurement path and the separate fixture-only Core append. Updated current summaries, §7 scheduling and dependent handoffs; retained dated receipts and unchanged numerical/security/native acceptance. |
+| Documentation verification — testing contract, documentation-only scope | **Executed:** `git diff --check` passed; 142 added local Markdown links resolve; all 20 changed paths are Markdown; `AGENTS.md` is 32,671 bytes, below 32,768. No top-level `docs/SHA256SUMS.txt` exists, so no manifest integrity pass is claimed. No source implementation, product tests, build, dependency import or native execution is claimed by this amendment. |
+| Independent review — `plan-independent-review`, `qa-independent-review` | Fresh-context comprehension preceded review of the combined 19-file candidate based on `45e2fcaafe25faae02c41d5ddc4a46ebdcf48a92` (diff SHA-256 `889785d9c1afe3485762a8f1f7fbb684578395b5f147cbc1b4f5691d1944d91a`). **DOC-SCOPE-01, Medium:** unavailable-Roughtime outcomes omitted the retained explicitly enabled helper route. Corrected the plan, roadmap and TA-C08/16/17/18 expectations with the valid helper neighbor, preserving conflict and NTS/broker gates. Also corrected the current MT-plan scope cell; historical receipts remain unchanged. **Targeted verification PASS:** the reviewer verified the corrections, four added links and all 20 file identities on diff SHA-256 `0d934091d0fce0999e1cc1d3b0ed6a9fb65cd0914a033dc00b0c2ab4436d30f7`, reusing unaffected conclusions. This final receipt update records that completed result; the pass covers documentation/task handoff only, with no runtime pass. |
+
+The protected receiver's retained `mapping-unavailable eligible=0 fresh_sync=0`
+result remains honest. Physical accuracy, qualified reissue/withdrawal, positive
+production history, native effects, metrics and release exits remain open at
+their existing owners. No zero-error bound, qualification pass or hold lift follows.
 
 ##### Verify the local-wall comparison arithmetic — 24 November 2026
 
@@ -25203,7 +25254,7 @@ all-stage approval rounds or a reason to postpone independent preparation.
 
 | Existing owner / trigger | Remaining deliverable, independent controls and joined exit |
 | --- | --- |
-| **Production source/freshness profile and temporal integration:** OPEN-5/6, OD-03, Core/Engine, W11-W01 and S0.7/S2.1/S2.2/P4. | Follow the [current development dependency](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent), [timestamp handoff](#426-s21-timestamp-provenance-preparation--5-november-2026) and canonical §22.1. Production source grouping/population, fresh votes versus prediction and age/uncertainty/fault assumptions need their owner's explicit profile. The finite supplier/receiver contract is settled; actual qualified issuer/reference, observation custody, final consume-once history and current broker feedback still need their own implementation/evidence. Useful independent fresh sources must work beside duplicate identities, missing/stale votes, bad mappings and old generations. No timestamp/identity observation alone admits a production sample. CHECK-6/7/8/11/14/21/25/27. |
+| **Production source/freshness profile and temporal integration:** OPEN-5/6, OD-03, Core/Engine, W11-W01 and S0.7/S2.1/S2.2/P4. | Follow the [current development dependency](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent), [timestamp handoff](#426-s21-timestamp-provenance-preparation--5-november-2026) and canonical §22.1. The [27 November routing](#v1-reference-routing-and-documentation-reconciliation--27-november-2026) selects the original-receipt source child while physical qualification is HELD/BLOCKED; no recurring equipment inquiry follows. Production source grouping/population, fresh votes versus prediction and age/uncertainty/fault assumptions need their owner's explicit profile. The finite supplier/receiver contract is settled; actual qualified issuer/reference, observation custody, final consume-once history and current broker feedback still need their own implementation/evidence. Useful independent fresh sources must work beside duplicate identities, missing/stale votes, bad mappings and old generations. No timestamp/identity observation alone admits a production sample. CHECK-6/7/8/11/14/21/25/27. |
 | **Correction, boot epochs and conditional retained-rate exposure:** OPEN-5/7, S0.4/S0.7, broker/Core and W11-W05/P4. | Use [§4.31](#431-clock-correction-limits-preparation--5-november-2026) for the measured field/provenance matrix and owner-approved defaults/ceilings/units, step/rate/cumulative authority and recovery policy. Qualify cold boot, restart, Fast Startup, sleep/hibernate and VM restore without invented fresh budgets. Pair legitimate correction and owned settlement with unknown epochs, lost acknowledgements, old-generation late completion and successor ownership. Actual mode/rate/trajectory and durable physical settlement remain distinct from current Core publication. Finite retained-rate error requires qualified rate and exposure assumptions; a configured restart delay or observed maximum cannot supply an unconditional deadline. CHECK-5/10/11/12/13/15/27. |
 | **Three time authorities and exact updater client:** OPEN-6/8/11, R-02/R-05, time/security, release and narrow maintenance owner; [§4.40](#440-tuf-authenticated-updater-integration--25-november-2026) and [update assessment §12.3](../docs/windows-time-update-assessment.md#123-bounded-continuation-and-acceptance-ownership). | Qualify NTS bootstrap/date/era/floor supersession, independent updater freshness and actual Windows PKI/deployment behavior separately. A supplied-time client fixture does not establish production UTC provenance, and an Engine or local-clock assertion cannot independently authorize update freshness. Exact client/provider/algorithm/graph, clock/storage seams and durable progress need admission and valid/forged/expired/future-clock/backward-repair/rotation/concurrent-user controls. Preserve the [wrong-clock/offline matrix](../docs/windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix). Trust/time/storage and surviving Windows recovery must both pass before live Apply; neither substitutes for the other. CHECK-9/12/13/15/18/20/23/25/26/27. |
 | **Sustainable publisher operations:** OPEN-11, David/release/security, P6/P7; [signing §10](../docs/windows-time-signing-guide.md#10-updater-signing-and-key-operations) and [release §7.5](../docs/release-policy.md#75-tuf-publisher-operations--25-november-2026). | Resolve actual key/provider/hosting custody, required Windows and TUF signing, renewal/expiry, backup/rotation, absence/offline support and compromise/corrective delivery through those owners' bounded cards. Pair useful final-byte publication and supported offline return with stale metadata, unavailable keys/provider, signer transition and compromised authority. Require actual rehearsal outcomes and compatible corrective installation, not a provider name or written runbook. Optional enhanced provenance remains optional; existing required artifact custody, signatures and exact release approval remain. CHECK-13/18/20/23/24/26. |

@@ -53,7 +53,7 @@ finite-budget rules to any relevant resumed proof work.
 | Surface | Disposition |
 | --- | --- |
 | Earlier first-Khronos and first-MT scheduling, then immediate MATH-0 → MT-0 scheduling | Superseded by the 13 and 14 November decisions: MATH-0 evaluation/disposition is first after actual V1 release, then TRUST-0, then MT-0. |
-| MT-0 → Khronos → GeoIP → Android | Relative order retained after MATH-C01 and TRUST-C01. RGT-0 → CHR-0 retains its separate later scope. |
+| MT-0 → Khronos → GeoIP → Android | Relative order retained after MATH-C01 and TRUST-C01. [OD-02’s 27 November amendment](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) places RGT-C01 in V1; CHR-0 retains that prerequisite and remains post-V1. |
 | Current-thread engine experiment | Retained as the inspected reference, not permanently selected for the post-V1 product or claimed superior. |
 | Source admission, independence and clock authority | Unchanged. Concurrency cannot lower a source minimum, add votes or grant workers broker privileges. |
 | Worker count, provider and runtime choice | Open. Neither four workers nor multithread Tokio is adopted by this plan. |
