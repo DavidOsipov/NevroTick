@@ -1698,9 +1698,15 @@ If bootstrap fails, retain holdover where available and display the exact remedy
 
 ### 8.3 Trust data shown to users and diagnostics
 
-Keep separate fields for packet authentication (`none`/`NTS`), certificate-time basis (`trusted-local`, `saved-authenticated-model`, `plain-bootstrap`, `operator-approximate`), current time quality, source agreement and retained bootstrap history.
+Keep separate fields for packet authentication (`none`/`NTS`), certificate-time basis (`trusted-local`, `saved-authenticated-model`, `roughtime-bootstrap`, `plain-bootstrap`, `operator-approximate`), current time quality, source agreement and retained bootstrap history. `roughtime-bootstrap` identifies an admitted signed approximate-date interval used for isolated NTS validation; it is not another NTP packet-authentication mode or a claim of exact UTC.
 
-During recovery, use wording such as: “Checking secure time servers using an unauthenticated time estimate. The system clock has not changed.” After acquisition, show “NTS synchronized” with the surviving source count and a discoverable bootstrap-history note. Do not claim that NTS or two helper servers guarantee absolute UTC against every attacker.
+During signed Roughtime recovery, use wording such as: “Checking secure time servers using a signed approximate date. The system clock has not changed.” For the separately enabled plain-helper route, retain: “Checking secure time servers using an unauthenticated time estimate. The system clock has not changed.” After acquisition, show “NTS synchronized” with the surviving source count and a discoverable bootstrap-history note. Preserve the original basis through the actual connection, full handshake and protected receipt; later validation does not erase it. Do not claim that NTS, Roughtime signatures or two helper servers guarantee absolute UTC against every attacker.
+
+**27 November provenance refinement:** these are required production data and
+presentation meanings. TA-W02 freezes their typed representation and failure
+categories; TA-W04/07/08 qualify the consumers. Current laboratory provenance
+variants and UI previews do not implement this production route or authorize
+relabeling a laboratory result as Roughtime-authenticated evidence.
 
 ### 8.4 Required negative behavior
 
@@ -1724,6 +1730,14 @@ protected fresh observations, configured agreement and revalidation before the
 broker. Healthy retained/strict NTS needs no additional bootstrap query.
 Provider/key, interval, dependency and OPEN-8 qualification remain open; this
 requirement is not a claim of implemented or admitted production support.
+
+The [27 November implementation-source review](plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+recommends RFC 10049 with selected Roughenough protocol/validation reuse,
+separately admitted cryptography and Engine-owned acquisition/evidence policy.
+The complete upstream client graph is not admitted, and the inspected
+`roughtime` 0.2.1 client does not satisfy this profile or evidence contract.
+TA-W02/03 own exact profile, source and dependency selection; the research adds
+no crypto provider, runtime, clock writer or native-qualification result.
 
 Khronos/Ananke-inspired NTP sampling remains a post-V1 conditional reserve when
 Roughtime is unavailable or unusable for NTS. Roughtime-only V1 qualification

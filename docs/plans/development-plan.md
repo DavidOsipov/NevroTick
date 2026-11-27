@@ -6075,6 +6075,16 @@ assignments and ready/held/deferred status in that existing task. This routing
 neither grants Roughtime clock authority nor lifts section 7's source, physical
 qualification or scoped native gates.
 
+The [27 November implementation-source review](time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+feeds TA-W02/03's exact profile, mandatory-root-key and dependency decisions.
+Its bounded portable child produces admitted bootstrap evidence or an explicit
+refusal at the actual consumer before Engine transport and isolated NTS/native
+integration. Reuse the existing task's cases and source identities, including
+the RFC example erratum; no public-server probe or reference-clock hardware is
+needed for that portable child. Exact graph admission precedes dependent code
+execution. This preparation changes neither section 7's next task nor any
+current implementation, metric, native or release gate.
+
 ### 8.7 Catalogue preparation and release data
 
 The [binary catalogue refinement](server-catalogue-binary-format.md),

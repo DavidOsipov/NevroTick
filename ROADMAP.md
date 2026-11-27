@@ -649,6 +649,13 @@ records the research, proposed joint state/evidence rules and open choices;
 [TA-W01–TA-W09](tasks/time-assurance-integration.md#3-work-assignments-and-finite-exits)
 own the bounded work and evidence. RGT-C01 remains separate from KHR-C01.
 
+The [27 November source assessment](docs/plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+recommends RFC 10049 with selected Roughenough protocol/validation reuse and
+Engine-owned policy, subject to exact crypto/graph admission. It records why
+`roughtime` 0.2.1 is unsuitable unchanged and why the complete Roughenough client
+is not yet admitted. TA-W02's contract freeze remains the next Roughtime-specific
+step; it does not replace the current development next-task record.
+
 **Outcome:** prefer Roughtime servers for an authenticated approximate-time
 interval during cold date bootstrap. If that branch cannot supply usable evidence,
 the strict/Roughtime-only profile reports blocked recovery or continues independently
