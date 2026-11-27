@@ -1508,6 +1508,13 @@ retain their separate limits. Four distinct retained executables provide the
 healthy run and datagram, raw KE and negotiation count sensitivity controls; those
 assertions do not themselves qualify an ASan detector.
 
+The [wire-only Roughtime fuzz experiment](tasks/time-assurance-integration.md#324-ta-w03-hostile-wire-and-keyed-verifier-coverage)
+uses `policy/roughtime-wire-fuzz-target.rs` with the stable test oracle in
+`crates/ntp-wire/tests/roughtime/hostile.rs`. Its retained launcher stages a
+separate offline graph and corpus. The configured legacy wire selectors still
+enforce their existing subject admission. The experiment receipt records the
+exact toolchain, seeds, 256 callbacks and a separate observation control.
+
 The GNU-host harness separately admits its locked source/features and native
 LLVM-exception notice and uses archive-verified vendor metadata. This test-only
 graph is not production NTS/TLS or distribution admission. New profile/target

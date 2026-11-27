@@ -21,6 +21,12 @@
 
 use nevrotick_engine::roughtime::{PendingRequest, RootKey, VerifiedResponse, VerifyError};
 use ntp_wire::roughtime::DecodeError;
+use std::ops::Range;
+
+#[path = "fixtures/roughtime/appendix_vectors.rs"]
+mod appendix_vectors;
+#[path = "fixtures/roughtime/signed_reply.rs"]
+mod signed_reply;
 
 /// Long-term key that signed the two-leaf tree's delegated key.
 const TREE_ROOT: &[u8; 32] = include_bytes!("fixtures/roughtime/tree-root.bin");
@@ -177,6 +183,166 @@ fn same_nonce_with_changed_request_bytes_has_no_inclusion() -> Result<(), Verify
     Ok(())
 }
 
+/// Require exact bounded frames at the keyed request and response entries.
+///
+/// # Errors
+/// Returns a refusal of the original root or any unmodified signed exchange.
+///
+/// # Panics
+/// Panics if a strict prefix, trailing byte, or oversized frame gets past framing.
+#[test]
+fn keyed_verifier_refuses_non_exact_frames() -> Result<(), VerifyError> {
+    // TA-W03's selected complete-frame cap includes the 12-byte header.
+    const COMPLETE_FRAME_LIMIT: usize = 4_096;
+
+    let root: RootKey = RootKey::from_bytes(TREE_ROOT)?;
+    let original: VerifiedResponse<'_, '_> =
+        PendingRequest::new(LEFT_REQUEST, &root)?.verify(LEFT_RESPONSE)?;
+    for cut in 0..LEFT_REQUEST.len() {
+        assert_eq!(
+            PendingRequest::new(&LEFT_REQUEST[..cut], &root).err(),
+            Some(VerifyError::Request(DecodeError::Frame)),
+            "request prefix length {cut}",
+        );
+    }
+    for cut in 0..LEFT_RESPONSE.len() {
+        assert_eq!(
+            PendingRequest::new(LEFT_REQUEST, &root)?
+                .verify(&LEFT_RESPONSE[..cut])
+                .err(),
+            Some(VerifyError::Response(DecodeError::Frame)),
+            "response prefix length {cut}",
+        );
+    }
+
+    let mut request: [u8; COMPLETE_FRAME_LIMIT + 1] = [0; COMPLETE_FRAME_LIMIT + 1];
+    request[..LEFT_REQUEST.len()].copy_from_slice(LEFT_REQUEST);
+    let request_errors: [(usize, DecodeError); 3] = [
+        (LEFT_REQUEST.len() + 1, DecodeError::Frame),
+        (COMPLETE_FRAME_LIMIT, DecodeError::Frame),
+        (COMPLETE_FRAME_LIMIT + 1, DecodeError::FrameLimit),
+    ];
+    for (length, cause) in request_errors {
+        assert_eq!(
+            PendingRequest::new(&request[..length], &root).err(),
+            Some(VerifyError::Request(cause)),
+            "request length {length} with its original declared length",
+        );
+    }
+
+    let mut response: [u8; COMPLETE_FRAME_LIMIT + 1] = [0; COMPLETE_FRAME_LIMIT + 1];
+    response[..LEFT_RESPONSE.len()].copy_from_slice(LEFT_RESPONSE);
+    let response_errors: [(usize, DecodeError); 3] = [
+        (LEFT_RESPONSE.len() + 1, DecodeError::Frame),
+        (COMPLETE_FRAME_LIMIT, DecodeError::Frame),
+        (COMPLETE_FRAME_LIMIT + 1, DecodeError::FrameLimit),
+    ];
+    for (length, cause) in response_errors {
+        assert_eq!(
+            PendingRequest::new(LEFT_REQUEST, &root)?
+                .verify(&response[..length])
+                .err(),
+            Some(VerifyError::Response(cause)),
+            "response length {length} with its original declared length",
+        );
+    }
+
+    assert_original_tree_frames(&original, LEFT_REQUEST, LEFT_RESPONSE);
+    let verified: VerifiedResponse<'_, '_> =
+        PendingRequest::new(RIGHT_REQUEST, &root)?.verify(RIGHT_RESPONSE)?;
+    assert_original_tree_frames(&verified, RIGHT_REQUEST, RIGHT_RESPONSE);
+    Ok(())
+}
+
+/// Require the exact commitment, nonce, Merkle inclusion and signature causes.
+///
+/// # Errors
+/// Returns a refusal of the original root or any unmodified signed exchange.
+///
+/// # Panics
+/// Panics if a one-byte change escapes its expected keyed rejection.
+#[test]
+fn keyed_verifier_checks_every_byte_of_selected_fields() -> Result<(), VerifyError> {
+    let root: RootKey = RootKey::from_bytes(TREE_ROOT)?;
+    let original: VerifiedResponse<'_, '_> =
+        PendingRequest::new(LEFT_REQUEST, &root)?.verify(LEFT_RESPONSE)?;
+
+    // Offsets from the independent fixture's little-endian tag table.
+    let request_fields: [(&str, Range<usize>, VerifyError); 5] = [
+        ("SRV", 64..96, VerifyError::ServerCommitment),
+        ("NONC", 96..128, VerifyError::Nonce),
+        ("SEEN", 132..136, VerifyError::RequestCommitment),
+        (
+            "first padding byte",
+            136..137,
+            VerifyError::RequestCommitment,
+        ),
+        (
+            "last padding byte",
+            1035..1036,
+            VerifyError::RequestCommitment,
+        ),
+    ];
+    let mut request: [u8; LEFT_REQUEST.len()] = *LEFT_REQUEST;
+    for (field, positions, expected) in request_fields {
+        for position in positions {
+            request[position] ^= 1;
+            assert_eq!(
+                PendingRequest::new(&request, &root)
+                    .and_then(|pending: PendingRequest<'_>| pending.verify(LEFT_RESPONSE))
+                    .err(),
+                Some(expected),
+                "request {field} byte {position}",
+            );
+            request[position] ^= 1;
+        }
+    }
+
+    let signature_fields: [(&str, Range<usize>, VerifyError); 2] = [
+        ("response SIG", 68..132, VerifyError::ResponseSignature),
+        (
+            "certificate SIG",
+            324..388,
+            VerifyError::DelegationSignature,
+        ),
+    ];
+    let mut response: [u8; LEFT_RESPONSE.len()] = *LEFT_RESPONSE;
+    for (field, positions, expected) in signature_fields {
+        for position in positions {
+            response[position] ^= 1;
+            assert_eq!(
+                PendingRequest::new(LEFT_REQUEST, &root)?
+                    .verify(&response)
+                    .err(),
+                Some(expected),
+                "response {field} byte {position}",
+            );
+            response[position] ^= 1;
+        }
+    }
+
+    assert_original_tree_frames(&original, LEFT_REQUEST, LEFT_RESPONSE);
+    let verified: VerifiedResponse<'_, '_> =
+        PendingRequest::new(RIGHT_REQUEST, &root)?.verify(RIGHT_RESPONSE)?;
+    assert_original_tree_frames(&verified, RIGHT_REQUEST, RIGHT_RESPONSE);
+    Ok(())
+}
+
+/// Check the known signed bounds and original externally supplied frame custody.
+///
+/// # Panics
+/// Panics if the result changes the expected bounds, root, or borrows.
+fn assert_original_tree_frames(
+    verified: &VerifiedResponse<'_, '_>,
+    request: &[u8],
+    response: &[u8],
+) {
+    assert_eq!(verified.bounds_seconds(), (995, 1005));
+    assert_eq!(verified.root_key_bytes(), TREE_ROOT);
+    assert!(core::ptr::eq(verified.request_frame(), request));
+    assert!(core::ptr::eq(verified.frame(), response));
+}
+
 /// Validate both Merkle path bytes and the direction of each sibling.
 ///
 /// # Errors
@@ -218,6 +384,79 @@ fn wrong_merkle_sibling_or_index_is_refused() -> Result<(), VerifyError> {
             "Merkle {case}",
         );
     }
+    Ok(())
+}
+
+/// Fold the second index bit and keep independently signed siblings in wire order.
+///
+/// # Errors
+/// Returns the original root, request, or healthy response verification error.
+///
+/// # Panics
+/// Panics if the original bounds or frame custody differ, or either altered
+/// path fails to produce the request-commitment refusal.
+#[test]
+fn signed_merkle_path_uses_second_index_bit_and_sibling_order() -> Result<(), VerifyError> {
+    // The four-leaf tree puts the request at index 2: first on the left,
+    // then on the right. PATH and INDX are outside the signed response value.
+    const PATH: Range<usize> = 168..232;
+    const INDEX_OFFSET: usize = 504;
+    let response: &[u8; 508] = include_bytes!("fixtures/roughtime/tree-depth-two-response.bin");
+    let root: RootKey = RootKey::from_bytes(TREE_ROOT)?;
+    let verified: VerifiedResponse<'_, '_> =
+        PendingRequest::new(LEFT_REQUEST, &root)?.verify(response)?;
+    assert_original_tree_frames(&verified, LEFT_REQUEST, response);
+
+    let mut wrong_second_direction: [u8; 508] = *response;
+    wrong_second_direction[INDEX_OFFSET] ^= 0b10;
+    let mut swapped_siblings: [u8; 508] = *response;
+    let (siblings, trailing): (&mut [[u8; 32]], &mut [u8]) =
+        swapped_siblings[PATH].as_chunks_mut::<32>();
+    assert_eq!(siblings.len(), 2);
+    assert_eq!(trailing, []);
+    siblings.swap(0, 1);
+    let altered: [(&str, &[u8]); 2] = [
+        ("second direction", &wrong_second_direction),
+        ("sibling order", &swapped_siblings),
+    ];
+    for (case, packet) in altered {
+        assert_eq!(
+            PendingRequest::new(LEFT_REQUEST, &root)?
+                .verify(packet)
+                .err(),
+            Some(VerifyError::RequestCommitment),
+            "Merkle {case}",
+        );
+    }
+    Ok(())
+}
+
+/// Accept the deepest supported signed path and check its final direction bit.
+///
+/// # Errors
+/// Returns the original root, request, or healthy response verification error.
+///
+/// # Panics
+/// Panics if the original bounds or frame custody differ, or clearing the
+/// highest index bit fails to produce the request-commitment refusal.
+#[test]
+fn signed_merkle_path_accepts_all_32_index_bits() -> Result<(), VerifyError> {
+    const INDEX_HIGH_BYTE: usize = 1467;
+    let request: &[u8; 1536] = include_bytes!("fixtures/roughtime/tree-depth-max-request.bin");
+    let response: &[u8; 1468] = include_bytes!("fixtures/roughtime/tree-depth-max-response.bin");
+    let root: RootKey = RootKey::from_bytes(TREE_ROOT)?;
+    let verified: VerifiedResponse<'_, '_> =
+        PendingRequest::new(request, &root)?.verify(response)?;
+    assert_original_tree_frames(&verified, request, response);
+
+    let mut wrong_last_direction: [u8; 1468] = *response;
+    wrong_last_direction[INDEX_HIGH_BYTE] ^= 0x80;
+    assert_eq!(
+        PendingRequest::new(request, &root)?
+            .verify(&wrong_last_direction)
+            .err(),
+        Some(VerifyError::RequestCommitment),
+    );
     Ok(())
 }
 
@@ -343,8 +582,8 @@ mod exchange {
 
     use ed25519_dalek::{Signature, Signer, SigningKey};
     use nevrotick_engine::roughtime::exchange::{
-        ExchangeError, PendingExchange, Receipt, RoundAuthority, StagedReceipt, Withdrawal,
-        retry::RetryBinding,
+        ExchangeError, ExchangeTransport, PendingExchange, Receipt, RoundAuthority, StagedReceipt,
+        Withdrawal, retry::RetryBinding,
     };
     use sha2::{Digest, Sha512};
 
@@ -352,10 +591,15 @@ mod exchange {
 
     /// Maximum wait for a single native UDP loopback exchange in this fixture.
     const BUDGET: Duration = Duration::from_secs(2);
+    /// Complete-frame receive limit for the controlled client.
+    const UDP_RESPONSE_LIMIT: usize = 4_096;
     /// The public test seed that produced the certified delegated key.
     const DELEGATED_SEED: [u8; 32] = *b" !\"#$%&'()*+,-./0123456789:;<=>?";
     /// Exact zero-terminated RFC v1 response domain separator.
     const RESPONSE_CONTEXT: &[u8] = b"Roughtime v1 response signature\0";
+    /// Independently published request framing, tag table and version for this profile.
+    const PUBLISHED_REQUEST: &[u8; 1_036] =
+        include_bytes!("fixtures/roughtime/appendix-b-original-request.bin");
 
     /// Failures in fixture plumbing carry diagnostics independently of exchange refusals.
     pub(super) type TestResult<T> = Result<T, Box<dyn Error>>;
@@ -401,6 +645,21 @@ mod exchange {
         values.get(start..end)?.try_into().ok()
     }
 
+    /// Check the actual emitted v1 profile independently of the encoder and signer.
+    pub(super) fn emitted_request_matches_profile(frame: &[u8], root: &[u8; 32]) -> bool {
+        if frame.len() != PUBLISHED_REQUEST.len() || frame[..56] != PUBLISHED_REQUEST[..56] {
+            return false;
+        }
+        let mut hash: Sha512 = Sha512::new();
+        hash.update([0xff]);
+        hash.update(root);
+        let commitment: [u8; 64] = hash.finalize().into();
+        frame[56..88] == commitment[..32]
+            && observed_nonce(frame).is_some()
+            && word(frame, 120) == Some(0)
+            && frame[124..].iter().all(|byte| *byte == 0)
+    }
+
     /// Adapt the independent fixture's signed response to the request actually sent.
     ///
     /// # Errors
@@ -430,6 +689,21 @@ mod exchange {
         let signature: Signature = delegated.sign(&payload);
         response[68..132].copy_from_slice(&signature.to_bytes());
         Ok(response)
+    }
+
+    /// Extend the tree-left reply with one opaque outer field, preserving both signed values.
+    fn capped_signed_reply(reply: &[u8; 476]) -> [u8; UDP_RESPONSE_LIMIT] {
+        let mut frame: [u8; UDP_RESPONSE_LIMIT] = [0x5a; UDP_RESPONSE_LIMIT];
+        frame[..8].copy_from_slice(b"ROUGHTIM");
+        frame[8..12].copy_from_slice(&4_084_u32.to_le_bytes());
+        frame[12..16].copy_from_slice(&8_u32.to_le_bytes());
+        // Add the last value offset after the six original offsets. Values remain unchanged.
+        frame[16..40].copy_from_slice(&reply[16..40]);
+        frame[40..44].copy_from_slice(&408_u32.to_le_bytes());
+        frame[44..72].copy_from_slice(&reply[40..68]);
+        frame[72..76].copy_from_slice(b"ZZZZ");
+        frame[76..484].copy_from_slice(&reply[68..]);
+        frame
     }
 
     /// Open exactly one nonblocking IPv4 loopback peer at an ephemeral port.
@@ -497,6 +771,16 @@ mod exchange {
         let mut original: PendingExchange<'_> =
             checked(PendingExchange::send(&authority, address, &root, BUDGET))?;
         let (request, sender): (Vec<u8>, SocketAddr) = receive_request(&peer)?;
+        assert!(
+            emitted_request_matches_profile(&request, TREE_ROOT),
+            "the UDP sender changed the fixed v1 request profile"
+        );
+        let mut nonzero_padding: Vec<u8> = request.clone();
+        nonzero_padding[PUBLISHED_REQUEST.len() - 1] = 1;
+        assert!(!emitted_request_matches_profile(
+            &nonzero_padding,
+            TREE_ROOT
+        ));
         let reply: [u8; 476] = signed_reply(&request)?;
         assert_eq!(peer.send_to(&reply, sender)?, reply.len());
         let staged: StagedReceipt<'_> = checked(receive(&mut original)?)?;
@@ -536,6 +820,56 @@ mod exchange {
             Err(ExchangeError::Verification(VerifyError::Nonce))
         ));
         assert!(matches!(successor.try_receive(), Err(ExchangeError::Spent)));
+        Ok(())
+    }
+
+    /// Consume one exact-limit reply or refuse the same authenticated prefix with excess bytes.
+    ///
+    /// # Errors
+    /// Returns fixture socket, signing, verification, or publication errors.
+    ///
+    /// # Panics
+    /// Panics if truncation can publish evidence, the exact-limit reply is changed, or the
+    /// original attempt remains available after its one response.
+    #[test]
+    fn udp_frame_cap_refuses_valid_prefix_with_excess_bytes() -> TestResult<()> {
+        const OVER_BUFFER: usize = UDP_RESPONSE_LIMIT + 256;
+        let root: RootKey = RootKey::from_bytes(TREE_ROOT).map_err(|error| format!("{error:?}"))?;
+        let (peer, address): (UdpSocket, SocketAddr) = peer()?;
+        for length in [UDP_RESPONSE_LIMIT, UDP_RESPONSE_LIMIT + 1, OVER_BUFFER] {
+            let authority: RoundAuthority = RoundAuthority::new();
+            let mut pending: PendingExchange<'_> =
+                checked(PendingExchange::send(&authority, address, &root, BUDGET))?;
+            let (request, sender): (Vec<u8>, SocketAddr) = receive_request(&peer)?;
+            let reply: [u8; 476] = signed_reply(&request)?;
+            // Model a signer exceeding the request size to exercise the client's receive limit.
+            let exact: [u8; UDP_RESPONSE_LIMIT] = capped_signed_reply(&reply);
+            let mut datagram: [u8; OVER_BUFFER] = [0xc3; OVER_BUFFER];
+            datagram[..UDP_RESPONSE_LIMIT].copy_from_slice(&exact);
+            assert_eq!(peer.send_to(&datagram[..length], sender)?, length);
+
+            let received: Result<StagedReceipt<'_>, ExchangeError> = receive(&mut pending)?;
+            if length == UDP_RESPONSE_LIMIT {
+                let receipt: Receipt = checked(checked(received)?.publish())?;
+                assert_eq!(receipt.request_frame(), request.as_slice());
+                assert_eq!(receipt.response_frame(), exact.as_slice());
+                assert_eq!(receipt.bounds_seconds(), (995, 1005));
+                assert_eq!(receipt.root_key_bytes(), TREE_ROOT);
+                assert_eq!(receipt.peer(), address);
+                assert_eq!(receipt.transport(), ExchangeTransport::Udp);
+            } else {
+                let refusal: Option<ExchangeError> = received.err();
+                assert!(
+                    matches!(refusal, Some(ExchangeError::Truncated)),
+                    "{length}-byte datagram should be truncated, got {refusal:?}"
+                );
+            }
+            assert!(matches!(pending.try_receive(), Err(ExchangeError::Spent)));
+            assert!(matches!(
+                PendingExchange::send(&authority, address, &root, BUDGET),
+                Err(ExchangeError::Spent)
+            ));
+        }
         Ok(())
     }
 
@@ -645,7 +979,7 @@ mod exchange {
     ///
     /// # Panics
     /// Panics if the selected peer cannot submit the complete reply.
-    fn stage_retry<'a>(
+    pub(super) fn stage_retry<'a>(
         authority: &'a RoundAuthority,
         binding: &'a mut RetryBinding<'_>,
         selected: &UdpSocket,
@@ -856,24 +1190,54 @@ mod exchange {
 mod tcp_exchange {
     use std::io::{self, ErrorKind, Read, Write};
     use std::net::{Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream, UdpSocket};
+    use std::num::NonZeroU64;
     use std::thread;
     use std::time::{Duration, Instant};
 
     use nevrotick_engine::roughtime::exchange::{
-        ExchangeError, ExchangeTransport, Receipt, RoundAuthority, StagedReceipt, Withdrawal,
-        retry::RetryBinding, tcp::PendingTcpExchange,
+        ExchangeError, ExchangeTransport, PendingExchange, Receipt, RoundAuthority, StagedReceipt,
+        Withdrawal,
+        retry::{RetryBinding, RetryRoute},
+        tcp::PendingTcpExchange,
     };
+    use nevrotick_engine::roughtime::round::RetryRoundPeer;
 
     use super::exchange::{
-        TestResult, assert_retry_wait, checked, malformed_retry, peer, refused_retry_floor,
-        signed_reply,
+        TestResult, assert_retry_wait, checked, emitted_request_matches_profile, malformed_retry,
+        peer, refused_retry_floor, signed_reply, stage_retry,
     };
-    use super::{LEFT_REQUEST, RootKey, TREE_ROOT};
+    use super::{LEFT_REQUEST, LEFT_RESPONSE, RootKey, TREE_ROOT};
 
     /// Limit both the local stream fixture and the original inquiry's lifetime.
     const BUDGET: Duration = Duration::from_secs(2);
     /// Limit observation calls independently of the product's poll accounting.
     const OBSERVATIONS: u8 = 32;
+
+    /// Bind both actual transports to one loopback address and port.
+    ///
+    /// # Errors
+    /// Returns a socket setup failure or exhaustion of the bounded port search.
+    pub(super) fn dual_transport_peer() -> io::Result<(UdpSocket, TcpListener, SocketAddr)> {
+        let mut used_tcp: Vec<TcpListener> = Vec::with_capacity(4);
+        for _ in 0..4 {
+            let tcp: TcpListener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+            let endpoint: SocketAddr = tcp.local_addr()?;
+            match UdpSocket::bind(endpoint) {
+                Ok(udp) => {
+                    udp.set_nonblocking(true)?;
+                    tcp.set_nonblocking(true)?;
+                    return Ok((udp, tcp, endpoint));
+                }
+                // Keep these TCP ports assigned while looking for an available pair.
+                Err(error) if error.kind() == ErrorKind::AddrInUse => used_tcp.push(tcp),
+                Err(error) => return Err(error),
+            }
+        }
+        Err(io::Error::new(
+            ErrorKind::AddrInUse,
+            "no loopback port pair",
+        ))
+    }
 
     /// Establish exactly one controlled client and server socket pair.
     ///
@@ -1009,6 +1373,111 @@ mod tcp_exchange {
         let staged: StagedReceipt<'_> = checked(receive(&mut pending)?)?;
         assert_retired(&mut server)?;
         Ok(staged)
+    }
+
+    /// Require the checked loopback representation before binding a route.
+    ///
+    /// # Panics
+    /// Panics if a malformed route is admitted or canonical IPv6 is refused.
+    #[test]
+    fn transport_route_requires_canonical_loopback() {
+        use std::net::{Ipv6Addr, SocketAddrV6};
+
+        let invalid: [SocketAddr; 4] = [
+            SocketAddr::from(([127, 0, 0, 1], 0)),
+            SocketAddr::from(([0, 0, 0, 0], 5319)),
+            SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 5319, 1, 0)),
+            SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 5319, 0, 1)),
+        ];
+        for endpoint in invalid {
+            assert!(matches!(
+                RetryRoute::new(endpoint, ExchangeTransport::Udp),
+                Err(ExchangeError::Configuration)
+            ));
+        }
+        let canonical: SocketAddr =
+            SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 5319, 0, 0));
+        assert!(RetryRoute::new(canonical, ExchangeTransport::Udp).is_ok());
+    }
+
+    /// Refuse a listed numeric endpoint when its requested transport is unselected.
+    ///
+    /// # Errors
+    /// Returns fixture setup or unexpected real exchange failure.
+    ///
+    /// # Panics
+    /// Panics if a refusal emits traffic, misreports classification, consumes either
+    /// authority or adds retry debt that prevents a healthy exchange.
+    #[test]
+    fn transport_qualified_binding_refuses_wrong_transport_without_debt() -> TestResult<()> {
+        let root: RootKey = RootKey::from_bytes(TREE_ROOT).map_err(|error| format!("{error:?}"))?;
+        let (udp, wrong_tcp, udp_address): (UdpSocket, TcpListener, SocketAddr) =
+            dual_transport_peer()?;
+        let (wrong_udp, tcp, tcp_address): (UdpSocket, TcpListener, SocketAddr) =
+            dual_transport_peer()?;
+        let (foreign_udp, foreign_address): (UdpSocket, SocketAddr) = peer()?;
+        let udp_route: RetryRoute = checked(RetryRoute::new(udp_address, ExchangeTransport::Udp))?;
+        assert!(matches!(
+            RetryBinding::new_for_routes(&root, udp_route, Some(udp_route)),
+            Err(ExchangeError::Configuration)
+        ));
+        let tcp_route: RetryRoute = checked(RetryRoute::new(tcp_address, ExchangeTransport::Tcp))?;
+        let mut binding: RetryBinding<'_> = checked(RetryBinding::new_for_routes(
+            &root,
+            udp_route,
+            Some(tcp_route),
+        ))?;
+        let udp_attempt: RoundAuthority = RoundAuthority::new();
+        let tcp_attempt: RoundAuthority = RoundAuthority::new();
+
+        let group: NonZeroU64 = NonZeroU64::MIN;
+        assert!(matches!(
+            RetryRoundPeer::new(&mut binding, tcp_address, group, group),
+            Err(ExchangeError::UnselectedTransport)
+        ));
+        assert!(matches!(
+            RetryRoundPeer::new_with_tcp(&mut binding, udp_address, udp_address, group, group),
+            Err(ExchangeError::UnselectedTransport)
+        ));
+        assert!(matches!(
+            PendingExchange::send_with_retry(&udp_attempt, &mut binding, tcp_address, BUDGET),
+            Err(ExchangeError::UnselectedTransport)
+        ));
+        assert!(matches!(
+            PendingTcpExchange::connect_with_retry(&tcp_attempt, &mut binding, udp_address, BUDGET),
+            Err(ExchangeError::UnselectedTransport)
+        ));
+        assert!(matches!(
+            PendingExchange::send_with_retry(&udp_attempt, &mut binding, foreign_address, BUDGET),
+            Err(ExchangeError::ForeignPeer)
+        ));
+        let mut packet: [u8; 1] = [0];
+        assert!(
+            wrong_udp
+                .recv_from(&mut packet)
+                .is_err_and(|error| error.kind() == ErrorKind::WouldBlock)
+        );
+        assert!(
+            foreign_udp
+                .recv_from(&mut packet)
+                .is_err_and(|error| error.kind() == ErrorKind::WouldBlock)
+        );
+        assert!(
+            wrong_tcp
+                .accept()
+                .is_err_and(|error| error.kind() == ErrorKind::WouldBlock)
+        );
+
+        let staged: StagedReceipt<'_> = stage_retry(&udp_attempt, &mut binding, &udp, udp_address)?;
+        let accepted: Receipt = checked(staged.publish())?;
+        assert_eq!(accepted.peer(), udp_address);
+        assert_eq!(accepted.transport(), ExchangeTransport::Udp);
+        let staged: StagedReceipt<'_> =
+            stage_connected_retry(&tcp_attempt, &mut binding, &tcp, tcp_address)?;
+        let accepted: Receipt = checked(staged.publish())?;
+        assert_eq!(accepted.peer(), tcp_address);
+        assert_eq!(accepted.transport(), ExchangeTransport::Tcp);
+        Ok(())
     }
 
     /// Carry the same binding from a UDP failure to TCP and back to UDP.
@@ -1186,6 +1655,52 @@ mod tcp_exchange {
         Ok(())
     }
 
+    /// Publish only the first authenticated frame sent jointly with a second complete frame.
+    ///
+    /// # Errors
+    /// Returns fixture socket, signing, verification, or publication errors.
+    ///
+    /// # Panics
+    /// Panics if the client changes the request profile, loses the first frame, or keeps the
+    /// original connection usable after staging it.
+    #[test]
+    fn publishes_only_first_coalesced_tcp_frame_and_retires_stream() -> TestResult<()> {
+        let root: RootKey = RootKey::from_bytes(TREE_ROOT).map_err(|error| format!("{error:?}"))?;
+        let authority: RoundAuthority = RoundAuthority::new();
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let mut pending: PendingTcpExchange<'_> = checked(PendingTcpExchange::start(
+            &authority, client, address, &root, BUDGET,
+        ))?;
+        let request: [u8; LEFT_REQUEST.len()] = submit(&mut pending, &mut peer)?;
+        assert!(
+            emitted_request_matches_profile(&request, TREE_ROOT),
+            "the TCP sender changed the fixed v1 request profile"
+        );
+        let reply: [u8; 476] = signed_reply(&request)?;
+        let mut frames: [u8; 952] = [0; 952];
+        frames[..476].copy_from_slice(&reply);
+        frames[476..].copy_from_slice(LEFT_RESPONSE);
+        assert_eq!(peer.write(&frames)?, frames.len());
+
+        let staged: StagedReceipt<'_> = checked(receive(&mut pending)?)?;
+        assert!(matches!(pending.poll(), Err(ExchangeError::Spent)));
+        // Closing with unread data may reset the stream. The peer has kept its write side open.
+        let mut tail: [u8; 1] = [0; 1];
+        match peer.read(&mut tail) {
+            Ok(count) => assert_eq!(count, 0),
+            Err(error) if error.kind() == ErrorKind::ConnectionReset => (),
+            Err(error) => return Err(error.into()),
+        }
+        let receipt: Receipt = checked(staged.publish())?;
+        assert_eq!(receipt.request_frame(), request.as_slice());
+        assert_eq!(receipt.response_frame(), reply.as_slice());
+        assert_eq!(receipt.bounds_seconds(), (995, 1005));
+        assert_eq!(receipt.root_key_bytes(), TREE_ROOT);
+        assert_eq!(receipt.peer(), address);
+        assert_eq!(receipt.transport(), ExchangeTransport::Tcp);
+        Ok(())
+    }
+
     /// Require refusal from a length prefix alone and from EOF mid-body.
     ///
     /// # Errors
@@ -1269,23 +1784,22 @@ mod ordered_round {
     use std::thread;
     use std::time::{Duration, Instant};
 
-    use ed25519_dalek::{Signature, Signer, SigningKey};
+    use ed25519_dalek::SigningKey;
     use nevrotick_engine::roughtime::exchange::{
         ExchangeError, ExchangeTransport, PendingExchange, Receipt, RoundAuthority, Withdrawal,
-        retry::RetryBinding,
+        retry::{RetryBinding, RetryRoute},
     };
     use nevrotick_engine::roughtime::interval::{
         ControlledAgreement, ControlledDate, IntervalError, IntervalPolicy,
     };
     use nevrotick_engine::roughtime::round::recovery::{
-        ConflictEvidence, ControlledRecovery, RecoveryControl, RecoveryDatePolicy, RecoveryRound,
-        SelectedPeer,
+        ConflictEvidence, ConflictProof, ControlledRecovery, RecoveryControl, RecoveryDatePolicy,
+        RecoveryRound, SelectedPeer,
     };
     use nevrotick_engine::roughtime::round::{
         OrderedRound, ProbeProgress, RetryRoundPeer, RoundControl, RoundError, RoundPeer,
         RoundStatus,
     };
-    use sha2::{Digest, Sha512};
     use time_domain::{
         EraWindow, LeapDataIdentity, LeapDateScope, LeapEventKnowledge, LeapHistoryBefore,
         LeapInterpretation, LeapKnowledge, LeapOffsetKnowledge, bundled_leap_knowledge,
@@ -1298,8 +1812,9 @@ mod ordered_round {
         TestResult, assert_retry_wait, checked as checked_exchange, malformed_retry,
         observed_nonce, peer, receive_request, refused_retry_floor,
     };
-    use super::tcp_exchange::{accept_peer, assert_retired, submit_request};
-    use super::{LEFT_REQUEST, LEFT_RESPONSE, RootKey, VerifyError};
+    use super::signed_reply::{digest, sign_reply};
+    use super::tcp_exchange::{accept_peer, assert_retired, dual_transport_peer, submit_request};
+    use super::{LEFT_REQUEST, RootKey, VerifyError};
 
     /// Total duration for nine actual loopback probes.
     const ROUND_BUDGET: Duration = Duration::from_secs(6);
@@ -1317,11 +1832,6 @@ mod ordered_round {
     const Q32_SECOND: i128 = 1_i128 << 32;
     /// Nanoseconds in one second, for the independent rational comparison.
     const NANOSECOND_DIVISOR: i128 = 1_000_000_000;
-    /// Certificate domain separator with its RFC terminator.
-    const DELEGATION_CONTEXT: &[u8] = b"Roughtime v1 delegation signature\0";
-    /// Response domain separator with its RFC terminator.
-    const RESPONSE_CONTEXT: &[u8] = b"Roughtime v1 response signature\0";
-
     /// One fixture operator, with independent root and delegated test keys.
     struct Server {
         /// Selected peer socket, bound on IPv4 loopback.
@@ -1343,6 +1853,19 @@ mod ordered_round {
         /// Returns fixture socket setup or root validation failure.
         fn bind(root_seed: u8, response_seed: u8) -> TestResult<Self> {
             let (socket, address): (UdpSocket, SocketAddr) = peer()?;
+            Self::from_peer(socket, address, root_seed, response_seed)
+        }
+
+        /// Attach the independent signing keys to an already bound peer socket.
+        ///
+        /// # Errors
+        /// Returns a root validation failure.
+        fn from_peer(
+            socket: UdpSocket,
+            address: SocketAddr,
+            root_seed: u8,
+            response_seed: u8,
+        ) -> TestResult<Self> {
             let trust_anchor: SigningKey = SigningKey::from_bytes(&[root_seed; 32]);
             let response_key: SigningKey = SigningKey::from_bytes(&[response_seed; 32]);
             let root: RootKey = RootKey::from_bytes(trust_anchor.verifying_key().as_bytes())
@@ -1392,45 +1915,15 @@ mod ordered_round {
             radius: u32,
         ) -> TestResult<[u8; 476]> {
             let nonce: [u8; 32] = observed_nonce(request).ok_or("missing fixture nonce")?;
-            let mut response: [u8; 476] = *LEFT_RESPONSE;
-            response[132..164].copy_from_slice(&nonce);
-            response[256..260].copy_from_slice(&radius.to_le_bytes());
-            response[260..268].copy_from_slice(&midpoint.to_le_bytes());
-            let leaf: [u8; 32] = digest(&[&[0], request]);
-            let merkle_root: [u8; 32] = digest(&[&[1], &leaf, &response[168..200]]);
-            response[276..308].copy_from_slice(&merkle_root);
-
-            let earliest: u64 = midpoint
-                .checked_sub(100)
-                .ok_or("fixture delegation starts too early")?;
-            let latest: u64 = midpoint
-                .checked_add(100)
-                .ok_or("fixture delegation ends too late")?;
-            response[424..456].copy_from_slice(self.response_key.verifying_key().as_bytes());
-            response[456..464].copy_from_slice(&earliest.to_le_bytes());
-            response[464..472].copy_from_slice(&latest.to_le_bytes());
-            let delegation: Signature = self
-                .trust_anchor
-                .sign(&[DELEGATION_CONTEXT, &response[388..472]].concat());
-            response[324..388].copy_from_slice(&delegation.to_bytes());
-            let signature: Signature = self
-                .response_key
-                .sign(&[RESPONSE_CONTEXT, &response[200..308]].concat());
-            response[68..132].copy_from_slice(&signature.to_bytes());
-            Ok(response)
+            sign_reply(
+                &self.trust_anchor,
+                &self.response_key,
+                request,
+                nonce,
+                midpoint,
+                radius,
+            )
         }
-    }
-
-    /// Independently hash the unmodified transmitted or received bytes.
-    fn digest(parts: &[&[u8]]) -> [u8; 32] {
-        let mut state: Sha512 = Sha512::new();
-        for part in parts {
-            state.update(part);
-        }
-        let bytes: [u8; 64] = state.finalize().into();
-        let mut truncated: [u8; 32] = [0; 32];
-        truncated.copy_from_slice(&bytes[..32]);
-        truncated
     }
 
     /// Build all three distinct fixture issuers with bounded socket effects.
@@ -2413,6 +2906,192 @@ mod ordered_round {
         Ok(RecoveryDatePolicy::new(policy, scope, calendar))
     }
 
+    /// Attach independently declared fixture groups to an original UDP binding.
+    /// # Errors
+    /// Returns a zero group label or an unexpected selected-route refusal.
+    fn declared_retry_candidate<'a>(
+        binding: &'a mut RetryBinding<'_>,
+        server: &Server,
+        groups: (u64, u64),
+    ) -> TestResult<RetryRoundPeer<'a>> {
+        let operator: NonZeroU64 = NonZeroU64::new(groups.0).ok_or("zero fixture operator")?;
+        let clock: NonZeroU64 = NonZeroU64::new(groups.1).ok_or("zero fixture clock")?;
+        checked_exchange(RetryRoundPeer::new(
+            binding,
+            server.address,
+            operator,
+            clock,
+        ))
+    }
+
+    /// Lend each candidate's original retry binding without changing its floor.
+    /// # Errors
+    /// Returns the first invalid group declaration or selected-route refusal.
+    fn selection_candidates<'a>(
+        bindings: &'a mut [RetryBinding<'_>; 5],
+        servers: &[Server; 5],
+        groups: [(u64, u64); 5],
+    ) -> TestResult<[RetryRoundPeer<'a>; 5]> {
+        let [first, second, third, fourth, fifth]: &mut [RetryBinding<'_>; 5] = bindings;
+        Ok([
+            declared_retry_candidate(first, &servers[0], groups[0])?,
+            declared_retry_candidate(second, &servers[1], groups[1])?,
+            declared_retry_candidate(third, &servers[2], groups[2])?,
+            declared_retry_candidate(fourth, &servers[3], groups[3])?,
+            declared_retry_candidate(fifth, &servers[4], groups[4])?,
+        ])
+    }
+
+    /// Observe that no request reached the selected loopback fixture sockets.
+    /// # Panics
+    /// Panics on a datagram or a distinct socket error.
+    fn assert_quiet_operators(servers: &[Server]) {
+        for server in servers {
+            let mut unexpected: [u8; 1] = [0];
+            assert!(
+                matches!(server.socket.recv_from(&mut unexpected), Err(error) if error.kind() == ErrorKind::WouldBlock)
+            );
+        }
+    }
+
+    /// Observe the only feasible set and keep its sampled order across all visits.
+    /// # Errors
+    /// Returns fixture socket, signing or unexpected round or date failure.
+    /// # Panics
+    /// Panics if a destination falls outside the feasible set, a visit changes the
+    /// selected order, or its receipt differs from the observed signed exchange.
+    fn observe_randomized_round(
+        round: &mut RecoveryRound<'_>,
+        servers: &[Server; 5],
+    ) -> TestResult<()> {
+        let mut order: [usize; 3] = [0; 3];
+        let mut observed: Vec<(SocketAddr, SignedFrames)> = Vec::with_capacity(9);
+        for position in 0..9 {
+            let destination: SocketAddr = checked(round.start_next())?;
+            let server: usize = servers
+                .iter()
+                .position(|candidate| candidate.address == destination)
+                .ok_or("selected destination is outside the fixture")?;
+            if position < order.len() {
+                order[position] = server;
+            } else {
+                assert_eq!(server, order[position % order.len()]);
+            }
+            assert!(
+                (1..=3).contains(&server),
+                "unexpected selected peer {server}"
+            );
+            let frames: SignedFrames = servers[server].respond(DATE_UNIX_SECONDS)?;
+            let expected: ProbeProgress = if position == 8 {
+                ProbeProgress::Complete
+            } else {
+                ProbeProgress::Accepted
+            };
+            assert_eq!(checked(poll_recovery_to_settlement(round)?)?, expected);
+            observed.push((destination, frames));
+        }
+        order.sort_unstable();
+        assert_eq!(order, [1, 2, 3]);
+        let date: ControlledDate<'_> = round
+            .admit_date()
+            .map_err(|error| format!("unexpected randomized date refusal: {error:?}"))?;
+        let agreement: &ControlledAgreement<'_> = date.agreement();
+        assert_eq!(agreement.supporting_groups(), 3);
+        for (position, (destination, (request, response))) in observed.iter().enumerate() {
+            let receipt: &Receipt = agreement
+                .receipt(position)
+                .ok_or("missing selected receipt")?;
+            assert_eq!(receipt.peer(), *destination);
+            assert_eq!(receipt.transport(), ExchangeTransport::Udp);
+            assert_eq!(receipt.request_frame(), request);
+            assert_eq!(receipt.response_frame(), response);
+        }
+        assert!(agreement.receipt(9).is_none());
+        Ok(())
+    }
+
+    /// Exclude a real retry floor and select the sole feasible trio past a greedy trap.
+    /// # Errors
+    /// Returns fixture admission, retry observation, or unexpected round failure.
+    /// # Panics
+    /// Panics if refusal consumes the invocation, emits a request, admits an
+    /// unavailable peer, or changes the selected order during traversal.
+    #[test]
+    fn randomized_recovery_selects_ready_trio_and_reuses_its_order() -> TestResult<()> {
+        let servers: [Server; 5] = [
+            Server::bind(11, 61)?,
+            Server::bind(22, 62)?,
+            Server::bind(33, 63)?,
+            Server::bind(44, 64)?,
+            Server::bind(55, 65)?,
+        ];
+        let [first, second, third, fourth, fifth]: [TestResult<RetryBinding<'_>>; 5] =
+            servers.each_ref().map(|server| {
+                let route: RetryRoute =
+                    checked_exchange(RetryRoute::new(server.address, ExchangeTransport::Udp))?;
+                checked_exchange(RetryBinding::new_for_routes(&server.root, route, None))
+            });
+        let mut bindings: [RetryBinding<'_>; 5] = [first?, second?, third?, fourth?, fifth?];
+        let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+        let policy: RecoveryDatePolicy<'_> = recovery_date_policy(&calendar)?;
+        let invocation: RecoveryControl = RecoveryControl::new();
+        let round_control: RoundControl = RoundControl::new();
+
+        let before_failure: Instant = Instant::now();
+        malformed_retry(&mut bindings[4], &servers[4].socket, servers[4].address)?;
+        let failure_capture: (Instant, Instant) = (before_failure, Instant::now());
+        let floor: Instant = refused_retry_floor(
+            &mut bindings[4],
+            &servers[4].socket,
+            servers[4].address,
+            failure_capture,
+            FIRST_RETRY_WAIT,
+        )?;
+
+        // Without the deferred fifth candidate, only two operator groups remain.
+        {
+            let mut candidates: [RetryRoundPeer<'_>; 5] = selection_candidates(
+                &mut bindings,
+                &servers,
+                [(1, 1), (1, 2), (1, 3), (2, 4), (3, 5)],
+            )?;
+            assert!(matches!(
+                ControlledRecovery::new_randomized(
+                    &invocation,
+                    ROUND_BUDGET,
+                    policy,
+                    &mut candidates,
+                    None,
+                ),
+                Err(RoundError::SelectionUnavailable)
+            ));
+            assert_quiet_operators(&servers);
+        }
+
+        // The first candidate conflicts with the second's operator and third's clock.
+        let mut candidates: [RetryRoundPeer<'_>; 5] = selection_candidates(
+            &mut bindings,
+            &servers,
+            [(1, 1), (1, 2), (2, 1), (3, 3), (4, 4)],
+        )?;
+        let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new_randomized(
+            &invocation,
+            ROUND_BUDGET + ROUND_BUDGET,
+            policy,
+            &mut candidates,
+            None,
+        ))?;
+        assert!(
+            Instant::now() < floor,
+            "fixture exceeded the observed retry floor"
+        );
+        let mut round: RecoveryRound<'_> =
+            checked(recovery.begin_bound(&round_control, ROUND_BUDGET, PROBE_BUDGET))?;
+        observe_randomized_round(&mut round, &servers)?;
+        assert_quiet_operators(&servers);
+        Ok(())
+    }
+
     /// Complete the healthy nine-leg date with each selected fixture operator.
     ///
     /// # Errors
@@ -2602,6 +3281,47 @@ mod ordered_round {
                 &servers[2].root,
                 [servers[2].address, other_aliases[1]],
             ))?,
+        ])
+    }
+
+    /// Bind real UDP and TCP endpoints at the second issuer's one numeric address.
+    ///
+    /// # Errors
+    /// Returns an original socket setup or root validation failure.
+    fn same_address_fallback_peers() -> TestResult<([Server; 3], TcpListener)> {
+        let (socket, listener, address): (UdpSocket, TcpListener, SocketAddr) =
+            dual_transport_peer()?;
+        let servers: [Server; 3] = [
+            Server::bind(11, 61)?,
+            Server::from_peer(socket, address, 22, 62)?,
+            Server::bind(33, 63)?,
+        ];
+        Ok((servers, listener))
+    }
+
+    /// Bind every scheduled UDP route and only the second issuer's exact TCP route.
+    ///
+    /// # Errors
+    /// Returns an original route or binding refusal.
+    fn transport_bound_fallback(
+        servers: &[Server; 3],
+        tcp: SocketAddr,
+    ) -> TestResult<[RetryBinding<'_>; 3]> {
+        let routes: [RetryRoute; 3] = [
+            checked_exchange(RetryRoute::new(servers[0].address, ExchangeTransport::Udp))?,
+            checked_exchange(RetryRoute::new(servers[1].address, ExchangeTransport::Udp))?,
+            checked_exchange(RetryRoute::new(servers[2].address, ExchangeTransport::Udp))?,
+        ];
+        let [first, second, third]: [RetryRoute; 3] = routes;
+        let tcp: RetryRoute = checked_exchange(RetryRoute::new(tcp, ExchangeTransport::Tcp))?;
+        Ok([
+            checked_exchange(RetryBinding::new_for_routes(&servers[0].root, first, None))?,
+            checked_exchange(RetryBinding::new_for_routes(
+                &servers[1].root,
+                second,
+                Some(tcp),
+            ))?,
+            checked_exchange(RetryBinding::new_for_routes(&servers[2].root, third, None))?,
         ])
     }
 
@@ -2895,7 +3615,7 @@ mod ordered_round {
         Ok(())
     }
 
-    /// Exercise scheduler admission once both real silence and the retry floor exist.
+    /// Exercise scheduler admission at the same UDP and TCP address after silence.
     ///
     /// # Errors
     /// Returns an unexpected fixture or scheduled recovery refusal.
@@ -2922,6 +3642,184 @@ mod ordered_round {
         exercise_scheduled_fallback(ScheduledScenario::LateWake)
     }
 
+    /// Resume the selected random order from its original retry floor.
+    ///
+    /// # Errors
+    /// Returns an unexpected socket, scheduling or date result.
+    ///
+    /// # Panics
+    /// Panics if the retry changes the observed order, transport, frames or ancestry.
+    #[test]
+    fn randomized_recovery_retains_order_across_scheduled_tcp_fallback() -> TestResult<()> {
+        let (servers, listener): ([Server; 3], TcpListener) = same_address_fallback_peers()?;
+        let tcp: SocketAddr = listener.local_addr()?;
+        assert_eq!(tcp, servers[1].address);
+        let mut bindings: [RetryBinding<'_>; 3] = transport_bound_fallback(&servers, tcp)?;
+        let mut peers: [RetryRoundPeer<'_>; 3] =
+            bound_retry_roster(&mut bindings, &servers, Some(tcp))?;
+        let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+        let authority: RecoveryControl = RecoveryControl::new();
+        let controls: [RoundControl; 2] = [RoundControl::new(), RoundControl::new()];
+        let runtime: Runtime = Builder::new_current_thread().enable_time().build()?;
+        let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new_randomized(
+            &authority,
+            ROUND_BUDGET + ROUND_BUDGET,
+            recovery_date_policy(&calendar)?,
+            &mut peers,
+            Some(UDP_WAIT),
+        ))?;
+        let (first_request, order, terminal): SilentTraversal =
+            observe_randomized_silence(&mut recovery, &controls[0], &servers)?;
+        let until: Instant = match recovery.begin_bound(&controls[1], ROUND_BUDGET, PROBE_BUDGET) {
+            Err(RoundError::Exchange(ExchangeError::RetryDeferred { until })) => until,
+            Err(error) => {
+                return Err(format!("unexpected randomized retry result: {error:?}").into());
+            }
+            Ok(_) => return Err("randomized fallback ignored the original retry floor".into()),
+        };
+        assert_retry_wait(until, terminal, FIRST_RETRY_WAIT)?;
+        let waiter = recovery.begin_scheduled_fallback(&controls[1], ROUND_BUDGET, PROBE_BUDGET);
+        tokio::pin!(waiter);
+        require_scheduled_pending(&runtime, waiter.as_mut())?;
+        assert!(matches!(listener.accept(), Err(error) if error.kind() == ErrorKind::WouldBlock));
+        assert_quiet_operators(&servers);
+        let mut round: RecoveryRound<'_> = checked(runtime.block_on(waiter))?;
+        assert!(Instant::now() >= until);
+
+        let frames: Vec<ObservedFallbackLeg> =
+            drive_randomized_fallback(&mut round, &servers, &listener, &runtime, order)?;
+        let date: ControlledDate<'_> = round
+            .admit_date()
+            .map_err(|error| format!("unexpected randomized fallback date refusal: {error:?}"))?;
+        assert_fresh_fallback_chain(date.agreement(), &frames, &first_request)?;
+        assert!(matches!(listener.accept(), Err(error) if error.kind() == ErrorKind::WouldBlock));
+        assert_quiet_operators(&servers);
+        Ok(())
+    }
+
+    /// First request, observed peer prefix, and bracket for committing UDP silence.
+    type SilentTraversal = (Vec<u8>, [Option<usize>; 3], (Instant, Instant));
+
+    /// Record the actual first traversal up to and including the silent UDP peer.
+    ///
+    /// # Errors
+    /// Returns an unexpected fixture, round, or selected endpoint result.
+    ///
+    /// # Panics
+    /// Panics if the silent request allows date admission or does not terminate with silence.
+    fn observe_randomized_silence(
+        recovery: &mut ControlledRecovery<'_>,
+        control: &RoundControl,
+        servers: &[Server; 3],
+    ) -> TestResult<SilentTraversal> {
+        let mut round: RecoveryRound<'_> =
+            checked(recovery.begin_bound(control, ROUND_BUDGET, PROBE_BUDGET))?;
+        let mut order: [Option<usize>; 3] = [None; 3];
+        let mut first_request: Option<Vec<u8>> = None;
+        for slot in &mut order {
+            let endpoint: SocketAddr = checked(round.start_next())?;
+            let index: usize = servers
+                .iter()
+                .position(|server: &Server| server.address == endpoint)
+                .ok_or("randomized UDP visit selected an unexpected peer")?;
+            *slot = Some(index);
+            let selected: &Server = &servers[index];
+            if index == 1 {
+                let (request, _sender): (Vec<u8>, SocketAddr) = receive_request(&selected.socket)?;
+                thread::sleep(UDP_WAIT);
+                let before: Instant = Instant::now();
+                assert!(matches!(
+                    round.poll(),
+                    Err(RoundError::Exchange(ExchangeError::Unanswered))
+                ));
+                let after: Instant = Instant::now();
+                assert_eq!(round.status(), RoundStatus::Unavailable);
+                assert!(matches!(
+                    round.admit_date(),
+                    Err(IntervalError::NotComplete)
+                ));
+                return Ok((first_request.unwrap_or(request), order, (before, after)));
+            }
+            let (request, _response): SignedFrames = selected.respond(DATE_UNIX_SECONDS)?;
+            let _first: &mut Vec<u8> = first_request.get_or_insert(request);
+            assert_eq!(
+                checked(poll_recovery_to_settlement(&mut round)?)?,
+                ProbeProgress::Accepted
+            );
+        }
+        Err("randomized UDP traversal never visited the silent peer".into())
+    }
+
+    /// Replay the observed prefix, record the remaining slots, and check both revisits.
+    ///
+    /// # Errors
+    /// Returns an unexpected round, fixture or selected endpoint result.
+    ///
+    /// # Panics
+    /// Panics if a visit substitutes a peer or completes at the wrong position.
+    fn drive_randomized_fallback(
+        round: &mut RecoveryRound<'_>,
+        servers: &[Server; 3],
+        listener: &TcpListener,
+        runtime: &Runtime,
+        mut order: [Option<usize>; 3],
+    ) -> TestResult<Vec<ObservedFallbackLeg>> {
+        let mut frames: Vec<ObservedFallbackLeg> = Vec::with_capacity(9);
+        for position in 0..9 {
+            let slot: &mut Option<usize> = &mut order[position % servers.len()];
+            let (observed, progress, endpoint, transport): (
+                SignedFrames,
+                Result<ProbeProgress, RoundError>,
+                SocketAddr,
+                ExchangeTransport,
+            ) = match *slot {
+                Some(1) => {
+                    let (observed, progress): (SignedFrames, Result<ProbeProgress, RoundError>) =
+                        tcp_recovery_leg(round, &servers[1], listener, Some(runtime))?;
+                    (
+                        observed,
+                        progress,
+                        listener.local_addr()?,
+                        ExchangeTransport::Tcp,
+                    )
+                }
+                Some(index) => {
+                    let selected: &Server = &servers[index];
+                    let (observed, progress): (SignedFrames, Result<ProbeProgress, RoundError>) =
+                        recovery_leg(round, selected, DATE_UNIX_SECONDS)?;
+                    (observed, progress, selected.address, ExchangeTransport::Udp)
+                }
+                None => {
+                    let endpoint: SocketAddr =
+                        checked(runtime.block_on(async { round.start_next() }))?;
+                    let index: usize = servers
+                        .iter()
+                        .position(|server: &Server| server.address == endpoint)
+                        .ok_or("randomized fallback selected an unexpected peer")?;
+                    assert_ne!(index, 1);
+                    *slot = Some(index);
+                    let observed: SignedFrames = servers[index].respond(DATE_UNIX_SECONDS)?;
+                    (
+                        observed,
+                        poll_recovery_to_settlement(round)?,
+                        endpoint,
+                        ExchangeTransport::Udp,
+                    )
+                }
+            };
+            let expected: ProbeProgress = if position == 8 {
+                ProbeProgress::Complete
+            } else {
+                ProbeProgress::Accepted
+            };
+            assert_eq!(checked(progress)?, expected);
+            frames.push((observed, endpoint, transport));
+        }
+        order.sort_unstable();
+        assert_eq!(order, [Some(0), Some(1), Some(2)]);
+        Ok(frames)
+    }
+
     /// Independent expected scheduler disposition after genuine UDP silence.
     #[derive(Clone, Copy)]
     enum ScheduledScenario {
@@ -2941,12 +3839,10 @@ mod ordered_round {
     /// # Panics
     /// Panics if withdrawal discards the original debt or allows more traffic.
     fn exercise_scheduled_fallback(scenario: ScheduledScenario) -> TestResult<()> {
-        let servers: [Server; 3] = operators()?;
-        let listener: TcpListener = fallback_listener(&servers)?;
+        let (servers, listener): ([Server; 3], TcpListener) = same_address_fallback_peers()?;
         let tcp: SocketAddr = listener.local_addr()?;
-        let aliases: [(UdpSocket, SocketAddr); 2] = [peer()?, peer()?];
-        let mut bindings: [RetryBinding<'_>; 3] =
-            fallback_bindings(&servers, tcp, [aliases[0].1, aliases[1].1])?;
+        assert_eq!(tcp, servers[1].socket.local_addr()?);
+        let mut bindings: [RetryBinding<'_>; 3] = transport_bound_fallback(&servers, tcp)?;
         let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
         let authority: RecoveryControl = RecoveryControl::new();
         let controls: [RoundControl; 2] = [RoundControl::new(), RoundControl::new()];
@@ -3241,8 +4137,13 @@ mod ordered_round {
         servers: &[Server; 3],
         observed: &[SignedFrames],
     ) -> TestResult<()> {
-        let history: &ConflictEvidence =
+        let retained: &ConflictEvidence =
             recovery.first_conflict().ok_or("missing signed conflict")?;
+        let proof: ConflictProof<'_> = retained
+            .reconstruct()
+            .map_err(|error| format!("signed conflict reconstruction failed: {error:?}"))?;
+        let history: &ConflictEvidence = proof.evidence();
+        assert!(std::ptr::eq(retained, history));
         assert_eq!(history.conflict().positions(), (0, 2));
         assert_eq!(history.receipts().len(), 3);
         assert_eq!(history.max_delay(), PROBE_BUDGET);
@@ -3276,6 +4177,62 @@ mod ordered_round {
                 assert!(receipt.chaining_randomness().is_none());
             }
             predecessor = Some(response);
+        }
+        Ok(())
+    }
+
+    /// Recheck both limits of the original contradictory prefix after withdrawal.
+    ///
+    /// # Errors
+    /// Returns fixture, live exchange or historical verification failures.
+    ///
+    /// # Panics
+    /// Panics if reconstruction loses an entry or reports a different first witness.
+    #[test]
+    fn reconstructs_two_and_nine_receipt_conflict_prefixes() -> TestResult<()> {
+        let servers: [Server; 3] = operators()?;
+        let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+        for length in [2_usize, 9] {
+            let invocation: RecoveryControl = RecoveryControl::new();
+            let round_control: RoundControl = RoundControl::new();
+            let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new(
+                &invocation,
+                ROUND_BUDGET,
+                recovery_date_policy(&calendar)?,
+            ))?;
+            {
+                let mut round: RecoveryRound<'_> = checked(recovery.begin(
+                    &round_control,
+                    roster(&servers)?,
+                    ROUND_BUDGET,
+                    PROBE_BUDGET,
+                ))?;
+                for position in 0..length {
+                    let midpoint: u64 = match (position == length - 1, position) {
+                        (true, _) => 1_009,
+                        (false, 1) => 1_021,
+                        (false, _) => 1_020,
+                    };
+                    let (_frames, progress): (SignedFrames, Result<ProbeProgress, RoundError>) =
+                        recovery_leg(&mut round, &servers[position % servers.len()], midpoint)?;
+                    if position == length - 1 {
+                        assert!(matches!(progress, Err(RoundError::Conflict(conflict))
+                            if conflict.positions() == (0, position)));
+                    } else {
+                        assert_eq!(checked(progress)?, ProbeProgress::Accepted);
+                    }
+                }
+            }
+            checked(round_control.withdraw(Withdrawal::Stop))?;
+            checked(invocation.withdraw(Withdrawal::Stop))?;
+            let retained: &ConflictEvidence = recovery.first_conflict().ok_or("missing prefix")?;
+            let proof: ConflictProof<'_> = retained
+                .reconstruct()
+                .map_err(|error| format!("signed prefix reconstruction failed: {error:?}"))?;
+            assert!(std::ptr::eq(retained, proof.evidence()));
+            assert_eq!(proof.evidence().receipts().len(), length);
+            assert_eq!(proof.evidence().conflict().positions(), (0, length - 1));
+            assert_quiet_operators(&servers);
         }
         Ok(())
     }

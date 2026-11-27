@@ -593,12 +593,15 @@ Full-client reuse can be reconsidered only after its dependent gates are met.
 
 **RFC Appendix B is not an unquestioned positive strict-v1 fixture.** Technical
 erratum **9238**, reported 27 October, concerns example signatures retaining
-draft contexts. The coauthor's 9 November reply calls the issue likely valid
-but says the proposed replacement had not yet been verified. The current errata
-portal status was unavailable during this review. Independently verify corrected
-or generated vectors against the normative profile; never weaken final-v1
-contexts to make the old example pass. Retain a wrong-context rejection control.
-[S21]
+draft contexts. The RFC Editor still listed it as **Reported** on 27 November.
+An independent offline check found that both signatures in each original
+exchange fail the final RFC contexts. Both signatures in each proposed exchange
+verify with the final contexts, as do the request commitments and both nonce
+links. The third signed interval ends 86,394 seconds before either of the first
+two begins. The [TA-W02/03 fixture checkpoint](../../tasks/time-assurance-integration.md#321-ta-w06-select-one-retry-ready-independent-roughtime-round)
+uses the original exchanges for wrong-context rejection and the proposal for
+authenticated disagreement. Independent signed loopback peers provide healthy
+agreement. Retain the final RFC contexts. [S21]
 
 TA-W02/TA-W03 must freeze framing, units, signature contexts, full-request Merkle
 binding and bounded decoding before TA-W06 interoperability. Include unknown
@@ -912,10 +915,11 @@ remain open.
 
 The [controlled three-traversal round](../../tasks/time-assurance-integration.md#312-rfc-m02-controlled-three-traversal-measurement)
 passed the fixed three-operator loopback checks, including incomplete-round
-refusal and original chain custody. The prior two-pass receipts retain their
-original scope. The complete product schedule still needs randomized selection
-from admitted operators, bound retries and authenticated reset, and native
-and provider qualification.
+refusal and original chain custody. The [controlled randomized selector](../../tasks/time-assurance-integration.md#321-ta-w06-select-one-retry-ready-independent-roughtime-round)
+selects a feasible independent trio once and preserves the exact order and retry
+bindings through all three traversals and controlled fallback. The prior two-pass
+receipts retain their original scope. Production integration still needs admitted
+live operators and native and provider qualification.
 
 The [controlled retry binding](../../tasks/time-assurance-integration.md#314-rfc-w01-controlled-tcp-connect-and-shared-retry-floor)
 shares the original floor across actual UDP send and TCP connect and resets at
@@ -929,7 +933,9 @@ wait, and changes only the unanswered peer's route. The [controlled scheduler wa
 rechecks the same cutoff and floor after timer or parent withdrawal. The
 [controlled TCP worker](../../tasks/time-assurance-integration.md#319-ta-w06-scheduled-tcp-connect-with-shared-worker-custody)
 retains the original retry binding through actual join and guarded stream
-adoption. Production integration still needs live catalogue-owned identity,
+adoption. The [transport-qualified retry binding](../../tasks/time-assurance-integration.md#320-ta-w06-bind-retry-admission-to-the-selected-transport)
+checks each selected numeric endpoint with its transport and supports the same
+port for UDP and TCP. Production integration still needs live catalogue-owned identity,
 qualified Windows retirement and restart continuity.
 
 Continue instantiating §8.4's documented RFC baseline in TA-W02's checked
@@ -965,6 +971,6 @@ hidden prerequisite; CHR-0 requires RGT-C01 but remains post-V1.
 - **S18:** Roughenough source at S6: [protocol manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-protocol/Cargo.toml), [client manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/Cargo.toml), [crypto boundary](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-common/src/crypto.rs), [Merkle manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-merkle/Cargo.toml), [client library](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/lib.rs), [transport](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/transport.rs), [client exchange](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/client.rs), [measurement sequence](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/sequence.rs), [MIT grant](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/LICENSE-MIT) and [CI](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/.github/workflows/rust.yml).
 - **S19:** Roughenough [published 2.2.0 release](https://github.com/int08h/roughenough/releases/tag/2.2.0) and [protocol 2.2.0 package](https://docs.rs/crate/roughenough-protocol/2.2.0). Registry entries for [client, blob `c505e22eeffaf0102e3ea09470134d806659eb05`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/c505e22eeffaf0102e3ea09470134d806659eb05) and [protocol, blob `aa419e863b703b86eaf7e8c94bcdb5a25617cf30`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/aa419e863b703b86eaf7e8c94bcdb5a25617cf30), checked 27 November, record `2026-10-12T02:03:22Z` and `2026-10-12T02:03:10Z` respectively, with no 2.3.0 entry. These publication records do not establish a resolved graph or archive parity.
 - **S20:** [`ed25519-dalek` 3.0.0 package](https://docs.rs/crate/ed25519-dalek/3.0.0) and [published manifest](https://docs.rs/crate/ed25519-dalek/3.0.0/source/Cargo.toml); registry [blob `19810c3a54c9c5bb24d2ae646c323a5935a034eb`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/19810c3a54c9c5bb24d2ae646c323a5935a034eb) records publication `2026-07-06T16:23:09Z`, not yanked, checksum `6ebaa1a2bf1290ab3bfe5a7b771d050ebffab2711c19a81691c683a5144a25de`. Candidate evidence only; archive/source and complete graph review pending.
-- **S21:** RFC 10049 erratum 9238 [official report, 27 October 2026](https://mailarchive.ietf.org/arch/msg/ntp/6Flv19F-d52veYryjOxM_iy9MJ8/) and [coauthor response, 9 November](https://mailarchive.ietf.org/arch/msg/ntp/QxQI3jhZds_af4uiBTz2YZRNRE8/). The report's dated status is Reported; current portal disposition was not verified.
+- **S21:** RFC 10049 erratum 9238, [RFC Editor status and correction text](https://errata.rfc-editor.org/search/?rfc_number=10049), [report, 27 October 2026](https://mailarchive.ietf.org/arch/msg/ntp/6Flv19F-d52veYryjOxM_iy9MJ8/) and [coauthor response, 9 November](https://mailarchive.ietf.org/arch/msg/ntp/QxQI3jhZds_af4uiBTz2YZRNRE8/).
 - **S22:** NevroTick's checked-in [CNG verification mapping](https://github.com/DavidOsipov/NevroTick/blob/3e3536d808789dabb1b6577b069140ca13ad6e31/tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/src/verify.rs) and [provider signer](https://github.com/DavidOsipov/NevroTick/blob/3e3536d808789dabb1b6577b069140ca13ad6e31/tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/src/signer/ec.rs); the mapping comments Ed25519 out and the checked-in provider supplies no admitted Roughtime verifier. Architecture §18.7.1 remains the graph/licence authority.
 - **S23:** Tokio 1.54.1 [`JoinHandle` contract](https://docs.rs/tokio/1.54.1/tokio/task/struct.JoinHandle.html): dropping a handle detaches its task. This documents the lifecycle obligation; it is not execution or graph qualification for `roughtime` 0.2.1.

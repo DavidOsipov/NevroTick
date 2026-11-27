@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Scheduler-owned retry floor for one controlled Roughtime peer and root.
 
-use super::{ExchangeError, RootKey};
+use super::{ExchangeError, ExchangeTransport, RootKey};
 use crate::native_network_job::{JoinWitness, Settlement};
 use std::{
     net::SocketAddr,
@@ -13,7 +13,52 @@ const CAP_FAILURE: u8 = 30;
 /// Exact maximum wait of 24 hours, in nanoseconds.
 const CAP_NANOS: u64 = 86_400_000_000_000;
 
-/// One explicit controlled peer/root binding with two eligible loopback aliases.
+/// One exact loopback endpoint and transport selected for a controlled peer.
+///
+/// ```compile_fail,E0451
+/// use std::net::SocketAddr;
+/// use nevrotick_engine::roughtime::exchange::{ExchangeTransport, retry::RetryRoute};
+/// let _route = RetryRoute {
+///     endpoint: SocketAddr::from(([0, 0, 0, 0], 5319)),
+///     transport: ExchangeTransport::Udp,
+/// };
+/// ```
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RetryRoute {
+    /// Checked numeric endpoint before any native work.
+    endpoint: SocketAddr,
+    /// Transport permitted on that endpoint.
+    transport: ExchangeTransport,
+}
+
+impl RetryRoute {
+    /// Admit a bounded numeric route for one transport.
+    ///
+    /// # Errors
+    /// Refuses non-loopback or noncanonical endpoints and zero ports.
+    pub fn new(endpoint: SocketAddr, transport: ExchangeTransport) -> Result<Self, ExchangeError> {
+        require_loopback_endpoint(endpoint)?;
+        Ok(Self {
+            endpoint,
+            transport,
+        })
+    }
+}
+
+/// Complete route set of one controlled binding.
+enum RetryRoutes {
+    /// The original fixture constructor explicitly allows both transports at each alias.
+    LoopbackAliases([SocketAddr; 2]),
+    /// The exact route or pair selected before any native effect.
+    Selected {
+        /// First selected route.
+        primary: RetryRoute,
+        /// Optional independently selected second route.
+        alternate: Option<RetryRoute>,
+    },
+}
+
+/// One controlled peer/root with a retry floor shared by its selected routes.
 ///
 /// The scheduler retains this same binding across attempts and round changes.
 /// The exclusive attempt borrow prevents overlap. Installed catalogue and
@@ -33,65 +78,122 @@ const CAP_NANOS: u64 = 86_400_000_000_000;
 /// }
 /// ```
 pub struct RetryBinding<'a> {
-    /// Exact previously selected root used by every alias.
+    /// Exact previously selected root used by every route.
     root: &'a RootKey,
-    /// Complete selected controlled alias set.
-    aliases: [SocketAddr; 2],
-    /// Floor shared by both aliases.
+    /// Complete selected route set.
+    routes: RetryRoutes,
+    /// Floor shared by all selected routes.
     state: RetryState,
 }
 
 impl<'a> RetryBinding<'a> {
-    /// Bind one explicit controlled root to two distinct loopback addresses.
+    /// Bind a controlled fixture root to two distinct addresses for UDP and TCP.
     ///
     /// # Errors
     /// Refuses duplicate, non-loopback or noncanonical addresses and zero ports.
     pub fn new(root: &'a RootKey, aliases: [SocketAddr; 2]) -> Result<Self, ExchangeError> {
-        if aliases[0] == aliases[1] || aliases.iter().any(|alias| {
-            !alias.ip().is_loopback()
-                || alias.port() == 0
-                || matches!(alias, SocketAddr::V6(v6) if v6.scope_id() != 0 || v6.flowinfo() != 0)
-        }) {
+        if aliases[0] == aliases[1] {
             return Err(ExchangeError::Configuration);
+        }
+        for endpoint in aliases {
+            require_loopback_endpoint(endpoint)?;
         }
         Ok(Self {
             root,
-            aliases,
+            routes: RetryRoutes::LoopbackAliases(aliases),
             state: RetryState::default(),
         })
     }
 
-    /// Lend the exact root and its floor for one selected alias.
+    /// Bind the exact controlled route or pair to one root and original retry state.
+    ///
+    /// UDP and TCP may share a numeric endpoint. Both retain the same retry floor.
     ///
     /// # Errors
-    /// Refuses a foreign alias or a floor that cannot yet admit native work.
+    /// Refuses two copies of the same endpoint and transport.
+    pub fn new_for_routes(
+        root: &'a RootKey,
+        primary: RetryRoute,
+        alternate: Option<RetryRoute>,
+    ) -> Result<Self, ExchangeError> {
+        if alternate == Some(primary) {
+            return Err(ExchangeError::Configuration);
+        }
+        Ok(Self {
+            root,
+            routes: RetryRoutes::Selected { primary, alternate },
+            state: RetryState::default(),
+        })
+    }
+
+    /// Lend the exact root and its floor for one selected route.
+    ///
+    /// # Errors
+    /// Refuses an unselected route or a floor that cannot yet admit native work.
     pub(super) fn admission(
         &mut self,
         peer: SocketAddr,
+        transport: ExchangeTransport,
     ) -> Result<(&RootKey, &mut RetryState), ExchangeError> {
-        let (root, state): (&RootKey, &mut RetryState) = self.selection(peer)?;
+        let (root, state): (&RootKey, &mut RetryState) = self.selection(peer, transport)?;
         state.check(Instant::now())?;
         Ok((root, state))
     }
 
-    /// Lend the selected alias and state for evaluation at a later native send.
+    /// Lend the selected route and state for evaluation at a later native send.
     ///
     /// # Errors
-    /// Refuses an alias outside the original binding.
+    /// Refuses an endpoint or transport outside the original binding.
     pub(in crate::roughtime) fn selection(
         &mut self,
         peer: SocketAddr,
+        transport: ExchangeTransport,
     ) -> Result<(&RootKey, &mut RetryState), ExchangeError> {
-        if !self.has_alias(peer) {
-            return Err(ExchangeError::ForeignPeer);
-        }
+        self.require_route(peer, transport)?;
         Ok((self.root, &mut self.state))
     }
 
-    /// Check whether the original owner selected this exact alias.
-    pub(in crate::roughtime) fn has_alias(&self, peer: SocketAddr) -> bool {
-        self.aliases.contains(&peer)
+    /// Check whether the original owner selected this exact endpoint and transport.
+    ///
+    /// # Errors
+    /// Refuses an unselected endpoint or a transport absent for that endpoint.
+    pub(in crate::roughtime) fn require_route(
+        &self,
+        peer: SocketAddr,
+        transport: ExchangeTransport,
+    ) -> Result<(), ExchangeError> {
+        match &self.routes {
+            RetryRoutes::LoopbackAliases(aliases) if aliases.contains(&peer) => Ok(()),
+            RetryRoutes::LoopbackAliases(_) => Err(ExchangeError::ForeignPeer),
+            RetryRoutes::Selected { primary, alternate } => {
+                let matches_route =
+                    |route: RetryRoute| route.endpoint == peer && route.transport == transport;
+                if matches_route(*primary) || alternate.is_some_and(matches_route) {
+                    Ok(())
+                } else if primary.endpoint == peer
+                    || alternate.is_some_and(|route| route.endpoint == peer)
+                {
+                    Err(ExchangeError::UnselectedTransport)
+                } else {
+                    Err(ExchangeError::ForeignPeer)
+                }
+            }
+        }
     }
+}
+
+/// Apply the controlled endpoint rule consistently to both constructors.
+///
+/// # Errors
+/// Refuses non-loopback endpoints, zero ports or a noncanonical IPv6 representation.
+fn require_loopback_endpoint(endpoint: SocketAddr) -> Result<(), ExchangeError> {
+    if !endpoint.ip().is_loopback()
+        || endpoint.port() == 0
+        || matches!(endpoint, SocketAddr::V6(v6) if v6.scope_id() != 0 || v6.flowinfo() != 0)
+    {
+        return Err(ExchangeError::Configuration);
+    }
+    Ok(())
 }
 
 /// Current earliest retry, including fail-closed monotonic arithmetic.

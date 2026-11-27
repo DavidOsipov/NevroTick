@@ -1858,3 +1858,28 @@ The coordinator may append this raw completed report to the existing catalogue t
 
 After integrating `be90618` with the receiver source checkpoint, all 38 catalogue
 methods pass under `python3 -I -X dev -Werror -B -m unittest discover -s tools/server-catalogue -p test_build_catalogue.py -v`. This includes the three added authority/independence/time-behavior forgeries. Raw log `recovery-source-v1/integrated-catalogue-v1.log`, SHA-256 `471e27d949d365e7b6cabefa7733f91472d4fca06d77e50e59a0b31055fc9c63`, retains the exact current result. This supplies no catalogue trust, production issuer, native or release qualification.
+
+### 8.8 Hostile catalogue member coverage
+
+The actual collection command now has a healthy single escaped member and a
+refused equivalent escaped/literal duplicate on the second row. Both source
+descriptors bind the exact bytes. The duplicate causes `json-duplicate` and
+refuses the complete affected source. The separately collected three NTP records
+remain intact. The result retains unapproved authority, the observed source
+identity, redacted diagnostics and the five-record healthy result.
+
+The isolated runner used the installed Python 3.12.3 with `-I -B -S -X dev -W
+error`, a read-only frozen catalogue subtree, a new network namespace, task-owned
+temporary files and ten CPU seconds per child. The first complete invocation
+reached the CPU cap, then the focused new case passed. Separate clean batches
+passed 35 admission and four work-limit tests. The first work-limit attempt had
+applied the 2 MiB log cap to product files and refused a valid fixture. The final
+work-limit child used a 32 MiB file cap for the collector's 16 MiB output bound
+and emitted less than 2 MiB of diagnostics. This run exercises publisher-side
+collection. Production issuer and provider admission retain their own gates.
+
+Receipts under `~/.local/share/nevrotick/roughtime-hostile-coverage.Hq03x6mA/`
+retain the first run as `catalogue.log`. The passing `catalogue-admission.log`
+hash is `a1d5eb7371c25759c91fc98793ec2b2dcde3809cad23477fe763ee137aa1a668`.
+The passing `catalogue-limits-repaired.log` hash is
+`84aa8a2dda36098874507b796eedbc3ca4bda71ff70682db227de24be34b4d46`.

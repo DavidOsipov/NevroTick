@@ -79,8 +79,10 @@ pub enum ExchangeError {
     CaptureOrder,
     /// All selected read attempts have been charged.
     ReceiveBudget,
-    /// The actual source address differs from the selected peer.
+    /// The destination is outside the binding or the response came from another peer.
     ForeignPeer,
+    /// The selected endpoint did not advertise the attempted transport.
+    UnselectedTransport,
     /// The received frame exceeded its transport size limit or was truncated.
     Truncated,
     /// The stream ended before transmitting or receiving a complete frame.
@@ -247,7 +249,8 @@ impl<'a> PendingExchange<'a> {
         budget: Duration,
     ) -> Result<Self, ExchangeError> {
         let cutoff: Instant = exchange_cutoff(budget)?;
-        let (root, state): (&RootKey, &mut RetryState) = binding.admission(peer)?;
+        let (root, state): (&RootKey, &mut RetryState) =
+            binding.admission(peer, ExchangeTransport::Udp)?;
         Self::send_bound(authority, peer, root, cutoff, &[], Some(state), None)
     }
 

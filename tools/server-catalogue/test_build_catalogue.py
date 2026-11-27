@@ -240,6 +240,44 @@ class CollectionTests(Case):
                 self.assertEqual(value["sources"][1]["status"], "complete")
         self.assertEqual(self.collect([("bad", C.NTS, self.fixture("ntp.md"))])[0], 3)
 
+    def test_escaped_duplicate_roughtime_member_refuses_entire_source(self) -> None:
+        original: bytes = dump({"servers": [rough_row(), rough_row("Beta", "beta.invalid:5319")]})
+        literal_key: bytes = b'"name":"Beta"'
+        escaped_key: bytes = b'"na\\u006de":"Beta"'
+        self.assertEqual(original.count(literal_key), 1)
+        healthy_body: bytes = original.replace(literal_key, escaped_key, 1)
+        peer: tuple[str, str, bytes] = ("peer", C.NTP, self.fixture("ntp.md"))
+        healthy: tuple[int, dict[str, object], Path] = self.collect(
+            [("rough", C.ROUGH, healthy_body), peer]
+        )
+        self.assertEqual((healthy[0], healthy[1]["status"], healthy[1]["record_count"]),
+                         (0, "complete-candidate", 5))
+        healthy_sources: object = healthy[1]["sources"]
+        assert isinstance(healthy_sources, list)
+        self.assertEqual([source["id"] for source in healthy_sources], ["peer", "rough"])
+
+        marker: bytes = b"duplicate-member-private-text"
+        malformed: bytes = healthy_body.replace(escaped_key, escaped_key + b',"name":"' + marker + b'"', 1)
+        manifest: Path = self.manifest([("rough", C.ROUGH, malformed), peer])
+        output: Path = self.fresh()
+        command_result: tuple[int, str, str] = self.invoke(
+            ["collect", "--manifest", str(manifest), "--output", str(output)]
+        )
+        self.assertEqual(command_result, (3, "published: incomplete-candidate\n", ""))
+        payload: bytes = output.read_bytes()
+        self.assertNotIn(marker, payload)
+        snapshot: dict[str, object] = json.loads(payload)
+        self.assertEqual((snapshot["status"], snapshot["authority"], snapshot["record_count"]),
+                         ("incomplete-candidate", "unapproved-publisher-evidence", 3))
+        sources: object = snapshot["sources"]
+        assert isinstance(sources, list)
+        self.assertEqual(len(sources), 2)
+        self.assertEqual(sources[0], healthy_sources[0])
+        refused: dict[str, object] = sources[1]
+        self.assertEqual((refused["id"], refused["status"], refused["error"], refused["records"]),
+                         ("rough", "failed", "json-duplicate", []))
+        self.assertEqual(refused["observed"], {"sha256": sha(malformed), "bytes": len(malformed)})
+
     def test_hash_length_blob_and_missing_source_failures_preserve_neighbor(self) -> None:
         for mutation in ("digest", "length", "blob", "missing"):
             with self.subTest(mutation=mutation):

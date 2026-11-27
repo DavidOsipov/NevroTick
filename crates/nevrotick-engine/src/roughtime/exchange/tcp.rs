@@ -76,7 +76,8 @@ impl<'a> PendingTcpExchange<'a> {
         budget: Duration,
     ) -> Result<Self, ExchangeError> {
         let cutoff: Instant = exchange_cutoff(budget)?;
-        let (root, state): (&RootKey, &mut RetryState) = binding.admission(peer)?;
+        let (root, state): (&RootKey, &mut RetryState) =
+            binding.admission(peer, ExchangeTransport::Tcp)?;
         Self::connect_bound(authority, peer, root, cutoff, &[], state)
     }
 
@@ -177,6 +178,19 @@ impl<'a> PendingTcpExchange<'a> {
     }
 }
 
+/// Fixture hook for the reservation before the actual worker dispatch claim.
+#[cfg(test)]
+pub(in crate::roughtime) type BeforeConnectDispatch = Box<dyn FnOnce() -> io::Result<()> + Send>;
+
+/// The real connector and its optional per-attempt fixture hook.
+#[cfg(test)]
+pub(in crate::roughtime) struct ConnectFixture<C> {
+    /// Where the worker would actually connect.
+    pub(in crate::roughtime) connect: C,
+    /// Gate before the worker's dispatch clock sample and claim.
+    pub(in crate::roughtime) before_dispatch: Option<BeforeConnectDispatch>,
+}
+
 /// Borrow the round inputs while one owned native job establishes its stream.
 pub(in crate::roughtime) struct PendingConnect<'a> {
     /// Process-owned thread and exclusive destination for its returned stream.
@@ -203,8 +217,18 @@ impl<'a> PendingConnect<'a> {
         cutoff: Instant,
         history: &[Receipt],
         retry: &'a mut RetryState,
-        connect: impl FnOnce(SocketAddr, Duration) -> io::Result<TcpStream> + Send + 'static,
+        #[cfg(not(test))] connect: impl FnOnce(SocketAddr, Duration) -> io::Result<TcpStream>
+        + Send
+        + 'static,
+        #[cfg(test)] fixture: ConnectFixture<
+            impl FnOnce(SocketAddr, Duration) -> io::Result<TcpStream> + Send + 'static,
+        >,
     ) -> Result<Self, ExchangeError> {
+        #[cfg(test)]
+        let ConnectFixture {
+            connect,
+            before_dispatch,
+        } = fixture;
         retry.prepare_worker(Instant::now())?;
         let request: OriginalRequest<'a> = prepare(
             authority,
@@ -217,6 +241,10 @@ impl<'a> PendingConnect<'a> {
         let job: NativeJob<Result<TcpStream, ExchangeError>> = NativeJob::start(
             "nevrotick-rgt-connect",
             move |dispatch: DispatchAdmission| {
+                #[cfg(test)]
+                if let Some(wait) = before_dispatch {
+                    wait().map_err(|_| ExchangeError::ConnectWorker)?;
+                }
                 let before: Instant = Instant::now();
                 if before >= cutoff {
                     return Err(ExchangeError::Expired);

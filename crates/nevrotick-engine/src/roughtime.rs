@@ -159,16 +159,16 @@ pub struct VerifiedResponse<'request, 'response> {
     root: &'request RootKey,
 }
 
-impl VerifiedResponse<'_, '_> {
+impl<'response> VerifiedResponse<'_, 'response> {
     /// Borrow the original framed request.
     #[must_use]
     pub const fn request_frame(&self) -> &[u8] {
         self.request.frame()
     }
 
-    /// Borrow the original framed response, including every byte used by chaining.
+    /// Borrow the complete verified frame for the lifetime of the original response bytes.
     #[must_use]
-    pub const fn frame(&self) -> &[u8] {
+    pub const fn frame(&self) -> &'response [u8] {
         self.response.frame()
     }
 

@@ -1828,6 +1828,386 @@ production scheduling, persistence and per-file qualification remain open.
 | `confirmed.json` | `470f8f91be81f326adc26a92a059f57c5180ec5226c61b56ba6b29810a12b8d2` |
 | `confirmed.log` | `90f546ce4042d47ae5944810cf05b4b271a7b1ca5bfa89cfa4a21de260979db8` |
 
+### 3.20 TA-W06 bind retry admission to the selected transport
+
+RFC-W01/W03, TA-C06/14/17/19 and CHECK-9/14/25/27. One controlled root and
+retry state now accepts a checked numeric route or pair. Each route specifies
+its transport. UDP and TCP can share a numeric endpoint. Repeating the exact
+same transport and endpoint, specifying zero port or passing a noncanonical
+loopback representation refuses construction. The original two-address fixture
+constructor continues to authorize both transports on its selected addresses.
+
+Direct UDP submission and TCP connect check the selected endpoint and transport
+before consulting the retry floor or preparing native work. Round construction
+checks both selected routes before it can hand the original retry state to the
+worker. A known address with a different transport yields
+`UnselectedTransport` and leaves the retry debt and native lane untouched. A
+different address yields the original `ForeignPeer` refusal. The shared floor,
+socket custody, signed frame chain and complete-date reset retain §3.19's owners.
+
+Use actual loopback listeners to verify transport-specific refusal with no
+native traffic and immediate healthy progress. The scheduled fallback control
+uses the same numeric UDP and TCP port and checks the original floor and all
+nine replies. A compile-fail consumer checks route construction privacy. Retain
+the GNU/MSVC and shared DNS/TCP regression selections under one 240-second
+execution and repair allowance. The route type consumes controlled selections.
+Live catalogue issuer approval, exact provider evidence, native Windows
+retirement and per-file qualification remain separate prerequisites.
+
+The final 802-input candidate
+`908364c1ed85bd0ba0679a8b35caf3ecae978c3e211ed27f4a18b8dd3dbbddfa`
+passed all twelve selected lanes, six executed on this candidate and six
+reused after exact affected-input comparison. The final GNU integration
+roster contains 47 tests. Its scheduled fallback drove all three TCP visits
+on the exact port used by the unanswered UDP peer and read back all nine
+original signed replies. The negative control observed empty UDP and TCP
+listeners after the mismatched requests and completed valid exchanges under
+the same original authorities. Direct construction accepted canonical `::1`
+and refused zero port, a non-loopback IPv4 address and IPv6 scope or flow
+fields. GNU and MSVC Clippy for Roughtime and the combined KE/Roughtime MSVC
+check passed. The unchanged 14 selected units, two shared worker custody controls,
+97 Engine doctests, 12 wire tests, four wire doctests and default MSVC Clippy
+match their passing first-run inputs. The Engine doctest roster includes the
+new private-field construction control.
+
+Fresh source review followed exact route identity through retry admission,
+round selection, worker dispatch and guarded socket adoption. The first attempt
+passed all twelve lanes with 46 Engine integration tests. The review identified
+a direct constructor-boundary test gap. Only the integration fixture changed
+between the attempts. The successor rechecked the affected targets and exact
+47-case roster, then verified the unaffected lane identities and the candidate,
+tool, vendor and graph bookends. Both attempts consumed 195.696 seconds
+of the original 240-second allowance. Wrong-transport priority over a deferred
+floor is covered by source review. Native Windows and production issuance,
+restart continuity and per-file metrics remain open.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-transport-binding.BS5up5Rj/` | SHA-256 |
+| --- | --- |
+| `check.py` | `d4476e21455b7f1d5a2b1d08f38764f416c18ac745c60f5addbdbdd530273104` |
+| `attempt.json` | `8387b8af56030f7814474be591303913caa1c6109c6fff62ea0e189c696cf33e` |
+| `attempt.log` | `09197bf1636246db38faa4fae8cfda18ef8f78d0e782e54ea819ed0f47ca5e1a` |
+| `check-boundary.py` | `00a3d5e5285749258907f7dfb1503ba945f19e06839b04a140a5c1d041abd771` |
+| `final.json` | `126de255361e40ff5336b3366562928f94b0bf8b3dd26ca8f877a4b166370109` |
+| `final.log` | `c9e1be513c67aa944240b8831ffe7fe91b9364d165f8c15187b7795f6c635cd7` |
+
+### 3.21 TA-W06 select one retry-ready independent Roughtime round
+
+RFC-M02/W01, TA-C01/06/14/17/19 and CHECK-7/8/9/14/21/25/27. The
+controlled recovery constructor takes three through sixteen checked candidates
+with their original exclusive retry states. It checks retry floors against one
+clock sample and observes any worker settlement separately for each candidate.
+It refuses duplicate UDP endpoints or roots across the roster and enumerates
+every feasible trio. Each pair must have distinct endpoints,
+keys, operators and upstream clock groups. A fallback-mode trio needs an
+advertised TCP route and each selected alternate must preserve distinct endpoints
+when it replaces that peer's UDP route. Sharing its own numeric UDP port remains
+valid. The original retry floor is checked again at each native effect.
+
+The finite enumeration visits at most 560 unordered trios. One rank across the
+six orders of each feasible trio uses the admitted operating-system entropy
+source. Accept complete buckets only, make at most eight draws, and refuse
+entropy failure or an empty feasible set. The original absolute deadline covers
+the search. The invocation rechecks it with the original control before issuance
+and retains the selected order and exclusive bindings for both rounds. Refusal
+emits no probe or successor and spends no invocation slot.
+
+The integration fixture excludes a peer with observed retry debt and compares
+the sole feasible trio with a greedy trap. It observes the selected order across
+all nine real signed loopback replies and checks the original frames and quiet
+unselected sockets. The fallback control checks the original UDP prefix and
+retry floor, same-slot TCP substitution, and retained order through all nine
+fresh signed replies. The deterministic rank controls cover the six orders of
+the sole feasible trio, rank boundaries at the 16-peer cap, incomplete buckets,
+entropy failure and bounded redraws.
+The selector draws over eligible concrete peer schedules. Approved production
+roster issuance and the shared live work budget retain their existing owners.
+
+The Appendix B follow-up reaches NevroTick's actual keyed verifier with all
+three published originals and all three proposed erratum 9238 replacements.
+The originals must refuse the final-profile delegation signature. The proposal
+must authenticate each original exchange, retain both nonce links and expose
+contradictions on the first-to-third and second-to-third pairs. The proposal's
+first two midpoints agree. The third is 86,400 seconds earlier.
+The RFC Editor lists the erratum as Reported. Separate signed loopback cases
+establish successful agreement and original-round conflict handling. [RFC Editor errata](https://errata.rfc-editor.org/search/?rfc_number=10049)
+
+The isolated 818-input candidate
+`e0430154f54afa623c8de88851a2487ab1737ab739bf8c97d2ffab33cb2fd217`
+passed all twelve selected lanes. It ran 17 Roughtime units, the two
+same-process worker-custody controls, 97 Engine doctests, 12 wire integration
+tests and four wire doctests. MSVC selected/default Clippy and the combined
+KE/Roughtime target check passed. The receipt preserves the GNU Clippy pass
+and the exact 51-case integration roster, including both Appendix B controls
+and both randomized loopback paths, from the preceding attempt. The final
+source change removed one redundant path qualification in a unit test. Exact
+comparison confirmed the applicable source, tools, target libraries, vendor and
+graph inputs for those two reused lanes. The same input bookends matched on the
+final run. The initial lints, unit compile refusal and repair consumed 199.226
+seconds of the original 240-second allowance, including the passing run.
+
+Fresh source review checked selection arithmetic, exclusive retry binding and
+TCP route mapping. The review identified the additional rank-boundary and
+randomized fallback controls. The independent byte check of Appendix B used
+both signature contexts, verified the nonce links for the replacement, and
+reported the exact contradictions. Its external `context-result.json` has
+SHA-256 `63a640cd4aee1393c0e737eec3fc3b5447238f1103e49a9920b0ab7f0bada2ce`.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-random-selection.US9zzUHG/` | SHA-256 |
+| --- | --- |
+| `check.py` | `d295b2753bd4e75f2e21b61e98f908c29f9b28d8d030905d9f86dfb8b430a8fc` |
+| `attempt.json` | `54063ec06f46dede85bfa0e876d06805382c0e779671406d627e0a1ff091a44f` |
+| `check-final.py` | `fcd54ea240e8e987f1aa1b218c4254d9317e855c472dfcc1b5695c902da98efa` |
+| `final.json` | `1441fda4fe391a783156909e334659e35dc368c02237c7cdd92cfc6b34d47a3f` |
+| `final-expected-cases` | `4f4ba691bfe0652d6f7b790c4bd3f0927ed5d07d3a356cd11b8f5f6bfd574178` |
+| `completed.json` | `7947220b57cb98f121b4c0afa434822f2d638590804893337c57af0e8355844c` |
+| `check-confirmed.py` | `dce6b92dac354ba324aef6631d69a57bca933b051b7736e36491bb47cc10c42a` |
+| `confirmed.json` | `587e6f83e552174f1cf2acb7cd2426b57ca3ee2750b6d6368eb0e194fb0ff9dd` |
+| `confirmed.log` | `986d4a21f5c5a27307a87a5e47e0012da299194c21bb6955c75889bda7acb245` |
+
+The next controlled source child reconstructs a proof from the original
+`ConflictEvidence` for RFC-M01 using the retained roots, frames and linking
+bytes. DATA-18 still owns authorized export, persistence and clearance. Live
+catalogue provenance, native Windows retirement, restart continuity, release
+trust and the per-file gates remain open under their existing owners.
+
+### 3.22 TA-W04 reconstruct the retained signed conflict
+
+RFC-M01, DATA-18, TA-C06/13/19/21 and CHECK-6/7/9/14/25. The existing
+`ConflictEvidence` receiver rechecks the complete original prefix against each
+expected endpoint and root in the original selected order. It uses the keyed
+wire verifier on the exact request and response frames and verifies every later
+link to the preceding complete response. The prefix contains 2–9 entries and
+must end at the original witness. Live receipt acceptance and reconstruction
+both use the strict signed bound comparison and choose the first earlier
+violating position. The borrowed `ConflictProof` is available only from a
+successful replay of that exact immutable evidence.
+
+Replay is bounded, uses no I/O or current clock authority, and preserves the
+original conflict on every refusal. It does not retry a probe, refresh a date
+or open an export sink. DATA-18 owns authorized export, persistent state,
+alerting, bounded remeasurement and clearance. Retain OPEN-DATA-05 and existing
+release, per-file and native gates.
+
+Check the actual recovery receiver after the original stop/expiry and a later
+round. Use live signed two-entry and nine-entry prefixes with an independently
+specified first witness. Use the intact reported erratum proposal with targeted
+identity, shape, verification and nonce-link faults and a consistent prefix.
+Check external construction refusal beside the legal borrowed proof. Select
+isolated GNU and MSVC development checks in one 240-second execution and repair
+allowance. Unchanged wire and default MSVC scopes stay with §3.21.
+
+The isolated 820-input candidate
+`0e4eefd756118efa85ad6599c30728d9cc95b50c9cc0c148381d7e6dad0d59d1`
+passed all nine selected lanes. GNU ran 52 integration cases, 20 selected
+Roughtime units, the two same-process worker controls and 98 Engine doctests.
+The integration cases reconstruct from the original receiving path after
+withdrawal, after timeout and after a later round. The two- and nine-receipt
+controls require the earliest original witness, even when another earlier
+receipt has a higher signed lower bound. The Reported erratum cases reject
+missing and changed links, malformed frames, a changed signature, wrong
+identity and false witness while retaining the valid original fixture.
+The public construction refusal and legal borrowed consumer both passed.
+MSVC Roughtime Clippy and the combined KE/Roughtime target check passed.
+
+The first Clippy invocation stopped before execution because the verified
+frame accessor tied the response borrow to the temporary verifier. The repair
+preserves the wire response's independent byte lifetime in the existing
+accessor. Both attempts used 121.215 seconds of the original 240-second window.
+The final input bookends and all 820 live digests matched. Independent source
+review traced the historical receiver, exact roster/witness binding, private
+proof construction, bounded rejection and unchanged recovery state.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-conflict-proof.0Iyi0ruu/` | SHA-256 |
+| --- | --- |
+| `check.py` | `a26269a084ca3d94f3f5368937f5fd0d5160e6887ab8446d6520ae881515a4eb` |
+| `expected-cases` | `aa334e70aa2d1eb12bdf7184bf70e9e5bb245cc7bbc93b82765d4447c9482e08` |
+| `attempt.json` | `4ed54e4b41405095a9ba6b8025d2b7e22384b75f0c29c926275595a5bfd36b95` |
+| `attempt.log` | `7f1ef60a9183eeafe214b132475b0c7c784136ad22c0d25243480a60b3714e1e` |
+| `repaired.json` | `81b1083b1f2b8f98f97545900c336aaea09ffcf9ae6543516221a87b07577933` |
+| `repaired.log` | `a58a62dca858f56c14f6eb715014f2f4c61f75178bfe5ccebf6c5c666efeda55` |
+
+The next independent qualification action is a guarded GNU per-file coverage
+lane for the Engine Roughtime owners. The current wire lane covers the decoder
+file only. Use the existing portable analysis workspace, exact manifest file
+selection, pinned stable tools, Roughtime graph/vendor and the Engine test
+identities above. Recheck private scratch capacity before execution. Keep
+the 90% per-file line gate and separate 95% critical-file mutation obligations.
+DATA-18 and OPEN-8 still govern the authorized export and native same-handshake
+NTS continuations.
+
+### 3.23 TA-W06 independently check emitted padding and reserved TCP withdrawal
+
+TA-C06/14/19 and CHECK-6/21/25/27. The review of `be318f7` identified two
+test gaps. Compare both against the current candidate. The real UDP request
+observer uses the published Appendix B request for framing, tag order, value
+widths and version. It independently derives the expected server commitment
+from the known root and checks the nonce width, request type and every padding
+byte. A copy differing only in the last padding byte must fail. Exercise one
+directed fault in a private frozen tree to show the actual sender regression
+fails that assertion while the original encoder succeeds.
+
+Pause the actual scheduled TCP worker immediately before its dispatch claim.
+Withdraw separately through the round and invocation. Observe the control
+result before polling or dropping the receiver, so receiver retirement cannot
+mask a broken control latch. Observe no connector or request, retained lane
+ownership, actual worker join, the exact original retry floor and a healthy
+TCP successor. Keep the fixture seam test-only. Use one 240-second allowance
+for the directed fault, isolated GNU/MSVC checkpoint and any needed repair.
+
+The exact loopback case passed on the unmodified encoder and observed a
+one-byte padding defect at the independent sender assertion. The private
+specimen changed only the last emitted padding byte to `1`. The build reran
+the Engine and executed the same selected case, which failed with the expected
+profile message. This took 35.029 seconds, including retirement. The fault
+was confined to the private specimen.
+
+The isolated 820-input candidate
+`45330ff66bed4e0898801cb790cd4df921752ba6a325b799e120f9a927f72dc1`
+passed all nine selected lanes. The first combined invocation passed GNU
+Clippy and all 52 integration cases, then stopped compiling the unit fixture
+at an equality assertion on `Result<(), ExchangeError>`. The fixture now uses
+the existing success check. The final run re-admitted the applicable inputs
+for both passing GNU lanes and verified the exact one-line unit-only change.
+It passed 22 Roughtime units, 98 Engine doctests, and both selected MSVC checks.
+All four selected DNS/TCP custody cases also passed together in one process.
+
+Both Stop controls produced the expected `Spent` result on the original
+worker before receiver cleanup. The connector stayed unused, contenders saw
+the occupied lane before join, and neither a connection nor a receipt
+appeared. After actual join the same binding refused the predecessor of the
+original retry floor, allowed the exact floor, and sent a real successor TCP
+request. All 820 live digests matched the final bookends. The directed fault
+and both combined attempts consumed 173.076 seconds of the 240-second budget.
+
+The default and KE hosted profiles cover their configured scopes. The
+Roughtime execution above comes from the explicitly selected local feature.
+The Engine per-file coverage and mutation gates, native Windows execution,
+and the Roughtime-to-NTS receiving integration remain open under §3.22 and
+their existing downstream owners.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-audit-controls.hoQZmeky/` | SHA-256 |
+| --- | --- |
+| `check-padding.py` | `34703a688228a2500d77f11a2f895b476f0719b7a716cb3f5b0a7a7658274d0d` |
+| `padding.json` | `a14241b86de0de53a3cf8143b30e477e9ca07e9c6d0753d3da04a065377d5fd4` |
+| `padding.log` | `deaa7e2a2003d16312eeec8baae8e76670b678520a571b828453e1ff2daa9acb` |
+| `sg01-pre-dispatch.patch` | `807c13c7d1ca95a7827d539db94855969528146085ee0d8ce4285e04730e8f91` |
+| `check.py` | `0ba2e728c127668773792a42338ea2098b25530f6ede4092bc83e490d8f22f5c` |
+| `attempt.json` | `8d0547980b3239e310b2caef1672395274e94e601aaece2f0295c4a98e1be25a` |
+| `check-repaired.py` | `6af57d1dab9c63f5d843e7a573fc07e0dc1f154bf89cbcb4c72f257691778289` |
+| `repaired.json` | `288ac96f5fcc9fb493fbff1db69183c78fee8f3ac8a687058d3e347d2cb95590` |
+| `repaired.log` | `1e91f1026d8eb5cd4c35994a4d9b19d5238d204cf8707ba7ca422773538b622d` |
+
+### 3.24 TA-W03 hostile wire and keyed-verifier coverage
+
+TA-C06/14/17/19 and CHECK-6/25/26. External packet bytes, roots and persisted
+provider descriptors require their normal admission checks. The added controls
+exercise the public request, response, TCP header and selected-root entry
+points. All generation and fuzz execution use local fixture bytes, with network
+namespaces and task-owned writes. The catalogue collector has its own duplicate
+member control in the [catalogue task](server-catalogue-and-statistics.md#88-hostile-catalogue-member-coverage).
+
+The stable wire suite exercised 8,184 deterministic raw and length-correct
+frames across sizes `0..=4097`. The response corpus covered 528 accepted cases
+across all 33 Merkle path depths, two timestamp extremes, four radii and opaque
+signed fields. Its 1,568 malformed neighbors reached the path, index or
+delegation guards. A first fixture used a single trailing path byte and hit the
+outer word-alignment check. Four trailing bytes keep the outer offsets aligned
+and distinguish the intended inner path refusal.
+
+The keyed Engine cases checked 1,518 frame-boundary cases and 198 single-byte
+changes. They require the specific refusal at the actual keyed entry point and
+check that independent healthy exchanges still retain exact frames and bounds.
+The final 821-input candidate
+`05e7a974366c932c3133bc9f026e55ce21d667af54c4b72c1f536bb05c326d95`
+passed 54 Engine integration tests, 22 Roughtime unit tests, four same-process
+worker cases, 98 Engine doctests and 14 wire tests. The isolated MSVC Roughtime
+Clippy and combined KE/Roughtime compiler checks passed. The final source change
+was confined to the wire test fixture. The shared runner rechecked source and
+tool identities before crediting prior successful Engine GNU results. The two
+attempts used 137.668 seconds.
+
+The [separate libFuzzer target](../policy/roughtime-wire-fuzz-target.rs) receives
+unchanged frames, with the same oracle as the stable wire test. The pinned GNU
+nightly built distinct healthy and observation-control executables from the
+admitted offline graph. Replaying the original valid request and response seeds
+passed. Replaying the accepted request with the observation control produced the
+intended assertion and exit 77. The healthy corpus contained those two original
+frames and a response missing its last byte. LibFuzzer completed 256 callbacks
+under the existing 4,096-byte, 2-second per-input and 30-second total flags, with
+seed `688161900` and final `cov: 155`, `ft: 233`. The raw logs retain build, graph,
+tool, fixture and executable digests. The frame above the cap is exercised by
+the stable tests. The first attempt ended during inventory serialization, before
+compilation. Both attempts took 387.695 seconds. The wire-only experiment uses
+the admitted sanitizer boundary. The observation control qualifies forwarding
+and failure propagation. The AES hold and six-owner selector retain their
+existing scopes.
+
+The configured per-file line rerun was refused before compiler startup. The
+analysis runner rejected the reserved `/dev/shm` work path. An outer private
+namespace provided new scratch, but its exact bind of the analysis tool root
+was also refused as a mount root. The earlier decoder receipt retains its
+original scope. Fresh per-file line and mutation gates, a maintained fuzz
+selection for CI, native Windows and production effect checks remain open.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-hostile-coverage.Hq03x6mA/` | SHA-256 |
+| --- | --- |
+| `check.py` | `c609c0fd1f90c78aac0d73c91e43b6897e2ff73ebfaa19a4275fbbe9b726cffd` |
+| `attempt.json` | `335a7a5829d5fa373327849588dfea4ba791eb6d9f871c7803bf4ea42dfad293` |
+| `check-repaired.py` | `3e39bd6ae1e9c10352b031fb245f371937505c50d2119e674423131f90a3647c` |
+| `repaired.json` | `3aa39801b8ffec67d42c9f00e0933fe0a2dcf61f334daab125449da0914ed11a` |
+| `check-fuzz.py` | `7aa47b7a7a81fe59d89157d4da2fbfb7415f00cf5a7fec30f817aee6bbf0bec0` |
+| `fuzz.json` | `5bb237ad0560fe2e78815ddf5cd26d357d71ef64c0cf15c7b830a61bbc6fb2af` |
+| `check-fuzz-repaired.py` | `e251f94bb1c40b6662204a81835a701ed968a357860ce89433b7cd84cf57f305` |
+| `fuzz-repaired.json` | `cd611629cb147b17a3a1c5c3a6c360851aa25f4b1949e1d3b9e4754062091948` |
+| `coverage.log` | `4cb0c2b40fbcaa0ffb60500fe27975326ae889ebddc55d90d0879ff6043b4aff` |
+| `coverage-nested.log` | `a4e9c26fbe706a7086a282635c416f00327836bcac14b1baa27d0516caab4461` |
+
+### 3.25 TA-W03/04/06 second-audit regression controls
+
+TA-C04/06/14/19 and CHECK-6/21/25/27. The second review of `be318f7`
+identified five specific test gaps. Current source inspection confirmed the
+original deadline, transport, cryptographic, and withdrawal guards. Sections
+3.23 and 3.24 already cover UDP emission and both pre-dispatch Stop paths.
+This checkpoint exercises the remaining discriminators on the current
+optional Engine Roughtime feature.
+
+| Finding | Skills and exercised boundary | Independent expectation |
+| --- | --- | --- |
+| C-CB-001 | `implement-rust-contracts`, `qa-contract-tests`, and `qa-boundary-edge-cases` at bound date admission after nine real signed UDP replies | Entry two nanoseconds before cutoff and exactly two owner observations. Return one nanosecond before cutoff admits once and resets all three floors. Return at cutoff, a reversed sample, or exhaustion refuses without clearing the original floors. The second admission is spent in every case. Production samples its own monotonic clock at both checkpoints. |
+| P-T01 | `qa-golden-fixture-parity` and `security-protocol-inputs` at `PendingRequest::verify` | Exact independently signed depth-two/index-two and depth-32/maximum-index vectors retain their original frames and bounds. Changing the later orientation or sibling order yields `RequestCommitment`. The complete response fits the padded request for each vector. |
+| P-T02 and P-T03 | `qa-integration-tests` and `qa-adversarial-inputs` at real loopback receive and send | The UDP client processes the exact 4,096-byte frame, refuses 4,097 and 4,352 bytes with the same authenticated prefix, and spends each attempt. The capped reply is a client-limit specimen from a test signer. The TCP peer independently checks the emitted profile before signing, writes two frames together, and observes closure before publication of the exact first receipt. |
+| R-F01 | `qa-state-concurrency-lifecycle` at both original Stop bindings and the actual TCP connector | The original refused dispatch retains its occupied lane through join, with zero connector calls or receipts and the exact seeded floor. The same gate then lets a live successor dispatch once. Retiring that real charged attempt advances the original sequence to 1.5 seconds. The earlier post-dispatch test retains its separate `RetryInFlight` observation while a binding is borrowable before join. |
+
+`qa-environment-preflight`, `qa-regression-selection`, and `qa-independent-review`
+used a frozen candidate and the existing isolated, offline recipe. The first
+snapshot missed a manifest required by dependency admission. The two later
+initial checks stopped at Clippy before running Rust tests. They identified a
+slice assertion and private fixture documentation and ownership warnings.
+After these corrections, the exact 826-input candidate
+`c6ad5cb20b52fcb2b3ba53edff2b2c1f99d24768e53f47758df36ffd057e90fa`
+passed GNU Clippy with `--tests`, all 58 selected Engine integration cases,
+23 Roughtime units, the four-case same-process DNS/TCP cohort, 98 Engine
+doctests and 14 wire cases. Format, selected MSVC-target Clippy and the combined
+KE/Roughtime MSVC-target compiler check also passed. The final run took
+121.806 seconds and all attempts used 181.650 seconds. The final source,
+tool, vendor and graph bookends matched, and the live source map readback matched
+all 826 digests. Independent Python/OpenSSL readback verified both signatures
+for each deep proof.
+
+Native Winsock outcomes and provider retirement retain their Windows owner.
+The per-file Engine coverage and mutation gates and full Roughtime-to-NTS
+receiving qualification remain open.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-second-audit.GwtgZ67w/` | SHA-256 |
+| --- | --- |
+| `attempt.json` | `1705d6c7631d9cfed4d5299f80985a1c4ce396ca254c86e9b64559187f012c6a` |
+| `combined.json` | `ad2fdf2905af8b63ebf64cd24af28d2db9e444b278099b89aa640cae949fe2b2` |
+| `repaired.json` | `4a05755da9355056e84836ac6ed6fe0cae1a4bf2e0be417632001095f2278fdc` |
+| `check-final.py` | `05d2742baae6421b564222bc5e1b598162dd1a011261b9c7e078812df81bae4c` |
+| `final.json` | `4b56341d2a35a8d8ff50017cd9e2ef7d2af872a4e5961c30cb9a92dc685cc9f7` |
+| `final.log` | `bd8678b7f5cac453c2f0d1de074c490c86801c8bb91717e8773a3e142f7e3872` |
+| `merkle-readback.log` | `cb301c4a5a012104dd69dc5c7753a1b492099c1a510e397bb432fca3e5fe9030` |
+
 ## 4. Independent acceptance cases
 
 All cases below are **planned, not run**. Pair each hostile/failure input with the
@@ -1887,15 +2267,13 @@ portable refinements do not qualify native event behavior or execute RGT-C01.
 
 ### 4.1 Source-review refinements — 27 November 2026
 
-These refinements remain **planned, not executed**, under the existing cases and
-their canonical CHECK mappings. The
+These refinements remain **open** under the existing cases and their canonical
+CHECK mappings. The
 [profile/fixture evidence](../docs/plans/time-assurance-integration.md#823-fixture-provenance-and-remaining-qualification)
-records the dated report and limits of the available status evidence for
-RFC 10049 erratum 9238; confirm the selected interpretation at the profile freeze.
-The original Appendix B legacy contexts
-are not a positive strict-v1 oracle. Use independently checked corrected or
-generated v1 fixtures, preserve their provenance, and never weaken v1 signature
-contexts to make a historical example pass.
+records the Reported status and independent byte checks for RFC 10049 erratum
+9238. Section 3.21 owns the focused verifier controls for those bytes. Retain the
+legacy contexts as a rejection case and use independently checked v1 fixtures
+for each positive behavior. Preserve fixture provenance and final RFC contexts.
 
 | Existing cases | Additional independent observation |
 | --- | --- |

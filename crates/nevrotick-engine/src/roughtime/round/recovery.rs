@@ -7,7 +7,7 @@
 
 use super::{
     Conflict, OrderedRound, PEERS, ProbeProgress, RetryRoundPeer, RoundControl, RoundError,
-    RoundPeer, RoundStatus, round_cutoff,
+    RoundPeer, RoundStatus, round_cutoff, selection,
 };
 use crate::native_network_job::JoinWitness;
 use crate::roughtime::{
@@ -26,6 +26,10 @@ use tokio::{
     sync::{Notify, futures::Notified},
     time,
 };
+
+mod proof;
+
+pub use proof::{ConflictProof, ConflictProofError};
 
 /// Live state of one exact controlled invocation.
 pub(super) enum RecoveryPhase {
@@ -246,9 +250,24 @@ impl<'a> ControlledRecovery<'a> {
         date: RecoveryDatePolicy<'a>,
     ) -> Result<Self, RoundError> {
         let cutoff: Instant = round_cutoff(budget, budget)?;
+        Self::new_until(control, cutoff, date)
+    }
+
+    /// Claim the original invocation with an already captured exclusive cutoff.
+    ///
+    /// # Errors
+    /// Refuses expired, already issued, withdrawn or unavailable control.
+    fn new_until(
+        control: &'a RecoveryControl,
+        cutoff: Instant,
+        date: RecoveryDatePolicy<'a>,
+    ) -> Result<Self, RoundError> {
         let mut phase: MutexGuard<'_, RecoveryPhase> = control.lock()?;
         match *phase {
-            RecoveryPhase::Unused => *phase = RecoveryPhase::Active(None),
+            RecoveryPhase::Unused if Instant::now() < cutoff => {
+                *phase = RecoveryPhase::Active(None);
+            }
+            RecoveryPhase::Unused => return Err(RoundError::Expired),
             RecoveryPhase::Active(_) => return Err(RoundError::Finished),
             RecoveryPhase::Withdrawn(cause) => return Err(RoundError::Withdrawn(cause)),
         }
@@ -294,16 +313,44 @@ impl<'a> ControlledRecovery<'a> {
         peers: [RetryRoundPeer<'a>; PEERS],
         udp_wait: Duration,
     ) -> Result<Self, RoundError> {
-        let tcp: [Option<SocketAddr>; PEERS] = peers.each_ref().map(|peer| peer.tcp);
-        if udp_wait.is_zero() || udp_wait >= budget || tcp.iter().all(Option::is_none) {
-            return Err(RoundError::Configuration);
-        }
+        require_response_wait(udp_wait, budget)?;
+        let fallback: FallbackPlan = FallbackPlan::new(&peers, udp_wait)?;
         let mut invocation: Self = Self::new_with_retry(control, budget, date, peers)?;
-        invocation.fallback = Some(FallbackPlan {
-            udp_wait,
-            tcp,
-            unanswered: None,
-        });
+        invocation.fallback = Some(fallback);
+        Ok(invocation)
+    }
+
+    /// Select one retry-ready independent trio and order from the controlled roster.
+    ///
+    /// The original deadline covers selection. The chosen order and bindings
+    /// stay with the invocation for both rounds. A supplied UDP wait selects
+    /// a trio with an eligible advertised TCP fallback.
+    ///
+    /// # Errors
+    /// Refuses invalid inputs, no feasible trio, unavailable entropy, expiry or control.
+    pub fn new_randomized(
+        control: &'a RecoveryControl,
+        budget: Duration,
+        date: RecoveryDatePolicy<'a>,
+        candidates: &'a mut [RetryRoundPeer<'_>],
+        udp_wait: Option<Duration>,
+    ) -> Result<Self, RoundError> {
+        let cutoff: Instant = round_cutoff(budget, budget)?;
+        if let Some(wait) = udp_wait {
+            require_response_wait(wait, budget)?;
+        }
+        let observed_at: Instant = Instant::now();
+        if observed_at >= cutoff {
+            return Err(RoundError::Expired);
+        }
+        let peers: [RetryRoundPeer<'a>; PEERS] =
+            selection::select(candidates, observed_at, udp_wait.is_some())?;
+        let fallback: Option<FallbackPlan> = udp_wait
+            .map(|wait| FallbackPlan::new(&peers, wait))
+            .transpose()?;
+        let mut invocation: Self = Self::new_until(control, cutoff, date)?;
+        invocation.retry_peers = Some(peers);
+        invocation.fallback = fallback;
         Ok(invocation)
     }
 
@@ -515,6 +562,17 @@ impl<'a> ControlledRecovery<'a> {
     }
 }
 
+/// Require a positive child response wait strictly shorter than the original budget.
+///
+/// # Errors
+/// Refuses a zero or whole-budget response wait.
+fn require_response_wait(wait: Duration, budget: Duration) -> Result<(), RoundError> {
+    if wait.is_zero() || wait >= budget {
+        return Err(RoundError::Configuration);
+    }
+    Ok(())
+}
+
 /// Original controlled fallback parameters and first settled silence evidence.
 struct FallbackPlan {
     /// Original per-leg UDP response wait.
@@ -523,6 +581,24 @@ struct FallbackPlan {
     tcp: [Option<SocketAddr>; PEERS],
     /// Retained prefix and unanswered origin for the only follow-up.
     unanswered: Option<UnansweredRound>,
+}
+
+impl FallbackPlan {
+    /// Copy only the selected advertised alternatives into the invocation.
+    ///
+    /// # Errors
+    /// Refuses a roster with no selected TCP route.
+    fn new(peers: &[RetryRoundPeer<'_>; PEERS], udp_wait: Duration) -> Result<Self, RoundError> {
+        let tcp: [Option<SocketAddr>; PEERS] = peers.each_ref().map(|peer| peer.tcp);
+        if tcp.iter().all(Option::is_none) {
+            return Err(RoundError::Configuration);
+        }
+        Ok(Self {
+            udp_wait,
+            tcp,
+            unanswered: None,
+        })
+    }
 }
 
 /// Historical prefix from the original unanswered UDP attempt's round.

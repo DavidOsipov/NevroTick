@@ -7,6 +7,11 @@ use ntp_wire::roughtime::{
     decode_response,
 };
 
+#[path = "roughtime/hostile.rs"]
+mod hostile;
+
+use hostile::check_untrusted_frame;
+
 /// A fixture field in caller-supplied wire tag order.
 type Field<'a> = ([u8; 4], &'a [u8]);
 
@@ -377,6 +382,104 @@ fn requires_exact_frame_and_checks_byte_cap() -> Result<(), String> {
     assert_rejected(&over_cap, DecodeError::FrameLimit);
     over_cap[0] = b'r';
     assert_rejected(&over_cap, DecodeError::FrameLimit);
+    Ok(())
+}
+
+/// Generate a repeatable raw and length-correct sample at every admitted size.
+///
+/// # Errors
+/// Returns an unexpected conversion failure in the bounded fixture length.
+///
+/// # Panics
+/// Panics on a parser failure or violation of the independent transport check.
+#[test]
+fn untrusted_raw_and_framed_inputs_cover_every_length() -> Result<(), String> {
+    let mut data: [u8; 4_097] = [0; 4_097];
+    let mut seed: u32 = 0x18c7_a391;
+    for length in 0..=data.len() {
+        let sample: &mut [u8] = &mut data[..length];
+        for byte in sample.iter_mut() {
+            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            *byte = seed.to_be_bytes()[0];
+        }
+        check_untrusted_frame(sample);
+        if length >= 12 {
+            let body: u32 = u32::try_from(length - 12).map_err(|error| error.to_string())?;
+            sample[..8].copy_from_slice(b"ROUGHTIM");
+            sample[8..12].copy_from_slice(&body.to_le_bytes());
+            check_untrusted_frame(sample);
+        }
+    }
+    Ok(())
+}
+
+/// Cross every path depth with timestamp and radius limits and opaque signed fields.
+///
+/// # Errors
+/// Returns an unexpected construction or valid-response refusal.
+///
+/// # Panics
+/// Panics on incorrect accepted field values or a malformed neighbor's acceptance.
+#[test]
+fn structured_wire_corpus_pairs_boundary_responses_with_malformed_neighbors() -> Result<(), String>
+{
+    let path: [u8; 1_028] = [0x9b; 1_028];
+    for depth in 0..=32_u32 {
+        let nodes: usize = usize::try_from(depth).map_err(|error| error.to_string())?;
+        let index: u32 = u32::MAX.checked_shr(32 - depth).unwrap_or_default();
+        for radius in [1_u32, 17, 65_535, u32::MAX] {
+            let radius_seconds: u64 = u64::from(radius);
+            for (midpoint, bounds) in [
+                (radius_seconds, (0, radius_seconds * 2)),
+                (
+                    u64::MAX - radius_seconds,
+                    (u64::MAX - radius_seconds * 2, u64::MAX),
+                ),
+            ] {
+                for extra in [ExtraTags::None, ExtraTags::Signed] {
+                    let fixture: Fixture<'_> = Fixture {
+                        midpoint,
+                        radius,
+                        minimum: midpoint,
+                        maximum: midpoint,
+                        path: &path[..nodes * 32],
+                        index,
+                        extra,
+                        ..Fixture::BASE
+                    };
+                    let valid: Vec<u8> = response(fixture)?;
+                    let parsed: Response<'_> =
+                        decode_response(&valid).map_err(|error| format!("{error:?}"))?;
+                    assert!(core::ptr::eq(parsed.frame(), valid.as_slice()));
+                    assert_eq!(parsed.bounds_seconds(), bounds);
+                    assert_eq!(parsed.delegation_seconds(), (midpoint, midpoint));
+                    assert_eq!(parsed.merkle_index(), index);
+                    assert_eq!(parsed.merkle_path().as_flattened(), fixture.path);
+
+                    let incomplete_node: Vec<u8> = response(Fixture {
+                        // Keep following message offsets word-aligned so the
+                        // malformed path reaches the inner PATH length check.
+                        path: &path[..nodes * 32 + 4],
+                        ..fixture
+                    })?;
+                    assert_rejected(&incomplete_node, DecodeError::MerklePath);
+                    if depth < 32 {
+                        let extra_index_bit: Vec<u8> = response(Fixture {
+                            index: index + 1,
+                            ..fixture
+                        })?;
+                        assert_rejected(&extra_index_bit, DecodeError::MerkleIndex);
+                    }
+                    let outside_delegation: Vec<u8> = response(Fixture {
+                        minimum: 0,
+                        maximum: midpoint - 1,
+                        ..fixture
+                    })?;
+                    assert_rejected(&outside_delegation, DecodeError::Delegation);
+                }
+            }
+        }
+    }
     Ok(())
 }
 

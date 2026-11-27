@@ -2,23 +2,37 @@
 //! Real loopback controls for the ordered round's TCP worker handoff.
 
 use super::{
-    ExchangeError, OrderedRound, PEERS, ProbeProgress, RetryBinding, RetryRoundPeer, RetryState,
-    RootKey, RoundControl, RoundError, Withdrawal,
+    ExchangeError, ExchangeTransport, OrderedRound, PEERS, PendingConnect, ProbeProgress,
+    RetryBinding, RetryRoundPeer, RetryState, RootKey, RoundControl, RoundError, Withdrawal,
+    round_cutoff,
+};
+use crate::{
+    native_network_job::{CUSTODY_FIXTURE, NativeJob, NativeJobError},
+    roughtime::{
+        exchange::{PendingExchange, RoundAuthority},
+        interval::IntervalPolicy,
+        round::recovery::{ControlledRecovery, RecoveryControl, RecoveryDatePolicy},
+    },
 };
 use ed25519_dalek::SigningKey;
 use std::{
     error::Error,
     fmt::Debug,
     io::{self, Read},
-    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-    num::NonZeroU64,
-    sync::mpsc::{self, Receiver, Sender},
+    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, UdpSocket},
+    num::{NonZeroU32, NonZeroU64},
+    sync::{
+        MutexGuard,
+        mpsc::{self, Receiver, RecvTimeoutError, Sender, TryRecvError},
+    },
+    task::Poll,
     time::{Duration, Instant},
 };
+use time_domain::{EraWindow, LeapDateScope, LeapKnowledge, bundled_leap_knowledge};
 use tokio::{
     runtime::{Builder, Runtime},
     sync::oneshot,
-    time::{sleep, timeout},
+    time::{sleep, sleep_until, timeout},
 };
 
 /// Independent bound on worker and observer waits in this fixture.
@@ -87,6 +101,7 @@ fn bindings(
 /// Returns an unexpected selection or round refusal.
 fn tcp_round<'a>(
     control: &'a RoundControl,
+    recovery: Option<&'a RecoveryControl>,
     bindings: &'a mut [RetryBinding<'_>; PEERS],
     endpoints: [SocketAddr; PEERS],
 ) -> TestResult<OrderedRound<'a>> {
@@ -116,9 +131,20 @@ fn tcp_round<'a>(
             groups[2],
         ))?,
     ];
-    let mut round: OrderedRound<'_> = checked(OrderedRound::new_with_retry(
-        control, peers, WATCHDOG, WATCHDOG,
-    ))?;
+    let mut round: OrderedRound<'_> = if let Some(parent) = recovery {
+        let cutoff: Instant = checked(round_cutoff(WATCHDOG, WATCHDOG))?;
+        checked(OrderedRound::start_bound_until(
+            control,
+            Some(parent),
+            peers,
+            cutoff,
+            WATCHDOG,
+        ))?
+    } else {
+        checked(OrderedRound::new_with_retry(
+            control, peers, WATCHDOG, WATCHDOG,
+        ))?
+    };
     round.tcp_slot = Some(0);
     round.worker_connect = true;
     Ok(round)
@@ -132,7 +158,7 @@ fn gated_connection(
     endpoint: SocketAddr,
     remaining: Duration,
     entered: oneshot::Sender<()>,
-    release: Receiver<()>,
+    release: &Receiver<()>,
 ) -> io::Result<TcpStream> {
     let stream: TcpStream = TcpStream::connect_timeout(&endpoint, remaining)?;
     entered
@@ -158,7 +184,7 @@ async fn stop_waiting_round(
     released: Receiver<()>,
 ) -> TestResult<()> {
     let selected: SocketAddr = checked(round.start_next_with(move |peer, remaining| {
-        gated_connection(peer, remaining, entered, released)
+        gated_connection(peer, remaining, entered, &released)
     }))?;
     assert_eq!(selected, endpoint);
     timeout(WATCHDOG, observed).await??;
@@ -187,7 +213,7 @@ async fn run_successor(
     let start: Instant = Instant::now();
     loop {
         let control: RoundControl = RoundControl::new();
-        let mut round: OrderedRound<'_> = tcp_round(&control, bindings, endpoints)?;
+        let mut round: OrderedRound<'_> = tcp_round(&control, None, bindings, endpoints)?;
         match round.start_next() {
             Ok(selected) => {
                 assert_eq!(selected, endpoints[0]);
@@ -253,7 +279,7 @@ async fn observe_successor(round: &mut OrderedRound<'_>, listener: &TcpListener)
 /// Panics on premature lane or retry release, missing retirement, or any retired request bytes.
 #[test]
 fn stopped_connect_keeps_worker_and_retry_until_retired() -> TestResult<()> {
-    let _fixture: std::sync::MutexGuard<'_, ()> = crate::native_network_job::CUSTODY_FIXTURE
+    let _fixture: MutexGuard<'_, ()> = CUSTODY_FIXTURE
         .lock()
         .map_err(|_| "native worker fixture unavailable")?;
     let original: TcpListener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
@@ -268,7 +294,8 @@ fn stopped_connect_keeps_worker_and_retry_until_retired() -> TestResult<()> {
     let runtime: Runtime = Builder::new_current_thread().enable_time().build()?;
 
     let control: RoundControl = RoundControl::new();
-    let mut round: OrderedRound<'_> = tcp_round(&control, &mut original_bindings, original_routes)?;
+    let mut round: OrderedRound<'_> =
+        tcp_round(&control, None, &mut original_bindings, original_routes)?;
     let (entered, observed): (oneshot::Sender<()>, oneshot::Receiver<()>) = oneshot::channel();
     let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
     runtime.block_on(stop_waiting_round(
@@ -281,14 +308,14 @@ fn stopped_connect_keeps_worker_and_retry_until_retired() -> TestResult<()> {
     ))?;
     drop(round);
     let (_, retry): (&RootKey, &mut RetryState) =
-        checked(original_bindings[0].selection(original_routes[0]))?;
+        checked(original_bindings[0].selection(original_routes[0], ExchangeTransport::Udp))?;
     assert!(matches!(
         retry.check(Instant::now()),
         Err(ExchangeError::RetryInFlight)
     ));
 
     let contender: RoundControl = RoundControl::new();
-    let mut busy: OrderedRound<'_> = tcp_round(&contender, &mut next_bindings, next_routes)?;
+    let mut busy: OrderedRound<'_> = tcp_round(&contender, None, &mut next_bindings, next_routes)?;
     assert!(matches!(
         runtime.block_on(async { busy.start_next() }),
         Err(RoundError::Exchange(ExchangeError::ConnectBusy))
@@ -314,4 +341,253 @@ fn stopped_connect_keeps_worker_and_retry_until_retired() -> TestResult<()> {
     abandoned.set_read_timeout(Some(WATCHDOG))?;
     assert_eq!(abandoned.read(&mut byte)?, 0);
     Ok(())
+}
+
+/// Which original authority acknowledges Stop before the worker claims dispatch.
+#[derive(Clone, Copy)]
+enum StopAuthority {
+    /// The child round control.
+    Round,
+    /// The exact parent recovery control.
+    Recovery,
+}
+
+/// Preserve a real UDP failure floor on the binding that will next be used for TCP.
+///
+/// # Errors
+/// Returns fixture socket failure or a missing scheduled retry.
+///
+/// # Panics
+/// Panics if the independently observed UDP send is incomplete.
+fn prior_retry_floor(binding: &mut RetryBinding<'_>, endpoint: SocketAddr) -> TestResult<Instant> {
+    let socket: UdpSocket = UdpSocket::bind(endpoint)?;
+    socket.set_read_timeout(Some(WATCHDOG))?;
+    let authority: RoundAuthority = RoundAuthority::new();
+    let pending: PendingExchange<'_> = checked(PendingExchange::send_with_retry(
+        &authority, binding, endpoint, WATCHDOG,
+    ))?;
+    let mut packet: [u8; 1036] = [0; 1036];
+    let (length, _): (usize, SocketAddr) = socket.recv_from(&mut packet)?;
+    assert_eq!(length, packet.len());
+    let before_retirement: Instant = Instant::now();
+    drop(pending);
+    let (_, retry): (&RootKey, &mut RetryState) =
+        checked(binding.selection(endpoint, ExchangeTransport::Tcp))?;
+    match retry.check(before_retirement) {
+        Err(ExchangeError::RetryDeferred { until }) => Ok(until),
+        other => Err(format!("missing charged UDP retry floor: {other:?}").into()),
+    }
+}
+
+/// Supply a valid date policy to issue the original recovery authority.
+///
+/// # Errors
+/// Returns an unexpected refusal of the literal fixture policy.
+fn worker_date_policy<'a>(calendar: &'a LeapKnowledge<'a>) -> TestResult<RecoveryDatePolicy<'a>> {
+    let rate: NonZeroU32 = NonZeroU32::new(1_000_000_000).ok_or("zero fixture rate")?;
+    let interval: IntervalPolicy = checked(IntervalPolicy::new(
+        [rate; 2],
+        Duration::ZERO,
+        WATCHDOG,
+        WATCHDOG,
+    ))?;
+    let ticks_per_second: i128 = 1_i128 << 32;
+    let earliest: i128 = 3_900_000_000 * ticks_per_second;
+    let scope: LeapDateScope = checked(LeapDateScope::new(EraWindow::new(
+        earliest,
+        earliest + ticks_per_second,
+    )?))?;
+    Ok(RecoveryDatePolicy::new(interval, scope, calendar))
+}
+
+/// Observe cancellation in the original worker before the round can retire it.
+///
+/// # Errors
+/// Returns unexpected settlement or a fixture watchdog failure.
+async fn join_dispatch_refusal(round: &mut OrderedRound<'_>) -> TestResult<()> {
+    let pending: &mut PendingConnect<'_> = round
+        .pending_connect
+        .as_mut()
+        .ok_or("missing reserved worker")?;
+    timeout(WATCHDOG, async {
+        loop {
+            match pending.try_join() {
+                Poll::Ready(Err(ExchangeError::Spent)) => return Ok(()),
+                Poll::Ready(other) => {
+                    return Err(format!("unexpected pre-dispatch settlement: {other:?}").into());
+                }
+                Poll::Pending => sleep(Duration::from_millis(1)).await,
+            }
+        }
+    })
+    .await?
+}
+
+/// Let the same pre-claim gate proceed without withdrawal, then charge one failed successor.
+///
+/// # Errors
+/// Returns a watchdog, fixture, or unexpected round failure.
+///
+/// # Panics
+/// Panics if the released worker skips the connector, sends before release, or stays active after Stop.
+async fn charged_successor(
+    bindings: &mut [RetryBinding<'_>; PEERS],
+    endpoints: [SocketAddr; PEERS],
+    listener: &TcpListener,
+) -> TestResult<(Instant, Instant)> {
+    let control: RoundControl = RoundControl::new();
+    let mut round: OrderedRound<'_> = tcp_round(&control, None, bindings, endpoints)?;
+    let (entered, observed): (oneshot::Sender<()>, oneshot::Receiver<()>) = oneshot::channel();
+    let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
+    round.before_connect_dispatch = Some(Box::new(move || {
+        entered
+            .send(())
+            .map_err(|()| io::Error::other("successor observer disappeared"))?;
+        released.recv_timeout(WATCHDOG).map_err(io::Error::other)
+    }));
+    let (called, calls): (Sender<()>, Receiver<()>) = mpsc::channel();
+    let selected: SocketAddr = checked(round.start_next_with(move |peer, remaining| {
+        called.send(()).map_err(io::Error::other)?;
+        TcpStream::connect_timeout(&peer, remaining)
+    }))?;
+    assert_eq!(selected, endpoints[0]);
+    timeout(WATCHDOG, observed).await??;
+    assert!(matches!(calls.try_recv(), Err(TryRecvError::Empty)));
+    assert!(matches!(listener.accept(), Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+    release.send(())?;
+    observe_successor(&mut round, listener).await?;
+    assert_eq!(calls.try_recv(), Ok(()));
+    assert_eq!(calls.try_recv(), Err(TryRecvError::Disconnected));
+    checked(control.withdraw(Withdrawal::Stop))?;
+    let before: Instant = Instant::now();
+    assert!(matches!(
+        round.poll(),
+        Err(RoundError::Withdrawn(Withdrawal::Stop))
+    ));
+    Ok((before, Instant::now()))
+}
+
+/// Deny the original dispatch through exactly one authority, then drive a healthy neighbor.
+///
+/// # Errors
+/// Returns a fixture, watchdog or unexpected round refusal.
+///
+/// # Panics
+/// Panics on work before the claim, early lane release, a changed floor or a retired connection.
+fn stop_before_dispatch(owner: StopAuthority) -> TestResult<()> {
+    let _fixture: MutexGuard<'_, ()> = CUSTODY_FIXTURE
+        .lock()
+        .map_err(|_| "native worker fixture unavailable")?;
+    let listener: TcpListener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+    listener.set_nonblocking(true)?;
+    let endpoint: SocketAddr = listener.local_addr()?;
+    let endpoints: [SocketAddr; PEERS] = routes(endpoint);
+    let roots: [RootKey; PEERS] = [fixture_root(31)?, fixture_root(37)?, fixture_root(41)?];
+    let mut original: [RetryBinding<'_>; PEERS] = bindings(&roots, endpoints)?;
+    let floor: Instant = prior_retry_floor(&mut original[0], endpoint)?;
+    let runtime: Runtime = Builder::new_current_thread().enable_time().build()?;
+    runtime.block_on(async { sleep_until(tokio::time::Instant::from_std(floor)).await });
+
+    let control: RoundControl = RoundControl::new();
+    let recovery: RecoveryControl = RecoveryControl::new();
+    let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+    let _invocation: ControlledRecovery<'_> = checked(ControlledRecovery::new(
+        &recovery,
+        WATCHDOG,
+        worker_date_policy(&calendar)?,
+    ))?;
+    let mut round: OrderedRound<'_> =
+        tcp_round(&control, Some(&recovery), &mut original, endpoints)?;
+    let (entered, observed): (Sender<()>, Receiver<()>) = mpsc::channel();
+    let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
+    round.before_connect_dispatch = Some(Box::new(move || {
+        entered.send(()).map_err(io::Error::other)?;
+        released.recv_timeout(WATCHDOG).map_err(io::Error::other)
+    }));
+    let (called, calls): (Sender<()>, Receiver<()>) = mpsc::channel();
+    let selected: SocketAddr = checked(round.start_next_with(move |peer, remaining| {
+        called.send(()).map_err(io::Error::other)?;
+        TcpStream::connect_timeout(&peer, remaining)
+    }))?;
+    assert_eq!(selected, endpoint);
+    observed.recv_timeout(WATCHDOG)?;
+    match owner {
+        StopAuthority::Round => checked(control.withdraw(Withdrawal::Stop))?,
+        StopAuthority::Recovery => checked(recovery.withdraw(Withdrawal::Stop))?,
+    }
+    assert!(matches!(
+        NativeJob::start("nevrotick-connect-contender", |_| ()),
+        Err(NativeJobError::Busy)
+    ));
+    assert!(matches!(calls.try_recv(), Err(TryRecvError::Empty)));
+    assert!(matches!(listener.accept(), Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+
+    // Polling or dropping the round first would independently cancel the worker.
+    release.send(())?;
+    assert_eq!(
+        calls.recv_timeout(WATCHDOG),
+        Err(RecvTimeoutError::Disconnected)
+    );
+    assert!(matches!(
+        NativeJob::start("nevrotick-connect-unjoined-contender", |_| ()),
+        Err(NativeJobError::Busy)
+    ));
+    runtime.block_on(join_dispatch_refusal(&mut round))?;
+    assert!(matches!(
+        round.poll(),
+        Err(RoundError::Withdrawn(Withdrawal::Stop))
+    ));
+    assert!(round.receipt(0).is_none());
+    assert!(matches!(listener.accept(), Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+    drop(round);
+
+    let (_, retry): (&RootKey, &mut RetryState) =
+        checked(original[0].selection(endpoint, ExchangeTransport::Tcp))?;
+    let before_floor: Instant = floor
+        .checked_sub(Duration::from_nanos(1))
+        .ok_or("unrepresentable prior floor predecessor")?;
+    assert!(matches!(
+        retry.check(before_floor),
+        Err(ExchangeError::RetryDeferred { until }) if until == floor
+    ));
+    checked(retry.check(floor))?;
+    let (before, after): (Instant, Instant) =
+        runtime.block_on(charged_successor(&mut original, endpoints, &listener))?;
+    if after.duration_since(before) >= Duration::from_millis(500) {
+        return Err(
+            "successor retirement bracket overlaps the first and second retry floors".into(),
+        );
+    }
+    let (_, retry): (&RootKey, &mut RetryState) =
+        checked(original[0].selection(endpoint, ExchangeTransport::Tcp))?;
+    let second_wait: Duration = Duration::from_millis(1_500);
+    let earliest: Instant = before
+        .checked_add(second_wait)
+        .ok_or("second retry floor overflow")?;
+    let latest: Instant = after
+        .checked_add(second_wait)
+        .ok_or("second retry floor overflow")?;
+    assert!(matches!(
+        retry.check(before),
+        Err(ExchangeError::RetryDeferred { until }) if (earliest..=latest).contains(&until)
+    ));
+    Ok(())
+}
+
+/// Round Stop cancels the still-reserved native connector.
+///
+/// # Errors
+/// Returns the first fixture or dispatch sequence failure.
+#[test]
+fn round_stop_revokes_reserved_connect_before_dispatch() -> TestResult<()> {
+    stop_before_dispatch(StopAuthority::Round)
+}
+
+/// Parent Stop cancels the still-reserved native connector.
+///
+/// # Errors
+/// Returns the first fixture or dispatch sequence failure.
+#[test]
+fn recovery_stop_revokes_reserved_connect_before_dispatch() -> TestResult<()> {
+    stop_before_dispatch(StopAuthority::Recovery)
 }

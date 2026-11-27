@@ -78,6 +78,8 @@ pub enum IntervalError {
     Withdrawn(Withdrawal),
     /// The original authority guard could not be obtained.
     AuthorityUnavailable,
+    /// A required owner-clock observation was unavailable.
+    ClockUnavailable,
     /// The original exclusive round deadline elapsed.
     Expired,
     /// The evaluation does not follow ordered original captures.

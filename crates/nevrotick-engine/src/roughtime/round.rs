@@ -8,7 +8,8 @@
 use super::{
     RootKey,
     exchange::{
-        ExchangeError, PendingExchange, Receipt, RoundAuthority, StagedReceipt, Withdrawal,
+        ExchangeError, ExchangeTransport, PendingExchange, Receipt, RoundAuthority, StagedReceipt,
+        Withdrawal,
         retry::{RetryBinding, RetryLease, RetryState},
         tcp::{PendingConnect, PendingTcpExchange, connect_native},
     },
@@ -26,8 +27,14 @@ use std::{
 };
 use time_domain::{LeapDateScope, LeapKnowledge};
 
-pub mod recovery;
+#[cfg(test)]
+use super::exchange::tcp::{BeforeConnectDispatch, ConnectFixture};
 
+pub mod recovery;
+mod selection;
+
+#[cfg(test)]
+mod date_tests;
 #[cfg(test)]
 mod worker_tests;
 
@@ -65,6 +72,18 @@ impl<'a> RoundPeer<'a> {
             clock,
         }
     }
+
+    /// Check both exact peer identities before granting independent support.
+    fn distinct_identity(self, other: Self) -> bool {
+        self.endpoint != other.endpoint && self.root.0.as_bytes() != other.root.0.as_bytes()
+    }
+
+    /// Require distinct peer identities and both declared dependency groups.
+    fn independent(self, other: Self) -> bool {
+        self.distinct_identity(other)
+            && self.operator != other.operator
+            && self.clock != other.clock
+    }
 }
 
 /// One controlled round selection with its exact exclusive retry state.
@@ -78,17 +97,18 @@ pub struct RetryRoundPeer<'a> {
 }
 
 impl<'a> RetryRoundPeer<'a> {
-    /// Select one alias of the original binding before a native attempt.
+    /// Select the original binding's UDP route before a native attempt.
     ///
     /// # Errors
-    /// Refuses an alias outside the original binding.
+    /// Refuses an endpoint or transport outside the original binding.
     pub fn new(
         binding: &'a mut RetryBinding<'_>,
         endpoint: SocketAddr,
         operator: NonZeroU64,
         clock: NonZeroU64,
     ) -> Result<Self, ExchangeError> {
-        let (root, retry): (&RootKey, &mut RetryState) = binding.selection(endpoint)?;
+        let (root, retry): (&RootKey, &mut RetryState) =
+            binding.selection(endpoint, ExchangeTransport::Udp)?;
         Ok(Self {
             peer: RoundPeer::new(endpoint, root, operator, clock),
             retry,
@@ -99,7 +119,7 @@ impl<'a> RetryRoundPeer<'a> {
     /// Select UDP and advertised TCP routes under the same original binding.
     ///
     /// # Errors
-    /// Refuses either route outside the original alias set.
+    /// Refuses either endpoint and transport outside the original route set.
     pub fn new_with_tcp(
         binding: &'a mut RetryBinding<'_>,
         udp: SocketAddr,
@@ -107,9 +127,7 @@ impl<'a> RetryRoundPeer<'a> {
         operator: NonZeroU64,
         clock: NonZeroU64,
     ) -> Result<Self, ExchangeError> {
-        if !binding.has_alias(tcp) {
-            return Err(ExchangeError::ForeignPeer);
-        }
+        binding.require_route(tcp, ExchangeTransport::Tcp)?;
         let mut selected: Self = Self::new(binding, udp, operator, clock)?;
         selected.tcp = Some(tcp);
         Ok(selected)
@@ -139,6 +157,12 @@ impl Conflict {
     #[must_use]
     pub const fn positions(self) -> (usize, usize) {
         (self.earlier, self.later)
+    }
+
+    /// Find the first earlier signed lower bound strictly beyond this upper bound.
+    fn against(later: usize, mut earlier: impl Iterator<Item = u64>, upper: u64) -> Option<Self> {
+        let earlier: usize = earlier.position(|lower| lower > upper)?;
+        Some(Self { earlier, later })
     }
 }
 
@@ -173,6 +197,8 @@ pub enum ProbeProgress {
 pub enum RoundError {
     /// An endpoint, group, root or budget is unsuitable for this roster.
     Configuration,
+    /// No retry-ready independent trio can satisfy the requested round mode.
+    SelectionUnavailable,
     /// No original unanswered UDP attempt admitted the configured fallback.
     FallbackUnavailable,
     /// The bounded receipt storage could not be reserved before sending.
@@ -330,6 +356,9 @@ pub struct OrderedRound<'a> {
     pending_connect: Option<PendingConnect<'a>>,
     /// Scheduled rounds dispatch TCP through the shared worker lane.
     worker_connect: bool,
+    /// Fixture gate transferred only to this round's next selected worker.
+    #[cfg(test)]
+    before_connect_dispatch: Option<BeforeConnectDispatch>,
     /// The one peer scheduled over TCP in a fresh fallback round.
     tcp_slot: Option<usize>,
     /// Dedicated UDP response window for the original round, when enabled.
@@ -418,12 +447,9 @@ impl<'a> OrderedRound<'a> {
             if noncanonical
                 || !peer.endpoint.ip().is_loopback()
                 || peer.endpoint.port() == 0
-                || peers[..index].iter().any(|earlier| {
-                    earlier.endpoint == peer.endpoint
-                        || earlier.operator == peer.operator
-                        || earlier.clock == peer.clock
-                        || earlier.root.0.as_bytes() == peer.root.0.as_bytes()
-                })
+                || peers[..index]
+                    .iter()
+                    .any(|earlier| !peer.independent(*earlier))
             {
                 return Err(RoundError::Configuration);
             }
@@ -450,6 +476,8 @@ impl<'a> OrderedRound<'a> {
             pending_tcp: None,
             pending_connect: None,
             worker_connect: false,
+            #[cfg(test)]
+            before_connect_dispatch: None,
             tcp_slot: None,
             udp_wait: None,
             retries: None,
@@ -542,7 +570,13 @@ impl<'a> OrderedRound<'a> {
                 self.cutoff,
                 &self.receipts,
                 retry,
+                #[cfg(not(test))]
                 connect,
+                #[cfg(test)]
+                ConnectFixture {
+                    connect,
+                    before_dispatch: self.before_connect_dispatch.take(),
+                },
             ) {
                 Ok(pending) => pending,
                 Err(error) => return self.unavailable(RoundError::Exchange(error)),
@@ -702,6 +736,20 @@ impl<'a> OrderedRound<'a> {
         scope: LeapDateScope,
         calendar: &LeapKnowledge<'_>,
     ) -> Result<ControlledDate<'_>, IntervalError> {
+        self.admit_date_observed(policy, scope, calendar, || Some(Instant::now()))
+    }
+
+    /// Complete the one-use admission under the original guard and owner clock.
+    ///
+    /// # Errors
+    /// Refuses an unavailable observation or any failed date admission without resetting debt.
+    fn admit_date_observed(
+        &mut self,
+        policy: &IntervalPolicy,
+        scope: LeapDateScope,
+        calendar: &LeapKnowledge<'_>,
+        observe: impl FnMut() -> Option<Instant>,
+    ) -> Result<ControlledDate<'_>, IntervalError> {
         let _current: EffectGuards<'a> = self.evaluation_guard()?;
         let [Some(first), Some(second), Some(third)]: [Option<&'a mut RetryState>; PEERS] =
             self.retries.take().ok_or(IntervalError::RetryAdmission)?
@@ -714,6 +762,7 @@ impl<'a> OrderedRound<'a> {
             self.cutoff,
             policy,
             |agreement: ControlledAgreement<'_>| ControlledDate::admit(agreement, scope, calendar),
+            observe,
         )?;
         for retry in [first, second, third] {
             retry.reset();
@@ -737,6 +786,7 @@ impl<'a> OrderedRound<'a> {
             self.cutoff,
             policy,
             consume,
+            || Some(Instant::now()),
         )
     }
 
@@ -768,12 +818,13 @@ impl<'a> OrderedRound<'a> {
         cutoff: Instant,
         policy: &IntervalPolicy,
         consume: impl FnOnce(ControlledAgreement<'round>) -> Result<T, IntervalError>,
+        mut observe: impl FnMut() -> Option<Instant>,
     ) -> Result<T, IntervalError> {
-        let evaluated_at: Instant = Instant::now();
+        let evaluated_at: Instant = observe().ok_or(IntervalError::ClockUnavailable)?;
         let agreement: ControlledAgreement<'round> =
             interval::evaluate(receipts, groups, evaluated_at, cutoff, policy)?;
         let result: T = consume(agreement)?;
-        let returned_at: Instant = Instant::now();
+        let returned_at: Instant = observe().ok_or(IntervalError::ClockUnavailable)?;
         if returned_at < evaluated_at {
             return Err(IntervalError::CaptureOrder);
         }
@@ -821,16 +872,18 @@ impl<'a> OrderedRound<'a> {
     fn accept(&mut self, receipt: Receipt) -> Result<ProbeProgress, RoundError> {
         let later: usize = self.receipts.len();
         let (_, upper): (u64, u64) = receipt.bounds_seconds();
-        let earlier: Option<usize> = self
-            .receipts
-            .iter()
-            .position(|previous| previous.bounds_seconds().0 > upper);
+        let conflict: Option<Conflict> = Conflict::against(
+            later,
+            self.receipts
+                .iter()
+                .map(|previous| previous.bounds_seconds().0),
+            upper,
+        );
         let ((send_before, _), (_, receive_after)): ((Instant, Instant), (Instant, Instant)) =
             receipt.captures();
         let delay: Option<Duration> = receive_after.checked_duration_since(send_before);
         self.receipts.push(receipt);
-        if let Some(earlier) = earlier {
-            let conflict: Conflict = Conflict { earlier, later };
+        if let Some(conflict) = conflict {
             self.status = RoundStatus::Conflict(conflict);
             return Err(RoundError::Conflict(conflict));
         }
