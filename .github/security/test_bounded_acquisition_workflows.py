@@ -63,12 +63,14 @@ class WorkflowAcquisitionControls(unittest.TestCase):
                 "#!/usr/bin/python3\nimport json,os,sys\n"
                 "with open(os.environ['PROBE_LOG'],'a') as output:\n"
                 " json.dump({'args':sys.argv[1:],'rustup':os.environ.get('RUSTUP_TOOLCHAIN'),"
-                "'flags':os.environ.get('RUSTFLAGS')},output);output.write('\\n')\n"
+                "'flags':os.environ.get('RUSTFLAGS'),'nextest_binary':os.environ.get('NEXTEST_BINARY'),"
+                "'nextest_retries':os.environ.get('NEXTEST_RETRIES')},output);output.write('\\n')\n"
                 "sys.exit(int(os.environ['PROBE_EXIT']))\n"
             )
             probe.chmod(0o700)
             environment = {"PATH": str(base) + ":/usr/bin:/bin", "RUSTUP_HOME": str(base / "rustup"),
                            "RUSTUP_TOOLCHAIN": "ambient-manager-selection", "RUSTFLAGS": "must-remain-visible",
+                           "NEXTEST_RETRIES": "must-remain-visible",
                            "PROBE_LOG": str(base / "calls.jsonl"), "PROBE_EXIT": str(exit_code)}
             environment.update({key: value.replace("${{ runner.temp }}", str(base))
                                 for key, value in raw_environment.items()})
@@ -113,7 +115,8 @@ class WorkflowAcquisitionControls(unittest.TestCase):
                                                 PRODUCT_RECEIPT="${{ runner.temp }}/" + receipt)
                     expected += ["--nextest", environment["NEXTEST_BINARY"], "--json", environment["PRODUCT_RECEIPT"]]
                 self.assertEqual(raw_environment, expected_environment)
-                self.assertEqual(calls, [{"args": expected, "rustup": None, "flags": "must-remain-visible"}])
+                self.assertEqual(calls, [{"args": expected, "rustup": None, "flags": "must-remain-visible",
+                                         "nextest_binary": None, "nextest_retries": "must-remain-visible"}])
 
     def test_ke_rows_propagate_refusal_and_remain_required_after_acquisition(self):
         dependency = "Check the explicit KE dependency graph before its package code executes"
