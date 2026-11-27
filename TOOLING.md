@@ -1515,6 +1515,20 @@ separate offline graph and corpus. The configured legacy wire selectors still
 enforce their existing subject admission. The experiment receipt records the
 exact toolchain, seeds, 256 callbacks and a separate observation control.
 
+The [Engine Roughtime line checkpoint](tasks/time-assurance-integration.md#326-ta-w030406-exact-engine-roughtime-line-coverage)
+uses `scripts/verify-engine-analysis.py --profile roughtime --lane coverage
+--tool-admission-profile stable-core` with the selected `--vendor-dir` and a
+fresh private Linux `--output-dir`. Its policy binds the GNU feature, exact
+binary case rosters and ten registered files. The command and result reader
+each enforce 90% executable-line coverage per file.
+
+The [Engine Roughtime mutation inventory](tasks/time-assurance-integration.md#327-ta-w030406-engine-roughtime-mutation-inventory)
+uses the same entry point with `--profile roughtime --lane enumerate
+--tool-admission-profile stable-core`, a selected `--vendor-dir` and a fresh
+private `--output-dir`. The inventory policy binds the checked product map and
+exact listing command for each file. It exports raw descriptors and their
+digests. Campaign admission, viability and scoring remain separate.
+
 The GNU-host harness separately admits its locked source/features and native
 LLVM-exception notice and uses archive-verified vendor metadata. This test-only
 graph is not production NTS/TLS or distribution admission. New profile/target

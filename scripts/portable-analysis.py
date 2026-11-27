@@ -23,7 +23,7 @@ import stat
 import sys
 import time
 import tomllib
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -335,6 +335,37 @@ class Scope(NamedTuple):
 
 
 ENGINE_KE_POLICY = "policy/engine-ke-association-analysis.json"
+ENGINE_ROUGHTIME_LINE_POLICY = "policy/engine-roughtime-line-analysis.json"
+ENGINE_ROUGHTIME_INVENTORY_POLICY = "policy/engine-roughtime-mutation-inventory.json"
+ENGINE_ROUGHTIME_LINE_SUBJECTS = (
+    ("verifier", "crates/nevrotick-engine/src/roughtime.rs"),
+    ("exchange", "crates/nevrotick-engine/src/roughtime/exchange.rs"),
+    ("request", "crates/nevrotick-engine/src/roughtime/request.rs"),
+    ("tcp", "crates/nevrotick-engine/src/roughtime/exchange/tcp.rs"),
+    ("retry", "crates/nevrotick-engine/src/roughtime/exchange/retry.rs"),
+    ("round", "crates/nevrotick-engine/src/roughtime/round.rs"),
+    ("selection", "crates/nevrotick-engine/src/roughtime/round/selection.rs"),
+    ("recovery", "crates/nevrotick-engine/src/roughtime/round/recovery.rs"),
+    ("proof", "crates/nevrotick-engine/src/roughtime/round/recovery/proof.rs"),
+    ("interval", "crates/nevrotick-engine/src/roughtime/interval.rs"),
+)
+ENGINE_ROUGHTIME_LINE_ROLE = "engine-roughtime-line-coverage-only"
+ENGINE_ROUGHTIME_INVENTORY_ROLE = "engine-roughtime-mutation-inventory-only"
+ENGINE_ROUGHTIME_INVENTORY_FACTS: dict[str, object] = {
+    "schema_version": 1,
+    "admission_status": ENGINE_ROUGHTIME_INVENTORY_ROLE,
+    "package": "nevrotick-engine",
+    "feature": "roughtime-verification",
+    "target": "x86_64-unknown-linux-gnu",
+    "tool_admission_profile": "stable-core",
+    "mutation_minimum_viable_killed_percent": 95,
+    "enumeration_wall_seconds": 120,
+    "maximum_listed_per_file": 512,
+    "maximum_listed_total": 2048,
+    "maximum_mutants": 512,
+    "mutation_jobs": 1,
+    "campaign_admission": False,
+}
 ENGINE_SOURCE_POLICY_POLICY = "policy/engine-source-policy-analysis.json"
 ENGINE_SOURCE_POLICY_SUBJECTS = (
     ("source_policy", "crates/nevrotick-engine/src/source_policy.rs"),
@@ -904,8 +935,18 @@ def equivalence_source_inputs(dependency_policy: dict, equivalences: list[dict])
     return (*manifests, *(entry["proof"]["path"] for entry in equivalences))
 
 
-def coverage_counts(scope: Scope, report: dict, expected_file: str) -> dict:
-    """Require nonempty actual parser line data; a repository average cannot pass."""
+class CoverageObservation(TypedDict):
+    """Observed exact-source line totals and optional branch evidence."""
+
+    file: str
+    executable_lines: int
+    covered_lines: int
+    line_percent: float
+    branch_evidence: object
+
+
+def coverage_observation(scope: Scope, report: dict, expected_file: str) -> CoverageObservation:
+    """Read one selected actual line denominator without awarding a gate pass."""
     filename = scope.selected_file(expected_file)
     files = [item for section in report.get("data", []) for item in section.get("files", [])
              if item.get("filename") == expected_file]
@@ -915,11 +956,17 @@ def coverage_counts(scope: Scope, report: dict, expected_file: str) -> dict:
     total, covered = lines.get("count"), lines.get("covered")
     if type(total) is not int or type(covered) is not int or not 0 < total or not 0 <= covered <= total:
         raise Incomplete("Parser coverage has an empty or invalid executable-line denominator.")
-    percent = 100 * covered / total
-    if percent < 90:
-        raise Incomplete("Parser executable-line coverage is below 90 percent.")
     return {"file": filename, "executable_lines": total, "covered_lines": covered,
-            "line_percent": percent, "branch_evidence": files[0].get("summary", {}).get("branches")}
+            "line_percent": 100 * covered / total,
+            "branch_evidence": files[0].get("summary", {}).get("branches")}
+
+
+def coverage_counts(scope: Scope, report: dict, expected_file: str) -> CoverageObservation:
+    """Require the selected file's 90 percent gate; a repository average cannot pass."""
+    observation: CoverageObservation = coverage_observation(scope, report, expected_file)
+    if observation["line_percent"] < 90:
+        raise Incomplete("Parser executable-line coverage is below 90 percent.")
+    return observation
 
 
 def mutation_listing_warning(expected_jobs: int) -> str | None:
@@ -978,6 +1025,8 @@ def mutation_inventory(scope: Scope, items: list, maximum: int, expected_file: s
                 or item.get("package") != scope.package or not isinstance(item.get("name"), str)
                 or not item["name"] or item["name"] in result):
             raise Incomplete("Mutation enumeration contains duplicate or out-of-scope entries.")
+        if is_roughtime_inventory_scope(scope):
+            require_roughtime_descriptor(item)
         result[item["name"]] = item
     return result
 
@@ -1063,6 +1112,35 @@ def exact_mutant_span(value) -> bool:
                     for side in ("start", "end"))
             and (value["start"]["line"], value["start"]["column"])
             <= (value["end"]["line"], value["end"]["column"]))
+
+
+def require_roughtime_descriptor(item: dict) -> None:
+    """Require typed locations and the observed cargo-mutants 27.1.0 descriptor shape."""
+    if (item.keys() != {"file", "package", "name", "span", "function", "genre", "replacement", "diff"}
+            or type(item.get("file")) is not str or type(item.get("name")) is not str
+            or not exact_mutant_span(item.get("span"))
+            or item.get("genre") not in ("FnValue", "BinaryOperator", "UnaryOperator", "MatchArmGuard", "MatchArm")
+            or type(item.get("replacement")) is not str or len(item["replacement"]) > 4096
+            or (not item["replacement"] and item["genre"] not in ("UnaryOperator", "MatchArm"))
+            or type(item.get("diff")) is not str or not item["diff"]):
+        raise Incomplete("Engine Roughtime inventory contains a malformed descriptor.")
+    span: dict = item["span"]
+    start: tuple[int, int] = (span["start"]["line"], span["start"]["column"])
+    end: tuple[int, int] = (span["end"]["line"], span["end"]["column"])
+    if not item["name"].startswith(f"{item['file']}:{start[0]}:{start[1]}: "):
+        raise Incomplete("Engine Roughtime descriptor name does not identify its source location.")
+    function: object = item["function"]
+    if function is None:
+        return
+    if (type(function) is not dict or function.keys() != {"function_name", "return_type", "span"}
+            or type(function["function_name"]) is not str or not function["function_name"]
+            or type(function["return_type"]) is not str or not exact_mutant_span(function["span"])):
+        raise Incomplete("Engine Roughtime inventory contains a malformed descriptor function.")
+    enclosing: dict = function["span"]
+    first: tuple[int, int] = (enclosing["start"]["line"], enclosing["start"]["column"])
+    last: tuple[int, int] = (enclosing["end"]["line"], enclosing["end"]["column"])
+    if not first <= start <= end <= last:
+        raise Incomplete("Engine Roughtime descriptor lies outside its declared function.")
 
 
 def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[dict]:
@@ -1587,6 +1665,8 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
                               *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human",
                               policy=None) -> None:
     """Reject command substitution before a mutation subprocess may be launched."""
+    if scope.policy == ENGINE_ROUGHTIME_INVENTORY_POLICY:
+        raise Incomplete("Engine Roughtime inventory grants no mutation campaign.")
     jobs = mutation_jobs({"mutation_jobs": expected_jobs})
     message_format = mutation_message_format({"mutation_message_format": expected_message_format})
     if _core_h02_role(scope, {} if policy is None else policy):
@@ -2071,6 +2151,53 @@ class MutationEnumeration(NamedTuple):
     campaign_budget_exceeded: bool
 
 
+def is_roughtime_inventory_scope(scope: Scope) -> bool:
+    """Identify the exact inventory package, files, and policy together."""
+    return type(scope) is Scope and scope == Scope(
+        "nevrotick-engine", ENGINE_ROUGHTIME_LINE_SUBJECTS, ENGINE_ROUGHTIME_INVENTORY_POLICY)
+
+
+def require_roughtime_inventory_role(scope: Scope, policy: dict[str, object]) -> None:
+    """Require the fixed noncampaign role and both source identity fields."""
+    identities: tuple[str, str] = ("candidate_sha256", "line_policy_sha256")
+    if (not is_roughtime_inventory_scope(scope) or type(policy) is not dict
+            or set(policy) != set(ENGINE_ROUGHTIME_INVENTORY_FACTS) | set(identities)
+            or any(type(policy[key]) is not type(value) or policy[key] != value
+                   for key, value in ENGINE_ROUGHTIME_INVENTORY_FACTS.items())
+            or any(type(policy[key]) is not str or re.fullmatch(r"[0-9a-f]{64}", policy[key]) is None
+                   for key in identities)):
+        raise Incomplete("Engine Roughtime inventory requires its exact stable listing-only role.")
+
+
+def mutation_listing_prefix(scope: Scope, filename: str, policy: dict, tools: Path) -> list[str]:
+    """Build the shared file listing prefix with only its selected features."""
+    workers: int = mutation_jobs(policy)
+    tokens: int = mutation_jobserver_tasks(scope, policy, workers=workers)
+    prefix: list[str] = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package,
+                         "--file", filename, "--test-workspace", "false", "--cap-lints", "false",
+                         "--jobs", str(workers), "--jobserver", "true", "--jobserver-tasks", str(tokens)]
+    if mutation_message_format(policy) == "json":
+        prefix.append("--cargo-arg=--message-format=json")
+    features: tuple[str, ...] = ("roughtime-verification",) if is_roughtime_inventory_scope(scope) else engine_ke_features(scope)
+    for feature in features:
+        prefix.extend(["--features", feature])
+    prefix.extend(per_subject_mutation_error_args(scope, filename, policy))
+    return prefix
+
+
+def require_roughtime_listing_command(scope: Scope, policy: dict, tools: Path,
+                                      label: str, command: list[str]) -> None:
+    """Keep the Engine Roughtime mutation tool at its exact listing effect boundary."""
+    require_roughtime_inventory_role(scope, policy)
+    prefix: str = "mutation-enumeration:"
+    subject: str = label.removeprefix(prefix)
+    if not label.startswith(prefix) or subject not in scope.select("all"):
+        raise Incomplete("Engine Roughtime permits only an exact inventory command.")
+    filename: str = scope.select(subject)[subject]
+    if command != [*mutation_listing_prefix(scope, filename, policy, tools), "--list", "--json"]:
+        raise Incomplete("Engine Roughtime permits only an exact inventory command.")
+
+
 def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, *,
                                    deadline, maximum_per_file, maximum_total) -> MutationEnumeration:
     """List each exact selected owner once through a source-bound custodian.
@@ -2103,23 +2230,13 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
             or not finite_deadline):
         raise Incomplete("Mutation listing requires explicit finite allowances and a finite deadline.")
     workers = mutation_jobs(policy)
-    tokens = mutation_jobserver_tasks(scope, policy, workers=workers)
     mutation_process_limit(policy)
-    message_format = mutation_message_format(policy)
     inventories, commands = {}, {}
     observations = report["mutation_enumeration"] = {}
     report.pop("mutation_enumerated_total", None)
     report.pop("mutation_campaign_budget_exceeded", None)
     for name, filename in subjects.items():
-        # Bound independent mutant copies and the GNU jobserver separately.
-        common = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
-                  "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(workers),
-                  "--jobserver", "true", "--jobserver-tasks", str(tokens)]
-        if message_format == "json":
-            common.append("--cargo-arg=--message-format=json")
-        for feature in engine_ke_features(scope):
-            common.extend(["--features", feature])
-        common.extend(per_subject_mutation_error_args(scope, filename, policy))
+        common = mutation_listing_prefix(scope, filename, policy, tools)
         commands[name] = common
         listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
                      remaining_timeout(deadline, 120))
@@ -3018,6 +3135,21 @@ def admission_profile(args, scope, policy):
     expected_profile = "full" if codec_fuzz else policy.get("tool_admission_profile", "full")
     if expected_profile != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == ENGINE_ROUGHTIME_INVENTORY_POLICY
+            or policy.get("admission_status") == ENGINE_ROUGHTIME_INVENTORY_ROLE):
+        require_roughtime_inventory_role(scope, policy)
+        if (profile != "stable-core" or args.lane != "enumerate"
+                or getattr(args, "profile", None) != "roughtime" or getattr(args, "subject", None) != "all"):
+            raise Incomplete("Engine Roughtime inventory requires its exact stable listing-only role.")
+        return profile
+    if (scope.policy == ENGINE_ROUGHTIME_LINE_POLICY or scope.subjects == ENGINE_ROUGHTIME_LINE_SUBJECTS
+            or policy.get("admission_status") == ENGINE_ROUGHTIME_LINE_ROLE):
+        if (scope != Scope("nevrotick-engine", ENGINE_ROUGHTIME_LINE_SUBJECTS, ENGINE_ROUGHTIME_LINE_POLICY)
+                or policy.get("admission_status") != ENGINE_ROUGHTIME_LINE_ROLE
+                or profile != "stable-core" or args.lane != "coverage"
+                or getattr(args, "profile", None) != "roughtime" or getattr(args, "subject", None) != "all"):
+            raise Incomplete("Engine Roughtime line coverage requires its exact stable coverage-only role.")
+        return profile
     if _core_h02_role(scope, policy):
         require_core_h02_role(scope, policy)
         if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation"}:
@@ -3396,9 +3528,16 @@ def admission_profile(args, scope, policy):
 class Session:
     """One immutable candidate, admitted graph/tools and private bounded work tree."""
 
-    def __init__(self, root, args, report, scope, policy, extra_inputs):
+    def __init__(self, root, args, report, scope, policy, extra_inputs, *, listing_deadline: float | None = None):
         self.root, self.report, self.scope, self.policy = Path(root), report, scope, policy
         self.admission_profile = admission_profile(args, scope, policy)
+        if is_roughtime_inventory_scope(scope):
+            now: float = time.monotonic()
+            if type(listing_deadline) is not float or not now < listing_deadline <= now + 120:
+                raise Incomplete("Engine Roughtime requires its original bounded listing deadline.")
+        elif listing_deadline is not None:
+            raise Incomplete("Listing deadline override is exclusive to the Engine Roughtime inventory.")
+        self.listing_deadline = listing_deadline
         _require_private_output(self.root, args.output_dir)
         self.dependency_policy, self.product_identity = PRODUCT.admit_product(self.root)
         external_contracts = policy.get("admission_status") in {
@@ -3440,7 +3579,7 @@ class Session:
         self.tools = self.output / "tools"; self.tools.mkdir(mode=0o700)
         selected = (("cargo-llvm-cov", "cargo-mutants") if args.lane == "all" else
                     ("cargo-llvm-cov",) if args.lane == "coverage" else
-                    ("cargo-mutants",) if args.lane == "mutation" else ())
+                    ("cargo-mutants",) if args.lane == "mutation" or is_roughtime_inventory_scope(scope) else ())
         self.protected_tools = {}
         for name in selected:
             tool_path(self.source, name, copy_to=self.tools / name)
@@ -3490,7 +3629,17 @@ class Session:
             mode="ordinary", negative=None, expected_error=None, cwd=None, specimen=None, mutation_subject=None,
             sanitizer_profile="legacy"):
         """Keep command execution under unchanged admission, namespace and resource custody."""
+        inventory: bool = is_roughtime_inventory_scope(self.scope)
+        if inventory:
+            if (sealed or compiler is not None or extra_tools is not None or mode != "ordinary"
+                    or negative is not None or expected_error is not None or cwd is not None
+                    or specimen is not None or mutation_subject is not None or sanitizer_profile != "legacy"
+                    or type(timeout) is not int or not 0 < timeout <= 120):
+                raise Incomplete("Engine Roughtime inventory forbids alternate command modes and budgets.")
+            require_roughtime_listing_command(self.scope, self.policy, self.tools, label, command)
         self.check()
+        if inventory:
+            timeout = remaining_timeout(self.listing_deadline, timeout)
         if mutation_subject is not None:
             if (label != "mutation-campaign:" + mutation_subject or specimen or expected_error or negative
                     or compiler is not None or extra_tools is not None or mode != "ordinary" or cwd is not None

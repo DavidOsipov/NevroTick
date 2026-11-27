@@ -2208,6 +2208,161 @@ receiving qualification remain open.
 | `final.log` | `bd8678b7f5cac453c2f0d1de074c490c86801c8bb91717e8773a3e142f7e3872` |
 | `merkle-readback.log` | `cb301c4a5a012104dd69dc5c7753a1b492099c1a510e397bb432fca3e5fe9030` |
 
+### 3.26 TA-W03/04/06 exact Engine Roughtime line coverage
+
+CHECK-6/19/24/25/26. Select the ten registered Engine Roughtime owners under
+the current `roughtime-verification` feature and GNU host target. The signed
+`c97041d` product input map and §3.25 receipts identify the exact 23 unit and
+58 integration cases. The coverage command selects their complete names and
+reads back each original binary, including the declared filtered unit count.
+An ignored, duplicated, substituted or displaced result cannot earn credit.
+
+| Stage and skill | Requirement and action | Evidence or remaining condition |
+| --- | --- | --- |
+| Planning and preflight with `plan-code-change`, `qa-test-planning`, `qa-environment-preflight` | Bind the exact source and registered security files, stable coverage tool, feature, locked vendor and child output directory. | A private outer Linux scratch preflight reached the inner namespace with ordinary identity and read-only tool/vendor inputs. Preserve the runner's existing path, source and resource checks. |
+| Implementation and regression with `qa-coverage-gap-analysis`, `qa-regression-selection`, `qa-contract-tests` | Require qualified names per binary and retain each selected file's positive denominator and 90% line threshold. Reject unsupported selector combinations and the wrong candidate. | The initial role is `--profile roughtime --lane coverage --tool-admission-profile stable-core`. The verified source map, actual tool output and focused reader controls own this checkpoint. |
+| Independent review and closeout with `qa-independent-review`, `qa-context-checkpoint` | Compare all source, tool and vendor bookends and verify executed cases and exact coverage attribution. | Per-file mutation, controlled wire fuzzing, native Windows and same-handshake NTS integration have separate owners and evidence. |
+
+Use one finite 480-second execution allowance across scoped preflight, commands
+and required repair checks. The coverage child has its own 240-second wall cap.
+The first focused reader run rejected its healthy fixture because its extra-row
+check counted the libtest summary. The corrected check excludes only the summary
+and still rejects an extra ignored row. Five focused reader and selector tests
+and 67 existing shared wire-analysis controls passed. A separate executable-path
+control refuses a mismatched GNU test binary even with the correct source label
+and complete case list.
+
+The first instrumented run executed all 81 selected tests. It retained the
+raw report and closed its source, tool and vendor bookends. Nine files met the
+90% gate. TCP covered 309 of 353 executable lines and the tool returned an
+incomplete gate. The two added loopback cases exercise an invalid and a foreign
+preconnected endpoint and the 64th idle read after observing the actual request.
+The existing frame refusal case now also checks the decoder's typed bad-magic
+result through the live TCP receiver. These controls exercise application
+stream retirement through the peer. The idle-budget fixture requires the
+initial request write to complete in one poll, as observed in both GNU runs.
+Windows provider retirement remains a separate native observation.
+
+The final product map `8b06f0b43e46aa52722c8a9f6a7b1290ad52f11b9555cd008d2549a40dbef5e2`
+changes only the Engine integration test relative to the first 826-input map.
+It executed 23 unit and 60 integration cases through both exact GNU binaries.
+All 834 admitted source and tooling digests match the live files. The retained
+vendor map contains 29,754 files, with digest
+`e756aee1e8211d464b283eff3e27d0d097a8b4c9cbc0505a24e3e71a5f4f9edf`.
+The configured gate passed for all ten files. Independent readback checked the
+raw counts against the per-file results and exact roster.
+The affected fixture also passed formatting and GNU/MSVC-target Clippy, plus
+all three selected TCP tests in an ordinary GNU run. The focused run matched
+the same 826-input product map and consumed 42.176 seconds. The two outer
+coverage launches took approximately 92 and 90 seconds respectively, measured
+from owned output creation to final receipt export. The scoped execution stayed
+within the original 480-second allowance.
+
+| Engine owner | Covered / executable lines | Percent |
+| --- | ---: | ---: |
+| Verifier | 99 / 101 | 98.02 |
+| UDP exchange | 352 / 379 | 92.88 |
+| Request | 8 / 8 | 100.00 |
+| TCP | 318 / 353 | 90.08 |
+| Retry | 210 / 214 | 98.13 |
+| Round | 457 / 483 | 94.62 |
+| Selection | 186 / 197 | 94.42 |
+| Recovery | 326 / 341 | 95.60 |
+| Conflict proof | 63 / 65 | 96.92 |
+| Interval | 180 / 192 | 93.75 |
+
+The source-bound GNU per-file line gate closes for this candidate. Keep
+critical-file mutation qualification open and reconcile the actual per-file
+descriptors and thresholds before admitting a campaign. Live trust and date
+issuers, OPEN-8 verifier selection, native transport and complete same-handshake
+Roughtime-to-NTS/broker qualification retain their existing exits.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-line-sandbox.XUq85F6u/` | SHA-256 |
+| --- | --- |
+| `launch.py` | `adf2e70b51dde6a526caca10c439c34246b8fb74fa1f0cee62cd1d12003d2010` |
+| `controls.log` | `a17d3ad89044c4298d48c8e4b45e87bd9b9cb4ccee0a87ba3a44808fb7d2d545` |
+| `controls-final.log` | `12256ca6d5306b991cfaed0cfed03ff6e33ee42ad15791affc778f5551b8ec08` |
+| `shared-wire-controls.log` | `7e536dc2b0b7a436831eb50608521b14f2becebcd5fd96d6f9cd823233cb9b70` |
+| `attempt/verification.json` | `d327ddeb3a27d940aa8d3ea845ea39cb300599c29c8e43aa04585228727e227f` |
+| `attempt/coverage.json` | `8e00201cd6f2e0363a9fc6283b2bdf2a4c5411dcabd18a1003b8ddedee12aa51` |
+| `final/verification.json` | `f11285485e60107ce99caa83be350fd85a16b6de6465417810a8c176c85c6ceb` |
+| `final/coverage.json` | `463ca70f3e0a42c15cd9db7866a481068811d201cb85b333da5f9ae33199548b` |
+| `check-tcp-lints.py` | `910906f5a80e5d5982c96b2bd14da5e43a0844a717cd5f13acc7ba51a02b1628` |
+| `tcp-lints.json` | `846a6a609efb8e05d6f7cef7d593ed0ffc2bfaf012b6ae2e7c48f0a34e039cdc` |
+
+### 3.27 TA-W03/04/06 Engine Roughtime mutation inventory
+
+CHECK-6/19/24/25/26. Freeze the same ten critical files and product inputs as
+the preceding line checkpoint. Admit `--profile roughtime --lane enumerate`
+with stable-core, the exact `roughtime-verification` feature and one fixed
+`--list --json` command per registered file. Retain only generated descriptors
+and their scope. The 95% gate requires later viable outcomes and a passing
+baseline. A listing supplies no viable denominator, equivalence or test result.
+
+| Stage and skill | Requirement and action | Exit or remaining condition |
+| --- | --- | --- |
+| Planning and preflight with `plan-code-change`, `qa-mutation-testing`, `qa-environment-preflight` | Bind the preceding line policy, product map, pinned Cargo tool and stable GNU namespace. Use one shared 120-second listing deadline. | The exact tool can read the sealed source and emit bounded output. A separate 300-second execution allowance covers targeted controls, listing, affected line replay and repair. |
+| Implementation and controls with `qa-contract-tests` and `qa-regression-selection` | Guard the exact selected owner, features and list-only command at the Session effect. Require ten unique, nonempty per-file inventories, at most 512 per file and 2,048 combined. | Exercise the accepted vector and refuse substituted commands, campaigns, alien files and malformed or foreign descriptors. Preserve the old line role and existing profiles. |
+| Closeout with `qa-independent-review` and `qa-context-checkpoint` | Independently reconcile exported names and locations with each critical operation and identify generation gaps and qualified alternatives. | Retain raw inventory and per-file digest, explicit unsupported/ungenerated obligations and the exact next pre-campaign condition. |
+
+The first listing completed in 37.84 seconds. Review identified two admission
+gaps in the new route: the shared reader accepted partial descriptor shapes,
+and the child timeout was set before rechecking source and tool custody. The
+final route checks the observed descriptor schema and source spans, and
+recomputes the remaining timeout after that custody check. It also refuses
+terminal credit beyond the original listing deadline.
+
+The final listing took 37.14 seconds and all ten commands exited successfully.
+It produced the same **601 unique descriptors**, including identical raw
+descriptor data, against product map
+`8b06f0b43e46aa52722c8a9f6a7b1290ad52f11b9555cd008d2549a40dbef5e2`.
+Independent readback matched all 835 bound source inputs, the per-file
+descriptor digests, and the pinned tool and vendor bookends. Seven focused
+inventory controls, five line-analysis controls and 67 shared wire-analysis
+controls passed. Affected line evidence was replayed with the final runner in
+94.30 seconds: the same 23 unit and 60 integration cases executed, and all ten
+files returned the coverage counts in §3.26. Only the two runner files changed
+in that replay's bound source map.
+
+The independent source reconciliation distinguishes directly generated
+operator or arm changes from whole-function replacements and operations the
+listing does not target individually. Existing tests in the rightmost column
+exercise the indicated behavior. A named test alone supplies no mutation kill.
+
+| Critical owner | Listed | Example scope and generation gap | Independent control or remaining evidence |
+| --- | ---: | --- | --- |
+| Verifier | 36 | Merkle index shifts are listed. The request constructor's selected-root commitment check and the strict signature-provider call have no individually targeted descriptor. | Every commitment byte is checked in the keyed verifier, and signed depth-two and depth-32 proofs exercise folding. Provider strictness sensitivity remains separate. |
+| UDP exchange | 99 | Receive sentinel size and publication comparisons are listed. Actual send debit, socket release, and capture transfer lack individual descriptors. | Real UDP cap and excess cases, retained alias debt, and withdrawn publication controls. Winsock's generated oversize mapping needs native execution. |
+| Request | 8 | Encoder body replacements and size arithmetic are listed. Literal prefix and individual copy and padding operations have no targeted descriptor. | The peer independently checks emitted UDP and TCP request fields with a one-byte padding refusal neighbor. |
+| TCP | 66 | Deadline, frame and idle-counter expressions are listed. Worker-witness transfer, partial-write slice selection and stream release lack individual descriptors. | Both pre-dispatch withdrawals and the post-dispatch custody test, plus fragmented, coalesced, idle and truncated frames. Deterministic partial writes and native provider retirement remain open. |
+| Retry | 51 | Join/time ordering and backoff arithmetic are listed. Constructors and lease transitions lack operation-level targets. | Seeded debt in worker and final-date tests, rational backoff controls, and route validation. A duplicate-alias refusal through the legacy constructor remains open. |
+| Round | 98 | Return-clock reversal, cutoff, and terminal comparisons are listed. Individual dual-witness assignments, guard reacquisition and retry reset calls are absent. | Separate round and recovery withdrawals and bounded clock observations inside date admission. Deterministic withdrawal between transport poll and final publication guard remains open. |
+| Selection | 58 | Rank and rejection-sampling arithmetic are listed. Fixed permutations, roster caps and actual readiness calls lack individual targets. | All six trio orders, reachable rank across a 16-peer roster, bounded redraws and actual ready-trio reuse. An explicit over-cap roster control remains open. |
+| Recovery | 73 | Budget, cutoff and conflict comparisons are listed. Exact silence variant, waiter arming, notification and evidence transfers lack individual targets. | Malformed UDP blocks fallback, silence restarts the chain, and Stop wakes the wait. Dropping the pending waiter without spending a round remains open. |
+| Conflict proof | 26 | Shape, index and first-witness comparisons are listed. Exact replay calls and duplicate-link lookup lack individual targets. | Valid two- and nine-receipt prefixes and corrupted frame/link refusals. A correctly chained proof with repeated randomness remains open. |
+| Interval | 86 | Capture order, age, width and scaling operators are listed. Policy construction, exact margin operations and calendar scope call lack individual targets. | Bracket, outward rounding, and scope refusal controls. Direct reversed-rate and zero-limit constructor refusals remain open. |
+
+The 601 listed operations exceed the existing 512-descriptor campaign
+reference by 89. Each per-file listing fits its 512 limit. The enumeration
+policy rejects campaign execution and grants no mutation or native credit.
+Before admitting a campaign, freeze the selected cases and passing baseline,
+disposition the generation and target-specific gaps, and review bounded
+per-file batches against an aggregate execution and resource budget. Keep the
+95% viable-mutation threshold for each critical file and retain each observed
+outcome against its exact denominator.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-inventory-sandbox.Rck16X27/` | SHA-256 |
+| --- | --- |
+| `launch.py` | `19e5bdbe55bf4545fae04c4328bc4a9407ffa1b02524cf7cfa6e3de2f382a2f0` |
+| `inventory/verification.json` | `76f32d38038c0da391e86e6c780d8f56eb5d4682456867704e1dda1d290a708c` |
+| `inventory-final/verification.json` | `b42011f31a2fe87c03586baf213dec09c7631caeb6a0ac009e45f67f0d64ff15` |
+| `inventory-final/launch.json` | `8641d8d988d05b6f1db604cce914e1005881f9a2508e6ed28f35351a6e13efbb` |
+| `final-engine_roughtime_inventory.log` | `f316a7d700c8cc3e37e9697d540801e8ec68609cef77c78adfc9373610e0d1be` |
+| `final-engine_roughtime_line_analysis.log` | `12256ca6d5306b991cfaed0cfed03ff6e33ee42ad15791affc778f5551b8ec08` |
+| `final-verify_wire_analysis.log` | `e9769180dee0b5d7ff71b0bfa62fcb2a30df8b71ee077c48109bde7412cf7a26` |
+| `line-replay/verification.json` | `5a37bc12e5ac355733f2273564eebcfeac091e2016819ee176c64f7101fb527f` |
+| `line-replay/coverage.json` | `d110f9e5a167ab8361fca2f9fdaa9733d36f4e9121c2d3a90ec9cc1765160961` |
+
 ## 4. Independent acceptance cases
 
 All cases below are **planned, not run**. Pair each hostile/failure input with the

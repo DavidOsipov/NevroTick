@@ -1206,7 +1206,7 @@ mod tcp_exchange {
         TestResult, assert_retry_wait, checked, emitted_request_matches_profile, malformed_retry,
         peer, refused_retry_floor, signed_reply, stage_retry,
     };
-    use super::{LEFT_REQUEST, LEFT_RESPONSE, RootKey, TREE_ROOT};
+    use super::{DecodeError, LEFT_REQUEST, LEFT_RESPONSE, RootKey, TREE_ROOT, VerifyError};
 
     /// Limit both the local stream fixture and the original inquiry's lifetime.
     const BUDGET: Duration = Duration::from_secs(2);
@@ -1701,7 +1701,88 @@ mod tcp_exchange {
         Ok(())
     }
 
-    /// Require refusal from a length prefix alone and from EOF mid-body.
+    /// Retire supplied streams that do not match an admitted loopback peer.
+    ///
+    /// # Errors
+    /// Returns fixture socket, root, or peer retirement observation failure.
+    ///
+    /// # Panics
+    /// Panics if an invalid or foreign endpoint can acquire the original stream.
+    #[test]
+    fn preconnected_stream_refuses_invalid_and_foreign_peers() -> TestResult<()> {
+        let root: RootKey = RootKey::from_bytes(TREE_ROOT).map_err(|error| format!("{error:?}"))?;
+        let authority: RoundAuthority = RoundAuthority::new();
+        let other_listener: TcpListener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+        let foreign: SocketAddr = other_listener.local_addr()?;
+
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let zero_port: SocketAddr = SocketAddr::new(address.ip(), 0);
+        assert!(matches!(
+            PendingTcpExchange::start(&authority, client, zero_port, &root, BUDGET),
+            Err(ExchangeError::Configuration)
+        ));
+        assert_retired(&mut peer)?;
+
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let unspecified: SocketAddr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, address.port()));
+        assert!(matches!(
+            PendingTcpExchange::start(&authority, client, unspecified, &root, BUDGET),
+            Err(ExchangeError::Configuration)
+        ));
+        assert_retired(&mut peer)?;
+
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        assert_ne!(foreign, address);
+        assert!(matches!(
+            PendingTcpExchange::start(&authority, client, foreign, &root, BUDGET),
+            Err(ExchangeError::ForeignPeer)
+        ));
+        assert_retired(&mut peer)?;
+
+        // Endpoint refusal precedes request preparation on the original authority.
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let mut pending: PendingTcpExchange<'_> = checked(PendingTcpExchange::start(
+            &authority, client, address, &root, BUDGET,
+        ))?;
+        let request: [u8; LEFT_REQUEST.len()] = submit(&mut pending, &mut peer)?;
+        assert!(emitted_request_matches_profile(&request, TREE_ROOT));
+        drop(pending);
+        assert_retired(&mut peer)?;
+        Ok(())
+    }
+
+    /// Charge exactly 64 idle reads after the observed original request.
+    ///
+    /// # Errors
+    /// Returns fixture socket, root, request, or retirement observation failure.
+    ///
+    /// # Panics
+    /// Panics if idle polls retire early, publish evidence, or leave a live stream.
+    #[test]
+    fn silent_tcp_peer_exhausts_the_exact_idle_budget() -> TestResult<()> {
+        let root: RootKey = RootKey::from_bytes(TREE_ROOT).map_err(|error| format!("{error:?}"))?;
+        let authority: RoundAuthority = RoundAuthority::new();
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let mut pending: PendingTcpExchange<'_> = checked(PendingTcpExchange::start(
+            &authority, client, address, &root, BUDGET,
+        ))?;
+        // One small write on a fresh loopback stream, followed by an independently
+        // bounded read of all transmitted bytes. No client read has run yet.
+        assert!(checked(pending.poll())?.is_none());
+        let mut request: [u8; LEFT_REQUEST.len()] = [0; LEFT_REQUEST.len()];
+        peer.read_exact(&mut request)?;
+        assert!(emitted_request_matches_profile(&request, TREE_ROOT));
+
+        for _ in 0..63 {
+            assert!(checked(pending.poll())?.is_none());
+        }
+        assert!(matches!(pending.poll(), Err(ExchangeError::ReceiveBudget)));
+        assert!(matches!(pending.poll(), Err(ExchangeError::Spent)));
+        assert_retired(&mut peer)?;
+        Ok(())
+    }
+
+    /// Require refusal from a malformed or oversized prefix and from EOF mid-body.
     ///
     /// # Errors
     /// Returns the original fixture, socket, signing, or exchange failure.
@@ -1725,6 +1806,23 @@ mod tcp_exchange {
             receive(&mut pending)?,
             Err(ExchangeError::Truncated)
         ));
+        assert_retired(&mut peer)?;
+
+        let authority: RoundAuthority = RoundAuthority::new();
+        let (client, mut peer, address): (TcpStream, TcpStream, SocketAddr) = sockets()?;
+        let mut pending: PendingTcpExchange<'_> = checked(PendingTcpExchange::start(
+            &authority, client, address, &root, BUDGET,
+        ))?;
+        let _request: [u8; LEFT_REQUEST.len()] = submit(&mut pending, &mut peer)?;
+        // Keep a valid-sized body declaration and change only the prefix magic.
+        peer.write_all(b"ROUGHTIX\x04\x00\x00\x00")?;
+        assert!(matches!(
+            receive(&mut pending)?,
+            Err(ExchangeError::Verification(VerifyError::Response(
+                DecodeError::Frame
+            )))
+        ));
+        assert!(matches!(pending.poll(), Err(ExchangeError::Spent)));
         assert_retired(&mut peer)?;
 
         let authority: RoundAuthority = RoundAuthority::new();

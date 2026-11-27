@@ -9707,6 +9707,12 @@ def execute_source_policy_profile(args, report: dict) -> None:
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
     profile = getattr(args, "profile", "legacy")
+    if profile == "roughtime":
+        if args.lane == "enumerate":
+            execute_roughtime_inventory_profile(args, report)
+        else:
+            execute_roughtime_line_profile(args, report)
+        return
     if profile == "source_policy":
         execute_source_policy_profile(args, report)
         return
@@ -9781,16 +9787,228 @@ def execute(args, report: dict) -> None:
         report["qualification_passed"] = True
 
 
+ROUGHTIME_LINE_SCOPE: COMMON.Scope = COMMON.Scope(
+    "nevrotick-engine", COMMON.ENGINE_ROUGHTIME_LINE_SUBJECTS, COMMON.ENGINE_ROUGHTIME_LINE_POLICY)
+ROUGHTIME_INVENTORY_SCOPE: COMMON.Scope = COMMON.Scope(
+    "nevrotick-engine", COMMON.ENGINE_ROUGHTIME_LINE_SUBJECTS, COMMON.ENGINE_ROUGHTIME_INVENTORY_POLICY)
+ROUGHTIME_LINE_FACTS: dict[str, object] = {
+    "schema_version": 1,
+    "admission_status": COMMON.ENGINE_ROUGHTIME_LINE_ROLE,
+    "package": "nevrotick-engine",
+    "feature": "roughtime-verification",
+    "target": "x86_64-unknown-linux-gnu",
+    "tool_admission_profile": "stable-core",
+    "line_minimum_percent": 90,
+    "coverage_wall_seconds": 240,
+    "jobs": 2,
+    "test_threads": 1,
+    "critical_files": list(ROUGHTIME_LINE_SCOPE.select("all").values()),
+}
+ROUGHTIME_RESULT_FILES: dict[str, tuple[str, int]] = {
+    "unittests src/lib.rs": ("nevrotick_engine", 283),
+    "tests/roughtime_verification.rs": ("roughtime_verification", 0),
+}
+
+
+def read_roughtime_line_policy(root: Path) -> tuple[dict[str, object], dict[str, list[str]]]:
+    """Admit the frozen host feature, owners and non-overlapping per-binary rosters."""
+    policy: dict[str, object] = read_json(root / ROUGHTIME_LINE_SCOPE.policy)
+    if (set(policy) != set(ROUGHTIME_LINE_FACTS) | {"candidate_sha256", "test_inventory"}
+            or any(type(policy[key]) is not type(value) or policy[key] != value
+                   for key, value in ROUGHTIME_LINE_FACTS.items())):
+        raise Incomplete("Engine Roughtime coverage policy differs from its fixed role.")
+    fingerprint: object = policy["candidate_sha256"]
+    if type(fingerprint) is not str or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
+        raise Incomplete("Engine Roughtime requires an exact candidate digest.")
+    inventory: object = policy["test_inventory"]
+    if type(inventory) is not dict or set(inventory) != {"src/lib.rs", "tests/roughtime_verification.rs"}:
+        raise Incomplete("Engine Roughtime requires both exact test binaries.")
+    roster: dict[str, list[str]] = {}
+    for binary, names in inventory.items():
+        expected_count: int = 23 if binary == "src/lib.rs" else 60
+        if (type(names) is not list or len(names) != expected_count
+                or any(type(name) is not str or re.fullmatch(r"\w+(?:::\w+)*", name, re.ASCII) is None
+                       or len(name) > 256 for name in names)
+                or names != sorted(set(names))
+                or any(name.startswith("roughtime::") != (binary == "src/lib.rs") for name in names)):
+            raise Incomplete("Engine Roughtime test roster is malformed or assigned to the wrong binary.")
+        roster[binary] = names
+    manifest: dict[str, object] = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    minimum: object = manifest.get("security_module_minimum_executable_line_percent")
+    if type(minimum) is not int or minimum != ROUGHTIME_LINE_FACTS["line_minimum_percent"]:
+        raise Incomplete("Engine Roughtime coverage requires the registered security line threshold.")
+    files: list[str] = [filename for row in manifest["security_modules"]
+                        if row["package"] == "nevrotick-engine" and row["name"].startswith("roughtime-v1-")
+                        for filename in row["files"]]
+    if (sorted(files) != sorted(ROUGHTIME_LINE_SCOPE.select("all").values())
+            or any(manifest["critical_files"].count(filename) != 1 for filename in files)):
+        raise Incomplete("Engine Roughtime coverage omits or duplicates a registered security owner.")
+    return policy, roster
+
+
+def roughtime_line_execution(text: str, roster: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Require actual successful output for each selected case in its original binary."""
+    blocks: list[re.Match[str]] = session_execution_blocks(text)
+    headers: list[re.Match[str]] = list(re.finditer(
+        r"(?m)^[ \t]*Running (unittests src/lib\.rs|tests/roughtime_verification\.rs) "
+        r"\(/work/target/llvm-cov-target/x86_64-unknown-linux-gnu/debug/build/nevrotick-engine/"
+        r"([0-9a-f]{16})/out/(nevrotick_engine|roughtime_verification)-\2\)$", text))
+    if (len(headers) != len(blocks) or len(headers) != len(roster)
+            or {header[1] for header in headers} != set(ROUGHTIME_RESULT_FILES)):
+        raise Incomplete("Engine Roughtime coverage lost a selected test binary.")
+    passes: dict[str, list[str]] = {}
+    previous_end: int = 0
+    for header, block in zip(headers, blocks, strict=True):
+        binary: str = header[1].removeprefix("unittests ")
+        stem, filtered = ROUGHTIME_RESULT_FILES[header[1]]
+        records: list[str] = re.findall(r"(?m)^test (\S+) \.\.\. ok$", block[2])
+        expected: list[str] = roster[binary]
+        if (header[3] != stem or not previous_end <= header.start() < header.end() <= block.start()
+                or block[3] != "ok" or int(block[1]) != len(expected) or int(block[4]) != len(expected)
+                or any(int(block[index]) for index in (5, 6, 7))
+                or int(block[8]) != filtered
+                or len(re.findall(r"(?m)^test ", block[2])) != len(records)
+                or sorted(records) != expected):
+            raise Incomplete("Engine Roughtime coverage omitted, substituted or failed a selected case.")
+        previous_end = block.end()
+        passes[binary] = records
+    if len(re.findall(r"(?m)^test (?!result:)", text)) != sum(map(len, passes.values())):
+        raise Incomplete("Engine Roughtime coverage has test records outside its selected binaries.")
+    return passes
+
+
+def execute_roughtime_line_profile(args: argparse.Namespace, report: dict[str, object]) -> None:
+    """Measure the ten GNU owners with fixed source, graph, tool and result custody."""
+    policy, roster = read_roughtime_line_policy(ROOT)
+    COMMON.admission_profile(args, ROUGHTIME_LINE_SCOPE, policy)
+    subjects: dict[str, str] = ROUGHTIME_LINE_SCOPE.select("all")
+    report.update(profile="roughtime", scope="Engine Roughtime per-file GNU line coverage only",
+                  subjects=subjects, line_gate_passed=False, qualification_passed=False,
+                  mutation_qualification="not performed", selected_test_inventory=roster)
+    inputs: tuple[str, ...] = (WRAPPER, "scripts/tests/test_engine_roughtime_line_analysis.py")
+    session: COMMON.Session = COMMON.Session(ROOT, args, report, ROUGHTIME_LINE_SCOPE, policy, inputs)
+    try:
+        copied_policy, copied_roster = read_roughtime_line_policy(session.source)
+        if (copied_policy != policy or copied_roster != roster
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]):
+            raise Incomplete("Engine Roughtime coverage requires its exact declared product candidate.")
+        try:
+            PRODUCT.SLINT.profile_rows(session.dependency_policy, PRODUCT.SLINT.RGT_PROFILE)
+        except PRODUCT.SLINT.Incomplete as error:
+            raise Incomplete(str(error)) from error
+        ignored: list[str] = [re.escape("/work/source/" + name) + "$" for name in session.product_identity
+                              if name.endswith(".rs") and name not in subjects.values()]
+        ignored.append("/rustlib/src/rust/library/")
+        regex: str = "|".join(ignored)
+        if len(regex.encode()) > 65_536:
+            raise Incomplete("Engine Roughtime coverage filename filter exceeds its bound.")
+        coverage_path: Path = session.work / "coverage.json"
+        report["raw_coverage"] = str(coverage_path)
+        command: list[str] = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "nevrotick-engine",
+                              "--features=roughtime-verification", "--target=x86_64-unknown-linux-gnu", "--frozen",
+                              "--jobs", "2", "--lib", "--test", "roughtime_verification", "--json",
+                              "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                              "--ignore-filename-regex", regex, "--fail-under-file-lines", "90", "--",
+                              "--test-threads=1", "--exact", *(name for names in roster.values() for name in names)]
+        tool_refusal: Exception | None = None
+        output: str
+        try:
+            output = session.run("roughtime-line-coverage", command, 240)
+        except PRODUCT.ENV.Incomplete as error:
+            # The pinned coverage tool writes its complete report before the
+            # file threshold refuses. Keep those observations without a pass.
+            lanes: object = report.get("lanes")
+            if type(lanes) is not list or not lanes:
+                raise
+            result: dict[str, object] = lanes[-1]
+            if (result["lane"] != "roughtime-line-coverage" or result["failure"] is not None
+                    or result["exit_code"] != 1 or not coverage_path.is_file()):
+                raise
+            raw_output: object = result["output"]
+            if type(raw_output) is not str:
+                raise
+            output = raw_output
+            tool_refusal = error
+        report["coverage_execution"] = roughtime_line_execution(output, roster)
+        coverage: dict[str, object] = COMMON.read_analysis_json(coverage_path)
+        observations: dict[str, COMMON.CoverageObservation] = {
+            name: COMMON.coverage_observation(ROUGHTIME_LINE_SCOPE, coverage, "/work/source/" + filename)
+            for name, filename in subjects.items()}
+        report["coverage"] = observations
+        low: list[str] = [name for name, observation in observations.items() if observation["line_percent"] < 90]
+        if low:
+            raise Incomplete("Engine Roughtime executable-line threshold was not met: " + ", ".join(low))
+        if tool_refusal is not None:
+            raise tool_refusal
+    finally:
+        session.finish()
+        report["vendor_sha256"] = COMMON.canonical_sha256(session.vendor_identity)
+        report["vendor_file_count"] = len(session.vendor_identity)
+    report["line_gate_passed"] = True
+
+
+def read_roughtime_inventory_policy(root: Path) -> dict[str, object]:
+    """Bind listing to the same admitted product, registered files and line policy."""
+    policy: dict[str, object] = read_json(root / ROUGHTIME_INVENTORY_SCOPE.policy)
+    COMMON.require_roughtime_inventory_role(ROUGHTIME_INVENTORY_SCOPE, policy)
+    line_policy, _ = read_roughtime_line_policy(root)
+    manifest: dict[str, object] = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    minimum: object = manifest.get("critical_file_minimum_mutation_percent")
+    if type(minimum) is not int or minimum != policy["mutation_minimum_viable_killed_percent"]:
+        raise Incomplete("Engine Roughtime inventory requires the registered critical-file mutation threshold.")
+    if (policy["candidate_sha256"] != line_policy["candidate_sha256"]
+            or policy["line_policy_sha256"] != PRODUCT.sha256(root / ROUGHTIME_LINE_SCOPE.policy)):
+        raise Incomplete("Engine Roughtime inventory and line coverage identify different candidates or policies.")
+    return policy
+
+
+def execute_roughtime_inventory_profile(args: argparse.Namespace, report: dict[str, object]) -> None:
+    """Generate ten GNU source inventories without compiling or testing mutants."""
+    deadline: float = time.monotonic() + 120
+    policy: dict[str, object] = read_roughtime_inventory_policy(ROOT)
+    COMMON.admission_profile(args, ROUGHTIME_INVENTORY_SCOPE, policy)
+    subjects: dict[str, str] = ROUGHTIME_INVENTORY_SCOPE.select("all")
+    report.update(profile="roughtime", scope="Engine Roughtime GNU mutation inventory only",
+                  subjects=subjects, campaign_admission=False, qualification_passed=False,
+                  mutation_qualification="not performed")
+    inputs: tuple[str, ...] = (WRAPPER, ROUGHTIME_LINE_SCOPE.policy,
+                               "scripts/tests/test_engine_roughtime_inventory.py")
+    session: COMMON.Session = COMMON.Session(ROOT, args, report, ROUGHTIME_INVENTORY_SCOPE, policy, inputs,
+                                             listing_deadline=deadline)
+    try:
+        if (read_roughtime_inventory_policy(session.source) != policy
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]):
+            raise Incomplete("Engine Roughtime inventory requires its exact declared product candidate.")
+        try:
+            PRODUCT.SLINT.profile_rows(session.dependency_policy, PRODUCT.SLINT.RGT_PROFILE)
+        except PRODUCT.SLINT.Incomplete as error:
+            raise Incomplete(str(error)) from error
+        enumeration: COMMON.MutationEnumeration = COMMON.enumerate_mutation_inventories(
+            ROUGHTIME_INVENTORY_SCOPE, subjects, policy, session.tools, session.run, report,
+            deadline=deadline, maximum_per_file=512, maximum_total=2048)
+        report.update(listed_inventories=enumeration.inventories,
+                      listed_inventory_bindings=listed_summary(enumeration.inventories))
+    finally:
+        session.finish()
+        report["vendor_sha256"] = COMMON.canonical_sha256(session.vendor_identity)
+        report["vendor_file_count"] = len(session.vendor_identity)
+    if time.monotonic() >= deadline:
+        raise Incomplete("Engine Roughtime mutation inventory exhausted its shared deadline.")
+
+
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round", "ke_association", "source_policy"), default="legacy")
+    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round", "ke_association", "source_policy", "roughtime"), default="legacy")
     parser.add_argument("--lane", choices=("contracts", "baseline", "fixtures", "enumerate", "coverage", "mutation", "all"), required=True)
     parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, *ENGINE_KE_HOST_SUBJECTS, "source_policy", "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if (args.profile == "roughtime" and (args.lane not in {"coverage", "enumerate"} or args.subject != "all"
+                                        or args.tool_admission_profile != "stable-core")):
+        parser.error("Engine Roughtime selects only stable-core coverage or inventory of all registered owners")
     if args.profile == "source_policy" and args.subject not in {*SOURCE_POLICY_SUBJECTS, "all"}:
         parser.error("Source-policy selects only its exact five named owners or all")
     if args.profile != "source_policy" and args.subject == "source_policy":

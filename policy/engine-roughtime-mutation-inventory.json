@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "admission_status": "engine-roughtime-mutation-inventory-only",
+  "package": "nevrotick-engine",
+  "feature": "roughtime-verification",
+  "target": "x86_64-unknown-linux-gnu",
+  "tool_admission_profile": "stable-core",
+  "mutation_minimum_viable_killed_percent": 95,
+  "enumeration_wall_seconds": 120,
+  "maximum_listed_per_file": 512,
+  "maximum_listed_total": 2048,
+  "maximum_mutants": 512,
+  "mutation_jobs": 1,
+  "campaign_admission": false,
+  "candidate_sha256": "8b06f0b43e46aa52722c8a9f6a7b1290ad52f11b9555cd008d2549a40dbef5e2",
+  "line_policy_sha256": "e69561bfb7ac3890a3392ac0405f807bf7d2d0f246c2c4a4eade802b406507c0"
+}
