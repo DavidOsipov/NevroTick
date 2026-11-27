@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.30<br>
+**Document:** NV-DEC-001, revision 1.31<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -29,7 +29,7 @@ independent verification and installation without separate routine Download or
 Install confirmations. Dependency, time, storage, Windows recovery and signing
 qualification remain open; this is an accepted plan, not an implemented updater.
 
-**Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) keeps mathematical estimation experiments first after actual V1 release. [OD-20, 14 November](#24-od-20--supplementary-certificate-distrust-after-v1) defers OneCRL/CRLite integration until after V1 and places TRUST-0 second under the delegated ordering choice, followed by multithreading, Khronos/Ananke, GeoIP and Android. Existing V1 certificate qualification remains required; this adds no V1 feed-integration gate.
+**Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) keeps mathematical estimation experiments first after actual V1 release. [OD-20, 14 November](#24-od-20--supplementary-certificate-distrust-after-v1) defers OneCRL/CRLite integration until after V1 and places TRUST-0 second under the delegated ordering choice, followed by multithreading. [OD-21, 27 November](#25-od-21--restricted-local-clock-changing-permissions) inserts optional restricted clock permissions after MT-C01 and immediately before Khronos/Ananke, followed by GeoIP and Android. Existing V1 correctness, service isolation and certificate qualification remain required; these post-V1 stages add no new V1 gate.
 
 **Later 13 November qualification direction:** [OD-18](#22-od-18--literature-derived-qualification-before-v1) places small literature-derived tests/cases before V1 and records longer implementations in the roadmap and detailed documentation. Existing phase owners and the post-V1 order remain authoritative.
 
@@ -87,11 +87,12 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates. See the [24 November calendar dependency decision](#slint-calendar-dependency--24-november-2026). |
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
-| OD-16 | Run mathematical estimation experiments first after actual V1 release, preserving multithreading before Khronos | **7 November direction amended 13 November; TRUST-0 inserted by OD-20 on 14 November 2026** | MATH-C01 precedes TRUST-C01, then MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
+| OD-16 | Run mathematical estimation experiments first after actual V1 release, preserving multithreading before Khronos | **7 November direction amended 13 November; TRUST-0 inserted by OD-20 on 14 November; CLK-0 inserted after MT-0 by OD-21 on 27 November 2026** | MATH-C01 precedes TRUST-C01, then MT-C01, CLK-C01 and Khronos; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
 | OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026; channel amended 21 November** | WGT-0 within P6/P7: non-Store source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve directly distributed complete MSIX; no automatic MSI selection, catalog publication or update guarantee |
 | OD-18 | Add small literature-derived tests/cases before V1; document longer implementation in ROADMAP.md and detailed docs | **Accepted qualification and planning direction, 13 November 2026** | Actual-consumer tests and reached V1 cases need candidate-specific results; absent future runtime cases remain prepared, not executed. LIT-0/NV-NCR-001 map longer work to existing owners without adopting TPKI, NTxMon or new estimator constants |
 | OD-19 | Apply a 14-day minimum publication age to routine selection of new registry versions, including changed/new transitives | **Accepted and implemented in the bounded tooling scope, 13 November 2026; isolated fixtures qualified under R4-B-02** | Product/native qualification remains separate; future updates need exact changed-graph/source approval and any concrete individual exception. Aging does not establish package safety |
 | OD-20 | Defer OneCRL and CRLite integration until after V1; add a roadmap entry and detailed plan, deciding its priority | **Accepted deferral, 14 November 2026; delegated engineering placement is second, after MATH-C01 and before MT-0** | TRUST-0/TRUST-C01: authenticated updates, accepted-chain checks, coverage/freshness, association invalidation and separate root-policy scope. No implementation or native pass; existing V1 OPEN-8/R-05 requirements remain |
+| OD-21 | Record a detailed restricted local clock-permissions plan and place the feature immediately before Khronos | **Accepted documentation and post-V1 placement, 27 November 2026** | CLK-0/CLK-C01 and NV-CLK-001 follow MT-C01. User acceptance covers planning and order; mechanisms require reassessment, bounded implementation/qualification and an explicit disposition. No automatic host mutation, V1 prerequisite or unrestricted-administrator exclusion is approved |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -1194,7 +1195,8 @@ material dependent choices when evidence makes them concrete.
 **Delivery:** the [roadmap DNS workstream](../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning)
 links this plan. The current Windows time-client execution plan, UI-M0 limits,
 existing privilege boundaries retain their authority. The post-V1 order starts with
-MATH-0, then TRUST-0, MT-0 and KHR-0 under [OD-20](#24-od-20--supplementary-certificate-distrust-after-v1). No DNS implementation, host configuration change, benchmark, native
+MATH-0, then TRUST-0, MT-0, CLK-0 and KHR-0 under [OD-20](#24-od-20--supplementary-certificate-distrust-after-v1)
+and [OD-21](#25-od-21--restricted-local-clock-changing-permissions). No DNS implementation, host configuration change, benchmark, native
 Windows result or new release qualification is established by this amendment.
 
 ## 13. OD-09 — leap policy and silent servers
@@ -1764,7 +1766,8 @@ MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. This supersed
 older descriptions of Khronos as the first Windows follow-up. The
 [13 November amendment](#201-mathematics-experiments-first--13-november-2026)
 inserted MATH-0 / MATH-C01 before MT-0; the [14 November amendment](#202-certificate-distrust-second--14-november-2026)
-now inserts TRUST-0 between them. OD-12's relative Khronos → GeoIP → Android order
+inserted TRUST-0 between them. The [27 November amendment](#203-restricted-clock-permissions-before-khronos--27-november-2026)
+now inserts CLK-0 after MT-C01, immediately before Khronos. OD-12's relative Khronos → GeoIP → Android order
 remains. The later 27 November OD-02 amendment places RGT-C01 in V1 and keeps
 CHR-0 post-V1 with RGT-C01 as a prerequisite.
 
@@ -1826,10 +1829,27 @@ of MATH-0.
 
 [OD-20](#24-od-20--supplementary-certificate-distrust-after-v1) records David's
 explicit post-V1 deferral of OneCRL/CRLite and the requested priority judgment.
-The selected engineering placement is **MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 →
+The selected engineering placement on 14 November (amended by §20.3 below) was
+**MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 →
 MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android**, after actual V1
 release. MATH remains first; the other follow-ups retain their relative order.
 Use OD-20 and NV-TRUST-001 for scope, finite exit and preserved V1 obligations.
+
+### 20.3 Restricted clock permissions before Khronos — 27 November 2026
+
+[OD-21](#25-od-21--restricted-local-clock-changing-permissions) records David's
+instruction to retain the detailed plan and schedule this feature immediately
+before Khronos. The accepted current order is **actual V1 release → MATH-0 /
+MATH-C01 → TRUST-0 / TRUST-C01 → MT-0 / MT-C01 → CLK-0 / CLK-C01 → KHR-0 /
+KHR-C01 → GEO-0 / GEO-C01 → Android**. Earlier MATH/TRUST/MT priorities and the
+Khronos → GeoIP → Android relationship remain.
+
+CLK-C01 records assessed implementation/qualification and an explicit
+evidence-supported disposition. Planning or blocked work cannot silently skip
+the feature or supply an implemented pass. This scheduling decision neither
+activates host changes now nor makes optional host-wide rights restriction a
+new V1 requirement; existing service/broker isolation and complete-product
+installation duties remain mandatory.
 
 ## 21. OD-17 — WinGet capability before V1
 
@@ -1901,7 +1921,7 @@ Conditional mechanisms require the specified evidence and a concrete later
 adoption decision. Paper percentages and server serving counts establish no
 NevroTick performance or security result.
 
-Preserve RGT-C01 before V1, actual V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 →
+Preserve RGT-C01 before V1, actual V1 → MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 →
 GEO-C01 → Android and post-V1 CHR-0’s dependency on RGT-C01. Ordinary regression tests do not run MATH-0
 early or complete its exit. OD-10's post-V1 formal deferral and existing
 native/fuzz/storage/UI execution holds retain their scopes; source preparation
@@ -1985,7 +2005,8 @@ trust snapshots, accepted-chain rejection and association-generation invalidatio
 before expanding concurrent acquisition. MT-0 is not a technical prerequisite:
 bounded native-work isolation, admission and actual-completion custody are
 already V1 requirements. The current order is actual V1 release → MATH-C01 →
-TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android. OD-02’s 27 November amendment
+TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → Android, as amended by
+[OD-21](#25-od-21--restricted-local-clock-changing-permissions). OD-02’s 27 November amendment
 places RGT-C01 before V1 and retains CHR-0 post-V1. TRUST-0’s placement is the requested engineering judgment,
 not a claim that David specified the number two verbatim.
 
@@ -2022,3 +2043,39 @@ The dated source comparison supports complementary evidence, not universal
 Microsoft delay or a reproduced NevroTick exploit. No production dependency,
 feed freshness/polling constant, weaker trust policy, automatic executable
 updater, native result or completed integration is selected by this decision.
+
+## 25. OD-21 — restricted local clock-changing permissions
+
+**Owner instruction, 27 November 2026:** investigate whether NevroTick can guide
+users through restricting other actors' ability to change the Windows clock,
+use Microsoft Learn MCP to research the feature, retain a substantial detailed
+plan under docs with sources and future reassessment criteria, link it from the
+roadmap and schedule the feature immediately before Khronos.
+
+**Accepted scope of this decision:** documentation and post-V1 work placement:
+MT-C01 → [CLK-0 / CLK-C01](../ROADMAP.md#clk-0--restrict-local-clock-changing-permissions)
+→ KHR-0 / KHR-C01. [NV-CLK-001](plans/windows-clock-permissions.md) records the
+proposed engineering design, threat boundary and finite work. The instruction
+does not approve every proposed policy mutation, select a production identity or
+claim that NevroTick can exclude an unrestricted administrator, SYSTEM/kernel
+compromise or a controlling hypervisor.
+
+At stage entry, reassess the actual released implementation and current Microsoft
+guidance, including service identities, effective/existing tokens, managed policy,
+package provisioning, recovery and clock-owner compatibility. Reuse W11-W05 and
+W11-W10 for the service/broker/lifecycle and complete-package consumers, with UI,
+security and independent native review. Then implement and qualify the admitted
+optional profile under the detailed plan and record CLK-C01's assessed
+implementation/qualification, exact evidence, remaining limitations and explicit
+disposition. Incomplete or blocked work is not an implemented/qualified pass;
+deliberate deferral or queue reordering requires an explicit owner decision.
+
+**V1 and authority boundary:** mandatory least-privilege process/service isolation,
+broker-only product clock effects and supported complete-package provisioning
+retain their existing pre-release obligations. Optional host-wide revocation of
+other principals' clock-changing rights is the later feature. This decision adds
+no V1 release gate, optional-setup substitute for a mandatory protection, new
+elevated runtime service or current host mutation. Preserve Core/P0–P7 priority,
+RGT-C01 before V1, post-V1 CHR-0's prerequisite, current execution holds and the
+hardware/reference boundaries. Sources, assessments and planned checks establish
+no implemented protection, benchmark or native pass.

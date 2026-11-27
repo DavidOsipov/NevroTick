@@ -1,6 +1,6 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.6<br>
+**Document:** NV-TA-001, revision 1.7<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
 **Scope amended:** 27 November 2026<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
@@ -43,7 +43,8 @@ clock-write envelope; earlier research/review receipts retain their own scope.
 places [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 first after actual V1 release; [OD-20](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
 places [TRUST-0](post-v1-certificate-distrust.md) second, followed by
-[MT-0](post-v1-multithreading.md) and then Khronos.
+[MT-0](post-v1-multithreading.md) and then Khronos (the later 27 November
+amendment below inserts CLK-0 between these stages).
 MATH-C01 requires experiment evaluation/disposition, not production
 adoption. This changes delivery order only; the dated protocol research and review
 receipts retain their original scope.
@@ -58,12 +59,20 @@ Khronos/Ananke into V1. Protocol, provider/key, interval and Windows-verifier
 gates remain open. Unavailable physical-reference equipment does not block
 independent protocol work or supply a qualification pass.
 
+**Post-V1 clock-permissions amendment, 27 November 2026:**
+[OD-21](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
+places [CLK-0/CLK-C01](windows-clock-permissions.md) after MT-C01 and immediately
+before Khronos. CLK-C01 records assessed implementation/qualification and an
+explicit disposition; research or blocked work supplies no implemented pass.
+This optional host-wide restriction adds no V1 bootstrap or isolation prerequisite
+and changes no protocol trust or broker clock authority.
+
 Keep the delivery obligations distinct:
 
 - **RGT-0 → RGT-C01 within P2/P7 → V1 released.**
   [RGT-0](../../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
   retains its implementation and actual Windows-recovery exit.
-- **V1 released → MATH-C01 disposition → TRUST-C01 → MT-C01 → KHR-C01 disposition → GEO-C01 disposition → Android.**
+- **V1 released → MATH-C01 disposition → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 disposition → GEO-C01 disposition → Android.**
   [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking) and the later
   [GEO-0 experiment](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
   retain `ADOPT_LIMITED`, `DEFER` or `REJECT` outcomes. The existing catalogue task

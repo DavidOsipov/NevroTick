@@ -525,7 +525,7 @@ Case preparation for a future mechanism does not require implementing it before
 V1. Do not create a mock TPKI protocol to manufacture a pass. New TCA
 infrastructure, NTxMon/live assignment and optional timestamp optimizations remain
 conditional work under the roadmap's longer-work table and named owners.
-Post-V1 MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
+Post-V1 MATH-C01 → TRUST-C01 → MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → Android and the separate
 CHR-0 replacement retain their existing gates. RGT-C01 is now V1 P2/P7 and
 remains a prerequisite to later CHR-0, without activating it. Formal/native/fuzz/storage/UI
 holds and ordinary coverage/mutation/release obligations retain their scope.
@@ -554,7 +554,7 @@ This does not add a V1 exit, import a ready implementation item into §8.4's
 hardening queue, or make the proposal an automatic MATH-0 assignment. Current
 §7 records the qualified W11-W08 portable catalogue/routing checkpoint and
 its delivery and retention continuation. The accepted post-V1 order remains MATH-0 →
-TRUST-0 → MT-0 → Khronos/Ananke → GEO-0 → Android; native, fuzz, storage, UI and
+TRUST-0 → MT-0 → CLK-0 → Khronos/Ananke → GEO-0 → Android; native, fuzz, storage, UI and
 formal-work restrictions retain their existing scope.
 
 If a later bounded experiment is selected, first freeze its hypothesis, exact
@@ -6034,6 +6034,16 @@ follows. [NV-MT-001](post-v1-multithreading.md) and the existing engine task own
 bounded multithreading/acquisition work and MT-C01. Existing V1 correctness,
 blocking-work isolation and lifecycle gates remain in P0–P7; current holds remain.
 After MT-C01, continue with
+[CLK-0](../../ROADMAP.md#clk-0--restrict-local-clock-changing-permissions) under
+[OD-21](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions).
+[NV-CLK-001](windows-clock-permissions.md) owns the bounded reassessment,
+optional permission-restriction design and implementation/qualification plan;
+existing W11-W05/W11-W10 retain service, broker, lifecycle and package evidence.
+Record CLK-C01's assessed implementation/qualification and explicit
+evidence-supported disposition. Blocked or inconclusive work stays incomplete;
+planning cannot supply an implemented pass or silently skip the feature.
+Mandatory V1 isolation and provisioning, current holds and hardware boundaries remain.
+After CLK-C01, continue with
 [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking).
 Record its KHR-C01 evidence and `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition
 before [GEO-0](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering),

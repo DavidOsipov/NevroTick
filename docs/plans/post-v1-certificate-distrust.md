@@ -29,7 +29,9 @@ certificate policy.
 [OD-20](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
 and [TRUST-0](../../ROADMAP.md#trust-0--post-v1-certificate-distrust-and-revocation)
 own the activation and ordering: actual V1 release → MATH-C01 → TRUST-C01 →
-MT-C01 → KHR-C01 → GEO-C01 → Android. Existing V1 bounded workers are sufficient
+MT-C01 → CLK-C01 → KHR-C01 → GEO-C01 → Android, including
+[OD-21's later CLK-0 placement](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions).
+Existing V1 bounded workers are sufficient
 for the initial qualification design; MT-0 is not a prerequisite.
 
 This plan adds no V1 release gate, dependency, updater, trust-store mutation,
