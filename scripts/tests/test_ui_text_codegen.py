@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -119,6 +120,26 @@ class CodeGeneration(unittest.TestCase):
                          [[index] for index in range(110, 126)])
         fingerprint = hashlib.sha256(files['contract-fingerprint-input.bin']).hexdigest()
         self.assertEqual(english['source_fingerprint'], fingerprint)
+
+    def test_effective_feedback_bindings_follow_generated_slots(self) -> None:
+        from check_ui_text_coverage import inert_source
+
+        root: Path = SCRIPTS.parent
+        raw: bytes = GEN._read_regular(root / GEN.CONTRACT_PATH, GEN.MAX_CONTRACT_BYTES)
+        files: dict[str, bytes] = GEN._emit_files(raw, hashlib.sha256(raw).hexdigest(), self.template)
+        feedback: dict[str, int] = GEN.protected_json.read(files['output-slot-map.json'])['feedback']
+        app: Path = root / 'crates/nevrotick-ui/ui/app.slint'
+        source: str = inert_source(GEN._read_regular(app, 128 * 1024).decode('utf-8'))
+        bindings: list[tuple[str, str, str]] = re.findall(
+            r'\bout property\s+<string>\s+([a-z-]+)\s*:\s*'
+            r'LocalizationCopy\.value\.catalog-ready\s*\?\s*'
+            r'LocalizationCopy\.value\.texts\[(\d+)\]\s*:\s*root\.([a-z-]+)\s*;',
+            source,
+        )
+        expected: list[tuple[str, str, str]] = sorted(
+            (name, str(index), f'fixture-{name}') for name, index in feedback.items()
+        )
+        self.assertEqual(sorted(bindings), expected)
 
     def test_generate_uses_new_private_output_and_preserves_repo_baseline_and_ledger(self):
         before = {str(path.relative_to(self.repo)): hashlib.sha256(path.read_bytes()).hexdigest()

@@ -80,6 +80,58 @@ its 765-input inventory SHA-256 is
 The callback, Rust JSON/CBOR and doctest results remain unverified for this
 candidate; the earlier candidate's completed lanes do not fill that gap.
 
+**Feedback binding repair — 27 November 2026.** The hosted portable run on
+signed `acbb85b` reached the actual Rust/Slint consumers. The editor test
+read “Copy” for a rejected draft, and the status-replay test read “Automatic”
+where it expected “No live connection.” Three new static catalogue slots
+shifted all 29 typed feedback positions from 410–438 to 413–441. The
+handwritten `AppWindow` bindings now use the generated positions with their
+existing fixture fallbacks. A source regression compares the actual property,
+index and fallback inventory to the generated map. It failed on the signed
+baseline and passed with the correction.
+[Hosted Rust product run](https://github.com/DavidOsipov/NevroTick/actions/runs/45991157687)
+
+The isolated repaired source passed 16 text codegen tests and 85 text coverage
+tests. The configured coverage CLI reported 525/525 active IDs and zero errors.
+The raw source logs are under
+`~/.local/share/nevrotick/ui-feedback-2711.M7GT7tqM/`. The fixed `app.slint`
+SHA-256 is `e22e9ef979497bf2a8074dd31c84bb06d48cdc85174ac055f44df3caa661a569`.
+The two Rust regressions still require a fresh selected UI libtest build on
+the repaired candidate. The existing Sandbox libtest is the P3 service
+fixture, and the standard MSVC UI lane produces an application executable.
+The hosted UI-M0 portable job is the established runtime route once the
+repaired candidate is published. Native observations remain open.
+
+The retained hosted log reports the two UI failures and has no per-case
+results for cancellation or the Rust JSON/CBOR controls. It has no UI
+doctest result or uploaded artifacts. The ordinary Rust checks remain open
+for the repaired candidate.
+
+**Selected Rustdoc recheck.** Use the signed `acbb85b` source plus the two
+feedback-binding repair files. Run the established isolated GNU default
+verifier's dependency/source controls, Rustdoc and actual UI doctests in a
+single service window of up to nine minutes. Keep the stock per-process
+address-space, CPU and output limits and use private scratch on the same
+Windows volume. This checks the public Rust examples independently of the
+libtest build. Cancellation, feedback replay and catalog admission in
+the ordinary test binary still require the separate exact-candidate run.
+
+The initial invocation stopped before any sandbox command because its old
+vendor directory was absent. The maintained admission checked the exact
+588-package baseline vendor at `/mnt/wsl/nevrotick-restart-vendor-2611.vwo8lv_q/vendor`
+on reentry. All 19 selected lanes passed in 6 minutes 58.245 seconds, including
+Rustdoc and all 17 UI doctests. Readback verified all 768 inputs and both live
+repair files, the raw executed cases and scratch and service retirement.
+The successor remote `fd62e2c` changes no bound input. The candidate's
+canonical input-map SHA-256 is
+`57727f3c1f32c2e02904d8c36f04f5d7682cb5ff17948482258b1f297719c791`.
+
+| Retained in `~/.local/share/nevrotick/ui-feedback-doctests.jJsylvFk/` | SHA-256 |
+| --- | --- |
+| `receipt.json`, missing vendor, no execution | `4a81f9c1e3cfe74752f48ac2b00fdb54b8a7ce74b2648e9bc2703e1fe5552179` |
+| `recheck.json`, passing selected lanes | `0660a8181a8bb3ffd63544303a7c371b43d69ac24c14ba9403e785c0cec2b301` |
+| `recheck.log` | `b6dd166e79230807373320cb73ed78d49ade2fca63af427c0337e525842f03af` |
+
 ## Manual updater contract and acceptance — 25 November 2026
 
 **Status: accepted product/design handoff; bounded Rust/Slint About preview implemented

@@ -30,6 +30,7 @@ NTS_NEGOTIATION = "crates/ntp-wire/src/nts_negotiation.rs"
 NTS_PACKET = "crates/ntp-wire/src/nts_packet.rs"
 NTS_PLAINTEXT = "crates/ntp-wire/src/nts_plaintext.rs"
 NTS_REQUEST = "crates/ntp-wire/src/nts_request.rs"
+ROUGHTIME = "crates/ntp-wire/src/roughtime.rs"
 SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
             "nts_negotiation": NTS_NEGOTIATION, "nts_packet": NTS_PACKET, "nts_plaintext": NTS_PLAINTEXT,
             "nts_request": NTS_REQUEST}
@@ -40,6 +41,7 @@ FUZZ_SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
 FUZZ_CASES = ("healthy", "defect", "ke-defect", "negotiation-defect",
               "context-defect", "membership-defect", "packet-defect", "plaintext-defect")
 POLICY = "policy/ntp-wire-analysis.json"
+ROUGHTIME_POLICY = "policy/roughtime-wire-analysis.json"
 FUZZ_CARGO_CONFIG = ('[source.crates-io]\nreplace-with="fuzz-reviewed"\n'
                      '[source.fuzz-reviewed]\ndirectory="/work/fuzz-vendor"\n')
 
@@ -56,6 +58,7 @@ COMMON = load_module("wire_portable_shared", ROOT / "scripts/portable-analysis.p
 ANALYSIS, PRODUCT, PREPARE = COMMON.ANALYSIS, COMMON.PRODUCT, COMMON.PREPARE
 RUNTIME, Incomplete = COMMON.RUNTIME, COMMON.Incomplete
 SCOPE = COMMON.Scope(PACKAGE, tuple(SUBJECTS.items()), POLICY)
+ROUGHTIME_SCOPE = COMMON.Scope(PACKAGE, (("roughtime", ROUGHTIME),), ROUGHTIME_POLICY)
 
 
 BOUND_INPUTS = (POLICY, "scripts/portable-analysis.py", "scripts/verify-wire-analysis.py",
@@ -88,7 +91,9 @@ def read_policy(root: Path) -> dict:
 
 
 def select_subjects(subject: str) -> dict[str, str]:
-    """Return only the fixed reviewed file mapping; all includes all seven owners."""
+    """Select one exact file or the existing seven-owner scope."""
+    if subject == "roughtime":
+        return {"roughtime": ROUGHTIME}
     if subject == "all":
         return dict(SUBJECTS)
     if subject not in SUBJECTS:
@@ -103,10 +108,36 @@ def admit_fuzz_subject(lane: str, subject: str) -> None:
     closes fuzz/all until separately reviewed target admission; contracts,
     coverage and mutation remain selectable without extending fuzz authority.
     """
+    if subject == "roughtime":
+        if lane not in {"coverage", "enumerate"}:
+            raise Incomplete("Roughtime admits coverage and enumeration only.")
+        return
     if lane not in {"contracts", "coverage", "mutation", "fuzz", "all"} or subject not in {*SUBJECTS, "all"}:
         raise Incomplete("Unknown wire analysis lane or subject.")
     if lane in {"fuzz", "all"} and SUBJECTS != FUZZ_SUBJECTS:
         raise Incomplete("A selected wire owner lacks admitted fuzz target coverage.")
+
+
+def read_roughtime_policy(root: Path) -> dict:
+    """Admit one stable coverage/listing role and its existing manifest entries."""
+    policy: object = ANALYSIS.decode(ANALYSIS.read_once(root / ROUGHTIME_POLICY, maximum=4096))
+    required: dict[str, object] = {
+        "schema_version": 1, "package": PACKAGE, "critical_files": [ROUGHTIME],
+        "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+        "coverage_wall_seconds": 120, "enumeration_wall_seconds": 100,
+        "maximum_mutants": 512, "jobs": 2, "coverage_test_threads": 1, "mutation_jobs": 1,
+    }
+    if (type(policy) is not dict or set(policy) != set(required)
+            or any(type(policy[key]) is not type(expected) or policy[key] != expected
+                   for key, expected in required.items())):
+        raise Incomplete("Unreviewed Roughtime wire-analysis scope, threshold or budget.")
+    manifest: dict = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    if (manifest.get("critical_files", []).count(ROUGHTIME) != 1
+            or sum(entry.get("files", []).count(ROUGHTIME)
+                   for entry in manifest.get("security_modules", [])
+                   if entry.get("package") == PACKAGE) != 1):
+        raise Incomplete("The Roughtime wire owner is absent or duplicated in the manifest.")
+    return policy
 
 
 def selected_file(filename: str) -> str:
@@ -1019,21 +1050,28 @@ def prepare_fuzz_vendor(original: Path, archive: Path, package: dict, destinatio
 
 def execute(args, report: dict) -> None:
     """Freeze graph/tools, execute the selected isolated lane, then reject drift."""
-    policy = read_policy(ROOT)
-    subjects = select_subjects(args.subject)
     admit_fuzz_subject(args.lane, args.subject)
+    roughtime: bool = args.subject == "roughtime"
+    scope: COMMON.Scope = ROUGHTIME_SCOPE if roughtime else SCOPE
+    policy: dict = read_roughtime_policy(ROOT) if roughtime else read_policy(ROOT)
+    subjects: dict[str, str] = select_subjects(args.subject)
     report["subjects"] = subjects
+    output = args.output_dir
+    if roughtime:
+        COMMON._require_private_output(ROOT, output)
     dependency_policy, identity = PRODUCT.admit_product(ROOT)
     product_identity = dict(identity)
-    extra = BOUND_INPUTS
-    extra += (policy["coverage_guided_fuzzing"]["target_source"],
-              policy["coverage_guided_fuzzing"]["llvm_notice"])
+    if roughtime:
+        extra: tuple[str, ...] = (ROUGHTIME_POLICY, *BOUND_INPUTS[1:])
+    else:
+        extra = (*BOUND_INPUTS, policy["coverage_guided_fuzzing"]["target_source"],
+                 policy["coverage_guided_fuzzing"]["llvm_notice"])
     identity.update({name: PRODUCT.sha256(ROOT / name) for name in extra})
-    admitted = ANALYSIS.admit(ROOT)
+    admitted = ANALYSIS.admit(ROOT, profile="stable-core") if roughtime else ANALYSIS.admit(ROOT)
     base, stable = admitted["base"], admitted["stable"]
+    payload: tuple[Path, ...] = tuple(admitted["readonly_roots"]) if roughtime else (base, stable)
     vendor = args.vendor_dir.resolve(strict=True)
     vendor_identity = PRODUCT.admit_vendor(vendor, dependency_policy)
-    output = args.output_dir
     if (not output.is_absolute() or output.parent != output.parent.resolve(strict=True)
             or output.is_relative_to(ROOT) or output.is_relative_to(Path("/mnt"))):
         raise Incomplete("Use a fresh external canonical private Linux output directory.")
@@ -1048,6 +1086,8 @@ def execute(args, report: dict) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / name, destination)
     require_unchanged(source, identity)
+    if roughtime and read_roughtime_policy(source) != policy:
+        raise Incomplete("Roughtime analysis policy changed before the source copy was sealed.")
     mutations = tomllib.loads((source / ".cargo/mutants.toml").read_text())
     if mutations.get("additional_cargo_args") != ["--frozen"] or mutations.get("cap_lints") is not False:
         raise Incomplete("Mutation commands require the unchanged frozen Cargo and lint policy.")
@@ -1055,7 +1095,7 @@ def execute(args, report: dict) -> None:
     tools.mkdir(mode=0o700)
     selected = (("cargo-llvm-cov", "cargo-mutants") if args.lane == "all" else
                 ("cargo-llvm-cov",) if args.lane == "coverage" else
-                ("cargo-mutants",) if args.lane == "mutation" else ())
+                ("cargo-mutants",) if args.lane in {"mutation", "enumerate"} else ())
     tool_identity = {}
     for name in selected:
         tool = COMMON.tool_path(source, name, copy_to=tools / name)
@@ -1065,8 +1105,13 @@ def execute(args, report: dict) -> None:
     (work / "cargo-home/config.toml").write_text(
         '[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory=' + json.dumps(str(vendor)) + '\n')
     report.update(source_sha256=identity, tools_sha256=tool_identity, lanes=[],
-                  analysis_policy_sha256=admitted["policy_sha256"], work=str(work),
-                  coverage_guided_fuzzing=policy["coverage_guided_fuzzing"])
+                  analysis_policy_sha256=admitted["policy_sha256"], work=str(work))
+    if roughtime:
+        report["analysis_admission"] = {key: admitted[key] for key in (
+            "admission_profile", "inventories", "installation_pointer", "installation_pointer_sha256")}
+        report["analysis_admission"]["readonly_roots"] = [str(path) for path in payload]
+    else:
+        report["coverage_guided_fuzzing"] = policy["coverage_guided_fuzzing"]
 
     def run(label: str, command: list[str], timeout: int, *, expected_error=None, sealed=(),
             compiler=None, extra_tools=None, mode="ordinary", negative=None, cwd=None, mutation_subject=None,
@@ -1080,7 +1125,7 @@ def execute(args, report: dict) -> None:
                     or compiler is not None or extra_tools is not None or mode != "ordinary" or cwd is not None):
                 raise Incomplete("Mutation campaign cannot borrow another execution mode or failure handler.")
             COMMON.mutation_campaign_command(
-                SCOPE, tools, mutation_subject, command,
+                scope, tools, mutation_subject, command,
                 expected_jobs=COMMON.mutation_jobs(policy),
                 expected_message_format=COMMON.mutation_message_format(policy))
         require_unchanged(ROOT, identity)
@@ -1091,12 +1136,12 @@ def execute(args, report: dict) -> None:
         compiler = compiler or stable
         # Mutation workers use the admitted policy count with serial Cargo and
         # libtest inside each private copy. Other lanes keep twelve build slots.
-        inner_jobs = 1 if label.startswith("mutation-") else RUNTIME.MAX_JOBS
+        inner_jobs = 1 if label.startswith("mutation-") else policy.get("jobs", RUNTIME.MAX_JOBS)
         environment = {"RUSTC": str(compiler / "bin/rustc"),
                        "RUSTDOC": str(compiler / "bin/rustdoc"), "RUST_TEST_THREADS": str(inner_jobs)}
         if compiler != stable:
             environment.update(RUSTUP_HOME=str(base / "common/rustup"), RUSTUP_TOOLCHAIN=ANALYSIS.NIGHTLY)
-        readonly = [base, stable, vendor, tools, *([extra_tools] if extra_tools else [])]
+        readonly = [*payload, vendor, tools, *([extra_tools] if extra_tools else [])]
         paths = [*([extra_tools] if extra_tools else []), compiler / "bin", tools]
         profile_options = ({"cargo_target_mode": "worker",
                             "process_limit": COMMON.mutation_process_limit(policy)}
@@ -1115,7 +1160,7 @@ def execute(args, report: dict) -> None:
             raise Incomplete("An admitted analysis extension changed during execution.")
         if mutation_subject is not None:
             return COMMON.mutation_campaign_result(
-                SCOPE, tools, mutation_subject, command, result,
+                scope, tools, mutation_subject, command, result,
                 expected_jobs=COMMON.mutation_jobs(policy),
                 expected_message_format=COMMON.mutation_message_format(policy))
         if expected_error:
@@ -1178,7 +1223,10 @@ def execute(args, report: dict) -> None:
                                                         if diagnostic is not None}}
         report["contracts"]["legal_consumers_executed"] = executed_legal
         print("PASSED: ntp-wire external-consumer contracts", flush=True)
-    COMMON.run_analysis_lanes(SCOPE, subjects, policy, work, tools, run, report, args.lane)
+    if roughtime:
+        run_roughtime_analysis(subjects, policy, work, tools, run, report, args.lane)
+    else:
+        COMMON.run_analysis_lanes(scope, subjects, policy, work, tools, run, report, args.lane)
     if args.lane in {"fuzz", "all"}:
         admit_fuzz_sources(base, policy)
         fuzz = work / "fuzz"
@@ -1313,21 +1361,54 @@ def execute(args, report: dict) -> None:
         raise Incomplete("Vendor bytes changed during parser qualification.")
     if any(PRODUCT.sha256(tools / name) != digest for name, digest in tool_identity.items()):
         raise Incomplete("An admitted analysis extension changed during execution.")
-    after = ANALYSIS.admit(ROOT)
-    if any(after[key] != admitted[key] for key in ("base", "stable", "policy_sha256", "inventories")):
+    after = ANALYSIS.admit(ROOT, profile="stable-core") if roughtime else ANALYSIS.admit(ROOT)
+    fields: tuple[str, ...] = ("base", "stable", "policy_sha256", "inventories")
+    if roughtime:
+        fields += ("admission_profile", "readonly_roots", "installation_pointer", "installation_pointer_sha256")
+    if any(after[key] != admitted[key] for key in fields):
         raise Incomplete("Analysis installation or payload identities changed during execution.")
+
+
+def run_roughtime_analysis(subjects: dict[str, str], policy: dict, work: Path, tools: Path,
+                          run, report: dict, lane: str) -> None:
+    """Measure this decoder or list its generated faults without running a campaign."""
+    admit_fuzz_subject(lane, "roughtime")
+    if subjects != {"roughtime": ROUGHTIME}:
+        raise Incomplete("Roughtime analysis requires its exact decoder subject.")
+    if lane == "enumerate":
+        maximum: int = policy["maximum_mutants"]
+        enumeration: COMMON.MutationEnumeration = COMMON.enumerate_mutation_inventories(
+            ROUGHTIME_SCOPE, subjects, policy, tools, run, report,
+            deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+            maximum_per_file=maximum, maximum_total=maximum)
+        report["mutation_inventory"] = enumeration.inventories
+        return
+
+    command: list[str] = [str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", PACKAGE,
+                          "--frozen", "--jobs", str(policy["jobs"]), "--test", "roughtime",
+                          "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                          "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                          "--", "--test-threads=" + str(policy["coverage_test_threads"])]
+    output: str = run("coverage", command, policy["coverage_wall_seconds"])
+    executed: int = COMMON.test_count(output)
+    report["coverage"] = {"roughtime": {
+        **COMMON.coverage_counts(ROUGHTIME_SCOPE, COMMON.read_analysis_json(work / "coverage.json"),
+                                 "/work/source/" + ROUGHTIME),
+        "tests_executed": executed, "shared_execution": "coverage"}}
 
 
 def main(argv=None) -> int:
     """Run only explicit fixed lanes, retaining partial results when a gate fails."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("contracts", "coverage", "mutation", "fuzz", "all"), default="all")
-    parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--lane", choices=("contracts", "coverage", "enumerate", "mutation", "fuzz", "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "roughtime", "all"), default="all")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     report = {"status": "incomplete", "scope": "ntp-wire seven-owner contracts/coverage/mutation including inert two-stage client request formatting; fuzz/all fail closed until the separate six-owner fuzz admission is extended; no TLS, keys or endpoint authority",
               "native_qualification": "not performed"}
+    if args.subject == "roughtime":
+        report["scope"] = "Roughtime decoder coverage or mutation enumeration only"
     try:
         if args.vendor_dir is None:
             args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])

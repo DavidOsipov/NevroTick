@@ -5075,6 +5075,231 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
         self.assertFalse((support.args.output_dir / "ep2-response-fixtures.rs").exists())
 
 
+class JoinedReceivingLineageTests(unittest.TestCase):
+    """Exercise both lineage readers through their normal family dispatcher."""
+
+    def admit(self, *, fault: str = "") -> tuple[dict[str, str], dict[str, str]]:
+        with tempfile.TemporaryDirectory() as temp:
+            home: Path = Path(temp)
+            expected: dict[str, str] = {}
+
+            def write(path: Path, data: object, *, raw: bool = False) -> str:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                content: bytes = data if raw and isinstance(data, bytes) else json.dumps(
+                    data, sort_keys=True, separators=(",", ":"),
+                ).encode()
+                path.write_bytes(content)
+                digest: str = hashlib.sha256(content).hexdigest()
+                expected[str(path)] = digest
+                return digest
+
+            engine: str = "crates/nevrotick-engine/src/nts_ke_experiment/"
+            job: str = engine + "job.rs"
+            worker: str = engine + "recovery/worker_tests.rs"
+            receiving: str = engine + "receiving.rs"
+            lineage_home: Path = home / "successor/lineage"
+            delta: dict[str, tuple[str, str]] = {}
+            for name in (job, worker):
+                previous: str = write(lineage_home / "preimages" / name, name.encode(), raw=True)
+                delta[name] = (previous, independent_digest(["postimage", name]))
+            before: dict[str, str] = {
+                f"fixture/input-{index}.rs": independent_digest([index]) for index in range(764)
+            }
+            before.update({name: pair[0] for name, pair in delta.items()})
+            before.update({"Cargo.lock": "a" * 64, receiving: "b" * 64})
+            after: dict[str, str] = before | {name: pair[1] for name, pair in delta.items()}
+            if fault == "extra-source":
+                after[receiving] = "c" * 64
+            predecessor: str = independent_digest(before)
+            successor: str = independent_digest(after)
+
+            graph_home: Path = home / "graph"
+            members: dict[str, str] = {}
+            lanes: list[dict[str, object]] = []
+            projections: list[dict[str, str]] = []
+            for index in range(45):
+                label: str = f"graph-{index}"
+                member: str = f"ep1--{label}.json"
+                digest: str = write(graph_home / member, {"command_observation": index})
+                lanes.append({"profile": "ep1", "label": label, "sha256": digest, "exit_code": 0})
+                members[member] = digest
+            for index in range(4):
+                member = f"projection-{index}.json"
+                digest = write(graph_home / member, {"projection_observation": index})
+                projections.append({"file": member, "sha256": digest})
+                members[member] = digest
+            graph_path: Path = graph_home / "verification.json"
+            graph_pin: str = write(graph_path, {
+                "status": "passed", "product_input_sha256": before, "product_digest": predecessor,
+                "lockfile_sha256": before["Cargo.lock"], "manifest_sha256": {"Cargo.lock": before["Cargo.lock"]},
+                "checkers": {}, "lanes": lanes, "rows": [0, 1, 2, 3], "projections": projections,
+            })
+            graph_ref: dict[str, str] = {"path": str(graph_path), "sha256": graph_pin}
+
+            reference_path: Path = home / "reference/verification.json"
+            reference_raw_pin: str = write(reference_path.with_name("ordinary.json"), {"focus": "predecessor"})
+            vendor_pin: str = independent_digest({"vendor": "fixture"})
+            reference_pin: str = write(reference_path, {
+                "status": "passed", "inputs": before, "candidate_sha256": predecessor,
+                "root_graph_evidence": graph_ref, "vendor": {"inventory_sha256": vendor_pin},
+                "lanes": [{"lane": "ordinary", "sha256": reference_raw_pin}],
+            })
+            reference_ref: dict[str, str] = {"path": str(reference_path), "sha256": reference_pin}
+            old_home: Path = home / "predecessor"
+            old_path: Path = old_home / "reports/run-01/verification.json"
+            old_boundary_pin: str = write(old_path.with_name("boundary-control.json"), {"namespace": "fixture"})
+            readback_path: Path = old_home / "readback.json"
+            readback_pin: str = write(readback_path, {"status": "passed-independent-fixture-readback"})
+            old_recipe: list[list[object]] = [
+                ["ep1-ordinary", ["cargo", "test"], "engine", [["unittests src/lib.rs", "prior_case"]], False],
+                ["ep1-optimized", ["cargo", "test", "--release"], "engine",
+                 [["unittests src/lib.rs", "prior_case"]], False],
+                *[[f"fixture-lane-{index}", ["cargo", "check"], "exit", None, False] for index in range(17)],
+            ]
+            old_capture: dict[str, object] = {
+                "head": "a" * 40, "staged_tree": "b" * 40, "index_sha256": "e" * 64,
+                "candidate_sha256": predecessor, "inputs": before, "input_manifest_count": 768,
+                "protected": {}, "compiler": {}, "tool_inventories": {},
+                "vendor_identity_sha256": vendor_pin, "live_doc_sha256": {}, "frozen_doc_sha256": {},
+                "campaigns_admitted": False, "wall_seconds": 1200, "lanes": old_recipe,
+                "root_graph_evidence": graph_ref if fault != "predecessor-graph" else graph_ref | {"sha256": "d" * 64},
+            }
+            old_capture_path: Path = old_home / "admission.json"
+            old_capture_pin: str = write(old_capture_path, old_capture)
+            cargo_pin: str = independent_digest("frozen cargo home")
+            old_terminal: dict[str, object] = {
+                "status": "incomplete" if fault == "predecessor-incomplete" else "passed",
+                "mode": "combined", "capture_sha256": old_capture_pin, "candidate_sha256": predecessor,
+                "inputs": before, "protected": {}, "main_admission": {
+                    "posture": "verified-staged-base-and-exact-overlay", "head": "a" * 40,
+                    "tree": "b" * 40, "index_sha256": "e" * 64,
+                },
+                "staged_tree": "b" * 40, "staged_index_sha256": "e" * 64,
+                "compiler": {}, "tool_inventories": {}, "vendor_identity": {"vendor": "fixture"},
+                "cargo_home_config_sha256": cargo_pin, "live_doc_sha256": {}, "frozen_doc_sha256": {},
+                "native_windows_execution": "not performed", "metrics": "not performed",
+                "public_campaigns_admitted": False, "resource_observer_joined": True,
+                "owned_work_allocated": True, "owned_work_retired": True, "tasks_events": "max 0",
+                "memory_events": dict.fromkeys(("max", "oom", "oom_kill", "oom_group_kill"), "0"),
+                "invocation_id": "1" * 32, "elapsed_seconds": 2, "peak_memory_bytes": 1024,
+                "lanes": [{"lane": recipe[0]} for recipe in old_recipe], "cache_retirement": [],
+            }
+            old_terminal_pin: str = write(old_path, old_terminal)
+            cases: tuple[str, str] = (
+                "nts_ke_experiment::fixture_boundary::equal",
+                "nts_ke_experiment::fixture_boundary::missing_context",
+            )
+            material: dict[str, str] = {f"preimages/{name}": pair[0] for name, pair in delta.items()}
+            attempts: list[dict[str, object]] = []
+            for label in ["boundary", *(f"{verb}-{index:02}" for index in range(1, 9)
+                                        for verb in ("discover", "execute"))]:
+                key: str = f"focus/{label}.log"
+                digest = write(lineage_home / key, label.encode(), raw=True)
+                material[key] = digest
+                attempts.append({"lane": label, "exit_code": 0, "failure": None, "log_sha256": digest})
+            if fault == "duplicate-attempt":
+                attempts[-1] = attempts[-3].copy()
+            if fault == "failed-attempt":
+                attempts[-1]["exit_code"] = 1
+            focused_pin: str = write(lineage_home / "focus/report.json", {
+                "status": "passed", "source_inputs": after,
+                "source_sha256": predecessor if fault == "wrong-focused-candidate" else successor,
+                "requested_cases": list(cases), "attempts": attempts,
+            })
+            material["focus/report.json"] = focused_pin
+            if fault == "missing-member":
+                del material["focus/execute-08.log"]
+            if fault == "corrupted-member":
+                (lineage_home / "focus/execute-08.log").write_bytes(b"changed")
+            fixture_lineage: dict[str, object] = {
+                "candidate": predecessor, "test_only_delta": {name: list(pair) for name, pair in delta.items()},
+                "new_ep1_cases": list(cases), "focused_relative_path": "lineage/focus/report.json",
+                "focused_sha256": focused_pin, "material": material,
+                "predecessor_terminal": {"path": str(old_path), "sha256": old_terminal_pin},
+                "predecessor_capture": {"path": str(old_capture_path), "sha256": old_capture_pin},
+                "predecessor_readback": {"path": str(readback_path), "sha256": readback_pin},
+            }
+            new_recipe: list[list[object]] = copy.deepcopy(old_recipe)
+            ep1_cases: list[list[str]] = [["unittests src/lib.rs", name] for name in (*cases, "prior_case")]
+            for selection in new_recipe[:2]:
+                selection[3] = copy.deepcopy(ep1_cases)
+            if fault == "wrong-case-binary":
+                new_recipe[0][3] = [["tests/foreign.rs", cases[0]], *ep1_cases[1:]]
+            if fault == "wrong-lane-command":
+                new_recipe[0][1] = ["cargo", "test", "--release"]
+            if fault == "graph-member-substitution":
+                members["projection-foreign.json"] = members.pop("projection-0.json")
+            path: Path = home / "successor/reports/run-01/verification.json"
+            wrapper: Path = path.parents[2] / "run-combined.py"
+            wrapper_pin: str = write(wrapper, b"owned combined producer", raw=True)
+            resources: Path = path.with_name("resources.jsonl")
+            resource_pin: str = write(resources, b'{"sample":1}\n', raw=True)
+            if fault == "resource-pin":
+                resource_pin = independent_digest("different independently pinned resource observer")
+            if fault == "producer-reference":
+                wrapper_pin = independent_digest("different producer reference")
+            capture: dict[str, object] = {
+                "root_graph_evidence": graph_ref, "current_raw_reference": reference_ref,
+                "lanes": new_recipe, "graph_members": members, "test_only_lineage": fixture_lineage,
+                "wrapper_sha256": wrapper_pin, "cargo_home_config_sha256": cargo_pin,
+                "vendor_identity_sha256": vendor_pin,
+            }
+            terminal: dict[str, object] = {
+                "candidate_sha256": successor, "root_graph_evidence": graph_ref,
+                "current_raw_reference": reference_ref, "reference_sha256": old_terminal_pin,
+                "test_only_lineage": fixture_lineage,
+            }
+            # Admit these test-owned anchors. All relationships, files, and both
+            # reader functions remain real. The predecessor boundary JSON gets
+            # checked but is not returned as a separate lineage member.
+            del expected[str(old_path.with_name("boundary-control.json"))]
+            with patch.multiple(
+                MODULE, ENGINE_JOINED_RECEIVING_CANDIDATE=predecessor,
+                ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE=successor,
+                ENGINE_JOINED_RECEIVING_FAMILY=(predecessor, successor),
+                ENGINE_JOINED_RECEIVING_BOUNDARY_DELTA=delta,
+                ENGINE_JOINED_RECEIVING_BOUNDARY_CASES=cases,
+                ENGINE_JOINED_RECEIVING_GRAPH=graph_pin, ENGINE_JOINED_RECEIVING_FOCUSED=reference_pin,
+                ENGINE_JOINED_RECEIVING_TERMINAL=old_terminal_pin,
+                ENGINE_JOINED_RECEIVING_MANIFEST=old_capture_pin,
+                ENGINE_JOINED_RECEIVING_BOUNDARY=old_boundary_pin,
+                ENGINE_JOINED_RECEIVING_CARGO_HOME=cargo_pin,
+                ENGINE_JOINED_RECEIVING_PREDECESSOR_READBACK=readback_pin,
+                ENGINE_JOINED_RECEIVING_BOUNDARY_FOCUSED=focused_pin,
+                ENGINE_JOINED_RECEIVING_BOUNDARY_WRAPPER=expected[str(wrapper)],
+                ENGINE_JOINED_RECEIVING_BOUNDARY_RESOURCES=resource_pin,
+            ):
+                actual: dict[str, str] = MODULE.admit_engine_combined_review_lineage(capture, terminal, after, path)
+            return actual, expected
+
+    def test_joined_receiving_accepts_complete_synthetic_lineage(self) -> None:
+        observed: dict[str, str]
+        expected: dict[str, str]
+        observed, expected = self.admit()
+        self.assertEqual(len(observed), 77)
+        self.assertEqual(observed, expected)
+
+    def test_joined_receiving_refuses_rebound_relationship_faults_and_corrupt_bytes(self) -> None:
+        faults: tuple[tuple[str, str], ...] = (
+            ("extra-source", "test-only source delta differs"),
+            ("predecessor-graph", "predecessor capture or graph differs"),
+            ("predecessor-incomplete", "lacks exact passing terminal custody"),
+            ("wrong-case-binary", "different physical lane recipe"),
+            ("wrong-lane-command", "different physical lane recipe"),
+            ("wrong-focused-candidate", "focused observations differ from the current candidate"),
+            ("duplicate-attempt", "focused evidence member set differs"),
+            ("missing-member", "focused evidence member set differs"),
+            ("failed-attempt", "focused raw lane is missing or failed"),
+            ("graph-member-substitution", "dependency graph physical roster differs"),
+            ("producer-reference", "development references differ"),
+            ("resource-pin", "producer or resource observation bytes differ"),
+            ("corrupted-member", "focused or preimage bytes differ"),
+        )
+        for fault, reason in faults:
+            with self.subTest(fault=fault), self.assertRaisesRegex(MODULE.Incomplete, reason):
+                self.admit(fault=fault)
+
+
 class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
     """Declared synthetic reader/dispatch controls; no compiler or product executes."""
 

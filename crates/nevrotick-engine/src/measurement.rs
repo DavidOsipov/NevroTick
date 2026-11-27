@@ -27,7 +27,7 @@ const Q32_SCALE: i128 = 1_i128 << 32;
 /// Exact decimal scale of the supplied system-wall representation.
 const NANOS_PER_SECOND: i128 = 1_000_000_000;
 /// Whole seconds from the NTP epoch to the Unix epoch; no date inference occurs.
-const NTP_UNIX_OFFSET_SECONDS: i128 = 2_208_988_800;
+pub(super) const NTP_UNIX_OFFSET_SECONDS: i128 = 2_208_988_800;
 /// Maximum declared coherence allowance, matching the bounded 30-second pilot.
 /// This is an experiment-input bound, not an adopted clock-accuracy threshold.
 const MAX_DECLARED_RESIDUAL_NS: u64 = 30_000_000_000;

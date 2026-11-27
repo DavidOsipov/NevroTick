@@ -1419,6 +1419,163 @@ required tool and library roots as ordinary directories. The parent
 filesystem and the work child must each satisfy the stock floor. The PE/PDB
 readback and subsequent native selectors retain separate checkpoint exits.
 
+**Current P3 test link.** Select one `libtest-link` invocation on the retained
+892-input checkout and the passing privilege receipt above. Use the private
+8 GiB memory filesystem and the existing shared writer lock. Seal both source
+receipts read-only. Supply the exact stable inventory and Microsoft library
+receipts, with the selected library scopes as ordinary children of their
+read-only mounts. Allow 245 seconds for namespace checks, admission, link and
+readback, then up to ten seconds for retirement. The stock runner retains its
+180-second limits per command and both 4 GiB floors. Require one Cargo-attributed
+release MSVC libtest and a matching PE/PDB, independent LLVM readback, stable
+inputs and full process retirement. Windows execution uses its own exact
+artifact and guest admission.
+
+The stock link and LLVM readback both passed. The source and index
+bookends matched the frozen graph and privilege receipts. The runner
+admitted all 529 selected Microsoft libraries and attributed one release
+AMD64 console libtest to the actual x86-64-v3 linker invocation. The PE
+and PDB matched on CodeView identity. The service retired after 142.469
+seconds with no main PID.
+
+| Record or export under `libtest-tmpfs-checkpoint.ceqfNgg0` or its linked receipt | SHA-256 |
+| --- | --- |
+| `link.json` | `1b10ab11ef96bd08f851c5c49d45e1ba6d373ffbf798bae6c165f5a2b3fd88d4` |
+| `command.txt` | `30c39a5cc37d3f3b57ef38e5044f00092b331fd68a855e3677dbf31bf9a60e22` |
+| Selected libtest PE | `25985dd01cce909ea309c008dd616a3a28dbae33545f760bbcea1726bea887b3` |
+| Matching PDB | `ff8dcd95b05375aa1ec80b92cbf9b7566f0eadaadf08380c025e7460ef40a3c1` |
+
+**Current native selection.** David confirmed that the Sandbox is ready.
+Host inventory returned the existing owned guest `43ca91ed-2a92-4302-b75d-ac977584fe82`
+and `wsb` 0.8.114.0. Prepare the four existing ignored selectors against
+the linked PE and the same source, graph, privilege and index receipts.
+Observe first-read attribution and the original cutoff, retained-child
+acceptance, same-actor foreign-child refusal and same-child wrong-image
+refusal. Use a fresh controller output under the owned Linux-memory
+filesystem, plus fresh read-only Windows inputs and bounded output.
+Retain the expired component-window accounting. Admit at most one
+six-minute native observation, including live preflight and retirement,
+with the existing host reserve and verified offline/actor context. Preserve
+the user-owned guest at exit and record any unconfirmed operation or
+incomplete selector. Installed-role and release qualification remain open.
+
+**Four native controls passed.** The exact controller ran from 11:39:27
+to 11:39:52 UTC after observing 3,163 MiB available host memory. Sandbox
+build 26100 reported no default routes before or after dispatch. Each
+selector ran in its own process and reported one passing test. All four
+processes exited zero and were reaped, both streams settled, and private
+guest scratch was removed. The input image rehash matched the linked PE.
+The host removed its transfer files and confirmed both attached shelves were
+empty. The original Sandbox remains active.
+
+Independent readback matched the raw controller and guest results and all
+four transcripts. The published working tree differs from this frozen
+892-input source map in four Engine test files. The service source is
+identical. The wrong-image control changes the expected image path while
+retaining the same live child. This run qualifies the selected unpackaged
+fixture paths under the existing Sandbox login. The package-present refusal,
+ordinary-user and installed identities, product endpoint and affected
+per-file qualification retain their existing owners.
+
+| Retained under `/mnt/d/NevroTick-Owned-Engine-Coverage-z9xlh7j9/p3-component-libtest.8TbA3mI6` | SHA-256 |
+| --- | --- |
+| `index.json` | `c25ca36a30966fc7a175f665a18034be715e292c524d32de8708597840280481` |
+| `native/binding.json` | `39e06cbef0ff17a9e88786b0568abf90a6ebaee272e1d61abf6ba6a1d46589e9` |
+| `native/native-verdict.json` | `7349464e7ec51399f81889f2898d2b28a760b283b2a27a3e84c6f8331c30a823` |
+| `native/guest.json` | `be3ae890db2592157a001eeedaec3fd920f4b1a0d855c8f8bc083a2954805997` |
+| `native/guest-readiness-and-mappings.json` | `cb5d24fe5d4183fe472abf098e6fb4e1ba56a4224e9d6d99c512136e21e9438c` |
+| `native/share-retirement.json` | `e665ddd3e41b555fc646b8dd8461db2cfa054660e522df9eefe6c7bd1377f649` |
+| `native/confirmed-readback.json` | `0785e38852d2c8f7072fe17461f3c8c7bd081ae5d63a668bf991497f7dd5ca39` |
+
+**Package-presence source control — 27 November 2026.** The ignored
+`host::private_clock_status::tests::distinct_peer::native_first_exchange_refuses_simulated_package_presence`
+selector uses the real retained fixture executable, pipe, token, image and
+package query. After the genuinely unpackaged result, the test-only one-shot
+observation supplies package presence. The existing receiving worker must
+report `UnexpectedPackage` after the original 18 bytes, keep status unissued,
+leave the getter count unchanged and send no reply. The supervisor requires
+original worker retirement and the child checks the zero-byte disconnect
+before exiting. The retained-child acceptance selector remains the healthy
+unpackaged neighbor. Pinned Rust formatting and whitespace checks passed.
+The four-selector receipt above retains its original source and native scope.
+
+**Package-presence compiler checkpoint.** Advance the new selector through
+the existing stock graph and privilege lanes. Use a new private Linux-memory
+checkout matching the complete current bound source and a separate private
+8 GiB scratch in the qualified nested namespace. Keep both stock 4 GiB
+reserves, tool/vendor re-admission, the original writer lock and all
+per-command limits. Allow up to 90 seconds for placement, 180 for the graph,
+270 for the twelve privilege commands and ten for retirement of each service.
+Require all six graph and twelve privilege results, matching bookends and
+independent readback. Cross-link and Windows dispatch retain separate gates.
+
+The stock graph and privilege checkpoints passed on the frozen 892-input
+candidate `eeb84c4a0d21d2980429efbc382041050f0c42e2a4006a300f9099a69db4a830`,
+with all six and twelve commands successful and the index unchanged. The
+Windows all-target Clippy command compiled the ignored test path. Independent
+receipt readback found 205 fixture and 70 platform cases in each of the GNU
+ordinary and optimized lanes, 28 platform doctests and zero fixture doctests.
+The graph receipt is
+`cf0e289e1593b623263b0068ac6108cc15ede478831d69c56fb96ac8c88d3f07`,
+the privilege receipt is
+`2c3b71f3ac69abee0604f7d7ec75438a13d97fb9b646e87a2531b9d1502f5119`,
+and the readback receipt is
+`0a29b513d559d09b764aa155fba120a3823c376407dabcb59778ab084a2b0e71`.
+The two transient services retired within their allowances.
+
+**Package-presence cross-link checkpoint.** Admit the exact stock
+`libtest-link` command from those receipts, with its existing tool, scratch
+and writer-lock controls, 245 seconds for the service and ten for retirement.
+Require the successful link and image inspection, matching PE and PDB bytes
+and both selected test names. Use only the retained-child acceptance and
+simulated-package refusal selectors for the paired native control. Windows
+execution and a genuinely packaged peer each require their own observations.
+
+The stock link and LLVM inspection passed. The transient service retired in
+121.350 seconds. Independent readback matched the AMD64 console PE and PDB
+CodeView identities, artifact bytes and both selected case names.
+
+| Retained link evidence | SHA-256 |
+| --- | --- |
+| Link receipt | `e3be1583219a0456d816a222bd8b9df1fc9c5388f0dd12613e980bc43fcdd284` |
+| Selected libtest PE | `0bc0a5d401225005b08bc355879a3211d55bc5980dfe4e0aa776bdda55274e40` |
+| Matching PDB | `7df9a251c8da3ed43db591ef766c6383466220488f12a6664b409f068f354e6d` |
+| Independent link readback | `5ae3418ca3bb9564296a04de98a8460cdb6dd8219813709f445892b256bb7f38` |
+
+**Paired native fixture observation.** Under W11-W05/P3 and CHECK-2/25/27,
+admit one six-minute run on the existing owned offline guest after the exact
+link passes. Recheck the guest ID, CLI version, x64 build and `ExistingLogin`
+context, 2,048 MiB available Windows host memory and both 4 GiB disks under the
+existing execution lock. Require the guest runtime and effective input/output
+mapping controls. Run the two fixed selectors in separate processes, requiring
+the original healthy reply and the package-presence refusal with no reply or
+getter progress. Confirm both original processes and their streams retired,
+both guest scratch and staged files removed, and the guest still running. If
+completion cannot be observed, retain the original custody and consumed budget.
+
+**Paired native observation passed.** The exact PE ran both selectors on
+offline Sandbox build 26100 under `ExistingLogin`. The controller operated
+from 12:46:33 to 12:46:55 UTC after observing 5,590 MiB available host memory.
+The retained-child test issued the expected status reply. The package-presence
+test used the real unpackaged query followed by the simulated observation,
+reached `UnexpectedPackage` after the original 18 bytes and preserved the
+no-dispatch, no-getter-progress and zero-byte-disconnect assertions. Each
+libtest process reported one pass with empty stderr, exited zero and was
+reaped. The guest confirmed scratch removal and input identity. Independent
+readback confirmed the transcripts, offline and mapping controls, and both
+empty host staging shelves. The original Sandbox remains running. This
+receipt covers the simulated observation on the unpackaged fixture. A truly
+packaged peer, ordinary-user and installed-role behavior, and product
+qualification retain their existing gates.
+
+| Retained under `/mnt/d/NevroTick-Owned-Engine-Coverage-z9xlh7j9/p3-package-libtest.83s9Xmyn` | SHA-256 |
+| --- | --- |
+| `index.json` | `ff482e6aae0fc40d2cfed75403edbf8499cb680c855330475cfd0d10339c742c` |
+| `native/guest.json` | `ae9909022453dcd30f1f2e6174f010c5707f59ada3e932c2031ce343c2740cb2` |
+| `native/native-verdict.json` | `e05ddda01db27ee228b32ae8447ede936497957c81b314c690da4b8bc30d46bf` |
+| `native/guest-readiness-and-mappings.json` | `334bd09b0815f64f71d5a38237dd9e057aa292319ee8b23e7a181a60f8b24a18` |
+| `native/share-retirement.json` | `0a3298e48b8ccb354ab33ba915d82b715304d4d1a751f9c6fd51715bbbad0d15` |
+
 **Next action and exit:** W11-W05/S0.3/S3.1–S3.2 and W11-W10 retain their
 existing CHECK-1/2/3/15/16/25/26/27 owners. Follow the
 [provisioning order](#service-provisioning-and-direct-msix-order--23-november-2026)
@@ -15541,6 +15698,61 @@ it has not been merged into the shared checkout or published. Qualification
 preflight continues only within the original common deadline, and cannot turn
 the missing source-stage controls into passes.
 
+**Source continuation on signed `acbb85b` — 27 November 2026.** The
+retained repair patch applies cleanly to the new base. The frozen producer
+and the signed tree's unchanged direct-MSIX verifier retain their separate
+input identities. Use one isolated source candidate to complete the unrun
+direct-MSIX consumer and readback-reader controls. Recheck the configured
+metadata suite and a fresh source-only generation on the integrated bytes.
+Keep the original attempts and their expired allowances. Allow 360 seconds
+for this source continuation, including at most 250 seconds for the exact
+test and generation service and ten for retirement. Do not reuse the old
+broad host mount. Expose just public runtime roots, the read-only candidate
+and bounded private work, with no inherited environment or network access.
+Before integrating, require healthy and discriminating malformed transcript
+and authoring-roster outcomes. Strict typing retains its exact earlier
+binding. Covered source behavior, mutation scores and installed package
+qualification keep their original exits.
+
+**Source result.** The isolated service retired in 132.476 seconds with
+272 metadata tests and 16 direct-MSIX consumer tests passing. Source
+validation, generation, generation readback and MSIX inspection passed for
+734 fields and 14 files. Inspection retained the absent package identity and
+all four unadmitted roles. Release validation refused the incomplete inputs.
+The retained readback reader accepted the original 14-file output and refused
+an extra transcript event and an equal-count authoring-path substitution, with
+the changed inputs rehashed before readback. The exact seven repair paths
+were integrated into the working tree and all 27 earlier source input hashes
+matched. The prior strict-typing evidence still binds its eight selected
+modules. The identity fixture still had inferred locals at this checkpoint.
+`~/.local/share/nevrotick/wgt-w02-source-reentry.obqy8kR2/confirmed-source.json`
+has SHA-256 `ea9d39ed6964d11779d11bd1cf92dbc81a6ca2feb35517db0e6438c365c8a9f1`.
+The readback controls have SHA-256
+`a8661a84149aeb04abf205d90fd6c2458ae90c59b963f7793391443d96821231`.
+Coverage, mutation, installed-package evidence and publication remain open.
+
+**Identity fixture type and readback revision — 27 November 2026.** Give the
+seven existing WGT tests concrete local types and check the JSON object and
+row shapes used by their assertions. Require exact booleans for incomplete
+assembly, field-specific internal provenance before testing public exclusion,
+and the changed provenance in freshly generated output. Reuse the unchanged
+producer and its earlier source and typing evidence. The exit is all seven
+cases in the isolated test entry, including the existing faulty and healthy
+neighbors. Allow one focused service of up to 90 seconds and ten seconds for
+retirement, using the preceding source continuation's mount and resource
+boundaries. This revision does not change the metric or native gates.
+
+The bound revision passed all seven tests in 16.351 seconds. The transient
+service exited zero and retired. Each tested input matched the working tree.
+Under `~/.local/share/nevrotick/wgt-fixture-types-2711.Stp05so7/`, the input
+manifest SHA-256 is `2650c9000ef5f6329b7f8cca590dfe4415c76aa4125dd167afdcce0ade28d57f`
+and the test transcript SHA-256 is
+`9a010aa13cab13ce6cd2b69c7a0402771409b86fac5b44a3739f40ebc7c9b30a`.
+The earlier full source run retains its original test file. Its unchanged
+producer and direct-MSIX reader still match their retained inputs. This
+focused rerun covers the changed test file without extending the eight-module
+strict-typing receipt to the fixture.
+
 WGT-W01 source/identity preparation has the bounded readback above. Recheck
 release/package state, source-specific IDs, pending fields, tools and holds when
 their inputs change or before dependent execution.
@@ -26054,6 +26266,114 @@ review did not execute tests or establish native behavior.
 The candidate, copied producer/adapter pins and handoff remain private under
 the same directory; `HANDOFF.md` SHA-256 is
 `ee23358e2dba389753c533af2d2dfbb3383604f3b2acd02b143c05dce3bb8d16`.
+
+**Collector reentry scope — 27 November 2026.** Rechecked the exact parser and
+its seven-case receipt against the revised native owner. The owner starts its
+stopwatch before the absolute sample, so elapsed recovery ticks need an
+independently observed bracket for ordering. Adding elapsed ticks to the
+sample yields an upper bound. The cumulative process total is distinct from
+the verified eight-active-process limit. The owner and relay share stderr,
+so the collector must retain bounded original bytes and recognize joint or
+ambiguous reports as incomplete. Join the parsed facts to independently
+observed original-process exit, both original EOFs, job-empty census, phase
+order and restored bytes. Require healthy and missing-EOF, crossed-identity,
+bad-order and emergency-cleanup controls at that join. The four passing
+unpackaged P3 fixture selectors used a different artifact and case. The
+current recovery contract remains source-only, with native launch dependent
+on a bound actor, launcher, staging owner and resolution of the pending-read
+versus helper admission race.
+
+**Healthy collector source slice — 27 November 2026.** Use the pinned
+diagnostic parser as the actual byte consumer and join its result to separately
+supplied, run-bound launch and completion observations. Check the original
+owner and both pipe identities, exact healthy relay stdout, natural owner
+exit, native job accounting, and the recorded final phase order and restored
+bytes. Allow tied observation ticks, with strict original cutoffs. Translate
+elapsed job-empty time through an independently supplied stopwatch-start
+interval and require the whole interval to fit the proven phase order.
+The typed phase input depends on the future observer's row, role and handle
+checks. This private source slice runs independent synthetic healthy and
+refusal controls only. Keep one 20-minute source allowance with up to one
+causal repair, one focused service of at most 30 seconds per candidate and
+ten seconds for retirement. The retained case/bridge, parser, and existing
+native entry and package work retain their own dispositions.
+
+The first isolated candidate ran 11 synthetic cases and retired with exit zero.
+The join required both original outer EOFs, successful inner stream and
+cleanup settlement, the five original job lifetimes, the separately verified
+eight-active-process limit and the exact restored bytes. Missing EOF, crossed
+identities, conflicting census, emergency cleanup and a same-length wrong
+preimage were refused. The clock control refused a job-empty interval before
+the observer terminal even though adding elapsed ticks to the owner's later
+sample would place it after the terminal. A healthy later Worker handle poll
+and either order of outer EOF observations remained admissible.
+
+Keep the exact source and raw results under the existing recovery directory's
+`collector-healthy-source.h3ZKMJCz/`. The input manifest SHA-256 is
+`45634fcf71d571ba5b87093eb01757ad35dacea91ca75b7abcbba7a6e3ce6427`,
+the collector source SHA-256 is
+`7964d6e3e07964e63a4dc7b1e44b6b621c79d9c023b27fd756fbfca5d3c585e6`,
+and the raw transcript SHA-256 is
+`af11f4d18bb0b459c46109336f7916fd874c51c330424f6a2039f8cad0ce9aff`.
+The original renderer's preparation record still pins the earlier C# owner.
+The test uses the retained render digests separately from the revised census
+owner's source, and uses a synthetic owner image pin. The original launcher,
+native image binding, strict raw phase reader and independent runtime clock
+and restored-byte observations remain open. No Windows execution or loss
+scenario was credited by this source run.
+
+Independent review found that the original join accepted stdout EOF one tick
+before observer terminal even with the relay success marker. The pinned relay
+emits that marker only after the observer returns. The one-tick case failed
+on the original collector with `Incomplete` missing. The revised join refused
+it, accepted the tied-tick neighbor, and passed all 12 synthetic cases. Both
+isolated services retired. Under the same directory, `r1/green/tested.sha256`
+has SHA-256 `e3e176921121779dab0af92bd477cc0e734116ceaec17495953b52a57509c881`.
+The preserved `r1/red/tests.log` and `r1/green/tests.log` have SHA-256
+`0f871367c1a382e7a402787f5477b312e500e301e71eccfbf92173d7500a577e`
+and `b44d8226dea5fe986c319d15955e5744322c1e21c7b76801b98259ab7937cafc`.
+
+**Healthy raw phase reader — 27 November 2026.** Join the pinned r2 bridge's
+19 emitted healthy JSON leaves to the existing collector. The exact held
+roster, run and inner QPC card, original role identities, healthy field
+values, and required partial order must survive strict bounded decoding.
+Independent original-handle retirement and readback of `subject.bin`
+retain their own input owners. The raw `observed` coordinate is the
+producer's prepublication QPC sample. It confers no exact file rename,
+process exit or restored-read timestamp. Run the combined consumer on
+independent synthetic serialized receipts with healthy and refusal neighbors.
+One 20-minute source allowance permits a 30-second focused service per
+candidate, ten seconds for retirement, and up to one causal repair. The
+native launcher, live custody, compiled owner, and loss controls keep
+their existing admission and qualification boundaries.
+
+The private reader requires the exact 19 leaf names and original role
+identities, accepts JSON object key order independently, and rejects duplicate
+keys at any depth, same-count leaf substitutions, clock or role changes,
+noncanonical field types and broken causal order. It feeds the original
+collector after matching independent natural child exits and observed
+restoration from the owned subject. The bridge's pinned successful terminal
+row implies settled original dispatcher reads. Independent capture still
+owns actual file custody, stream observations, process handles and the timed
+read of restored bytes. The test uses synthetic serialized records.
+
+Independent review found that the first reader accepted Worker EOF one tick
+before the Worker published `helper-stop`. The new control reproduced the
+gap. The repaired candidate refused it and accepted the same-tick case plus
+the independent early and late EOF interleavings. The repair also binds
+`dispatcher-live` to the earlier owner's QPC sample and a natural Dispatcher
+exit observation to the earlier `helper-live` event. The isolated combined
+entry passed 10 raw-reader cases and all 12 collector cases, with both
+services retired. Keep the exact sources, initial failure and passing readback
+under `healthy-phase-readback.xd7LXdV2/` in the existing private recovery
+directory. The final `run/tested.sha256` has SHA-256
+`f7af698c8f23fd21053cb86b15b1b1bdb58edf67751345074f800f76511fcac3`.
+`red/tests.log` and `run/tests.log` have SHA-256
+`5dd10fb77e3b0ad6d2232bca19eb95461e84c00232f009bde0d027f7a276bf89`
+and `603234c8585429ba8e7c34d8cb6cb60fa1d2bf29bc0ede5d64ecc992a07c7045`.
+The source reader remains a portable oracle. The original native caller,
+admitted parent-handle and pipe collector, exact revised executable binding,
+and actual Windows recovery outcomes remain open.
 
 The external native owner draft binds the current five adapter sources
 and admits one fixed relay entry. The relay and its ordered ASCII case

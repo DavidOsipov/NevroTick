@@ -1,4 +1,12 @@
-# NTP wire source provenance
+# Wire source provenance
+
+The inert Roughtime v1 response reader is an original implementation of
+[RFC 10049 §§4–5](https://www.rfc-editor.org/rfc/rfc10049.html#section-4).
+The committed wire tests use independently constructed synthetic bytes.
+The RFC and upstream comparisons, scope and qualification record belong to
+[TA-W03](../../tasks/time-assurance-integration.md#32-ta-w03-inert-response-decoder).
+
+## NTP and NTS
 
 This is NevroTick's S1.1a inert fixed-header decoder and S1.1b bounded outer
 framing owner. The selected

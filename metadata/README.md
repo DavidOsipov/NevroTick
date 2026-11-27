@@ -15,8 +15,8 @@ separately edited authorities.
 
 The source now gives every field in the maintained catalogue its own explicit
 disposition, alongside project facts and per-component PE/service values. It has
-731 entries: the catalogue's 551 scoped rows (88 SCM, 267 artifact/distribution,
-196 diagnostics) plus 180 project/component entries. These include compiler,
+734 entries: the catalogue's 551 scoped rows (88 SCM, 267 artifact/distribution,
+196 diagnostics) plus 183 project/component entries. These include compiler,
 runtime and conditional fields; they authorize no Windows settings. Completeness
 is bounded by the catalogue's declared structures, not every
 Windows extension or every future SDK. The generated field coverage report keeps

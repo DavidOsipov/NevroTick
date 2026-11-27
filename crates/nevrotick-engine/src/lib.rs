@@ -13,8 +13,12 @@
 
 mod clock_capture;
 mod measurement;
+#[cfg(any(windows, test, feature = "roughtime-verification"))]
+mod native_network_job;
 mod quality;
 mod relative;
+#[cfg(feature = "roughtime-verification")]
+pub mod roughtime;
 mod series;
 mod session;
 mod source_policy;

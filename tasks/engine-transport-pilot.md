@@ -26,8 +26,10 @@ are also complete; the current continuation below supersedes that old routing.
 No commit/stage/push or Windows execution follows.
 
 **Current product action — 27 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
-selects the [consume-once admission handoff for original joined protected receipts](#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+records the implemented [consume-once admission handoff for original joined protected receipts](#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
 under the [Engine-to-Core handoff](#current-engine-to-core-admission-handoff--23-november-2026).
+The affected Engine qualification needs the current candidate and roster
+readmission and configured scratch capacity.
 Physical-reference qualification is **HELD/BLOCKED** under the
 [W11 disposition](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026).
 Ordinary resumption does not restart hardware inventory, procurement or a general
@@ -32503,6 +32505,161 @@ complete current review and exact binding. Keep the current hold and per-file
 95% gates. `lib.rs`, `profile.rs`, `transport.rs`, `source_policy.rs` and the
 actual provider probe remain separate critical owners. Native paths, ungenerated
 guards and the remaining line-coverage gates retain their own evidence exits.
+
+**Exact reentry readback — 27 November 2026.** All 768 bound inputs for
+`96451105…` match the signed `acbb85b` view. In the live tree, the two
+bound UI files `crates/nevrotick-ui/ui/app.slint` and
+`scripts/tests/test_ui_text_codegen.py` differ from that view. Keep the
+current UI repair and use the signed source in a private view for any
+four-file Engine-only rebind. The configured 19-row reader still consumes
+the predecessor `d5729afd…` capture. A focused roster establishes neither
+fresh complete EP1 execution nor a rebind. The earlier budget retains 11
+seconds, and the private RAM filesystem readback is 125,095,936 bytes
+below the existing 7 GiB metric startup reserve. A source-only selective
+reader would need explicit predecessor custody for retained observations
+and fresh affected EP1 lanes before it can admit current metrics.
+
+**Selective readmission source preflight — 27 November 2026.** Begin with
+the signed 768-input view and the original d572 read-only combined capture.
+Re-read the full historical recipe and actual raw rows. Bind the exact
+four test-source differences and the observed focused identities. Derive
+the proposed current and predecessor lane records without copying an old
+result into a current slot. This source preflight keeps the existing full
+reader and metric policy untouched. Allow one read-only image acquisition
+of at most 60 seconds and one 60-second confined source-reader service,
+including ten-second retirement for each. Keep the original timed Rust
+attempts, both metric bindings, and coverage and mutation requirements.
+
+The read-only remount verified and retained all 45 original files. A
+write-open against the original admission record returned `EROFS`. The
+mounted process retired and the image stat bookends matched. The signed
+commit verified, and all 768 actual Git blobs matched `96451105…`, with
+exactly four changed test files from `d5729afd…`. The unchanged historical
+reader accepted all 19 original commands and raw rows. Readback also
+rehash-checked all 49 graph members under original producer `1e6b438b…`
+and all 17 focused logs of the final eight exact case pairs.
+
+The private proposal retains 11 eligible predecessor rows with their
+original provenance and requires eight fresh rows. The two fresh EP1 modes
+each expect the same 688 qualified binary/case pairs, SHA-256
+`22d91432d7a33efae4293b6384cbcee4dd35be63b84b54d0c0f9a11502e6ec21`.
+Current full executions remain empty. The initial confined check lacked
+the signed verifier's imported custody module. The next check found that
+the full-run parser refuses the expected filtered neighbors in focused
+libtest. The corrected reader validates one complete focused case and
+its actual library binary with the existing selected-block parser. Six
+focused reader tests passed in the final service. The controls refuse
+same-count source and binary substitutions and stale focused bytes. The
+GNU-for-MSVC lane control exercised digest custody. Its rehashed row was
+still under the fixed whole-terminal pin, so it stopped before the raw
+command comparison. A current-row reader needs a healthy actual MSVC command
+and a fully rebound fixture whose GNU raw command reaches the specific
+target/command refusal. All test services retired.
+
+Under `selective-readmission-source.l4JEmTrl/` in the existing private
+qualification bundle, acquisition SHA-256 is
+`a42c7acb9570b3fe3141b17ce7c38c29c51d608c2f4b2ffbe01fc7d9967e88de`,
+`run/basis.json` SHA-256 is
+`2539d4f769aa78f3fc9608d5c537accf18e3254d3e8f60b719af1a4cbf3b6b8d`,
+and `run/tests.log` SHA-256 is
+`c8147a3e644aef79622335c2af87d2661468e497ace6c97e9add064235b5b536`.
+The exact signed-view source preflight leaves both metric bindings unchanged.
+The current KE reader still requires physical EP1 doctests among the full
+19 rows. Predecessor eligibility for that lane is a proposal for a reviewed
+selective reader and does not change the configured obligation.
+The actual current runner and candidate-specific consumers for both roles
+still require a defined current receipt, fresh rows, tool/resource preflight
+and independent readback before current line or mutation campaigns.
+
+The stock 19-row path has less new admission surface than the selective
+reader. At the next read-only check, the stock durable launcher required
+16 GiB available on `/mnt/d` and observed 16,316,977,152 bytes, short by
+862,892,032 bytes. The shared `/dev/shm` observation was 7,214,632,960 bytes,
+above the 5 GiB combined-capture floor and below the later 7 GiB metric
+startup floor. No execution window was opened. Reentry needs fresh capacity
+and an admitted candidate-specific graph/tool/receipt window. Reusing the
+stock rules with a different owned backing volume requires reproducing the
+filesystem, capacity and retirement admission for that volume. Retain the
+11 seconds left on the earlier window and the existing campaign holds.
+
+**C: placement preflight.** The alternate DrvFs volume had more than
+239 GB free. The bounded storage canary and one causal retry both stopped
+at their first subprocess before creating the owned image or running any
+Engine lane. The outer Linux UID-wide process limits were 24 and 256.
+The actual UID had 477 threads at the subsequent observation, consistent
+with both fork refusals despite a low process count. Both services
+retired. The first and repaired unit logs under
+`~/.local/share/nevrotick/engine-combined-c-canary.3AUHUFlj/` and
+`~/.local/share/nevrotick/engine-combined-c-canary-repair.Eu3xPYEt/`
+have SHA-256 `79ca204dab2d21be1865fb8e66ee3b10169303324ddd13ed547279fcdd583c64`
+and `b3470594b705715318db2ede1c2b4b0977bb583bd92982ddbd3a69f0d5cac33a`.
+Reentry requires a reachable subprocess under the intended UID accounting
+and dedicated 24-task cgroup. These attempts supplied no mount or retirement
+evidence for C: placement. The separate 7 GiB metric startup reserve remains
+open.
+
+**C: storage canary passed.** The following attempt first verified a real
+fork under UID 1000 and dedicated `pids.max=24`. The original filesystem
+probe then created its private 10 GiB ext4 image on the observed C: DrvFs
+volume and passed the actual controller's sandbox view. It wrote through
+the distinct report and tmpfs paths, read back the report on read-only
+remount and observed `EROFS` on a new write. It measured 239,766,462,464
+bytes free on C: at entry, 229,028,978,688 with the image allocated,
+9,927,114,752 in the report filesystem and 6,897,369,088 in the RAM work
+view. The image, temporary directories, FUSE daemon, mount and service
+retired. The service passed in 6.197 seconds under the original
+70-second runtime cap.
+
+Results under `~/.local/share/nevrotick/engine-combined-c-canary-cgroup.ikpmLxxi/`
+include `capacity-readback.json` SHA-256
+`6323c20f917b5db590c80ca2aea279cc66ee511b8f7db05ff107ec873b179730`
+and `unit.log` SHA-256
+`ab60f0f5d8af09e5d162869de114b57b1571fa25d1a5765f92f5135fc0fa98ab`.
+This supplies the C: storage and retirement precondition for reviewing the
+exact combined launcher and independent receipt reader's placement change.
+The earlier 11-second compiler allowance remains intact. A current exact
+19-row window and separate 7 GiB metric reserve remain open. No Engine
+command or Windows guest action ran.
+
+The placement review identifies two exact owners in `durable-preflight-01/`.
+`run-private-reports-successor.py` still pins the D: capacity record, checks
+space on D: and creates its image there. `read-combined-successor.py` pins
+that launcher and independently requires the same D: image parent. A new
+paired revision must bind the admitted C: backing, its canary bytes and the
+same 16 GiB backing and 5 GiB work/report floors. Keep the historical pair
+and records with their original pins. The current candidate, full 19-row
+recipe, exact EP1 roster, fresh execution window and subsequent metric
+admission remain separate prerequisites.
+
+**Independent audit follow-up — 27 November 2026.** The repository now
+exercises both joined-receiving lineage readers through their shared
+dispatcher using owned synthetic files and independently calculated pins.
+The healthy case asserts the complete returned 77-member registry. The
+refusal cases reach the extra source edit, predecessor graph, incomplete
+terminal, binary/case roster, duplicate and missing member, failed attempt,
+producer and resource checks. Rebound fixture pins allow semantic failures
+to reach their guards, and a separate corrupted byte check retains its pin.
+The predecessor combined reader and scope-specific lineage checks execute
+normally in these controls. This source test neither runs a Rust lane nor
+replaces physical graph or role evidence.
+
+The isolated run passed both new tests, all eleven fault controls and two
+existing joined-receiving neighbors. Its test log under
+`~/.local/share/nevrotick/audit-joined-reader-2711.mRcoYI1x/final/` has SHA-256
+`384a01e1a16ab2b826573ce391eaa9ce899249ff58522710577e096a6ffa12e9`.
+Both current metric policies pin the earlier reader-test file. Retain their
+historical binding and include the new source control in later readmission.
+
+The follow-up also changes the ordinary command to the optimized command
+while keeping its exact case roster, and gives the focused report the
+predecessor's candidate digest while rebinding its receipt hash. Both
+reach their respective relationship checks. The isolated four-test
+selection passed again with all thirteen fault controls. The passing log
+under `~/.local/share/nevrotick/audit-joined-reader-delta.wi1H1awW/` has
+SHA-256 `b29b55932407858a4aeb11bd22e6fb318c4161bf3c73540b3316d6fcd62eae03`.
+These controls enter at the lineage dispatcher and exercise the full
+predecessor reader. The current successor's physical lane evidence
+remains owned by the configured checkpoint.
 
 ###### Calculate each original joined ordinary receipt
 

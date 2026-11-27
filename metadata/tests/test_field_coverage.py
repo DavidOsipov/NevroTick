@@ -342,10 +342,10 @@ class ExpandedModelTests(SourceFixture):
         expected_columns = ("key", "surface", "kind", "value_type", "owner", "applicability", "derivation", "source_ref")
         self.assertEqual(tuple(field.name for field in dataclasses.fields(self.registry.FieldSpec)), expected_columns)
         rows = [[getattr(spec, column) for column in expected_columns] for spec in self.registry.FIELD_SPECS]
-        self.assertEqual(len(rows), 731)
+        self.assertEqual(len(rows), 734)
         self.assertTrue(all(len(row) == 8 and all(type(value) is str for value in row) for row in rows))
         canonical = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "4382c850c018560874520b756e8378a56ca2846f833a908a4a5eb6e0b41ce1fb")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "06d30ba10e6e4fcc616f084a5ed347d9f531cc2db116e4745f0570498a6df3a4")
         indexed = self.registry.FIELD_BY_KEY
         self.assertEqual(set(indexed), {row[0] for row in rows})
         catalogue = {spec.key for spec in self.registry.FIELD_SPECS if spec.key.startswith("catalogue.")}
@@ -361,7 +361,7 @@ class ExpandedModelTests(SourceFixture):
 
     def test_registry_rejects_duplicate_keys_at_import(self) -> None:
         """A second row with the same key must prevent publication of the index."""
-        self.assertEqual(len(self.registry.FIELD_BY_KEY), 731)
+        self.assertEqual(len(self.registry.FIELD_BY_KEY), 734)
         source = (REPOSITORY / "metadata/pipeline/fields.py").read_text(encoding="utf-8")
         construction = "\nFIELD_SPECS = "
         self.assertEqual(source.count(construction), 1)

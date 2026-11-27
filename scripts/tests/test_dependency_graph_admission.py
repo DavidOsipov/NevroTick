@@ -102,15 +102,51 @@ class GraphAgeControls(unittest.TestCase):
         with self.assertRaises(AGE.Incomplete):
             AGE.validate_policy_admission(forged)
 
-    def test_current_url_resolution_requires_its_exact_cooldown_exception(self):
-        value = policy()
+    def test_current_root_is_registered_as_next_resolution_baseline(self) -> None:
+        value: dict[str, object] = policy()
         AGE.validate_root_admission(ROOT, value)
-        record = value["cooldown_admission"]["resolution"]
+        lock: bytes = (ROOT / "Cargo.lock").read_bytes()
+        admission_digest: str = AGE.canonical(value["cooldown_admission"])
+        self.assertEqual(AGE.accepted_checkpoint(admission_digest), {
+            "lockfile_sha256": sha(lock),
+            "registry_sha256": AGE.canonical(AGE.registry_records(lock)),
+            "exception_decisions": ["OD-04-URL-20261124"],
+        })
+
+    def test_historical_url_resolution_requires_its_exact_cooldown_exception(self) -> None:
+        fixture: Path = ROOT / "scripts/tests/fixtures/dependency-age-url-resolution-history.json"
+        raw: bytes = fixture.read_bytes()
+        self.assertEqual(sha(raw), "3ed985bb8aff634f591c4e753805edf55617610f10a3e1cf24f67a0f4df18680")
+        history: dict = json.loads(raw)
+        original: set[tuple[str, str, str, str]] = set(AGE._records(AGE.policy_records(original_policy())))
+        added: set[tuple[str, str, str, str]] = set(AGE._records(history["original_registry_added"]))
+        removed: set[tuple[str, str, str, str]] = set(AGE._records(history["original_registry_removed"]))
+        self.assertTrue(removed <= original)
+        self.assertFalse(added & original)
+        registry: list[dict[str, str]] = AGE._ordered((original - removed) | added)
+        record: dict = history["resolution"]
         self.assertEqual(record["exception"]["decision_id"], "OD-04-URL-20261124")
         self.assertCountEqual([(item["name"], item["version"]) for item in record["added"]],
                               [("url", "2.5.9"), ("form_urlencoded", "1.2.3")])
+        AGE.validate_resolution(record, registry)
         record["exception"] = None
         with self.assertRaisesRegex(AGE.Incomplete, "insufficient publication age"):
+            AGE.validate_resolution(record, registry)
+
+    def test_current_roughtime_resolution_inherits_url_history_without_an_exception(self) -> None:
+        value: dict = policy()
+        AGE.validate_root_admission(ROOT, value)
+        record: dict = value["cooldown_admission"]["resolution"]
+        self.assertEqual(record["operation"], "workspace")
+        self.assertIsNone(record["exception"])
+        self.assertEqual(record["retained_exception_decisions"], ["OD-04-URL-20261124"])
+        self.assertCountEqual([(item["name"], item["version"]) for item in record["added"]], [
+            ("curve25519-dalek", "5.0.0"), ("curve25519-dalek-derive", "0.1.1"),
+            ("ed25519", "3.0.0"), ("ed25519-dalek", "3.0.0"), ("fiat-crypto", "0.3.0"),
+            ("sha2", "0.11.1"), ("signature", "3.0.0"),
+        ])
+        record["retained_exception_decisions"] = []
+        with self.assertRaisesRegex(AGE.Incomplete, "approved baseline or prior exception scope"):
             AGE.validate_root_admission(ROOT, value)
 
     def test_relabelled_new_version_or_lock_is_not_grandfathered(self):

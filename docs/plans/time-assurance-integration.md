@@ -896,9 +896,45 @@ TA-C01–TA-C22, valid/hostile controls, candidate identity and actual results. 
 separates portable policy/protocol models, controlled interoperability, native
 Windows evidence and the two roadmap exits. No planned case is marked passed.
 
-The next step is to instantiate §8.4's documented RFC baseline in TA-W02's checked
+The [reviewed TA-W02 contract](../../tasks/time-assurance-integration.md#31-v1-roughtime-admission-contract--27-november-2026)
+defines the boundary for the [implemented TA-W03 inert response decoder](../../tasks/time-assurance-integration.md#32-ta-w03-inert-response-decoder).
+The inert decoder passed its focused development checks and GNU line coverage.
+Mutation qualification remains open. The exact CHECK-26 graph passed
+ordinary cooldown resolution and configured GNU/MSVC dependency checks.
+The mandatory-root verifier, ordered loopback round, common-instant interval
+admission, [controlled whole-date interpretation](../../tasks/time-assurance-integration.md#38-ta-w04-controlled-whole-date-interpretation),
+[cross-round conflict retention](../../tasks/time-assurance-integration.md#39-ta-w04-retain-signed-conflict-across-controlled-rounds),
+[invocation withdrawal](../../tasks/time-assurance-integration.md#310-ta-w04-guard-the-controlled-recovery-invocation),
+and the [controlled TCP counterpart](../../tasks/time-assurance-integration.md#311-ta-w06-controlled-tcp-counterpart)
+passed their selected GNU and MSVC development checks. Live issuers,
+date-basis admission, per-file qualification and native Windows execution
+remain open.
+
+The [controlled three-traversal round](../../tasks/time-assurance-integration.md#312-rfc-m02-controlled-three-traversal-measurement)
+passed the fixed three-operator loopback checks, including incomplete-round
+refusal and original chain custody. The prior two-pass receipts retain their
+original scope. The complete product schedule still needs randomized selection
+from admitted operators, bound retries and authenticated reset, and native
+and provider qualification.
+
+The [controlled retry binding](../../tasks/time-assurance-integration.md#314-rfc-w01-controlled-tcp-connect-and-shared-retry-floor)
+shares the original floor across actual UDP send and TCP connect and resets at
+current signed single-exchange publication. The [controlled ordered round](../../tasks/time-assurance-integration.md#315-rfc-w01-controlled-complete-chain-retry-reset)
+retains debt on provisional UDP legs and resets only on complete-date admission.
+The [bound recovery invocation](../../tasks/time-assurance-integration.md#316-rfc-w01-bound-recovery-and-retained-conflict)
+uses the same states across both rounds and gives retained conflict priority
+over a later otherwise usable date. The [controlled UDP-to-TCP fallback](../../tasks/time-assurance-integration.md#317-rfc-w01-controlled-udp-to-tcp-fallback-and-fresh-chain)
+starts a fresh chain when a UDP read finds the socket empty after the response
+wait, and changes only the unanswered peer's route. The [controlled scheduler wait](../../tasks/time-assurance-integration.md#318-rfc-w01-schedule-controlled-fallback-at-the-original-retry-floor)
+rechecks the same cutoff and floor after timer or parent withdrawal. The
+[controlled TCP worker](../../tasks/time-assurance-integration.md#319-ta-w06-scheduled-tcp-connect-with-shared-worker-custody)
+retains the original retry binding through actual join and guarded stream
+adoption. Production integration still needs live catalogue-owned identity,
+qualified Windows retirement and restart continuity.
+
+Continue instantiating §8.4's documented RFC baseline in TA-W02's checked
 Roughtime/NTS types, limits, aggregation and independent fixtures at the existing
-P2 entry, then review that engineering exit before dependent implementation.
+P2 entry. Review each engineering exit before dependent implementation.
 RGT-C01 is required by P7 before V1. Current product ordering stays with
 development-plan §7 and does not retry the blocked physical-reference trial.
 Reserve-only TA work remains post-V1. KHR-C01

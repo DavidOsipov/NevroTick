@@ -431,6 +431,9 @@ pub(super) struct RetainedFixtureClient {
     expected_image: Box<[u16]>,
     /// One-way gate after pipe, process, token or component observation is refused.
     current: bool,
+    /// One synthetic presence observation for an otherwise unpackaged test peer.
+    #[cfg(test)]
+    simulate_package_presence: bool,
 }
 
 impl RetainedFixtureClient {
@@ -459,6 +462,8 @@ impl RetainedFixtureClient {
             token,
             expected_image,
             current: true,
+            #[cfg(test)]
+            simulate_package_presence: false,
         })
     }
 
@@ -481,6 +486,8 @@ impl RetainedFixtureClient {
     /// # Errors
     /// Preserve image and package query errors. Classify an unconfirmed peer
     /// as a continuity refusal and reject a different component.
+    /// # Panics
+    /// The test-only presence simulation requires a genuinely unpackaged peer.
     fn observe_component(&mut self, server: BorrowedHandle<'_>) -> Result<(), FixtureClientError> {
         if !self.observe(server) {
             return Err(FixtureClientError::Continuity);
@@ -499,7 +506,18 @@ impl RetainedFixtureClient {
         if image.as_wide() != self.expected_image.as_ref() {
             return Err(FixtureClientError::WrongImage);
         }
-        if package.is_some() {
+        let package_present: bool = package.is_some();
+        #[cfg(test)]
+        let package_present: bool = if std::mem::take(&mut self.simulate_package_presence) {
+            assert!(
+                !package_present,
+                "the simulated fixture peer must be unpackaged"
+            );
+            true
+        } else {
+            package_present
+        };
+        if package_present {
             return Err(FixtureClientError::UnexpectedPackage);
         }
         Ok(())
@@ -511,6 +529,12 @@ impl RetainedFixtureClient {
         if let Some(unit) = self.expected_image.last_mut() {
             *unit ^= 1;
         }
+    }
+
+    /// Arm one synthetic presence observation after the real component queries.
+    #[cfg(test)]
+    pub(super) const fn simulate_package_presence_for_test(&mut self) {
+        self.simulate_package_presence = true;
     }
 
     /// Borrow the identity from the exact primary token retained for this peer.

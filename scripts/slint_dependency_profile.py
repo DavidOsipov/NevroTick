@@ -50,6 +50,7 @@ then selected_metadata may produce cargo-deny's bounded selected projection.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 import copy
 import hashlib
 import importlib.util
@@ -64,7 +65,7 @@ _COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "47204cbff0a0790b36ae69c12d1c573c4f8f768df454290fc2ac5b1ccf168ed3"
+REVIEWED_POLICY_SHA256: str | None = "c60e4cc7a22a665adfb102a28378b902dede9c92ad1396f5ccd6bf24d1665e2d"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -180,6 +181,33 @@ EP1_PROFILE = "engine-ke-association"
 EP1_FIELD = "engine_ke_association"
 EP1_FEATURE = "ke-association-prototype"
 EP1_FEATURE_ARGUMENT = "nevrotick-engine/" + EP1_FEATURE
+RGT_PROFILE = "engine-roughtime-verification"
+COMBINED_PROFILE = "engine-ke-roughtime-verification"
+RGT_FIELD = "engine_roughtime_verification"
+COMBINED_FIELD = "engine_ke_roughtime_verification"
+RGT_FEATURE = "roughtime-verification"
+RGT_FEATURE_ARGUMENT = "nevrotick-engine/" + RGT_FEATURE
+RGT_PROFILES = (RGT_PROFILE, COMBINED_PROFILE)
+RGT_CURVE_ID = "curve25519-dalek@5.0.0"
+RGT_MACRO_ID = "curve25519-dalek-derive@0.1.1"
+RGT_FIAT_ID = "fiat-crypto@0.3.0"
+RGT_SELECTED_ROLES: dict[str, dict[str, list[list[str]]]] = {
+    RGT_CURVE_ID: {"target": [["digest"]]},
+    RGT_MACRO_ID: {"host": [[]]},
+    "ed25519@3.0.0": {"target": [[]]},
+    "ed25519-dalek@3.0.0": {"target": [[]]},
+    "sha2@0.11.1": {"target": [[]]},
+    "signature@3.0.0": {"target": [[]]},
+}
+RGT_SELECTED_GRANTS: dict[str, str] = {
+    RGT_CURVE_ID: "BSD-3-Clause",
+    RGT_MACRO_ID: "MIT",
+    "ed25519@3.0.0": "MIT",
+    "ed25519-dalek@3.0.0": "BSD-3-Clause",
+    "sha2@0.11.1": "MIT",
+    "signature@3.0.0": "MIT",
+}
+RGT_PACKAGE_NAMES = frozenset(key.split("@", 1)[0] for key in (*RGT_SELECTED_ROLES, RGT_FIAT_ID))
 EP1_AES_NAME = "nevrotick-s115-aes-siv-fixture"
 EP1_AES_ID = EP1_AES_NAME + "@0.0.0"
 EP1_AES_PATH = "tools/crypto-aes-siv-witness"
@@ -326,13 +354,46 @@ def selected_records(policy: dict) -> dict[str, dict]:
     return {identity(record): record for record in policy["packages"] + policy.get("patched_packages", [])}
 
 
+def profile_feature_argument(profile: str) -> str | None:
+    """Return the only permitted Cargo feature argument for this profile."""
+    if profile == "default":
+        return None
+    if profile == EP1_PROFILE:
+        return EP1_FEATURE_ARGUMENT
+    if profile == RGT_PROFILE:
+        return RGT_FEATURE_ARGUMENT
+    if profile == COMBINED_PROFILE:
+        return EP1_FEATURE_ARGUMENT + "," + RGT_FEATURE_ARGUMENT
+    raise Incomplete("Unknown or unadmitted dependency profile.")
+
+
+def _roughtime_profile_rows(policy: dict) -> dict[str, dict]:
+    """Require separately observed Roughtime and combined profile pairs."""
+    present: set[str] = {RGT_FIELD, COMBINED_FIELD} & set(policy)
+    if not present:
+        return {}
+    if present != {RGT_FIELD, COMBINED_FIELD} or EP1_FIELD not in policy:
+        raise Incomplete("Roughtime requires both exact profile pairs and the existing KE profile.")
+    rows: dict[str, dict] = {}
+    for profile, field in ((RGT_PROFILE, RGT_FIELD), (COMBINED_PROFILE, COMBINED_FIELD)):
+        record: object = policy[field]
+        if type(record) is not dict or set(record) != {"rows"} or type(record["rows"]) is not dict:
+            raise Incomplete("Unadmitted Roughtime profile fields.")
+        rows[profile] = record["rows"]
+    return rows
+
+
 def profile_rows(policy: dict, profile: str = "default") -> dict:
-    """Select only the default row or the one code-owned Engine prototype."""
+    """Select exactly one reviewed target pair."""
     if profile == "default":
         return policy["rows"]
-    if profile != EP1_PROFILE or EP1_FIELD not in policy:
-        raise Incomplete("Unknown or unadmitted dependency profile.")
-    return policy[EP1_FIELD]["rows"]
+    if profile == EP1_PROFILE and EP1_FIELD in policy:
+        return policy[EP1_FIELD]["rows"]
+    if profile in RGT_PROFILES:
+        rows: dict[str, dict] = _roughtime_profile_rows(policy)
+        if profile in rows:
+            return rows[profile]
+    raise Incomplete("Unknown or unadmitted dependency profile.")
 
 
 def first_party_dependency(policy: dict) -> dict | None:
@@ -362,9 +423,14 @@ def profile_locals(profile: str, *, scope: str = "workspace", target: str = HOST
     if native and scope == "nevrotick-engine" and target == WINDOWS_TARGET:
         members.add(NATIVE_PACKAGE)
     result = {name + "@0.0.0": {"target": [[]]} for name in members}
-    if profile == EP1_PROFILE and (scope == "workspace" or scope == "nevrotick-engine"):
-        result["nevrotick-engine@0.0.0"] = {"target": [[EP1_FEATURE]]}
-        result[EP1_AES_ID] = {"target": [[]]}
+    if scope in ("workspace", "nevrotick-engine"):
+        engine_features: list[str] = []
+        if profile in (EP1_PROFILE, COMBINED_PROFILE):
+            engine_features.append(EP1_FEATURE)
+            result[EP1_AES_ID] = {"target": [[]]}
+        if profile in RGT_PROFILES:
+            engine_features.append(RGT_FEATURE)
+        result["nevrotick-engine@0.0.0"] = {"target": [engine_features]}
     return result
 
 
@@ -402,11 +468,29 @@ def slint_core_debugger_bypass(bypass: dict) -> bool:
         SLINT_CORE_ID, SLINT_CORE_DEBUGGER_FILE, SLINT_CORE_DEBUGGER_SHA256)
 
 
+def _roughtime_package_ids(identities: Iterable[str]) -> set[str]:
+    """Include sibling versions when checking for unreviewed provider roles."""
+    return {key for key in identities if key.split("@", 1)[0] in RGT_PACKAGE_NAMES}
+
+
+def _roughtime_context(profile: str, features: dict) -> None:
+    """Require the exact verification-only roles and shared feature contexts."""
+    digest_features: list[str] = ["block-api", "default"]
+    if profile == COMBINED_PROFILE:
+        digest_features.extend(["mac", "zeroize"])
+    if (_roughtime_package_ids(features) != set(RGT_SELECTED_ROLES)
+            or any(features[key] != roles for key, roles in RGT_SELECTED_ROLES.items())
+            or features.get("digest@0.11.3") != {"target": [digest_features]}
+            or features.get("subtle@2.6.1") != {"target": [["const-generics"]]}
+            or features.get("rustc_version@0.4.1") != {"host": [[]]}):
+        raise Incomplete("Roughtime requires its exact verification-only target and host roles.")
+
+
 def validate_policy_shape(policy: dict) -> None:
     """Check closed bounded schema and role consistency; this grants no admission."""
     required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256", "packages", "cooldown_admission",
                 "metadata_only_packages", "rows", "first_party_build_scripts"}
-    optional = {"patched_packages", "archive_file_bypasses", EP1_FIELD}
+    optional = {"patched_packages", "archive_file_bypasses", EP1_FIELD, RGT_FIELD, COMBINED_FIELD}
     if (type(policy) is not dict or not required <= set(policy) or set(policy) - required - optional
             or type(policy["schema_version"]) is not int
             or policy["schema_version"] != 3 or type(policy["scope"]) is not str
@@ -425,6 +509,7 @@ def validate_policy_shape(policy: dict) -> None:
             or not _hash(policy["first_party_build_scripts"][UI_BUILD])):
         raise Incomplete("Manifest or first-party build-script identity differs from the profile.")
     dependency = first_party_dependency(policy)
+    rgt_rows: dict[str, dict] = _roughtime_profile_rows(policy)
     names = patch_names(policy)
     if (bool(dependency) != all(name in names for name in EP1_PATCH_NAMES)
             or any(name in names for name in EP1_PATCH_NAMES) != bool(dependency)):
@@ -470,6 +555,16 @@ def validate_policy_shape(policy: dict) -> None:
             raise Incomplete("Dependency records must use canonical exact-identity order.")
     if len(selected) + len(inert) > MAX_PACKAGES:
         raise Incomplete("Combined dependency inventory exceeds its bound.")
+    if rgt_rows:
+        if (_roughtime_package_ids(selected) != set(RGT_SELECTED_ROLES)
+                or _roughtime_package_ids(inert) != {RGT_FIAT_ID}):
+            raise Incomplete("Roughtime requires the six reviewed execution grants and lock-only Fiat Crypto.")
+        for key, grant in RGT_SELECTED_GRANTS.items():
+            record: dict = selected[key]
+            if (record["selected_license"] != grant or record["links"] is not None
+                    or record["build_script"] != (key == RGT_CURVE_ID)
+                    or record["proc_macro"] != (key == RGT_MACRO_ID)):
+                raise Incomplete("A Roughtime execution role or reviewed licence changed.")
     patches = policy.get("patched_packages", [])
     names = patch_names(policy)
     patched_ids = set()
@@ -508,6 +603,7 @@ def validate_policy_shape(policy: dict) -> None:
     row_sets = [("default", policy["rows"])]
     if dependency:
         row_sets.append((EP1_PROFILE, policy[EP1_FIELD]["rows"]))
+    row_sets.extend(rgt_rows.items())
     if any(type(rows) is not dict or set(rows) != set(TARGETS) for _, rows in row_sets):
         raise Incomplete("Missing or unadmitted target/host dependency row.")
     reached = set()
@@ -549,10 +645,11 @@ def validate_policy_shape(policy: dict) -> None:
         scopes = row["package_scopes"]
         prototype_sources = EP1_PATCH_IDS | {"rustls@0.23.46", "rustls-pki-types@1.15.1", "zeroize@1.9.1",
             "aes-siv@0.8.0", "aes@0.9.3", "cmac@0.8.0"}
-        if profile == "default" and any(key.split("@", 1)[0] in {item.split("@", 1)[0] for item in prototype_sources}
-                                            for key in features):
-            raise Incomplete("Prototype dependencies leaked into the default selected graph.")
-        if profile == EP1_PROFILE:
+        ke_active: bool = profile in (EP1_PROFILE, COMBINED_PROFILE)
+        if not ke_active and any(key.split("@", 1)[0] in {item.split("@", 1)[0] for item in prototype_sources}
+                                for key in features):
+            raise Incomplete("Prototype dependencies leaked into a graph without the KE feature.")
+        if ke_active:
             required = {"rustls-pki-types@1.15.1", "zeroize@1.9.1", "aes-siv@0.8.0", "aes@0.9.3", "cmac@0.8.0"}
             if target == WINDOWS_TARGET:
                 required |= EP1_PATCH_IDS | {"rustls@0.23.46"}
@@ -564,6 +661,14 @@ def validate_policy_shape(policy: dict) -> None:
                 raise Incomplete("The prototype providers require empty-feature normal target roles.")
             if target == WINDOWS_TARGET and features["rustls@0.23.46"] != {"target": [["std"]]}:
                 raise Incomplete("The prototype TLS feature must remain std-only.")
+        if profile in RGT_PROFILES:
+            _roughtime_context(profile, features)
+            if (_roughtime_package_ids(metadata) != set(RGT_SELECTED_ROLES)
+                    or any(metadata[key] != next(iter(roles.values()))[0]
+                           for key, roles in RGT_SELECTED_ROLES.items())):
+                raise Incomplete("Roughtime metadata includes an unreviewed provider or feature.")
+        elif rgt_rows and _roughtime_package_ids(set(features) | set(metadata)):
+            raise Incomplete("Roughtime dependencies leaked into a graph without the Roughtime feature.")
         if PATCH_NAME in names and features.get(PATCH_ID) != {"host": [[]]}:
             raise Incomplete("The spin_on patch may only enter the product's host-tool graph.")
         for patch_name, patch_id in WINDOWS_PATCHES:
@@ -611,10 +716,17 @@ def validate_policy_shape(policy: dict) -> None:
                 raise Incomplete("Slint dependencies must remain isolated from pure/engine package selections.")
             elif SLINT_CORE_NAME in names and SLINT_CORE_TIME_ID in scope["features"]:
                 raise Incomplete("The local calendar dependency cannot leak into another product package scope.")
-            elif (patched_ids & set(scope["features"])) - (EP1_PATCH_IDS if profile == EP1_PROFILE and name == "nevrotick-engine" else set()):
+            elif (patched_ids & set(scope["features"])) - (EP1_PATCH_IDS if ke_active and name == "nevrotick-engine" else set()):
                 raise Incomplete("Path patches belong only to their exact GUI or prototype Engine roles.")
-            if profile == EP1_PROFILE and name != "nevrotick-engine" and set(scope["features"]) & prototype_sources:
+            if ke_active and name != "nevrotick-engine" and set(scope["features"]) & prototype_sources:
                 raise Incomplete("Prototype crypto cannot leak into unrelated package scopes.")
+            if profile in RGT_PROFILES:
+                if name == "nevrotick-engine":
+                    _roughtime_context(profile, scope["features"])
+                else:
+                    base_rows: dict = policy[EP1_FIELD]["rows"] if ke_active else policy["rows"]
+                    if scope != base_rows[target]["package_scopes"][name]:
+                        raise Incomplete("Roughtime changed an unrelated package scope.")
         reached.update(features)
     if reached != set(selected):
         raise Incomplete("Selected package inventory contains an unreachable execution grant.")

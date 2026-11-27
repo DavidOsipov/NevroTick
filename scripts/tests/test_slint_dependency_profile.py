@@ -962,6 +962,161 @@ class SlintProfileControls(unittest.TestCase):
                     self.assertIn("nevrotick-ui", observed[-1][0])
 
 
+def roughtime_policy_control() -> dict:
+    """Extend the existing inert KE fixture with independently listed roles."""
+    spec = importlib.util.spec_from_file_location(
+        "roughtime_base_fixture", Path(__file__).with_name("test_engine_ke_dependency_profile.py"))
+    assert spec is not None and spec.loader is not None
+    base = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(base)
+    policy: dict = base.prototype_policy()
+    records: tuple[tuple[str, str, str, str, list[str], bool, bool], ...] = (
+        ("curve25519-dalek", "5.0.0", "BSD-3-Clause", "target", ["digest"], True, False),
+        ("curve25519-dalek-derive", "0.1.1", "MIT", "host", [], False, True),
+        ("ed25519", "3.0.0", "MIT", "target", [], False, False),
+        ("ed25519-dalek", "3.0.0", "BSD-3-Clause", "target", [], False, False),
+        ("sha2", "0.11.1", "MIT", "target", [], False, False),
+        ("signature", "3.0.0", "MIT", "target", [], False, False),
+        ("digest", "0.11.3", "MIT", "target", ["block-api", "default"], False, False),
+        ("subtle", "2.6.1", "MIT", "target", ["const-generics"], False, False),
+        ("rustc_version", "0.4.1", "MIT", "host", [], False, False),
+    )
+    for name, version, grant, role, features, build, macro in records:
+        policy["packages"].append({"name": name, "version": version, "license": grant,
+            "selected_license": grant, "checksum": "4" * 64, "files_sha256": "5" * 64,
+            "links": None, "upstream_revision": None, "build_script": build, "proc_macro": macro})
+    policy["packages"].sort(key=PROFILE.identity)
+    policy["metadata_only_packages"].insert(0, {"name": "fiat-crypto", "version": "0.3.0",
+        "license": "MIT", "checksum": "6" * 64, "files_sha256": "7" * 64, "role": "metadata-only"})
+    for field, ke, base_rows in (
+        ("engine_roughtime_verification", False, policy["rows"]),
+        ("engine_ke_roughtime_verification", True, policy["engine_ke_association"]["rows"]),
+    ):
+        rows: dict = copy.deepcopy(base_rows)
+        policy[field] = {"rows": rows}
+        for row in rows.values():
+            engine: dict = row["package_scopes"]["nevrotick-engine"]
+            for local_features in (row["local_features"], engine["local_features"]):
+                local_features["nevrotick-engine@0.0.0"]["target"][0].append("roughtime-verification")
+            for name, version, grant, role, features, build, macro in records:
+                key: str = name + "@" + version
+                active: list[str] = [*features, "mac", "zeroize"] if ke and name == "digest" else features
+                row["features"][key] = {role: [active]}
+                engine["features"][key] = {role: [active]}
+                row["metadata_features"][key] = active
+                if build:
+                    row["allowed_build_scripts"] = sorted([*row["allowed_build_scripts"], key])
+                if macro:
+                    row["allowed_proc_macros"] = sorted([*row["allowed_proc_macros"], key])
+    return policy
+
+
+class RoughtimeProfileControls(unittest.TestCase):
+    def test_closed_feature_names_and_separately_observed_rows(self) -> None:
+        policy: dict = roughtime_policy_control()
+        PROFILE.validate_policy_shape(policy)
+        for profile, field, features, expected in (
+            ("engine-roughtime-verification", "engine_roughtime_verification",
+                ["roughtime-verification"], "nevrotick-engine/roughtime-verification"),
+            ("engine-ke-roughtime-verification", "engine_ke_roughtime_verification",
+                ["ke-association-prototype", "roughtime-verification"],
+                "nevrotick-engine/ke-association-prototype,nevrotick-engine/roughtime-verification"),
+        ):
+            with self.subTest(profile=profile):
+                rows: dict = PROFILE.profile_rows(policy, profile)
+                self.assertIs(rows, policy[field]["rows"])
+                self.assertEqual(PROFILE.profile_feature_argument(profile), expected)
+                for target in (HOST, WINDOWS):
+                    self.assertEqual(rows[target]["local_features"]["nevrotick-engine@0.0.0"],
+                                     {"target": [features]})
+                with self.assertRaises(PROFILE.Incomplete):
+                    PROFILE.profile_rows(fixture_policy(), profile)
+        with self.assertRaises(PROFILE.Incomplete):
+            PROFILE.profile_feature_argument("--all-features")
+
+    def test_policy_refuses_leakage_unification_drift_and_execution_role_promotion(self) -> None:
+        healthy: dict = roughtime_policy_control()
+        for change, diagnostic in (
+            ("missing-pair", "both exact profile pairs"),
+            ("stray-field", "Unadmitted Roughtime profile fields"),
+            ("off-metadata-leak", "leaked into a graph without the Roughtime feature"),
+            ("fiat-promotion", "six reviewed execution grants and lock-only Fiat Crypto"),
+            ("fiat-metadata", "metadata includes an unreviewed provider"),
+            ("wide-provider", "exact verification-only target and host roles"),
+            ("combined-as-roughtime", "exact verification-only target and host roles"),
+            ("combined-missing-ke-root", "prototype lacks its exact selected crypto roots"),
+            ("empty-subtle", "exact verification-only target and host roles"),
+            ("missing-engine-macro", "exact verification-only target and host roles"),
+            ("foreign-macro-grant", "execution role or reviewed licence changed"),
+            ("unrelated-scope", "changed an unrelated package scope"),
+        ):
+            value: dict = copy.deepcopy(healthy)
+            row: dict = value["engine_roughtime_verification"]["rows"][HOST]
+            combined: dict = value["engine_ke_roughtime_verification"]["rows"][WINDOWS]
+            if change == "missing-pair":
+                del value["engine_ke_roughtime_verification"]
+            elif change == "stray-field":
+                value["engine_ke_roughtime_verification"]["features"] = ["foreign"]
+            elif change == "off-metadata-leak":
+                value["rows"][HOST]["metadata_features"]["ed25519-dalek@3.0.0"] = []
+            elif change == "fiat-promotion":
+                fiat: dict = value["metadata_only_packages"].pop(0)
+                del fiat["role"]
+                value["packages"].append({**fiat, "selected_license": "MIT", "build_script": False,
+                    "proc_macro": False, "links": None, "upstream_revision": None})
+                value["packages"].sort(key=PROFILE.identity)
+            elif change == "fiat-metadata":
+                row["metadata_features"]["fiat-crypto@0.3.0"] = []
+            elif change == "wide-provider":
+                row["features"]["ed25519-dalek@3.0.0"] = {"target": [["legacy_compatibility"]]}
+                row["metadata_features"]["ed25519-dalek@3.0.0"] = ["legacy_compatibility"]
+            elif change == "combined-as-roughtime":
+                combined["features"]["digest@0.11.3"] = {"target": [["block-api", "default"]]}
+            elif change == "combined-missing-ke-root":
+                del combined["features"]["rustls-pki-types@1.15.1"]
+            elif change == "empty-subtle":
+                combined["features"]["subtle@2.6.1"] = {"target": [[]]}
+            elif change == "missing-engine-macro":
+                del row["package_scopes"]["nevrotick-engine"]["features"]["curve25519-dalek-derive@0.1.1"]
+            elif change == "foreign-macro-grant":
+                macro: dict = next(record for record in value["packages"]
+                                   if record["name"] == "curve25519-dalek-derive")
+                macro["proc_macro"] = False
+            elif change == "unrelated-scope":
+                row["package_scopes"]["time-domain"]["features"]["sha2@0.11.1"] = {"target": [[]]}
+            with self.subTest(change=change), self.assertRaisesRegex(PROFILE.Incomplete, diagnostic):
+                PROFILE.validate_policy_shape(value)
+
+    def test_selected_tree_checks_provider_features_and_macro_role(self) -> None:
+        policy: dict = roughtime_policy_control()
+        healthy: str = (
+            "nevrotick-engine v0.0.0 (/work/fixture/crates/nevrotick-engine)|roughtime-verification\n"
+            "|-- ntp-wire v0.0.0 (/work/fixture/crates/ntp-wire)|\n"
+            "|-- time-domain v0.0.0 (/work/fixture/crates/time-domain)|\n"
+            "|-- ed25519-dalek v3.0.0|\n"
+            "|   |-- curve25519-dalek v5.0.0|digest\n"
+            "|   |   |-- curve25519-dalek-derive v0.1.1 (proc-macro)|\n"
+            "|   |   |-- digest v0.11.3|block-api,default\n"
+            "|   |   `-- subtle v2.6.1|const-generics\n"
+            "|   |   [build-dependencies]\n"
+            "|   |   `-- rustc_version v0.4.1|\n"
+            "|   |-- ed25519 v3.0.0|\n"
+            "|   |   `-- signature v3.0.0|\n"
+            "|   `-- sha2 v0.11.1|\n"
+            "`-- sha2 v0.11.1| (*)\n"
+        )
+        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(policy)), \
+                patch.object(PROFILE.COOLDOWN, "validate_policy_admission"):
+            profile: str = "engine-roughtime-verification"
+            row: dict = PROFILE.validate_tree(HOST, healthy, policy, scope="nevrotick-engine", profile=profile)
+            self.assertIn("curve25519-dalek-derive@0.1.1", row["selected_packages"])
+            for changed in (healthy.replace(" (proc-macro)", ""),
+                            healthy.replace("ed25519-dalek v3.0.0|", "ed25519-dalek v3.0.0|legacy_compatibility"),
+                            healthy.replace("roughtime-verification", "")):
+                with self.assertRaises(PROFILE.Incomplete):
+                    PROFILE.validate_tree(HOST, changed, policy, scope="nevrotick-engine", profile=profile)
+
+
 class NativePlatformProfileControls(unittest.TestCase):
     def setUp(self):
         self.policy = with_native_platform(fixture_policy())

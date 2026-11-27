@@ -11,7 +11,7 @@ import tempfile
 import tomllib
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("test_wire_analysis", ROOT / "scripts/verify-wire-analysis.py")
@@ -36,6 +36,140 @@ def complete_report(value):
     value.update(caught=summaries.count("CaughtMutant"), missed=summaries.count("MissedMutant"),
                  timeout=summaries.count("Timeout"), unviable=summaries.count("Unviable"), success=0)
     return value
+
+
+class RoughtimeTests(unittest.TestCase):
+    """Exercise the narrow ordinary-tool role with literal analyzer results."""
+
+    FILE: str = "crates/ntp-wire/src/roughtime.rs"
+    SUBJECTS: dict[str, str] = {"roughtime": FILE}
+    POLICY: dict[str, object] = {
+        "schema_version": 1, "package": "ntp-wire", "critical_files": [FILE],
+        "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+        "coverage_wall_seconds": 120, "enumeration_wall_seconds": 100,
+        "maximum_mutants": 512, "jobs": 2, "coverage_test_threads": 1, "mutation_jobs": 1,
+    }
+
+    def test_roughtime_routes_coverage_and_enumeration_only(self) -> None:
+        self.assertEqual(MODULE.select_subjects("roughtime"), self.SUBJECTS)
+        self.assertNotIn("roughtime", MODULE.select_subjects("all"))
+        with (patch.object(MODULE, "read_roughtime_policy", return_value=self.POLICY) as narrow,
+              patch.object(MODULE, "read_policy") as legacy,
+              patch.object(MODULE.COMMON, "_require_private_output"),
+              patch.object(MODULE.PRODUCT, "admit_product",
+                           side_effect=MODULE.Incomplete("product admission sentinel")) as product,
+              patch.object(MODULE.ANALYSIS, "admit") as tools,
+              patch.object(MODULE.RUNTIME, "run") as runtime):
+            for lane, subject in (("contracts", "roughtime"), ("fuzz", "roughtime"),
+                                  ("all", "roughtime"), ("mutation", "roughtime"),
+                                  ("enumerate", "header"), ("enumerate", "all")):
+                with self.subTest(lane=lane, subject=subject), self.assertRaises(MODULE.Incomplete):
+                    MODULE.execute(SimpleNamespace(lane=lane, subject=subject), {})
+            narrow.assert_not_called()
+            product.assert_not_called()
+            for lane in ("coverage", "enumerate"):
+                args: SimpleNamespace = SimpleNamespace(lane=lane, subject="roughtime", output_dir=Path("/unopened"))
+                with (self.subTest(lane=lane),
+                      self.assertRaisesRegex(MODULE.Incomplete, "product admission sentinel")):
+                    MODULE.execute(args, {})
+            self.assertEqual(narrow.call_count, 2)
+            self.assertEqual(product.call_count, 2)
+            legacy.assert_not_called()
+            tools.assert_not_called()
+            runtime.assert_not_called()
+
+    def test_roughtime_policy_requires_exact_limits_and_manifest_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root: Path = Path(temporary)
+            (root / "policy").mkdir()
+            policy: Path = root / "policy/roughtime-wire-analysis.json"
+            manifest: Path = root / "policy/verification-manifest.toml"
+            owner: list[str] = [self.FILE]
+
+            def write_manifest(critical: list[str], security_packages: list[str]) -> None:
+                security: str = ", ".join(f'{{package="{package}", files={json.dumps(owner)}}}'
+                                          for package in security_packages)
+                manifest.write_text(f"critical_files = {json.dumps(critical)}\nsecurity_modules = [{security}]\n")
+
+            write_manifest(owner, ["ntp-wire"])
+            policy.write_text(json.dumps(self.POLICY))
+            self.assertEqual(MODULE.read_roughtime_policy(root), self.POLICY)
+            for change in ({"critical_files": ["crates/ntp-wire/src/header.rs"]}, {"package": "time-domain"},
+                           {"coverage_minimum_line_percent": 89}, {"mutation_minimum_viable_killed_percent": 94},
+                           {"enumeration_wall_seconds": 101}, {"mutation_jobs": True},
+                           {"coverage_guided_fuzzing": {}}):
+                with (self.subTest(change=change),
+                      self.assertRaisesRegex(MODULE.Incomplete, "scope, threshold or budget")):
+                    policy.write_text(json.dumps({**self.POLICY, **change}))
+                    MODULE.read_roughtime_policy(root)
+            policy.write_text(json.dumps(self.POLICY))
+            for critical, security in (([], ["ntp-wire"]), (owner * 2, ["ntp-wire"]), (owner, []),
+                                       (owner, ["ntp-wire", "ntp-wire"]), (owner, ["time-domain"])):
+                with (self.subTest(critical=critical, security=security),
+                      self.assertRaisesRegex(MODULE.Incomplete, "manifest")):
+                    write_manifest(critical, security)
+                    MODULE.read_roughtime_policy(root)
+
+    def test_roughtime_coverage_uses_its_tests_and_exact_file_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            work: Path = Path(temporary)
+            tools: Path = work / "tools"
+            run: Mock = Mock(return_value="test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n")
+            filename: str = "/work/source/" + self.FILE
+            exact: dict[str, object] = {"filename": filename, "summary": {"lines": {"count": 100, "covered": 90}}}
+            foreign: dict[str, object] = {**exact, "filename": "/work/source/crates/ntp-wire/src/header.rs"}
+
+            def write_coverage(files: list[dict[str, object]]) -> None:
+                (work / "coverage.json").write_text(json.dumps({"data": [{"files": files}]}))
+
+            report: dict[str, object] = {}
+            write_coverage([foreign, exact])
+            MODULE.run_roughtime_analysis(self.SUBJECTS, self.POLICY, work, tools, run, report, "coverage")
+            run.assert_called_once_with("coverage", [
+                str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", "ntp-wire", "--frozen", "--jobs", "2",
+                "--test", "roughtime", "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/", "--", "--test-threads=1",
+            ], 120)
+            self.assertEqual(report["coverage"], {"roughtime": {
+                "file": self.FILE, "executable_lines": 100, "covered_lines": 90, "line_percent": 90.0,
+                "branch_evidence": None, "tests_executed": 9, "shared_execution": "coverage",
+            }})
+            below: dict[str, object] = {**exact, "summary": {"lines": {"count": 100, "covered": 89}}}
+            for files in ([foreign], [exact, exact], [foreign, below]):
+                with self.subTest(files=files), self.assertRaises(MODULE.Incomplete):
+                    write_coverage(files)
+                    MODULE.run_roughtime_analysis(self.SUBJECTS, self.POLICY, work, tools, run, {}, "coverage")
+            run.reset_mock()
+            with self.assertRaisesRegex(MODULE.Incomplete, "exact decoder subject"):
+                MODULE.run_roughtime_analysis({"roughtime": "crates/ntp-wire/src/header.rs"},
+                                              self.POLICY, work, tools, run, {}, "coverage")
+            run.assert_not_called()
+
+    def test_roughtime_enumeration_lists_only_and_refuses_foreign_records(self) -> None:
+        work: Path = Path("/work")
+        tools: Path = work / "tools"
+        mutant: dict[str, str] = {"name": "replace decode_response result", "file": self.FILE, "package": "ntp-wire"}
+        report: dict[str, object] = {}
+        run: Mock = Mock(return_value=json.dumps([mutant]) + "\n")
+        with patch.object(MODULE.time, "monotonic", return_value=100.0):
+            MODULE.run_roughtime_analysis(self.SUBJECTS, self.POLICY, work, tools, run, report, "enumerate")
+        run.assert_called_once_with("mutation-enumeration:roughtime", [
+            str(tools / "cargo-mutants"), "mutants", "--package", "ntp-wire", "--file", self.FILE,
+            "--test-workspace", "false", "--cap-lints", "false", "--jobs", "1",
+            "--jobserver", "true", "--jobserver-tasks", "1", "--list", "--json",
+        ], 100)
+        self.assertEqual(report["mutation_inventory"], {"roughtime": {mutant["name"]: mutant}})
+        self.assertEqual(report["mutation_enumerated_total"], 1)
+        self.assertNotIn("mutation", report)
+        for foreign in ({**mutant, "file": "crates/ntp-wire/src/header.rs"}, {**mutant, "package": "time-domain"}):
+            rejected: dict = {}
+            output: str = json.dumps([foreign]) + "\n"
+            with (self.subTest(foreign=foreign), patch.object(MODULE.time, "monotonic", return_value=100.0),
+                  self.assertRaisesRegex(MODULE.Incomplete, "out-of-scope entries")):
+                MODULE.run_roughtime_analysis(self.SUBJECTS, self.POLICY, work, tools,
+                                              Mock(return_value=output), rejected, "enumerate")
+            self.assertEqual(rejected["mutation_enumeration"]["roughtime"]["raw_output"], output)
+            self.assertNotIn("mutation_inventory", rejected)
 
 
 class AccountingTests(unittest.TestCase):

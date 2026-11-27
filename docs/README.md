@@ -13,8 +13,10 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 [OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
 includes NTP/NTS and Roughtime bootstrap in V1, with no PPS/GNSS/refclock product
 input or user-owned timing-hardware prerequisite. [Development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-selects the bounded source child separately from the [blocked physical-reference
-trial](../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026).
+records the implemented receiving handoff, controlled Roughtime verification
+and the ordered round. It also routes their remaining qualification. The [physical-reference
+trial](../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026)
+remains blocked.
 Do not repeat equipment questions without a changed input. RGT-C01 now joins V1
 P2/P7; Khronos/Ananke, CHR-0 and other post-V1 work retain their separate placement.
 Physical accuracy, positive production admission and all other unmet gates remain open.

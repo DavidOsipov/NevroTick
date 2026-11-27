@@ -48,6 +48,13 @@ _PENDING = {
     "release.qualification": "W11-W10/P6",
 }
 
+# These future observations have no admitted value or alternative disposition.
+_WGT_PENDING_ONLY = frozenset({
+    "project.distribution.community.source_identity",
+    "project.distribution.community.package_identifier",
+    "project.distribution.msix.package_family_name",
+})
+
 
 class MetadataError(ValueError):
     """Bounded source admission failed; no metadata should be published."""
@@ -597,6 +604,8 @@ def _validate_fields(metadata: Metadata) -> None:
             raise MetadataError("fields: text policy refused") from error
         if field.owner != spec.owner or field.status not in {"populated", "derived", "pending", "not-applicable"}:
             raise MetadataError("fields: unapproved owner or disposition")
+        if field.key in _WGT_PENDING_ONLY and (field.status != "pending" or field.value or not field.source):
+            raise MetadataError("fields: distribution identity observation remains pending")
         _text(field.reason, "field.reason", 1024)
         if field.source:
             _text(field.source, "field.source", 1024)

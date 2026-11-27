@@ -1,108 +1,40 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Process custody of one actual blocking resolver thread.
 
-use std::{
-    sync::{
-        Arc, Mutex, MutexGuard, TryLockError,
-        atomic::{AtomicU8, Ordering},
-    },
-    task::Poll,
-    thread::{self, JoinHandle},
-    time::Duration,
-};
+use std::{task::Poll, time::Duration};
 
 use super::{AddressRoundRefreshOutcome, RefreshPlan};
-use crate::PilotError;
+use crate::{
+    PilotError,
+    native_network_job::{DispatchAdmission, NativeJob, NativeJobError},
+};
 
-/// Worker has not yet been authorized to enter the blocking adapter.
-const RESERVED: u8 = 0;
-/// Worker was authorized to enter the blocking adapter once.
-const DISPATCHED: u8 = 1;
-/// The invocation retired its reservation or stopped waiting.
-const RETIRED: u8 = 2;
-/// The process owner joined the actual worker.
-const JOINED: u8 = 3;
 /// Timer interval for checking actual completion without blocking the Engine.
 const COMPLETION_CHECK: Duration = Duration::from_millis(5);
 
 /// One outcome produced by the selected resolver operation.
 type Answer = Result<RefreshPlan, AddressRoundRefreshOutcome>;
 
-/// Actual thread custody and identity of its original invocation.
-struct Submission {
-    /// Shared only with the invocation and its one dispatch admission.
-    state: Arc<AtomicU8>,
-    /// Kept here until the process owner can join it.
-    thread: JoinHandle<Answer>,
-}
-
-/// The sole actual blocking resolver slot, including retired threads.
-static SUBMISSION: Mutex<Option<Submission>> = Mutex::new(None);
-
-/// One dispatch decision belonging to the original invocation's reservation.
-pub(super) struct DispatchAdmission {
-    /// Monotonic state of the same submission whose thread remains in custody.
-    state: Arc<AtomicU8>,
-}
-
-impl DispatchAdmission {
-    /// Only the first dispatch admitted before retirement can enter the adapter.
-    pub(super) fn admit(&self) -> bool {
-        self.state
-            .compare_exchange(RESERVED, DISPATCHED, Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
-    }
-
-    /// Report whether this worker's invocation has requested retirement.
-    #[cfg(any(windows, test))]
-    pub(super) fn retirement_requested(&self) -> bool {
-        self.state.load(Ordering::Acquire) == RETIRED
-    }
-}
-
-/// Invocation-side ownership of one actual blocking resolver thread.
+/// Resolver access to the shared process-owned native network lane.
 pub(super) struct NativeResolverJob {
-    /// Identifies the submission and prevents dispatch after retirement.
-    state: Arc<AtomicU8>,
+    /// Retains the original typed answer until actual join or retirement.
+    job: NativeJob<Answer>,
 }
 
 impl NativeResolverJob {
-    /// Reserve the process slot and hand it the actual thread.
+    /// Reserve the shared process slot and hand it the actual resolver thread.
     ///
     /// # Errors
-    /// Report occupied custody or a failure to start the owned thread.
+    /// Report occupied custody or a failure to start the owned resolver thread.
     pub(super) fn start(
         operation: impl FnOnce(DispatchAdmission) -> Answer + Send + 'static,
     ) -> Result<Self, PilotError> {
-        let mut slot: MutexGuard<'_, Option<Submission>> = match SUBMISSION.try_lock() {
-            Ok(slot) => slot,
-            Err(TryLockError::WouldBlock) => return Err(PilotError::ResolutionBusy),
-            Err(TryLockError::Poisoned(_)) => return Err(PilotError::ResolverTask),
-        };
-        let discarded: Option<thread::Result<Answer>> = slot
-            .as_ref()
-            .is_some_and(|owner| owner.state.load(Ordering::Acquire) == RETIRED)
-            .then(|| join_finished(&mut slot))
-            .flatten();
-        if slot.is_some() {
-            return Err(PilotError::ResolutionBusy);
-        }
-        let state: Arc<AtomicU8> = Arc::new(AtomicU8::new(RESERVED));
-        let admission: DispatchAdmission = DispatchAdmission {
-            state: Arc::clone(&state),
-        };
-        let thread: JoinHandle<Answer> = thread::Builder::new()
-            .name(String::from("nevrotick-dns"))
-            .spawn(move || operation(admission))
-            .map_err(|_| PilotError::ResolverTask)?;
-        *slot = Some(Submission {
-            state: Arc::clone(&state),
-            thread,
-        });
-        let job: Self = Self { state };
-        drop(slot);
-        drop(discarded);
-        Ok(job)
+        NativeJob::start("nevrotick-dns", operation)
+            .map(|job| Self { job })
+            .map_err(|error| match error {
+                NativeJobError::Busy => PilotError::ResolutionBusy,
+                NativeJobError::Failed => PilotError::ResolverTask,
+            })
     }
 
     /// Await and consume the result from this actual thread. Dropping the
@@ -112,8 +44,11 @@ impl NativeResolverJob {
     /// Return the resolver disposition, or report failed or absent custody.
     pub(super) async fn wait(&mut self) -> Answer {
         loop {
-            if let Poll::Ready(outcome) = self.try_collect() {
-                return outcome;
+            if let Poll::Ready(outcome) = self.job.try_join() {
+                return match outcome {
+                    Ok(answer) => answer,
+                    Err(_) => Err(resolver_task()),
+                };
             }
             tokio::time::sleep(COMPLETION_CHECK).await;
         }
@@ -121,78 +56,8 @@ impl NativeResolverJob {
 
     /// Retire this invocation and report whether actual thread custody remains.
     pub(super) fn retire(self) -> bool {
-        self.mark_retired();
-        if let Ok(mut slot) = SUBMISSION.try_lock()
-            && self.owns(slot.as_ref())
-        {
-            let discarded: Option<thread::Result<Answer>> = join_finished(&mut slot);
-            drop(slot);
-            drop(discarded);
-        }
-        self.state.load(Ordering::Acquire) != JOINED
+        self.job.retire()
     }
-
-    /// Attempt to transfer only this invocation's actually joined result.
-    fn try_collect(&self) -> Poll<Answer> {
-        let mut slot: MutexGuard<'_, Option<Submission>> = match SUBMISSION.try_lock() {
-            Ok(slot) => slot,
-            Err(TryLockError::WouldBlock) => return Poll::Pending,
-            Err(TryLockError::Poisoned(_)) => return Poll::Ready(Err(resolver_task())),
-        };
-        if !self.owns(slot.as_ref()) {
-            return Poll::Ready(Err(resolver_task()));
-        }
-        let joined: Option<thread::Result<Answer>> = join_finished(&mut slot);
-        drop(slot);
-        match joined {
-            Some(Ok(outcome)) => Poll::Ready(outcome),
-            Some(Err(_)) => Poll::Ready(Err(resolver_task())),
-            None => Poll::Pending,
-        }
-    }
-
-    /// Match actual invocation identity even if a later thread occupies the slot.
-    fn owns(&self, slot: Option<&Submission>) -> bool {
-        slot.is_some_and(|owner| Arc::ptr_eq(&self.state, &owner.state))
-    }
-
-    /// Close dispatch admission and preserve the latched join state, if any.
-    fn mark_retired(&self) {
-        let _previous: u8 = self.state.fetch_max(RETIRED, Ordering::AcqRel);
-    }
-}
-
-impl Drop for NativeResolverJob {
-    fn drop(&mut self) {
-        self.mark_retired();
-    }
-}
-
-/// Remove custody only after confirmed exit and join. The slot remains locked
-/// through the join and the joined result is transferred once.
-fn join_finished(slot: &mut Option<Submission>) -> Option<thread::Result<Answer>> {
-    if !slot
-        .as_ref()
-        .is_some_and(|owner| thread_exited(&owner.thread))
-    {
-        return None;
-    }
-    let owner: Submission = slot.take()?;
-    let joined: thread::Result<Answer> = owner.thread.join();
-    owner.state.store(JOINED, Ordering::Release);
-    Some(joined)
-}
-
-/// Require Windows thread exit, including teardown after the function returns.
-#[cfg(windows)]
-fn thread_exited(thread: &JoinHandle<Answer>) -> bool {
-    windows_platform_native::dns_worker_thread_exited(thread)
-}
-
-/// Observe the idle test worker using the portable Rust completion indication.
-#[cfg(not(windows))]
-fn thread_exited(thread: &JoinHandle<Answer>) -> bool {
-    thread.is_finished()
 }
 
 /// Report a custody failure without exposing the worker's private panic payload.
@@ -204,14 +69,15 @@ fn resolver_task() -> AddressRoundRefreshOutcome {
 mod tests {
     use std::{
         error::Error,
-        net::SocketAddr,
+        io,
+        net::{SocketAddr, TcpStream},
         sync::mpsc::{self, Receiver, Sender},
     };
 
     use super::super::{AddressRoundConfig, series_packets};
     use super::{
-        AddressRoundRefreshOutcome, COMPLETION_CHECK, Duration, NativeResolverJob, PilotError,
-        RefreshPlan, resolver_task,
+        AddressRoundRefreshOutcome, COMPLETION_CHECK, Duration, NativeJob, NativeJobError,
+        NativeResolverJob, PilotError, RefreshPlan, resolver_task,
     };
 
     /// Finite watchdog for both coordinator-side and worker-side waits.
@@ -272,6 +138,10 @@ mod tests {
     #[test]
     fn retirement_closes_dispatch_and_preserves_actual_thread_custody() -> Result<(), Box<dyn Error>>
     {
+        #[cfg(feature = "roughtime-verification")]
+        let _fixture: std::sync::MutexGuard<'_, ()> = crate::native_network_job::CUSTODY_FIXTURE
+            .lock()
+            .map_err(|_| "native worker fixture unavailable")?;
         let old_peer: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 41001));
         let current_peer: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 41002));
         let old_answer: RefreshPlan = answer(old_peer)?;
@@ -288,6 +158,12 @@ mod tests {
         })?;
         started.recv_timeout(WATCHDOG)?;
         assert!(original.retire());
+        assert!(matches!(
+            NativeJob::<io::Result<TcpStream>>::start("nevrotick-tcp", |_| {
+                Err(io::Error::other("unexpected TCP worker"))
+            }),
+            Err(NativeJobError::Busy)
+        ));
         assert!(matches!(
             NativeResolverJob::start(|_| Err(resolver_task())),
             Err(PilotError::ResolutionBusy)

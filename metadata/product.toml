@@ -102,6 +102,11 @@ next_action = "Complete the existing native and package qualification gates."
 # Derived records have an empty authored value; the loader resolves existing facts.
 [fields]
 
+# Selected Community route; actual source and package observations are not yet qualified.
+"project.distribution.community.source_identity" = { value = "", status = "pending", source = "docs/plans/winget-distribution.md#4-metadata-and-artifact-contract", reason = "The actual Community source identity remains unqualified." }
+"project.distribution.community.package_identifier" = { value = "", status = "pending", source = "docs/plans/winget-distribution.md#4-metadata-and-artifact-contract", reason = "No Community PackageIdentifier is established." }
+"project.distribution.msix.package_family_name" = { value = "", status = "pending", source = "docs/plans/winget-distribution.md#4-metadata-and-artifact-contract", reason = "The package family name has not been observed on an admitted package." }
+
 # project.author
 "project.author.name" = { value = "", status = "derived", source = "product.publisher", reason = "Derived from the existing admitted authority." }
 "project.author.role" = { value = "AI-Driven B2B Lead Product Manager", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }

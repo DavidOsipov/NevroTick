@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "package": "ntp-wire",
+  "critical_files": ["crates/ntp-wire/src/roughtime.rs"],
+  "coverage_minimum_line_percent": 90,
+  "mutation_minimum_viable_killed_percent": 95,
+  "coverage_wall_seconds": 120,
+  "enumeration_wall_seconds": 100,
+  "maximum_mutants": 512,
+  "jobs": 2,
+  "coverage_test_threads": 1,
+  "mutation_jobs": 1
+}

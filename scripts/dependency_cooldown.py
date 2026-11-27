@@ -42,6 +42,18 @@ APPROVED_BASELINES: dict[str, dict] = {
         "registry_sha256": "274b0f0bf48cd012de23f8f9caae9e7ac1e1cd3a801474fefeec26f8f10ebe98",
         "exception_decisions": [],
     },
+    # Carry the reviewed URL fix into the next ordinary resolution.
+    "3e0b349b52653f49e2b956ba852141f4e9b38979bc2b88e475dfc71dadd2a311": {
+        "lockfile_sha256": "d0cbe60cb93954940854e14cbf0b27f6d4edececcb06b79dd09377fbd5378515",
+        "registry_sha256": "0cc517dee573f19743dcfcfdfcd3e7f133e42eca50235bbffd2f8280bab801d0",
+        "exception_decisions": ["OD-04-URL-20261124"],
+    },
+    # Preserve the ordinary Roughtime graph and predecessor exception history.
+    "c06cf3e63aabd26793e8fba2ea5067e89432aff24aed6ecd1bc6c6878ae94398": {
+        "lockfile_sha256": "7c8b1bd0d043f7866f6c944dcdec97a187dcdb23c1b90a0dc055ccf672a9abb6",
+        "registry_sha256": "f1b78dac9820da2b8cbb087b81cd73d9993c510159b119b0fd0a5df3b8e88f69",
+        "exception_decisions": ["OD-04-URL-20261124"],
+    },
     # Reproduce the unchanged lock with the standalone crypto lint policy.
     "7e538b900c20f5bd16077e04d044ff901a5f7ac8ffad8633dd514a4ee587281a": {
         "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",

@@ -1482,6 +1482,14 @@ source-bound JSON compiler cause. The loader also pins its actual
 the [inert formatter child](tasks/engine-transport-pilot.md#next-independent-source-child-complete-inert-nts-request-formatting)
 owns its current results and the changed header/datagram helpers' qualification.
 
+For the [Roughtime decoder](tasks/time-assurance-integration.md#33-ta-w03-decoder-coverage-and-inventory-admission),
+select `--subject roughtime` with `--lane coverage` or `--lane enumerate` and
+an explicit private output path. Its [one-file policy](policy/roughtime-wire-analysis.json)
+uses the stable tool payload. Coverage runs the dedicated integration binary
+and checks the decoder's exact file. Enumeration lists its descriptors for
+review and runs no baseline or mutant. The legacy `all` selector retains its
+seven owners, and Roughtime mutation campaign admission remains open work.
+
 `--lane fuzz` and `--lane all` now fail closed for every subject: the separately
 admitted fuzz target covers the original six owners, without the new formatter.
 Adding the analysis subject supplies no fuzz admission or permission to lift the

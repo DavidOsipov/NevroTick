@@ -59,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 52;
+const BROKER_CASES: usize = 53;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -2921,7 +2921,7 @@ mod distinct_peer {
     /// The only exact libtest function the supervisor spawns.
     const CHILD_TEST: &str =
         "host::private_clock_status::tests::distinct_peer::run_broker_first_exchange_child";
-    /// Private process selector for the two fixed inert child roles.
+    /// Private process selector for the fixed inert child modes.
     const CHILD_ROLE: &str = "NEVROTICK_BROKER_LAB_CHILD";
     /// Supervisor PID used to locate and check the fixed local pipe.
     const PARENT_PID: &str = "NEVROTICK_BROKER_LAB_PARENT";
@@ -2932,7 +2932,9 @@ mod distinct_peer {
     /// Unique pipe slot for the deterministic submission control.
     const GUARD_CASE: u32 = 40;
     /// Unique pipe and clock slot for the real child with a wrong image expectation.
-    const WRONG_IMAGE_CASE: u32 = 51;
+    const WRONG_IMAGE_CASE: usize = 51;
+    /// Unique pipe and clock slot for synthetic package presence on a real child.
+    const PACKAGE_PRESENT_CASE: usize = 52;
     /// Allowance before the idle child acknowledges its private hold.
     const SETUP_WAIT: Duration = Duration::from_secs(5);
     /// Limit on the isolated child exchange or private hold.
@@ -3283,15 +3285,12 @@ mod distinct_peer {
     /// Send the fixed request and observe the selected reply history on the original client.
     /// # Errors
     /// Preserve open, I/O, byte-oracle or Stop-disconnect failure.
-    fn exchange_as_child(parent: &PeerProcess, expects_reply: bool) -> Check<()> {
+    fn exchange_as_child(case: u32, expects_reply: bool) -> Check<()> {
+        let pid: NonZeroU32 = env::var(PARENT_PID)?.parse()?;
+        let parent: PeerProcess = PeerProcess::open(pid)?;
         let deadline: Instant = Instant::now() + CHILD_WAIT;
         let supervisor: ObservedProcessPrimaryToken<'_> =
-            ObservedProcessPrimaryToken::observe(parent).map_err(LabPipeError::SupervisorToken)?;
-        let case: u32 = if expects_reply {
-            CHILD_CASE
-        } else {
-            WRONG_IMAGE_CASE
-        };
+            ObservedProcessPrimaryToken::observe(&parent).map_err(LabPipeError::SupervisorToken)?;
         let (client, mut writer): (LabPipeReader, LabSupervisedFirstExchangeWriter<'_>) = loop {
             match open_supervised_first_exchange_client(case, &supervisor, deadline) {
                 Ok(pair) => break pair,
@@ -3355,10 +3354,10 @@ mod distinct_peer {
         };
         match role.to_str() {
             Some("hold") => hold_child(),
-            Some(exchange @ ("exchange" | "exchange-refused")) => {
-                let pid: NonZeroU32 = env::var(PARENT_PID)?.parse()?;
-                let parent: PeerProcess = PeerProcess::open(pid)?;
-                exchange_as_child(&parent, exchange == "exchange")
+            Some("exchange") => exchange_as_child(CHILD_CASE, true),
+            Some("exchange-refused") => exchange_as_child(u32::try_from(WRONG_IMAGE_CASE)?, false),
+            Some("exchange-package-refused") => {
+                exchange_as_child(u32::try_from(PACKAGE_PRESENT_CASE)?, false)
             }
             _ => Err("fixture child role was unsupported".into()),
         }
@@ -3416,35 +3415,63 @@ mod distinct_peer {
     #[test]
     #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
     fn native_first_exchange_refuses_wrong_fixture_image() -> Check<()> {
-        let mut child: FixtureChild = FixtureChild::spawn("exchange-refused")?;
+        let child: FixtureChild = FixtureChild::spawn("exchange-refused")?;
         let mut peer: RetainedFixtureClient = child.retained_client()?;
         peer.change_expected_image_for_test();
+        check_component_refusal::<WRONG_IMAGE_CASE>(child, peer, |cause| {
+            matches!(cause, FixtureClientError::WrongImage)
+        })
+    }
+
+    /// Refuse a real retained child's complete request when package presence is injected.
+    /// # Errors
+    /// Preserve setup, attribution, reply-absence or observed retirement failure.
+    #[test]
+    #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
+    fn native_first_exchange_refuses_simulated_package_presence() -> Check<()> {
+        let child: FixtureChild = FixtureChild::spawn("exchange-package-refused")?;
+        let mut peer: RetainedFixtureClient = child.retained_client()?;
+        peer.simulate_package_presence_for_test();
+        check_component_refusal::<PACKAGE_PRESENT_CASE>(child, peer, |cause| {
+            matches!(cause, FixtureClientError::UnexpectedPackage)
+        })
+    }
+
+    /// Require the selected component refusal before status dispatch and retire both original peers.
+    /// # Errors
+    /// Preserve native request, refusal, no-reply or Stop settlement failure.
+    fn check_component_refusal<const N: usize>(
+        mut child: FixtureChild,
+        peer: RetainedFixtureClient,
+        is_expected_cause: fn(&FixtureClientError) -> bool,
+    ) -> Check<()> {
+        let case: u32 = u32::try_from(N)?;
         let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-            prepare_first_exchange_fixture(WRONG_IMAGE_CASE, peer, None)
+            prepare_first_exchange_fixture(case, peer, None)
         };
-        let observed: Check<()> = with_broker_worker_reads::<51, 1, _, _>(
+        let observed: Check<()> = with_broker_worker_reads::<N, 1, _, _>(
             BrokerEndpointWorker::new(acquire),
             |owner, clock, stop| {
                 let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
                 let control: BrokerControlWake = BrokerControlWake::new()?;
                 let mut waiter: BrokerWait = BrokerWait::new();
-                let getters: u32 = GETTERS[51].load(SeqCst);
+                let getters: u32 = GETTERS[N].load(SeqCst);
                 wait_for_first_reply_write(owner, clock, stop, &control, &mut waiter, cutoff)?;
                 child.wait_ready(cutoff)?;
                 if !matches!(
                     &owner.native_status.outcome,
                     Some(NativeStatusOutcome::Identity(
                         IdentifiedReadError::Component {
-                            cause: FixtureClientError::WrongImage,
+                            cause,
                             received: 18,
                         }
-                    ))
+                    )) if is_expected_cause(cause)
                 ) || owner.private_status_issue != PrivateStatusIssue::Unissued
                     || owner.native_status.reply_written
                     || owner.connection_cutoff != Some(cutoff)
                     || owner.outstanding_work() != 1
                     || owner.worker.completion_wake().is_some()
-                    || GETTERS[51].load(SeqCst) != getters
+                    || GETTERS[N].load(SeqCst) != getters
                 {
                     return Err(
                         "the live selected child's component refusal reached dispatch".into(),

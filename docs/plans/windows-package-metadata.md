@@ -814,7 +814,7 @@ Check independently parsed JSON/XML/CSV and the supported Rust/RC source literal
 against those obligations before accepting a generated tree. Keep exact byte and
 custody checks too: semantic agreement does not establish unchanged bytes, and
 regenerating the same formatter alone can repeat a mapping defect. Record the
-bounded source-delivery result separately from the 731 field dispositions;
+bounded source-delivery result separately from the field dispositions;
 catalogue-reference, pending and intentionally excluded fields are not missing
 public payloads. Missing, extra, duplicated, wrong-component or wrong-value
 bindings must fail even when counts agree. The source observer is not a compiler

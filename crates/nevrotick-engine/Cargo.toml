@@ -9,6 +9,9 @@ repository.workspace = true
 description = "Bounded NevroTick observe-only engine transport experiment"
 
 [features]
+# Private CHECK-26 candidate for Roughtime keyed verification.
+roughtime-verification = ["dep:ed25519-dalek", "dep:sha2"]
+
 # Explicitly activated only by the existing controlled-loopback KE probe.
 ke-association-prototype = [
     "dep:nevrotick-s115-aes-siv-fixture",
@@ -20,6 +23,8 @@ ke-association-prototype = [
 ]
 
 [dependencies]
+ed25519-dalek = { version = "=3.0.0", default-features = false, optional = true }
+sha2 = { version = "=0.11.1", default-features = false, optional = true }
 garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
 getrandom = { version = "=0.4.3", default-features = false }
 ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }

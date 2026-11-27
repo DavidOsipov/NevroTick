@@ -23,6 +23,9 @@ class FieldSpec:
 # Scope: A=88 service rows; B=267 artifact/distribution rows; C=196 diagnostic rows.
 # These mixed categories and aliases are not a count of unique product facts.
 _FIELD_ROWS = (
+    ('project.distribution.community.source_identity', 'project', 'observation', 'text', 'W11-W10/P6', 'current-source', '', 'docs/plans/winget-distribution.md#4-metadata-and-artifact-contract'),
+    ('project.distribution.community.package_identifier', 'project', 'observation', 'text', 'W11-W10/P6', 'current-source', '', 'docs/plans/winget-distribution.md#4-metadata-and-artifact-contract'),
+    ('project.distribution.msix.package_family_name', 'project', 'observation', 'text', 'W11-W10/P6', 'current-source', '', 'docs/plans/winget-distribution.md#4-metadata-and-artifact-contract'),
     ('project.author.name', 'project', 'derived', 'text', 'W11-W10/P6', 'current-source', 'product.publisher', ''),
     ('project.author.role', 'project', 'identity', 'text', 'W11-W10/P6', 'current-source', '', ''),
     ('project.author.website', 'project', 'identity', 'url', 'W11-W10/P6', 'current-source', '', ''),

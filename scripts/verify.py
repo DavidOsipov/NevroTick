@@ -54,6 +54,7 @@ LEGACY_PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain"
             "nevrotick-engine": "crates/nevrotick-engine", "windows-platform": "crates/windows-platform"}
 PACKAGES = {**LEGACY_PACKAGES, SLINT.NATIVE_PACKAGE: "crates/" + SLINT.NATIVE_PACKAGE}
 HOST_TARGET = "x86_64-unknown-linux-gnu"
+RGT_ENGINE_VERSIONS: dict[str, str] = {"ed25519-dalek": "3.0.0", "sha2": "0.11.1"}
 REGISTRY_VERSIONS = {
     "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
     "garde_derive": "0.23.0", "getrandom": "0.4.3", "itoa": "1.0.18", "libc": "0.2.191",
@@ -963,12 +964,19 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     "rustls-cng-crypto": {"version": "=0.1.2", "default-features": False, "optional": True},
                     "rustls-platform-verifier": {"version": "=0.7.1", "default-features": False, "optional": True},
                 })
-                expected_feature = {SLINT.EP1_FEATURE: ["dep:" + name for name in
+                expected_feature: dict[str, list[str]] = {SLINT.EP1_FEATURE: ["dep:" + name for name in
                     (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize", "rustls", "rustls-cng-crypto", "rustls-platform-verifier")]}
+                if SLINT.RGT_FIELD in policy:
+                    required.update({name: {"version": "=" + version, "default-features": False, "optional": True}
+                                     for name, version in RGT_ENGINE_VERSIONS.items()})
+                    expected_feature[SLINT.RGT_FEATURE] = ["dep:" + name for name in RGT_ENGINE_VERSIONS]
                 if (member.get("features") != expected_feature or member.get("target") != expected_target
                         or member.get("dependencies") != required):
-                    raise ENV.Incomplete("The Engine prototype requires its exact default-off feature and Windows-only provider graph.")
-                declarations = [member["dependencies"][name] for name in (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize")]
+                    raise ENV.Incomplete("The Engine requires its exact default-off features and reviewed provider graph.")
+                normal_optional: tuple[str, ...] = (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize")
+                if SLINT.RGT_FIELD in policy:
+                    normal_optional += tuple(RGT_ENGINE_VERSIONS)
+                declarations: list[dict[str, object]] = [member["dependencies"][name] for name in normal_optional]
                 declarations += [member["target"]["cfg(windows)"]["dependencies"][name]
                                  for name in ("rustls", "rustls-cng-crypto", "rustls-platform-verifier")]
                 if any(type(item.get(field)) is not bool for item in declarations
@@ -1013,6 +1021,8 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     if dependency:
         engine_edges = sorted([*engine_edges, SLINT.EP1_AES_NAME, "rustls", "rustls-cng-crypto",
                                "rustls-pki-types", "rustls-platform-verifier", "zeroize"])
+    if SLINT.RGT_FIELD in policy:
+        engine_edges = sorted([*engine_edges, *RGT_ENGINE_VERSIONS])
     external = {(p["name"], p["version"], p.get("checksum")) for p in packages if "source" in p}
     local = [p for p in packages if "source" not in p]
     if (external != expected or len([p for p in packages if "source" in p]) != len(expected)
@@ -1440,6 +1450,14 @@ def validate_text_coverage_result(output: str) -> dict:
     return result
 
 
+def require_profile_lane(lane: str, profile: str) -> None:
+    """Limit the newly reviewed provider profiles to dependency evidence."""
+    if profile not in ("default", SLINT.EP1_PROFILE, *SLINT.RGT_PROFILES):
+        raise ENV.Incomplete("Unknown dependency profile.")
+    if profile in SLINT.RGT_PROFILES and lane != "dependencies":
+        raise ENV.Incomplete("Roughtime profiles currently admit only the dependency lane.")
+
+
 def commands(lane: str, *, schema_version: int = 2,
              patched_packages: tuple[str, ...] = (), profile: str = "default") -> list[tuple[str, list[str]]]:
     """Select explicit product commands; never replace execution by bootstrap controls."""
@@ -1448,8 +1466,10 @@ def commands(lane: str, *, schema_version: int = 2,
     if (type(patched_packages) is not tuple or patched_packages not in SLINT.PATCH_NAME_SETS
             or patched_packages and schema_version != 3):
         raise ENV.Incomplete("Unknown patched package verification scope.")
-    if profile not in {"default", SLINT.EP1_PROFILE} or profile != "default" and schema_version != 3:
-        raise ENV.Incomplete("Unknown or non-schema-3 prototype profile.")
+    require_profile_lane(lane, profile)
+    if profile != "default" and schema_version != 3:
+        raise ENV.Incomplete("An explicit dependency profile requires schema 3.")
+    feature_argument: str | None = SLINT.profile_feature_argument(profile)
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
 
@@ -1483,11 +1503,11 @@ def commands(lane: str, *, schema_version: int = 2,
                 preflight.append(("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
                                                            "--metadata-path", "/work/selected-metadata-" + target + ".json",
                                                            "check", "--deny", "warnings"]))
-        if profile == SLINT.EP1_PROFILE:
+        if feature_argument is not None:
             for _, command in preflight:
                 if command[0] == "cargo" and ("metadata" in command or "--workspace" in command
                         or "--package" in command and command[command.index("--package") + 1] == "nevrotick-engine"):
-                    command.extend(["--features", SLINT.EP1_FEATURE_ARGUMENT])
+                    command.extend(["--features", feature_argument])
         if lane == "dependencies":
             return preflight
         patch_checks = []
@@ -2002,11 +2022,13 @@ def validate_test_discovery(lane: str, output: str, profile: str) -> set[CaseIde
 
 def validate_test_result(lane: str, output: str, work: Path, *, profile: str = "default") -> dict | None:
     """Credit successful JUnit cases only under their package and binary identity."""
-    if profile not in {"default", SLINT.EP1_PROFILE}:
+    if profile not in ("default", SLINT.EP1_PROFILE, *SLINT.RGT_PROFILES):
         raise ENV.Incomplete("Unknown test-accounting profile.")
     kind, _, package = lane.partition(":")
     if kind not in {"product-tests", "doctests", "optimized-tests"}:
         return None
+    if profile in SLINT.RGT_PROFILES:
+        raise ENV.Incomplete("Roughtime dependency profiles cannot credit product tests.")
     if package not in {*PACKAGES, SLINT.PATCH_NAME}:
         raise ENV.Incomplete("Test accounting identifies an unreviewed package.")
     if kind == "optimized-tests" and package not in OPTIMIZED_DISCRIMINATORS:
@@ -2125,11 +2147,12 @@ def command_resources(lane: str, label: str, command: list[str], *, profile: str
     There is no caller-provided number, environment override or CLI budget.
     """
     if (type(lane) is not str or lane not in {"portable", "windows", "dependencies"}
-            or type(profile) is not str or profile not in {"default", SLINT.EP1_PROFILE}
+            or type(profile) is not str
             or type(label) is not str or not label
             or type(command) is not list or not command
             or any(type(argument) is not str for argument in command)):
         raise ENV.Incomplete("Unadmitted product command resource context.")
+    require_profile_lane(lane, profile)
     portable_ep1 = lane == "portable" and profile == SLINT.EP1_PROFILE
     if label == ENGINE_EP1_RELEASE_BUILD_ROW or tuple(command) == ENGINE_EP1_RELEASE_BUILD:
         if not portable_ep1 or label != ENGINE_EP1_RELEASE_BUILD_ROW or tuple(command) != ENGINE_EP1_RELEASE_BUILD:
@@ -3173,9 +3196,8 @@ def read_ui_entry(work: Path, source: Path, digest: str, image_digest: str) -> d
 
 def execute(root: Path, args, report: dict) -> None:
     """Freeze candidate inputs, run the selected row and reject input drift."""
-    profile = getattr(args, "profile", "default")
-    if profile not in {"default", SLINT.EP1_PROFILE}:
-        raise ENV.Incomplete("Unknown prototype profile.")
+    profile: str = getattr(args, "profile", "default")
+    require_profile_lane(args.lane, profile)
     policy, source_identity = admit_product(root)
     artwork_dir = getattr(args, "msix_branding_dir", None)
     export_authoring = getattr(args, "export_msix_authoring", False)
@@ -3190,7 +3212,7 @@ def execute(root: Path, args, report: dict) -> None:
     base_artwork = read_msix_artwork(artwork_dir) if artwork_dir is not None else None
     if profile != "default":
         if policy["schema_version"] != 3:
-            raise ENV.Incomplete("The Engine prototype requires its admitted schema-3 feature graph.")
+            raise ENV.Incomplete("The selected profile requires its admitted schema-3 feature graph.")
         try:
             SLINT.profile_rows(policy, profile)
         except SLINT.Incomplete as error:
@@ -3603,7 +3625,7 @@ def main(argv=None) -> int:
     """Resolve explicit/default paths without installing or fetching anything."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("portable", "windows", "dependencies"), default="portable")
-    parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE), default="default")
+    parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE, *SLINT.RGT_PROFILES), default="default")
     parser.add_argument("--capture-slint", action="store_true")
     parser.add_argument("--inspect-msix-handoff", type=Path,
                         help="read a retained private Windows artifact export without building")

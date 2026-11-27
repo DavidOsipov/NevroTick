@@ -2898,6 +2898,20 @@ suite passed again with 29 tests after adding exact exception-delta
 and publication-age controls. Removing either tested guard in memory
 made its intended control fail.
 
+**Next ordinary resolution checkpoint — 27 November 2026.** The live-root
+control reproduced a missing-checkpoint refusal at the lookup that the
+guarded product resolver uses before Cargo. The registered
+checkpoint binds the existing lock, the accepted registry digest and the
+original `OD-04-URL-20261124` history. The old exception stays historical
+under the ordinary 14-day deny policy. The current manifest and lock remain
+the accepted inputs. The new live-root control detected the missing entry
+and the final isolated selection passed all six root and child controls.
+The first receipt and final log are retained under
+`~/.local/share/nevrotick/url-cooldown-checkpoint.vaalLW2G/receipt.json`
+(`9559836ca50ca2a3b4ece8d52946445314e2f9662d3657cff7bc60a5521508bb`) and
+`~/.local/share/nevrotick/url-baseline-control-final.9aZoHa1p/tests.log`
+(`2d7fc66d71ec581a11a7af125ead50be91d5dea88157e2e08c658a2439266176`).
+
 Raw receipts are in
 `~/.local/share/nevrotick/url-20261124.FRJBoTOA/`.
 

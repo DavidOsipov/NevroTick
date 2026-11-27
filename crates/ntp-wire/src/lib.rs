@@ -1,4 +1,4 @@
-//! Pure bounded NTP wire decoding and inert NTS-KE/NTS request processing.
+//! Pure bounded NTP, NTS and Roughtime wire processing.
 //!
 //! S1.1a handles exactly one 48-byte fixed header. Its immutable outputs retain
 //! every raw field without admitting a time sample, peer, profile, authentication
@@ -22,6 +22,7 @@ mod nts_negotiation;
 mod nts_packet;
 mod nts_plaintext;
 mod nts_request;
+pub mod roughtime;
 
 pub use datagram::{
     ExtensionFields, FrameError, FrameLimits, RawDatagram, RawExtension,

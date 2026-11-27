@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -61,6 +62,51 @@ class EngineKeProfileControls(unittest.TestCase):
         self.assertEqual(targets, {FIXTURE.HOST, FIXTURE.WINDOWS})
         self.assertEqual(VERIFY.commands("dependencies", schema_version=3),
                          VERIFY.commands("dependencies", schema_version=3, profile="default"))
+
+    def test_roughtime_selects_only_the_reviewed_workspace_and_engine_dependency_commands(self) -> None:
+        ke: str = "nevrotick-engine/ke-association-prototype"
+        roughtime: str = "nevrotick-engine/roughtime-verification"
+        selections: dict[str, str] = {
+            "engine-roughtime-verification": roughtime,
+            "engine-ke-roughtime-verification": f"{ke},{roughtime}",
+        }
+        baseline: dict[str, list[str]] = dict(VERIFY.commands("dependencies", schema_version=3))
+        targets: tuple[str, str] = (FIXTURE.HOST, FIXTURE.WINDOWS)
+        changed: set[str] = {
+            prefix + target for target in targets
+            for prefix in ("dependency-metadata-", "dependency-tree-", "dependency-tree-nevrotick-engine-")
+        }
+        for profile, feature in selections.items():
+            with self.subTest(profile=profile):
+                expected: dict[str, list[str]] = {
+                    label: [*command, "--features", feature] if label in changed else command
+                    for label, command in baseline.items()
+                }
+                rows: list[tuple[str, list[str]]] = VERIFY.commands(
+                    "dependencies", schema_version=3, profile=profile)
+                self.assertEqual(rows, list(expected.items()))
+                for label, command in rows:
+                    VERIFY.command_resources("dependencies", label, command, profile=profile)
+                    self.assertIsNone(VERIFY.validate_test_result(label, "", FIXTURE.ROOT, profile=profile))
+
+    def test_roughtime_build_lanes_refuse_before_product_admission(self) -> None:
+        profiles: tuple[str, str] = ("engine-roughtime-verification", "engine-ke-roughtime-verification")
+        for profile in profiles:
+            for lane in ("portable", "windows"):
+                with self.subTest(profile=profile, lane=lane):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only the dependency lane"):
+                        VERIFY.commands(lane, schema_version=3, profile=profile)
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only the dependency lane"):
+                        VERIFY.command_resources(lane, "compiler", ["cargo", "check"], profile=profile)
+                    args: SimpleNamespace = SimpleNamespace(lane=lane, profile=profile)
+                    with patch.object(VERIFY, "admit_product") as admit:
+                        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only the dependency lane"):
+                            VERIFY.execute(FIXTURE.ROOT, args, {})
+                        admit.assert_not_called()
+            with self.subTest(profile=profile), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.commands("dependencies", schema_version=2, profile=profile)
+            with self.subTest(profile=profile), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "cannot credit"):
+                VERIFY.validate_test_result("product-tests:nevrotick-engine", "", FIXTURE.ROOT, profile=profile)
 
     def test_foreign_profile_unknown_lane_and_old_schema_refuse(self):
         for lane, profile in (("dependencies", "foreign"), ("portable", "foreign"),
