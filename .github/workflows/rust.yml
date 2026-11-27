@@ -179,7 +179,7 @@ jobs:
           NEXTEST_BINARY: ${{ runner.temp }}/nextest-tool/cargo-nextest
           PRODUCT_RECEIPT: ${{ runner.temp }}/ui-m0-portable.json
         run: |
-          env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify.py --lane portable \
+          env -u RUSTUP_TOOLCHAIN -u NEXTEST_BINARY python3 -B scripts/verify.py --lane portable \
             --toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
             --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
             --nextest "${NEXTEST_BINARY}" --json "${PRODUCT_RECEIPT}"
@@ -204,7 +204,7 @@ jobs:
           NEXTEST_BINARY: ${{ runner.temp }}/nextest-tool/cargo-nextest
           PRODUCT_RECEIPT: ${{ runner.temp }}/engine-ke-association-portable.json
         run: |
-          env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify.py --lane portable \
+          env -u RUSTUP_TOOLCHAIN -u NEXTEST_BINARY python3 -B scripts/verify.py --lane portable \
             --profile engine-ke-association \
             --toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
             --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \

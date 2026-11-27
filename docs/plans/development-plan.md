@@ -2,7 +2,14 @@
 
 **Distribution amendments — 21 and 25 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts the TUF-authenticated complete-MSIX updater with one Update now decision. Exact client/signing/trust/hosting, time/state and native deployment/recovery qualification remain open. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
 
-**Created:** 29 October 2026; **current-routing reconciliation:** 26 November 2026
+**Created:** 29 October 2026; **current-routing reconciliation:** 27 November 2026
+
+**V1 scope clarification — 27 November 2026:** [OD-02](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+places NTP, NTS and Roughtime in V1. RGT-C01 belongs to P2/P7 below;
+Khronos/Ananke, Chrony replacement and other post-V1 work retain their own gates.
+GPS/PPS/refclock support and special timing hardware are not V1 runtime
+requirements. A possible laboratory reference is a separate qualification input,
+not a request that David inventory or acquire equipment.
 
 **Status:** P0–P7 remain open. Core frequency-request/achieved-baseline feedback and the earlier laboratory KE-to-request handoff have completed their selected host exits. The default-off Engine NTS prototype now contains private association/request custody, authenticated-response admission, an explicitly selected protected-datagram path and bounded private recovery. Its latest source checkpoint retains unresolved recovery, generation and native gates; it is not a whole-Engine qualification. Production sample admission, integrated services/clock control, full S1.4/P1/P2, Slint backend/text approval and release qualification remain open. [Section 7](#7-next-executable-task-for-a-development-agent) owns the current Core/Engine continuation and exact evidence boundaries.
 
@@ -44,10 +51,13 @@ pre-V1 formal work and changes no current product acceptance gate.
 
 **Immediate priority:** follow [section 7's dependency order](#resume-in-dependency-order--23-november-2026).
 The [rebuilt authenticated timing pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair)
-completed its exact offline Windows laboratory scope. The next S2.1/W11-W01
-child is the independent physical reference, read-side mapping and validity
-issuer, with justified date, era, scale and uncertainty inputs before positive
-Engine-to-Core history admission. The seven-owner Core union and earlier KE
+completed its exact offline Windows laboratory scope. Physical-reference
+qualification is **HELD/BLOCKED**: no admitted reference/evidence route is
+identified. Ordinary resumption does not restart equipment questions, procurement
+or a general hardware survey. The next executable source child is the
+[consume-once handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+Qualified mapping/withdrawal, date, era, scale and uncertainty remain prerequisites
+for positive production Engine-to-Core history admission. The seven-owner Core union and earlier KE
 Preview, configuration and worker-custody receipts retain their original
 candidates; none supplies production calibration or a whole-Engine pass.
 Independent service and package source work can continue when its own
@@ -249,7 +259,11 @@ material unresolved choice through the existing owner-decision procedure.
 
 For the current S2.1/W11-W01 child, use the
 [reference feasibility disposition](../../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026).
-It precedes reference admission in section 7; it establishes no calibration,
+Its [27 November routing amendment](../../tasks/windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026)
+holds physical qualification until concrete reference/access/calibration/route
+evidence changes or an explicit owner decision changes that approach. Handoff
+alone does not reopen an inventory, purchase request or survey. Section 7 routes
+the independent source child; neither disposition establishes calibration,
 runtime mapping, sample eligibility or new native-execution permission.
 
 Apply the [qualification lifecycle](../../.agents/skills/testing/CONTRACT.md#execution-efficiency)
@@ -504,7 +518,7 @@ at their dependent checkpoints, not a second acquisition or policy plan.
 | --- | --- |
 | [W11-W01/S2.1](../../tasks/windows11-integration.md#w11-w01-preserve-packet-timestamp-provenance); CHECK-6/11/21/27 and affected CHECK-7/25 | Test actual measurement invariance under processing delay and coherent send-completion variation. The engine task records source versus executed evidence. Required acquisition provenance remains a V1 obligation. |
 | [Publisher R collector](../../tasks/server-catalogue-and-statistics.md); DATA-01/24 | Extend actual snapshot import/diff rejection cases for forged independence, time-quality and approval claims. A matching input digest cannot create publisher approval or client authority. |
-| [TA-C01/04/06/07/08/10/13/14](../../tasks/time-assurance-integration.md#4-independent-acceptance-cases) | Prepare/refine independent inputs, healthy neighbors and forbidden effects now. Exercise any actual shared V1 consumers before their phase/release exit; absent future RGT/KHR consumers retain explicit later execution prerequisites. |
+| [TA-C01/04/06/07/08/10/13/14](../../tasks/time-assurance-integration.md#4-independent-acceptance-cases) | Prepare/refine independent inputs, healthy neighbors and forbidden effects now. Exercise applicable V1 Roughtime and shared consumers before their P2/P7 exit under OD-02's 27 November clarification. Absent post-V1 Khronos/Ananke consumers retain their later execution prerequisites; fixtures supply no implementation pass. |
 | Existing P4 correction/recovery and S0.1/S2.2 polling/NTS owners; CHECK-6/8/9/10/12/15/17/21/27 | Reuse adequate current cases; retain restart-authority, actual next-send/backoff, cookie lifecycle and aggregate-budget regressions before relevant V1 acceptance. A one-shot helper does not qualify an absent continuous caller or privileged effect. |
 
 Case preparation for a future mechanism does not require implementing it before
@@ -512,7 +526,8 @@ V1. Do not create a mock TPKI protocol to manufacture a pass. New TCA
 infrastructure, NTxMon/live assignment and optional timestamp optimizations remain
 conditional work under the roadmap's longer-work table and named owners.
 Post-V1 MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
-RGT-0 → CHR-0 direction retain their existing order. Formal/native/fuzz/storage/UI
+CHR-0 replacement retain their existing gates. RGT-C01 is now V1 P2/P7 and
+remains a prerequisite to later CHR-0, without activating it. Formal/native/fuzz/storage/UI
 holds and ordinary coverage/mutation/release obligations retain their scope.
 
 The [13 November Tychron full-text assessment](../supporting-reviews/tychron-fulltext-assessment.md)
@@ -782,6 +797,15 @@ NTS-KE/packets using admitted dependencies; S2.3 protected association reuse and
 qualified opt-in recovery; S2.4 adversarial/resource/secret handling. A diagnostic
 consumer must expose actual admitted results and failure reasons. Do not wire
 production networking into UI-M0.
+
+Under [OD-02's V1 clarification](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026),
+also deliver [RGT-0/RGT-C01](../../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
+through the [existing time-assurance task](../../tasks/time-assurance-integration.md).
+Its Roughtime source, protocol/key/provider, interval/freshness and guarded
+NTS-bootstrap work belongs to P2, with integrated evidence reconciled at P7.
+Roughtime supplies no direct clock-write authority, NTS vote or substitute for
+qualified local timestamp mapping. Khronos/Ananke reserve work remains post-V1;
+the V1 Roughtime-only path must disclose an absent reserve.
 
 The [S2.1 integration card](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 prepares two distinct exits: first, one real controlled-UDP exchange through
@@ -1225,6 +1249,12 @@ activation criteria. Reuse earlier
 evidence only while its relevant state is unchanged; rerun affected observations
 after invalidating changes. Required missing evidence is incomplete, not N/A.
 
+Reconcile V1 RGT-C01 and the applicable TA-W/TA-C evidence in the
+[time-assurance task](../../tasks/time-assurance-integration.md) alongside the
+NTP/NTS gates. The [27 November scope decision](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+changes Roughtime's schedule, not its implementation or qualification status.
+No absent post-V1 Khronos reserve is claimed or made an automatic V1 prerequisite.
+
 Reconcile the selected storage route's applicable ST-T01–ST-T18 observations
 against final installed bytes, policy and supported environments. Provider, key
 origin, algorithms, serialization, account, Windows build, mitigation or package
@@ -1281,24 +1311,28 @@ The public mutation campaign remains closed.
 
 The [architectural closure workstream](#architectural-closure-workstream--26-november-2026)
 routes the remaining decision and mechanism deliverables into their existing
-phases. It does not reorder the reference/mapping dependency below or turn every
+phases. It preserves the held reference/mapping qualification and ready source
+work below without turning every
 later production-policy choice into a prerequisite for controlled-profile work.
 
 ### Resume in dependency order — 23 November 2026
 
 Use this sequence for current activation. The dated checkpoints below retain
 their original candidates. The table routes existing requirements and does not
-schedule execution while a hold applies.
+schedule execution while a hold applies. The 27 November owner clarification
+separates the next source child from held physical-reference qualification;
+earlier “next reference” directions in dated receipts do not restart that hold.
 
 | Order and owner | Entry and allowed parallel work | Discriminating exit |
 | --- | --- | --- |
 | **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [rebuilt native pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
-| **Next development child — reference and mapping, S2.1/W11-W01** | Start with the [finite reference feasibility disposition](../../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026). The [bench reader](../../tasks/windows11-integration.md#bind-retained-application-captures-to-the-reference-trial--24-november-2026) binds the original application brackets for the [independent reference trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026). Qualify traceable UTC, bounded event-pairing error, drift and total uncertainty. Bind the read-side mapping and validity-withdrawal issuer and independent date, era and scale authority. Independent service and package source work can continue while the physical reference is unavailable. | The admitted reference supplies evidence for the full capture and exchange span. Replace or retire the mapping on invalidation. Read-side work requires neither a product clock write nor an installed service. |
+| **Next executable source child — S2.1/W11-W01 receiving handoff** | Implement the [consume-once admission handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026) through the existing Engine join and reporting owners. Preserve the settled supplier contract; connect original receipt custody to the final receiving decision with unavailable/withdrawn production inputs. Controlled source fixtures may exercise the useful neighboring handoff without creating a calibrated mapping provider or unadmitted Core dependency. | The actual receiving boundary consumes each original ordinary receipt at most once; missing/stale/foreign/crossing/replaced inputs refuse admission without renewed age or freshness. A controlled valid receipt and fresh reissue work. Production eligibility stays unavailable; exact-source checks and existing 90%/95% gates remain at their declared checkpoint. |
+| **HELD/BLOCKED — physical reference and positive mapping qualification, S2.1/W11-W01** | The [finite disposition and current routing](../../tasks/windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026) identify no admitted reference/evidence route. Resume only for changed concrete reference/access/calibration/route evidence or an explicit owner decision changing the approach. Do not ask for a recurring device inventory, procurement or general hardware research. Independent service, package and UI source work continues under its own gates. | The [bench trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026) still needs traceable UTC, original-event pairing, finite placement/residual/drift bounds and full-span validity. Actual mapping/withdrawal and independent date/era/scale issuers must be qualified before positive production admission. Unavailability is not a pass. |
 | **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |
 | **Secured service status — P3 and S-2** | Independent source preparation can proceed with the admitted service adapters and W11-W05/W11-W10 fixture. Bind exact roles and create protections before exposure. Qualify minimum authenticated management admission before functional IPC, then full handlers, mandatory state and simulated integration. Restore D2 freshness, connection and generation rules before connecting live status, including read-only. | Intended peers complete ready/stop and read status. Foreign identity, stale generations, failed state commit and retained native work cannot produce a false success. S-2 joins real admitted acquisition, secured status and ordinary-user read-only UI. |
 | **Real clock control — P4** | Require the reached P3/S0 evidence, independent reference and finite owned-lab card. Join current ownership, durable reservation, checked budgets and recoverable handover before the first product-backed write. Keep measurement admission independent of actuation. | Observe actual delivered correction and cleanup with current authorization. Crash, lost acknowledgement, competing ownership or invalidation cannot repeat a step, restore spent authority or publish a current synthetic effect. |
 | **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
-| **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational and WinGet capability evidence. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
+| **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational, WinGet and V1 RGT-C01 evidence. Roughtime's P2 work stays with the existing time-assurance owners; post-V1 reserve/replacement work retains its separate gates. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
 
 The [joined DNS adoption controls](../../tasks/engine-transport-pilot.md#refuse-a-joined-windows-dns-answer-after-source-replacement)
 exercise W11-W03/S2.2 in parallel. The Windows loopback answer can reach a
@@ -5235,7 +5269,7 @@ profile, Windows mechanism, TUF implementation, signer or additional service.
 
 | Preparation order and existing owners | Deliverable and readiness boundary |
 | --- | --- |
-| Current S2.1/S2.2/W11-W01/Core | Continue §7's independent reference, mapping/withdrawal issuer and real consume-once history join. The supplier contract is settled; physical evidence and actual suppliers remain open. A controlled-profile observation need not wait for a shipped default preset. |
+| Current S2.1/S2.2/W11-W01/Core | Continue §7's bounded original-receipt receiving source child. Physical-reference qualification is HELD/BLOCKED under the current W11 disposition; qualified mapping/withdrawal and real consume-once Core history remain open. Preserve the settled supplier contract and do not restart equipment inquiries on resumption. A controlled-profile observation need not wait for a shipped default preset. |
 | Parallel S0.2/S0.3/S0.6, W11-W04/W05/W10 | Prepare supported pre-start isolation/admission and independently invocable recovery through the [Windows closure inventory](../../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026). Distinguish evidence already retained from rights, invocation, current authorization and final-profile gaps. Native execution still needs its scoped admission. |
 | Before dependent P1/P2/P4 behavior, R-02/R-04/R-05 and S0.4/S0.7 | Complete source/vote/freshness/fault, date/era/floor, ordinary NTS lifetime and correction/holdover/epoch decision outputs. W11 §4.31 remains the detailed correction owner. Evidence supports an NV-DEC-001 card when a material choice is ready; no permissive placeholder values. |
 | Before each mandatory production writer/reuse path, S3.3 and original state owners | Freeze [§12.1.4's physical lifetime](../windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery), actual schemas/commits/readers/retirement and bounded recovery. Join mandatory Engine restrictions and the distinct updater trust/installed/floor classes through their writers. ST-W03 supplies object evidence; optional-cache work remains paused independently. |
@@ -5251,7 +5285,7 @@ implementation and native/delivered evidence statuses remain separate.
 
 At the corresponding phase handoff, review every applicable inventory row and
 its indirect consumers. An unresolved later choice blocks only its dependent
-claim. No formal proof, optional future DNS/proxy/assurance subsystem or unrelated
+claim. No formal proof, optional future DNS/proxy/Khronos subsystem or unrelated
 campaign is added to V1. No coverage amendment lifts current execution holds or
 substitutes a documentation pass for a product exit.
 
@@ -5935,20 +5969,17 @@ ordering between those later workstreams is invented here. These handoffs add
 no current P0–P7 blocker or permission for Windows/device execution.
 
 The [Roughtime/NTS/Khronos/Ananke coordination plan](time-assurance-integration.md)
-and [shared future task](../../tasks/time-assurance-integration.md) now own the
-requested research, dated server census, preferred Roughtime / conditional
-Khronos-Ananke provisional-date reserve, failure classification, evidence
-dependencies, comparison epochs and source/Windows qualification. Continuous
-watchdog operation is a separately deferred alternative under the later owner
-refinement. Reuse that task for KHR-C01 and RGT-C01 while
-retaining their distinct exits. Roughtime can later initialize a recovery frame
-without becoming a prerequisite to the earlier KHR evaluation or Android; its
-later RGT-0 → CHR-0 sequence is unchanged. A claimed combined automatic-reserve
-profile requires the applicable KHR implementation and TA-C17–TA-C22 evidence;
-Roughtime-only qualification must disclose an absent reserve. At the relevant handoff, record the
-selected TA-W assignments and their ready/held/deferred status in that task.
-This routing does not replace section 7's current Core continuation or lift its
-execution gates, including the separately admitted Sandbox scope.
+and [shared task](../../tasks/time-assurance-integration.md) retain separate V1
+and post-V1 assignments. [OD-02's 27 November clarification](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+moves RGT-0/RGT-C01 into this plan's P2/P7; it is no longer a future-only handoff.
+Khronos/Ananke reserve work, continuous watchdog evaluation and CHR-0 remain
+post-V1 under their own prerequisites. Completing RGT-C01 before V1 does not
+activate Chrony replacement. A later combined automatic-reserve claim still
+requires the applicable KHR implementation and TA-C17–TA-C22 evidence; the V1
+Roughtime-only path discloses an absent reserve. Record the selected TA-W
+assignments and ready/held/deferred status in that existing task. This routing
+neither grants Roughtime clock authority nor lifts section 7's source, physical
+qualification or scoped native gates.
 
 ### 8.7 Catalogue preparation and release data
 
@@ -5967,8 +5998,9 @@ immutable tables remain C candidates; its format, schema/caps, signature strateg
 approved roster and runtime graph are unresolved. R's JSON is publisher evidence,
 not the selected C encoding or a client dependency.
 
-Ordinary catalogue preparation is independent of the later RGT-0 implementation;
-placing its key fields now does not change RGT-0 → CHR-0. Keep source admission
+Ordinary catalogue preparation keeps its own source exit; placing Roughtime key
+fields alone does not qualify the V1 RGT-0 runtime or activate post-V1 CHR-0.
+Keep source admission
 and OD-03, release trust and W11/ST-W lifecycle, and TA-W runtime key/bootstrap
 qualification with their existing owners. Catalogue cardinality grants no extra
 active sources, sockets or histories. The requested five-role documentation

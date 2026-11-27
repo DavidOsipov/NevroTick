@@ -11,6 +11,15 @@ or canonical architecture. Unless explicitly marked active, rows below are futur
 cards; none is completed evidence.
 Role owners are responsibilities, not staffing assignments.
 
+**V1 scope and current routing — 27 November 2026:** [OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+includes NTP, NTS and Roughtime in V1; RGT-C01 belongs to P2/P7 below. It adds no
+GPS/PPS/refclock runtime or special timing-hardware requirement. Physical-reference
+qualification is [HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026),
+and ordinary resumption must not restart equipment inventory, procurement or a
+general hardware survey. The [original joined-receipt source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+advances independently; qualified mapping and positive production history remain
+open. Khronos/Ananke, Chrony replacement and other post-V1 work stay deferred.
+
 Activate only the next bounded child when its named prerequisites and current
 authorization hold. In that existing chain, freeze candidate/source/graph,
 literal independent expected facts, valid/rejected controls, environment,
@@ -54,7 +63,8 @@ The [canonical coverage inventory](../docs/windows-time-architecture.md#221-arch
 maps the assessed gaps to existing decisions, contracts and owners. The
 [development workstream](../docs/plans/development-plan.md#architectural-closure-workstream--26-november-2026)
 controls preparation order. This intake refines the future cards below; it does
-not activate every parent or change the current reference/mapping child.
+not activate every parent. The 27 November routing separates the current receiving
+source child from held physical-reference qualification.
 
 | Existing parent and disposition | Required handoff before dependent work | Owning execution/evidence record |
 | --- | --- | --- |
@@ -66,7 +76,7 @@ not activate every parent or change the current reference/mapping child.
 | S0.6/P4/P6 recovery — feasibility open | Compatible trusted code, protected data, current authority and independent invocation together; pending-obligation removal/Reset, failed successor/no login/reboot, valid successor transfer and final retirement. | [MSIX §7.6](../docs/plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026) and W11-W05/W10; before takeover/dependent actuation/live Apply. |
 | P5/P6 updater — contract adopted; implementation/qualification open | Separately evidenced UTC issuer, admitted client/publisher/process graph, trust-state commits/floor/decommission, bounded allocations and Windows caller/registration/recovery profile. BOTH feasibility tracks precede live Apply. | [Updater closure deliverables](../docs/windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026) and [W11 §4.40/closure inventory](windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026). |
 | P6/P7 supported delivery and publisher operations — qualification open | Exact platform/protection/update-owner profile, finite aggregate limits, public-safe custody/renewal/offline/absence/retention record and useful corrective/recovery rehearsals on final delivered bytes. | W11-W08/W10, [publisher readiness](../docs/windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026), [release rehearsals](../docs/release-policy.md#publisher-rehearsal-evidence--26-november-2026) and existing WinGet owners. Signing remains at its deferred checkpoint. |
-| Current S2.1/S2.2/W11-W01/Core — settled contract, physical supplier and integration open | Independent reference/mapping/withdrawal, date/scale/uncertainty and original receipt custody before final consume-once history. Qualified reissue must permit a fresh useful observation; stale/duplicate/unknown observations add no history/freshness. | [Current Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026) and development §7. This remains the next dependency. |
+| Current S2.1/S2.2/W11-W01/Core — receiving source child ready; physical qualification HELD/BLOCKED | Implement the original joined-receipt consuming handoff under the settled supplier contract. Independent reference/mapping/withdrawal, date/scale/uncertainty and genuine quality remain prerequisites for positive production history. Controlled reissue must permit a fresh useful receipt; stale/duplicate/unknown observations add no production history/freshness. | [Bounded source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026), [held reference disposition](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026) and development §7. Handoff does not restart equipment inquiries. |
 
 Each owner records the accepted decision/artifact separately from implementation
 and candidate-specific qualification. At activation, bind actual input/writer/
@@ -76,13 +86,19 @@ phase exits control; a coverage row is neither an executed check nor a waiver.
 
 ## Current Core/Engine continuation — 26 November 2026
 
+**Routing amended 27 November 2026; heading retained for existing links.**
+
 Follow the
 [dependency order in development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
 and the [actual Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026).
 The rebuilt authenticated laboratory pair and the seven-owner Core fixture
-union completed their exact selected scopes. Independent physical reference,
-read-side mapping and validity issuance, date/scale and quality inputs precede
-positive consume-once history admission. Earlier worker-stop and
+union completed their exact selected scopes. The next source child is the
+[consume-once handoff for original joined protected receipts](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+The [physical-reference trial is HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
+no admitted reference/evidence route is identified and no recurring inventory or
+purchase inquiry follows. Independent physical calibration, read-side mapping
+and validity issuance, date/scale and quality inputs still precede positive
+production consume-once history admission. Earlier worker-stop and
 actual-completion source preparation is historical. The probe remains one-shot
 and never-send by default; accepted cookie policies are not reopened.
 The earlier measurement, numerical bridge, N1/N2/N3, conditional quality,
@@ -719,6 +735,14 @@ V1 implementation, phase acceptance or release.
 
 ## P2 acquisition
 
+**V1 Roughtime assignment — 27 November 2026:** [RGT-0/RGT-C01](../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
+now enters P2 with integrated P7 qualification under [OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026).
+The existing [time-assurance task](time-assurance-integration.md) retains its
+protocol/key/provider, interval/freshness, guarded NTS bootstrap and applicable
+TA-W/TA-C owners. Roughtime is not a direct clock writer, an NTS vote or physical
+mapping evidence. The Roughtime-only V1 path discloses an absent reserve;
+Khronos/Ananke reserve and CHR-0 remain post-V1.
+
 **Timestamp refinement — 18 November 2026:** reuse the settled finite
 supplier/receiver contract and [W11-W01 TQ-01–10](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
 when implementing its actual capture/mapping issuer and final consumer. Required
@@ -754,10 +778,11 @@ must still fail explicitly instead of becoming Direct.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S2.1 UDP/DNS observation / engine/platform | The [rebuilt authenticated pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) supplies exact laboratory capture evidence. The next child prepares the qualified physical reference and read-side validity issuer under the [current admission handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Later source changes require their own affected checks. | Controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Qualify calibrated mapping through the actual guard before positive sample admission. Wrong endpoint/correlation/generation and forged/stale KoD retain bounded refusal and a healthy neighbor. CHECK-6/7/8/11/14/21/24/25/27. |
+| S2.1 UDP/DNS observation / engine/platform | The [rebuilt authenticated pair](engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) supplies exact laboratory capture evidence. The next [receiving source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026) connects original receipt custody and consumes its admission handoff once; physical qualification remains HELD/BLOCKED under the current W11 disposition. Later source changes require their own affected checks. | Controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Qualify calibrated mapping through the actual guard before positive sample admission. Wrong endpoint/correlation/generation and forged/stale KoD retain bounded refusal and a healthy neighbor. CHECK-6/7/8/11/14/21/24/25/27. |
 | [S2.2 ordinary composition](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) / engine/protocol/security | The private two-leg KE/UDP pair advanced the earlier never-send lab witness. Its scoped evidence and the current facade/peer build retain separate identities. Actual issuers, admitted provider/trust/AEAD graph, runtime/lifetime and cookie-policy gates precede production use. | Fresh KE publishes one complete association and current eligible protected UDP evidence reaches the actual Core consumer exactly once. Authentic but stale, unmapped or out-of-envelope neighbors add zero current history or freshness. Paired path/packet/resource/trust controls retain independent vectors/interoperability. CHECK-6/7/8/9/17/20/21/25/26/27, AC-04. |
 | S2.3 reuse/recovery / engine/security/storage | Qualified ordinary NTS first; OPEN-8/relevant recovery decisions and any optional-state construction/provider/pause gates; freeze one compatible-restart or provisional-recovery child. | Compatible reuse succeeds beside unavailable/stale/substituted state; strict authentication remains, no restored pending request, plain hint vote or global clock effect. Two-helper failure creates no silent one-helper path. CHECK-8/9/15/25/26, AC-02/09/10; applicable ST-T cases. |
 | S2.4 adversarial closure / protocol/security/QA | Reached S2.1–S2.3 entrypoints and frozen retry/endpoint/native-job contracts; choose the remaining discriminating failure case. | Replay/endpoint changes, storms, stuck native work and cancellation preserve bounded real-job custody, atomic state and redacted output while valid neighboring acquisition works. CHECK-6/8/9/17/26/27; complete the linked checklist. |
+| RGT-0 V1 bootstrap / time-assurance, protocol/security/Engine/platform | Existing time-assurance task; activate its next bounded Roughtime source/consumer child under the current §7 order and applicable dependency/native gates. Do not wait for post-V1 Khronos/Ananke or Chrony replacement. | RGT-C01 and applicable TA-C evidence qualify actual verified interval/freshness and provisional-date handoff into ordinary NTS validation, including wrong-key/signature/nonce/replay/conflict/unavailable controls. No direct clock write, vote promotion or substitute physical calibration; disclose the absent reserve. |
 
 Before cached/resumed association support, apply the existing
 [R-05 authentication-lifetime card](s0.1-crypto-feasibility.md#deferred-nts-authentication-lifetime--r-05).
@@ -970,6 +995,9 @@ persisted state and installed payload. Malformed/unauthorized/stale/tampered
 neighbors must fail without protected effects while valid controls remain usable.
 Reconcile CHECK-1–27, applicable AC-01–26, applicable ST-T cases, critical-file
 gates, native accessibility/authority/lifecycle and baseline/soak evidence.
+Include V1 RGT-C01 and applicable TA-W/TA-C evidence from the existing
+time-assurance task. Its revised V1 schedule supplies no implementation pass and
+does not move the conditional Khronos/Ananke reserve or Chrony replacement into V1.
 AC-21/22 retain their [OD-11 scope split](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence):
 current direct-path/shared cases remain required; proxy-specific cases keep
 their later activation criteria. Missing
@@ -1000,10 +1028,11 @@ status and real read-only UI observations, not on separate child reports.
 | S-6 exact release | Existing P6 owner + P7: complete hardened direct MSIX, exact signed/downloaded/installed identity and trust, WGT-C01, full applicable acceptance, independent CHECK-24 and David's exact-candidate approval before public release. WGT-C02 records availability after authorized publication. |
 
 Later [roadmap handoffs](../docs/plans/development-plan.md#86-handoff-after-the-windows-plan)
-are Windows P0–P7 including WGT-C01 → actual V1 release → MATH-C01 disposition → TRUST-C01 → MT-C01 → KHR-C01
-disposition → GEO-C01 disposition → Android, with later RGT-0 → CHR-0
-and the [shared time-assurance task](time-assurance-integration.md) retaining
-their distinct exits. Future DNS retains its own DoQ-only/DNS-C owners; do not
+are Windows P0–P7 including WGT-C01 and RGT-C01 → actual V1 release → MATH-C01 disposition → TRUST-C01 → MT-C01 → KHR-C01
+disposition → GEO-C01 disposition → Android. CHR-0 remains post-V1 and retains
+RGT-C01 as a prerequisite; earlier RGT-C01 completion does not activate it.
+The [shared time-assurance task](time-assurance-integration.md) keeps V1 Roughtime
+and future reserve exits distinct. Future DNS retains its own DoQ-only/DNS-C owners; do not
 invent ordering between DNS and Android or add either as a current Core gate.
 
 
@@ -1013,16 +1042,17 @@ invent ordering between DNS and Android or add either as a current Core gate.
 retain the [roadmap](../ROADMAP.md) and focused-plan owners; they authorize no
 device/host changes, dependency adoption, public probes or clock effects. Expand
 only the next admitted child when its future stage is reached. Do not invent an
-ordering between DNS and Android. KHR/RGT stay in the existing time-assurance task.
+ordering between DNS and Android. KHR remains in the existing time-assurance task;
+that task's RGT-C01 work is V1 P2/P7 above, not a deferred roadmap parent.
 
 | Future parent / role owner | Entry and first bounded child | Existing exit / controls |
 | --- | --- | --- |
 | MATH-0 / Core/Engine numerical and independent QA owners | First after actual V1 release under [OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026). [The roadmap experiment](../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments) owns the bounded comparison; existing Core/Engine tasks retain execution evidence. | MATH-C01 records experiment evaluation/disposition before TRUST-0 under OD-20. Production algorithm adoption is not required; current V1 gates and holds remain unchanged. |
 | TRUST-0 / crypto/security/engine/platform/delivery/QA | Second after actual V1 release and MATH-C01, before MT-0, under [OD-20](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1). [NV-TRUST-001](../docs/plans/post-v1-certificate-distrust.md) and the [crypto coordinator](s0.1-crypto-feasibility.md#post-v1-certificate-distrust--trust-0-14-november-2026) start TRUST-W01 by inspecting released source, actual accepted-chain consumers, upstream data and bounded update/coverage contracts. | TRUST-C01 records both feed integrations and qualification/disposition with visible remaining gaps; blocked work is not a pass or silent queue advance. Existing V1 OPEN-8/R-05 requirements remain; supplemental feeds add no V1 blocker. Root-policy scope and any leaf-evidence substitution remain distinct choices. |
 | MT-0 / engine/platform/protocol/performance/QA | After actual V1 release, MATH-C01 and TRUST-C01, before Khronos. [The maintained plan](../docs/plans/post-v1-multithreading.md) and existing engine task own inspection of the released baseline and intervening trust changes, bounded pipeline/worker contracts, implementation and matched qualification. | MT-C01 records qualified improvement or evidence-supported baseline retention. Existing V1 correctness remains mandatory; no worker/runtime count or speedup is preselected. |
-| GEO-0 / catalogue/release/engine/QA/security | After KHR-C01, before Android. The [existing catalogue task](server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) freezes a bounded comparison of ordinary acquisition with optional geography ordering, reusing C/R/Q ownership. | GEO-C01 records actual evidence/gaps and `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs measured benefit within unchanged constraints. No changed reserve sampler, trust vote, mandatory client-IP lookup, parallel database or dependency on deferred Roughtime/SOCKS5 runtime. Any GeoIP implementation is separately scoped. |
+| GEO-0 / catalogue/release/engine/QA/security | After KHR-C01, before Android. The [existing catalogue task](server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) freezes a bounded comparison of ordinary acquisition with optional geography ordering, reusing C/R/Q ownership. | GEO-C01 records actual evidence/gaps and `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs measured benefit within unchanged constraints. Use the admitted V1 Roughtime baseline without adding a separate GEO-specific Roughtime implementation requirement. No changed reserve sampler, trust vote, mandatory client-IP lookup, parallel database or dependency on deferred SOCKS5 runtime. Any GeoIP implementation is separately scoped. |
 | AND-0–AND-6 / Android/platform/protocol/ADB/QA | Windows P0–P7 including pre-V1 WinGet capability, actual V1 release, then MATH-C01 disposition, TRUST-C01, MT-C01 and KHR-C01 disposition and qualified Khronos implementation if adopted, then GEO-C01 disposition before Android. Mathematics/GeoIP production adoption is not required. Start AND-0 read-only device/build discovery, then an ordinary-UID loopback fixture under explicit device/restore bounds. | AND-C01–06 retain device/APK, local responder/NTS, reversible ADB setup/restoration, lifecycle and signed-preview evidence. No generic Android clock-write privilege is assumed. AND-6/AND-C07 server scope remains separately conditional. |
-| CHR-0 / numerical/protocol/provenance/rights | Immediately after RGT-C01 in the existing RGT-0 → CHR-0 sequence; freeze the source/material ledger, consumer boundary and independent contract before replacement work. | CHR-C01 requires independently checked behavior, complete material/dependency provenance and reviewed rights. Current Chrony GPL obligations remain until an actual qualified replacement; public licence and Microsoft permission decisions stay with David. |
+| CHR-0 / numerical/protocol/provenance/rights | Post-V1 under its retained roadmap gates, with RGT-C01 as a prerequisite; the 27 November move of RGT-C01 into V1 does not activate CHR-0. Freeze the source/material ledger, consumer boundary and independent contract before replacement work. | CHR-C01 requires independently checked behavior, complete material/dependency provenance and reviewed rights. Current Chrony GPL obligations remain until an actual qualified replacement; public licence and Microsoft permission decisions stay with David. |
 | SOCKS-0 / engine/protocol/Windows/security/QA/UI | Beyond first Windows P0–P7 delivery, when a real use case and maintenance capacity justify it; placement among future work remains open without reordering KHR/Android or RGT/CHR. Reuse the [existing engine task](engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026) to freeze the manual loopback/no-auth/local-DNS subset and qualified relay/provider envelope. | SOCKS-C01 and applicable PATH/AC/CHECK cases: actual CONNECT plus UDP, strict no-escape/recovery, endpoint identity, service lifetime, DNS/verifier routing, timing and bounded resource evidence. Remote/auth/proxy-DNS extensions are separate later admissions, not first-subset requirements. |
 | DNS-0–DNS-6 / DNS/platform/security/resources | At its future phase, start [DNS-0 contract freeze](../docs/plans/system-dns-cache-design.md#12-staged-delivery-and-next-action), then the plan's baseline → DNSSEC → native integration → shadow demand → bounded refresh sequence; DNS-6 remains conditional. | DNS-C01–18/DOQ-C01, DoQ-only upstream and leaf/intermediate pinning; qualify actual application routing rather than configuration readback. Apply [source-derived ownership/publication/retained-memory/async controls](../docs/plans/dns-upstream-lessons.md) at DNS-1/2 and demand/forget/privacy/persistence controls at DNS-4/5. W11/ST refinements and optional-storage pause retain their scope. |
 | WINSEC-0 / existing Windows, crypto/Engine, storage, delivery and QA owners | Follow the [roadmap's conditional research record](../ROADMAP.md#winsec-0--post-v1-windows-security-compatibility-and-evidence) and [W11 intake](windows11-integration.md#441-windows-security-review-intake--26-november-2026) at the applicable existing consumer trigger. Enterprise pinning has a reported post-V1 owner deferral with the retained ARC-1 original-instruction provenance limit; other technologies remain conditional proposals. This row assigns no rank in the accepted post-V1 sequence. | Refresh primary sources and freeze one actual consumer's bounded comparison before evaluation. Preserve OPEN-8/R-05 V1 duties, distinguish Windows enterprise pins from TRUST-0 and DoQ pins, and add no TRUST-C01 prerequisite, adopted protection, native permission or new V1 gate. |

@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.29<br>
+**Document:** NV-DEC-001, revision 1.30<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -8,6 +8,12 @@
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
+
+**V1 scope clarification — 27 November 2026:** [OD-02's current scope](#v1-protocol-and-hardware-scope--27-november-2026)
+includes NTP/NTS and Roughtime bootstrap; local PPS/GNSS/refclock inputs remain
+outside V1. RGT-C01 moves into V1 qualification. The blocked laboratory-reference
+trial does not require recurring equipment questions or halt independent source
+work. Other post-V1 work and unmet accuracy/security/native gates retain their scope.
 
 **Current delivery decision — 21 November 2026:** [OD-05 §7.9](#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects one complete MSIX for direct distribution and rejects Microsoft Store
@@ -67,7 +73,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | ID | Owner instruction | Recorded status | What still needs evidence or a decision |
 | --- | --- | --- | --- |
 | OD-01 | Take selected upstream code, stress-test it, and alter it when bugs or justified optimizations are found; independently replace Chrony-derived implementations after Roughtime | **Accepted current reuse and future replacement direction** | Exact source/dependency licence inventory and notices; permitted Rust/native graph; justified behavioral deviations; future replacement qualification, rights review and public licence selection |
-| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; add a future Roughtime bootstrap stage for a badly wrong initial date | **Accepted behavior goal and future bootstrap direction** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-0 protocol/provider/trust qualification. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
+| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; include Roughtime bootstrap in network-only V1, without local PPS/GNSS/refclock inputs | **Accepted behavior goal; V1 protocol/hardware scope clarified 27 November 2026** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-C01 protocol/provider/trust qualification before V1. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
 | OD-05 | Prepare one complete hardened MSIX for direct distribution; no Microsoft Store publication. Add the TUF-authenticated About updater with one target-bound Update now decision; preserve approved upstream signatures, required signing scope and David's release authority | **Direct distribution accepted 21 November; updater design accepted 25 November 2026; signing implementation unresolved** | §7.10 assigns the updater plan and phase joins. Exact client/provider/key custody, trustworthy update time, durable trust, supported provisioning/recovery and final native/signature evidence remain open; no unsigned-release or trust-bypass approval |
@@ -112,6 +118,8 @@ Current source-derived development, GPL-2.0-only obligations and provenance rema
 in force until the replacement and release decisions are qualified; this future
 direction is not an immediate licence change or an upstream permission grant.
 
+**Scheduling clarification — 27 November 2026:** [OD-02 below](#v1-protocol-and-hardware-scope--27-november-2026) moves RGT-C01 into V1. CHR-0 retains RGT-C01 as a prerequisite and stays post-V1; the earlier immediate-successor timing no longer applies.
+
 **Owner escalation:** a proposed reuse/dependency change requires incompatible rights, a deliberate algorithm deviation changes security or observable behavior, or a measured performance tradeoff changes the product requirements. Routine compatible fixes within the approved contracts need no repeated policy approval.
 
 ## 4. OD-02 — distinguish authenticated recovery from ordinary correction
@@ -121,6 +129,42 @@ direction is not an immediate licence change or an upstream permission grant.
 The product should aim to recover a badly wrong local date without an arbitrary small limit merely because the offset is large, provided the authenticated evidence and correction policy justify it. A local clock wrong by approximately 100 years is an explicit research/acceptance target.
 
 That is different from accepting an unrestricted target date or allowing any large step during normal operation. Until the wider path is qualified, existing conservative broker limits apply. Preserve source agreement, fresh evidence, current machine-policy authorization, sole clock ownership, cumulative accounting, and acknowledgment of the actual applied effect.
+
+#### V1 protocol and hardware scope — 27 November 2026
+
+**Direct owner clarification and documentation-repair instruction:** David states
+that V1 is purely an NTP/NTS/Roughtime client. V1 includes NTPv4, NTS and bounded
+Roughtime cold-date bootstrap. Direct PPS/GPS/GNSS/refclock inputs are outside
+the product scope. Neither installation, runtime operation nor ordinary source
+development requires David or an end user to own or attach reference-clock hardware.
+
+[RGT-0/RGT-C01](../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
+now belongs to P2 acquisition/recovery and P7 integrated V1 acceptance. This
+supersedes its earlier future-only placement, including dated sequence references
+below. Protocol, provider/key, interval, dependency, Windows-verifier and actual
+bootstrap-to-NTS evidence remain open. David reconfirmed the intended sequence:
+Roughtime roughly estimates the date for TLS certificate validation, then NTS
+supplies authenticated time for ongoing synchronization. The approximate interval
+stays inside isolated bootstrap validation; Roughtime does not directly discipline Windows, become an NTS
+vote or bypass certificate, source-agreement, date/era/scale or broker checks.
+Healthy retained/strict NTS need not invoke bootstrap. Roughtime-only qualification
+does not require the deferred Khronos/Ananke reserve; unavailable bootstrap must
+remain honestly unavailable under the applicable recovery policy.
+
+CHR-0 remains post-V1 with RGT-C01 as a prerequisite; moving RGT-0 does not move
+Chrony replacement, Khronos/Ananke, Android or other deferred work into V1. Their
+existing relative order and acceptance obligations otherwise remain.
+
+Independent reference equipment is a qualification method for a declared physical
+timing envelope. PPS/GNSS is one conditional laboratory option, with no selected
+device or purchase requirement. The [W11 reference disposition](../tasks/windows11-integration.md#reference-feasibility-disposition--26-november-2026)
+owns the missing evidence and changed-input re-entry condition. Stop repeated
+device-inventory questions, procurement research and unchanged feasibility passes;
+agent/session handoff is not a changed input. Continue the bounded source child
+selected in [development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Physical qualification and dependent positive mapping/Core-admission claims stay
+open. This scope clarification supplies no calibration, native result, hold lift
+or release approval and changes no numerical/security/coverage/mutation threshold.
 
 **Future bootstrap direction — 3 November 2026 (direct owner clarification):**
 David identified Roughtime servers as the intended initial time source for a
@@ -1355,8 +1399,9 @@ sits between KHR-C01 and Android. Its GEO-C01 comparison/disposition belongs to 
 reusing catalogue and advisory-history owners. `ADOPT_LIMITED`, `DEFER` or `REJECT`
 all close the experiment; production GeoIP implementation is separately scoped
 and is not an Android prerequisite. An adopted Khronos implementation retains its
-existing qualification requirement before Android. Current Windows P0–P7 and the
-separate RGT-0 → CHR-0 order remain intact.
+existing qualification requirement before Android. Under the 27 November OD-02
+amendment, RGT-C01 belongs to V1 P2/P7 while CHR-0 remains post-V1; the GeoIP
+experiment does not change those gates.
 
 **Engineering experiment boundary:** geography may order ordinary acquisition
 candidates but cannot grant trust, replace actual measurements, weaken independent
@@ -1704,8 +1749,9 @@ MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. This supersed
 older descriptions of Khronos as the first Windows follow-up. The
 [13 November amendment](#201-mathematics-experiments-first--13-november-2026)
 inserted MATH-0 / MATH-C01 before MT-0; the [14 November amendment](#202-certificate-distrust-second--14-november-2026)
-now inserts TRUST-0 between them. OD-12's relative Khronos → GeoIP → Android order and the
-separate later RGT-0 → CHR-0 direction remain.
+now inserts TRUST-0 between them. OD-12's relative Khronos → GeoIP → Android order
+remains. The later 27 November OD-02 amendment places RGT-C01 in V1 and keeps
+CHR-0 post-V1 with RGT-C01 as a prerequisite.
 
 [NV-MT-001](plans/post-v1-multithreading.md) records the phased plan, resource/
 ownership contracts, independent healthy/fault observations and MT-C01 exit.
@@ -1735,6 +1781,8 @@ MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. This supersed
 MT-0's first position while preserving the relative order of the existing
 follow-ups, OD-12, the pre-V1 WinGet requirement and the separate later
 RGT-0 → CHR-0 sequence. Publishing source changes alone is not V1 release.
+The 27 November OD-02 amendment subsequently moves RGT-C01 into V1 while
+retaining post-V1 CHR-0; it does not alter the MATH/TRUST/MT/KHR/GEO ordering.
 
 [MATH-0](../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 records the bounded comparison, primary references and MATH-C01 exit. Evaluate
@@ -1817,9 +1865,10 @@ V1 behavior before its existing phase/release exit. Existing correctness,
 security, native, package and release requirements are not deferred merely
 because their implementation is substantial.
 
-Some reviewed cases concern future Roughtime/Khronos or an unselected TPKI
+Some reviewed cases concern V1 Roughtime, post-V1 Khronos or an unselected TPKI
 protocol. Specify their concrete input, expected result and consumer/stage early;
-execute them when the actual mechanism reaches its selected implementation.
+execute applicable Roughtime cases at its P2/P7 exit and deferred cases when
+their actual mechanism reaches its selected implementation.
 Preparation or a shared-component test does not qualify an absent runtime, and
 agents must not build a dummy mechanism solely to report passing cases.
 
@@ -1837,8 +1886,8 @@ Conditional mechanisms require the specified evidence and a concrete later
 adoption decision. Paper percentages and server serving counts establish no
 NevroTick performance or security result.
 
-Preserve actual V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the
-separate RGT-0 → CHR-0 direction. Ordinary regression tests do not run MATH-0
+Preserve RGT-C01 before V1, actual V1 → MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 →
+GEO-C01 → Android and post-V1 CHR-0’s dependency on RGT-C01. Ordinary regression tests do not run MATH-0
 early or complete its exit. OD-10's post-V1 formal deferral and existing
 native/fuzz/storage/UI execution holds retain their scopes; source preparation
 and separately admitted portable tests continue within current authorization.
@@ -1921,8 +1970,8 @@ trust snapshots, accepted-chain rejection and association-generation invalidatio
 before expanding concurrent acquisition. MT-0 is not a technical prerequisite:
 bounded native-work isolation, admission and actual-completion custody are
 already V1 requirements. The current order is actual V1 release → MATH-C01 →
-TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android; the separate later RGT-0 →
-CHR-0 sequence remains. This placement is the requested engineering judgment,
+TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android. OD-02’s 27 November amendment
+places RGT-C01 before V1 and retains CHR-0 post-V1. TRUST-0’s placement is the requested engineering judgment,
 not a claim that David specified the number two verbatim.
 
 [TRUST-0](../ROADMAP.md#trust-0--post-v1-certificate-distrust-and-revocation) and

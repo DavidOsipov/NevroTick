@@ -148,17 +148,19 @@ for supported target-date/era versus local-error fields, one-use step authority,
 durable unknown outcomes and qualified actual feedback. This source preparation
 selects no exceptional quorum, floor-supersession rule or production envelope.
 
-**Future Roughtime coordination:** [NV-TA-001](plans/time-assurance-integration.md)
+**V1 Roughtime and post-V1 reserve — 27 November 2026:** [OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026) places RGT-C01 in V1 P2/P7; Khronos/Ananke remains post-V1. [NV-TA-001](plans/time-assurance-integration.md)
 and the [shared task](../tasks/time-assurance-integration.md) now retain the
 owner-selected Roughtime-first cold bootstrap and conditional Khronos/Ananke
 provisional-date reserve. R-02 still owns era, interval, fresh
 agreement and saved-floor supersession questions; TA-C01–TA-C22 add combined
 dependency/frame/conflict cases without replacing these requirements. Neither
 an auxiliary agreement nor a new source label proves independent corroboration
-or grants correction authority. Include forced fallback, common-path Pool
-manipulation plus expired credentials, and preservation of signed conflicts.
+or grants correction authority. V1 covers Roughtime failure, preservation of
+signed conflicts and honest blocked recovery; forced-reserve and common-path
+Pool manipulation plus expired-credential cases apply when the post-V1 reserve
+is admitted. Existing explicitly enabled helper threats retain their own gates.
 The dated provider census is source evidence, not live availability or an
-admitted roster. Runtime cooperation does not reorder delivery.
+admitted roster. Qualify the V1 Roughtime-only path and honest unavailable outcome without requiring the deferred reserve; the owner amendment governs delivery order.
 
 ### Required research result
 
@@ -326,11 +328,11 @@ Record exact provider evidence dates, accepted scope, enforcing consumer and
 unqualified cells in the existing catalogue/source task. A completed admission
 worksheet does not prove live interoperability or production source eligibility.
 This card selects no default, new provider, replacement policy or public-server
-probe and does not reorder the current reference/mapping work.
+probe. Development §7 separates the next source child from blocked physical-reference qualification.
 
 ## 7. R-05 — Windows trust with a wrong system date
 
-The future [Roughtime handoff](plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives)
+The V1 [Roughtime handoff](plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives)
 must qualify this same OPEN-8 boundary. TA-W07 owns its coordinated Windows
 experiment when the artifacts/environment are admitted; successful Roughtime or
 Khronos results cannot bypass the required verifier/revocation policy. Distinguish

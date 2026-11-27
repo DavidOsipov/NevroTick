@@ -5,6 +5,14 @@ This is a continuation guide, not a second implementation plan. The
 [S0.5 task](s0.5-ui-comparison.md) owns candidate history and evidence.
 Remote review: [PR10](https://github.com/DavidOsipov/NevroTick/pull/10).
 
+**Current scheduling — 27 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+selects the [original joined-receipt source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+Physical-reference qualification is [HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026),
+with no recurring hardware inventory or procurement on resumption. Independent
+GUI source work continues under its own prerequisites; live backend, D1–D3,
+native and security/metric gates remain. [V1 NTP/NTS/Roughtime scope](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+adds no GPS/PPS/refclock runtime or UI requirement.
+
 The [9 November imported-findings repair](codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
 adds process-owned AccessKit subclass custody and standalone actual-module facade
 controls. Reuse that exact source/evidence chain; this memory-safety correction
@@ -918,8 +926,11 @@ debugger coverage of the changed Shell/FFI paths remains pending.
 
 1. Resume from the actual checkout and
    [development section 7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
-   whose current child is independent reference/mapping qualification after the
-   completed laboratory timing pair. PR10 and the numerical checkpoint above
+   whose current source child connects the consume-once admission handoff for
+   original joined receipts after the completed laboratory timing pair.
+   Physical-reference qualification stays HELD/BLOCKED under the W11 changed-input
+   re-entry rule; no device inventory or procurement is a GUI-source prerequisite.
+   PR10 and the numerical checkpoint above
    retain their dated evidence; they are not the current checkout or next task.
    Preserve the canonical decision identities. Keep
    lock, manifest and graph policy changes with one owner; re-admit affected

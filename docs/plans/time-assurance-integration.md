@@ -1,18 +1,20 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.5<br>
+**Document:** NV-TA-001, revision 1.6<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
+**Scope amended:** 27 November 2026<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
-**Status:** owner-selected future bootstrap priority and retained research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
-**Execution and evidence owner:** [shared future task](../../tasks/time-assurance-integration.md).
+**Status:** owner-selected V1 Roughtime bootstrap and post-V1 reserve research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
+**Execution and evidence owner:** [shared task](../../tasks/time-assurance-integration.md).
 
 ## 1. Scope, authority and delivery order
 
 David requested that the Roughtime research be recorded and its interaction with
-Khronos/Ananke designed. The accepted direction is Roughtime-assisted recovery
-from a severely wrong initial date, followed by the independent replacement of
-Chrony-derived implementations. This document proposes how the time mechanisms
-cooperate. It does not turn every brainstorm alternative into an owner decision.
+Khronos/Ananke designed. The accepted direction includes V1 Roughtime-assisted
+recovery from a severely wrong initial date. Independent replacement of
+Chrony-derived implementations remains post-V1 and requires RGT-C01. This document
+proposes how the time mechanisms cooperate. It does not turn every brainstorm
+alternative into an owner decision.
 
 **Later owner refinement, 3 November 2026:** use Roughtime as the preferred
 initial date source, then NTS; invoke Khronos/Ananke with an NTP population only
@@ -37,7 +39,7 @@ date. The rule is evaluated against all admitted true-date/era hypotheses, not
 the local clock. This amendment qualifies no new source, native mapping or
 clock-write envelope; earlier research/review receipts retain their own scope.
 
-**Current scheduling amendment, 14 November 2026:** [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
+**Post-V1 scheduling amendment, 14 November 2026:** [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
 places [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 first after actual V1 release; [OD-20](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
 places [TRUST-0](post-v1-certificate-distrust.md) second, followed by
@@ -46,23 +48,40 @@ MATH-C01 requires experiment evaluation/disposition, not production
 adoption. This changes delivery order only; the dated protocol research and review
 receipts retain their original scope.
 
-Keep the two roadmap sequences distinct:
+**Current V1 scope, 27 November 2026:**
+[OD-02](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+selects NTPv4/NTS and Roughtime, with no PPS/GNSS/refclock product inputs.
+RGT-0 is finite implementation and qualification work under existing P2/P7 owners,
+with RGT-C01 required before V1. This supersedes earlier later-only Roughtime
+scheduling and the immediate RGT-0 → CHR-0 timing; it does not advance CHR-0 or
+Khronos/Ananke into V1. Protocol, provider/key, interval and Windows-verifier
+gates remain open. Unavailable physical-reference equipment does not block
+independent protocol work or supply a qualification pass.
 
+Keep the delivery obligations distinct:
+
+- **RGT-0 → RGT-C01 within P2/P7 → V1 released.**
+  [RGT-0](../../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
+  retains its implementation and actual Windows-recovery exit.
 - **V1 released → MATH-C01 disposition → TRUST-C01 → MT-C01 → KHR-C01 disposition → GEO-C01 disposition → Android.**
   [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking) and the later
   [GEO-0 experiment](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
   retain `ADOPT_LIMITED`, `DEFER` or `REJECT` outcomes. The existing catalogue task
   owns GEO-C01; geography cannot alter a qualified reserve population or sampler.
-- **RGT-0 → CHR-0.** [RGT-0](../../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
-  retains its own implementation and Windows-recovery exit. Its placement against
-  later Android/DNS work remains open.
+- **CHR-0 after V1 and RGT-C01.** Its placement against other post-V1 work remains
+  open; RGT-C01 alone does not start the replacement stage.
 
-Runtime cooperation does not create a new delivery prerequisite. KHR-0 can
-evaluate the existing acquisition path without Roughtime. RGT-0 must remain
-testable if Khronos is deferred or rejected. A later joint profile needs the
-applicable integration evidence; neither stage inherits the other's completion.
+The reserve adds no V1 delivery prerequisite. KHR-0 evaluates its selected
+baseline in its post-V1 phase. RGT-0 must remain testable while Khronos is deferred
+or rejected. A later joint profile needs the applicable integration evidence;
+neither stage inherits the other's completion.
 Claiming the combined automatic-reserve profile requires qualification of its
-reserve branch; a Roughtime-only configuration must disclose the absent reserve.
+reserve branch. V1 discloses the absent reserve. In the strict/Roughtime-only
+profile, with no separately enabled and admissible plain-helper route, failed cold
+bootstrap stays blocked or independently usable cached/strict NTS continues.
+[Architecture §8.1](../windows-time-architecture.md#81-recovery-order) retains
+the existing explicitly enabled helper policy and all subsequent NTS/broker gates.
+Roughtime failure neither enables those helpers nor clears signed conflict.
 The current Core work and [execution gates](development-plan.md#7-next-executable-task-for-a-development-agent),
 including the admitted Sandbox scope and remaining holds, continue to govern.
 
@@ -71,9 +90,9 @@ including the admitted Sandbox scope and remaining holds, continue to govern.
 | Mechanism | Proposed NevroTick role | Limit of that role |
 | --- | --- | --- |
 | NTS acquisition and primary estimator | Fresh authenticated observations for ordinary estimation and the existing recovery/correction policy | Authentication, source agreement, accuracy and permission to change the clock remain separate |
-| Roughtime | Preferred approximate UTC/date interval for cold bootstrap without an adequate trusted time basis | No NTS vote, direct Windows clock write or claim of fine precision |
-| Khronos-inspired recovery | Conditional robust date candidate when the preferred branch cannot supply usable evidence | Unauthenticated Pool input remains provisional; cold-start guarantees need their own population, fault, era and sampling analysis |
-| Ananke-inspired admission | Candidate policy for constructing and maintaining the reserve population | A pool policy, not another measurement protocol or independent vote; generic Pool answers are not an audited Ananke roster |
+| Roughtime | V1 preferred approximate UTC/date interval for cold bootstrap without an adequate trusted time basis | No NTS vote, direct Windows clock write or claim of fine precision |
+| Khronos-inspired recovery | Post-V1 conditional date candidate when the preferred branch cannot supply usable evidence | Unauthenticated Pool input remains provisional; cold-start guarantees need their own population, fault, era and sampling analysis |
+| Ananke-inspired admission | Post-V1 candidate policy for constructing and maintaining the reserve population | A pool policy, not another measurement protocol or independent vote; generic Pool answers are not an audited Ananke roster |
 | Existing engine policy and clock broker | Admit evidence, prepare eligible proposals, then enforce current authorization and actual-effect accounting | Agreement never expands privilege, replenishes budgets or bypasses the broker |
 
 **Roughtime source facts.** Experimental RFC 10049 uses configured long-term
@@ -111,12 +130,12 @@ reused after changing the pool, sampler, retries, trust or panic behavior.
 Keep network collection and pure calculations in their existing unprivileged
 engine/core owners. Reuse the engine's recovery/correction policy; do not create
 a competing service, generic command interface or independent phase/frequency
-controller. Suggested evidence types below are future contracts, not existing
+controller. Suggested evidence types below are planned contracts, not existing
 Rust APIs.
 
 ```mermaid
 flowchart TD
-    A["Ananke-inspired pool admission"] --> K["Khronos reserve date candidate"]
+    A["Post-V1 Ananke pool admission"] --> K["Post-V1 Khronos reserve date"]
     R["Preferred Roughtime acquisition"] --> S["Bootstrap branch and evidence policy"]
     S -->|"usable signed interval"| N["Full NTS verification and fresh agreement"]
     S -->|"eligible reserve trigger"| K
@@ -135,7 +154,7 @@ these mechanisms schedules an extra event or synthesizes a ±1-second broker
 request. The leap guard and subsequent fresh-quorum residual correction use the
 same engine/broker ownership and actual-outcome rules as ordinary recovery.
 
-**Selected future operating role:** conditional bootstrap reserve. Healthy NTS
+**Selected post-V1 reserve role:** conditional bootstrap reserve. Healthy NTS
 tracking does not periodically activate Khronos under this profile. A later
 continuous observer or correction inhibitor would be a separately selected and
 qualified extension. The reserve is intended to activate automatically within
@@ -163,10 +182,15 @@ NTS tracking outside the applicable guard.
    finite deadlines and available qualified transports, including TCP where
    advertised; one malformed reply is not a failure of the whole mechanism.
 3. If that branch yields usable evidence, pass its interval to isolated NTS
-   verification. If it cannot, classify the reason under section 6 and, when
-   eligible, invoke the bounded Khronos/Ananke-inspired reserve. Its output is a
-   provisional date hypothesis with lower assurance, not a clock correction.
-4. For either route, establish supported date/era interpretation and complete
+   verification. If it cannot, classify the reason under section 6. Without a
+   separately enabled, policy-admissible plain-helper route, V1 reports blocked
+   cold bootstrap or retains independently usable cached/strict NTS. An already
+   enabled helper route retains architecture §8.1’s complete gates; timeout or
+   route change cannot clear signed conflict. After post-V1 reserve qualification,
+   an eligible failure may invoke bounded
+   Khronos/Ananke recovery. Its output is a provisional date hypothesis with
+   lower assurance, not a clock correction.
+4. For every admitted route, establish supported date/era interpretation and complete
    identity/trust/revocation policy, fresh protected NTS observations, configured
    source agreement and candidate-time revalidation. Preserve the distinct
    Roughtime or plain-reserve ancestry. Do not lower existing NTS agreement
@@ -185,7 +209,7 @@ NTS. Bind reserve rounds to a defined comparison epoch and absolute-date/era
 interpretation before using their offsets. Earlier observations are not
 automatically promoted into that epoch. An untriggered reserve is not an agreeing
 monitor. Authentication, agreement, evidence age, interval width and the actual
-bootstrap route remain separate in diagnostics and future UI work.
+bootstrap route remain separate in diagnostics and production UI work.
 
 **No date search until TLS accepts.** A certificate-time error may mean a wrong
 date or an expired/misconfigured server. Try the other admitted NTS authorities,
@@ -206,7 +230,7 @@ case, not proof that every fallback can be safely completed. [S2, S3]
 
 ## 5. Evidence contracts and dependency accounting
 
-The engine's future receiving boundary must accept checked, immutable evidence
+The engine's planned receiving boundary must accept checked, immutable evidence
 with these conceptual fields. Exact types and limits are frozen in TA-W02 before
 implementation; documentation alone does not enforce the contract.
 
@@ -278,8 +302,9 @@ does not globally disable same-segment NTP UTC tracking.
 
 Here, **qualified NTS** means the complete current identity, admission, freshness,
 agreement and policy requirements, not merely an authenticated packet.
-This table specifies the selected future bootstrap routing and its proposed
-guards. It does not replace existing tracking policy with a continuous watchdog.
+This table specifies V1 Roughtime routing and the separately deferred post-V1
+reserve guards. It does not replace existing tracking policy with a continuous
+watchdog.
 
 | Situation | Required distinction | Proposed result |
 | --- | --- | --- |
@@ -292,16 +317,16 @@ guards. It does not replace existing tracking policy with a continuous watchdog.
 | Fresh comparable evidence agrees | Compatibility is conditional on provenance and uncertainty | Record the bounded corroboration; no new vote, tighter precision claim or expanded correction budget |
 | Plain reserve contradicts qualified NTS | Provisional evidence has weaker authentication | Bounded diagnosis; no plain replacement clock or unlimited veto |
 | Fresh Roughtime and NTS contradict | No generic majority across mechanisms | Preserve conflict and evidence; reject an inconsistent Roughtime-dependent bootstrap candidate. Outside that dependency, existing NTS policy controls; a new correction inhibitor requires qualification |
-| Cold bootstrap; no usable Roughtime result within budget | No replies, too few independent operators, unsupported wire/transport or rejected intervals are different causes | The qualified future profile invokes the labelled provisional-date reserve; it still completes every applicable NTS gate before clock effects |
-| Invalid Roughtime packet/signature | Could be corruption, interference or protocol grease, not proof of a lying authenticated server | Reject the reply, continue within budget; exhaustion can trigger reserve, never new trust or a malfeasance accusation from signature failure alone |
-| NTS certificate-time failure with the Roughtime-derived candidate | Date incompatibility is a hypothesis, not proof Roughtime is wrong | Try other admitted NTS authorities; allow bounded alternate-date diagnosis through the reserve under the declared conflict policy |
+| Cold bootstrap; no usable Roughtime result within budget | No replies, too few independent operators, unsupported wire/transport or rejected intervals are different causes | Without a separately enabled and admissible plain-helper route, V1 exposes blocked recovery or retains independently usable cached/strict NTS. Existing explicit helpers retain architecture §8.1’s gates and cannot clear signed conflict. Only a qualified post-V1 profile invokes the Khronos/Ananke reserve; all NTS gates still precede clock effects |
+| Invalid Roughtime packet/signature | Could be corruption, interference or protocol grease, not proof of a lying authenticated server | Reject the reply and continue within budget; exhaustion follows the unavailable-evidence outcome above. No new trust or malfeasance accusation from signature failure alone |
+| NTS certificate-time failure with the Roughtime-derived candidate | Date incompatibility is a hypothesis, not proof Roughtime is wrong | Try other admitted NTS authorities; bounded alternate-date reserve diagnosis requires the separately qualified post-V1 conflict policy |
 | Roughtime succeeds; NTS name, chain, explicit revocation, required revocation evidence or agreement fails | These are not generic date errors | Reject the affected path; preserve the applicable policy and try other admitted authorities. No date search or relaxed checks to force success |
 | NTS transport fails | A different date cannot unblock a network path | Bounded endpoint/transport recovery; no false Roughtime-error classification |
 | Signed Roughtime conflict persists while reserve suggests another date | Lower-trust agreement cannot erase stronger contradictory evidence | Preserve conflict across branch changes and timeouts; only the qualified resolution rule can admit a final NTS candidate |
 | NTS becomes unavailable while the other checks agree | Auxiliary agreement is not renewed NTS evidence | Existing bounded holdover/recovery rules apply; do not refresh NTS observation or full-authentication age |
 | Clock, boot, catalogue, pool or policy changes during a round | Old evidence may be incomparable | Invalidate or perform only the qualified rebase; late replies cannot authorize the new generation |
 | External evidence conflicts with an intact future saved floor | Integrity does not prove semantic correctness | Preserve records and consumed authority; use only R-02's approved supersession/refusal procedure |
-| Khronos is deferred/rejected or no admissible reserve roster exists | The requested reserve is not available in this configuration | Roughtime/NTS qualification remains independently possible; expose the missing reserve and retain the existing blocked/manual recovery path |
+| Khronos is deferred/rejected or no admissible reserve roster exists | The requested reserve is not available in this configuration | Roughtime/NTS qualification remains independently possible; expose the missing reserve. Existing explicitly enabled, admissible helpers retain their policy; otherwise cold recovery stays blocked or independently usable cached/strict NTS continues |
 
 A timeout after a recorded contradiction does not resolve it. Declare how a
 conflict is cleared by new comparable evidence or an authorized decision. Keep
@@ -340,8 +365,9 @@ unauthenticated DNS responses or treat MSIX signing as source-time correctness.
 [existing catalogue task](../../tasks/server-catalogue-and-statistics.md) now
 require Roughtime public-key algorithm/bytes, exact protocol profile,
 source/endpoint scope and provenance in the first catalogue schema. Schema
-preparation and a future publisher-side collector do not activate RGT-0 or admit
-the documented keys as a shipped roster. Ordinary NTP/NTS catalogue work may
+preparation and a future publisher-side collector do not qualify RGT-0 or admit
+the documented keys as a shipped roster. RGT-0 now belongs to V1 under the
+27 November scope amendment. Ordinary NTP/NTS catalogue work may
 proceed independently; this plan retains runtime verification, rotation,
 conflict, bootstrap and source-minimum authority.
 
@@ -472,7 +498,8 @@ revocation/offline/retrieval policy and supported true-date range. A real Window
 experiment needs its admitted disposable environment, independent observer,
 bounded effects and restoration; a cross-build is insufficient.
 
-Retain these alternatives for a concrete future decision, not automatic fallback:
+Resolve the applicable V1 verifier/key choices before their dependent RGT work;
+reserve choices remain post-V1. These alternatives are not automatic fallback:
 
 | Open choice | Evidence needed before dependent implementation |
 | --- | --- |
@@ -494,12 +521,14 @@ TA-C01–TA-C22, valid/hostile controls, candidate identity and actual results. 
 separates portable policy/protocol models, controlled interoperability, native
 Windows evidence and the two roadmap exits. No planned case is marked passed.
 
-The next step for this workstream is the source/contract freeze in TA-W02 when its
-phase is selected. Current product work stays with development-plan §7. KHR-C01
+The next step is the Roughtime/NTS source/contract freeze in TA-W02 at the existing
+P2 entry; RGT-C01 is required by P7 before V1. Current product ordering stays with
+development-plan §7 and does not retry the blocked physical-reference trial.
+Reserve-only TA work remains post-V1. KHR-C01
 can close with a documented deferral/rejection, then hand off to GEO-0 before
-Android; GEO-C01 does not require GeoIP implementation. RGT-C01 still requires functioning
-qualified bootstrap. The optional watchdog cannot become a hidden prerequisite
-for the RGT-0 → CHR-0 sequence.
+Android; GEO-C01 does not require GeoIP implementation. RGT-C01 still requires
+functioning qualified bootstrap, including truthful refusal. Khronos is not a
+hidden prerequisite; CHR-0 requires RGT-C01 but remains post-V1.
 
 ## 11. Primary sources
 

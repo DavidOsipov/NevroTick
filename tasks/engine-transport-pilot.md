@@ -25,9 +25,15 @@ is complete. Its then-next N2 fit/suffix contract and subsequent selected childr
 are also complete; the current continuation below supersedes that old routing.
 No commit/stage/push or Windows execution follows.
 
-**Current product action — 26 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
-selects the independent reference, read-side mapping and validity issuer under
-the [Engine-to-Core admission handoff](#current-engine-to-core-admission-handoff--23-november-2026).
+**Current product action — 27 November 2026:** [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
+selects the [consume-once admission handoff for original joined protected receipts](#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+under the [Engine-to-Core handoff](#current-engine-to-core-admission-handoff--23-november-2026).
+Physical-reference qualification is **HELD/BLOCKED** under the
+[W11 disposition](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026).
+Ordinary resumption does not restart hardware inventory, procurement or a general
+equipment survey. [OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
+places NTP/NTS/Roughtime in V1 without GPS/PPS/refclock runtime support; it makes
+no equipment-availability claim and waives no qualification requirement.
 The [rebuilt authenticated timing pair](#replay-the-rebuilt-authenticated-timing-pair)
 completed its exact offline Windows laboratory scope, including original
 application captures and trust/resource retirement. It still reports
@@ -2641,7 +2647,8 @@ native behavior. New failure paths cannot refresh last-success time or erase an
 older valid observation's original age. The
 [architectural closure inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
 and [development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
-retain the current reference/mapping dependency and existing holds; this card
+retain qualified mapping as a production-admission dependency while the current
+source child advances separately from held physical qualification; this card
 activates no retry campaign or durable-store experiment.
 
 ### Documentation integration and review receipt
@@ -31783,6 +31790,12 @@ still gets no production measurement declaration. Core history in the test
 composition uses fixture timing and a fixed divisor. The seven-owner Core
 result qualifies its selected fixture scope.
 
+**Scheduling amendment — 27 November 2026:** the settled supplier/receiver
+contract remains. Implement the [bounded receiving source child](#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+next; the [physical-reference trial is HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026).
+The numbered stages retain their production dependencies, not an instruction
+to repeat equipment questions or reopen the completed contract design.
+
 1. **Canonical laboratory pair.** The completed private pair retains the
    exact images in the preceding receipt. The separate publication candidate
    was prepared on `c347bd0` plus twelve paths and its recorded scratch-space
@@ -31792,9 +31805,10 @@ result qualifies its selected fixture scope.
    now binds the facade, matching peer, controller, readback and guest retirement
    to one tested candidate. This step supplies the original capture evidence
    for the reference trial below.
-2. **Reference and issuer, independent of the build.** Reuse the
+2. **Held reference qualification; source preparation independent of the build.** Reuse the
    [W11-W01 reference trial](windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026).
-   The Windows reference owner must admit traceable UTC and independently
+   Re-enter its physical qualification only under the current W11 changed-input
+   rule. For production-positive admission, the Windows reference owner must admit traceable UTC and independently
    bounded event pairing, calibration, drift and uncertainty. The actual
    clock-effect and invalidation owner supplies a checked revision and
    withdraws stale authority on discontinuity or ambiguity. Domain/bootstrap
@@ -31857,14 +31871,80 @@ Reference admission, positive history integration and their exact-candidate
 results remain open. The plan update schedules no builds, native execution
 or formal work.
 
-**Coverage routing — 26 November 2026:** the
+**Coverage routing — reconciled 27 November 2026:** the
 [architectural closure inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
-retains this settled supplier/receiver contract and the independent reference
-trial as the next dependency. The [R-02 decision/consumer card](../docs/nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026)
+retains this settled supplier/receiver contract. The source child below advances
+the actual receiver while independent physical qualification stays HELD/BLOCKED;
+qualified reference/mapping remain dependencies of positive production history.
+The [R-02 decision/consumer card](../docs/nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026)
 and [R-05 lifetime card](../docs/nevrotick-research-handoff.md#r-05-ordinary-and-reused-authentication-closure--26-november-2026)
 route the production policy inputs at their dependent stages. They neither
 replace calibrated mapping evidence nor reopen the supplier abstraction; the
 actual current, consume-once Core join above remains the implementation exit.
+
+###### Consume-once admission handoff for original joined protected receipts — 27 November 2026
+
+**Next executable source child; implementation and checks not yet performed.**
+Acquisition/Engine owns the joined receiving change, Windows platform owns the
+mapping/withdrawal input contract, and the existing S1.2/S1.4 receiving owners
+review the later history seam. Reuse the settled 8 November contract and the
+current handoff above under CHECK-6/7/8/11/14/25/27. This is one bounded source
+implementation, not another supplier-design or physical-feasibility pass.
+
+**Inspected starting path (`45e2fcaafe25faae02c41d5ddc4a46ebdcf48a92`):**
+`nts_ke_experiment/datagram.rs::receive_joined` returns the actual
+`ReceivedManagedSuccessor`; its `into_parts` transfers first/terminal history
+and charged work to `managed_preview.rs::ManagedProtectedReport::from_observed`.
+The report retains original receipts, but repeated measurement access is a
+diagnostic calculation, not history admission. `measurement.rs::measure_for_source`
+is explicitly conditional/ineligible. The separate
+`ntp-exchange/tests/support/scenario_driver.rs::Composition::deliver` consumes
+fixture observations into Core with fixture time and divisor `1.0`; the Engine
+manifest has no `time-core` dependency. Do not present that test composition as
+the missing production bridge.
+
+**Concrete change:** connect the original joined ordinary receipts to one private,
+consuming receiving decision before report projection. Preserve their source/
+association/configuration identity, capture span, original age, cookie history
+and native-work charges; transfer the receiving opportunity once rather than
+reconstruct it from report fields. Connect absent or withdrawn read-side supplier
+outcomes to explicit refusal at this actual boundary. The source owner must
+identify the consumed-marker owner and final current-revision guard within the
+existing private join/source-policy path before editing that seam; this is the
+finite implementation prerequisite, not a reopened abstract contract. Keep the
+decision and consuming transfer serialized, with no await/callback/unlock between
+them. Do not create a detached `MappingValid` model, affirmative calibration
+provider, default zero uncertainty or unadmitted Core dependency.
+
+**Bounded scope and controls:** use the existing
+`nts_ke_experiment/datagram/tests.rs`, `managed_preview_tests.rs` and joined
+worker fixtures to exercise the changed production boundary, with at most the
+existing first and terminal ordinary receipts in one invocation. A controlled
+valid supplier/receipt neighbor must reach the consuming handoff once; a second
+attempt or repeated reporting cannot create a new handoff, history row or fresh
+observation. Missing/withdrawn evidence, source replacement immediately before
+consumption, stale/foreign identity, crossing validity, excessive declared error,
+late return and revision exhaustion must refuse while retaining original facts,
+age and debits. Pair withdrawal with a fresh controlled reissue and a genuinely
+new receipt that can proceed once; an old receipt cannot become new by reissue.
+These source fixtures establish custody and receiving behavior only. The actual
+production supplier remains unavailable, so existing diagnostic results retain
+`mapping-unavailable eligible=0 fresh_sync=0`; no positive Core insertion or
+clock effect is enabled by this child.
+
+**Exit and stop:** complete this one source path and its healthy/refused/duplicate/
+reissue controls, then freeze the exact candidate and run its applicable configured
+focused checks, external contracts and affected 90% security-primitive/95%
+critical-file checkpoint gates under the existing admission and resource limits.
+Use `implement-rust`, `implement-rust-contracts` and the reached security/QA owners
+at implementation; the testing contract governs actual execution. Do not expand
+into a scheduler, public-server run, hardware survey, native trial or whole-Engine
+campaign. A concrete missing owner access/serialization fact or unavailable gate
+is recorded once here with its next discriminating source action. Positive
+production mapping and consume-once Core history remain held until their genuine
+issuer, date/era/scale, quality and calibration prerequisites and applicable
+qualification are satisfied. Independent service/package/UI source work retains
+its own gates; no existing execution hold is lifted.
 
 ###### Calculate each original joined ordinary receipt
 
