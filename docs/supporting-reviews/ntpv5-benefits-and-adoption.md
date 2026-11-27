@@ -261,11 +261,14 @@ optimizations; it predicts neither isolated F323 benefit nor NevroTick accuracy.
 
 ## 7. Scheduling, adoption and remaining uncertainty
 
-The [roadmap](../../ROADMAP.md) remains **V1 → MATH-0 → TRUST-0 → MT-0 →
-Khronos/Ananke → GEO-0 → Android**. F323/v5 remain unscheduled, not automatic
-MATH-C01 additions. Current execution follows development §7: the newer service
-composition checkpoint precedes the complete first portable W11-W08 logger
-catalogue/routing stage with all five obligations, not an obsolete Core-only continuation.
+Under the 27 November [OD-21 amendment](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions),
+the [current roadmap](../../ROADMAP.md) is **V1 → MATH-0 → TRUST-0 → MT-0 →
+CLK-0 → Khronos/Ananke → GEO-0 → Android**. F323/v5 remain unscheduled, not
+automatic MATH-C01 additions. Use the maintained
+[development §7 continuation](../plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+for the next executable source task and its held qualification work. The
+21 November source and integration receipts above retain their dated scope;
+they do not select the current task.
 
 Adoption needs a bounded assignment in the existing protocol task, current source
 revalidation, frozen metadata/currentness contracts, independent review and

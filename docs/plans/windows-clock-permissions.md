@@ -1,7 +1,7 @@
 # NV-CLK-001 — Windows clock-permission restriction plan
 
 **Working feature name:** Restrict clock changes<br>
-**Revision:** 1.0, 27 November 2026 (Asia/Tbilisi)<br>
+**Revision:** 1.1, 27 November 2026 (Asia/Tbilisi)<br>
 **Status:** owner-requested future feature and roadmap position; detailed design proposal, subject to reassessment and native qualification<br>
 **Owner decision:** [OD-21](../nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)<br>
 **Roadmap:** [CLK-0](../../ROADMAP.md#clk-0--restrict-local-clock-changing-permissions), after MT-C01 and immediately before KHR-0<br>
@@ -96,7 +96,7 @@ ordinary Windows clock claim. [MS-10](#ms-10-windows-security-boundaries)
 | Actor or condition | Intended contribution | Limit that remains visible |
 | --- | --- | --- |
 | Process whose effective token lacks the time privilege | Windows should reject privileged clock-setting APIs; qualify the actual APIs on the selected profile. | An account-policy display alone does not establish the process token. |
-| Newly created elevated process deriving the privilege only from Administrators | The proposed removal may eliminate that direct grant route. | Other groups, direct assignments or authority paths may still provide it. |
+| Elevated process using a token from a new logon after the policy change | The proposed removal may eliminate clock authority if Administrators was its only time-right grant route. | Process creation alone does not refresh a logon token; other grants may still provide authority. |
 | Already-running privileged process | Show activation uncertainty and explain the existing-token boundary. | Changing account assignments does not retroactively rewrite its token. |
 | Local Service and reported remaining principals | Preserve required assignments and disclose exceptions. | Their presence prevents a universal NevroTick-only claim. |
 | Malicious unrestricted administrator or SYSTEM-level control | Reduce casual direct use where applicable; detect some configuration divergence. | The actor may alter policy, services, processes or the product itself. |
@@ -677,28 +677,43 @@ does not require repeating every unrelated check.
 
 ### 16.1 Initial research and review record
 
-The predecessor is the Microsoft Learn investigation and independently reviewed
-feature proposal from this conversation on 27 November 2026. It was reconciled
-from repository `c27043a8` to `acbb85bd` before this document was requested.
-The user then selected the future roadmap position and asked to preserve the
-detailed plan here. That changes scheduling, not the truth of the remaining
-provisioning and recovery gaps.
+The initial publication recorded a predecessor Microsoft Learn investigation
+and independently reviewed feature proposal from the 27 November 2026
+conversation, reconciled from repository `c27043a8` to `acbb85bd` before this
+document was requested. The raw predecessor review was unavailable during the
+post-merge verification below, so that review remains reported historical
+context, not independently verified review evidence. The user then selected
+the future roadmap position and asked to preserve the detailed plan here.
+That changes scheduling, not the remaining provisioning and recovery gaps.
 
-The prior fresh-context review admitted only the next read-only source/design
-slice. Its useful refinement was to preserve documented empty direct-grant
-results separately from failed observation. This document incorporates that
-refinement in §4, §6 and CLK-T02. The review did not execute native APIs or
-approve a production mutation path.
+The reported prior review admitted only the next read-only source/design
+slice and recommended preserving documented empty direct-grant results
+separately from failed observation. This document incorporates that refinement
+in §4, §6 and CLK-T02. No native execution or production mutation approval is
+claimed from that historical attribution.
 
 At initial publication, the evidence remains source research and documentation
 review. No feature code, Windows policy, service, clock, package or native
 qualification result is created by this plan.
+
+**Completed post-merge verification — 27 November 2026:** the
+[PR #38 review record](https://github.com/DavidOsipov/NevroTick/pull/38#issuecomment-7220245786)
+retains three fresh-context reviewers' verbatim comprehension and results for
+`fd62e2c0591f1a91351b50d8857699391014fff2`, tree
+`27772b35d1a65b25088a6fb44bca9b57413c26aa`, together with the applied repository
+skills, full-page Microsoft Learn source coverage, documentation checks and
+separate failed hosted UI checks. It found no material factual correction in
+the 15 changed files; its minor scheduling and token-wording follow-ups are
+addressed by this documentation revision. This completed review supplies current
+documentation evidence, not retrospective verification of the predecessor or
+native/product qualification.
 
 ### 16.2 Revision ledger
 
 | Date | Revision | Change and evidence scope |
 | --- | --- | --- |
 | 27 November 2026 | 1.0 | Preserve the researched feature proposal, accepted placement after MT-C01/before KHR-0, initial candidate, limits, ownership, cases, source links and future reassessment protocol. Implementation/native evidence remains open. |
+| 27 November 2026 | 1.1 | Link the completed post-merge factual/skill review, distinguish its evidence from the unavailable predecessor receipt, and clarify new-logon-token activation. Reconcile the NTPv5 scheduling consumer with OD-21. No feature implementation or native qualification is added. |
 
 Future entries should identify the changed decision or evidence, affected
 guarantee, owner and links to actual results. Do not fill the ledger with routine
