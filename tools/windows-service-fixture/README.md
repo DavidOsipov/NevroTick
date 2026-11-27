@@ -717,7 +717,7 @@ confined to the selected file at both namespace aliases. Each replay
 starts from an absent/empty private target, then requires successful package-only
 Cargo cleaning and fresh fixture libtest artifacts for variants and restoration.
 
-For `graph` and `privilege-checkpoint`, `--scratch-root` can select an existing
+For `graph`, `fixture-test` and `privilege-checkpoint`, `--scratch-root` can select an existing
 private, user-owned directory outside the checkout and read-only inputs. For
 example, create a private child of the WSL tmpfs with
 `mktemp -d /mnt/wsl/nevrotick-service.XXXXXXXX` and pass its absolute path.

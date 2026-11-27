@@ -1598,6 +1598,19 @@ schema/limits, trust/replay lifecycle and actual Rust admission or generated-dat
 contract. No production default, preset, automatic replacement or weaker quorum
 is selected here.
 
+**Operator-evidence binding preparation.** The offline R candidate and semantic diff remain unapproved. Before a later approved-input builder can use operator evidence, the catalogue/release owner and relevant source/time-assurance owners need a reviewed account of the evidence's authority and scope, its association with the exact candidate and relevant endpoint/key/profile, and the disposition being reviewed. The existing DATA-01/03/05 and binary-plan §§6.2–6.3 requirements govern; the approval/evidence artifact representation, reviewer authentication, evidence threshold, stable production IDs and actual consumer are still open. An informational URI, digest, source-list inclusion or successful parse is not itself an operator authorization or approval.
+
+The following **synthetic review controls** clarify existing obligations. They specify no test fixture format and do not authorize a provider or implementation:
+
+| Comparison for an independent reviewer | Required review interpretation; future consumer still unimplemented |
+| --- | --- |
+| A complete candidate and a matching, scoped hypothetical operator statement are unchanged. | The packet can be presented for the existing owner's review; completeness and matching identifiers confer no automatic approval. |
+| A relevant candidate or evidence input changes after review, or the same hostname appears with a different endpoint, key or profile. | Re-review the affected binding against the exact candidate; neither the earlier disposition nor apparently unchanged neighbors silently authorize the new snapshot. |
+| A source is absent or fails, compared with separate explicit evidence of a withdrawal. | Treat the former as unavailable/blocked comparison, not a retirement. Evaluate a withdrawal only under its applicable evidence and owner review. |
+| Use terms, unsmeared time behavior or dependence are missing or conflicting; separately, a second key appears without an explicitly reviewed overlap. | Keep the affected status unassessed or unresolved and do not infer admission or key overlap; a valid, explicitly scoped evidence neighbor remains reviewable. |
+
+These are planned independent controls for the later approval/builder boundary, not a claim that the current R collector consumes such an artifact or that its existing regression suite exercises approval. OPEN-CAT-01/02/03, R-04/OD-03 and TA-W retain their existing owners; the changes above grant no provider, runtime, native, signing or release approval.
+
 The separate Q0/Q-J pilot, current bounded Core priority, RGT-0 → CHR-0 order,
 NV-LP-001/S1.4 authority and existing Windows/storage/fuzz dispositions remain.
 No dependency was installed; no Core typing policy, Cargo graph, application

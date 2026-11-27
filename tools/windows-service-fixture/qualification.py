@@ -750,10 +750,11 @@ def lane_commands(lane, cargo):
 
 
 def admit_scratch_root(path, lane):
-    """Admit an explicit private work parent for the two batched source lanes."""
+    """Admit an explicit private work parent for the selected source lanes."""
     if path is None:
         return CACHE
-    require(lane in {"graph", "privilege-checkpoint"}, "Scratch relocation is only for graph and privilege-checkpoint.")
+    require(lane in {"graph", "fixture-test", "privilege-checkpoint"},
+            "Scratch relocation is only for graph, fixture-test and privilege-checkpoint.")
     scratch = C.RUNTIME._directory(path, "Service scratch root")
     C.RUNTIME._owned_work(scratch, ROOT)
     require(not C.RUNTIME._overlap(scratch, CACHE), "Service scratch root overlaps the shared writer cache.")
@@ -923,7 +924,7 @@ def main():
     parser.add_argument("--graph-receipt", type=Path)
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--scratch-root", type=Path,
-                        help="Existing private derived-work parent for graph or privilege-checkpoint")
+                        help="Existing private derived-work parent for graph, fixture-test or privilege-checkpoint")
     args = parser.parse_args()
     try:
         status = run(args)
