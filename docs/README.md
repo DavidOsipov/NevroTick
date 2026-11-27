@@ -19,6 +19,18 @@ Do not repeat equipment questions without a changed input. RGT-C01 now joins V1
 P2/P7; Khronos/Ananke, CHR-0 and other post-V1 work retain their separate placement.
 Physical accuracy, positive production admission and all other unmet gates remain open.
 
+**Roughtime implementation-source review — 27 November 2026:**
+[NV-TA-001 revision 1.8](plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+compares the published `roughtime` 0.2.1 client with pinned Roughenough source and
+RFC 10049. It records the wire/evidence mismatches, the existing AWS-LC admission
+hold, the recommended narrow reuse boundary and reported erratum 9238's fixture
+implications. The [existing task](../tasks/time-assurance-integration.md) owns
+TA-W02's contract freeze and the bounded portable consumer before Engine/NTS and
+native integration. [Architecture §8.3](windows-time-architecture.md#83-trust-data-shown-to-users-and-diagnostics)
+now distinguishes signed Roughtime date provenance from plain hints. No client,
+crypto graph, provider roster or Windows recovery is qualified; current product
+ordering and execution holds remain.
+
 **Restricted clock permissions plan — 27 November 2026:**
 [OD-21](nevrotick-owner-decisions.md#25-od-21--restricted-local-clock-changing-permissions)
 and [NV-CLK-001](plans/windows-clock-permissions.md) place CLK-0 after MT-C01,

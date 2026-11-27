@@ -1,7 +1,8 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.7<br>
+**Document:** NV-TA-001, revision 1.8<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
+**Implementation-source review:** 27 November 2026, Asia/Tbilisi; §8.2<br>
 **Scope amended:** 27 November 2026<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
 **Status:** owner-selected V1 Roughtime bootstrap and post-V1 reserve research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
@@ -408,12 +409,15 @@ are not stress, fault-injection or adversarial-test targets.
 
 ## 8. Roughtime implementation and ecosystem research
 
-These are dated source observations, not dependency adoption or live-service
-qualification. Recheck them when TA-W03/TA-W06 starts.
+The initial observations and §8.1 census retain their 3 November evidence scope.
+[Section 8.2](#82-implementation-source-review--27-november-2026) records the
+27 November implementation-source disposition. Neither review admits a
+dependency or qualifies a live service; recheck the selected source and graph
+when TA-W03/TA-W06 starts.
 
 | Candidate | Inspected evidence | Consequence |
 | --- | --- | --- |
-| Roughenough, `04ca59bf321b46b650574aa9e67900f1a9c216a5` | Workspace version 2.3.0, `Apache-2.0 OR MIT`; RFC v1 support and a separate client library. README lists Unix-like systems. [S6] | Evaluate the library behind a bounded adapter. Windows, selected features and the complete dependency/native/licence graph remain unqualified |
+| Roughenough, `04ca59bf321b46b650574aa9e67900f1a9c216a5` | Workspace version 2.3.0, `Apache-2.0 OR MIT`; RFC v1 support and a separate client library. README lists Unix-like systems. [S6] | Evaluate bounded protocol/validation reuse under §8.2; the full client remains unadmitted. Windows, selected features and the complete dependency/native/licence graph remain unqualified |
 | Roughenough validator | `ResponseValidator::new` accepts `Option<PublicKey>`; without a root key it checks response self-consistency rather than the full root-key trust chain. [S6] | NevroTick's production constructor must require the admitted root-key identity. Successful generic validation cannot create authenticated evidence by itself |
 
 The optional root-key API is a documented capability, not a vulnerability claim.
@@ -493,6 +497,115 @@ qualified UDP/TCP alternatives before invoking the reserve, but TCP on 5319
 does not guarantee passage through a restrictive network. Never silently reduce
 the source minimum or add draft parsers merely to improve the count. [S1, S7, S8]
 
+### 8.2 Implementation-source review — 27 November 2026
+
+This source review used NevroTick at
+[`3e3536d808789dabb1b6577b069140ca13ad6e31`](https://github.com/DavidOsipov/NevroTick/tree/3e3536d808789dabb1b6577b069140ca13ad6e31).
+It refines TA-W02/TA-W03's implementation basis without replacing the historical
+baseline or census. No package code, builds, dependency resolution, public
+time-server probes or Windows tests were run. The findings establish source fit,
+not an exploitable CVE, release qualification or dependency adoption.
+
+#### 8.2.1 Published roughtime 0.2.1 disposition
+
+**Do not adopt `roughtime` 0.2.1 or its verifier/client unchanged.** The inspected
+published representation declares 0BSD and VCS revision
+`b37ce906f0d679e5bc29d2f6f913f4b94747112f`; its registry publication is
+24 August 2026. The working docs.rs source route displayed 0.2.1 throughout;
+independent archive/checksum and VCS parity were not established. Access to its
+declared upstream repository returned 404, leaving maintenance continuity
+unresolved rather than proving abandonment. [S17]
+
+| Boundary | Source finding and disposition |
+| --- | --- |
+| Wire profile | Unframed 1024-byte request with a 64-byte nonce and padding, without `VER` or `TYPE`; verifier uses microseconds, legacy `RoughTime` contexts including delegation `--`, and a nonce-derived Merkle leaf with 32-byte truncated SHA-512 hashes. RFC 10049 uses ROUGHTIM framing, a 32-byte nonce, its version/type schema, seconds, final contexts and the full framed request in the leaf. This requires a coherent profile replacement, not a nonce-length patch. Compatibility with a particular legacy service was not proved. [S1, S17] |
+| Crypto graph | `aws-lc-rs` is mandatory; disabling default DNSCrypt does not replace it. `ed25519-dalek` is only a test dependency. The package's 0BSD grant does not clear the existing AWS-LC/native graph hold in [architecture §18.7.1](../windows-time-architecture.md#1871-license-gate-and-finite-provider-choice). [S17] |
+| Evidence and aggregation | The client accepts one success, returns a median with spread as a warning, and loses per-source signed evidence and monotonic exchange bounds. Its even-count midpoint averaging with the maximum input radius does not preserve the contributing intervals. It supplies no admitted operator-independence policy. [S17] |
+| Lifecycle and bounds | One task per supplied entry, reused retry nonce, no received-endpoint check, and plain join handles whose drop detaches tasks require separate aggregate-work, freshness and cancellation ownership. A fixed receive buffer does not bound every public parser/verifier entry point. These observations are source-review limits, not reproduced attacks. [S17, S23] |
+
+The source floor is a fixed lower date, not persisted authenticated freshness.
+Neither that floor nor synthetic/loopback fixtures establishes current-RFC
+interoperability. Keep this crate as comparison material; NevroTick must retain
+the evidence the generic client discards. [S17]
+
+#### 8.2.2 Recommended implementation basis
+
+**Use RFC 10049 as authority, selected Roughenough protocol/validation source as
+the primary Rust reuse candidate, separately admitted cryptography, and
+NevroTick Engine orchestration.** This recommendation selects no Cargo package,
+feature graph, copied source or production root list. [S1, S6, S18]
+
+The pinned Roughenough commit remained upstream HEAD on this review date and
+declares workspace 2.3.0. Published client/protocol versions remain **2.2.0**,
+with registry publication on **12 October 2026**; those are distinct candidates.
+The protocol crate's normal dependencies are `thiserror` and `pastey`. Client,
+common and merkle instead require AWS-LC, so disabling client defaults cannot
+clear the graph hold. Reporting and server test fixtures are optional: do not
+attribute the complete server/cloud graph to a client-only selection. The MIT
+option applies to Roughenough's own code, not automatically to its dependencies.
+[S18, S19]
+
+The client library forbids unsafe code and uses standard UDP APIs; Unix
+`clock_settime` is confined to the CLI. A Windows library route is therefore
+plausible from source, but upstream's Unix-oriented documentation and Ubuntu CI
+do not qualify it. Use no standalone clock-setting CLI. The supplied transport
+is UDP-only; NevroTick owns bounded UDP/TCP handling, monotonic send/receive
+capture, total RTT/deadlines, cancellation and actual completion. [S18]
+
+The optional-root validator remains a diagnostic capability, not a vulnerability
+claim. Production construction must require an admitted root-key identity and
+bind the exact request/response bytes. Preserve offered-version, delegation,
+Merkle and signature checks plus the separate `VERS` membership check. The
+Engine policy must enforce independent operator groups, the complete RFC §8.2
+chained measurement with its repeated server order, causal consistency and
+interval admission; the generic sequence API does not establish those obligations
+merely by returning measurements. TA-W02 freezes the exact count/round contract.
+[S6, S18]
+
+`ed25519-dalek` **3.0.0** is a possible primitive backend, not an
+admitted dependency. Its BSD-3-Clause package and **6 July 2026** registry
+publication support further review; exact archive/source parity, features,
+complete graph/licences/advisories, verification semantics and Windows behavior
+remain open. The current CNG integration supplies no admitted Ed25519 verifier;
+that is a finding about the checked-in provider, not a claim that every Windows
+crypto API lacks Ed25519. Do not implement a replacement primitive locally.
+[S20, S22]
+
+The direct published versions above exceed
+[OD-19's 14-day minimum](../nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
+on the review date. Every newly selected transitive, build and proc-macro version
+still needs the ordinary whole-delta age and source review; a git revision or imported lock
+is no substitute. The strongest counterargument to narrow reuse is maintenance
+and semantic drift from a partial fork. Keep the selection small, preserve
+provenance and upstream changes, and qualify the adapted verifier independently.
+Full-client reuse can be reconsidered only after its dependent gates are met.
+
+#### 8.2.3 Fixture provenance and remaining qualification
+
+**RFC Appendix B is not an unquestioned positive strict-v1 fixture.** Technical
+erratum **9238**, reported 27 October, concerns example signatures retaining
+draft contexts. The coauthor's 9 November reply calls the issue likely valid
+but says the proposed replacement had not yet been verified. The current errata
+portal status was unavailable during this review. Independently verify corrected
+or generated vectors against the normative profile; never weaken final-v1
+contexts to make the old example pass. Retain a wrong-context rejection control.
+[S21]
+
+TA-W02/TA-W03 must freeze framing, units, signature contexts, full-request Merkle
+binding and bounded decoding before TA-W06 interoperability. Include unknown
+tags, malformed lengths, version/context confusion, missing/wrong roots, delayed
+or replayed responses, incomplete chains, signed contradictions and healthy
+controls. Evidence must survive through the actual NTS date-basis consumer;
+neither a median nor successful parsing is authenticated interval admission.
+The [shared task](../../tasks/time-assurance-integration.md) owns finite portable,
+controlled-peer and native exits.
+
+All existing routing and limits remain: V1 Roughtime bootstrap, post-V1 reserve,
+independently usable strict/cached NTS priority, the explicitly enabled helper
+policy, leap/era policy, one broker clock writer, OPEN-8, CHECK-26/27 and the
+scoped native/CI execution holds. This research neither advances the current
+Core queue nor admits network experiments, resets budgets or enables clock writes.
+
 ## 9. Windows gate and explicit decision alternatives
 
 Microsoft documents that a supplied `CertGetCertificateChain` validation time
@@ -557,3 +670,10 @@ hidden prerequisite; CHR-0 requires RGT-C01 but remains post-V1.
 - **S14:** [Alastyr operator information](https://ntp.alastyr.com/en/roughtime.html).
 - **S15:** teaishealthy's [source for the teax.dev service page](https://gist.github.com/teaishealthy/b214d95f6fc0a001278478dc9c37e806).
 - **S16:** NTP Pool [vendor requirements](https://www.ntppool.org/vendors.html); use of assigned vendor zones, traffic and DNS behavior.
+- **S17:** Published [`roughtime` 0.2.1 source](https://docs.rs/crate/roughtime/0.2.1/source/), including [`Cargo.toml.orig`](https://docs.rs/crate/roughtime/0.2.1/source/Cargo.toml.orig), [VCS record](https://docs.rs/crate/roughtime/0.2.1/source/.cargo_vcs_info.json), [`request.rs`](https://docs.rs/crate/roughtime/0.2.1/source/src/request.rs), [`verify.rs`](https://docs.rs/crate/roughtime/0.2.1/source/src/verify.rs), [`client.rs`](https://docs.rs/crate/roughtime/0.2.1/source/src/client.rs), [`wire.rs`](https://docs.rs/crate/roughtime/0.2.1/source/src/wire.rs) and [`floor.rs`](https://docs.rs/crate/roughtime/0.2.1/source/src/floor.rs). Source-route limitations and VCS identity are recorded in §8.2.1; registry [blob `aa59fbefe9cb87af2d1db1a71fc90043b794d52b`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/aa59fbefe9cb87af2d1db1a71fc90043b794d52b) records publication `2026-08-24T07:40:29Z` and checksum `9b7ef4a4bf763598f5c3deb1e72d37277ccade20e70d17f6a1e7d9707d94f412`. No archive checksum was independently recomputed.
+- **S18:** Roughenough source at S6: [protocol manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-protocol/Cargo.toml), [client manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/Cargo.toml), [crypto boundary](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-common/src/crypto.rs), [Merkle manifest](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-merkle/Cargo.toml), [client library](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/lib.rs), [transport](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/transport.rs), [client exchange](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/client.rs), [measurement sequence](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/crates/roughenough-client/src/sequence.rs), [MIT grant](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/LICENSE-MIT) and [CI](https://github.com/int08h/roughenough/blob/04ca59bf321b46b650574aa9e67900f1a9c216a5/.github/workflows/rust.yml).
+- **S19:** Roughenough [published 2.2.0 release](https://github.com/int08h/roughenough/releases/tag/2.2.0) and [protocol 2.2.0 package](https://docs.rs/crate/roughenough-protocol/2.2.0). Registry entries for [client, blob `c505e22eeffaf0102e3ea09470134d806659eb05`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/c505e22eeffaf0102e3ea09470134d806659eb05) and [protocol, blob `aa419e863b703b86eaf7e8c94bcdb5a25617cf30`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/aa419e863b703b86eaf7e8c94bcdb5a25617cf30), checked 27 November, record `2026-10-12T02:03:22Z` and `2026-10-12T02:03:10Z` respectively, with no 2.3.0 entry. These publication records do not establish a resolved graph or archive parity.
+- **S20:** [`ed25519-dalek` 3.0.0 package](https://docs.rs/crate/ed25519-dalek/3.0.0) and [published manifest](https://docs.rs/crate/ed25519-dalek/3.0.0/source/Cargo.toml); registry [blob `19810c3a54c9c5bb24d2ae646c323a5935a034eb`](https://api.github.com/repos/rust-lang/crates.io-index/git/blobs/19810c3a54c9c5bb24d2ae646c323a5935a034eb) records publication `2026-07-06T16:23:09Z`, not yanked, checksum `6ebaa1a2bf1290ab3bfe5a7b771d050ebffab2711c19a81691c683a5144a25de`. Candidate evidence only; archive/source and complete graph review pending.
+- **S21:** RFC 10049 erratum 9238 [official report, 27 October 2026](https://mailarchive.ietf.org/arch/msg/ntp/6Flv19F-d52veYryjOxM_iy9MJ8/) and [coauthor response, 9 November](https://mailarchive.ietf.org/arch/msg/ntp/QxQI3jhZds_af4uiBTz2YZRNRE8/). The report's dated status is Reported; current portal disposition was not verified.
+- **S22:** NevroTick's checked-in [CNG verification mapping](https://github.com/DavidOsipov/NevroTick/blob/3e3536d808789dabb1b6577b069140ca13ad6e31/tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/src/verify.rs) and [provider signer](https://github.com/DavidOsipov/NevroTick/blob/3e3536d808789dabb1b6577b069140ca13ad6e31/tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/src/signer/ec.rs); the mapping comments Ed25519 out and the checked-in provider supplies no admitted Roughtime verifier. Architecture §18.7.1 remains the graph/licence authority.
+- **S23:** Tokio 1.54.1 [`JoinHandle` contract](https://docs.rs/tokio/1.54.1/tokio/task/struct.JoinHandle.html): dropping a handle detaches its task. This documents the lifecycle obligation; it is not execution or graph qualification for `roughtime` 0.2.1.

@@ -2,7 +2,7 @@
 
 **Date:** 3 November 2026, Asia/Tbilisi<br>
 **Retained leap-policy integration baseline:** `DavidOsipov/NevroTick@7550f83292f959a6d0acbb2d396e964a6bcf4b01`; 4 November 2026, NV-TA-001 revision 1.2. Earlier amendment and receipt identities are retained below.<br>
-**Current design owner:** [NV-TA-001, revision 1.7](../docs/plans/time-assurance-integration.md), including the 27 November V1 scope and post-V1 clock-permissions amendments below.<br>
+**Current design owner:** [NV-TA-001, revision 1.8](../docs/plans/time-assurance-integration.md), including the 27 November V1 scope, post-V1 clock-permissions and implementation-source amendments below.<br>
 **Mode/status:** V1 Roughtime implementation/qualification work defined; protocol/runtime implementation and qualification have not run. Khronos/Ananke remains post-V1.<br>
 **Coordinator:** existing numerical/protocol P2/P7 owner, with independent security and Windows reviewers; David owns material policy choices.
 
@@ -119,6 +119,38 @@ and does not qualify this task's planned binaries.
 | Existing opt-in plain-bootstrap baseline | Retained until the scoped future automatic reserve is specified and qualified; no silent relaxation of NTS, quorum or clock authority |
 | Earlier small provider shortlist | Enriched by a pinned mixed-version census: 14 hostnames / about 10 nominal groups; only two explicit RFC-v1 operator advertisements and a third maintainer-documented candidate, with no live checks |
 
+### 2.1 Source review and implementation basis — 27 November 2026
+
+**Inspected project source:** `3e3536d808789dabb1b6577b069140ca13ad6e31`.
+The [implementation-source review](../docs/plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+records the supplied `roughtime 0.2.1` package and pinned Roughenough comparison.
+The engineering recommendation is RFC 10049/v1 with pinned Roughenough protocol
+and verification code as a reference, NevroTick-owned bounded Engine acquisition
+and pure evidence admission, and a separately admitted maintained Ed25519/SHA-512
+backend. It does not adopt either complete upstream client or its dependency
+graph. `roughtime 0.2.1` is not the implementation base: its legacy-profile
+behavior, aggregation and lifecycle limits need independent controls rather than
+inheritance. The plan retains exact source evidence and the distinction between
+reference-code reuse and dependency adoption.
+
+| Existing surface | Actual evidence and remaining work |
+| --- | --- |
+| [Workspace](../Cargo.toml) and [Engine graph](../crates/nevrotick-engine/Cargo.toml) | No Roughtime runtime client is present. Keep the engine-only current-thread Tokio arrangement; no core, broker or UI runtime expansion follows from this recommendation. Exact features, transitive/native graph, source/archive parity, registry cooldown and licences remain CHECK-26 admission work. |
+| [Catalogue importer](../tools/server-catalogue/build_catalogue.py) and [UI recovery preview](../crates/nevrotick-ui/src/recovery.rs) | The importer preserves candidate keys/profile claims with unknown independence and no supported runtime profile; Ed25519 lengths alone establish no trust. The UI contains explanatory text and plain-helper previews. Neither supplies a runtime roster, signature evidence or bootstrap implementation. |
+| [Era-domain owner](../crates/time-domain/src/era.rs) and [pure Core](../crates/time-core/src/lib.rs) | Checked coordinates, numeric windows and era resolution are reusable. They supply no trusted date provenance or Roughtime policy by themselves; TA-W04 must reach the actual pure receiving consumer, not only a disconnected model. |
+| [KE time provider](../crates/nevrotick-engine/src/nts_ke_experiment/transport.rs), [strict profile](../crates/nevrotick-engine/src/nts_ke_experiment/profile.rs) and [protected receipts](../crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs) | The existing private connection/profile/receipt chain retains laboratory certificate-time classification. A production Roughtime basis does not exist. Preserve original checked evidence through the same configured NTS connection, completed full handshake and protected receipt; a timestamp callback or caller-set authentication label is insufficient. |
+| [Windows verifier derivative](../tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/src/verification/windows.rs) | Actual source is laboratory-only: separate cache-only chain/revocation controls, chain-excluding-root checks, no ignored policy errors, checked FILETIME conversion and a normal-date ceiling. The older upstream candidate's soft-failure/overflow observations do not describe this derivative's current code. Neither profile is a qualified wrong-date bootstrap solution; OPEN-8 remains open. |
+| [TLS CNG verification](../tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/src/verify.rs) | Ed25519 is not enabled in the inspected provider. Existing TLS/CNG or private SHA-512 code does not admit a Roughtime crypto backend. Select and qualify its exact maintained implementation and graph separately; the AWS-LC/ring holds in architecture §18.7.1 still apply. |
+
+These are source observations, not new native results or runtime qualification.
+The [current Engine receiving owner](../crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs)
+still has no positive production mapping admission. Roughtime does not supply
+that missing physical/quality evidence. Reuse the current typed
+[TLS failure projection](../crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs)
+when specifying routing, preserving date errors and unavailable local time
+separately from identity, revocation, network and unclassified failures. A failure
+class alone grants no retry or alternate-date authority.
+
 ## 3. Work assignments and finite exits
 
 TA-W identifiers are local assignments. Each implementation owner freezes the
@@ -127,10 +159,10 @@ run. Later unresolved choices do not block this documentation handoff.
 
 | ID / owner | Work and required input | Observable exit / current status |
 | --- | --- | --- |
-| **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | This plan/task and canonical routing exist; source findings are separated from qualification. **Source/design work complete; review receipt below owns handoff evidence** |
-| **TA-W02 — protocol/security owner** | Freeze V1 Roughtime/NTS triggers and refusal behavior, evidence fields, dependency groups, era/frame/interval admission, generations and conflict clearance; distinguish date-specific NTS failures and retain compromised-key controls. Integrate NV-LP-001's dataset/rule/scale-segment, full-date-hypothesis and guard fields without a circular bootstrap prerequisite. Freeze reserve-only triggers/envelope and its expired-NTS-key/common-path case at the later KHR entry | Reviewed contract and independent expected-result table for each selected slice; exact owners, assurance limits and forbidden effects. **V1 P2 contract pending; reserve-only work post-V1** |
-| **TA-W03 — Roughtime/dependency owner** | Select exact wire/client/crypto graph under CHECK-26; implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02 | Valid response accepted; missing/wrong root, version/unit errors, malformed/replayed input and invalid intervals cannot create authenticated evidence. **V1 P2, not implemented** |
-| **TA-W04 — core/engine owner** | Model V1 Roughtime/NTS branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth; retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under S1.4. Add reserve-specific behavior after TA-W05 | Applicable TA-C01–TA-C07/10/12/13/16/18/21 controls reach the policy consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **V1 P2 work pending; reserve portions post-V1** |
+| **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | Source/design findings and canonical routing are recorded. **Revision 1.8 independent review completed: ready for documentation handoff only; §6.4 retains the receipt. Historical receipts keep their original scopes** |
+| **TA-W02 — protocol/security owner** | Freeze the V1 Roughtime/NTS contract in §3.1: exact profile, mandatory roots, intervals/units, independent groups, sequential measurement/repetition, evidence fields, generations, refusal and conflict clearance. Distinguish date-specific NTS failures and retain compromised-key controls. Integrate NV-LP-001's dataset/rule/scale-segment, full-date/era and guard fields without a circular bootstrap prerequisite. Freeze reserve-only envelope and expired-NTS-key/common-path threats at the later KHR entry | Reviewed contract and independent expected-result table for each selected slice; exact owners, assurance limits and forbidden effects. **V1 P2 contract pending; reserve-only work post-V1** |
+| **TA-W03 — Roughtime/dependency owner** | Evaluate §2.1's source recommendation; admit the exact wire/crypto implementation and graph under CHECK-26, then implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02. Keep protocol-profile fixtures independent of the implementation | Valid response accepted; missing/wrong root, version/context/unit errors, malformed/replayed input and invalid intervals cannot create authenticated evidence. **V1 P2, not implemented; no graph admitted by this review** |
+| **TA-W04 — core/engine owner** | Implement the actual pure evidence-admission consumer and model V1 Roughtime/NTS branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth. Retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under S1.4. Add reserve-specific behavior after TA-W05 | Applicable TA-C01–TA-C07/10/12/13/16/18/21 controls reach the actual consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **V1 P2 work pending; reserve portions post-V1** |
 | **TA-W05 — KHR numerical/security owner** | After actual V1 release, MATH-C01 disposition, TRUST-C01, MT-C01 and CLK-C01, evaluate cold-start reserve candidates, Ananke-inspired admission, initial roster/refresh and bounded sampling against the unchanged baseline; do not import periodic-watchdog security bounds | KHR-0's recovery/error/false-acceptance/latency/cost evidence plus `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs qualified bounded implementation. **Future KHR phase** |
 | **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume the catalogue owner's required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first | Exact compatibility and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **V1 P2/P7 evidence pending** |
 | **TA-W07 — Windows/NTS owner** | With admitted artifacts and owned disposable environment, exercise the V1 Roughtime date-basis route under OPEN-8/R-02/R-05, exact error categories and fresh isolated verification across hypotheses; exercise the reserve route only after its post-V1 admission | Valid supported-date recovery and explicit failure for bad identity/revocation/era; applicable TA-C11/19/20/22, no unauthorized effect, observed cleanup/restoration. **V1 P2/P7 gate open; existing native admission/holds remain** |
@@ -144,6 +176,58 @@ qualified baseline at its post-V1 entry; simulation supplies no implementation
 or Windows qualification for either route.
 TA-W07 requires the whole NTS/Windows path, not a successful Roughtime packet
 exchange. Split an oversized assignment into bounded slices inside this task.
+
+### 3.1 First portable Roughtime slice — 27 November 2026
+
+This is the next **Roughtime-specific** source slice, not a replacement for
+[development §7's current product child](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Reuse TA-W02/03/04 and the existing TA-C/CHECK owners; create no parallel campaign.
+Before implementation, record the selected source/graph, actual receiving
+consumer, independent fixture provenance, healthy/refused exit, finite work and
+verification budget. Later Windows, roster or reserve questions block their
+dependent integration, not every portable contract calculation.
+
+1. **TA-W02 — freeze one executable contract.** Name the exact RFC/wire profile,
+   signature contexts and handling of the specification's documented erratum;
+   require the admitted long-term root key and bind the delegation, request and
+   response. Define wire units/epoch, checked conversion and supported true-date/
+   era bounds; preserve the complete interval, delay/elapsed-time uncertainty and
+   the rule for passing a point to a certificate verifier. Freeze independent
+   operator/dependency groups, selected/responding/admitted sets and the sequential
+   chain procedure, including the required repeated-measurement count and
+   comparison instants derived from RFC 10049 §8.2. Do not substitute one reply
+   per peer, unconstrained parallel queries or an invented product constant.
+2. **TA-W03 — bounded codec and verification.** After exact manifest/feature/
+   transitive/native/crypto/licence and cooldown admission under CHECK-26,
+   implement the inert parser and mandatory-root-key verification adapter.
+   Separate parsed data, authenticated assertions and policy-eligible evidence.
+   Bound packet fields, bytes, allocation and cryptographic work before expensive
+   operations. An optional-root diagnostic path, public raw-field constructor or
+   caller-set `authenticated` flag cannot issue production evidence.
+3. **TA-W04 — actual pure receiving consumer.** Admit current evidence into an
+   immutable bounded bootstrap-date result or a closed refusal. Preserve source/
+   key/catalogue/policy identity, original monotonic observation/evaluation
+   instants, evidence age, boot/clock/mapping generations, uncertainty, conflict
+   and ancestry. Independent truth must exercise a useful accepted result and
+   bad-root/profile/replay/duplicate-operator/broad-interval/stale-generation/
+   signed-conflict neighbors at this consumer. No normal NTS vote or broker
+   clock-effect authority is returned. Controlled fixture evidence remains
+   explicitly separate from a production cryptographic issuer.
+4. **Subsequent Engine/NTS integration.** Own bounded acquisition under the
+   existing current-thread runtime, original stage/total deadlines and one
+   aggregate resource budget. Cancellation requests do not release permits or
+   retained input until actual work completes or its qualified recovery owner
+   takes custody. Fresh final guards precede evidence publication and consumption.
+   Keep the private date basis with the same NTS connection, full handshake and
+   protected receipt; revalidate at candidate time without cross-hypothesis
+   resumption. The Windows path remains separately subject to OPEN-8 and TA-W07.
+
+The portable exit is a checked useful interval and observable typed refusals at
+the actual adapter/pure consumer, with original provenance and no clock effects.
+It requires no public peers, reference-clock hardware or Khronos implementation.
+It does not close RGT-C01: controlled transport, roster/operator interoperability,
+Windows trust and complete bootstrap-to-NTS/broker qualification retain their
+existing owners and valid/refused controls.
 
 ## 4. Independent acceptance cases
 
@@ -201,6 +285,26 @@ agreement. TA-C15 and TA-W07 retain kernel-only explicit events, actual measured
 residual recovery and no synthetic extra second when Windows already handled
 the event. Reuse CHECK-6/7/8/9/10/11/12/14/15/25 at their existing phase scopes;
 portable refinements do not qualify native event behavior or execute RGT-C01.
+
+### 4.1 Source-review refinements — 27 November 2026
+
+These refinements remain **planned, not executed**, under the existing cases and
+their canonical CHECK mappings. The
+[profile/fixture evidence](../docs/plans/time-assurance-integration.md#823-fixture-provenance-and-remaining-qualification)
+records the dated report and limits of the available status evidence for
+RFC 10049 erratum 9238; confirm the selected interpretation at the profile freeze.
+The original Appendix B legacy contexts
+are not a positive strict-v1 oracle. Use independently checked corrected or
+generated v1 fixtures, preserve their provenance, and never weaken v1 signature
+contexts to make a historical example pass.
+
+| Existing cases | Additional independent observation |
+| --- | --- |
+| TA-C06/17/19 — profile and authentication | Accept a correct, independently checked v1 fixture with the admitted root; reject legacy/different-version signature contexts, wrong root, delegation/request mismatch and replay. A second signer that duplicates the parser/verifier's own wire convention is not independent interoperability evidence. Retain exact raw bytes and expected units/contexts. |
+| TA-C01/04/05/08/17 — measurement procedure and freshness | Exercise the frozen RFC §8.2 sequential chain and required repetition, sufficient independent groups and healthy elapsed-time bounds. Reject duplicate operators masquerading as distinct support, missing required repetitions, reordered/foreign chain state, expired evidence and changed key/policy/clock generations. Arrival or reevaluation cannot renew an original measurement's age. |
+| TA-C07/13/21 — uncertainty and disagreement | Retain the counterexample with centers `0, 0, 10, 10` seconds and radius `1` second each: an even-count median of `5` with the maximum input radius describes `[4, 6]`, disjoint from every input interval. That construction cannot authorize bootstrap or clear signed conflict. Pair it with independently supported compatible intervals admitted by the reviewed full-interval rule; check a certificate validity boundary inside the interval. |
+| TA-C04/14/22 — deadlines, cancellation and resource custody | Delay decoding/verification or delivery across the original deadline, key/policy replacement, Stop and candidate-date changes. Final acceptance refuses stale results; cancellation retains the permit and inputs until actual completion/recovery. A healthy bounded operation completes and releases custody once. Repeated individually valid requests must remain within the aggregate source/socket/byte/signature/job budget without starving primary acquisition. |
+| TA-C02/11/16/19/22 — NTS handoff | Preserve the private original Roughtime basis through the actual configured connection, accepted full handshake and protected receipt. Test unsupported local clock readings separately from certificate date, name, trust, revocation and transport failures. Healthy cached/strict NTS avoids unnecessary bootstrap; absent reserve remains visible. Current laboratory provenance and a successful callback do not establish production bootstrap or OPEN-8 compliance. |
 
 ## 5. Exit and claim discipline
 
@@ -375,3 +479,34 @@ the documentation candidate based on `45e2fcaafe25faae02c41d5ddc4a46ebdcf48a92`;
 the coordinator owns combined-candidate canonical-link and consistency verification.
 No product execution, new dependency, hardware trial or TA-C pass is part of
 this repair; historical review receipts retain their original identities.
+
+### 6.4 Implementation-source amendment — 27 November 2026
+
+Documentation-only scope based on project
+`3e3536d808789dabb1b6577b069140ca13ad6e31`: record the
+[revision 1.8 source recommendation](../docs/plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026),
+the actual catalogue/UI/KE/Core boundaries and the first portable TA-W02/03/04
+contract, with focused refinements to existing TA-C cases. The source review
+qualifies no dependency, provider, public service, Windows bootstrap or runtime
+exit. Historical receipts above are unchanged.
+
+**Completed independent review:** `/root/roughtime_docs_review`, launched with
+fresh conversation context (`fork_turns: "none"`), reviewed the seven-file
+candidate after its final-ready notification. The substantive candidate tree was
+`76c75382c3ce423d4d2467520072043e01b113e8`, based on the project commit above.
+The reviewer read the applicable repository instructions, independent-review
+skill and testing contract, checked canonical routing and consequential primary
+sources, and returned **ready for documentation handoff only**, with no open
+material findings. **RGT-DOC-001**, a low-severity intermediate ambiguity about
+CNG Ed25519 support, was corrected and independently verified before that freeze.
+
+The raw result is `roughtime-docs-independent-review.md`, SHA-256
+`6c038d3f747e8db353a2639b42b856c0083b76301b137dab393daa1abb1fadfe`;
+retain it verbatim, including both comprehension paragraphs, with this change's
+PR record. Coordinator and reviewer checks passed whitespace, all **29 added
+local-link occurrences / 28 unique source-target pairs**, and the seven-file
+Markdown-only scope. The working bytes matched the frozen tree. The publication
+record binds the subsequent receipt-only amendment to its final tree; no earlier
+review is relabeled as a revision 1.8 pass. No product build/test, dependency
+resolution, public-peer probe or native qualification was performed for this
+documentation handoff.

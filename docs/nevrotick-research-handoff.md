@@ -162,6 +162,16 @@ is admitted. Existing explicitly enabled helper threats retain their own gates.
 The dated provider census is source evidence, not live availability or an
 admitted roster. Qualify the V1 Roughtime-only path and honest unavailable outcome without requiring the deferred reserve; the owner amendment governs delivery order.
 
+The [27 November implementation-source review](plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
+recommends selected Roughenough protocol/validation reuse with a separately
+admitted crypto backend and NevroTick-owned acquisition. The inspected
+`roughtime` 0.2.1 client is unsuitable unchanged; complete Roughenough inclusion
+also reaches the existing AWS-LC graph hold. TA-W02/03 retain exact profile,
+interval, source and graph admission, including independent fixtures accounting
+for reported RFC erratum 9238. Catalogue imports, UI text and the laboratory TLS
+time-provider seam are preparation, not an implemented bootstrap route. This
+source handoff closes neither R-02 nor OPEN-8 and does not reorder current work.
+
 ### Required research result
 
 Design a bounded recovery path that can correct a very wrong local date when authenticated evidence is sufficient. Separate the supported **true date** from the initial **Windows date error**. Investigate both forward and backward 100-year errors, without assuming both directions or all runtime circumstances have already been approved for automatic steps.
