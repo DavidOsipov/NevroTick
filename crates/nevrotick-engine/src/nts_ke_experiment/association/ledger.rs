@@ -31,6 +31,8 @@ use crate::SoftwareClock;
 use crate::nts_ke_experiment::DatagramAuthorityGuard;
 #[cfg(any(windows, test))]
 use crate::source_policy::LivePolicy;
+#[cfg(any(windows, test))]
+use crate::source_policy::ProtectedReceiptPolicy;
 use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
 
 pub(in super::super) mod retirement;
@@ -331,6 +333,18 @@ pub(in super::super) enum RetiredCommit {
     Terminal,
     /// The first protected commit keeps the same invocation alive.
     FirstRequest(Attempts),
+}
+
+/// Original successful cookie commit and detached request policy facts.
+#[cfg(any(windows, test))]
+#[must_use = "retain the original protected commit and its receiving provenance"]
+pub(in super::super) struct RetiredReplyCommit {
+    /// Exact original submitted socket identity.
+    pub(in super::super) identity: Arc<()>,
+    /// Fresh clock read under the actual commit gates.
+    pub(in super::super) committed_at: Instant,
+    /// The current policy epochs of the actual charged managed request, if present.
+    pub(in super::super) policy: Option<ProtectedReceiptPolicy>,
 }
 
 /// First authenticated request committed on this exact managed association.
@@ -2240,7 +2254,7 @@ impl<'a> AssociationOwner<'a> {
         reply: RetiredReply<'_>,
         disposition: RetiredCommit,
         observe_now: impl FnOnce() -> Instant,
-    ) -> Result<(Arc<()>, Instant), Failure> {
+    ) -> Result<RetiredReplyCommit, Failure> {
         let (control, receipt, replacement, submission): RetiredReplyParts<'_> = reply.into_parts();
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
@@ -2263,6 +2277,10 @@ impl<'a> AssociationOwner<'a> {
             guard.control.published(now)?;
             return Err(refused(LedgerError::Time));
         }
+        let policy: Option<ProtectedReceiptPolicy> = submission
+            .stamp
+            .as_ref()
+            .map(ProtectedSendStamp::receipt_policy);
         let identity: Arc<()> = match disposition {
             RetiredCommit::Terminal => {
                 guard.control.commit(now)?;
@@ -2282,7 +2300,11 @@ impl<'a> AssociationOwner<'a> {
         let retired: [CookiePool; 2] = self.apply_replacement(replacement);
         drop(guard);
         drop(retired);
-        Ok((identity, now))
+        Ok(RetiredReplyCommit {
+            identity,
+            committed_at: now,
+            policy,
+        })
     }
 
     /// After a private first commit, only the original remaining driver can run.

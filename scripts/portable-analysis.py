@@ -343,6 +343,7 @@ ENGINE_SOURCE_POLICY_SUBJECTS = (
     ("series", "crates/nevrotick-engine/src/series.rs"),
     ("address_round", "crates/nevrotick-engine/src/address_round.rs"),
 )
+ENGINE_KE_JOINED_RECEIVING_SOURCE = "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs"
 ENGINE_KE_SUBJECTS = (
     ("ke_core", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"),
     ("ke_association", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"),
@@ -358,6 +359,7 @@ ENGINE_KE_SUBJECTS = (
     ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
     ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
     ("ke_managed_preview", "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"),
+    ("ke_receiving", ENGINE_KE_JOINED_RECEIVING_SOURCE),
 )
 ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/lib.rs",

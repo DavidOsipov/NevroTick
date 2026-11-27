@@ -18,6 +18,11 @@ use windows_platform_native::{
 #[path = "numerics_tests.rs"]
 mod numerics_tests;
 
+/// Real joined controls with a separately controlled mapping issuer.
+#[cfg(any(windows, target_os = "linux"))]
+#[path = "receiving_cases.rs"]
+mod receiving_cases;
+
 use super::{
     Arc, AtomicBool, Config, Control, Duration, ExchangeCase, ExchangeMode, Failed, Failure,
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
@@ -29,6 +34,8 @@ use crate::nts_ke_experiment::datagram::tests::{LoopbackPeerLeg, serve_managed_l
 use crate::nts_ke_experiment::datagram::{
     ReceivedInvocation, receive_joined, tests::managed_attempt_config,
 };
+#[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::job::ReceivingOutcome;
 use crate::nts_ke_experiment::job::{
     CollectError, Hooks, JoinedOutcome, Observation, Operation, PreparedInvocation,
     SubmissionReservation, SubmitError, Termination, WorkerSlot,
@@ -42,6 +49,8 @@ use crate::nts_ke_experiment::power_target::{PowerEvent, PowerTarget};
 use crate::nts_ke_experiment::process::ProcessClaim;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
+#[cfg(any(windows, target_os = "linux"))]
+use crate::nts_ke_experiment::receiving::ManagedReceivingContext;
 #[cfg(windows)]
 use crate::nts_ke_experiment::{
     ClockAdjustmentRead, ManagedAdjustmentRead, ManagedClockRead, RawClockAdjustment,
@@ -56,7 +65,8 @@ use crate::nts_ke_experiment::{
 use crate::{
     ConditionalQuality, DeclaredFrequencyInterval, DeclaredQualityAssumptions,
     DeclaredQualityLimits, ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs,
-    MeasurementRefusal, QualityRefusal, RelativeMeasurementRefusal, SourceScale,
+    MeasurementRefusal, ProtectedReceiptAdmission, QualityRefusal, RelativeMeasurementRefusal,
+    SourceScale,
 };
 use crate::{
     ManagedProtectedReport, RunClockContext, SoftwareClock, SourceProtectedProbeFailure,
@@ -1782,12 +1792,15 @@ fn loopback_control_operation<'scope>(
 /// # Errors
 /// Preserve deadline arithmetic and Control construction refusals.
 #[cfg(any(windows, target_os = "linux"))]
-fn prepare_managed_loopback(config: Config) -> Result<PreparedInvocation, Failure> {
+fn prepare_managed_loopback(config: Config) -> Result<(PreparedInvocation, StopHandle), Failure> {
     let origin: Instant = Instant::now();
     let window: Duration = WAIT.checked_mul(2).ok_or(Failure::Deadline)?;
     let cutoff: Instant = origin.checked_add(window).ok_or(Failure::Deadline)?;
     let control: Control = Control::clamped(origin, cutoff)?;
-    Ok(PreparedInvocation::checked_fixture(config, control))
+    let stop: StopHandle = StopHandle {
+        scope: Arc::clone(&control.stop_scope),
+    };
+    Ok((PreparedInvocation::checked_fixture(config, control), stop))
 }
 
 /// Submit the actual bounded first request and observe the sealed result after join.
@@ -2159,6 +2172,83 @@ enum LoopbackSuccessor {
     Unwind,
 }
 
+/// One controlled receiving input after both original ordinary receipts join.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+enum LoopbackReceivingEvent {
+    /// Preserve the joined job's original authority.
+    None,
+    /// Advance the live source definition while preserving its values.
+    ReplaceConfiguration,
+    /// Advance only the actual source restriction epoch while it remains available.
+    ReenableSource,
+    /// Advance only the actual endpoint restriction epoch while it remains available.
+    ReenableEndpoint,
+    /// Latch the original prepared invocation's Stop scope.
+    Stop,
+    /// Deliver the joined originals without a receiving context.
+    WithoutContext,
+    /// Observe the first receipt at its exact original commit.
+    AtFirstCommit,
+    /// Observe the first receipt one nanosecond before its original commit.
+    BeforeFirstCommit,
+}
+
+/// Select the peer script and the receiving-side event independently.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+struct LoopbackScenario {
+    /// Action selected for the final transport commit.
+    successor: LoopbackSuccessor,
+    /// Whether the independently scripted peer sends its original NTS NAK.
+    sends_nak: bool,
+    /// Outside event after joined take and before receiving.
+    receiving_event: LoopbackReceivingEvent,
+}
+
+#[cfg(any(windows, target_os = "linux"))]
+impl LoopbackScenario {
+    /// Keep the original worker and peer scenario without a receiving-side event.
+    const fn new(successor: LoopbackSuccessor, sends_nak: bool) -> Self {
+        Self {
+            successor,
+            sends_nak,
+            receiving_event: LoopbackReceivingEvent::None,
+        }
+    }
+
+    /// Check the prescribed policy effects after both joins and the receiving event.
+    /// # Errors
+    /// Preserve refusal to inspect the original source or endpoint state.
+    /// # Panics
+    /// Fail if the observed restriction, revisions or original floors differ.
+    fn assert_final_policy(
+        self,
+        source: &crate::SourceHandle,
+        alias: &crate::SourceHandle,
+        remote: std::net::SocketAddr,
+    ) -> Result<(), Failure> {
+        let deny_applied: bool = matches!(self.successor, LoopbackSuccessor::ApplyDeny);
+        let revisions: [u64; 2] = match self.receiving_event {
+            LoopbackReceivingEvent::ReenableSource => [4, 3],
+            LoopbackReceivingEvent::ReenableEndpoint => [3, 4],
+            LoopbackReceivingEvent::None
+            | LoopbackReceivingEvent::ReplaceConfiguration
+            | LoopbackReceivingEvent::Stop
+            | LoopbackReceivingEvent::WithoutContext
+            | LoopbackReceivingEvent::AtFirstCommit
+            | LoopbackReceivingEvent::BeforeFirstCommit => {
+                if deny_applied {
+                    [4, 4]
+                } else {
+                    [3, 3]
+                }
+            }
+        };
+        assert_loopback_policy(source, alias, remote, deny_applied, revisions)
+    }
+}
+
 #[cfg(any(windows, target_os = "linux"))]
 impl LoopbackSuccessor {
     /// Select the independently sealed first response sent by the loopback peer.
@@ -2185,7 +2275,7 @@ static SUCCESSOR_UNWIND_DROPS: AtomicUsize = AtomicUsize::new(0);
 #[cfg(any(windows, target_os = "linux"))]
 fn loopback_successor_hook(
     successor: LoopbackSuccessor,
-    mut authority: crate::SourcePolicyAuthority,
+    mut authority: Option<crate::SourcePolicyAuthority>,
     original: crate::SourceConfigurationSnapshot,
     target: crate::KePreviewTarget,
 ) -> (super::LoopbackBeforeCommit, Gate) {
@@ -2197,6 +2287,8 @@ fn loopback_successor_hook(
             LoopbackSuccessor::ApplyOrdinary | LoopbackSuccessor::ApplyDeny => {}
             LoopbackSuccessor::ReplaceConfiguration => {
                 let replacement: crate::SourceConfigurationSnapshot = authority
+                    .as_mut()
+                    .ok_or(Failure::Control)?
                     .replace_ke_preview_configuration(
                         &original,
                         original.addresses().clone(),
@@ -2257,8 +2349,7 @@ fn run_managed_loopback_control(
     run_managed_loopback_observing(
         slot,
         admission,
-        successor,
-        true,
+        LoopbackScenario::new(successor, true),
         measurement,
         move || {
             point = point.checked_add(1).ok_or(Failure::Control)?;
@@ -2372,29 +2463,37 @@ fn prepare_loopback_source(
     })
 }
 
-/// Run the bounded worker while a separate peer owns its socket observations.
-/// Pass actual peer and Engine observations to the verifier after both joins.
-/// # Errors
-/// Preserve fixture setup, worker, peer and verifier failures.
-/// # Panics
-/// Fail if the actual worker or policy state differs from the selected scenario.
+/// The original job and its independent test controllers, before submission.
 #[cfg(any(windows, target_os = "linux"))]
-fn run_managed_loopback_observing<T: Send>(
-    slot: &'static WorkerSlot,
-    admission: &'static ProcessAdmission,
+struct PreparedLoopbackInvocation {
+    /// Live policy readback for the originally selected source and its alias.
+    source: crate::SourceHandle,
+    alias: crate::SourceHandle,
+    /// Exact original definition and its checked KE target.
+    expected: crate::SourceConfigurationSnapshot,
+    target: crate::KePreviewTarget,
+    /// Observe release of the original configuration before cleanup.
+    config_lifetime: Weak<()>,
+    /// Retained only if the worker does not own the policy replacement.
+    receiver_authority: Option<crate::SourcePolicyAuthority>,
+    /// One worker-side gate and its outside controller.
+    before_commit: super::LoopbackBeforeCommit,
+    gate: Gate,
+    /// Single checked job submission and its original authority.
+    job: PreparedInvocation,
+    stop: StopHandle,
+    receiving: ManagedReceivingContext,
+}
+
+/// Prepare the original job and assign live authority to the selected controller.
+/// # Errors
+/// Preserve source admission, original timing or missing receiving authority.
+#[cfg(any(windows, target_os = "linux"))]
+fn prepare_loopback_invocation(
+    remote: std::net::SocketAddr,
+    scale: Option<SourceScale>,
     successor: LoopbackSuccessor,
-    sends_nak: bool,
-    measurement: Option<LoopbackMeasurement>,
-    peer_clock: impl FnMut() -> Result<T, Failure> + Send,
-    verify: impl FnOnce(Option<&ManagedProtectedReport>, [LoopbackPeerLeg<T>; 2]) -> Result<(), Failure>,
-) -> Result<(), Failure> {
-    use crate::nts_ke_experiment::receive_submitted;
-    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
-    let scale: Option<SourceScale> = measurement
-        .as_ref()
-        .map(|input: &LoopbackMeasurement| input.scale);
-    let profile: Option<ExperimentalProfile> =
-        measurement.map(|input: LoopbackMeasurement| input.profile);
+) -> Result<PreparedLoopbackInvocation, Failure> {
     let LoopbackSource {
         authority,
         source,
@@ -2409,10 +2508,61 @@ fn run_managed_loopback_observing<T: Send>(
     );
     let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
 
-    let (before_commit, gate): (super::LoopbackBeforeCommit, Gate) =
-        loopback_successor_hook(successor, authority, expected.clone(), target);
-    let prepared: PreparedInvocation = prepare_managed_loopback(config)?;
-    let original_origin: Instant = prepared.original_times().0;
+    let (worker_authority, receiver_authority): (
+        Option<crate::SourcePolicyAuthority>,
+        Option<crate::SourcePolicyAuthority>,
+    ) = if matches!(successor, LoopbackSuccessor::ReplaceConfiguration) {
+        (Some(authority), None)
+    } else {
+        (None, Some(authority))
+    };
+    let (before_commit, gate): (super::LoopbackBeforeCommit, Gate) = loopback_successor_hook(
+        successor,
+        worker_authority,
+        expected.clone(),
+        target.clone(),
+    );
+    let (job, stop): (PreparedInvocation, StopHandle) = prepare_managed_loopback(config)?;
+    let receiving: ManagedReceivingContext = job.managed_receiving().ok_or(Failure::Control)?;
+    Ok(PreparedLoopbackInvocation {
+        source,
+        alias,
+        expected,
+        target,
+        config_lifetime,
+        receiver_authority,
+        before_commit,
+        gate,
+        job,
+        stop,
+        receiving,
+    })
+}
+
+/// Run the bounded worker while a separate peer owns its socket observations.
+/// Pass actual peer and Engine observations to the verifier after both joins.
+/// # Errors
+/// Preserve fixture setup, worker, peer and verifier failures.
+/// # Panics
+/// Fail if the actual worker or policy state differs from the selected scenario.
+#[cfg(any(windows, target_os = "linux"))]
+fn run_managed_loopback_observing<T: Send>(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    scenario: LoopbackScenario,
+    measurement: Option<LoopbackMeasurement>,
+    peer_clock: impl FnMut() -> Result<T, Failure> + Send,
+    verify: impl FnOnce(Option<&ManagedProtectedReport>, [LoopbackPeerLeg<T>; 2]) -> Result<(), Failure>,
+) -> Result<(), Failure> {
+    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
+    let scale: Option<SourceScale> = measurement
+        .as_ref()
+        .map(|input: &LoopbackMeasurement| input.scale);
+    let profile: Option<ExperimentalProfile> =
+        measurement.map(|input: LoopbackMeasurement| input.profile);
+    let mut fixture: PreparedLoopbackInvocation =
+        prepare_loopback_invocation(remote, scale, scenario.successor)?;
+    let original_origin: Instant = fixture.job.original_times().0;
     std::thread::scope(|scope| {
         let peer_socket: &std::net::UdpSocket = &peer;
         let peer_worker: std::thread::ScopedJoinHandle<
@@ -2422,30 +2572,50 @@ fn run_managed_loopback_observing<T: Send>(
             .spawn_scoped(scope, move || {
                 serve_managed_loopback(
                     peer_socket,
-                    successor.first_reply(),
-                    matches!(successor, LoopbackSuccessor::ApplyOrdinary),
-                    sends_nak,
+                    scenario.successor.first_reply(),
+                    matches!(scenario.successor, LoopbackSuccessor::ApplyOrdinary),
+                    scenario.sends_nak,
                     peer_clock,
                 )
             })
             .map_err(|_| Failure::Control)?;
-        let provider_lifetime: Arc<OnceLock<Weak<()>>> =
-            submit_managed_loopback_worker(slot, admission, prepared, remote, before_commit)?;
-        gate.wait(slot)?;
+        let provider_lifetime: Arc<OnceLock<Weak<()>>> = submit_managed_loopback_worker(
+            slot,
+            admission,
+            fixture.job,
+            remote,
+            fixture.before_commit,
+        )?;
+        fixture.gate.wait(slot)?;
         let before_successor_commit: Instant = Instant::now();
         assert!(matches!(
             slot.take_for_receiving(),
             Err(CollectError::NotReady)
         ));
-        assert_loopback_policy(&source, &alias, remote, false)?;
-        gate.release()?;
+        assert_loopback_policy(&fixture.source, &fixture.alias, remote, false, [3, 3])?;
+        fixture.gate.release()?;
         wait_for_unjoined_successor(slot)?;
         assert!(matches!(
             slot.take_for_receiving(),
             Err(CollectError::NotReady)
         ));
         let provider_before_join: Option<usize> = provider_lifetime.get().map(Weak::strong_count);
-        let result: Result<ReceivedInvocation, RunFailed> = receive_submitted(slot, profile);
+        let result: Result<ReceivedInvocation, RunFailed> = slot
+            .collect()
+            .and_then(|()| slot.take_for_receiving())
+            .map_err(RunFailed::Collection)
+            .and_then(|joined: ReceivingOutcome| {
+                apply_loopback_receiving_event(
+                    scenario.receiving_event,
+                    fixture.receiver_authority.as_mut(),
+                    &fixture.expected,
+                    fixture.target,
+                    &fixture.stop,
+                    remote,
+                )
+                .map_err(|failure: Failure| RunFailed::Operation(Failed::from(failure)))?;
+                receive_loopback_join(joined, profile, fixture.receiving, scenario.receiving_event)
+            });
         let peer_result: Result<[LoopbackPeerLeg<T>; 2], Failure> =
             peer_worker.join().unwrap_or(Err(Failure::Control));
         assert_eq!(
@@ -2463,18 +2633,117 @@ fn run_managed_loopback_observing<T: Send>(
                 .map_err(|failure: &Failure| *failure);
         let report: Option<ManagedProtectedReport> = assert_joined_loopback_successor(
             result,
-            successor,
-            sends_nak,
+            scenario.successor,
+            scenario.sends_nak,
             remote,
-            &expected,
+            &fixture.expected,
             &(original_origin..=before_successor_commit),
             first_endpoints,
         )?;
         verify(report.as_ref(), peer_result?)
     })?;
-    let deny_applied: bool = matches!(successor, LoopbackSuccessor::ApplyDeny);
-    assert_loopback_policy(&source, &alias, remote, deny_applied)?;
-    assert_loopback_custody(slot, &peer, &config_lifetime, successor)
+    scenario.assert_final_policy(&fixture.source, &fixture.alias, remote)?;
+    assert_loopback_custody(slot, &peer, &fixture.config_lifetime, scenario.successor)
+}
+
+/// Send the sealed originals through the selected real receiving path.
+/// # Errors
+/// Preserve a missing commit, unrepresentable sample or actual receiving refusal.
+/// # Panics
+/// Fail if receiving changes the first original's commit coordinate.
+#[cfg(any(windows, target_os = "linux"))]
+fn receive_loopback_join(
+    joined: ReceivingOutcome,
+    profile: Option<ExperimentalProfile>,
+    receiving: ManagedReceivingContext,
+    event: LoopbackReceivingEvent,
+) -> Result<ReceivedInvocation, RunFailed> {
+    let first_commit: Option<Instant> = joined.first_committed_at();
+    let context: Option<ManagedReceivingContext> = match event {
+        LoopbackReceivingEvent::WithoutContext => None,
+        LoopbackReceivingEvent::AtFirstCommit | LoopbackReceivingEvent::BeforeFirstCommit => {
+            let commit: Instant =
+                first_commit.ok_or_else(|| RunFailed::Operation(Failed::from(Failure::Control)))?;
+            let sample: Instant = if matches!(event, LoopbackReceivingEvent::BeforeFirstCommit) {
+                commit
+                    .checked_sub(Duration::from_nanos(1))
+                    .ok_or_else(|| RunFailed::Operation(Failed::from(Failure::Deadline)))?
+            } else {
+                commit
+            };
+            Some(receiving.with_observed_at(sample))
+        }
+        LoopbackReceivingEvent::None
+        | LoopbackReceivingEvent::ReplaceConfiguration
+        | LoopbackReceivingEvent::ReenableSource
+        | LoopbackReceivingEvent::ReenableEndpoint
+        | LoopbackReceivingEvent::Stop => Some(receiving),
+    };
+    let result: ReceivedInvocation = receive_joined(
+        joined,
+        profile,
+        context.as_ref(),
+        #[cfg(windows)]
+        || None,
+    )?;
+    if let ReceivedInvocation::ManagedSuccessor(received) = &result {
+        let projected: Option<Instant> = received.first_history().map(
+            |receipt: &crate::nts_ke_experiment::datagram::ManagedProtectedHistory| {
+                receipt.history().committed_at()
+            },
+        );
+        assert_eq!(projected, first_commit);
+    }
+    Ok(result)
+}
+
+/// Change current authority after the actual joined take and before receiving.
+/// # Errors
+/// Preserve failure to change the live source or latch the original Stop.
+/// # Panics
+/// Fail if equal-valued replacement does not advance identity or Stop is already latched.
+#[cfg(any(windows, target_os = "linux"))]
+fn apply_loopback_receiving_event(
+    event: LoopbackReceivingEvent,
+    authority: Option<&mut crate::SourcePolicyAuthority>,
+    original: &crate::SourceConfigurationSnapshot,
+    target: crate::KePreviewTarget,
+    stop: &StopHandle,
+    remote: std::net::SocketAddr,
+) -> Result<(), Failure> {
+    match event {
+        LoopbackReceivingEvent::None
+        | LoopbackReceivingEvent::WithoutContext
+        | LoopbackReceivingEvent::AtFirstCommit
+        | LoopbackReceivingEvent::BeforeFirstCommit => {}
+        LoopbackReceivingEvent::ReplaceConfiguration => {
+            let replacement: crate::SourceConfigurationSnapshot = authority
+                .ok_or(Failure::Control)?
+                .replace_ke_preview_configuration(original, original.addresses().clone(), target)
+                .map_err(Failure::SourcePolicy)?;
+            assert_eq!(replacement.declared_scale(), original.declared_scale());
+            assert!(!replacement.same_configuration(original));
+        }
+        LoopbackReceivingEvent::ReenableSource => {
+            let owner: &mut crate::SourcePolicyAuthority = authority.ok_or(Failure::Control)?;
+            let source: crate::SourceHandle = owner.source(0).map_err(Failure::SourcePolicy)?;
+            let target: crate::SourcePolicyTarget = owner
+                .source_target(&source)
+                .map_err(Failure::SourcePolicy)?;
+            owner.reenable(&[target]).map_err(Failure::SourcePolicy)?;
+        }
+        LoopbackReceivingEvent::ReenableEndpoint => {
+            let owner: &mut crate::SourcePolicyAuthority = authority.ok_or(Failure::Control)?;
+            let target: crate::SourcePolicyTarget = owner
+                .endpoint_target(remote)
+                .map_err(Failure::SourcePolicy)?;
+            owner.reenable(&[target]).map_err(Failure::SourcePolicy)?;
+        }
+        LoopbackReceivingEvent::Stop => {
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+        }
+    }
+    Ok(())
 }
 
 /// Submit the actual component worker and permit observation of its provider lifetime.
@@ -3012,6 +3281,22 @@ fn assert_pair_loopback_reports(
             peer.join().map_err(|_| Failure::Control)??;
         assert_pair_loopback_report(report, expected, cutoff, observed)?;
         assert_eq!(report.power_observation(), Some(power));
+        let receiving: ProtectedReceiptAdmission = match power {
+            ManagedPowerObservation::NoEventObserved => {
+                ProtectedReceiptAdmission::MappingUnavailable
+            }
+            ManagedPowerObservation::Invalidated => ProtectedReceiptAdmission::ControlUnavailable,
+            ManagedPowerObservation::Unavailable => return Err(Failure::Control),
+        };
+        let first_receipt: &crate::ManagedProtectedReceipt =
+            report.first().ok_or(Failure::Control)?;
+        let crate::ManagedProtectedTerminal::Ordinary(terminal) = report.terminal() else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(
+            [first_receipt.admission(), terminal.admission()],
+            [receiving; 2]
+        );
     }
     #[cfg(windows)]
     assert_pair_timing_observations(
@@ -3803,6 +4088,7 @@ fn assert_loopback_policy(
     alias: &crate::SourceHandle,
     remote: std::net::SocketAddr,
     deny_applied: bool,
+    revisions: [u64; 2],
 ) -> Result<(), Failure> {
     use crate::SourcePolicySnapshot;
 
@@ -3816,9 +4102,10 @@ fn assert_loopback_policy(
     assert_eq!(after.endpoint().refused(), deny_applied);
     assert!(!alias_after.source().refused());
     assert_eq!(alias_after.endpoint().refused(), deny_applied);
-    let expected_revision: u64 = if deny_applied { 4 } else { 3 };
-    assert_eq!(after.source().revision(), expected_revision);
-    assert_eq!(after.endpoint().revision(), expected_revision);
+    assert_eq!(
+        [after.source().revision(), after.endpoint().revision()],
+        revisions
+    );
     assert!(after.source().floor().is_some());
     assert!(after.endpoint().floor().is_some());
     Ok(())
@@ -4306,6 +4593,10 @@ fn assert_abnormal_loopback_successor(
     let retained: crate::ManagedProtectedReceipt =
         failure.retained_first().ok_or(Failure::Control)?;
     assert_eq!(
+        retained.admission(),
+        ProtectedReceiptAdmission::NotEvaluated
+    );
+    assert_eq!(
         retained.certificate_time_provenance(),
         CertificateTimeProvenance::Component
     );
@@ -4484,6 +4775,375 @@ fn managed_loopback_successor_preserves_nak_and_ordinary_reply_after_join() -> R
     run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyOrdinary)
 }
 
+/// Withhold only the terminal reply after the peer's optional NAK send.
+/// # Errors
+/// Preserve the separate peer's actual I/O or script failure.
+/// # Panics
+/// Fail if the peer does not reach its terminal response boundary.
+#[cfg(any(windows, target_os = "linux"))]
+fn withhold_terminal_loopback_reply(
+    peer: &std::net::UdpSocket,
+    sends_nak: bool,
+) -> Result<(), Failure> {
+    let mut observations: u8 = 0;
+    let result: Result<[LoopbackPeerLeg<()>; 2], Failure> = serve_managed_loopback(
+        peer,
+        LoopbackSuccessor::ApplyDeny.first_reply(),
+        false,
+        sends_nak,
+        || {
+            observations = observations.checked_add(1).ok_or(Failure::Control)?;
+            if observations == 4 {
+                return Err(Failure::Arguments);
+            }
+            Ok(())
+        },
+    );
+    match result {
+        Err(Failure::Arguments) => {
+            assert_eq!(observations, 4);
+            Ok(())
+        }
+        Err(failure) => Err(failure),
+        Ok(_) => Err(Failure::Control),
+    }
+}
+
+/// Keep the worker's actual driver observations separate from its projected report.
+/// # Errors
+/// Preserve independent peer, worker admission and normal joined receiving failures.
+/// # Panics
+/// Fail if terminal cancellation loses the first receipt, original NAK or charged work.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_joined_nak_receive_stop(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    sends_nak: bool,
+) -> Result<(), Failure> {
+    use crate::nts_ke_experiment::datagram::ProtectedDatagramWork;
+
+    let (peer, remote): (std::net::UdpSocket, std::net::SocketAddr) = bind_managed_loopback_peer()?;
+    let LoopbackSource {
+        authority,
+        source,
+        alias,
+        expected,
+        ..
+    }: LoopbackSource = prepare_loopback_source(remote, None)?;
+    let config: Config = Config::from_managed_protected(
+        authority
+            .authorize_protected_ke(&expected)
+            .map_err(Failure::SourcePolicy)?,
+    );
+    let (job, stop): (PreparedInvocation, StopHandle) = prepare_managed_loopback(config)?;
+    let cutoff: Instant = job.original_times().2;
+    let watchdog: Instant = cutoff.checked_add(WAIT).ok_or(Failure::Deadline)?;
+    let receiving: ManagedReceivingContext = job.managed_receiving().ok_or(Failure::Control)?;
+    let work: Arc<OnceLock<Arc<ProtectedDatagramWork>>> = Arc::new(OnceLock::new());
+    let worker_work: Arc<OnceLock<Arc<ProtectedDatagramWork>>> = Arc::clone(&work);
+    let joined: ReceivingOutcome = std::thread::scope(|scope| {
+        let peer_worker = std::thread::Builder::new()
+            .spawn_scoped(scope, || withhold_terminal_loopback_reply(&peer, sends_nak))
+            .map_err(|_| Failure::Control)?;
+        slot.try_reserve(job)
+            .and_then(|reservation: SubmissionReservation| {
+                reservation.submit_bounded_successor_fixture(
+                    admission,
+                    component_provider,
+                    move |config, provider, control, first_receipt| {
+                        let observed: &Arc<ProtectedDatagramWork> = control
+                            .datagram_work
+                            .as_ref()
+                            .ok_or_else(|| Failed::from(Failure::Control))?;
+                        worker_work
+                            .set(Arc::clone(observed))
+                            .map_err(|_| Failed::from(Failure::Control))?;
+                        loopback_control_operation(
+                            config,
+                            provider,
+                            control,
+                            first_receipt,
+                            remote,
+                            Box::new(|| Err(Failure::Control)),
+                        )
+                    },
+                    Hooks::none(),
+                )
+            })
+            .map_err(|_| Failure::Control)?;
+        let checkpoint: Result<(), Failure> = (|| {
+            peer_worker.join().map_err(|_| Failure::Control)??;
+            // The peer saw the successor send. The marked case also needs actual NAK admission.
+            let driver: &ProtectedDatagramWork = work.get().ok_or(Failure::Control)?;
+            while sends_nak && driver.first_nak_at().is_none() {
+                if Instant::now() >= cutoff {
+                    return Err(Failure::Deadline);
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            Ok(())
+        })();
+        let stopped: Result<StopDisposition, Failure> = stop.request_stop();
+        let collected: Result<ReceivingOutcome, Failure> = (|| {
+            while !matches!(
+                slot.observer().poll_until(watchdog),
+                Observation::Running(true)
+            ) {
+                if Instant::now() >= watchdog {
+                    return Err(Failure::Deadline);
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            collect_available(slot).map_err(|_| Failure::Control)?;
+            slot.take_for_receiving().map_err(|_| Failure::Control)
+        })();
+        // Always settle the submitted worker before returning the original fixture error.
+        checkpoint?;
+        assert_eq!(stopped?, StopDisposition::Latched);
+        collected
+    })?;
+    let result: Result<ReceivedInvocation, RunFailed> =
+        receive_loopback_join(joined, None, receiving, LoopbackReceivingEvent::None);
+    let report: ManagedProtectedReport =
+        ManagedProtectedReport::from_observed(Ok(ObservedInvocation {
+            result,
+            cleanup: crate::nts_ke_experiment::PowerObserverCleanup::default(),
+        }))
+        .map_err(|_| Failure::Control)?;
+    let observed: &ProtectedDatagramWork = work.get().ok_or(Failure::Control)?;
+    assert_nak_receive_stop_report(&report, observed, &expected, remote, cutoff, sends_nak)?;
+    assert_loopback_policy(&source, &alias, remote, false, [3, 3])
+}
+
+/// Compare joined report contents against the socket driver's original observations.
+/// # Errors
+/// Refuse absent first history or a disposition other than terminal receive cancellation.
+/// # Panics
+/// Fail if the first receipt, NAK or debits differ from the independent observations.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_nak_receive_stop_report(
+    report: &ManagedProtectedReport,
+    observed: &crate::nts_ke_experiment::datagram::ProtectedDatagramWork,
+    expected: &crate::SourceConfigurationSnapshot,
+    remote: std::net::SocketAddr,
+    cutoff: Instant,
+    sends_nak: bool,
+) -> Result<(), Failure> {
+    use crate::ManagedProtectedTerminal;
+
+    let ManagedProtectedTerminal::Refused(failure) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.primary_labels(), Some(("currentness", "cancelled")));
+    assert!(report.terminal_measurement().is_none());
+    let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    assert!(first.configuration().same_configuration(expected));
+    assert_eq!(first.peer_endpoint(), remote);
+    assert_eq!(first.packet_bytes(), 252);
+    assert_peer_timestamps(first, FIRST_PEER_TIMESTAMPS);
+    let nak: Option<Instant> = observed.first_nak_at();
+    assert_eq!(nak.is_some(), sends_nak);
+    assert_eq!(report.first_nak_at(), nak);
+    if let Some(mark) = nak {
+        assert!(first.committed_at() <= mark && mark < cutoff);
+    }
+    assert_eq!(report.recovery_unavailable(), sends_nak);
+    let driver: (usize, usize, usize) = observed.snapshot();
+    assert_eq!((driver.0, driver.1), (2, 2));
+    assert_eq!(
+        (
+            report.attempted_sends(),
+            report.fully_submitted_sends(),
+            report.remaining_driver_work()
+        ),
+        driver,
+    );
+    let charged_nak: usize = usize::from(sends_nak);
+    assert_eq!(
+        report.remaining_association_work(),
+        Some((30, 31 - charged_nak, 131_072 - 140 - 84 * charged_nak)),
+    );
+    Ok(())
+}
+
+/// A normal joined receive cancellation preserves an actual NAK only when admitted.
+/// # Errors
+/// Preserve the first failing genuine marked or unmarked invocation.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receive_stop_preserves_original_nak_and_work() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    for ((sends_nak, slot), admission) in [true, false].into_iter().zip(&SLOTS).zip(&ADMISSIONS) {
+        assert_joined_nak_receive_stop(slot, admission, sends_nak)?;
+    }
+    Ok(())
+}
+
+/// Both ordinarily committed replies have diagnostics but lack an admitted mapping.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_reports_absent_mapping_for_both_originals() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_receiving_event(
+        &SLOT,
+        &ADMISSION,
+        LoopbackReceivingEvent::None,
+        ProtectedReceiptAdmission::MappingUnavailable,
+    )
+}
+
+/// Preserve both original replies when the joined collector has no receiving context.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_without_context_preserves_originals() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_receiving_event(
+        &SLOT,
+        &ADMISSION,
+        LoopbackReceivingEvent::WithoutContext,
+        ProtectedReceiptAdmission::ControlUnavailable,
+    )
+}
+
+/// Exercise the original commit and its immediate early neighbor with no supplied mapping.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_checks_original_commit_boundary() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    let cases: [(LoopbackReceivingEvent, ProtectedReceiptAdmission); 2] = [
+        (
+            LoopbackReceivingEvent::AtFirstCommit,
+            ProtectedReceiptAdmission::MappingUnavailable,
+        ),
+        (
+            LoopbackReceivingEvent::BeforeFirstCommit,
+            ProtectedReceiptAdmission::Deadline,
+        ),
+    ];
+    for (((event, expected), slot), admission) in cases.into_iter().zip(&SLOTS).zip(&ADMISSIONS) {
+        assert_joined_receiving_event(slot, admission, event, expected)?;
+    }
+    Ok(())
+}
+
+/// Replace the equal-valued definition after both ordinary packets commit.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_refuses_equal_source_replacement_after_commit() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_receiving_event(
+        &SLOT,
+        &ADMISSION,
+        LoopbackReceivingEvent::ReplaceConfiguration,
+        ProtectedReceiptAdmission::SourcePolicy(crate::SourcePolicyError::ConfigurationChanged),
+    )
+}
+
+/// Stop the original scope after actual join without erasing either packet result.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_refuses_stop_after_commit() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_receiving_event(
+        &SLOT,
+        &ADMISSION,
+        LoopbackReceivingEvent::Stop,
+        ProtectedReceiptAdmission::ControlUnavailable,
+    )
+}
+
+/// Current available policy cannot revive a receipt from an earlier restriction epoch.
+/// # Errors
+/// Preserve fixture, joined receiving and original arithmetic refusals.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_joined_receiving_refuses_each_changed_restriction_epoch() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    let events: [LoopbackReceivingEvent; 2] = [
+        LoopbackReceivingEvent::ReenableSource,
+        LoopbackReceivingEvent::ReenableEndpoint,
+    ];
+    for ((event, slot), admission) in events.into_iter().zip(&SLOTS).zip(&ADMISSIONS) {
+        assert_joined_receiving_event(
+            slot,
+            admission,
+            event,
+            ProtectedReceiptAdmission::SourcePolicy(crate::SourcePolicyError::Stale),
+        )?;
+    }
+    Ok(())
+}
+
+/// Verify both receipts against the same outside event at the joined consumer.
+/// # Errors
+/// Preserve checked fixture, worker and numerical failures.
+/// # Panics
+/// Fail if either original exchange is lost or a joined decision changes on reporting.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_joined_receiving_event(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    receiving_event: LoopbackReceivingEvent,
+    expected: ProtectedReceiptAdmission,
+) -> Result<(), Failure> {
+    let scenario: LoopbackScenario = LoopbackScenario {
+        successor: LoopbackSuccessor::ApplyOrdinary,
+        sends_nak: false,
+        receiving_event,
+    };
+    let measurement: LoopbackMeasurement = LoopbackMeasurement {
+        profile: valid_loopback_measurement_profile()?,
+        // The same-value replacement carries the initial default declaration.
+        scale: SourceScale::Unknown,
+    };
+    run_managed_loopback_observing(
+        slot,
+        admission,
+        scenario,
+        Some(measurement),
+        || Ok(()),
+        |report, _: [LoopbackPeerLeg<()>; 2]| {
+            let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
+            let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+            let crate::ManagedProtectedTerminal::Ordinary(terminal) = report.terminal() else {
+                return Err(Failure::Control);
+            };
+            assert!(!first.same_exchange(terminal));
+            assert!(first.committed_at() <= terminal.committed_at());
+            let terminal_expected: ProtectedReceiptAdmission =
+                if matches!(receiving_event, LoopbackReceivingEvent::AtFirstCommit)
+                    && first.committed_at() != terminal.committed_at()
+                {
+                    ProtectedReceiptAdmission::Deadline
+                } else {
+                    expected
+                };
+            let dispositions: [ProtectedReceiptAdmission; 2] = [expected, terminal_expected];
+            assert_eq!([first.admission(), terminal.admission()], dispositions);
+            assert_ordinary_joined_measurements(report, None)?;
+            assert_eq!([first.admission(), terminal.admission()], dispositions);
+            Ok(())
+        },
+    )
+}
+
 /// Compare both original ordinary exchanges through the joined numerical consumer.
 /// # Errors
 /// Preserve checked fixture, worker and numerical failures.
@@ -4540,8 +5200,7 @@ fn managed_loopback_measures_both_joined_ordinary_receipts() -> Result<(), Failu
         run_managed_loopback_observing(
             slot,
             admission,
-            LoopbackSuccessor::ApplyOrdinary,
-            true,
+            LoopbackScenario::new(LoopbackSuccessor::ApplyOrdinary, true),
             measurement,
             || Ok(()),
             |report, _: [LoopbackPeerLeg<()>; 2]| {
@@ -4585,8 +5244,7 @@ fn managed_loopback_distinguishes_joined_peer_era_outcomes() -> Result<(), Failu
         run_managed_loopback_observing(
             slot,
             admission,
-            LoopbackSuccessor::ApplyOrdinary,
-            true,
+            LoopbackScenario::new(LoopbackSuccessor::ApplyOrdinary, true),
             Some(LoopbackMeasurement {
                 profile,
                 scale: SourceScale::UnsmearedUtc,
@@ -4758,8 +5416,7 @@ fn managed_loopback_ordinary_legs_preserve_native_capture_placement() -> Result<
     run_managed_loopback_observing(
         &SLOT,
         &ADMISSION,
-        LoopbackSuccessor::ApplyOrdinary,
-        false,
+        LoopbackScenario::new(LoopbackSuccessor::ApplyOrdinary, false),
         None,
         || {
             read_clock_coordinates().map_err(|error: ClockReadError| {
@@ -5028,7 +5685,7 @@ fn native_provider_managed_loopback_successor_commits_exact_deny_after_normal_jo
         let _reported: std::process::ExitCode = report_run_failure(failure);
     }
     assert_native_loopback_control(observed.result, udp, &expected)?;
-    assert_loopback_policy(&source, &alias, udp, true)?;
+    assert_loopback_policy(&source, &alias, udp, true, [4, 4])?;
     assert!(!observed.cleanup.stop_failed);
     assert_eq!(observed.cleanup.unregistration_error, None);
     assert_eq!(config_lifetime.strong_count(), 0);
@@ -5308,8 +5965,14 @@ fn managed_deny_worker_post_record_stop_preserves_only_once_joined_history() -> 
     let joined: ReceivingOutcome = SLOT.take_for_receiving().map_err(|_| Failure::Control)?;
     let profile: ExperimentalProfile =
         ExperimentalProfile::new(0, u64::from(u32::MAX), 0).map_err(|_| Failure::Control)?;
-    let ReceivedInvocation::ProtectedControl(received) =
-        receive_joined(joined, Some(profile)).map_err(|_| Failure::Control)?
+    let ReceivedInvocation::ProtectedControl(received) = receive_joined(
+        joined,
+        Some(profile),
+        None,
+        #[cfg(windows)]
+        || None,
+    )
+    .map_err(|_| Failure::Control)?
     else {
         return Err(Failure::Control);
     };

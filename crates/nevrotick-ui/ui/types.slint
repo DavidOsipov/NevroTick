@@ -26,7 +26,7 @@ export struct SourceChangeRow {
 
 export enum Page { status, sources, statistics, diagnostics, settings, about, recovery }
 
-export enum UpdateStage { idle, checking, offered, downloading, verifying, installing, complete }
+export enum UpdateStage { idle, checking, offered, downloading, verifying, installing, complete, cancelled }
 
 export struct UpdatePreview {
     stage: UpdateStage,

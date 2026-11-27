@@ -6,7 +6,6 @@ import io
 import json
 import os
 from pathlib import Path
-import signal
 import sys
 import tempfile
 import time
@@ -475,37 +474,45 @@ class ProcessTests(unittest.TestCase):
         self.assertIn("wall timeout", result["failure"])
         self.assertLess(time.monotonic() - started, 1.5)
 
-    def test_descendant_cannot_outlive_a_successful_leader(self):
+    def test_descendant_cannot_outlive_a_successful_leader(self) -> None:
+        directory: str
         with tempfile.TemporaryDirectory() as directory:
-            pid_path = Path(directory) / "descendant.pid"
-            code = (
+            pid_path: Path = Path(directory) / "descendant.pid"
+            # Even if runner cleanup fails, the fixture child has a finite lifetime.
+            # CI also owns the enclosing PID namespace. Its old PID must not be signaled here.
+            code: str = (
                 "import pathlib,subprocess,sys; "
                 "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(20)'], "
                 "stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
                 "pathlib.Path(sys.argv[1]).write_text(str(child.pid))"
             )
-            descendant = None
-            try:
-                result = ENV.run([sys.executable, "-c", code, str(pid_path)], cwd=Path.cwd())
-                descendant = int(pid_path.read_text())
-                self.assertEqual(result["exit_code"], 0)
-                self.assertIn("descendant", result["failure"] or "")
-                with self.assertRaises(ENV.Incomplete):
-                    ENV.require_ok(result)
-                deadline = time.monotonic() + 1
-                while time.monotonic() < deadline:
-                    status = Path(f"/proc/{descendant}/stat")
-                    if not status.exists() or status.read_text().split()[2] in {"Z", "X"}:
-                        break
-                    time.sleep(0.01)
-                else:
-                    self.fail("Owned descendant remained running after the command returned")
-            finally:
-                if descendant is not None:
-                    try:
-                        os.kill(descendant, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
+            result: dict[str, list[str] | int | str | None] = ENV.run(
+                [sys.executable, "-c", code, str(pid_path)], cwd=Path.cwd(),
+            )
+            descendant: int = int(pid_path.read_text())
+            self.assertEqual(result["exit_code"], 0)
+            failure: list[str] | int | str | None = result["failure"]
+            if not isinstance(failure, str):
+                self.fail("Expected the runner to report an outliving descendant")
+            self.assertIn("descendant", failure)
+            with self.assertRaises(ENV.Incomplete):
+                ENV.require_ok(result)
+            status: Path = Path(f"/proc/{descendant}/stat")
+            deadline: float = time.monotonic() + 1
+            while time.monotonic() < deadline:
+                try:
+                    stat_text: str = status.read_text()
+                except FileNotFoundError:
+                    break
+                # The parenthesized command in /proc/<pid>/stat can contain spaces.
+                state_and_rest: list[str] = stat_text.rpartition(") ")[2].split(maxsplit=1)
+                if not stat_text.startswith(f"{descendant} (") or len(state_and_rest) != 2 or len(state_and_rest[0]) != 1:
+                    self.fail("Malformed descendant process status")
+                if state_and_rest[0] in {"Z", "X"}:
+                    break
+                time.sleep(0.01)
+            else:
+                self.fail("Owned descendant remained running after the command returned")
 
 
 class ReceiptTests(unittest.TestCase):

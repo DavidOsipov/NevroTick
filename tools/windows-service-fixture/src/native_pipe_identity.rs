@@ -4,12 +4,19 @@
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem::{align_of, offset_of, size_of};
-use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
+use std::os::windows::{
+    ffi::OsStrExt,
+    io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle},
+};
+use std::path::{Path, PathBuf};
 use std::process;
 use std::ptr;
 use std::rc::Rc;
 
-use windows_platform_native::{PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess};
+use windows_platform_native::{
+    PackageFullNameError, PeerPrimaryToken, PeerPrimaryTokenError, PeerProcess,
+    ProcessImageNameError, ReportedPackageFullName, ReportedProcessImageName,
+};
 use windows_sys::Win32::Foundation::{
     ERROR_NO_TOKEN, GetLastError, HANDLE, INVALID_HANDLE_VALUE, TRUE,
 };
@@ -76,6 +83,8 @@ pub(super) enum PipeIdentityError {
     AnonymousUser,
     /// A primary token changed during the identity read.
     ChangedPrimaryToken,
+    /// The token from the completed pipe read changed during admission.
+    ChangedRequestToken,
 }
 
 impl fmt::Display for PipeIdentityError {
@@ -98,13 +107,55 @@ impl fmt::Display for PipeIdentityError {
             Self::ChangedPrimaryToken => {
                 formatter.write_str("primary token changed during identity observation")
             }
+            Self::ChangedRequestToken => {
+                formatter.write_str("request token changed during identity observation")
+            }
         }
     }
 }
 
 impl std::error::Error for PipeIdentityError {}
 
-/// Capture the native identity associated with the server's most recent completed read.
+/// Query-only token from the completed pipe read, inspected after reversion.
+pub(super) struct CapturedRequestToken {
+    /// The exact token received from the original reader thread.
+    handle: OwnedHandle,
+    /// The fixture identity from that token at the captured generation.
+    identity: PipeIdentity,
+    /// Modification identifier bracketing the original identity query.
+    generation: TokenGeneration,
+}
+
+impl CapturedRequestToken {
+    /// Borrow the fixture identity checked on this token.
+    pub(super) const fn identity(&self) -> &PipeIdentity {
+        &self.identity
+    }
+
+    /// Check the same identification token before its request reaches dispatch.
+    ///
+    /// # Errors
+    /// Refuse an ambient thread token, invalid statistics or a changed generation.
+    pub(super) fn reobserve(&self) -> Result<(), PipeIdentityError> {
+        ensure_unimpersonated()?;
+        let statistics: TOKEN_STATISTICS = validate_statistics(
+            read_statistics(self.handle.as_handle())?,
+            TokenImpersonation,
+        )?;
+        if TokenGeneration::from_statistics(&statistics) != self.generation {
+            return Err(PipeIdentityError::ChangedRequestToken);
+        }
+        Ok(())
+    }
+
+    /// Change only the expected generation for the directed dispatch control.
+    #[cfg(test)]
+    pub(super) fn change_expected_generation_for_test(&mut self) {
+        self.generation.1 ^= 1;
+    }
+}
+
+/// Capture the exact token associated with the server's most recent completed read.
 ///
 /// The fixture read owner must serialize this call with reads and disconnects of
 /// this connected server instance. Token inspection starts only after reversion.
@@ -112,14 +163,23 @@ impl std::error::Error for PipeIdentityError {}
 /// # Errors
 /// Reject an ambient thread token, failed capture, or unsuitable token evidence.
 /// A failed reversion aborts the supervised fixture process immediately.
-pub(super) fn capture(pipe: BorrowedHandle<'_>) -> Result<PipeIdentity, PipeIdentityError> {
+pub(super) fn capture(pipe: BorrowedHandle<'_>) -> Result<CapturedRequestToken, PipeIdentityError> {
     let thread: HANDLE = current_thread();
     let identification: PipeIdentification = PipeIdentification::begin(pipe)?;
     let opened_token: Result<HANDLE, PipeIdentityError> = open_thread_token(thread);
     drop(identification);
 
-    let token: OwnedHandle = take_opened_token(opened_token?)?;
-    query_identity(token.as_handle(), TokenImpersonation)
+    let handle: OwnedHandle = take_opened_token(opened_token?)?;
+    let statistics: TOKEN_STATISTICS =
+        validate_statistics(read_statistics(handle.as_handle())?, TokenImpersonation)?;
+    let identity: PipeIdentity = sample_identity(handle.as_handle(), &statistics)?;
+    let token: CapturedRequestToken = CapturedRequestToken {
+        handle,
+        identity,
+        generation: TokenGeneration::from_statistics(&statistics),
+    };
+    token.reobserve()?;
+    Ok(token)
 }
 
 /// Revert an established pipe identification on its originating thread.
@@ -220,9 +280,9 @@ pub(super) fn own_process_identity() -> Result<PipeIdentity, PipeIdentityError> 
 
 /// Both halves of the Windows token's modification LUID.
 #[derive(Clone, Copy, Eq, PartialEq)]
-struct PrimaryTokenGeneration(i32, u32);
+struct TokenGeneration(i32, u32);
 
-impl PrimaryTokenGeneration {
+impl TokenGeneration {
     /// Project the generation from a checked native statistics sample.
     const fn from_statistics(statistics: &TOKEN_STATISTICS) -> Self {
         Self(
@@ -239,7 +299,7 @@ pub(super) struct RetainedPrimaryToken {
     /// Identity read from this same token before admission.
     identity: PipeIdentity,
     /// Generation shared by the statistics samples bracketing the SID read.
-    generation: PrimaryTokenGeneration,
+    generation: TokenGeneration,
 }
 
 impl RetainedPrimaryToken {
@@ -268,11 +328,11 @@ impl RetainedPrimaryToken {
     ) -> Result<Self, PipeIdentityError> {
         let original: TOKEN_STATISTICS =
             validate_statistics(read(token.as_handle())?, TokenPrimary)?;
-        let generation: PrimaryTokenGeneration = PrimaryTokenGeneration::from_statistics(&original);
+        let generation: TokenGeneration = TokenGeneration::from_statistics(&original);
         let identity: PipeIdentity = read_identity(token.as_handle(), &original)?;
         let confirmed: TOKEN_STATISTICS =
             validate_statistics(read(token.as_handle())?, TokenPrimary)?;
-        if PrimaryTokenGeneration::from_statistics(&confirmed) != generation {
+        if TokenGeneration::from_statistics(&confirmed) != generation {
             return Err(PipeIdentityError::ChangedPrimaryToken);
         }
         Ok(Self {
@@ -298,6 +358,68 @@ impl RetainedPrimaryToken {
     }
 }
 
+/// Refusal while preparing or observing one selected fixture client.
+#[derive(Debug)]
+pub(super) enum FixtureClientError {
+    /// The original query-only primary token could not be prepared.
+    Token(PipeIdentityError),
+    /// The fixture could not recover its own fixed executable path.
+    ExpectedImage(std::io::Error),
+    /// The original server, client process or primary token no longer matched.
+    Continuity,
+    /// The retained process's image could not be sampled.
+    Image(ProcessImageNameError),
+    /// The retained process's package identity could not be sampled.
+    Package(PackageFullNameError),
+    /// The observed image differed from the fixed fixture executable.
+    WrongImage,
+    /// The copied-out fixture unexpectedly ran under a package identity.
+    UnexpectedPackage,
+}
+
+impl fmt::Display for FixtureClientError {
+    /// Preserve the refusal stage without publishing the component names.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Token(cause) => write!(formatter, "prepare fixture client token: {cause}"),
+            Self::ExpectedImage(cause) => {
+                write!(
+                    formatter,
+                    "read expected fixture executable: {:?}",
+                    cause.kind()
+                )
+            }
+            Self::Continuity => formatter.write_str("fixture client is no longer current"),
+            Self::Image(cause) => write!(formatter, "read retained fixture image: {cause}"),
+            Self::Package(cause) => write!(formatter, "read retained fixture package: {cause}"),
+            Self::WrongImage => formatter.write_str("fixture executable does not match"),
+            Self::UnexpectedPackage => formatter.write_str("unexpected fixture package identity"),
+        }
+    }
+}
+
+impl std::error::Error for FixtureClientError {}
+
+/// Fixed executable for the copied-out fixture, acquired independently of its peer.
+pub(super) struct FixtureExecutable(PathBuf);
+
+impl FixtureExecutable {
+    /// Capture the source path used by the fixed fixture launcher.
+    ///
+    /// # Errors
+    /// Preserve the current executable lookup refusal.
+    pub(super) fn current() -> Result<Self, FixtureClientError> {
+        std::env::current_exe()
+            .map(Self)
+            .map_err(FixtureClientError::ExpectedImage)
+    }
+
+    /// Use this same source path for the child launch and retained peer check.
+    pub(super) fn path(&self) -> &Path {
+        self.0.as_path()
+    }
+}
+
 /// Own the independently selected fixture process and its original token.
 /// The first exchange retains this owner through actual native write settlement.
 pub(super) struct RetainedFixtureClient {
@@ -305,22 +427,90 @@ pub(super) struct RetainedFixtureClient {
     process: PeerProcess,
     /// Query-only handle to that process's original primary token.
     token: RetainedPrimaryToken,
-    /// One-way gate after process, pipe or token observation is refused.
+    /// Literal path from the fixed fixture launcher, independent of peer queries.
+    expected_image: Box<[u16]>,
+    /// One-way gate after pipe, process, token or component observation is refused.
     current: bool,
 }
 
 impl RetainedFixtureClient {
-    /// Bind the fixture actor before accepting a pipe connection.
+    /// Bind a retained client in the current fixed fixture image.
+    ///
+    /// # Errors
+    /// Preserve the launcher image or query-only primary-token acquisition refusal.
+    pub(super) fn new(process: PeerProcess) -> Result<Self, FixtureClientError> {
+        let executable: FixtureExecutable = FixtureExecutable::current()?;
+        Self::from_fixture_executable(process, &executable)
+    }
+
+    /// Bind the client to the same executable input used by its fixture launcher.
     ///
     /// # Errors
     /// Preserve the query-only primary-token acquisition refusal.
-    pub(super) fn new(process: PeerProcess) -> Result<Self, PipeIdentityError> {
-        let token: RetainedPrimaryToken = RetainedPrimaryToken::open(process.as_handle())?;
+    pub(super) fn from_fixture_executable(
+        process: PeerProcess,
+        executable: &FixtureExecutable,
+    ) -> Result<Self, FixtureClientError> {
+        let token: RetainedPrimaryToken =
+            RetainedPrimaryToken::open(process.as_handle()).map_err(FixtureClientError::Token)?;
+        let expected_image: Box<[u16]> = executable.path().as_os_str().encode_wide().collect();
         Ok(Self {
             process,
             token,
+            expected_image,
             current: true,
         })
+    }
+
+    /// Check the fixture image and package on the same client that supplied the read.
+    ///
+    /// # Errors
+    /// Permanently retire the fixture on changed continuity, a refused native read
+    /// or a different component. A successful check supplies fixture evidence only.
+    pub(super) fn check_component(
+        &mut self,
+        server: BorrowedHandle<'_>,
+    ) -> Result<(), FixtureClientError> {
+        let outcome: Result<(), FixtureClientError> = self.observe_component(server);
+        self.current = outcome.is_ok();
+        outcome
+    }
+
+    /// Compare both bounded component observations while the original client is current.
+    ///
+    /// # Errors
+    /// Preserve image and package query errors. Classify an unconfirmed peer
+    /// as a continuity refusal and reject a different component.
+    fn observe_component(&mut self, server: BorrowedHandle<'_>) -> Result<(), FixtureClientError> {
+        if !self.observe(server) {
+            return Err(FixtureClientError::Continuity);
+        }
+        let image: ReportedProcessImageName = self
+            .process
+            .image_name()
+            .map_err(FixtureClientError::Image)?;
+        let package: Option<ReportedPackageFullName> = self
+            .process
+            .package_full_name()
+            .map_err(FixtureClientError::Package)?;
+        if !self.observe(server) {
+            return Err(FixtureClientError::Continuity);
+        }
+        if image.as_wide() != self.expected_image.as_ref() {
+            return Err(FixtureClientError::WrongImage);
+        }
+        if package.is_some() {
+            return Err(FixtureClientError::UnexpectedPackage);
+        }
+        Ok(())
+    }
+
+    /// Challenge image comparison without altering the live client or its token.
+    #[cfg(test)]
+    pub(super) fn change_expected_image_for_test(&mut self) {
+        if let Some(unit) = self.expected_image.last_mut() {
+            *unit ^= 1;
+        }
     }
 
     /// Borrow the identity from the exact primary token retained for this peer.
@@ -586,7 +776,7 @@ mod tests {
 
     use std::num::NonZeroU32;
 
-    use super::{AsHandle, PeerProcess, PrimaryTokenGeneration, RetainedFixtureClient};
+    use super::{AsHandle, PeerProcess, RetainedFixtureClient, TokenGeneration};
     use crate::native_pipe_pair::{
         LabClientContext, LabPipeReader, LabRequestWriter, open_lab_identification_pipe,
     };
@@ -605,14 +795,14 @@ mod tests {
         for (high, low) in [(1_i32, 0_u32), (0, 1)] {
             let mut client: RetainedFixtureClient =
                 RetainedFixtureClient::new(PeerProcess::open(pid)?)?;
-            let original: PrimaryTokenGeneration = client.token.generation;
+            let original: TokenGeneration = client.token.generation;
             if !client.observe(reader.as_handle()) {
                 return Err("the original client generation was refused".into());
             }
 
             // Change only the saved observation. The kernel token, principal,
             // process and connected server remain the healthy originals.
-            client.token.generation = PrimaryTokenGeneration(original.0 ^ high, original.1 ^ low);
+            client.token.generation = TokenGeneration(original.0 ^ high, original.1 ^ low);
             if client.observe(reader.as_handle()) {
                 return Err("a different generation on the same token was accepted".into());
             }

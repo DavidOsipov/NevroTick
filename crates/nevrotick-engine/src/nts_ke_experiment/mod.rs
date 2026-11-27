@@ -35,6 +35,8 @@ mod power_target;
 mod process;
 mod profile;
 #[cfg(any(windows, test))]
+mod receiving;
+#[cfg(any(windows, test))]
 mod recovery;
 
 #[cfg(windows)]
@@ -1097,17 +1099,17 @@ enum InvocationCompletion {
 }
 
 /// Terminal historical effect issued after the second adapter retires.
-enum ManagedSuccessorEffect {
+enum ManagedSuccessorEffect<Ordinary = Arc<datagram::ManagedProtectedHistory>> {
     /// Genuine authenticated ordinary commit.
-    Ordinary(Arc<datagram::ManagedProtectedHistory>),
+    Ordinary(Ordinary),
     /// The exact restriction committed by the source and endpoint policy owner.
     Restriction(association::ledger::AppliedProtectedControl),
 }
 
 /// Terminal operation result and the independently observed recovery indication.
-struct ManagedSuccessorTerminal {
+struct ManagedSuccessorTerminal<Ordinary = Arc<datagram::ManagedProtectedHistory>> {
     /// Preserve original operation and cleanup failures beside the first receipt.
-    result: Result<ManagedSuccessorEffect, Failed>,
+    result: Result<ManagedSuccessorEffect<Ordinary>, Failed>,
     /// Earliest admitted NAK within the original successor receive window.
     first_nak_at: Option<Instant>,
     /// Unspent checkout, frame and byte budgets from this actual association.
@@ -1254,6 +1256,8 @@ struct ManagedObservedJob<'target> {
     active: power_target::ActivePower<'target>,
     /// The exact Stop handle for an unconfirmed collection.
     stop: StopHandle,
+    /// Exact authority for consuming any normally joined ordinary receipts.
+    receiving: receiving::ManagedReceivingContext,
 }
 
 /// Use the observer's epoch across original Control preparation and reservation.
@@ -1274,6 +1278,9 @@ fn prepare_managed_observed<'target>(
         .map_err(power_refusal)?;
     let prepared: job::PreparedInvocation =
         prepare_synchronous(config, cutoff).map_err(ObserverStartError::Preparation)?;
+    let receiving: receiving::ManagedReceivingContext = prepared
+        .managed_receiving()
+        .ok_or_else(|| power_refusal(Failed::from(Failure::Control)))?;
     let reservation: job::SubmissionReservation =
         worker
             .try_reserve(prepared)
@@ -1286,6 +1293,7 @@ fn prepare_managed_observed<'target>(
         reservation,
         active,
         stop,
+        receiving,
     })
 }
 
@@ -1371,6 +1379,7 @@ fn read_managed_clock() -> ManagedClockRead {
 #[cfg(any(windows, test))]
 fn receive_managed_submission(
     submit: impl FnOnce() -> Result<job::SubmittedJob, job::SubmitError>,
+    receiving: &receiving::ManagedReceivingContext,
     #[cfg(windows)] read_clock: &mut Option<&mut dyn FnMut() -> ManagedClockRead>,
 ) -> Result<datagram::ReceivedInvocation, RunFailed> {
     #[cfg(windows)]
@@ -1382,16 +1391,13 @@ fn receive_managed_submission(
         .map_err(RunFailed::Submission)?
         .receive()
         .map_err(RunFailed::Collection)?;
-    let received: datagram::ReceivedInvocation = datagram::receive_joined(joined, None)?;
-    #[cfg(windows)]
-    let received: datagram::ReceivedInvocation = match (received, finish_clock_read) {
-        (datagram::ReceivedInvocation::ManagedSuccessor(mut result), Some(mut finish)) => {
-            result.retain_clock_reads(finish());
-            datagram::ReceivedInvocation::ManagedSuccessor(result)
-        }
-        (other, _) => other,
-    };
-    Ok(received)
+    datagram::receive_joined(
+        joined,
+        None,
+        Some(receiving),
+        #[cfg(windows)]
+        || finish_clock_read.map(|mut finish| finish()),
+    )
 }
 
 /// Select the explicit bounded successor before any Native invocation effects.
@@ -1408,6 +1414,7 @@ fn run_managed_successor_with_power_observer(
         reservation,
         active,
         stop,
+        receiving,
     } = prepare_managed_observed(config, owner_cutoff, &worker, &target)?;
     let close = subscribe_managed_power(Arc::clone(&target))
         .map_err(|()| ObserverStartError::Registration)?;
@@ -1419,6 +1426,7 @@ fn run_managed_successor_with_power_observer(
             drop(worker);
             submitted
         },
+        &receiving,
         &mut Some(&mut read_managed_clock),
     );
     Ok(finish_observing(result, &stop, Some(active), close))
@@ -1675,7 +1683,13 @@ fn receive_submitted(
 ) -> Result<datagram::ReceivedInvocation, RunFailed> {
     slot.collect().map_err(RunFailed::Collection)?;
     let joined: job::ReceivingOutcome = slot.take_for_receiving().map_err(RunFailed::Collection)?;
-    datagram::receive_joined(joined, profile)
+    datagram::receive_joined(
+        joined,
+        profile,
+        None,
+        #[cfg(windows)]
+        || None,
+    )
 }
 
 /// Closed outer failure projection keeps submission, operation and joined termination distinct.

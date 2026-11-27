@@ -5772,6 +5772,53 @@ ENGINE_STALE_DEBIT_TEST_POST = '031e1f2a0896350a359c3ab52af4f48d75139e112787f612
 ENGINE_STALE_DEBIT_EP1_CASE_DIGEST = '0e6f6d3e9d8b210799ee61270bff21fe40053efe69af799090d7eddabac03509'
 ENGINE_STALE_DEBIT_FULL_COMMANDS = {'ep1-ordinary': '15fb7af1ad4678d1c3d428504b671e132361eeef54ba96e6e83964805a569118', 'ep1-optimized': '6c83ad7594673fb937511174ea5d07a9b0c529fca0ba2bf1f22f50d81b5c682d', 'ep1-doctests': '906f3b3a5cf44e0a4911772e655887aa7463852844d8a6e44c179c25a357d2e8'}
 ENGINE_STALE_DEBIT_ROSTER = ENGINE_FINAL_FRAME_ROSTER | {"ep1-ordinary": (604, "aae2f8642303d4d8f39b4a8fce24a683b98289481deea570e9efe423a2ef9947")}
+ENGINE_JOINED_RECEIVING_CANDIDATE = "1e6b438b9f86fabe50673b8571642d2bba323d62eb131d401280e3b2b2574435"
+ENGINE_JOINED_RECEIVING_MANIFEST = "fb8151b66bb271ac9d1373f6cb280c03490e133e85773d9d728764e482b3bdc0"
+ENGINE_JOINED_RECEIVING_TERMINAL = "5511669e84f4219cf0caa3feacbc0c0d458fce2f75c2e50819ed113b0285080f"
+ENGINE_JOINED_RECEIVING_BOUNDARY = "d96ff06a587f6772448866f6b94e1b703a45a9b343395613e67faf3af65f6855"
+ENGINE_JOINED_RECEIVING_WRAPPER = "f3ffb5927f4d76c8665e1bc5e26c9edc886432b5b72ccc4f67ddac4472d880b4"
+ENGINE_JOINED_RECEIVING_GRAPH = "c543dbebe170e04aa3889d82646edeca791fab574923e8bd0862ba99dfc6b842"
+ENGINE_JOINED_RECEIVING_FOCUSED = "e39a89ba30620e48ca43ed6dae02de51e3a53e3092f4e4a08df30e80f5e1b211"
+ENGINE_JOINED_RECEIVING_RESOURCES = "b6b30c3c412f37a545b51702d7ca7577483f872071eab712f0ff48d49c864369"
+ENGINE_JOINED_RECEIVING_CARGO_HOME = "d32fb62c39621c1a8e362cbd460897959f767f65b1bd41a47f7c3a5127984217"
+ENGINE_JOINED_RECEIVING_ROSTER = {
+    "default-ordinary": (318, "6783e4ebc08b35738253d0337799c4e610e254c4124f0513943eb6464b0544f7"),
+    "ep1-ordinary": (684, "23eb26e971617c49da833284306e3040cf686fea22db11e5f5a90892e238168a"),
+    "default-doctests": (90, "84e67f5ad5247fd75c90ab9f08b6c3dc58d5b3aff989c0f1371e295c4ebb9b83"),
+    "ep1-doctests": (91, "154bcf865eb9cba5ae2f20db963e94b1eaee6d8fcb79c5bf9f48b352dc1d2ecc"),
+}
+ENGINE_JOINED_RECEIVING_CASE_DIGESTS = {
+    "default": "93705d1beb0f3d849f6b481197f3df531ea5139d1011f7de0ff0a1b60d9a315d",
+    "ep1": "d5ad64ac8f530ff83b7849a441a0b55db0fa20193c66d74d390c09aa0b74d966",
+}
+ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE = "d5729afdb817caeb07928ac960d6649427e756ec6135b19f9543cc2c45ff39e7"
+ENGINE_JOINED_RECEIVING_BOUNDARY_MANIFEST = "b4ee2b0f5681f9e8f55a9a241f3df961155be941f6585ad945a35b60b73c66a1"
+ENGINE_JOINED_RECEIVING_BOUNDARY_TERMINAL = "a3a9c8ef61bd5a642abad9010d36bc5deb439b63fa6222392cd3b7c500a5eb16"
+ENGINE_JOINED_RECEIVING_BOUNDARY_CONTROL = "c7b2ad32b5b8e63da5ac8e9f51064f635739c19dfe56c567821ed87db208c008"
+ENGINE_JOINED_RECEIVING_BOUNDARY_WRAPPER = "ac138acd9cae3f6ad655386dff285bfd3dad6a07902929f20791776ec4f2b3a8"
+ENGINE_JOINED_RECEIVING_BOUNDARY_RESOURCES = "f7efbc90f1f41359e90cafd492f0a09468f86bfc5ee53a0f7e81b4033d5eae9d"
+ENGINE_JOINED_RECEIVING_BOUNDARY_FOCUSED = "5de7d276484d61b299a5159179b5567fadf59c57d813c3ad6d4b524d439274ab"
+ENGINE_JOINED_RECEIVING_PREDECESSOR_READBACK = "a6569ace03b3c10783444a3c28744220b08cc765871671b03f14080d2602c690"
+ENGINE_JOINED_RECEIVING_FAMILY = (ENGINE_JOINED_RECEIVING_CANDIDATE, ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE)
+ENGINE_JOINED_RECEIVING_BOUNDARY_DELTA = {
+    "crates/nevrotick-engine/src/nts_ke_experiment/job.rs": (
+        "a4cfdc52e2d7bc9f1dbeff7e407dd52c62b064d0d7847d3dc7b31d2a3554ec90",
+        "48a49db6cb9a297f82bf335ae3033aa4ed781a2509f80e8990665e8f29235555",
+    ),
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs": (
+        "633fb069e9d4a7f806603522f4ea9fd8c99fe8b39bb9b85957fc58036ba123c6",
+        "46e1c31b26824e9e153c0933abdec78e9beff5b7a5a4e54705b2a24f296bda51",
+    ),
+}
+ENGINE_JOINED_RECEIVING_BOUNDARY_CASES = tuple(
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::" + name
+    for name in ("managed_joined_receiving_checks_original_commit_boundary",
+                 "managed_joined_receiving_without_context_preserves_originals")
+)
+ENGINE_JOINED_RECEIVING_BOUNDARY_ROSTER = ENGINE_JOINED_RECEIVING_ROSTER | {
+    "ep1-ordinary": (686, "67e486fbbf7bb092e51f41fb673833625487915196587f30abf78858d28f0112"),
+}
+ENGINE_JOINED_RECEIVING_BOUNDARY_EP1_CASE_DIGEST = "024466c2ce2753984b13971d6a4916ca0d934b5cb1d2ac9b2de391927c406c71"
 ENGINE_REVIEW_TERMINAL = "6459d484673913359fc69e58596c32ef113eca27363fa1ebc75ea14518ae31f7"
 ENGINE_REVIEW_MANIFEST = "1cc89353a08cab0ca94d365ac65a5319709e4904a207122cc095e3aad19bfc35"
 ENGINE_REVIEW_BOUNDARY = "a47858cedf91f8ae1d0fe3bb5440377cfa11d785b21afc34a4984aafa92b4994"
@@ -5897,6 +5944,10 @@ ENGINE_KE_LOOPBACK_AND_TRANSPORT_CUTOFF_TESTS = frozenset((
     "nts_ke_experiment::managed_preview_tests::"
     "managed_ke_transport_refusal_keeps_initial_io_category",
 ))
+ENGINE_KE_JOINED_RECEIVING_TEST_SOURCES = (
+    "crates/nevrotick-engine/src/nts_ke_experiment/receiving/fixture.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_cases.rs",
+)
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs",
@@ -5911,6 +5962,7 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs",
+    *ENGINE_KE_JOINED_RECEIVING_TEST_SOURCES,
     "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
     "crates/nevrotick-engine/tests/private/source_configuration.rs",
@@ -6096,6 +6148,8 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
 
 def engine_review_input_count(candidate: object) -> int | None:
     """Select each combined review candidate without changing the older binding."""
+    if candidate in ENGINE_JOINED_RECEIVING_FAMILY:
+        return 768
     if candidate in (ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE):
         return ENGINE_SCALE_CONFLICT_INPUT_COUNT
     if candidate == ENGINE_REVIEW_CANDIDATE:
@@ -6105,6 +6159,10 @@ def engine_review_input_count(candidate: object) -> int | None:
 
 def engine_review_terminal_pin(candidate: object) -> str:
     """Choose the immutable combined terminal for the admitted review generation."""
+    if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_BOUNDARY_TERMINAL
+    if candidate == ENGINE_JOINED_RECEIVING_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_TERMINAL
     if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
         return ENGINE_STALE_DEBIT_TERMINAL
     if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
@@ -6119,14 +6177,28 @@ def engine_review_terminal_pin(candidate: object) -> str:
 
 
 def engine_ke_bound_inputs(candidate: object) -> tuple[str, ...]:
-    """Bind the new Windows test helper only for the candidate which contains it."""
+    """Bind the joined receiving owner and controls for current candidates.
+
+    Retain the exact helper closure of the named predecessor evidence.
+    """
+    inputs: tuple[str, ...] = ENGINE_KE_BOUND_INPUTS
+    if candidate in (ENGINE_KE_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
+                     ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE,
+                     ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE,
+                     ENGINE_STALE_DEBIT_CANDIDATE):
+        later: tuple[str, ...] = (COMMON.ENGINE_KE_JOINED_RECEIVING_SOURCE, *ENGINE_KE_JOINED_RECEIVING_TEST_SOURCES)
+        inputs = tuple(name for name in inputs if name not in later)
     if candidate in (ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE):
-        return (*ENGINE_KE_BOUND_INPUTS, ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE)
-    return ENGINE_KE_BOUND_INPUTS
+        return (*inputs, ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE)
+    return inputs
 
 
 def engine_ke_case_counts(candidate: object) -> tuple[int, int]:
     """Keep historical rosters distinct from the exact review candidate."""
+    if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+        return 686, 360
+    if candidate == ENGINE_JOINED_RECEIVING_CANDIDATE:
+        return 684, 358
     if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
         return (604, 312)
     if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
@@ -6168,6 +6240,10 @@ def validate_engine_ke_inventory(names: object, *, candidate: object = None) -> 
             or not ENGINE_KE_MANAGED_REPORT_TESTS.issubset(names)
             or not ENGINE_KE_TRANSPORT_CURRENTNESS_TESTS.issubset(names)
             or not ENGINE_KE_LOOPBACK_AND_TRANSPORT_CUTOFF_TESTS.issubset(names)
+            or (candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+                and COMMON.canonical_sha256(names) != ENGINE_JOINED_RECEIVING_BOUNDARY_ROSTER["ep1-ordinary"][1])
+            or (candidate == ENGINE_JOINED_RECEIVING_CANDIDATE
+                and COMMON.canonical_sha256(names) != ENGINE_JOINED_RECEIVING_ROSTER["ep1-ordinary"][1])
             or (candidate == ENGINE_REVIEW_CANDIDATE
                 and COMMON.canonical_sha256(names) != SOURCE_POLICY_ENGINE_REVIEW_ROSTER["ep1-ordinary"][1])
             or (candidate == ENGINE_SCALE_CONFLICT_CANDIDATE
@@ -6199,7 +6275,9 @@ def validate_engine_ke_doctest_inventory(names: object, *, candidate: object = N
                       or engine_review_input_count(candidate) is not None)
     count = 91 if exact_doctests else ENGINE_KE_DOCTEST_COUNT
     digest = ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST
-    if candidate == ENGINE_PLACEMENT_CANDIDATE:
+    if candidate in ENGINE_JOINED_RECEIVING_FAMILY:
+        digest = ENGINE_JOINED_RECEIVING_ROSTER["ep1-doctests"][1]
+    elif candidate == ENGINE_PLACEMENT_CANDIDATE:
         digest = ENGINE_PLACEMENT_ROSTER["ep1-doctests"][1]
     elif candidate == ENGINE_STALE_DEBIT_CANDIDATE:
         digest = ENGINE_STALE_DEBIT_ROSTER["ep1-doctests"][1]
@@ -6357,7 +6435,11 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
             raise Incomplete("Engine KE development EP1 row differs from the physical executed identities.")
         if (source_scale or review) and lane != "ep1-doctests":
             pairs = sorted((case["binary"], case["name"]) for case in cases)
-            if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+            if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+                digest = ENGINE_JOINED_RECEIVING_BOUNDARY_EP1_CASE_DIGEST
+            elif candidate == ENGINE_JOINED_RECEIVING_CANDIDATE:
+                digest = ENGINE_JOINED_RECEIVING_CASE_DIGESTS["ep1"]
+            elif candidate == ENGINE_STALE_DEBIT_CANDIDATE:
                 digest = ENGINE_STALE_DEBIT_EP1_CASE_DIGEST
             elif candidate == ENGINE_FINAL_FRAME_CANDIDATE:
                 digest = ENGINE_FINAL_FRAME_EP1_CASE_DIGEST
@@ -6376,8 +6458,16 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
     graph_path = Path(graph["path"])
     if review:
         capture, reference, recipe, boundary = read_combined_development(candidate, identity, evidence)
-        if graph != capture["predecessor_graph"]:
-            raise Incomplete("Engine review KE binding names a different predecessor graph.")
+        graph_key: str = ("root_graph_evidence" if candidate in ENGINE_JOINED_RECEIVING_FAMILY
+                          else "predecessor_graph")
+        if graph != capture[graph_key]:
+            raise Incomplete(
+                "Engine review KE binding names a different dependency graph."
+                if candidate in ENGINE_JOINED_RECEIVING_FAMILY
+                else "Engine review KE binding names a different predecessor graph.")
+        if (candidate in ENGINE_JOINED_RECEIVING_FAMILY
+                and binding["source_context_sha256"] != COMMON.canonical_sha256(capture["source"])):
+            raise Incomplete("Joined receiving KE binding names a different frozen checkout.")
         result.update(admit_engine_combined_review_lineage(capture, reference, identity, path))
         ordinary, = (row["cases"] for row in lanes if row["lane"] == "default-ordinary")
         doctests, = (row["cases"] for row in lanes if row["lane"] == "default-doctests")
@@ -6931,9 +7021,12 @@ def execute_engine_ke_profile(args, report: dict) -> None:
     manifest = tomllib.loads((ROOT / "policy/verification-manifest.toml").read_text())
     for filename in COMMON.ENGINE_KE_CRITICAL:
         package = "nevrotick-crypto-cng-lifecycle" if filename.startswith("tools/") else "nevrotick-engine"
+        owners: list[str | None] = [
+            row.get("package") for row in manifest.get("security_modules", [])
+            for member in row.get("files", []) if member == filename
+        ]
         if (manifest.get("critical_files", []).count(filename) != 1
-                or sum(row.get("package") == package and filename in row.get("files", [])
-                       for row in manifest.get("security_modules", [])) != 1):
+                or owners != [package]):
             raise Incomplete("Engine KE requires the complete current critical/security inventory.")
     evidence_before = admit_engine_ke_evidence(binding)
     selected = argparse.Namespace(**vars(args))
@@ -6943,10 +7036,15 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                   full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
                   scope="Selected registered GNU KE owners; remaining file and Windows-arm evidence stays open",
                   source_context_sha256=binding["source_context_sha256"],
-                  source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
+                  source_context_scope=(
+                      "Exact complete frozen checkout used by the combined producer."
+                      if binding["candidate_sha256"] in ENGINE_JOINED_RECEIVING_FAMILY else
+                      "Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256"),
                   candidate_sha256=binding["candidate_sha256"],
                   ordinary_reference=binding["ordinary_evidence"],
                   ordinary_reference_scope=(
+                      "Exact current combined terminal and graph; physical EP1 ordinary, optimized and Rustdoc rosters."
+                      if binding["candidate_sha256"] in ENGINE_JOINED_RECEIVING_FAMILY else
                       "Exact combined terminal and predecessor graph; physical EP1 ordinary, optimized and Rustdoc rosters."
                       if binding["candidate_sha256"] in (
                           ENGINE_KE_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
@@ -7276,6 +7374,10 @@ SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
 
 def source_policy_combined_roster(candidate: object) -> tuple[dict, int] | None:
     """Select the roster and private-case count for the exact combined product."""
+    if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_BOUNDARY_ROSTER, 77
+    if candidate == ENGINE_JOINED_RECEIVING_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_ROSTER, 77
     if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
         return (ENGINE_STALE_DEBIT_ROSTER, 75)
     if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
@@ -7329,7 +7431,8 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
     compiler_count, negative_count = (
         (19, 14) if binding.get("candidate_sha256") in (
             SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
-            ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE)
+            ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE, ENGINE_PROTECTED_DEBIT_CANDIDATE,
+            ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE, *ENGINE_JOINED_RECEIVING_FAMILY)
         else (18, 13))
     if (len(selected) != (combined[1] if combined else 68)
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
@@ -8186,6 +8289,10 @@ def admit_source_policy_observer(reference: dict, path: Path) -> dict:
 
 def source_policy_combined_evidence(candidate: str) -> tuple[str, str]:
     """Select the pinned manifest and raw boundary for this combined candidate."""
+    if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_BOUNDARY_MANIFEST, ENGINE_JOINED_RECEIVING_BOUNDARY_CONTROL
+    if candidate == ENGINE_JOINED_RECEIVING_CANDIDATE:
+        return ENGINE_JOINED_RECEIVING_MANIFEST, ENGINE_JOINED_RECEIVING_BOUNDARY
     if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
         return (ENGINE_STALE_DEBIT_MANIFEST, ENGINE_STALE_DEBIT_BOUNDARY)
     if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
@@ -8253,11 +8360,17 @@ def validate_source_policy_capture_lane(row: dict, selected: dict, raw: dict, bi
             ENGINE_FINAL_FRAME_CANDIDATE: ENGINE_FINAL_FRAME_EP1_CASE_DIGEST,
             ENGINE_STALE_DEBIT_CANDIDATE: ENGINE_STALE_DEBIT_EP1_CASE_DIGEST,
         }
-        if candidate in expected_digests:
+        expected_digest: str | None = None
+        if candidate in ENGINE_JOINED_RECEIVING_FAMILY:
+            profile: str = lane.split("-", 1)[0]
+            expected_digest = (ENGINE_JOINED_RECEIVING_BOUNDARY_EP1_CASE_DIGEST
+                               if profile == "ep1" and candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+                               else ENGINE_JOINED_RECEIVING_CASE_DIGESTS[profile])
+        elif candidate in expected_digests:
             expected_digest = (expected_digests[candidate] if lane.startswith("ep1-")
                                else ENGINE_SCALE_CONFLICT_DEFAULT_CASE_DIGEST)
-            if COMMON.canonical_sha256(pairs) != expected_digest:
-                raise Incomplete("Engine combined ordinary execution differs by binary.")
+        if expected_digest is not None and COMMON.canonical_sha256(pairs) != expected_digest:
+            raise Incomplete("Engine combined ordinary execution differs by binary.")
         if (Counter(pairs) != Counter(map(tuple, selected["expected"]))
                 or cases != row.get("cases") or facts["tests_executed"] != row.get("tests_executed")):
             raise Incomplete("Source-policy capture development ordinary identities differ by binary.")
@@ -9083,9 +9196,155 @@ def admit_engine_stale_debit_lineage(capture: dict, terminal: dict, identity: di
     return admitted
 
 
+def validate_joined_receiving_boundary_delta(identity: dict[str, str], predecessor: dict[str, str]) -> None:
+    """Refuse graph reuse for anything beyond the reviewed two-file test delta."""
+    changes: dict[str, tuple[str, str]] = {
+        name: (predecessor[name], digest) for name, digest in identity.items()
+        if name in predecessor and predecessor[name] != digest
+    }
+    if (identity.keys() != predecessor.keys() or changes != ENGINE_JOINED_RECEIVING_BOUNDARY_DELTA):
+        raise Incomplete("Joined receiving test-only source delta differs.")
+
+
+def admit_joined_receiving_boundary_material(capture: dict, terminal: dict, identity: dict[str, str],
+                                            predecessor: dict[str, str], path: Path) -> dict[str, str]:
+    """Read the exact predecessor recipe and the focused evidence retained with this run."""
+    validate_joined_receiving_boundary_delta(identity, predecessor)
+    lineage: dict = capture["test_only_lineage"]
+    if (terminal.get("test_only_lineage") != lineage
+            or lineage["candidate"] != ENGINE_JOINED_RECEIVING_CANDIDATE
+            or lineage["test_only_delta"] != {
+                name: list(pins) for name, pins in ENGINE_JOINED_RECEIVING_BOUNDARY_DELTA.items()
+            }
+            or lineage["new_ep1_cases"] != list(ENGINE_JOINED_RECEIVING_BOUNDARY_CASES)
+            or lineage["focused_relative_path"] != "lineage/focus/report.json"
+            or lineage["focused_sha256"] != ENGINE_JOINED_RECEIVING_BOUNDARY_FOCUSED):
+        raise Incomplete("Joined receiving current evidence has a different test-only lineage.")
+    admitted: dict[str, str] = {}
+    previous_evidence: dict[str, str] = lineage["predecessor_terminal"]
+    old_capture, _, _, _ = read_combined_development(
+        ENGINE_JOINED_RECEIVING_CANDIDATE, predecessor, previous_evidence)
+    old_capture_path: Path = Path(previous_evidence["path"]).parents[2] / "admission.json"
+    if (lineage["predecessor_capture"] != {"path": str(old_capture_path), "sha256": ENGINE_JOINED_RECEIVING_MANIFEST}
+            or lineage["predecessor_readback"]["sha256"] != ENGINE_JOINED_RECEIVING_PREDECESSOR_READBACK
+            or old_capture["root_graph_evidence"] != capture["root_graph_evidence"]):
+        raise Incomplete("Joined receiving predecessor capture or graph differs.")
+    old_readback: Path = Path(lineage["predecessor_readback"]["path"])
+    read_json(old_readback, maximum=64 * 1024, expected_sha256=ENGINE_JOINED_RECEIVING_PREDECESSOR_READBACK,
+              owned_evidence=True)
+    admitted.update({previous_evidence["path"]: ENGINE_JOINED_RECEIVING_TERMINAL,
+                     str(old_capture_path): ENGINE_JOINED_RECEIVING_MANIFEST,
+                     str(old_readback): ENGINE_JOINED_RECEIVING_PREDECESSOR_READBACK})
+    for row, old in zip(capture["lanes"], old_capture["lanes"], strict=True):
+        expected: list[object] = list(old)
+        if old[0] in {"ep1-ordinary", "ep1-optimized"}:
+            expected[3] = sorted(old[3] + [
+                ["unittests src/lib.rs", name] for name in ENGINE_JOINED_RECEIVING_BOUNDARY_CASES
+            ])
+        if row != expected:
+            raise Incomplete("Joined receiving successor selects a different physical lane recipe.")
+    material: dict[str, str] = lineage["material"]
+    home: Path = path.parents[2]
+    focus_path: Path = home / lineage["focused_relative_path"]
+    focused: dict = read_json(focus_path, maximum=4 * 1024**2,
+                             expected_sha256=ENGINE_JOINED_RECEIVING_BOUNDARY_FOCUSED, owned_evidence=True)
+    if (focused.get("status") != "passed" or focused.get("source_inputs") != identity
+            or focused.get("source_sha256") != ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+            or not all(name in focused["requested_cases"] for name in ENGINE_JOINED_RECEIVING_BOUNDARY_CASES)
+            or len(focused["attempts"]) != 17):
+        raise Incomplete("Joined receiving focused observations differ from the current candidate.")
+    expected_material: dict[str, str] = {
+        "focus/report.json": ENGINE_JOINED_RECEIVING_BOUNDARY_FOCUSED,
+        **{f"preimages/{name}": pins[0] for name, pins in ENGINE_JOINED_RECEIVING_BOUNDARY_DELTA.items()},
+    }
+    for row in focused["attempts"]:
+        label: str = row["lane"]
+        if (not re.fullmatch(r"boundary|(?:discover|execute)-0[1-8]", label)
+                or type(row.get("exit_code")) is not int or row["exit_code"] != 0
+                or row.get("failure", True) is not None):
+            raise Incomplete("Joined receiving focused raw lane is missing or failed.")
+        expected_material[f"focus/{label}.log"] = row["log_sha256"]
+    if len(expected_material) != 20 or material != expected_material:
+        raise Incomplete("Joined receiving focused evidence member set differs.")
+    for name, pin in material.items():
+        member: Path = home / "lineage" / name
+        data: bytes = COMMON.read_analysis_bytes(member, maximum=4 * 1024**2)
+        if hashlib.sha256(data).hexdigest() != pin:
+            raise Incomplete("Joined receiving focused or preimage bytes differ.")
+        admitted[str(member)] = pin
+    return admitted
+
+
+def admit_engine_joined_receiving_lineage(capture: dict, terminal: dict, identity: dict,
+                                          path: Path) -> dict[str, str]:
+    """Read the current raw dependency graph, roster reference and combined producer bytes."""
+    admitted: dict[str, str] = {}
+    graph_reference: dict[str, str] = capture["root_graph_evidence"]
+    focused_reference: dict[str, str] = capture["current_raw_reference"]
+    boundary: bool = terminal.get("candidate_sha256") == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+    wrapper_pin: str = (ENGINE_JOINED_RECEIVING_BOUNDARY_WRAPPER if boundary else ENGINE_JOINED_RECEIVING_WRAPPER)
+    resource_pin: str = (ENGINE_JOINED_RECEIVING_BOUNDARY_RESOURCES if boundary else ENGINE_JOINED_RECEIVING_RESOURCES)
+    reference_pin: str = (ENGINE_JOINED_RECEIVING_TERMINAL if boundary else ENGINE_JOINED_RECEIVING_FOCUSED)
+    if (terminal.get("root_graph_evidence") != graph_reference
+            or terminal.get("current_raw_reference") != focused_reference
+            or graph_reference["sha256"] != ENGINE_JOINED_RECEIVING_GRAPH
+            or focused_reference["sha256"] != ENGINE_JOINED_RECEIVING_FOCUSED
+            or terminal.get("reference_sha256") != reference_pin
+            or capture.get("wrapper_sha256") != wrapper_pin
+            or capture.get("cargo_home_config_sha256") != ENGINE_JOINED_RECEIVING_CARGO_HOME):
+        raise Incomplete("Joined receiving development references differ from their admitted identities.")
+    graph_path: Path = Path(graph_reference["path"])
+    focused_path: Path = Path(focused_reference["path"])
+    graph: dict = read_json(graph_path, maximum=8 * 1024**2, expected_sha256=ENGINE_JOINED_RECEIVING_GRAPH,
+                            owned_evidence=True)
+    focused: dict = read_json(focused_path, maximum=8 * 1024**2, expected_sha256=ENGINE_JOINED_RECEIVING_FOCUSED,
+                              owned_evidence=True)
+    graph_identity: dict[str, str] = graph["product_input_sha256"] if boundary else identity
+    if (graph.get("status") != "passed" or graph.get("product_input_sha256") != graph_identity
+            or COMMON.canonical_sha256(graph_identity) != ENGINE_JOINED_RECEIVING_CANDIDATE
+            or graph.get("product_digest") != ENGINE_JOINED_RECEIVING_CANDIDATE
+            or graph.get("lockfile_sha256") != identity.get("Cargo.lock")
+            or any(identity.get(name) != digest for name, digest in
+                   (graph["manifest_sha256"] | graph["checkers"]).items())
+            or focused.get("status") != "passed" or focused.get("inputs") != graph_identity
+            or focused.get("candidate_sha256") != ENGINE_JOINED_RECEIVING_CANDIDATE
+            or focused.get("root_graph_evidence") != graph_reference
+            or focused.get("vendor", {}).get("inventory_sha256") != capture["vendor_identity_sha256"]):
+        raise Incomplete("Joined receiving dependency graph or raw roster source differs.")
+    admitted.update({str(graph_path): ENGINE_JOINED_RECEIVING_GRAPH, str(focused_path): ENGINE_JOINED_RECEIVING_FOCUSED})
+    if boundary:
+        admitted.update(admit_joined_receiving_boundary_material(capture, terminal, identity, graph_identity, path))
+    graph_pins: dict[str, str] = {
+        f"{row['profile']}--{row['label']}.json": row["sha256"] for row in graph["lanes"]
+    }
+    graph_pins.update({row["file"]: row["sha256"] for row in graph["projections"]})
+    if (len(graph["lanes"]) != 45 or len(graph["rows"]) != 4 or len(graph["projections"]) != 4
+            or len(graph_pins) != 49 or graph_pins != capture["graph_members"]
+            or any(row.get("exit_code") != 0 or type(row["exit_code"]) is not int for row in graph["lanes"])
+            or any(re.fullmatch(r"[a-z0-9_-]+\.json", name) is None for name in graph_pins)):
+        raise Incomplete("Joined receiving dependency graph physical roster differs.")
+    for name, digest in graph_pins.items():
+        member: Path = graph_path.with_name(name)
+        read_json(member, maximum=16 * 1024**2, expected_sha256=digest, owned_evidence=True)
+        admitted[str(member)] = digest
+    for row in focused["lanes"]:
+        raw: Path = focused_path.with_name(row["lane"] + ".json")
+        read_json(raw, maximum=4 * 1024**2, expected_sha256=row["sha256"], owned_evidence=True)
+        admitted[str(raw)] = row["sha256"]
+    for file, expected in ((path.parents[2] / "run-combined.py", wrapper_pin),
+                           (path.with_name("resources.jsonl"), resource_pin)):
+        content: bytes = COMMON.read_analysis_bytes(file, maximum=4 * 1024**2)
+        if hashlib.sha256(content).hexdigest() != expected:
+            raise Incomplete("Joined receiving producer or resource observation bytes differ.")
+        admitted[str(file)] = expected
+    return admitted
+
+
 def admit_engine_combined_review_lineage(capture: dict, terminal: dict, identity: dict,
                                          path: Path) -> dict:
     """Keep each exact combined review on its own original construction and retry evidence."""
+    if terminal.get("candidate_sha256") in ENGINE_JOINED_RECEIVING_FAMILY:
+        return admit_engine_joined_receiving_lineage(capture, terminal, identity, path)
     if terminal.get("candidate_sha256") == ENGINE_STALE_DEBIT_CANDIDATE:
         return admit_engine_stale_debit_lineage(capture, terminal, identity, path)
     if terminal.get("candidate_sha256") == ENGINE_FINAL_FRAME_CANDIDATE:
@@ -9195,8 +9454,12 @@ def read_combined_development(candidate: str, identity: dict, evidence: dict) ->
                      else 2400)
     if candidate == ENGINE_FINAL_FRAME_CANDIDATE:
         expected_wall = ENGINE_FINAL_FRAME_RETRY_WALL
-    if candidate == ENGINE_STALE_DEBIT_CANDIDATE:
+    if candidate in (ENGINE_STALE_DEBIT_CANDIDATE, ENGINE_JOINED_RECEIVING_CANDIDATE):
         expected_wall = 1200
+    if candidate == ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE:
+        expected_wall = 600
+    cargo_home_pin: str = (ENGINE_JOINED_RECEIVING_CARGO_HOME if candidate in ENGINE_JOINED_RECEIVING_FAMILY
+                           else SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME)
     documentation_keys = {"live_doc_sha256", "frozen_doc_sha256"}
     if candidate == ENGINE_PLACEMENT_CANDIDATE:
         expected_wall = ENGINE_PLACEMENT_RETRY_WALL
@@ -9218,7 +9481,7 @@ def read_combined_development(candidate: str, identity: dict, evidence: dict) ->
             or reference.get("compiler") != capture["compiler"]
             or reference.get("tool_inventories") != capture["tool_inventories"]
             or COMMON.canonical_sha256(reference.get("vendor_identity")) != capture["vendor_identity_sha256"]
-            or reference.get("cargo_home_config_sha256") != SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME
+            or reference.get("cargo_home_config_sha256") != cargo_home_pin
             or not document_custody
             or reference.get("native_windows_execution") != "not performed"
             or reference.get("metrics") != "not performed"
@@ -9358,7 +9621,8 @@ def execute_source_policy_profile(args, report: dict) -> None:
                   development_reference_scope=(
                       "Exact current 19-lane development; helpers and metric results retain separate admission."
                       if binding["candidate_sha256"] in (
-                          SOURCE_POLICY_SOURCE_SCALE_CANDIDATE, ENGINE_REVIEW_CANDIDATE,
+                          *ENGINE_JOINED_RECEIVING_FAMILY, SOURCE_POLICY_SOURCE_SCALE_CANDIDATE,
+                          ENGINE_REVIEW_CANDIDATE,
                           ENGINE_SCALE_CONFLICT_CANDIDATE, ENGINE_PLACEMENT_CANDIDATE,
                           ENGINE_PROTECTED_DEBIT_CANDIDATE, ENGINE_FINAL_FRAME_CANDIDATE, ENGINE_STALE_DEBIT_CANDIDATE) else
                       "Prior-source development only; current helpers/manifest and metric results retain their own admission."),

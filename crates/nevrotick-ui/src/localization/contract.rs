@@ -54,7 +54,7 @@ pub struct Spec {
     pub group: Option<Group>,
 }
 /// Compatibility fingerprint; grants no semantic approval.
-pub const FINGERPRINT: &str = "091f71d5341d9963611cf73de985795803cc65b883884baa2d62af20a8ec95a7";
+pub const FINGERPRINT: &str = "8636c6e87302c241efa7060644df0734491f1bc96cd36acc3a61771749bc0c69";
 /// Fixed product catalog domain, never a path.
 pub const DOMAIN: &str = "nevrotick.ui";
 /// Fixed English cardinal rule and checked integer domain.
@@ -64,9 +64,9 @@ pub const CATALOG_SCHEMA_VERSION: u32 = 2;
 /// Code-owned engineering GUI build version, distinct from file schema.
 pub const GUI_BUILD_VERSION: u32 = 2;
 /// Code-owned text meaning/type contract version, distinct from build/schema.
-pub const TEXT_CONTRACT_VERSION: u32 = 3;
+pub const TEXT_CONTRACT_VERSION: u32 = 4;
 /// Number of active messages, not registry ordinals.
-pub const COUNT: usize = 522;
+pub const COUNT: usize = 525;
 impl MessageId {
     /// Resolve one exact active ID without aliases or normalization.
     ///
@@ -1135,6 +1135,12 @@ impl MessageId {
     pub const UPDATE_INSTALL: Self = Self(520);
     /// ui.update.complete; stable ordinal 609.
     pub const UPDATE_COMPLETE: Self = Self(521);
+    /// ui.update.cancel; stable ordinal 610.
+    pub const UPDATE_CANCEL: Self = Self(522);
+    /// ui.update.cancel-check; stable ordinal 611.
+    pub const UPDATE_CANCEL_CHECK: Self = Self(523);
+    /// ui.update.cancelled; stable ordinal 612.
+    pub const UPDATE_CANCELLED: Self = Self(524);
 }
 
 /// Active protected definitions in private dense storage order.
@@ -4792,5 +4798,26 @@ pub const SPECS: &[Spec] = &[
         ordinal: 609,
         kind: Kind::Text,
         group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_CANCEL,
+        key: "ui.update.cancel",
+        ordinal: 610,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_CANCEL_CHECK,
+        key: "ui.update.cancel-check",
+        ordinal: 611,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_CANCELLED,
+        key: "ui.update.cancelled",
+        ordinal: 612,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
     },
 ];

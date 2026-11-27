@@ -25,7 +25,10 @@ use windows_sys::Win32::{
 
 use crate::{
     native_broker_wait::{CompletionWakeState, PendingCompletionWake},
-    native_pipe_identity::{PipeIdentity, PipeIdentityError, RetainedFixtureClient, capture},
+    native_pipe_identity::{
+        CapturedRequestToken, FixtureClientError, PipeIdentity, PipeIdentityError,
+        RetainedFixtureClient, capture,
+    },
     native_pipe_pair::{
         LabIdentificationPipe, LabOverlappedWriter, LabPipeError, LabPipeReader, LabRequestWriter,
         LabUnconnectedDuplexPipe, ReplyPipePair, check_request_peers,
@@ -103,14 +106,19 @@ impl CompletedFirstRead<'_> {
         self,
         expected: &PipeIdentity,
     ) -> Result<AttributedStatusRead, IdentifiedReadError> {
-        self.origin.require_client(&self.bytes, expected)?;
-        Ok(AttributedStatusRead(self.bytes))
+        let token: CapturedRequestToken = self.origin.require_client(&self.bytes, expected)?;
+        Ok(AttributedStatusRead {
+            bytes: self.bytes,
+            token,
+            #[cfg(test)]
+            change_generation_after_dispatch: false,
+        })
     }
 
-    /// Match the read to the independently retained fixture client's original token.
+    /// Match the read to the independently retained fixture client's token and component.
     ///
     /// # Errors
-    /// Refuse unsuitable read attribution or a no-longer-current process or token.
+    /// Refuse unsuitable read attribution, changed continuity or a different component.
     pub(super) fn attribute_peer(
         self,
         peer: &mut RetainedFixtureClient,
@@ -118,21 +126,89 @@ impl CompletedFirstRead<'_> {
         if !peer.observe_pipe(self.origin.pipe()) {
             return Err(IdentifiedReadError::Unattributed);
         }
-        self.origin.require_client(&self.bytes, peer.identity())?;
-        if !peer.observe(self.origin.pipe()) {
-            return Err(IdentifiedReadError::Unattributed);
-        }
-        Ok(AttributedStatusRead(self.bytes))
+        let token: CapturedRequestToken =
+            self.origin.require_client(&self.bytes, peer.identity())?;
+        peer.check_component(self.origin.pipe())
+            .map_err(|cause: FixtureClientError| IdentifiedReadError::Component {
+                cause,
+                received: self.bytes.as_bytes().len(),
+            })?;
+        Ok(AttributedStatusRead {
+            bytes: self.bytes,
+            token,
+            #[cfg(test)]
+            change_generation_after_dispatch: false,
+        })
     }
 }
 
-/// The exact completed prefix after matching native identity and successful reversion.
-pub(super) struct AttributedStatusRead(NativeReadBytes);
+/// The completed prefix and query-only token from the original read.
+pub(super) struct AttributedStatusRead {
+    /// Only the native operation's exact completed bytes may reach dispatch.
+    bytes: NativeReadBytes,
+    /// The same identification token retained through dispatch admission.
+    token: CapturedRequestToken,
+    /// Directed fault applied after the fixture computes status, before it can publish a reply.
+    #[cfg(test)]
+    change_generation_after_dispatch: bool,
+}
+
+/// Which observation must refuse the original real token in a directed control.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(super) enum RequestGenerationFault {
+    /// Refuse before the one-shot status receiver is issued.
+    BeforeDispatch,
+    /// Refuse after the status decision, before the reply can escape the receiver.
+    AfterDispatch,
+}
 
 impl AttributedStatusRead {
-    /// Borrow only the bytes delivered and attributed by the original read.
-    pub(super) fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+    /// Borrow the completed prefix while its captured token is still current.
+    ///
+    /// # Errors
+    /// Preserve the token refusal and completed extent without exposing the bytes.
+    pub(super) fn current_bytes(&self) -> Result<&[u8], IdentifiedReadError> {
+        self.require_current()?;
+        Ok(self.bytes.as_bytes())
+    }
+
+    /// Require the same token generation before releasing the read-only status result.
+    ///
+    /// # Errors
+    /// Preserve the token refusal and completed extent without releasing any reply.
+    pub(super) fn finish_dispatch(&mut self) -> Result<(), IdentifiedReadError> {
+        #[cfg(test)]
+        if std::mem::take(&mut self.change_generation_after_dispatch) {
+            self.token.change_expected_generation_for_test();
+        }
+        self.require_current()
+    }
+
+    /// Check the original token and preserve the byte count on refusal.
+    ///
+    /// # Errors
+    /// Preserve the first reobservation failure.
+    fn require_current(&self) -> Result<(), IdentifiedReadError> {
+        self.token
+            .reobserve()
+            .map_err(|cause: PipeIdentityError| IdentifiedReadError::Identity {
+                cause,
+                received: self.bytes.as_bytes().len(),
+            })
+    }
+
+    /// Challenge a receiving guard while retaining the real completed read.
+    #[cfg(test)]
+    pub(super) fn fault_generation_for_test(&mut self, fault: RequestGenerationFault) {
+        match fault {
+            RequestGenerationFault::BeforeDispatch => {
+                self.token.change_expected_generation_for_test();
+            }
+            RequestGenerationFault::AfterDispatch => {
+                self.change_generation_after_dispatch = true;
+            }
+        }
     }
 }
 
@@ -183,6 +259,13 @@ pub(super) enum IdentifiedReadError {
         /// Exact completed length. No bytes escape this refusal.
         received: usize,
     },
+    /// Component observation on the original fixture client was refused.
+    Component {
+        /// Original component or continuity refusal.
+        cause: FixtureClientError,
+        /// Exact completed length. No bytes escape this refusal.
+        received: usize,
+    },
     /// The consumed bytes and their captured context are inadmissible.
     Unattributed,
     /// An earlier identity refusal permanently closed this reader.
@@ -197,6 +280,12 @@ impl std::fmt::Display for IdentifiedReadError {
                 write!(
                     formatter,
                     "pipe identity refused after {received} bytes: {cause:?}"
+                )
+            }
+            Self::Component { cause, received } => {
+                write!(
+                    formatter,
+                    "fixture component refused after {received} bytes: {cause}"
                 )
             }
             Self::Unattributed => {
@@ -300,7 +389,7 @@ impl IdentifiedRequestRead {
             NativeReadPoll::Data(ref completed) => {
                 // Retire by default until this exact fragment's identity is established.
                 self.retired = true;
-                self.read.require_client(completed, &self.expected)?;
+                drop(self.read.require_client(completed, &self.expected)?);
                 self.retired = false;
                 Ok(completion)
             }
@@ -482,19 +571,19 @@ impl NativePipeRead {
         &self,
         completed: &NativeReadBytes,
         expected: &PipeIdentity,
-    ) -> Result<(), IdentifiedReadError> {
+    ) -> Result<CapturedRequestToken, IdentifiedReadError> {
         let received: usize = completed.as_bytes().len();
         if received == 0 {
             return Err(IdentifiedReadError::Unattributed);
         }
-        let actual: PipeIdentity =
+        let token: CapturedRequestToken =
             capture(self.reader.as_handle()).map_err(|cause: PipeIdentityError| {
                 IdentifiedReadError::Identity { cause, received }
             })?;
-        if &actual != expected {
+        if token.identity() != expected {
             return Err(IdentifiedReadError::Unattributed);
         }
-        Ok(())
+        Ok(token)
     }
 
     /// Borrow the original handle for the accept and eventual read.

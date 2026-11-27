@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "domain": "nevrotick.ui",
-  "contract_revision": "ui-l10n-about-preview-v3-unapproved",
+  "contract_revision": "ui-l10n-about-cancel-v4-unapproved",
   "plural_profile": "english-u64-cardinal-v1",
   "locale": "en",
   "unicode_profile": "unicode-15.1-english-printable-ascii-middle-dot-en-em-dash-v1",
   "catalog_schema_version": 2,
   "gui_build_version": 2,
-  "text_contract_version": 3,
+  "text_contract_version": 4,
   "status": "UNAPPROVED native consumer candidate; exact source sinks and caller chains require common-integration validation. Production semantic ledger remains EMPTY.",
   "bounds": {
     "JSON_BYTES": 131072,
@@ -19,7 +19,7 @@
     "MAX_DEPTH": 4,
     "MAX_FIELDS": 2048,
     "MAX_NODES": 4096,
-    "MAX_MAP": 522,
+    "MAX_MAP": 525,
     "MAX_WORK": 4000000,
     "OUTPUT_BYTES": 4096,
     "OUTPUT_UTF16": 2048,
@@ -66,7 +66,7 @@
     "native-tray": "Exactly six code-owned native command identities. Current private readiness and receiver guards decide availability; label text never selects actions. Closing via tray preserves only an actual observer; services remain separate.",
     "native-notification-test": "Only an explicit local TestExample may reach guarded native Show. One immutable snapshot supplies title/body/fixed Notifications label. OS acceptance does not establish banner display, reading or any service/clock health. Activation is fixed navigation after current private guard checks.",
     "native-observer-stop": "UI-only exit waits for confirmed owned native cleanup. Timeout/failure keeps the app open; elapsed time is not completion. No service, clock, network or elevation effect is authorized.",
-    "about.update-preview": "About Check publishes one in-memory sample offer for the active visit. Yes consumes the current exact offer once and simulates download, verification and installation. The typed offer owns installed 1.0.0, offered 1.1.0, stable channel, 12582912 bytes, unmetered, no roaming and no external management. Not now, dismissal and leaving About invalidate an unaccepted offer. Repeated, stale and out-of-view requests have no effect. The fixture has no network, package, persistence, service, elevation or clock effects."
+    "about.update-preview": "About Check publishes one in-memory sample offer for the active visit. Yes consumes the current exact offer once and simulates download, verification and installation. The typed offer owns installed 1.0.0, offered 1.1.0, stable channel, 12582912 bytes, unmetered, no roaming and no external management. Not now, dismissal and leaving About invalidate an unaccepted offer. Repeated, stale and out-of-view requests have no effect. The fixture has no network, package, persistence, service, elevation or clock effects. Cancel stops the current sample check, download or verification; installation cannot be cancelled."
   },
   "messages": [
     {
@@ -13185,6 +13185,72 @@
         "global": "FixtureCopy",
         "namespace": "fixture",
         "property": "update-complete",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.cancel",
+      "ordinal": 610,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Cancels the accepted sample update during download or verification, before simulated installation.",
+      "active": true,
+      "symbol": "UPDATE_CANCEL",
+      "reference": {
+        "text": "Cancel update"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:155"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-cancel",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.cancel-check",
+      "ordinal": 611,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Cancels the current sample check before an offer is made.",
+      "active": true,
+      "symbol": "UPDATE_CANCEL_CHECK",
+      "reference": {
+        "text": "Cancel check"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:156"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-cancel-check",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.cancelled",
+      "ordinal": 612,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Cancellation result for a sample check or update, with no simulated installation started.",
+      "active": true,
+      "symbol": "UPDATE_CANCELLED",
+      "reference": {
+        "text": "Update cancelled. Installation did not start. You can check again when you are ready."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:157"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-cancelled",
         "slot": null
       }
     }

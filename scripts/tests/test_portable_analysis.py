@@ -4758,6 +4758,7 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
             ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
             ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
             ("ke_managed_preview", "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"),
+            ("ke_receiving", "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs"),
         )
         expected_critical = (
             "crates/nevrotick-engine/src/lib.rs",
@@ -4769,9 +4770,10 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         )
         self.assertEqual(MODULE.ENGINE_KE_SUBJECTS, expected_subjects)
         self.assertEqual(MODULE.ENGINE_KE_CRITICAL, expected_critical)
-        self.assertEqual(len(expected_subjects), 14)
-        self.assertEqual(len(set(expected_critical)), 19)
-        self.assertEqual(self.scope.select("ke_managed_preview"), dict(expected_subjects[-1:]))
+        self.assertEqual(len(expected_subjects), 15)
+        self.assertEqual(len(set(expected_critical)), 20)
+        self.assertEqual(self.scope.select("ke_managed_preview"), dict(expected_subjects[-2:-1]))
+        self.assertEqual(self.scope.select("ke_receiving"), dict(expected_subjects[-1:]))
         policy = {**self.policy, "mutation_equivalences": []}
         MODULE.require_engine_ke_role(self.scope, policy)
         self.assertFalse(policy["campaigns_admitted"])
@@ -4781,7 +4783,7 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
                 self.scope.select(unsupported)
         for subjects in (expected_subjects[:-1], expected_subjects[1:],
                          tuple(reversed(expected_subjects)),
-                         (*expected_subjects[:-1], ("ke_managed_preview", expected_critical[-2])),
+                         (*expected_subjects[:-1], ("ke_receiving", expected_critical[-2])),
                          (*expected_subjects, expected_subjects[-1])):
             changed = MODULE.Scope(self.scope.package, subjects, self.scope.policy)
             forged = {**policy, "subjects": dict(subjects)}

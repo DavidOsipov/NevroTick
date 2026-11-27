@@ -20,9 +20,13 @@ use super::{
     association::ledger::{AppliedProtectedControl, Receipt},
     datagram::{ManagedProtectedHistory, ReceivedInvocation},
     failure_labels, handoff, io_label, job, receive_probe,
+    receiving::ReceivedOrdinaryReceipt,
     response::{ControlProtection, ProtectedControlKind},
 };
-pub use super::{power_target::ManagedPowerObservation, profile::CertificateTimeProvenance};
+pub use super::{
+    power_target::ManagedPowerObservation, profile::CertificateTimeProvenance,
+    receiving::ProtectedReceiptAdmission,
+};
 use crate::{
     ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
     RelativeMeasurementRefusal, RunClockContext, SoftwareClock, SourceConfigurationSnapshot,
@@ -440,6 +444,8 @@ pub struct ManagedProtectedReceipt {
     configuration: SourceConfigurationSnapshot,
     /// The original historical exchange and its bound endpoints.
     history: Arc<ManagedProtectedHistory>,
+    /// Disposition of this exact receipt at the joined receiving boundary.
+    admission: ProtectedReceiptAdmission,
     /// Actual complete local request length.
     packet_bytes: usize,
     /// Checked population before the operation's first checkout.
@@ -472,15 +478,30 @@ pub struct ManagedProtectedReceipt {
 }
 
 impl ManagedProtectedReceipt {
-    /// Copy only the bounded public facts from genuine joined history.
+    /// Retain historical facts from a path that did not enter managed receiving.
     fn from_history(managed: &Arc<ManagedProtectedHistory>) -> Self {
+        Self::project(Arc::clone(managed), ProtectedReceiptAdmission::NotEvaluated)
+    }
+
+    /// Copy only the bounded public facts from genuine joined history.
+    fn from_joined(original: ReceivedOrdinaryReceipt) -> Self {
+        let (managed, admission): (Arc<ManagedProtectedHistory>, ProtectedReceiptAdmission) =
+            original.into_parts();
+        Self::project(managed, admission)
+    }
+
+    /// Project original packet facts without reevaluating the receiving decision.
+    fn project(
+        managed: Arc<ManagedProtectedHistory>,
+        admission: ProtectedReceiptAdmission,
+    ) -> Self {
         let history: &super::datagram::ProtectedHistory = managed.history();
         let receipt: Receipt = history.receipt();
         let header: RawHeader = receipt.fields().header();
         let summary: &super::Summary = managed.summary();
         Self {
             configuration: managed.configuration().clone(),
-            history: Arc::clone(managed),
+            admission,
             packet_bytes: summary.packet_bytes,
             initial_cookie_population: (summary.cookies, summary.cookie_bytes),
             leap_indicator: header.leap_indicator(),
@@ -496,6 +517,7 @@ impl ManagedProtectedReceipt {
             #[cfg(windows)]
             application_native_clock_captures: history.native_captures(),
             application_wall_elapsed_bounds: history.application_wall_elapsed_bounds(),
+            history: managed,
         }
     }
 
@@ -525,6 +547,11 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub const fn configuration(&self) -> &SourceConfigurationSnapshot {
         &self.configuration
+    }
+
+    /// Return the original receiving decision, without re-admitting this receipt.
+    pub const fn admission(&self) -> ProtectedReceiptAdmission {
+        self.admission
     }
 
     /// Return the original local endpoint for pairing with an independent packet observation.
@@ -877,18 +904,18 @@ impl ManagedProtectedReport {
         let clock_reads: Option<[super::ManagedClockRead; 2]> = received.clock_reads();
         let profile: Option<ExperimentalProfile> = received.profile();
         let (first, terminal, (attempted_sends, fully_submitted_sends, remaining_driver_work)): (
-            Option<Arc<ManagedProtectedHistory>>,
-            super::ManagedSuccessorTerminal,
+            Option<ReceivedOrdinaryReceipt>,
+            super::ManagedSuccessorTerminal<ReceivedOrdinaryReceipt>,
             (usize, usize, usize),
         ) = received.into_parts();
         let super::ManagedSuccessorTerminal {
             result,
             first_nak_at,
             remaining_association_work,
-        }: super::ManagedSuccessorTerminal = terminal;
+        }: super::ManagedSuccessorTerminal<ReceivedOrdinaryReceipt> = terminal;
         let terminal: ManagedProtectedTerminal = match result {
             Ok(super::ManagedSuccessorEffect::Ordinary(history)) => {
-                ManagedProtectedTerminal::Ordinary(ManagedProtectedReceipt::from_history(&history))
+                ManagedProtectedTerminal::Ordinary(ManagedProtectedReceipt::from_joined(history))
             }
             Ok(super::ManagedSuccessorEffect::Restriction(applied)) => {
                 ManagedProtectedTerminal::Restriction(ManagedProtectedRestriction { applied })
@@ -898,7 +925,7 @@ impl ManagedProtectedReport {
             ),
         };
         Ok(Self {
-            first: first.as_ref().map(ManagedProtectedReceipt::from_history),
+            first: first.map(ManagedProtectedReceipt::from_joined),
             terminal,
             profile,
             first_nak_at,
@@ -1169,9 +1196,11 @@ fn run_pair_member(
         reservation,
         active,
         stop,
+        receiving,
     } = job;
     let result: Result<ReceivedInvocation, RunFailed> = super::receive_managed_submission(
         || submit(reservation),
+        &receiving,
         #[cfg(windows)]
         read_clock,
     );

@@ -153,6 +153,8 @@ pub(super) struct Script {
     read_after: Option<Instant>,
     /// Optional substitute for the trailing reading of the final scripted datagram.
     read_after_final: Option<Instant>,
+    /// Use the leading receive-return reading as the trailing reading.
+    zero_width_receive_capture: bool,
     /// Apply the closed event on the selected completed receive capture.
     revoke_after_read: Option<(usize, ScriptReceiveRevocation)>,
     send: ScriptSend,
@@ -194,6 +196,7 @@ impl Script {
             read_before_at_residue: None,
             read_after: None,
             read_after_final: None,
+            zero_width_receive_capture: false,
             revoke_after_read: None,
             send,
             send_before: None,
@@ -359,9 +362,12 @@ impl Script {
             }
             _ => captured,
         };
-        let trailing: Option<Instant> = self
-            .read_after
-            .or_else(|| self.read_after_final.filter(|_| self.reads.is_empty()));
+        let trailing: Option<Instant> = if self.zero_width_receive_capture {
+            Some(captured.monotonic())
+        } else {
+            self.read_after
+                .or_else(|| self.read_after_final.filter(|_| self.reads.is_empty()))
+        };
         let captured: SoftwareClock = match trailing {
             Some(mono_after) => SoftwareClock {
                 mono_after,
@@ -4089,7 +4095,32 @@ fn known_protected_datagram_with_invalid_capture_charges_frame_and_bytes() -> Re
 /// Propagate actual fixture, exchange, retirement or policy refusal.
 #[test]
 fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(), Failure> {
-    assert_managed_retired_deny(&PROTECTED_DENY, ControlProtection::Authenticated)
+    assert_managed_retired_deny(&PROTECTED_DENY, ControlProtection::Authenticated, |_| {})
+}
+
+/// Apply authenticated DENY when the real receive bracket has equal monotonic readings.
+/// # Errors
+/// Preserve fixture, exchange, retirement, policy or capture observation failure.
+/// # Panics
+/// Fail if the selected capture was not a tie at the real receive-return site.
+#[test]
+fn managed_retired_deny_commits_zero_width_receive_capture() -> Result<(), Failure> {
+    let captures: Arc<Mutex<Vec<SoftwareClock>>> = Arc::new(Mutex::new(Vec::new()));
+    assert_managed_retired_deny(
+        &PROTECTED_DENY,
+        ControlProtection::Authenticated,
+        |script: &mut Script| {
+            script.zero_width_receive_capture = true;
+            script.read_captures = Some(Arc::clone(&captures));
+        },
+    )?;
+    let readings: MutexGuard<'_, Vec<SoftwareClock>> =
+        captures.lock().map_err(|_| Failure::Control)?;
+    let [capture]: &[SoftwareClock] = readings.as_slice() else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(capture.monotonic(), capture.monotonic_after());
+    Ok(())
 }
 
 /// Apply a correlated-only DENY through the same retired successor owner.
@@ -4097,7 +4128,7 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
 /// Propagate actual fixture, exchange, retirement or policy refusal.
 #[test]
 fn managed_retired_correlated_only_deny_has_exact_policy_scope() -> Result<(), Failure> {
-    assert_managed_retired_deny(&CORRELATED_DENY, ControlProtection::CorrelatedOnly)
+    assert_managed_retired_deny(&CORRELATED_DENY, ControlProtection::CorrelatedOnly, |_| {})
 }
 
 /// Consume the selected exact DENY and observe its committed protection and policy.
@@ -4108,6 +4139,7 @@ fn managed_retired_correlated_only_deny_has_exact_policy_scope() -> Result<(), F
 fn assert_managed_retired_deny(
     packet: &'static [u8],
     protection: ControlProtection,
+    configure_capture: impl FnOnce(&mut Script),
 ) -> Result<(), Failure> {
     use crate::source_policy::SourceBinding;
     use crate::{SourceHandle, SourcePolicySnapshot};
@@ -4125,7 +4157,10 @@ fn assert_managed_retired_deny(
         let before: Status = owner.status();
         let selected: RetiredProtectedResponse<'_> =
             exchange_successor_mixed(owner, control, successor_entropy, |peer: SocketAddr| {
-                Script::new(ScriptSend::Full, vec![ScriptRead::Packet(packet, peer)])
+                let mut script: Script =
+                    Script::new(ScriptSend::Full, vec![ScriptRead::Packet(packet, peer)]);
+                configure_capture(&mut script);
+                script
             })?;
         let RetiredProtectedResponse::Control(retired) = selected else {
             return Err(Failure::Control);

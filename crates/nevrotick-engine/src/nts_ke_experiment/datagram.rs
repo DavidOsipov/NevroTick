@@ -63,17 +63,20 @@ mod reached {
     use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
     use crate::nts_ke_experiment::association::ledger::{
         CookieReplacement, LedgerError, PendingSubmission, ProtectedControlLeg, Receipt,
-        RequestInput, RequestPhase, RetiredCommit, SendOutcome, StagedProtectedControl,
-        StagedProtectedSuccessor, Ticket,
+        RequestInput, RequestPhase, RetiredCommit, RetiredReplyCommit, SendOutcome,
+        StagedProtectedControl, StagedProtectedSuccessor, Ticket,
     };
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
     use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
+    use crate::nts_ke_experiment::receiving::{ManagedReceivingContext, ReceivedOrdinaryReceipt};
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
-        Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase,
+        Control, DatagramAuthorityGuard, Failed, Failure, InvocationCompletion, IoPhase,
         ManagedSuccessorTerminal, RunFailed, Summary,
     };
-    use crate::source_policy::{LivePolicy, ProtectedEndpoint, ProtectedSendStamp};
+    use crate::source_policy::{
+        LivePolicy, ProtectedEndpoint, ProtectedReceiptPolicy, ProtectedSendStamp,
+    };
     use crate::{
         ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, RunClockContext,
         SoftwareClock, SourceConfigurationSnapshot,
@@ -670,6 +673,8 @@ mod reached {
         committed_at: Instant,
         /// Historical managed configuration, checked at both original effects.
         configuration: Option<SourceConfigurationSnapshot>,
+        /// Original policy epochs from the actual correlated submission.
+        policy: Option<ProtectedReceiptPolicy>,
         /// The actual publishing association's original accepted KE provenance.
         certificate_time_provenance: CertificateTimeProvenance,
     }
@@ -749,9 +754,16 @@ mod reached {
         history: ProtectedHistory,
         /// Immutable revision checked by both the sender and final reply consumer.
         configuration: SourceConfigurationSnapshot,
+        /// Exact policy epochs from the original request, detached from live policy.
+        policy: Option<ProtectedReceiptPolicy>,
     }
 
     impl ManagedProtectedHistory {
+        /// Borrow the original historical policy witness for receiving revalidation.
+        pub(in super::super) const fn receipt_policy(&self) -> Option<&ProtectedReceiptPolicy> {
+            self.policy.as_ref()
+        }
+
         /// Borrow the already committed revision, without deriving current authority.
         pub(in super::super) const fn configuration(&self) -> &SourceConfigurationSnapshot {
             &self.configuration
@@ -795,12 +807,31 @@ mod reached {
         }
     }
 
-    /// The selected bounded path's normal retirement, original first history and work.
+    /// One ordinary receipt authorized for transfer by the actual normally retired take.
+    #[must_use = "consume the original joined ordinary receipt before report projection"]
+    pub(in super::super) struct PendingJoinedOrdinary(Arc<ManagedProtectedHistory>);
+
+    impl PendingJoinedOrdinary {
+        /// Move original immutable facts only at the receiving owner.
+        pub(in super::super) fn into_history(self) -> Arc<ManagedProtectedHistory> {
+            self.0
+        }
+
+        /// Consume this original receipt through the collector's live input, when supplied.
+        fn receive(self, receiving: Option<&ManagedReceivingContext>) -> ReceivedOrdinaryReceipt {
+            match receiving {
+                Some(context) => context.receive(self),
+                None => ReceivedOrdinaryReceipt::without_context(self),
+            }
+        }
+    }
+
+    /// The selected path's normal retirement, original receiving decisions and work.
     pub(in super::super) struct ReceivedManagedSuccessor {
         /// Present only after a genuine first commit.
-        first: Option<Arc<ManagedProtectedHistory>>,
+        first: Option<ReceivedOrdinaryReceipt>,
         /// Actual terminal result with the original NAK mark.
-        terminal: ManagedSuccessorTerminal,
+        terminal: ManagedSuccessorTerminal<ReceivedOrdinaryReceipt>,
         /// Original checked declaration shared by the two distinct ordinary receipts.
         profile: Option<ExperimentalProfile>,
         /// Attempted sends, full sends, and the original driver's remaining work.
@@ -811,13 +842,48 @@ mod reached {
     }
 
     impl ReceivedManagedSuccessor {
-        /// Retain the private observation enclosing this worker submission and take.
-        #[cfg(windows)]
-        pub(in super::super) const fn retain_clock_reads(
-            &mut self,
-            reads: [super::super::ManagedClockRead; 2],
-        ) {
-            self.clock_reads = Some(reads);
+        /// Move the original ordinary histories through their joined receiving decisions.
+        /// Preserve the bounded work and the closed terminal effect independently.
+        fn from_joined(
+            first: Option<Arc<ManagedProtectedHistory>>,
+            terminal: ManagedSuccessorTerminal,
+            profile: Option<ExperimentalProfile>,
+            work: (usize, usize, usize),
+            receiving: Option<&ManagedReceivingContext>,
+            #[cfg(windows)] clock_reads: Option<[super::super::ManagedClockRead; 2]>,
+        ) -> Self {
+            use super::super::ManagedSuccessorEffect;
+
+            let ManagedSuccessorTerminal {
+                result,
+                first_nak_at,
+                remaining_association_work,
+            }: ManagedSuccessorTerminal = terminal;
+            let first: Option<ReceivedOrdinaryReceipt> =
+                first.map(|history: Arc<ManagedProtectedHistory>| {
+                    PendingJoinedOrdinary(history).receive(receiving)
+                });
+            let result: Result<ManagedSuccessorEffect<ReceivedOrdinaryReceipt>, Failed> = result
+                .map(|effect: ManagedSuccessorEffect| match effect {
+                    ManagedSuccessorEffect::Ordinary(history) => ManagedSuccessorEffect::Ordinary(
+                        PendingJoinedOrdinary(history).receive(receiving),
+                    ),
+                    ManagedSuccessorEffect::Restriction(restriction) => {
+                        ManagedSuccessorEffect::Restriction(restriction)
+                    }
+                });
+            Self {
+                first,
+                terminal: ManagedSuccessorTerminal {
+                    result,
+                    first_nak_at,
+                    remaining_association_work,
+                },
+                profile,
+                work,
+                #[cfg(windows)]
+                clock_reads,
+            }
         }
 
         /// Return the exact optional pair without querying the process again.
@@ -831,7 +897,7 @@ mod reached {
         /// Observe the exact first packet history in joined component assertions.
         #[cfg(test)]
         pub(in super::super) fn first_history(&self) -> Option<&ManagedProtectedHistory> {
-            self.first.as_deref()
+            self.first.as_ref().map(ReceivedOrdinaryReceipt::history)
         }
 
         /// Observe the exact terminal ordinary history in joined component assertions.
@@ -840,7 +906,7 @@ mod reached {
             use crate::nts_ke_experiment::ManagedSuccessorEffect;
 
             match &self.terminal.result {
-                Ok(ManagedSuccessorEffect::Ordinary(history)) => Some(history),
+                Ok(ManagedSuccessorEffect::Ordinary(receipt)) => Some(receipt.history()),
                 Ok(ManagedSuccessorEffect::Restriction(_)) | Err(_) => None,
             }
         }
@@ -854,8 +920,8 @@ mod reached {
         pub(in super::super) fn into_parts(
             self,
         ) -> (
-            Option<Arc<ManagedProtectedHistory>>,
-            ManagedSuccessorTerminal,
+            Option<ReceivedOrdinaryReceipt>,
+            ManagedSuccessorTerminal<ReceivedOrdinaryReceipt>,
             (usize, usize, usize),
         ) {
             (self.first, self.terminal, self.work)
@@ -1073,6 +1139,8 @@ mod reached {
     pub(in super::super) fn receive_joined(
         joined: ReceivingOutcome,
         profile: Option<ExperimentalProfile>,
+        receiving: Option<&ManagedReceivingContext>,
+        #[cfg(windows)] closing_reads: impl FnOnce() -> Option<[super::super::ManagedClockRead; 2]>,
     ) -> Result<ReceivedInvocation, RunFailed> {
         let NormalOperation {
             operation,
@@ -1089,16 +1157,18 @@ mod reached {
                 },
                 Ok(_) => return Err(RunFailed::Operation(Failure::Control.into())),
             };
-            return Ok(ReceivedInvocation::ManagedSuccessor(Box::new(
-                ReceivedManagedSuccessor {
-                    first: first_receipt,
-                    terminal,
-                    profile,
-                    work,
-                    #[cfg(windows)]
-                    clock_reads: None,
-                },
-            )));
+            #[cfg(windows)]
+            let clock_reads: Option<[super::super::ManagedClockRead; 2]> = closing_reads();
+            let received: ReceivedManagedSuccessor = ReceivedManagedSuccessor::from_joined(
+                first_receipt,
+                terminal,
+                profile,
+                work,
+                receiving,
+                #[cfg(windows)]
+                clock_reads,
+            );
+            return Ok(ReceivedInvocation::ManagedSuccessor(Box::new(received)));
         }
         if first_receipt.is_some() {
             return Err(RunFailed::Operation(Failure::Control.into()));
@@ -1153,6 +1223,11 @@ mod reached {
     }
 
     impl ProtectedHistory {
+        /// Compare with the exact invocation originally prepared for the collector.
+        pub(in super::super) fn belongs_to_association(&self, association: &Arc<()>) -> bool {
+            Arc::ptr_eq(&self.ke_association_identity, association)
+        }
+
         /// Compare the original one-publication KE Control identities.
         pub(in super::super) fn same_ke_association(&self, other: &Self) -> bool {
             Arc::ptr_eq(
@@ -1280,7 +1355,11 @@ mod reached {
                 reply,
                 attempts,
             }: RetiredOperation<'control> = self.into_retired();
-            let (identity, committed_at): (Arc<()>, Instant) = association.commit_retired_reply(
+            let RetiredReplyCommit {
+                identity,
+                committed_at,
+                policy,
+            }: RetiredReplyCommit = association.commit_retired_reply(
                 reply,
                 RetiredCommit::FirstRequest(attempts),
                 Instant::now,
@@ -1298,6 +1377,7 @@ mod reached {
                 identity,
                 committed_at,
                 configuration,
+                policy,
                 certificate_time_provenance: association.certificate_time_provenance(),
             }))
         }
@@ -1347,13 +1427,18 @@ mod reached {
                 .map(|lease: &ProtectedEndpoint| lease.configuration().ok_or(Failure::Control))
                 .transpose()?
                 .cloned();
-            let (identity, committed_at): (Arc<()>, Instant) =
+            let RetiredReplyCommit {
+                identity,
+                committed_at,
+                policy,
+            }: RetiredReplyCommit =
                 association.commit_retired_reply(reply, RetiredCommit::Terminal, observe_now)?;
             Ok(CommittedProtected {
                 operation: history,
                 identity,
                 committed_at,
                 configuration,
+                policy,
                 certificate_time_provenance: association.certificate_time_provenance(),
             })
         }
@@ -1509,6 +1594,7 @@ mod reached {
                     InvocationCompletion::ManagedProtected(Arc::new(ManagedProtectedHistory {
                         history,
                         configuration,
+                        policy: self.policy,
                     }))
                 }
                 None => InvocationCompletion::Protected(Box::new(history)),
@@ -2302,9 +2388,9 @@ pub(super) use reached::{exchange, exchange_initial, exchange_successor};
 pub(super) use reached::{
     Attempts, BoundFirstHistory, CommittedFirstProtected, CommittedProtected, CompletionProjection,
     ConsumedDatagram, GuardedSender, ManagedProtectedHistory, ManagedProtectedProjection,
-    ObservedRetiredSuccessor, ProtectedCompletion, ProtectedDatagramWork, ProtectedHistory,
-    ReceivedCompletion, ReceivedInvocation, RetiredProtectedControl, RetiredProtectedResponse,
-    RetiredReply, RetiredReplyParts, SuccessorFailure, receive_joined,
+    ObservedRetiredSuccessor, PendingJoinedOrdinary, ProtectedCompletion, ProtectedDatagramWork,
+    ProtectedHistory, ReceivedCompletion, ReceivedInvocation, RetiredProtectedControl,
+    RetiredProtectedResponse, RetiredReply, RetiredReplyParts, SuccessorFailure, receive_joined,
 };
 
 #[cfg(test)]

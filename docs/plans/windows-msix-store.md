@@ -1311,6 +1311,13 @@ invocation remain open. The
 [notification controls](../../tasks/windows11-integration.md#discriminate-scm-description-and-dacl-notifications-on-disabled-controls)
 exclude subscription silence as a DACL-continuity witness. These are scoped
 receipts for the discriminator below, not a completed access or lifecycle gate.
+The [privilege-assisted ownership candidate](../../tasks/windows11-integration.md#privilege-assisted-service-ownership-candidate--pending-owner-disposition)
+records a documented helper-only alternative and David's separate bounded
+Sandbox experiment instruction. Production adoption remains unselected.
+It leaves this original card's ownership-takeover exclusion and handle-only exit intact;
+the denied configuration handle does not establish that the alternative API
+route is unavailable. No production mechanism or native setter is admitted by
+that source review.
 
 W11-W05/S0.6 owns this bounded question; W11-W10 supplies
 the exact complete inert package and OS/channel row. The existing disposable

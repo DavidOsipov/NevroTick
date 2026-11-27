@@ -1334,6 +1334,13 @@ earlier “next reference” directions in dated receipts do not restart that ho
 | **Finished UI and complete package — P5/P6** | Source/metadata work and qualified lab mechanics can overlap. Restore D1–D3 at their canonical triggers and bind live UI journeys to their actual receivers. W11-W10/W11-W05 establish supported provisioning, final roles and protections before exposure, including pre-v3 admission on every startup path. | Reach ordinary-user status, accessibility and recovery controls plus complete direct MSIX install/repair/update/Reset/removal. Later owner-selected signer/trust and controlled delivery bind the exact built, signed, downloaded and installed artifacts. Recheck actual per-role mitigation and lifecycle on the final profile. |
 | **Integrated V1 acceptance — P7** | Freeze the exact complete candidate and compare all applicable phase, CHECK/AC, native/platform, security, metric, operational, WinGet and V1 RGT-C01 evidence. Roughtime's P2 work stays with the existing time-assurance owners; post-V1 reserve/replacement work retains its separate gates. Reuse earlier evidence within its matching scope. | The actual healthy and refused journeys establish the supported behavior on the delivered artifact. Fresh CHECK-24 review and David's exact-candidate approval precede public release. |
 
+The [owner's USB GNSS observation](../../tasks/windows11-integration.md#observe-the-owners-usb-gnss-time-source)
+identified a concrete reference candidate. The user-provided NEO-M9N
+supplied 600 accepted NMEA time rows at 10 Hz through COM10. The retained
+Windows read comparison establishes serial feasibility. Independently
+bounded timing transfer, UTC validity and original packet pairing remain
+open; PPS is currently unused.
+
 The [joined DNS adoption controls](../../tasks/engine-transport-pilot.md#refuse-a-joined-windows-dns-answer-after-source-replacement)
 exercise W11-W03/S2.2 in parallel. The Windows loopback answer can reach a
 successor. Replacing the source after the resolver joins leaves the original
@@ -1355,6 +1362,16 @@ now observes a real RATE through that direct driver. Timely release
 commits the original receive once. Holding the guard through expiry
 preserves the original debit and records one rejection with no successor
 query. The isolated synchronous-receive control failed the new assertion.
+The [local path observation handoff](../../tasks/engine-transport-pilot.md#bind-an-engine-local-path-decision-to-its-observation-owner)
+identifies the exact candidate identity already available to the managed
+sender and the missing current route observation owner. The fixture can
+exercise the portable sender contract while the platform issuer is
+qualified. This remains independent from first Core sample admission.
+The [configured round bind fallback](../../tasks/engine-transport-pilot.md#continue-a-configured-round-after-its-local-address-fails-to-bind)
+now retains an unavailable local address and advances to an admitted
+successor with no peer debit for the refused candidate. The controlled
+bind result reached a real loopback reply, and the Stop and occupied-bind
+neighbors issued no successor query.
 
 The [pinned bench comparison](../../tasks/windows11-integration.md#bind-the-two-timing-legs-to-the-original-bench-records)
 checks both held-out legs and their original wire and residual record
@@ -1428,6 +1445,16 @@ passed healthy completion and terminal cancellation after scripted
 revision withdrawal. The adjacent full-write control delivered the exact
 bytes and withheld current confirmation. Installed peer admission and
 per-file metric qualification remain open.
+The [first-read prefill checkpoint](../../tasks/windows11-integration.md#recheck-the-first-read-after-backpressure-prefill)
+now checks the original Stop and cutoff at read submission after the
+marker settles. Portable controls cover refusal and continued collection
+of already submitted reads. The offline Windows run observed the exact
+marker, an idle server read at cutoff, and original Stop and cleanup.
+The [marker submission follow-up](../../tasks/windows11-integration.md#recheck-the-original-connection-before-the-prefill-marker)
+adds the original connection guard around retained-peer observation at
+the marker's native write boundary. Both GNU modes and MSVC-target
+Clippy passed. The exact Windows marker-refusal, post-prefill read
+and backpressure selectors passed on the linked source.
 The [joined measurement projection](../../tasks/engine-transport-pilot.md#calculate-each-original-joined-ordinary-receipt)
 now checks conditional nominal arithmetic for both original ordinary
 receipts through the actual Engine join. The Windows facade still supplies
@@ -1629,6 +1656,9 @@ The [guarded UI debugger observation](../../tasks/slint-gui-handoff.md#observe-b
 recorded the same 28 images at the initial breakpoint and the entry
 instruction of the exact unsigned ArtworkLab UI. It leaves DLL
 initializer CPU compatibility and installed activation open.
+The [current About-preview observation](../../tasks/windows11-integration.md#observe-the-current-about-preview-ui-before-its-entry-instruction)
+repeats those two native stops on the changed package member and
+its original map. Both tables again contained the same 28 images.
 The [guarded package stager](../../tasks/windows11-integration.md#reconcile-the-service-linker-maps-again-at-guarded-staging)
 now reconciles both retained service maps against the exact PE bytes it
 stages and refuses incompatible CRT addresses. The original unsigned
@@ -1636,6 +1666,13 @@ ArtworkLab carrier retained its existing scope.
 The [shared linker-map repair](../../tasks/windows11-integration.md#bound-the-shared-linker-map-symbol-reader)
 bounds symbol-row matching in the service and UI readers while retaining
 the receipt pins and PE address checks.
+The [service artifact publication control](../../tasks/windows11-integration.md#preserve-a-destination-created-during-service-artifact-publication)
+confirms that a late competing directory keeps its original identity.
+An uncontended run exports both checked role pairs and the receipt.
+The [Windows build-tool checkpoint](../../tasks/windows11-integration.md#preserve-the-selected-windows-tools-through-link-and-readback)
+records exact private compiler, linker and reader inputs for both default
+release links. All 35 configured cross-build rows and the 61-file export
+readback passed. Guarded and installed candidates keep separate evidence.
 The [guarded ArtworkLab pack-input producer](../../tasks/windows11-integration.md#stage-the-pinned-guarded-artworklab-pack-inputs-together)
 now publishes the exact pinned SDK and payload trees together. The
 portable replay reproduced the previous guarded inputs and archive
@@ -1753,6 +1790,53 @@ native `OpenServiceW` error 5 for `SERVICE_CHANGE_CONFIG`. This
 guest-login profile cannot supply positive provisioning access to
 the held fixture. The separate Standard control and a supported
 provisioning actor and invocation remain open.
+The [privilege-assisted ownership candidate](../../tasks/windows11-integration.md#privilege-assisted-service-ownership-candidate--pending-owner-disposition)
+identifies a documented helper-only route. David authorized a separate bounded
+Sandbox feasibility experiment; production adoption remains unselected. The
+first child is limited to privilege and `WRITE_OWNER` observations. The
+helper compiled in the current guest and the separate inert process controls
+observed normal exit and timed-out child retirement. Installed dispatch is
+held at surviving recovery of a lost dispatcher and its package transaction.
+The original no-takeover probe remains intact; API availability and access
+observations alone cannot close provisioning, restoration or servicing.
+The [bounded Standard cohort](../../tasks/windows11-integration.md#retain-a-standard-cohort-refused-before-enrollment)
+refused before enrollment when the original shared allowance could no
+longer admit that child. Zero Standard native tests executed. Original
+processes and jobs retired; the package, temporary trust, two exact
+scratch roots and nonce transfers were removed. This cohort ends
+incomplete without a retry or budget extension. Reduce the existing
+admission cost or review a fitting integration before re-entry; keep
+positive provisioning and full SCM continuity open.
+The [permanent strict-handle startup check](../../tasks/windows11-integration.md#require-permanent-strict-handles-at-each-service-entry)
+now runs before SCM at both fixed fixture entries. The same 885-input
+candidate passed the selected compiler and service lanes, both guarded
+role links and three fresh-process Windows selectors. Each role observed
+policy `0 → 3`, and the typed diagnostic path passed. The
+[current lab package refresh](../../tasks/windows11-integration.md#refresh-artworklab-after-the-strict-handle-source-change)
+passed all 38 configured guarded-UI rows, the source/artifact staging
+controls, actual MakeAppx healthy/refusal cases and the independent
+58-member archive readback. Its UI and role receipts agree across all
+761 common source paths; the complete union contains 899 paths. All
+three new PEs are present in the retained unsigned lab archive.
+Invalid-handle fault behavior, current per-file metrics, product roles,
+supported provisioning, signing and installed-role qualification remain
+open. The
+[bounded GUI startup child](../../tasks/slint-gui-handoff.md#require-permanent-strict-handles-before-slint--26-november-2026)
+now requires permanent strict handles before Slint. Its eighteen source
+controls, fifteen policy tests, directed partial-word fault and all 38
+configured Windows rows passed. The source-linked Windows process
+observed `0 → 3`; the exact guarded UI opened and closed normally with
+word `3` in the elevated unpackaged guest profile. Ordinary-user and
+installed activation, actual invalid-handle faults, affected-file metrics
+and the separate wrapper execution/diagnostic controls remain open.
+The new UI has not replaced the preceding lab archive's UI. Rebind
+common sources and roles before the next P6 assembly. The owner-confirmed
+PC restart preserved the durable checkpoint and vendor archive. HOST
+inventory identifies the replacement guest. A follow-up admitted the 29,510
+restored vendor files and observed the reduced offline guest profile for the
+service feasibility experiment. The original reentry remains incomplete as
+recorded in the GUI handoff. Reference/mapping and secured-management dependency
+gates remain unchanged; independent source work continues.
 
 The [retained token generation checkpoint](../../tasks/windows11-integration.md#retain-the-token-generation-through-service-peer-reobservation--24-november-2026)
 keeps the original token and its modification generation together across

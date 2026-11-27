@@ -316,3 +316,74 @@ fn preview_update_uses_the_toolkit_timer_for_each_stage() -> Result<(), Box<dyn 
     test.assert_step(UpdateStage::Complete, generation);
     Ok(())
 }
+
+/// Cancel each pre-install phase through the generated receiver and retire its timer.
+///
+/// # Errors
+/// Propagates a software fixture construction failure.
+/// # Panics
+/// A stale, hidden, repeated or post-install cancellation must not change the owner.
+#[test]
+fn preview_update_cancel_retires_only_the_current_preinstall_operation()
+-> Result<(), Box<dyn Error>> {
+    let test: TestSession = TestSession::new()?;
+    let window: &AppWindow = test.window();
+    window.invoke_navigate(Page::About);
+    window.invoke_preview_update_check();
+    let checking: i32 = window.get_update_preview().generation;
+    window.invoke_preview_update_cancel(checking ^ 1);
+    test.assert_step(UpdateStage::Checking, checking);
+    window.invoke_preview_update_cancel(checking);
+    test.assert_step(UpdateStage::Cancelled, checking);
+    window.invoke_preview_update_cancel(checking);
+    test.advance(checking);
+    test.dispatch_at(500);
+    test.assert_step(UpdateStage::Cancelled, checking);
+
+    window.invoke_preview_update_check();
+    let download: i32 = window.get_update_preview().generation;
+    assert_ne!(download, checking);
+    test.assert_step(UpdateStage::Checking, download);
+    test.advance(checking);
+    window.invoke_preview_update_cancel(checking);
+    test.assert_step(UpdateStage::Checking, download);
+    test.advance(download);
+    window.invoke_preview_update_cancel(checking);
+    test.assert_step(UpdateStage::Offered, download);
+    window.invoke_preview_update_yes(download);
+    test.assert_step(UpdateStage::Downloading, download);
+    window.invoke_navigate(Page::Status);
+    window.invoke_preview_update_cancel(download);
+    test.assert_step(UpdateStage::Downloading, download);
+    window.invoke_navigate(Page::About);
+    window.invoke_preview_update_cancel(download);
+    test.assert_step(UpdateStage::Cancelled, download);
+    test.advance(download);
+    test.dispatch_at(1000);
+    test.assert_step(UpdateStage::Cancelled, download);
+
+    let verify: i32 = test.open_offer();
+    window.invoke_preview_update_yes(verify);
+    test.advance(download);
+    test.assert_step(UpdateStage::Downloading, verify);
+    test.advance(verify);
+    test.assert_step(UpdateStage::Verifying, verify);
+    window.invoke_preview_update_cancel(download);
+    test.assert_step(UpdateStage::Verifying, verify);
+    window.invoke_preview_update_cancel(verify);
+    test.assert_step(UpdateStage::Cancelled, verify);
+    test.advance(verify);
+    test.dispatch_at(1500);
+    test.assert_step(UpdateStage::Cancelled, verify);
+
+    let install: i32 = test.open_offer();
+    window.invoke_preview_update_yes(install);
+    test.advance(install);
+    test.advance(install);
+    test.assert_step(UpdateStage::Installing, install);
+    window.invoke_preview_update_cancel(install);
+    test.assert_step(UpdateStage::Installing, install);
+    test.advance(install);
+    test.assert_step(UpdateStage::Complete, install);
+    Ok(())
+}

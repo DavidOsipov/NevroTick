@@ -211,6 +211,7 @@ export component AppWindow inherits Window {
     callback preview-update-check();
     callback preview-update-yes(int);
     callback preview-update-later(int);
+    callback preview-update-cancel(int);
     callback mode-requested(bool);
     callback source-selected(int);
     callback edit-requested();
@@ -549,6 +550,7 @@ export component AppWindow inherits Window {
                         update-check => { root.preview-update-check(); }
                         update-yes(generation) => { root.preview-update-yes(generation); }
                         update-later(generation) => { root.preview-update-later(generation); }
+                        update-cancel(generation) => { root.preview-update-cancel(generation); }
                     }
                     }
                 }

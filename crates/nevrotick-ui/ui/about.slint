@@ -9,6 +9,7 @@ export component AboutPage inherits VerticalLayout {
     callback update-check();
     callback update-yes(int);
     callback update-later(int);
+    callback update-cancel(int);
     in property <UpdatePreview> update-preview;
     in property <bool> update-interactive;
     private property <bool> repository-failed: false;
@@ -43,7 +44,7 @@ export component AboutPage inherits VerticalLayout {
     Panel {
         ActionButton {
             text: FixtureCopy.update-check;
-            enabled: root.update-interactive && (root.update-preview.stage == UpdateStage.idle || root.update-preview.stage == UpdateStage.complete);
+            enabled: root.update-interactive && (root.update-preview.stage == UpdateStage.idle || root.update-preview.stage == UpdateStage.complete || root.update-preview.stage == UpdateStage.cancelled);
             clicked => { root.update-check(); }
         }
         if root.update-preview.stage == UpdateStage.checking: BodyText {
@@ -76,11 +77,19 @@ export component AboutPage inherits VerticalLayout {
         if root.update-preview.stage == UpdateStage.verifying: BodyText {
             text: FixtureCopy.update-verify;
         }
+        if root.update-preview.stage == UpdateStage.checking || root.update-preview.stage == UpdateStage.downloading || root.update-preview.stage == UpdateStage.verifying: ActionButton {
+            text: root.update-preview.stage == UpdateStage.checking ? FixtureCopy.update-cancel-check : FixtureCopy.update-cancel;
+            enabled: root.update-interactive;
+            clicked => { root.update-cancel(root.update-preview.generation); }
+        }
         if root.update-preview.stage == UpdateStage.installing: BodyText {
             text: FixtureCopy.update-install;
         }
         if root.update-preview.stage == UpdateStage.complete: BodyText {
             text: FixtureCopy.update-complete;
+        }
+        if root.update-preview.stage == UpdateStage.cancelled: BodyText {
+            text: FixtureCopy.update-cancelled;
         }
     }
     Panel {

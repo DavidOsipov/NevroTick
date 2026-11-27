@@ -59,7 +59,7 @@ use crate::{
 };
 
 /// Stable slots include the native pipe histories and the split power-cycle case.
-const BROKER_CASES: usize = 49;
+const BROKER_CASES: usize = 52;
 /// Each scenario owns one fresh registered mailbox and one independent counter.
 static MAILBOXES: [BrokerClockChanges; BROKER_CASES] =
     [const { BrokerClockChanges::new() }; BROKER_CASES];
@@ -2239,7 +2239,10 @@ fn private_status_client_rechecks_cutoff_after_broker_reply() -> Result<(), Box<
 #[ignore = "requires the admitted offline Windows first-read fixture supervisor"]
 fn native_first_read_requires_attribution_and_original_cutoff() -> Result<(), Box<dyn Error>> {
     use super::NativeStatusOutcome;
-    use crate::private_clock_wire::{RequestId, decode_reply};
+    use crate::{
+        native_pipe_read::RequestGenerationFault,
+        private_clock_wire::{RequestId, decode_reply},
+    };
 
     let id: RequestId = native_fixture_result(RequestId::new(42))?;
     let outcome: Option<NativeStatusOutcome> =
@@ -2248,6 +2251,30 @@ fn native_first_read_requires_attribution_and_original_cutoff() -> Result<(), Bo
         return Err("identified current first read did not produce its status reply".into());
     };
     assert_eq!(decode_reply(frame.as_bytes(), id), Ok(true));
+    assert!(matches!(
+        observed_first_status::<49>(
+            LabClientContext::Identification,
+            FirstStatusCase::ChangedRequestGeneration(RequestGenerationFault::BeforeDispatch),
+        )?,
+        Some(NativeStatusOutcome::Identity(
+            IdentifiedReadError::Identity {
+                cause: PipeIdentityError::ChangedRequestToken,
+                received: 18,
+            }
+        ))
+    ));
+    assert!(matches!(
+        observed_first_status::<50>(
+            LabClientContext::Identification,
+            FirstStatusCase::ChangedRequestGeneration(RequestGenerationFault::AfterDispatch),
+        )?,
+        Some(NativeStatusOutcome::Identity(
+            IdentifiedReadError::Identity {
+                cause: PipeIdentityError::ChangedRequestToken,
+                received: 18,
+            }
+        ))
+    ));
     assert!(matches!(
         observed_first_status::<31>(LabClientContext::Anonymous, FirstStatusCase::Full)?,
         Some(NativeStatusOutcome::Identity(
@@ -2297,6 +2324,8 @@ fn native_first_read_requires_attribution_and_original_cutoff() -> Result<(), Bo
 enum FirstStatusCase {
     /// Complete request and a live context just before the original cutoff.
     Full,
+    /// Original valid request and token with a changed expected generation.
+    ChangedRequestGeneration(crate::native_pipe_read::RequestGenerationFault),
     /// Original valid envelope missing its final byte.
     Partial,
     /// The original cutoff is reached as native collection finishes.
@@ -2331,7 +2360,11 @@ fn observed_first_status<const N: usize>(
     let case: u32 = u32::try_from(N)?;
     let expected: PipeIdentity = own_process_identity()?;
     let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
-        prepare_first_read_fixture(case, Some(expected))
+        let mut endpoint: NativeBrokerEndpoint = prepare_first_read_fixture(case, Some(expected))?;
+        if let FirstStatusCase::ChangedRequestGeneration(fault) = scenario {
+            endpoint.fault_request_generation_for_test(fault);
+        }
+        Ok(endpoint)
     };
     let outcome: Result<Option<super::NativeStatusOutcome>, Box<dyn Error>> =
         with_broker_worker_reads::<N, 1, _, _>(
@@ -2373,7 +2406,9 @@ fn observed_first_status<const N: usize>(
                     FirstStatusCase::Stopped => (2, DecisionAction::Deliver(1)),
                     FirstStatusCase::CutoffAfterAttribution => (3, DecisionAction::Advance(cutoff)),
                     FirstStatusCase::StoppedAfterAttribution => (3, DecisionAction::Deliver(1)),
-                    FirstStatusCase::Full | FirstStatusCase::Partial => (
+                    FirstStatusCase::Full
+                    | FirstStatusCase::ChangedRequestGeneration(_)
+                    | FirstStatusCase::Partial => (
                         1,
                         DecisionAction::Advance(
                             cutoff
@@ -2394,6 +2429,18 @@ fn observed_first_status<const N: usize>(
                 );
                 assert_eq!(owner.connection_cutoff, Some(cutoff));
                 assert_eq!(owner.outstanding_work(), u32::from(!expects_stop));
+                if let FirstStatusCase::ChangedRequestGeneration(fault) = scenario {
+                    use crate::{
+                        host::PrivateStatusIssue, native_pipe_read::RequestGenerationFault,
+                    };
+
+                    let issue: PrivateStatusIssue = match fault {
+                        RequestGenerationFault::BeforeDispatch => PrivateStatusIssue::Unissued,
+                        RequestGenerationFault::AfterDispatch => PrivateStatusIssue::Issued,
+                    };
+                    assert!(owner.private_status_issue == issue);
+                    assert!(!owner.native_status.reply_written);
+                }
                 native_fixture_result(ensure_unimpersonated())?;
                 Ok(owner.native_status.outcome.take())
             },
@@ -2838,7 +2885,6 @@ mod distinct_peer {
         io::{self, Read as _, Write as _},
         num::NonZeroU32,
         os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, RawHandle},
-        path::PathBuf,
         process::{self, Child, ChildStderr, Command, ExitStatus, Stdio},
         sync::mpsc,
         thread,
@@ -2862,7 +2908,7 @@ mod distinct_peer {
         native_broker_endpoint::NativeBrokerEndpoint,
         native_broker_wait::{BrokerControlWake, BrokerWait, WakeSource},
         native_peer_process::same_kernel_object,
-        native_pipe_identity::RetainedFixtureClient,
+        native_pipe_identity::{FixtureClientError, FixtureExecutable, RetainedFixtureClient},
         native_pipe_pair::{
             LabOverlappedWriter, LabRequestWriter, LabSupervisedFirstExchangeWriter,
             check_fixture_peer_before_cutoff, open_first_exchange_client, open_lab_reply_pipe,
@@ -2885,6 +2931,8 @@ mod distinct_peer {
     const FOREIGN_CASE: u32 = 39;
     /// Unique pipe slot for the deterministic submission control.
     const GUARD_CASE: u32 = 40;
+    /// Unique pipe and clock slot for the real child with a wrong image expectation.
+    const WRONG_IMAGE_CASE: u32 = 51;
     /// Allowance before the idle child acknowledges its private hold.
     const SETUP_WAIT: Duration = Duration::from_secs(5);
     /// Limit on the isolated child exchange or private hold.
@@ -2905,15 +2953,15 @@ mod distinct_peer {
     type Check<T> = Result<T, Box<dyn Error>>;
 
     /// The original spawn handle owns recovery if a test exits early.
-    struct FixtureChild(Child);
+    struct FixtureChild(Child, FixtureExecutable);
 
     impl FixtureChild {
         /// Spawn only the exact ignored role in the current admitted test image.
         /// # Errors
         /// Preserve executable discovery or process creation failure.
         fn spawn(role: &str) -> Check<Self> {
-            let executable: PathBuf = env::current_exe()?;
-            let child: Child = Command::new(executable)
+            let executable: FixtureExecutable = FixtureExecutable::current()?;
+            let child: Child = Command::new(executable.path())
                 .args([
                     "--exact",
                     CHILD_TEST,
@@ -2928,7 +2976,16 @@ mod distinct_peer {
                 .stdout(Stdio::null())
                 .stderr(Stdio::piped())
                 .spawn()?;
-            Ok(Self(child))
+            Ok(Self(child, executable))
+        }
+
+        /// Retain the exact spawned process and original launcher executable.
+        ///
+        /// # Errors
+        /// Preserve original process custody, primary-token or image expectation refusal.
+        fn retained_client(&self) -> Check<RetainedFixtureClient> {
+            RetainedFixtureClient::from_fixture_executable(self.process()?, &self.1)
+                .map_err(Into::into)
         }
 
         /// Compare the limited process query to the independently held spawn object.
@@ -3223,15 +3280,20 @@ mod distinct_peer {
         Ok(())
     }
 
-    /// Send the fixed request and observe the exact reply on the original client.
+    /// Send the fixed request and observe the selected reply history on the original client.
     /// # Errors
     /// Preserve open, I/O, byte-oracle or Stop-disconnect failure.
-    fn exchange_as_child(parent: &PeerProcess) -> Check<()> {
+    fn exchange_as_child(parent: &PeerProcess, expects_reply: bool) -> Check<()> {
         let deadline: Instant = Instant::now() + CHILD_WAIT;
         let supervisor: ObservedProcessPrimaryToken<'_> =
             ObservedProcessPrimaryToken::observe(parent).map_err(LabPipeError::SupervisorToken)?;
+        let case: u32 = if expects_reply {
+            CHILD_CASE
+        } else {
+            WRONG_IMAGE_CASE
+        };
         let (client, mut writer): (LabPipeReader, LabSupervisedFirstExchangeWriter<'_>) = loop {
-            match open_supervised_first_exchange_client(CHILD_CASE, &supervisor, deadline) {
+            match open_supervised_first_exchange_client(case, &supervisor, deadline) {
                 Ok(pair) => break pair,
                 Err(LabPipeError::Native {
                     operation: "CreateFileW",
@@ -3254,11 +3316,13 @@ mod distinct_peer {
                 return Err("reply was available before the original request".into());
             }
             writer.write(REQUEST)?;
-            observe_first_reply_bytes(&mut reader, REPLY, |reader: &mut NativePipeRead| {
-                read_until(reader, deadline)
-            })?;
-            if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
-                return Err("the original client already received a second reply".into());
+            if expects_reply {
+                observe_first_reply_bytes(&mut reader, REPLY, |reader: &mut NativePipeRead| {
+                    read_until(reader, deadline)
+                })?;
+                if native_fixture_result(reader.begin(MAX_FRAME_LEN))? != NativeReadStart::Queued {
+                    return Err("the original client already received a second reply".into());
+                }
             }
             after_current_supervisor_observation(
                 deadline,
@@ -3280,7 +3344,7 @@ mod distinct_peer {
         observed
     }
 
-    /// Dispatch only the two fixed fixture roles from the private supervisor.
+    /// Dispatch only the fixed fixture roles from the private supervisor.
     /// # Errors
     /// Preserve bad setup or an unsuccessful child observation.
     #[test]
@@ -3291,10 +3355,10 @@ mod distinct_peer {
         };
         match role.to_str() {
             Some("hold") => hold_child(),
-            Some("exchange") => {
+            Some(exchange @ ("exchange" | "exchange-refused")) => {
                 let pid: NonZeroU32 = env::var(PARENT_PID)?.parse()?;
                 let parent: PeerProcess = PeerProcess::open(pid)?;
-                exchange_as_child(&parent)
+                exchange_as_child(&parent, exchange == "exchange")
             }
             _ => Err("fixture child role was unsupported".into()),
         }
@@ -3307,7 +3371,7 @@ mod distinct_peer {
     #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
     fn native_first_exchange_accepts_retained_child() -> Check<()> {
         let mut child: FixtureChild = FixtureChild::spawn("exchange")?;
-        let peer: RetainedFixtureClient = RetainedFixtureClient::new(child.process()?)?;
+        let peer: RetainedFixtureClient = child.retained_client()?;
         let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
             prepare_first_exchange_fixture(CHILD_CASE, peer, None)
         };
@@ -3346,6 +3410,61 @@ mod distinct_peer {
         child.finish()
     }
 
+    /// Refuse a complete native request from the retained child with the wrong image expectation.
+    /// # Errors
+    /// Preserve setup, continuity, reply-absence or observed retirement failure.
+    #[test]
+    #[ignore = "requires the admitted offline Windows distinct-process broker fixture"]
+    fn native_first_exchange_refuses_wrong_fixture_image() -> Check<()> {
+        let mut child: FixtureChild = FixtureChild::spawn("exchange-refused")?;
+        let mut peer: RetainedFixtureClient = child.retained_client()?;
+        peer.change_expected_image_for_test();
+        let acquire = move || -> Result<NativeBrokerEndpoint, NativeError> {
+            prepare_first_exchange_fixture(WRONG_IMAGE_CASE, peer, None)
+        };
+        let observed: Check<()> = with_broker_worker_reads::<51, 1, _, _>(
+            BrokerEndpointWorker::new(acquire),
+            |owner, clock, stop| {
+                let cutoff: Instant = owner.connection_cutoff.ok_or("no original accept cutoff")?;
+                let control: BrokerControlWake = BrokerControlWake::new()?;
+                let mut waiter: BrokerWait = BrokerWait::new();
+                let getters: u32 = GETTERS[51].load(SeqCst);
+                wait_for_first_reply_write(owner, clock, stop, &control, &mut waiter, cutoff)?;
+                child.wait_ready(cutoff)?;
+                if !matches!(
+                    &owner.native_status.outcome,
+                    Some(NativeStatusOutcome::Identity(
+                        IdentifiedReadError::Component {
+                            cause: FixtureClientError::WrongImage,
+                            received: 18,
+                        }
+                    ))
+                ) || owner.private_status_issue != PrivateStatusIssue::Unissued
+                    || owner.native_status.reply_written
+                    || owner.connection_cutoff != Some(cutoff)
+                    || owner.outstanding_work() != 1
+                    || owner.worker.completion_wake().is_some()
+                    || GETTERS[51].load(SeqCst) != getters
+                {
+                    return Err(
+                        "the live selected child's component refusal reached dispatch".into(),
+                    );
+                }
+                native_fixture_result(ensure_unimpersonated())?;
+                let _time: Duration = remaining(cutoff)?;
+                let _stop = deliver(Some(clock.mailbox), stop, 1, 0);
+                if owner.poll(clock, stop) != InvocationPoll::Finished
+                    || owner.outstanding_work() != 0
+                {
+                    return Err("Stop did not retire the refused component's connection".into());
+                }
+                Ok(())
+            },
+        )?;
+        observed?;
+        child.finish()
+    }
+
     /// Refuse the same-actor parent on the one connection reserved for the live child.
     /// # Errors
     /// Preserve setup, native progress, refusal, zero-byte or cleanup failure.
@@ -3354,7 +3473,7 @@ mod distinct_peer {
     fn native_first_exchange_refuses_foreign_same_actor() -> Check<()> {
         let mut child: FixtureChild = FixtureChild::spawn("hold")?;
         child.wait_ready(Instant::now() + SETUP_WAIT)?;
-        let peer: RetainedFixtureClient = RetainedFixtureClient::new(child.process()?)?;
+        let peer: RetainedFixtureClient = child.retained_client()?;
         if peer.identity() != &super::own_process_identity()? {
             return Err("fixture foreign connector did not share the expected actor".into());
         }

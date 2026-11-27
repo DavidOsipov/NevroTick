@@ -2059,6 +2059,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
         "ke_preview_target": "crates/nevrotick-engine/src/ke_preview_target.rs",
         "ke_managed_preview": "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
+        "ke_receiving": "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs",
     }
     PROBE_CALLER = "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
     MANAGED_PROTECTED_CASES = (
@@ -2303,7 +2304,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         path.write_text(json.dumps(receipt))
         binding["ordinary_evidence"] = {"path": str(path), "sha256": MODULE.PRODUCT.sha256(path)}
 
-    def invoke(self, *, accepted=False, free=7 * 1024**3):
+    def invoke(self, *, accepted=False, free=7 * 1024**3, refusal: str | None = None) -> None:
         """Exercise real pre-Session guards with assumed prior product admission."""
         (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
         dependency = {"engine_ke_association": {"rows": {}}}
@@ -2311,7 +2312,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=(dependency, self.identity)), \
                 patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=free)), \
                 patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
-            with self.assertRaises(self.SessionReached if accepted else MODULE.Incomplete):
+            expected = (self.assertRaisesRegex(MODULE.Incomplete, refusal) if refusal is not None
+                        else self.assertRaises(self.SessionReached if accepted else MODULE.Incomplete))
+            with expected:
                 MODULE.execute_engine_ke_profile(self.args, {})
             if accepted:
                 session.assert_called_once()
@@ -2338,11 +2341,52 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.args.lane = "coverage"
         self.args.subject = "ke_managed_preview"
         self.invoke(accepted=True)
+        self.args.subject = "ke_receiving"
+        self.invoke(accepted=True)
+
+    def test_joined_receiving_requires_both_unique_manifest_registrations(self) -> None:
+        self.args.lane = "coverage"
+        self.args.subject = "ke_receiving"
+        critical: list[str] = self.policy["critical_files"]
+        engine: list[str] = [name for name in critical if name != self.PROBE_CALLER]
+        receiving: str = self.HOST["ke_receiving"]
+        manifest: Path = self.root / "policy/verification-manifest.toml"
+        original: bytes = manifest.read_bytes()
+        cases: tuple[tuple[list[str], list[str]], ...] = (
+            ([name for name in critical if name != receiving], engine),
+            (critical, [name for name in engine if name != receiving]),
+            (critical, [*engine, receiving]),
+            ([*critical, receiving], engine),
+        )
+        self.invoke(accepted=True)
+        try:
+            for registered_files, registered_primitives in cases:
+                with self.subTest(critical=registered_files.count(receiving),
+                                  security=registered_primitives.count(receiving)):
+                    amended: str = original.decode()
+                    amended = amended.replace("critical_files = " + json.dumps(critical),
+                                              "critical_files = " + json.dumps(registered_files), 1)
+                    amended = amended.replace("files=" + json.dumps(engine),
+                                              "files=" + json.dumps(registered_primitives), 1)
+                    manifest.write_text(amended)
+                    self.policy["binding"]["inputs_sha256"]["policy/verification-manifest.toml"] = (
+                        MODULE.PRODUCT.sha256(manifest))
+                    self.invoke(refusal="complete current critical/security inventory")
+        finally:
+            manifest.write_bytes(original)
+            self.policy["binding"]["inputs_sha256"]["policy/verification-manifest.toml"] = (
+                MODULE.PRODUCT.sha256(manifest))
+        self.invoke(accepted=True)
 
     def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
-        bound_sources = ("crates/nevrotick-engine/tests/private/processing_guards.rs",
-                         "crates/nevrotick-engine/tests/private/series.rs",
-                         "tools/crypto-cng-lifecycle/Cargo.lock")
+        bound_sources: tuple[str, ...] = (
+            "crates/nevrotick-engine/tests/private/processing_guards.rs",
+            "crates/nevrotick-engine/tests/private/series.rs",
+            "tools/crypto-cng-lifecycle/Cargo.lock",
+            "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/receiving/fixture.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_cases.rs",
+        )
         for name in ("scripts/portable-analysis.py", "scripts/analysis-controls.py",
                      "scripts/check-analysis.py",
                      "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
@@ -3100,39 +3144,58 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
             MODULE.admit_engine_ke_evidence(binding)
 
-    def test_current_engine_ke_requires_native_fixture_and_exact_stale_debit_roster(self):
+    def test_current_engine_ke_requires_joined_receiving_inputs_and_roster(self):
         policy = json.loads((ROOT / MODULE.ENGINE_KE_POLICY).read_bytes())
         binding = MODULE.validate_engine_ke_policy(policy)
-        self.assertEqual(binding["candidate_sha256"], MODULE.ENGINE_STALE_DEBIT_CANDIDATE)
-        fixture = MODULE.ENGINE_SCALE_CONFLICT_NATIVE_FIXTURE
-        self.assertNotIn(fixture, MODULE.engine_ke_bound_inputs(MODULE.ENGINE_REVIEW_CANDIDATE))
-        without_fixture = copy.deepcopy(policy)
-        del without_fixture["binding"]["inputs_sha256"][fixture]
-        with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
-            MODULE.validate_engine_ke_policy(without_fixture)
+        candidate = MODULE.ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+        self.assertEqual(binding["candidate_sha256"], candidate)
+        current_only = (
+            "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/receiving/fixture.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_cases.rs",
+        )
+        for path in current_only:
+            with self.subTest(joined_receiving_path=path):
+                self.assertIn(path, binding["inputs_sha256"])
+                self.assertNotIn(path, MODULE.engine_ke_bound_inputs(MODULE.ENGINE_STALE_DEBIT_CANDIDATE))
+                without_helper = copy.deepcopy(policy)
+                del without_helper["binding"]["inputs_sha256"][path]
+                with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
+                    MODULE.validate_engine_ke_policy(without_helper)
 
+        worker = "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        boundary_cases: tuple[str, str] = (
+            worker + "managed_joined_receiving_checks_original_commit_boundary",
+            worker + "managed_joined_receiving_without_context_preserves_originals",
+        )
+        required = (
+            *boundary_cases,
+            worker + "managed_joined_receiving_refuses_each_changed_restriction_epoch",
+            worker + "managed_joined_receiving_refuses_equal_source_replacement_after_commit",
+            worker + "managed_joined_receiving_refuses_stop_after_commit",
+            worker + "managed_joined_receiving_reports_absent_mapping_for_both_originals",
+            worker + "receiving_cases::managed_joined_receiving_checks_mapping_bounds_and_sticky_revision_exhaustion",
+            worker + "receiving_cases::managed_joined_receiving_requires_new_receipts_after_mapping_reissue",
+            "nts_ke_experiment::receiving::fixture::controlled_validity_covers_both_outer_capture_edges",
+        )
         names = binding["test_inventory"]
-        predecessor = sorted(set(names) - {MODULE.ENGINE_STALE_DEBIT_CASE})
+        self.assertEqual(len(names), 686)
+        self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in names), 360)
+        predecessor: list[str] = sorted(set(names) - set(boundary_cases))
+        self.assertEqual(len(predecessor), 684)
         self.assertEqual(MODULE.validate_engine_ke_inventory(
-            predecessor, candidate=MODULE.ENGINE_FINAL_FRAME_CANDIDATE), predecessor)
-        previous = sorted(set(predecessor) - MODULE.ENGINE_FINAL_FRAME_ADDITIONS)
-        self.assertEqual(MODULE.validate_engine_ke_inventory(
-            previous, candidate=MODULE.ENGINE_PROTECTED_DEBIT_CANDIDATE), previous)
-        missing_debit = sorted(set(previous) - MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS)
-        self.assertEqual(MODULE.validate_engine_ke_inventory(
-            missing_debit, candidate=MODULE.ENGINE_PLACEMENT_CANDIDATE), missing_debit)
-        historical = [name for name in missing_debit if name != MODULE.ENGINE_PLACEMENT_TEST]
-        self.assertEqual(MODULE.validate_engine_ke_inventory(
-            historical, candidate=MODULE.ENGINE_SCALE_CONFLICT_CANDIDATE), historical)
-        for required in (MODULE.ENGINE_SCALE_CONFLICT_TEST, MODULE.ENGINE_PLACEMENT_TEST,
-                         *sorted(MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS),
-                         *sorted(MODULE.ENGINE_FINAL_FRAME_ADDITIONS),
-                         MODULE.ENGINE_STALE_DEBIT_CASE):
-            self.assertIn(required, names)
-            substitute = required.rpartition("::")[0] + "::foreign_control"
-            substituted = sorted(substitute if name == required else name for name in names)
-            with self.subTest(required=required), self.assertRaisesRegex(MODULE.Incomplete, "604 actual Engine tests"):
-                MODULE.validate_engine_ke_inventory(substituted, candidate=binding["candidate_sha256"])
+            predecessor, candidate=MODULE.ENGINE_JOINED_RECEIVING_CANDIDATE), predecessor)
+        with self.assertRaisesRegex(MODULE.Incomplete, "684 actual Engine tests"):
+            MODULE.validate_engine_ke_inventory(names, candidate=MODULE.ENGINE_JOINED_RECEIVING_CANDIDATE)
+        with self.assertRaisesRegex(MODULE.Incomplete, "686 actual Engine tests"):
+            MODULE.validate_engine_ke_inventory(predecessor, candidate=candidate)
+        for case in required:
+            self.assertIn(case, names)
+            substitute = case.rpartition("::")[0] + "::foreign_control"
+            substituted = sorted(substitute if name == case else name for name in names)
+            with self.subTest(required=case), self.assertRaisesRegex(MODULE.Incomplete, "686 actual Engine tests"):
+                MODULE.validate_engine_ke_inventory(substituted, candidate=candidate)
+
         docs = binding["doctest_inventory"]
         moved = ("crates/nevrotick-engine/src/measurement.rs - "
                  "measurement::NominalPhaseNs (line 770) - compile fail")
@@ -3141,9 +3204,98 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             replaced = sorted(incorrect if name == moved else name for name in docs)
             with self.subTest(incorrect=incorrect), self.assertRaisesRegex(
                     MODULE.Incomplete, "annotated Rustdoc inventory"):
-                MODULE.validate_engine_ke_doctest_inventory(replaced, candidate=binding["candidate_sha256"])
+                MODULE.validate_engine_ke_doctest_inventory(replaced, candidate=candidate)
         with self.assertRaisesRegex(MODULE.Incomplete, "mutation is held"):
             MODULE.validate_engine_ke_policy(policy, campaign=True)
+
+    def test_joined_receiving_boundary_delta_requires_exact_test_file_preimages_and_postimages(self) -> None:
+        job: str = "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"
+        worker: str = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs"
+        receiving: str = "crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs"
+        old_job: str = "a4cfdc52e2d7bc9f1dbeff7e407dd52c62b064d0d7847d3dc7b31d2a3554ec90"
+        new_job: str = "48a49db6cb9a297f82bf335ae3033aa4ed781a2509f80e8990665e8f29235555"
+        old_worker: str = "633fb069e9d4a7f806603522f4ea9fd8c99fe8b39bb9b85957fc58036ba123c6"
+        new_worker: str = "46e1c31b26824e9e153c0933abdec78e9beff5b7a5a4e54705b2a24f296bda51"
+        predecessor: dict[str, str] = {f"fixture/input-{index}.rs": independent_digest([index]) for index in range(765)}
+        predecessor.update({job: old_job, worker: old_worker, receiving: "a" * 64})
+        identity: dict[str, str] = predecessor | {job: new_job, worker: new_worker}
+        unexpected: str = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/foreign_tests.rs"
+
+        # The synthetic maps use independent identities for each control so a
+        # candidate digest mismatch cannot mask defects in the file-delta guard.
+        with patch.multiple(MODULE, ENGINE_JOINED_RECEIVING_CANDIDATE=independent_digest(predecessor),
+                            ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE=independent_digest(identity)):
+            MODULE.validate_joined_receiving_boundary_delta(identity, predecessor)
+        choices: tuple[tuple[str, dict[str, str], dict[str, str]], ...] = (
+            ("omitted change", identity | {worker: old_worker}, predecessor),
+            ("missing input", {name: pin for name, pin in identity.items() if name != worker}, predecessor),
+            ("extra input", identity | {unexpected: "b" * 64}, predecessor),
+            ("same-count path substitution",
+             {name: pin for name, pin in identity.items() if name != job} | {unexpected: new_job}, predecessor),
+            ("extra production change", identity | {receiving: "b" * 64}, predecessor),
+            ("wrong postimage", identity | {job: "b" * 64}, predecessor),
+            ("wrong preimage", identity, predecessor | {worker: "b" * 64}),
+        )
+        for label, current, previous in choices:
+            with self.subTest(label=label), patch.multiple(
+                    MODULE, ENGINE_JOINED_RECEIVING_CANDIDATE=independent_digest(previous),
+                    ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE=independent_digest(current)):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_joined_receiving_boundary_delta(current, previous)
+
+    def test_historical_ke_predecessor_chain_preserves_required_cases_and_input_closure(self):
+        baseline = self.policy["binding"]
+        scale = sorted([
+            *baseline["test_inventory"], MODULE.ENGINE_SCALE_CONFLICT_TEST,
+            "nts_ke_experiment::historical_scale_fixture",
+            *(f"historical_scale_fixture_{index}" for index in range(7)),
+        ])
+        placement = sorted([*scale, MODULE.ENGINE_PLACEMENT_TEST])
+        debit = sorted([*placement, *MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS])
+        final_frame = sorted([*debit, *MODULE.ENGINE_FINAL_FRAME_ADDITIONS])
+        stale = sorted([*final_frame, MODULE.ENGINE_STALE_DEBIT_CASE])
+        predecessors = (
+            (MODULE.ENGINE_SCALE_CONFLICT_CANDIDATE, "ENGINE_SCALE_CONFLICT_ROSTER", scale),
+            (MODULE.ENGINE_PLACEMENT_CANDIDATE, "ENGINE_PLACEMENT_ROSTER", placement),
+            (MODULE.ENGINE_PROTECTED_DEBIT_CANDIDATE, "ENGINE_PROTECTED_DEBIT_ROSTER", debit),
+            (MODULE.ENGINE_FINAL_FRAME_CANDIDATE, "ENGINE_FINAL_FRAME_ROSTER", final_frame),
+            (MODULE.ENGINE_STALE_DEBIT_CANDIDATE, "ENGINE_STALE_DEBIT_ROSTER", stale),
+        )
+        docs = sorted([*baseline["doctest_inventory"], "src/lib.rs - Fixture::historical (line 100)"])
+        # Keep the historical count and required-case branches while giving this
+        # synthetic cohort its own independently calculated digests.
+        rosters = {
+            table: getattr(MODULE, table) | {"ep1-ordinary": (len(names), independent_digest(names))}
+            for _, table, names in predecessors
+        }
+        rosters["ENGINE_STALE_DEBIT_ROSTER"]["ep1-doctests"] = (len(docs), independent_digest(docs))
+        with patch.multiple(MODULE, **rosters):
+            for candidate, _, names in predecessors:
+                with self.subTest(candidate=candidate):
+                    self.assertEqual(MODULE.validate_engine_ke_inventory(names, candidate=candidate), names)
+            for case in (MODULE.ENGINE_SCALE_CONFLICT_TEST, MODULE.ENGINE_PLACEMENT_TEST,
+                         *sorted(MODULE.ENGINE_PROTECTED_DEBIT_ADDITIONS),
+                         *sorted(MODULE.ENGINE_FINAL_FRAME_ADDITIONS), MODULE.ENGINE_STALE_DEBIT_CASE):
+                substitute = case.rpartition("::")[0] + "::foreign_control"
+                changed = sorted(substitute if name == case else name for name in stale)
+                with self.subTest(required=case), self.assertRaisesRegex(MODULE.Incomplete, "604 actual Engine tests"):
+                    MODULE.validate_engine_ke_inventory(changed, candidate=MODULE.ENGINE_STALE_DEBIT_CANDIDATE)
+
+            fixture = "crates/nevrotick-engine/src/nts_ke_experiment/transport/managed_close_fixture.rs"
+            self.assertNotIn(fixture, MODULE.engine_ke_bound_inputs(MODULE.ENGINE_REVIEW_CANDIDATE))
+            old = copy.deepcopy(self.policy)
+            binding = old["binding"]
+            binding.update(candidate_sha256=MODULE.ENGINE_STALE_DEBIT_CANDIDATE, source_file_count=620,
+                           test_inventory=stale, doctest_inventory=docs)
+            for path in ("crates/nevrotick-engine/src/nts_ke_experiment/receiving.rs",
+                         "crates/nevrotick-engine/src/nts_ke_experiment/receiving/fixture.rs",
+                         "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_cases.rs"):
+                del binding["inputs_sha256"][path]
+            binding["inputs_sha256"][fixture] = "b" * 64
+            self.assertEqual(MODULE.validate_engine_ke_policy(old), binding)
+            del binding["inputs_sha256"][fixture]
+            with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
+                MODULE.validate_engine_ke_policy(old)
 
     def test_missing_numerics_helper_pin_refuses_admission(self):
         path = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"
@@ -3320,7 +3472,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 ENGINE_KE_SOURCE_SCALE_CASE_DIGEST=independent_digest(cases),
                 ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR=independent_digest(previous),
                 ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256=pin):
-            yield binding, legacy
+            current_pins: dict[str, str] = binding["inputs_sha256"]
+            binding["inputs_sha256"] = {
+                name: current_pins[name] for name in MODULE.engine_ke_bound_inputs(binding["candidate_sha256"])
+            }
+            try:
+                yield binding, legacy
+            finally:
+                binding["inputs_sha256"] = current_pins
 
     def test_source_scale_requires_its_exact_91_docs_at_execution_and_retirement(self):
         with self.source_scale_reference() as (binding, legacy):
@@ -6551,7 +6710,9 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
     def test_current_source_policy_rejects_old_doc_identity_and_stopped_terminal(self):
         policy = json.loads((ROOT / MODULE.SOURCE_POLICY_POLICY).read_bytes())
         binding = MODULE.validate_source_policy_policy(policy)
-        self.assertEqual(binding["candidate_sha256"], MODULE.ENGINE_STALE_DEBIT_CANDIDATE)
+        candidate = MODULE.ENGINE_JOINED_RECEIVING_BOUNDARY_CANDIDATE
+        self.assertEqual(binding["candidate_sha256"], candidate)
+        self.assertEqual(len(binding["test_inventory"]), 318)
         moved = "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 762)"
         self.assertIn(moved, binding["doctest_inventory"])
         documents = sorted(moved.replace("(line 762)", "(line 742)") if name == moved else name
@@ -6559,10 +6720,10 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.Incomplete, "compiler examples differ"):
             MODULE.source_policy_development_doctests(self.execution(documents), binding, "default-doctests")
 
-        candidate = MODULE.ENGINE_STALE_DEBIT_CANDIDATE
-        for old in (MODULE.ENGINE_FINAL_FRAME_TERMINAL, MODULE.ENGINE_FINAL_FRAME_INCOMPLETE, MODULE.ENGINE_PROTECTED_DEBIT_TERMINAL,
-                    MODULE.ENGINE_PLACEMENT_TERMINAL,
-                    MODULE.ENGINE_PLACEMENT_STOPPED):
+        for old in (MODULE.ENGINE_JOINED_RECEIVING_TERMINAL, MODULE.ENGINE_STALE_DEBIT_TERMINAL,
+                    MODULE.ENGINE_FINAL_FRAME_TERMINAL,
+                    MODULE.ENGINE_FINAL_FRAME_INCOMPLETE, MODULE.ENGINE_PROTECTED_DEBIT_TERMINAL,
+                    MODULE.ENGINE_PLACEMENT_TERMINAL, MODULE.ENGINE_PLACEMENT_STOPPED):
             stale = dict(binding["development_evidence"], sha256=old)
             with self.subTest(terminal=old), self.assertRaisesRegex(
                     MODULE.Incomplete, "exact combined terminal receipt"):

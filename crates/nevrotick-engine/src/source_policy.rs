@@ -2882,6 +2882,16 @@ impl ConfiguredKePreview {
         &self.snapshot
     }
 
+    /// Retain this exact issued definition for the original joined collector.
+    /// The copy still requires current policy custody before any decision.
+    pub(super) fn receiving_definition(&self) -> Self {
+        Self {
+            source: self.source.clone(),
+            snapshot: self.snapshot.clone(),
+            target: self.target.clone(),
+        }
+    }
+
     /// Acquire actual nonblocking policy custody before performing any checks.
     /// The receiving owner must retain this guard through its decision and release
     /// Control custody before this value drops and publishes policy-release wakes.
@@ -2920,6 +2930,36 @@ impl KePreviewPolicyGuard<'_> {
     /// and invalid/outside selected endpoint without allocation or state change.
     pub(super) fn check(&self, peer: Option<SocketAddr>) -> Result<(), SourcePolicyError> {
         configuration::check_preview(self.original, &self.guard, peer)
+    }
+
+    /// Check an original receipt while retaining the same live policy custody.
+    /// The collector independently binds receipt and invocation custody. This
+    /// check neither consults the next-send floor nor changes endpoint state.
+    /// # Errors
+    /// Preserve current-definition and availability refusals, and refuse a
+    /// foreign source or endpoint or a changed restriction epoch.
+    pub(super) fn check_receipt(
+        &self,
+        peer: SocketAddr,
+        stamp: &ProtectedReceiptPolicy,
+    ) -> Result<(), SourcePolicyError> {
+        let original_source: &SourceIdentity = self.original.snapshot.source_identity();
+        if !original_source.same_source(&stamp.source) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        self.check(Some(peer))?;
+        let key: EndpointKey = EndpointKey::new(peer)?;
+        let state: &PolicyState = self.guard.state()?;
+        let source: &Record = state.record(RecordKey::Source(stamp.source.index))?;
+        let endpoint: &EndpointRecord = state
+            .endpoints
+            .get(stamp.endpoint)
+            .filter(|entry: &&EndpointRecord| entry.key == Some(key))
+            .ok_or(SourcePolicyError::Foreign)?;
+        if source.epoch != stamp.source_epoch || endpoint.record.epoch != stamp.endpoint_epoch {
+            return Err(SourcePolicyError::Stale);
+        }
+        Ok(())
     }
 }
 
@@ -3140,6 +3180,38 @@ impl ProtectedEndpointGuard<'_> {
 pub(super) struct ProtectedSendStamp {
     /// Same-cell source/endpoint epochs, actual request allocation and send observation.
     correlation: Correlation,
+}
+
+/// The original policy identity and restriction epochs, detached from live custody.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+#[must_use = "retain the original policy identity for joined receipt validation"]
+pub(super) struct ProtectedReceiptPolicy {
+    /// Original catalogue identity, independent of the mutable policy cell.
+    source: SourceIdentity,
+    /// Original permanently bound endpoint slot in this catalogue's policy cell.
+    endpoint: usize,
+    /// Source restriction epoch at the concrete submission.
+    source_epoch: u64,
+    /// Endpoint restriction epoch at the same submission.
+    endpoint_epoch: u64,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ProtectedSendStamp {
+    /// Detach only the historical policy coordinates from this original submission.
+    /// Only the original receiving owner can bind these facts to a committed receipt.
+    pub(super) fn receipt_policy(&self) -> ProtectedReceiptPolicy {
+        let correlation: &Correlation = &self.correlation;
+        ProtectedReceiptPolicy {
+            source: SourceIdentity {
+                domain: Arc::clone(&correlation.cell.identity_domain),
+                index: correlation.source,
+            },
+            endpoint: correlation.endpoint,
+            source_epoch: correlation.source_epoch,
+            endpoint_epoch: correlation.endpoint_epoch,
+        }
+    }
 }
 
 /// Mandatory immutable source/endpoint custody passed down the prepared chain.

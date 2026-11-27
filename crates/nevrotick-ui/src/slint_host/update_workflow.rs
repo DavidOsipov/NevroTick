@@ -100,6 +100,8 @@ enum Phase {
     Installing(SampleOffer),
     /// All simulated steps completed and the timer has retired.
     Complete,
+    /// A pre-install operation was cancelled and its timer retired.
+    Cancelled,
 }
 
 /// Identify which arm owns a tick. The check arm cannot advance consented work.
@@ -133,6 +135,7 @@ impl UpdatePreviewState {
             Phase::Verifying(offer) => (UpdateStage::Verifying, Some(offer)),
             Phase::Installing(offer) => (UpdateStage::Installing, Some(offer)),
             Phase::Complete => (UpdateStage::Complete, None),
+            Phase::Cancelled => (UpdateStage::Cancelled, None),
         };
         let mut preview: UpdatePreview = UpdatePreview {
             generation: self.generation,
@@ -172,6 +175,39 @@ pub(super) fn install(window: &AppWindow, state: &Rc<RefCell<BindingState>>) {
             resolve(&window, &state, generation, Decision::Dismiss);
         }
     });
+    let weak: slint::Weak<AppWindow> = window.as_weak();
+    let owner: Weak<RefCell<BindingState>> = Rc::downgrade(state);
+    window.on_preview_update_cancel(move |generation| {
+        if let (Some(window), Some(state)) = (weak.upgrade(), owner.upgrade()) {
+            cancel(&window, &state, generation);
+        }
+    });
+}
+
+/// Cancel only the current pre-install sample and retire its timer.
+fn cancel(window: &AppWindow, state: &Rc<RefCell<BindingState>>, generation: i32) {
+    let Some(_guard) = ProjectionGuard::enter(state) else {
+        return;
+    };
+    if !offer_visible(window) {
+        return;
+    }
+    let (preview, timer): (UpdatePreview, Option<Timer>) = {
+        let mut owner: std::cell::RefMut<'_, BindingState> = state.borrow_mut();
+        if owner.navigation.page() != SessionPage::About
+            || owner.updates.generation != generation
+            || !matches!(
+                owner.updates.phase,
+                Phase::Checking | Phase::Downloading(_) | Phase::Verifying(_)
+            )
+        {
+            return;
+        }
+        owner.updates.phase = Phase::Cancelled;
+        (owner.updates.projection(), owner.updates.timer.take())
+    };
+    drop(timer);
+    apply(window, preview);
 }
 
 /// Invalidate an unconfirmed check or offer when About leaves view.
@@ -216,7 +252,10 @@ fn check(window: &AppWindow, state: &Rc<RefCell<BindingState>>) {
     let preview: UpdatePreview = {
         let mut owner: std::cell::RefMut<'_, BindingState> = state.borrow_mut();
         if owner.navigation.page() != SessionPage::About
-            || !matches!(owner.updates.phase, Phase::Idle | Phase::Complete)
+            || !matches!(
+                owner.updates.phase,
+                Phase::Idle | Phase::Complete | Phase::Cancelled
+            )
         {
             return;
         }

@@ -39,6 +39,47 @@ midnight, timezone changes and daylight-saving behavior.
 [OD-13 calendar decision](../docs/nevrotick-owner-decisions.md#slint-calendar-dependency--24-november-2026)
 [Build evidence](build-optimization.md#replace-chrono-in-the-selected-slint-desktop-graph)
 
+## About cancellation candidate — 27 November 2026
+
+The fixture candidate adds distinct Cancel check and Cancel update actions and an
+inline cancelled result. It retires the current timer before publication and
+requires the current About page, generation and a pre-install phase. A fresh check
+is available after cancellation. Installation refuses cancellation. Stale callback
+and tick controls include a replacement check and an accepted replacement update.
+This remains an in-memory sample; it performs no download or installation.
+
+The candidate adds three update meanings (ordinals 610–612), raising the active
+roster to 525 with a matching map ceiling. Schema 2, text contract 4, English
+revision 4 and the four-million decoder work bound remain. Compact formatting in
+seven argument-free catalog sections gives 3,998,450 calculated JSON work units;
+actual Rust JSON/CBOR admission and the new callback controls remain unverified
+until the selected UI compiler and test lane runs on this exact candidate.
+The v2/v3 fixtures retain the earlier incompatible-version controls. Native UI,
+critical-text approval and production updater qualification remain open.
+
+For the revised, independently reviewed candidate, one integrated default-GNU
+UI verification attempt starts at 2026-11-26 21:49 UTC and ends by 22:04 UTC.
+It selects the admitted isolation, text and source controls, formatting,
+compiler, Clippy, UI tests and doctests, including cancellation and the actual
+JSON/CBOR consumers. Four build jobs use an owned Windows-volume scratch path;
+the Linux disk and memory floors remain active. The earlier six-minute attempt
+on the narrower candidate stopped before tests and is not reused as a pass for
+this changed source. Native Windows and production updater gates remain open.
+
+The integrated attempt passed its source controls, dependency inventory,
+format, compiler, Clippy and Rustdoc, then stopped while building the UI
+test binary: rustc/LLVM reported allocation failure and aborted before any
+UI tests ran. The sandbox had a 4-GiB per-process address-space limit; host
+available-memory observations stayed above 5.51 GB near the failure and do
+not establish which allocation boundary caused it. The monitor did not stop
+the run, and the owned processes retired. The incomplete receipt is
+`%LOCALAPPDATA%/NevroTick/ui-cancel-final-2711.jN9aWjYj/receipt.json`,
+SHA-256 `a9ee59f73264afa08157a5697ad6b86f50fdca3bd276f5cf84e57c254e7d3734`;
+its 765-input inventory SHA-256 is
+`620a8d64a5f06c2836db6e80318199a7cc066ebdb5a748ea6e7856fc1ae6cdac`.
+The callback, Rust JSON/CBOR and doctest results remain unverified for this
+candidate; the earlier candidate's completed lanes do not fill that gap.
+
 ## Manual updater contract and acceptance — 25 November 2026
 
 **Status: accepted product/design handoff; bounded Rust/Slint About preview implemented
@@ -187,6 +228,54 @@ a focused source repair and affected rerun; absent evidence does not justify
 repeating unrelated suites or changing browser/host policy. Attach the bounded
 result here, preserving the existing source/Node/structure receipt. Neither this
 HTML pass nor its current gap qualifies or blocks unrelated native product work.
+
+**Browser availability follow-up — 27 November 2026.** A cached Chromium
+executable was found outside PATH at
+`~/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome`, SHA-256
+`377a9fc07b495c3b8d0ab8ec1fdfd153641759f9756fea34d8dfce4de82f5025`.
+An installed Playwright alpha driver names browser revision 1247, so its
+compatibility with this binary and both tool trees' admission remain open.
+The current standalone SHA-256 matches the published value above; the bundle
+manifest's 185 entries also match. Neither a cached executable nor these
+source checks establish a working or permitted browser environment. The one
+prototype browser pass remains unspent and no browser was launched in this
+follow-up. An inert, separately bounded preflight must establish exact tool
+identity, offline credential-free isolation and owned process cleanup before
+the complete browser review; no package download or host profile is selected.
+The inert readiness stage runs `04:13:39Z`–`04:28:39Z` on 27 November 2026,
+including preparation, independent review, at most one causal correction and
+one bounded blank-page browser attempt. It binds exact browser/driver/runtime
+trees, forbids external networking and host credential/profile mounts, retains
+first failure and retires its owned scope. Root and scratch must retain the
+existing four-GiB filesystem floor and host memory the one-GiB floor; finite
+CPU, memory, process, output and wall limits must be admitted before launch.
+This preflight executes no prototype and does not consume or pass the separate
+one-pass browser review. If its prerequisites or launch fail, stop with an
+incomplete result; do not silently retry or relax the boundary.
+Source inspection of the installed driver found that it disables Chromium's
+back-forward cache by default. The later prototype pass must narrowly account
+for that default and observe a genuine persisted back/forward restoration;
+a synthetic event or ordinary launch is not that evidence. The first inert
+launcher draft failed independent source review: its timeout/failure cleanup
+did not establish retirement of all scope descendants, its final tool
+bookend occurred only on success, and its namespace/network/identity checks
+were not an admission handshake before loading the driver. No browser was
+started and those gaps must be resolved before the one inert attempt.
+The stage stopped **incomplete** after that review; no browser or prototype
+test ran. Its private draft under
+`~/.local/share/nevrotick/browser-inert-preflight-20261127-0414/` retains
+`driver.cjs` SHA-256 `a6ca440bfc627af189feaaa137aa64cf77e57bb5274f024a564f19ae76972554`,
+`supervise.py` SHA-256 `ae455264fc4624dc8bbb4471de685438bb4bf7ee121603544ab5f8c90a59383a`,
+and the tool inventory SHA-256
+`a2e192fd50102f522763043dec25ac35c17a0e6f31963da5e55019e7a32aa46a`.
+The earlier isolated supervisor admits a different fixed Python suite and
+resource profile; it cannot be reused as Node/Chromium admission. Re-entry
+requires a separately reviewed pinned-process identity gate and exact-scope
+watchdog, or an already admitted browser environment, plus fresh tool and
+resource checks. Two inventoried library links also lead to unmounted
+`/etc/alternatives`; whether Chromium needs those libraries is unknown and the
+runtime closure must be checked without broadening host mounts by assumption.
+The prototype's one browser pass remains unspent.
 
 **Documentation routing follow-up — 25 November 2026:** based on
 `a4a3bb043fdb09126d3659595d3ff8b20cdc8198`, the existing indexes, feature/update
@@ -445,8 +534,8 @@ belongs to the current check or progress arm. Generation and phase guards
 reject stale callbacks. The fixture scope permits simulated effects only.
 [Receiver](../crates/nevrotick-ui/src/slint_host/update_workflow.rs)
 
-The catalog now admits 522 messages at schema 2 and text contract 3. The
-checker traces all 522 meanings to their renderers or reached feedback sinks.
+At that checkpoint the catalog admitted 522 messages at schema 2 and text
+contract 3. The checker traced all 522 meanings to their renderers or reached feedback sinks.
 The offer and both choices use the same critical group. The four displayed
 package facts come from the same typed offer consumed by Yes. The v2 CBOR
 fixture remains available for the incompatible-version refusal control.
@@ -546,12 +635,12 @@ The following bullets retain the historical PR-preparation environment:
 | Localization | Strict original UTF-8 JSON, duplicate/unknown-field rejection, closed schema, canonical bounded CBOR, Unicode/emoji policy, typed placeholders, literal sinks and atomic catalog publication. Missing/blank/orphan consumer checks run before Cargo. Catalogs cannot choose actions, severity, permissions, routes or URIs. |
 | Dependencies/tooling | One pinned graph and schema3 admission policy; Windows-only Winit/AccessKit/WinRT/Shell features, narrow Linux software test profile, reviewed local `spin_on` and AccessKit patches, guarded verifier/captures and negative checker controls. No new Core runtime or broad execution exception. |
 
-**Current text identities — 26 November:** schema 2, text contract 3, English
-revision 3 and informational GUI build 2; 522 active messages. The
+**Candidate text identities — 27 November:** schema 2, text contract 4, English
+revision 4 and informational GUI build 2; 525 active messages. The
 [protected contract](../crates/nevrotick-ui/src/localization/contract.rs) and
 [English catalog](../crates/nevrotick-ui/locales/en.json) carry the exact current
 roster and identity. Current fingerprint:
-`091f71d5341d9963611cf73de985795803cc65b883884baa2d62af20a8ec95a7`.
+`8636c6e87302c241efa7060644df0734491f1bc96cd36acc3a61771749bc0c69`.
 The [earlier text2 cohort](s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
 retains its historical 509 active IDs, 596 stable ordinals, 87 inactive identities,
 426 immutable output rows and fingerprint
@@ -1792,6 +1881,173 @@ for remote images and System32 search, early static loads, structured failure
 delivery, and packaged activation remain open. The selected local Low-label
 case is recorded below. The other process profiles, signing and release retain
 their existing owners.
+
+### Require permanent strict handles before Slint — 26 November 2026
+
+W11-W10/S6.1, WIN-3/WIN-4 and CHECK-16/18/20/23/26. Architecture
+§15.1/15.4 requires separate GUI strict-handle qualification. The existing
+startup owner now has a bounded child to require both documented fields
+before backend selection. Initial word `3` needs no setter. Initial
+`0`, `1` or `2` requires one exact `3` request and a fresh exact readback;
+unknown flags and native or incomplete-readback failures must retain the
+first typed cause and return before Slint. No weaker retry is permitted.
+The ordinary portable fixture remains free of process-policy effects.
+The private GUI adapter and GPL-3.0-only graph remain the owners; importing
+the GPL-2.0-only native-platform crate is not selected.
+
+The stage starts at `2026-11-26T16:15:54Z` and ends no later than
+`17:20:54Z`, with 65 minutes total: 20 for source/focused controls/review,
+25 for the unchanged configured Windows build, 15 for native controls,
+and five for final readback/cleanup. Every setup failure, repair and
+partial run consumes that same allowance. Root owns Python enforcement,
+integration and the original offline guest; a private-worktree worker
+owns only Rust startup changes and a separate worker prepares the inert
+native capsule. Fresh-context review assesses the contract and combined
+candidate independently.
+
+| Stage and skill owner | Requirement, action and observable evidence |
+| --- | --- |
+| Rust/contracts, native UI and native-UI security | Fixed current-process DWORD ABI, checked word `3`, bounded typed first-failure propagation through the real startup caller, source-visible types and unchanged dependency/licence boundary. |
+| Static, contract, unit and boundary QA | Actual source consumer refuses missing/ignored/deferred/late startup calls beside the maintained caller. Ordered literal native-call controls cover recognized and reserved words and every failed stage. A weakened effective-state guard must fail its intended case. Source enforcement is not a runtime proof. |
+| Configured build and regression QA | Format the completed source before freezing. Re-admit the current default Windows graph, run every configured guarded-UI row and retain the exact PE/PDB/object/map and receipts. Use the corrected `Assets` input and admitted vendor/tool custody. |
+| Native, lifecycle and package QA | A fresh source-linked process calls the production guard and independently reads effective state. The exact guarded GUI opens its fixture window, is observed under permanent strict handles and exits through its original close owner. Retain original process identity, streams, native result and retirement; no host clock, services, trust, signing or COM10 effects. |
+| Independent review and final qualification | Inspect source, real consumer and native/artifact outputs. Preserve failures and missing observations. Record reached scope and next action in this existing owner, not a separate plan. |
+
+The selected exit is the source/build/native startup child, not full UI
+qualification. The registered startup adapters still require their 90%
+executable-line and 95% critical-file mutation gates at their existing
+qualification owner. Actual invalid-handle fault behavior, debugger/
+Verifier conditions, ordinary-user and installed activation, complete
+mitigation compatibility and deferred D1–D3 retain their own exits.
+No generated mutation score, full accessibility pass or release claim
+follows from directed controls or one successful fixture close.
+
+The integrated source and bounded observations reached their selected
+exit. The actual startup caller propagates the typed strict-handle
+refusal before backend selection. Six new literal controls cover the
+recognized words, all thirty reserved positions, every native failure
+and fixed diagnostic text. The complete source-linked policy suite
+passed 15 portable tests. Its private bit-zero-only effective-state
+guard failed exactly the incomplete-word case, with fourteen healthy
+neighbors. This supplies no generated mutation percentage. The actual
+source checker passed all eighteen controls after its new missing-guard
+case first exposed the prior acceptance gap.
+
+The first source-control dispatch had an isolated-import setup failure;
+explicit unittest discovery then reached the intended source rejection.
+The first full Windows build caught two unsafe calls in one block in
+the independent test query. Separating the borrowed pseudohandle from
+the query preserved its semantics and warning policy. The corrected
+candidate passed all 38 configured guarded default-profile Windows
+rows. Its 778 source hashes match Main, and the exact UI/PDB/entry
+object/map remain in the export. The earlier receipts and source-linked
+suite remain attributed to their earlier test-helper bytes.
+
+Independent review required stricter native result consumers before
+execution: exact field sets and integer/Boolean kinds, complete normal
+retirement, known image flags and coherent elapsed bounds. The original
+readers accepted fifty invalid specimens among 171 data controls. The
+bound corrected readers passed all 171, including nine useful healthy
+neighbors and exact returned flag pairs. The leaf admission also binds
+the coordinator's observed producer exit zero and completed source/SDK
+bookends; successful command rows from its finally receipt alone are
+insufficient. These are evidence-consumer controls, not product test
+executions or authenticated numeric-process identities.
+
+The first native leaf observer stopped at its module import because
+its invocation omitted the session execution policy used by the
+existing GUI recipe. No product child or testcase started. Its primary
+record and empty streams were preserved despite the initial host
+reader's nonempty-output refusal. Exact cleanup observed no process
+using the sole pinned image, held and hashed it, removed only the
+original nonce directory and retired its transfers. The corrected
+invocation uses the existing process-scoped `RemoteSigned` selection;
+it changes no registry execution policy.
+[PowerShell session parameter](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_exe?view=powershell-5.1#-executionpolicy-executionpolicy)
+
+In the original offline build-26100 guest, the fresh source-linked
+process 1568 independently observed `0 → 3`, passed its one exact
+selected test and retired its process, both streams and private scratch.
+The exact guarded UI
+`99b4b122e12d444478735d4190bfd5dfbbd44f7ac53b24d4f63942ac175c12ae`
+then opened the owned sample window as process 7892. It reported strict
+handles `3`, image flags `7` and debugger absent. Startup took 360 ms;
+normal Close, exit zero and complete collection took 518 ms. The
+supported-v3 probe, original process/creation identity, source and input
+bookends, EOF/reaping and empty transfer directories passed independent
+raw review. Both launcher and child were elevated, elevation type `1`
+and High integrity `12288`: this is the unpackaged elevated lab profile,
+not ordinary-user qualification. Application Verifier state and actual
+invalid-handle fault behavior were not established.
+
+The Windows-only `HostError` cause test compiled in the all-target
+checkpoint but was not executed. The meaningful must-use annotations
+are present and compile; their actual ignored-wrapper diagnostic control
+remains unverified. The 90%/95% file gates, ordinary-user/installed
+activation and complete mitigation/accessibility/package qualification
+remain open. This new UI is not present in the preceding unsigned lab
+archive; retain that archive's original bytes and candidate scope.
+Further assembly needs current common-source/role admission at its P6
+checkpoint. David requested a safe PC-restart point: save source,
+untracked files, artifacts and the temporary vendor before notifying him;
+after reboot re-admit resources and the replacement guest before any
+dependent native action.
+
+The private producer worktree, both leaf-build copies and the empty
+Windows build scratch were retired after byte-checked export. Main's
+index was preserved, and the three new untracked Rust files are included
+in the durable candidate patch. The temporary vendor was retained as
+`vendor-before-restart.tar.gz`; restoring that cache still requires
+private extraction and normal source admission. All owned build, native,
+cleanup and archival jobs are terminal, and the original transfer
+directories are empty. No further job is started before the requested
+restart handoff.
+
+**Post-restart reentry — 26 November 2026.** David confirmed the PC restart
+and a newly started Sandbox. HOST inventory identified the sole new guest
+`43ca91ed-2a92-4302-b75d-ac977584fe82` with unchanged `wsb` version
+`0.8.114.0`; the previous guest's observations retain their original scope.
+The retained vendor archive matched its recorded SHA-256 and was privately
+extracted after rejecting linked, escaping, duplicate and unsupported entries.
+Its extracted payload still needs the normal vendor-content admission. The
+ten-minute reentry allowance, `17:27:47Z`–`17:37:47Z`, ended incomplete before
+that admission and the new guest's effective configuration checks. No product
+command or guest payload ran in this attempt. The original restoration and
+closeout records are under
+`~/.local/share/nevrotick/restart-reentry-2611.7xwmkxm5/`.
+Keep that incomplete attempt; a dependent native child needs a separately
+reviewed fitting approach and current environment admission. Independent
+service source work continues.
+
+The follow-up read-only vendor admission checked the restored payload against
+the current dependency policy using the configured verifier. It accepted
+29,510 files. Inventory SHA-256 is
+`f1d5d9736121beee9ee3ad510fd641179c0f47a3453982936230fb90772dfa82`.
+`restored-vendor-admission.json` in the same directory records the policy,
+lockfile, verifier and extraction bindings. The current guest's reduced
+offline profile was also observed for the separate
+[service feasibility experiment](windows11-integration.md#privilege-assisted-service-ownership-candidate--pending-owner-disposition).
+The UI actor, package, toolchain and resource admissions still apply to
+the next UI run.
+
+A later storage check moved only the generated Cargo target from the completed
+`s21-terminal-fence-green-checkpoint-2611` run to an archive on the local Windows
+volume. A full restore rehearsal matched all 2,576 entries, file hashes, modes,
+timestamps and hardlink groups. WSL gained 729,903,104 available bytes and
+passed the service runner's 4 GiB floor. The original receipt, source and
+Git state were preserved. `cargo-target-relocation.json` in the same reentry
+directory binds the archive location and hash to the completed restore check.
+
+| Record under `~/.local/share/nevrotick/ui-strict-handles-2611.m_d46orh/` | SHA-256 |
+| --- | --- |
+| `windows-default-guarded-r2.json` | `3ae15bcef34cdf325fe09d9ca7ad3b2fd4c580704d69a8e3612d4e1b35c030a3` |
+| `policy-leaf-current/receipt.json` | `deb49ce3d7a3d7198fbd22d6f6d740168cfddbf552dd89b148d6873657f40ff6` |
+| `readback-green-r4/result.json` | `0aacbcc1495e8d2b6dcbb9a92f2c05b6719d29bb0f47f84f00da1fdf1d66185d` |
+| `native-preparation/retire-failed-leaf-880f778b/execution.json` | `8e06851c371725ef62f96747daf0e62df0fb30aa3714921c82e0d0924aba51f0` |
+| `native-preparation/bound-leaf-r4/results/verification.json` | `1513eb968ede74ca194ac9be8e5f7aaf107247504aeb8340332ab5b15489664b` |
+| `native-preparation/bound-ui/native/receipt.json` | `99926413a143ca81bf6520c13c37dcc1afa43747ba72a66dd445d254ffa5882f` |
+| `review/final-native-readback-review.md` | `1b73ce32a526da4b416ae16f29d172a9882a1e6ab49fd32d3d1714a79c6e5239` |
+| `vendor-before-restart.tar.gz` | `2339af490d8fa1908af2d1bb64948c0d56609abcd81ff596d1790df1af4f3096` |
 
 ### Configure the default DLL search before Slint backend selection
 

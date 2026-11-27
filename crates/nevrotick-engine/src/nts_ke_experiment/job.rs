@@ -95,6 +95,18 @@ impl PreparedInvocation {
         }
     }
 
+    /// Capture the exact collector context for the original managed preparation.
+    /// Other modes issue no joined managed receiving context.
+    pub(super) fn managed_receiving(&self) -> Option<super::receiving::ManagedReceivingContext> {
+        let super::ExchangeMode::ManagedProtected(source) = &self.config.mode else {
+            return None;
+        };
+        Some(super::receiving::ManagedReceivingContext::from_prepared(
+            source.definition(),
+            &self.control,
+        ))
+    }
+
     /// Retain a genuinely checked expired Control for the actual startup refusal probe.
     /// This test seam grants no caller-selected clock to normal preparation.
     #[cfg(test)]
@@ -272,6 +284,14 @@ pub(super) struct ReceivingOutcome {
 }
 
 impl ReceivingOutcome {
+    /// Observe the first original commit without moving its receiving custody.
+    #[cfg(all(test, any(windows, target_os = "linux")))]
+    pub(super) fn first_committed_at(&self) -> Option<Instant> {
+        self.joined
+            .first_receipt()
+            .map(|receipt: &Arc<ManagedProtectedHistory>| receipt.history().committed_at())
+    }
+
     /// Consume actual collected custody only after all normal-retirement facts agree.
     /// # Errors
     /// Preserve the complete abnormal outcome, including any original history.

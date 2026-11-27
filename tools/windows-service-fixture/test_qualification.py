@@ -5,16 +5,28 @@ from __future__ import annotations
 import fcntl
 import importlib.util
 import json
+from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
+from typing import TypedDict
 import unittest
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, call, mock_open, patch
 
 SPEC = importlib.util.spec_from_file_location("fixture_qualification_controls", Path(__file__).with_name("qualification.py"))
 Q = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(Q)
+
+
+class CommandObservation(TypedDict):
+    exit_code: int
+    output: str
+    failure: str | None
+
+
+class GraphCommandObservation(CommandObservation):
+    argv: list[str]
 
 
 class HostAdmissionTests(unittest.TestCase):
@@ -107,8 +119,10 @@ class HostAdmissionTests(unittest.TestCase):
                 self.assertEqual(settings.get("RUST_TEST_NOCAPTURE"), "1" if mutation else None)
                 self.assertEqual(execute.call_args.kwargs["environment"], {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
 
-    def test_relocated_work_resource_callback_returns_actual_stop(self):
+    def test_relocated_work_resource_callback_returns_actual_stop(self) -> None:
         """The runner's actual callback checks the selected work during execution."""
+        reason: str | None
+        directory: str
         for reason in (None, "DISK_RESERVE", "WORK_DISK_RESERVE"):
             with self.subTest(reason=reason), tempfile.TemporaryDirectory(prefix="service-callback-") as directory:
                 parent: Path = Path(directory)
@@ -123,19 +137,25 @@ class HostAdmissionTests(unittest.TestCase):
                 config: Path = work / "cargo-home/config.toml"
                 config.parent.mkdir()
                 config.write_text("source-control\n")
-                admitted: dict = {"stable": stable, "extensions": {}, "helpers": Q.host_helpers()}
+                helpers: dict[str, dict[str, str]] = Q.host_helpers()
+                extensions: dict[str, Path] = {}
+                admitted: dict[str, Path | dict[str, Path] | dict[str, dict[str, str]]] = {
+                    "stable": stable, "extensions": extensions, "helpers": helpers,
+                }
 
-                def observe(_argv, **options):
-                    observed: str | None = options["resource_guard"]()
+                def observe(_argv: list[str], *, resource_guard: Callable[[], str | None],
+                            **_options: object) -> CommandObservation:
+                    observed: str | None = resource_guard()
                     return {"exit_code": 0, "output": "controlled",
                             "failure": None if observed is None else "resource stop: " + observed}
 
                 with patch.object(Q, "check_core_dumps"), patch.object(Q, "check_service_tools"), patch.object(
                         Q, "resource_stop_reason", side_effect=[None, reason]) as headroom, patch.object(
                         Q.C.PRODUCT.ENV, "run", side_effect=observe):
-                    result: dict = Q.run_command(work, ["/toolchain/bin/cargo", "--version"], admitted,
-                                                 vendor, source, guard_scratch=True)
-                self.assertEqual(headroom.call_args_list, [unittest.mock.call(work), unittest.mock.call(work)])
+                    result: dict[str, int | str | list[str] | None] = Q.run_command(
+                        work, ["/toolchain/bin/cargo", "--version"], admitted, vendor, source, guard_scratch=True,
+                    )
+                self.assertEqual(headroom.call_args_list, [call(work), call(work)])
                 self.assertEqual(result["failure"], None if reason is None else "resource stop: " + reason)
 
     def test_native_profile_writes_only_selected_file_through_both_readonly_aliases(self):
@@ -235,7 +255,7 @@ class ResourceHeadroomTests(unittest.TestCase):
                         Q.Path, "open", mock_open(read_data=b"MemAvailable: 1048576 kB\n")):
                     self.assertEqual(Q.resource_stop_reason(scratch), expected)
 
-    def test_selected_scratch_admission_preserves_defaults_and_rejects_aliases(self):
+    def test_selected_scratch_admission_preserves_defaults_and_rejects_aliases(self) -> None:
         with tempfile.TemporaryDirectory(prefix="service-scratch-control-") as directory:
             parent = Path(directory)
             root, cache, scratch, public = (parent / name for name in ("repo", "cache", "scratch", "public"))
@@ -246,6 +266,7 @@ class ResourceHeadroomTests(unittest.TestCase):
             alias.symlink_to(scratch, target_is_directory=True)
             with patch.object(Q, "ROOT", root), patch.object(Q, "CACHE", cache):
                 self.assertEqual(Q.admit_scratch_root(None, "fixture-test"), cache)
+                lane: str
                 for lane in ("graph", "fixture-test", "privilege-checkpoint"):
                     with self.subTest(allowed_lane=lane):
                         self.assertEqual(Q.admit_scratch_root(scratch, lane), scratch)
@@ -261,13 +282,18 @@ class ResourceHeadroomTests(unittest.TestCase):
                     with self.subTest(path=path, lane=lane), self.assertRaises(Q.Incomplete):
                         Q.admit_scratch_root(path, lane)
 
-    def test_fixture_relocation_dispatch_and_reserve_failures(self):
+    def test_fixture_relocation_dispatch_and_reserve_failures(self) -> None:
         """Observe the fixed lane and its receipt through the actual dispatch owner."""
+        scenario: str
+        directory: str
         for scenario in ("healthy", "pre-root", "pre-scratch", "during-root", "during-scratch",
                          "post-root", "post-scratch"):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory(prefix="service-dispatch-") as directory:
                 parent: Path = Path(directory)
-                root, cache, scratch, vendor = (parent / name for name in ("repo", "cache", "scratch", "vendor"))
+                root: Path = parent / "repo"
+                cache: Path = parent / "cache"
+                scratch: Path = parent / "scratch"
+                vendor: Path = parent / "vendor"
                 records: Path = root / "records"
                 records.mkdir(parents=True)
                 scratch.mkdir(mode=0o700)
@@ -278,28 +304,35 @@ class ResourceHeadroomTests(unittest.TestCase):
                 graph: Path = records / "graph.json"
                 graph.write_text("{}")
                 identity: dict[str, str] = {Q.SELF: "controlled-source-digest"}
-                admitted: dict = {"readonly_roots": [], "extensions": {}}
+                readonly_roots: list[Path] = []
+                extensions: dict[str, Path] = {}
+                admitted: dict[str, list[Path] | dict[str, Path]] = {
+                    "readonly_roots": readonly_roots, "extensions": extensions,
+                }
                 stop: str = "DISK_RESERVE" if scenario.endswith("root") else "WORK_DISK_RESERVE"
                 headroom: list[str | None] = ([stop] if scenario.startswith("pre-") else
                                               [None, stop] if scenario.startswith("post-") else [None, None])
                 failure: str | None = "resource stop: " + stop if scenario.startswith("during-") else None
-                patches: dict = {"ROOT": root, "CACHE": cache, "RECORDS": records,
+                patches: dict[str, Path | Callable[..., object]] = {"ROOT": root, "CACHE": cache, "RECORDS": records,
                     "disable_core_dumps": lambda: {"limit_bytes": 0}, "no_ambient_flags": lambda: None,
                     "source_identity": lambda: ({}, identity), "index_identity": lambda: {"sha256": "index"},
                     "manifest_admission": lambda _policy: {}, "admit_service_tools": lambda: admitted,
                     "tool_identity": lambda _admitted: {"tool": "digest"}, "select_vendor": lambda _args: vendor}
-                args = SimpleNamespace(label="selected", lane="fixture-test", scratch_root=scratch,
-                                       vendor_dir=vendor, graph_receipt=graph)
+                args: SimpleNamespace = SimpleNamespace(label="selected", lane="fixture-test", scratch_root=scratch,
+                                                        vendor_dir=vendor, graph_receipt=graph)
+                name: str
+                value: Path | Callable[..., object]
+                stack: ExitStack
                 with ExitStack() as stack:
                     for name, value in patches.items():
                         stack.enter_context(patch.object(Q, name, value))
                     stack.enter_context(patch.object(Q.shutil, "disk_usage", return_value=SimpleNamespace(free=2**60)))
-                    resource_check = stack.enter_context(patch.object(Q, "resource_stop_reason", side_effect=headroom))
+                    resource_check: MagicMock = stack.enter_context(patch.object(Q, "resource_stop_reason", side_effect=headroom))
                     stack.enter_context(patch.object(Q.C.PRODUCT, "admit_vendor", return_value={}))
                     stack.enter_context(patch.object(Q.C.PRODUCT, "inventory", return_value=identity))
                     stack.enter_context(patch.object(Q.C, "read_analysis_json", return_value={"controlled": True}))
-                    receive = stack.enter_context(patch.object(Q, "receive_graph"))
-                    execute = stack.enter_context(patch.object(Q, "run_command", return_value={
+                    receive: MagicMock = stack.enter_context(patch.object(Q, "receive_graph"))
+                    execute: MagicMock = stack.enter_context(patch.object(Q, "run_command", return_value={
                         "exit_code": 0, "output": "controlled", "failure": failure}))
                     if scenario == "healthy":
                         self.assertEqual(Q.run(args), "passed")
@@ -311,9 +344,14 @@ class ResourceHeadroomTests(unittest.TestCase):
                     self.assertFalse(receipt.exists())
                     execute.assert_not_called()
                     continue
-                record: dict = json.loads(receipt.read_text())
+                record: object = json.loads(receipt.read_text())
+                if not isinstance(record, dict):
+                    self.fail("Expected a receipt object")
+                limits: object = record["limits"]
+                if not isinstance(limits, dict):
+                    self.fail("Expected a receipt limits object")
                 self.assertEqual(record["status"], "passed" if scenario == "healthy" else "incomplete")
-                self.assertEqual(record["limits"]["scratch_disk_floor_bytes"], 4 * 1024 ** 3)
+                self.assertEqual(limits["scratch_disk_floor_bytes"], 4 * 1024 ** 3)
                 self.assertEqual(receive.call_count, 1)
                 self.assertEqual(receive.call_args.args[0], {"controlled": True})
                 self.assertEqual(execute.call_count, 1)
@@ -321,17 +359,11 @@ class ResourceHeadroomTests(unittest.TestCase):
                                       "--frozen", "--offline", "--all-targets", "--", "--test-threads=1"]
                 self.assertEqual(execute.call_args.args[0:2], (scratch / "selected", command))
                 self.assertTrue(execute.call_args.kwargs["guard_scratch"])
-                self.assertEqual(resource_check.call_args_list[0], unittest.mock.call(scratch))
+                self.assertEqual(resource_check.call_args_list[0], call(scratch))
                 if scenario == "healthy" or scenario.startswith("post-"):
-                    self.assertEqual(resource_check.call_args_list[1], unittest.mock.call(scratch / "selected"))
+                    self.assertEqual(resource_check.call_args_list[1], call(scratch / "selected"))
                 if scenario != "healthy":
                     self.assertFalse(record["bookends_passed"])
-
-    def test_stale_graph_binding_is_refused(self):
-        graph: dict = {"status": "passed", "lane": "graph", "bookends_passed": True,
-                       "index_bytes_unchanged": True, "graph_binding": {"candidate": "old"}}
-        with self.assertRaisesRegex(Q.Incomplete, "Graph receipt"):
-            Q.receive_graph(graph, {"candidate": "current"}, {}, "/toolchain/bin/cargo")
 
     def test_existing_work_leaf_releases_shared_writer_without_a_receipt(self):
         with tempfile.TemporaryDirectory(prefix="service-scratch-control-") as directory:
@@ -535,6 +567,39 @@ class EngineCompositionGraphTests(unittest.TestCase):
         )
         development += f"`-- windows-sys v0.61.2|{','.join(test_features)}\n    `-- windows-link v0.2.1|\n"
         return policy, data, normal, development
+
+    def test_stale_graph_binding_is_refused(self) -> None:
+        """Admit both raw graph rows first, then change only the receipt binding."""
+        policy: dict[str, object]
+        linux_data: dict[str, object]
+        linux_normal: str
+        linux_development: str
+        windows_data: dict[str, object]
+        windows_normal: str
+        windows_development: str
+        _, linux_data, linux_normal, linux_development = self.fixture()
+        policy, windows_data, windows_normal, windows_development = self.windows_fixture()
+
+        cargo: str = "/toolchain/bin/cargo"
+        outputs: tuple[str, ...] = (json.dumps(linux_data), linux_normal, linux_development,
+                                    json.dumps(windows_data), windows_normal, windows_development)
+        commands: list[GraphCommandObservation] = [
+            {"argv": argv, "exit_code": 0, "failure": None, "output": output}
+            for argv, output in zip(Q.graph_commands(cargo), outputs, strict=True)
+        ]
+        rows: list[dict[str, object]] = [
+            Q.graph_row(policy, Q.TARGETS[0], *outputs[:3]),
+            Q.graph_row(policy, Q.TARGETS[1], *outputs[3:]),
+        ]
+        binding: dict[str, str] = {"candidate": "current"}
+        graph: dict[str, object] = {
+            "status": "passed", "lane": "graph", "bookends_passed": True, "index_bytes_unchanged": True,
+            "graph_binding": binding, "commands": commands, "graph_rows": rows,
+        }
+        Q.receive_graph(graph, binding, policy, cargo)
+        stale_graph: dict[str, object] = {**graph, "graph_binding": {"candidate": "old"}}
+        with self.assertRaisesRegex(Q.Incomplete, r"^Graph receipt does not admit these exact source/configuration/tool/vendor bytes\.$"):
+            Q.receive_graph(stale_graph, binding, policy, cargo)
 
     def test_windows_private_bindings_are_admitted_only_in_development(self):
         result = self.receive(self.windows_fixture(), Q.TARGETS[1])

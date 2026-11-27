@@ -40,8 +40,8 @@ pub use nts_ke_experiment::managed_preview::ProtectedTimingObservationRefusal;
 pub use nts_ke_experiment::managed_preview::{
     CertificateTimeProvenance, ManagedPowerObservation, ManagedProtectedPairReport,
     ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, SourceProtectedProbeFailure,
-    SourceProtectedProbeReport,
+    ManagedProtectedRestriction, ManagedProtectedTerminal, ProtectedReceiptAdmission,
+    SourceProtectedProbeFailure, SourceProtectedProbeReport,
 };
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};

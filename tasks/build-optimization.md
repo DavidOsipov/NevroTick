@@ -1570,6 +1570,265 @@ decision remains the prerequisite to restoring these hosted runs.
 [Rust startup annotation](https://github.com/DavidOsipov/NevroTick/actions/runs/45785019484)
 [Security startup annotation](https://github.com/DavidOsipov/NevroTick/actions/runs/45785021276)
 
+**Policy transition and hosted readback — 27 November 2026.** David approved
+the exact checkout and CodeQL commits in §6.4. GitHub rejected the proposed
+disabled-and-selected REST request, and the original policy read back intact.
+After David saved the selected-policy form, the coordinator corrected the
+readback to disable both broad allowances and select the exact checkout,
+CodeQL `init` and CodeQL `analyze` action paths at the approved commits.
+Full-SHA pinning and both required checks remained active. GitHub refused to
+retry the startup-failed runs, so two exact-head workflow dispatches were
+started. The first Security dispatch still refused the repository-level
+CodeQL pattern; the path-qualified readback admitted the next run, whose
+Security gate passed with the four planned CodeQL jobs skipped.
+
+The Rust dispatch reached its actual runner. Its environment test selection
+failed in two cases because the isolated environment contained no passwd
+entry and the fixtures cleared their `HOME`. This is a test-fixture failure
+before the intended assertions. The existing targeted fixture repair keeps
+the controlled home and cleared-environment cases independent. The new
+candidate still needs its own hosted run.
+[Security run](https://github.com/DavidOsipov/NevroTick/actions/runs/45896284360)
+[Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/45896174041)
+
+The signed test-fixture repair `c123ee52af79174d55083b994b3b774b93091327`
+passed the 39 isolated environment tests, the skill checker and the pinned
+secret scan before publication. Its hosted Security gate passed. The Rust
+job passed the former failure, then reached two cooldown-publication test
+failures under the actual product-admission step. One bounded diagnosis and
+repair interval runs from 2026-11-26 21:24 UTC through 21:44 UTC, with at
+most two causal candidate repairs and their focused controls. Retain each
+first failure and do not infer a complete product run from earlier steps.
+[Current Security](https://github.com/DavidOsipov/NevroTick/actions/runs/45897406767)
+[Current Rust](https://github.com/DavidOsipov/NevroTick/actions/runs/45897407288)
+
+The two failures came from test fixtures retaining an accepted-baseline
+assumption after the selected policy moved to a resolved graph. The fixture
+also omitted 13 manifests required by the resolution, so its intended
+post-download control stopped before transport. The corrected tests admit the
+actual current resolution, check the complete manifest set, and require the
+specific pre-download lock and post-download configuration refusals. The
+isolated 30-case acquisition cohort and 29-case age/graph cohort passed.
+The exact historical baseline still passes its age control. Replaying that
+historical policy at today's actual acquisition entry refused the current
+code-owned schema pin before transport. Signed test-only commit `f760b9c`
+publishes the correction. Its hosted gates require fresh results.
+An additional coordinator isolation attempt initially lacked the expected
+passwd entry and then lacked the fixture toolchain and sparse-file allowance.
+The final isolated graph control supplied a task-owned passwd entry, the
+admitted read-only toolchain and a 256-MiB file limit. Its 29 cases passed.
+The earlier failed outputs remain under
+`~/.local/share/nevrotick/hosted-cooldown-publication.tAB5SV6H/`.
+
+The second and final repair in that interval is signed commit
+`ec78e4408791d72b963b90f8f2113df4ebb89f95`. The real graph-admission
+suite now runs after pinned compiler acquisition and selects the private
+`RUSTUP_HOME`; its digest checks remain enforced. The 29 focused controls,
+eight workflow controls, pinned workflow analyzers and secret scan passed
+locally, with an independent source review and full staged-tree custody.
+The [hosted Security run](https://github.com/DavidOsipov/NevroTick/actions/runs/45899384282)
+passed, and the formerly failing graph-admission step passed in the
+[hosted Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/45899384381).
+That run then failed before its portable product commands because the workflow
+exports `NEXTEST_BINARY`, which the verifier rejects as an unreviewed build
+override even though the workflow also passes its value as `--nextest`.
+The retained failed-step log SHA-256 is
+`447a26adf46438a9a326f007f69e160126e67f0862e2891158fe0e138e485b1e`.
+Both permitted repairs are consumed; the hosted Rust gate remains incomplete.
+The separate [CodeQL workflow](https://github.com/DavidOsipov/NevroTick/actions/runs/45899384195)
+passed all five configured language jobs on `ec78e44`; it is not a substitute
+for the failed Rust product gate.
+The signed pushes used the repository administrator bypass while required
+checks were pending; subsequent hosted results are recorded separately.
+On later `6e8aaac`, the [Security gate](https://github.com/DavidOsipov/NevroTick/actions/runs/45902612864)
+passed and the [Rust gate](https://github.com/DavidOsipov/NevroTick/actions/runs/45902612907)
+failed at the same `NEXTEST_BINARY` environment refusal before portable
+product execution. Its failed-step log SHA-256 is
+`879f215828f5d61447505e176b77ac50ad1f3a7cd081200af0408c3cd0fa431d`.
+The intervening `74eddba` Rust run was cancelled by the newer run and supplies
+no product result. The separate [CodeQL run](https://github.com/DavidOsipov/NevroTick/actions/runs/45902612989)
+passed on `6e8aaac`; it does not replace the Rust gate.
+
+**Distinct hosted test-oracle failure — 27 November 2026.** The
+[Rust run for `45e2fca`](https://github.com/DavidOsipov/NevroTick/actions/runs/45954309654)
+failed earlier in the isolated environment checks: 39 cases ran and
+`test_descendant_cannot_outlive_a_successful_leader` raised
+`FileNotFoundError` when `/proc/7/stat` disappeared between `exists()` and
+`read_text()`. The real product row was not reached. This is an observed
+test-oracle race, not a demonstrated failure of the process runner. The prior
+`NEXTEST_BINARY` issue and its exhausted repair interval remain unchanged.
+
+A separate, failure-specific source/control stage runs `06:52:05Z`–`07:12:05Z`
+on 27 November 2026. It allows one causal test-only correction, independent
+review and at most one focused failing-control and one corrected-control
+invocation after isolation and resource admission. Its exit is the actual
+disappearance race accepted as retirement while live, malformed and denied
+observations remain failures, with the existing healthy process neighbor.
+Preserve real cleanup ownership and do not signal an unrelated reused PID.
+No product Cargo or Windows operation is authorized by this stage. A setup
+failure, missing selection or expired allowance remains incomplete; this
+distinct cause does not replenish the old hosted repair allowance or establish
+that the full Rust gate passes.
+The private draft at
+`~/.local/share/nevrotick/hosted-proc-retirement-fix-20261127/retirement.patch`
+has SHA-256 `3fc1c228b716cdda0bcc46f177a8586f60632f30241294263a9d48984b8d330c`.
+Independent review found that its disappearance control reaches the extracted
+helper but not the actual failing test loop; the inherited numeric-PID
+fallback's ownership across PID reuse also remains unproved. The stage was
+interrupted for the owner's time-sensitive GPS observation and stopped
+**incomplete**: no corrected candidate was admitted, no test ran and the
+shared source was not changed. These gaps remain open; the earlier hosted
+failure and the separately exhausted `NEXTEST_BINARY` issue are preserved.
+
+**Audit follow-up — 27 November 2026.** The owner brought a fresh review of
+`45e2fca`. The follow-up took one test-only correction and a bounded WSL run
+through the actual failing test. The observer reads the process status once
+per poll. It accepts disappearance or observed termination and still fails
+at the original deadline for a live child. The runner retains process-group
+cleanup. The fixture has a finite lifetime and the enclosing PID namespace
+provides teardown, so the observer sends no signal to a potentially reused PID.
+Injected disappearance reproduced the original error and passed on the updated
+test. Live, denied and malformed observations retained their failures. All 39
+tests in the hosted environment-policy test module passed locally in the
+isolated Linux boundary. The source digests, command and logs are under
+`~/.local/share/nevrotick/audit-45e2fca-python-20261127.2xd6Tc6T/`.
+`environment.log` has SHA-256
+`c167c9726e898ac5952ac0eb40023a14032ea3ec59a37ccf3090359da83aa106`.
+The earlier interrupted stage remains recorded. Hosted downstream product
+results remain unverified on the correction.
+
+### Bound the GNU UI test build separately from test execution
+
+The [About cancellation checkpoint](slint-gui-handoff.md#about-cancellation-candidate--27-november-2026)
+stopped in its UI test build on a rustc/LLVM allocation failure. Its one
+attempt ran 8 minutes 52 seconds and ended before its original deadline; the
+failed process did not establish which allocation boundary caused the error.
+The current verifier builds and runs that UI row together under the ordinary
+4-GiB per-process address-space limit. Raising the combined command's limit
+would also raise the test-process limit.
+
+The independently reviewed next tooling stage proposes one exact default-GNU
+UI archive build at a finite 8-GiB per-process address-space limit, followed
+by separately bounded discovery and replay at the existing 4-GiB limit. The
+three steps share their original wall deadline and retain current CPU, source,
+tool, environment, test-status and custody controls. Exact selector and full
+wrapper checks must reject changed commands, lanes, profiles, flags or paths.
+Reconcile complete discovered and executed qualified case identities, fresh
+JUnit and mandatory current UI cases; test actual effective process limits and
+healthy/refusal neighbors. The six-job build exception also reaches build
+subprocesses, so aggregate headroom is a separate prerequisite.
+
+Stage A starts at `2026-11-26T22:10:00Z` and ends at `23:10:00Z`, including
+implementation, focused controls, review and cleanup. It permits one coherent
+candidate and at most one causal repair within that same interval, with the
+fixed test invocations and limits in the retained design. No product Cargo or
+UI test run is admitted by Stage A. The reviewed design is
+`~/.local/share/nevrotick/ui-test-build-resource-2711/design-v3.md`, SHA-256
+`fe111ccf16180b0538797bfe83df3e1c60a669987868d8e89c6f8c94e37c37a2`.
+
+The independent reviewer traced the existing combined UI row, the Engine
+archive route and current result consumer, then corrected the prior elapsed
+time and the stage's test/repair bounds. A second recheck corrected the new
+synthetic-control timeout without changing existing supervisor-test limits.
+The final review marked Stage A ready only. Archive compatibility, safe
+extraction, actual JUnit placement, UI roster, aggregate resources, remaining
+budget and a feasible product-run deadline remain prerequisites for any later
+Stage B. Preserve the earlier failed receipts and do not relabel them as a
+successful or unspent attempt.
+
+Stage A stopped incomplete at 22:13 UTC before candidate edits or test
+invocations. The selected Nextest archive listing extracts and invokes
+discovery while its work tree is writable; neither safe prevalidation of the
+complete compressed archive nor immutable replay inputs and actual remapped
+JUnit placement were established with the currently admitted primitives.
+The existing Engine archive mocks do not establish these UI properties. No
+decoder was admitted and no product Cargo or native work ran. The sampled
+resource-monitor log SHA-256 is
+`e73f98ce7df65f10302e68e6f2afee8d5953382a34e9bbbf3357edf898f89813`
+under `~/.local/share/nevrotick/ui-stage-a-2711/`; its clean detached
+worktree was retired. Re-entry requires a reviewed, bounded approach to those
+specific custody and reporting gaps, not merely a new label or timeout.
+
+The independently reviewed re-entry approach avoids archive extraction:
+the pinned Nextest `binaries-only` listing builds without executing test
+binaries, then separate metadata-based discovery and replay use the existing
+4-GiB limit. An owned build tree is mounted read-only for replay, with a
+separate writable report store and explicit checking of the complete binary,
+dynamic-library, `OUT_DIR` and loader closure. This bounds writes from the
+sandbox; it assumes no concurrent same-user host writer and does not claim
+that the mount prevents such a writer. If that custody cannot be established,
+stop. Fresh JUnit, independent mandatory UI identities, full discovery/result
+equality and effective process limits still need actual controls.
+
+The re-entry uses the original 23:10 UTC deadline, original candidate and
+repair limits, and already consumed work; it does not authorize Stage B.
+The reviewed delta and concrete synthetic-fixture proposal are retained as
+`~/.local/share/nevrotick/ui-test-build-resource-2711/no-archive-alternative-review-v3.md`,
+SHA-256 `9faee74642080c0aca067ee9315b64e98509b2440fd130a747567e6094c7acee`.
+The fixture's loader, nested build output, discovery-entry marker, five-second
+subprocess bounds and report placement are unexecuted requirements. An
+independent reviewer initially mistook escaped display text for literal
+backslashes in the proposed arguments, then withdrew that finding after
+byte-level readback; the exact arguments contain no such backslashes.
+
+Re-entry stopped incomplete at 22:30 UTC. A read-only target and restricted
+`PATH` do not by themselves prove that executable or library resolution
+cannot use writable temporary or report paths, and no admitted mechanism was
+established for the reviewed complete-closure claim. The disabled partial
+scaffold is retained in `~/.local/share/nevrotick/ui-stage-a-2711/reentry-tree`;
+its patch SHA-256 is
+`6ed02cd127cdb6085fd56b9af63a9ee8c329177cc701339e05f1ac355399615b`.
+It has no connected selector or test methods. No test, Cargo, compiler or
+native operation ran in this re-entry. The sampled resource-monitor log
+SHA-256 is `b53f067f2df23f389b8e2fdc63e20e14e35fdad144ced3bd24524e06ba544372`.
+Further work needs a reviewed enforceable confinement mechanism or an
+explicitly narrower evidence claim; the UI candidate remains unverified.
+
+Independent source and contract review found that the existing §3.3 sandbox
+does not establish a universal ban on execution or dynamic loading from its
+writable work and temporary paths; that stronger claim was introduced by the
+stopped proposal, not an existing completed gate. The reviewed narrower
+re-entry keeps the original isolation, exact selection, result and resource
+checks and mounts the built artifacts read-only to the sandbox, while stating
+the writable-path and same-user-host-writer limits explicitly. It scopes the
+no-build claim to the pinned Nextest metadata-reuse mechanism and requires
+real known-path refusal controls rather than treating `PATH` masking as proof.
+
+The independently reviewed mount and custody delta is retained as
+`~/.local/share/nevrotick/ui-test-build-resource-2711/no-archive-alternative-review-v5-delta.md`,
+SHA-256 `5b5ca64438224755fd3556e11f682a70e0cba621b3e42b9bac40ab20d67fc9d9`.
+The follow-up v6 corrects the source-anchor explanation without changing scope.
+The existing disabled partial scaffold remains the same unfinished candidate;
+no repair or test invocation was consumed. Resume only within the original
+23:10 UTC deadline and original remaining control limits. Stage B stays
+unadmitted; no universal loader closure, hostile same-user test-code protection
+or product pass follows.
+
+The focused controls first ran 37 cases with one synthetic fixture link
+failure. The one permitted causal repair added its missing library linkage;
+the second focused invocation passed all 37, including the pinned synthetic
+build, discovery and replay controls. Independent source review then found
+that the new JUnit reader opens the sandbox-writable report before checking
+its type, without nonblocking mode. A FIFO at that path could block the
+verifier outside the subprocess deadline. The repair allowance was already
+spent, so the broader suite did not run and Stage A stopped incomplete. The
+focused pass does not establish the missing FIFO refusal or a UI product pass.
+The first and repaired focused receipts are retained under
+`~/.local/share/nevrotick/ui-stage-a-2711/`, with SHA-256 values
+`b2488fd5fbf0490d10a675d6d83d76728d324779f33bd2ca5d60156027cba89d`
+and `806e9245212c18a5eec2de88e4afdf06be77d85e81de035c385413c5ff86ee59`.
+The frozen repaired patch has SHA-256
+`15251fcd167c7c50db398ccc06445deb269c2f8faf8d20f9278370ba33c8f1f9`.
+Further source review found that its unfiltered Cargo metadata is checked
+against a host-filtered graph policy; the synthetic control replaces that
+validation. A real workspace rejection is a source-supported concern, not an
+executed result. The focused synthetic replay also compares identities in a
+test helper rather than challenging the actual UI dispatch with equal-count or
+wrong-binary substitutions; required entry-point metadata-refusal controls
+were not located. The actual UI dispatch does compare full sets in source, but
+that is not an executed discriminator. These findings remain to be resolved
+before reuse.
+
 The H09 source child retains both default verification rows and adds explicit
 engine-ke-association dependency/portable rows with unique receipts and the same
 complete freshly acquired lockfile/vendor/tool/advisory inputs. There is no new
@@ -1798,6 +2057,56 @@ ignored call with legal handling. The new expressible locals in the retry
 and tray paths use the existing domain types. Four source-extracted portable
 tray controls passed. Native Windows and fresh metric qualification remain
 with their existing owners.
+
+#### Type Nextest discovery and exercise equal-count replay substitution
+
+CHECK-6/19/25. The follow-up against `91265bd` confirmed two gaps in
+the current verifier. The discovery reader now keeps decoded values
+unknown until the existing shape checks admit them. The command runner
+declares its text-or-case-set result. An unexpected result kind fails
+the discovery row before it records case identities or emits a pass.
+The discovery caller narrows the result before replay.
+
+The archive control keeps every mandatory case and replaces one other
+discovered case with a different successful JUnit case. It checks the
+replay row's retained failure, absence of test credit and absence of a
+pass message despite a successful subprocess exit. The identical
+inventory and missing-case neighbors still distinguish success and
+omission. A one-change count-only comparator passes those neighbors
+and fails the new substitution control. Removing only the early
+result-kind guard fails the new discovery control. The admitted Linux
+Python 3.12.3 namespace passed 211 verifier and 63 dependency-profile
+controls on the final source. The separate repository mypy lane covers
+its selected accounting helpers and supplies no verifier typing result.
+
+All four historical receipt digests above match. Independent readback
+reconciled the recorded source and tool hashes and exact command
+selections. The two original EP1 listing/JUnit pairs each contain 674
+qualified passing cases in nine binaries, and the retained output
+records 91 passing doctests. The current parser reproduced both pairs.
+It also reproduced all six default inventories from the retained
+listings. Their case records agree with the original PASS transcripts.
+The historical compiler receipt and reconstructed specimens match their
+source hashes and record four intended `unused_must_use` rejections
+alongside successful legal handling. Its compiler identity comes from the
+retained GNU rustc 1.100.0 version output. The receipt lacks a compiler
+binary hash for that specific specimen invocation.
+
+Raw default JUnit XML, the original EP1 archive and extraction, the
+historical vendor snapshot and sandbox mount state, and separate logs
+for the earlier 206 and 63 controls were unavailable to this readback.
+The current controls and parser replay ran without a new Rust product
+build or Nextest execution.
+
+| Record under `~/.local/share/nevrotick/q01-type-and-substitution-2611.vAYiVX3G/` | SHA-256 |
+| --- | --- |
+| `source-map.json` | `a3c0c5219c615ca9d2ac5cbfb8897e8abf33eb7d6e814edcda9748851faf7af8` |
+| `verifier.log` | `a9f03898c27dede5871d067f50ad77687a015803fe59716b58f021072aaf71c7` |
+| `profiles.log` | `ac416affc13e220a8242e3c3cb8831e4afebcfa6989941cbc01fbd4b6283cb0d` |
+| `ep1-profile.log` | `1ee2ed7722dcda75bef051a7403abf8bdb1e9f0a6c76c04b37f57e1fabafac40` |
+| `count-only.log` | `a3fa155a4fbf1f009d1941bf32f0b8235b7426f496c9f4d7ce3f11a30a31274b` |
+| `no-kind-check.log` | `de8850f6716a26dae8b5bed22e602c9befd351bec0b159975149ee20b4dea20e` |
+| `current-parser-readback.json` | `9132aca9e6c62cc07ef658fc0d378ea6ab6d38735bc4360a6ab620f14bb9a5a7` |
 
 ## Linked Windows PE hardening gate — 21 November 2026
 

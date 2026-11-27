@@ -2437,6 +2437,48 @@ bounded attempt to succeed. Repeat with the same endpoint values under a
 replacement configuration. Native API selection and qualification remain
 with the Windows platform owner.
 
+The next bounded experiment is test-only. Under `cfg(test)`, attach a private
+finite fixture observation owner to the existing managed loopback round and
+exercise current exclusion both before socket setup and immediately before
+reservation/send. Do not change non-test sender, setup, status or policy
+behavior; failure to demonstrate that boundary stops the experiment. Control,
+policy and path custody must use one reviewed lock order, with a freshly
+sampled original cutoff and no await under guards. Path contention retains an
+enrolled release waiter, suppresses writable polling and preserves Stop,
+cutoff and debit state. The actual socket must retire before a successor.
+
+At most 20 serial scenarios use a 10-second supervisor each, two-second
+rounds, two responder threads, one publisher thread, one current-thread
+runtime and at most 64 path-contention episodes per candidate. The stage
+starts `2026-11-26T22:20:00Z` and ends `2026-11-27T01:20:00Z`, including
+one implementation, at most two causal repairs, configured checks, review and
+capture. The independently reviewed detailed design is retained at
+`~/.local/share/nevrotick/engine-path-safety-2711/plan-v2.md`, SHA-256
+`da35a893543f7ea2d2d76c3a683a4fdc2b2a05b53f48067f8613c79dd08ac21e`.
+The reviewer reconciled the production-phase boundary and the path waiter with
+the actual round, policy and sender owners. This is a planned experiment, not
+an executed result or a change to the production acquisition sequence.
+
+The first test-only candidate stopped incomplete after both permitted repair
+cycles were consumed. Its first compile found a missing field in an existing
+test constructor; a later compile found two denied lints. No scenarios ran.
+Before another compile, source review also found that a test-only policy
+refusal could return after the original cutoff without a fresh deadline sample.
+That additional correction was not made within the exhausted repair budget,
+and the non-test boundary has not been independently proven. The retained
+patch under `~/.local/share/nevrotick/engine-path-safety-2711/` has SHA-256
+`fe61afb8db07292172233f86670a6049c4c0571b9cec597f9323d805dfdbb450`;
+the frozen candidate record has SHA-256
+`b086c5bee82436529e84fbc9f85e177792c00d74e4096279bcb62e400bfa01a7`.
+Source, tool, vendor and index bookends passed for the later failed compile.
+Do not treat this fixture or its unexecuted scenarios as product behavior.
+
+Automatic reconsideration after missed notifications still has no identified
+scheduler or bounded cross-round budget owner. A manually created later round
+can check stale identity but cannot prove that liveness guarantee. The real
+Windows observation issuer, first controlled measurement and policy freeze
+remain separate prerequisites for production socket changes.
+
 ##### Continue a configured round after its local address fails to bind
 
 S2.1 and CHECK-8/25/27. When the configured managed loopback round has
@@ -31884,7 +31926,8 @@ actual current, consume-once Core join above remains the implementation exit.
 
 ###### Consume-once admission handoff for original joined protected receipts — 27 November 2026
 
-**Next executable source child; implementation and checks not yet performed.**
+**Current source child. Implementation and configured development checks passed.
+Affected per-file qualification remains open.**
 Acquisition/Engine owns the joined receiving change, Windows platform owns the
 mapping/withdrawal input contract, and the existing S1.2/S1.4 receiving owners
 review the later history seam. Reuse the settled 8 November contract and the
@@ -31945,6 +31988,517 @@ production mapping and consume-once Core history remain held until their genuine
 issuer, date/era/scale, quality and calibration prerequisites and applicable
 qualification are satisfied. Independent service/package/UI source work retains
 its own gates; no existing execution hold is lifted.
+
+**Receiving implementation checkpoint — 27 November 2026.** Source base
+`c27043a8749c8289f02bd048c1ff6efff2e83126`. The Engine source was clean at
+entry. The worktree already contained unrelated edited paths and Engine-task
+notes. The actual worker slot's joined take remains the consumed-marker
+owner. The original prepared invocation supplies its exact Stop scope,
+association identity, expiry and source definition to the joined collector.
+The guarded cookie commit supplies historical per-request policy epochs,
+separate from send-floor revisions. The receiving decision checks the original
+definition and exact peer, revalidates those epochs under the actual source
+policy gate and uses the original deadline. The closing clock read occurs
+before the final guard and before retirement of the power binding. Transport
+commit and reporting preserve original receipt facts and work on refusal.
+
+| Stage and skills | Requirement, action and evidence status |
+| --- | --- |
+| Scope/contract — `plan-code-change`, `plan-architecture`, `implement-rust-contracts`, `security-protocol-inputs`, `qa-subagent-dispatch` | CHECK-6/7/8/11/14/25/27. Independent source traces located the exact joined take, original source/endpoint epochs and closing-read order. The worker slot and receipt issuers remain authoritative. Production mapping authority is unavailable. |
+| Implementation — `implement-rust`, `implement-rust-contracts`, `security-protocol-inputs` | Implemented the original ledger-to-report data path. Integrated the policy witness and loopback controls from separate writers in owned worktrees. The only new transfer consumes at most the two original ordinary histories. Guard and transfer are synchronous. The fixture mapping lease binds before acquisition and is checked while held through transfer. |
+| Independent review — `qa-independent-review` | A fresh read-only source reviewer confirmed the ownership path and found the Windows closing clock closure binding and a former call signature in the fixture, both corrected before GNU execution. The exact-source follow-up read the added distinct authority cases and original outer capture bound controls. The legacy/abnormal `NotEvaluated` disposition has source inspection while the legacy regression controls retain their existing receipt-custody assertions. |
+| Focused execution — `qa-test-planning`, `qa-regression-selection`, `qa-contract-tests`, `qa-environment-preflight` | Isolated GNU EP1 used actual joined loopback and reissue consumers. Ten exact cases passed on `c794ed73708e1e83e27e77a6332e26420da3f25cf61dc6f73735897b95da663a`. First compilation and first epoch-oracle failures retain their original receipts. GNU/MSVC EP1 metadata and GNU 91 doctests passed for that input. Both Clippy lanes reached the candidate and returned six lint sites. |
+| Final configured checks — `qa-contract-tests`, `qa-regression-selection`, `qa-context-checkpoint` | On the same 768-input digest `c45e627cc635877e99b625d314d64779e32d595b7a96533464c4feb4b36af303`, selected GNU and MSVC EP1 all-target Clippy and all 91 GNU Engine doctests passed. GNU EP1 ordinary and optimized passed the same 684 qualified cases across nine test binaries, including all ten focused cases in each mode. The external MSVC compile-only pair verified the actual public outcome contract. Pinned Engine formatting and whitespace checks passed. |
+| Remaining qualification | Affected 90% executable-line and 95% viable per-file mutation gates need current-source analysis admission. Physical reference, positive production history and native Windows behavior remain open. Current work consumes sealed typed receipts, leaving the existing parser campaign disposition in force. |
+
+Evidence under
+`~/.local/share/nevrotick/engine-joined-receiving-20261127.sjPk37aL/`.
+The focused attempts consumed 120.149 seconds across the three receipts.
+The first compile found two legacy history-only projectors; the repair keeps
+their observation distinct from normal joined receiving. The next attempt
+executed three healthy/refused controls and stopped on the epoch-test oracle:
+re-enable advances the selected record's ordinary revision. Updating the
+expected changed record left the original send-floor and refusal checks intact.
+The corrected focused cohort passed all ten exact identities. The following
+46.467-second static attempt ran both target metadata checks, both Clippy
+lanes and 91 GNU doctests. The actual failures were bounded function size,
+passing a scalar fixture by value, a redundant outcome attribute and a negated
+age comparison. Rust 1.100.0 and 29,510 reviewed vendor files were matched under
+the isolated WSL runner. Source, index, tool and vendor bookends passed and all
+compiler scratch retired.
+
+The final compiler and test snapshot followed a scoped lint repair with the
+existing predicates and tests preserved. The first Nextest launcher attempt
+encountered the shared command generator's schema-2 recursive call after the
+isolation canary. Correcting the private launcher delegation enabled the
+selected GNU metadata, Engine graph and ordinary/optimized rows within the
+remaining budget. The ordinary and optimized listings and fresh JUnit agree
+on complete qualified case identities. The qualified roster SHA-256 is
+`017fed22a551a3d12f21f9e6769ecbaaec567287ec8601e6a4f36ef87c4bddb7`.
+The 28,678,008-byte archive's hash and two extracted metadata files are bound
+to the same optimized compile and replay. Archive build, discovery and replay
+kept the configured 240/90/90 CPU seconds and one 300-second wall deadline.
+Raw capture hashes passed after evidence copy and compiler scratch retired.
+
+Two external contract launchers preserved their failures. The first assumed
+the earlier Cargo metadata layout. The second read the actual selected
+metadata but raw rustc could not resolve the complete crate loading context.
+The effective control uses two scratch-only external example targets in
+sequence, each compiled through the frozen MSVC Cargo graph with production
+Engine metadata. Returning `ProtectedReceiptAdmission` passed. Inserting
+only an ignored `receipt.admission();` failed at the marked line with
+`unused_must_use` and the type's handling message. Source, graph, tool, target
+library, vendor and index custody passed. The recorded scoped execution
+attempts took 485.105 seconds, including the preserved failures.
+
+The affected owners include `source_policy.rs`,
+`association/ledger.rs`, `datagram.rs`, `job.rs`, `mod.rs`,
+`managed_preview.rs` and the new `receiving.rs` source. The new receiving owner
+needs explicit registration in `policy/verification-manifest.toml` and the KE
+subject tables in `scripts/portable-analysis.py` and
+`policy/engine-ke-association-analysis.json`, with their existing reader
+controls adjusted. Then bind the current source and graph to the analysis
+reader's required combined libtest/doctest evidence, review the full affected
+descriptor inventories and generation gaps, and run the admitted per-file
+gates. The ordinary and optimized Nextest readback is distinct from that
+reader's fixed combined libtest receipt. Both current metric bindings require
+new evidence, and both mutation campaigns remain closed pending review.
+Physical calibration and Windows runtime qualification retain their existing
+owners. Independent service, package and UI work can continue at its own gates.
+
+| Retained receipt | SHA-256 |
+| --- | --- |
+| `focused-ju_f7a9v/report.json` — compiler refusal | `2954a90329e82fcc43f228696626d76c9b20515c465731b4c89819399511264a` |
+| `focused-cvupa2sx/report.json` — epoch-oracle refusal | `850c22e6141e5129be39a72ccfef299af8dea93df0584d38bb020c3c268936c5` |
+| `focused-0y0gj6mb/report.json` — ten exact GNU cases | `2ba6e85cd7c17ba15d278fee5cddcd9c808d35e8eeeaa37c3fa42f636a187aee` |
+| `static-dhx_88he/report.json` — both target metadata and GNU doctests passed, lint incomplete | `746c52064b83426743833cb32f530a6401ba4db6abb02f6cc510eb0f5ca4fafe` |
+| `static-96ds5pdp/report.json` — final GNU/MSVC Clippy and 91 GNU doctests | `7272d31376ae1fe6a19f0d3ed01c81e6e06d33fbeb02a3258bcf1a3335aca037` |
+| `nextest-pix5urw4/custody.json` — first launcher refusal | `1ae654602d8e1e3e6e8702bfe13c2c29875a8b956fa5284c95b483c8dd750f5e` |
+| `nextest-kqcczowb/verification.json` — final Engine-only verifier | `d92c48f60c223f8ba94a2f1008ec2a8d40f8ce0e2d4f910f792191ef2f564c02` |
+| `nextest-kqcczowb/custody.json` — listings, JUnit, archive metadata and input rechecks | `52e395552e5b0ae5ea1f25b160d8a3b7dd3fb2d22b4b3803e28e27a230050ea2` |
+| `contract-1u2t8p6d/report.json` — external loader layout refusal | `61e12c7c21a61665081398f6fbbab5ed941ab2284bfe454567fc9f63c0c4c187` |
+| `contract-9a324rkn/report.json` — raw rustc crate resolution refusal | `acffd3423c3d9f3d55e6cab7839f3f7cd9eb4d64a8081a95cf14502c453840e1` |
+| `contract-u17muk5y/report.json` — MSVC legal and ignored-outcome controls | `25895cd9f46b5c3ec304322e8b519f97d1a5ca1dfd16f79bcd895524538cc234` |
+
+**Per-file qualification admission — 27 November 2026.** CHECK-6/7/8/11/14/25/27.
+The prior source slice closed its selected development checks. This continuation
+registers the actual receiver and obtains the configured source-bound inputs
+for the already open 90% line and 95% viable-mutation gates. One isolated
+Python control run and one serial graph plus raw libtest/Rustdoc capture share
+a 600-second execution budget, including any causal rerun. Graph and test
+subcommands retain their existing resource limits. Generated metrics and any
+campaign remain separately bounded at their existing checkpoint and require
+current admission plus independent inventory review. The historical KE and
+source-policy bindings retain their dates, rosters, source hashes and holds.
+Owners are Engine qualification for the registry, current role bindings and
+metrics, Build Optimization for graph/tools, and the existing Windows owners
+for calibrated mapping and native behavior.
+
+| Stage and skills | Planned action and discriminating exit |
+| --- | --- |
+| Scope and gap review — `qa-coverage-gap-analysis`, `qa-mutation-testing`, `qa-subagent-dispatch`, `qa-context-checkpoint` | Independent read-only traces cover actual receiver guards and Windows-only callers, current registry/readers, and graph, log and tool custody. Register the production file as a measured owner and bind its two test-only input files. |
+| Registry and admission controls — `qa-regression-selection`, `qa-contract-tests`, `qa-environment-preflight` | Read back the real subject, security and critical-file manifest exactly once each. A healthy synthetic selection reaches the configured pre-Session boundary. Omission, duplicate membership, stale bytes and missing helper pins refuse. Historical admissions keep their exact pinned input sets. |
+| Freeze and fresh development receipt | Admit fixed compiler, vendor, manifest and targets, then capture exact observed package/binary cases and Rustdoc cases through the configured commands. Link current graph projections and raw logs under one source identity. Rebind both roles only when the actual reader accepts the evidence and current representative controls. |
+
+The registry now includes `receiving.rs` in the KE subject, security and
+critical-file inventories, and binds its two test-only files. The new
+registration control exposed duplicate membership within one security row.
+The reader now counts every occurrence and requires exactly one under the
+expected package. The final isolated Python run passed all 75 selected
+controls. The initial attempt stopped before discovery because the verifier
+needed a private `HOME`. The next reached the controls and exposed the small
+temporary-volume reserve, the historical fixture's changed input set and the
+duplicate-membership defect. The final run kept the retirement reserve on
+private writable tmpfs and checked the historical pins separately.
+
+An isolated Rust 1.100.0 capture passed on the 768-input product
+`1e6b438b9f86fabe50673b8571642d2bba323d62eb131d401280e3b2b2574435`.
+The dependency receipt includes the boundary canary, 44 metadata and tree
+commands and all four selected GNU/MSVC projections across default and EP1.
+Actual GNU ordinary libtest ran 318 default and 684 EP1 cases, with 358
+KE cases in EP1. Separate Rustdoc invocations ran 90 default and 91 EP1
+examples. The default binary/case roster matched its own raw `--list` output.
+EP1 matched the earlier discovery for unchanged Rust and Cargo inputs. The
+capture verified source, compiler, target libraries, vendor and index at both
+bookends. The service exited zero in 141.853 seconds. Its retained cgroup peak
+was 2,038,120,448 bytes, memory and task-limit events were zero and the owned
+compiler directory retired.
+
+| Receipt under `~/.local/share/nevrotick/engine-receiving-qualification-20261127.Wcw5gM7T` | SHA-256 |
+| --- | --- |
+| `python-controls-final.log` | `ffbb1f620905ed62cb43806250d587953d7195111231aa98b2feb897a6c492cf` |
+| `python-inputs-final.sha256` | `6b29e505cd3aeb71a9a1a5fe038fb199ee6b666cdda900f014efbe0ce156e6ba` |
+| `combined-metric-inputs-01/run.py` | `468b5b97978c8282416f47d17122a1ec3f66a8ba1c98f0c09d8ffb0006a77f23` |
+| `combined-metric-inputs-01/admission.json` | `f1317b9b605a57f2b9704a725fde58b79cce23a885e8c521612ca3e05e1a2920` |
+| `combined-metric-inputs-01/graph/verification.json` | `c543dbebe170e04aa3889d82646edeca791fab574923e8bd0862ba99dfc6b842` |
+| `combined-metric-inputs-01/reports/run-01/verification.json` | `e39a89ba30620e48ca43ed6dae02de51e3a53e3092f4e4a08df30e80f5e1b211` |
+| `receipt-readback-01.json` | `d94324875df3cb0476909483e45ce96909680b618599471b04322260f2dec909` |
+| `durable-preflight-01/mount-smoke-03.json` | `90994bda1c551d027899dd0dc5a3e025a36c724eb34e5643035ad7f6816793af` |
+| `durable-preflight-01/capacity-readback.json` | `0ac0aad2d1023912c24816756508ea01b140f19d7d17688c9b48a2f8f0876307` |
+
+Independent readback rehashed all 768 live product inputs and 60 evidence
+members. It reconstructed the graph and test commands, checked selected
+projection packages, features and edges, and compared binary/case coordinates
+with the discovery and Rustdoc references. The 318 default tests include 77
+private source-policy cases. The source and evidence bookends matched.
+
+The fresh graph and rosters are inputs to the configured 19-lane combined
+development checkpoint. The role readers require raw default and EP1
+optimized libtest, the selected compiler, lint and rustdoc commands and
+the scoped Core tests under the combined producer's custody. The earlier
+optimized Nextest receipts retain their own evidence. Both role bindings
+remain historical pending the exact combined run and reader re-admission.
+The current Linux report volume fell below the combined producer's 5 GiB
+startup reserve. The pinned `fuse2fs` and library still match the retained
+Ubuntu packages and local package index. A fresh private `/mnt/d` ext4 smoke
+passed the controller's mount check, read-only refusal, separate writable
+report and RAM paths, and exact remount readback. The mount and smoke image
+retired. The full-size probe repeated those observations with a 10 GiB image,
+9,927,114,752 free report bytes and 8,563,277,824 free RAM-work bytes. Both
+locations met the existing 5 GiB startup floor. The image allocated the full
+10 GiB while present and the disk returned to its prior capacity after
+retirement. The Linux volume is also below the prior export floor. Prepare
+durable retention on the private ext4 store, with checked remount readback,
+before starting any combined lane. Use `time-core@0.0.0` for the five existing
+Core commands because the current lock also resolves the registry `time-core`.
+The per-file line and mutation gates and the native evidence retain their
+existing owners and pending status.
+
+**Combined development checkpoint.** Select all 19 existing lanes under one
+frozen capture and the original analysis sandbox. Reuse the separately bound
+graph and exact roster expectations. The retained plan re-admitted all 768
+product files and 49 graph members. It preserves the 14 other commands, all
+three cache retirements, 240 CPU seconds and 300 wall seconds per lane, the
+resource observer and the 6 GiB service ceiling. The service has at most
+1,200 wall seconds. Keep the earlier source checks and receipt capture charged
+at 486 and 142 seconds. Allow at most another 270 seconds for the three Python
+attempt ceilings, 50 seconds for preparation, 90 seconds for the storage
+checks and placement, and 10 seconds for service retirement. That bounds
+the combined checkpoint at 2,248 of the original 2,400 seconds. Keep the
+combined receipt and every raw lane on the private ext4 image and verify all
+retained bytes on read-only remount. Rebind both roles only after independent
+readback and actual reader admission. The existing enumeration and the two
+per-file metric thresholds remain separate exits.
+
+The combined Rust 1.100.0 service exited zero in 522.201 seconds. All 19
+physical lanes passed. Default ran 318 and EP1 ran 684 ordinary cases in each
+of the two build modes, with 90 and 91 Rustdoc examples respectively. The
+four Core selectors ran four cases each. Independent readback reconciled
+2,201 named executions against the commands, binary/case rosters and raw
+hashes, and checked 486 resource samples. The observer joined, the unit
+retired and the compiler work was removed.
+
+The outer placement check initially returned incomplete because FUSE
+advertised `rw` on the read-only backend. The retained image was remounted
+twice. Both live write controls returned `EROFS`, the capture and all 19
+raw logs matched their terminal pins, every member hash agreed across
+both remounts, and the FUSE processes and mounts retired. The first
+placement receipt remains intact. The image is retained on the secondary
+drive for admission at the recorded mount path. Remount it read-only for
+the configured metric readers.
+
+Both applied policy bindings select the current product. The isolated
+admission re-read 82 KE and 78 SourcePolicy evidence references and checked
+60 KE and 47 SourcePolicy source/helper pins. All 133 focused reader tests
+passed, including the historical candidate controls and current same-count
+case substitutions. Mutation inventories and equivalences remain empty.
+
+| Receipt under `combined-19-01` or on its retained image | SHA-256 |
+| --- | --- |
+| `mount/admission.json` | `fb8151b66bb271ac9d1373f6cb280c03490e133e85773d9d728764e482b3bdc0` |
+| `mount/reports/run-01/verification.json` | `5511669e84f4219cf0caa3feacbc0c0d458fce2f75c2e50819ed113b0285080f` |
+| `placement.json` | `20ad1c53382b0d4dbf8ac55797ea188370c8250f00e32be0f96fcb7286d97fc1` |
+| `mount-diagnostic.json` | `10094d6ae979b26d7ba1c24d0e0c06c6f3c4dc0cd1cc0ca4e1986906ea02c339` |
+| `readback.json` | `a6569ace03b3c10783444a3c28744220b08cc765871671b03f14080d2602c690` |
+| `rebind-current-readback.log` | `5838392b22719c82bc7d73d27e16220409e372fa4b9403ea6832915ffd60bbc4` |
+| `rebind-controls.log` | `25242db2f67039baf888fecff98bed0166e1365c9f37c0747c16404c0d332390` |
+
+The receiving inventory now proceeds through the configured `enumerate`
+lane with `ke_receiving` alone, the 240-second lane limit and at most 350
+seconds for the containing service including admission. This checkpoint
+requires exact product and tool custody, a fresh output and the original
+7 GiB startup reserve. Preserve the complete descriptor roster for
+independent review against the production guards before granting mutation
+admission. Coverage retains its separate 90% gate.
+
+The first listing stopped before tool dispatch because the direct `/dev/shm`
+path is reserved by the analysis sandbox. The 20.405-second failure is
+preserved. The causal retry used the existing read-only outer namespace to
+expose the private RAM-backed work directory at the admitted work-view path.
+It exited zero in 20.853 seconds and listed exactly 15 descriptors with
+inventory digest `bd1ddf87e12fe650a8d39a1a13b9ffa226cdf42d7ad75eb274ffb9816a21276c`.
+The first and second terminal hashes are
+`bf6732ad63068dad09cb12dad0671aeb045eae97a1f1bc7aeef54205d4435efb` and
+`942a5ae91996e4d87373fd896486eaa5bcd50c824eab30d56aa2beb62da7e0fc`.
+The scope is the `ke_receiving` GNU catalogue. Next measure that file's
+executable lines with the configured `coverage` lane, 300 seconds for the
+lane and 360 seconds for the containing service, using the same work-view
+boundary. This budget is for the line measurement. The listing supplies no
+mutation outcome.
+
+Independent descriptor review traced eight operator variants and seven
+whole-function replacements to their source. The exact original commit
+instant has no direct observation in the current joined controls. It
+distinguishes both early-time replacements at `receiving.rs:224`, `<` to
+`==` and `<` to `<=`. An actual sealed joined outcome can supply that
+coordinate to a controlled read. Pair an equality admission with a
+one-tick-earlier `Deadline` through the real receiving owner, preserve the
+original cutoff and verify that the joined slot stays consumed. Review
+compiler outcomes for the seven replacements separately. The current
+source predicts missing `Default` or denied-unused failures, which earn
+no credit without actual observations. The Windows clock arm, lock
+failures, missing receipt policy and an isolated configuration mismatch
+retain their own evidence gaps.
+
+The selected coverage lane ran all 684 EP1 tests successfully, then failed
+the 90% file criterion. `receiving.rs` covered 81 of 94 executable lines
+(86.17%). The LLVM profile and nine captured test binaries reproduced
+exactly 94 line records. Zero counts cover lines 78–83 in the absent-context
+handoff, 133–136 in the lock-refusal projection, 149 in the unsupplied
+mapping path's timing refusal, 175 at the Stop lock error and 205 for an
+absent receipt policy. The instrumented test helper's path includes a `..`
+component and also appears in the raw export. Its 230/234 result grants
+no credit to the production owner. The containing service retired after
+101.854 seconds and the retained invocation exited 1.
+
+Continue with the actual joined owner: use a genuine managed ordinary
+outcome with no receiving context and check `ControlUnavailable` on the
+retained originals and refusal of a second take. Pair this with the
+original-commit equality and one-tick-early cases in the no-mapping path.
+These cases target the largest observed line gap and the two independently
+identified live comparisons. New bound test bytes require candidate
+readmission and fresh measurements before a campaign decision.
+
+| Receipt under `receiving-coverage-01` | SHA-256 |
+| --- | --- |
+| `verification.json` | `0c842991f92c4a69ee70b61e092e085604287d1b126bffd1ac897858acd513a0` |
+| `coverage.json` | `658a0eb23cb1bd4d77b5930a08a5339466c07c3103a772d731bdbcf5518206d0` |
+| `receiving-lines.txt` | `37f66d15e39fbad7f333a26d1f5a6bf81abdaccd3c72aa997517baa30f2b122d` |
+
+**Original commit controls.** The existing real loopback fixture now observes
+the first commit from the sealed outcome before receiving. The absent-context
+case passes `None` with the actual source scope and Stop state untouched. The
+timing case samples the original commit and its one-nanosecond-early neighbor
+without a mapping supplier. Equality leaves the first receipt at
+`MappingUnavailable`. The earlier sample refuses it with `Deadline`. The
+terminal expectation accounts for the actual commit coordinate. The fixture
+compares the projected first commit with the original and retains its peer,
+debit, retirement and refused second-take assertions. Independent source
+review confirmed that both prior comparison variants differ at equality.
+
+Only `job.rs` and `recovery/worker_tests.rs` changed in the 768-input release
+candidate relative to `1e6b438b…`. The `job.rs` accessor is compiled only in
+the Linux and Windows test configurations. Eight exact GNU EP1 identities,
+including the two new cases and their existing joined neighbors, passed
+isolated discovery and execution in 48.331 seconds. The final source digest
+is `d5729afdb817caeb07928ac960d6649427e756ec6135b19f9543cc2c45ff39e7`.
+The report and 17 log hashes matched after copying to
+`receiving-boundary-focused-01`. The report SHA-256 is
+`5de7d276484d61b299a5159179b5567fadf59c57d813c3ad6d4b524d439274ab`.
+
+Fresh combined admission checks all 19 actual lanes on these bound inputs.
+It may reuse the retained dependency graph under an explicit two-file
+test-only source delta, matching compiler, dependency inputs and all 49
+graph members. The predecessor's physical case coordinates plus the two
+focused discoveries set the expected EP1 roster. No prior result is credited
+to a current combined lane. Keep existing 240 CPU/300 wall per-lane ceilings
+and charge the new service's 600-second ceiling against the original
+2,400-second allowance. Both metric bindings remain on the predecessor
+until the actual consumer accepts the new evidence. Measure the file again
+after readmission and reconcile the current catalogue before mutation.
+
+All 19 successor lanes passed in 597.512 seconds of service time. Independent
+readback reconciled 2,205 named executions across the physical outputs,
+including 686 EP1 cases in each build mode and the unchanged default,
+Rustdoc and Core rosters. The 557 resource samples and joined observer
+passed their checks. The placement kept 45 file hashes identical across
+retirement and remount, and exclusive creation on the read-only backend
+returned `EROFS`. The original 49 dependency graph members remain bound
+through the verified two-file test delta. Both rebuilt role readers
+accepted the current capture with its predecessor and focused inputs.
+They re-read 105 KE and 101 SourcePolicy evidence references. All 134
+isolated reader controls passed, including seven exact-delta refusal cases
+and the two new full-roster substitution controls. The applied role files
+match those tested bytes.
+
+| Receipt under `combined-19-boundary-01` or on its retained image | SHA-256 |
+| --- | --- |
+| `mount/admission.json` | `b4ee2b0f5681f9e8f55a9a241f3df961155be941f6585ad945a35b60b73c66a1` |
+| `mount/reports/run-01/verification.json` | `a3a9c8ef61bd5a642abad9010d36bc5deb439b63fa6222392cd3b7c500a5eb16` |
+| `placement.json` | `dea94efdac726ed638ef7316635978324acb64493f1c45a017e965c4ac5ac068` |
+| `readback.json` | `d80aab1efae736cba90796e0d69cc3d9e7f5c6f1d77c96283d80faffe4562038` |
+| `rebind-current-readback.log` | `34636e0164312dec04baa21642b9e8d60937930169efc01ea3b6bca8a5ac661e` |
+| `rebind-controls.log` | `96dcb95d0a2d80193553b065cc02144f5d15783dee4a781b5dfe3a6b7b496f5a` |
+
+The new listing and line measurement select only `ke_receiving` through the
+unchanged configured commands and private work-view. Charge the prior 42
+listing seconds and 102 coverage seconds. The current containing services
+have 290 and 245 seconds respectively, with an additional ten seconds
+reserved for each retirement within the original 350/360 allowances.
+The next campaign prerequisite remains complete current inventories and
+generation review for all host subjects selected by the role.
+
+The refreshed listing retains 15 descriptors with the same exact digest
+`bd1ddf87e12fe650a8d39a1a13b9ffa226cdf42d7ad75eb274ffb9816a21276c`.
+The current GNU EP1 coverage lane ran all 686 cases and covered 88 of 94
+executable lines in `receiving.rs` (93.62%). The selected 90% line gate
+passed. The unchanged denominator and seven newly covered lines match the
+previous absence-of-context and early-deadline observations. Independent
+LLVM readback with the nine actual test binaries identified lines 78–83
+and 149 as the only new positive line counts. Mutation
+viability and kills remain separate. The wider host catalogue and its
+generation review precede campaign admission. Retain the current instrumented
+outputs and verify the 7 GiB work-view reserve before that listing. The
+observed post-coverage free RAM filesystem space was 7,283,802,112 bytes.
+
+| Receipt under the receiving qualification bundle | SHA-256 |
+| --- | --- |
+| `receiving-boundary-enumerate-01/verification.json` | `dfb0fb576b2c868afee1f683408d675500696ccde05424420b6e465eb64343ed` |
+| `receiving-boundary-coverage-01/verification.json` | `1f28799810751d450cbf3df09c9737dc44b526582797af55cac1a8905f8f5ffb` |
+| `receiving-boundary-coverage-01/coverage.json` | `5a5f5ff10a6f3559ca8bfd3432121d6368082c4c70c54a0b557a8c417c661d27` |
+| `receiving-boundary-coverage-01/receiving-lines.txt` | `0dd3f29fe7a9fc89489f1e0442f1a35fe30faf9238c05c2ad784d375fe9813d7` |
+
+**Complete current host catalogue.** The previous failed coverage work was
+retired after full archive comparison and sample restoration of its exact
+terminal receipt and LLVM profile. The archive is
+`/mnt/d/NevroTick-Owned-Engine-Coverage-z9xlh7j9/superseded-coverage.tar.gz`,
+SHA-256 `18035a96b6d56a6abe6452e69d7da11c0bd8826b5fec22160a7cc08eb80ce737`.
+The current coverage work and checkout bookends were preserved. Available
+private RAM filesystem space rose by 474,185,728 bytes to 7,757,987,840,
+above the existing 7 GiB floor. The cleanup receipt is
+`retired-coverage-storage-01.json` in the current qualification bundle.
+
+Run the existing full `ke_association` host listing on `d5729afd…` through
+the admitted work-view. Charge the 67 seconds already spent on the three
+earlier listing services, at most 270 seconds for this service and ten
+seconds for retirement. Keep the configured 240-second listing allowance.
+The catalogue must account for all 15 GNU owners and reconcile their
+raw commands, exact descriptor hashes and generation gaps. The five
+additional critical owners and native paths retain their separate evidence
+requirements. Campaign admission stays closed during this checkpoint.
+
+**Result.** The full stable-core GNU listing exited zero in 50.722 seconds.
+Including the earlier listings, the service work charged to this checkpoint
+totals 117.722 seconds. The terminal tool and placement mounts retired.
+Independent readback verified all 15 raw command outputs, 1,324 typed
+descriptors, rendered changes against their source preimages, exact tool
+bookends, and an identical 15-row receiving inventory in the earlier
+selected listing.
+The terminal report records `status=enumerated`, with campaign admission
+and the aggregate selected-lane pass flag both false.
+
+| Record under `receiving-boundary-full-enumerate-01` | SHA-256 |
+| --- | --- |
+| `verification.json` | `e798cc4e21b18c602abe206188b0914ff1a8de11b45d410c4bb5fac76b1fb932` |
+| `catalogue-readback.json` | `d8e65ad7170bfb150a12af6c8f41cbdc1d24e9c4ef16cf101b11bb9df3053d70` |
+
+Source review tied the observed generation to these existing guarantees.
+The gaps below retain their actual-consumer, native or directed-test owners.
+
+| GNU owner | Rows | Representative isolated generation gaps and present controls |
+| --- | ---: | --- |
+| `ke_core` | 139 | Managed original-context transfer and exact closing observation order have coarse body alternatives. Native closing-edge resume and abnormal-join controls remain Windows-only. |
+| `ke_association` | 48 | Preview charge before entropy and candidate field assembly have no isolated rows. Existing fixtures vary binding, cutoff, endpoint, population and mode. |
+| `ke_process` | 3 | The latch initialization, CAS arguments and native provider construction and shutdown have no isolated rows. |
+| `ke_handoff` | 18 | Final commit, managed routing and individual entropy and sealing checkpoints have no isolated rows. |
+| `ke_request` | 6 | Key construction and direction, entropy split, direct error mapping and plaintext wipe have no isolated rows. |
+| `ke_fault` | 39 | First-fault latch and individual pre/post-adapter Stop and time checks have no isolated rows. The 21 Windows-only rows stay outside GNU execution. |
+| `ke_ledger` | 294 | Original send-stamp policy attachment, successor allowance consumption and cookie-effect ordering lack isolated rows. Generated correlation, time and ordinal comparisons have existing direct controls. |
+| `ke_retirement` | 53 | Publication, span check, archive transfer and predecessor publication lack isolated rows. Existing chronology and expiry controls retain their behavior scope. |
+| `ke_response` | 78 | Nonce admission, authenticated empty plaintext, control admission per leg and allocation custody have no isolated rows. Valid-tag nonce neighbors exercise actual reply admission. |
+| `ke_datagram` | 188 | Native closing observation order and individual leg custody, debit and saved admission have no isolated rows. The policy extraction and association pointer alternatives have direct healthy and foreign controls. |
+| `ke_recovery` | 143 | The Stop, currentness, debit and cleanup boundaries and original NAK transfer lack isolated rows. Fourteen rows occur in Windows-only blocks, including fixture code. |
+| `ke_job` | 70 | Two clock-observer rows are test-only. Joined retirement, active custody and post-join eligibility keep their separate observation owners. |
+| `ke_preview_target` | 18 | The Garde expansion, both IPv6 scope/flow operands and TLS-name conversion have no isolated rows. Raw constructor fixtures exercise those boundaries. |
+| `ke_managed_preview` | 212 | Saved receiving admission and abnormal `NotEvaluated` have only whole-body alternatives. Abnormal controls check identity and timing. |
+| `ke_receiving` | 15 | Two lower-window comparison rows have matching directed controls through the joined result. The upper cutoff has a polarity reversal row and no equality-only row. Several current-policy witness and guard paths have no isolated rows. |
+
+Six byte-identical owners account for 137 of the 199 exact typed and rendered
+matches to the earlier 909-row catalogue. Tool identity matched. The locked
+graph, callers and rosters changed, so the older outcomes retain their original
+candidate bindings. This result supplies no current mutation outcomes.
+
+Before freezing a successor, review these concrete assertion improvements
+together. The generated `job.rs:780` conjunction needs the existing abnormal
+joined retirement to assert that the taken slot stays ineligible for reissue.
+The generated `ledger.rs:1920` boundary needs an admitted retired DENY with
+equal real receive observations, paired with the current reversed refusal.
+Add the exact `Nonce` refusal alongside the two accepted short nonce lengths,
+assert `NotEvaluated` on the existing abnormal managed report, and exercise
+the original first NAK through normal worker publication after terminal
+receive failure. These observations are source-derived. Viability and
+sensitivity require their actual consumer runs.
+
+**Test-only successor.** Complete the five-file Engine assertion batch
+before a separate whole-candidate freeze. In the successor receive path,
+the independent peer withholds the terminal reply after seeing the actual
+second request. The marked case waits for the original socket driver's NAK
+observation before issuing Stop. The unmarked case requires cancellation
+after the second send and can stop before the request becomes pending.
+The join must preserve the original cause,
+first receipt and exact send and receive work in both cases. Run one focused
+GNU EP1 service against the frozen product digest, with eight exact
+discovery and execution pairs, up to 180 seconds plus ten for service
+retirement. Preserve the first result and keep the configured per-command
+limits. A focused pass supplies development evidence for these assertions.
+The full ordinary and optimized lanes and the reviewed per-file gates have
+their own checkpoint requirements.
+
+The first attempt compiled the five-file candidate and passed the first
+four cases. The fifth assertion used the terminal probe fixture to ask for a
+first-successor receipt. That fixture preserves the terminal configuration
+in the operation result, leaving the independent first-successor checkpoint
+empty. Retain the 52.038-second first attempt and its exact failing assertion.
+Move the assertion to the existing abnormal successor join that actually
+owns the first checkpoint. The corrected batch changes four test files.
+Allow one causal rerun up to 110 seconds within the original service budget.
+
+The corrected 768-input candidate
+`d6c3461650704398d9a7bfc64f5d5099701274aedf1b0353a44ac07ddd1e5584`
+passed the namespace boundary control and all eight exact GNU EP1 discovery
+and execution pairs in 50.057 seconds. The joined Stop case took 0.02 seconds
+and observed both marked and unmarked ordinary first receipts. The raw
+readback verified all 17 command logs and matched the four test-only deltas
+against the preceding 768-input receipt. The two supervised services
+consumed 102.225 seconds; both retired. The exact next full roster must
+account for the two newly added cases. Generated viability and kills still
+require the independent operator controls and bounded campaign cohorts.
+
+| Record under `catalogue-assertions-focus.k09E3UW7` | SHA-256 |
+| --- | --- |
+| `first-attempt/report.json` | `deefbc149756b93e6116cc6a584f91fadee8777bfcdb1c940e5e1bad7ebd6613` |
+| `corrected-attempt/report.json` | `418ba054869cd201de3dfff293b61cecd042f97c404eb9d499787ef03f43f6bb` |
+| `confirmed-readback.json` | `61318aec0a7cbab00e0fd75d24c31701894ba84165d53f4a67f18b35b6eea7e2` |
+
+A fresh source reviewer confirmed the five assertions and found a separate
+fixture cleanup gap after worker submission. If the peer fails or the
+marked observer reaches its cutoff, issue the original Stop and attempt
+bounded collection before returning the original fixture error. Allow one
+65-second service and ten seconds for retirement to check that cleanup
+revision with the same eight selectors. The maximum combined service and
+retirement charge remains below 180 seconds.
+
+The cleanup revision freezes to
+`9645110516804cd7530eca46e350ad99810fc753b844c8b1b9ed0a4b067d9b00`.
+Only the worker test changed from the preceding focused candidate. All
+eight exact GNU EP1 discovery and execution pairs and the namespace control
+passed again. Readback verified all 17 raw logs, the source and custody
+bookends and service retirement. The last service took 51.795 seconds.
+The three supervised services total 154.020 seconds. The review and
+focused execution cover the fixture repair and actual selected healthy
+paths. Separate injected cleanup and generated mutation outcomes remain open.
+
+| Final record under `catalogue-assertions-focus.k09E3UW7` | SHA-256 |
+| --- | --- |
+| `cleanup-attempt/report.json` | `0413edb0f9fbb690fc7aa81ec551fcf504ba3737269afb83528b165de56a0cf6` |
+| `cleanup-readback.json` | `eb7bb07860bffe14d6b4d28206f309252b6a4ef8cb85c060cbaad77482d356f0` |
+
+The 1,324 rows exceed the configured 512-variant campaign cap for a combined
+dispatch. The existing selected-owner route can form bounded cohorts after
+complete current review and exact binding. Keep the current hold and per-file
+95% gates. `lib.rs`, `profile.rs`, `transport.rs`, `source_policy.rs` and the
+actual provider probe remain separate critical owners. Native paths, ungenerated
+guards and the remaining line-coverage gates retain their own evidence exits.
 
 ###### Calculate each original joined ordinary receipt
 

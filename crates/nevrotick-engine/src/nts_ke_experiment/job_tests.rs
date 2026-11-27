@@ -1185,6 +1185,13 @@ fn job_actual_inner_fact_poison_preserves_failure_and_refuses_normal_claim() -> 
         cell.is_poisoned() && !SLOT.custody.is_poisoned(),
         "KE-HIST-05-inner-poison-never-healed"
     );
+    let custody: std::sync::MutexGuard<'_, super::Custody> =
+        SLOT.custody.lock().map_err(|_| Failure::Control)?;
+    assert!(
+        matches!(custody.phase, Phase::Taken { retired: false }),
+        "KE-HIST-05-abnormal-take-must-not-enable-reissue"
+    );
+    drop(custody);
     assert_eq!(SLOT.sealed_count().map_err(|_| Failure::Control)?, 0);
     assert!(matches!(duplicate, Err(CollectError::NotReady)));
     assert_eq!(record_after_take, Err(Failure::Control));

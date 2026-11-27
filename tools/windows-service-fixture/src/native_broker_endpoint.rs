@@ -57,7 +57,7 @@ use crate::{
     native_pipe_pair::{LabPipeError, LabUnconnectedDuplexPipe},
     native_pipe_read::{
         AttributedStatusRead, CompletedFirstRead, IdentifiedReadError, NativeCancel,
-        NativePipeRead, NativeReadError, NativeReadStart,
+        NativePipeRead, NativeReadError, NativeReadStart, RequestGenerationFault,
     },
     native_pipe_write::{NativePipeWrite, NativeWriteError, NativeWritePoll, NativeWriteStart},
     private_clock_wire::MAX_FRAME_LEN,
@@ -293,6 +293,9 @@ pub(super) struct NativeBrokerEndpoint {
     /// Expected identity of the one fixture client, selected before acquisition.
     #[cfg(test)]
     status_client: Option<Box<PipeIdentity>>,
+    /// Directed fault applied only to the staged fixture read's token generation.
+    #[cfg(test)]
+    request_generation_fault: Option<RequestGenerationFault>,
 }
 
 /// Refusal to hand the original server handle to the duplex fixture.
@@ -398,6 +401,8 @@ impl NativeBrokerEndpoint {
             fixture_pipe: false,
             #[cfg(test)]
             status_client: None,
+            #[cfg(test)]
+            request_generation_fault: None,
         })
     }
 
@@ -417,6 +422,7 @@ impl NativeBrokerEndpoint {
             pipe: EndpointPipe::Reservation(server.into_handle()),
             fixture_pipe: true,
             status_client: None,
+            request_generation_fault: None,
         })
     }
 
@@ -438,7 +444,14 @@ impl NativeBrokerEndpoint {
             pipe: EndpointPipe::FirstRead(read),
             fixture_pipe: false,
             status_client: status_client.map(Box::new),
+            request_generation_fault: None,
         })
+    }
+
+    /// Select a mismatch in the captured generation at the fixture dispatch handoff.
+    #[cfg(test)]
+    pub(super) fn fault_request_generation_for_test(&mut self, fault: RequestGenerationFault) {
+        self.request_generation_fault = Some(fault);
     }
 
     /// Prepare separate read and write records while retaining one original server.
@@ -466,6 +479,7 @@ impl NativeBrokerEndpoint {
             })),
             fixture_pipe: false,
             status_client: None,
+            request_generation_fault: None,
         })
     }
 
@@ -486,6 +500,7 @@ impl NativeBrokerEndpoint {
             pipe: EndpointPipe::Reservation(handle),
             fixture_pipe: _,
             status_client: _,
+            request_generation_fault: _,
         } = self
         else {
             return Err(FixtureConnectionError::Ineligible(self));
@@ -512,6 +527,8 @@ impl NativeBrokerEndpoint {
                 fixture_pipe: _,
             #[cfg(test)]
                 status_client: _,
+            #[cfg(test)]
+                request_generation_fault: _,
         } = self;
         drop(accept);
         let pipe_result: Result<(), NativeError> = pipe.close();
@@ -750,6 +767,7 @@ impl Reservation for NativeBrokerEndpoint {
         &mut self,
         connection: &mut RunningConnection<'_, C>,
     ) -> Result<Poll<FirstReadCompletion>, NativeError> {
+        let generation_fault: Option<RequestGenerationFault> = self.request_generation_fault;
         let mut staged_match: bool = false;
         let result: Result<Poll<FirstReadCompletion>, NativeError> =
             self.observe_first_read(|expected, peer, completed| {
@@ -758,12 +776,15 @@ impl Reservation for NativeBrokerEndpoint {
                 {
                     return;
                 }
-                let attributed: Result<AttributedStatusRead, IdentifiedReadError> =
+                let mut attributed: Result<AttributedStatusRead, IdentifiedReadError> =
                     match (peer, expected) {
                         (Some(peer), _) => completed.attribute_peer(peer),
                         (None, Some(expected)) => completed.attribute(expected),
                         (None, None) => return,
                     };
+                if let (Some(fault), Ok(read)) = (generation_fault, &mut attributed) {
+                    read.fault_generation_for_test(fault);
+                }
                 let matched: bool = attributed.is_ok();
                 staged_match = connection.record_status_read(attributed) && matched;
             });

@@ -471,7 +471,7 @@ fn selected_algorithm_nonce_minimum_preserves_short_valid_neighbors() -> Result<
         assert_valid_tag(raw)?;
         let result = stage_reply(&keys(C2S, S2C), raw, &UID, ORIGIN, 1);
         if length == 0 {
-            assert!(result.is_err());
+            assert!(matches!(result, Err(ReplyError::Nonce)));
         } else {
             let staged = result?;
             assert_eq!(staged.cookie_count(), 1);

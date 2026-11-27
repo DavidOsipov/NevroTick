@@ -635,9 +635,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
         read: Result<AttributedStatusRead, IdentifiedReadError>,
     ) -> Option<NativeStatusReply> {
         let outcome: NativeStatusOutcome = match read {
-            Ok(read) => match self.dispatch_native_status(clock, stop, &read) {
+            Ok(mut read) => match self.dispatch_native_status(clock, stop, &mut read) {
                 Ok(reply) => return Some(reply),
-                Err(fault) => NativeStatusOutcome::Receive(fault),
+                Err(outcome) => outcome,
             },
             Err(error) => NativeStatusOutcome::Identity(error),
         };
@@ -653,26 +653,40 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
     /// Apply the original accept cutoff to the common bounded status receiver.
     ///
     /// # Errors
-    /// Refuses absent, used or expired custody and incomplete or invalid frames.
+    /// Refuses absent, used or expired custody, a changed caller token, and
+    /// incomplete or invalid frames.
     fn dispatch_native_status<C: Clock>(
         &mut self,
         clock: &mut C,
         stop: &StopNotification,
-        read: &AttributedStatusRead,
-    ) -> Result<NativeStatusReply, SessionFault> {
+        read: &mut AttributedStatusRead,
+    ) -> Result<NativeStatusReply, NativeStatusOutcome> {
         if self.private_status_issue == PrivateStatusIssue::Issued {
-            return Err(SessionFault::Closed);
+            return Err(NativeStatusOutcome::Receive(SessionFault::Closed));
         }
-        let cutoff: Instant = self.connection_cutoff.ok_or(SessionFault::Closed)?;
+        let cutoff: Instant = self
+            .connection_cutoff
+            .ok_or(NativeStatusOutcome::Receive(SessionFault::Closed))?;
         self.broker_status_edge(clock, stop, Some(cutoff))
-            .map_err(BrokerStatusSession::<R, C, P, W>::owner_fault)?;
+            .map_err(|fault: BrokerQueryFault| {
+                NativeStatusOutcome::Receive(BrokerStatusSession::<R, C, P, W>::owner_fault(fault))
+            })?;
+        let bytes: &[u8] = read
+            .current_bytes()
+            .map_err(NativeStatusOutcome::Identity)?;
         let mut session: BrokerStatusSession<'_, R, C, P, W> =
             BrokerStatusSession::issue(self, clock, stop, cutoff);
         let connection: Connection = Rc::clone(&session.connection);
-        let reply: Reply = session.receive(Delivery {
-            connection: &connection,
-            bytes: read.as_bytes(),
-        })?;
+        let reply: Reply = session
+            .receive(Delivery {
+                connection: &connection,
+                bytes,
+            })
+            .map_err(NativeStatusOutcome::Receive)?;
+        // The broker has only observed its read-only availability state. A
+        // changed caller token during dispatch must prevent reply publication.
+        read.finish_dispatch()
+            .map_err(NativeStatusOutcome::Identity)?;
         Ok(NativeStatusReply {
             frame: reply.frame,
             cutoff,

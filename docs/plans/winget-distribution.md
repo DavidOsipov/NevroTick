@@ -360,10 +360,14 @@ without blocking useful source preparation.
 | WGT-W05 — independent reviewer/coordinator | Reconcile exact candidate/tool/platform receipts and remaining blockers; record WGT-C01 before V1 release approval. Scope local, direct-package and Community evidence separately. |
 | WGT-W06 — David/release owner | At authorized publication, perform the selected source operation and observe WGT-C02. Later versions reuse the tested update path and triage policy; listing/merge alone is not an installed recovery result. |
 
-**Next executable stage now:** WGT-W01 source/identity preparation under existing
-P6 ownership. The current request records this plan and routing, not execution
-of held native work, a new dependency, credential creation, signing or publication.
-Before any later bounded experiment record its exact candidate, environment,
+**Next executable stage now:** WGT-W02 source identity/readback under existing
+P6 ownership. The [WGT-W01 source readback](../../tasks/windows11-integration.md#436-winget-distribution-before-v1--7-november-2026)
+records the pending direct-package identity, role artifacts and tool admission;
+it does not establish a registered Community identifier or a release artifact.
+Define the reached source contract without inventing either. Multi-file Community
+projection remains conditional on its activation. No held native work, new
+dependency, credential creation, signing or publication follows from this step.
+Before a bounded experiment record its exact candidate, environment,
 success/refusal expectations, elapsed-time/retry limit and cleanup. Stop for the
 concrete failed prerequisite; do not repeatedly probe or redesign unrelated work.
 

@@ -414,8 +414,8 @@ clarify their implementation; they are not additional pending decisions.
 
 ### 6.4 Hosted Actions trust policy — 14 November 2026
 
-**Decision:** NV-DEC-001 §6.4 / H08, CHECK-19/25/26/27. **Status: Ready for
-owner; not accepted.** The dependent action is restoring the existing mandatory
+**Decision:** NV-DEC-001 §6.4 / H08, CHECK-19/25/26/27. **Status: Approved
+by David on 27 November 2026.** The dependent action is restoring the existing mandatory
 GitHub Actions jobs. Independent Core/Engine implementation and isolated local
 checks continue. This card changes no product trust, native or release policy.
 
@@ -446,7 +446,7 @@ CodeQL subdirectories are trusted. Keep `github_owned_allowed: false`,
 CodeQL deferral. No broader owner wildcard, floating ref, all-Actions allowance,
 new analysis execution or protection bypass is proposed.
 
-**Concrete pending operation:** after fresh settings/active-run checks, temporarily
+**Original proposed operation:** after fresh settings/active-run checks, temporarily
 disable this repository's Actions while selecting the policy, install the exact
 two-pattern list, read it back, then re-enable. If any operation fails, restore
 the original top-level policy; never re-enable with an unverified selected list.
@@ -474,11 +474,26 @@ Rollback body for the top-level endpoint:
 {"enabled":true,"allowed_actions":"local_only","sha_pinning_required":true}
 ```
 
-**Owner/approval:** David; pending. API reads report repository-admin status, but
-Administration-write token acceptance is untested. No settings write or run retry
-has been performed. Residual trust includes all action code within each selected
+**Original approval state:** David's decision was pending at the earlier readback.
+API reads reported repository-admin status, while Administration-write token
+acceptance was untested. Residual trust includes all action code within each selected
 immutable repository commit. A changed action pin needs a new reviewed allowlist
-update; this approval, if given, would not permit arbitrary upstream actions.
+update. The approved list permits those two commits only.
+
+**Owner approval — 27 November 2026:** David approved the two exact SHA pins
+above and restoration of the required workflows. The transition and its readback
+are recorded separately by the existing build task. The approval preserves
+full-SHA enforcement and both required checks.
+
+**Applied — 27 November 2026:** GitHub rejected the planned disabled-plus-
+selected REST request. The original policy remained in effect. David saved
+the selected-policy form, and the API readback exposed enabled broad allowances
+and one combined pattern. The coordinator immediately replaced these with
+`actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` and the exact
+`github/codeql-action/init` and `github/codeql-action/analyze` paths at
+`9b3254085494b55a0f7c4c2b3d2d52cc712ce370`. Both broad allowances read false,
+full-SHA pinning remains true and the two required checks remain active.
+These three path patterns retain the two approved immutable commits.
 
 **Validation and revisit:** verify settings/read-only tokens/rules after the
 transition, then observe actual mandatory jobs and their candidate-specific
