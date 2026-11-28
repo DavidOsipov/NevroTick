@@ -112,7 +112,15 @@ Source selection is automatic. It admits valid responses, compares current estim
 
 Do not implement “pick the server with the lowest ping.” Response speed alone does not establish correct time. Preserve Chrony's selected statistical/majority behavior, the configured minimum agreement and reselection stability.
 
-The existing starting proposal is four independently operated NTS identities, with at least two agreeing eligible identities **and** the majority rule satisfied. That is a configuration proposal, not a promise that any two of four names suffice. Hostname aliases or several addresses from one operator do not automatically establish independence. The shipped provider set must also have a compatible time-scale/leap policy. RFC 8633 supports using diverse sources and explains the limitations of too few or correlated sources. [R1]
+[OD-23](nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+accepts a default authenticated minimum of **three fresh, admissible independent
+operator groups**, preserving the majority rule. This replaces the earlier
+minimum-two proposal. The recommended target is five qualified NTS groups;
+provider membership and qualification remain open. Aliases do not add votes or
+duplicate numerical influence. Require a unique maximum component with a complete
+common witness, and refuse ambiguous maximum regions. The shipped set also needs compatible
+time-scale/leap policy. RFC 8633 motivates diversity, without proving independence
+from a hostname count. [R1]
 
 Under the [selected leap policy](windows-time-architecture.md#105-leap-seconds-and-time-scales),
 an admitted unsmeared UTC server remains usable when it never announces a leap
@@ -122,10 +130,14 @@ their votes; no automatic smaller quorum or different scale is substituted.
 
 **Acceptance:** controlled agreeing, disagreeing, stale and duplicate sources yield the expected membership and reasons; a fast wrong source is rejected. Loss of agreement does not silently reduce the minimum or enter single-source mode. [Architecture §7; CHECK-7/8]
 
-Before production integration, freeze the majority population, independent groups,
-timeout behavior and observation-age limits under [architecture §7.2](windows-time-architecture.md#72-sample-to-clock-pipeline).
-An older usable predictor is not fresh independent corroboration. Authentication,
-cookie renewal and reachability do not by themselves refresh a time measurement.
+Before production integration, complete the population, independent-group,
+timeout and observation-age fields under [architecture §7.2.2](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026).
+Source loss never reduces the accepted three-group minimum. Last useful
+measurement, transport reachability, model evaluation and authentication lifetime
+remain distinct; check evidence expiry again at consumption. Report witnesses
+and numerical contributors separately. Historical predictors provide only their
+admitted prediction role. Statistical precision and agreement do not by
+themselves establish a physical UTC-error bound.
 
 ### F-04 — Show truthful status immediately
 
@@ -208,7 +220,7 @@ The hints affect only the isolated certificate-time recovery path. They cannot s
 
 If the accepted result lies outside tested automatic correction limits, show **Review clock correction — Administrator required**. Display the direction, magnitude/target interval, evidence freshness, consequence and single-use nature. A changed generation, policy, estimate or expired proposal requires a new review. Declining leaves the clock unchanged by that proposal.
 
-**Owner goal OD-02:** include approximately 100-year local-date errors in recovery qualification. Exact true-date/era bounds, authenticated quorum and direction/runtime correction policy remain open. The tentative 12-hour plain-NTP limit is not an adopted value; preserve separate acquisition and broker authority.
+**Owner goal OD-02:** include approximately 100-year local-date errors in recovery qualification. OD-23 settles the default three-group agreement floor; exact true-date/era bounds, additional recovery evidence and direction/runtime correction policy remain open. The tentative 12-hour plain-NTP limit is not an adopted value; preserve separate acquisition and broker authority.
 
 Leap and continuous-UTC rules use the full supported candidate date interval,
 not the wrong Windows date. Ambiguous interpretation withholds clock authority
@@ -456,8 +468,8 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | --- | --- | --- |
 | Background operation | Services start independently of login | Installer-owned, qualified recovery |
 | Normal trust profile | Existing NTS-only baseline pending OD-03 resolution | Pool preference does not establish an NTS preset or silently authorize a default trust downgrade |
-| Source preset | Target four diverse NTS operators; supplied directory is discovery input | Candidate shortlist in research R-04; qualification and exact identities remain open. Pool defaults require a vendor zone and an explicit role |
-| Agreement | Existing minimum-two-plus-majority proposal | Freeze the tested policy; never reduce automatically |
+| Source preset | Recommended target five qualified NTS operator groups; supplied directory is discovery input | R-04/OPEN-CAT-02 retain admission and exact identities. Pool defaults require a vendor zone and an explicit role |
+| Agreement | Accepted default minimum three fresh admissible groups plus majority and unambiguous common witness | OD-23 / architecture §7.2.2; no automatic reduction through loss/rejection. Production profile/consumer qualification remains open |
 | Time-network route | Direct, Automatic interface and Automatic IP mode | Machine policy; qualify current pinned/only-family controls. Proxy support is deferred beyond first delivery to SOCKS-0; unsupported proxy state cannot reset to Direct |
 | Plain NTP | Available by deliberate profile change | Administrator; permanently visible unauthenticated label |
 | Recovery hints | Off | Administrator explicitly chooses one or two helpers |

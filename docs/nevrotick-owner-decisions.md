@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.33<br>
+**Document:** NV-DEC-001, revision 1.34<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -8,6 +8,13 @@
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
+
+**Production quorum decision — 29 November 2026:**
+[OD-23](#27-od-23--production-quorum-and-evidence-policy) accepts three fresh,
+admissible independently operated NTS groups as the default authenticated
+agreement floor. Source loss cannot reduce it. The accompanying production
+profile records the five-group design target and remaining freshness, uncertainty,
+provider and consumer qualification; documentation does not complete item 2.
 
 **Sanitizer qualification direction — 28 November 2026:** [OD-22](#26-od-22--sanitizer-qualification-cadence)
 places routine sanitizer qualification at coherent module completion and requires
@@ -81,7 +88,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | ID | Owner instruction | Recorded status | What still needs evidence or a decision |
 | --- | --- | --- | --- |
 | OD-01 | Take selected upstream code, stress-test it, and alter it when bugs or justified optimizations are found; independently replace Chrony-derived implementations after Roughtime | **Accepted current reuse and future replacement direction** | Exact source/dependency licence inventory and notices; permitted Rust/native graph; justified behavioral deviations; future replacement qualification, rights review and public licence selection |
-| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; include Roughtime bootstrap in network-only V1, without local PPS/GNSS/refclock inputs | **Accepted behavior goal; V1 protocol/hardware scope clarified 27 November 2026** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-C01 protocol/provider/trust qualification before V1. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
+| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; include Roughtime bootstrap in network-only V1, without local PPS/GNSS/refclock inputs | **Accepted behavior goal; V1 protocol/hardware scope clarified 27 November 2026** | Supported true-date interval, era anchor, additional exceptional-recovery requirements above OD-23's default agreement floor, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-C01 protocol/provider/trust qualification before V1. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
 | OD-05 | Prepare one complete hardened MSIX for direct distribution; no Microsoft Store publication. Add the TUF-authenticated About updater with one target-bound Update now decision; preserve approved upstream signatures, required signing scope and David's release authority | **Direct distribution accepted 21 November; updater design accepted 25 November 2026; signing implementation unresolved** | §7.10 assigns the updater plan and phase joins. Exact client/provider/key custody, trustworthy update time, durable trust, supported provisioning/recovery and final native/signature evidence remain open; no unsigned-release or trust-bypass approval |
@@ -102,6 +109,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-20 | Defer OneCRL and CRLite integration until after V1; add a roadmap entry and detailed plan, deciding its priority | **Accepted deferral, 14 November 2026; delegated engineering placement is second, after MATH-C01 and before MT-0** | TRUST-0/TRUST-C01: authenticated updates, accepted-chain checks, coverage/freshness, association invalidation and separate root-policy scope. No implementation or native pass; existing V1 OPEN-8/R-05 requirements remain |
 | OD-21 | Record a detailed restricted local clock-permissions plan and place the feature immediately before Khronos | **Accepted documentation and post-V1 placement, 27 November 2026** | CLK-0/CLK-C01 and NV-CLK-001 follow MT-C01. User acceptance covers planning and order; mechanisms require reassessment, bounded implementation/qualification and an explicit disposition. No automatic host mutation, V1 prerequisite or unrestricted-administrator exclusion is approved |
 | OD-22 | Run routine sanitizer qualification when a coherent module is ready, and complete every applicable sanitizer obligation before V1 release | **Accepted cadence and applicability guidance, 28 November 2026** | Reconcile the five established families and relevant additional mechanisms under hardening §§9.5.3–9.5.4; distinguish required profiles, unsupported native modes and conditional analysis candidates. Preserve separate detector/product evidence, justified reuse and current Windows hardening requirements. Current tool controls supply no product or release pass |
+| OD-23 | Record the item-2 analysis and use a quorum of three for the default authenticated profile | **Three-group floor accepted, 29 November 2026** | Fresh operator-group evidence, fixed minimum through loss, existing majority/ambiguity rules and separate correction authority. Five-group roster target, fault assumptions and numerical limits require profile/provider qualification; production consumers and item-2 completion remain open |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -246,7 +254,7 @@ NTS authenticates the peer and data under its trust basis; a faulty source, corr
 
 ### 4.5 Recommendations to investigate, not adopted constants
 
-1. Start with **four independently operated NTS sources** as the normal preset target. For exceptional very large recovery, test a stronger requirement such as **three agreeing independent NTS identities**, while preserving the existing majority rule. This is a research candidate, not a new quorum default.
+1. **Quorum recommendation superseded, 29 November 2026:** [OD-23](#27-od-23--production-quorum-and-evidence-policy) accepts a default floor of three fresh independent NTS groups, including evidence for exceptional recovery. The earlier four-source target and exceptional-only three-source candidate are historical. The recommended five-group target, provider admission and additional exceptional-recovery requirements retain their separate qualification.
 2. Prefer automatic exceptional recovery during a clearly defined acquisition/recovery window. Evaluate large backward and forward changes after normal tracking separately; obtain fresh evidence before either. A Windows service starting does not prove other applications are not running.
 3. For plain NTP, compare a **1,000-second outer guard and smaller limits** against realistic drift/outage cases. Retain David's “12 hours or smaller” as the question to answer, not a value to hardcode. A small per-update bound alone does not prevent accumulated manipulation.
 4. Keep normal corrections gradual and bounded. Require explicit policy or a current one-use approval outside the qualified automatic envelope. Service restarts, retries, reconnects and sign changes must not replenish consumed authority.
@@ -296,7 +304,9 @@ the collected sources and provenance. The
 [joint production-decision TODO](../tasks/development-backlog.md#joint-production-decisions--28-november-2026)
 retains items 2–9 with their existing owners and dependencies.
 
-Their open choices remain open until discussed and recorded with David;
+The three-group floor in item 2 was subsequently accepted in
+[OD-23](#27-od-23--production-quorum-and-evidence-policy), 29 November 2026.
+Remaining item-2 choices and items 3–9 stay open for joint discussion;
 collection alone does not approve a production server preset. Continue already
 authorized preparation and implementation under the current contracts. Bring a
 concrete decision when the dependent work needs it; this instruction neither
@@ -2165,3 +2175,57 @@ This decision grants no tool installation, arbitrary runner flags, production
 profile change or Windows/fuzz/storage/UI hold lift. OD-10's formal-work deferral
 remains distinct. Instruction/source research and historical tool fixtures do not
 claim a current product run, completed module, native pass or V1 approval.
+
+## 27. OD-23 — production quorum and evidence policy
+
+**Owner instruction, 29 November 2026 (Asia/Tbilisi):** after the comparison of
+Chrony, ntpd-rs and NTPsec, David endorsed a quorum of three and instructed agents
+to put the recommendations into the documentation. This settles the default
+authenticated agreement floor; implementation and qualification remain distinct.
+
+**Accepted requirement:** require at least **three fresh, admissible independently
+operated NTS groups** before accepting new agreement in the default authenticated
+profile. Preserve the majority requirement and one vote per group. Timeouts,
+statistical rejection, stale evidence, aliases and source loss cannot reduce the
+minimum. No automatic transition to a two- or one-group profile is permitted.
+The existing deliberately selected, visibly labelled single-source profile remains
+separate. Roughtime bootstrap evidence supplies no ordinary NTS vote.
+
+The same three-group floor applies to default authenticated evidence used for
+exceptional recovery. Passing it grants no step, wider correction, floor-reset or
+certificate-verification privilege. OD-02/OPEN-5/6/8 retain those additional
+recovery and broker-authority choices.
+
+**Documented engineering direction:** retain the Chrony-derived V1 estimator and
+controller; preserve unique-component/common-witness refusal, separate witnesses
+from numerical contributors, renew freshness only from useful accepted time
+observations, and carry evidence age/generations/expiry to the actual consumer.
+Keep statistical precision, selection distance, arithmetic enclosure and a
+conditional physical UTC-error envelope distinct. Existing contracts already
+require truthful freshness/uncertainty reporting; a smaller overlap or model
+variance cannot establish a physical accuracy claim by itself.
+
+**Recommendations still requiring profile qualification or a later decision:**
+
+- Target five qualified operator groups, with a fixed quorum of three for that
+  cohort. Exact membership, provider permission and independence evidence remain
+  R-04/OPEN-CAT-02; five directory names do not qualify five groups.
+- Use at most one incorrect group as the initial qualification baseline, with
+  outages exercised separately and together. Record common-path/reference limits;
+  this is a proposed fault model, not an accepted accuracy or availability guarantee.
+- Qualify finite observation-age and aged-uncertainty ceilings. The suggested
+  `min(3 * anchor_poll_interval, profile_age_cap)` is an experiment candidate only;
+  no seconds, ppm, statistical multiplier or physical-error ceiling is adopted.
+- Resolve larger/custom-profile majority populations explicitly. Do not infer a
+  general adaptive denominator or new weaker profile from the five-group proposal.
+
+[Architecture §7.2.2](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026)
+owns the production contract and useful/refused cases;
+[R-02/R-04](nevrotick-research-handoff.md#item-2-implementation-comparison--29-november-2026)
+own source evidence and remaining parameter/provider work. The existing
+[Core task](../tasks/s1.3-source-selection-readiness.md) and
+[joint TODO](../tasks/development-backlog.md#joint-production-decisions--28-november-2026)
+retain consumer implementation/qualification and items 3–9. Current fixture
+results, controlled Engine observations and this decision do not establish a
+production voting path, Windows accuracy or phase completion. MATH-0, execution
+holds and the current development order are unchanged.

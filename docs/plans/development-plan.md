@@ -868,7 +868,7 @@ owners. Keep sockets/OS clocks outside them.
 | Packet and numeric admission | Raw valid NTP vector is accepted once; malformed/truncated/oversized/duplicate/stale/wrong-correlation/invalid-extension vectors cannot mutate time/history. Checked era/unit/overflow and finite-result boundaries work in release builds. | CHECK-6/25 |
 | Timestamp meaning | In one millisecond coordinate system, T1=0, T2=70, T3=80, T4=110 yields +20 ms offset and 100 ms round-trip delay. These are relative analytic coordinates, not literal zero-valued wire timestamps; packet fixtures need valid timestamp encodings. Derive independent asymmetric-delay, precision, rollover and ambiguous-era cases; do not replace upstream precision handling with a simplistic negative-delay rule. | CHECK-7/25 |
 | Regression | Known offset/drift/noise trajectories meet predeclared error and uncertainty envelopes; sample aging/pruning remains bounded. Applied corrections use actual acknowledgements or a documented stable coordinate system. | CHECK-7/10, AC-19 |
-| Selection | Independently specified survivor/principal/supporter sets and reasons match. Fast wrong peers, duplicate identities, lost peers and two-source disagreement cannot manufacture votes, lower minimum agreement or silently become a single-peer profile. | CHECK-7/8, AC-03 |
+| Selection | Independently specified survivor/principal/supporter sets and reasons match. Production integration preserves [OD-23](../nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)'s minimum of three fresh admissible operator groups for the default authenticated profile and unique-component/common-witness refusal. Fast wrong peers, aliases, lost/rejected/expired observations and old predictors cannot manufacture votes, lower the minimum or silently become a single-peer profile. Historical fixture minima retain their bounded scope. | CHECK-7/8/14/25, AC-03 |
 | Combination/discipline | Preserve different offset/frequency weighting, principal hysteresis and uncertainty. Step/slew/holdover proposals remain pure, bounded and invalidated by modeled generation changes; no feedback from merely requested effects. | CHECK-7/8/10 |
 | Leap knowledge and guard — S1.4 | Apply [NV-LP-001](leap-second-policy.md): separate history/future coverage, admit silent LI=0 sources, preserve complete date/exchange intervals and model guard/reacquisition without synthetic leap effects. Unknown future coverage alone does not prohibit event-free tracking. | CHECK-6/7/8/11/14/25/26 |
 | Contracts/tooling | Real entry points reject construction/transform bypasses; healthy controls succeed. Nonzero tests, lint/SAST failure propagation, source provenance, reviewed security-module/critical-file scope and applicable coverage/mutation gates are established. | CHECK-19/20/25/26 |
@@ -5375,7 +5375,7 @@ gates and authorize no immediate campaign.
 
 | Measurement | Initial target and required context |
 | --- | --- |
-| Service memory | Engine + broker ≤32 MiB steady-state private bytes; p95 one-second samples over a one-hour, four-source run after warm-up; peaks separately. |
+| Service memory | Engine + broker ≤32 MiB steady-state private bytes; p95 one-second samples over a one-hour admitted-profile run after warm-up; qualify the proposed five-group cohort and retain the four-source control; peaks separately. |
 | UI memory/lifecycle | Visible UI ≤48 MiB; separate optional tray budget; default closed UI has no process. |
 | Idle service CPU/wakeups | ≤0.1% of one logical CPU averaged ten minutes; ≤4 timer wakeups/second in the canonical idle tracking condition; retain burst data. |
 | UI latency | Local-action p95 <100 ms; cold usable window <500 ms on named hardware; network/UAC separate. |
@@ -5383,8 +5383,9 @@ gates and authorize no immediate campaign.
 | Long run | One-hour baseline and 72-hour reconnect/fault soak; no unexplained retained handle/thread/allocation growth before teardown. |
 
 Retain the canonical hard configured cap of 16 logical sources, 64 history samples
-per source and separate maximum-two helpers. The four-source target does not
-settle OD-03's shipped preset. Freeze protocol/IPC/string/cookie/queue/file/error
+per source and separate maximum-two helpers. OD-23 accepts a default quorum of
+three fresh groups; its recommended five-group target does not settle OD-03's
+shipped preset or resource qualification. Freeze protocol/IPC/string/cookie/queue/file/error
 limits from their canonical contracts before exposing inputs; test exact accepted
 neighbors and one-over-limit rejection plus aggregate pressure.
 
@@ -5502,7 +5503,7 @@ or enabling the dependent production interfaces:
 | S0.2/P3, platform/security | Choose and demonstrate object-owner isolation through runtime creation/replacement, not DACL allow-list inspection alone; CHECK-1/15. |
 | S0.4/P4, broker/storage | Freeze durable reservation/outcome protocol, explicit unknowns, mode/value transitions, slew settlement and boot/Fast Startup epochs. Fault each persistence/effect/acknowledgement seam; CHECK-10/11/12/15. |
 | S0.7/P2, protocol/security | R-05 freezes association/key/full-authentication/resumption ages, trust-change detection and unknown-age behavior before S2.3 reuse; CHECK-8/9/15. |
-| S0.7/P1/P2/P4, core/security | R-02 freezes uncertainty/floor provenance and narrow supersession; production vote/freshness/independence tables distinguish retained prediction from fresh routine or exceptional agreement; CHECK-7/8/9/14/15. Existing pure selection fixtures remain bounded evidence. |
+| S0.7/P1/P2/P4, core/security | R-02 freezes uncertainty/floor provenance and narrow supersession; apply [OD-23](../nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)'s three-group minimum and complete the remaining production vote/freshness/independence table. Distinguish retained prediction from fresh routine or exceptional agreement; CHECK-7/8/9/14/15. Existing pure selection fixtures remain bounded evidence. |
 | S0.6/P6, installer/release | Qualify durable maintenance startup inhibition against queued SCM recovery; wrong-clock/offline signing, key policy and project-specific admission through repair/removal/restoration; CHECK-9/13/18/23. |
 | P1/P7, tooling/QA | Reconcile per-critical-file functions/guards with generated and automatically absent mutants and alternative evidence. Keep the 95% gate and scoped historical receipts; CHECK-19/25. |
 
@@ -5519,14 +5520,18 @@ The [architecture §22.1 inventory](../windows-time-architecture.md#221-architec
 and [backlog intake](../../tasks/development-backlog.md#architectural-closure-intake--26-november-2026)
 cover the eight assessed closure areas and the current temporal integration
 dependency. Reuse their canonical contracts and existing owners. This work
-turns remaining decisions into concrete handoffs; it selects no numerical
-profile, Windows mechanism, TUF implementation, signer or additional service.
+turns remaining decisions into concrete handoffs. The
+[29 November quorum decision](../nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+settles the default authenticated minimum of three; the
+[remaining production profile and consumer work](../windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026)
+stays open. No Windows mechanism, TUF implementation, signer or additional service
+is selected by this workstream.
 
 | Preparation order and existing owners | Deliverable and readiness boundary |
 | --- | --- |
 | Current S2.1/S2.2/W11-W01/Core | Continue §7's bounded original-receipt receiving source child. Physical-reference qualification is HELD/BLOCKED under the current W11 disposition; qualified mapping/withdrawal and real consume-once Core history remain open. Preserve the settled supplier contract and do not restart equipment inquiries on resumption. A controlled-profile observation need not wait for a shipped default preset. |
 | Parallel S0.2/S0.3/S0.6, W11-W04/W05/W10 | Prepare supported pre-start isolation/admission and independently invocable recovery through the [Windows closure inventory](../../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026). Distinguish evidence already retained from rights, invocation, current authorization and final-profile gaps. Native execution still needs its scoped admission. |
-| Before dependent P1/P2/P4 behavior, R-02/R-04/R-05 and S0.4/S0.7 | Complete source/vote/freshness/fault, date/era/floor, ordinary NTS lifetime and correction/holdover/epoch decision outputs. W11 §4.31 remains the detailed correction owner. Evidence supports an NV-DEC-001 card when a material choice is ready; no permissive placeholder values. |
+| Before dependent P1/P2/P4 behavior, R-02/R-04/R-05 and S0.4/S0.7 | Bind the accepted three-fresh-group minimum to the actual Core/Engine consumers and complete the remaining source/vote/freshness/fault profile. Date/era/floor, ordinary NTS lifetime and correction/holdover/epoch decisions remain separate; W11 §4.31 owns correction. Preserve accepted-observation age, expiry at consumption and distinct uncertainty claims. Evidence supports an NV-DEC-001 card for remaining material choices; no permissive placeholder values or automatic quorum reduction. |
 | Before each mandatory production writer/reuse path, S3.3 and original state owners | Freeze [§12.1.4's physical lifetime](../windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery), actual schemas/commits/readers/retirement and bounded recovery. Join mandatory Engine restrictions and the distinct updater trust/installed/floor classes through their writers. ST-W03 supplies object evidence; optional-cache work remains paused independently. |
 | Before P5/P6 live Apply, maintenance/time/security with W11-W05/W10 | Complete separate UTC-producer, exact client/publisher/process graph, protected-state and supported Windows invocation/profile exits. Trust/time/storage and surviving deployment/recovery must both pass. Preserve one exact-target user intent and actual current admission. |
 | At dependent integration and P6/P7, platform/performance/UI/release | Populate exact supported OS/CPU/protection/caller/registration/update-owner rows and aggregate work/storage/lease/stop allocations. Later selected signing/custody/renewal/offline/absence procedures and useful corrective delivery need actual candidate/operational evidence. |

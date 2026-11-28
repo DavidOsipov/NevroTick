@@ -279,7 +279,7 @@ The following choices form the implementation baseline. A gated choice is select
 | DEC-5 | Retain the existing NTS-only selectable baseline while resolving OD-03's Pool/default-profile interaction; do not ship an unqualified preset | Prevents silent weakening of an authenticated configuration | An explicitly selected NTP-only profile is needed; it stays visibly unauthenticated |
 | DEC-6 | Prefer cached NTS associations before any bootstrap hint | Fresh authenticated UDP replies can avoid certificate-time circularity | State is absent, rejected, expired under policy or cryptographically invalid |
 | DEC-7 | Plain NTP bootstrap is opt-in and affects only a provisional TLS verification clock | Repairs gross date errors without writing globally untrusted time | An independent trusted time anchor becomes available; do not add accept-all TLS |
-| DEC-8 | Preserve majority selection and configured minimum agreement | No single-peer fallback after disagreement; availability is traded for correct trust reporting | A deliberate single-source profile is approved and labelled |
+| DEC-8 | Preserve majority selection and configured minimum agreement; OD-23 sets the default authenticated floor to three fresh independent groups | No automatic minimum reduction or single-peer fallback after disagreement/source loss; availability is traded for correct trust reporting | A deliberate single-source profile is approved and labelled |
 | DEC-9 | One complete hardened MSIX is the direct-distribution target, including both services, UI and helper | OD-05 §7.9 rejects Store publication; retain one-product ownership, least privilege and reversible W32Time handover | OD-05 §7.10 adopts §19.8's TUF updater and one-consent flow; exact client/signing/trust/hosting/time/state/native mechanisms remain open. No automatic MSI fallback, split product or weaker privilege boundary |
 | DEC-10 | Native, bounded local protocols and files; no embedded web server/WebView | Removes unnecessary network/browser surfaces and runtime overhead | A concrete user need justifies a new threat model and applicability review |
 | DEC-11 | Only broker-acknowledged applied corrections update the engine model | Avoids assuming requested frequency/phase equals actual Windows behavior | Never relaxed; a changed backend must meet the same contract |
@@ -1004,15 +1004,23 @@ records inspected behavior, limits and retained source pins. [S122]
 7. **Propose discipline.** Separate long-term oscillator correction from a finite phase correction. Account for actual backend results, limits and quantization; prevent integrator wind-up.
 8. **Publish honest state.** Report the principal, supporters, rejection reasons, fresh agreement and uncertainty. Tracking requires more than socket reachability.
 
-A strict default targets four independently operated NTS identities, with a configured minimum of two agreeing eligible identities and the majority rule still required. Four hostnames or IPs do not prove independence; allow explicit operator grouping and deduplicate identities/endpoints. A deliberate single-source profile is possible but must be labelled, never entered automatically after agreement fails. RFC 8633 motivates diverse sources; the selected minimum is a product proposal. [S17, S18]
+[OD-23](nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy),
+29 November 2026, accepts a default authenticated floor of **three fresh,
+admissible independently operated NTS groups**, preserving the majority rule.
+This supersedes the earlier minimum-two proposal. The recommended roster target
+is five qualified groups; exact membership and the complete production profile
+remain subject to the gates below. Hostname/IP aliases do not add independent
+votes. A deliberate single-source profile remains possible and visibly labelled,
+never entered automatically after agreement fails. See §7.2.2. [S17, S18]
 
 Before production admission, freeze the vote population: configured identities,
 eligible estimates and independently operated groups are distinct sets. Specify
 the majority denominator, treatment of timeout/statistical rejection, deduplication,
 maximum observation age and uncertainty growth, separately for routine tracking
-and exceptional recovery. Preserve the configured minimum through source loss.
-Qualify four fresh sources, two missing, duplicate operators, a 2–2 split and one
-fresh source with older usable models under the declared fault assumptions.
+and exceptional recovery, preserving OD-23's three-group floor in the default
+authenticated profile. Qualify three useful fresh groups beside missing groups,
+only two fresh groups, duplicate operators, a 2–2 split and one fresh source with
+older usable models under the declared fault assumptions.
 Two malicious agreeing sources with two honest sources blocked illustrates a
 policy/fault-model question, not a disproof of a one-fault guarantee. [S117]
 
@@ -1020,8 +1028,8 @@ Keep model eligibility for prediction/holdover, fresh independent corroboration
 and exceptional-correction authority separate. An older selectable Chrony model
 does not establish a fresh vote. NTS-KE, cookie renewal, NAK and reachability alone
 never refresh the last accepted-time-observation timestamp. Existing S1.3 fixture
-selection does not settle the production denominator or exceptional quorum;
-OPEN-5/6 and research R-02 own the dependent choices.
+selection does not implement the production profile or exceptional-recovery
+authority; OPEN-5/6 and research R-02 own the remaining dependent choices.
 
 #### 7.2.1 Estimate lifecycle and anomaly evidence
 
@@ -1051,6 +1059,98 @@ local error. Replaying or selecting the same observation is not confirmation.
 Hysteresis cannot retain an ineligible principal, and persistence of an error
 alone grants no exceptional correction authority. Borrow transition discipline
 without importing upstream spike/step thresholds or a second controller. [S122]
+
+#### 7.2.2 Production quorum and evidence profile — 29 November 2026
+
+**Decision and scope:** OD-23 settles the default authenticated agreement floor
+at three fresh groups. The table below binds that decision and the existing
+lifecycle/uncertainty requirements to production owners. The five-group roster
+and initial one-incorrect-group fault model are engineering recommendations for
+qualification; numerical freshness/error limits and admitted providers remain
+open. This profile is not implemented by the current `select_fixture` API.
+
+| Field | Production contract / current disposition |
+| --- | --- |
+| Cohort | Versioned configured group identities; recommended target five qualified NTS groups. Catalogue entries, IPs and eligible models are separate populations. |
+| Quorum | Accepted minimum three fresh admissible groups. For the proposed five-group cohort, require a fixed quorum of three; outages/rejections never lower it. Larger/custom-cohort majority policy needs explicit resolution before admission. |
+| Group construction | One vote per operator group. Freeze the representative or group estimate using declared local criteria before cross-group selection. Record known shared-reference/path dependencies; operator diversity alone proves no complete independence. |
+| Selection | Project admitted evidence to one qualified reference instant with aged uncertainty; preserve strict majority, the minimum, a unique maximum component and a common witness. Do not remove dissenters and recompute a weaker quorum. |
+| Witnesses/contributors | Retain distinct counts and identities. Every witness relied upon stays valid; every numerical contributor has current admission. Multiple endpoints cannot regain duplicate group influence through combination. |
+| Authentication/scale | Normal votes remain NTS-only, with compatible admitted UTC/era/leap interpretation. Plain helpers, Roughtime bootstrap ancestry, KE success and authentication alone supply no additional independent vote. |
+| Freshness anchor | Original accepted observation identity/time supporting a valid current model, plus clock/source/path generations. A newly received but statistically rejected packet does not renew it. |
+| Expiry | Finite observation-age deadline and aged-uncertainty ceiling; enforce both at selection and current consumption. Age does not stop while a proposal is queued. |
+| Missing agreement | Publish unavailable fresh corroboration and its cause. Historical predictors retain only their separately admitted prediction/holdover role; no automatic smaller quorum. |
+| Exceptional recovery | Same default three-group floor plus the separately qualified OD-02 recovery/broker requirements. Agreement supplies no exceptional correction or floor-supersession authority. |
+| Fault assumptions | Proposed initial qualification: at most one incorrect group, with missing/expired groups exercised separately and together. Shared path/reference failures need explicit assumptions; no general accuracy or availability guarantee follows. |
+
+**Freshness and model validity.** Keep last authenticated response, last useful
+observation, model reference instant, evaluation instant and authentication
+lifecycle distinct. New KE/cookies, NAK, reachability, projection, reselection,
+restored state and polling backoff cannot refresh the original observation age.
+Use a qualified monotonic/lifecycle basis; sleep/restart or clock/path changes
+must preserve age or invalidate incompatible evidence. A fresh final observation
+cannot validate history spanning an incompatible regime without a justified
+transformation or requalification. Expired source models do not enter a
+combination reported as supported by current quorum; valid internal fit history
+and explicitly aged holdover remain separate claims.
+
+The research candidate `fresh_limit = min(3 * P_anchor, profile_age_cap)` uses the
+admitted poll policy attached to the last useful observation. Freeze that
+observation's deadline; later retry backoff cannot extend it. The multiplier,
+absolute cap, history window, uncertainty ceiling and oscillator-growth terms
+need qualification against the intended accuracy/availability targets and
+provider limits. They are not adopted production constants. Schedule acquisition
+consistently with the accepted deadline; a profile must not routinely expire
+evidence before its next permitted poll.
+
+**Uncertainty meaning.** Keep statistical precision, selection distance,
+arithmetic enclosure, conditional physical UTC-error envelope and unapplied
+system-clock correction separately typed/interpreted. Propagate each justified
+component to the actual estimate, evaluation time and current clock frame.
+Source/upstream error, path asymmetry, common bias, local mapping, age/drift and
+arithmetic contributions retain their assumptions; standard deviations and
+worst-case bounds are not interchangeable. Shared error receives no automatic
+`1/sqrt(N)` reduction. Publish a physical error bound only when its propagation
+is justified; otherwise report estimate, statistical precision, evidence age and
+fresh agreement with physical accuracy explicitly not established.
+
+Selection geometry alone is insufficient: with true offset zero, three honest
+`[-10, 10] ms` intervals and one incorrect `[1, 2] ms` interval have a unique
+four-way maximum overlap `[1, 2] ms` that excludes truth. This mathematical
+example explains the claim boundary; it is not an executed protocol result.
+Likewise, five configured groups can leave enough potential witnesses after an
+outage and an incorrect source, but competing maximum regions can still require
+refusal. Quorum is an agreement gate, not a guaranteed UTC enclosure or liveness
+claim.
+
+**Consumer ownership and completion.** Configuration/R-04 owns cohort identity,
+revision and admitted providers; Engine owns authenticated observation admission
+and original provenance; Core owns valid model transformations, grouping,
+selection and combination; the broker rechecks current evidence/policy/generation
+validity before its separate correction-authority gate; status publishes the
+same admitted meanings. Carry witness observation IDs, generations and earliest
+validity deadline through this chain. The production profile must preserve its
+minimum when constructing a Core batch: fixture population is merely batch size.
+R-02/R-04, S0.7 and the existing Core/Engine tasks own implementation and
+qualification under CHECK-7/8/14 and admission CHECK-25.
+
+| Controlled case | Independent expected result |
+| --- | --- |
+| Five healthy fresh groups agree | Useful selection and truthful published evidence. |
+| Three fresh groups share one unambiguous region; two unavailable | Selection can proceed while required admission/uncertainty/deadline checks hold. |
+| Only two fresh groups, or a 2–2 split with fifth unavailable | No new default-profile agreement; minimum remains three. |
+| Several endpoints represent only two operators | Two votes; no restored influence through duplicate contributors. |
+| One fresh group plus historical predictors | Preserve admitted prediction history; no manufactured fresh quorum. |
+| Authenticated packet rejected by estimator; KE/cookie renewal or NAK | Appropriate transport/control state may change; observation freshness does not renew. |
+| Projection, reselection, restored prior or retry backoff | Original age/deadline retained; aged uncertainty grows under its declared model. |
+| Witness expires before consumption; incompatible clock/path generation | Revalidate/reacquire or refuse the dependent proposal; no stale correction authority. |
+| Multiple equally supported maximum regions | Refuse ambiguous selection without lowering the minimum. |
+| One incorrect group with outages; more faults/common bias as limitation controls | Evaluate the declared scope honestly; no guaranteed selection or accuracy beyond it. |
+| Tight overlap/low scatter with shared bias or unapplied correction | Keep physical-error claim and actual clock state distinct from consensus/precision. |
+
+These are planned consumer checks, not executed production or Windows evidence.
+Retain current development ordering, execution holds and post-V1 MATH-0; this
+decision replaces no controller and opens no native timing campaign.
 
 ### 7.3 NTP client behavior
 
@@ -3987,7 +4087,7 @@ The following are **unmeasured proposed budgets**, not inherited website mandate
 
 | Resource | Initial target | Measurement contract |
 | --- | --- | --- |
-| Engine plus broker memory | At most 32 MiB combined steady-state private bytes | p95 of one-second samples over a one-hour four-source run after warm-up; report peaks separately |
+| Engine plus broker memory | At most 32 MiB combined steady-state private bytes | p95 of one-second samples over a one-hour admitted-profile run after warm-up; qualify the proposed five-group cohort and retain the four-source control; report peaks separately |
 | UI memory | At most 48 MiB private bytes when visible | Same reference machine, sources/settings/diagnostics exercised; service memory reported separately |
 | Closed UI | No UI process by default | Optional tray process is separately budgeted and disabled unless chosen |
 | Idle CPU | At most 0.1% of one logical CPU averaged over ten minutes | Include both services; report wakeups and burst CPU, not only whole-machine percentage |
@@ -3995,7 +4095,7 @@ The following are **unmeasured proposed budgets**, not inherited website mandate
 | Package size | At most 20 MiB compressed complete MSIX as an initial goal | Include all required payloads; no hidden large runtime download; measure the actual delivered inventory |
 | UI responsiveness | Typical local actions below 100 ms; cold usable window below 500 ms | p95 on named reference machine; network/UAC work is asynchronous and separately explained |
 | Log storage | 10 MiB rotating diagnostic budget | A hostile packet stream cannot grow storage indefinitely |
-| Source/history bounds | Default four logical sources; hard configured cap 16; at most 64 regression samples/source | Bootstrap helpers are a separate maximum-two list; record fixed queue/cookie limits |
+| Source/history bounds | Recommended default five logical sources qualified as distinct groups (§7.2.2); hard configured cap 16; at most 64 regression samples/source | Bootstrap helpers are a separate maximum-two list; record fixed queue/cookie limits. Roster/resource qualification remains open. |
 | Long-run resource stability | No unexplained growth in handles, threads or private allocations over 72 hours | Normalize for bounded caches and log rotation; test fault/reconnect cycles before teardown |
 
 Use one bounded engine event loop and a small explicit blocking-work budget. A current-thread async runtime is a candidate, not a requirement to spawn one worker thread per CPU. DNS, certificate work and diagnostics must not create unbounded background tasks. Network retry and UI refresh are event-driven; visible values update at most once per second unless an interaction needs immediate feedback.
@@ -5227,7 +5327,7 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-5 | W32Time active/disabled/managed-policy states; detected competing controller | One cooperating owner; correct prior state restored; no fight with GPO | P0/P4/P6, installer/platform |
 | CHECK-6 | Raw NTP/NTS vectors, replay, malformed extensions, wrong UID/key/origin, KoD/NAK handling and storms; RFC 8915 alignment checklist | Invalid packet has no time/cookie effect; valid neighboring packet accepted exactly once; admitted KoD changes only permitted control state, never supplies a time sample | P1/P2, protocol |
 | CHECK-7 | Symmetric/asymmetric delay, variable drift, one/two falsetickers, 2-source disagreement; §10.5 calendar/LI/segment cases | Expected selection/principal/supporters and no-majority behavior; healthy all-LI=0 admission, no crossed-event fit or LI-created leap; no fastest-peer shortcut | P1, numerical core |
-| CHECK-8 | Identity/endpoint duplication and configured minimum changes | One logical source cannot obtain multiple votes; no silent minimum reduction | P1/P2, core/security |
+| CHECK-8 | Identity/operator/endpoint duplication, source loss and configured minimum changes; §7.2.2 profile cases | One group cannot obtain duplicate votes or contributor influence; OD-23's default three-group minimum survives loss/rejection | P1/P2, core/security |
 | CHECK-9 | Clock years wrong, cached keys, expired/future certificates, 1/2 helpers and expired-compromised-key attack | No plain-clock actuation; wrong identity still rejected; residual attack documented honestly | P2, protocol/security |
 | CHECK-10 | Actual Windows rate/step sign, units, quantization, cancellation, acknowledgement loss and cumulative correction accounting; native handled/missing/unexpected leap cases | Actual integrated effects consume policy budgets; no double step or synthetic leap correction, arithmetic overflow or stale correction; independently known safe residual correction succeeds | P0/P4, clock backend |
 | CHECK-11 | S3/S4/Modern Standby, manual step, VM restore, network/VPN switch; leap guard and mapping/presentation changes | Generations invalidate old/crossing work; no integration of sleep as delivered active slew; fresh post-guard recovery succeeds even with all LI=0 | P4, platform |
@@ -5462,7 +5562,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | OD-14 selects intended Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience; the [two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retains open profile, admission, delivery and candidate-specific evidence. Required v3 is configured; CPU/OS/VM startup and native qualification remain open. Qualify ARM64 separately | Platform owner, S0.4 |
 | OPEN-3 | Final account/token/object-owner/DACL topology, including runtime replacement | Virtual-account broker plus restricted LocalService engine | Security/platform, S0.2 |
 | OPEN-4 | Race-safe mutual IPC authentication and revocation semantics | Named pipes with OS identity proof; local RPC fallback | Security/platform, S0.3 |
-| OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production quorum/freshness and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
+| OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production profile/freshness and holdover budgets | OD-23 accepts the default three-group agreement floor; qualify remaining profile/consumer behavior. OD-02 retains era/target/correction authority. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
 | OPEN-6 | Bootstrap absolute date/era range and one/two-helper default; Pool role and NTS preset | Existing opt-in baseline pending OD-03 resolution; two helpers preferred, explicit weaker one; evidence-defined protected floor and narrowly authorized supersession without budget resets. Pool vendor zone/provider qualification required | Product/security, S0.7/P2 |
 | OPEN-7 | Qualify selected leap mapping/presentation, OS event knowledge/behavior, finite guard/cancellation/recovery and finite-slew failure envelope | §10.5 selects Windows-only explicit events, local reviewed knowledge and guard plus measured-residual recovery; exact event-time claim needs native evidence | Platform/core, S0.4/P4; pure S1.4 cases in NV-LP-001 |
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
@@ -5489,7 +5589,7 @@ remaining product decisions or evidence gates.
 
 | Assessed area and current disposition | Required closure output in the canonical owner | Existing plan/task owner and dependent trigger |
 | --- | --- | --- |
-| Production source/vote/freshness profile — decision open | §7.2 and OPEN-5/6: accepted population/grouping/denominator, fresh votes versus predictors, fault/common-path assumptions, age/uncertainty and routine/exceptional rules; OD-03 shipped-source role and admitted preset. | [R-02 decision/consumer](nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026) and [R-04 preset/admission](nevrotick-research-handoff.md#r-04-preset-admission-and-consumer-closure--26-november-2026), Core/Engine and catalogue owners; S0.7 before production selection/default claims. Controlled-profile measurement and unrelated Core work retain their own scope. |
+| Production source/vote/freshness profile — quorum accepted; remaining profile/consumers open | OD-23 / §7.2.2 accepts the default three-group floor. OPEN-5/6 retain remaining population/fault/age/uncertainty and routine/exceptional details; OD-03/R-04 retain shipped role and admitted preset. | [R-02 decision/consumer](nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026) and [R-04 preset/admission](nevrotick-research-handoff.md#r-04-preset-admission-and-consumer-closure--26-november-2026), Core/Engine and catalogue owners; S0.7 before production selection/default claims. Controlled-profile measurement and unrelated Core work retain their own scope. |
 | Correction/holdover/epoch profile — values and dependent evidence open | §§5.3/10 and OPEN-5/7/13: measured capability versus approved defaults/ceilings, units/windows/rounding, one-use authority, delivered contribution, boot transitions and known/unknown settlement. Broker-death residual claims remain conditional on delivered exposure. | [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026), S0.4/S0.7 and S4.1–S4.5; freeze before production clock effects. |
 | Three time authorities — distinct open contracts | §8/OPEN-6/8: NTS date/era and authorized intact-floor supersession; §19.8.3/OPEN-11: independent updater UTC evidence and maintenance bootstrap; Windows verifier/deployment time and revocation need their own exact-profile evidence. | [R-02 recovery](nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026), [R-05 authentication](nevrotick-research-handoff.md#r-05-ordinary-and-reused-authentication-closure--26-november-2026) and [updater UTC deliverable](windows-time-update-assessment.md#independent-updater-utc-evidence), with [wrong-clock PKI matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix); separate P2 and P5/P6 consumers. One authority cannot waive another's prerequisite. |
 | Windows security realization — mechanism/admission choices and native evidence open | §§4/5/15 and OPEN-3/4/8/12/14: supported pre-start actor, creation-time owner/token/object isolation, actual actor/component/request binding, bounded OS-account revocation, and installed direct/delegated network policy. Exact privilege sets are already selected. | W11-W04/W05/W10, [current provisioning order](../tasks/windows11-integration.md#service-provisioning-and-direct-msix-order--23-november-2026) and [closure inventory](../tasks/windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026); S0.2/S0.3/S0.6 before the corresponding functional P3/P6 boundary. |

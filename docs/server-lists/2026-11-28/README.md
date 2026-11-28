@@ -3,6 +3,9 @@
 **Owner instruction:** collect the supplied NTS directory and find Roughtime
 servers first. The other eight audit topics remain for joint discussion in the
 [existing backlog](../../../tasks/development-backlog.md#joint-production-decisions--28-november-2026).
+**Subsequent decision, 29 November:** [OD-23](../../nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+accepts item 2's default quorum of three fresh operator groups; remaining profile
+choices and items 3–9 are still open. This does not admit a provider preset.
 The [catalogue task](../../../tasks/server-catalogue-and-statistics.md) and
 [R-04 research](../../nevrotick-research-handoff.md#6-r-04--default-servers-and-the-supplied-nts-list)
 own this collection. These are discovery candidates, not an approved shipping

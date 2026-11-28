@@ -1,12 +1,18 @@
 # NevroTick — research handoff for the next AI
 
-**Document:** NV-RESEARCH-001, revision 1.4<br>
+**Document:** NV-RESEARCH-001, revision 1.5<br>
 **Prepared:** 29 October 2026, Asia/Tbilisi  
 **Owner:** David Osipov  
 **Input:** [Owner decisions NV-DEC-001](nevrotick-owner-decisions.md), [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md)  
 **Repository integration base:** `DavidOsipov/NevroTick@77ad8c416db32d5edfdc9e6a538d76637eaf44f0`. This maintained assignment accompanies the integrated owner-decision record; retrieve the current checkout and relevant updates before acting.
 
-**30 October 2026 trust-lifecycle amendment:** R-02/R-04/R-05 now require explicit authentication ages, semantic time-floor recovery and vote/freshness rules before the dependent production interfaces are frozen. These refine existing open gates; they adopt no key lifetime, stronger quorum, floor-reset privilege or new source preset. Source review and controlled-case specifications below establish no implemented NTS or Windows behavior.
+**29 November 2026 quorum amendment:** [OD-23](nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+accepts three fresh independent groups as the default authenticated agreement
+floor. The [item-2 comparison](#item-2-implementation-comparison--29-november-2026)
+and [architecture profile](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026)
+retain provider, numerical, fault-model and consumer qualification as open work.
+
+**30 October 2026 trust-lifecycle amendment:** R-02/R-04/R-05 require explicit authentication ages, semantic time-floor recovery and vote/freshness rules before the dependent production interfaces are frozen. That amendment adopted no key lifetime, stronger quorum, floor-reset privilege or new source preset; OD-23 later settled the default agreement floor. Source review and controlled-case specifications below establish no implemented NTS or Windows behavior.
 
 **21 November 2026 delivery amendment:** [OD-05 §7.9](nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026)
 selects complete hardened MSIX for direct distribution and rejects Store publication.
@@ -191,7 +197,7 @@ Specify:
 - Source and trust of the era anchor; supported interval; behavior with no saved state, old binaries, clock rollback and invalid protected state.
 - Full-width internal time representation, exact units, interval conversion and checked arithmetic. No implicit narrowing to signed 32-bit Unix time or ambiguous modulo timestamp differences.
 - NTS certificate-time bootstrap, cached-association path, fresh request/replay checks, candidate-time revalidation and retained provenance.
-- Operator/endpoint deduplication, uncertainty/interval agreement, majority/minimum-source semantics and a proposed exceptional quorum. Evaluate three independent agreeing NTS identities as a candidate, not an accepted requirement.
+- Operator/endpoint deduplication, uncertainty/interval agreement and production majority/minimum-source semantics under OD-23's accepted default floor of three fresh independent NTS groups. Qualify any additional exceptional-recovery requirements separately; quorum supplies no correction authority.
 - Separate acquisition-time and unexpected running-system recovery; approved target interval/directions, one-use authority, cumulative budgets, restart/reboot policy and ambiguous-acknowledgment reconciliation.
 - Observable failure behavior and recovery remedies when certificates, era, quorum or broker authority cannot be established.
 
@@ -225,9 +231,35 @@ R-02 must propose a narrowly authorized supersession procedure, its independent 
 
 ### Votes, prediction and fresh agreement
 
-R-02/R-04 must freeze a decision table naming the majority denominator, configured minimum, operator/endpoint grouping, timeout and statistical-rejection effects, accepted-observation age and uncertainty growth, separately for routine selection and exceptional recovery. Include four fresh groups, two unavailable groups, duplicate operators, a 2–2 split and one fresh source plus usable historical predictors. State the assumed faulty-group/path model and availability tradeoff; two malicious agreeing groups with two honest groups blocked does not disprove a one-fault guarantee.
+R-02/R-04 must complete the versioned [production profile](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026) around OD-23's accepted three-group floor: majority population, operator grouping, timeout/rejection effects, accepted-observation age and uncertainty growth, with separate routine/exceptional consumers. Qualify three useful fresh groups beside unavailable groups, only two fresh groups, duplicate operators, a 2–2 split and one fresh source plus historical predictors. The recommended five-group cohort and one-incorrect-group qualification baseline require explicit assumptions; shared-path errors and successful selection during faults are not automatically covered.
 
 [Chrony's FAQ §3.7](https://chrony-project.org/faq.html#_an_unreachable_source_is_selected) explains that an unreachable predictor may remain selected for hours. Its usefulness for prediction is not fresh independent corroboration or exceptional-correction authority. KE completion, cookie replacement, NAK and reachability changes must not refresh the last accepted time-observation timestamp. Preserve useful history without claiming renewed agreement.
+
+### Item-2 implementation comparison — 29 November 2026
+
+David accepted the default quorum of three after this source comparison;
+[OD-23](nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+records authority and [architecture §7.2.2](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026)
+owns the contract. This review read released source; no upstream/client execution,
+public-server queries or Windows performance/accuracy qualification occurred.
+
+| Inspected release and immutable source | Material finding | NevroTick disposition |
+| --- | --- | --- |
+| Chrony 4.9, `8df4f1263e206585e6c4e61352d042c2dd12916a`: [configuration](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/conf.c), [selection](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c), [receive path](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.c) | Default `minsources=1`; eligibility precedes majority; old unreachable models can remain eligible. Survivor count can span disconnected maximum regions. Reachability can update before useful sample accumulation. | Retain regression/controller work; preserve NevroTick's stricter unique-component/common-witness rule and explicit fresh-vote deadline. Witness count and final contributor count remain distinct. |
+| ntpd-rs 1.9.0, `46ec9bb4d5b6cb24f814f5543d85b9138afb4cba`: [minimum](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/config.rs), [selection](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/select.rs), [combination](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/combiner.rs) | Default minimum three plus strict majority of admitted intervals. Voting uses filtered statistical uncertainty and local delay; server root dispersion enters later combination. | Use an explicit minimum; preserve uncertainty meanings rather than importing the full Kalman controller or calling its voting radius a conservative UTC envelope. |
+| NTPsec 1.2.6, `6e198f2a75c4296e10c637b512a776238635c011`: [filter/selection](https://github.com/ntpsec/ntpsec/blob/6e198f2a75c4296e10c637b512a776238635c011/ntpd/ntp_proto.c), [constants](https://github.com/ntpsec/ntpsec/blob/6e198f2a75c4296e10c637b512a776238635c011/include/ntp.h) | Default `minsane=1`; `minclock=3` is a clustering setting. Dispersion aging and epoch guards are separate from reachability. | Specify authorization quorum separately from clustering/weights; preserve original observation epochs and uncertainty aging. |
+
+The five-group target is an engineering tradeoff, not an RFC requirement.
+[RFC 8633 §3.2–3.3](https://www.rfc-editor.org/rfc/rfc8633.html#section-3.2)
+recommends at least four independent diverse sources and names common failures.
+[RFC 8915 §8.6](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.6)
+explains why authenticated packets do not remove asymmetric-delay error.
+[Chrony's tracking documentation](https://chrony-project.org/doc/4.9/chronyc.html#tracking)
+includes remaining system-clock correction in its conditional error calculation.
+Neither operator count, tight overlap nor low model variance alone supplies a
+physical UTC-error bound. Numerical age/ppm/error limits need the existing
+bounded qualification, without introducing a V1 estimator-replacement or proof
+campaign. Exact provider admission remains R-04/OPEN-CAT-02.
 
 ### R-02 decision and consumer closure — 26 November 2026
 
@@ -236,12 +268,13 @@ contracts under OPEN-5/6/8. S0.7's product/security/Core coordinator prepares th
 next needed decision through [NV-DEC-001](nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete)
 and records implementation and qualification separately at the existing consumer.
 The [architectural closure inventory](windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)
-routes these obligations; it does not accept a quorum, date interval or recovery
-privilege.
+routes these obligations. OD-23 subsequently accepts the default three-group
+floor; remaining profile choices, date intervals and recovery privileges retain
+their own decision and qualification gates.
 
 | Existing owner and dependent behavior | Next bounded deliverable | Useful/refused controls and completion evidence |
 | --- | --- | --- |
-| R-02/R-04, OPEN-5/6; S0.7 → Core/Engine production voting and freshness | Prepare one versioned profile table for configured identities, eligible models and fresh independent groups; routine/exceptional denominators and minima; timeout/rejection effects; observation age and uncertainty growth; and declared faulty-group/common-path assumptions. Bind its fields to source configuration, final sample admission, selection and published agreement/quality. | Sufficient current independent agreement remains useful beside unavailable groups, aliases, a 2–2 split and one fresh source plus old predictors. Complete only after the dependent policy is accepted and the actual consumers preserve its denominator, minimum, original observation age and uncertainty meaning. CHECK-7/8/14; the [current Engine/Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026) retains its separate first-sample exit. |
+| R-02/R-04, OPEN-5/6; S0.7 → Core/Engine production voting and freshness | Bind OD-23's accepted three-group floor and §7.2.2's versioned profile to configuration, final sample admission, selection and published agreement/quality. Complete remaining provider/fault/population choices and age/uncertainty parameters; preserve routine/exceptional authority separation. | Three useful fresh groups remain useful beside unavailable groups; two fresh groups, aliases, a 2–2 split and one fresh source plus predictors cannot manufacture quorum. Complete only when actual consumers preserve the accepted minimum, profile population, original age, deadline and uncertainty meaning under CHECK-7/8/14/25. The [current Engine/Core handoff](../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026) retains its separate first-sample exit. |
 | R-02/R-05, OPEN-5/6/8; S0.7 → S2.3 authenticated date/era recovery | Bind supported true-date/era hypotheses, anchor provenance, helper mode, whole-interval scale/leap interpretation and candidate-time verification to the recovery state transitions. Separate these fields from initial local error and the broker's accepted target/direction/approval envelope. Identify the next unresolved authority choice and its evidence-backed options. | A supported large-error case completes isolated NTS recovery beside ambiguous era, unsupported true date, helper loss/conflict, invalid credentials and insufficient fresh agreement. Observe useful acquisition without a preliminary clock write; admit a later proposal only through the independent broker gate. CHECK-7/8/9/10/12 and the controlled cases below. |
 | R-02, OPEN-6; security and mandatory-state/S3.3 → persisted-floor recovery | Specify the floor's uncertainty/model/source provenance and a narrowly authorized supersession transition: current writer/revision, independent replacement evidence, preserved old record, commit/recovery outcomes and dependent model/association invalidation. Apply [mandatory-state lifetime and bounded recovery](windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery) to its schema, finite retained evidence and interrupted transitions. | Correct independent sources beside an intact future floor reach only the approved supersession or explicit refusal/remedy. Forged, stale, unauthorized, missing and interrupted state cannot gain authority. Exact-candidate checks must show preserved provenance, consumed correction budgets, step authority and installation ownership across restart; supersession itself performs no clock write. CHECK-9/15; optional cache deletion or future TA-C10 cannot replace this ordinary P2 exit. |
 

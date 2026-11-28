@@ -9,14 +9,26 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Production quorum — 29 November 2026:**
+[OD-23](nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy)
+accepts a default authenticated floor of three fresh independent operator groups.
+[Architecture §7.2.2](windows-time-architecture.md#722-production-quorum-and-evidence-profile--29-november-2026)
+owns grouping, unchanged minimum through loss, evidence expiry, witnesses versus
+contributors and uncertainty meaning; [the source comparison](nevrotick-research-handoff.md#item-2-implementation-comparison--29-november-2026)
+records the Chrony/ntpd-rs/NTPsec rationale. The five-group target, exact providers,
+fault assumptions and numerical limits still need profile qualification. The
+existing Core/Engine tasks own consumer enforcement; item 2 remains partial and
+items 3–9 stay for joint discussion. No runtime or native qualification follows.
+
 **Server discovery and joint TODOs — 28 November 2026:**
 the [NTS/Roughtime collection](server-lists/2026-11-28/README.md) preserves the
 complete supplied NTS directory, researched Roughtime endpoints/public keys,
 immutable source snapshots, licenses and protocol limitations. The
 [catalogue task](../tasks/server-catalogue-and-statistics.md) owns collection;
 the [existing backlog](../tasks/development-backlog.md#joint-production-decisions--28-november-2026)
-retains the other eight audit topics for joint discussion with David. No
-production server preset or remaining architecture choice is finalized.
+retains the other eight audit topics for joint discussion with David. OD-23 later
+settles item 2's default agreement floor; other choices and the production server
+preset remain open.
 
 **Exploit-hardening coverage — 28 November 2026:**
 [Architecture §15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)

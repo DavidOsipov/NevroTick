@@ -20,7 +20,7 @@ Preserve the architecture's selected strict JSON IPC, machine-policy and broker-
 
 ## 2. Resource model and physical allocation
 
-The complete catalogue is distinct from the active association set. Hundreds of records do not authorize hundreds of sockets, timers, TLS states or estimator histories. Existing default-four/maximum-16 ordinary active-source and maximum-two helper bounds remain separate from catalogue cardinality and future admitted bootstrap work.
+The complete catalogue is distinct from the active association set. Hundreds of records do not authorize hundreds of sockets, timers, TLS states or estimator histories. [OD-23](../nevrotick-owner-decisions.md#27-od-23--production-quorum-and-evidence-policy) accepts a default minimum of three fresh groups and recommends a five-group roster target, pending admission. The maximum-16 ordinary active-source and maximum-two helper bounds remain separate from catalogue cardinality and future admitted bootstrap work.
 
 | Class | Placement and representation | Resource and security consequence |
 | --- | --- | --- |
