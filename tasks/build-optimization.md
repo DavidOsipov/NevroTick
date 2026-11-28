@@ -769,6 +769,41 @@ native/resource/package and submitted/Store-delivered MSIX reconciliation.
 That scope-label correction performs no new inventory generation and closes
 neither this raw-admission follow-up nor the complete-product SBOM gate.
 
+**Bounded raw-report source continuation — 29 November 2026.** On the
+`c91107846e7a5941cc1856f55d26e799457f6de4` checkout, the SBOM wrapper
+now checks strict UTF-8, decoded duplicate field names, finite and bounded
+numbers, nesting, node count and the consumed CycloneDX field shapes before
+retaining a report for publication. The existing 16 MiB per-report, 64 MiB
+aggregate and 128-report budgets remain. The added limits are depth 64,
+262,144 JSON token starts and 128 characters per number. The wrapper still
+publishes the original admitted bytes and does not claim full CycloneDX schema
+validation. `scripts/generate-sbom.py` hashes to
+`a609512d7e7a50d51ca6a204d0b79b05039477f8d63161550a6a7c74774027d9`;
+the focused test file hashes to
+`920632f1dee3207208be2b0f8ccb0d72511b4bf54afb193b1d67fcb5670fed90`.
+
+The real two-member generator fixture first reproduced the gap: adding an
+escaped-equivalent duplicate `version` field to one emitted report allowed
+the old wrapper to create output. After the repair, the same case refused
+after one other healthy report was checked and left no output directory.
+Restored reports were retained byte for byte. The focused command
+`timeout 110s python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_sbom.py -v`
+passed all 16 cases in 56.013 seconds, including original Cargo graph,
+target and feature controls and new malformed/healthy boundaries.
+An independent source review found no new defect in the decoder and checked
+its exact 64-depth, 262,144-node and 128-character number boundaries with
+pure calls. Focused permanent controls for those actual boundaries were then
+added; six `ReportAdmissionControls` cases passed in 0.086 seconds. The same
+full focused command was repeated on the resulting test file and passed all
+17 cases in 53.395 seconds, including the actual pinned generator fixtures.
+`git diff --check` passed. The reviewer also identified pre-existing graph
+topology and component-multiplicity limits in the wrapper's set comparison;
+the pinned producer was not shown to emit those shapes. Write failure after
+output-directory creation can still leave partial files. These remain
+separate complete-graph/publication checks. This is source and local fixture
+evidence only; native/generated/package inventory reconciliation, signing and
+installed MSIX qualification remain open under their existing owners.
+
 ## Cargo intermediate-layout upgrade check — 9 November 2026
 
 **R4-B-02: future compatibility watch; no current failure or upgrade selected.**

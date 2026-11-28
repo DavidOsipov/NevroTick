@@ -62,6 +62,29 @@ class BomStructureControls(unittest.TestCase):
                 with self.assertRaises(SBOM.ENV.Incomplete):
                     SBOM.validate_bom(bom)
 
+    def test_raw_consumed_shapes_fail_with_bounded_incomplete(self) -> None:
+        for field, value, diagnostic in (
+            ("metadata", [], "root crate"),
+            ("metadata", {"component": []}, "root crate"),
+            ("components", {}, "components must be an array"),
+            ("components", [False], "identity"),
+            ("components", [{"name": [], "version": "1.0", "bom-ref": "dep"}], "identity"),
+            ("dependencies", [{"ref": "root", "dependsOn": "normal"}], "edge list"),
+            ("dependencies", [{"ref": [], "dependsOn": []}], "reference"),
+            ("dependencies", [{"ref": "root", "dependsOn": [[]]}], "reference"),
+        ):
+            with self.subTest(field=field, value=value):
+                raw: bytes = json.dumps({**valid_bom(), field: value}).encode("utf-8")
+                with self.assertRaisesRegex(SBOM.ENV.Incomplete, diagnostic):
+                    SBOM.decode_report(raw)
+        bom: dict = valid_bom()
+        bom["components"][0]["components"] = [{"bom-ref": []}]
+        with self.assertRaisesRegex(SBOM.ENV.Incomplete, "nested component reference"):
+            SBOM.decode_report(json.dumps(bom).encode("utf-8"))
+        bom["components"][0]["components"] = [{"bom-ref": "child"}]
+        bom["dependencies"][0]["dependsOn"].append("child")
+        self.assertEqual(SBOM.decode_report(json.dumps(bom).encode("utf-8")), bom)
+
     def test_absent_product_source_does_not_create_output_or_admit_tools(self):
         with tempfile.TemporaryDirectory(prefix="sbom-no-source-") as temporary:
             area = Path(temporary)
@@ -96,6 +119,49 @@ class ReportAdmissionControls(unittest.TestCase):
             for path in (alias, root):
                 with self.subTest(path=path.name), self.assertRaises(SBOM.ENV.Incomplete):
                     SBOM.read_report(path, 1024)
+
+    def test_report_requires_complete_utf8_and_finite_numbers(self) -> None:
+        bom: dict = {**valid_bom(), "description": 'Example [ } says "λ"'}
+        text: str = json.dumps(bom, ensure_ascii=False)
+        original: bytes = text.encode("utf-8")
+        self.assertEqual(SBOM.decode_report(original), bom)
+        for malformed in (text.encode("utf-16"), b"\xef\xbb\xbf" + original,
+                          original[:-1] + b',"description2":"\xff"}', original + b"{}"):
+            with self.subTest(malformed=malformed), self.assertRaisesRegex(SBOM.ENV.Incomplete, "UTF-8"):
+                SBOM.decode_report(malformed)
+        for number in (b"NaN", b"Infinity", b"-Infinity", b"1e999"):
+            with self.subTest(number=number), self.assertRaisesRegex(SBOM.ENV.Incomplete, "nonfinite"):
+                SBOM.decode_report(original[:-1] + b',"score":' + number + b"}")
+
+    def test_exact_depth_bound_ignores_punctuation_inside_escaped_strings(self) -> None:
+        within: str = '{"description":["[}\\\""]}'
+        over: str = '{"description":[["[}\\\""]]}'
+        with patch.object(SBOM, "MAX_REPORT_DEPTH", 2):
+            SBOM.bound_report_structure(within)
+            with self.assertRaisesRegex(SBOM.ENV.Incomplete, "nesting bound"):
+                SBOM.bound_report_structure(over)
+        SBOM.bound_report_structure("[" * 64 + "0" + "]" * 64)
+        with self.assertRaisesRegex(SBOM.ENV.Incomplete, "nesting bound"):
+            SBOM.bound_report_structure("[" * 65 + "0" + "]" * 65)
+
+    def test_exact_node_bound_counts_keys_containers_and_scalar_values(self) -> None:
+        within: str = '{"nodes":[1,"two",null]}'
+        over: str = '{"nodes":[1,"two",null,false]}'
+        with patch.object(SBOM, "MAX_REPORT_NODES", 6):
+            SBOM.bound_report_structure(within)
+            with self.assertRaisesRegex(SBOM.ENV.Incomplete, "node bound"):
+                SBOM.bound_report_structure(over)
+        SBOM.bound_report_structure("[" + ",".join(["0"] * 262_143) + "]")
+        with self.assertRaisesRegex(SBOM.ENV.Incomplete, "node bound"):
+            SBOM.bound_report_structure("[" + ",".join(["0"] * 262_144) + "]")
+
+    def test_exact_number_token_limit_has_a_healthy_neighbor(self) -> None:
+        prefix: bytes = json.dumps(valid_bom(), separators=(",", ":")).encode("utf-8")[:-1]
+        within: bytes = prefix + b',"sequence":' + b"1" * 128 + b"}"
+        over: bytes = prefix + b',"sequence":' + b"1" * 129 + b"}"
+        self.assertEqual(SBOM.decode_report(within)["sequence"], int("1" * 128))
+        with self.assertRaisesRegex(SBOM.ENV.Incomplete, "number length"):
+            SBOM.decode_report(over)
 
 
 class ActualCargoSbomControls(unittest.TestCase):
@@ -257,6 +323,56 @@ extra = ["dep:control-optional"]
                               bom["metadata"]["properties"])
                 self.assertFalse((self.root / "BUILD_SCRIPT_EXECUTED").exists())
                 self.assertEqual(SBOM.source_snapshot(self.root), before)
+
+    def test_actual_emission_requires_unambiguous_report_before_output(self) -> None:
+        self.add_second_workspace_member()
+        native_run = SBOM.ENV.run
+        emissions: list[dict[str, bytes]] = []
+        rejected_tree_calls: list[list[str]] = []
+
+        def generate(output_name: str, *, duplicate: bool) -> Path:
+            output: Path = self.area / output_name
+
+            def inspect_emission(command: list[str], **kwargs: object) -> dict:
+                result: dict = native_run(command, **kwargs)
+                if "--" not in command or result["exit_code"] != 0:
+                    return result
+                inner: list[str] = command[command.index("--") + 1:]
+                if duplicate and "tree" in inner:
+                    rejected_tree_calls.append(inner)
+                if "/tools/cargo-cyclonedx" in inner:
+                    fixture: Path = Path(command[command.index("--bind") + 1]) / "fixture"
+                    reports: list[Path] = list(fixture.rglob("*.cdx.json"))
+                    self.assertEqual(len(reports), 2)
+                    originals: dict[str, bytes] = {
+                        report.relative_to(fixture).as_posix(): report.read_bytes() for report in reports
+                    }
+                    emissions.append(originals)
+                    if duplicate:
+                        report: Path = reports[-1]
+                        original: bytes = originals[report.relative_to(fixture).as_posix()]
+                        self.assertTrue(original.startswith(b"{"))
+                        report.write_bytes(b'{"ver\\u0073ion":999,' + original[1:])
+                return result
+
+            with patch.object(SBOM.ENV, "inspect", return_value=self.admitted_environment), \
+                 patch.object(SBOM.ENV, "run", side_effect=inspect_emission):
+                if duplicate:
+                    with self.assertRaisesRegex(SBOM.ENV.Incomplete, "duplicate"):
+                        SBOM.generate(self.root, output, [], False)
+                else:
+                    SBOM.generate(self.root, output, [], False)
+            return output
+
+        rejected: Path = generate("duplicate-field", duplicate=True)
+        self.assertEqual(len(rejected_tree_calls), 1, "One healthy report was checked before the refusal")
+        self.assertFalse(rejected.exists())
+        healthy: Path = generate("unambiguous", duplicate=False)
+        self.assertEqual(len(emissions), 2, "Both controls must reach successful generator emission")
+        retained: dict[str, bytes] = {report.relative_to(healthy).as_posix(): report.read_bytes()
+                                      for report in healthy.rglob("*.cdx.json")}
+        self.assertEqual(retained, emissions[-1])
+        self.assertFalse((self.root / "BUILD_SCRIPT_EXECUTED").exists())
 
     def test_target_conditional_feature_leakage_is_rejected_without_output(self):
         self.package("branch-windows")

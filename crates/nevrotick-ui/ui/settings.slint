@@ -175,24 +175,6 @@ export component SettingsPage inherits VerticalLayout {
         if !root.host-ready: SecondaryText { text: PreferencesCopy.host-unavailable; color: Theme.amber; }
     }
     if root.shown-section == 1: Panel {
-        Badge { text: FixtureCopy.admin-required; }
-        SecondaryText { text: ShellCopy.service-unavailable; color: Theme.amber; }
-        if root.service-feedback != "": SecondaryText { text: root.service-feedback; color: Theme.amber; }
-        HorizontalLayout {
-            spacing: 10px;
-            alignment: start;
-            ActionButton { text: FixtureCopy.start-service; enabled: false; clicked => { root.service-command-requested(0); } }
-            ActionButton { text: FixtureCopy.stop-service; enabled: false; clicked => { root.service-command-requested(1); } }
-            ActionButton { text: FixtureCopy.restart-service; enabled: false; clicked => { root.service-command-requested(2); } }
-        }
-        ActionButton {
-            text: root.power-mode ? ShellCopy.diagnose : ShellCopy.diagnose-power;
-            enabled: root.host-ready;
-            clicked => { root.diagnose-service-requested(); }
-        }
-        SecondaryText { text: FixtureCopy.service-protected-note; }
-        SecondaryText { text: ShellCopy.diagnose-note; }
-        Rule { }
         SecondaryText { text: FixtureCopy.service-description; font-size: 13px; }
         GridLayout {
             spacing: 22px;
@@ -200,6 +182,24 @@ export component SettingsPage inherits VerticalLayout {
             FactRow { row: 0; col: 1; label: FixtureCopy.startup-label; value: FixtureCopy.startup-value; }
             FactRow { row: 1; col: 0; label: FixtureCopy.owner-label; value: FixtureCopy.owner-value; }
             FactRow { row: 1; col: 1; label: FixtureCopy.synchronization-label; value: FixtureCopy.synchronization-value; }
+        }
+        ActionButton {
+            text: root.power-mode ? ShellCopy.diagnose : ShellCopy.diagnose-power;
+            enabled: root.host-ready;
+            clicked => { root.diagnose-service-requested(); }
+        }
+        SecondaryText { text: ShellCopy.diagnose-note; }
+        Rule { }
+        Badge { text: FixtureCopy.admin-required; }
+        SecondaryText { text: ShellCopy.service-unavailable; color: Theme.amber; }
+        if root.service-feedback != "": SecondaryText { text: root.service-feedback; color: Theme.amber; }
+        SecondaryText { text: FixtureCopy.service-protected-note; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: FixtureCopy.start-service; enabled: false; clicked => { root.service-command-requested(0); } }
+            ActionButton { text: FixtureCopy.stop-service; enabled: false; clicked => { root.service-command-requested(1); } }
+            ActionButton { text: FixtureCopy.restart-service; enabled: false; clicked => { root.service-command-requested(2); } }
         }
         Rule { }
         SectionHeading { text: ShellCopy.startup-title; }

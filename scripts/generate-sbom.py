@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -19,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("sbom_environment", ROOT / "scripts/check-environment.py")
@@ -31,6 +33,9 @@ POLICY = {"schema_version": 1, "generator": "cargo-cyclonedx", "format": "json",
 MAX_REPORT_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_REPORT_BYTES = 64 * 1024 * 1024
 MAX_REPORTS = 128
+MAX_REPORT_DEPTH = 64
+MAX_REPORT_NODES = 262_144
+MAX_REPORT_NUMBER_LENGTH = 128
 
 
 def read_report(path: Path, remaining: int) -> bytes:
@@ -44,32 +49,130 @@ def read_report(path: Path, remaining: int) -> bytes:
     return data
 
 
-def validate_bom(bom: dict) -> None:
+def bound_report_structure(text: str) -> None:
+    """Bound depth and token starts before allocating decoded JSON containers."""
+    depth: int = 0
+    nodes: int = 0
+    quoted: bool = False
+    escaped: bool = False
+    scalar: bool = False
+    for character in text:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                quoted = False
+            continue
+        if character == '"':
+            quoted = True
+            nodes += 1
+        elif character in "[{":
+            depth += 1
+            nodes += 1
+        elif character in "]}":
+            depth -= 1
+        elif character not in " \t\r\n,:":
+            if not scalar:
+                nodes += 1
+            scalar = True
+            if nodes > MAX_REPORT_NODES:
+                raise ENV.Incomplete("SBOM report exceeds its JSON node bound.")
+            continue
+        scalar = False
+        if not 0 <= depth <= MAX_REPORT_DEPTH:
+            raise ENV.Incomplete("SBOM report exceeds its JSON nesting bound or is unbalanced.")
+        if nodes > MAX_REPORT_NODES:
+            raise ENV.Incomplete("SBOM report exceeds its JSON node bound.")
+    if depth or quoted:
+        raise ENV.Incomplete("SBOM report is not a complete JSON document.")
+
+
+def decode_report(data: bytes) -> dict[str, Any]:
+    """Admit one bounded UTF-8 JSON object and its consumed CycloneDX fields."""
+    if not 0 < len(data) <= MAX_REPORT_BYTES:
+        raise ENV.Incomplete("SBOM report is empty or exceeds its byte budget.")
+
+    def unique_fields(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ENV.Incomplete("SBOM report contains a duplicate JSON field.")
+            result[key] = value
+        return result
+
+    def reject_nonfinite(_token: str) -> None:
+        raise ENV.Incomplete("SBOM report contains a nonfinite JSON number.")
+
+    def number(token: str, *, floating: bool) -> int | float:
+        if len(token) > MAX_REPORT_NUMBER_LENGTH:
+            raise ENV.Incomplete("SBOM report exceeds its JSON number length bound.")
+        if not floating:
+            return int(token)
+        converted: float = float(token)
+        if not math.isfinite(converted):
+            reject_nonfinite(token)
+        return converted
+
+    try:
+        text: str = data.decode("utf-8")
+        bound_report_structure(text)
+        decoded: Any = json.loads(text, object_pairs_hook=unique_fields,
+                                  parse_constant=reject_nonfinite,
+                                  parse_int=lambda token: number(token, floating=False),
+                                  parse_float=lambda token: number(token, floating=True))
+    except (ValueError, RecursionError) as error:
+        raise ENV.Incomplete("SBOM report is not one complete strict UTF-8 JSON document.") from error
+    validate_bom(decoded)
+    return decoded
+
+
+def validate_bom(bom: object) -> None:
     """Check the consumed structure/closure; this is not full schema validation."""
-    if (not isinstance(bom, dict) or bom.get("bomFormat") != "CycloneDX" or bom.get("specVersion") != "1.5"
+    if (type(bom) is not dict or bom.get("bomFormat") != "CycloneDX" or bom.get("specVersion") != "1.5"
             or type(bom.get("version")) is not int or bom["version"] < 1):
         raise ENV.Incomplete("Expected a versioned CycloneDX 1.5 JSON document.")
-    product = bom.get("metadata", {}).get("component", {})
-    if not product.get("name") or not product.get("version") or not product.get("bom-ref"):
+    metadata: object = bom.get("metadata")
+    if type(metadata) is not dict or type(metadata.get("component")) is not dict:
         raise ENV.Incomplete("SBOM lacks an identified root crate.")
-    components = [product, *bom.get("components", [])]
-    references = set()
-    for component in components:
-        reference = component.get("bom-ref")
-        if (not isinstance(reference, str) or not reference or reference in references
-                or not component.get("name") or not component.get("version")):
-            raise ENV.Incomplete("SBOM component identity is empty or duplicated.")
+    product: dict[str, Any] = metadata["component"]
+    components: object = bom.get("components", [])
+    if type(components) is not list:
+        raise ENV.Incomplete("SBOM components must be an array.")
+
+    def nonempty_string(value: object) -> bool:
+        return type(value) is str and bool(value)
+
+    references: set[str] = set()
+    for component in [product, *components]:
+        if type(component) is not dict or not all(nonempty_string(component.get(field))
+                                                  for field in ("bom-ref", "name", "version")):
+            raise ENV.Incomplete("SBOM component identity must contain nonempty strings.")
+        reference: str = component["bom-ref"]
+        if reference in references:
+            raise ENV.Incomplete("SBOM component reference is duplicated.")
         references.add(reference)
-        for child in component.get("components", []):
-            if child.get("bom-ref"):
+        children: object = component.get("components", [])
+        if type(children) is not list or any(type(child) is not dict for child in children):
+            raise ENV.Incomplete("SBOM nested components must be an array of objects.")
+        for child in children:
+            if "bom-ref" in child:
+                child_ref: object = child["bom-ref"]
+                if not nonempty_string(child_ref) or child_ref in references:
+                    raise ENV.Incomplete("SBOM nested component reference is invalid or duplicated.")
                 references.add(child["bom-ref"])
-    dependencies = bom.get("dependencies")
-    if not isinstance(dependencies, list) or not dependencies:
+    dependencies: object = bom.get("dependencies")
+    if type(dependencies) is not list or not dependencies:
         raise ENV.Incomplete("SBOM dependency graph is empty.")
     for edge in dependencies:
-        if edge.get("ref") not in references or any(ref not in references for ref in edge.get("dependsOn", [])):
+        if (type(edge) is not dict or not nonempty_string(edge.get("ref"))
+                or type(edge.get("dependsOn", [])) is not list
+                or any(not nonempty_string(ref) for ref in edge.get("dependsOn", []))):
+            raise ENV.Incomplete("SBOM dependency entry has an invalid reference or edge list.")
+        if edge["ref"] not in references or any(ref not in references for ref in edge.get("dependsOn", [])):
             raise ENV.Incomplete("SBOM dependency graph contains a dangling reference.")
-    if product["bom-ref"] not in {edge.get("ref") for edge in dependencies}:
+    if product["bom-ref"] not in {edge["ref"] for edge in dependencies}:
         raise ENV.Incomplete("SBOM dependency graph omits its root crate.")
 
 
@@ -168,8 +271,7 @@ def generate(root: Path, output: Path, features: list[str], no_default: bool) ->
                 raise ENV.Incomplete("SBOM report count exceeds its budget.")
             data = read_report(path, MAX_TOTAL_REPORT_BYTES - report_bytes)
             report_bytes += len(data)
-            bom = json.loads(data)
-            validate_bom(bom)
+            bom: dict[str, Any] = decode_report(data)
             product = bom["metadata"]["component"]
             member = product["bom-ref"]
             if (member not in expected_members or member in seen_members

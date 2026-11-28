@@ -1029,17 +1029,33 @@ matching the review bundle's independent derivation. This updates one input
 in the receiving verification source inventory. The English content remains
 pending human semantic approval. Native UI qualification remains open.
 
-**Service badge presentation draft — 29 November 2026.** The private patch
-`/tmp/nevrotick-p5-service-badge-ol2tgwft/settings.patch` (SHA-256
-`d0ed3f15d1e295f57f0913130c236ea4dc5d9672a0899ecb1fa51da3e2344f2d`)
-places status facts and Diagnostics above a divider, followed by the
-administrator badge, refusal messages and eight disabled service change
-controls. This only reorders existing source lines. The isolated configured
-text checker on the overlaid candidate passed with 539 active and used IDs
-and the same contract fingerprint. Before integration, verify the generated
-shell callbacks and rebind both the exact-content review's view source and
-the product input map. The draft remains private. Its visible layout still
-requires the existing Simple and Power mode observations.
+**Service badge source continuation — 29 November 2026.** On the
+`c91107846e7a5941cc1856f55d26e799457f6de4` checkout, the reviewed private
+patch `d0ed3f15d1e295f57f0913130c236ea4dc5d9672a0899ecb1fa51da3e2344f2d`
+was applied to `ui/settings.slint`. The resulting file hashes to
+`7e72daeefdf8d22e2544f1ae5e27887c50c27637415e338016f1463f9c7f8b7f`.
+Four read-only status facts and Diagnostics precede the divider; the
+administrator badge, refusal messages and all eight disabled service-change
+controls follow it. The panel's existing callbacks and other source lines are
+unchanged. Source tracing confirmed that Diagnostics still reaches the shared
+navigation guard and direct service commands still reach the disconnected
+fixture port. `git diff --check` passed.
+
+The configured text checker passed on these source bytes with 539 active and
+used IDs, zero errors and unchanged fingerprint `973058fb8f1d923f20b06e66e0ba6406230af8575ea5b109cb94339de7e4547d`.
+Its external result is `/tmp/nevrotick-p5-badge-integrated-4YM092/ui-text.json`
+(SHA-256 `08bf78f39d1763c184d90793dd1be6b2f9bb83122e373d761be64398f536ff76`).
+The exact-content review bundle remains **UNAPPROVED**; its historical manifest
+is unchanged. The configured `verify.py::admit_product` source readback returns
+838 inputs with canonical digest
+`e17b948fca423dd8320e504faab61836a042dcb30a245d8fb291b7415fb81184`.
+Replacing only this Settings entry with the original HEAD blob reproduces the
+previous `ff59bd784952c73d7c370cd9a35b213d7232468e6817d1b94f48b2359f943fbe`
+map. A new exact-content review manifest and successor evidence-consumer binding
+are still required; the old private basis is historical. Actual Slint code generation,
+`shell_bindings` callback execution and the Simple/Power rendered placement,
+including compact scrolling, remain open. This source result grants no human
+semantic approval, native UI qualification or service authority.
 
 **Historical candidate text identities — 27 November 2026:** schema 2,
 text contract 4, English revision 4 and informational GUI build 2;
